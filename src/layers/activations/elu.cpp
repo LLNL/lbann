@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define ELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/elu.hpp"
 
 namespace lbann {
@@ -69,6 +70,47 @@ void local_bp(DataType alpha,
 
 } // namespace
 
+// COMMON IMPL
+template <data_layout Layout, El::Device Device>
+elu_layer<Layout, Device>::elu_layer(lbann_comm *comm, DataType alpha)
+  : Layer(comm) , m_alpha(alpha)
+{}
+
+template <data_layout Layout, El::Device Device>
+auto elu_layer<Layout, Device>::copy() const -> elu_layer* {
+  return new elu_layer(*this);
+}
+
+template <data_layout Layout, El::Device Device>
+std::string elu_layer<Layout, Device>::get_type() const {
+  return "ELU";
+}
+
+template <data_layout Layout, El::Device Device>
+data_layout elu_layer<Layout, Device>::get_data_layout() const {
+  return Layout;
+}
+
+template <data_layout Layout, El::Device Device>
+El::Device elu_layer<Layout, Device>::get_device_allocation() const {
+  return Device;
+}
+
+template <data_layout Layout, El::Device Device>
+description elu_layer<Layout, Device>::get_description() const {
+  auto desc = Layer::get_description();
+  desc.add("alpha", m_alpha);
+  return desc;
+}
+
+template <data_layout Layout, El::Device Device>
+void elu_layer<Layout, Device>::setup_dims() {
+  Layer::setup_dims();
+  set_output_dims(get_input_dims());
+}
+
+// SPECIAL IMPL
+
 template <>
 void elu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
        ::fp_compute() {
@@ -101,3 +143,10 @@ void elu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
 }
 
 } // namespace lbann
+
+template class lbann::elu_layer<lbann::data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class lbann::elu_layer<lbann::data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+template class lbann::elu_layer<lbann::data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class lbann::elu_layer<lbann::data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU

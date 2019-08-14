@@ -162,4 +162,7 @@ void elu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
            get_local_error_signals());
 }
 
+template class elu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class elu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+
 } // namespace lbann

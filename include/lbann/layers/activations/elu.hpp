@@ -49,24 +49,16 @@ namespace lbann {
 template <data_layout Layout, El::Device Device>
 class elu_layer : public Layer {
 public:
-  elu_layer(lbann_comm *comm, DataType alpha = 1)
-    : Layer(comm), m_alpha(alpha) {}
-  elu_layer* copy() const override { return new elu_layer(*this); }
-  std::string get_type() const override { return "ELU"; }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
+  elu_layer(lbann_comm *comm, DataType alpha = 1);
+  elu_layer* copy() const override;
+  std::string get_type() const override;
+  data_layout get_data_layout() const override;
+  El::Device get_device_allocation() const override;
 
-  description get_description() const override {
-    auto desc = Layer::get_description();
-    desc.add("alpha", m_alpha);
-    return desc;
-  }
+  description get_description() const override;
 
 protected:
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
-  }
+  void setup_dims() override;
   void fp_compute() override;
   void bp_compute() override;
 
@@ -77,5 +69,4 @@ private:
 };
 
 } // namespace lbann
-
 #endif // LBANN_LAYERS_ACTIVATIONS_ELU_HPP_INCLUDED
