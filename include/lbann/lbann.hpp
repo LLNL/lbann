@@ -95,6 +95,7 @@
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 
 /// Input layer
 #include "lbann/layers/io/input/input_layer.hpp"
