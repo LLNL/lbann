@@ -51,8 +51,6 @@ using factory_type = lbann::generic_factory<
 
 void register_default_builders(factory_type& factory)
 {
-  factory.register_builder("LayerDefault",
-                           [](MessageT const&) { return nullptr; });
   factory.register_builder("ConstantInitializer",
                            build_constant_initializer_from_pbuf);
   factory.register_builder("ValueInitializer",
