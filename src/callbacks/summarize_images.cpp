@@ -85,6 +85,8 @@ construct_strategy(google::protobuf::Message const& proto_msg) {
 
 }// namespace
 
+
+// categorical_accuracy_strategy
 std::vector<El::Int> categorical_accuracy_strategy::get_image_indices(model const& m) {
 
   static size_t img_counter = 0;
@@ -120,13 +122,14 @@ std::vector<El::Int> categorical_accuracy_strategy::get_image_indices(model cons
         LBANN_ERROR("Invalid data from ", m_cat_accuracy_layer->get_name(),
                         ". Received ", correctness_value, ", expected 0 or 1.");
 
+      if(img_indices.size() > static_cast<size_t>(num_samples) || img_counter >= m_num_images)
+        break;
+
       if (meets_criteria(correctness_value)){
         img_indices.push_back(sample);
         img_counter++;
       }
 
-      if(img_indices.size() > static_cast<size_t>(num_samples) || img_counter >= m_num_images)
-        break;
     }
   }
 
@@ -161,6 +164,8 @@ build_categorical_accuracy_strategy_from_pbuf(google::protobuf::Message const& m
     ConvertToLbannType(strategy_msg.match_type()),
     strategy_msg.num_images_per_epoch());
 }
+
+// End categorical_accuracy_strategy
 
 std::vector<El::Int> autoencoder_strategy::get_image_indices(model const& m) {
 
