@@ -1,6 +1,6 @@
 """Neural network model."""
 import abc
-from lbann import lbann_pb2
+from lbann import model_pb2
 from lbann.util import make_iterable
 import lbann.layer
 import lbann.objective_function
@@ -44,7 +44,7 @@ class Model:
     def export_proto(self):
         """Construct and return a protobuf message."""
         # Initialize protobuf message
-        model = lbann_pb2.Model()
+        model = model_pb2.Model()
         model.mini_batch_size = self.mini_batch_size
         model.num_epochs = self.epochs
         model.block_size = self.block_size

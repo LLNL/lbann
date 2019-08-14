@@ -174,17 +174,17 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables,
             cluster)
 
 
-def test_integration_performance_lenet_mnist_clang4(cluster, dirname, exes):
-  skeleton_performance_lenet_mnist(cluster, dirname, exes, 'clang4')
+def test_integration_performance_lenet_mnist_clang6(cluster, dirname, exes):
+  skeleton_performance_lenet_mnist(cluster, dirname, exes, 'clang6')
 
 
-def test_integration_performance_alexnet_clang4(cluster, dirname, exes, weekly):
-  skeleton_performance_alexnet(cluster, dirname, exes, 'clang4', weekly)
+def test_integration_performance_alexnet_clang6(cluster, dirname, exes, weekly):
+  skeleton_performance_alexnet(cluster, dirname, exes, 'clang6', weekly)
 
 
-def test_integration_performance_full_alexnet_clang4(cluster, dirname, exes,
+def test_integration_performance_full_alexnet_clang6(cluster, dirname, exes,
                                                      weekly, run):
-  skeleton_performance_full_alexnet(cluster, dirname, exes, 'clang4', weekly,
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'clang6', weekly,
                                     run)
 
 
@@ -216,7 +216,7 @@ def test_integration_performance_full_alexnet_intel19(cluster, dirname, exes,
                                     run)
 
 
-# Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_lenet_mnist_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_integration_performance.py -k 'test_integration_performance_lenet_mnist_exe' --exe=<executable>
 def test_integration_performance_lenet_mnist_exe(cluster, dirname, exe):
     if exe is None:
       e = 'test_integration_performance_lenet_mnist_exe: Non-local testing'
@@ -226,7 +226,7 @@ def test_integration_performance_lenet_mnist_exe(cluster, dirname, exe):
     skeleton_performance_lenet_mnist(cluster, dirname, exes, 'exe')
 
 
-# Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_alexnet_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_integration_performance.py -k 'test_integration_performance_alexnet_exe' --exe=<executable>
 def test_integration_performance_alexnet_exe(cluster, dirname, exe):
     if exe is None:
       e = 'stest_integration_performance_alexnet_exe: Non-local testing'
@@ -236,7 +236,7 @@ def test_integration_performance_alexnet_exe(cluster, dirname, exe):
     skeleton_performance_alexnet(cluster, dirname, exes, 'exe', True)
 
 
-# Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_full_alexnet_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_integration_performance.py -k 'test_integration_performance_full_alexnet_exe' --exe=<executable>
 def test_integration_performance_full_alexnet_exe(cluster, dirname, exe):
     if exe is None:
       e = 'test_integration_performance_full_alexnet_exe: Non-local testing'

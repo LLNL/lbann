@@ -87,7 +87,7 @@ class sort_layer : public transform_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = transform_layer::get_description();
+    auto desc = transform_layer::get_description();
     desc.add("Descending", m_descending);
     return desc;
   }

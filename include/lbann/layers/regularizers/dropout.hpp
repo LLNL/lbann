@@ -118,7 +118,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = regularizer_layer::get_description();
+    auto desc = regularizer_layer::get_description();
     desc.add("Keep probability", m_keep_prob);
     return desc;
   }

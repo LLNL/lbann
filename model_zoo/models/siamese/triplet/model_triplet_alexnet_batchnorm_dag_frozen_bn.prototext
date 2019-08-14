@@ -70,9 +70,11 @@ model {
 
   weights {
     name: "conv1_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -85,8 +87,10 @@ model {
 
   weights {
     name: "conv1_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
     optimizer {
       sgd {
@@ -99,9 +103,11 @@ model {
 
   weights {
     name: "conv2_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -114,8 +120,10 @@ model {
 
   weights {
     name: "conv2_bias"
-    constant_initializer {
-      value: 0.1
+    initializer {
+      constant_initializer {
+        value: 0.1
+      }
     }
     optimizer {
       sgd {
@@ -128,9 +136,11 @@ model {
 
   weights {
     name: "conv3_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -143,8 +153,10 @@ model {
 
   weights {
     name: "conv3_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
     optimizer {
       sgd {
@@ -157,9 +169,11 @@ model {
 
   weights {
     name: "conv4_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -172,8 +186,10 @@ model {
 
   weights {
     name: "conv4_bias"
-    constant_initializer {
-      value: 0.1
+    initializer {
+      constant_initializer {
+        value: 0.1
+      }
     }
     optimizer {
       sgd {
@@ -186,9 +202,11 @@ model {
 
   weights {
     name: "conv5_kernel"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -201,8 +219,10 @@ model {
 
   weights {
     name: "conv5_bias"
-    constant_initializer {
-      value: 0.1
+    initializer {
+      constant_initializer {
+        value: 0.1
+      }
     }
     optimizer {
       sgd {
@@ -215,9 +235,11 @@ model {
 
   weights {
     name: "fc6_linearity"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.005
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.005
+      }
     }
     optimizer {
       sgd {
@@ -230,8 +252,10 @@ model {
 
   weights {
     name: "fc6_bias"
-    constant_initializer {
-      value: 0.1
+    initializer {
+      constant_initializer {
+        value: 0.1
+      }
     }
     optimizer {
       sgd {
@@ -244,9 +268,11 @@ model {
 
   weights {
     name: "fc7_linearity"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -259,8 +285,10 @@ model {
 
   weights {
     name: "fc7_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
     optimizer {
       sgd {
@@ -273,9 +301,11 @@ model {
 
   weights {
     name: "fc8_linearity"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -288,8 +318,10 @@ model {
 
   weights {
     name: "fc8_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
     optimizer {
       sgd {
@@ -302,9 +334,11 @@ model {
 
   weights {
     name: "fc9_linearity"
-    normal_initializer {
-      mean: 0.0
-      standard_deviation: 0.01
+    initializer {
+      normal_initializer {
+        mean: 0.0
+        standard_deviation: 0.01
+      }
     }
     optimizer {
       sgd {
@@ -317,8 +351,10 @@ model {
 
   weights {
     name: "fc9_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
     optimizer {
       sgd {
@@ -335,217 +371,265 @@ model {
 
   weights {
     name: "bn_conv1_scale"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv1_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv1_running_mean"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv1_running_variance"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv2_scale"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv2_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv2_running_mean"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv2_running_variance"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv3_scale"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv3_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv3_running_mean"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv3_running_variance"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv4_scale"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv4_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv4_running_mean"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv4_running_variance"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv5_scale"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv5_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv5_running_mean"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_conv5_running_variance"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_fc6_scale"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_fc6_bias"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_fc6_running_mean"
-    constant_initializer {
-      value: 0.0
+    initializer {
+      constant_initializer {
+        value: 0.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
   weights {
     name: "bn_fc6_running_variance"
-    constant_initializer {
-      value: 1.0
+    initializer {
+      constant_initializer {
+        value: 1.0
+      }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
   ###################################################

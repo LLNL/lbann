@@ -24,13 +24,17 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/proto/factories.hpp"
 #include "lbann/transforms/normalize.hpp"
 #include "lbann/transforms/sample_normalize.hpp"
 #include "lbann/transforms/scale.hpp"
+#include "lbann/transforms/vision/adjust_brightness.hpp"
+#include "lbann/transforms/vision/adjust_contrast.hpp"
+#include "lbann/transforms/vision/adjust_saturation.hpp"
 #include "lbann/transforms/vision/center_crop.hpp"
-#include "lbann/transforms/vision/grayscale.hpp"
 #include "lbann/transforms/vision/colorize.hpp"
+#include "lbann/transforms/vision/color_jitter.hpp"
+#include "lbann/transforms/vision/cutout.hpp"
+#include "lbann/transforms/vision/grayscale.hpp"
 #include "lbann/transforms/vision/horizontal_flip.hpp"
 #include "lbann/transforms/vision/normalize_to_lbann_layout.hpp"
 #include "lbann/transforms/vision/random_affine.hpp"
@@ -41,83 +45,75 @@
 #include "lbann/transforms/vision/resized_center_crop.hpp"
 #include "lbann/transforms/vision/to_lbann_layout.hpp"
 #include "lbann/transforms/vision/vertical_flip.hpp"
+
+#include "lbann/proto/factories.hpp"
+#include "lbann/proto/proto_common.hpp"
+#include "lbann/proto/helpers.hpp"
+#include "lbann/utils/factory.hpp"
 #include "lbann/utils/memory.hpp"
+
+#include <reader.pb.h>
+#include <transforms.pb.h>
 
 namespace lbann {
 namespace proto {
+namespace {
+
+using factory_type = lbann::generic_factory<
+  transform::transform,
+  std::string,
+  generate_builder_type<transform::transform,
+                        google::protobuf::Message const&>,
+  default_key_error_policy>;
+
+void register_default_builders(factory_type& factory) {
+  using namespace transform;
+  factory.register_builder("AdjustBrightness", build_adjust_brightness_transform_from_pbuf);
+  factory.register_builder("AdjustContrast", build_adjust_contrast_transform_from_pbuf);
+  factory.register_builder("AdjustSaturation", build_adjust_saturation_transform_from_pbuf);
+  factory.register_builder("CenterCrop", build_center_crop_transform_from_pbuf);
+  factory.register_builder("ColorJitter", build_color_jitter_transform_from_pbuf);
+  factory.register_builder("Colorize", build_colorize_transform_from_pbuf);
+  factory.register_builder("Cutout", build_cutout_transform_from_pbuf);
+  factory.register_builder("Grayscale", build_grayscale_transform_from_pbuf);
+  factory.register_builder("HorizontalFlip", build_horizontal_flip_transform_from_pbuf);
+  factory.register_builder("Normalize", build_normalize_transform_from_pbuf);
+  factory.register_builder("NormalizeToLBANNLayout", build_normalize_to_lbann_layout_transform_from_pbuf);
+  factory.register_builder("RandomAffine", build_random_affine_transform_from_pbuf);
+  factory.register_builder("RandomCrop", build_random_crop_transform_from_pbuf);
+  factory.register_builder("RandomResizedCrop", build_random_resized_crop_transform_from_pbuf);
+  factory.register_builder("RandomResizedCropWithFixedAspectRatio", build_random_resized_crop_with_fixed_aspect_ratio_transform_from_pbuf);
+  factory.register_builder("Resize", build_resize_transform_from_pbuf);
+  factory.register_builder("ResizedCenterCrop", build_resized_center_crop_transform_from_pbuf);
+  factory.register_builder("SampleNormalize", build_sample_normalize_transform_from_pbuf);
+  factory.register_builder("Scale", build_scale_transform_from_pbuf);
+  factory.register_builder("ToLBANNLayout", build_to_lbann_layout_transform_from_pbuf);
+  factory.register_builder("VerticalFlip", build_vertical_flip_transform_from_pbuf);
+}
+
+// Manage a global factory
+struct factory_manager {
+  factory_type factory_;
+
+  factory_manager() {
+    register_default_builders(factory_);
+  }
+};
+
+factory_manager factory_mgr_;
+factory_type const& get_transform_factory() noexcept {
+  return factory_mgr_.factory_;
+}
+
+}// namespace <anon>
 
 std::unique_ptr<transform::transform> construct_transform(
   const lbann_data::Transform& trans) {
-  if (trans.has_normalize()) {
-    auto& pb_trans = trans.normalize();
-    return make_unique<transform::normalize>(
-      parse_list<float>(pb_trans.means()),
-      parse_list<float>(pb_trans.stddevs()));
-  } else if (trans.has_sample_normalize()) {
-    return make_unique<transform::sample_normalize>();
-  } else if (trans.has_scale()) {
-    return make_unique<transform::scale>(trans.scale().scale());
-  } else if (trans.has_center_crop()) {
-    auto& pb_trans = trans.center_crop();
-    return make_unique<transform::center_crop>(
-      pb_trans.height(), pb_trans.width());
-  } else if (trans.has_colorize()) {
-    return make_unique<transform::colorize>();
-  } else if (trans.has_grayscale()) {
-    return make_unique<transform::grayscale>();
-  } else if (trans.has_horizontal_flip()) {
-    return make_unique<transform::horizontal_flip>(
-      trans.horizontal_flip().p());
-  } else if (trans.has_normalize_to_lbann_layout()) {
-    auto& pb_trans = trans.normalize_to_lbann_layout();
-    return make_unique<transform::normalize_to_lbann_layout>(
-      parse_list<float>(pb_trans.means()),
-      parse_list<float>(pb_trans.stddevs()));
-  } else if (trans.has_random_affine()) {
-    auto& pb_trans = trans.random_affine();
-    return make_unique<transform::random_affine>(
-      pb_trans.rotate_min(), pb_trans.rotate_max(),
-      pb_trans.translate_h(), pb_trans.translate_w(),
-      pb_trans.scale_min(), pb_trans.scale_max(),
-      pb_trans.shear_min(), pb_trans.shear_max());
-  } else if (trans.has_random_crop()) {
-    auto& pb_trans = trans.random_crop();
-    return make_unique<transform::random_crop>(
-      pb_trans.height(), pb_trans.width());
-  } else if (trans.has_random_resized_crop()) {
-    auto& pb_trans = trans.random_resized_crop();
-    // Handle defaults: If one specified, all must be.
-    if (pb_trans.scale_min() != 0.0f) {
-      return make_unique<transform::random_resized_crop>(
-        pb_trans.height(), pb_trans.width(),
-        pb_trans.scale_min(), pb_trans.scale_max(),
-        pb_trans.ar_min(), pb_trans.ar_max());
-    } else {
-      return make_unique<transform::random_resized_crop>(
-        pb_trans.height(), pb_trans.width());
-    }
-  } else if (trans.has_random_resized_crop_with_fixed_aspect_ratio()) {
-    auto& pb_trans = trans.random_resized_crop_with_fixed_aspect_ratio();
-    return make_unique<transform::random_resized_crop_with_fixed_aspect_ratio>(
-      pb_trans.height(), pb_trans.width(),
-      pb_trans.crop_height(), pb_trans.crop_width());
-  } else if (trans.has_resize()) {
-    auto& pb_trans = trans.resize();
-    return make_unique<transform::resize>(pb_trans.height(), pb_trans.width());
-  } else if (trans.has_resized_center_crop()) {
-    auto& pb_trans = trans.resized_center_crop();
-    return make_unique<transform::resized_center_crop>(
-      pb_trans.height(), pb_trans.width(),
-      pb_trans.crop_height(), pb_trans.crop_width());
-  } else if (trans.has_to_lbann_layout()) {
-    return make_unique<transform::to_lbann_layout>();
-  } else if (trans.has_vertical_flip()) {
-    return make_unique<transform::horizontal_flip>(
-      trans.vertical_flip().p());
-  }
 
-  LBANN_ERROR("Unknown transform");
-  return nullptr;
+  auto const& factory = get_transform_factory();
+  auto const& msg =
+    helpers::get_oneof_message(trans, "transform_type");
+  return factory.create_object(msg.GetDescriptor()->name(), msg);
 }
 
 transform::transform_pipeline construct_transform_pipeline(

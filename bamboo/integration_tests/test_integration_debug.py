@@ -60,12 +60,12 @@ def skeleton_cifar_debug(cluster, dir_name, executables, compiler_name, weekly,
     assert output_value == 0
 
 
-def test_integration_mnist_clang4_debug(cluster, dirname, exes, weekly, debug_build):
-    skeleton_mnist_debug(cluster, dirname, exes, 'clang4_debug', weekly, debug_build)
+def test_integration_mnist_clang6_debug(cluster, dirname, exes, weekly, debug_build):
+    skeleton_mnist_debug(cluster, dirname, exes, 'clang6_debug', weekly, debug_build)
 
 
-def test_integration_cifar_clang4_debug(cluster, dirname, exes, weekly, debug_build):
-    skeleton_cifar_debug(cluster, dirname, exes, 'clang4_debug', weekly, debug_build)
+def test_integration_cifar_clang6_debug(cluster, dirname, exes, weekly, debug_build):
+    skeleton_cifar_debug(cluster, dirname, exes, 'clang6_debug', weekly, debug_build)
 
 
 def test_integration_mnist_gcc7_debug(cluster, dirname, exes, weekly, debug_build):
@@ -84,7 +84,7 @@ def test_integration_cifar_intel19_debug(cluster, dirname, exes, weekly, debug_b
     skeleton_cifar_debug(cluster, dirname, exes, 'intel19_debug', weekly, debug_build)
 
 
-# Run with python -m pytest -s test_integration_debug.py -k 'test_integration_mnist_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_integration_debug.py -k 'test_integration_mnist_exe' --exe=<executable>
 def test_integration_mnist_exe(cluster, dirname, exe):
     if exe is None:
         e = 'test_integration_mnist_exe: Non-local testing'
@@ -94,7 +94,7 @@ def test_integration_mnist_exe(cluster, dirname, exe):
     skeleton_mnist_debug(cluster, dirname, exes, 'exe', True, True)
 
 
-# Run with python -m pytest -s test_integration_debug.py -k 'test_integration_cifar_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_integration_debug.py -k 'test_integration_cifar_exe' --exe=<executable>
 def test_integration_cifar_exe(cluster, dirname, exe):
     if exe == None:
         e = 'test_integration_cifar_exe: Non-local testing'

@@ -280,6 +280,7 @@ void moving_mnist_reader::load() {
   // Reset indices
   m_shuffled_indices.resize(num_images);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  resize_shuffled_indices();
   select_subset_of_data();
 
 }

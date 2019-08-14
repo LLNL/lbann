@@ -514,6 +514,28 @@ void lbann_comm::reset_threads() {
 }
 #endif
 
+const El::mpi::Comm& lbann_comm::get_packed_group_comm(int num_per_group) const {
+  if (group_communicators.count(num_per_group) == 0) {
+    // Ensure we can get an even number of groups.
+    if (get_procs_in_world() % num_per_group != 0) {
+      std::stringstream err;
+      err << "Cannot create a packed group comm with group size "
+          << num_per_group
+          << " out of " << get_procs_in_world()
+          << " processes";
+      LBANN_ERROR(err.str());
+    }
+    MPI_Comm comm;
+    MPI_Comm_split(
+      get_world_comm().GetMPIComm(),
+      get_rank_in_world() / (get_procs_in_world() / num_per_group),
+      0, &comm);
+    group_communicators.emplace(num_per_group, comm);
+    MPI_Comm_free(&comm);  // El::mpi::Comm duplicates internally.
+  }
+  return group_communicators[num_per_group];
+}
+
 void lbann_comm::lbann_comm_abort(std::string msg) {
   throw lbann_exception(msg);
 }

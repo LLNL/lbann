@@ -32,6 +32,11 @@
 
 namespace lbann {
 
+// Forward declaration.
+namespace callback {
+class imcomm;
+}
+
 /** @brief Standard deep learning convolution.
  *
  *  Applies convolution (more precisely, cross-correlation) to input
@@ -42,7 +47,7 @@ template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = E
 class convolution_layer : public base_convolution_layer<Device> {
 private:
 
-  friend class lbann_callback_imcomm;
+  friend class callback::imcomm;
 
 public:
 
@@ -123,7 +128,7 @@ protected:
 
   }
 
-  std::vector<int> get_kernel_dims() const {
+  std::vector<int> get_kernel_dims() const override {
     std::vector<int> dims;
     dims.push_back(this->m_output_channels);
     dims.push_back(this->get_input_dims()[0] / this->m_groups);

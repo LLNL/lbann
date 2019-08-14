@@ -33,14 +33,16 @@
 namespace lbann {
 
 // Forward declaration.
-class lbann_callback_imcomm;
+namespace callback {
+class imcomm;
+}
 
 /** @brief Transpose of the convolution layer. */
 template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
 class deconvolution_layer : public base_convolution_layer<Device> {
 private:
 
-  friend class lbann_callback_imcomm;
+  friend class callback::imcomm;
 
 public:
 
@@ -142,7 +144,7 @@ public:
 
 protected:
 
-  std::vector<int> get_kernel_dims() const {
+  std::vector<int> get_kernel_dims() const override {
     std::vector<int> dims;
     dims.push_back(this->get_input_dims()[0]);
     dims.push_back(this->m_output_channels);

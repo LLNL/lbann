@@ -130,7 +130,9 @@ model {
   # decode2
   weights {
     name: "decode2_fc_matrix"
-    glorot_uniform_initializer {}
+    initializer {
+      glorot_uniform_initializer {}
+    }
   }
   layer {
     parents: "encode2"

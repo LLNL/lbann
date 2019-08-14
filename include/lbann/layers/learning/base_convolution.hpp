@@ -189,7 +189,7 @@ public:
   }
 
   description get_description() const override {
-    auto&& desc = Layer::get_description();
+    auto desc = Layer::get_description();
     std::ostringstream ss;
 
     // Convolution dimensions
@@ -352,14 +352,14 @@ public:
       this->m_weights.resize(1, nullptr);
     }
     if (this->m_weights[0] == nullptr) {
-      auto* w = new weights(get_comm());
-      std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
+      auto w = make_unique<weights>(get_comm());
+      auto init = make_unique<he_initializer>(probability_distribution::gaussian);
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_kernel");
-      w->set_initializer(init);
-      w->set_optimizer(opt);
-      this->m_weights[0] = w;
-      this->m_model->add_weights(w);
+      w->set_initializer(std::move(init));
+      w->set_optimizer(std::move(opt));
+      this->m_weights[0] = w.get();
+      this->m_model->add_weights(w.release());
     }
     auto& kernel_weights = *this->m_weights[0];
 
@@ -381,12 +381,12 @@ public:
     // Set up bias if needed.
     if (m_bias_scaling_factor != DataType(0)) {
       if (this->m_weights[1] == nullptr) {
-        auto* w = new weights(get_comm());
+        auto w = make_unique<weights>(get_comm());
         std::unique_ptr<optimizer> opt(m_model->create_optimizer());
         w->set_name(get_name() + "_bias");
-        w->set_optimizer(opt);
-        this->m_weights[1] = w;
-        this->m_model->add_weights(w);
+        w->set_optimizer(std::move(opt));
+        this->m_weights[1] = w.get();
+        this->m_model->add_weights(w.release());
       }
       auto& bias_weights = *this->m_weights[1];
       bias_weights.set_dims(output_dims[0]);

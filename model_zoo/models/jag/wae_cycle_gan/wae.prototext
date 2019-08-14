@@ -610,29 +610,39 @@ model {
   ###@todo : delete not used, LTFB uses encodefc*linearity_weights instead
   weights {
     name: "encodefc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "encodefc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "encodefc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "encodefc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
 
   #Decoder weights here to be used in WAE+cyclic model
   weights {
     name: "decode0linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -640,7 +650,9 @@ model {
   }
   weights {
     name: "decode1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -648,7 +660,9 @@ model {
   }
   weights {
     name: "decode2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -656,7 +670,9 @@ model {
   }
   weights {
     name: "decode3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -667,7 +683,9 @@ model {
   #Discriminator (shared)
   weights {
     name: "wae_d1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -675,7 +693,9 @@ model {
   }
   weights {
     name: "wae_d1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -683,7 +703,9 @@ model {
   }
   weights {
     name: "wae_d1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -691,7 +713,9 @@ model {
   }
   weights {
     name: "wae_d1fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -699,7 +723,9 @@ model {
   }
   weights {
     name: "wae_d1fc5linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {

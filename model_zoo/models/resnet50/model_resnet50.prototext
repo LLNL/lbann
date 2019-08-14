@@ -49,9 +49,12 @@ model {
       all_optimizers: true
     }
   }
+
+  #summarizer {
+  #  dir: "."
+  #}
   # callback {
   #   summary {
-  #     dir: "."
   #     mat_interval: 25
   #   }
   # }

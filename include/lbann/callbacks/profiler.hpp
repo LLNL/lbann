@@ -23,7 +23,7 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback_timer .hpp .cpp - Callback hooks to time training
+// timer .hpp .cpp - Callback hooks to time training
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_PROFILER_HPP_INCLUDED
@@ -32,16 +32,17 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+namespace callback {
 
 /**
  */
-class lbann_callback_profiler : public lbann_callback {
+class profiler : public callback_base {
  public:
-  lbann_callback_profiler(bool sync = false, bool skip_init = false);
-  lbann_callback_profiler(const lbann_callback_profiler&) = default;
-  lbann_callback_profiler& operator=(const lbann_callback_profiler&) = default;
-  lbann_callback_profiler* copy() const override {
-    return new lbann_callback_profiler(*this);
+  profiler(bool sync = false, bool skip_init = false);
+  profiler(const profiler&) = default;
+  profiler& operator=(const profiler&) = default;
+  profiler* copy() const override {
+    return new profiler(*this);
   }
   void on_epoch_begin(model *m) override;
   void on_epoch_end(model *m) override;
@@ -79,6 +80,12 @@ class lbann_callback_profiler : public lbann_callback {
   bool m_skip_init;
 };
 
-}  // namespace lbann
+// Builder function
+std::unique_ptr<callback_base>
+build_profiler_callback_from_pbuf(
+  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+
+} // namespace callback
+} // namespace lbann
 
 #endif  // LBANN_CALLBACKS_PROFILER_HPP_INCLUDED

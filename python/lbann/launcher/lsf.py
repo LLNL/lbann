@@ -42,6 +42,12 @@ def run(command,
         setup_only (bool, optional): If true, the experiment is not
             run after the batch script is created.
 
+    Returns:
+        int: Exit status from LSF. This is really only meaningful if
+            the script is run on an existing node allocation. If a
+            batch job is submitted, LSF will probably return 0
+            trivially.
+
     """
     # Check for an existing job allocation.
     # Note: Settings for existing allocations take precedence.
@@ -88,7 +94,7 @@ def run(command,
     # Time and node list.
     s += '\n# ==== Useful info ====\n'
     s += 'date\n'
-    s += 'jsrun -n {} -a 1 hostname > {}\n'.format(nodes, nodes_file)
+    s += 'jsrun -n {} -a 1 -r 1 hostname > {}\n'.format(nodes, nodes_file)
     s += 'sort --unique --output={0} {0}\n'.format(nodes_file)
 
     # Run experiment.
@@ -104,7 +110,9 @@ def run(command,
     os.chmod(batch_file, 0o755)
 
     # Launch if needed.
-    if not setup_only:
+    if setup_only:
+        return 0
+    else:
         if has_allocation:
             run_proc = subprocess.Popen(['sh', batch_file],
                                         stdout=subprocess.PIPE,
@@ -128,3 +136,4 @@ def run(command,
         run_proc.wait()
         out_proc.wait()
         err_proc.wait()
+        return run_proc.returncode

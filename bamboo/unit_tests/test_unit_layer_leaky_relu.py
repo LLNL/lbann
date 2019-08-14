@@ -14,8 +14,9 @@ def skeleton_layer_leaky_relu(cluster, executables, dir_name, compiler_name):
     error_file_name  = '%s/bamboo/unit_tests/error/layer_leaky_relu_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=executables[compiler_name], num_nodes=1,
+        time_limit=10,
         num_processes=2, dir_name=dir_name,
-        data_filedir_default='', data_reader_name='synthetic',
+        data_reader_name='synthetic',
         model_folder='tests/layer_tests', model_name='leaky_relu',
         optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -23,8 +24,8 @@ def skeleton_layer_leaky_relu(cluster, executables, dir_name, compiler_name):
     assert return_code == 0
 
 
-def test_unit_layer_leaky_relu_clang4(cluster, exes, dirname):
-    skeleton_layer_leaky_relu(cluster, exes, dirname, 'clang4')
+def test_unit_layer_leaky_relu_clang6(cluster, exes, dirname):
+    skeleton_layer_leaky_relu(cluster, exes, dirname, 'clang6')
 
 
 def test_unit_layer_leaky_relu_gcc7(cluster, exes, dirname):
@@ -35,7 +36,7 @@ def test_unit_layer_leaky_relu_intel19(cluster, exes, dirname):
     skeleton_layer_leaky_relu(cluster, exes, dirname, 'intel19')
 
 
-# Run with python -m pytest -s test_unit_ridge_regression.py -k 'test_unit_layer_leaky_relu_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_unit_ridge_regression.py -k 'test_unit_layer_leaky_relu_exe' --exe=<executable>
 def test_unit_layer_leaky_relu_exe(cluster, dirname, exe):
     if exe is None:
         e = 'test_unit_layer_leaky_relu_exe: Non-local testing'

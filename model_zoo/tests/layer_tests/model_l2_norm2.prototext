@@ -39,6 +39,7 @@ model {
   }
   callback {
     check_gradients {
+      execution_modes: "test"
       verbose: false
       error_on_failure: true
     }
@@ -64,8 +65,10 @@ model {
   }
   weights {
     name: "x_vals"
-    value_initializer {
-      values: "0 1 -0.5 0.5 -1"
+    initializer {
+      value_initializer {
+        values: "0 1 -0.5 0.5 -1"
+      }
     }
   }
 

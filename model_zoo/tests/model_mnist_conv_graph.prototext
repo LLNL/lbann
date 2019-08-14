@@ -22,6 +22,7 @@ model {
   callback { timer {} }
   callback {
     check_gradients {
+      execution_modes: "test"
       verbose: false
       error_on_failure: true
     }
@@ -145,11 +146,15 @@ model {
   }
   weights {
     name: "branch3_conv_kernel"
-    glorot_uniform_initializer {}
+    initializer {
+      glorot_uniform_initializer {}
+    }
   }
   weights {
     name: "branch3_conv_bias"
-    constant_initializer {}
+    initializer {
+      constant_initializer {}
+    }
   }
   layer {
     parents: "branch3_slice"

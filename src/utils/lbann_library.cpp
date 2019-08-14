@@ -25,7 +25,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/callbacks/callback_checkpoint.hpp"
+
+#include "lbann/proto/factories.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
 
 namespace lbann {
 
@@ -242,7 +248,7 @@ std::unique_ptr<model> build_model_from_prototext(
                                                             pb.model());
   ret_model->setup();
 
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }
@@ -260,7 +266,7 @@ std::unique_ptr<model> build_model_from_prototext(
     std::cout << "\n"
               << ret_model->get_description()
               << "Callbacks:" << std::endl;
-    for (lbann_callback *cb : ret_model->get_callbacks()) {
+    for (callback_base *cb : ret_model->get_callbacks()) {
       std::cout << cb->name() << std::endl;
     }
   }

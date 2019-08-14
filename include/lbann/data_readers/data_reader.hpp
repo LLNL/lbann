@@ -550,9 +550,17 @@ class generic_data_reader {
   }
 
   /**
-   * Select the appropriate subset of data based on settings.
+   * Optionally resizes the shuffled indices based on the data reader
+   * prototext settings: absolute_sample_count, percent_of_data_to_use.
+   * (dah - this was formerly part of select_subset_of_data)
    */
-  virtual void select_subset_of_data();
+  void resize_shuffled_indices();
+
+  /**
+   * Select the appropriate subset of data for the validation set based on
+   * the data reader prototext setting: validation_percent
+   */
+  void select_subset_of_data();
 
   /// called by select_subset_of_data() if data set is partitioned
   void select_subset_of_data_partitioned();
@@ -741,6 +749,12 @@ class generic_data_reader {
   double get_use_percent() const;
 
   /**
+   * Returns the percent of the shuffled indices that are to be 
+   * used. Code in this method was formerly in select_subset_of_data()
+   */
+  double get_percent_to_use() const;
+
+  /**
    * Return the percent of the dataset to be used for validation.
    */
   double get_validation_percent() const;
@@ -783,6 +797,11 @@ class generic_data_reader {
     NOT_IMPLEMENTED("fetch_response");
     return false;
   }
+
+  /// returns the percent of shuffled indices that are used;
+  /// the returned value  depends on the values returned by 
+  /// get_absolute_sample_count() and get_use_percent().
+  double get_percent_to_use();
 
   /**
    * Called before fetch_datum/label/response to allow initialization.
@@ -906,6 +925,10 @@ class generic_data_reader {
   /// but we're not retrieving a conduit::Node from the store. This typically occurs
   /// during the test phase
   bool m_issue_warning;
+
+  /// throws exception if get_absolute_sample_count() and
+  /// get_use_percent() are incorrect
+  void error_check_counts() const;
 };
 
 template<typename T>

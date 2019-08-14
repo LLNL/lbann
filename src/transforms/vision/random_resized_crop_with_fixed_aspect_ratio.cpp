@@ -24,9 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <opencv2/imgproc.hpp>
 #include "lbann/transforms/vision/random_resized_crop_with_fixed_aspect_ratio.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
+
+#include <opencv2/imgproc.hpp>
 
 namespace lbann {
 namespace transform {
@@ -65,6 +69,17 @@ void random_resized_crop_with_fixed_aspect_ratio::apply(
   cv::resize(tmp, dst, dst.size(), 0, 0, cv::INTER_LINEAR);
   data.emplace<uint8_t>(std::move(dst_real));
   dims = new_dims;
+}
+
+std::unique_ptr<transform>
+build_random_resized_crop_with_fixed_aspect_ratio_transform_from_pbuf(
+  google::protobuf::Message const& msg) {
+  using namespace lbann_data;
+  auto const& params =
+    dynamic_cast<Transform::RandomResizedCropWithFixedAspectRatio const&>(msg);
+  return make_unique<random_resized_crop_with_fixed_aspect_ratio>(
+    params.height(), params.width(),
+    params.crop_height(), params.crop_width());
 }
 
 }  // namespace transform

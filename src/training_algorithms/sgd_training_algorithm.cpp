@@ -50,7 +50,7 @@ void sgd_training_algorithm::apply(execution_context& context,
     evaluate(sgd_context, model, mode, sgd_term.num_steps);
     break;
   default:
-    LBANN_ERROR(std::string{} + "Illegal mode: " + _to_string(mode));
+    LBANN_ERROR(std::string{} + "Illegal mode: " + to_string(mode));
   }
 }
 

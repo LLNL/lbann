@@ -28,10 +28,24 @@
 
 #include "lbann/proto/init_image_data_readers.hpp"
 #include "lbann/proto/factories.hpp"
+
+#include "lbann/data_readers/data_reader_cifar10.hpp"
+#include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/data_readers/data_reader_imagenet.hpp"
+#include "lbann/data_readers/data_reader_mnist.hpp"
+#include "lbann/data_readers/data_reader_moving_mnist.hpp"
+#include "lbann/data_readers/data_reader_multihead_siamese.hpp"
+
+#include <reader.pb.h>
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/text_format.h>
-#include <memory> // for dynamic_pointer_cast
+
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
 namespace lbann {
 
@@ -250,7 +264,7 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
   }
 
   reader->set_transform_pipeline(
-    std::move(proto::construct_transform_pipeline(pb_readme)));
+    proto::construct_transform_pipeline(pb_readme));
 
   if (channels == 0) {
     channels = 3;
@@ -291,7 +305,7 @@ void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool 
   }
 
   reader->set_transform_pipeline(
-    std::move(proto::construct_transform_pipeline(pb_readme)));
+    proto::construct_transform_pipeline(pb_readme));
 }
 
 }

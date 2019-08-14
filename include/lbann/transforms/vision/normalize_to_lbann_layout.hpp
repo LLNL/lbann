@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -49,12 +51,12 @@ public:
       LBANN_ERROR("Normalize mean and std have different numbers of channels.");
     }
   }
-  
+
   transform* copy() const override { return new normalize_to_lbann_layout(*this); }
 
   std::string get_type() const override { return "normalize_to_lbann_layout"; }
 
-  bool supports_non_inplace() const { return true; }
+  bool supports_non_inplace() const override { return true; }
 
   void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
 
@@ -66,6 +68,10 @@ private:
   /** Channel-wise standard deviations. */
   std::vector<float> m_stds;
 };
+
+std::unique_ptr<transform>
+build_normalize_to_lbann_layout_transform_from_pbuf(
+  google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

@@ -21,6 +21,7 @@ rm -f ${LBANN_DIR}/bamboo/integration_tests/error/*.txt
 rm -f ${LBANN_DIR}/bamboo/integration_tests/output/*.txt
 
 # Unit Tests
+rm -rf ${LBANN_DIR}/bamboo/unit_tests/ckpt_*
 rm -f ${LBANN_DIR}/bamboo/unit_tests/*.prototext*
 rm -f ${LBANN_DIR}/bamboo/unit_tests/*.pyc
 rm -rf ${LBANN_DIR}/bamboo/unit_tests/__pycache__

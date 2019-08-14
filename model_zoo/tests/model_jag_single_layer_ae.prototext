@@ -1,0 +1,135 @@
+# Unit test for JAG model and (particularly) data reader
+# Run time for this example is about 2s per epoch on 16 nodes (32 tasks)
+# Example on how to run:
+# srun --nodes=16 --ntasks=32  build/gnu.Release.catalyst.llnl.gov/lbann/build/model_zoo/lbann --model=model_zoo/tests/model_jag_single_layer_ae.prototext --optimizer=model_zoo/optimizers/opt_adam.prototext --reader=model_zoo/data_readers/data_reader_jag.prototext --metadata=model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext
+model {
+  name: "ae_model"
+  shareable_training_data_reader:false 
+  serialize_io: true
+  data_layout: "data_parallel"
+  mini_batch_size: 128 
+  block_size: 256
+  num_epochs: 4
+  num_parallel_readers: 0
+  procs_per_trainer: 0
+
+  ###################################################
+  # Objective function
+  ###################################################
+
+  objective_function {
+    layer_term { layer: "img_loss" }
+    l2_weight_regularization {
+      scale_factor: 1e-4
+    }
+  }
+
+  ###################################################
+  # Metrics
+  ###################################################
+
+  metric {
+    layer_metric {
+      name: "reconstr_loss"
+      layer: "img_loss"
+    }
+  }
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    print {
+      interval: 1
+    }
+  }
+  callback { timer {} }
+  # See lbann/src/proto/lbann.proto CallbackCheckMetric
+  # See lbann/src/callbacks/callback_check_metric.cpp
+  callback {
+    check_metric {
+      metric: "reconstr_loss",
+      lower_bound: 20.3956,
+      upper_bound: 22.3956,
+      error_on_failure: true,
+      execution_modes: "testing"
+    }
+  }
+
+  ###################################################
+  # start of layers
+  ###################################################
+
+  # Data
+  layer {
+    input {
+      io_buffer: "partitioned"
+      target_mode: "N/A"
+    }
+    name: "data"
+    data_layout: "data_parallel"
+    parents: " "
+  }
+  layer {
+    name: "slice_data"
+    data_layout: "data_parallel"
+    parents: "data"
+    children: "image_data_dummy param_data_id"
+    slice {
+      get_slice_points_from_reader: "independent"
+    }
+  }
+  #Y (images + scalar)
+  layer {
+    identity {
+    }
+    name: "image_data_dummy"
+    data_layout: "data_parallel"
+    parents: "slice_data"
+  }
+  # X (params not used)
+  layer {
+    identity {
+    }
+    name: "param_data_id"
+    data_layout: "data_parallel"
+    parents: "slice_data"
+  }
+  ## Hidden layer
+  layer {
+    fully_connected {
+      num_neurons: 1024
+      has_bias: true
+    }
+    name: "encodefc"
+    data_layout: "data_parallel"
+    parents: "image_data_dummy"
+  }
+  layer {
+    parents: "encodefc"
+    name: "encodeelu"
+    data_layout: "data_parallel"
+    elu {}
+  }
+  #Y'(reconstructed images and scalar) 
+  layer {
+    parents: "encodeelu"
+    name: "decode"
+    data_layout: "data_parallel"
+    fully_connected {
+      get_slice_points_from_reader: "independent"
+      get_num_neurons_of_slice_from_reader: [ 1 ]
+      has_bias: true
+    }
+  }
+  # Loss/Metric layer
+  layer {
+    parents: "decode image_data_dummy"
+    name: "img_loss"
+    data_layout: "data_parallel"
+    mean_squared_error {}
+  }
+
+  ###################################################
+  # end of layers
+  ###################################################
+}

@@ -26,6 +26,9 @@
 
 #include "lbann/optimizers/rmsprop.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <optimizers.pb.h>
 
 namespace lbann {
 
@@ -52,7 +55,7 @@ rmsprop& rmsprop::operator=(const rmsprop& other) {
 }
 
 description rmsprop::get_description() const {
-  auto&& desc = optimizer::get_description();
+  auto desc = optimizer::get_description();
   desc.add("Decay rate", m_decay_rate);
   desc.add("eps", m_eps);
   return desc;
@@ -149,5 +152,16 @@ bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
 
    return true;
  }
+
+std::unique_ptr<optimizer>
+build_rmsprop_optimizer_from_pbuf(
+  google::protobuf::Message const& msg, lbann_comm* comm) {
+  const auto& params =
+    dynamic_cast<lbann_data::Optimizer::RMSprop const&>(msg);
+  return make_unique<rmsprop>(comm,
+                              params.learn_rate(),
+                              params.decay_rate(),
+                              params.eps());
+}
 
 } // namespace lbann

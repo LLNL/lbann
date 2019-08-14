@@ -29,7 +29,12 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
+
 #include <dirent.h>
+
 #include <cstdlib>
 using namespace lbann;
 
@@ -71,7 +76,8 @@ int main(int argc, char *argv[]) {
     }
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
-      lbann_callback_save_model::load_model_weights(opts->get_string("ckpt_dir"), model_1.get());
+      callback::save_model::load_model_weights(opts->get_string("ckpt_dir"),
+                                               model_1.get());
     }
     // Train model
     if (master) {

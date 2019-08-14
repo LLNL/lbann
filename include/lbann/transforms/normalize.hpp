@@ -27,9 +27,12 @@
 #ifndef LBANN_TRANSFORMS_NORMALIZE_HPP_INCLUDED
 #define LBANN_TRANSFORMS_NORMALIZE_HPP_INCLUDED
 
-#include <vector>
-#include "lbann/utils/exception.hpp"
 #include "lbann/transforms/transform.hpp"
+#include "lbann/utils/exception.hpp"
+
+#include <google/protobuf/message.h>
+
+#include <vector>
 
 namespace lbann {
 namespace transform {
@@ -54,7 +57,7 @@ public:
 
   std::string get_type() const override { return "normalize"; }
 
-  bool supports_non_inplace() const { return true; }
+  bool supports_non_inplace() const override { return true; }
 
   void apply(utils::type_erased_matrix& data, std::vector<size_t>& dims) override;
   void apply(utils::type_erased_matrix& data, CPUMat& out,
@@ -65,6 +68,10 @@ private:
   /** Channel-wise standard deviations. */
   std::vector<float> m_stds;
 };
+
+// Builder function
+std::unique_ptr<transform>
+build_normalize_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

@@ -69,7 +69,9 @@ model {
 
   weights {
     name: "w1"
-    glorot_uniform_initializer {}
+    initializer {
+      glorot_uniform_initializer {}
+    }
   }
 
   layer {

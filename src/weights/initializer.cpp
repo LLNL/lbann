@@ -25,8 +25,15 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/weights/initializer.hpp"
+
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/random.hpp"
+
+#include <weights.pb.h>
+
+#include <sstream>
 
 namespace lbann {
 
@@ -35,7 +42,7 @@ description weights_initializer::get_description() const {
 }
 
 description constant_initializer::get_description() const {
-  auto&& desc = weights_initializer::get_description();
+  auto desc = weights_initializer::get_description();
   desc.add("Value", m_value);
   return desc;
 }
@@ -91,7 +98,7 @@ void value_initializer::fill(AbsDistMat& matrix) {
 }
 
 description uniform_initializer::get_description() const {
-  auto&& desc = weights_initializer::get_description();
+  auto desc = weights_initializer::get_description();
   std::stringstream ss;
   ss << "[" << m_min << "," << m_max << ")";
   desc.add("Range", ss.str());
@@ -104,7 +111,7 @@ void uniform_initializer::fill(AbsDistMat& matrix) {
 }
 
 description normal_initializer::get_description() const {
-  auto&& desc = weights_initializer::get_description();
+  auto desc = weights_initializer::get_description();
   desc.add("Mean", m_mean);
   desc.add("Standard deviation", m_standard_deviation);
   return desc;
@@ -113,6 +120,50 @@ description normal_initializer::get_description() const {
 void normal_initializer::fill(AbsDistMat& matrix) {
   gaussian_fill(matrix, matrix.Height(), matrix.Width(),
                 m_mean, m_standard_deviation);
+}
+
+//
+// Builder functions
+//
+
+std::unique_ptr<weights_initializer>
+build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Initializer::ConstantInitializer const&>(msg);
+  return make_unique<constant_initializer>(params.value());
+}
+
+std::unique_ptr<weights_initializer>
+build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
+  return make_unique<value_initializer>(parse_list<DataType>(params.values()));
+}
+
+std::unique_ptr<weights_initializer>
+build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Initializer::UniformInitializer const&>(msg);
+  const auto& min = params.min();
+  const auto& max = params.max();
+  if (min != 0.0 || max != 0.0) {
+    return make_unique<uniform_initializer>(min, max);
+  } else {
+    return make_unique<uniform_initializer>();
+  }
+}
+
+std::unique_ptr<weights_initializer>
+build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Initializer::NormalInitializer const&>(msg);
+  const auto& mean = params.mean();
+  const auto& standard_deviation = params.standard_deviation();
+  if (mean != 0.0 || standard_deviation != 0.0) {
+    return make_unique<normal_initializer>(mean, standard_deviation);
+  } else {
+    return make_unique<normal_initializer>();
+  }
 }
 
 } // namespace lbann

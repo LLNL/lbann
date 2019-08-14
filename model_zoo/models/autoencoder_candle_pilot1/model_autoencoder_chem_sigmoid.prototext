@@ -22,6 +22,9 @@ model {
   ###################################################
   # Callbacks
   ###################################################
+  summarizer {
+    dir: "."
+  }
   callback {
     print {
       interval: 1
@@ -33,7 +36,6 @@ model {
   }
   callback {
     summary {
-      dir: "."
       batch_interval: 1
       mat_interval: 25
     }

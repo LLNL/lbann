@@ -139,8 +139,10 @@ model {
   }
   weights {
      name: "gen_fc1_weights"
-     optimizer { }
-     glorot_normal_initializer {}
+     optimizer { no_optimizer {} }
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   #############
   # FC 1
@@ -180,8 +182,10 @@ model {
 
   weights {
      name: "gen_fc2_weights"
-     optimizer { }
-     glorot_normal_initializer {}
+     optimizer { no_optimizer {} }
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   layer {
     name: "fc2"
@@ -218,8 +222,10 @@ model {
 
   weights {
      name: "gen_fc3_weights"
-     optimizer { }
-     glorot_normal_initializer {}
+     optimizer { no_optimizer {} }
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   layer {
     name: "fc3"
@@ -256,8 +262,10 @@ model {
 
   weights {
      name: "gen_fc4_weights"
-     optimizer { }
-     glorot_normal_initializer {}
+     optimizer { no_optimizer {} }
+     initializer {
+       glorot_normal_initializer {}
+     }
   }
   layer {
     name: "fc4"

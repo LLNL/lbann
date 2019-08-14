@@ -18,32 +18,32 @@ def _str_list(l):
 class Module:
     """Base class for neural network modules.
 
-    A module is a pattern of operations that may be applied to a set
-    of input layers, obtaining a set of output layers.
+    A module is a pattern of layers that can be added to a layer
+    graph, possibly multiple times. The pattern typically takes a set
+    of input layers and obtains a set of output layers.
 
     """
 
     def __init__(self):
         pass
 
-    def forward(self, input):
-        """Apply module pattern to `input`.
+    def forward(self, *args, **kwargs):
+        """Apply module pattern.
 
-        `input` is a `Layer` or a sequence of `Layer`s. The module
-        pattern is added to the layer graph and the output layer(s)
-        are returned.
+        A module pattern typically takes a set of `Layer`s as input
+        and returns a set of `Layer`s.
 
         """
         # Should be overridden in all sub-classes
         raise NotImplementedError
 
-    def __call__(self, input):
+    def __call__(self, *args, **kwargs):
         """Apply module mattern to `input`.
 
         Syntatic sugar around `forward` function.
 
         """
-        return self.forward(input)
+        return self.forward(*args, **kwargs)
 
 class FullyConnectedModule(Module):
     """Basic block for fully-connected neural networks.
@@ -275,14 +275,6 @@ class LSTMCell(Module):
                      else 'lstmcell{0}'.format(LSTMCell.global_count))
         self.data_layout = data_layout
 
-        # Initial state
-        self.last_output = lbann.Constant(value=0.0, num_neurons=str(size),
-                                          name=self.name + '_init_output',
-                                          data_layout=self.data_layout)
-        self.last_cell = lbann.Constant(value=0.0, num_neurons=str(size),
-                                        name=self.name + '_init_cell',
-                                        data_layout=self.data_layout)
-
         # Weights
         self.weights = list(make_iterable(weights))
         if len(self.weights) > 2:
@@ -291,13 +283,13 @@ class LSTMCell(Module):
         if len(self.weights) == 0:
             self.weights.append(
                 lbann.Weights(initializer=lbann.UniformInitializer(min=-1/sqrt(self.size),
-                                                                   max=-1/sqrt(self.size)),
+                                                                   max=1/sqrt(self.size)),
                               name=self.name+'_matrix'))
         if len(self.weights) == 1:
             self.weights.append(
                 lbann.Weights(initializer=lbann.UniformInitializer(min=-1/sqrt(self.size),
-                                                                   max=-1/sqrt(self.size)),
-                           name=self.name+'_bias'))
+                                                                   max=1/sqrt(self.size)),
+                              name=self.name+'_bias'))
 
         # Linearity
         self.fc = FullyConnectedModule(4*size, bias=bias,
@@ -305,17 +297,28 @@ class LSTMCell(Module):
                                        name=self.name + '_fc',
                                        data_layout=self.data_layout)
 
-    def forward(self, x):
-        """Perform LSTM step.
+    def forward(self, x, prev_state):
+        """Apply LSTM step.
 
-        State from previous steps is used to compute output.
+        Args:
+            x (Layer): Input.
+            prev_state (tuple with two `Layer`s): State from previous
+                LSTM step. Comprised of LSTM output and cell state.
+
+        Returns:
+            (Layer, (Layer, Layer)): The output and state (the output
+                and cell state). The state can be passed directly into
+                the next LSTM step.
 
         """
         self.step += 1
         name = '{0}_step{1}'.format(self.name, self.step)
 
+        # Get output and cell state from previous step
+        prev_output, prev_cell = prev_state
+
         # Apply linearity
-        input_concat = lbann.Concatenation([x, self.last_output],
+        input_concat = lbann.Concatenation([x, prev_output],
                                            name=name + '_input',
                                            data_layout=self.data_layout)
         fc = self.fc(input_concat)
@@ -343,7 +346,7 @@ class LSTMCell(Module):
                            data_layout=self.data_layout)
 
         # Cell state
-        cell_forget = lbann.Multiply([f, self.last_cell],
+        cell_forget = lbann.Multiply([f, prev_cell],
                                      name=name + '_cell_forget',
                                      data_layout=self.data_layout)
         cell_input = lbann.Multiply([i, cell_update],
@@ -358,7 +361,145 @@ class LSTMCell(Module):
         output = lbann.Multiply([o, cell_act], name=name,
                                 data_layout=self.data_layout)
 
-        # Update state and return output
-        self.last_cell = cell
-        self.last_output = output
-        return output
+        # Return output and state
+        return output, (output, cell)
+
+class GRU(Module):
+    """Gated-recurrent unit.
+       Implementation mostly taken from:
+       https://pytorch.org/docs/stable/nn.html#gru"""
+
+    global_count = 0  # Static counter, used for default names
+
+    def __init__(self, size, bias = True,
+                 weights=[], name=None, data_layout='data_parallel'):
+        """Initialize GRU cell.
+
+        Args:
+            size (int): Size of output tensor.
+            bias (bool): Whether to apply biases after linearity.
+            weights (`Weights` or iterator of `Weights`): Weights in
+                fully-connected layer. There are at most four - two
+                matrices ((3*size) x (input_size) and (3*size) x (size) dimensions) each and two
+                biases (3*size entries) each. If weights are not provided,
+                the matrix and bias will be initialized in a similar
+                manner as PyTorch (uniform random values from
+                [-1/sqrt(size), 1/sqrt(size)]).
+            name (str): Default name is in the form 'gru<index>'.
+            data_layout (str): Data layout.
+
+        """
+        super().__init__()
+        GRU.global_count += 1
+        self.step = 0
+        self.size = size
+        self.name = (name
+                     if name
+                     else 'gru{0}'.format(GRU.global_count))
+        self.data_layout = data_layout
+
+        # Weights
+        self.weights = list(make_iterable(weights))
+        if len(self.weights) > 4:
+            raise ValueError('`GRU` has at most 4 weights, '
+                             'but got {0}'.format(len(self.weights)))
+        ##@todo: use loop
+        if len(self.weights) == 0:
+            self.weights.append(
+                lbann.Weights(initializer=lbann.UniformInitializer(min=-1/sqrt(self.size),
+                                                                   max=1/sqrt(self.size)),
+                              name=self.name+'_ih_matrix'))
+        if len(self.weights) == 1:
+            self.weights.append(
+                lbann.Weights(initializer=lbann.UniformInitializer(min=-1/sqrt(self.size),
+                                                                   max=1/sqrt(self.size)),
+                              name=self.name+'_ih_bias'))
+        if len(self.weights) == 2:
+            self.weights.append(
+                lbann.Weights(initializer=lbann.UniformInitializer(min=-1/sqrt(self.size),
+                                                                   max=1/sqrt(self.size)),
+                              name=self.name+'_hh_matrix'))
+        if len(self.weights) == 3:
+            self.weights.append(
+                lbann.Weights(initializer=lbann.UniformInitializer(min=-1/sqrt(self.size),
+                                                                   max=1/sqrt(self.size)),
+                              name=self.name+'_hh_bias'))
+
+        # Linearity
+        ####Learnable input-hidden weights
+        self.ih_fc = lbann.modules.FullyConnectedModule(3*size, bias=bias,
+                                       weights=self.weights[:2],
+                                       name=self.name + '_ih_fc',
+                                       data_layout=self.data_layout)
+        ###Learnable hidden-hidden weights
+        self.hh_fc = lbann.modules.FullyConnectedModule(3*size, bias=bias,
+                                       weights=self.weights[2:],
+                                       name=self.name + '_hh_fc',
+                                       data_layout=self.data_layout)
+
+    def forward(self, x, prev_state):
+        """Apply GRU step.
+
+        Args:
+            x (Layer): Input.
+            prev_state: State from previous GRU step.
+
+        Returns:
+            (Layer, Layer): The output (out)  and state (hn). 
+                          The state can be passed directly into
+                           the next GRU step.
+
+        """
+        self.step += 1
+        name = '{0}_step{1}'.format(self.name, self.step)
+
+
+        fc1 = self.ih_fc(x)   #input_fc
+        fc2 = self.hh_fc(prev_state)  #hidden_fc
+
+
+        # Get gates and cell update
+        fc1_slice = lbann.Slice(fc1,
+                            slice_points=_str_list([0, self.size, 2*self.size, 3*self.size]),
+                            name=name + '_fc1_slice',
+                            data_layout=self.data_layout)
+        Wir_x = lbann.Identity(fc1_slice, name=name + '_Wrx',
+                           data_layout=self.data_layout)
+        Wiz_x = lbann.Identity(fc1_slice, name=name + '_Wzx',
+                           data_layout=self.data_layout)
+        Win_x = lbann.Identity(fc1_slice, name=name + '_Wnx',
+                           data_layout=self.data_layout)
+
+        fc2_slice = lbann.Slice(fc2,
+                            slice_points=_str_list([0, self.size, 2*self.size, 3*self.size]),
+                            name=name + '_fc2_slice',
+                            data_layout=self.data_layout)
+        Whr_prev = lbann.Identity(fc2_slice, name=name + '_Wrh',
+                           data_layout=self.data_layout)
+        Whz_prev = lbann.Identity(fc2_slice, name=name + '_Wzh',
+                           data_layout=self.data_layout)
+        Whn_prev = lbann.Identity(fc2_slice, name=name + '_Wnh',
+                           data_layout=self.data_layout)
+        
+        rt = lbann.Sigmoid(lbann.Add([Wir_x,Whr_prev], data_layout=self.data_layout), name=name + '_reset_gate',
+                           data_layout=self.data_layout)
+
+        zt = lbann.Sigmoid(lbann.Add([Wiz_x,Whz_prev], data_layout=self.data_layout), name=name + '_update_gate',
+                           data_layout=self.data_layout)
+        
+        nt = lbann.Tanh(lbann.Add([Win_x,
+                        lbann.Multiply([rt,Whn_prev], data_layout=self.data_layout)], data_layout=self.data_layout),
+                        name=name + '_new_gate', data_layout=self.data_layout)
+
+        ht = lbann.Add([
+                       lbann.Multiply([
+                             lbann.WeightedSum([
+                                 lbann.Constant(value=1.0, hint_layer=zt, data_layout=self.data_layout),
+                                 zt],
+                                 scaling_factors='1 -1', data_layout=self.data_layout),
+                             nt], data_layout=self.data_layout),
+                       lbann.Multiply([zt,prev_state], data_layout=self.data_layout)], name=name+ '_output', 
+                       data_layout=self.data_layout)
+        
+        # Return output
+        return ht, ht

@@ -180,17 +180,23 @@ model {
 # Specify shared weights for drug tracks
   weights {
     name: "drug_fc1_w"
-    he_normal_initializer {}
+    initializer {
+      he_normal_initializer {}
+    }
   }
 
   weights {
     name: "drug_fc2_w"
-    he_normal_initializer {}
+    initializer {
+      he_normal_initializer {}
+    }
   }
 
   weights {
     name: "drug_fc3_w"
-    he_normal_initializer {}
+    initializer {
+      he_normal_initializer {}
+    }
   }
 
 #Drug1 Track

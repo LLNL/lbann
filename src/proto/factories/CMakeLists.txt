@@ -1,7 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   callback_factory.cpp
-  factories.cpp
   layer_factory.cpp
   layer_graph_factory.cpp
   model_factory.cpp

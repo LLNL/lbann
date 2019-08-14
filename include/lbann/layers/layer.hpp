@@ -37,16 +37,22 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
-#include <lbann.pb.h>
 #include <string>
 #include <vector>
+
+// Forward-declare protobuf classes
+namespace lbann_data {
+class Layer;
+}
 
 namespace lbann {
 
 // Forward declarations
 class model;
 class weights;
-class lbann_callback_sync_layers;
+namespace callback {
+class sync_layers;
+} // namespace callback
 
 /**
  * @brief Neural network tensor operation.
@@ -66,8 +72,7 @@ class lbann_callback_sync_layers;
  * the weights.
  */
 class Layer {
-  friend class lbann_callback_sync_layers;
-  friend class lbann_callback_sync_selected;
+  friend class callback::sync_layers;
 
 public:
 
