@@ -277,6 +277,9 @@ void summarize_images::setup(model* m)
 void summarize_images::dump_images_to_summary(
   Layer const& layer, uint64_t const& step, El::Int const& epoch, model const& m) {
 
+  if(!m_input_layer)
+    m_input_layer = get_layer_by_name(m, m_input_layer_name);
+
   auto sample_indices = const_cast<Layer&>(*m_input_layer).get_sample_indices_per_mb();
   if (sample_indices == nullptr)
     LBANN_ERROR("NULL SAMPLE INDICES");
@@ -345,8 +348,8 @@ build_summarize_images_callback_from_pbuf(
   return make_unique<summarize_images>(
     summarizer,
     construct_strategy(params.selection_strategy()),
-    params.image_layer_name(),
-    params.image_layer_name(),// FIXME
+    params.image_source_layer_name(),
+    params.input_layer_name(),
     params.epoch_interval());
 }
 

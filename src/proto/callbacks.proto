@@ -347,8 +347,9 @@ message Callback {
     }// message SelectionStrategy
 
     SelectionStrategy selection_strategy = 1;
-    string image_layer_name = 2;
-    uint64 epoch_interval = 3;
+    string image_source_layer_name = 2;
+    string input_layer_name = 3;
+    uint64 epoch_interval = 4;
   }// message CallbackSummarizeImages
 
 //  message CallbackSummarizeAutoencoderImages {
