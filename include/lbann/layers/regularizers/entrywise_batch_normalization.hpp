@@ -33,6 +33,18 @@
 
 namespace lbann {
 
+/** @brief
+ *
+ *  Each input entry is normalized across the mini-batch to have zero
+ *  mean and unit standard deviation. This uses the standard approach
+ *  of maintaining the running mean and standard deviation (with
+ *  exponential decay) for use at test time. See:
+ *
+ *  Sergey Ioffe and Christian Szegedy. "Batch Normalization:
+ *  Accelerating Deep Network Training by Reducing Internal Covariate
+ *  Shift." In International Conference on Machine Learning,
+ *  pp. 448-456. 2015.
+ */
 template <data_layout Layout, El::Device Device>
 class entrywise_batch_normalization_layer : public Layer {
 public:

@@ -300,8 +300,10 @@ void bp_training_impl(lbann_comm& comm,
 
 /** @brief Backprop for inference.
  *
- *  Assumes forward prop uses running statistics. In other words,
- *  statistics are independent of input.
+ *  Computes gradient w.r.t. input when the model is performing
+ *  inference, e.g. in validation or testing mode. In this case,
+ *  forward prop uses running statistics, which are independent of
+ *  input.
  */
 void bp_inference_impl(DataType epsilon,
                        const AbsDistMat& gradient_wrt_output,
