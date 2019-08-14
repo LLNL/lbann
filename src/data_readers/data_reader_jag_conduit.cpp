@@ -784,6 +784,12 @@ void data_reader_jag_conduit::load() {
 
   options *opts = options::get();
 
+  // Experimental
+  m_data_store_matrix = opts->get_bool("data_store_matrix");
+  if (m_data_store_matrix && opts->get_bool("preload_data_store")) {
+    LBANN_ERROR("preload mode is not yet implemented for data_store_matrix mode");
+  }
+
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
@@ -1445,18 +1451,29 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   if (data_store_active()) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
-  }else {
+  } else {
     m_sample_list.open_samples_file_handle(data_id);
   }
 
-  for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
-    // The third argument mb_idx below is 0 because it is for the view of X not X itself
-    ok = fetch(X_v[i], data_id, node, 0, tid, m_independent[i], "datum");
+  if (m_data_store_matrix) {
+    size_t width = node['/' + LBANN_DATA_ID_STR(data_id) + "/width"].value();
+    size_t height = node['/' + LBANN_DATA_ID_STR(data_id) + "/height"].value();
+    size_t leading_dimension = node['/' + LBANN_DATA_ID_STR(data_id) + "/ldim"].value();
+    const std::vector<DataType> &v = node['/' + LBANN_DATA_ID_STR(data_id) + "/data"].value();
+  } else {
+    for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
+      // The third argument mb_idx below is 0 because it is for the view of X not X itself
+      ok = fetch(X_v[i], data_id, node, 0, tid, m_independent[i], "datum");
+    }  
   }
 
   if (priming_data_store()) {
-    // Once the node has been populated save it in the data store
-    m_data_store->set_conduit_node(data_id, node);
+    if (m_data_store_matrix) {
+      m_data_store->set_cpu_mat(data_id, X);
+    } else {
+      // Once the node has been populated save it in the data store
+      m_data_store->set_conduit_node(data_id, node);
+    }  
   }
 
   m_sample_list.close_if_done_samples_file_handle(data_id);

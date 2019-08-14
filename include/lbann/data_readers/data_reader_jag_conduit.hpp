@@ -464,6 +464,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   sample_list_t m_sample_list;
   bool m_list_per_trainer;
   bool m_list_per_model;
+
+  bool m_data_store_matrix = false;
 };
 
 /**
