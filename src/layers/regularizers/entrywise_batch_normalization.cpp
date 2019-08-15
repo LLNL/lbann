@@ -291,7 +291,7 @@ void bp_training_impl(lbann_comm& comm,
         auto& dvar = local_gradient_wrt_var(row, 0);
         dx = (dy * inv_stdev
               + dmean * inv_stats_count
-              + dvar * (x - mean)) * 2 * inv_stats_countm1;
+              + dvar * (x - mean) * 2 * inv_stats_countm1);
       }
     }
   }
