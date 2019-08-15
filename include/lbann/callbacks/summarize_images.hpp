@@ -87,9 +87,6 @@ private:
   /** @brief Name of categorical accuracy layer*/
   std::string const m_cat_accuracy_layer_name;
 
-  /* @brief Name of categorical accuracy layer */
-  Layer const* m_cat_accuracy_layer = nullptr;
-
   /** @brief Criterion to dump images */
   MatchType m_match_type;
 
@@ -157,8 +154,6 @@ public:
                    std::string const& img_source_layer_name,
                    std::string const& input_layer_name,
                    uint64_t interval = 1,
-                   //This can go away
-                   uint64_t num_images = 10,
                    std::string const& img_format = ".jpg");
 
   /** @brief Copy constructor */
@@ -167,23 +162,16 @@ public:
   /** @brief Return name of callback */
   std::string name() const override { return "summarize_images"; }
 
-  /** @brief setup layers */
-  void setup(model* m) override;
-
   /** @brief Hook to pull data from lbann run */
   void on_batch_evaluate_end(model* m) override;
 
 private:
 
   /** @brief Add image to event file */
-  void dump_images_to_summary(Layer const& layer,
-                              uint64_t const& step,
-                              El::Int const& epoch,
-                              model const& m);
+  void dump_images_to_summary(Layer const& layer, model const& m);
 
   /** @brief Construct tag for image */
   std::string get_tag(El::Int index, El::Int epoch, size_t img_number = 0);
-
 
 private:
 
@@ -194,18 +182,11 @@ private:
   std::shared_ptr<image_output_strategy> m_strategy;
 
   /* @brief Names of layers */
-  std::string const m_img_source_layer_name;
-  std::string const m_input_layer_name;
-
-  /** @brief lbann::Layer objects */
-  Layer const* m_img_source_layer = nullptr;
-  Layer const* m_input_layer = nullptr;
+  std::string m_img_source_layer_name;
+  std::string m_input_layer_name;
 
   /* @brief Interval for dumping images */
-  uint64_t m_interval;
-
-  /* @brief Number of images to be dumped */
-  size_t m_num_images;
+  uint64_t m_epoch_interval;
 
   /** @brief Image file format. Valid options: .jpg, .png, .pgm. */
   std::string m_img_format;
@@ -216,8 +197,7 @@ private:
  *  @param m The model
  *  @param layer_name Name of layer
  */
-Layer const* get_layer_by_name(model const& m,
-                               std::string const& layer_name);
+Layer const& get_layer_by_name(model const& m, std::string const& layer_name);
 
 std::unique_ptr<callback_base>
 build_summarize_images_callback_from_pbuf(

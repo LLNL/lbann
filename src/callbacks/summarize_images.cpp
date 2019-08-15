@@ -97,10 +97,9 @@ std::vector<El::Int> categorical_accuracy_strategy::get_image_indices(model cons
   }
   std::vector<El::Int> img_indices;
 
-  if(!m_cat_accuracy_layer)
-    m_cat_accuracy_layer = get_layer_by_name(m, m_cat_accuracy_layer_name);
+  auto const& cat_accuracy_layer = get_layer_by_name(m, m_cat_accuracy_layer_name);
 
-  const AbsDistMat& categorized_correctly_dist = m_cat_accuracy_layer->get_activations();
+  const AbsDistMat& categorized_correctly_dist = cat_accuracy_layer.get_activations();
   CircMat<El::Device::CPU> categorized_correctly(
     categorized_correctly_dist.Grid(), categorized_correctly_dist.Root());
   categorized_correctly = categorized_correctly_dist;
@@ -119,8 +118,8 @@ std::vector<El::Int> categorical_accuracy_strategy::get_image_indices(model cons
 
       if ((correctness_value != DataType(0))
           && (correctness_value != DataType(1)))
-        LBANN_ERROR("Invalid data from ", m_cat_accuracy_layer->get_name(),
-                        ". Received ", correctness_value, ", expected 0 or 1.");
+        LBANN_ERROR("Invalid data from ", cat_accuracy_layer.get_name(),
+                    ". Received ", correctness_value, ", expected 0 or 1.");
 
       if(img_indices.size() > static_cast<size_t>(num_samples) || img_counter >= m_num_images)
         break;
@@ -169,11 +168,11 @@ build_categorical_accuracy_strategy_from_pbuf(google::protobuf::Message const& m
 
 std::vector<El::Int> autoencoder_strategy::get_image_indices(model const& m) {
 
-  auto input_layer = get_layer_by_name(m, m_input_layer_name);
+  auto const& input_layer = get_layer_by_name(m, m_input_layer_name);
 
   std::vector<El::Int> img_indices;
   auto* sample_indices =
-    const_cast<Layer&>(*input_layer).get_sample_indices_per_mb();
+    const_cast<Layer&>(input_layer).get_sample_indices_per_mb();
   if (sample_indices == nullptr)
     LBANN_ERROR("NULL SAMPLE INDICES");
 
@@ -217,18 +216,15 @@ summarize_images::summarize_images(std::shared_ptr<lbann_summary> const& summari
                                    std::shared_ptr<image_output_strategy> const& strategy,
                                    std::string const& img_layer_name,
                                    std::string const& input_layer_name,
-                                   uint64_t interval,
-                                   uint64_t num_images,
+                                   uint64_t epoch_interval,
                                    std::string const& img_format)
-  : callback_base(1),
+  : callback_base(/*batch interval=*/1),
     m_summarizer(summarizer),
     m_strategy(strategy),
     m_img_source_layer_name(img_layer_name),
     m_input_layer_name(input_layer_name),
-    m_interval(interval),
-    m_num_images(num_images),
+    m_epoch_interval(std::max(epoch_interval, uint64_t{1})),
     m_img_format(img_format)
-
 {
 #ifndef LBANN_HAS_OPENCV
   LBANN_ERROR("OpenCV not detected");
@@ -237,61 +233,28 @@ summarize_images::summarize_images(std::shared_ptr<lbann_summary> const& summari
 
 void summarize_images::on_batch_evaluate_end(model* m) {
 
-
-  if (m->get_epoch() % m_interval != 0)
+  if (m->get_epoch() % m_epoch_interval != 0)
     return;
 
-  if (m_img_source_layer == nullptr) {
-    setup(m);
-  }
+  dump_images_to_summary(get_layer_by_name(*m, m_img_source_layer_name), *m);
 
-  dump_images_to_summary(*m_img_source_layer, m->get_step(), m->get_epoch(), *m);
 // FIXME: Dump original image for Autoencoder Strategy
 //  if(m->get_epoch() > 1)
 //    dump_images_to_summary(*m_img_layer, m->get_step());
 }
 
-void summarize_images::setup(model* m)
-{
-  /* find layers in model based on string */
-  m_img_source_layer = get_layer_by_name(*m, m_img_source_layer_name);
-  if (m_img_source_layer == nullptr)
-    LBANN_ERROR("get_layer_by_name() failed on layer ",
-                                  m_img_source_layer_name);
+void summarize_images::dump_images_to_summary(Layer const& layer, model const& m) {
+  auto const epoch = m.get_epoch();
+  auto const step = m.get_step();
 
-  m_input_layer = get_layer_by_name(*m, m_input_layer_name);
-  if (m_input_layer == nullptr)
-    LBANN_ERROR("get_layer_by_name() failed on layer ", m_input_layer_name);
-
-//FIXME: Does this make sense? Error is supposed to catch reconstruction/img layer.
-//       Should this be moved somewhere else for autoencoder strategy?
-  // Check widths of img_layer.activations and reconstruction_layer are equal
-  const AbsDistMat& img_source_activations = m_img_source_layer->get_activations();
-  const AbsDistMat& input_layer_activations = m_input_layer->get_activations();
-  if( img_source_activations.Width() != input_layer_activations.Width() )
-    LBANN_ERROR(
-        "Invalid data. Reconstruction layer activations and image activations widths "
-        "do not match.");
-
-  if (auto gil = dynamic_cast<generic_input_layer const*>(m_input_layer))
-    m_num_images = std::min(static_cast<long>(m_num_images),
-                            gil->get_dataset(execution_mode::validation).get_total_samples());
-
-}
-
-void summarize_images::dump_images_to_summary(
-  Layer const& layer, uint64_t const& step, El::Int const& epoch, model const& m) {
-
-  if(!m_input_layer)
-    m_input_layer = get_layer_by_name(m, m_input_layer_name);
-
-  auto sample_indices = const_cast<Layer&>(*m_input_layer).get_sample_indices_per_mb();
+  auto const& input_layer = get_layer_by_name(m, m_input_layer_name);
+  auto sample_indices = const_cast<Layer&>(input_layer).get_sample_indices_per_mb();
   if (sample_indices == nullptr)
     LBANN_ERROR("NULL SAMPLE INDICES");
 
-
-//FIXME: Is this right?
   std::vector<El::Int> img_indices = m_strategy->get_image_indices(m);
+
+  static size_t img_number = 0;
 
   const AbsDistMat& layer_activations = layer.get_activations();
 
@@ -309,7 +272,7 @@ void summarize_images::dump_images_to_summary(
             "col_index: ", col_index, " is greater than Matrix height: ",
             local_images.Height());
       auto sample_index = sample_indices->Get(col_index, 0);
-      auto image_tag =  get_tag(sample_index, epoch);
+      auto image_tag =  get_tag(sample_index, epoch, img_number++);
       auto const local_image = local_images(El::ALL, El::IR(col_index));
 
       this->m_summarizer->report_image(image_tag, m_img_format, local_image, dims, step);
@@ -327,18 +290,16 @@ std::string summarize_images::get_tag(El::Int index, El::Int epoch, size_t img_n
   return image_tag;
 }
 
-Layer const* get_layer_by_name(model const& m,
+Layer const& get_layer_by_name(model const& m,
                                std::string const& layer_name)
 {
-
-  auto layers = m.get_layers();
-
-  for(auto const* l : layers)
-    if( l->get_name() == layer_name)
+  for (El::Int ii = 0; ii < m.get_num_layers(); ++ii) {
+    auto const& l = m.get_layer(ii);
+    if (l.get_name() == layer_name)
       return l;
-
-  LBANN_ERROR("Layer named ", layer_name, " not found.");
-  return nullptr;
+  }
+  LBANN_ERROR("Did not find a layer with name \"", layer_name, "\" in model.");
+  return m.get_layer(0); // Silence compiler warning
 }
 
 std::unique_ptr<callback_base>
@@ -349,7 +310,6 @@ build_summarize_images_callback_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSummarizeImages&>(proto_msg);
 
-//FIXME: Correct params?
   return make_unique<summarize_images>(
     summarizer,
     construct_strategy(params.selection_strategy()),
