@@ -45,6 +45,9 @@
 #ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/cudnn.hpp"
 #endif
+#ifdef LBANN_HAS_PYTHON
+#include "lbann/utils/python.hpp"
+#endif
 
 #include <iostream>
 #include <string>
@@ -94,6 +97,9 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed) {
 void finalize(lbann_comm* comm) {
 #ifdef LBANN_HAS_CUDNN
   cudnn::destroy();
+#endif
+#ifdef LBANN_HAS_PYTHON
+  python::finalize();
 #endif
   if (comm != nullptr) {
     delete comm;
