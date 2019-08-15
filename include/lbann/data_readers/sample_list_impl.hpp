@@ -761,18 +761,23 @@ inline void sample_list<sample_name_t>
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::reorder() {
-  if (m_stride > 1ul) {
-    // undo interleaving
+  if (m_stride > 1ul) { // undo interleaving
     const size_t sz = m_sample_list.size();
-    samples_t tmp_sample_list;
-    tmp_sample_list.reserve(sz);
+    const size_t s = sz/m_stride;
+    const size_t s_more = (sz + m_stride - 1ul)/m_stride;
+    const size_t n_more = sz - s * m_stride;
 
-    const size_t s = (sz + m_stride - 1ul)/m_stride;
-    for (size_t i = 0ul; i < s; ++i) {
-      for (size_t j = i; j < sz; j += s) {
+    samples_t tmp_sample_list;
+    tmp_sample_list.reserve(s_more * m_stride);
+
+    for (size_t i = 0ul; i < s_more; ++i) {
+      for (size_t j = i, k = 0ul; j < sz; ++k) {
         tmp_sample_list.push_back(m_sample_list[j]);
+        //if (tmp_sample_list.size() == sz) break;
+        j += ((k < n_more)? s_more : s);
       }
     }
+    tmp_sample_list.resize(sz);
     std::swap(m_sample_list, tmp_sample_list);
     m_stride = 1ul;
   }
