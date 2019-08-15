@@ -185,8 +185,6 @@ void image_data_reader::load() {
   }
   fclose(fplist);
 
-  // TODO: this will probably need to change after sample_list class
-  //       is modified
   // reset indices
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_image_list.size());
