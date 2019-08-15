@@ -115,6 +115,9 @@ class sample_list {
   template<typename T> size_t all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm);
   virtual void all_gather_packed_lists(lbann_comm& comm);
 
+  /// Set to maintain the original sample order as listed in the file
+  void keep_sample_order(bool keep);
+
  protected:
 
   /// Reads a header line from the sample list given as a stream, and use the info string for error message
@@ -149,6 +152,9 @@ class sample_list {
 
   /// The stride used in loading sample list file
   size_t m_stride;
+
+  /// maintain the original sample order as listed in the file
+  bool m_keep_order;
 
  private:
   /// List of all samples with a file identifier and sample name for each sample

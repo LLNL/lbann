@@ -107,7 +107,7 @@ inline const std::string& sample_list_header::get_file_dir() const {
 
 template <typename sample_name_t>
 inline sample_list<sample_name_t>::sample_list()
-: m_stride(1ul) {
+: m_stride(1ul), m_keep_order(true) {
 }
 
 template <typename sample_name_t>
@@ -751,7 +751,9 @@ inline void sample_list<sample_name_t>
     }
   }
 
-  reorder();
+  if (m_keep_order) {
+    reorder();
+  }
 
   assign_samples_name();
 
@@ -781,6 +783,12 @@ inline void sample_list<sample_name_t>
     std::swap(m_sample_list, tmp_sample_list);
     m_stride = 1ul;
   }
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::keep_sample_order(bool keep) {
+  m_keep_order = keep;
 }
 
 } // end of namespace lbann
