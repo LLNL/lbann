@@ -303,6 +303,7 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file,
   // load the sample list
   double tm1 = get_time();
   if (load_interleave) {
+    m_sample_list.keep_sample_order(true);
     m_sample_list.load(sample_list_file, *m_comm);
   } else {
     m_sample_list.load(sample_list_file);

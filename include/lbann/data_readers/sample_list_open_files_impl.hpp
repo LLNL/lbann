@@ -561,9 +561,9 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     }
   }
 
-  // data_reader_jag_conduit does use any label. Thus, the information in
-  // sample list is self-contained requiring no reordering.
-  //reorder();
+  if (this->m_keep_order) {
+    reorder();
+  }
 
   return;
 }
