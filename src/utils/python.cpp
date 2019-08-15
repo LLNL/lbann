@@ -32,19 +32,68 @@
 namespace lbann {
 namespace python {
 
-// ---------------------------------------------
-// session class
-// ---------------------------------------------
+namespace {
 
-void session::start_once() { get(); }
+/** @brief State on main Python thread after initialization. */
+PyThreadState* init_thread_state = nullptr;
 
-bool session::is_active() noexcept { return Py_IsInitialized(); }
+} // namespace
 
-void session::check_error(bool force_error) {
-  start_once();
+void initialize() {
+
+  // Thread-safe initialization with double-checked locking pattern
   if (!is_active()) {
-    LBANN_ERROR("embedded Python session has terminated unexpectedly");
+    static std::mutex m;
+    std::lock_guard<std::mutex> lock(m);
+    if (!is_active()) {
+
+      // Hack to display output from Python
+      // Note: Python outputs didn't appear because MPI intercepts
+      // stdout and stderr. See
+      // https://stackoverflow.com/questions/29352485/python-print-not-working-when-embedded-into-mpi-program
+      Py_UnbufferedStdioFlag = 1;
+
+      // Initialize Python session and release GIL
+      Py_Initialize();
+      PyEval_InitThreads();
+      init_thread_state = PyEval_SaveThread();
+      if (!is_active()) {
+        LBANN_ERROR("error initializing embedded Python session");
+      }
+
+    }
   }
+
+}
+
+void finalize() {
+
+  // Thread-safe finalization with double-checked locking pattern
+  if (is_active()) {
+    static std::mutex m;
+    std::lock_guard<std::mutex> lock(m);
+    if (is_active()) {
+
+      // Take GIL and finalize Python session
+      if (init_thread_state != nullptr) {
+        PyEval_RestoreThread(init_thread_state);
+        init_thread_state = nullptr;
+      }
+      Py_Finalize();
+
+      // Check that Python session has been finalized
+      if (is_active()) {
+        LBANN_WARNING("error finalizing embedded Python session");
+      }
+
+    }
+  }
+
+}
+
+bool is_active() { return Py_IsInitialized(); }
+
+void check_error(bool force_error) {
   global_interpreter_lock gil;
   if (force_error || PyErr_Occurred()) {
 
@@ -92,60 +141,17 @@ void session::check_error(bool force_error) {
   }
 }
 
-session& session::get() {
-  // Initializing static local variables is thread-safe as of C++11
-  static session instance;
-  return instance;
-}
-
-session::session() {
-  if (!is_active()) {
-
-    // Hack to display output from Python
-    // Note: Python outputs didn't appear because MPI intercepts
-    // stdout and stderr. See
-    // https://stackoverflow.com/questions/29352485/python-print-not-working-when-embedded-into-mpi-program
-    Py_UnbufferedStdioFlag = 1;
-
-    // Initialize embedded Python session
-    Py_Initialize();
-    PyEval_InitThreads();
-
-    // Release GIL
-    m_thread_state = PyEval_SaveThread();
-
-  }
-  if (!is_active()) {
-    LBANN_ERROR("error initializing embedded Python session");
-  }
-}
-
-session::~session() {
-  if (is_active()) {
-    if (m_thread_state != nullptr) {
-      PyEval_RestoreThread(m_thread_state);
-    }
-    Py_Finalize();
-  }
-  if (is_active()) {
-    LBANN_WARNING("error finalizing embedded Python session");
-  }
-}
-
 // ---------------------------------------------
 // global_interpreter_lock class
 // ---------------------------------------------
 
 global_interpreter_lock::global_interpreter_lock() {
-  session::start_once();
-  if (!session::is_active()) {
-    LBANN_ERROR("embedded Python session has terminated unexpectedly");
-  }
+  initialize(); // Make sure Python is running
   m_gil_state = PyGILState_Ensure();
 }
 
 global_interpreter_lock::~global_interpreter_lock() {
-  if (session::is_active()) {
+  if (is_active()) {
     PyGILState_Release(m_gil_state);
   }
 }
@@ -155,29 +161,29 @@ global_interpreter_lock::~global_interpreter_lock() {
 // ---------------------------------------------
 
 object::object(PyObject* ptr) : m_ptr(ptr) {
-  session::check_error();
+  check_error();
 }
 object::object(const std::string& val) {
   global_interpreter_lock gil;
   m_ptr = PyUnicode_FromStringAndSize(val.c_str(), val.size());
-  session::check_error();
+  check_error();
 }
 object::object(long val) {
   global_interpreter_lock gil;
   m_ptr = PyLong_FromLong(val);
-  session::check_error();
+  check_error();
 }
 object::object(double val) {
   global_interpreter_lock gil;
   m_ptr = PyFloat_FromDouble(val);
-  session::check_error();
+  check_error();
 }
 
 object::object(const object& other) : m_ptr(other.m_ptr) {
   global_interpreter_lock gil;
   m_ptr = other.m_ptr;
   Py_XINCREF(m_ptr);
-  session::check_error();
+  check_error();
 }
 
 object& object::operator=(const object& other) {
@@ -185,7 +191,7 @@ object& object::operator=(const object& other) {
   Py_XDECREF(m_ptr);
   m_ptr = other.m_ptr;
   Py_XINCREF(m_ptr);
-  session::check_error();
+  check_error();
   return *this;
 }
 
@@ -198,12 +204,12 @@ object& object::operator=(object&& other) {
   Py_XDECREF(m_ptr);
   m_ptr = other.m_ptr;
   other.m_ptr = nullptr;
-  session::check_error();
+  check_error();
   return *this;
 }
 
 object::~object() {
-  if (session::is_active()) {
+  if (is_active()) {
     global_interpreter_lock gil;
     Py_XDECREF(m_ptr);
   }
