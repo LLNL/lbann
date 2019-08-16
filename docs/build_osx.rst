@@ -136,7 +136,7 @@ Building & Installing LBANN as a developer
           -D LBANN_SB_FWD_LBANN_OpenMP_CXX_FLAGS="-fopenmp=libomp" \
           -D LBANN_SB_FWD_LBANN_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib \
           \
-          -D CMAKE_CXX_COMPILER=$(which clang) \
+          -D CMAKE_CXX_COMPILER=$(which clang++) \
           -D CMAKE_C_COMPILER=$(which clang) \
           ${LBANN_HOME}/superbuild
 
