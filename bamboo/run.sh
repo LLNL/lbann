@@ -33,6 +33,20 @@ echo $WEEKLY
 echo "Task: Cleaning"
 ./clean.sh
 
+echo "Task: Rebasing"
+git remote add main_repo https://github.com/LLNL/lbann.git
+git fetch main_repo develop
+git rebase main_repo/develop
+if [ $? == 0 ]; then
+    echo "Rebase successful"
+    git status
+else
+    git status
+    git rebase --abort
+    echo "Rebase failed"
+    git status
+fi
+
 echo "Task: Compiler Tests"
 cd compiler_tests
 module load cmake/3.9.2
