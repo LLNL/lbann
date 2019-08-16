@@ -183,7 +183,7 @@ bool save_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdi
 
 std::unique_ptr<callback_base>
 build_save_model_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSaveModel&>(proto_msg);
   if(params.extension().size() != 0) {

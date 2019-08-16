@@ -161,6 +161,8 @@ include(SetupCXX)
 ################################################################
 
 # Required dependencies
+find_package(Threads REQUIRED)
+
 find_package(CEREAL NO_MODULE
   HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
   PATH_SUFFIXES share/cmake/cereal
@@ -468,15 +470,15 @@ add_subdirectory(docs)
 # Build LBANN
 ################################################################
 
+# Add LBANN source files
+add_subdirectory(include)
+add_subdirectory(src)
+
 # Write the configure file
 configure_file(
   "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_config.hpp.in"
   "${CMAKE_BINARY_DIR}/lbann_config.hpp"
   @ONLY)
-
-# Add LBANN source files
-add_subdirectory(include)
-add_subdirectory(src)
 
 # Create the LBANN library
 add_library(lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_CUDA_SOURCES})
@@ -492,6 +494,7 @@ endif ()
 
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
+target_link_libraries(lbann PUBLIC Threads::Threads)
 target_link_libraries(lbann PUBLIC cereal)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)

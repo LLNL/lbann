@@ -1,14 +1,18 @@
-#ifndef __LBANN_THREAD_POOL_HPP__
-#define __LBANN_THREAD_POOL_HPP__
+#ifndef LBANN_UTILS_THREADS_THREAD_POOL_HPP_INCLUDED
+#define LBANN_UTILS_THREADS_THREAD_POOL_HPP_INCLUDED
 
-#include <future>
-#include <thread>
-#include <vector>
-#include <unordered_map>
+#include "lbann_config.hpp"
 
 #include "thread_safe_queue.hpp"
 #include "type_erased_function.hpp"
 #include "lbann/utils/exception.hpp"
+
+#include <sched.h>
+
+#include <future>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 
 namespace lbann {
 
@@ -111,8 +115,9 @@ public:
 private:
   /** @brief The task executed by each thread */
   void do_thread_work_();
+#ifdef LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
   void do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set);
-
+#endif // LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
 private:
 
   /** @brief Container holding the threads */
@@ -138,4 +143,4 @@ private:
 };// class thread_pool
 
 }// namespace lbann
-#endif /* __LBANN_THREAD_POOL_HPP__ */
+#endif /* LBANN_UTILS_THREADS_THREAD_POOL_HPP_INCLUDED */

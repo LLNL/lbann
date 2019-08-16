@@ -176,6 +176,7 @@ void mnist_reader::load() {
     std::cerr << "calling select_subset_of_data; m_shuffled_indices.size: " <<
       m_shuffled_indices.size() << std::endl;
   }
+  resize_shuffled_indices();
   select_subset_of_data();
 }
 

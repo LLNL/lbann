@@ -374,7 +374,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -385,7 +385,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -396,7 +396,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -407,7 +407,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -418,7 +418,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -429,7 +429,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -440,7 +440,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -451,7 +451,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -462,7 +462,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -473,7 +473,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -484,7 +484,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -495,7 +495,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -506,7 +506,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -517,7 +517,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -528,7 +528,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -539,7 +539,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -550,7 +550,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -561,7 +561,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -572,7 +572,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -583,7 +583,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -594,7 +594,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -605,7 +605,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -616,7 +616,7 @@ model {
         value: 0.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
 
@@ -627,7 +627,7 @@ model {
         value: 1.0
       }
     }
-    optimizer {}
+    optimizer { no_optimizer {} }
   }
 
   ###################################################

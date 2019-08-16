@@ -40,12 +40,12 @@ namespace lbann {
 namespace callback {
 
 imcomm::imcomm(imcomm::comm_type ct,
-    lbann_summary *summarizer) :
-  callback_base(1, summarizer), m_default_ct(ct) {}
+    const std::shared_ptr<lbann_summary>& summarizer) :
+  m_default_ct(ct), m_summarizer(summarizer) {}
 
 imcomm::imcomm(imcomm::comm_type ct,
     std::unordered_set<weights *> weights_list,
-    lbann_summary *summarizer) :
+    const std::shared_ptr<lbann_summary>& summarizer) :
   imcomm(ct, summarizer) {
   for (weights *w : weights_list) {
     m_weights_params[w] = {};
@@ -160,7 +160,7 @@ std::string get_comm_type_name(imcomm::comm_type m) {
 std::unique_ptr<callback_base>
 build_imcomm_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
-  lbann_summary* summarizer) {
+  const std::shared_ptr<lbann_summary>& summarizer) {
   const auto& params = dynamic_cast<const lbann_data::Callback::CallbackImComm&>(proto_msg);
   const auto& type_str = params.intertrainer_comm_method();
   imcomm::comm_type type = imcomm::comm_type::NONE;

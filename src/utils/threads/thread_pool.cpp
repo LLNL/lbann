@@ -37,7 +37,20 @@ void thread_pool::launch_threads(size_type num_threads)
   }
 }
 
-void thread_pool::launch_pinned_threads(size_type num_threads, int cpu_offset) {
+// FIXME (trb 08/03/2019): Setting thread affinity is not a portable
+// pthread operation (hence the _np suffix); indeed, OSX does not
+// support it. Unfortunately the case on OSX is even more dire -- they
+// seem to want to prevent you from messing with their scheduler at
+// all. The MACH kernel API for doing this is marked "deprecated" and
+// its use is not advised for code that is not tied to a specific OSX
+// version (see here for more information:
+// http://web.mit.edu/darwin/src/modules/xnu/osfmk/man/).
+//
+// As a result of the above, this will, in fact, *not* launch pinned
+// threads when the locally-supported pthread API does not support it.
+void thread_pool::launch_pinned_threads(
+  size_type num_threads, int cpu_offset) {
+#ifdef LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
   threads_.reserve(num_threads);
   m_work_group.reserve(num_threads);
   m_thread_id_to_local_id_map.reserve(num_threads);
@@ -48,7 +61,8 @@ void thread_pool::launch_pinned_threads(size_type num_threads, int cpu_offset) {
   cpu_set_t cpuset, ht_cpuset;
   CPU_ZERO(&cpuset);
 
-  auto error = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  auto error = pthread_getaffinity_np(pthread_self(),
+                                      sizeof(cpu_set_t), &cpuset);
   if (error != 0) {
     std::cerr << "error in pthread_getaffinity_np, error=" << error
               << std::endl;
@@ -66,7 +80,8 @@ void thread_pool::launch_pinned_threads(size_type num_threads, int cpu_offset) {
         }
       }
 
-      threads_.emplace_back(&thread_pool::do_thread_work_pinned_thread_,this, cnt, ht_cpuset);
+      threads_.emplace_back(&thread_pool::do_thread_work_pinned_thread_,
+                            this, cnt, ht_cpuset);
     }
   }
   catch(...)
@@ -74,6 +89,9 @@ void thread_pool::launch_pinned_threads(size_type num_threads, int cpu_offset) {
     all_work_done_ = true;
     throw;
   }
+#else
+  launch_threads(num_threads);
+#endif// LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
 }
 
 void thread_pool::reap_threads() {
@@ -110,12 +128,15 @@ void thread_pool::do_thread_work_()
   }
 }
 
+#ifdef LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
 void thread_pool::do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set)
 {
   // Set the CPU affinity for the thread
-  auto error = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpu_set);
+  auto error = pthread_setaffinity_np(pthread_self(),
+                                      sizeof(cpu_set_t), &cpu_set);
   if (error != 0) {
-    std::cerr << "error in pthread_setaffinity_np, error=" << error << std::endl;
+    std::cerr << "error in pthread_setaffinity_np, error="
+              << error << std::endl;
   }
 
   {
@@ -132,6 +153,7 @@ void thread_pool::do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set)
     }
   }
 }
+#endif // LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
 
 int thread_pool::get_local_thread_id() {
   std::thread::id this_id = std::this_thread::get_id();

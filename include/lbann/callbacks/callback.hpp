@@ -39,11 +39,11 @@
 #include <algorithm>
 #include <string>
 
-// A utility macro for easily adding default-constructed sub-class
-// builders.
+/** @brief A utility macro for easily adding default-constructed sub-class
+ *  builders.*/
 #define LBANN_ADD_DEFAULT_CALLBACK_BUILDER(Class, FunctionName)  \
   inline std::unique_ptr<callback_base> FunctionName(           \
-    const google::protobuf::Message&, lbann_summary*) {          \
+    const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&) {          \
     return lbann::make_unique<Class>();                          \
   }
 
@@ -63,14 +63,12 @@ public:
   /** @name Constructors and destructor */
   ///@{
 
-  /** @brief Initialize a callback with an optional batch interval and
-   *         summarizer.
+  /** @brief Initialize a callback with an optional batch interval
    */
-  callback_base(int batch_interval = 1,
-                 lbann_summary *summarizer = nullptr) :
-    m_batch_interval(std::max(batch_interval, 1)), m_summarizer(summarizer) {}
+  callback_base(int batch_interval = 1) :
+    m_batch_interval(std::max(batch_interval, 1)) {}
   callback_base(const callback_base&) = default;
-  virtual ~callback_base() {}
+  virtual ~callback_base() = default;
 
   ///@}
   /** @name Polymorphic copy */
@@ -81,10 +79,6 @@ public:
   ///@}
   /** @name Modifiers */
   ///@{
-
-  void set_summarizer(lbann_summary *summarizer) {
-    m_summarizer = summarizer;
-  }
 
   /** @brief Called once to set up the callback (after all layers are
    *         set up).
@@ -194,8 +188,6 @@ protected:
 
   /** @brief Batch methods should once every this many steps. */
   int m_batch_interval;
-  /** @brief Optional summarizer for the callbacks to use. */
-  lbann_summary *m_summarizer;
 };
 
 }  // namespace lbann

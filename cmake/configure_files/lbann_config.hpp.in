@@ -45,6 +45,9 @@
 #cmakedefine LBANN_HAS_STD_ANY
 #cmakedefine LBANN_HAS_STD_MAKE_UNIQUE
 
+// API support for non-portable pthread functionality.
+#cmakedefine LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
+
 // Define the LBANN datatype
 namespace lbann
 {
