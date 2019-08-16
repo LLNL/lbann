@@ -16,85 +16,57 @@
 using namespace std;
 using namespace lbann;
 
-#undef SANITY
-#define SANITY
+//=================================================================================================
+// sanity check the cmd line
+void check_cmd_line();
 
+std::string help_msg();
+
+void read_mapping_file(std::string &mapping_fn, unordered_map<string, std::unordered_set<string>> &sample_mapping, unordered_map<string, std::vector<string>> &sample_mapping_v, unordered_map<string, int>& string_to_index);
+
+//=================================================================================================
 int main(int argc, char **argv) {
   int random_seed = lbann_default_random_seed;
   world_comm_ptr comm = initialize(argc, argv, random_seed);
-  bool master = comm->am_world_master();
-  int rank, np;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &np);
 
   if (np!= 1) {
-    if (master) {
-      LBANN_ERROR("please run with a single processor");
-    }
+    LBANN_ERROR("please run with a single processor");
   }
 
   options *opts = options::get();
   opts->init(argc, argv);
 
-  std::stringstream err;
-
-  // sanity check the cmd line
-  if (! (opts->has_string("index_fn") && opts->has_string("sample_mapping_fn")
-         && opts->has_int("num_samples") && opts->has_int("random_seed")
-         && opts->has_string("output_fn"))) {
-    if (master) {
-      LBANN_ERROR("usage: select_samples --index_fn=<string> --sample_mapping_fn=<string> --num_samples=<int> --output_fn=<string> --random_seed=<int>\n\n");
-    }
-    exit(9);
+  // check for proper invocation, print help message
+  if (opts->has_bool("h") || opts->has_bool("help") || argc == 1) {
+    std::cout << help_msg();
+    MPI_Finalize();
+    exit(0);
   }
+  check_cmd_line();
 
+  // get all required options
   const std::string index_fn = opts->get_string("index_fn");
-  const std::string mapping_fn = opts->get_string("sample_mapping_fn");
-  const std::string output_fn = opts->get_string("output_fn");
-  size_t num_samples = opts->get_int("num_samples");
+  const std::string mapping_fn = opts->get_string("mapping_fn");
+  const std::string output_dir = opts->get_string("output_dir");
+  const std::string output_base = opts->get_string("output_base_fn");
+  size_t num_samples = opts->get_int("num_samples_per_list");
+  size_t num_lists = opts->get_int("num_lists");
   int seed = opts->get_int("random_seed");
 
-  //==========================================================================
   // read previously computed mapping: sample_id (string) -> local_index
-  //==========================================================================
-  cerr << "reading sample mapping\n";
   // maps filename to { sample_ids }
   unordered_map<string, std::unordered_set<string>> sample_mapping;
   unordered_map<string, std::vector<string>> sample_mapping_v;
   // maps a sampleID to a local idex
   unordered_map<string, int> string_to_index;
 
-  ifstream in(mapping_fn.c_str());
-  string filename;
-  string sample_id;
-  string line;
-  size_t n = 0;
-  while (getline(in, line)) {
-    if (!line.size()) {
-      break;
-    }
-    stringstream s(line);
-    s >> filename;
-    ++n;
-    int hh = 0;
-    while (s >> sample_id) {
-      sample_mapping[filename].insert(sample_id);
-      sample_mapping_v[filename].push_back(sample_id);
-      if (string_to_index.find(sample_id) != string_to_index.end()) {
-        err << "duplicate sample_ID: " << sample_id << " in file: " << filename;
-        LBANN_ERROR(err.str());
-      }
-      string_to_index[sample_id] = hh++;
-    }
-  }
-  in.close();
-  cerr << "num lines processed: " << n << "\n";
+  read_mapping_file(mapping_fn, sample_mapping, sample_mapping_v, string_to_index);
 
   //==========================================================================
-  // master builds two maps: <string, set<int>> maps a filename to the
+  // build two maps: <string, set<int>> maps a filename to the
   // set of indices (not sample_ids; that comes later!) that are to be
   // included and excluded
-  if (master) {
 
     // your job, should you decide to accept it, is to fill in these maps
     std::unordered_map<std::string, std::unordered_set<int>> index_map_keep;
@@ -283,7 +255,66 @@ int main(int argc, char **argv) {
 
     out << total_good << " " << total_bad << " " << num_include_files
             << "\n" << base_dir << "\n" << sout.str();
-  }
 
+  MPI_Finalize();
   return EXIT_SUCCESS;
+}
+
+// sanity check the cmd line
+void check_cmd_line() {
+  options *opts = options::get();
+  std::stringstream err;
+  if (! (opts->has_string("index_fn") && opts->has_string("mapping_fn")
+         && opts->has_int("num_samples_per_list") && && opts->has_int("num_lists")
+         && opts->has_int("random_seed")
+         && opts->has_string("output_dir") && opts->has_string("output_base_fn"))) {
+    std::cout << help_message();
+    MPI_Finalize();
+    exit(0);
+  }
+}
+
+std::string help_msg() {
+      std::stringstream err;
+      err << "usage: select_samples --index_fn=<string> --sample_mapping_fn=<string> --num_samples_per_list=<int> --num_lists --output_dir=<string> --output_base_name=<string> --random_seed=<int>\n\n";
+      err << "example invocation:\n";
+      err << "select_samples \n";
+      err << "  --index_fn=/p/gpfs1/brainusr/datasets/10MJAG/1M_B/index.txt\n";
+      err << "  --mapping_fn=/p/gpfs1/brainusr/datasets/10MJAG/1M_B/id_mapping.txt\n";
+      err << "  --num_samples_per_list=1000\n";
+      err << "  --num_lists=4\n";
+      err << "  --output_dir=/p/gpfs1/brainusr/datasets/10MJAG/1M_B\n";
+      err << "  --output_base_fn=my_samples.txt\n";
+      err << "  --random_seed=42\n";
+      err << "\n\n";
+      return err.str();
+}
+
+void read_mapping_file(std::string &mapping_fn, unordered_map<string, std::unordered_set<string>> &sample_mapping, unordered_map<string, std::vector<string>> &sample_mapping_v, unordered_map<string, int>& string_to_index) {
+  cerr << "reading sample mapping\n";
+  ifstream in(mapping_fn.c_str());
+  string filename;
+  string sample_id;
+  string line;
+  size_t n = 0;
+  while (getline(in, line)) {
+    if (!line.size()) {
+      break;
+    }
+    stringstream s(line);
+    s >> filename;
+    ++n;
+    int hh = 0;
+    while (s >> sample_id) {
+      sample_mapping[filename].insert(sample_id);
+      sample_mapping_v[filename].push_back(sample_id);
+      if (string_to_index.find(sample_id) != string_to_index.end()) {
+        err << "duplicate sample_ID: " << sample_id << " in file: " << filename;
+        LBANN_ERROR(err.str());
+      }
+      string_to_index[sample_id] = hh++;
+    }
+  }
+  in.close();
+  cerr << "FINISHED reading sample mapping: num lines processed: " << n << "\n";
 }
