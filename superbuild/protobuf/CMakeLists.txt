@@ -50,6 +50,8 @@ if (PROTOBUF_CUSTOM_SOURCE_DIR)
   message(STATUS "Using PROTOBUF source in: ${PROTOBUF_SOURCE_DIR}")
 else ()
   set(PROTOBUF_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/src")
+  set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
+  set(_GIT_TAG_TAG "GIT_TAG")
 endif ()
 
 include(ExternalProject)

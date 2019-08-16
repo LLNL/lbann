@@ -91,6 +91,8 @@ if (HDF5_CUSTOM_SOURCE_DIR)
   message(STATUS "Using HDF5 source in: ${HDF5_SOURCE_DIR}")
 else ()
   set(HDF5_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/src")
+  set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
+  set(_GIT_TAG_TAG "GIT_TAG")
 endif ()
 
 include(ExternalProject)

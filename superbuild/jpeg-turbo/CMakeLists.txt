@@ -32,6 +32,8 @@ if (JPEG_TURBO_CUSTOM_SOURCE_DIR)
   message(STATUS "Using JPEG-TURBO source in: ${JPEG_TURBO_SOURCE_DIR}")
 else ()
   set(JPEG_TURBO_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/src")
+  set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
+  set(_GIT_TAG_TAG "GIT_TAG")
 endif ()
 
 # Handle the install of LIBJPEG-TURBO

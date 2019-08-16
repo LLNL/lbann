@@ -98,6 +98,8 @@ if (HYDROGEN_CUSTOM_SOURCE_DIR)
   message(STATUS "Using HYDROGEN source in: ${HYDROGEN_SOURCE_DIR}")
 else ()
   set(HYDROGEN_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/src")
+  set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
+  set(_GIT_TAG_TAG "GIT_TAG")
 endif ()
 
 include(ExternalProject)

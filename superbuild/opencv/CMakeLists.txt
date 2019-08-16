@@ -53,6 +53,8 @@ if (OPENCV_CUSTOM_SOURCE_DIR)
   message(STATUS "Using OPENCV source in: ${OPENCV_SOURCE_DIR}")
 else ()
   set(OPENCV_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/src")
+  set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
+  set(_GIT_TAG_TAG "GIT_TAG")
 endif ()
 
 include(ExternalProject)

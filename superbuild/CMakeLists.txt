@@ -58,6 +58,8 @@ option(LBANN_SB_BUILD_LBANN "Pull and build LBANN from Github" OFF)
 #
 # Add the TPL subdirectories
 #
+set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
+set(_GIT_TAG_TAG "GIT_TAG")
 include(LBANNSuperBuildCreateCMakeArguments)
 
 if (LBANN_SB_BUILD_ALUMINUM)
