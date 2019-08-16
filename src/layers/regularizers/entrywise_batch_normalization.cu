@@ -355,7 +355,7 @@ __global__ void bp_training_error_signal_kernel(size_t height,
       auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
       dx = (dy * inv_stdev
             + dmean / statistics_count
-            + dvar * (x - _mean)) * 2 / (statistics_count - 1);
+            + dvar * (x - _mean) * 2 / (statistics_count - 1));
     }
   }
 }
