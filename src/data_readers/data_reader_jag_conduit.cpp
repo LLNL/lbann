@@ -1442,6 +1442,7 @@ int data_reader_jag_conduit::fetch_labels(CPUMat& Y) {
 
 
 bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
+//std::cout << "XX starting data_reader_jag_conduit::fetch_datum\n";
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_data_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
@@ -1449,17 +1450,28 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   // Create a node to hold all of the data
   conduit::Node node;
   if (data_store_active()) {
+//std::cout << "XX   data_store_active\n";
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   } else {
     m_sample_list.open_samples_file_handle(data_id);
   }
+//std::cout << "XX   NOT data_store_active\n";
 
-  if (m_data_store_matrix) {
+  if (!priming_data_store() && m_data_store_matrix) {
+//std::cout << "XX   m_data_store_matrix (1)\n";
     size_t width = node['/' + LBANN_DATA_ID_STR(data_id) + "/width"].value();
     size_t height = node['/' + LBANN_DATA_ID_STR(data_id) + "/height"].value();
-    size_t leading_dimension = node['/' + LBANN_DATA_ID_STR(data_id) + "/ldim"].value();
-    const std::vector<DataType> &v = node['/' + LBANN_DATA_ID_STR(data_id) + "/data"].value();
+    //size_t leading_dimension = node['/' + LBANN_DATA_ID_STR(data_id) + "/ldim"].value();
+    DataType *v1 = node['/' + LBANN_DATA_ID_STR(data_id) + "/data"].value();
+    DataType *v = reinterpret_cast<DataType *>(v1);
+
+    X.Resize(height, width);
+    DataType *b = X.Buffer();
+    size_t sz = height*width;
+    for (size_t j=0; j<sz; j++) {
+      b[j] = v[j];
+    }
   } else {
     for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
       // The third argument mb_idx below is 0 because it is for the view of X not X itself
@@ -1467,9 +1479,61 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     }  
   }
 
+
   if (priming_data_store()) {
     if (m_data_store_matrix) {
-      m_data_store->set_cpu_mat(data_id, X);
+    m_data_store->set_cpu_mat(data_id, X);
+
+
+
+    // debug block; will go away
+    const conduit::Node& nd = m_data_store->get_conduit_node(data_id);
+    size_t width = nd['/' + LBANN_DATA_ID_STR(data_id) + "/width"].value();
+    size_t height = nd['/' + LBANN_DATA_ID_STR(data_id) + "/height"].value();
+    const DataType* v = nd['/' + LBANN_DATA_ID_STR(data_id) + "/data"].value();
+    size_t sz = width*height;
+    DataType *b = X.Buffer();
+
+    for (size_t j=0; j<sz; j++) {
+      if (v[j] != b[j]) {
+        LBANN_ERROR("b[j] != b2[j] for j= " + std::to_string(j));
+      }
+    }
+
+#if 0
+    CPUMat X2;
+    X2.Resize(height, width);
+    DataType *b = X2.Buffer();
+    size_t sz = height*width;
+ //   std::cout << "XX width/height/size: " << width << " " << height <<  " " << sz << std::endl;
+    /*
+    for (size_t j=0; j<sz; j++) {
+      std::cout << j << " " << v[j] << " ";
+      if (v[j] != 0.) std::cout << " YY\n";
+      else std::cout << "\n";
+    }
+    */
+    for (size_t j=0; j<sz; j++) {
+      //std::cout << j << " " << v[j] << " ";
+      //if (v[j] != 0.) std::cout << "YY " << j << " " << v[j] << std::endl;
+      //else std::cout << std::endl;
+      b[j] = v[j];
+    }
+
+    DataType *b2 = X.Buffer();
+    if (X.Height() != (int)height) {
+      LBANN_ERROR("X.Height() != height");
+    }
+    if (X.Width() != (int)width) {
+      LBANN_ERROR("X.Width() != width");
+    }
+    for (size_t j=0; j<sz; j++) {
+      if (b[j] != b2[j]) {
+        LBANN_ERROR("b[j] != b2[j] for j= " + std::to_string(j));
+      }
+    }
+#endif
+    // end debug block
     } else {
       // Once the node has been populated save it in the data store
       m_data_store->set_conduit_node(data_id, node);

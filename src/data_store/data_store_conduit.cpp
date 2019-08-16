@@ -450,19 +450,15 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 void data_store_conduit::set_cpu_mat(int data_id, CPUMat &mat) {
   conduit::Node nd;
   const std::string id = LBANN_DATA_ID_STR(data_id);
-  size_t size = mat.MemorySize();
   size_t height = mat.Height();
   size_t width = mat.Width();
   size_t ldim = mat.LDim();
-  if (size != height*width) {
-    LBANN_ERROR("size != height*width");
-  }
+  size_t size = height*width;
   DataType *buf = mat.Buffer();
   std::vector<DataType> v(size);
   for (size_t j=0; j<size; j++) {
     v[j] = buf[j];
   }
-  //nd[id + "/size"].set(size);
   nd[id + "/width"].set(width);
   nd[id + "/height"].set(height);
   nd[id + "/ldim"].set(ldim);
