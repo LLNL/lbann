@@ -307,7 +307,7 @@ inline void sample_list<sample_name_t>
 
     if (filename.empty() || !check_if_file_exists(file_path)) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                            + " :: data file '" + filename + "' does not exist.");
+                            + " :: data file '" + file_path + "' does not exist.");
     }
 
     const sample_file_id_t index = m_file_id_stats_map.size();
