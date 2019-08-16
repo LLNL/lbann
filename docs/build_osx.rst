@@ -14,6 +14,15 @@ Building LBANN on OS X
 Getting Started
 --------------------
 
+.. warning:: If using OSX 10.14 or newer, be sure that
+             :bash:`/usr/include` has been restored. In version 10.14,
+             this may be accomplished by installing
+             :bash:`/Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg`.
+             If this package is not available, it's possible command
+             line tools have not been installed; do so by executing
+             :bash:`xcode-select --install`.
+
+
 .. _osx-setup-spack:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
