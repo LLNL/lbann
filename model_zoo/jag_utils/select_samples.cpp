@@ -186,7 +186,7 @@ void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapp
       sample_mapping[filename].insert(sample_id);
       sample_mapping_v[filename].push_back(sample_id);
       if (string_to_index.find(sample_id) != string_to_index.end()) {
-        LBANN_ERROR("duplicate sample_ID: " + to_string(sample_id) + " in file: " + filename);
+        LBANN_ERROR("duplicate sample_ID: " + sample_id + " in file: " + filename);
       }
       string_to_index[sample_id] = hh++;
     }
@@ -270,12 +270,12 @@ void build_index_maps(
     string sample_id;
     while (s >> sample_id) {
       if (sample_mapping[fn].find(sample_id) == sample_mapping[fn].end()) {
-        LBANN_ERROR("failed to find " + to_string(sample_id) + " in sample_mapping");
+        LBANN_ERROR("failed to find " + sample_id + " in sample_mapping");
       }
       index_map_exclude[fn].insert(string_to_index[sample_id]);
     }
     if (index_map_exclude[fn].size() != bad) {
-      LBANN_ERROR("exclude.size(): " + to_string(index_map_exclude[fn].size()) + " should be: " + to_string(bad) + " but isn't\n");
+      LBANN_ERROR("exclude.size(): " + std::to_string(index_map_exclude[fn].size()) + " should be: " + std::to_string(bad) + " but isn't\n");
     }
 
     int local_valid_index = 0;
@@ -317,7 +317,7 @@ void sanity_test_request() {
   int num_lists = options::get()->get_int("num_lists");
   int num_samples = samples_per_list * num_lists;
   if (num_samples > num_valid) {
-    LBANN_ERROR("you requested a total of " + to_string(num_samples) + " samples, but only " + to_string("num_valid") + " are available");
+    LBANN_ERROR("you requested a total of " + std::to_string(num_samples) + " samples, but only " + std::to_string(num_valid) + " are available");
   }
 }
 
