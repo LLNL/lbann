@@ -18,18 +18,31 @@ set(CUB_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 # Handle the install of CUB
 include(ExternalProject)
 
+if (CUB_CUSTOM_SOURCE_DIR)
+  set(CUB_SOURCE_DIR "${CUB_CUSTOM_SOURCE_DIR}")
+  set(CUB_URL "")
+  set(CUB_TAG "")
+  set(_GIT_REPOSITORY_TAG)
+  set(_GIT_TAG_TAG)
+  message(STATUS "Using CUB source in: ${CUB_SOURCE_DIR}")
+else ()
+  set(CUB_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/src")
+  set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
+  set(_GIT_TAG_TAG "GIT_TAG")
+endif ()
+
 ExternalProject_Add(CUB
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
-  GIT_REPOSITORY ${CUB_URL}
-  GIT_TAG ${CUB_TAG}
-  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
+  ${_GIT_REPOSITORY_TAG} ${CUB_URL}
+  ${_GIT_TAG_TAG} ${CUB_TAG}
+  SOURCE_DIR ${CUB_SOURCE_DIR}
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   PATCH_COMMAND
   ${CMAKE_COMMAND} -E copy_if_different
   ${CMAKE_CURRENT_SOURCE_DIR}/CUBCMakeLists.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/src/CMakeLists.txt &&
+  ${CUB_SOURCE_DIR}/CMakeLists.txt &&
   patch -p1 < ${LBANN_SRC_DIR}/external/cub/cub_enable_alloc_free_logging.patch
   INSTALL_DIR ${CUB_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1
