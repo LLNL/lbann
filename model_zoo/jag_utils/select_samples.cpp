@@ -73,6 +73,15 @@ int main(int argc, char **argv) {
     // sanity checks
     check_cmd_line();
 
+    // check that output directory exists and is writable
+    const string d = opts->get_string("output_dir") + "/ok_to_erase_me";
+    ofstream testing(d.c_str());
+    if (!testing) {
+      LBANN_ERROR("the output directory \"" + opts->get_string("output_dir") + "\" either doesn't exist or is not writable");
+    }
+    testing.close();
+    remove(d.c_str());
+
     // ensure we have enough samples to fullfill the requirements
     sanity_test_request();
 
@@ -142,20 +151,23 @@ string help_msg() {
       stringstream err;
       err << "usage: select_samples --index_fn=<string> --sample_mapping_fn=<string> --num_samples_per_list=<int> --num_lists --output_dir=<string> --output_base_name=<string> --random_seed=<int>\n\n";
       err << "example invocation:\n";
-      err << "select_samples \n";
-      err << "  --index_fn=/p/gpfs1/brainusr/datasets/10MJAG/1M_B/index.txt\n";
-      err << "  --mapping_fn=/p/gpfs1/brainusr/datasets/10MJAG/1M_B/id_mapping.txt\n";
-      err << "  --num_samples_per_list=1000\n";
-      err << "  --num_lists=4\n";
-      err << "  --output_dir=/p/gpfs1/brainusr/datasets/10MJAG/1M_B\n";
-      err << "  --output_base_fn=my_samples.txt\n";
+      err << "select_samples \\\n";
+      err << "  --index_fn=/p/gpfs1/brainusr/datasets/100M/index.txt \\\n";
+      err << "  --mapping_fn=/p/gpfs1/brainusr/datasets/100M/id_mapping.txt \\\n";
+      err << "  --num_samples_per_list=100000 \\\n";
+      err << "  --num_lists=640 \\\n";
+      err << "  --output_dir=/p/gpfs1/brainusr/datasets/100M/1M_B \\\n";
+      err << "  --output_base_fn=my_samples.txt \\\n";
       err << "  --random_seed=42\n";
       err << "\n\n";
+      err << "NOTE: output directory must exist prior to running this code\n";
+
       return err.str();
 }
 
 void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapping, unordered_map<string, vector<string>> &sample_mapping_v, unordered_map<string, int>& string_to_index) {
   cerr << "starting read_mapping_file\n";
+  double tm1 = get_time();
   const string mapping_fn = options::get()->get_string("mapping_fn");
   ifstream in(mapping_fn.c_str());
   string filename;
@@ -180,7 +192,8 @@ void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapp
     }
   }
   in.close();
-  cerr << "  FINISHED reading sample mapping: num lines processed: " << n << "\n";
+  double tm2 = get_time() - tm1;
+  cerr << "  FINISHED reading sample mapping: num lines processed: " << n << "; time: " << tm2 << "\n";
 }
 
 // build two maps: <string, set<int>> maps a filename to the
@@ -194,6 +207,7 @@ void build_index_maps(
   unordered_map<string, string> &data) {
 
   cout << "starting build_index_maps\n";
+  double tm1 = get_time();
 
   int samples_per_list = options::get()->get_int("num_samples_per_list");
   int num_lists = options::get()->get_int("num_lists");
@@ -217,11 +231,13 @@ void build_index_maps(
   getline(in, line);  //discard newline
   string base_dir;
   getline(in, base_dir);
+  options::get()->set_option("base_dir", base_dir);
   cerr << "input index file contains " << num_valid << " valid samples\n";
 
-  cerr << "generating random indicess ...\n";
+  cerr << "generating random indices ...\n";
+  double tm2 = get_time();
   unordered_set<int> random_indices;
-  srandom(options::get()->get_int("seed"));
+  srandom(options::get()->get_int("random_seed"));
   while (true) {
     int v = random() % num_valid;
     random_indices.insert(v);
@@ -229,6 +245,7 @@ void build_index_maps(
       break;
     }
   }
+  cerr << "  FINISHED generating random indices; time: " << get_time() - tm2 << endl;
 
   // loop over each entry from in input index file; determine which, if any,
   // local indices will be added to the INCLUSION index
@@ -278,7 +295,7 @@ void build_index_maps(
   if (index_map_exclude.size() != index_map_keep.size()) {
     LBANN_ERROR("index_map_exclude.size() != index_map_keep.size()");
   }
-  cout << "  FINISHEDbuild_index_maps\n";
+  cout << "  FINISHED build_index_maps; time: " << get_time() - tm1 << endl;
 }
 
 void sanity_test_request() {
@@ -341,7 +358,7 @@ void write_sample_list(
   const string dir = options::get()->get_string("output_dir");
   const string fn = options::get()->get_string("output_base_fn");
   stringstream s;
-  s << dir << '/' << "t_" << n << '_' << fn;
+  s << dir << '/' << "t" << n << '_' << fn;
   ofstream out(s.str().c_str());
   if (!out) {
     LBANN_ERROR("failed to open " + s.str() + " for writing");
@@ -370,9 +387,10 @@ void write_sample_list(
     // get total samples for the current file
     stringstream s5(filename_data[filename]);
     int good, bad;
-    string fn_discard;
-    s5 >> fn_discard >> good >> bad;
+    string fn2;
+    s5 >> fn2 >> good >> bad;
     size_t total = good+bad;
+
     const unordered_set<int> &include_me = t.second;
     int included = include_me.size();
     int excluded = total - included;
@@ -382,23 +400,19 @@ void write_sample_list(
       total_good += included;
       total_bad += excluded;
       sout << filename << " " << included << " " << excluded;
-      for (auto t3 : include_me) {
-        sout << " " << sample_mapping_v[fn][t3];
+      for (auto &t3 : include_me) {
+        if (sample_mapping_v.find(fn2) == sample_mapping_v.end()) {
+          LBANN_ERROR("failed to find the key: " + fn2 + " in sample_mapping_v map");
+        }  
+        sout << " " << sample_mapping_v[fn2][t3];
       }
       sout << "\n";
     }
   }
 
-  const string index_fn = options::get()->get_string("index_fn").c_str();
-  ifstream in(index_fn.c_str());
-  string line;
-  getline(in, line);
-  int num_valid, num_invalid, num_files;
-  in >> num_valid >> num_invalid >> num_files;
-  getline(in, line);  //discard newline
-  string base_dir;
-  getline(in, base_dir);
+  const string base_dir = options::get()->get_string("base_dir");
 
   out << total_good << " " << total_bad << " " << num_include_files
       << "\n" << base_dir << "\n" << sout.str();
+  out.close();
 }
