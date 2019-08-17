@@ -7,11 +7,11 @@
 #include <cstdlib>
 #include <unordered_set>
 #include <unordered_map>
-#include "lbann/lbann.hpp"
-#include "conduit/conduit.hpp"
-#include "conduit/conduit_relay.hpp"
-#include "conduit/conduit_relay_io_hdf5.hpp"
-#include "lbann/lbann.hpp"
+#include "lbann/utils/options.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/timer.hpp"
+#include "lbann/utils/lbann_library.hpp"
+#include "lbann/comm.hpp"
 
 using namespace std;
 using namespace lbann;
