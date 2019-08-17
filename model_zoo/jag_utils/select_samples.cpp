@@ -87,18 +87,18 @@ int main(int argc, char **argv) {
     // ensure we have enough samples to fullfill the requirements
     sanity_test_request();
 
-    // maps filename to { sample_ids }
+    // maps a sample_id filename to the set of sample IDs
     unordered_map<string, unordered_set<string>> sample_mapping;
-    // maps filename to  [ sample_ids ]
+    // maps  a sample_id filename to a list of sample IDs
     unordered_map<string, vector<string>> sample_mapping_v;
     // maps a sampleID to a local idex
     unordered_map<string, int> string_to_index;
-    // note: the above mappings contain sample IDs for all samples,
-    //        whether successful or failed
 
     read_mapping_file(sample_mapping, sample_mapping_v, string_to_index);
 
+    // maps a samole_id filename to a set of randomly selected sample_ids 
     unordered_map<string, unordered_set<int>> index_map_keep;
+    // maps a samole_id filename to the set of sample_ids that have not been randomly selscted
     unordered_map<string, unordered_set<int>> index_map_exclude;
     std::unordered_map<std::string, std::string> filename_data;
     build_index_maps(index_map_keep, index_map_exclude, string_to_index, filename_data);
@@ -206,7 +206,7 @@ void build_index_maps(
   unordered_map<string, unordered_set<int>> &index_map_keep, 
   unordered_map<string, unordered_set<int>> &index_map_exclude,
   unordered_map<string, int>& string_to_index,
-  unordered_map<string, string> &data) {
+  unordered_map<string, string> &filename_data) {
 
   cout << "starting build_index_maps\n";
   double tm1 = get_time();
@@ -265,7 +265,7 @@ void build_index_maps(
     if (num_files % 1000 == 0) cerr << num_files/1000 << "K input lines processed\n";
     stringstream s(line);
     s >> fn >> good >> bad;
-    data[fn] = line;
+    filename_data[fn] = line;
     const int total = good+bad;
     index_map_exclude[fn];
     index_map_keep[fn];
