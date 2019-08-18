@@ -14,7 +14,7 @@
 #include "lbann/comm.hpp"
 
 using namespace std;
-using namespace lbann;
+using lbann::options;
 
 //============================================================================
 // sanity checks the cmd line
@@ -59,8 +59,8 @@ void write_sample_list(
 
 //============================================================================
 int main(int argc, char **argv) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  int random_seed = lbann::lbann_default_random_seed;
+  lbann::world_comm_ptr comm = lbann::initialize(argc, argv, random_seed);
   int np = comm->get_procs_in_world();
 
   try {
@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
   } catch (lbann::exception& e) {
     if (options::get()->get_bool("stack_trace_to_file")) {
       ostringstream ss("stack_trace");
-      const auto& rank = get_rank_in_world();
+      const auto& rank = lbann::get_rank_in_world();
       if (rank >= 0) {
         ss << "_rank" << rank;
       }
@@ -170,7 +170,7 @@ string help_msg() {
 
 void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapping, unordered_map<string, vector<string>> &sample_mapping_v, unordered_map<string, int>& string_to_index) {
   cerr << "starting read_mapping_file\n";
-  double tm1 = get_time();
+  double tm1 = lbann::get_time();
   const string mapping_fn = options::get()->get_string("mapping_fn");
   ifstream in(mapping_fn.c_str());
   string filename;
@@ -195,7 +195,7 @@ void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapp
     }
   }
   in.close();
-  double tm2 = get_time() - tm1;
+  double tm2 = lbann::get_time() - tm1;
   cerr << "  FINISHED reading sample mapping: num lines processed: " << n << "; time: " << tm2 << "\n";
 }
 
@@ -209,7 +209,7 @@ void build_index_maps(
   unordered_map<string, string> &filename_data) {
 
   cout << "starting build_index_maps\n";
-  double tm1 = get_time();
+  double tm1 = lbann::get_time();
 
   int samples_per_list = options::get()->get_int("num_samples_per_list");
   int num_lists = options::get()->get_int("num_lists");
@@ -237,7 +237,7 @@ void build_index_maps(
   cerr << "input index file contains " << num_valid << " valid samples\n";
 
   cerr << "generating random indices ...\n";
-  double tm2 = get_time();
+  double tm2 = lbann::get_time();
   unordered_set<int> random_indices;
   srandom(options::get()->get_int("random_seed"));
   while (true) {
@@ -247,7 +247,7 @@ void build_index_maps(
       break;
     }
   }
-  cerr << "  FINISHED generating random indices; time: " << get_time() - tm2 << endl;
+  cerr << "  FINISHED generating random indices; time: " << lbann::get_time() - tm2 << endl;
 
   // loop over each entry from in input index file; determine which, if any,
   // local indices will be added to the INCLUSION index
@@ -295,7 +295,7 @@ void build_index_maps(
   if (index_map_exclude.size() != index_map_keep.size()) {
     LBANN_ERROR("index_map_exclude.size() != index_map_keep.size()");
   }
-  cout << "  FINISHED build_index_maps; time: " << get_time() - tm1 << endl;
+  cout << "  FINISHED build_index_maps; time: " << lbann::get_time() - tm1 << endl;
 }
 
 void sanity_test_request() {
