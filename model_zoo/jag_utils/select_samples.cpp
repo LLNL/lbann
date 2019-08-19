@@ -12,6 +12,9 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/comm.hpp"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using namespace std;
 using lbann::options;
@@ -23,7 +26,8 @@ void check_cmd_line();
 // returns the help message
 string help_msg();
 
-// tests that the output dir exists and is writable
+// tests that the output dir exists and is writable,
+// and creates it if otherwise
 void test_output_dir();
 
 // tests that there are sufficient samples to build the lists
@@ -81,7 +85,8 @@ int main(int argc, char **argv) {
     // check for proper invocation
     check_cmd_line();
 
-    // check that output directory exists and is writable
+    // check that output directory exists and is writable,
+    // and creates it if otherwise
     test_output_dir();
 
     // ensure we have enough samples to fullfill the requirements
@@ -109,11 +114,11 @@ int main(int argc, char **argv) {
     divide_selected_samples(index_map_keep, subsets);
 
     // write the sample lists
-//    const string output_dir = opts->get_string("output_dir");
-//    const string output_base = opts->get_string("output_base_fn");
     for (int n=0; n<num_lists; n++) {
       write_sample_list(n, subsets, sample_mapping_v, filename_data);
     }
+
+    cout << "SUCESS - FINISHED!\n";
 
   } catch (lbann::exception& e) {
     if (options::get()->get_bool("stack_trace_to_file")) {
@@ -146,6 +151,28 @@ void check_cmd_line() {
          && opts->has_int("random_seed")
          && opts->has_string("output_dir") && opts->has_string("output_base_fn"))) {
     cout << help_msg();
+    if (!opts->has_string("index_fn")) {
+      cout << "missing --index_fn=<string> \n";
+    }
+    if (!opts->has_string("mapping_fn")) {
+      cout << "missing --mapping_fn=<string> \n";
+    }
+    if (!opts->has_string("num_samples_per_list")) {
+      cout << "missing --num_samples_per_list=<int> \n";
+    }
+    if (!opts->has_string("num_lists")) {
+      cout << "missing --num_lists=<int> \n";
+    }
+    if (!opts->has_string("random_seed")) {
+      cout << "missing --random_seed=<int> \n";
+    }
+    if (!opts->has_string("output_dir")) {
+      cout << "missing --output_dir=<string> \n";
+    }
+    if (!opts->has_string("output_base_fn")) {
+      cout << "missing --output_base_fn=<string> \n";
+    }
+    cout << "\n";
     exit(0);
   }
 }
@@ -169,7 +196,7 @@ string help_msg() {
 }
 
 void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapping, unordered_map<string, vector<string>> &sample_mapping_v, unordered_map<string, int>& string_to_index) {
-  cerr << "starting read_mapping_file\n";
+  cout << "starting read_mapping_file\n";
   double tm1 = lbann::get_time();
   const string mapping_fn = options::get()->get_string("mapping_fn");
   ifstream in(mapping_fn.c_str());
@@ -196,7 +223,7 @@ void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapp
   }
   in.close();
   double tm2 = lbann::get_time() - tm1;
-  cerr << "  FINISHED reading sample mapping: num lines processed: " << n << "; time: " << tm2 << "\n";
+  cout << "  FINISHED reading sample mapping: num lines processed: " << n << "; time: " << tm2 << "\n";
 }
 
 // build two maps: <string, set<int>> maps a filename to the
@@ -234,9 +261,9 @@ void build_index_maps(
   string base_dir;
   getline(in, base_dir);
   options::get()->set_option("base_dir", base_dir);
-  cerr << "input index file contains " << num_valid << " valid samples\n";
+  cout << "input index file contains " << num_valid << " valid samples\n";
 
-  cerr << "generating random indices ...\n";
+  cout << "generating random indices ...\n";
   double tm2 = lbann::get_time();
   unordered_set<int> random_indices;
   srandom(options::get()->get_int("random_seed"));
@@ -247,7 +274,9 @@ void build_index_maps(
       break;
     }
   }
-  cerr << "  FINISHED generating random indices; time: " << lbann::get_time() - tm2 << endl;
+  cout << "  FINISHED generating random indices; time: " << lbann::get_time() - tm2 << endl;
+  cout << "selecting samples based on random indices\n";
+  double tm3 = lbann::get_time();
 
   // loop over each entry from in input index file; determine which, if any,
   // local indices will be added to the INCLUSION index
@@ -262,7 +291,7 @@ void build_index_maps(
       break;
     }
     ++num_files;
-    if (num_files % 1000 == 0) cerr << num_files/1000 << "K input lines processed\n";
+    if (num_files % 1000 == 0) cout << num_files/1000 << "K input lines processed\n";
     stringstream s(line);
     s >> fn >> good >> bad;
     filename_data[fn] = line;
@@ -291,6 +320,7 @@ void build_index_maps(
     }
     first += good;
   }
+  cout << "FINISHED selecting samples based on random indices; time: " << lbann::get_time() - tm3 << endl;
 
   if (index_map_exclude.size() != index_map_keep.size()) {
     LBANN_ERROR("index_map_exclude.size() != index_map_keep.size()");
@@ -429,6 +459,37 @@ void write_sample_list(
 }
 
 void test_output_dir() {
+/*
+  const string dir = options::get()->get_string("output_dir");
+  struct stat buf;
+  int err = stat(dir.c_str(), &buf);
+  if (!err) {
+    cout << "output directory " << dir << " exists; next will test if it's writable" << endl;
+
+    const string test_fn = options::get()->get_string("output_dir") + "/ok_to_eraseme";
+    ofstream testing(test_fn.c_str());
+    if (!testing) {
+      LBANN_ERROR("the output directory " << dir << " exists, but is not writable");
+    } else {
+      testing.close();
+      remove(d.c_str());
+      // good to go!
+      return;
+    }  
+  }
+
+  // output dir doesn't exist, so attempt to create it
+
+
+
+
+
+  cout << "stat for dir: " << dir << " is: " << err << endl;
+  err = stat("/", &buf);
+  cout << "stat for dir: /; " << err << endl;
+  exit(0);
+
+*/
   const string d = options::get()->get_string("output_dir") + "/ok_to_erase_me";
   ofstream testing(d.c_str());
   if (!testing) {
