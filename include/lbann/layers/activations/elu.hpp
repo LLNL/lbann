@@ -49,16 +49,24 @@ namespace lbann {
 template <data_layout Layout, El::Device Device>
 class elu_layer : public Layer {
 public:
-  elu_layer(lbann_comm *comm, DataType alpha = 1);
-  elu_layer* copy() const override;
-  std::string get_type() const override;
-  data_layout get_data_layout() const override;
-  El::Device get_device_allocation() const override;
+  elu_layer(lbann_comm *comm, DataType alpha = 1)
+    : Layer(comm), m_alpha(alpha) {}
+  elu_layer* copy() const override { return new elu_layer(*this); }
+  std::string get_type() const override { return "ELU"; }
+  data_layout get_data_layout() const override { return Layout; }
+  El::Device get_device_allocation() const override { return Device; }
 
-  description get_description() const override;
+  description get_description() const override {
+    auto desc = Layer::get_description();
+    desc.add("alpha", m_alpha);
+    return desc;
+  }
 
 protected:
-  void setup_dims() override;
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims(get_input_dims());
+  }
   void fp_compute() override;
   void bp_compute() override;
 
@@ -68,5 +76,15 @@ private:
 
 };
 
+#ifndef LBANN_ELU_LAYER_INSTANTIATE
+extern template class elu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class elu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class elu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class elu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_ELU_LAYER_INSTANTIATE
+
 } // namespace lbann
+
 #endif // LBANN_LAYERS_ACTIVATIONS_ELU_HPP_INCLUDED
