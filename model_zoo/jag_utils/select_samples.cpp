@@ -215,7 +215,7 @@ void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapp
       sample_mapping[filename].insert(sample_id);
       sample_mapping_v[filename].push_back(sample_id);
       if (string_to_index.find(sample_id) != string_to_index.end()) {
-        LBANN_ERROR("duplicate sample_ID: " + sample_id + " in file: " + filename);
+        LBANN_ERROR("duplicate sample_ID: ", sample_id, " in file: ", filename);
       }
       string_to_index[sample_id] = hh++;
     }
@@ -245,7 +245,7 @@ void build_index_maps(
   const string index_fn = options::get()->get_string("index_fn").c_str();
   ifstream in(index_fn.c_str());
   if (!in) {
-    LBANN_ERROR("failed to open " + index_fn + " for reading");
+    LBANN_ERROR("failed to open ", index_fn, " for reading");
   }
 
   string line;
@@ -303,7 +303,7 @@ void build_index_maps(
       index_map_exclude[fn].insert(string_to_index[sample_id]);
     }
     if (index_map_exclude[fn].size() != bad) {
-      LBANN_ERROR("exclude.size(): " + std::to_string(index_map_exclude[fn].size()) + " should be: " + std::to_string(bad) + " but isn't\n");
+      LBANN_ERROR("exclude.size(): ", index_map_exclude[fn].size(), " should be: ", bad, " but isn't\n");
     }
 
     int local_valid_index = 0;
@@ -331,7 +331,7 @@ void sanity_test_request() {
   const string index_fn = options::get()->get_string("index_fn").c_str();
   ifstream in(index_fn.c_str());
   if (!in) {
-    LBANN_ERROR("failed to open " + index_fn + " for reading");
+    LBANN_ERROR("failed to open ", index_fn, " for reading");
   }
 
   string line;
@@ -346,7 +346,7 @@ void sanity_test_request() {
   int num_lists = options::get()->get_int("num_lists");
   int num_samples = samples_per_list * num_lists;
   if (num_samples > num_valid) {
-    LBANN_ERROR("you requested a total of " + std::to_string(num_samples) + " samples, but only " + std::to_string(num_valid) + " are available");
+    LBANN_ERROR("you requested a total of ", num_samples, " samples, but only ", num_valid, " are available");
   }
 }
 
@@ -390,7 +390,7 @@ void write_sample_list(
   s << dir << '/' << "t" << n << '_' << fn;
   ofstream out(s.str().c_str());
   if (!out) {
-    LBANN_ERROR("failed to open " + s.str() + " for writing");
+    LBANN_ERROR("failed to open ", s.str(), " for writing");
   }
   cout << "WRITING output file: " << s.str() << endl;
 
@@ -410,7 +410,7 @@ void write_sample_list(
       }
       LBANN_ERROR(err.str());
       #endif
-      LBANN_ERROR("filename_data.find(" + filename + ") failed");
+      LBANN_ERROR("filename_data.find(", filename, ") failed");
     }
 
     // get total samples for the current file
@@ -435,7 +435,7 @@ void write_sample_list(
       sout << filename << " " << included << " " << excluded;
       for (auto &t3 : include_me) {
         if (sample_mapping_v.find(fn2) == sample_mapping_v.end()) {
-          LBANN_ERROR("failed to find the key: " + fn2 + " in sample_mapping_v map");
+          LBANN_ERROR("failed to find the key: ", fn2, " in sample_mapping_v map");
         }  
         unordered_map<string, vector<string>>::const_iterator t5 = sample_mapping_v.find(fn2);
         if (t5 == sample_mapping_v.end()) {
