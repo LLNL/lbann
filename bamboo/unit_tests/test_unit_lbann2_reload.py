@@ -34,8 +34,8 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
         sys.exit(1)
 
     os.system('mkdir ckpt_lbann2_reload')
-    no_ckpt = 'ckpt_lbann2_reload/lbann2_no_ckpt_{c}'.format(c=compiler_name)
-    os.system('mv lbann2_ckpt {c}'.format(c=no_ckpt))
+    no_ckpt_dir = 'ckpt_lbann2_reload/lbann2_no_ckpt_{c}'.format(c=compiler_name)
+    os.system('mv lbann2_ckpt {c}'.format(c=no_ckpt_dir))
 
     # Run to checkpoint, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/lbann2_checkpoint_%s_output.txt' % (dir_name, compiler_name)
@@ -75,7 +75,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
     os.system('rm lbann2_ckpt/model0-epoch*')
     os.system('rm lbann2_nockpt/model0-epoch*')
 
-    diff_result = os.system('diff -rq lbann2_ckpt/ {c}'.format(c=no_ckpt))
+    diff_result = os.system('diff -rq lbann2_ckpt/ {c}'.format(c=no_ckpt_dir))
     allow_epsilon_diff = False
     if allow_epsilon_diff and (diff_result != 0):
         equal_within_epsilon = True
@@ -109,7 +109,13 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
                         print(error_string)
         if equal_within_epsilon:
             diff_result = 0
-    os.system('mv lbann2_ckpt ckpt_lbann2_reload/lbann2_ckpt_{c}'.format(c=compiler_name))
+    ckpt_dir = 'ckpt_lbann2_reload/lbann2_ckpt_{c}'.format(c=compiler_name)
+    os.system('mv lbann2_ckpt {c}'.format(c=ckpt_dir))
+    path_prefix = '{d}/bamboo/unit_tests'.format(d=dir_name)
+    if diff_result != 0:
+        raise AssertionError(
+            'diff_test={dt}\nCompare {ncd} and {cd} in {p}'.format(
+                dt=diff_result, ncd=no_ckpt_dir, cd=ckpt_dir, p=path_prefix))
     assert diff_result == 0
 
 

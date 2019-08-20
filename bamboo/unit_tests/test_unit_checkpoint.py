@@ -28,8 +28,8 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         sys.stderr.write('LeNet (no checkpoint) execution failed, exiting with error')
         sys.exit(1)
     os.system('mkdir ckpt_lenet_shared')
-    no_ckpt = 'ckpt_lenet_shared/no_ckpt_{c}'.format(c=compiler_name)
-    os.system('mv ckpt {c}'.format(c=no_ckpt))
+    no_ckpt_dir = 'ckpt_lenet_shared/no_ckpt_{c}'.format(c=compiler_name)
+    os.system('mv ckpt {c}'.format(c=no_ckpt_dir))
 
     # Run to checkpoint, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_checkpoint_%s_output.txt' % (dir_name, compiler_name)
@@ -61,9 +61,13 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         sys.stderr.write('LeNet execution (restart from checkpoint) failed, exiting with error')
         sys.exit(1)
 
-    diff_test = os.system('diff -rq ckpt {c}'.format(c=no_ckpt))
-    os.system('mv ckpt ckpt_lenet_shared/ckpt_{c}'.format(c=compiler_name))
-    assert diff_test == 0
+    diff_test = os.system('diff -rq ckpt {c}'.format(c=no_ckpt_dir))
+    ckpt_dir = 'ckpt_lenet_shared/ckpt_{c}'.format(c=compiler_name)
+    os.system('mv ckpt {c}'.format(c=ckpt_dir))
+    path_prefix = '{d}/bamboo/unit_tests/'.format(d=dir_name)
+    if diff_test !=0:
+        raise AssertionError('diff_test={dt}\nCompare {ncd} and {cd} in {p}'.format(
+            dt=diff_test, ncd=no_ckpt_dir, cd=ckpt_dir, p=path_prefix))
 
 
 def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
@@ -89,8 +93,8 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
          sys.stderr.write('LeNet (no checkpoint) execution failed, exiting with error')
          sys.exit(1)
      os.system('mkdir ckpt_lenet_distributed')
-     no_ckpt = 'ckpt_lenet_distributed/no_ckpt_{c}'.format(c=compiler_name)
-     os.system('mv ckpt {c}'.format(c=no_ckpt))
+     no_ckpt_dir = 'ckpt_lenet_distributed/no_ckpt_{c}'.format(c=compiler_name)
+     os.system('mv ckpt {c}'.format(c=no_ckpt_dir))
 
      # Run to checkpoint, printing weights to files.
      output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_checkpoint_%s_output.txt' % (dir_name, compiler_name)
@@ -122,9 +126,14 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
          sys.stderr.write('LeNet execution (restart from checkpoint) failed, exiting with error')
          sys.exit(1)
 
-     diff_test = os.system('diff -rq ckpt {c}'.format(c=no_ckpt))
-     os.system('mv ckpt ckpt_lenet_distributed/ckpt_{c}'.format(c=compiler_name))
-     assert diff_test == 0
+     diff_test = os.system('diff -rq ckpt {c}'.format(c=no_ckpt_dir))
+     ckpt_dir = 'ckpt_lenet_distributed/ckpt_{c}'.format(c=compiler_name)
+     os.system('mv ckpt {c}'.format(c=ckpt_dir))
+     path_prefix = '{d}/bamboo/unit_tests'.format(d=dir_name)
+     if diff_test != 0:
+         raise AssertionError(
+             'diff_test={dt}\nCompare {ncd} and {cd} in {p}'.format(
+                 dt=diff_test, ncd=no_ckpt_dir, cd=ckpt_dir, p=path_prefix))
 
 
 def test_unit_checkpoint_lenet_shared_clang6(cluster, exes, dirname):
