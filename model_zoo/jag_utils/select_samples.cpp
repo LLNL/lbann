@@ -138,7 +138,6 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-
   return EXIT_SUCCESS;
 }
 
@@ -458,43 +457,67 @@ void write_sample_list(
   out.close();
 }
 
-void test_output_dir() {
-/*
-  const string dir = options::get()->get_string("output_dir");
-  struct stat buf;
-  int err = stat(dir.c_str(), &buf);
-  if (!err) {
-    cout << "output directory " << dir << " exists; next will test if it's writable" << endl;
+bool file_exists(const char *path) {
+  struct stat s;
+  int err = stat(path, &s);
+  if (err == -1) {
+    return false;
+  }
+  return true;
+}
 
-    const string test_fn = options::get()->get_string("output_dir") + "/ok_to_eraseme";
-    ofstream testing(test_fn.c_str());
-    if (!testing) {
-      LBANN_ERROR("the output directory " << dir << " exists, but is not writable");
+void make_dir(char *cpath) {
+  cout << "   path doesn't exist: " << strerror(errno) << endl;
+  cout << "   attempting to create path\n";
+  int err = mkdir(cpath, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IXUSR | S_IXGRP);
+  if (err) {
+    free(cpath);
+    LBANN_ERROR("mkdir failed for \"", cpath, "\"; please create this directory yourself, then rerun this program");
+    cout << "   mkdir failed: " << strerror(errno) << endl;
+  } else {
+    cout << "   SUCCESS!\n";
+    cout << "   attempting to change permissions\n";
+    err = chmod(cpath, S_ISGID | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IXUSR | S_IXGRP);
+    if (err) {
+      cout << "   mkdir failed: " << strerror(errno) << endl;
     } else {
-      testing.close();
-      remove(d.c_str());
-      // good to go!
-      return;
+      cout << "   SUCCESS!\n";
+    }
+  }
+}
+
+void test_output_dir() {
+  cout << "\nChecking if output diretory path exists;\n"
+          " if not, we'll attempt to create it.\n";
+  const string dir = options::get()->get_string("output_dir");
+  char *cpath = strdup(dir.c_str());
+  char *pp = cpath;
+  if (pp[0] == '/') {
+    ++pp;
+  }
+  char *sp;
+  int status = 0;
+  while (status == 0 && (sp = strchr(pp, '/')) != 0) {
+    if (sp != pp) {
+      *sp = '\0';
+      cout << cpath << endl;
+      if (file_exists(cpath)) {
+        cout << "  path exists\n";
+      } else {
+        make_dir(cpath);
+      }
+      *sp = '/';
+    }
+    pp = sp+1;
+  }
+  if (status == 0) {
+    cout << cpath << endl;
+    if (file_exists(cpath)) {
+      cout << "  path exists\n";
+    } else {
+      make_dir(cpath);
     }  
   }
-
-  // output dir doesn't exist, so attempt to create it
-
-
-
-
-
-  cout << "stat for dir: " << dir << " is: " << err << endl;
-  err = stat("/", &buf);
-  cout << "stat for dir: /; " << err << endl;
-  exit(0);
-
-*/
-  const string d = options::get()->get_string("output_dir") + "/ok_to_erase_me";
-  ofstream testing(d.c_str());
-  if (!testing) {
-    LBANN_ERROR("the output directory \"" + options::get()->get_string("output_dir") + "\" either doesn't exist or is not writable");
-  }
-  testing.close();
-  remove(d.c_str());
+  free(cpath);
+  cout << endl;
 }
