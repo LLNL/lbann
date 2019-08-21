@@ -32,6 +32,12 @@
 namespace lbann {
 namespace callback {
 
+/** @brief Print human-readable description of model to standard input.
+ *
+ *  Message is printed when the model has finished setup. The
+ *  description includes information on the model's layers, weights,
+ *  and callbacks.
+ */
 class print_model_description : public callback_base {
 public:
   print_model_description() : callback_base() {}

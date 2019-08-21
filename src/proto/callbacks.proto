@@ -317,6 +317,11 @@ message Callback {
     string directory = 1;
   }
 
+  // Print human-readable description of model to standard output.
+  //
+  // Message is printed when the model has finished setup. The
+  // description includes information on the model's layers, weights,
+  // and callbacks.
   message CallbackPrintModelDescription {
   }
 
