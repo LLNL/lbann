@@ -22,7 +22,7 @@ def skeleton_layer_softmax(cluster, executables, dir_name, compiler_name):
         optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
     return_code = os.system(command)
-    assert return_code == 0
+    tools.assert_success(return_code, error_file_name)
 
 
 def test_unit_layer_softmax_clang6(cluster, exes, dirname):

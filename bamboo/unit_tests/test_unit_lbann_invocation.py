@@ -109,7 +109,7 @@ def test_unit_bad_params(cluster, exes):
 
 
 # Run with python3 -m pytest -s test_unit_lbann_invocation.py -k 'test_unit_should_work' --exes=<executable>
-def test_unit_should_work(cluster, exes):
+def test_unit_should_work(cluster, dirname, exes):
     if isinstance(exes, dict):
         exe = exes['gcc7']
     else:
@@ -118,10 +118,16 @@ def test_unit_should_work(cluster, exes):
     model_path = '{prototext/model_mnist_simple_1.prototext,prototext/model_mnist_simple_1.prototext}'
     data_reader_path = 'prototext/data_reader_mnist.prototext'
     optimizer_path = 'prototext/opt_sgd.prototext'
+    output_file_name = '{d}/bamboo/unit_tests/output/lbann_invocation_should_work_output.txt'.format(
+        d=dirname)
+    error_file_name = '{d}/bamboo/unit_tests/error/lbann_invocation_should_work_error.txt'.format(
+        d=dirname)
     command = tools.get_command(
         cluster=cluster, executable=exe, data_reader_path=data_reader_path,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         exit_after_setup=True, model_path=model_path,
-        optimizer_path=optimizer_path)
+        optimizer_path=optimizer_path,
+        output_file_name=output_file_name,
+        error_file_name=error_file_name)
     return_code = os.system(command)
-    assert return_code != 0
+    tools.assert_success(return_code, error_file_name)
