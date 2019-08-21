@@ -209,11 +209,7 @@ std::unique_ptr<model> build_model_from_prototext(
 
   if (comm->am_world_master()) {
     std::cout << "\n"
-              << ret_model->get_description()
-              << "Callbacks:" << std::endl;
-    for (callback_base *cb : ret_model->get_callbacks()) {
-      std::cout << cb->name() << std::endl;
-    }
+              << ret_model->get_description();
   }
 
 #ifndef LBANN_DETERMINISTIC

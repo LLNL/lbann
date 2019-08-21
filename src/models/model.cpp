@@ -268,7 +268,19 @@ description model::get_description() const {
   desc.add(std::string{});
   desc.add(weights_desc);
 
-  /// @todo Descriptions for objective function, metrics, callbacks
+  // Callbacks
+  description callback_desc("Callbacks:");
+  for (const auto& cb : m_callbacks) {
+    if (cb == nullptr) {
+      callback_desc.add("unknown callback");
+    } else {
+      callback_desc.add(cb->get_description());
+    }
+  }
+  desc.add(std::string{});
+  desc.add(callback_desc);
+
+  /// @todo Descriptions for objective function, metrics
 
   // Result
   return desc;
@@ -593,6 +605,8 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // =============================================
 
 void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
+  do_setup_begin_cbs();
+
   // Setup I/O threads - set up before setting up the layers (input
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
@@ -617,6 +631,8 @@ void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
   for (const auto& cb : m_callbacks) {
     cb->setup(this);
   }
+
+  do_setup_begin_cbs();
 }
 
 void model::setup_layer_topology() {
@@ -1211,6 +1227,18 @@ void model::reconcile_weight_values() {
 // =============================================
 // Callbacks
 // =============================================
+
+void model::do_setup_begin_cbs() {
+  for (const auto& cb : m_callbacks) {
+    cb->on_setup_begin(this);
+  }
+}
+
+void model::do_setup_end_cbs() {
+  for (const auto& cb : m_callbacks) {
+    cb->on_setup_end(this);
+  }
+}
 
 void model::do_train_begin_cbs() {
   for (const auto& cb : m_callbacks) {

@@ -387,6 +387,10 @@ protected:
   // Callbacks
   // ===========================================
 
+  /** @brief Execute callbacks at start of setup. */
+  virtual void do_setup_begin_cbs();
+  /** @brief Execute callbacks at end of setup. */
+  virtual void do_setup_end_cbs();
   /** @brief Execute callbacks at start of training. */
   virtual void do_train_begin_cbs();
   /** @brief Execute callbacks at end of training. */
