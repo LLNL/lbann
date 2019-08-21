@@ -72,12 +72,12 @@ def run_lbann(command, model_name, output_file_name, error_file_name,
     print('About to run: %s' % command)
     print('%s began waiting in the queue at ' % model_name +
           time.strftime('%H:%M:%S', time.localtime()))
-    output_value = os.system(command)
+    return_code = os.system(command)
     print('%s finished at ' % model_name +
           time.strftime('%H:%M:%S', time.localtime()))
     lbann_exceptions = []
     timed_out = False
-    if should_log or (output_value != 0):
+    if should_log or (return_code != 0):
         output_file = open(output_file_name, 'r')
         for line in output_file:
             print('%s: %s' % (output_file_name, line))
@@ -94,13 +94,13 @@ def run_lbann(command, model_name, output_file_name, error_file_name,
             is_match = re.search('LBANN error on (.*)', line)
             if is_match:
                 lbann_exceptions.append(is_match.group(1))
-    if output_value != 0:
-        error_string = ('Model %s crashed with output_value=%d, timed_out=%s,'
+    if return_code != 0:
+        error_string = ('Model %s crashed with return_code=%d, timed_out=%s,'
                         ' and lbann exceptions=%s. Command was: %s') % (
-            model_name, output_value, str(timed_out),
+            model_name, return_code, str(timed_out),
             str(collections.Counter(lbann_exceptions)), command)
-        raise Exception(error_string)
-    return output_value
+        print(error_string)
+    tools.assert_success(return_code, error_file_name)
 
 # Extract data from output ####################################################
 

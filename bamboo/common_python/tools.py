@@ -557,7 +557,9 @@ def assert_success(return_code, error_file_name):
             error_line = ''
             previous_line = ''
             for line in error_file:
-                if 'ERROR' in line:
+                if ('ERROR' in line) or ('LBANN error' in line) or \
+                        ('Error:' in line) or \
+                        ('Expired or invalid job' in line):
                     error_line = line
                     break
                 elif 'Stack trace:' in line:
