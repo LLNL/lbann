@@ -1,6 +1,6 @@
-# import sys
-# sys.path.insert(0, '../common_python')
-# import tools
+import sys
+sys.path.insert(0, '../common_python')
+import tools
 import pytest
 import os, re, subprocess
 
@@ -22,7 +22,7 @@ def test_compiler_build_script(cluster, dirname):
         error_file = open(error_file_name, 'r')
         for line in error_file:
             print('%s: %s' % (error_file_name, line))
-    assert return_code == 0
+    tools.assert_success(return_code, error_file_name)
 
 
 def test_compiler_clang6_release(cluster, dirname):
@@ -137,7 +137,7 @@ def spack_skeleton(dir_name, compiler, mpi_lib, debug, should_log):
         error_file = open(error_file_name, 'r')
         for line in error_file:
             print('%s: %s' % (error_file_name, line))
-    assert return_code == 0
+    tools.assert_success(return_code, error_file_name)
 
 
 def build_skeleton(dir_name, compiler, debug, should_log):
@@ -172,7 +172,7 @@ def build_skeleton(dir_name, compiler, debug, should_log):
         error_file = open(error_file_name, 'r')
         for line in error_file:
             print('%s: %s' % (error_file_name, line))
-    assert return_code == 0
+    tools.assert_success(return_code, error_file_name)
 
 
 def build_script(cluster, dirname, compiler, debug):
@@ -196,4 +196,4 @@ def build_script(cluster, dirname, compiler, debug):
         error_file = open(error_file_name, 'r')
         for line in error_file:
             print('%s: %s' % (error_file_name, line))
-    assert return_code == 0
+    tools.assert_success(return_code, error_file_name)
