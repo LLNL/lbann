@@ -271,11 +271,7 @@ description model::get_description() const {
   // Callbacks
   description callback_desc("Callbacks:");
   for (const auto& cb : m_callbacks) {
-    if (cb == nullptr) {
-      callback_desc.add("unknown callback");
-    } else {
-      callback_desc.add(cb->get_description());
-    }
+    callback_desc.add(cb->get_description());
   }
   desc.add(std::string{});
   desc.add(callback_desc);
