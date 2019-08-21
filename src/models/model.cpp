@@ -632,7 +632,7 @@ void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
     cb->setup(this);
   }
 
-  do_setup_begin_cbs();
+  do_setup_end_cbs();
 }
 
 void model::setup_layer_topology() {
