@@ -258,8 +258,8 @@ def get_command(cluster,
         # If data_reader_name is set, an exception will be raised later.
         option_data_reader = ' --reader=%s' % data_reader_path
     if optimizer_path is not None:
-        # If optimizer_name is set, an exception will be raised later.
-        option_optimizer_name = ' --optimizer=%s' % optimizer_path
+        # If optimizer_name is also set, an exception will be raised later.
+        option_optimizer = ' --optimizer=%s' % optimizer_path
     if dir_name is not None:
         if model_path is not None:
             if (model_folder is not None) or (model_name is not None):
@@ -549,3 +549,24 @@ def get_default_exes(default_dirname, cluster):
 
     print('default_exes={d}'.format(d=default_exes))
     return default_exes
+
+
+def assert_success(return_code, error_file_name):
+    if return_code != 0:
+        with open(error_file_name, 'r') as error_file:
+            error_line = ''
+            previous_line = ''
+            for line in error_file:
+                if ('ERROR' in line) or ('LBANN error' in line) or \
+                        ('Error:' in line) or \
+                        ('Expired or invalid job' in line):
+                    error_line = line
+                    break
+                elif 'Stack trace:' in line:
+                    error_line = previous_line
+                    break
+                else:
+                    previous_line = line
+            raise AssertionError(
+                'return_code={rc}\n{el}\nSee {efn}'.format(
+                    rc=return_code, el=error_line, efn=error_file_name))

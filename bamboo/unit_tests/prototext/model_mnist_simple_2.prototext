@@ -33,11 +33,13 @@ model {
   # Callbacks
   ###################################################
 
+  summarizer {
+    dir: "."
+  }
   callback { print {} }
   callback { timer {} }
   callback {
     summary {
-      dir: "."
       mat_interval: 25
     }
   }
