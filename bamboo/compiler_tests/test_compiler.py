@@ -15,13 +15,6 @@ def test_compiler_build_script(cluster, dirname):
     command = '%s/bamboo/compiler_tests/build_script.sh > %s 2> %s' % (
         dirname, output_file_name, error_file_name)
     return_code = os.system(command)
-    if return_code != 0:
-        output_file = open(output_file_name, 'r')
-        for line in output_file:
-            print('%s: %s' % (output_file_name, line))
-        error_file = open(error_file_name, 'r')
-        for line in error_file:
-            print('%s: %s' % (error_file_name, line))
     tools.assert_success(return_code, error_file_name)
 
 
@@ -73,48 +66,46 @@ def test_compiler_intel19_debug(cluster, dirname):
         assert os.path.exists(path)
 
 
-def skeleton_clang6(cluster, dir_name, debug, should_log=False):
+def skeleton_clang6(cluster, dir_name, debug):
     if cluster not in ['catalyst']:
         e = 'skeleton_clang6: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
     try:
-        spack_skeleton(dir_name, 'clang@6.0.0', 'mvapich2@2.2', debug,
-                       should_log)
-        build_skeleton(dir_name, 'clang@6.0.0', debug, should_log)
+        spack_skeleton(dir_name, 'clang@6.0.0', 'mvapich2@2.2', debug)
+        build_skeleton(dir_name, 'clang@6.0.0', debug)
     except AssertionError as e:
         print(e)
         build_script(cluster, dir_name, 'clang6', debug)
 
 
-def skeleton_gcc7(cluster, dir_name, debug, should_log=False):
+def skeleton_gcc7(cluster, dir_name, debug):
     if cluster not in ['catalyst', 'pascal']:
         e = 'skeleton_gcc7: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
     try:
-        spack_skeleton(dir_name, 'gcc@7.1.0', 'mvapich2@2.2', debug, should_log)
-        build_skeleton(dir_name, 'gcc@7.1.0', debug, should_log)
+        spack_skeleton(dir_name, 'gcc@7.1.0', 'mvapich2@2.2', debug)
+        build_skeleton(dir_name, 'gcc@7.1.0', debug)
     except AssertionError as e:
         print(e)
         build_script(cluster, dir_name, 'gcc7', debug)
 
 
-def skeleton_intel19(cluster, dir_name, debug, should_log=False):
+def skeleton_intel19(cluster, dir_name, debug):
     if cluster not in []:  # Taking out 'catalyst'
         e = 'skeleton_intel19: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
     try:
-        spack_skeleton(dir_name, 'intel@19.0.0', 'mvapich2@2.2', debug,
-                       should_log)
-        build_skeleton(dir_name, 'intel@19.0.0', debug, should_log)
+        spack_skeleton(dir_name, 'intel@19.0.0', 'mvapich2@2.2', debug)
+        build_skeleton(dir_name, 'intel@19.0.0', debug)
     except AssertionError as e:
         print(e)
         build_script(cluster, dir_name, 'intel19', debug)
 
 
-def spack_skeleton(dir_name, compiler, mpi_lib, debug, should_log):
+def spack_skeleton(dir_name, compiler, mpi_lib, debug):
     compiler_underscored = re.sub('[@\.]', '_', compiler)
     if debug:
         build_type = 'debug'
@@ -130,17 +121,10 @@ def spack_skeleton(dir_name, compiler, mpi_lib, debug, should_log):
         dir_name, compiler, mpi_lib, debug_flag, output_file_name, error_file_name)
     return_code = os.system(command)
     os.chdir('..')
-    if should_log or (return_code != 0):
-        output_file = open(output_file_name, 'r')
-        for line in output_file:
-            print('%s: %s' % (output_file_name, line))
-        error_file = open(error_file_name, 'r')
-        for line in error_file:
-            print('%s: %s' % (error_file_name, line))
     tools.assert_success(return_code, error_file_name)
 
 
-def build_skeleton(dir_name, compiler, debug, should_log):
+def build_skeleton(dir_name, compiler, debug):
     compiler_underscored = re.sub('[@\.]', '_', compiler)
     if debug:
         build_type = 'debug'
@@ -165,13 +149,6 @@ def build_skeleton(dir_name, compiler, debug, should_log):
     command = 'make -j all > %s 2> %s' % (output_file_name, error_file_name)
     return_code = os.system(command)
     os.chdir('../..')
-    if should_log or (return_code != 0):
-        output_file = open(output_file_name, 'r')
-        for line in output_file:
-            print('%s: %s' % (output_file_name, line))
-        error_file = open(error_file_name, 'r')
-        for line in error_file:
-            print('%s: %s' % (error_file_name, line))
     tools.assert_success(return_code, error_file_name)
 
 
@@ -189,11 +166,4 @@ def build_script(cluster, dirname, compiler, debug):
     error_file_name = '%s/bamboo/compiler_tests/error/%s_%s_%s_build_script_error.txt' % (dirname, cluster, compiler, build)
     command = '%s/bamboo/compiler_tests/build_script_specific.sh --compiler %s %s> %s 2> %s' % (dirname, compiler, debug_flag, output_file_name, error_file_name)
     return_code = os.system(command)
-    if return_code != 0:
-        output_file = open(output_file_name, 'r')
-        for line in output_file:
-            print('%s: %s' % (output_file_name, line))
-        error_file = open(error_file_name, 'r')
-        for line in error_file:
-            print('%s: %s' % (error_file_name, line))
     tools.assert_success(return_code, error_file_name)

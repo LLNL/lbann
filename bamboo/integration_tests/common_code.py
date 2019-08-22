@@ -80,7 +80,6 @@ def run_lbann(command, model_name, output_file_name, error_file_name,
     if should_log or (return_code != 0):
         output_file = open(output_file_name, 'r')
         for line in output_file:
-            print('%s: %s' % (output_file_name, line))
             is_match = re.search(
                 'This lbann_exception is about to be thrown:(.*)', line)
             if is_match:
@@ -90,7 +89,6 @@ def run_lbann(command, model_name, output_file_name, error_file_name,
                 timed_out = True
         error_file = open(error_file_name, 'r')
         for line in error_file:
-            print('%s: %s' % (error_file_name, line))
             is_match = re.search('LBANN error on (.*)', line)
             if is_match:
                 lbann_exceptions.append(is_match.group(1))
@@ -227,7 +225,7 @@ def skeleton(cluster, dir_name, executable, model_folder, model_name,
         cluster, dir_name, model_folder, model_name, executable,
         output_file_name, error_file_name, compiler_name, weekly=weekly)
     run_lbann(command, model_name, output_file_name,
-              error_file_name, should_log)  # Don't need return value
+              error_file_name, should_log)
     return extract_data(output_file_name, data_fields, should_log)
 
 # Misc. functions  ############################################################
