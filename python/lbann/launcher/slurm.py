@@ -1,6 +1,7 @@
 """Utility functions for Slurm."""
 import os, os.path
 import subprocess
+from .batch_script import BatchScript
 from lbann.util import make_iterable
 
 def run(command,
@@ -55,82 +56,128 @@ def run(command,
         job_name = os.environ['SLURM_JOB_NAME']
         partition = os.environ['SLURM_JOB_PARTITION']
         account = os.environ['SLURM_JOB_ACCOUNT']
-        time_limit = -1
+        time_limit = None
 
-    # Experiment directory
-    experiment_dir = os.path.abspath(experiment_dir)
-    os.makedirs(experiment_dir, exist_ok=True)
-    batch_file = os.path.join(experiment_dir, 'batch.sh')
-    out_file = os.path.join(experiment_dir, 'out.log')
-    err_file = os.path.join(experiment_dir, 'err.log')
+    # Initialize Slurm batch script
+    script_file = os.path.join(experiment_dir, 'batch.sh')
+    script = SlurmBatchScript(script_file=script_file,
+                              work_dir=experiment_dir,
+                              nodes=nodes,
+                              procs_per_node=procs_per_node,
+                              time_limit=time_limit,
+                              job_name=job_name,
+                              partition=partition,
+                              account=account,
+                              launcher_args=srun_args)
+
+    # Set environment
+    for variable, value in environment.items():
+        script.add_command('export {0}={1}'.format(variable, value))
+
+    # Display time and node list
+    script.add_command('date')
     nodes_file = os.path.join(experiment_dir, 'nodes.txt')
+    script.add_parallel_command('hostname > {0}'.format(nodes_file),
+                                procs_per_node=1)
+    script.add_command('sort --unique --output={0} {0}'.format(nodes_file))
 
-    # Write batch script
-    with open(batch_file, 'w') as f:
-        f.write('#!/bin/sh\n')
+    # Run LBANN
+    for cmd in make_iterable(command):
+        script.add_parallel_command(cmd)
 
-        # Slurm job settings
+    # Write, run, or submit batch script
+    # Note: Return exit status
+    if setup_only:
+        script.write()
+        return 0
+    elif has_allocation:
+        return script.run()
+    else:
+        return script.submit()
+
+class SlurmBatchScript(BatchScript):
+
+    def __init__(self,
+                 script_file=None,
+                 work_dir=os.getcwd(),
+                 nodes=1,
+                 procs_per_node=1,
+                 time_limit=None,
+                 job_name=None,
+                 partition=None,
+                 account=None,
+                 launcher_args=None,
+                 interpreter='/bin/bash'):
+        super().__init__(script_file=script_file,
+                         work_dir=work_dir,
+                         interpreter=interpreter)
+        self.nodes = nodes
+        self.procs_per_node = procs_per_node
+        self.launcher_args = launcher_args
+
+        # Configure Slurm job with header
+        self._construct_header(job_name=job_name,
+                               nodes=self.nodes,
+                               time_limit=time_limit,
+                               partition=partition,
+                               account=account)
+
+    def _construct_header(self,
+                          job_name=None,
+                          nodes=1,
+                          time_limit=None,
+                          partition=None,
+                          account=None):
         if job_name:
-            f.write('#SBATCH --job-name={}\n'.format(job_name))
-        f.write('#SBATCH --nodes={}\n'.format(nodes))
-        if partition:
-            f.write('#SBATCH --partition={}\n'.format(partition))
-        if account:
-            f.write('#SBATCH --account={}\n'.format(account))
-        if reservation:
-            raise ValueError('Slurm reservations not supported')
-        f.write('#SBATCH --workdir={}\n'.format(experiment_dir))
-        f.write('#SBATCH --output={}\n'.format(out_file))
-        f.write('#SBATCH --error={}\n'.format(err_file))
-        if time_limit >= 0:
+            self.add_header_line('#SBATCH --job-name={}'.format(job_name))
+        self.add_header_line('#SBATCH --nodes={}'.format(nodes))
+        if time_limit is not None:
+            time_limit = max(time_limit, 0)
             seconds = int((time_limit % 1) * 60)
             hours, minutes = divmod(int(time_limit), 60)
             days, hours = divmod(hours, 24)
-            f.write('#SBATCH --time={}-{:02d}:{:02d}:{:02d}\n'
-                    .format(days, hours, minutes, seconds))
+            self.add_header_line('#SBATCH --time={}-{:02d}:{:02d}:{:02d}'
+                                 .format(days, hours, minutes, seconds))
+        self.add_header_line('#SBATCH --workdir={}'.format(self.work_dir))
+        self.add_header_line('#SBATCH --output={}'.format(self.out_log_file))
+        self.add_header_line('#SBATCH --error={}'.format(self.err_log_file))
+        if partition:
+            self.add_header_line('#SBATCH --partition={}'.format(partition))
+        if account:
+            self.add_header_line('#SBATCH --account={}'.format(account))
 
-        # Set environment
-        if environment:
-            f.write('\n')
-            f.write('# ==== Environment ====\n')
-            for variable, value in environment.items():
-                f.write('export {}={}\n'.format(variable, value))
+    def add_parallel_command(self,
+                             command,
+                             launcher_args=None,
+                             nodes=None,
+                             procs_per_node=None):
+        if launcher_args is None:
+            launcher_args = self.launcher_args
+        if nodes is None:
+            nodes = self.nodes
+        if procs_per_node is None:
+            procs_per_node = self.procs_per_node
+        self.add_body_line('srun {0} --nodes={1} --ntasks={2} {3}'
+                           .format(launcher_args,
+                                   nodes,
+                                   nodes * procs_per_node,
+                                   command))
+    def submit(self):
 
-        # Display time and node list
-        f.write('\n')
-        f.write('# ==== Useful info ====\n')
-        f.write('date\n')
-        f.write('srun --nodes={0} --ntasks={0} hostname > {1}\n'
-                .format(nodes, nodes_file))
-        f.write('sort --unique --output={0} {0}\n'.format(nodes_file))
+        # Construct script file
+        self.write()
 
-        # Run experiment
-        f.write('\n')
-        f.write('# ==== Experiment ====\n')
-        for cmd in make_iterable(command):
-            f.write('srun {} --nodes={} --ntasks={} {}\n'
-                    .format(srun_args, nodes, nodes * procs_per_node,
-                            cmd))
-
-    # Make batch script executable
-    os.chmod(batch_file, 0o755)
-
-    # Launch job if needed
-    # Note: Pipes output to log files
-    if setup_only:
-        return 0
-    else:
-        run_exe = 'sh' if has_allocation else 'sbatch'
-        run_proc = subprocess.Popen([run_exe, batch_file],
-                                    stdout = subprocess.PIPE,
-                                    stderr = subprocess.PIPE,
-                                    cwd = experiment_dir)
-        out_proc = subprocess.Popen(['tee', out_file],
-                                    stdin = run_proc.stdout,
-                                    cwd = experiment_dir)
-        err_proc = subprocess.Popen(['tee', err_file],
-                                    stdin = run_proc.stderr,
-                                    cwd = experiment_dir)
+        # Submit batch script and pipe output to log files
+        run_proc = subprocess.Popen(['sbatch', self.script_file],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    cwd=self.work_dir)
+        out_proc = subprocess.Popen(['tee', self.out_log_file],
+                                    stdin=run_proc.stdout,
+                                    cwd=self.work_dir)
+        err_proc = subprocess.Popen(['tee', self.err_log_file],
+                                    stdin=run_proc.stderr,
+                                    cwd=self.work_dir)
         run_proc.stdout.close()
         run_proc.stderr.close()
         run_proc.wait()
