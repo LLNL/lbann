@@ -91,6 +91,7 @@ class data_store_conduit {
   /// get_empty_node(). In some operating modes this saves us from copying the node
   void set_conduit_node(int data_id, conduit::Node &node, bool already_have = false);
 
+  void set_cpu_mat(int data_id, std::vector<CPUMat> &mat);
   void set_cpu_mat(int data_id, CPUMat &mat);
 
   void set_preloaded_conduit_node(int data_id, conduit::Node &node);

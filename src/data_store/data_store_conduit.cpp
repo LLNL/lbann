@@ -447,6 +447,28 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
   }
 }
 
+void data_store_conduit::set_cpu_mat(int data_id, std::vector<CPUMat> &mat) {
+  conduit::Node nd;
+  const std::string id = LBANN_DATA_ID_STR(data_id);
+  for (size_t h=0; h<mat.size(); h++) {
+    size_t height = mat[h].Height();
+    size_t width = mat[h].Width();
+    size_t ldim = mat[h].LDim();
+    size_t size = height*width;
+    DataType *buf = mat[h].Buffer();
+    std::vector<DataType> v(size);
+    for (size_t j=0; j<size; j++) {
+      v[j] = buf[j];
+    }
+    nd[id + "/width_" + std::to_string(h)].set(width);
+    nd[id + "/height_" + std::to_string(h)].set(height);
+    nd[id + "/ldim_" + std::to_string(h)].set(ldim);
+    nd[id + "/size_" + std::to_string(h)].set(size);
+    nd[id + "/data_" + std::to_string(h)].set(v);
+  }  
+  set_conduit_node(data_id, nd);
+}
+
 void data_store_conduit::set_cpu_mat(int data_id, CPUMat &mat) {
   conduit::Node nd;
   const std::string id = LBANN_DATA_ID_STR(data_id);
@@ -457,11 +479,12 @@ void data_store_conduit::set_cpu_mat(int data_id, CPUMat &mat) {
   DataType *buf = mat.Buffer();
   std::vector<DataType> v(size);
   for (size_t j=0; j<size; j++) {
-    v[j] = buf[j];
+   v[j] = buf[j];
   }
   nd[id + "/width"].set(width);
   nd[id + "/height"].set(height);
   nd[id + "/ldim"].set(ldim);
+  nd[id + "/size"].set(size);
   nd[id + "/data"].set(v);
   set_conduit_node(data_id, nd);
 }
@@ -518,6 +541,10 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
 const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
   if (m_output) {
     m_output << "get_conduit_node: " << data_id << std::endl;
+    std::stringstream ss;
+    ss << "debug_" << m_reader->get_role() << "." << m_comm->get_rank_in_world();
+    m_output.close();
+    m_output.open(ss.str().c_str(), std::ios::app);
   }
   /**
    * dah: commenting this out since it gives a false positive for test
@@ -559,6 +586,13 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
       m_output << std::endl;
     }
   }
+
+/*
+if (m_world_master) {
+  const conduit::Schema &s = t2->second.schema();
+  s.print();
+}
+*/
 
   return t2->second;
 }
