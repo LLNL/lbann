@@ -1460,24 +1460,13 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     m_sample_list.open_samples_file_handle(data_id);
   }
 
-
   if (!priming_data_store() && m_data_store_matrix && get_role() != "test") {
-  /*
-    size_t sz = node['/' + LBANN_DATA_ID_STR(data_id) + "/size"].value();
-    DataType *v1 = node['/' + LBANN_DATA_ID_STR(data_id) + "/data"].value();
-    DataType *v = reinterpret_cast<DataType *>(v1);
-  std::vector<size_t> sizes2 = { sz };
-  std::vector<CPUMat> X_v2 = create_datum_views(X, sizes2, mb_idx);
-    set_minibatch_item<DataType>(X_v2[0], mb_idx, v, sz);
-   */
-//  /*
     for (size_t h=0; h<X_v.size(); h++) {
       size_t sz = node['/' + LBANN_DATA_ID_STR(data_id) + "/size_" + std::to_string(h)].value();
       DataType *v1 = node['/' + LBANN_DATA_ID_STR(data_id) + "/data_" + std::to_string(h)].value();
       DataType *v = reinterpret_cast<DataType *>(v1);
       set_minibatch_item<DataType>(X_v[h], mb_idx, v, sz);
     }
-//    */
   } else {
     for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
       // The third argument mb_idx below is 0 because it is for the view of X not X itself
@@ -1485,28 +1474,35 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     }  
   }
 
-
   // Once the node has been populated save it in the data store
   if (priming_data_store()) {
     if (m_data_store_matrix) {
       m_data_store->set_cpu_mat(data_id, X_v);
-      //m_data_store->set_cpu_mat(data_id, X);
-//  std::vector<size_t> sizes = {H0
- // std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
     } else {
       m_data_store->set_conduit_node(data_id, node);
     }  
   }
 
-#if 0
-size_t sz2 = sizes[1];
-m_data_store->m_output << "Xv[1]; data_id: " << data_id << std::endl;
-DataType *b1 = X_v[1].Buffer();
-for (size_t i=0; i<sz2; i++) {
-  m_data_store->m_output << b1[i] << " ";
-}
-m_data_store->m_output << std::endl;
-#endif
+  // debug block; each data_store writes info to fille if --debug
+  // is on the cmd line. The intent of the following is to ensure
+  // that the data retrieved from the data_store is correct; during 
+  // the first epoch X_v will contain data read from file; in following
+  // epochs X_v contains data retrieved from the data_store.
+  if (m_data_store->m_output) {  
+    size_t sz2 = sizes[1];
+    m_data_store->m_output << "Xv[1]; data_id: " << data_id << std::endl;
+    DataType *b1 = X_v[1].Buffer();
+    for (size_t i=0; i<sz2; i++) {
+      m_data_store->m_output << b1[i] << " ";
+    }
+    m_data_store->m_output << std::endl;
+    m_data_store->m_output << "Xv[2]; data_id: " << data_id << std::endl;
+    b1 = X_v[2].Buffer();
+    for (size_t i=0; i<sz2; i++) {
+      m_data_store->m_output << b1[i] << " ";
+    }
+    m_data_store->m_output << std::endl;
+  }  
 
   m_sample_list.close_if_done_samples_file_handle(data_id);
   m_using_random_node.erase(m_io_thread_pool->get_local_thread_id());
@@ -1524,14 +1520,27 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }
-  for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
-    ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
-  }
-  if (m_data_store != nullptr && m_model->get_epoch() == 0) {
-    // Once the node has been populated save it in the data store
-    if (m_data_store != nullptr) {
-      m_data_store->set_conduit_node(data_id, node);
+
+  if (!priming_data_store() && m_data_store_matrix && get_role() != "test") {
+    for (size_t h=0; h<X_v.size(); h++) {
+      size_t sz = node['/' + LBANN_DATA_ID_STR(data_id) + "/size_" + std::to_string(h)].value();
+      DataType *v1 = node['/' + LBANN_DATA_ID_STR(data_id) + "/data_" + std::to_string(h)].value();
+      DataType *v = reinterpret_cast<DataType *>(v1);
+      set_minibatch_item<DataType>(X_v[h], mb_idx, v, sz);
     }
+  } else {
+    for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
+      // The third argument mb_idx below is 0 because it is for the view of X not X itself
+      ok = fetch(X_v[i], data_id, node, 0, tid, m_independent[i], "response");
+    }  
+  }
+
+  if (priming_data_store()) {
+    if (m_data_store_matrix) {
+      m_data_store->set_cpu_mat(data_id, X_v);
+    } else {
+      m_data_store->set_conduit_node(data_id, node);
+    }  
   }
   return ok;
 }

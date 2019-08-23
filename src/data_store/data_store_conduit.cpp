@@ -586,14 +586,6 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
       m_output << std::endl;
     }
   }
-
-/*
-if (m_world_master) {
-  const conduit::Schema &s = t2->second.schema();
-  s.print();
-}
-*/
-
   return t2->second;
 }
 
