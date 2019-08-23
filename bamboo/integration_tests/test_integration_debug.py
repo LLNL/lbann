@@ -26,7 +26,8 @@ def skeleton_mnist_debug(cluster, dir_name, executables, compiler_name, weekly,
         data_reader_name='mnist', model_folder='models/' + model_name,
         model_name=model_name, num_epochs=5, optimizer_name='adagrad',
         output_file_name=output_file_name, error_file_name=error_file_name)
-    common_code.run_lbann(command, model_name, output_file_name, error_file_name, should_log)
+    common_code.run_lbann(command, model_name, output_file_name,
+                          error_file_name, should_log)
 
 
 def skeleton_cifar_debug(cluster, dir_name, executables, compiler_name, weekly,
@@ -55,7 +56,8 @@ def skeleton_cifar_debug(cluster, dir_name, executables, compiler_name, weekly,
         data_reader_name='cifar10', data_reader_percent=0.01, model_folder='models/' + model_name,
         model_name='conv_' + model_name, num_epochs=5, optimizer_name='adagrad',
         output_file_name=output_file_name, error_file_name=error_file_name)
-    common_code.run_lbann(command, model_name, output_file_name, error_file_name, should_log)
+    common_code.run_lbann(command, model_name, output_file_name,
+                          error_file_name, should_log)
 
 
 def test_integration_mnist_clang6_debug(cluster, dirname, exes, weekly, debug_build):
