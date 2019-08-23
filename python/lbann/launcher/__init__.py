@@ -5,25 +5,25 @@ import lbann
 import lbann.proto
 import lbann.launcher.slurm
 import lbann.launcher.lsf
+from lbann.util import make_iterable
 
 # ==============================================
 # Run experiments
 # ==============================================
 
 def run(model, data_reader, optimizer,
-        lbann_exe=lbann.lbann_exe(),
-        lbann_args='',
         experiment_dir=None,
         nodes=1,
         procs_per_node=1,
-        time_limit=60,
+        time_limit=None,
         scheduler='slurm',
         job_name='lbann',
         system=None,
         partition=None,
         account=None,
         reservation=None,
-        launcher_args='',
+        launcher_args=[],
+        lbann_args=[],
         environment={},
         setup_only=False):
     """Run LBANN experiment.
@@ -44,9 +44,6 @@ def run(model, data_reader, optimizer,
         data_reader (lbann_pb2.DataReader): Data reader.
         optimizer (lbann.model.Optimizer or lbann_pb2.Optimizer):
             Default optimizer for model.
-        lbann_exe (str, optional): LBANN executable.
-        lbann_args (str, optional): Command-line arguments to LBANN
-            executable.
         experiment_dir (str, optional): Experiment directory.
         nodes (int, optional): Number of compute nodes.
         procs_per_node (int, optional): Number of processes per compute
@@ -60,6 +57,8 @@ def run(model, data_reader, optimizer,
         reservation (str, optional): Scheduler reservation name.
         launcher_args (str, optional): Command-line arguments to
             launcher.
+        lbann_args (str, optional): Command-line arguments to LBANN
+            executable.
         environment (dict of {str: str}, optional): Environment
             variables.
         setup_only (bool, optional): If true, the experiment is not
@@ -73,7 +72,7 @@ def run(model, data_reader, optimizer,
 
     """
 
-    # Construct experiment directory if needed
+    # Create experiment directory if needed
     if not experiment_dir:
         if 'LBANN_EXPERIMENT_DIR' in os.environ:
             experiment_dir = os.environ['LBANN_EXPERIMENT_DIR']
@@ -91,41 +90,79 @@ def run(model, data_reader, optimizer,
     experiment_dir = os.path.abspath(experiment_dir)
     os.makedirs(experiment_dir, exist_ok=True)
 
-    # Create experiment prototext file
+    # Initialize batch script
+    # Note: If a scheduler allocation is detected, its settings
+    #   override the user-provided settings.
+    script_file = os.path.join(experiment_dir, 'batch.sh')
+    script = None
+    has_allocation = True
+    if scheduler.lower() in ('slurm', 'srun', 'sbatch'):
+        has_allocation = 'SLURM_JOB_ID' in os.environ
+        if has_allocation:
+            job_name = os.environ['SLURM_JOB_NAME']
+            partition = os.environ['SLURM_JOB_PARTITION']
+            account = os.environ['SLURM_JOB_ACCOUNT']
+            time_limit = None
+        script = lbann.launcher.slurm.SlurmBatchScript(
+            script_file=script_file,
+            work_dir=experiment_dir,
+            nodes=nodes,
+            procs_per_node=procs_per_node,
+            time_limit=time_limit,
+            job_name=job_name,
+            partition=partition,
+            account=account,
+            launcher_args=launcher_args)
+    elif scheduler.lower() in ('lsf', 'jsrun', 'bsub'):
+        has_allocation = 'LSB_JOBID' in os.environ
+        if has_allocation:
+            job_name = os.environ['LSB_JOBNAME']
+            partition = os.environ['LSB_QUEUE']
+            account = None  # LSF doesn't set env var for account
+            time_limit = None
+        script = lbann.launcher.slurm.LSFBatchScript(
+            script_file=script_file,
+            work_dir=experiment_dir,
+            nodes=nodes,
+            procs_per_node=procs_per_node,
+            time_limit=time_limit,
+            job_name=job_name,
+            partition=partition,
+            account=account,
+            reservation=reservation,
+            launcher_args=launcher_args)
+    else:
+        raise RuntimeError('unsupported job scheduler ({})'
+                           .format(scheduler))
+
+    # Set batch script environment
+    for variable, value in environment.items():
+        script.add_command('export {0}={1}'.format(variable, value))
+
+    # Output time and node list in batch script
+    script.add_command('date')
+    nodes_file = os.path.join(experiment_dir, 'nodes.txt')
+    script.add_parallel_command('hostname > {0}'.format(nodes_file),
+                                procs_per_node=1)
+    script.add_command('sort --unique --output={0} {0}'.format(nodes_file))
+
+    # Construct LBANN invocation
+    lbann_command = lbann.lbann_exe()
+    lbann_command += ' ' + ' '.join(make_iterable(lbann_args))
     prototext_file = os.path.join(experiment_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
                                model=model,
                                data_reader=data_reader,
                                optimizer=optimizer)
-    lbann_args += ' --prototext=' + prototext_file
+    lbann_command += ' --prototext=' + prototext_file
+    script.add_parallel_command(lbann_command)
 
-    # Run experiment
-    if scheduler.lower() in ('slurm', 'srun', 'sbatch'):
-        return slurm.run(experiment_dir=experiment_dir,
-                         command='{} {}'.format(lbann_exe, lbann_args),
-                         nodes=nodes,
-                         procs_per_node=procs_per_node,
-                         time_limit=time_limit,
-                         job_name=job_name,
-                         partition=partition,
-                         account=account,
-                         reservation=reservation,
-                         srun_args=launcher_args,
-                         environment=environment,
-                         setup_only=setup_only)
-    elif scheduler.lower() in ('lsf', 'jsrun', 'bsub'):
-        return lsf.run(experiment_dir=experiment_dir,
-                       command='{} {}'.format(lbann_exe, lbann_args),
-                       nodes=nodes,
-                       procs_per_node=procs_per_node,
-                       time_limit=time_limit,
-                       job_name=job_name,
-                       partition=partition,
-                       account=account,
-                       reservation=reservation,
-                       jsrun_args=launcher_args,
-                       environment=environment,
-                       setup_only=setup_only)
+    # Write, run, or submit batch script
+    # Note: Return exit status
+    if setup_only:
+        script.write()
+        return 0
+    elif has_allocation:
+        return script.run()
     else:
-        raise RuntimeError('unsupported job scheduler ({})'
-                           .format(scheduler))
+        return script.submit()

@@ -1,10 +1,9 @@
 from lbann import lbann_exe
 from lbann.contrib.lc.systems import *
 import lbann.launcher
+from lbann.util import make_iterable
 
 def run(model, data_reader, optimizer,
-        lbann_exe=lbann_exe(),
-        lbann_args='',
         experiment_dir=None,
         nodes=1,
         procs_per_node=procs_per_node(),
@@ -15,7 +14,8 @@ def run(model, data_reader, optimizer,
         partition=partition(),
         account=account(),
         reservation=None,
-        launcher_args='',
+        launcher_args=[],
+        lbann_args=[],
         environment={},
         setup_only=False):
     """Run LBANN experiment with LC-specific optimizations.
@@ -25,6 +25,10 @@ def run(model, data_reader, optimizer,
 
     """
 
+    # Make sure command-line arguments are lists of strings
+    launcher_args = list(make_iterable(launcher_args))
+    lbann_args = list(make_iterable(lbann_args))
+
     # Setup GPU bindings
     # Note: Hydrogen processes take ownership of the GPU indices that
     # matches their node communicator ranks. mpibind assigns each rank
@@ -32,14 +36,15 @@ def run(model, data_reader, optimizer,
     # may touch the wrong GPUs in the process of figuring out GPU
     # ownership, so an exclusive GPU compute mode causes problems.
     if scheduler == 'slurm' and has_gpu(system):
-        launcher_args += ' --mpibind=off --nvidia_compute_mode=default'
+        launcher_args.extend(['--mpibind=off',
+                              '--nvidia_compute_mode=default'])
 
     # Deal with Pascal's strange hardware topology
     # Note: Both GPUs on a Pascal node are on the same socket, so we
     # only use cores on that socket.
     if system == 'pascal' and procs_per_node == 2:
         if scheduler == 'slurm':
-            launcher_args += ' --cpu_bind=mask_cpu:0x000001ff,0x0003fe00'
+            launcher_args.append('--cpu_bind=mask_cpu:0x000001ff,0x0003fe00')
         environment['OMP_NUM_THREADS'] = 8
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
 
@@ -60,19 +65,19 @@ def run(model, data_reader, optimizer,
     # all four GPUs visible to each process.
     if system in ('sierra', 'lassen'):
         if scheduler == 'lsf':
-            launcher_args += ' --launch_distribution packed'
-            launcher_args += ' --bind "packed:10"'
-            launcher_args += ' --rs_per_host 1'
-            launcher_args += ' --cpu_per_rs 40'
-            launcher_args += ' --gpu_per_rs 4'
+            launcher_args.extend([
+                '--launch_distribution packed',
+                '--bind "packed:10"',
+                '--rs_per_host 1',
+                '--cpu_per_rs 40',
+                '--gpu_per_rs 4'
+            ])
         environment['OMP_NUM_THREADS'] = 4
         # Deal with topology mis-identification on Sierra/Lassen.
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
 
     # Run LBANN
     return lbann.launcher.run(model, data_reader, optimizer,
-                              lbann_exe=lbann_exe,
-                              lbann_args=lbann_args,
                               experiment_dir=experiment_dir,
                               nodes=nodes,
                               procs_per_node=procs_per_node,
@@ -84,5 +89,6 @@ def run(model, data_reader, optimizer,
                               account=account,
                               reservation=reservation,
                               launcher_args=launcher_args,
+                              lbann_args=lbann_args,
                               environment=environment,
                               setup_only=setup_only)
