@@ -1,4 +1,5 @@
 """Utility functions for Slurm."""
+
 import os, os.path
 import subprocess
 from .batch_script import BatchScript
@@ -115,7 +116,7 @@ class SlurmBatchScript(BatchScript):
         self.procs_per_node = procs_per_node
         self.launcher_args = launcher_args
 
-        # Configure Slurm job with header
+        # Configure header with Slurm job options
         self._construct_header(job_name=job_name,
                                nodes=self.nodes,
                                time_limit=time_limit,
@@ -162,6 +163,7 @@ class SlurmBatchScript(BatchScript):
                                    nodes,
                                    nodes * procs_per_node,
                                    command))
+
     def submit(self):
 
         # Construct script file

@@ -60,7 +60,11 @@ def run(model, data_reader, optimizer,
     # all four GPUs visible to each process.
     if system in ('sierra', 'lassen'):
         if scheduler == 'lsf':
-            launcher_args += ' -d packed -b "packed:10" -r 1 -c 40 -g 4'
+            launcher_args += ' --launch_distribution packed'
+            launcher_args += ' --bind "packed:10"'
+            launcher_args += ' --rs_per_host 1'
+            launcher_args += ' --cpu_per_rs 40'
+            launcher_args += ' --gpu_per_rs 4'
         environment['OMP_NUM_THREADS'] = 4
         # Deal with topology mis-identification on Sierra/Lassen.
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2

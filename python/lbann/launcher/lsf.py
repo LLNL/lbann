@@ -3,6 +3,7 @@
 import os
 import os.path
 import subprocess
+from .batch_script import BatchScript
 from lbann.util import make_iterable
 
 def run(command,
@@ -58,79 +59,129 @@ def run(command,
         # LSF does not provide a way to get the account via env vars.
         time_limit = -1
 
-    # Experiment directory
-    experiment_dir = os.path.abspath(experiment_dir)
-    os.makedirs(experiment_dir, exist_ok=True)
-    batch_file = os.path.join(experiment_dir, 'batch.sh')
-    out_file = os.path.join(experiment_dir, 'out.log')
-    err_file = os.path.join(experiment_dir, 'err.log')
+    # Initialize Slurm batch script
+    script_file = os.path.join(experiment_dir, 'batch.sh')
+    script = LSFBatchScript(script_file=script_file,
+                            work_dir=experiment_dir,
+                            nodes=nodes,
+                            procs_per_node=procs_per_node,
+                            time_limit=time_limit,
+                            job_name=job_name,
+                            partition=partition,
+                            account=account,
+                            reservation=reservation,
+                            launcher_args=jsrun_args)
+
+    # Set environment
+    for variable, value in environment.items():
+        script.add_command('export {0}={1}'.format(variable, value))
+
+    # Display time and node list
+    script.add_command('date')
     nodes_file = os.path.join(experiment_dir, 'nodes.txt')
+    script.add_parallel_command('hostname > {0}'.format(nodes_file),
+                                procs_per_node=1)
+    script.add_command('sort --unique --output={0} {0}'.format(nodes_file))
 
-    # Create batch script.
-    s = '#!/bin/sh\n'
-    if job_name:
-        s += '#BSUB -J {}\n'.format(job_name)
-    s += '#BSUB -nnodes {}\n'.format(nodes)
-    if partition:
-        s += '#BSUB -q {}\n'.format(partition)
-    if account:
-        s += '#BSUB -G {}\n'.format(account)
-    else:
-        raise ValueError('LSF requires an account')
-    if reservation:
-        s += '#BSUB -U {}\n'.format(reservation)
-    s += '#BSUB -cwd {}\n'.format(experiment_dir)
-    s += '#BSUB -o {}\n'.format(out_file)
-    s += '#BSUB -e {}\n'.format(err_file)
-    if time_limit >= 0:
-        s += '#BSUB -W {}\n'.format(time_limit)
-
-    # Set environment variables.
-    if environment:
-        s += '\n# ==== Environment ====\n'
-        for variable, value in environment.items():
-            s += 'export {}={}\n'.format(variable, value)
-
-    # Time and node list.
-    s += '\n# ==== Useful info ====\n'
-    s += 'date\n'
-    s += 'jsrun -n {} -a 1 -r 1 hostname > {}\n'.format(nodes, nodes_file)
-    s += 'sort --unique --output={0} {0}\n'.format(nodes_file)
-
-    # Run experiment.
-    s += '\n# ==== Experiment ====\n'
+    # Run LBANN
     for cmd in make_iterable(command):
-        s += 'jsrun -n {} -a {} {} {}\n'.format(
-            nodes, procs_per_node, jsrun_args, cmd)
+        script.add_parallel_command(cmd)
 
-    with open(batch_file, 'w') as f:
-        f.write(s)
-
-    # Make batch script executable.
-    os.chmod(batch_file, 0o755)
-
-    # Launch if needed.
+    # Write, run, or submit batch script
+    # Note: Return exit status
     if setup_only:
+        script.write()
         return 0
+    elif has_allocation:
+        return script.run()
     else:
-        if has_allocation:
-            run_proc = subprocess.Popen(['sh', batch_file],
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        cwd=experiment_dir)
-        else:
-            # bsub requires the batch script be read from its stdin.
-            run_proc = subprocess.Popen('bsub < {}'.format(batch_file),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        cwd=experiment_dir,
-                                        shell=True)
-        out_proc = subprocess.Popen(['tee', out_file],
+        return script.submit()
+
+class LSFBatchScript(BatchScript):
+
+    def __init__(self,
+                 script_file=None,
+                 work_dir=os.getcwd(),
+                 nodes=1,
+                 procs_per_node=1,
+                 time_limit=None,
+                 job_name=None,
+                 partition=None,
+                 account=None,
+                 reservation=None,
+                 launcher_args=None,
+                 interpreter='/bin/bash'):
+        super().__init__(script_file=script_file,
+                         work_dir=work_dir,
+                         interpreter=interpreter)
+        self.nodes = nodes
+        self.procs_per_node = procs_per_node
+        self.launcher_args = launcher_args
+
+        # Configure header with LSF job options
+        self._construct_header(job_name=job_name,
+                               nodes=self.nodes,
+                               time_limit=time_limit,
+                               partition=partition,
+                               account=account,
+                               reservation=reservation)
+
+    def _construct_header(self,
+                          job_name=None,
+                          nodes=1,
+                          time_limit=None,
+                          partition=None,
+                          account=None,
+                          reservation=None):
+        if job_name:
+            self.add_header_line('#BSUB -J {}'.format(job_name))
+        if partition:
+            self.add_header_line('#BSUB -q {}'.format(partition))
+        self.add_header_line('#BSUB --nnodes {}'.format(nodes))
+        if time_limit:
+            hours, minutes = divmod(int(time_limit), 60)
+            self.add_header_line('#BSUB -W {}:{:02d}'.format(hours, minutes))
+        self.add_header_line('#BSUB -cwd {}'.format(self.work_dir))
+        self.add_header_line('#BSUB -o {}'.format(self.out_log_file))
+        self.add_header_line('#BSUB -e {}'.format(self.err_log_file))
+        if account:
+            self.add_header_line('#BSUB -G {}'.format(account))
+        if reservation:
+            self.add_header_line('#BSUB -U {}'.format(reservation))
+
+    def add_parallel_command(self,
+                             command,
+                             launcher_args=None,
+                             nodes=None,
+                             procs_per_node=None):
+        if launcher_args is None:
+            launcher_args = self.launcher_args
+        if nodes is None:
+            nodes = self.nodes
+        if procs_per_node is None:
+            procs_per_node = self.procs_per_node
+        self.add_body_line('jsrun {0} -n {1} -r {2} {3}'
+                           .format(launcher_args,
+                                   nodes,
+                                   procs_per_node,
+                                   command))
+
+    def submit(self):
+
+        # Construct script file
+        self.write()
+
+        # Submit batch script and pipe output to log files
+        run_proc = subprocess.Popen(['bsub', self.script_file],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    cwd=self.work_dir)
+        out_proc = subprocess.Popen(['tee', self.out_log_file],
                                     stdin=run_proc.stdout,
-                                    cwd=experiment_dir)
-        err_proc = subprocess.Popen(['tee', err_file],
+                                    cwd=self.work_dir)
+        err_proc = subprocess.Popen(['tee', self.err_log_file],
                                     stdin=run_proc.stderr,
-                                    cwd=experiment_dir)
+                                    cwd=self.work_dir)
         run_proc.stdout.close()
         run_proc.stderr.close()
         run_proc.wait()
