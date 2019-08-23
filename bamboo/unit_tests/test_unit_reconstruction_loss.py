@@ -27,7 +27,7 @@ def skeleton_jag_reconstruction_loss(cluster, executables, dir_name, compiler_na
         output_file_name=output_file_name,
         error_file_name=error_file_name)
     return_code = os.system(command)
-    assert return_code == 0
+    tools.assert_success(return_code, error_file_name)
 
 
 def test_unit_jag_reconstruction_loss_clang6(cluster, exes, dirname):
