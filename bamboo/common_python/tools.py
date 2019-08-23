@@ -551,22 +551,45 @@ def get_default_exes(default_dirname, cluster):
     return default_exes
 
 
+def get_error_line(error_file_name):
+    with open(error_file_name, 'r') as error_file:
+        error_line = ''
+        previous_line = ''
+        for line in error_file:
+            if ('ERROR' in line) or ('LBANN error' in line) or \
+                    ('Error:' in line) or \
+                    ('Expired or invalid job' in line):
+                error_line = line
+                break
+            elif 'Stack trace:' in line:
+                error_line = previous_line
+                break
+            else:
+                previous_line = line
+    return error_line
+
+
 def assert_success(return_code, error_file_name):
     if return_code != 0:
-        with open(error_file_name, 'r') as error_file:
-            error_line = ''
-            previous_line = ''
-            for line in error_file:
-                if ('ERROR' in line) or ('LBANN error' in line) or \
-                        ('Error:' in line) or \
-                        ('Expired or invalid job' in line):
-                    error_line = line
-                    break
-                elif 'Stack trace:' in line:
-                    error_line = previous_line
-                    break
-                else:
-                    previous_line = line
-            raise AssertionError(
-                'return_code={rc}\n{el}\nSee {efn}'.format(
-                    rc=return_code, el=error_line, efn=error_file_name))
+        error_line = get_error_line(error_file_name)
+        raise AssertionError(
+            'return_code={rc}\n{el}\nSee {efn}'.format(
+                rc=return_code, el=error_line, efn=error_file_name))
+
+
+def assert_failure(return_code, expected_error, error_file_name):
+    if return_code == 0:
+        raise AssertionError(
+            'return_code={rc}\nSuccess when expecting failure.\nSee {efn}'.format(
+                rc=return_code, efn=error_file_name))
+    with open(error_file_name, 'r') as error_file:
+        for line in error_file:
+            if expected_error in line:
+                return True
+    # If we're at this point, then we know the test did not succeed,
+    # but we didn't get the expected error.
+    actual_error = get_error_line(error_file_name)
+    raise AssertionError(
+        'return_code={rc}\nFailed with error different than expected.\nactual_error={ae}\nexpected_error={ee}\nSee {efn}'.format(
+            rc=return_code, ae=actual_error, ee=expected_error,
+            efn=error_file_name))

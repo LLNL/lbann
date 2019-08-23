@@ -52,7 +52,7 @@ elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTE
         fi
     else
         if [ "${CLUSTER}" = 'catalyst' ]; then
-            ALLOCATION_TIME_LIMIT=240
+            ALLOCATION_TIME_LIMIT=300
         elif [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
             ALLOCATION_TIME_LIMIT=660
         fi
