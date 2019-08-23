@@ -370,16 +370,24 @@ void divide_selected_samples(
       sets[which][filename].insert(it2);
       ++total;
       ++count;
+      /*
       if (count == samples_per_list) {
         count = 0;
         ++which;
       }
+      */
+      ++which;
+      if (which == sets.size()) {
+        which = 0;
+      }
     }
   }
 
+/*
   if (which != sets.size()) {
     LBANN_ERROR("which != sets.size()");
   }
+  */
   if (total != samples_per_list * sets.size()) {
     LBANN_ERROR("samples_per_list * sets.size()");
   }
