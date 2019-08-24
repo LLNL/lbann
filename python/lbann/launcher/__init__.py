@@ -1,6 +1,7 @@
+import datetime
 import os
 import os.path
-import datetime
+import subprocess
 import lbann
 import lbann.proto
 import lbann.launcher.slurm
@@ -16,7 +17,7 @@ def run(model, data_reader, optimizer,
         nodes=1,
         procs_per_node=1,
         time_limit=None,
-        scheduler='slurm',
+        scheduler=None,
         job_name='lbann',
         system=None,
         partition=None,
@@ -72,40 +73,114 @@ def run(model, data_reader, optimizer,
 
     """
 
-    # Create experiment directory if needed
-    if not experiment_dir:
-        if 'LBANN_EXPERIMENT_DIR' in os.environ:
-            experiment_dir = os.environ['LBANN_EXPERIMENT_DIR']
-        else:
-            experiment_dir = os.path.join(os.getcwd())
-        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-        experiment_dir = os.path.join(experiment_dir,
-                                      '{}_{}'.format(timestamp, job_name))
-        i = 1
-        while os.path.lexists(experiment_dir):
-            i += 1
-            experiment_dir = os.path.join(
-                os.path.dirname(experiment_dir),
-                '{}_{}_{}'.format(timestamp, job_name, i))
-    experiment_dir = os.path.abspath(experiment_dir)
-    os.makedirs(experiment_dir, exist_ok=True)
+    # Create batch script generator
+    script = make_batch_script(work_dir=experiment_dir,
+                               nodes=nodes,
+                               procs_per_node=procs_per_node,
+                               time_limit=time_limit,
+                               scheduler=scheduler,
+                               job_name=job_name,
+                               system=system,
+                               partition=partition,
+                               account=account,
+                               reservation=reservation,
+                               launcher_args=launcher_args,
+                               environment=environment)
 
-    # Initialize batch script
-    # Note: If a scheduler allocation is detected, its settings
-    #   override the user-provided settings.
-    script_file = os.path.join(experiment_dir, 'batch.sh')
-    script = None
-    has_allocation = True
-    if scheduler.lower() in ('slurm', 'srun', 'sbatch'):
+    # Check for an existing job allocation
+    has_allocation = False
+    if isinstance(script, lbann.launcher.slurm.SlurmBatchScript):
         has_allocation = 'SLURM_JOB_ID' in os.environ
-        if has_allocation:
-            job_name = os.environ['SLURM_JOB_NAME']
-            partition = os.environ['SLURM_JOB_PARTITION']
-            account = os.environ['SLURM_JOB_ACCOUNT']
-            time_limit = None
+    if isinstance(script, lbann.launcher.lsf.LSFBatchScript):
+        has_allocation = 'LSB_JOBID' in os.environ
+
+    # Batch script prints start time
+    script.add_command('date | sed "s/^/Started at /"')
+
+    # Batch script invokes LBANN
+    lbann_command = lbann.lbann_exe()
+    lbann_command += ' ' + ' '.join(make_iterable(lbann_args))
+    prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
+    lbann.proto.save_prototext(prototext_file,
+                               model=model,
+                               data_reader=data_reader,
+                               optimizer=optimizer)
+    lbann_command += ' --prototext=' + prototext_file
+    script.add_parallel_command(lbann_command)
+
+    # Batch script prints finish time
+    script.add_command('date | sed "s/^/Finished at /"')
+
+    # Write, run, or submit batch script
+    status = 0
+    if setup_only:
+        script.write()
+    elif has_allocation:
+        status = script.run()
+    else:
+        status = script.submit()
+    return status
+
+def make_batch_script(script_file=None,
+                      work_dir=None,
+                      nodes=1,
+                      procs_per_node=1,
+                      time_limit=None,
+                      scheduler=None,
+                      job_name='lbann',
+                      system=None,
+                      partition=None,
+                      account=None,
+                      reservation=None,
+                      launcher_args=[],
+                      environment={}):
+
+    # Try detecting job scheduler if not provided
+    if not scheduler:
+        try:
+            subprocess.call(['sbatch', '--version'],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL)
+            scheduler = 'slurm'
+        except:
+            pass
+    if not scheduler:
+        try:
+            subprocess.call(['bsub', '-V'],
+                            stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL)
+            scheduler = 'lsf'
+        except:
+            pass
+    if not scheduler:
+        raise RuntimeError('could not detect job scheduler')
+
+    # Create work directory if not provided
+    if not work_dir:
+        if 'LBANN_EXPERIMENT_DIR' in os.environ:
+            work_dir = os.environ['LBANN_EXPERIMENT_DIR']
+        else:
+            work_dir = os.path.join(os.getcwd())
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        work_dir = os.path.join(work_dir,
+                                '{}_{}'.format(timestamp, job_name))
+        i = 1
+        while os.path.lexists(work_dir):
+            i += 1
+            work_dir = os.path.join(
+                os.path.dirname(work_dir),
+                '{}_{}_{}'.format(timestamp, job_name, i))
+    work_dir = os.path.realpath(work_dir)
+    os.makedirs(work_dir, exist_ok=True)
+
+    # Create batch script generator
+    if not script_file:
+        script_file = os.path.join(work_dir, 'batch.sh')
+    script = None
+    if scheduler.lower() in ('slurm', 'srun', 'sbatch'):
         script = lbann.launcher.slurm.SlurmBatchScript(
             script_file=script_file,
-            work_dir=experiment_dir,
+            work_dir=work_dir,
             nodes=nodes,
             procs_per_node=procs_per_node,
             time_limit=time_limit,
@@ -114,15 +189,9 @@ def run(model, data_reader, optimizer,
             account=account,
             launcher_args=launcher_args)
     elif scheduler.lower() in ('lsf', 'jsrun', 'bsub'):
-        has_allocation = 'LSB_JOBID' in os.environ
-        if has_allocation:
-            job_name = os.environ['LSB_JOBNAME']
-            partition = os.environ['LSB_QUEUE']
-            account = None  # LSF doesn't set env var for account
-            time_limit = None
-        script = lbann.launcher.slurm.LSFBatchScript(
+        script = lbann.launcher.lsf.LSFBatchScript(
             script_file=script_file,
-            work_dir=experiment_dir,
+            work_dir=work_dir,
             nodes=nodes,
             procs_per_node=procs_per_node,
             time_limit=time_limit,
@@ -139,30 +208,4 @@ def run(model, data_reader, optimizer,
     for variable, value in environment.items():
         script.add_command('export {0}={1}'.format(variable, value))
 
-    # Output time and node list in batch script
-    script.add_command('date')
-    nodes_file = os.path.join(experiment_dir, 'nodes.txt')
-    script.add_parallel_command('hostname > {0}'.format(nodes_file),
-                                procs_per_node=1)
-    script.add_command('sort --unique --output={0} {0}'.format(nodes_file))
-
-    # Construct LBANN invocation
-    lbann_command = lbann.lbann_exe()
-    lbann_command += ' ' + ' '.join(make_iterable(lbann_args))
-    prototext_file = os.path.join(experiment_dir, 'experiment.prototext')
-    lbann.proto.save_prototext(prototext_file,
-                               model=model,
-                               data_reader=data_reader,
-                               optimizer=optimizer)
-    lbann_command += ' --prototext=' + prototext_file
-    script.add_parallel_command(lbann_command)
-
-    # Write, run, or submit batch script
-    # Note: Return exit status
-    if setup_only:
-        script.write()
-        return 0
-    elif has_allocation:
-        return script.run()
-    else:
-        return script.submit()
+    return script
