@@ -1,3 +1,4 @@
+import os, os.path
 from lbann import lbann_exe
 from lbann.contrib.lc.systems import *
 import lbann.launcher
@@ -20,14 +21,76 @@ def run(model, data_reader, optimizer,
         setup_only=False):
     """Run LBANN experiment with LC-specific optimizations.
 
-    This is a convenience wrapper around the `lbann.launcher.run`
-    function, with defaults and optimizations for LC systems.
+    This is intended to match the behavior of `lbann.launcher.run`,
+    with defaults and optimizations for LC systems.
 
     """
 
-    # Make sure command-line arguments are lists of strings
+    # Create batch script generator
+    script = make_batch_script(work_dir=experiment_dir,
+                               nodes=nodes,
+                               procs_per_node=procs_per_node,
+                               time_limit=time_limit,
+                               scheduler=scheduler,
+                               job_name=job_name,
+                               system=system,
+                               partition=partition,
+                               account=account,
+                               reservation=reservation,
+                               launcher_args=launcher_args,
+                               environment=environment)
+
+    # Check for an existing job allocation
+    has_allocation = False
+    if isinstance(script, lbann.launcher.slurm.SlurmBatchScript):
+        has_allocation = 'SLURM_JOB_ID' in os.environ
+    if isinstance(script, lbann.launcher.lsf.LSFBatchScript):
+        has_allocation = 'LSB_JOBID' in os.environ
+
+    # Batch script prints start time
+    script.add_command('date | sed "s/^/Started at /"')
+
+    # Batch script invokes LBANN
+    lbann_command = lbann.lbann_exe()
+    lbann_command += ' ' + ' '.join(make_iterable(lbann_args))
+    prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
+    lbann.proto.save_prototext(prototext_file,
+                               model=model,
+                               data_reader=data_reader,
+                               optimizer=optimizer)
+    lbann_command += ' --prototext=' + prototext_file
+    script.add_parallel_command(lbann_command)
+
+    # Batch script prints finish time
+    script.add_command('date | sed "s/^/Finished at /"')
+
+    # Write, run, or submit batch script
+    status = 0
+    if setup_only:
+        script.write()
+    elif has_allocation:
+        status = script.run()
+    else:
+        status = script.submit()
+    return status
+
+def make_batch_script(script_file=None,
+                      work_dir=None,
+                      nodes=1,
+                      procs_per_node=procs_per_node(),
+                      time_limit=None,
+                      scheduler=scheduler(),
+                      job_name='lbann',
+                      system=system(),
+                      partition=partition(),
+                      account=account(),
+                      reservation=None,
+                      launcher_args=[],
+                      environment={}):
+
+    # Create shallow copies of input arguments
     launcher_args = list(make_iterable(launcher_args))
-    lbann_args = list(make_iterable(lbann_args))
+    environment = environment.copy()
 
     # Setup GPU bindings
     # Note: Hydrogen processes take ownership of the GPU indices that
@@ -39,7 +102,7 @@ def run(model, data_reader, optimizer,
         launcher_args.extend(['--mpibind=off',
                               '--nvidia_compute_mode=default'])
 
-    # Deal with Pascal's strange hardware topology
+    # Deal with Pascal's hardware topology
     # Note: Both GPUs on a Pascal node are on the same socket, so we
     # only use cores on that socket.
     if system == 'pascal' and procs_per_node == 2:
@@ -53,12 +116,6 @@ def run(model, data_reader, optimizer,
     # processes. This bug is not present in MVAPICH2-2.2 but is
     # present in MVAPICH2-2.3rc2.
     environment['MV2_USE_RDMA_CM'] = 0
-
-    # Hacked bugfix for MPI_Sendrecv in MVAPICH2-2.3
-    # Note: MPI_Sendrecv produces incorrect output under certain
-    # circumstances. This bug is not present in MVAPICH2-2.2 or
-    # MVAPICH2-2.3.1.
-    environment['MV2_USE_LAZY_MEM_UNREGISTER'] = 0
 
     # Magic default arguments to jsrun/etc.
     # Note: Pack processes using ten cores for each, with 40 cores total, and
@@ -76,19 +133,16 @@ def run(model, data_reader, optimizer,
         # Deal with topology mis-identification on Sierra/Lassen.
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
 
-    # Run LBANN
-    return lbann.launcher.run(model, data_reader, optimizer,
-                              experiment_dir=experiment_dir,
-                              nodes=nodes,
-                              procs_per_node=procs_per_node,
-                              time_limit=time_limit,
-                              scheduler=scheduler,
-                              job_name=job_name,
-                              system=system,
-                              partition=partition,
-                              account=account,
-                              reservation=reservation,
-                              launcher_args=launcher_args,
-                              lbann_args=lbann_args,
-                              environment=environment,
-                              setup_only=setup_only)
+    return lbann.launcher.make_batch_script(script_file=script_file,
+                                            work_dir=work_dir,
+                                            nodes=nodes,
+                                            procs_per_node=procs_per_node,
+                                            time_limit=time_limit,
+                                            scheduler=scheduler,
+                                            job_name=job_name,
+                                            system=system,
+                                            partition=partition,
+                                            account=account,
+                                            reservation=reservation,
+                                            launcher_args=launcher_args,
+                                            environment=environment)

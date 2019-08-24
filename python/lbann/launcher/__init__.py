@@ -1,6 +1,5 @@
 import datetime
-import os
-import os.path
+import os, os.path
 import subprocess
 import lbann
 import lbann.proto
