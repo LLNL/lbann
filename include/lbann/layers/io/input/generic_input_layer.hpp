@@ -1140,9 +1140,25 @@ class generic_input_layer : public io_layer {
     prof_region_begin("copy-to-device", prof_colors[1], false);
     assert0(dc::tensor::Copy(m_input_dev, input_tensor, dc::get_stream()));
     prof_region_end("copy-to-device", false);
-    prof_region_begin("cast-from-int16", prof_colors[1], false);
-    dc::tensor::Cast(m_activations_t, m_input_dev, dc::get_stream());
-    prof_region_end("copy-from-int16", false);
+    {
+      const auto norm_alpha_p = std::getenv("COSMOFLOW_NORMALIZE_ALPHA");
+      const auto norm_beta_p  = std::getenv("COSMOFLOW_NORMALIZE_BETA");
+      if(norm_alpha_p != nullptr) {
+        const auto norm_alpha = std::stod(norm_alpha_p);
+        const auto norm_beta = std::stod(norm_beta_p);
+        prof_region_begin("cast-scale-bias-from-int16", prof_colors[1], false);
+        dc::tensor::CastScaleBias(m_activations_t,
+                                  m_input_dev,
+                                  (DataType) norm_alpha,
+                                  (DataType) norm_beta,
+                                  dc::get_stream());
+        prof_region_end("cast-scale-bias-from-int16", false);
+      } else {
+        prof_region_begin("cast-from-int16", prof_colors[1], false);
+        dc::tensor::Cast(m_activations_t, m_input_dev, dc::get_stream());
+        prof_region_end("cast-from-int16", false);
+      }
+    }
     // Note: no copy out for activation is necessary as the original
     // LBANN tensor is valid.
   }
