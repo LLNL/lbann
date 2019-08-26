@@ -76,7 +76,7 @@ class LSFBatchScript(BatchScript):
             self.add_header_line('#BSUB -J {}'.format(job_name))
         if partition:
             self.add_header_line('#BSUB -q {}'.format(partition))
-        self.add_header_line('#BSUB --nnodes {}'.format(nodes))
+        self.add_header_line('#BSUB -nnodes {}'.format(nodes))
         if time_limit:
             hours, minutes = divmod(int(time_limit), 60)
             self.add_header_line('#BSUB -W {}:{:02d}'.format(hours, minutes))
@@ -117,7 +117,7 @@ class LSFBatchScript(BatchScript):
             nodes = self.nodes
         if procs_per_node is None:
             procs_per_node = self.procs_per_node
-        self.add_body_line('{0} {1} -n {2} -r {3} {4}'
+        self.add_body_line('{0} {1} -n {2} --tasks_per_rs {3} {4}'
                            .format(launcher,
                                    ' '.join(make_iterable(launcher_args)),
                                    nodes,
