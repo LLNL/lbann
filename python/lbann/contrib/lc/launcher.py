@@ -19,7 +19,7 @@ def run(model, data_reader, optimizer,
         lbann_args=[],
         environment={},
         setup_only=False):
-    """Run LBANN experiment with LC-specific optimizations.
+    """Run LBANN with LC-specific optimizations.
 
     This is intended to match the behavior of `lbann.launcher.run`,
     with defaults and optimizations for LC systems.
@@ -33,7 +33,6 @@ def run(model, data_reader, optimizer,
                                time_limit=time_limit,
                                scheduler=scheduler,
                                job_name=job_name,
-                               system=system,
                                partition=partition,
                                account=account,
                                reservation=reservation,
@@ -87,6 +86,13 @@ def make_batch_script(script_file=None,
                       reservation=None,
                       launcher_args=[],
                       environment={}):
+    """Construct batch script manager with LC-specific optimizations.
+
+    This is intended to match the behavior of
+    `lbann.launcher.make_batch_script`, with defaults and
+    optimizations for LC systems.
+
+    """
 
     # Create shallow copies of input arguments
     launcher_args = list(make_iterable(launcher_args))
@@ -140,7 +146,6 @@ def make_batch_script(script_file=None,
                                             time_limit=time_limit,
                                             scheduler=scheduler,
                                             job_name=job_name,
-                                            system=system,
                                             partition=partition,
                                             account=account,
                                             reservation=reservation,

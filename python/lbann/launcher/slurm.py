@@ -6,6 +6,7 @@ from lbann.util import make_iterable
 from .batch_script import BatchScript
 
 class SlurmBatchScript(BatchScript):
+    """Utility class to write Slurm batch scripts."""
 
     def __init__(self,
                  script_file=None,
@@ -16,13 +17,40 @@ class SlurmBatchScript(BatchScript):
                  job_name=None,
                  partition=None,
                  account=None,
+                 launcher='srun',
                  launcher_args=[],
                  interpreter='/bin/bash'):
+        """Construct Slurm batch script manager.
+
+        Args:
+            script_file (str): Script file.
+            work_dir (str, optional): Working directory
+                (default: current working directory).
+            nodes (int, optional): Number of compute nodes
+                (default: 1).
+            procs_per_node (int, optional): Parallel processes per
+                compute node (default: 1).
+            time_limit (int, optional): Job time limit, in minutes
+                (default: none).
+            job_name (str, optional): Job name (default: none).
+            partition (str, optional): Scheduler partition
+                (default: none).
+            account (str, optional): Scheduler account
+                (default: none).
+            launcher (str, optional): Parallel command launcher
+                (default: srun).
+            launcher_args (`Iterable` of `str`, optional):
+                Command-line arguments to srun.
+            interpreter (str, optional): Script interpreter
+                (default: /bin/bash).
+
+        """
         super().__init__(script_file=script_file,
                          work_dir=work_dir,
                          interpreter=interpreter)
         self.nodes = nodes
         self.procs_per_node = procs_per_node
+        self.launcher = launcher
         self.launcher_args = launcher_args
 
         # Configure header with Slurm job options
@@ -38,6 +66,7 @@ class SlurmBatchScript(BatchScript):
                           time_limit=None,
                           partition=None,
                           account=None):
+        """Construct script header with options for sbatch."""
         if job_name:
             self.add_header_line('#SBATCH --job-name={}'.format(job_name))
         self.add_header_line('#SBATCH --nodes={}'.format(nodes))
@@ -58,22 +87,49 @@ class SlurmBatchScript(BatchScript):
 
     def add_parallel_command(self,
                              command,
+                             launcher=None,
                              launcher_args=None,
                              nodes=None,
                              procs_per_node=None):
+        """Add command to be executed in parallel.
+
+        The command is launched with srun. Parallel processes are
+        distributed evenly amongst the compute nodes.
+
+        Args:
+            command (str): Command to be executed in parallel.
+            launcher (str, optional): srun executable.
+            launcher_args (`Iterable` of `str`s, optional):
+                Command-line arguments to srun.
+            nodes (int, optional): Number of compute nodes.
+            procs_per_node (int, optional): Number of parallel
+                processes per compute node.
+
+        """
+        if launcher is None:
+            launcher = self.launcher
         if launcher_args is None:
             launcher_args = self.launcher_args
         if nodes is None:
             nodes = self.nodes
         if procs_per_node is None:
             procs_per_node = self.procs_per_node
-        self.add_body_line('srun {0} --nodes={1} --ntasks={2} {3}'
-                           .format(' '.join(make_iterable(launcher_args)),
+        self.add_body_line('{0} {1} --nodes={2} --ntasks={3} {4}'
+                           .format(launcher,
+                                   ' '.join(make_iterable(launcher_args)),
                                    nodes,
                                    nodes * procs_per_node,
                                    command))
 
     def submit(self):
+        """Submit batch job to Slurm with sbatch.
+
+        The script file is written/overwritten before being submitted.
+
+        Returns:
+            int: Exit status from sbatch.
+
+        """
 
         # Construct script file
         self.write()

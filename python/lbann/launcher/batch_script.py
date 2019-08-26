@@ -3,15 +3,35 @@ import os.path
 import subprocess
 
 class BatchScript:
+    """Utility class to write batch job scripts.
+
+    This class manages a non-interactive script file that can be
+    submitted as a batch job to an HPC job scheduler. A script is made
+    up of two parts: the header configures the job and the body
+    contains the actual commands to be executed.
+
+    This particular class is not fully implemented. Derived classes
+    for specific job schedulers should implement
+    `add_parallel_command` and `submit`, maintaining the same API.
+
+    """
 
     def __init__(self,
                  script_file=None,
                  work_dir=os.getcwd(),
                  interpreter='/bin/bash'):
+        """Construct batch script manager.
+
+        Args:
+            script_file (str): Script file.
+            work_dir (str, optional): Working directory
+                (default: current working directory).
+            interpreter (str, optional): Script interpreter
+                (default: /bin/bash).
+
+        """
 
         # Lines in script are stored as lists of strings
-        # Note: The header configures batch job settings and the body
-        # actually executes commands.
         self.header = []
         self.body = []
 
@@ -29,12 +49,24 @@ class BatchScript:
             self.header.append('#!{}'.format(interpreter))
 
     def add_header_line(self, line):
+        """Add line to script header.
+
+        The header should specify configuration options for the job
+        scheduler, without containing executable commands.
+
+        """
         self.header.append(line)
 
     def add_body_line(self, line):
+        """Add line to script body.
+
+        The body should contain the script's executable commands.
+
+        """
         self.body.append(line)
 
     def add_command(self, command):
+        """Add executable command to script."""
         self.add_body_line(command)
 
     def add_parallel_command(self,
@@ -43,9 +75,35 @@ class BatchScript:
                              launcher_args=None,
                              nodes=None,
                              procs_per_node=None):
-        raise NotImplementedError()
+        """Add command to be executed in parallel.
+
+        The command is executed via a launcher, e.g. `mpirun`.
+        Parallel processes are distributed evenly amongst the compute
+        nodes.
+
+        Args:
+            command (str): Command to be executed in parallel.
+            launcher (str, optional): Parallel command launcher,
+               `mpirun`.
+            launcher_args (`Iterable` of `str`s, optional):
+                Command-line arguments to parallel command launcher.
+            nodes (int, optional): Number of compute nodes.
+            procs_per_node (int, optional): Number of parallel
+                processes per compute node.
+
+        """
+        raise NotImplementedError(
+            'classes that inherit from `BatchScript` should implement '
+            '`add_parallel_command` to use a specific job scheduler'
+        )
 
     def write(self):
+        """Write script to file.
+
+        Overwrites script file if it already exists. The working
+        directory is created if needed.
+
+        """
 
         # Create directories if needed
         os.makedirs(self.work_dir, exist_ok=True)
@@ -63,6 +121,16 @@ class BatchScript:
         os.chmod(self.script_file, 0o755)
 
     def run(self):
+        """Execute the script.
+
+        The script is executed directly and is _not_ submitted to a
+        job scheduler. The script file is written/overwritten before
+        being executed.
+
+        Returns:
+            int: Exit status from executing script.
+
+        """
 
         # Construct script file
         self.write()
@@ -86,4 +154,15 @@ class BatchScript:
         return run_proc.returncode
 
     def submit(self):
-        raise NotImplementedError()
+        """Submit batch job to job scheduler.
+
+        The script file is written/overwritten before being submitted.
+
+        Returns:
+            int: Exit status from submitting to job scheduler.
+
+        """
+        raise NotImplementedError(
+            'classes that inherit from `BatchScript` should implement '
+            '`submit` to use a specific job scheduler'
+        )

@@ -6,6 +6,7 @@ from lbann.util import make_iterable
 from .batch_script import BatchScript
 
 class LSFBatchScript(BatchScript):
+    """Utility class to write LSF batch scripts."""
 
     def __init__(self,
                  script_file=None,
@@ -17,13 +18,42 @@ class LSFBatchScript(BatchScript):
                  partition=None,
                  account=None,
                  reservation=None,
+                 launcher='jsrun',
                  launcher_args=[],
                  interpreter='/bin/bash'):
+        """Construct LSF batch script manager.
+
+        Args:
+            script_file (str): Script file.
+            work_dir (str, optional): Working directory
+                (default: current working directory).
+            nodes (int, optional): Number of compute nodes
+                (default: 1).
+            procs_per_node (int, optional): Parallel processes per
+                compute node (default: 1).
+            time_limit (int, optional): Job time limit, in minutes
+                (default: none).
+            job_name (str, optional): Job name (default: none).
+            partition (str, optional): Scheduler partition
+                (default: none).
+            account (str, optional): Scheduler account
+                (default: none).
+            reservation (str, optional): Scheduler advance reservation
+                (default: none).
+            launcher (str, optional): Parallel command launcher
+                (default: jsrun).
+            launcher_args (`Iterable` of `str`, optional):
+                Command-line arguments to jsrun.
+            interpreter (str, optional): Script interpreter
+                (default: /bin/bash).
+
+        """
         super().__init__(script_file=script_file,
                          work_dir=work_dir,
                          interpreter=interpreter)
         self.nodes = nodes
         self.procs_per_node = procs_per_node
+        self.launcher = launcher
         self.launcher_args = launcher_args
 
         # Configure header with LSF job options
@@ -41,6 +71,7 @@ class LSFBatchScript(BatchScript):
                           partition=None,
                           account=None,
                           reservation=None):
+        """Construct script header with options for bsub."""
         if job_name:
             self.add_header_line('#BSUB -J {}'.format(job_name))
         if partition:
@@ -59,22 +90,49 @@ class LSFBatchScript(BatchScript):
 
     def add_parallel_command(self,
                              command,
+                             launcher=None,
                              launcher_args=None,
                              nodes=None,
                              procs_per_node=None):
+        """Add command to be executed in parallel.
+
+        The command is launched with jsrun. Parallel processes are
+        distributed evenly amongst the compute nodes.
+
+        Args:
+            command (str): Command to be executed in parallel.
+            launcher (str, optional): jsrun executable.
+            launcher_args (`Iterable` of `str`s, optional):
+                Command-line arguments to jsrun.
+            nodes (int, optional): Number of compute nodes.
+            procs_per_node (int, optional): Number of parallel
+                processes per compute node.
+
+        """
+        if launcher is None:
+            launcher = self.launcher
         if launcher_args is None:
             launcher_args = self.launcher_args
         if nodes is None:
             nodes = self.nodes
         if procs_per_node is None:
             procs_per_node = self.procs_per_node
-        self.add_body_line('jsrun {0} -n {1} -r {2} {3}'
-                           .format(' '.join(make_iterable(launcher_args)),
+        self.add_body_line('{0} {1} -n {2} -r {3} {4}'
+                           .format(launcher,
+                                   ' '.join(make_iterable(launcher_args)),
                                    nodes,
                                    procs_per_node,
                                    command))
 
     def submit(self):
+        """Submit batch job to LSF with bsub.
+
+        The script file is written/overwritten before being submitted.
+
+        Returns:
+            int: Exit status from bsub.
+
+        """
 
         # Construct script file
         self.write()
