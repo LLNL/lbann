@@ -726,12 +726,8 @@ void generic_data_reader::instantiate_data_store(const std::vector<int>& local_l
       std::cout << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
     }
     if (local_list_sizes.size() != 0) {
-      if (is_master()) std::cout << "XX local_list_sizes.size() != 0\n";
       m_data_store->build_preloaded_owner_map(local_list_sizes);
     }
-else {
-      if (is_master()) std::cout << "XX local_list_sizes.size() == 0\n";
-}
     preload_data_store();
     if(is_master()) {
      std::cout << "preload complete" << std::endl;
