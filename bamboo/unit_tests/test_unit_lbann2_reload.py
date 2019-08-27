@@ -28,10 +28,8 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
         error_file_name=error_file_name)
 
     os.mkdir('lbann2_ckpt')
-    return_code = os.system(command)
-    if return_code != 0:
-        sys.stderr.write('LBANN2 LeNet execution failed, exiting with error')
-        sys.exit(1)
+    return_code_no_ckpt = os.system(command)
+    tools.assert_success(return_code_no_ckpt, error_file_name)
 
     os.system('mkdir ckpt_lbann2_reload')
     no_ckpt_dir = 'ckpt_lbann2_reload/lbann2_no_ckpt_{c}'.format(c=compiler_name)
@@ -49,10 +47,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
         output_file_name=output_file_name,
         error_file_name=error_file_name)
     return_code_ckpt_1 = os.system(command)
-    if return_code_ckpt_1 != 0:
-        sys.stderr.write(
-            'LeNet (checkpoint) execution failed, exiting with error')
-        sys.exit(1)
+    tools.assert_success(return_code_ckpt_1, error_file_name)
 
     # Pick up from checkpoint, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/lbann2_restart_%s_output.txt' % (dir_name, compiler_name)
@@ -68,10 +63,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
         output_file_name=output_file_name,
         error_file_name=error_file_name)
     return_code_ckpt_2 = os.system(command)
-    if return_code_ckpt_2 != 0:
-        sys.stderr.write(
-            'LBANN2 LeNet weight reload failed, exiting with error')
-        sys.exit(1)
+    tools.assert_success(return_code_ckpt_2, error_file_name)
     os.system('rm lbann2_ckpt/model0-epoch*')
     os.system('rm lbann2_nockpt/model0-epoch*')
 
