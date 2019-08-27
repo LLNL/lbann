@@ -158,6 +158,7 @@
 #include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
+#include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/replace_weights.hpp"
