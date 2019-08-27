@@ -96,7 +96,7 @@ void init_data_readers(
     // This is a hack that should be fixed when we clean up data reader setup.
     bool set_transform_pipeline = true;
 
-    if ((name == "mnist") || (name == "cifar10") || (name == "moving_mnist")) {
+    if ((name == "mnist") || (name == "cifar10")) {
       init_org_image_data_reader(readme, master, reader);
       set_transform_pipeline = false;
     } else if ((name == "imagenet") ||
@@ -324,8 +324,6 @@ void init_data_readers(
       }
     } else if (name == "mesh") {
       reader = new mesh_reader(shuffle);
-    } else if (name == "moving_mnist") {
-      reader = new moving_mnist_reader(7, 40, 40, 2);
     } else if (name == "python") {
 #ifdef LBANN_HAS_PYTHON
       const auto& params = readme.python();
@@ -481,9 +479,6 @@ void init_data_readers(
       } else if (name == "mesh") {
         reader_validation = new mesh_reader(shuffle);
         (*(mesh_reader *)reader_validation) = (*(mesh_reader *)reader);
-      } else if (name == "moving_mnist") {
-        reader_validation = new moving_mnist_reader(7, 40, 40, 2);
-        (*(moving_mnist_reader *)reader_validation) = (*(moving_mnist_reader *)reader);
       } else if (name == "python") {
 #ifdef LBANN_HAS_PYTHON
         const auto& params = readme.python();

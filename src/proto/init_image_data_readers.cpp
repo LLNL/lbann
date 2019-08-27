@@ -33,7 +33,6 @@
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
-#include "lbann/data_readers/data_reader_moving_mnist.hpp"
 #include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 
 #include <reader.pb.h>
@@ -90,8 +89,6 @@ void init_image_data_reader(const lbann_data::Reader& pb_readme, const lbann_dat
     reader = new imagenet_reader(shuffle);
   } else if (name == "multihead_siamese") {
     reader = new data_reader_multihead_siamese(pb_readme.num_image_srcs(), shuffle);
-  } else if (name == "moving_mnist") {
-    reader = new moving_mnist_reader(7, 40, 40, 2);
   } else if (name =="jag_conduit") {
     data_reader_jag_conduit* reader_jag = new data_reader_jag_conduit(shuffle);
     const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
@@ -293,8 +290,6 @@ void init_org_image_data_reader(const lbann_data::Reader& pb_readme, const bool 
   } else if (name == "cifar10") {
     reader = new cifar10_reader(shuffle);
     if (master) std::cout << "cifar10_reader is set" << std::endl;
-  } else if (name == "moving_mnist") {
-    reader = new moving_mnist_reader(7, 40, 40, 2);
   } else {
     if (master) {
       std::stringstream err;
