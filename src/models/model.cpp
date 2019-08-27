@@ -601,7 +601,6 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // =============================================
 
 void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
-  do_setup_begin_cbs();
 
   // Setup I/O threads - set up before setting up the layers (input
   // layer depends on having a properly initialized thread pool)
@@ -628,7 +627,9 @@ void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
     cb->setup(this);
   }
 
+  // Callback hooks at end of setup
   do_setup_end_cbs();
+
 }
 
 void model::setup_layer_topology() {
@@ -1223,12 +1224,6 @@ void model::reconcile_weight_values() {
 // =============================================
 // Callbacks
 // =============================================
-
-void model::do_setup_begin_cbs() {
-  for (const auto& cb : m_callbacks) {
-    cb->on_setup_begin(this);
-  }
-}
 
 void model::do_setup_end_cbs() {
   for (const auto& cb : m_callbacks) {
