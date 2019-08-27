@@ -561,7 +561,8 @@ def get_error_line(error_file_name):
                     ('Expired or invalid job' in line):
                 error_line = line
                 break
-            elif 'Stack trace:' in line:
+            elif ('Stack trace:' in line) or \
+                    ('Error is not recoverable: exiting now' in line):
                 error_line = previous_line
                 break
             else:
