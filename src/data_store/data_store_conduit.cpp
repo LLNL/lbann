@@ -108,6 +108,7 @@ data_store_conduit::data_store_conduit(
       std::cerr << "data_store_conduit is running in multi-message mode\n";
     }
   }
+
 }
 
 data_store_conduit::~data_store_conduit() {
@@ -450,13 +451,24 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 void data_store_conduit::set_cpu_mat(int data_id, std::vector<CPUMat> &mat) {
   conduit::Node nd;
   const std::string id = LBANN_DATA_ID_STR(data_id);
+  size_t total = 0;
+  if (m_output) m_output << "set_cpu_mat; data_id: " << data_id << std::endl;
   for (size_t h=0; h<mat.size(); h++) {
     size_t height = mat[h].Height();
     size_t width = mat[h].Width();
     size_t ldim = mat[h].LDim();
     size_t size = height*width;
+    total += size;
     DataType *buf = mat[h].Buffer();
     std::vector<DataType> v(size);
+
+    if (h == 2 && m_output) {
+      for (size_t j=0; j<size; j++) {
+        m_output << buf[j] << " ";
+      }
+      m_output << std::endl;
+    }
+
     for (size_t j=0; j<size; j++) {
       v[j] = buf[j];
     }
@@ -496,10 +508,6 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   m_mutex.lock();
   if (already_have == false && m_data.find(data_id) != m_data.end()) {
     LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_conduit::set_conduit_node");
-  }
-
-  if (m_output) {
-    m_output << "set_conduit_node: " << data_id << std::endl;
   }
 
   if (already_have && is_local_cache()) {
@@ -586,15 +594,13 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
       m_output << std::endl;
     }
   }
+
   return t2->second;
 }
 
 // code in the following method is a modification of code from
 // conduit/src/libs/relay/conduit_relay_mpi.cpp
 void data_store_conduit::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
-  if (m_output) {
-    m_output << "starting build_node_for_sending\n";
-  }
 
   node_out.reset();
   conduit::Schema s_data_compact;
@@ -687,10 +693,6 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
         sz = m_sample_sizes[index];
       }
 
-      if (m_output) {
-        m_output << "sending " << index << " size: " << sz << " to " << p << std::endl;
-      }
-
       m_comm->nb_tagged_send<El::byte>(s, sz, p, index, m_send_requests[ss++], m_comm->get_trainer_comm());
     }
   }
@@ -754,6 +756,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
     n_msg["data"].set_external(rcv_schema,n_buff_ptr);
 
     int data_id = m_recv_data_ids[j];
+    if (m_output) m_output << "building data_id: " << data_id << std::endl;
     m_minibatch_data[data_id].set_external(n_msg["data"]);
   }
 }
@@ -778,7 +781,7 @@ int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) 
   m_indices_to_send.resize(m_np_in_trainer);
   int k = 0;
   if (m_output) {
-    m_output << "build_indices_i_will_send; cur pos: " << current_pos << " mb_size: " << mb_size << " m_data.size: " << m_data.size() << "\n";
+//    m_output << "build_indices_i_will_send; cur pos: " << current_pos << " mb_size: " << mb_size << " m_data.size: " << m_data.size() << "\n";
   }
   for (int i = current_pos; i < current_pos + mb_size; i++) {
     auto index = (*m_shuffled_indices)[i];

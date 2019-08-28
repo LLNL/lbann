@@ -789,6 +789,9 @@ void data_reader_jag_conduit::load() {
   if (m_data_store_matrix && opts->get_bool("preload_data_store")) {
     LBANN_ERROR("preload mode is not yet implemented for data_store_matrix mode");
   }
+  if (m_data_store_matrix && is_master()) {
+    std::cout << "\nRUNNING in data_store_matrix mode\n\n";
+  }
 
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
@@ -1465,7 +1468,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
       size_t sz = node['/' + LBANN_DATA_ID_STR(data_id) + "/size_" + std::to_string(h)].value();
       DataType *v1 = node['/' + LBANN_DATA_ID_STR(data_id) + "/data_" + std::to_string(h)].value();
       DataType *v = reinterpret_cast<DataType *>(v1);
-      set_minibatch_item<DataType>(X_v[h], mb_idx, v, sz);
+      set_minibatch_item<DataType>(X_v[h], 0, v, sz);
     }
   } else {
     for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
@@ -1488,16 +1491,11 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   // that the data retrieved from the data_store is correct; during 
   // the first epoch X_v will contain data read from file; in following
   // epochs X_v contains data retrieved from the data_store.
-  if (m_data_store->m_output) {  
-    size_t sz2 = sizes[1];
-    m_data_store->m_output << "Xv[1]; data_id: " << data_id << std::endl;
-    DataType *b1 = X_v[1].Buffer();
-    for (size_t i=0; i<sz2; i++) {
-      m_data_store->m_output << b1[i] << " ";
-    }
-    m_data_store->m_output << std::endl;
-    m_data_store->m_output << "Xv[2]; data_id: " << data_id << std::endl;
-    b1 = X_v[2].Buffer();
+  if (m_data_store != nullptr && m_data_store->m_output) {  
+    size_t sz2 = sizes[2];
+    m_data_store->m_output << "mb_idx: " << mb_idx << "\n";
+    m_data_store->m_output << "reader, Xv[2]; data_id: " << data_id << std::endl;
+    DataType *b1 = X_v[2].Buffer();
     for (size_t i=0; i<sz2; i++) {
       m_data_store->m_output << b1[i] << " ";
     }
