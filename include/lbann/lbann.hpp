@@ -126,7 +126,6 @@
 #include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
-#include "lbann/data_readers/data_reader_moving_mnist.hpp"
 #include "lbann/data_readers/data_reader_python.hpp"
 
 /// Data stores
