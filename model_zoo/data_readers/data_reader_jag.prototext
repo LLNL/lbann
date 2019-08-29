@@ -15,9 +15,9 @@ data_reader {
     role: "train"
     shuffle: true
     data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/100K4trainers/"
-    index_list: "100Kindex.txt"
-    index_list_per_trainer: false
-    index_list_per_model: false
+    sample_list: "100Kindex.txt"
+    sample_list_per_trainer: false
+    sample_list_per_model: false
 
     validation_percent: 0
     absolute_sample_count: 0
@@ -35,9 +35,9 @@ data_reader {
     shuffle: false
     # change to a lustre path
     data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/100K16trainers/"
-    index_list: "t1_sample_list.txt"
-    index_list_per_trainer: false
-    index_list_per_model: false
+    sample_list: "t1_sample_list.txt"
+    sample_list_per_trainer: false
+    sample_list_per_model: false
 
     validation_percent: 0
     absolute_sample_count: 0

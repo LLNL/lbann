@@ -101,7 +101,7 @@ void init_data_readers(
       set_transform_pipeline = false;
     } else if ((name == "imagenet")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
-      reader->set_data_index_list(readme.index_list());
+      reader->set_data_sample_list(readme.sample_list());
       set_transform_pipeline = false;
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
@@ -110,9 +110,9 @@ void init_data_readers(
       const lbann_data::Model& pb_model = p.model();
       const lbann_data::Trainer& pb_trainer = p.trainer();
       reader->set_mini_batch_size(static_cast<int>(pb_trainer.mini_batch_size()));
-      reader->set_data_index_list(readme.index_list());
-      reader_jag_conduit->set_list_per_trainer(readme.index_list_per_trainer());
-      reader_jag_conduit->set_list_per_model(readme.index_list_per_model());
+      reader->set_data_sample_list(readme.sample_list());
+      reader_jag_conduit->set_list_per_trainer(readme.sample_list_per_trainer());
+      reader_jag_conduit->set_list_per_model(readme.sample_list_per_model());
 
       /// Allow the prototext to control if the data readers is
       /// shareable for each phase training, validation, or testing
@@ -643,18 +643,18 @@ void set_data_readers_filenames(
   }
 }
 
-void set_data_readers_index_list(
+void set_data_readers_sample_list(
   const std::string& which, lbann_data::LbannPB& p)
 {
   options *opts = options::get();
   lbann_data::DataReader *readers = p.mutable_data_reader();
   int size = readers->reader_size();
-  const std::string key_role = "index_list_" + which;
+  const std::string key_role = "sample_list_" + which;
 
   for (int j=0; j<size; j++) {
     lbann_data::Reader *r = readers->mutable_reader(j);
     if (r->role() == which) {
-      r->set_index_list(opts->get_string(key_role));
+      r->set_sample_list(opts->get_string(key_role));
     }
   }
 }
@@ -677,7 +677,7 @@ void set_data_readers_percent(lbann_data::LbannPB& p)
   }
 }
 
-void customize_data_readers_index_list(const lbann_comm& comm, lbann_data::LbannPB& p)
+void customize_data_readers_sample_list(const lbann_comm& comm, lbann_data::LbannPB& p)
 {
   lbann_data::DataReader *readers = p.mutable_data_reader();
   const lbann_data::Model& pb_model = p.model();
@@ -685,23 +685,23 @@ void customize_data_readers_index_list(const lbann_comm& comm, lbann_data::Lbann
   for (int j=0; j<size; j++) {
     lbann_data::Reader *r = readers->mutable_reader(j);
     std::ostringstream s;
-    std::string basename = get_basename_without_ext(r->index_list());
-    std::string ext = get_ext_name(r->index_list());
-    std::string dir = lbann::file::extract_parent_directory(r->index_list());
+    std::string basename = get_basename_without_ext(r->sample_list());
+    std::string ext = get_ext_name(r->sample_list());
+    std::string dir = lbann::file::extract_parent_directory(r->sample_list());
     if (dir.empty()) {
       dir = ".";
     }
 
-    if(r->index_list_per_model()) {
+    if(r->sample_list_per_model()) {
       s << pb_model.name() << "_";
     }
-    if(r->index_list_per_trainer()) {
+    if(r->sample_list_per_trainer()) {
       s << "t" << comm.get_trainer_rank() << "_";
     }
     s << dir << '/';
     s << basename;
     s << "." << ext;
-    r->set_index_list(s.str());
+    r->set_sample_list(s.str());
   }
 }
 
@@ -736,11 +736,11 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
       or opts->has_string("label_filename_test")) {
     set_data_readers_filenames("test", p);
   }
-  if (opts->has_string("index_list_train")) {
-    set_data_readers_index_list("train", p);
+  if (opts->has_string("sample_list_train")) {
+    set_data_readers_sample_list("train", p);
   }
-  if (opts->has_string("index_list_test")) {
-    set_data_readers_index_list("test", p);
+  if (opts->has_string("sample_list_test")) {
+    set_data_readers_sample_list("test", p);
   }
   if (opts->has_string("data_reader_percent")) {
     set_data_readers_percent(p);
@@ -895,7 +895,7 @@ void print_help(std::ostream& os)
        "      sets the file directory for train and test data\n"
        "  --data_filedir_train=<string>   --data_filedir_test=<string>\n"
        "  --data_filename_train=<string>  --data_filename_test=<string>\n"
-       "  --index_list_train=<string>     --index_list_test=<string>\n"
+       "  --sample_list_train=<string>    --sample_list_test=<string>\n"
        "  --label_filename_train=<string> --label_filename_test=<string>\n"
        "  --data_reader_percent=<float>\n"
        "  --share_testing_data_readers=<bool:[0|1]>\n"

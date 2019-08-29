@@ -54,7 +54,7 @@ image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
   }
   generic_data_reader::operator=(rhs);
   m_image_dir = rhs.m_image_dir;
-  m_image_list = rhs.m_image_list;
+  m_labels = rhs.m_labels;
   m_image_width = rhs.m_image_width;
   m_image_height = rhs.m_image_height;
   m_image_num_channels = rhs.m_image_num_channels;
@@ -76,7 +76,7 @@ void image_data_reader::copy_members(const image_data_reader &rhs) {
   }
 
   m_image_dir = rhs.m_image_dir;
-  m_image_list = rhs.m_image_list;
+  m_labels = rhs.m_labels;
   m_image_width = rhs.m_image_width;
   m_image_height = rhs.m_image_height;
   m_image_num_channels = rhs.m_image_num_channels;
@@ -126,7 +126,12 @@ void image_data_reader::set_input_params(const int width, const int height, cons
 }
 
 bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
-  const label_t label = m_image_list[data_id].second;
+  const auto sample_name = m_sample_list[data_id].second;
+  labels_t::const_iterator it = m_labels.find(sample_name);
+  if (it == m_labels.cend()) {
+    LBANN_ERROR("Cannot find label for sample '" + sample_name + "'.");
+  }
+  const label_t label = it->second;
   if (label < label_t{0} || label >= static_cast<label_t>(m_num_labels)) {
     LBANN_ERROR(
       "\"",this->get_type(),"\" data reader ",
@@ -142,7 +147,7 @@ void image_data_reader::load() {
 
   // Load sample list
   const std::string data_dir = add_delimiter(get_file_dir());
-  const std::string sample_list_file = get_data_index_list();
+  const std::string sample_list_file = get_data_sample_list();
 
   load_list_of_samples(sample_list_file, true);
   if(is_master()) {
@@ -169,25 +174,25 @@ void image_data_reader::load() {
 
   const std::string imageListFile = get_data_filename();
 
-  // load image list
-  m_image_list.clear();
+  // load labels
+  m_labels.clear();
   FILE *fplist = fopen(imageListFile.c_str(), "rt");
   if (!fplist) {
     LBANN_ERROR("failed to open: " + imageListFile + " for reading");
   }
   while (!feof(fplist)) {
-    char imagepath[512];
+    char imagepath[512] = {'\0'};
     label_t imagelabel;
     if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
       break;
     }
-    m_image_list.emplace_back(imagepath, imagelabel);
+    m_labels.insert(std::make_pair(sample_name_t(imagepath), imagelabel));
   }
   fclose(fplist);
 
   // reset indices
   m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_image_list.size());
+  m_shuffled_indices.resize(m_sample_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
 
@@ -195,6 +200,15 @@ void image_data_reader::load() {
   instantiate_data_store();
 
   select_subset_of_data();
+}
+
+image_data_reader::sample_t image_data_reader::get_sample(const size_t idx) const {
+  const auto sample_name = m_sample_list[idx].second;
+  labels_t::const_iterator it = m_labels.find(sample_name);
+  if (it == m_labels.cend()) {
+    LBANN_ERROR("Cannot find label for sample '" + sample_name + "'.");
+  }
+  return sample_t(sample_name, it->second);
 }
 
 void read_raw_data(const std::string &filename, std::vector<char> &data) {
@@ -273,12 +287,6 @@ void image_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_t
      static_cast<size_t>(m_image_width)});
 }
 
-std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_current_mb() const {
-  std::vector<sample_t> ret;
-  ret.reserve(m_mini_batch_size);
-  return ret;
-}
-
 bool image_data_reader::load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids) {
   conduit::Node node;
   for (auto t : data_ids) {
@@ -290,8 +298,17 @@ bool image_data_reader::load_conduit_nodes_from_file(const std::unordered_set<in
 
 void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &node) {
   node.reset();
-  const std::string filename = get_file_dir() + m_image_list[data_id].first;
-  int label = m_image_list[data_id].second;
+
+  const auto file_id = m_sample_list[data_id].first;
+  const std::string filename = get_file_dir() + m_sample_list.get_samples_filename(file_id);
+
+  const auto& sample_name = m_sample_list[data_id].second;
+  std::unordered_map<std::string, label_t>::const_iterator it = m_labels.find(sample_name);
+  if (it == m_labels.cend()) {
+    LBANN_ERROR("Cannot find label for sample '" + sample_name + "'.");
+  }
+  const label_t label = it->second;
+
   std::vector<char> data;
   read_raw_data(filename, data);
   node[LBANN_DATA_ID_STR(data_id) + "/label"].set(label);

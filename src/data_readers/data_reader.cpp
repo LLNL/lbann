@@ -614,17 +614,17 @@ std::string generic_data_reader::get_local_file_dir() const {
   return m_local_file_dir;
 }
 
-void generic_data_reader::set_data_index_list(std::string s) {
-  m_data_index_list = s;
+void generic_data_reader::set_data_sample_list(std::string s) {
+  m_data_sample_list = s;
 }
 
-std::string generic_data_reader::get_data_index_list() const {
-  if (m_data_index_list == "") {
+std::string generic_data_reader::get_data_sample_list() const {
+  if (m_data_sample_list == "") {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: you apparently did not call set_data_index_list; error!");
+      " :: you apparently did not call set_data_sample_list; error!");
   }
-  return m_data_index_list;
+  return m_data_sample_list;
 }
 
 void generic_data_reader::set_data_filename(std::string s) {

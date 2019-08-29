@@ -787,13 +787,13 @@ void data_reader_jag_conduit::load() {
     std::cout << "data_reader_jag_conduit - starting load" << std::endl;
   }
   const std::string data_dir = add_delimiter(get_file_dir());
-  const std::string sample_list_file = data_dir + get_data_index_list();
+  const std::string sample_list_file = data_dir + get_data_sample_list();
 
   options *opts = options::get();
   bool check_data = opts->get_bool("check_data");
 
   /// The use of these flags need to be updated to properly separate
-  /// how index lists are used between trainers and models
+  /// how sample lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
   load_list_of_samples(sample_list_file, true);
   if(is_master()) {
