@@ -275,6 +275,28 @@ if (LBANN_HAS_CUDA)
   endif ()
 endif (LBANN_HAS_CUDA)
 
+if (LBANN_WITH_NVSHMEM)
+  message("Looking for NVSHMEM")
+  find_package(NVSHMEM)
+  set(LBANN_HAS_NVSHMEM ${NVSHMEM_FOUND})
+
+  # Report failure.
+  if (NOT LBANN_HAS_NVSHMEM)
+    message(WARNING
+      "Requested LBANN_WITH_NVSHMEM but NVSHMEM not found. "
+      "NVSHMEM is now disabled. "
+      "Try specifying NVSHMEM_DIR as the root of an NVSHMEM install. "
+      "Alternatively, build with LBANN_WITH_NVSHMEM=OFF to suppress "
+      "this warning.")
+    set(LBANN_WITH_NVSHMEM OFF)
+
+  else ()
+
+    message(STATUS "Found NVSHMEM: ${NVSHMEM_DIR}")
+
+  endif (NOT LBANN_HAS_NVSHMEM)
+endif (LBANN_WITH_NVSHMEM)
+
 # This shouldn't be here, but is ok for now. This will occasionally be
 # part of another TPL's libraries (e.g., MKL), but it's no
 # guarantee. There's no harm including it multiple times.
@@ -517,6 +539,10 @@ endif ()
 
 if (LBANN_HAS_ALUMINUM)
   target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
+endif ()
+
+if (LBANN_HAS_NVSHMEM)
+  target_link_libraries(lbann PUBLIC ${NVSHMEM_LIBRARIES})
 endif ()
 
 if (LBANN_HAS_VTUNE)
