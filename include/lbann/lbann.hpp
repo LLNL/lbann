@@ -123,7 +123,6 @@
 #include "lbann/data_readers/data_reader_csv.hpp"
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include "lbann/data_readers/data_reader_merge_features.hpp"
-#include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/data_readers/data_reader_python.hpp"
