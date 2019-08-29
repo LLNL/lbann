@@ -16,9 +16,9 @@ data_reader {
     shuffle: true
     # change to a lustre path
     data_filedir: "/p/gpfs1/brainusr/datasets/10MJAG/1M_A/"
-    index_list: "index.txt"
-    index_list_per_trainer: false
-    index_list_per_model: false
+    sample_list: "index.txt"
+    sample_list_per_trainer: false
+    sample_list_per_model: false
 
     validation_percent: 0
     absolute_sample_count: 0
@@ -35,9 +35,9 @@ data_reader {
     shuffle: true
     # change to a lustre path
     data_filedir: "/p/gpfs1/brainusr/datasets/10MJAG/1M_B"
-    index_list: "index.txt"
-    index_list_per_trainer: false
-    index_list_per_model: false
+    sample_list: "index.txt"
+    sample_list_per_trainer: false
+    sample_list_per_model: false
 
     validation_percent: 0
     absolute_sample_count: 0

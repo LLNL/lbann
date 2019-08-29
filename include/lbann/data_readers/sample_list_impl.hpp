@@ -535,7 +535,7 @@ inline void sample_list<sample_name_t>
   size_t total, included, excluded;
   get_num_samples(total, included, excluded);
   /// TODO: clarify the comment below
-  /// Include the number of invalid samples, which for an inclusive index list is always 0
+  /// Include the number of invalid samples, which for an inclusive sample list is always 0
   sstr += std::to_string(included) + ' '  + std::to_string(excluded) + ' '  + std::to_string(num_files) + '\n';
   sstr += m_header.get_file_dir() + '\n';
 }
@@ -649,7 +649,7 @@ inline void sample_list<sample_name_t>
     }
   } else if constexpr (std::is_same<std::string, sample_name_t>::value) {
     for (auto& s: m_sample_list) {
-      s.second = s.first;
+      s.second = get_samples_filename(s.first);
     }
   } else {
     LBANN_ERROR(std::string{} + " :: base class does not implement this method"
@@ -686,7 +686,7 @@ template<> inline void sample_list<size_t>
 template<> inline void sample_list<std::string>
 ::assign_samples_name() {
   for (auto& s: m_sample_list) {
-    s.second = s.first;
+    s.second = get_samples_filename(s.first);
   }
 }
 
