@@ -115,7 +115,10 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
         print('Errors for: The following models exited with errors %s' % compiler_name)
         for model in defective_models:
             print(model)
-    assert num_defective == 0
+    if num_defective != 0:
+        raise AssertionError(
+            'num_defective={nd}\nDefective models:\n{dms}'.format(
+                nd=num_defective, dms=defective_models))
 
 
 def test_unit_models_clang6(cluster, dirname, exes):
