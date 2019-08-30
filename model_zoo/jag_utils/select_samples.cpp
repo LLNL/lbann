@@ -61,8 +61,9 @@ void write_sample_list(
     const unordered_map<string, vector<string>> &sample_mapping_v,
     const std::unordered_map<std::string, std::string> &filename_data); 
 
-void write_exclusion_file(
+void write_bar_files(
   const unordered_map<string, unordered_set<int>> index_map_exclude,
+  const unordered_map<string, unordered_set<string>> &sample_mapping, 
   const unordered_map<string, vector<string>> &sample_mapping_v, 
   const unordered_map<string, string> &filename_data);
 //============================================================================
@@ -117,7 +118,7 @@ int main(int argc, char **argv) {
     vector<unordered_map<string, unordered_set<int>>> subsets(num_lists);
     divide_selected_samples(index_map_keep, subsets);
 
-    write_exclusion_file(index_map_exclude, sample_mapping_v, filename_data);
+    write_bar_files(index_map_exclude, sample_mapping, sample_mapping_v, filename_data);
 
     // write the sample lists
     for (int n=0; n<num_lists; n++) {
@@ -194,9 +195,7 @@ string help_msg() {
       err << "  --output_dir=/p/gpfs1/brainusr/datasets/100M/1M_B \\\n";
       err << "  --output_base_fn=my_samples.txt \\\n";
       err << "  --random_seed=42\n";
-      err << "\n\n";
-      err << "NOTE: output directory must exist prior to running this code\n";
-
+      err << "\n";
       return err.str();
 }
 
@@ -416,6 +415,7 @@ void write_sample_list(
   stringstream sout;
   for (auto &t : subsets[n]) {
     const string &filename = t.first;
+    vector<stringstream> s6;
 
     // get total samples for the current file
     std::unordered_map<std::string, std::string>::const_iterator t4 = filename_data.find(filename);
@@ -436,7 +436,8 @@ void write_sample_list(
       ++num_include_files;
       total_good += included;
       total_bad += excluded;
-      sout << filename << " " << included << " " << excluded;
+      s6.resize(s6.size()+1);
+      s6.back() << filename << " " << included << " " << excluded;
       for (auto &t3 : include_me) {
         if (sample_mapping_v.find(fn2) == sample_mapping_v.end()) {
           LBANN_ERROR("failed to find the key: ", fn2, " in sample_mapping_v map");
@@ -448,9 +449,25 @@ void write_sample_list(
         if (static_cast<size_t>(t3) >= t5->second.size()) {
           LBANN_ERROR("t3 >= t5->second.size()");
         }
-        sout << " " << t5->second[t3];
+        s6.back() << " " << t5->second[t3];
       }
-      sout << "\n";
+
+      //compute values for randomizing 
+      //(this was previously done with a python script)
+      size_t n2 = s6.size();
+      unordered_set<int> used_indices;
+      vector<int> indices;
+      while (used_indices.size() < n2) {
+        int v = random() % n2;
+        if (used_indices.find(v) == used_indices.end()) {
+          used_indices.insert(v);
+          indices.push_back(v);
+        }
+      }
+
+      for (size_t y=0; y<n2; ++y) {
+        sout << s6[indices[y]].str() << endl;
+      }
     }
   }
 
@@ -527,16 +544,20 @@ void test_output_dir() {
 }
 
 
-void write_exclusion_file(
+void write_bar_files(
   const unordered_map<string, unordered_set<int>> index_map_exclude,
+  const unordered_map<string, unordered_set<string>> &sample_mapping, 
   const unordered_map<string, vector<string>> &sample_mapping_v, 
   const unordered_map<string, string> &filename_data
 ) {
+
+  unordered_set<string> all_excluded;
+
   const string dir = options::get()->get_string("output_dir");
   const string base_fn = options::get()->get_string("output_base_fn");
   stringstream s;
-  s << dir << '/' << "t_" << '_' << base_fn << "_bar";
-  std::cerr << "\nWRITING output bar file: " << s.str() << "\n";
+  s << dir << '/' << "t_exclusion_" << base_fn << "_bar";
+  std::cerr << "\nWRITING exclusion bar file: " << s.str() << "\n";
   std::ofstream out(s.str().c_str());
   if (!out) {
       LBANN_ERROR("failed to open ", s.str(), " for writing\n");
@@ -578,13 +599,54 @@ void write_exclusion_file(
           LBANN_ERROR("t5 == sample_mapping_v.end())");
         }
         sout << " " << t5->second[t3];
+        all_excluded.insert(t5->second[t3]);
       }
       sout << "\n";
+    }
+  }
+
+  const string base_dir = options::get()->get_string("base_dir");
+  out << total_good << " " << total_bad << " " << num_include_files << "\n"
+      << base_dir << endl << sout.str();
+  out.close();
+
+  s.clear();
+  s.str("");
+  s << dir << '/' << "t_inclusion_" << base_fn << "_bar";
+  std::cerr << "\nWRITING inclusion bar file: " << s.str() << "\n";
+  std::ofstream out2(s.str().c_str());
+  if (!out2) {
+      LBANN_ERROR("failed to open ", s.str(), " for writing\n");
+  }
+  out2 << "CONDUIT_HDF5_INCLUSION\n";
+
+  num_include_files = 0;
+  unordered_map<string, unordered_set<string>> data_for_inclusion;
+  for (auto &&t : sample_mapping) {
+    for (auto &t2 : t.second) {
+      if (all_excluded.find(t2) == all_excluded.end()) {
+        data_for_inclusion[t.first].insert(t2);
       }
     }
+  }
 
-    const string base_dir = options::get()->get_string("base_dir");
-    out << total_good << " " << total_bad << " " << num_include_files << "\n"
-        << base_dir << "\n" << sout.str();
-    out.close();
+  cout << "all_excluded.size: " << all_excluded.size() << endl;
+
+  out2 <<  total_good << " " << total_bad << " " << data_for_inclusion.size() << "\n" << base_dir << endl;
+
+  for (auto &&t : data_for_inclusion) {
+    int included = t.second.size();
+    unordered_map<string, unordered_set<string>>::const_iterator it = sample_mapping.find(t.first);
+    if (it == sample_mapping.end()) {
+      LBANN_ERROR("it == sample_mapping.end()");
+    }
+    int total = it->second.size();
+    int excluded = total - included;
+    out2 << t.first << " " << included << " " << excluded << " ";
+    for (auto &t2 : t.second) {
+      out2 << t2 << " ";
+    }
+    out2 << endl;
+  }
+  out2 << endl;
 }

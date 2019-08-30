@@ -42,9 +42,11 @@ def buildInc(mp, fn) :
     t = line.split()
     for j in t[3:] :
       r.add(j)
+  print '   num sample IDs:', len(r)
   return r
 
 #======================================================================
+#returns (excluded, included) sample IDs from an input EXCLUSION sample list
 def buildExc(mp, fn) :
   s = set()
   print 'buildExc; opening:', fn
@@ -56,11 +58,16 @@ def buildExc(mp, fn) :
     t = line.split()
     for j in t[3:] :
       s.add(j)
+  #at this point, 's' contains all excluded sample IDs (these are the IDs
+  #that are explicitly listed in the exclusion bar file);
+  #mp is the set of all sample IDs, whether included, or excluded 
+  #(unsuccessfule)
   r = set()
   for sample_id in mp :
     if sample_id not in s :
       r.add(sample_id)
-  return r
+  print '   num sample IDs:', len(r)
+  return (s, r)
 
 #======================================================================
 #build set that contains all sample names
@@ -76,10 +83,27 @@ sample_list_dir = sys.argv[2]
 sample_list_base_name = sys.argv[3]
 
 #build exclusion set; this set contains all valid (successful) sample IDs
-s2 = buildExc(mp, sample_list_dir + '/t__' + sample_list_base_name + '_bar')
+(excluded, included) = buildExc(mp, sample_list_dir + '/t_exclusion_' + sample_list_base_name + '_bar')
 
+print '\nlen(included):', len(included), 'len(excluded):', len(excluded), 'intersection:', len(included.intersection(excluded))
 data = []
-data.append(s2)
+data.append(included)
+
+#build bar inclusion set
+(included2, excluded2) = buildExc(mp, sample_list_dir + '/t_inclusion_' + sample_list_base_name + '_bar')
+#(excluded2, included2) = buildExc(mp, sample_list_dir + '/t_inclusion_' + sample_list_base_name + '_bar')
+print '\nlen(included):', len(included2), 'len(excluded):', len(excluded2), 'intersection:', len(included2.intersection(excluded2))
+
+print
+print 'checking that the bar files do not intersect'
+r = len(excluded.intersection(included2))
+if r != 0 :
+  print 'FAILED!'
+  print 'len(intersection):', r
+  exit(0)
+#print 'bar inclusion file contains', len(bar), 'sample IDs'
+#data.append(bar)
+
 
 for j in range(int(sys.argv[4])) :
   s2 = buildInc(mp, sample_list_dir + '/t' + str(j) + '_' + sample_list_base_name)
@@ -94,16 +118,24 @@ for j in range(0, len(data)-1) :
     if j != k :
       a = data[j]
       b = data[k]
-      #print 'testing', j, 'against', k
+      print 'testing', j, 'against', k, 'len:', len(a), len(b)
       r = len(a.intersection(b))
       if r != 0 :
         print 'FAILED: ', j, 'intersection with',k, '=' , r
+        tt = 0
+        for x in a :
+          if x in b :
+            print x,
+            tt += 1
+        print
+        print 'total:', tt
+        exit(9)
         success = False
 if success :
   print '  SUCCESS!'
 
 print
-print 'testing that all samples appear in one sample list, or the bar file'
+print 'testing that all samples appear in one sample list, or the exclusion bar file'
 
 s2 = set()
 for j in range(0, len(data)) :
