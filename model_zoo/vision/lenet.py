@@ -80,7 +80,9 @@ model = lbann.Model(mini_batch_size,
                     layers=lbann.traverse_layer_graph(input),
                     objective_function=loss,
                     metrics=[lbann.Metric(acc, name='accuracy', unit='%')],
-                    callbacks=[lbann.CallbackPrint(), lbann.CallbackTimer()])
+                    callbacks=[lbann.CallbackPrintModelDescription(),
+                               lbann.CallbackPrint(),
+                               lbann.CallbackTimer()])
 
 # Setup optimizer
 opt = lbann.SGD(learn_rate=0.01, momentum=0.9)

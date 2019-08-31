@@ -66,6 +66,7 @@
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
+#include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/categorical_random.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
@@ -570,6 +571,10 @@ std::unique_ptr<Layer> construct_layer(
     } else {
       return lbann::make_unique<selu_dropout<Layout, Device>>(comm, keep_prob);
     }
+  }
+  if (proto_layer.has_entrywise_batch_normalization()) {
+    const auto& params = proto_layer.entrywise_batch_normalization();
+    return lbann::make_unique<entrywise_batch_normalization_layer<Layout, Device>>(comm, params.decay(), params.epsilon());
   }
 
   // Math layers

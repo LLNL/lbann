@@ -36,9 +36,6 @@ def run_tests(actual_objective_functions, model_name, dir_name, cluster,
              actual_objective_functions, expected_objective_functions,
              model_name, errors, all_values, frequency_str)
 
-    print('Errors for: %s %s (%d)' % (model_name, compiler_name, len(errors)))
-    for error in errors:
-        print(error)
     if should_log:
         print('All values for: %s %s (%d)' % (model_name, compiler_name,
                                               len(all_values)))

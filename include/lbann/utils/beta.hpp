@@ -56,9 +56,9 @@ public:
   public:
     using distribution_type = beta_distribution;
 
-    explicit param_type(RealType a, RealType b) :
-      m_a(a), m_b(b) {
-      if (a <= RealType(0) || b <= RealType(0)) {
+    explicit param_type(RealType param_a, RealType param_b) :
+      m_a(param_a), m_b(param_b) {
+      if (param_a <= RealType(0) || param_b <= RealType(0)) {
         LBANN_ERROR("Beta distribution parameters must be positive");
       }
     }
