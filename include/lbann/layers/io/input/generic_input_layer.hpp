@@ -35,8 +35,6 @@
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/imcomm.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
-#include "lbann/training_algorithms/training_algorithm.hpp"
-#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 #include <cereal/types/utility.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
@@ -575,7 +573,8 @@ class generic_input_layer : public io_layer {
   const std::vector<int> get_data_dims(int child_index = 0) const override {
     // Check the training and testing execution modes for data dimensions
     const generic_data_reader *dr = get_data_reader(execution_mode::training);
-    if(dr != nullptr) {
+    // If there isn't a training data reader, use the testing data reader
+    if(dr == nullptr) {
       dr = get_data_reader(execution_mode::testing);
     }
     if(dr == nullptr) { LBANN_ERROR("unable to call get_data_dims -- no valid execution mode"); }

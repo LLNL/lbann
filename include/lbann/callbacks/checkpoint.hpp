@@ -139,18 +139,18 @@ class checkpoint : public callback_base {
   };
 };
 
-static inline std::string get_last_shared_checkpoint_filename(model *m, const std::string& dir) {
+inline std::string get_last_shared_checkpoint_filename(model *m, const std::string& dir) {
   lbann_comm *comm = m->get_comm();
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << dir << "/";
   ss << m->get_name().c_str() << ".trainer.";
   ss << comm->get_trainer_rank() << ".last.shared.checkpoint";
   return ss.str();
 }
 
-static inline std::string get_shared_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, int epoch, int step) {
+inline std::string get_shared_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, int epoch, int step) {
   lbann_comm *comm = m->get_comm();
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << dir << "/" << m->get_name().c_str();
   ss << ".trainer." << comm->get_trainer_rank();
   ss << ".shared." << to_string(mode);
@@ -159,18 +159,18 @@ static inline std::string get_shared_checkpoint_dirname(model *m, const std::str
   return ss.str();
 }
 
-static inline std::string get_last_distributed_checkpoint_filename(model *m, const std::string& dir) {
+inline std::string get_last_distributed_checkpoint_filename(model *m, const std::string& dir) {
   lbann_comm *comm = m->get_comm();
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << dir << "/";
   ss << m->get_name().c_str() << ".trainer.";
   ss << comm->get_trainer_rank() << ".last.distributed.checkpoint";
   return ss.str();
 }
 
-static inline std::string get_distributed_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, int epoch, int step) {
+inline std::string get_distributed_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, int epoch, int step) {
   lbann_comm *comm = m->get_comm();
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << dir << "/" << m->get_name().c_str();
   ss << ".trainer." << comm->get_trainer_rank();
   ss << ".rank." << comm->get_rank_in_trainer();
@@ -181,7 +181,7 @@ static inline std::string get_distributed_checkpoint_dirname(model *m, const std
 }
 
 // Print last checkpoint to file, used to determine which checkpoint to load from.
-static inline bool write_latest(std::string filename, execution_mode mode, int epoch, int train) {
+inline bool write_latest(std::string filename, execution_mode mode, int epoch, int train) {
   // open the file for writing
   int fd = openwrite(filename.c_str());
   if (fd != -1) {
@@ -197,7 +197,7 @@ static inline bool write_latest(std::string filename, execution_mode mode, int e
 /** \brief Reads the "latest" file and returns the epoch number and
  *        sample offset for most recent checkpoint
  */
-static inline bool read_latest(std::string filename, execution_mode *mode, int *epochLast, int *trainLast) {
+inline bool read_latest(std::string filename, execution_mode *mode, int *epochLast, int *trainLast) {
   // assume we don't have a file, we'll return -1 in that case
   *epochLast = -1;
   *trainLast = -1;
