@@ -80,9 +80,6 @@ def run_tests(actual_performance, model_name, dir_name, should_log,
   else:
     print('os.environ["LOGNAME"]=%s' % os.environ['LOGNAME'])
 
-  print('Errors for: %s %s (%d)' % (model_name, compiler_name, len(errors)))
-  for error in errors:
-    print(error)
   if should_log:
     print('All values for: %s %s (%d)' % (
       model_name, compiler_name, len(all_values)))

@@ -205,7 +205,7 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
           const std::vector<std::string> &names2 = rhs.m_data[i]["data"][names[0]].child_names();
           for (auto t : names2) {
             n2[names[0]][t] = rhs.m_data[i]["data"][names[0]][t];
-          }  
+          }
           build_node_for_sending(n2, m_data[i]);
         } else {
           m_data[i] = rhs.m_data[i];
@@ -392,9 +392,9 @@ void data_store_conduit::exchange_data_by_super_node(size_t current_pos, size_t 
     m_output << "m_minibatch_data.size(): " << m_minibatch_data.size() << "; indices: ";
     for (auto t : m_minibatch_data) {
       m_output << t.first << " ";
-    }  
+    }
     m_output << std::endl;
-  }  
+  }
 }
 
 void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &node) {
@@ -418,12 +418,12 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &
       if (m_output) {
         m_output << "set_preloaded_conduit_node: " << data_id << " for super_node mode\n";
       }
-    } else {  
+    } else {
       if (m_output) {
         m_output << "set_preloaded_conduit_node: " << data_id << " is already in m_data\n";
       }
     }
-  }  
+  }
 }
 
 void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int data_id) {
@@ -537,7 +537,7 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
       m_output << "failed to find data_id: " << data_id << " in m_minibatch_data; my m_minibatch_data indices: ";
       for (auto t : m_minibatch_data) {
         m_output << t.first << " ";
-      }  
+      }
       m_output << std::endl;
     }
   }
@@ -591,7 +591,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   }
 
   /// exchange sample sizes if they are non-uniform (imagenet);
-  /// this will only be called once, during the first call to 
+  /// this will only be called once, during the first call to
   /// exchange_data_by_sample at the beginning of the 2nd epoch,
   /// or during the first call th exchange_data_by_sample() during
   /// the first epoch if preloading
@@ -831,7 +831,7 @@ void data_store_conduit::purge_unused_samples(const std::vector<int>& indices) {
 void data_store_conduit::compact_nodes() {
   if (m_super_node) {
     return;
-  } 
+  }
   for(auto&& j : *m_shuffled_indices) {
     if(m_data.find(j) != m_data.end()){
       if(! (m_data[j].is_contiguous() && m_data[j].is_compact()) ) {
@@ -1010,8 +1010,8 @@ bool data_store_conduit::has_conduit_node(int data_id) const {
   return t != m_data.end();
 }
 
-void data_store_conduit::set_shuffled_indices(const std::vector<int> *indices) { 
-  m_shuffled_indices = indices; 
+void data_store_conduit::set_shuffled_indices(const std::vector<int> *indices) {
+  m_shuffled_indices = indices;
 }
 
 void data_store_conduit::exchange_sample_sizes() {
@@ -1055,7 +1055,7 @@ void data_store_conduit::exchange_sample_sizes() {
   m_have_sample_sizes = true;
 }
 
-void data_store_conduit::set_preload() { 
+void data_store_conduit::set_preload() {
   m_preload = true;
 }
 
@@ -1172,7 +1172,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
   }
   m_comm->trainer_barrier();
 
-  int shm_fd;
+  int shm_fd = -1;
 
   if (node_id == 0) {
     shm_fd = shm_open(m_seg_name.c_str(), O_CREAT | O_RDWR | O_EXCL, 0666);
@@ -1193,7 +1193,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
     if (sanity != 0) {
       LBANN_ERROR("msync failed");
     }
-  }  
+  }
 
   m_comm->barrier(m_comm->get_node_comm());
 
@@ -1221,7 +1221,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
 }
 
 void data_store_conduit::preload_local_cache() {
-  std::unordered_map<int,size_t> file_sizes; 
+  std::unordered_map<int,size_t> file_sizes;
   std::vector<std::vector<int>> indices;
 
   double tm1 = get_time();
@@ -1233,7 +1233,7 @@ void data_store_conduit::preload_local_cache() {
   //that P_j will read from disk, and subsequently bcast to all others
   //
   //file_sizes maps an index to its file size
-  
+
   if (m_world_master) std::cout << "calling allocate_shared_segment" << std::endl;
   allocate_shared_segment(file_sizes, indices);
   if (m_world_master) std::cout << "  allocate_shared_segment time: " << (get_time()-tm1) << std::endl;
@@ -1308,7 +1308,7 @@ void data_store_conduit::build_conduit_nodes(std::unordered_map<int,size_t> &siz
 }
 
 void data_store_conduit::fillin_shared_images(const std::vector<char> &images, size_t offset) {
-  memcpy(m_mem_seg+offset, reinterpret_cast<const void*>(images.data()), images.size()); 
+  memcpy(m_mem_seg+offset, reinterpret_cast<const void*>(images.data()), images.size());
 }
 
 void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered_map<int,size_t> &image_sizes, std::vector<std::vector<int>> &indices) {
@@ -1343,4 +1343,3 @@ void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered
 
 
 }  // namespace lbann
-

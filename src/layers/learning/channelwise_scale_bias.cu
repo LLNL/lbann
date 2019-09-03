@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
+#ifdef HYDROGEN_HAVE_CUB
 #include "cub/block/block_reduce.cuh"
+#endif // HYDROGEN_HAVE_CUB
 
 namespace lbann {
 
@@ -122,7 +124,7 @@ __global__ void bp_kernel(size_t num_channels,
     }
 
     // Accumulate gradient contributions for block and add to result
-    // Note: Perform block reduction with CUB
+#ifdef HYDROGEN_HAVE_CUB
     constexpr auto reduce_algo = cub::BLOCK_REDUCE_WARP_REDUCTIONS;
     using BlockReduce = cub::BlockReduce<DataType, bsizex, reduce_algo, bsizey>;
     __shared__ typename BlockReduce::TempStorage workspace;
@@ -136,6 +138,29 @@ __global__ void bp_kernel(size_t num_channels,
     if (tid == 0) {
       cuda::atomic_add(&gradient_wrt_bias[channel], db);
     }
+#else
+    __shared__ DataType workspace[bsizex*bsizey];
+    workspace[tid] = private_da;
+    for (size_t stride = bsizex*bsizey/2; stride > 0; stride /= 2) {
+      __syncthreads();
+      if (tid < stride) {
+        workspace[tid] += workspace[tid + stride];
+      }
+    }
+    if (tid == 0) {
+      cuda::atomic_add(&gradient_wrt_scale[channel], workspace[0]);
+    }
+    workspace[tid] = private_db;
+    for (size_t stride = bsizex*bsizey/2; stride > 0; stride /= 2) {
+      __syncthreads();
+      if (tid < stride) {
+        workspace[tid] += workspace[tid + stride];
+      }
+    }
+    if (tid == 0) {
+      cuda::atomic_add(&gradient_wrt_bias[channel], workspace[0]);
+    }
+#endif // HYDROGEN_HAVE_CUB
 
   }
 

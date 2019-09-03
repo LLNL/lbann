@@ -262,15 +262,6 @@ std::unique_ptr<model> build_model_from_prototext(
   //@todo
   //model->restartShared();
 
-  if (comm->am_world_master()) {
-    std::cout << "\n"
-              << ret_model->get_description()
-              << "Callbacks:" << std::endl;
-    for (callback_base *cb : ret_model->get_callbacks()) {
-      std::cout << cb->name() << std::endl;
-    }
-  }
-
 #ifndef LBANN_DETERMINISTIC
   // Under normal conditions, reinitialize the random number generator so
   // that regularization techniques (e.g. dropout) generate unique patterns

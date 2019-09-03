@@ -101,6 +101,7 @@
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 
 /// Input layer
 #include "lbann/layers/io/input/input_layer.hpp"
@@ -128,10 +129,8 @@
 #include "lbann/data_readers/data_reader_csv.hpp"
 #include "lbann/data_readers/data_reader_merge_samples.hpp"
 #include "lbann/data_readers/data_reader_merge_features.hpp"
-#include "lbann/data_readers/data_reader_ascii.hpp"
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
-#include "lbann/data_readers/data_reader_moving_mnist.hpp"
 #include "lbann/data_readers/data_reader_python.hpp"
 
 /// Data stores
@@ -163,6 +162,7 @@
 #include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
+#include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/replace_weights.hpp"

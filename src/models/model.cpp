@@ -258,7 +258,15 @@ description model::get_description() const {
   desc.add(std::string{});
   desc.add(weights_desc);
 
-  /// @todo Descriptions for objective function, metrics, callbacks
+  // Callbacks
+  description callback_desc("Callbacks:");
+  for (const auto& cb : m_callbacks) {
+    callback_desc.add(cb->get_description());
+  }
+  desc.add(std::string{});
+  desc.add(callback_desc);
+
+  /// @todo Descriptions for objective function, metrics
 
   // Result
   return desc;
@@ -563,6 +571,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // =============================================
 
 void model::setup() {
+
   // Setup layers
   setup_layer_topology();
   setup_layer_execution_order();
@@ -580,6 +589,10 @@ void model::setup() {
   for (const auto& cb : m_callbacks) {
     cb->setup(this);
   }
+
+  // Callback hooks at end of setup
+  do_setup_end_cbs();
+
 }
 
 void model::setup_layer_topology() {
@@ -1059,6 +1072,12 @@ void model::reconcile_weight_values() {
 // =============================================
 // Callbacks
 // =============================================
+
+void model::do_setup_end_cbs() {
+  for (const auto& cb : m_callbacks) {
+    cb->on_setup_end(this);
+  }
+}
 
 void model::do_model_forward_prop_begin_cbs(execution_mode mode) {
   for (const auto& cb : m_callbacks) {

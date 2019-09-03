@@ -21,7 +21,7 @@ def skeleton_layer_squared_difference(cluster, executables, dir_name, compiler_n
         optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
     return_code = os.system(command)
-    assert return_code == 0
+    tools.assert_success(return_code, error_file_name)
 
 
 def test_unit_layer_squared_difference_clang6(cluster, exes, dirname):

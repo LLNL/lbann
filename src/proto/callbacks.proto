@@ -74,6 +74,7 @@ message Callback {
     CallbackCheckInit init = 42;
     CallbackEarlyStopping early_stopping = 43;
     CallbackTimeline timeline = 44;
+    CallbackPrintModelDescription print_model_description = 45;
   }
 
   message CallbackLTFB {
@@ -315,4 +316,13 @@ message Callback {
   message CallbackTimeline {
     string directory = 1;
   }
+
+  // Print human-readable description of model to standard output.
+  //
+  // Message is printed when the model has finished setup. The
+  // description includes information on the model's layers, weights,
+  // and callbacks.
+  message CallbackPrintModelDescription {
+  }
+
 }

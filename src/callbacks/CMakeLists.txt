@@ -1,5 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  callback.cpp
   check_dataset.cpp
   check_gradients.cpp
   check_init.cpp
@@ -25,6 +26,7 @@ set_full_path(THIS_DIR_SOURCES
   monitor_io.cpp
   perturb_adam.cpp
   perturb_dropout.cpp
+  print_model_description.cpp
   print_statistics.cpp
   profiler.cpp
   replace_weights.cpp

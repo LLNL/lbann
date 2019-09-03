@@ -205,10 +205,7 @@ void sgd_training_algorithm::do_evaluate_begin_cbs(model& model, execution_mode 
     case execution_mode::testing:
       cb->on_test_begin(&model); break;
     default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid execution mode";
-      throw lbann_exception(err.str());
+      LBANN_ERROR("invalid execution mode");
     }
   }
 }
@@ -221,10 +218,7 @@ void sgd_training_algorithm::do_evaluate_end_cbs(model& model, execution_mode mo
     case execution_mode::testing:
       cb->on_test_end(&model); break;
     default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid execution mode";
-      throw lbann_exception(err.str());
+      LBANN_ERROR("invalid execution mode");
     }
   }
 }
@@ -256,10 +250,7 @@ void sgd_training_algorithm::do_batch_begin_cbs(model& model, execution_mode mod
       cb->on_batch_evaluate_begin(&model);
       break;
     default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid execution mode";
-      throw lbann_exception(err.str());
+      LBANN_ERROR("invalid execution mode");
     }
   }
 }
@@ -279,10 +270,7 @@ void sgd_training_algorithm::do_batch_end_cbs(model& model, execution_mode mode)
       cb->on_batch_evaluate_end(&model);
       break;
     default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid execution mode";
-      throw lbann_exception(err.str());
+      LBANN_ERROR("invalid execution mode");
     }
   }
 }

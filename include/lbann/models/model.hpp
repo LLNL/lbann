@@ -363,7 +363,9 @@ public:
   // Callbacks
   // ===========================================
 
-  /** Execute callbacks at start of model forward propagation. */
+  /** @brief Execute callbacks at end of setup. */
+  virtual void do_setup_end_cbs();
+  /** @brief Execute callbacks at start of model forward propagation. */
   virtual void do_model_forward_prop_begin_cbs(execution_mode mode);
   /** @brief Execute callbacks at end of model forward propagation. */
   virtual void do_model_forward_prop_end_cbs(execution_mode mode);

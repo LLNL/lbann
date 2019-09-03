@@ -42,14 +42,13 @@ python_reader::python_reader(std::string module,
   : generic_data_reader(true) {
 
   // Make sure Python is running and acquire GIL
-  python::session::start_once();
   python::global_interpreter_lock gil;
 
   // Import Python module for data
   if (!module_dir.empty()) {
     auto path = PySys_GetObject("path");  // Borrowed reference
     PyList_Append(path, python::object(module_dir));
-    python::session::check_error();
+    python::check_error();
   }
   python::object data_module = PyImport_ImportModule(module.c_str());
 
@@ -58,7 +57,7 @@ python_reader::python_reader(std::string module,
     = PyObject_GetAttrString(data_module, num_samples_function.c_str());
   python::object num = PyObject_CallObject(num_func, nullptr);
   m_num_samples = PyLong_AsLong(num);
-  python::session::check_error();
+  python::check_error();
 
   // Get sample dimensions
   python::object dims_func
@@ -69,7 +68,7 @@ python_reader::python_reader(std::string module,
     m_sample_dims.push_back(PyLong_AsLong(d));
     Py_DECREF(d);
   }
-  python::session::check_error();
+  python::check_error();
 
   // Get sample access function
   m_sample_function = PyObject_GetAttrString(data_module,
@@ -78,7 +77,7 @@ python_reader::python_reader(std::string module,
 }
 
 python_reader::~python_reader() {
-  if (python::session::is_active() && m_process_pool != nullptr) {
+  if (python::is_active() && m_process_pool != nullptr) {
     python::global_interpreter_lock gil;
     PyObject_CallMethod(m_process_pool, "terminate", nullptr);
     PyObject_CallMethod(m_process_pool, "join", nullptr);
@@ -216,14 +215,14 @@ void python_reader::setup(int num_io_threads,
   PyObject_SetAttrString(main_module,
                          sample_func_name.c_str(),
                          m_sample_function);
-  python::session::check_error();
+  python::check_error();
   const std::string shared_array_name
     = ("_DATA_READER_PYTHON_CPP_shared_memory_array"
        + std::to_string(instance_id));
   PyObject_SetAttrString(main_module,
                          shared_array_name.c_str(),
                          m_shared_memory_array);
-  python::session::check_error();
+  python::check_error();
 
   // Create wrapper around sample function
   // Note: We attempt accessing the sample with the buffer protocol
@@ -273,7 +272,7 @@ def @wrapper_func@(sample_index, array_offset):
                                         std::regex("\\@datatype_typecode\\@"),
                                         datatype_typecode);
   PyRun_SimpleString(wrapper_func_def.c_str());
-  python::session::check_error();
+  python::check_error();
   m_sample_function_wrapper
     = PyObject_GetAttrString(main_module,
                              wrapper_func_name.c_str());
@@ -302,7 +301,7 @@ def @init_func@():
                                      std::regex("\\@init_func\\@"),
                                      init_func_name);
   PyRun_SimpleString(init_func_def.c_str());
-  python::session::check_error();
+  python::check_error();
   python::object init_func
     = PyObject_GetAttrString(main_module,
                              init_func_name.c_str());
