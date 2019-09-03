@@ -48,7 +48,7 @@ Model:
   for inference.  It is a collection of layers that perform
   transformations and mathematical operations on data that is passed
   between layers.  Layers are composed in a general directed acyclic
-  graph (DAG) and executed in a depth-first traversal.  Inside of some
+  graph (DAG) and executed in topological order.  Inside of some
   layer types are weight matrices that define a trained model.
 
   The model also owns the objective function, since that is integrally
@@ -58,5 +58,6 @@ Model:
 
   The model also owns the max_mini_batch_size that is supported by the
   model.  This is due to the fact that it changes the size and shape of
-  weight matrices.  Additionally, the model owns if background I/O is
-  allowed.
+  weight matrices.  Additionally, the model owns a field that
+  controls if background I/O is allowed for this model and associated
+  data reader.

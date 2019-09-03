@@ -84,15 +84,15 @@ static std::string __attribute__((used)) to_string(persist_type pt) {
   case persist_type::validate:
     return "validate";
   case persist_type::testing:
-    return "testing";
+    return "test";
   case persist_type::prediction_ctx:
-    return "prediction_ctx";
+    return "prediction";
   case persist_type::training_ctx:
-    return "training_ctx";
+    return "training";
   case persist_type::validation_ctx:
-    return "validation_ctx";
+    return "validation";
   case persist_type::testing_ctx:
-    return "testing_ctx";
+    return "testing";
   default:
       LBANN_ERROR("Invalid persist type specified");
   }
