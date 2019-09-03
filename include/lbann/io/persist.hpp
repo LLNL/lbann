@@ -55,7 +55,7 @@ enum class persist_type {
 
 typedef Iterator<persist_type, persist_type::train, persist_type::validation_ctx> persist_type_iterator;
 
-static persist_type __attribute__((used)) execution_mode_to_persist_type(execution_mode m) {
+inline persist_type execution_mode_to_persist_type(execution_mode m) {
   switch(m) {
   case execution_mode::training:
     return persist_type::training_ctx;
@@ -73,7 +73,7 @@ static persist_type __attribute__((used)) execution_mode_to_persist_type(executi
   }
 }
 
-static std::string __attribute__((used)) to_string(persist_type pt) {
+inline std::string to_string(persist_type pt) {
   switch(pt) {
   case persist_type::model:
     return "model";
@@ -107,7 +107,7 @@ enum class callback_type {
 };
 
 class persist {
- protected:
+ private:
   std::map<persist_type, uint64_t> m_bytes;
   std::map<persist_type, int> m_FDs;
   std::map<persist_type, std::string> m_filenames;
@@ -210,7 +210,7 @@ bool write_string(int fd, const char *name, const char *buf, size_t size);
 bool read_string(int fd, const char *name, char *buf, size_t size);
 
 template <typename C>
-bool write_cereal_archive(C& obj, persist& p, persist_type pt, std::string suffix) {
+bool write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
   std::ofstream os(p.get_filename(pt) + suffix);
   {
     cereal::XMLOutputArchive archive(os);
@@ -220,13 +220,13 @@ bool write_cereal_archive(C& obj, persist& p, persist_type pt, std::string suffi
 }
 
 template <typename C>
-bool write_cereal_archive(C& obj, persist& p, execution_mode mode, std::string suffix) {
+bool write_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
   const persist_type pt = execution_mode_to_persist_type(mode);
   return write_cereal_archive<C>(obj, p, pt, suffix);
 }
 
 template <typename C>
-bool read_cereal_archive(C& obj, persist& p, persist_type pt, std::string suffix) {
+bool read_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
   bool success = false;
   std::ifstream is(p.get_filename(pt) + suffix);
   if(is) {
@@ -240,7 +240,7 @@ bool read_cereal_archive(C& obj, persist& p, persist_type pt, std::string suffix
 }
 
 template <typename C>
-bool read_cereal_archive(C& obj, persist& p, execution_mode mode, std::string suffix) {
+bool read_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
   const persist_type pt = execution_mode_to_persist_type(mode);
   return read_cereal_archive<C>(obj, p, pt, suffix);
 }
@@ -256,7 +256,7 @@ std::string create_cereal_archive_binary_string(C& obj) {
 }
 
 template <typename C>
-bool unpack_cereal_archive_binary_string(C& obj, std::string buf) {
+bool unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
   std::stringstream ss(buf);
   {
     cereal::BinaryInputArchive archive(ss);
