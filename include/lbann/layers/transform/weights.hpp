@@ -28,8 +28,6 @@
 #define LBANN_LAYER_WEIGHTS_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
-#include "lbann/training_algorithms/training_algorithm.hpp"
-#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 
 namespace lbann {
 

@@ -37,8 +37,6 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
-#include "lbann/training_algorithms/training_algorithm.hpp"
-#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 
 namespace lbann {
 
