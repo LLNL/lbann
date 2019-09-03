@@ -92,7 +92,7 @@ trainer::~trainer() {
 // Trainer specification
 ////////////////////////////////////////////////////////////
 
-void trainer::set_name(std::string name) {
+void trainer::set_name(std::string const& name) {
   m_name = name;
 }
 

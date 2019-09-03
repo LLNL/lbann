@@ -210,7 +210,7 @@ static inline bool read_latest(std::string filename, execution_mode *mode, int *
     read_string(fd, filename.c_str(), field, sizeof(field));
     char modeStr[64];
     int ret = sscanf(field, "mode=%s epoch=%d step=%d\n", modeStr, epochLast, trainLast);
-    *mode = _from_string(modeStr);
+    *mode = exec_mode_from_string(modeStr);
     // close our file
     closeread(fd, filename.c_str());
     if(ret != 2) { return false; }

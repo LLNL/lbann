@@ -137,7 +137,7 @@ private:
     *  @detailed Step counts the number of iterations in the training
     *  algorithm's internal state
     */
-  El::Int m_step = 0;
+  size_t m_step = 0;
 
   /** @brief Whether to terminate training.
    *  @detailed If true, training will terminate immediately before

@@ -74,7 +74,7 @@ public:
    *  that may be useful in multi-trainer scenarios, e.g,
    *  LTFB, jag
    */
-  void set_name(std::string name);
+  void set_name(std::string const& name);
 
   /** Return the trainer's name; this is an arbitrary string
    *  that may be useful in multi-trainer scenarios, e.g,
@@ -119,7 +119,7 @@ public:
   void evaluate(observing_ptr<model> model, execution_mode mode, El::Int num_batche=0);
 
   /** Return the I/O thread pool */
-  observing_ptr<thread_pool> get_io_thread_pool() const { return static_cast<observing_ptr<thread_pool>>(m_io_thread_pool.get()); }
+  observing_ptr<thread_pool> get_io_thread_pool() const { return m_io_thread_pool.get(); }
 
   /** Get the trainer's comm. */
   inline lbann_comm *get_comm() const {

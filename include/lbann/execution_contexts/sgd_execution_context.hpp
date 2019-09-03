@@ -101,7 +101,7 @@ public:
 
 private:
   /** Number of times the training data set has been traversed. */
-  El::Int m_epoch = 0;
+  size_t m_epoch = 0;
 
   /** Size of the current mini-batch in the model. */
   int m_current_mini_batch_size;

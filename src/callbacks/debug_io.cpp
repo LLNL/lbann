@@ -168,7 +168,7 @@ build_debug_io_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDebugIO&>(proto_msg);
-  const auto& phase = exe_mode_from_string(params.phase());
+  const auto& phase = exec_mode_from_string(params.phase());
   const auto& lvl = params.lvl();
   switch (phase) {
   case execution_mode::training:
