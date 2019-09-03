@@ -167,7 +167,7 @@ class adaptive_learning_rate : public learning_rate {
   /** Amount to decrease the learning rate by. */
   float m_amt;
   /** Current epoch. */
-  size_t m_cur_epoch = std::numeric_limits<size_t>::max();;
+  size_t m_cur_epoch = std::numeric_limits<size_t>::max();
   /** Last recorded score. */
   EvalType m_last_score = std::numeric_limits<EvalType>::max();
   /** Current number of epochs without improvement. */

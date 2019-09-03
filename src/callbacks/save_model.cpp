@@ -147,8 +147,8 @@ bool save_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdi
   if(ckptdir_is_fullpath) {
     active_ckpt_dir = ckpt_dir;
   }else {
-    int epochLast = -1;
-    int stepLast = -1;
+    size_t epochLast = std::numeric_limits<size_t>::max();;
+    size_t stepLast = std::numeric_limits<size_t>::max();;
     execution_mode mode = execution_mode::invalid;
     active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
 

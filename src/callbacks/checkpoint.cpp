@@ -143,8 +143,8 @@ bool checkpoint::do_checkpoint(model *m) {
   char dir[1024];
   std::string epochdir;
   std::string latest_file;
-  int epoch = -1;
-  int step = -1 ;
+  size_t epoch = std::numeric_limits<size_t>::max();
+  size_t step = std::numeric_limits<size_t>::max();
   lbann_comm *comm = m->get_comm();
   // TODO: we would want to prepend dir with the model name and model rank:
   // m->get_name() + '.' + std::to_string(comm->get_trainer_rank()) + '.'
@@ -156,7 +156,7 @@ bool checkpoint::do_checkpoint(model *m) {
     epoch = c.get_epoch();
     step = c.get_step();
     timer.Start();
-    printf("Checkpoint [%s]: epoch %d step %d ...\n", to_string(c.get_execution_mode()).c_str(), epoch, step);
+    printf("Checkpoint [%s]: epoch %ld step %ld ...\n", to_string(c.get_execution_mode()).c_str(), epoch, step);
     fflush(stdout);
   }
   comm->trainer_broadcast(0, epoch);
@@ -235,7 +235,7 @@ bool checkpoint::do_checkpoint(model *m) {
     if (secs > 0.0) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
-    printf("[%s.%d] Checkpoint [%s] complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
+    printf("[%s.%d] Checkpoint [%s] complete: Epoch=%ld Step=%ld (%f secs, %llu bytes, %f MB/sec)\n",
            m->get_name().c_str(), comm->get_trainer_rank(), to_string(c.get_execution_mode()).c_str(), epoch, step, secs, (unsigned long long) bytes_count, bw);
     fflush(stdout);
   }
@@ -245,18 +245,18 @@ bool checkpoint::do_checkpoint(model *m) {
   return true;
 }
 
-std::string checkpoint::find_latest_checkpoint(model *m, std::string& latest_file, execution_mode& mode, int &epoch, int& step, int& shared) {
+std::string checkpoint::find_latest_checkpoint(model *m, std::string& latest_file, execution_mode& mode, size_t &epoch, size_t& step, int& shared) {
   constexpr unsigned int max_len_dirname = 1024;
   char dir[max_len_dirname];
-  int epoch_dist = -1;
-  int step_dist = -1;
+  size_t epoch_dist = 0;
+  size_t step_dist = 0;
   lbann_comm *comm = m->get_comm();
   // Grab latest checkpoint information, checks for latest in dist and shared, restarts from most recent between the two.
   if (comm->am_trainer_master()) {
     if(m_per_rank_dir.length()){
       snprintf(dir, sizeof(dir), "%s/%s", m_per_rank_dir.c_str(), m_checkpoint_dir.c_str());
       latest_file = get_last_distributed_checkpoint_filename(m, dir);
-      read_latest(latest_file, &mode, &epoch, &step);
+      read_latest(latest_file, &mode, &epoch_dist, &step_dist);
     }
     if(m_checkpoint_dir.length()){
       strcpy(dir, m_checkpoint_dir.c_str());
@@ -326,8 +326,8 @@ bool checkpoint::open_latest_checkpoint(
   // get top level directory
   // char dir[max_len_dirname];
   std::string latest_file;
-  int epoch = -1;
-  int step = -1;
+  size_t epoch = std::numeric_limits<size_t>::max();
+  size_t step = std::numeric_limits<size_t>::max();
   int shared = 1;
   execution_mode mode;
   lbann_comm *comm = m->get_comm();
@@ -335,7 +335,7 @@ bool checkpoint::open_latest_checkpoint(
   std::string dir = find_latest_checkpoint(m, latest_file, mode, epoch, step, shared);
 
   // if we couldn't find the latest epoch, just return
-  if (epoch < 0) {
+  if (epoch == std::numeric_limits<size_t>::max()) {
     return false;
   }
   // time how long this takes
@@ -377,7 +377,7 @@ bool checkpoint::open_latest_checkpoint(
     if (secs > 0.0) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
-    printf("[%s.%d] %s complete: Epoch=%d Step=%d (%f secs, %llu bytes, %f MB/sec)\n",
+    printf("[%s.%d] %s complete: Epoch=%ld Step=%ld (%f secs, %llu bytes, %f MB/sec)\n",
            m->get_name().c_str(), comm->get_trainer_rank(), task_label.c_str(), epoch, step,
            secs, (unsigned long long) bytes_count, bw
           );

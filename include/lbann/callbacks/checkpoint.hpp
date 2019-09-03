@@ -105,8 +105,8 @@ class checkpoint : public callback_base {
   }
 
   bool need_checkpoint(model *m, callback_phase phase);
-  std::string find_latest_checkpoint(model *m, std::string& latest_file, int &epoch, int& step, int& shared);
-  std::string find_latest_checkpoint(model *m, std::string& latest_file, execution_mode& mode, int &epoch, int& step, int& shared);
+  std::string find_latest_checkpoint(model *m, std::string& latest_file, size_t& epoch, size_t& step, int& shared);
+  std::string find_latest_checkpoint(model *m, std::string& latest_file, execution_mode& mode, size_t &epoch, size_t& step, int& shared);
   bool open_latest_checkpoint(model *m,
                               const std::string& task_label,
                               std::function<bool(/*const */persist&)> reload_shared_ckpt,
@@ -148,7 +148,7 @@ inline std::string get_last_shared_checkpoint_filename(model *m, const std::stri
   return ss.str();
 }
 
-inline std::string get_shared_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, int epoch, int step) {
+inline std::string get_shared_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
   lbann_comm *comm = m->get_comm();
   std::ostringstream ss;
   ss << dir << "/" << m->get_name().c_str();
@@ -168,7 +168,7 @@ inline std::string get_last_distributed_checkpoint_filename(model *m, const std:
   return ss.str();
 }
 
-inline std::string get_distributed_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, int epoch, int step) {
+inline std::string get_distributed_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
   lbann_comm *comm = m->get_comm();
   std::ostringstream ss;
   ss << dir << "/" << m->get_name().c_str();
@@ -181,12 +181,12 @@ inline std::string get_distributed_checkpoint_dirname(model *m, const std::strin
 }
 
 // Print last checkpoint to file, used to determine which checkpoint to load from.
-inline bool write_latest(std::string filename, execution_mode mode, int epoch, int train) {
+inline bool write_latest(std::string filename, execution_mode mode, size_t epoch, size_t train) {
   // open the file for writing
   int fd = openwrite(filename.c_str());
   if (fd != -1) {
     char field[256];
-    sprintf(field, "mode=%s epoch=%d step=%d\n", to_string(mode).c_str(), epoch, train);
+    sprintf(field, "mode=%s epoch=%ld step=%ld\n", to_string(mode).c_str(), epoch, train);
     write_string(fd, filename.c_str(), field, strlen(field));
     // close our file
     closewrite(fd, filename.c_str());
@@ -197,7 +197,7 @@ inline bool write_latest(std::string filename, execution_mode mode, int epoch, i
 /** \brief Reads the "latest" file and returns the epoch number and
  *        sample offset for most recent checkpoint
  */
-inline bool read_latest(std::string filename, execution_mode *mode, int *epochLast, int *trainLast) {
+inline bool read_latest(std::string filename, execution_mode *mode, size_t *epochLast, size_t *trainLast) {
   // assume we don't have a file, we'll return -1 in that case
   *epochLast = -1;
   *trainLast = -1;
@@ -209,7 +209,7 @@ inline bool read_latest(std::string filename, execution_mode *mode, int *epochLa
     char field[256];
     read_string(fd, filename.c_str(), field, sizeof(field));
     char modeStr[64];
-    int ret = sscanf(field, "mode=%s epoch=%d step=%d\n", modeStr, epochLast, trainLast);
+    int ret = sscanf(field, "mode=%s epoch=%ld step=%ld\n", modeStr, epochLast, trainLast);
     *mode = exec_mode_from_string(modeStr);
     // close our file
     closeread(fd, filename.c_str());
