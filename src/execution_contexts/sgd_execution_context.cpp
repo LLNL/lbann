@@ -25,6 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/polymorphic.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
 
 namespace lbann {
 
@@ -39,88 +43,41 @@ sgd_execution_context::sgd_execution_context(observing_ptr<trainer> trainer, lba
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
-/* struct used to serialize mode fields in file and MPI transfer */
-struct lbann_execution_context_header {
-  uint64_t current_epoch;
-  uint64_t current_mini_batch_size;
-  uint64_t effective_mini_batch_size;
-};
-
 bool sgd_execution_context::save_to_checkpoint_shared(persist& p) {
-  execution_context::save_to_checkpoint_shared(p);
-
-  // write out fields we need to save for execution_context
-  const persist_type pt = execution_mode_to_persist_type(get_execution_mode());
-
   if (get_comm()->am_trainer_master()) {
-    p.write_uint64(pt, "current_epoch",             (uint64_t) m_epoch);
-    p.write_uint64(pt, "current_mini_batch_size",   (uint64_t) m_current_mini_batch_size);
-    p.write_uint64(pt, "effective_mini_batch_size", (uint64_t) m_effective_mini_batch_size);
+    write_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
   }
 
   return true;
 }
 
 bool sgd_execution_context::load_from_checkpoint_shared(persist& p) {
-  execution_context::load_from_checkpoint_shared(p);
-
-  // have rank 0 read the file
-  // read state from file
-  struct lbann_execution_context_header header;
-
-  callback_type cb = p.get_cb_type();
-  const persist_type pt = callback_type_to_persist_type(cb);
+  bool success = false;
+  std::string buf;
 
   // Assume checkpoint reload from epoch end not step end
   if (get_comm()->am_trainer_master()) {
-    p.read_uint64(pt, "current_epoch",     &header.current_epoch);
-    p.read_uint64(pt, "current_mini_batch_size", &header.current_mini_batch_size);
-    p.read_uint64(pt, "effective_mini_batch_size", &header.effective_mini_batch_size);
+    success = read_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+    buf = create_cereal_archive_binary_string<sgd_execution_context>(*this);
   }
 
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
-  get_comm()->trainer_broadcast(0, header);
-  // set our member params from values read from disk
-  m_epoch                     = (El::Int) header.current_epoch;
-  m_current_mini_batch_size   = (El::Int) header.current_mini_batch_size;
-  m_effective_mini_batch_size = (El::Int) header.effective_mini_batch_size;
+  get_comm()->trainer_broadcast(0, buf);
 
-  return true;
+  if (!get_comm()->am_trainer_master()) {
+    success = unpack_cereal_archive_binary_string<sgd_execution_context>(*this, buf);
+  }
+
+  return success;
 }
 
 bool sgd_execution_context::save_to_checkpoint_distributed(persist& p) {
-  execution_context::save_to_checkpoint_distributed(p);
-
-  // write out fields we need to save for execution_context
-  const persist_type pt = execution_mode_to_persist_type(get_execution_mode());
-
-  p.write_uint64(pt, "current_epoch",             (uint64_t) m_epoch);
-  p.write_uint64(pt, "current_mini_batch_size",   (uint64_t) m_current_mini_batch_size);
-  p.write_uint64(pt, "effective_mini_batch_size", (uint64_t) m_effective_mini_batch_size);
-
-  return true;
+  return write_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
 }
 
 bool sgd_execution_context::load_from_checkpoint_distributed(persist& p) {
-  execution_context::load_from_checkpoint_distributed(p);
-
-  struct lbann_execution_context_header header;
-
-  callback_type cb = p.get_cb_type();
-  const persist_type pt = callback_type_to_persist_type(cb);
-
-  // Assume checkpoint reload from epoch end not step end
-  p.read_uint64(pt, "current_epoch",     &header.current_epoch);
-  p.read_uint64(pt, "current_mini_batch_size", &header.current_mini_batch_size);
-  p.read_uint64(pt, "effective_mini_batch_size", &header.effective_mini_batch_size);
-
-  // set our member params from values read from disk
-  m_epoch                     = (El::Int) header.current_epoch;
-  m_current_mini_batch_size   = (El::Int) header.current_mini_batch_size;
-  m_effective_mini_batch_size = (El::Int) header.effective_mini_batch_size;
-
-  return true;
+  return read_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
 }
 
 }  // namespace lbann

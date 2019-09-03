@@ -90,10 +90,24 @@ public:
   /** Set up the trainer. */
   virtual void setup(std::unique_ptr<thread_pool> io_thread_pool);
 
-  virtual std::pair<observing_ptr<model>, execution_mode>
+  using execution_context_key_pair_t = typename std::pair<observing_ptr<model>, execution_mode>;
+
+  virtual execution_context_key_pair_t
   check_and_build_execution_context(observing_ptr<training_algorithm> alg,
                                     observing_ptr<model> model,
                                     execution_mode mode);
+
+  virtual execution_context_key_pair_t
+  check_and_build_execution_context(const execution_context& c,
+                                    model& model,
+                                    execution_mode mode);
+
+  virtual execution_context& get_execution_context(observing_ptr<model> model,
+                                                                 execution_mode mode);
+
+  virtual execution_context& get_execution_context(execution_context_key_pair_t key);
+
+  virtual void for_each_execution_context(std::function<bool(observing_ptr<execution_context>)>fn);
 
   virtual void apply(observing_ptr<training_algorithm> alg,
                      observing_ptr<model> model,

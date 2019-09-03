@@ -31,6 +31,7 @@
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/enum_iterator.hpp"
 
 // Defines, among other things, DataType.
 #include "lbann_config.hpp"
@@ -129,11 +130,32 @@ matrix_format data_layout_to_matrix_format(data_layout layout);
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
 std::string to_string(execution_mode m);
+typedef Iterator<execution_mode, execution_mode::training, execution_mode::invalid> execution_mode_iterator;
 
 /** @brief Convert a string to an execution_mode. */
 execution_mode exe_mode_from_string(std::string const& str);
 /** @brief Extract an execution_mode from a stream. */
 std::istream& operator>>(std::istream& os, execution_mode& e);
+
+static execution_mode __attribute__((used)) _from_string(const char *str) {
+  if(strcmp(str,"training") == 0) {
+    return execution_mode::training;
+  }
+  if(strcmp(str, "validation") == 0) {
+    return execution_mode::validation;
+  }
+  if(strcmp(str, "testing") == 0){
+    return execution_mode::testing;
+  }
+  if(strcmp(str, "prediction") == 0) {
+    return execution_mode::prediction;
+  }
+  if(strcmp(str, "invalid") == 0) {
+    return execution_mode::invalid;
+  }
+
+  throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
+}
 
 /** Pooling layer mode */
 enum class pool_mode {invalid, max, average, average_no_pad};

@@ -24,35 +24,32 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATASET_HPP_INCLUDED
-#define LBANN_DATASET_HPP_INCLUDED
+#ifndef LBANN_ENUM_ITERATOR_H
+#define LBANN_ENUM_ITERATOR_H
 
-#include "lbann/data_readers/data_reader.hpp"
-#include <cereal/types/utility.hpp>
+#include <type_traits>
 
 namespace lbann {
 
-class dataset {
- public:
-  dataset() : m_num_samples_processed(0), m_total_samples(0) {};
-  // The associated model/IO layer using this dataset is responsible for copying
-  // the data reader.
-  dataset(const dataset& other) = default;
-  dataset& operator=(const dataset& other) = default;
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_num_samples_processed),
-       CEREAL_NVP(m_total_samples));
+template < typename C, C beginVal, C endVal>
+class Iterator {
+  typedef typename std::underlying_type<C>::type val_t;
+  int val;
+public:
+  Iterator(const C & f) : val(static_cast<val_t>(f)) {}
+  Iterator() : val(static_cast<val_t>(beginVal)) {}
+  Iterator operator++() {
+    ++val;
+    return *this;
   }
-
-  long get_num_samples_processed() const { return m_num_samples_processed; }
-  long& num_samples_processed() { return m_num_samples_processed; }
-  long get_total_samples() const { return m_total_samples; }
-  long& total_samples() { return m_total_samples; }
- protected:
-  long m_num_samples_processed;
-  long m_total_samples;
+  C operator*() { return static_cast<C>(val); }
+  Iterator begin() { return *this; } //default ctor is good
+  Iterator end() {
+      static const Iterator endIter=++Iterator(endVal); // cache it
+      return endIter;
+  }
+  bool operator!=(const Iterator& i) { return val != i.val; }
 };
 
-}  // namespace lbann
-
-#endif  // LBANN_DATASET_HPP_INCLUDED
+}
+#endif // LBANN_ENUM_ITERATOR_H

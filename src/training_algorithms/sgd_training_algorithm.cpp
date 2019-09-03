@@ -58,12 +58,17 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
                                    model& model,
                                    El::Int num_epochs,
                                    El::Int num_batches) {
+
+  // Initialize epoch
+  model.reset_mode(&c, execution_mode::training);
+
   do_train_begin_cbs(model);
   for (int epoch = c.get_epoch(); epoch < num_epochs; ++epoch) {
     if (c.get_terminate_training()) { break; }
 
     // Initialize epoch
     model.reset_mode(&c, execution_mode::training);
+    model.reset_epoch_statistics(execution_mode::training);
     do_epoch_begin_cbs(model);
 
     // Training iterations
@@ -77,13 +82,11 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
     c.inc_epoch();
     model.reconcile_weight_values();
     do_epoch_end_cbs(model);
-    model.reset_epoch_statistics(execution_mode::training);
 
     // Evaluate on validation set
-    auto evaluation_context = make_unique<sgd_execution_context>(static_cast<const sgd_execution_context&>(c));
-    evaluation_context.get()->set_execution_mode(execution_mode::validation);
-    evaluate(*(evaluation_context.get()), model, execution_mode::validation);
-
+    auto key = c.get_trainer()->check_and_build_execution_context(c, model, execution_mode::validation);
+    auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer()->get_execution_context(key));
+    evaluate(evaluation_context, model, execution_mode::validation);
   }
   do_train_end_cbs(model);
 }
@@ -159,6 +162,7 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   } else {
     while (!evaluate_mini_batch(c, model, mode)) {}
   }
+  c.inc_epoch();
   do_evaluate_end_cbs(model, mode);
 }
 

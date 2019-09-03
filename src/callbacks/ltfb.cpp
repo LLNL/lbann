@@ -216,7 +216,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
   // Save model checkpoint
   persist p;
-  p.set_cb_type(callback_type::batch);
+  p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
     p.open_checkpoint(send_dir.c_str());
   } else {
@@ -235,7 +235,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
   }
 
   // Load model checkpoint from partner trainer
-  p.set_cb_type(callback_type::batch);
+  p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
     p.open_restart(recv_dir.c_str());
   } else {
@@ -273,7 +273,7 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
   // Load local model checkpoint
   persist p;
-  p.set_cb_type(callback_type::batch);
+  p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
     p.open_restart(checkpoint_dir.c_str());
   } else {

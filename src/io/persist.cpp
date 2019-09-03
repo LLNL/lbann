@@ -99,7 +99,7 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
   if (write_rc != sizeof(header)) {
     // error!
   }
-  m_bytes += write_rc;
+  m_bytes[type] += write_rc;
 
   // now write the data for our part of the distributed matrix
   const El::Int lDim = M.LDim();
@@ -112,7 +112,7 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
     if (write_rc != bufsize) {
       // error!
     }
-    m_bytes += write_rc;
+    m_bytes[type] += write_rc;
   } else {
     // TODO: if this padding is small, may not be a big deal to write it out anyway
     // we've got some padding along the first dimension
@@ -124,7 +124,7 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
       if (write_rc != bufsize) {
         // error!
       }
-      m_bytes += write_rc;
+      m_bytes[type] += write_rc;
     }
   }
   return true;
@@ -158,7 +158,7 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
         << "but got " << read_rc << " bytes)";
     LBANN_ERROR(err.str());
   }
-  m_bytes += read_rc;
+  m_bytes[type] += read_rc;
 
   // resize our global matrix
   El::Int height = header.height;
@@ -179,7 +179,7 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
             << "but got " << read_rc << " bytes)";
         LBANN_ERROR(err.str());
       }
-      m_bytes += read_rc;
+      m_bytes[type] += read_rc;
     } else {
       for(El::Int j = 0; j <  localwidth; ++j) {
         auto *buf = (void *) M.Buffer(0, j);
@@ -192,7 +192,7 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
               << "but got " << read_rc << " bytes)";
           LBANN_ERROR(err.str());
         }
-        m_bytes += read_rc;
+        m_bytes[type] += read_rc;
       }
     }
   } else {
@@ -208,7 +208,7 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
             << "but got " << read_rc << " bytes)";
         LBANN_ERROR(err.str());
       }
-      m_bytes += read_rc;
+      m_bytes[type] += read_rc;
     } else {
       for(El::Int jLoc = 0; jLoc < localwidth; ++jLoc) {
         auto *buf = (void *) M.Buffer(0, jLoc);
@@ -221,7 +221,7 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
               << "but got " << read_rc << " bytes)";
           LBANN_ERROR(err.str());
         }
-        m_bytes += read_rc;
+        m_bytes[type] += read_rc;
       }
     }
   }
@@ -233,15 +233,39 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
  ****************************************************/
 
 lbann::persist::persist() {
-  // initialize number of bytes written
-  m_bytes = 0;
-
-  // initialize file descriptors
-  m_model_fd = -1;
-  m_train_fd = -1;
-  m_validate_fd = -1;
+  for(persist_type pt : persist_type_iterator()) {
+    // initialize number of bytes written
+    m_bytes[pt] = 0;
+    // initialize file descriptors
+    m_FDs[pt] = -1;
+    m_filenames[pt] = "<unknown>";
+  }
 }
 
+bool lbann::persist::checkpoint_has_valid_execution_mode(persist_type pt) {
+  return (m_FDs[pt] >= 0);
+}
+
+bool lbann::persist::checkpoint_has_valid_execution_mode(execution_mode mode) {
+  return true;
+  /// @todo BVE explicitly bypass the check for file descriptors since
+  /// this context is being saved via Cereal
+#if 0
+  switch(mode) {
+  case execution_mode::training:
+    return (m_FDs[persist_type::training_ctx] >= 0);
+  case execution_mode::validation:
+    return (m_FDs[persist_type::validation_ctx] >= 0);
+  case execution_mode::testing:
+    return (m_FDs[persist_type::testing_ctx] >= 0);
+  default:
+    return false;
+  }
+#endif
+}
+
+/** @todo BVE FIXME this should be refactored to only open the
+    checkpoints files that we care about */
 void lbann::persist::open_checkpoint(const char *dir) {
   // create directory for checkpoint
   lbann::makedir(dir);
@@ -249,94 +273,67 @@ void lbann::persist::open_checkpoint(const char *dir) {
   // copy checkpoint directory
   strcpy(m_checkpoint_dir, dir);
 
-  // open the file for writing
-  sprintf(m_model_filename, "%s/model", dir);
-
-  // define filename for train state
-  sprintf(m_train_filename, "%s/train", dir);
-
-  if(ckpt_type != callback_type::validation && ckpt_type != callback_type::inference){
-    m_model_fd = lbann::openwrite(m_model_filename);
-    if (m_model_fd < 0) {
-      LBANN_ERROR(std::string{}
-                  + "failed to open file (" + m_model_filename + ")");
-    }
-
-    m_train_fd = lbann::openwrite(m_train_filename);
-    if (m_train_fd < 0) {
-      LBANN_ERROR(std::string{}
-                  + "failed to open file (" + m_train_filename + ")");
-    }
-  }
-  if (ckpt_type == callback_type::validation || ckpt_type == callback_type::batch){
-    sprintf(m_validate_filename, "%s/validate", dir);
-    m_validate_fd = lbann::openwrite(m_validate_filename);
-    if (m_validate_fd < 0) {
-      LBANN_ERROR(std::string{}
-                  + "failed to open file (" + m_validate_filename + ")");
+  for(persist_type pt : persist_type_iterator()) {
+    // open the file for writing
+    m_filenames[pt] = dir + to_string(pt);
+    // Do not explicitly open several files -- this state is saved via Cereal
+    if(pt != persist_type::metrics &&
+       pt != persist_type::testing &&
+       pt != persist_type::validate &&
+       pt != persist_type::testing_ctx &&
+       pt != persist_type::training_ctx &&
+       pt != persist_type::validation_ctx &&
+       pt != persist_type::prediction_ctx) {
+      m_FDs[pt] = lbann::openwrite(m_filenames[pt].c_str());
+      if (m_FDs[pt] < 0) {
+        LBANN_ERROR(std::string{}
+                + "failed to open file (" + m_filenames[pt] + ")");
+      }
     }
   }
 }
 
 void lbann::persist::close_checkpoint() {
-  // close model file
-  if (m_model_fd >= 0) {
-    lbann::closewrite(m_model_fd, m_model_filename);
-    m_model_fd = -1;
-  }
-
-  // close training file
-  if (m_train_fd >= 0) {
-    lbann::closewrite(m_train_fd, m_train_filename);
-    m_train_fd = -1;
-  }
-  if (m_validate_fd >= 0) {
-    lbann::closewrite(m_validate_fd, m_validate_filename);
-    m_validate_fd = -1;
+  for(persist_type pt : persist_type_iterator()) {
+    if (m_FDs[pt] >= 0) {
+      lbann::closewrite(m_FDs[pt], m_filenames[pt].c_str());
+      m_FDs[pt] = -1;
+      m_filenames[pt] = "<unknown>";
+    }
   }
 }
 
 void lbann::persist::open_restart(const char *dir) {
   // copy checkpoint directory
   strcpy(m_checkpoint_dir, dir);
-  // open the file for writing
-  sprintf(m_model_filename, "%s/model", dir);
 
-  // define filename for train state
-  sprintf(m_train_filename, "%s/train", dir);
-  // define filename for validate phase state
-  sprintf(m_validate_filename, "%s/validate", dir);
-
-  m_model_fd = lbann::openread(m_model_filename);
-  if (m_model_fd < 0) {
-    LBANN_ERROR(std::string{}
-                + "failed to read file (" + m_model_filename + ")");
-  }
-
-  m_train_fd = lbann::openread(m_train_filename);
-  if (m_train_fd < 0) {
-    LBANN_ERROR(std::string{}
-                + "failed to read file (" + m_train_filename + ")");
-  }
-  m_validate_fd = lbann::openread(m_validate_filename);
-  if (m_validate_fd < 0) {
-    LBANN_WARNING(std::string{}
-                  + "failed to read file (" + m_validate_filename + "), "
-                  + "which is not an error if validation percent = 0");
+  for(persist_type pt : persist_type_iterator()) {
+    // open the file for reading
+    m_filenames[pt] = dir + to_string(pt);
+    if(pt != persist_type::metrics &&
+       pt != persist_type::testing &&
+       pt != persist_type::validate &&
+       pt != persist_type::testing_ctx &&
+       pt != persist_type::training_ctx &&
+       pt != persist_type::validation_ctx &&
+       pt != persist_type::prediction_ctx) {
+      m_FDs[pt] = lbann::openread(m_filenames[pt].c_str());
+      if (m_FDs[pt] < 0) {
+        LBANN_ERROR(std::string{}
+                + "failed to open file (" + m_filenames[pt] + ")");
+      }
+    }
   }
 }
 
 void lbann::persist::close_restart() {
-  // close model file
-  lbann::closeread(m_model_fd, m_model_filename);
-  m_model_fd = -1;
-  // close training file
-  lbann::closeread(m_train_fd, m_train_filename);
-  m_train_fd = -1;
-  // close validate file
-  lbann::closeread(m_validate_fd, m_validate_filename);
-  m_validate_fd = -1;
-
+  for(persist_type pt : persist_type_iterator()) {
+    if (m_FDs[pt] >= 0) {
+      lbann::closeread(m_FDs[pt], m_filenames[pt].c_str());
+      m_FDs[pt] = -1;
+      m_filenames[pt] = "<unknown>";
+    }
+  }
 }
 
 bool lbann::persist::write_distmat(persist_type type, const char *name, AbsDistMat *M) {
@@ -356,7 +353,7 @@ bool lbann::persist::write_distmat(persist_type type, const char *name, AbsDistM
   //Write_MPI(M, filename, BINARY, "");
 
   uint64_t bytes = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
-  m_bytes += bytes;
+  m_bytes[type] += bytes;
 
   return true;
 }
@@ -384,33 +381,38 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, AbsDistMa
   //Read_MPI(M, filename, BINARY, 1);
 
   uint64_t bytes = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
-  m_bytes += bytes;
+  m_bytes[type] += bytes;
 
   return true;
 }
 
 bool lbann::persist::write_bytes(persist_type type, const char *name, const void *buf, size_t size) {
   int fd = get_fd(type);
+  std::string filename = get_filename(type);
   if (fd >= 0) {
     ssize_t rc = write(fd, buf, size);
     if (rc != (ssize_t) size) {
-      LBANN_ERROR(std::string{} + "failed to write file (" + name + ")");
+      LBANN_ERROR(std::string{} + "failed to write to fd " + std::to_string(fd).c_str()
+                  + " for file " + filename + " and field (" + name + ")");
       return false;
     }
-    m_bytes += size;
+    m_bytes[type] += size;
   }
   return true;
 }
 
 bool lbann::persist::read_bytes(persist_type type, const char *name, void *buf, size_t size) {
   int fd = get_fd(type);
+  std::string filename = get_filename(type);
   if (fd >= 0) {
     ssize_t rc = read(fd, buf, size);
     if (rc != (ssize_t) size) {
-      LBANN_ERROR(std::string{} + "failed to read file (" + name + ")");
+      LBANN_ERROR(std::string{} + "failed to read " + std::to_string(size).c_str() + " bytes from fd "
+                  + std::to_string(fd).c_str() + " for file " + filename + " and field (" + name
+                  + ") at offset " + std::to_string(m_bytes[type]).c_str());
       return false;
     }
-    m_bytes += size;
+    m_bytes[type] += size;
   }
   else {
     return false;
@@ -477,15 +479,11 @@ bool lbann::persist::read_string(persist_type type, const char *name, char *val,
 }
 
 int lbann::persist::get_fd(persist_type type) const {
-  int fd = -1;
-  if (type == persist_type::train) {
-    fd = m_train_fd;
-  } else if (type == persist_type::model) {
-    fd = m_model_fd;
-  } else if (type == persist_type::validate) {
-    fd = m_validate_fd;
-  }
-  return fd;
+  return m_FDs.at(type);
+}
+
+std::string lbann::persist::get_filename(persist_type type) const {
+  return m_filenames.at(type);
 }
 
 /****************************************************

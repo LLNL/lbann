@@ -28,7 +28,7 @@
 #define LBANN_SGD_EXECUTION_CONTEXT_HPP
 
 #include "lbann/execution_contexts/execution_context.hpp"
-
+#include <cereal/types/base_class.hpp>
 namespace lbann {
 
 struct sgd_termination_criteria : public termination_criteria {
@@ -57,6 +57,14 @@ public:
   sgd_execution_context& operator=(sgd_execution_context&& other) = default;
   /** Copy sgd_execution_context. */
   virtual std::unique_ptr<execution_context> copy_execution_context() const { return make_unique<sgd_execution_context>(*this); }
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(cereal::base_class<execution_context>( this ),
+       CEREAL_NVP(m_epoch),
+       CEREAL_NVP(m_current_mini_batch_size),
+       CEREAL_NVP(m_effective_mini_batch_size));
+  }
 
   /** Number of times the training set has been traversed. */
   inline El::Int get_epoch() const noexcept { return m_epoch; }

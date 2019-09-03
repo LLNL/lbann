@@ -30,63 +30,87 @@
 #define LBANN_PERSIST_H
 
 #include "lbann/base.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/enum_iterator.hpp"
 #include "El.hpp"
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/polymorphic.hpp>
+#include <sstream>
 
 namespace lbann {
 
 enum class persist_type {
   train, // data should be saved in file with train data
   model, // data should be saved in file with model data
-  validate
+  metrics,
+  validate,
+  testing,
+  prediction_ctx,
+  training_ctx,
+  testing_ctx,
+  validation_ctx,
 };
+
+typedef Iterator<persist_type, persist_type::train, persist_type::validation_ctx> persist_type_iterator;
 
 static persist_type __attribute__((used)) execution_mode_to_persist_type(execution_mode m) {
   switch(m) {
   case execution_mode::training:
-    return persist_type::train;
+    return persist_type::training_ctx;
   case execution_mode::validation:
-    return persist_type::validate;
+    return persist_type::validation_ctx;
   case execution_mode::testing:
-    return persist_type::validate;
+    return persist_type::testing_ctx;
   case execution_mode::prediction:
-    return persist_type::validate;
+    return persist_type::prediction_ctx;
+  // case execution_mode::tournament:
+  //   return persist_type::tournament;
   case execution_mode::invalid:
   default:
     throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
   }
 }
 
-enum class callback_type {
-  batch,
-  epoch,
-  validation,
-  inference,
-  invalid
-};
-
-static persist_type __attribute__((used)) callback_type_to_persist_type(callback_type cb) {
-  switch(cb) {
-  case callback_type::batch:
-  case callback_type::epoch:
-    return persist_type::train;
-  case callback_type::validation:
-    return persist_type::validate;
-  case callback_type::inference:
-  case callback_type::invalid:
+static std::string __attribute__((used)) to_string(persist_type pt) {
+  switch(pt) {
+  case persist_type::model:
+    return "model";
+  case persist_type::metrics:
+    return "metrics";
+  case persist_type::train:
+    return "train";
+  case persist_type::validate:
+    return "validate";
+  case persist_type::testing:
+    return "testing";
+  case persist_type::prediction_ctx:
+    return "prediction_ctx";
+  case persist_type::training_ctx:
+    return "training_ctx";
+  case persist_type::validation_ctx:
+    return "validation_ctx";
+  case persist_type::testing_ctx:
+    return "testing_ctx";
   default:
-    throw("Invalid callback_type specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
+      LBANN_ERROR("Invalid persist type specified");
   }
 }
 
+/// @todo Fix the callback types to properly track execution phases
+enum class callback_type {
+  model_only,
+  execution_context_only,
+  full_checkpoint,
+  invalid
+};
+
 class persist {
  protected:
-  uint64_t m_bytes;
-  int m_model_fd;
-  int m_train_fd;
-  int m_validate_fd;
-  char m_model_filename[1024];
-  char m_train_filename[1024];
-  char m_validate_filename[1024];
+  std::map<persist_type, uint64_t> m_bytes;
+  std::map<persist_type, int> m_FDs;
+  std::map<persist_type, std::string> m_filenames;
   callback_type ckpt_type;
  public:
   char m_checkpoint_dir[1024];
@@ -103,6 +127,9 @@ class persist {
     ckpt_type = type;
   }
 
+  bool checkpoint_has_valid_execution_mode(persist_type pt);
+  bool checkpoint_has_valid_execution_mode(execution_mode mode);
+
   void open_checkpoint(const char *dir);
   void close_checkpoint();
 
@@ -110,11 +137,17 @@ class persist {
   void close_restart();
 
   uint64_t get_bytes() const {
-    return m_bytes;
+    uint64_t bytes = 0;
+    for(auto& pt : m_bytes) {
+      bytes += pt.second;
+    }
+    return bytes;
   }
 
   void reset_bytes() {
-    m_bytes = 0;
+    for(auto& pt : m_bytes) {
+      pt.second = 0;
+    }
   }
 
   bool write_rank_distmat(persist_type type, const char *name, const AbsDistMat& M);
@@ -147,6 +180,7 @@ class persist {
   bool write_datatype(persist_type type, const char *name, DataType  val);
   bool read_datatype (persist_type type, const char *name, DataType *val);
 
+  std::string get_filename(persist_type type) const;
  private:
   int get_fd(persist_type type) const;
 };
@@ -174,6 +208,62 @@ bool read_double (int fd, const char *name, double *val);
 
 bool write_string(int fd, const char *name, const char *buf, size_t size);
 bool read_string(int fd, const char *name, char *buf, size_t size);
+
+template <typename C>
+bool write_cereal_archive(C& obj, persist& p, persist_type pt, std::string suffix) {
+  std::ofstream os(p.get_filename(pt) + suffix);
+  {
+    cereal::XMLOutputArchive archive(os);
+    archive(obj);
+  } // archive goes out of scope, ensuring all contents are flushed
+  return true;
+}
+
+template <typename C>
+bool write_cereal_archive(C& obj, persist& p, execution_mode mode, std::string suffix) {
+  const persist_type pt = execution_mode_to_persist_type(mode);
+  return write_cereal_archive<C>(obj, p, pt, suffix);
+}
+
+template <typename C>
+bool read_cereal_archive(C& obj, persist& p, persist_type pt, std::string suffix) {
+  bool success = false;
+  std::ifstream is(p.get_filename(pt) + suffix);
+  if(is) {
+    cereal::XMLInputArchive archive(is);
+    archive(obj);
+    success = true;
+  }else {
+    success = false;
+  }
+  return success;
+}
+
+template <typename C>
+bool read_cereal_archive(C& obj, persist& p, execution_mode mode, std::string suffix) {
+  const persist_type pt = execution_mode_to_persist_type(mode);
+  return read_cereal_archive<C>(obj, p, pt, suffix);
+}
+
+template <typename C>
+std::string create_cereal_archive_binary_string(C& obj) {
+  std::stringstream ss;
+  {
+    cereal::BinaryOutputArchive archive(ss);
+    archive(obj);
+  } // archive goes out of scope, ensuring all contents are flushed
+  return ss.str();
+}
+
+template <typename C>
+bool unpack_cereal_archive_binary_string(C& obj, std::string buf) {
+  std::stringstream ss(buf);
+  {
+    cereal::BinaryInputArchive archive(ss);
+    archive(obj);
+  } // archive goes out of scope, ensuring all contents are flushed
+  return true;
+}
 
 } // namespace lbann
 

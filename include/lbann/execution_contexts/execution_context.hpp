@@ -31,6 +31,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include <cereal/types/utility.hpp>
 
 namespace lbann {
 
@@ -53,6 +54,13 @@ public:
     // Use explicit construction of unique pointer since copy
     // constructor is protected and cannot be accessed in make_unique
     return std::unique_ptr<execution_context>{new execution_context(*this)};
+  }
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_execution_mode),
+       CEREAL_NVP(m_terminate_training),
+       CEREAL_NVP(m_step));
   }
 
   /** @brief Current step in the training algorithm

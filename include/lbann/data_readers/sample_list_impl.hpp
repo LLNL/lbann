@@ -387,8 +387,10 @@ inline size_t sample_list<sample_name_t>
                    lbann_comm& comm) {
   std::string archive;
   std::stringstream ss;
-  cereal::BinaryOutputArchive oarchive(ss);
-  oarchive(data);
+  {
+    cereal::BinaryOutputArchive oarchive(ss);
+    oarchive(data);
+  } // archive goes out of scope, ensuring all contents are flushed
   archive = ss.str();
 
   std::vector<std::string> gathered_archive(comm.get_procs_per_trainer());

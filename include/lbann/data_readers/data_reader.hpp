@@ -44,7 +44,9 @@
 #include <vector>
 #include <unistd.h>
 #include <unordered_set>
-
+#include <cereal/types/utility.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/vector.hpp>
 
 #define NOT_IMPLEMENTED(n) { \
   std::stringstream s; \
@@ -107,6 +109,13 @@ class generic_data_reader {
 
   virtual ~generic_data_reader() {}
   virtual generic_data_reader* copy() const = 0;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_current_mini_batch_idx),
+       CEREAL_NVP(m_current_pos),
+       CEREAL_NVP(m_shuffled_indices));
+  }
 
   /// set the comm object
   void set_comm(lbann_comm *comm) {
@@ -584,96 +593,15 @@ class generic_data_reader {
 
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-  bool save_to_checkpoint_shared(persist& p, const char *name);
+  bool save_to_checkpoint_shared(persist& p, execution_mode mode);
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
-  bool load_from_checkpoint_shared(persist& p, const char *name);
+  bool load_from_checkpoint_shared(persist& p, execution_mode mode);
 
-  bool save_to_checkpoint_distributed(persist& p, const char *name);
+  bool save_to_checkpoint_distributed(persist& p, execution_mode mode);
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
-  bool load_from_checkpoint_distributed(persist& p, const char *name);
-
-  struct packing_header {
-    uint64_t current_pos;
-    uint64_t current_mini_batch_idx;
-    uint64_t data_size;
-  };
-  bool pack_scalars(persist& p, const char *name) {
-    char fieldname[1024];
-    lbann::persist_type persist_value;
-    std::string s_name(name);
-    if(s_name.compare("data_reader_validation") == 0){
-      persist_value = persist_type::validate;
-    } else {
-       persist_value= persist_type::train;
-    }
-
-
-    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-    p.write_uint64(persist_value, fieldname, (uint64_t) m_current_mini_batch_idx);
-
-    int size = m_shuffled_indices.size();
-    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
-    p.write_uint64(persist_value, fieldname, (uint64_t) size);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-    p.write_uint64(persist_value, fieldname, (uint64_t) m_current_pos);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-    p.write_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-
-    return true;
-  }
-
-  bool unpack_scalars(persist& p, struct packing_header *header, const char *name){
-    char fieldname[1024];
-    lbann::persist_type persist_value;
-    std::string s_name(name);
-    if(s_name.compare("data_reader_validation") == 0){
-      persist_value = persist_type::validate;
-    } else {
-       persist_value= persist_type::train;
-    }
-    // Closest to non checkpoint run only loads m_current_pos
-
-    // record minibatch index
-    uint64_t val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-    p.read_uint64(persist_value, fieldname, &val);
-    m_current_mini_batch_idx = (int) val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
-    p.read_uint64(persist_value, fieldname, &val);
-    auto size = (int) val;
-
-    // get current position within data
-    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-    p.read_uint64(persist_value, fieldname, &val);
-    m_current_pos = (int) val;
-    //resize shuffled index array to hold values
-    m_shuffled_indices.resize(size);
-
-     //read list of indices
-    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-    p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-
-    if(header != nullptr){
-      //shuffled data indices array size, used for resize after broadcast. Not unpacked.
-      header->data_size = size;
-      // all else, unpacked and set in unpack header.
-      header->current_pos = m_current_pos;
-      header->current_mini_batch_idx = m_current_mini_batch_idx;
-    }
-
-  return true;
-  }
-
-  void unpack_header(struct packing_header& header){
-    m_current_pos = (int) header.current_pos;
-    m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
-  }
+  bool load_from_checkpoint_distributed(persist& p, execution_mode mode);
 
   /// returns a const ref to the data store
   virtual const data_store_conduit& get_data_store() const {
@@ -749,7 +677,7 @@ class generic_data_reader {
   double get_use_percent() const;
 
   /**
-   * Returns the percent of the shuffled indices that are to be 
+   * Returns the percent of the shuffled indices that are to be
    * used. Code in this method was formerly in select_subset_of_data()
    */
   double get_percent_to_use() const;
@@ -799,7 +727,7 @@ class generic_data_reader {
   }
 
   /// returns the percent of shuffled indices that are used;
-  /// the returned value  depends on the values returned by 
+  /// the returned value  depends on the values returned by
   /// get_absolute_sample_count() and get_use_percent().
   double get_percent_to_use();
 

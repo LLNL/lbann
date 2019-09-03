@@ -72,7 +72,7 @@ void save_model::write_proto_text(const lbann_data::Model& proto,
 bool save_model::do_save_model(model *m) {
   lbann_data::Model model_param;
 
-  p.set_cb_type(callback_type::inference);
+  p.set_cb_type(callback_type::model_only);
   do_save_model_weights(m);
   p.set_cb_type(callback_type::invalid);
 
@@ -111,7 +111,7 @@ bool save_model::do_save_model_weights(model *m) {
 
   // Shared checkpoint, logic identical to Distributed.i
   makedir(m_dir.c_str());
-  std::string epochdir = get_shared_checkpoint_dirname(m, m_dir.c_str(), epoch, step);
+  std::string epochdir = get_shared_checkpoint_dirname(m, m_dir.c_str(), c.get_execution_mode(), epoch, step);
   if (comm->am_trainer_master()) {
     p.open_checkpoint(epochdir.c_str());
   }
@@ -122,7 +122,7 @@ bool save_model::do_save_model_weights(model *m) {
   p.close_checkpoint();
   if (comm->am_trainer_master()) {
     std::string latest_file = get_last_shared_checkpoint_filename(m, m_dir.c_str());
-    write_latest(latest_file, epoch, step);
+    write_latest(latest_file, c.get_execution_mode(), epoch, step);
   }
 
   uint64_t bytes_count = p.get_bytes();
@@ -149,14 +149,15 @@ bool save_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdi
   }else {
     int epochLast = -1;
     int stepLast = -1;
+    execution_mode mode = execution_mode::invalid;
     active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
 
     // get last epoch and step saved.
-    int success = read_latest(active_ckpt_dir, &epochLast, &stepLast);
+    int success = read_latest(active_ckpt_dir, &mode, &epochLast, &stepLast);
     if(!success) {
       return false;
     }
-    active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
+    active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, mode, epochLast, stepLast);
   }
   lbann_comm *comm = m->get_comm();
   if(comm->am_trainer_master()) {

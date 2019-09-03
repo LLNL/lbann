@@ -29,6 +29,7 @@
 
 #include "lbann/layers/io/io_layer.hpp"
 //#include "lbann/utils/dataset.hpp"
+#include "lbann/io/persist.hpp"
 #include "lbann/io/data_buffers/generic_io_buffer.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/models/model.hpp"
@@ -36,6 +37,11 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/training_algorithms/training_algorithm.hpp"
 #include "lbann/training_algorithms/sgd_training_algorithm.hpp"
+#include <cereal/types/utility.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
 
 #include <future>
 
@@ -123,6 +129,16 @@ class generic_input_layer : public io_layer {
       dr.second = dr.second->copy();
     }
     return *this;
+  }
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(/*CEREAL_NVP(m_io_buffer),*/
+       CEREAL_NVP(m_training_dataset),
+       CEREAL_NVP(m_testing_dataset),
+       CEREAL_NVP(m_validation_dataset)/*,
+       CEREAL_NVP(m_data_readers),
+       CEREAL_NVP(m_data_set_processed)*/);
   }
 
   template<typename T_io_buffer>
@@ -711,51 +727,29 @@ class generic_input_layer : public io_layer {
   bool save_to_checkpoint_shared(persist& p) const override {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
-    if(p.get_cb_type() != callback_type::validation){
+    if(p.get_cb_type() == callback_type::execution_context_only
+       || p.get_cb_type() == callback_type::full_checkpoint){
+
       it = this->m_data_readers.find(execution_mode::training);
       if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_shared(p, "data_reader_training");
+        (it->second)->save_to_checkpoint_shared(p, execution_mode::training);
       }
       it = this->m_data_readers.find(execution_mode::testing);
       if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_shared(p, "data_reader_testing");
-      }
-      if (m_comm->am_trainer_master()) {
-        p.write_uint64(persist_type::train, "reader_train_processed",
-                       (uint64_t) m_training_dataset.get_num_samples_processed());
-        p.write_uint64(persist_type::train, "reader_train_total",
-                       (uint64_t) m_training_dataset.get_total_samples());
-
-        p.write_uint64(persist_type::train, "reader_test_processed",
-                       (uint64_t) m_testing_dataset.get_num_samples_processed());
-        p.write_uint64(persist_type::train, "reader_test_total",
-                     (uint64_t) m_testing_dataset.get_total_samples());
-
-      }
-    }
-    if(p.get_cb_type() == callback_type::validation || p.get_cb_type() == callback_type::batch){
-      if (m_comm->am_trainer_master()) {
-        p.write_uint64(persist_type::validate, "reader_validate_processed",
-                       (uint64_t) m_validation_dataset.get_num_samples_processed());
-        p.write_uint64(persist_type::validate, "reader_validate_total",
-                       (uint64_t) m_validation_dataset.get_total_samples());
+        (it->second)->save_to_checkpoint_shared(p, execution_mode::testing);
       }
       it = this->m_data_readers.find(execution_mode::validation);
       if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_shared(p, "data_reader_validation");
+        (it->second)->save_to_checkpoint_shared(p, execution_mode::validation);
       }
+
+      if (get_comm()->am_trainer_master()) {
+        write_cereal_archive<const generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
+      }
+
     }
     return true;
   }
-
-  struct dataset_header {
-    uint64_t train_proc;
-    uint64_t train_total;
-    uint64_t test_proc;
-    uint64_t test_total;
-    uint64_t validate_proc;
-    uint64_t validate_total;
-  };
 
   // reload state of IO from a checkpoint
   bool load_from_checkpoint_shared(persist& p) override {
@@ -764,80 +758,53 @@ class generic_input_layer : public io_layer {
 
     it = this->m_data_readers.find(execution_mode::training);
     if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_shared(p, "data_reader_training");
+      (it->second)->load_from_checkpoint_shared(p, execution_mode::training);
     }
     it = this->m_data_readers.find(execution_mode::testing);
     if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_shared(p, "data_reader_testing");
+      (it->second)->load_from_checkpoint_shared(p, execution_mode::testing);
     }
-
-    // save our own state
-    // rank 0 reads the file
-    dataset_header header;
-    // Assume we are loading from a epoch end checkpoint
-    if (m_comm->am_trainer_master()) {
-      p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
-      p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
-      p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
-      p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
-      if(m_data_readers[execution_mode::validation] != nullptr){
-        p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
-        p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
-      }
-    }
-
     it = this->m_data_readers.find(execution_mode::validation);
     if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_shared(p, "data_reader_validation");
+      (it->second)->load_from_checkpoint_shared(p, execution_mode::validation);
     }
-    // TODO: assumes homogeneous hardware
-    // broadcast data from rank 0
-    MPI_Bcast(&header, sizeof(header), MPI_BYTE, 0, MPI_COMM_WORLD);
-    // set our fields
-    m_training_dataset.num_samples_processed()   = (long) header.train_proc;
-    m_training_dataset.total_samples()           = (long) header.train_total;
-    m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
-    m_testing_dataset.total_samples()            = (long) header.test_total;
-    if(m_data_readers[execution_mode::validation] != nullptr){
-      m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
-      m_validation_dataset.total_samples()         = (long) header.validate_total;
+
+    bool success = false;
+    std::string buf;
+    if (get_comm()->am_trainer_master()) {
+      success = read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
+      buf = create_cereal_archive_binary_string<generic_input_layer>(*this);
+   }
+
+    // TODO: this assumes homogeneous processors
+    // broadcast state from rank 0
+    get_comm()->trainer_broadcast(0, buf);
+
+    if (!get_comm()->am_trainer_master()) {
+      success = unpack_cereal_archive_binary_string<generic_input_layer>(*this, buf);
     }
-    return true;
+
+    return success;
   }
 
   bool save_to_checkpoint_distributed(persist& p) const override {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
-    if(p.get_cb_type() != callback_type::validation){
+    if(p.get_cb_type() == callback_type::execution_context_only || p.get_cb_type() == callback_type::full_checkpoint) {
       it = this->m_data_readers.find(execution_mode::training);
       if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_distributed(p, "data_reader_training");
+        (it->second)->save_to_checkpoint_distributed(p, execution_mode::training);
       }
       it = this->m_data_readers.find(execution_mode::testing);
       if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_distributed(p, "data_reader_testing");
+        (it->second)->save_to_checkpoint_distributed(p, execution_mode::testing);
       }
-      p.write_uint64(persist_type::train, "reader_train_processed",
-                     (uint64_t) m_training_dataset.get_num_samples_processed());
-      p.write_uint64(persist_type::train, "reader_train_total",
-                     (uint64_t) m_training_dataset.get_total_samples());
-
-      p.write_uint64(persist_type::train, "reader_test_processed",
-                     (uint64_t) m_testing_dataset.get_num_samples_processed());
-      p.write_uint64(persist_type::train, "reader_test_total",
-                   (uint64_t) m_testing_dataset.get_total_samples());
-
-    }
-    if(p.get_cb_type() == callback_type::validation || p.get_cb_type() == callback_type::batch){
-      p.write_uint64(persist_type::validate, "reader_validate_processed",
-                     (uint64_t) m_validation_dataset.get_num_samples_processed());
-      p.write_uint64(persist_type::validate, "reader_validate_total",
-                     (uint64_t) m_validation_dataset.get_total_samples());
       it = this->m_data_readers.find(execution_mode::validation);
       if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_distributed(p, "data_reader_validation");
+        (it->second)->save_to_checkpoint_distributed(p, execution_mode::validation);
       }
 
+      write_cereal_archive<const generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
     }
     return true;
   }
@@ -847,38 +814,18 @@ class generic_input_layer : public io_layer {
     data_reader_map_t::const_iterator it;
     it = this->m_data_readers.find(execution_mode::training);
     if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_distributed(p, "data_reader_training");
+      (it->second)->load_from_checkpoint_distributed(p, execution_mode::training);
     }
     it = this->m_data_readers.find(execution_mode::testing);
     if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_distributed(p, "data_reader_testing");
-    }
-    // save our own state
-    // rank 0 reads the file
-    dataset_header header;
-    p.read_uint64(persist_type::train, "reader_train_processed",    &header.train_proc);
-    p.read_uint64(persist_type::train, "reader_train_total",        &header.train_total);
-    p.read_uint64(persist_type::train, "reader_test_processed",     &header.test_proc);
-    p.read_uint64(persist_type::train, "reader_test_total",         &header.test_total);
-    if(m_data_readers[execution_mode::validation] != nullptr){
-      p.read_uint64(persist_type::validate, "reader_validate_processed", &header.validate_proc);
-      p.read_uint64(persist_type::validate, "reader_validate_total",     &header.validate_total);
+      (it->second)->load_from_checkpoint_distributed(p, execution_mode::testing);
     }
     it = this->m_data_readers.find(execution_mode::validation);
     if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_distributed(p, "data_reader_validation");
+      (it->second)->load_from_checkpoint_distributed(p, execution_mode::validation);
     }
 
-    // set our fields
-    m_training_dataset.num_samples_processed()   = (long) header.train_proc;
-    m_training_dataset.total_samples()           = (long) header.train_total;
-    m_testing_dataset.num_samples_processed()    = (long) header.test_proc;
-    m_testing_dataset.total_samples()            = (long) header.test_total;
-    if(m_data_readers[execution_mode::validation] != nullptr){
-      m_validation_dataset.num_samples_processed() = (long) header.validate_proc;
-      m_validation_dataset.total_samples()         = (long) header.validate_total;
-    }
-    return true;
+    return read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
   }
 
   int get_active_buffer_idx(execution_mode m) {

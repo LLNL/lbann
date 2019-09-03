@@ -32,6 +32,9 @@
 #include "lbann/models/model.hpp"
 #include <omp.h>
 #include <future>
+#include "lbann/io/persist.hpp"
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
 
 namespace lbann {
 
@@ -494,7 +497,7 @@ double generic_data_reader::get_percent_to_use() {
   size_t count = get_absolute_sample_count();
   double use_percent = get_use_percent();
   double r = 0.;
-  
+
   if (count != 0) {
     r = count / get_num_data();
   }
@@ -525,7 +528,7 @@ void generic_data_reader::select_subset_of_data() {
     return ;
   }
 
-  long unused = get_validation_percent()*get_num_data(); 
+  long unused = get_validation_percent()*get_num_data();
   long use_me = get_num_data() - unused;
   if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
@@ -550,40 +553,44 @@ void generic_data_reader::use_unused_index_set() {
 }
 
 /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-bool generic_data_reader::save_to_checkpoint_shared(persist& p, const char *name) {
-  // rank 0 writes the training state file
-  if (m_comm->am_trainer_master()) {
-    pack_scalars(p,name);
+bool generic_data_reader::save_to_checkpoint_shared(persist& p, execution_mode mode) {
+  if (get_comm()->am_trainer_master()) {
+    write_cereal_archive<generic_data_reader>(*this, p, mode, "_dr.xml");
   }
   return true;
 }
 
 /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
-bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, const char *name) {
-  // rank 0 reads the training state file
-  struct packing_header header;
-  if (m_comm->am_trainer_master()) {
-    unpack_scalars(p,&header,name);
-  }
-  m_comm->trainer_broadcast(0, header);
-  unpack_header(header);
+bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, execution_mode mode) {
+  bool success = false;
+  std::string buf;
 
-  m_comm->trainer_broadcast(0, m_shuffled_indices);
+  // Assume checkpoint reload from epoch end not step end
+  if (get_comm()->am_trainer_master()) {
+    success = read_cereal_archive<generic_data_reader>(*this, p, mode, "_dr.xml");
+    buf = create_cereal_archive_binary_string<generic_data_reader>(*this);
+  }
+
+  // TODO: this assumes homogeneous processors
+  // broadcast state from rank 0
+  get_comm()->trainer_broadcast(0, buf);
+
+  if (!get_comm()->am_trainer_master()) {
+    success = unpack_cereal_archive_binary_string<generic_data_reader>(*this, buf);
+  }
 
   // Adjust current position to deal with fact that it was just loaded to all ranks from rank 0 (differs by rank #)
   m_current_pos += m_comm->get_rank_in_trainer();
-  return true;
+  return success;
+  //  return true;
 }
 
-bool generic_data_reader::save_to_checkpoint_distributed(persist& p, const char *name) {
-  pack_scalars(p,name);
-  return true;
+bool generic_data_reader::save_to_checkpoint_distributed(persist& p, execution_mode mode) {
+  return write_cereal_archive<generic_data_reader>(*this, p, mode, "_dr.xml");
 }
 
-bool lbann::generic_data_reader::load_from_checkpoint_distributed(persist& p, const char *name) {
-  struct packing_header header;
-  unpack_scalars(p,&header,name);
-  return true;
+bool lbann::generic_data_reader::load_from_checkpoint_distributed(persist& p, execution_mode mode) {
+  return read_cereal_archive<generic_data_reader>(*this, p, mode, "_dc.xml");
 }
 
 void generic_data_reader::set_file_dir(std::string s) {

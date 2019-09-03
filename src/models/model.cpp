@@ -99,6 +99,7 @@ model::model(const model& other) :
   for (const auto& ptr : other.m_layers) {
     if (ptr == nullptr) { LBANN_ERROR("unexpected null pointer"); }
     auto* old_layer = ptr.get();
+    /// @todo BVE FIXME - not sure copy does what I think that it should
     auto* new_layer = old_layer->copy();
     new_layer->set_model(this);
     m_layers.emplace_back(new_layer);
@@ -1252,41 +1253,23 @@ struct lbann_model_header {
 
 bool model::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
-  if (p.get_cb_type() != callback_type::validation) {
-    if (m_comm->am_trainer_master()) {
-      p.write_uint32(persist_type::model, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
-      p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
-    }
+  if (m_comm->am_trainer_master()) {
+    p.write_uint32(persist_type::model, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
+    p.write_uint32(persist_type::model, "persist_callback_type",      (uint32_t) p.get_cb_type());
+  }
 
-    for (weights *w : m_weights) {
-      w->save_to_checkpoint_shared(p);
-    }
+  for (weights *w : m_weights) {
+    w->save_to_checkpoint_shared(p);
+  }
 
-    for (El::Int i = 0; i < get_num_layers(); ++i) {
-      if (!get_layer(i).save_to_checkpoint_shared(p)) {
-        return false;
-      }
-    }
-    if(p.get_cb_type() == callback_type::batch || get_num_iterations_per_epoch(execution_mode::validation) == 0){
-      save_rng_to_checkpoint_shared(p, m_comm);
-      for (const auto& m : m_metrics) {
-        m->save_to_checkpoint_shared(p);
-      }
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    if (!get_layer(i).save_to_checkpoint_shared(p)) {
+      return false;
     }
   }
-  else{
-    save_rng_to_checkpoint_shared(p, m_comm);
-    for (weights *w : m_weights) {
-      w->save_to_checkpoint_shared(p);
-    }
-    for (El::Int i = 0; i < get_num_layers(); ++i) {
-      if (!get_layer(i).save_to_checkpoint_shared(p)) {
-        return false;
-      }
-    }
-    for (const auto& m : m_metrics) {
-      m->save_to_checkpoint_shared(p);
-    }
+  save_rng_to_checkpoint_shared(p, m_comm);
+  for (const auto& m : m_metrics) {
+    m->save_to_checkpoint_shared(p);
   }
   return true;
 }
@@ -1297,21 +1280,17 @@ bool model::load_from_checkpoint_shared(persist& p) {
   struct lbann_model_header header;
   // Assume checkpoint reload from epoch end not step end
   if (m_comm->am_trainer_master()) {
-    if (p.get_cb_type() != callback_type::validation) {
-      p.read_uint32(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
-      p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
-    }
+    p.read_uint32(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
+    p.read_uint32(persist_type::model, "persist_callback_type",     &header.callback_type);
   }
   load_rng_from_checkpoint_shared(p, m_comm);
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
   m_comm->trainer_broadcast(0, header);
   // set our member params from values read from disk
-  if (p.get_cb_type() != callback_type::validation) {
-    m_max_mini_batch_size = (int)           header.max_mini_batch_size;
-    // set state of persist object to know which type of ckpt we are returning from.
-    p.set_cb_type((callback_type) header.callback_type);
-  }
+  m_max_mini_batch_size = (int)           header.max_mini_batch_size;
+  // set state of persist object to know which type of ckpt we are returning from.
+  p.set_cb_type((callback_type) header.callback_type);
 
   for (weights *w : m_weights) {
     w->load_from_checkpoint_shared(p);
@@ -1336,44 +1315,24 @@ bool model::load_from_checkpoint_shared(persist& p) {
 
 bool model::save_to_checkpoint_distributed(persist& p){
   // write out fields we need to save for model
-  if (p.get_cb_type() != callback_type::validation) {
-    p.write_uint32(persist_type::model, "max_mini_batch_size",  (uint32_t) m_max_mini_batch_size);
-    p.write_uint32(persist_type::train, "persist_callback_type",(uint32_t) p.get_cb_type());
+  p.write_uint32(persist_type::model, "max_mini_batch_size",  (uint32_t) m_max_mini_batch_size);
+  p.write_uint32(persist_type::train, "persist_callback_type",(uint32_t) p.get_cb_type());
 
-    for (weights *w : m_weights) {
-      w->save_to_checkpoint_distributed(p);
-    }
-
-    for (El::Int i = 0; i < get_num_layers(); ++i) {
-      if (!get_layer(i).save_to_checkpoint_distributed(p)) {
-        return false;
-      }
-    }
-    #if 0
-    if(p.get_cb_type() == callback_type::batch || get_num_iterations_per_epoch(execution_mode::validation) == 0){
-       save_rng_to_checkpoint_shared(p, m_comm);
-      for (const auto& m : m_metrics) {
-        m->save_to_checkpoint_distributed(p);
-      }
-    }
-    #endif
+  // for each execution context write out them out
+  for (weights *w : m_weights) {
+    w->save_to_checkpoint_distributed(p);
   }
 
-  else {
-#if 0
-    p.write_uint64(persist_type::validate, "validataion_step",       (uint64_t) c.get_step());
-#endif
-    save_rng_to_checkpoint_shared(p, m_comm);
-
-    for (El::Int i = 0; i < get_num_layers(); ++i) {
-      if (!get_layer(i).save_to_checkpoint_distributed(p)) {
-        return false;
-      }
-    }
-    for (const auto& m : m_metrics) {
-      m->save_to_checkpoint_distributed(p);
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    if (!get_layer(i).save_to_checkpoint_distributed(p)) {
+      return false;
     }
   }
+  save_rng_to_checkpoint_shared(p, m_comm);
+  for (const auto& m : m_metrics) {
+    m->save_to_checkpoint_distributed(p);
+  }
+
   return true;
 }
 
@@ -1396,10 +1355,8 @@ bool model::load_from_checkpoint_distributed(persist& p){
       return false;
     }
   }
-  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
-    for (const auto& m : m_metrics) {
-      m->load_from_checkpoint_distributed(p);
-    }
+  for (const auto& m : m_metrics) {
+    m->load_from_checkpoint_distributed(p);
   }
   return true;
 }
