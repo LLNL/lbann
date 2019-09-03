@@ -72,7 +72,7 @@ public:
   model(const model& other);
   model& operator=(const model& other);
   virtual ~model();
-  virtual std::unique_ptr<model> copy_model() const { return make_unique<model>(*this); }
+  virtual std::unique_ptr<model> copy_model() const = 0;
 
   // ===========================================
   // Access functions
@@ -82,7 +82,7 @@ public:
    *  @details Should be a brief, human-readable description of the
    *  model's architecture.
    */
-  virtual std::string get_type() const {return "generic_model"; }
+  virtual std::string get_type() const = 0;
 
   /** @brief Model instance name.
    *  @details Each model in a trainer should have a unique, and

@@ -68,7 +68,7 @@ public:
   /** Copy assignment operator. */
   trainer& operator=(const trainer& other);
   /** Destructor. */
-  virtual ~trainer();
+  ~trainer();
 
   /** Set the trainer's name; this is an arbitrary string
    *  that may be useful in multi-trainer scenarios, e.g,
@@ -85,38 +85,38 @@ public:
   }
 
   /** Human-readable description. */
-  virtual description get_description() const;
+  description get_description() const;
 
   /** Set up the trainer. */
-  virtual void setup(std::unique_ptr<thread_pool> io_thread_pool);
+  void setup(std::unique_ptr<thread_pool> io_thread_pool);
 
   using execution_context_key_pair_t = typename std::pair<observing_ptr<model>, execution_mode>;
 
-  virtual execution_context_key_pair_t
-  check_and_build_execution_context(observing_ptr<training_algorithm> alg,
+  execution_context_key_pair_t
+  check_and_build_execution_context(training_algorithm& alg,
                                     observing_ptr<model> model,
                                     execution_mode mode);
 
-  virtual execution_context_key_pair_t
+  execution_context_key_pair_t
   check_and_build_execution_context(const execution_context& c,
                                     model& model,
                                     execution_mode mode);
 
-  virtual execution_context& get_execution_context(observing_ptr<model> model,
+  execution_context& get_execution_context(observing_ptr<model> model,
                                                                  execution_mode mode);
 
-  virtual execution_context& get_execution_context(execution_context_key_pair_t key);
+  execution_context& get_execution_context(execution_context_key_pair_t key);
 
-  virtual void for_each_execution_context(std::function<bool(observing_ptr<execution_context>)>fn);
+  void for_each_execution_context(std::function<bool(observing_ptr<execution_context>)>fn);
 
-  virtual void apply(observing_ptr<training_algorithm> alg,
-                     observing_ptr<model> model,
-                     execution_mode mode,
-                     termination_criteria const& term_criteria);
+  void apply(training_algorithm& alg,
+             observing_ptr<model> model,
+             execution_mode mode,
+             termination_criteria const& term_criteria);
 
-  virtual void train(observing_ptr<model> model, El::Int num_epochs, El::Int num_batches=0);
+  void train(observing_ptr<model> model, El::Int num_epochs, El::Int num_batches=0);
 
-  virtual void evaluate(observing_ptr<model> model, execution_mode mode, El::Int num_batche=0);
+  void evaluate(observing_ptr<model> model, execution_mode mode, El::Int num_batche=0);
 
   /** Return the I/O thread pool */
   observing_ptr<thread_pool> get_io_thread_pool() const { return static_cast<observing_ptr<thread_pool>>(m_io_thread_pool.get()); }
