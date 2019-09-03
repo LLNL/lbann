@@ -105,17 +105,26 @@ class BatchScript:
             '`add_parallel_command` to use a specific job scheduler'
         )
 
-    def write(self):
+    def write(self, overwrite=False):
         """Write script to file.
 
-        Overwrites script file if it already exists. The working
-        directory is created if needed.
+        The working directory is created if needed.
+
+        Args:
+            overwrite (bool): Whether to overwrite script file if it
+                already exists (default: false).
 
         """
 
         # Create directories if needed
         os.makedirs(self.work_dir, exist_ok=True)
         os.makedirs(os.path.dirname(self.script_file), exist_ok=True)
+
+        # Check if script file already exists
+        if not overwrite and os.path.isfile(self.script_file):
+            raise RuntimeError('Attempted to write batch script to {}, '
+                               'but it already exists'
+                               .format(self.script_file))
 
         # Write script to file
         with open(self.script_file, 'w') as f:
@@ -128,12 +137,16 @@ class BatchScript:
         # Make script file executable
         os.chmod(self.script_file, 0o755)
 
-    def run(self):
+    def run(self, overwrite=False):
         """Execute the script.
 
         The script is executed directly and is _not_ submitted to a
-        job scheduler. The script file is written/overwritten before
-        being executed.
+        job scheduler. The script file is written before being
+        executed.
+
+        Args:
+            overwrite (bool): Whether to overwrite script file if it
+                already exists (default: false).
 
         Returns:
             int: Exit status from executing script.
@@ -141,7 +154,7 @@ class BatchScript:
         """
 
         # Construct script file
-        self.write()
+        self.write(overwrite=overwrite)
 
         # Run script and pipe output to log files
         run_proc = subprocess.Popen(self.script_file,
@@ -161,10 +174,14 @@ class BatchScript:
         err_proc.wait()
         return run_proc.returncode
 
-    def submit(self):
+    def submit(self, overwrite=False):
         """Submit batch job to job scheduler.
 
-        The script file is written/overwritten before being submitted.
+        The script file is written before being submitted.
+
+        Args:
+            overwrite (bool): Whether to overwrite script file if it
+                already exists (default: false).
 
         Returns:
             int: Exit status from submitting to job scheduler.

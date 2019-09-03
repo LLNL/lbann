@@ -122,10 +122,14 @@ class SlurmBatchScript(BatchScript):
         args.extend(make_iterable(command))
         self.add_command(args)
 
-    def submit(self):
+    def submit(self, overwrite=False):
         """Submit batch job to Slurm with sbatch.
 
-        The script file is written/overwritten before being submitted.
+        The script file is written before being submitted.
+
+        Args:
+            overwrite (bool): Whether to overwrite script file if it
+                already exists (default: false).
 
         Returns:
             int: Exit status from sbatch.
@@ -133,7 +137,7 @@ class SlurmBatchScript(BatchScript):
         """
 
         # Construct script file
-        self.write()
+        self.write(overwrite=overwrite)
 
         # Submit batch script and pipe output to log files
         run_proc = subprocess.Popen(['sbatch', self.script_file],

@@ -125,10 +125,14 @@ class LSFBatchScript(BatchScript):
         args.extend(make_iterable(command))
         self.add_command(args)
 
-    def submit(self):
+    def submit(self, overwrite=False):
         """Submit batch job to LSF with bsub.
 
-        The script file is written/overwritten before being submitted.
+        The script file is written before being submitted.
+
+        Args:
+            overwrite (bool): Whether to overwrite script file if it
+                already exists (default: false).
 
         Returns:
             int: Exit status from bsub.
@@ -136,7 +140,7 @@ class LSFBatchScript(BatchScript):
         """
 
         # Construct script file
-        self.write()
+        self.write(overwrite=overwrite)
 
         # Submit batch script and pipe output to log files
         run_proc = subprocess.Popen(['bsub', self.script_file],
