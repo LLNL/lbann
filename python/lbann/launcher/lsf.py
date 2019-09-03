@@ -100,7 +100,8 @@ class LSFBatchScript(BatchScript):
         distributed evenly amongst the compute nodes.
 
         Args:
-            command (str): Command to be executed in parallel.
+            command (`str` or `Iterable` of `str`s): Command to be
+                executed in parallel.
             launcher (str, optional): jsrun executable.
             launcher_args (`Iterable` of `str`s, optional):
                 Command-line arguments to jsrun.
@@ -117,12 +118,12 @@ class LSFBatchScript(BatchScript):
             nodes = self.nodes
         if procs_per_node is None:
             procs_per_node = self.procs_per_node
-        self.add_body_line('{0} {1} -n {2} --tasks_per_rs {3} {4}'
-                           .format(launcher,
-                                   ' '.join(make_iterable(launcher_args)),
-                                   nodes,
-                                   procs_per_node,
-                                   command))
+        args = [launcher]
+        args.extend(make_iterable(launcher_args))
+        args.append('-n {}'.format(nodes))
+        args.append('--tasks_per_rs {}'.format(procs_per_node))
+        args.extend(make_iterable(command))
+        self.add_command(args)
 
     def submit(self):
         """Submit batch job to LSF with bsub.

@@ -1,6 +1,7 @@
 import os
 import os.path
 import subprocess
+from lbann.util import make_iterable
 
 class BatchScript:
     """Utility class to write batch job scripts.
@@ -46,7 +47,7 @@ class BatchScript:
 
         # Shebang line
         if interpreter:
-            self.header.append('#!{}'.format(interpreter))
+            self.add_header_line('#!{}'.format(interpreter))
 
     def add_header_line(self, line):
         """Add line to script header.
@@ -66,8 +67,14 @@ class BatchScript:
         self.body.append(line)
 
     def add_command(self, command):
-        """Add executable command to script."""
-        self.add_body_line(command)
+        """Add executable command to script.
+
+        Args:
+            command (`str` or `Iterable` of `str`s): Program
+                invocation or sequence of program arguments.
+
+        """
+        self.add_body_line(' '.join(make_iterable(command)))
 
     def add_parallel_command(self,
                              command,
@@ -82,7 +89,8 @@ class BatchScript:
         nodes.
 
         Args:
-            command (str): Command to be executed in parallel.
+            command (`str` or `Iterable` of `str`s): Command to be
+                executed in parallel.
             launcher (str, optional): Parallel command launcher,
                `mpirun`.
             launcher_args (`Iterable` of `str`s, optional):

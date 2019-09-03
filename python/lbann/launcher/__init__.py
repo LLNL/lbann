@@ -94,14 +94,14 @@ def run(model, data_reader, optimizer,
     script.add_command('date | sed "s/^/Started at /"')
 
     # Batch script invokes LBANN
-    lbann_command = lbann.lbann_exe()
-    lbann_command += ' ' + ' '.join(make_iterable(lbann_args))
+    lbann_command = [lbann.lbann_exe()]
+    lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
                                model=model,
                                data_reader=data_reader,
                                optimizer=optimizer)
-    lbann_command += ' --prototext=' + prototext_file
+    lbann_command.append('--prototext={}'.format(prototext_file))
     script.add_parallel_command(lbann_command)
 
     # Batch script prints finish time
