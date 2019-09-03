@@ -66,7 +66,7 @@ public:
   // ===========================================
 
   model(lbann_comm* comm,
-        El::Int mini_batch_size,
+        size_t mini_batch_size,
         objective_function* obj_fn,
         optimizer* default_optimizer = nullptr);
   model(const model& other);
@@ -191,7 +191,7 @@ public:
   optimizer* create_optimizer() const;
 
   /** Get the trainer's maximum mini-batch size. */
-  inline int get_max_mini_batch_size() const {
+  inline size_t get_max_mini_batch_size() const {
     return m_max_mini_batch_size;
   }
 
@@ -416,7 +416,7 @@ private:
    *  this model.  Note that this is local to the particular model,
    *  not across multiple models.
    */
-  int m_max_mini_batch_size;
+  size_t m_max_mini_batch_size;
 
   /** @details If a layer needs to construct an optimizer during
    *  setup, it will make a copy of the default optimizer. This object

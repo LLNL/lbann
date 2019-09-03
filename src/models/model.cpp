@@ -57,7 +57,7 @@ namespace lbann {
 // =============================================
 
 model::model(lbann_comm* comm,
-             El::Int mini_batch_size,
+             size_t mini_batch_size,
              objective_function* obj_fn,
              optimizer* default_optimizer)
   : m_execution_context(nullptr),
@@ -1266,14 +1266,14 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 
 /* struct used to serialize mode fields in file and MPI transfer */
 struct lbann_model_header {
-  uint32_t max_mini_batch_size;
+  uint64_t max_mini_batch_size;
   uint32_t callback_type;
 };
 
 bool model::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
   if (m_comm->am_trainer_master()) {
-    p.write_uint32(persist_type::model, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
+    p.write_uint64(persist_type::model, "max_mini_batch_size",      (uint64_t) m_max_mini_batch_size);
     p.write_uint32(persist_type::model, "persist_callback_type",      (uint32_t) p.get_cb_type());
   }
 
@@ -1299,7 +1299,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
   struct lbann_model_header header;
   // Assume checkpoint reload from epoch end not step end
   if (m_comm->am_trainer_master()) {
-    p.read_uint32(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
+    p.read_uint64(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
     p.read_uint32(persist_type::model, "persist_callback_type",     &header.callback_type);
   }
   load_rng_from_checkpoint_shared(p, m_comm);
@@ -1307,7 +1307,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
   // broadcast state from rank 0
   m_comm->trainer_broadcast(0, header);
   // set our member params from values read from disk
-  m_max_mini_batch_size = (int)           header.max_mini_batch_size;
+  m_max_mini_batch_size = (size_t)           header.max_mini_batch_size;
   // set state of persist object to know which type of ckpt we are returning from.
   p.set_cb_type((callback_type) header.callback_type);
 
@@ -1334,7 +1334,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
 
 bool model::save_to_checkpoint_distributed(persist& p){
   // write out fields we need to save for model
-  p.write_uint32(persist_type::model, "max_mini_batch_size",  (uint32_t) m_max_mini_batch_size);
+  p.write_uint64(persist_type::model, "max_mini_batch_size",  (uint64_t) m_max_mini_batch_size);
   p.write_uint32(persist_type::train, "persist_callback_type",(uint32_t) p.get_cb_type());
 
   // for each execution context write out them out
@@ -1357,10 +1357,10 @@ bool model::save_to_checkpoint_distributed(persist& p){
 
 bool model::load_from_checkpoint_distributed(persist& p){
   struct lbann_model_header header;
-  p.read_uint32(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
+  p.read_uint64(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
   p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
 
-  m_max_mini_batch_size = (int)           header.max_mini_batch_size;
+  m_max_mini_batch_size = (size_t)           header.max_mini_batch_size;
 
   p.set_cb_type((callback_type) header.callback_type);
   load_rng_from_checkpoint_shared(p, m_comm);

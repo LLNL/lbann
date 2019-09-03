@@ -109,11 +109,11 @@ void learning_rate::on_backward_prop_end(model *m) {
 }
 
 step_learning_rate::step_learning_rate(
-  int step, float amt) :
+  size_t step, float amt) :
   learning_rate(), m_step(step), m_amt(amt) {}
 
 step_learning_rate::step_learning_rate(
-  int step, float amt, std::vector<std::string> weights_names) :
+  size_t step, float amt, std::vector<std::string> weights_names) :
   learning_rate(std::move(weights_names)),
   m_step(step), m_amt(amt) {}
 
@@ -127,12 +127,12 @@ float step_learning_rate::global_schedule(model *m) {
 }
 
 adaptive_learning_rate::adaptive_learning_rate(
-  int64_t patience, float amt) :
+  size_t patience, float amt) :
   adaptive_learning_rate(patience, amt,
                                         std::vector<std::string>()) {}
 
 adaptive_learning_rate::adaptive_learning_rate(
-  int64_t patience, float amt, std::vector<std::string> weights_list) :
+  size_t patience, float amt, std::vector<std::string> weights_list) :
   learning_rate(std::move(weights_list)),
   m_patience(patience), m_amt(amt) {}
 
@@ -169,12 +169,12 @@ float adaptive_learning_rate::global_schedule(model *m) {
 }
 
 drop_fixed_learning_rate::drop_fixed_learning_rate(
-  std::vector<int64_t> drop_epochs, float amt) :
+  std::vector<size_t> drop_epochs, float amt) :
   drop_fixed_learning_rate(std::move(drop_epochs), amt,
                                           std::vector<std::string>()) {}
 
 drop_fixed_learning_rate::drop_fixed_learning_rate(
-  std::vector<int64_t> drop_epochs, float amt, std::vector<std::string> weights_names) :
+  std::vector<size_t> drop_epochs, float amt, std::vector<std::string> weights_names) :
   learning_rate(std::move(weights_names)),
   m_amt(amt), m_drop_epochs(std::move(drop_epochs)) {
   // Sort in reverse order.
@@ -198,17 +198,17 @@ float drop_fixed_learning_rate::global_schedule(model* m) {
 }
 
 linear_growth_learning_rate::linear_growth_learning_rate(
-  float target, int64_t num_epochs) :
+  float target, size_t num_epochs) :
   linear_growth_learning_rate(target, num_epochs, 0,
                                              std::vector<std::string>()) {}
 
 linear_growth_learning_rate::linear_growth_learning_rate(
-  float target, int64_t num_epochs, int64_t delay) :
+  float target, size_t num_epochs, size_t delay) :
   linear_growth_learning_rate(target, num_epochs, delay,
                                              std::vector<std::string>()) {}
 
 linear_growth_learning_rate::linear_growth_learning_rate(
-  float target, int64_t num_epochs, int64_t delay,
+  float target, size_t num_epochs, size_t delay,
   std::vector<std::string> weights_names) :
   learning_rate(std::move(weights_names)),
   m_target(target), m_inc(0),
@@ -243,14 +243,14 @@ float linear_growth_learning_rate::global_schedule(model *m) {
  * epochs (n_epochs). n_epochs is not used otherwise.
  */
 poly_learning_rate::poly_learning_rate(
-  double p, uint64_t n_epochs, uint64_t max_iter)
+  double p, size_t n_epochs, size_t max_iter)
   : learning_rate(std::vector<std::string>()),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
     m_end_lr(0.0f),
     m_lr(1.0f), m_last_epoch_lr(1.0f) {}
 
 poly_learning_rate::poly_learning_rate(
-  double p, uint64_t n_epochs, uint64_t max_iter, double end_lr,  std::vector<std::string> weights_names)
+  double p, size_t n_epochs, size_t max_iter, double end_lr,  std::vector<std::string> weights_names)
   : learning_rate(std::move(weights_names)),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
     m_end_lr(end_lr),
@@ -281,7 +281,7 @@ float poly_learning_rate::global_schedule(model *m) {
  */
 float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
   const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-  const uint64_t cur_iter = static_cast<uint64_t>(c.get_step());
+  const size_t cur_iter = c.get_step();
   if (m_max_iter > cur_iter) {
     m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
   }
@@ -340,7 +340,7 @@ build_drop_fixed_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDropFixedLearningRate&>(proto_msg);
-  std::vector<int64_t> drop_epochs;
+  std::vector<size_t> drop_epochs;
   for (int i = 0; i < params.drop_epoch_size(); ++i) {
     drop_epochs.push_back(params.drop_epoch(i));
   }

@@ -113,9 +113,9 @@ class learning_rate : public callback_base {
 class step_learning_rate : public learning_rate {
  public:
   /** Decrease the learning rate by amt every step epochs. */
-  step_learning_rate(int step, float amt);
-  step_learning_rate(int step, float amt,
-                                    std::vector<std::string> weights_names);
+  step_learning_rate(size_t step, float amt);
+  step_learning_rate(size_t step, float amt,
+                     std::vector<std::string> weights_names);
   step_learning_rate(
     const step_learning_rate&) = default;
   step_learning_rate& operator=(
@@ -128,7 +128,7 @@ class step_learning_rate : public learning_rate {
   float global_schedule(model *m) override;
  private:
   /** Number of epochs between each learning rate decrease. */
-  int m_step;
+  size_t m_step;
   /** Amount to decrease the learning rate by. */
   float m_amt;
 };
@@ -148,8 +148,8 @@ class adaptive_learning_rate : public learning_rate {
    * Decrease the learning rate by amt if accuracy does not improve for patience
    * epochs.
    */
-  adaptive_learning_rate(int64_t patience, float amt);
-  adaptive_learning_rate(int64_t patience, float amt,
+  adaptive_learning_rate(size_t patience, float amt);
+  adaptive_learning_rate(size_t patience, float amt,
                                         std::vector<std::string> weights_names);
   adaptive_learning_rate(
     const adaptive_learning_rate&) = default;
@@ -163,15 +163,15 @@ class adaptive_learning_rate : public learning_rate {
   float global_schedule(model *m) override;
  private:
   /** Number of epochs to wait for improvements. */
-  int64_t m_patience;
+  size_t m_patience;
   /** Amount to decrease the learning rate by. */
   float m_amt;
   /** Current epoch. */
-  int m_cur_epoch = -1;
+  size_t m_cur_epoch = std::numeric_limits<size_t>::max();;
   /** Last recorded score. */
   EvalType m_last_score = std::numeric_limits<EvalType>::max();
   /** Current number of epochs without improvement. */
-  int64_t m_wait = 0;
+  size_t m_wait = 0;
   /** Whether to adjust learning rate for current epoch. */
   bool m_adjust_learning_rate = false;
 };
@@ -192,9 +192,9 @@ class drop_fixed_learning_rate :
    * reached.
    */
   drop_fixed_learning_rate(
-    std::vector<int64_t> drop_epochs, float amt);
+    std::vector<size_t> drop_epochs, float amt);
   drop_fixed_learning_rate(
-    std::vector<int64_t> drop_epochs, float amt,
+    std::vector<size_t> drop_epochs, float amt,
     std::vector<std::string> weights_names);
   drop_fixed_learning_rate(
     const drop_fixed_learning_rate&) = default;
@@ -213,7 +213,7 @@ class drop_fixed_learning_rate :
    * Epochs to drop learning rate at. This is stored in reverse sorted order,
    * so that the end can be examined and then popped in constant time.
    */
-  std::vector<int64_t> m_drop_epochs;
+  std::vector<size_t> m_drop_epochs;
 };
 
 // Builder function
@@ -235,11 +235,11 @@ class linear_growth_learning_rate :
    * Linearly increase the learning rate to reach target after num_epochs.
    */
   linear_growth_learning_rate(
-    float target, int64_t num_epochs);
+    float target, size_t num_epochs);
   linear_growth_learning_rate(
-    float target, int64_t num_epochs, int64_t delay);
+    float target, size_t num_epochs, size_t delay);
   linear_growth_learning_rate(
-    float target, int64_t num_epochs, int64_t delay,
+    float target, size_t num_epochs, size_t delay,
     std::vector<std::string> weights_names);
   linear_growth_learning_rate(
     const linear_growth_learning_rate&) = default;
@@ -259,9 +259,9 @@ class linear_growth_learning_rate :
   /// Amount to increase each epoch.
   float m_inc;
   /// Number of epochs over which to scale the learning rate.
-  int64_t m_num_epochs;
+  size_t m_num_epochs;
   /// Number of epochs to delay before starting growth.
-  int64_t m_delay;
+  size_t m_delay;
 };
 
 // Builder function
@@ -277,8 +277,8 @@ build_linear_growth_learning_rate_callback_from_pbuf(
  */
 class poly_learning_rate : public learning_rate {
  public:
-  poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter);
-  poly_learning_rate(double p, uint64_t n_epochs, uint64_t max_iter, double endl_r,
+  poly_learning_rate(double p, size_t n_epochs, size_t max_iter);
+  poly_learning_rate(double p, size_t n_epochs, size_t max_iter, double endl_r,
     std::vector<std::string> weights_names);
   poly_learning_rate(
     const poly_learning_rate&) = default;
@@ -296,9 +296,9 @@ class poly_learning_rate : public learning_rate {
   /// The exponent to compute new learning rate in poly policy
   double m_p;
   /// The number of epochs for training
-  uint64_t m_num_epochs;
+  size_t m_num_epochs;
   /// The maximum number of iterations until which the learning rate changes
-  uint64_t m_max_iter;
+  size_t m_max_iter;
   /// The minimum learning rate
   float m_end_lr;
   /// The current rate to scale the base learning rate

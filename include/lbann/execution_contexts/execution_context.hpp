@@ -39,7 +39,7 @@ namespace lbann {
 class trainer;
 
 struct termination_criteria {
-  El::Int num_steps;
+  size_t num_steps;
 };
 
 class execution_context {
@@ -67,7 +67,7 @@ public:
     *  @detailed Step counts the number of iterations in the training
     *  algorithm's internal state
     */
-  El::Int get_step() const noexcept { return m_step; }
+  size_t get_step() const noexcept { return m_step; }
 
   /** @brief Increment the current step in the training algorithm
     *  @detailed Increment the step count in the training
@@ -106,9 +106,9 @@ public:
   /** Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed();
 
-  /** Checkpoint training_algorithm to given file descriptor, return number of bytes written */
+  /** Checkpoint training_algorithm to given file descriptor, returns flag indicating success */
   virtual bool save_to_checkpoint_shared(persist& p);
-  /** Restore training_algorithm by reading checkpoint from given file descriptor, return number of bytes read */
+  /** Restore training_algorithm by reading checkpoint from given file descriptor, returns flag indicating success */
   virtual bool load_from_checkpoint_shared(persist& p);
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);

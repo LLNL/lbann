@@ -40,7 +40,7 @@ namespace lbann {
 namespace callback {
 
 variable_minibatch::variable_minibatch(
-  int starting_mbsize) : m_starting_mbsize(starting_mbsize),
+  size_t starting_mbsize) : m_starting_mbsize(starting_mbsize),
                          m_current_mini_batch_size(starting_mbsize) {}
 
 void variable_minibatch::on_train_begin(model *m) {
@@ -82,9 +82,9 @@ void variable_minibatch::on_epoch_end(model *m) {
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
 
   lbann_comm *comm = m->get_comm();
-  int new_mbsize = 0;
+  size_t new_mbsize = 0;
   float new_lr = 0.0f;
-  int ramp_time = 0;
+  size_t ramp_time = 0;
   if (schedule(m, new_mbsize, new_lr, ramp_time)) {
     if (new_mbsize > m->get_max_mini_batch_size()) {
       if (comm->am_trainer_master()) {
@@ -154,12 +154,12 @@ float variable_minibatch::get_current_learning_rate(
 }
 
 step_minibatch::step_minibatch(
-  int starting_mbsize, int step, int ramp_time) :
+  size_t starting_mbsize, size_t step, size_t ramp_time) :
   variable_minibatch(starting_mbsize), m_step(step),
   m_ramp_time(ramp_time) {}
 
 bool step_minibatch::schedule(
-  model *m, int& new_mbsize, float& new_lr, int& ramp_time) {
+  model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) {
   const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   if (c.get_epoch() % m_step == 0) {
     new_mbsize = m_current_mini_batch_size * 2;
@@ -172,7 +172,7 @@ bool step_minibatch::schedule(
 }
 
 minibatch_schedule::minibatch_schedule(
-  int starting_mbsize, std::vector<minibatch_step> steps) :
+  size_t starting_mbsize, std::vector<minibatch_step> steps) :
   variable_minibatch(starting_mbsize), m_steps(std::move(steps)) {
   std::sort(m_steps.rbegin(), m_steps.rend(),
             [] (const minibatch_step& a, const minibatch_step& b) {
@@ -181,7 +181,7 @@ minibatch_schedule::minibatch_schedule(
 }
 
 bool minibatch_schedule::schedule(
-  model *m, int& new_mbsize, float& new_lr, int& ramp_time) {
+  model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) {
   const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   if (!m_steps.empty() && c.get_epoch() == m_steps.back().epoch) {
     new_mbsize = m_steps.back().mbsize;

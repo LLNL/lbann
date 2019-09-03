@@ -67,7 +67,7 @@ public:
   }
 
   /** Number of times the training set has been traversed. */
-  inline El::Int get_epoch() const noexcept { return m_epoch; }
+  inline size_t get_epoch() const noexcept { return m_epoch; }
 
   /** @brief Increment the current epoch in the execution context
     *  @detailed Increment the counter tracking the number of times
@@ -76,25 +76,25 @@ public:
   void inc_epoch() noexcept { ++m_epoch; }
 
   /** Set the trainer's current mini-batch size. */
-  inline void set_current_mini_batch_size(int mini_batch_size) {
+  inline void set_current_mini_batch_size(size_t mini_batch_size) {
     m_current_mini_batch_size = mini_batch_size;
   }
   /** Get the trainer's current mini-batch size. */
-  inline int get_current_mini_batch_size() const {
+  inline size_t get_current_mini_batch_size() const {
     return m_current_mini_batch_size;
   }
   /** Get the trainer's effective mini-batch size. */
-  inline int get_effective_mini_batch_size() const {
+  inline size_t get_effective_mini_batch_size() const {
     return m_effective_mini_batch_size;
   }
   /** Set the trainer's effective mini-batch size. */
-  inline void set_effective_mini_batch_size(int mini_batch_size) {
+  inline void set_effective_mini_batch_size(size_t mini_batch_size) {
     m_effective_mini_batch_size = mini_batch_size;
   }
 
-  /** Checkpoint training_algorithm to given file descriptor, return number of bytes written */
+  /** Checkpoint training_algorithm to given file descriptor, returns flag indicating success  */
   virtual bool save_to_checkpoint_shared(persist& p);
-  /** Restore training_algorithm by reading checkpoint from given file descriptor, return number of bytes read */
+  /** Restore training_algorithm by reading checkpoint from given file descriptor, returns flag indicating success */
   virtual bool load_from_checkpoint_shared(persist& p);
   virtual bool save_to_checkpoint_distributed(persist& p);
   virtual bool load_from_checkpoint_distributed(persist& p);
@@ -104,14 +104,14 @@ private:
   size_t m_epoch = 0;
 
   /** Size of the current mini-batch in the model. */
-  int m_current_mini_batch_size;
+  size_t m_current_mini_batch_size;
 
   /** The "effective" size of a minibatch.
    *
    *  This is the size of the minibatch across all models and used for
    *  e.g.  correctly averaging gradients from multiple models.
    */
-  int m_effective_mini_batch_size;
+  size_t m_effective_mini_batch_size;
 };
 
 }  // namespace lbann
