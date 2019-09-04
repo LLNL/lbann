@@ -84,8 +84,8 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
     do_epoch_end_cbs(model);
 
     // Evaluate on validation set
-    auto key = c.get_trainer()->check_and_build_execution_context(c, model, execution_mode::validation);
-    auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer()->get_execution_context(key));
+    auto key = c.get_trainer().check_and_build_execution_context(c, model, execution_mode::validation);
+    auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
     evaluate(evaluation_context, model, execution_mode::validation);
   }
   do_train_end_cbs(model);

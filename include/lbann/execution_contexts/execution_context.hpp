@@ -95,8 +95,9 @@ public:
   }
 
   /** Get the execution environment */
-  trainer* get_trainer() {
-    return m_trainer;
+  trainer& get_trainer() {
+    if (!m_trainer) { LBANN_ERROR("m_trainer is null"); }
+    return *m_trainer;
   }
 
   observing_ptr<thread_pool> get_io_thread_pool() const;

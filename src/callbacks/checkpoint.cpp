@@ -189,7 +189,7 @@ bool checkpoint::do_checkpoint(model *m) {
           ctx->save_to_checkpoint_distributed(this->p);
           return true;
         });
-      c.get_trainer()->for_each_execution_context(save_checkpoint);
+      c.get_trainer().for_each_execution_context(save_checkpoint);
     }
     p.close_checkpoint();
     // Print latest checkpoint to file
@@ -219,7 +219,7 @@ bool checkpoint::do_checkpoint(model *m) {
           ctx->save_to_checkpoint_shared(this->p);
           return true;
         });
-      c.get_trainer()->for_each_execution_context(save_checkpoint);
+      c.get_trainer().for_each_execution_context(save_checkpoint);
     }
     // close our checkpoint
     p.close_checkpoint();
@@ -434,8 +434,8 @@ bool checkpoint::restart(model *m) {
             /// Restart has to be able to load the currently running  execution context
             c.load_from_checkpoint_shared(p_ref);
           }else {
-            key = c.get_trainer()->check_and_build_execution_context(c, *m, mode);
-            auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer()->get_execution_context(key));
+            key = c.get_trainer().check_and_build_execution_context(c, *m, mode);
+            auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
             evaluation_context.load_from_checkpoint_shared(p_ref);
           }
         }catch (NonexistentArchiveFile const&) {
@@ -443,7 +443,7 @@ bool checkpoint::restart(model *m) {
           if(current_mode == mode) {
             LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
           }else {
-            c.get_trainer()->delete_execution_context(key);
+            c.get_trainer().delete_execution_context(key);
           }
         }
       }
@@ -464,8 +464,8 @@ bool checkpoint::restart(model *m) {
             /// Restart has to be able to load the currently running  execution context
             c.load_from_checkpoint_distributed(p_ref);
           }else {
-            key = c.get_trainer()->check_and_build_execution_context(c, *m, mode);
-            auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer()->get_execution_context(key));
+            key = c.get_trainer().check_and_build_execution_context(c, *m, mode);
+            auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
             evaluation_context.load_from_checkpoint_distributed(p_ref);
           }
         }catch (NonexistentArchiveFile const&) {
@@ -473,7 +473,7 @@ bool checkpoint::restart(model *m) {
           if(current_mode == mode) {
             LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
           }else {
-            c.get_trainer()->delete_execution_context(key);
+            c.get_trainer().delete_execution_context(key);
           }
         }
 

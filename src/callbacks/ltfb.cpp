@@ -298,7 +298,7 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   m.mark_data_store_explicitly_loading(execution_mode::validation);
 
   // Evaluate model on validation set
-  c.get_trainer()->evaluate(&m, execution_mode::validation);
+  c.get_trainer().evaluate(&m, execution_mode::validation);
 
   // Get metric value
   bool found_metric = false;
