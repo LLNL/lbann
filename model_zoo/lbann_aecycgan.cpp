@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     // Construct the trainer
     std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
 
-    observing_ptr<thread_pool> io_thread_pool = trainer->get_io_thread_pool();
+    thread_pool& io_thread_pool = trainer->get_io_thread_pool();
 
     auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
                                               comm.get(), opts, io_thread_pool, true); //ae

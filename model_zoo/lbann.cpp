@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
     // Construct the trainer
     std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
 
-    observing_ptr<thread_pool> io_thread_pool = trainer->get_io_thread_pool();
+    thread_pool& io_thread_pool = trainer->get_io_thread_pool();
 
     lbann_data::Model *pb_model = pb.mutable_model();
 

@@ -100,7 +100,7 @@ public:
     return *m_trainer;
   }
 
-  observing_ptr<thread_pool> get_io_thread_pool() const;
+  thread_pool& get_io_thread_pool() const;
 
   lbann_comm& get_comm() const {
     if (!m_comm) { LBANN_ERROR("m_comm is null"); }

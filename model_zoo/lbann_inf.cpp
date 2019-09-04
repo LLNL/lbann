@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     // Construct the trainer
     std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
 
-    observing_ptr<thread_pool> io_thread_pool = trainer->get_io_thread_pool();
+    thread_pool& io_thread_pool = trainer->get_io_thread_pool();
     std::vector<std::unique_ptr<model>> models;
     for(auto&& pb_model : pbs) {
       models.emplace_back(

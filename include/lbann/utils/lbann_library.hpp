@@ -46,7 +46,7 @@ std::unique_ptr<model> build_model_from_prototext(
     lbann_data::LbannPB &pb,
     lbann_comm *comm,
     options *opts,
-    observing_ptr<thread_pool> io_thread_pool,
+    thread_pool& io_thread_pool,
     bool first_model);
 
 void print_lbann_configuration(lbann_comm *comm,

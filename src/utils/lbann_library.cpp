@@ -147,7 +147,7 @@ std::unique_ptr<model> build_model_from_prototext(
   lbann_data::LbannPB &pb,
   lbann_comm *comm,
   options *opts,
-  observing_ptr<thread_pool> io_thread_pool,
+  thread_pool& io_thread_pool,
   bool first_model) {
 
   int random_seed = lbann_default_random_seed;
@@ -161,15 +161,15 @@ std::unique_ptr<model> build_model_from_prototext(
   lbann_data::Model *pb_model = pb.mutable_model();
 
   // Check to see if the model wants to reduce the I/O parallelism
-  if(pb_model->serialize_io() && io_thread_pool->get_num_threads() != 1) {
+  if(pb_model->serialize_io() && io_thread_pool.get_num_threads() != 1) {
     if(master) {
       std::cout << "Model " << pb_model->name() << " serialized the I/O threads" << std::endl;
     }
-    io_thread_pool->relaunch_pinned_threads(1);
+    io_thread_pool.relaunch_pinned_threads(1);
   }
 
   // Get I/O thread details
-  auto io_threads_per_process = io_thread_pool->get_num_threads();
+  auto io_threads_per_process = io_thread_pool.get_num_threads();
 
   /// @todo BVE FIXME should this be in the trainer
   // Change random seed if needed.
@@ -220,7 +220,7 @@ std::unique_ptr<model> build_model_from_prototext(
   init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
   /// Setup the data readers with the I/O thread pool
   for(auto&& dr: data_readers) {
-    dr.second->setup(io_threads_per_process, io_thread_pool);
+    dr.second->setup(io_threads_per_process, &io_thread_pool);
     dr.second->set_rank(comm->get_rank_in_trainer());
   }
 

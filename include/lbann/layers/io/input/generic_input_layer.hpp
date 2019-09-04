@@ -261,7 +261,7 @@ class generic_input_layer : public io_layer {
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
     if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->is_data_fetched_in_background(mode)) {
-      std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool()->submit_job(
+      std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool().submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, get_active_buffer_idx(mode), mode));
       io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
       io_buffer->set_fetch_data_in_background(true, mode);
@@ -303,7 +303,7 @@ class generic_input_layer : public io_layer {
 
     if(!m_data_set_processed && this->m_model->get_execution_context().background_io_activity_allowed()) {
       int next_active_buffer = get_active_buffer_idx(mode) + 1;
-      std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool()->submit_job(
+      std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool().submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, mode));
       generic_io_buffer* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
       next_io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);

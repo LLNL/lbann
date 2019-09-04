@@ -121,7 +121,10 @@ public:
   void evaluate(observing_ptr<model> model, execution_mode mode, El::Int num_batche=0);
 
   /** Return the I/O thread pool */
-  observing_ptr<thread_pool> get_io_thread_pool() const { return m_io_thread_pool.get(); }
+  thread_pool& get_io_thread_pool() const {
+    if (!m_io_thread_pool) { LBANN_ERROR("m_io_thread_pool is null"); }
+    return *(m_io_thread_pool.get());
+  }
 
   /** Get the trainer's comm. */
   inline lbann_comm *get_comm() const {

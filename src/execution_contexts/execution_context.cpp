@@ -62,7 +62,7 @@ execution_context::execution_context(observing_ptr<trainer> trainer, lbann_comm 
 //   return m_trainer->get_io_thread_pool();
 // }
 
-observing_ptr<thread_pool> execution_context::get_io_thread_pool() const {
+thread_pool& execution_context::get_io_thread_pool() const {
   return m_trainer->get_io_thread_pool();
 }
 
