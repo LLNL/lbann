@@ -269,10 +269,10 @@ void unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
 
 template <typename C>
 void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
-                                     observing_ptr<lbann_comm> comm,
+                                     lbann_comm& comm,
                                      const std::string& suffix) {
   std::string buf;
-  if (comm->am_trainer_master()) {
+  if (comm.am_trainer_master()) {
     read_cereal_archive<C>(obj, p, pt, suffix);
     buf = create_cereal_archive_binary_string<C>(obj);
   }else {
@@ -285,9 +285,9 @@ void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
 
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
-  comm->trainer_broadcast(0, buf);
+  comm.trainer_broadcast(0, buf);
 
-  if (!comm->am_trainer_master()) {
+  if (!comm.am_trainer_master()) {
     unpack_cereal_archive_binary_string<C>(obj, buf);
   }
   return;
@@ -295,7 +295,7 @@ void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
 
 template <typename C>
 void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
-                                     observing_ptr<lbann_comm> comm,
+                                     lbann_comm& comm,
                                      const std::string& suffix) {
   const persist_type pt = execution_mode_to_persist_type(mode);
   load_from_shared_cereal_archive<C>(obj, p, pt, comm, suffix);

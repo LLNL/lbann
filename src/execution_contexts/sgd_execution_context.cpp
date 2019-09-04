@@ -44,7 +44,7 @@ sgd_execution_context::sgd_execution_context(observing_ptr<trainer> trainer, lba
 ////////////////////////////////////////////////////////////
 
 void sgd_execution_context::save_to_checkpoint_shared(persist& p) {
-  if (get_comm()->am_trainer_master()) {
+  if (get_comm().am_trainer_master()) {
     write_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
   }
   return;

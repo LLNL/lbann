@@ -98,7 +98,7 @@ bool metric::save_to_checkpoint_shared(persist& p) {
 }
 
 bool metric::load_from_checkpoint_shared(persist& p) {
-  load_from_shared_cereal_archive<metric>(*this, p, persist_type::metrics, m_comm, ".xml");
+  load_from_shared_cereal_archive<metric>(*this, p, persist_type::metrics, *m_comm, ".xml");
   return true;
 }
 

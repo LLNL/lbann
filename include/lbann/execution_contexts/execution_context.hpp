@@ -102,7 +102,10 @@ public:
 
   observing_ptr<thread_pool> get_io_thread_pool() const;
 
-  observing_ptr<lbann_comm> get_comm() const { return m_comm; };
+  lbann_comm& get_comm() const {
+    if (!m_comm) { LBANN_ERROR("m_comm is null"); }
+    return *m_comm;
+  };
 
   /** Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed();

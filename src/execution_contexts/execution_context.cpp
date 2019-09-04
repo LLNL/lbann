@@ -76,7 +76,7 @@ bool execution_context::background_io_activity_allowed() {
 ////////////////////////////////////////////////////////////
 
 void execution_context::save_to_checkpoint_shared(persist& p) {
-  if (get_comm()->am_trainer_master()) {
+  if (get_comm().am_trainer_master()) {
     write_cereal_archive<execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
   }
   return;
