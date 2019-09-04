@@ -1,6 +1,6 @@
 """LBANN Trainer."""
 import abc
-from lbann import lbann_pb2
+from lbann import trainer_pb2
 from lbann.util import make_iterable
 
 class Trainer:
@@ -16,7 +16,7 @@ class Trainer:
     def export_proto(self):
         """Construct and return a protobuf message."""
         # Initialize protobuf message
-        trainer = lbann_pb2.Trainer()
+        trainer = trainer_pb2.Trainer()
         trainer.block_size = self.block_size
         trainer.procs_per_trainer = self.procs_per_trainer
         trainer.num_parallel_readers = self.num_parallel_readers
