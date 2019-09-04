@@ -46,7 +46,7 @@ namespace {
  *  layers. It is assumed that input layers have already loaded data.
  */
 DataType compute_objective_function(model& m) {
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m.get_execution_context());
+  const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
 
   // Forward prop, skipping input layers
   for (auto&& l : m.get_layers()) {
