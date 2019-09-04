@@ -43,21 +43,18 @@ sgd_execution_context::sgd_execution_context(observing_ptr<trainer> trainer, lba
 // Checkpointing
 ////////////////////////////////////////////////////////////
 
-bool sgd_execution_context::save_to_checkpoint_shared(persist& p) {
+void sgd_execution_context::save_to_checkpoint_shared(persist& p) {
   if (get_comm()->am_trainer_master()) {
     write_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
   }
-
-  return true;
+  return;
 }
 
-bool sgd_execution_context::load_from_checkpoint_shared(persist& p) {
-  bool success = false;
+void sgd_execution_context::load_from_checkpoint_shared(persist& p) {
   std::string buf;
-
   // Assume checkpoint reload from epoch end not step end
   if (get_comm()->am_trainer_master()) {
-    success = read_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+    read_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
     buf = create_cereal_archive_binary_string<sgd_execution_context>(*this);
   }
 
@@ -66,18 +63,19 @@ bool sgd_execution_context::load_from_checkpoint_shared(persist& p) {
   get_comm()->trainer_broadcast(0, buf);
 
   if (!get_comm()->am_trainer_master()) {
-    success = unpack_cereal_archive_binary_string<sgd_execution_context>(*this, buf);
+    unpack_cereal_archive_binary_string<sgd_execution_context>(*this, buf);
   }
-
-  return success;
+  return;
 }
 
-bool sgd_execution_context::save_to_checkpoint_distributed(persist& p) {
-  return write_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+void sgd_execution_context::save_to_checkpoint_distributed(persist& p) {
+  write_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+  return;
 }
 
-bool sgd_execution_context::load_from_checkpoint_distributed(persist& p) {
-  return read_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+void sgd_execution_context::load_from_checkpoint_distributed(persist& p) {
+  read_cereal_archive<sgd_execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
+  return;
 }
 
 }  // namespace lbann

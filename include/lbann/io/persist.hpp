@@ -127,8 +127,8 @@ class persist {
     ckpt_type = type;
   }
 
-  bool checkpoint_has_valid_execution_mode(persist_type pt);
-  bool checkpoint_has_valid_execution_mode(execution_mode mode);
+  // bool checkpoint_has_valid_execution_mode(persist_type pt);
+  // bool checkpoint_has_valid_execution_mode(execution_mode mode);
 
   void open_checkpoint(const char *dir);
   void close_checkpoint();
@@ -209,40 +209,45 @@ bool read_double (int fd, const char *name, double *val);
 bool write_string(int fd, const char *name, const char *buf, size_t size);
 bool read_string(int fd, const char *name, char *buf, size_t size);
 
+class NonexistentArchiveFile : public std::runtime_error {
+public:
+  NonexistentArchiveFile(std::string const& filename) : std::runtime_error(std::string("Archive file not found: ") + filename) {}
+};
+
 template <typename C>
-bool write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
+void write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
   std::ofstream os(p.get_filename(pt) + suffix);
-  {
-    cereal::XMLOutputArchive archive(os);
-    archive(obj);
-  } // archive goes out of scope, ensuring all contents are flushed
-  return true;
-}
-
-template <typename C>
-bool write_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
-  const persist_type pt = execution_mode_to_persist_type(mode);
-  return write_cereal_archive<C>(obj, p, pt, suffix);
-}
-
-template <typename C>
-bool read_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
-  bool success = false;
-  std::ifstream is(p.get_filename(pt) + suffix);
-  if(is) {
-    cereal::XMLInputArchive archive(is);
-    archive(obj);
-    success = true;
-  }else {
-    success = false;
+  if(!os.is_open()) {
+    throw NonexistentArchiveFile("Unable to open file for saving checkpoint " + p.get_filename(pt) + suffix);
   }
-  return success;
+  cereal::XMLOutputArchive archive(os);
+  archive(obj);
+  return;
 }
 
 template <typename C>
-bool read_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
+void write_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
   const persist_type pt = execution_mode_to_persist_type(mode);
-  return read_cereal_archive<C>(obj, p, pt, suffix);
+  write_cereal_archive<C>(obj, p, pt, suffix);
+  return;
+}
+
+template <typename C>
+void read_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
+  std::ifstream is(p.get_filename(pt) + suffix);
+  if(!is.is_open()) {
+    throw NonexistentArchiveFile("Unable to open file for loading checkpoint " + p.get_filename(pt) + suffix);
+  }
+  cereal::XMLInputArchive archive(is);
+  archive(obj);
+  return;
+}
+
+template <typename C>
+void read_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
+  const persist_type pt = execution_mode_to_persist_type(mode);
+  read_cereal_archive<C>(obj, p, pt, suffix);
+  return;
 }
 
 template <typename C>
@@ -256,13 +261,13 @@ std::string create_cereal_archive_binary_string(C& obj) {
 }
 
 template <typename C>
-bool unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
+void unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
   std::stringstream ss(buf);
   {
     cereal::BinaryInputArchive archive(ss);
     archive(obj);
   } // archive goes out of scope, ensuring all contents are flushed
-  return true;
+  return;
 }
 
 } // namespace lbann

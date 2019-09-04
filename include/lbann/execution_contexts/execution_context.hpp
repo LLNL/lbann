@@ -106,12 +106,12 @@ public:
   /** Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed();
 
-  /** Checkpoint training_algorithm to given file descriptor, returns flag indicating success */
-  virtual bool save_to_checkpoint_shared(persist& p);
-  /** Restore training_algorithm by reading checkpoint from given file descriptor, returns flag indicating success */
-  virtual bool load_from_checkpoint_shared(persist& p);
-  virtual bool save_to_checkpoint_distributed(persist& p);
-  virtual bool load_from_checkpoint_distributed(persist& p);
+  /** Checkpoint training_algorithm to given file descriptor */
+  virtual void save_to_checkpoint_shared(persist& p);
+  /** Restore training_algorithm by reading checkpoint from given file descriptor */
+  virtual void load_from_checkpoint_shared(persist& p);
+  virtual void save_to_checkpoint_distributed(persist& p);
+  virtual void load_from_checkpoint_distributed(persist& p);
 
 protected:
   /** Copy constructor. */

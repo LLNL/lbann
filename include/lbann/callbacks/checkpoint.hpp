@@ -109,8 +109,8 @@ class checkpoint : public callback_base {
   std::string find_latest_checkpoint(model *m, std::string& latest_file, execution_mode& mode, size_t &epoch, size_t& step, int& shared);
   bool open_latest_checkpoint(model *m,
                               const std::string& task_label,
-                              std::function<bool(/*const */persist&)> reload_shared_ckpt,
-                              std::function<bool(/*const */persist&)> reload_distributed_ckpt);
+                              std::function<void(/*const */persist&)> reload_shared_ckpt,
+                              std::function<void(/*const */persist&)> reload_distributed_ckpt);
   bool reload_model(model *m);
   bool restart(model *m);
   std::string name() const override { return "checkpoint"; }

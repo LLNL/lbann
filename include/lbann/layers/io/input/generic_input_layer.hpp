@@ -767,10 +767,9 @@ class generic_input_layer : public io_layer {
       (it->second)->load_from_checkpoint_shared(p, execution_mode::validation);
     }
 
-    bool success = false;
     std::string buf;
     if (get_comm()->am_trainer_master()) {
-      success = read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
+      read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
       buf = create_cereal_archive_binary_string<generic_input_layer>(*this);
    }
 
@@ -779,10 +778,10 @@ class generic_input_layer : public io_layer {
     get_comm()->trainer_broadcast(0, buf);
 
     if (!get_comm()->am_trainer_master()) {
-      success = unpack_cereal_archive_binary_string<generic_input_layer>(*this, buf);
+      unpack_cereal_archive_binary_string<generic_input_layer>(*this, buf);
     }
 
-    return success;
+    return true;
   }
 
   bool save_to_checkpoint_distributed(persist& p) const override {
@@ -823,7 +822,8 @@ class generic_input_layer : public io_layer {
       (it->second)->load_from_checkpoint_distributed(p, execution_mode::validation);
     }
 
-    return read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
+    read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
+    return true;
   }
 
   int get_active_buffer_idx(execution_mode m) {

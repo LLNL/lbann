@@ -242,28 +242,6 @@ lbann::persist::persist() {
   }
 }
 
-bool lbann::persist::checkpoint_has_valid_execution_mode(persist_type pt) {
-  return (m_FDs[pt] >= 0);
-}
-
-bool lbann::persist::checkpoint_has_valid_execution_mode(execution_mode mode) {
-  return true;
-  /// @todo BVE explicitly bypass the check for file descriptors since
-  /// this context is being saved via Cereal
-#if 0
-  switch(mode) {
-  case execution_mode::training:
-    return (m_FDs[persist_type::training_ctx] >= 0);
-  case execution_mode::validation:
-    return (m_FDs[persist_type::validation_ctx] >= 0);
-  case execution_mode::testing:
-    return (m_FDs[persist_type::testing_ctx] >= 0);
-  default:
-    return false;
-  }
-#endif
-}
-
 /** @todo BVE FIXME this should be refactored to only open the
     checkpoints files that we care about */
 void lbann::persist::open_checkpoint(const char *dir) {

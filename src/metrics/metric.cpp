@@ -98,17 +98,14 @@ bool metric::save_to_checkpoint_shared(persist& p) {
 }
 
 bool metric::load_from_checkpoint_shared(persist& p) {
-  bool success = false;
   std::string buf;
-
   if (m_comm->am_trainer_master()) {
-    success = read_cereal_archive<metric>(*this, p, persist_type::metrics, ".xml");
+    read_cereal_archive<metric>(*this, p, persist_type::metrics, ".xml");
     buf = create_cereal_archive_binary_string<metric>(*this);
   }
   m_comm->trainer_broadcast(0, buf);
-
-  success = unpack_cereal_archive_binary_string<metric>(*this, buf);
-  return success;
+  unpack_cereal_archive_binary_string<metric>(*this, buf);
+  return true;
 }
 
 bool metric::save_to_checkpoint_distributed(persist& p) {
@@ -117,7 +114,8 @@ bool metric::save_to_checkpoint_distributed(persist& p) {
 }
 
 bool metric::load_from_checkpoint_distributed(persist& p) {
-  return read_cereal_archive<metric>(*this, p, persist_type::metrics, ".xml");
+  read_cereal_archive<metric>(*this, p, persist_type::metrics, ".xml");
+  return true;
 }
 
 }  // namespace lbann

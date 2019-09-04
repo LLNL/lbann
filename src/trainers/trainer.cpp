@@ -167,6 +167,14 @@ execution_context& trainer::get_execution_context(execution_context_key_pair_t k
   return static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get()));
 }
 
+void trainer::delete_execution_context(execution_context_key_pair_t key) {
+  if(m_model_execution_context.count(key) == 0) {
+    LBANN_WARNING("Attempting to delete an invalid execution context for model="
+                  + (key.first)->get_name() + " / " + to_string(key.second));
+  }
+  m_model_execution_context.erase(key);
+}
+
 void trainer::for_each_execution_context(std::function<bool(observing_ptr<execution_context>)>fn) {
 
   for(auto&& c : m_model_execution_context) {

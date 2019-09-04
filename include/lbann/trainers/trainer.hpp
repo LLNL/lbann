@@ -107,6 +107,8 @@ public:
 
   execution_context& get_execution_context(execution_context_key_pair_t key);
 
+  void delete_execution_context(execution_context_key_pair_t key);
+
   void for_each_execution_context(std::function<bool(observing_ptr<execution_context>)>fn);
 
   void apply(training_algorithm& alg,

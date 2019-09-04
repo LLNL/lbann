@@ -186,7 +186,8 @@ bool checkpoint::do_checkpoint(model *m) {
       auto save_checkpoint = std::function<bool(observing_ptr<execution_context>)>
         ([this](observing_ptr<execution_context> ctx)
          ->bool {
-          return ctx->save_to_checkpoint_distributed(this->p);
+          ctx->save_to_checkpoint_distributed(this->p);
+          return true;
         });
       c.get_trainer()->for_each_execution_context(save_checkpoint);
     }
@@ -215,7 +216,8 @@ bool checkpoint::do_checkpoint(model *m) {
       auto save_checkpoint = std::function<bool(observing_ptr<execution_context>)>
         ([this](observing_ptr<execution_context> ctx)
          ->bool {
-          return ctx->save_to_checkpoint_shared(this->p);
+          ctx->save_to_checkpoint_shared(this->p);
+          return true;
         });
       c.get_trainer()->for_each_execution_context(save_checkpoint);
     }
@@ -315,8 +317,8 @@ std::string checkpoint::find_latest_checkpoint(model *m, std::string& latest_fil
 bool checkpoint::open_latest_checkpoint(
   model *m,
   const std::string& task_label,
-  std::function<bool(/*const */persist&)> reload_shared_ckpt,
-  std::function<bool(/*const */persist&)> reload_distributed_ckpt) {
+  std::function<void(/*const */persist&)> reload_shared_ckpt,
+  std::function<void(/*const */persist&)> reload_distributed_ckpt) {
   // if the checkpoint directory is not defined, bail
   if (m_checkpoint_dir.length() == 0 &&  m_per_rank_dir.length() == 0) {
     return false;
@@ -389,16 +391,18 @@ bool checkpoint::open_latest_checkpoint(
 
 // Reload a model from a Shared/Distributed checkpoint
 bool checkpoint::reload_model(model *m) {
-  auto reload_shared_model = std::function<bool(/*const */persist&)>
+  auto reload_shared_model = std::function<void(/*const */persist&)>
     ([m](/*const */persist& p_ref)
-     ->bool {
-      return m->load_from_checkpoint_shared(p_ref);
+     ->void {
+      m->load_from_checkpoint_shared(p_ref);
+      return;
     });
 
-  auto reload_distributed_model = std::function<bool(/*const */persist&)>
+  auto reload_distributed_model = std::function<void(/*const */persist&)>
     ([m](/*const */persist& p_ref)
-     ->bool {
-      return m->load_from_checkpoint_distributed(p_ref);
+     ->void {
+      m->load_from_checkpoint_distributed(p_ref);
+      return;
     });
 
 
@@ -416,63 +420,65 @@ bool checkpoint::restart(model *m) {
   // Then setup the model with the proper one
   sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
 
-  auto restart_shared_model = std::function<bool(/*const */persist&)>
+  auto restart_shared_model = std::function<void(/*const */persist&)>
     ([&m, &c](/*const */persist& p_ref)
-     ->bool {
-
-      bool success = true;
-
+     ->void {
       execution_mode current_mode = c.get_execution_mode();
 
       for(execution_mode mode : execution_mode_iterator()) {
         /// Restart should optionally load any other valid contexts
         if(mode == execution_mode::invalid) { continue; }
-        if(p_ref.checkpoint_has_valid_execution_mode(mode)) {
+        trainer::execution_context_key_pair_t key;
+        try {
           if(current_mode == mode) {
             /// Restart has to be able to load the currently running  execution context
-            success &= c.load_from_checkpoint_shared(p_ref);
+            c.load_from_checkpoint_shared(p_ref);
           }else {
-            auto key = c.get_trainer()->check_and_build_execution_context(c, *m, mode);
+            key = c.get_trainer()->check_and_build_execution_context(c, *m, mode);
             auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer()->get_execution_context(key));
-            success &= evaluation_context.load_from_checkpoint_shared(p_ref);
+            evaluation_context.load_from_checkpoint_shared(p_ref);
           }
-        }else {
+        }catch (NonexistentArchiveFile const&) {
+          // Ignore the exception if the file is not for the current execution mode
           if(current_mode == mode) {
             LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
+          }else {
+            c.get_trainer()->delete_execution_context(key);
           }
         }
-
       }
-      return success;
+      return;
     });
 
-  auto restart_distributed_model = std::function<bool(/*const */persist&)>
+  auto restart_distributed_model = std::function<void(/*const */persist&)>
     ([&m, &c](/*const */persist& p_ref)
-     ->bool {
-      bool success = true;
-
+     ->void {
       execution_mode current_mode = c.get_execution_mode();
 
       for(execution_mode mode : execution_mode_iterator()) {
         /// Restart should optionally load any other valid contexts
         if(mode == execution_mode::invalid) { continue; }
-        if(p_ref.checkpoint_has_valid_execution_mode(mode)) {
+        trainer::execution_context_key_pair_t key;
+        try {
           if(current_mode == mode) {
             /// Restart has to be able to load the currently running  execution context
-            success &= c.load_from_checkpoint_distributed(p_ref);
+            c.load_from_checkpoint_distributed(p_ref);
           }else {
-            auto key = c.get_trainer()->check_and_build_execution_context(c, *m, mode);
+            key = c.get_trainer()->check_and_build_execution_context(c, *m, mode);
             auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer()->get_execution_context(key));
-            success &= evaluation_context.load_from_checkpoint_distributed(p_ref);
+            evaluation_context.load_from_checkpoint_distributed(p_ref);
           }
-        }else {
+        }catch (NonexistentArchiveFile const&) {
+          // Ignore the exception if the file is not for the current execution mode
           if(current_mode == mode) {
             LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
+          }else {
+            c.get_trainer()->delete_execution_context(key);
           }
         }
 
       }
-      return success;
+      return;
     });
 
 
