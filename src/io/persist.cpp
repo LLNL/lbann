@@ -72,9 +72,7 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
   } else if (type == persist_type::model) {
     filename += std::string("/model_") + name;
   } else {
-    std::stringstream err;
-    err << "invalid persist_type (" << static_cast<int>(type) << ")";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("invalid persist_type (", static_cast<int>(type), ")");
   }
   // skip all of this if matrix is not held on rank
   const El::Int localHeight = M.LocalHeight();
@@ -133,8 +131,6 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
 /** \brief Given an open file descriptor, file name, and a matrix, read the matrix
  *         from the file descriptor, return the number of bytes read */
 bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsDistMat& M) {
-  std::stringstream err;
-
   // read in the header
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -142,8 +138,7 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
   } else if (type == persist_type::model) {
     filename += std::string("/model_") + name;
   } else {
-    err << "invalid persist_type (" << static_cast<int>(type) << ")";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("invalid persist_type (", static_cast<int>(type), ")");
   }
   int fd = openread(filename.c_str());
   // file does not exist. we will try to grab matrix from rank 0
@@ -152,11 +147,8 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
   struct layer_header header;
   ssize_t read_rc = read(fd, &header, sizeof(header));
   if (read_rc != sizeof(header)) {
-    err << "failed to read layer header from file "
-        << "(attempted to read " << sizeof(header) << " bytes "
-        << "from " << filename << ", "
-        << "but got " << read_rc << " bytes)";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("failed to read layer header from file (attempted to read ",
+                sizeof(header), " bytes from ", filename, ", but got ", read_rc, " bytes)");
   }
   m_bytes[type] += read_rc;
 
@@ -173,11 +165,8 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
       El::Int bufsize = localheight * localwidth * sizeof(DataType);
       read_rc = read(fd, buf, bufsize);
       if (read_rc != bufsize) {
-        err << "failed to read layer data from file "
-            << "(attempted to read " << bufsize << " bytes "
-            << "from " << filename << ", "
-            << "but got " << read_rc << " bytes)";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR("failed to read layer data from file (attempted to read ", bufsize,
+                    " bytes from ", filename, ", but got ", read_rc, " bytes)");
       }
       m_bytes[type] += read_rc;
     } else {
@@ -186,11 +175,8 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
         El::Int bufsize = localheight * sizeof(DataType);
         read_rc = read(fd, buf, bufsize);
         if (read_rc != bufsize) {
-          err << "failed to read layer data from file "
-              << "(attempted to read " << bufsize << " bytes "
-              << "from " << filename << ", "
-              << "but got " << read_rc << " bytes)";
-          LBANN_ERROR(err.str());
+          LBANN_ERROR("failed to read layer data from file (attempted to read ",
+                      bufsize, " bytes from ", filename, ", but got ", read_rc, " bytes)");
         }
         m_bytes[type] += read_rc;
       }
@@ -202,11 +188,8 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
       El::Int bufsize = localheight * localwidth * sizeof(DataType);
       read_rc = read(fd, buf, bufsize);
       if (read_rc != bufsize) {
-        err << "failed to read layer data from file "
-            << "(attempted to read " << bufsize << " bytes "
-            << "from " << filename << ", "
-            << "but got " << read_rc << " bytes)";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR("failed to read layer data from file (attempted to read ",
+                    bufsize, " bytes from ", filename, ", but got ", read_rc, " bytes)");
       }
       m_bytes[type] += read_rc;
     } else {
@@ -215,11 +198,8 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsD
         El::Int bufsize = localheight * sizeof(DataType);
         read_rc = read(fd, buf, bufsize);
         if (read_rc != bufsize) {
-          err << "failed to read layer data from file "
-              << "(attempted to read " << bufsize << " bytes "
-              << "from " << filename << ", "
-              << "but got " << read_rc << " bytes)";
-          LBANN_ERROR(err.str());
+          LBANN_ERROR("failed to read layer data from file (attempted to read ",
+                      bufsize, " bytes from ", filename, ", but got ", read_rc, " bytes)");
         }
         m_bytes[type] += read_rc;
       }
@@ -264,8 +244,7 @@ void lbann::persist::open_checkpoint(const char *dir) {
        pt != persist_type::prediction_ctx) {
       m_FDs[pt] = lbann::openwrite(m_filenames[pt].c_str());
       if (m_FDs[pt] < 0) {
-        LBANN_ERROR(std::string{}
-                + "failed to open file (" + m_filenames[pt] + ")");
+        LBANN_ERROR("failed to open file (", m_filenames[pt], ")");
       }
     }
   }
@@ -297,8 +276,7 @@ void lbann::persist::open_restart(const char *dir) {
        pt != persist_type::prediction_ctx) {
       m_FDs[pt] = lbann::openread(m_filenames[pt].c_str());
       if (m_FDs[pt] < 0) {
-        LBANN_ERROR(std::string{}
-                + "failed to open file (" + m_filenames[pt] + ")");
+        LBANN_ERROR("failed to open file (", m_filenames[pt], ")");
       }
     }
   }
@@ -322,9 +300,7 @@ bool lbann::persist::write_distmat(persist_type type, const char *name, AbsDistM
   } else if (type == persist_type::model) {
     filename += std::string("/model_") + name;
   } else {
-    std::stringstream err;
-    err << "invalid persist_type (" << static_cast<int>(type) << ")";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("invalid persist_type (", static_cast<int>(type), ")");
   }
 
   El::Write(*M, filename, El::BINARY, "");
@@ -344,15 +320,13 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, AbsDistMa
   } else if (type == persist_type::model) {
     filename += std::string("/model_") + name;
   } else {
-    std::stringstream err;
-    err << "invalid persist_type (" << static_cast<int>(type) << ")";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("invalid persist_type (", static_cast<int>(type), ")");
   }
 
   // check whether file exists
   int exists = lbann::exists(filename.c_str());
   if (! exists) {
-    LBANN_ERROR("failed to read distributed matrix from file (" + filename + ")");
+    LBANN_ERROR("failed to read distributed matrix from file (", filename, ")");
     return false;
   }
   El::Read(*M, filename, El::BINARY, true);
@@ -370,8 +344,8 @@ bool lbann::persist::write_bytes(persist_type type, const char *name, const void
   if (fd >= 0) {
     ssize_t rc = write(fd, buf, size);
     if (rc != (ssize_t) size) {
-      LBANN_ERROR(std::string{} + "failed to write to fd " + std::to_string(fd).c_str()
-                  + " for file " + filename + " and field (" + name + ")");
+      LBANN_ERROR("failed to write to fd ", fd,
+                  " for file ", filename, " and field (", name, ")");
       return false;
     }
     m_bytes[type] += size;
@@ -385,9 +359,9 @@ bool lbann::persist::read_bytes(persist_type type, const char *name, void *buf, 
   if (fd >= 0) {
     ssize_t rc = read(fd, buf, size);
     if (rc != (ssize_t) size) {
-      LBANN_ERROR(std::string{} + "failed to read " + std::to_string(size).c_str() + " bytes from fd "
-                  + std::to_string(fd).c_str() + " for file " + filename + " and field (" + name
-                  + ") at offset " + std::to_string(m_bytes[type]).c_str());
+      LBANN_ERROR("failed to read ", size, " bytes from fd ",
+                  fd, " for file ", filename, " and field (", name,
+                  ") at offset ", m_bytes[type]);
       return false;
     }
     m_bytes[type] += size;
@@ -482,9 +456,7 @@ bool lbann::read_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) 
   // check whether file exists
   int exists = lbann::exists(name);
   if (! exists) {
-    LBANN_ERROR(std::string{}
-                + "failed to read distributed matrix from file "
-                + "(" + name + ")");
+    LBANN_ERROR("failed to read distributed matrix from file (", name, ")");
     return false;
   }
 
@@ -501,7 +473,7 @@ bool lbann::write_bytes(int fd, const char *name, const void *buf, size_t size) 
   if (fd >= 0) {
     ssize_t rc = write(fd, buf, size);
     if (rc != (ssize_t) size) {
-      LBANN_ERROR(std::string{} + "failed to write file (" + name + ")");
+      LBANN_ERROR("failed to write file (", name, ")");
       return false;
     }
   }
@@ -512,7 +484,7 @@ bool lbann::read_bytes(int fd, const char *name, void *buf, size_t size) {
   if (fd >= 0) {
     ssize_t rc = read(fd, buf, size);
     if (rc != (ssize_t) size) {
-      LBANN_ERROR(std::string{} + "failed to read file (" + name + ")");
+      LBANN_ERROR("failed to read file (", name, ")");
       return false;
     }
   }
@@ -565,7 +537,7 @@ bool lbann::write_string(int fd, const char *name, const char *buf, size_t size)
   if (fd > 0) {
     ssize_t rc = write(fd, buf, size);
     if (rc != (ssize_t) size) {
-      LBANN_ERROR(std::string{} + "failed to write file (" + name + ")");
+      LBANN_ERROR("failed to write file (", name, ")");
       return false;
     }
   }
@@ -576,7 +548,7 @@ bool lbann::read_string(int fd, const char *name, char *buf, size_t size) {
   if (fd > 0) {
     ssize_t rc = read(fd, buf, size);
     if (rc <= 0) {
-      LBANN_ERROR(std::string{} + "failed to read file (" + name + ")");
+      LBANN_ERROR("failed to read file (", name, ")");
       return false;
     }
   }
