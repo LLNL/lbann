@@ -130,7 +130,7 @@ matrix_format data_layout_to_matrix_format(data_layout layout);
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
 std::string to_string(execution_mode m);
-using execution_mode_iterator = Iterator<execution_mode, execution_mode::training, execution_mode::invalid>;
+using execution_mode_iterator = EnumIterator<execution_mode, execution_mode::training, execution_mode::invalid>;
 
 /** @brief Convert a string to an execution_mode. */
 execution_mode exec_mode_from_string(std::string const& str);

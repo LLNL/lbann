@@ -56,8 +56,6 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
       pb_trainer->set_num_parallel_readers(procs_per_trainer);
     }
 
-    std::ostringstream err;
-
     // Adjust the number of parallel readers; this may be adjusted
     // after calling split_trainers()
     // set_num_parallel_readers(*comm, pb);
@@ -71,8 +69,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
 
     // Set algorithmic blocksize
     if (pb_trainer->block_size() == 0 and master) {
-      err << "model does not provide a valid block size (" << pb_trainer->block_size() << ")";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("model does not provide a valid block size (", pb_trainer->block_size(), ")");
     }
     El::SetBlocksize(pb_trainer->block_size());
 

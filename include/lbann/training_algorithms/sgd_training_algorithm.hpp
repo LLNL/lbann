@@ -65,12 +65,12 @@ public:
   /** Train a model using an iterative SGD solver. */
   void train(sgd_execution_context& c,
              model& model,
-             El::Int num_epochs, El::Int num_batches=0);
+             size_t num_epochs, size_t num_batches=0);
 
   /** Evaluate a model using the forward pass of an SGD solver. */
   void evaluate(sgd_execution_context& c,
                 model& model,
-                execution_mode mode, El::Int num_batches=0);
+                execution_mode mode, size_t num_batches=0);
 
 protected:
   /** Train model on one step / mini-batch of an SGD forward pass */

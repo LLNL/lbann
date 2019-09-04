@@ -56,14 +56,14 @@ void sgd_training_algorithm::apply(execution_context& context,
 
 void sgd_training_algorithm::train(sgd_execution_context& c,
                                    model& model,
-                                   El::Int num_epochs,
-                                   El::Int num_batches) {
+                                   size_t num_epochs,
+                                   size_t num_batches) {
 
   // Initialize epoch
   model.reset_mode(&c, execution_mode::training);
 
   do_train_begin_cbs(model);
-  for (int epoch = c.get_epoch(); epoch < num_epochs; ++epoch) {
+  for (size_t epoch = c.get_epoch(); epoch < num_epochs; ++epoch) {
     if (c.get_terminate_training()) { break; }
 
     // Initialize epoch
@@ -73,7 +73,7 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
 
     // Training iterations
     if (num_batches > 0) {
-      for (int i = 0; i < num_batches; i++) { train_mini_batch(c, model); }
+      for (size_t i = 0; i < num_batches; i++) { train_mini_batch(c, model); }
     } else {
       while (!train_mini_batch(c, model)) {}
     }
@@ -142,7 +142,7 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
 void sgd_training_algorithm::evaluate(sgd_execution_context& c,
                                       model& model,
                                       execution_mode mode,
-                                      El::Int num_batches) {
+                                      size_t num_batches) {
   // Return early if execution mode is invalid
   if (!model.is_execution_mode_valid(mode)) return;
   if (mode != execution_mode::validation
@@ -158,7 +158,7 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   model.reset_mode(&c, mode);
   do_evaluate_begin_cbs(model, mode);
   if (num_batches > 0) {
-    for (int i = 0; i < num_batches; i++) { evaluate_mini_batch(c, model, mode); }
+    for (size_t i = 0; i < num_batches; i++) { evaluate_mini_batch(c, model, mode); }
   } else {
     while (!evaluate_mini_batch(c, model, mode)) {}
   }
