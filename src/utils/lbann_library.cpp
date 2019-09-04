@@ -193,7 +193,7 @@ std::unique_ptr<model> build_model_from_prototext(
     ret_model->allow_background_io_activity(false);
   }
 
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->get_bool("data_store_matrix")) {
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }

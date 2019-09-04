@@ -103,8 +103,6 @@ class data_store_conduit {
   /// returns an empty node
   conduit::Node & get_empty_node(int data_id);
 
-  /// As of this writing, will be called if cmd line includes: --preload_data_store
-  /// This may change in the future; TODO revisit
   void set_preload(); 
 
   bool is_preloaded() { return m_preload; }

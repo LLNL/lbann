@@ -694,7 +694,7 @@ double generic_data_reader::get_use_percent() const {
 
 void generic_data_reader::instantiate_data_store(const std::vector<int>& local_list_sizes) {
   options *opts = options::get();
-  if (! (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache"))) {
+  if (! (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->get_bool("data_store_matrix"))) {
     if (m_data_store != nullptr) {
       delete m_data_store;
       m_data_store = nullptr;

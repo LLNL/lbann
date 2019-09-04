@@ -152,6 +152,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
   m_emi_image_keys = rhs.m_emi_image_keys;
   m_scalar_keys = rhs.m_scalar_keys;
   m_input_keys = rhs.m_input_keys;
+  m_data_store_matrix = rhs.m_data_store_matrix;
 
   m_uniform_input_type = rhs.m_uniform_input_type;
 
@@ -1524,7 +1525,7 @@ bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx)
       size_t sz = node['/' + LBANN_DATA_ID_STR(data_id) + "/size_" + std::to_string(h)].value();
       DataType *v1 = node['/' + LBANN_DATA_ID_STR(data_id) + "/data_" + std::to_string(h)].value();
       DataType *v = reinterpret_cast<DataType *>(v1);
-      set_minibatch_item<DataType>(X_v[h], mb_idx, v, sz);
+      set_minibatch_item<DataType>(X_v[h], 0, v, sz);
     }
   } else {
     for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
