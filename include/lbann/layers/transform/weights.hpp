@@ -185,7 +185,7 @@ class weights_layer : public transform_layer {
     m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
     El::Fill(*m_workspace, one);
 
-    const sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
     // Compute gradient contribution and accumulate
     const auto& scale = one / c.get_effective_mini_batch_size();
     El::Gemv(El::NORMAL,

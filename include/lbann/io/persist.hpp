@@ -127,9 +127,6 @@ class persist {
     ckpt_type = type;
   }
 
-  // bool checkpoint_has_valid_execution_mode(persist_type pt);
-  // bool checkpoint_has_valid_execution_mode(execution_mode mode);
-
   void open_checkpoint(const char *dir);
   void close_checkpoint();
 

@@ -208,7 +208,7 @@ class generic_input_layer : public io_layer {
       /// @todo This functionality should probably be moved elsewhere
       mini_batch_size = get_current_mini_batch_size();
 
-      int effective_mini_batch_size = mini_batch_size;
+      auto effective_mini_batch_size = mini_batch_size;
       for (auto&& cb : this->m_model->get_callbacks()) {
         if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
           effective_mini_batch_size = get_current_global_mini_batch_size();
@@ -216,7 +216,7 @@ class generic_input_layer : public io_layer {
         }
       }
 
-      sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+      auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
       // Set mini-batch size in model
       c.set_current_mini_batch_size(mini_batch_size);
       c.set_effective_mini_batch_size(effective_mini_batch_size);
