@@ -60,9 +60,7 @@ trainer::trainer(lbann_comm *comm)
     m_background_io_allowed(true) {
 
   // Default trainer name
-  static El::Int num_trainers = 0;
-  m_name = "trainer" + std::to_string(num_trainers);
-  num_trainers++;
+  m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
 }
 
 trainer::trainer(const trainer& other) :
