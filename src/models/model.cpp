@@ -974,8 +974,8 @@ void model::mark_data_store_explicitly_loading(execution_mode mode) {
 
 // At the start of the epoch, set the execution mode and make sure
 // that each layer points to this model
-void model::reset_mode(observing_ptr<execution_context> context, execution_mode mode) {
-  m_execution_context = context;
+void model::reset_mode(execution_context& context, execution_mode mode) {
+  m_execution_context = static_cast<observing_ptr<execution_context>>(&context);
   //  set_execution_mode(mode);
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     get_layer(i).set_model(this);

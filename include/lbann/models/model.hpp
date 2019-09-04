@@ -323,7 +323,7 @@ public:
   // ===========================================
 
   /** @brief Reset model pointer and execution mode. */
-  virtual void reset_mode(observing_ptr<execution_context> context, execution_mode mode);
+  virtual void reset_mode(execution_context& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */
   virtual void reset_epoch_statistics(execution_mode mode);
 

@@ -60,14 +60,14 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
                                    size_t num_batches) {
 
   // Initialize epoch
-  model.reset_mode(&c, execution_mode::training);
+  model.reset_mode(c, execution_mode::training);
 
   do_train_begin_cbs(model);
   for (size_t epoch = c.get_epoch(); epoch < num_epochs; ++epoch) {
     if (c.get_terminate_training()) { break; }
 
     // Initialize epoch
-    model.reset_mode(&c, execution_mode::training);
+    model.reset_mode(c, execution_mode::training);
     model.reset_epoch_statistics(execution_mode::training);
     do_epoch_begin_cbs(model);
 
@@ -97,7 +97,7 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
 
 bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
                                               model& model) {
-  model.reset_mode(&c, execution_mode::training);
+  model.reset_mode(c, execution_mode::training);
   do_batch_begin_cbs(model, execution_mode::training);
 
   bool finished;
@@ -155,7 +155,7 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
 
   // Evaluate on all mini-batches
   model.reset_epoch_statistics(mode);
-  model.reset_mode(&c, mode);
+  model.reset_mode(c, mode);
   do_evaluate_begin_cbs(model, mode);
   if (num_batches > 0) {
     for (size_t i = 0; i < num_batches; i++) { evaluate_mini_batch(c, model, mode); }
@@ -169,7 +169,7 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
 bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
                                                  model& model,
                                                  execution_mode mode) {
-  model.reset_mode(&c, mode);
+  model.reset_mode(c, mode);
   do_batch_begin_cbs(model, mode);
   model.forward_prop(mode);
   model.get_objective_function()->start_evaluation(mode, c.get_current_mini_batch_size());
