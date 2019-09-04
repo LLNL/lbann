@@ -139,7 +139,7 @@ void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
 template <>
 void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
      ::bp_compute() {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   bp_impl(dynamic_cast<const CPUMat&>(get_local_prev_activations()),
           dynamic_cast<const CPUMat&>(get_local_prev_error_signals()),
           dynamic_cast<CPUMat&>(get_local_error_signals()),
@@ -150,7 +150,7 @@ void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
 template <>
 void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
      ::bp_compute() {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   bp_impl(dynamic_cast<const CPUMat&>(get_local_prev_activations()),
           dynamic_cast<const CPUMat&>(get_local_prev_error_signals()),
           dynamic_cast<CPUMat&>(get_local_error_signals()),

@@ -430,7 +430,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   auto& local_bias_gradient = m_bias_gradient->Matrix();
 
   // Matrix parameters
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   const El::Int effective_mini_batch_size = c.get_effective_mini_batch_size();
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();

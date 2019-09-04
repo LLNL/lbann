@@ -56,15 +56,6 @@
 
 namespace lbann {
 
-  enum class callback_phase {
-    batch,
-    epoch,
-    validation,
-    inference,
-    invalid
-  };
-
-
 /** @class callback_base
  *  @brief Base class for callbacks during training/testing.
  *

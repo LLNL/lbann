@@ -563,7 +563,7 @@ void bp_impl(lbann_comm& comm,
 // Template instantiation
 template <>
 void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   fp_impl(*get_comm(),
           m_decay,
           m_epsilon,
@@ -576,7 +576,7 @@ void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device:
 }
 template <>
 void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   fp_impl(*get_comm(),
           m_decay,
           m_epsilon,
@@ -589,7 +589,7 @@ void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device
 }
 template <>
 void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   bp_impl(*get_comm(),
           m_epsilon,
           c.get_execution_mode() == execution_mode::training,
@@ -602,7 +602,7 @@ void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device:
 }
 template <>
 void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   bp_impl(*get_comm(),
           m_epsilon,
           c.get_execution_mode() == execution_mode::training,

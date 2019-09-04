@@ -40,7 +40,7 @@ namespace lbann {
 namespace callback {
 
 void dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t step) {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   // Print minibatch sample indices of input layers
   auto *input = dynamic_cast<generic_input_layer*>(l);
   if (input != nullptr) {

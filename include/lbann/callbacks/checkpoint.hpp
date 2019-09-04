@@ -34,6 +34,14 @@
 namespace lbann {
 namespace callback {
 
+enum class callback_phase {
+  batch,
+  epoch,
+  validation,
+  inference,
+  invalid
+};
+
 /** @brief Checkpoint at given interval in given directory */
 class checkpoint : public callback_base {
  public:

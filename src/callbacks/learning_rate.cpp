@@ -280,7 +280,7 @@ float poly_learning_rate::global_schedule(model *m) {
  * Compute the learning rate for the next iteration.
  */
 float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   const size_t cur_iter = c.get_step();
   if (m_max_iter > cur_iter) {
     m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));

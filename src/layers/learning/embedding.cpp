@@ -122,7 +122,7 @@ void embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::bp_compute() {
   auto& local_dict_grad = m_dictionary_gradient.Matrix();
   const auto& local_output_grad = get_local_prev_error_signals();
   const auto& local_width = local_input.Width();
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   const auto& mini_batch_size = c.get_effective_mini_batch_size();
 
   // Update appropriate columns of gradient w.r.t. dictionary
