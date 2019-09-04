@@ -562,21 +562,7 @@ bool generic_data_reader::save_to_checkpoint_shared(persist& p, execution_mode m
 
 /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
 bool lbann::generic_data_reader::load_from_checkpoint_shared(persist& p, execution_mode mode) {
-  std::string buf;
-  // Assume checkpoint reload from epoch end not step end
-  if (get_comm()->am_trainer_master()) {
-    read_cereal_archive<generic_data_reader>(*this, p, mode, "_dr.xml");
-    buf = create_cereal_archive_binary_string<generic_data_reader>(*this);
-  }
-
-  // TODO: this assumes homogeneous processors
-  // broadcast state from rank 0
-  get_comm()->trainer_broadcast(0, buf);
-
-  if (!get_comm()->am_trainer_master()) {
-    unpack_cereal_archive_binary_string<generic_data_reader>(*this, buf);
-  }
-
+  load_from_shared_cereal_archive<generic_data_reader>(*this, p, mode, get_comm(), "_dr.xml");
   // Adjust current position to deal with fact that it was just loaded to all ranks from rank 0 (differs by rank #)
   m_current_pos += m_comm->get_rank_in_trainer();
   return true;

@@ -83,21 +83,7 @@ void execution_context::save_to_checkpoint_shared(persist& p) {
 }
 
 void execution_context::load_from_checkpoint_shared(persist& p) {
-  std::string buf;
-
-  // Assume checkpoint reload from epoch end not step end
-  if (get_comm()->am_trainer_master()) {
-    read_cereal_archive<execution_context>(*this, p, get_execution_mode(), "_ctx.xml");
-    buf = create_cereal_archive_binary_string<execution_context>(*this);
-  }
-
-  // TODO: this assumes homogeneous processors
-  // broadcast state from rank 0
-  get_comm()->trainer_broadcast(0, buf);
-
-  if (!get_comm()->am_trainer_master()) {
-    unpack_cereal_archive_binary_string<execution_context>(*this, buf);
-  }
+  load_from_shared_cereal_archive<execution_context>(*this, p, get_execution_mode(), get_comm(), "_ctx.xml");
   return;
 }
 
