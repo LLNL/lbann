@@ -32,13 +32,13 @@ namespace lbann {
 namespace callback {
 
 void timer::batch_timing_begin(const model& m) {
-  const execution_context& c = m.get_execution_context();
+  const auto& c = m.get_execution_context();
   const auto& mode = c.get_execution_mode();
   m_batch_start_times[mode] = get_time();
 }
 
 void timer::batch_timing_end(const model& m) {
-  const execution_context& c = m.get_execution_context();
+  const auto& c = m.get_execution_context();
   const auto& mode = c.get_execution_mode();
   const auto& batch_time = get_time() - m_batch_start_times[mode];
   m_batch_times[mode].push_back(batch_time);
@@ -49,7 +49,7 @@ void timer::batch_timing_end(const model& m) {
 }
 
 void timer::timing_begin(const model& m) {
-  const execution_context& c = m.get_execution_context();
+  const auto& c = m.get_execution_context();
   const auto& mode = c.get_execution_mode();
   m_start_times[mode] = get_time();
   m_batch_times[mode].clear();

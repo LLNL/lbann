@@ -204,7 +204,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
                                       const std::vector<weights*>& local_weights) {
 
   // Checkpoint directories
-  const execution_context& c = m.get_execution_context();
+  const auto& c = m.get_execution_context();
   const auto local_trainer = comm.get_trainer_rank();
   const auto step = c.get_step();
   const std::string send_dir = (m.get_name()
@@ -264,7 +264,7 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
   // Checkpoint directories
-  const execution_context& c = m.get_execution_context();
+  const auto& c = m.get_execution_context();
   const auto local_trainer = comm.get_trainer_rank();
   const auto step = c.get_step();
   const std::string checkpoint_dir = (m.get_name()

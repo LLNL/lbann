@@ -66,7 +66,7 @@ def run(trainer, model, data_reader, optimizer,
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
 
     # Run LBANN
-    return lbann.launcher.run(traine, model, data_reader, optimizer,
+    return lbann.launcher.run(trainer, model, data_reader, optimizer,
                               lbann_exe=lbann_exe,
                               lbann_args=lbann_args,
                               experiment_dir=experiment_dir,

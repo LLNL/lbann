@@ -252,7 +252,7 @@ void read_cereal_archive(C& obj, persist& p, execution_mode mode, const std::str
 
 template <typename C>
 std::string create_cereal_archive_binary_string(C& obj) {
-  std::stringstream ss;
+  std::ostringstream ss;
   {
     cereal::BinaryOutputArchive archive(ss);
     archive(obj);
@@ -262,7 +262,7 @@ std::string create_cereal_archive_binary_string(C& obj) {
 
 template <typename C>
 void unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
-  std::stringstream ss(buf);
+  std::istringstream ss(buf);
   {
     cereal::BinaryInputArchive archive(ss);
     archive(obj);

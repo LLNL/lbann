@@ -62,7 +62,7 @@ check_metric::check_metric(std::string metric_name,
 
 
 void check_metric::do_check_metric(const model& m) const {
-  const execution_context& c = m.get_execution_context();
+  const auto& c = m.get_execution_context();
   std::stringstream err;
 
   // Return immediately if execution mode is invalid

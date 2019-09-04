@@ -29,12 +29,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 
-#include "lbann/base.hpp"
-#include "lbann/utils/summary.hpp"
 #include "lbann/trainers/trainer.hpp"
-#include "lbann/training_algorithms/training_algorithm.hpp"
-#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
-#include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/description.hpp"

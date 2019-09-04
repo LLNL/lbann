@@ -133,7 +133,7 @@ const AbsDistMat& confusion_matrix::get_labels(const model& m) const {
 // ---------------------------------------------------------
 
 void confusion_matrix::reset_counts(const model& m) {
-  const execution_context& c = m.get_execution_context();
+  const auto& c = m.get_execution_context();
   auto& counts = m_counts[c.get_execution_mode()];
   const auto& num_classes = get_predictions(m).Height();
   counts.assign(num_classes * num_classes, 0);
@@ -166,7 +166,7 @@ void confusion_matrix::update_counts(const model& m) {
   const auto& local_labels = m_labels_v->LockedMatrix();
 
   // Update counts
-  const execution_context& c = m.get_execution_context();
+  const auto& c = m.get_execution_context();
   auto& counts = m_counts[c.get_execution_mode()];
   const auto& local_height = local_predictions.Height();
   const auto& local_width = local_predictions.Width();

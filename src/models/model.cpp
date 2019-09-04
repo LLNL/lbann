@@ -327,7 +327,7 @@ const std::vector<weights*> model::get_weights() const {
   return weights_list;
 }
 
-int model::get_num_iterations_per_epoch(execution_mode mode) const {
+size_t model::get_num_iterations_per_epoch(execution_mode mode) const {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     const auto* input = dynamic_cast<const generic_input_layer*>(&get_layer(i));
     if (input != nullptr) {

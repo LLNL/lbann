@@ -37,6 +37,8 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
