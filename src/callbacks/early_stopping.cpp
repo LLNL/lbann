@@ -41,7 +41,7 @@ early_stopping::early_stopping(int64_t patience) :
 /// Monitor the objective function to see if the validation score
 /// continues to improve
 void early_stopping::on_validation_end(model *m) {
-  execution_context& c = m->get_execution_context();
+  auto& c = m->get_execution_context();
   execution_mode mode = c.get_execution_mode();
   EvalType score = m->get_objective_function()->get_mean_value(mode);
   if (score < m_last_score) {

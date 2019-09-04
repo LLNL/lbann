@@ -38,7 +38,7 @@ namespace lbann {
 namespace callback {
 
 void monitor_io::on_epoch_end(model *m) {
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   lbann_comm *comm = m->get_comm();
   for (Layer *layer : m->get_layers()) {
     if(m_layers.size() == 0
@@ -56,7 +56,7 @@ void monitor_io::on_epoch_end(model *m) {
 }
 
 void monitor_io::on_test_end(model *m) {
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   lbann_comm *comm = m->get_comm();
   for (Layer *layer : m->get_layers()) {
     if(m_layers.size() == 0

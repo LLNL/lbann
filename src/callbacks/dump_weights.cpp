@@ -45,7 +45,7 @@ void dump_weights::on_epoch_end(model *m) {
 }
 
 void dump_weights::do_dump_weights(model *m, std::string s) {
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   for (weights *w : m->get_weights()) {
     std::string epoch = "-epoch" + std::to_string(c.get_epoch()-1);
     if(s != "") {

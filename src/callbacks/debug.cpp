@@ -65,7 +65,7 @@ std::string weights_string(const weights& w) {
 
 /** Get human-readable string describing current batch step. */
 std::string batch_step_string(const model& m) {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
   std::stringstream msg;
   const auto& mode = c.get_execution_mode();
   msg << to_string(mode) << " batch " << c.get_step();
@@ -77,7 +77,7 @@ std::string batch_step_string(const model& m) {
 
 // Status updates for batch beginnings/endings
 void debug::on_batch_begin(model *m) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": "
@@ -86,7 +86,7 @@ void debug::on_batch_begin(model *m) {
   }
 }
 void debug::on_batch_end(model *m) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": "
@@ -103,7 +103,7 @@ void debug::on_batch_evaluate_end(model *m) {
 
 // Status updates for beginning/ending of layer forward/backward prop
 void debug::on_forward_prop_begin(model *m, Layer *l) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
@@ -113,7 +113,7 @@ void debug::on_forward_prop_begin(model *m, Layer *l) {
   }
 }
 void debug::on_forward_prop_end(model *m, Layer *l) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
@@ -123,7 +123,7 @@ void debug::on_forward_prop_end(model *m, Layer *l) {
   }
 }
 void debug::on_backward_prop_begin(model *m, Layer *l) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
@@ -133,7 +133,7 @@ void debug::on_backward_prop_begin(model *m, Layer *l) {
   }
 }
 void debug::on_backward_prop_end(model *m, Layer *l) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)

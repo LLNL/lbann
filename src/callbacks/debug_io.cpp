@@ -84,7 +84,7 @@ void debug_io::print_fp_start(model *m, generic_input_layer *input) {
 
 //  179i @ 300s (=5m*60s) + 1i @ 100s (=5m*45s):offset <- num models
 void debug_io::print_phase_start(model *m, execution_mode mode) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   // Get data reader from first input layer in model
   generic_data_reader* data_reader = nullptr;
   for (auto&& l : m->get_layers()) {
@@ -141,7 +141,7 @@ void debug_io::on_validation_begin(model *m) {
 }
 
 void debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   auto *input = dynamic_cast<generic_input_layer*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;

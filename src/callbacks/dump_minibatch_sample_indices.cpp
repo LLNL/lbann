@@ -72,12 +72,12 @@ void dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t ste
 }
 
 void dump_minibatch_sample_indices::on_forward_prop_end(model *m, Layer *l) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   dump_to_file(m, l, c.get_step());
 }
 
 void dump_minibatch_sample_indices::on_evaluate_forward_prop_end(model *m, Layer *l) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   dump_to_file(m, l, c.get_step());
 }
 

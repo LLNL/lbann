@@ -98,7 +98,7 @@ void imcomm::on_train_begin(model *m) {
 }
 
 void imcomm::on_backward_prop_end(model *m) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   lbann_comm *comm = m->get_comm();
   if (comm->get_num_trainers() == 1 ||
       c.get_execution_mode() != execution_mode::training) {
