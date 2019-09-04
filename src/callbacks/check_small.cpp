@@ -31,7 +31,7 @@ namespace lbann {
 namespace callback {
 
 void check_small::on_forward_prop_end(model *m, Layer *l) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   const AbsDistMat& acts = l->get_activations();
   if (!is_good(acts)) {
     std::stringstream ss;
@@ -44,7 +44,7 @@ void check_small::on_forward_prop_end(model *m, Layer *l) {
 }
 
 void check_small::on_backward_prop_end(model *m) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr && !is_good(opt->get_gradient())) {
@@ -59,7 +59,7 @@ void check_small::on_backward_prop_end(model *m) {
 }
 
 void check_small::on_batch_end(model *m) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   for (weights *w : m->get_weights()) {
     if (!is_good(w->get_values())) {
       std::stringstream ss;

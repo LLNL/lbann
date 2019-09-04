@@ -78,7 +78,7 @@ check_gradients::check_gradients(std::set<execution_mode> modes,
 void check_gradients::do_check_gradients(model& m) const {
 
   // Get objects from model
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m.get_execution_context());
+  const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
   auto& comm = *m.get_comm();
   const auto mode = c.get_execution_mode();
   const auto& layers = m.get_layers();

@@ -77,7 +77,7 @@ bool has_inf(const AbsDistMat& mat, El::Int& row, El::Int& col) {
  *  necessarily have bad data, and the check is purely local.
  */
 void dump_network(model *m) {
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   for (const auto* l : m->get_layers()) {
     std::stringstream ss;
     ss << "model" << m->get_comm()->get_trainer_rank()

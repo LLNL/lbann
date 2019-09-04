@@ -132,7 +132,7 @@ bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
 
 // Checkpoint Shared/Distributed
 bool checkpoint::do_checkpoint(model *m) {
-  sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // if the checkpoint directory is not defined, bail
   if (m_checkpoint_dir.length() == 0 && m_per_rank_dir.length() == 0) {
     return false;

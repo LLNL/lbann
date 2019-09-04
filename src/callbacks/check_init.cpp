@@ -33,7 +33,7 @@ namespace lbann {
 namespace callback {
 
 void check_init::on_train_begin(model *m) {
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // Skip after the first epoch.
   if (c.get_epoch() != 0) {
     return;
