@@ -26,4 +26,4 @@ class Trainer:
 
     def save_proto(self, filename):
         """Export trainer to prototext file."""
-        save_prototext(filename, trainer=self.export_proto())
+        lbann.proto.save_prototext(filename, trainer=self.export_proto())
