@@ -100,7 +100,7 @@ fast_rng_gen& get_fast_io_generator() {
   return ::fast_io_generator;
 }
 
-bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
+bool save_rng_to_checkpoint(persist& p, const lbann_comm* comm) {
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   makedir(dirname.c_str());
   std::string rng_name;
@@ -157,7 +157,7 @@ bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
    return true;
 }
 
-bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
+bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
 
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   std::string rng_name;

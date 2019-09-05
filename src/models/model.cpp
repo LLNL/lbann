@@ -99,7 +99,6 @@ model::model(const model& other) :
   for (const auto& ptr : other.m_layers) {
     if (ptr == nullptr) { LBANN_ERROR("unexpected null pointer"); }
     auto* old_layer = ptr.get();
-    /// @todo BVE FIXME - not sure copy does what I think that it should
     auto* new_layer = old_layer->copy();
     new_layer->set_model(this);
     m_layers.emplace_back(new_layer);
@@ -1283,10 +1282,10 @@ bool model::save_to_checkpoint_shared(persist& p) {
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     if (!get_layer(i).save_to_checkpoint_shared(p)) {
-      return false;
+      LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
     }
   }
-  save_rng_to_checkpoint_shared(p, m_comm);
+  save_rng_to_checkpoint(p, m_comm);
   for (const auto& m : m_metrics) {
     m->save_to_checkpoint_shared(p);
   }
@@ -1302,7 +1301,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
     p.read_uint64(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
     p.read_uint32(persist_type::model, "persist_callback_type",     &header.callback_type);
   }
-  load_rng_from_checkpoint_shared(p, m_comm);
+  load_rng_from_checkpoint(p, m_comm);
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
   m_comm->trainer_broadcast(0, header);
@@ -1318,7 +1317,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
   // read in each layer
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     if (!get_layer(i).load_from_checkpoint_shared(p)) {
-      return false;
+      LBANN_ERROR("Unable to load layer[",i,"]=", get_layer(i).get_name());
     }
   }
   if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
@@ -1344,10 +1343,10 @@ bool model::save_to_checkpoint_distributed(persist& p){
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     if (!get_layer(i).save_to_checkpoint_distributed(p)) {
-      return false;
+      LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
     }
   }
-  save_rng_to_checkpoint_shared(p, m_comm);
+  save_rng_to_checkpoint(p, m_comm);
   for (const auto& m : m_metrics) {
     m->save_to_checkpoint_distributed(p);
   }
@@ -1363,7 +1362,7 @@ bool model::load_from_checkpoint_distributed(persist& p){
   m_max_mini_batch_size = (size_t)           header.max_mini_batch_size;
 
   p.set_cb_type((callback_type) header.callback_type);
-  load_rng_from_checkpoint_shared(p, m_comm);
+  load_rng_from_checkpoint(p, m_comm);
 
   for (weights *w : m_weights) {
     w->load_from_checkpoint_distributed(p);
@@ -1371,7 +1370,7 @@ bool model::load_from_checkpoint_distributed(persist& p){
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     if (!get_layer(i).load_from_checkpoint_distributed(p)) {
-      return false;
+      LBANN_ERROR("Unable to load layer[",i,"]=", get_layer(i).get_name());
     }
   }
   for (const auto& m : m_metrics) {
