@@ -28,18 +28,6 @@
 #define LBANN_TRAINING_ALGORITHM_HPP
 
 #include "lbann/base.hpp"
-// #include "lbann/comm.hpp"
-// #include "lbann/layers/layer.hpp"
-// #include "lbann/utils/summary.hpp"
-// #include "lbann/utils/graph.hpp"
-// #include "lbann/io/file_io.hpp"
-// #include "lbann/io/persist.hpp"
-// #include "lbann/utils/threads/thread_pool.hpp"
-// #include <lbann.pb.h>
-// #include <vector>
-// #include <string>
-// #include <unordered_map>
-
 #include "lbann/execution_contexts/execution_context.hpp"
 
 namespace lbann {

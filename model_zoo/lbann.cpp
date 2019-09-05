@@ -98,11 +98,9 @@ int main(int argc, char *argv[]) {
 
       // Train model
       trainer->train(model.get(), pb_model->num_epochs());
-      //      trainer->apply(SGD, execution_mode::training, model, lambdat ()(return pb_model->num_epochs()> 0));
 
       // Evaluate model on test set
       trainer->evaluate(model.get(), execution_mode::testing);
-      //      trainer->apply(SGD, execution_mode::testing, model, pb_model->num_epochs());
 
       //has no affect unless option: --st_on was given
       stack_profiler::get()->print();

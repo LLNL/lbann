@@ -53,7 +53,7 @@ enum class persist_type {
   validation_ctx,
 };
 
-using persist_type_iterator = EnumIterator<persist_type, persist_type::train, persist_type::validation_ctx>;
+using persist_type_iterator = enum_iterator<persist_type, persist_type::train, persist_type::validation_ctx>;
 
 inline persist_type execution_mode_to_persist_type(execution_mode m) {
   switch(m) {
