@@ -1,6 +1,7 @@
 """LBANN Trainer."""
 import abc
 from lbann import trainer_pb2
+import lbann.proto
 from lbann.util import make_iterable
 
 class Trainer:
