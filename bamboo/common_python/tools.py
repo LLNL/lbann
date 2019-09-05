@@ -397,6 +397,8 @@ def get_command(cluster,
         # this error to lbann_errors.
         if isinstance(extra_lbann_flags, dict):
             # See `lbann --help` or src/proto/proto_common.cpp
+            # Commented out flags already have their own parameters
+            # in this function.
             allowed_flags = [
                 # 'model',
                 # 'optimizer',
@@ -558,7 +560,9 @@ def get_error_line(error_file_name):
         for line in error_file:
             if ('ERROR' in line) or ('LBANN error' in line) or \
                     ('Error:' in line) or \
-                    ('Expired or invalid job' in line):
+                    ('Expired or invalid job' in line) or \
+                    ('Segmentation fault (core dumped)' in line) or \
+                    ('Relinquishing job allocation' in line):
                 error_line = line
                 break
             elif ('Stack trace:' in line) or \
