@@ -102,7 +102,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_com
 /** CPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+  auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
   const auto mini_batch_size = c.get_effective_mini_batch_size();
@@ -211,7 +211,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_comp
 /** CPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+  auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
   const auto mini_batch_size = c.get_effective_mini_batch_size();
@@ -296,7 +296,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_comp
 /** GPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+  auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
   const auto mini_batch_size = c.get_effective_mini_batch_size();
@@ -399,7 +399,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_com
 
 template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+  auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
   const auto mini_batch_size = c.get_effective_mini_batch_size();

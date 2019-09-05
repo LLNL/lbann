@@ -431,7 +431,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
 
   // Matrix parameters
   const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
-  const El::Int effective_mini_batch_size = c.get_effective_mini_batch_size();
+  const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();
   const auto& output_dims = get_output_dims();

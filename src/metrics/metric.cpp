@@ -27,9 +27,6 @@
 #include "lbann/metrics/metric.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/timer.hpp"
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
-#include <cereal/types/base_class.hpp>
 
 namespace lbann {
 
