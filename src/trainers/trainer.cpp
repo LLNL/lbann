@@ -175,8 +175,7 @@ void trainer::delete_execution_context(execution_context_key_pair_t key) {
   m_model_execution_context.erase(key);
 }
 
-void trainer::for_each_execution_context(std::function<bool(observer_ptr<execution_context>)>fn) {
-
+void trainer::for_each_execution_context(std::function<void(observer_ptr<execution_context>)>fn) {
   for(auto&& c : m_model_execution_context) {
     // auto&& model = c.first.first;
     // auto&& mode = c.first.second;

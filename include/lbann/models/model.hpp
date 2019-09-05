@@ -133,17 +133,17 @@ public:
   }
 
   /** @brief Get the model's comm. */
-  inline lbann_comm *get_comm() const {
+  lbann_comm *get_comm() const {
     return m_comm;
   }
 
   /** Check to see if there is a valid training context for the model */
-  inline bool has_valid_execution_context() const {
+  bool has_valid_execution_context() const {
     return (m_execution_context != nullptr);
   }
 
   /** Grab the training context of the model */
-  inline const execution_context& get_execution_context() const {
+  const execution_context& get_execution_context() const {
     if(m_execution_context == nullptr) {
       LBANN_ERROR("execution context is not set");
     }
@@ -151,11 +151,8 @@ public:
   }
 
   /** Grab the training context of the model */
-  inline execution_context& get_execution_context() {
-    if(m_execution_context == nullptr) {
-      LBANN_ERROR("execution context is not set");
-    }
-    return *m_execution_context;
+  execution_context& get_execution_context() {
+    return const_cast<execution_context&>(static_cast<const model&>(*this).get_execution_context());
   }
 
   // ===========================================

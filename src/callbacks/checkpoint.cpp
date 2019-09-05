@@ -156,7 +156,8 @@ bool checkpoint::do_checkpoint(model *m) {
     epoch = c.get_epoch();
     step = c.get_step();
     timer.Start();
-    printf("Checkpoint [%s]: epoch %ld step %ld ...\n", to_string(c.get_execution_mode()).c_str(), epoch, step);
+    std::cout << "Checkpoint [" << to_string(c.get_execution_mode())
+              << "]: epoch " << epoch << " step " << step << " ..." << std::endl;
     fflush(stdout);
   }
   comm->trainer_broadcast(0, epoch);
@@ -183,12 +184,8 @@ bool checkpoint::do_checkpoint(model *m) {
     }
     if(p.get_cb_type() == callback_type::execution_context_only
        || p.get_cb_type() == callback_type::full_checkpoint) {
-      auto save_checkpoint = std::function<bool(observer_ptr<execution_context>)>
-        ([this](observer_ptr<execution_context> ctx)
-         ->bool {
-          ctx->save_to_checkpoint_distributed(this->p);
-          return true;
-        });
+      auto save_checkpoint = [this](observer_ptr<execution_context> ctx)
+        ->void { ctx->save_to_checkpoint_distributed(this->p); };
       c.get_trainer().for_each_execution_context(save_checkpoint);
     }
     p.close_checkpoint();
@@ -213,12 +210,8 @@ bool checkpoint::do_checkpoint(model *m) {
     }
     if(p.get_cb_type() == callback_type::execution_context_only
        || p.get_cb_type() == callback_type::full_checkpoint) {
-      auto save_checkpoint = std::function<bool(observer_ptr<execution_context>)>
-        ([this](observer_ptr<execution_context> ctx)
-         ->bool {
-          ctx->save_to_checkpoint_shared(this->p);
-          return true;
-        });
+      auto save_checkpoint = [this](observer_ptr<execution_context> ctx)
+         ->void { ctx->save_to_checkpoint_shared(this->p); };
       c.get_trainer().for_each_execution_context(save_checkpoint);
     }
     // close our checkpoint
@@ -237,8 +230,13 @@ bool checkpoint::do_checkpoint(model *m) {
     if (secs > 0.0) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
-    printf("[%s.%d] Checkpoint [%s] complete: Epoch=%ld Step=%ld (%f secs, %llu bytes, %f MB/sec)\n",
-           m->get_name().c_str(), comm->get_trainer_rank(), to_string(c.get_execution_mode()).c_str(), epoch, step, secs, (unsigned long long) bytes_count, bw);
+    std::cout << "[" << m->get_name()
+              << "." << comm->get_trainer_rank()
+              << "] Checkpoint [" << to_string(c.get_execution_mode())
+              << "] complete: Epoch=" << epoch
+              << " Step=" << step
+              << " (" << secs << " secs, " << bytes_count << " bytes, "
+              << bw << " MB/sec)" << std::endl;
     fflush(stdout);
   }
   // record last checkpoint time in case checkpoint_secs interval defined.
@@ -379,10 +377,13 @@ bool checkpoint::open_latest_checkpoint(
     if (secs > 0.0) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
-    printf("[%s.%d] %s complete: Epoch=%ld Step=%ld (%f secs, %llu bytes, %f MB/sec)\n",
-           m->get_name().c_str(), comm->get_trainer_rank(), task_label.c_str(), epoch, step,
-           secs, (unsigned long long) bytes_count, bw
-          );
+    std::cout << "[" << m->get_name()
+              << "." << comm->get_trainer_rank()
+              << "] " << task_label
+              << " complete: Epoch=" << epoch
+              << " Step=" << step
+              << " (" << secs << " secs, " << bytes_count << " bytes, "
+              << bw << " MB/sec)" << std::endl;
     fflush(stdout);
   }
   p.reset_bytes();
