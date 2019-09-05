@@ -1,7 +1,6 @@
 """LBANN Trainer."""
 import abc
 from lbann import trainer_pb2
-import lbann.proto
 from lbann.util import make_iterable
 
 class Trainer:
@@ -24,7 +23,3 @@ class Trainer:
         trainer.num_gpus = self.num_gpus
 
         return trainer
-
-    def save_proto(self, filename):
-        """Export trainer to prototext file."""
-        lbann.proto.save_prototext(filename, trainer=self.export_proto())

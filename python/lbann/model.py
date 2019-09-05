@@ -58,7 +58,3 @@ class Model:
         model.callback.extend([c.export_proto() for c in self.callbacks])
 
         return model
-
-    def save_proto(self, filename):
-        """Export model to prototext file."""
-        save_prototext(filename, model=self.export_proto())
