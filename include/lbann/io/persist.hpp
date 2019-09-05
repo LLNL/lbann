@@ -47,24 +47,24 @@ enum class persist_type {
   metrics,
   validate,
   testing,
-  prediction_ctx,
-  training_ctx,
-  testing_ctx,
-  validation_ctx,
+  prediction_context,
+  training_context,
+  testing_context,
+  validation_context,
 };
 
-using persist_type_iterator = enum_iterator<persist_type, persist_type::train, persist_type::validation_ctx>;
+using persist_type_iterator = enum_iterator<persist_type, persist_type::train, persist_type::validation_context>;
 
 inline persist_type execution_mode_to_persist_type(execution_mode m) {
   switch(m) {
   case execution_mode::training:
-    return persist_type::training_ctx;
+    return persist_type::training_context;
   case execution_mode::validation:
-    return persist_type::validation_ctx;
+    return persist_type::validation_context;
   case execution_mode::testing:
-    return persist_type::testing_ctx;
+    return persist_type::testing_context;
   case execution_mode::prediction:
-    return persist_type::prediction_ctx;
+    return persist_type::prediction_context;
   // case execution_mode::tournament:
   //   return persist_type::tournament;
   case execution_mode::invalid:
@@ -85,13 +85,13 @@ inline std::string to_string(persist_type pt) {
     return "validate";
   case persist_type::testing:
     return "test";
-  case persist_type::prediction_ctx:
+  case persist_type::prediction_context:
     return "prediction";
-  case persist_type::training_ctx:
+  case persist_type::training_context:
     return "training";
-  case persist_type::validation_ctx:
+  case persist_type::validation_context:
     return "validation";
-  case persist_type::testing_ctx:
+  case persist_type::testing_context:
     return "testing";
   default:
       LBANN_ERROR("Invalid persist type specified");

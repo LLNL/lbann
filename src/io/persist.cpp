@@ -238,10 +238,10 @@ void lbann::persist::open_checkpoint(const char *dir) {
     if(pt != persist_type::metrics &&
        pt != persist_type::testing &&
        pt != persist_type::validate &&
-       pt != persist_type::testing_ctx &&
-       pt != persist_type::training_ctx &&
-       pt != persist_type::validation_ctx &&
-       pt != persist_type::prediction_ctx) {
+       pt != persist_type::testing_context &&
+       pt != persist_type::training_context &&
+       pt != persist_type::validation_context &&
+       pt != persist_type::prediction_context) {
       m_FDs[pt] = lbann::openwrite(m_filenames[pt].c_str());
       if (m_FDs[pt] < 0) {
         LBANN_ERROR("failed to open file (", m_filenames[pt], ")");
@@ -270,10 +270,10 @@ void lbann::persist::open_restart(const char *dir) {
     if(pt != persist_type::metrics &&
        pt != persist_type::testing &&
        pt != persist_type::validate &&
-       pt != persist_type::testing_ctx &&
-       pt != persist_type::training_ctx &&
-       pt != persist_type::validation_ctx &&
-       pt != persist_type::prediction_ctx) {
+       pt != persist_type::testing_context &&
+       pt != persist_type::training_context &&
+       pt != persist_type::validation_context &&
+       pt != persist_type::prediction_context) {
       m_FDs[pt] = lbann::openread(m_filenames[pt].c_str());
       if (m_FDs[pt] < 0) {
         LBANN_ERROR("failed to open file (", m_filenames[pt], ")");
