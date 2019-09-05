@@ -55,7 +55,7 @@ void summary::on_batch_end(model *m) {
     LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
 
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
 
   prof_region_begin("summary-batch", prof_colors[0], false);
   m->summarize_stats(*m_summarizer);
@@ -86,7 +86,7 @@ void summary::on_epoch_end(model *m) {
     LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
 
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   prof_region_begin("summary-epoch", prof_colors[0], false);
   for (const auto& met : m->get_metrics()) {
     EvalType train_score = met->get_mean_value(c.get_execution_mode());
@@ -107,7 +107,7 @@ void summary::on_test_end(model *m) {
   if(!m_summarizer){
     LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   prof_region_begin("summary-test", prof_colors[0], false);
   lbann_comm *comm = m->get_comm();
   for (auto&& met : m->get_metrics()) {
@@ -131,7 +131,7 @@ void summary::save_histograms(model *m) {
   if(!m_summarizer){
     LBANN_ERROR("Summary callback failed: m_summarizer does not exist.");
   }
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   for (const auto& layer : m->get_layers()) {
     const std::string prefix = layer->get_name() + "/";
     for (int i = 0; i < layer->get_num_children(); ++i) {

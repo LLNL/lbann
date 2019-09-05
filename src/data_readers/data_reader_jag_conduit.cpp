@@ -264,7 +264,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_list_per_model = false;
 }
 
-void data_reader_jag_conduit::setup(int num_io_threads, observing_ptr<thread_pool> io_thread_pool) {
+void data_reader_jag_conduit::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
 }
 

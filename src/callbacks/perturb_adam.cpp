@@ -61,7 +61,7 @@ void perturb_adam::setup(model* m) {
 }
 
 void perturb_adam::on_batch_begin(model* m) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   if (m_perturb_during_training && c.get_step() > 0) {
     perturb(*m);
   }

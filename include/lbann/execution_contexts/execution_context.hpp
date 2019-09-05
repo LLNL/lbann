@@ -45,7 +45,7 @@ struct termination_criteria {
 class execution_context {
 public:
   /** Constructor. */
-  execution_context(observing_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode);
+  execution_context(observer_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode);
   /** Destructor. */
   virtual ~execution_context() = default;
 
@@ -129,10 +129,10 @@ protected:
 
 private:
   /** Pointer to the training context (execution environment) for the training algorithm */
-  observing_ptr<trainer> m_trainer;
+  observer_ptr<trainer> m_trainer;
 
   /** LBANN communicator. */
-  observing_ptr<lbann_comm> m_comm;
+  observer_ptr<lbann_comm> m_comm;
 
   /** The trainer's current execution mode. */
   execution_mode m_execution_mode = execution_mode::training;

@@ -43,7 +43,7 @@ struct sgd_termination_criteria : public termination_criteria {
 class sgd_execution_context final : public execution_context {
 public:
   /** Constructor. */
-  sgd_execution_context(observing_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode, size_t mini_batch_size);
+  sgd_execution_context(observer_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode, size_t mini_batch_size);
   /** Destructor. */
   virtual ~sgd_execution_context() = default;
 

@@ -32,7 +32,7 @@
 
 namespace lbann {
 
-sgd_execution_context::sgd_execution_context(observing_ptr<trainer> trainer, lbann_comm *comm,
+sgd_execution_context::sgd_execution_context(observer_ptr<trainer> trainer, lbann_comm *comm,
                                              execution_mode mode,
                                              size_t mini_batch_size)
   : execution_context(trainer, comm, mode),

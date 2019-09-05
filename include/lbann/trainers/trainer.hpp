@@ -90,11 +90,11 @@ public:
   /** Set up the trainer. */
   void setup(std::unique_ptr<thread_pool> io_thread_pool);
 
-  using execution_context_key_pair_t = typename std::pair<observing_ptr<model>, execution_mode>;
+  using execution_context_key_pair_t = typename std::pair<observer_ptr<model>, execution_mode>;
 
   execution_context_key_pair_t
   check_and_build_execution_context(training_algorithm& alg,
-                                    observing_ptr<model> model,
+                                    observer_ptr<model> model,
                                     execution_mode mode);
 
   execution_context_key_pair_t
@@ -102,23 +102,23 @@ public:
                                     model& model,
                                     execution_mode mode);
 
-  execution_context& get_execution_context(observing_ptr<model> model,
+  execution_context& get_execution_context(observer_ptr<model> model,
                                                                  execution_mode mode);
 
   execution_context& get_execution_context(execution_context_key_pair_t key);
 
   void delete_execution_context(execution_context_key_pair_t key);
 
-  void for_each_execution_context(std::function<bool(observing_ptr<execution_context>)>fn);
+  void for_each_execution_context(std::function<bool(observer_ptr<execution_context>)>fn);
 
   void apply(training_algorithm& alg,
-             observing_ptr<model> model,
+             observer_ptr<model> model,
              execution_mode mode,
              termination_criteria const& term_criteria);
 
-  void train(observing_ptr<model> model, El::Int num_epochs, El::Int num_batches=0);
+  void train(observer_ptr<model> model, El::Int num_epochs, El::Int num_batches=0);
 
-  void evaluate(observing_ptr<model> model, execution_mode mode, El::Int num_batches=0);
+  void evaluate(observer_ptr<model> model, execution_mode mode, El::Int num_batches=0);
 
   /** Return the I/O thread pool */
   thread_pool& get_io_thread_pool() const {
@@ -152,7 +152,7 @@ private:
   bool m_background_io_allowed;
 
   /** @brief Map from model and execution mode to its execution context */
-  std::unordered_map<std::pair<observing_ptr<model>, execution_mode>,
+  std::unordered_map<std::pair<observer_ptr<model>, execution_mode>,
                      std::unique_ptr<execution_context>,
                      pair_hash> m_model_execution_context;
 };

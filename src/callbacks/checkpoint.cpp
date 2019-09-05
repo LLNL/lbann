@@ -183,8 +183,8 @@ bool checkpoint::do_checkpoint(model *m) {
     }
     if(p.get_cb_type() == callback_type::execution_context_only
        || p.get_cb_type() == callback_type::full_checkpoint) {
-      auto save_checkpoint = std::function<bool(observing_ptr<execution_context>)>
-        ([this](observing_ptr<execution_context> ctx)
+      auto save_checkpoint = std::function<bool(observer_ptr<execution_context>)>
+        ([this](observer_ptr<execution_context> ctx)
          ->bool {
           ctx->save_to_checkpoint_distributed(this->p);
           return true;
@@ -213,8 +213,8 @@ bool checkpoint::do_checkpoint(model *m) {
     }
     if(p.get_cb_type() == callback_type::execution_context_only
        || p.get_cb_type() == callback_type::full_checkpoint) {
-      auto save_checkpoint = std::function<bool(observing_ptr<execution_context>)>
-        ([this](observing_ptr<execution_context> ctx)
+      auto save_checkpoint = std::function<bool(observer_ptr<execution_context>)>
+        ([this](observer_ptr<execution_context> ctx)
          ->bool {
           ctx->save_to_checkpoint_shared(this->p);
           return true;

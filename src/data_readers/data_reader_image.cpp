@@ -224,7 +224,7 @@ void image_data_reader::preload_data_store() {
   }
 }
 
-void image_data_reader::setup(int num_io_threads, observing_ptr<thread_pool> io_thread_pool) {
+void image_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
    m_transform_pipeline.set_expected_out_dims(
     {static_cast<size_t>(m_image_num_channels),

@@ -119,13 +119,13 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool) {
 
 /// Check if there is already an execution context for the model in this mode, if not create one
 trainer::execution_context_key_pair_t trainer::check_and_build_execution_context(training_algorithm& alg,
-                                                                                 observing_ptr<model> model,
+                                                                                 observer_ptr<model> model,
                                                                                  execution_mode mode) {
   auto key = std::make_pair(model,mode);
   if(m_model_execution_context.count(key) == 0) {
     /// Create a execution context for each model and execution mode
     std::unique_ptr<execution_context> context;
-    if(dynamic_cast<observing_ptr<sgd_training_algorithm>>(&alg) != nullptr) {
+    if(dynamic_cast<observer_ptr<sgd_training_algorithm>>(&alg) != nullptr) {
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
       context = make_unique<sgd_execution_context>(this, m_comm, mode, model->get_max_mini_batch_size());
@@ -144,7 +144,7 @@ trainer::execution_context_key_pair_t trainer::check_and_build_execution_context
   auto key = std::make_pair(&model, mode);
   if(m_model_execution_context.count(key) == 0) {
     std::unique_ptr<execution_context> context;
-    if(dynamic_cast<observing_ptr<const sgd_execution_context>>(&c) != nullptr) {
+    if(dynamic_cast<observer_ptr<const sgd_execution_context>>(&c) != nullptr) {
       context = make_unique<sgd_execution_context>(this, m_comm, mode, model.get_max_mini_batch_size());
     }else {
       context = make_unique<execution_context>(this, m_comm, mode);
@@ -154,7 +154,7 @@ trainer::execution_context_key_pair_t trainer::check_and_build_execution_context
   return key;
 }
 
-execution_context& trainer::get_execution_context(observing_ptr<model> model,
+execution_context& trainer::get_execution_context(observer_ptr<model> model,
                                                   execution_mode mode) {
   auto key = std::make_pair(model,mode);
   return get_execution_context(key);
@@ -175,7 +175,7 @@ void trainer::delete_execution_context(execution_context_key_pair_t key) {
   m_model_execution_context.erase(key);
 }
 
-void trainer::for_each_execution_context(std::function<bool(observing_ptr<execution_context>)>fn) {
+void trainer::for_each_execution_context(std::function<bool(observer_ptr<execution_context>)>fn) {
 
   for(auto&& c : m_model_execution_context) {
     // auto&& model = c.first.first;
@@ -190,7 +190,7 @@ void trainer::for_each_execution_context(std::function<bool(observing_ptr<execut
 // Evaluation and training
 ////////////////////////////////////////////////////////////
 void trainer::apply(training_algorithm& alg,
-                    observing_ptr<model> model,
+                    observer_ptr<model> model,
                     execution_mode mode,
                     termination_criteria const& term_criteria) {
 
@@ -200,14 +200,14 @@ void trainer::apply(training_algorithm& alg,
   alg.apply(*(m_model_execution_context[key].get()), *model, mode, term_criteria);
 }
 
-void trainer::train(observing_ptr<model> model, El::Int num_epochs, El::Int num_batches) {
+void trainer::train(observer_ptr<model> model, El::Int num_epochs, El::Int num_batches) {
   auto sgd = make_unique<sgd_training_algorithm>();
   auto key = check_and_build_execution_context(*sgd.get(), model, execution_mode::training);
   /// Apply the training algorithm to train the model
   sgd.get()->train(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, num_epochs, num_batches);
 }
 
-void trainer::evaluate(observing_ptr<model> model, execution_mode mode, El::Int num_batches) {
+void trainer::evaluate(observer_ptr<model> model, execution_mode mode, El::Int num_batches) {
   auto sgd = make_unique<sgd_training_algorithm>();
   auto key = check_and_build_execution_context(*sgd.get(), model, mode);
   /// Apply the training algorithm to evaluate the model

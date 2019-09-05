@@ -393,7 +393,7 @@ public:
 private:
 
   /** Pointer to the execution context object used for training or evaluating this model */
-  observing_ptr<execution_context> m_execution_context;
+  observer_ptr<execution_context> m_execution_context;
 
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;

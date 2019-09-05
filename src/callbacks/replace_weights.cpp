@@ -48,7 +48,7 @@ void replace_weights::setup(model *m) {
 }
 
 void replace_weights::on_batch_end(model *m) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   const auto& step = c.get_step();
   if(step % m_batch_interval == 0) {
     for(size_t i = 0; i < m_src_layers.size(); i++) {

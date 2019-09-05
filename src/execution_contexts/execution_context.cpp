@@ -40,7 +40,7 @@
 #include <cereal/types/base_class.hpp>
 #include <cereal/types/polymorphic.hpp>
 
-#include "mpi.h"
+//#include <mpi.h>
 
 namespace lbann {
 
@@ -48,7 +48,7 @@ namespace lbann {
 // Execution context
 //******************************************************************************
 
-execution_context::execution_context(observing_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode)
+execution_context::execution_context(observer_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode)
   : m_trainer(trainer),
     m_comm(comm),
     m_execution_mode(mode),
@@ -58,7 +58,7 @@ execution_context::execution_context(observing_ptr<trainer> trainer, lbann_comm 
 // Training_Algorithm state
 ////////////////////////////////////////////////////////////
 
-// observing_ptr<thread_pool> training_algorithm::get_io_thread_pool() {
+// observer_ptr<thread_pool> training_algorithm::get_io_thread_pool() {
 //   return m_trainer->get_io_thread_pool();
 // }
 
