@@ -100,8 +100,7 @@ class metric {
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_statistics),
-       CEREAL_NVP(m_evaluate_time));
+    ar(CEREAL_NVP(m_statistics));
   }
 
   /** Return a string name for this metric. */
