@@ -408,8 +408,8 @@ fi
 # Add compiler optimization flags
 if [ "${BUILD_TYPE}" == "Release" ]; then
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -O3 ${INSTRUMENT}"
-        CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT}"
+        C_FLAGS="${C_FLAGS} -O3 ${INSTRUMENT} -fno-omit-frame-pointer"
+        CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT} -fno-omit-frame-pointer"
         Fortran_FLAGS="${Fortran_FLAGS} -O3"
         if [ "${CLUSTER}" == "catalyst" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
@@ -435,8 +435,8 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
     fi
 else
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -g ${INSTRUMENT}"
-        CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT}"
+        C_FLAGS="${C_FLAGS} -g ${INSTRUMENT} -fno-omit-frame-pointer"
+        CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT} -fno-omit-frame-pointer"
         Fortran_FLAGS="${Fortran_FLAGS} -g"
     fi
 fi

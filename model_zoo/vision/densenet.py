@@ -490,17 +490,22 @@ def set_up_experiment(args,
     else:
         optimizer = lbann.contrib.args.create_optimizer(args)
 
+    # Setup trainer
+    trainer = lbann.Trainer()
+
     # Save prototext to args.prototext
     if args.prototext:
         lbann.proto.save_prototext(args.prototext,
+                                   trainer=trainer,
                                    model=model,
                                    optimizer=optimizer,
                                    data_reader=data_reader_proto)
 
-    return model, data_reader_proto, optimizer
+    return trainer, model, data_reader_proto, optimizer
 
 
 def run_experiment(args,
+                   trainer,
                    model,
                    data_reader_proto,
                    optimizer):
@@ -530,7 +535,7 @@ def run_experiment(args,
                             imagenet_dir(data_set='val', num_classes=classes),
                             imagenet_labels(data_set='val',
                                             num_classes=classes)))
-        lbann.contrib.lc.launcher.run(model,
+        lbann.contrib.lc.launcher.run(trainer, model,
                                       data_reader_proto,
                                       optimizer,
                                       job_name='lbann_densenet',
@@ -565,7 +570,7 @@ def main():
     # Setup experiment
     # ----------------------------------
 
-    (model, data_reader_proto, optimizer) = set_up_experiment(
+    (trainer, model, data_reader_proto, optimizer) = set_up_experiment(
         args, input_node, probs, labels)
 
     # ----------------------------------
@@ -573,7 +578,7 @@ def main():
     # ----------------------------------
     # Note: Use `lbann.run` instead for non-LC systems.
 
-    run_experiment(args, model, data_reader_proto, optimizer)
+    run_experiment(args, trainer, model, data_reader_proto, optimizer)
 
 
 if __name__ == '__main__':
