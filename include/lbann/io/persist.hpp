@@ -69,7 +69,7 @@ inline persist_type execution_mode_to_persist_type(execution_mode m) {
   //   return persist_type::tournament;
   case execution_mode::invalid:
   default:
-    throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
+    LBANN_ERROR("Invalid execution mode specified");
   }
 }
 

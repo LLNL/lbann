@@ -118,7 +118,7 @@ public:
 
   void train(observing_ptr<model> model, El::Int num_epochs, El::Int num_batches=0);
 
-  void evaluate(observing_ptr<model> model, execution_mode mode, El::Int num_batche=0);
+  void evaluate(observing_ptr<model> model, execution_mode mode, El::Int num_batches=0);
 
   /** Return the I/O thread pool */
   thread_pool& get_io_thread_pool() const {

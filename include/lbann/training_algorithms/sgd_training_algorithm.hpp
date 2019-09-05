@@ -32,7 +32,7 @@
 
 namespace lbann {
 
-/** Base class for LBANN SGD-family training algorithms. */
+/** @brief Base class for LBANN SGD-family training algorithms. */
 class sgd_training_algorithm : public training_algorithm {
 public:
 
