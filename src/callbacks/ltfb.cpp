@@ -414,7 +414,7 @@ void ltfb::on_train_begin(model *m) {
 }
 
 void ltfb::on_batch_begin(model *m) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   auto&& comm = *m->get_comm();
 
   // Check whether to start LTFB round

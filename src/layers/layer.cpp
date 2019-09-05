@@ -253,7 +253,7 @@ void Layer::forward_prop() {
   const auto fp_start = get_time();
 
   // Setup tensors
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m_model->get_execution_context());
+  const auto& c = static_cast<sgd_execution_context&>(m_model->get_execution_context());
   const auto& mini_batch_size = c.get_current_mini_batch_size();
   fp_setup_inputs(mini_batch_size);
   fp_setup_outputs(mini_batch_size);
@@ -286,7 +286,7 @@ void Layer::back_prop() {
   const auto bp_start = get_time();
 
   // Setup tensors
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m_model->get_execution_context());
+  const auto& c = static_cast<sgd_execution_context&>(m_model->get_execution_context());
   const auto& mini_batch_size = c.get_current_mini_batch_size();
   bp_setup_gradient_wrt_outputs(mini_batch_size);
   bp_setup_gradient_wrt_inputs(mini_batch_size);

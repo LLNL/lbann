@@ -105,7 +105,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
   sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
-  const int mini_batch_size = c.get_effective_mini_batch_size();
+  const auto mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& linearity = m_weights[0]->get_values();
@@ -214,7 +214,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
   sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
-  const int mini_batch_size = c.get_effective_mini_batch_size();
+  const auto mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& local_linearity = m_weights[0]->get_values().LockedMatrix();
@@ -299,7 +299,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
   sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
-  const int mini_batch_size = c.get_effective_mini_batch_size();
+  const auto mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& local_linearity = m_weights[0]->get_values().LockedMatrix();
@@ -402,7 +402,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   sgd_execution_context& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
 
   // Effective mini-batch size
-  const int mini_batch_size = c.get_effective_mini_batch_size();
+  const auto mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& linearity = m_weights[0]->get_values();

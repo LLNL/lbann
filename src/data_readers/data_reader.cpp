@@ -744,7 +744,7 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
 }
 
 bool generic_data_reader::data_store_active() const {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_preloaded()) {
     return true;
   }
@@ -758,7 +758,7 @@ bool generic_data_reader::data_store_active() const {
 }
 
 bool generic_data_reader::priming_data_store() const {
-  const sgd_execution_context& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_preloaded()) {
     return false;
   }

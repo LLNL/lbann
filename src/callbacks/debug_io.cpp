@@ -51,7 +51,7 @@ void debug_io::on_forward_prop_begin(model *m, Layer *l) {
     return;
   }
 
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   if(m->get_comm()->get_rank_in_trainer() < input->get_data_reader()->get_num_parallel_readers()) {
     if(m_debug_phase == execution_mode::invalid || m_debug_phase == c.get_execution_mode()) {
       print_fp_start(m, input);

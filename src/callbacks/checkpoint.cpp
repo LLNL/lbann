@@ -78,7 +78,7 @@ void checkpoint::on_batch_end(model *m) {
 
 // Decide if we need to trigger a checkpoint for either mode, based on prototext defined intervals
 bool checkpoint::need_checkpoint(model *m, callback_phase phase) {
-  const sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   /* TODO: since we're using clocks, this requires a bcast for each call,
    * we could use number of samples processed to make a local decision */
   // if none of our checkpoint conditions are set, assume we're not checkpointing

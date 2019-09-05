@@ -1225,7 +1225,7 @@ void model::do_weight_optimize_end_cbs(weights *w) {
 // =============================================
 
 void model::summarize_stats(lbann_summary& summarizer) {
-  const execution_context& c = get_execution_context();
+  const auto& c = get_execution_context();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     get_layer(i).summarize_stats(summarizer, c.get_step());
   }
@@ -1253,7 +1253,7 @@ void model::summarize_stats(lbann_summary& summarizer) {
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {
-  const execution_context& c = get_execution_context();
+  const auto& c = get_execution_context();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     get_layer(i).summarize_matrices(summarizer, c.get_step());
   }

@@ -132,7 +132,7 @@ void imcomm::do_summary(model *m, weights *w,
   if (m_summarizer == nullptr) {
     return;
   }
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   std::string prefix = w->get_name() + "/imcomm_";
   m_summarizer->reduce_scalar(prefix + "time",
                               im_time, c.get_step());

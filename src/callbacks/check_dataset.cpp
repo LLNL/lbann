@@ -59,12 +59,12 @@ void check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>&
 }
 
 void check_dataset::on_forward_prop_end(model *m, Layer *l) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   add_to_set(m, l, c.get_step(), training_set);
 }
 
 void check_dataset::on_evaluate_forward_prop_end(model *m, Layer *l) {
-  const execution_context& c = m->get_execution_context();
+  const auto& c = m->get_execution_context();
   switch(c.get_execution_mode()) {
   case execution_mode::validation:
     add_to_set(m, l, c.get_step(), validation_set);
