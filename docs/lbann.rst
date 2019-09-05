@@ -1,5 +1,5 @@
 ********************
-LBANN Semantics
+LBANN Software Architecture and Class Overview
 ********************
 
 Trainers (i.e. execution environment)
@@ -30,7 +30,7 @@ sub-class) per execution mode.  Thus there is one execution context
 per model and mode that contains all of the state with respect to the
 training algorithm being applied to the model.
 
-For example it  tracks the current:
+For example it tracks the current:
 
 * step
 * execution mode
