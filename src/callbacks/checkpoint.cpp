@@ -419,68 +419,66 @@ bool checkpoint::restart(model *m) {
   // contexts exists and create a valid execution context for each
   // one.
   // Then setup the model with the proper one
-  sgd_execution_context& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
 
-  auto restart_shared_model = std::function<void(/*const */persist&)>
-    ([&m, &c](/*const */persist& p_ref)
-     ->void {
-      execution_mode current_mode = c.get_execution_mode();
+  auto restart_shared_model = [&m, &c](/*const */persist& p_ref)
+    ->void {
+    execution_mode current_mode = c.get_execution_mode();
 
-      for(execution_mode mode : execution_mode_iterator()) {
-        /// Restart should optionally load any other valid contexts
-        if(mode == execution_mode::invalid) { continue; }
-        trainer::execution_context_key_pair_t key;
-        try {
-          if(current_mode == mode) {
-            /// Restart has to be able to load the currently running  execution context
-            c.load_from_checkpoint_shared(p_ref);
-          }else {
-            key = c.get_trainer().check_and_build_execution_context(c, *m, mode);
-            auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
-            evaluation_context.load_from_checkpoint_shared(p_ref);
-          }
-        }catch (NonexistentArchiveFile const&) {
-          // Ignore the exception if the file is not for the current execution mode
-          if(current_mode == mode) {
-            LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
-          }else {
-            c.get_trainer().delete_execution_context(key);
-          }
+    for(execution_mode mode : execution_mode_iterator()) {
+      /// Restart should optionally load any other valid contexts
+      if(mode == execution_mode::invalid) { continue; }
+      trainer::execution_context_key_pair_t key;
+      try {
+        if(current_mode == mode) {
+          /// Restart has to be able to load the currently running  execution context
+          c.load_from_checkpoint_shared(p_ref);
+        }else {
+          key = c.get_trainer().check_and_build_execution_context(c, *m, mode);
+          auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
+          evaluation_context.load_from_checkpoint_shared(p_ref);
+        }
+      }catch (NonexistentArchiveFile const&) {
+        // Ignore the exception if the file is not for the current execution mode
+        if(current_mode == mode) {
+          LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
+        }else {
+          c.get_trainer().delete_execution_context(key);
         }
       }
-      return;
-    });
+    }
+    return;
+  };
 
-  auto restart_distributed_model = std::function<void(/*const */persist&)>
-    ([&m, &c](/*const */persist& p_ref)
-     ->void {
-      execution_mode current_mode = c.get_execution_mode();
+  auto restart_distributed_model = [&m, &c](/*const */persist& p_ref)
+    ->void {
+    execution_mode current_mode = c.get_execution_mode();
 
-      for(execution_mode mode : execution_mode_iterator()) {
-        /// Restart should optionally load any other valid contexts
-        if(mode == execution_mode::invalid) { continue; }
-        trainer::execution_context_key_pair_t key;
-        try {
-          if(current_mode == mode) {
-            /// Restart has to be able to load the currently running  execution context
-            c.load_from_checkpoint_distributed(p_ref);
-          }else {
-            key = c.get_trainer().check_and_build_execution_context(c, *m, mode);
-            auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
-            evaluation_context.load_from_checkpoint_distributed(p_ref);
-          }
-        }catch (NonexistentArchiveFile const&) {
-          // Ignore the exception if the file is not for the current execution mode
-          if(current_mode == mode) {
-            LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
-          }else {
-            c.get_trainer().delete_execution_context(key);
-          }
+    for(execution_mode mode : execution_mode_iterator()) {
+      /// Restart should optionally load any other valid contexts
+      if(mode == execution_mode::invalid) { continue; }
+      trainer::execution_context_key_pair_t key;
+      try {
+        if(current_mode == mode) {
+          /// Restart has to be able to load the currently running  execution context
+          c.load_from_checkpoint_distributed(p_ref);
+        }else {
+          key = c.get_trainer().check_and_build_execution_context(c, *m, mode);
+          auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
+          evaluation_context.load_from_checkpoint_distributed(p_ref);
         }
-
+      }catch (NonexistentArchiveFile const&) {
+        // Ignore the exception if the file is not for the current execution mode
+        if(current_mode == mode) {
+          LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
+        }else {
+          c.get_trainer().delete_execution_context(key);
+        }
       }
-      return;
-    });
+
+    }
+    return;
+  };
 
 
   open_latest_checkpoint(m, "Restart", restart_shared_model, restart_distributed_model);

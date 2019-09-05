@@ -288,7 +288,7 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
 /** Get mean metric value with validation set. */
 EvalType evaluate(model& m, const std::string& metric_name) {
-  execution_context& c = m.get_execution_context();
+  auto& c = m.get_execution_context();
   // Make sure data readers finish asynchronous work
   const auto original_mode = c.get_execution_mode();
   m.collect_background_data_fetch(original_mode);

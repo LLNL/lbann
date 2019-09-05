@@ -141,7 +141,7 @@ float adaptive_learning_rate::global_schedule(model *m) {
   // Determine behavior the first time this is called in an epoch
   if (m_cur_epoch != c.get_epoch()) {
     m_cur_epoch = c.get_epoch();
-    const execution_mode mode = c.get_execution_mode();
+    const auto mode = c.get_execution_mode();
     const EvalType score = m->get_objective_function()->get_mean_value(mode);
     if (score < m_last_score) {
       // Reset wait counter if score has decreased
