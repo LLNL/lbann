@@ -26,6 +26,7 @@
 
 #include "lbann/layers/learning/embedding.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 

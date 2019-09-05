@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 

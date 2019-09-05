@@ -29,6 +29,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 #include <layers.pb.h>
 

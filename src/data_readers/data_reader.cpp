@@ -33,6 +33,7 @@
 #include <omp.h>
 #include <future>
 #include "lbann/io/persist.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/xml.hpp>
 

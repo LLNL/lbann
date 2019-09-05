@@ -29,7 +29,7 @@
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/training_algorithms/training_algorithm.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/image.hpp"
 #include "lbann/utils/opencv.hpp"

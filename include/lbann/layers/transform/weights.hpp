@@ -28,6 +28,7 @@
 #define LBANN_LAYER_WEIGHTS_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 

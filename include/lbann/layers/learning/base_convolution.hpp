@@ -37,6 +37,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 

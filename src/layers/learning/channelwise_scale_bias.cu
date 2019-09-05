@@ -28,6 +28,7 @@
 #ifdef HYDROGEN_HAVE_CUB
 #include "cub/block/block_reduce.cuh"
 #endif // HYDROGEN_HAVE_CUB
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 

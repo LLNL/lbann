@@ -25,8 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/learning/fully_connected.hpp"
-#include "lbann/training_algorithms/training_algorithm.hpp"
-#include "lbann/training_algorithms/sgd_training_algorithm.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
