@@ -55,6 +55,20 @@ if (TARGET ALUMINUM)
   endif (Hydrogen_ENABLE_ALUMINUM)
 endif (TARGET ALUMINUM)
 
+if (TARGET CUB)
+  option(Hydrogen_ENABLE_CUB "Whether to use CUB in Hydrogen" ON)
+  if (Hydrogen_ENABLE_CUB)
+    message(STATUS "Building Hydrogen with CUB support")
+    set(LBANN_SB_FWD_HYDROGEN_CUB_DIR "${CUB_DIR}"
+      CACHE STRING "The path to CUB for Hydrogen.")
+
+    set(_hydrogen_depends_tag DEPENDS)
+    list(APPEND _HYDROGEN_DEPENDS CUB)
+
+    set(Hydrogen_ENABLE_CUDA ON)
+  endif ()
+endif (TARGET CUB)
+
 if (Hydrogen_ENABLE_CUDA)
   enable_language(CUDA)
 endif ()
