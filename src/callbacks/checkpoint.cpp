@@ -363,16 +363,18 @@ bool checkpoint::open_latest_checkpoint(
   }
   else {
     epochdir = get_shared_checkpoint_dirname(m, dir, mode, epoch, step);
-    //    if (comm->am_trainer_master()) {
+    // if (comm->am_trainer_master()) {
     /// @todo For the moment let all ranks open the checkpoint files
     p.open_restart(epochdir.c_str());
-      //    }
-    // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
-    comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
+    // } else {
+    // // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
+    //   p.m_checkpoint_dir = epochdir;
+    // }
     reload_shared_ckpt(p);
-    //    if(comm->am_trainer_master())
+    // if(comm->am_trainer_master()) {
     /// @todo For the moment let all ranks open the checkpoint files
     p.close_restart();
+    // }
   }
 
   // close our checkpoint
