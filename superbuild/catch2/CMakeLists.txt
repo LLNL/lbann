@@ -16,7 +16,7 @@ else ()
 endif ()
 
 # ... then the tag.
-set(CATCH2_TAG "master"
+set(CATCH2_TAG "v2.9.2"
   CACHE STRING "The git tag or hash to checkout for CATCH2")
 
 # Where to install CATCH2
