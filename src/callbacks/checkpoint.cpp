@@ -156,8 +156,11 @@ bool checkpoint::do_checkpoint(model *m) {
     epoch = c.get_epoch();
     step = c.get_step();
     timer.Start();
-    std::cout << "Checkpoint [" << to_string(c.get_execution_mode())
-              << "]: epoch " << epoch << " step " << step << " ..." << std::endl;
+    std::cout << "[" << m->get_name()
+              << "." << comm->get_trainer_rank()
+              << "] Checkpoint [" << to_string(c.get_execution_mode())
+              << "] to " << m_checkpoint_dir
+              << " : epoch " << epoch << " step " << step << " ..." << std::endl;
     fflush(stdout);
   }
   comm->trainer_broadcast(0, epoch);
@@ -195,7 +198,7 @@ bool checkpoint::do_checkpoint(model *m) {
       write_latest(latest_file, c.get_execution_mode(), epoch, step);
     }
   }
-  // Shared checkpoint, logic identical to Distributed.i
+  // Shared checkpoint, logic identical to Distributed.
   if(m_checkpoint_shared){
     strcpy(dir, m_checkpoint_dir.c_str());
     makedir(dir);
@@ -233,7 +236,8 @@ bool checkpoint::do_checkpoint(model *m) {
     std::cout << "[" << m->get_name()
               << "." << comm->get_trainer_rank()
               << "] Checkpoint [" << to_string(c.get_execution_mode())
-              << "] complete: Epoch=" << epoch
+              << "] to " << m_checkpoint_dir
+              << " complete: Epoch=" << epoch
               << " Step=" << step
               << " (" << secs << " secs, " << bytes_count << " bytes, "
               << bw << " MB/sec)" << std::endl;
@@ -343,7 +347,7 @@ bool checkpoint::open_latest_checkpoint(
   // let user know we're restarting from a checkpoint
   if (comm->am_trainer_master()) {
     timer.Start();
-    std::cout << task_label << "ing: epoch " << epoch << " ..." << std::endl;
+    std::cout << task_label << "ing from " << m_checkpoint_dir << " : epoch " << epoch << " ..." << std::endl;
   }
 
   std::string epochdir;
@@ -380,6 +384,7 @@ bool checkpoint::open_latest_checkpoint(
     std::cout << "[" << m->get_name()
               << "." << comm->get_trainer_rank()
               << "] " << task_label
+              << " from " << m_checkpoint_dir
               << " complete: Epoch=" << epoch
               << " Step=" << step
               << " (" << secs << " secs, " << bytes_count << " bytes, "
