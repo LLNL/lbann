@@ -29,6 +29,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -243,6 +244,19 @@ std::unique_ptr<model> build_model_from_prototext(
                                                             pb.optimizer(),
                                                             pb.trainer(),
                                                             pb.model());
+
+  // If the checkpoint directory has been overriden reset it before
+  // setting up the model
+  if (opts->has_string("ckpt_dir")) {
+    for (auto&& c : ret_model->get_callbacks()) {
+      auto* ckpt = dynamic_cast<callback::checkpoint*>(c);
+      if(ckpt != nullptr) {
+        ckpt->set_checkpoint_dir(opts->get_string("ckpt_dir"));
+        std::cout << "Setting the checkpoint directory to " << ckpt->get_checkpoint_dir() << std::endl;
+      }
+    }
+  }
+
   ret_model->setup();
 
   if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {

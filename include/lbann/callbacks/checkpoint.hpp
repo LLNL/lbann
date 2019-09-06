@@ -88,6 +88,10 @@ class checkpoint : public callback_base {
     m_checkpoint_dir= dir;
   }
 
+  inline const std::string& get_checkpoint_dir(){
+    return m_checkpoint_dir;
+  }
+
   inline void set_checkpoint_epochs(int epochs){
     m_checkpoint_epochs= epochs;
   }
