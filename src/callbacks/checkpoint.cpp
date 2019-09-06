@@ -205,9 +205,12 @@ bool checkpoint::do_checkpoint(model *m) {
     epochdir = get_shared_checkpoint_dirname(m, dir, c.get_execution_mode(), epoch, step);
     if (comm->am_trainer_master()) {
       p.open_checkpoint(epochdir.c_str());
+    }else {
+      // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
+      p.m_checkpoint_dir = epochdir;
     }
-    // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
-    comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
+    // Make sure that the master has had a chance to create the directories
+    comm->trainer_barrier();
     if(p.get_cb_type() == callback_type::model_only || p.get_cb_type() == callback_type::full_checkpoint) {
       m->save_to_checkpoint_shared(p);
     }

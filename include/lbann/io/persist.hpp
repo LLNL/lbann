@@ -113,7 +113,7 @@ class persist {
   std::map<persist_type, std::string> m_filenames;
   callback_type ckpt_type;
  public:
-  char m_checkpoint_dir[1024];
+  std::string m_checkpoint_dir;
 
  public:
   persist();
@@ -127,10 +127,10 @@ class persist {
     ckpt_type = type;
   }
 
-  void open_checkpoint(const char *dir);
+  void open_checkpoint(const std::string& dir);
   void close_checkpoint();
 
-  void open_restart(const char *dir);
+  void open_restart(const std::string& dir);
   void close_restart();
 
   uint64_t get_bytes() const {

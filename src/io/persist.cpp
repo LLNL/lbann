@@ -224,12 +224,12 @@ lbann::persist::persist() {
 
 /** @todo BVE FIXME this should be refactored to only open the
     checkpoints files that we care about */
-void lbann::persist::open_checkpoint(const char *dir) {
+void lbann::persist::open_checkpoint(const std::string& dir) {
   // create directory for checkpoint
-  lbann::makedir(dir);
+  lbann::makedir(dir.c_str());
 
   // copy checkpoint directory
-  strcpy(m_checkpoint_dir, dir);
+  m_checkpoint_dir = dir;
 
   for(persist_type pt : persist_type_iterator()) {
     // open the file for writing
@@ -260,9 +260,9 @@ void lbann::persist::close_checkpoint() {
   }
 }
 
-void lbann::persist::open_restart(const char *dir) {
+void lbann::persist::open_restart(const std::string& dir) {
   // copy checkpoint directory
-  strcpy(m_checkpoint_dir, dir);
+  m_checkpoint_dir = dir;
 
   for(persist_type pt : persist_type_iterator()) {
     // open the file for reading

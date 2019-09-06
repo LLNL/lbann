@@ -218,9 +218,9 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
   persist p;
   p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
-    p.open_checkpoint(send_dir.c_str());
+    p.open_checkpoint(send_dir);
   } else {
-    std::strcpy(p.m_checkpoint_dir, send_dir.c_str());
+    p.m_checkpoint_dir = send_dir;
   }
   m.save_to_checkpoint_shared(p);
   p.close_checkpoint();
@@ -237,9 +237,9 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
   // Load model checkpoint from partner trainer
   p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
-    p.open_restart(recv_dir.c_str());
+    p.open_restart(recv_dir);
   } else {
-    std::strcpy(p.m_checkpoint_dir, recv_dir.c_str());
+    p.m_checkpoint_dir = recv_dir;
   }
   m.load_from_checkpoint_shared(p);
   if (comm.am_trainer_master()) {
@@ -275,9 +275,9 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
   persist p;
   p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
-    p.open_restart(checkpoint_dir.c_str());
+    p.open_restart(checkpoint_dir);
   } else {
-    std::strcpy(p.m_checkpoint_dir, checkpoint_dir.c_str());
+    p.m_checkpoint_dir = checkpoint_dir;
   }
   m.load_from_checkpoint_shared(p);
   if (comm.am_trainer_master()) {
