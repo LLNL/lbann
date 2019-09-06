@@ -108,7 +108,7 @@ class generic_input_layer : public io_layer {
       io_buffer = io_buffer->copy();
     }
     for (auto& dr : m_data_readers) {
-      dr.second = dr.second->copy();
+      dr.second = dr.second ? dr.second->copy() : nullptr;
     }
   }
 
@@ -118,7 +118,7 @@ class generic_input_layer : public io_layer {
       io_buffer = io_buffer->copy();
     }
     for (auto& dr : m_data_readers) {
-      dr.second = dr.second->copy();
+      dr.second = dr.second ? dr.second->copy() : nullptr;
     }
     return *this;
   }
