@@ -84,7 +84,7 @@ class checkpoint : public callback_base {
   void on_batch_end(model *m) override;
   void on_validation_end(model *m) override;
 
-  inline void set_checkpoint_dir(std::string dir){
+  inline void set_checkpoint_dir(const std::string& dir){
     m_checkpoint_dir= dir;
   }
 
@@ -226,8 +226,9 @@ inline bool read_latest(std::string filename, execution_mode *mode, size_t *epoc
     // close our file
     closeread(fd, filename.c_str());
     if(ret != 2) { return false; }
+    return true;
   }
-  return true;
+  return false;
 }
 
 // Builder function

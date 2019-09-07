@@ -73,13 +73,12 @@ int main(int argc, char *argv[]) {
 
     /// Load the prototexts specificed on the command line
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
-    lbann_data::LbannPB pb = *(pbs[0]);
-
     // Optionally over-ride some values in the prototext for each model
     for(size_t i = 0; i < pbs.size(); i++) {
       get_cmdline_overrides(*comm, *(pbs[i]));
     }
 
+    lbann_data::LbannPB& pb = *(pbs[0]);
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer

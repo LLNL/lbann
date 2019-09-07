@@ -30,6 +30,8 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
+#include "lbann/callbacks/dump_weights.hpp"
+#include "lbann/callbacks/save_model.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -245,14 +247,30 @@ std::unique_ptr<model> build_model_from_prototext(
                                                             pb.trainer(),
                                                             pb.model());
 
-  // If the checkpoint directory has been overriden reset it before
+  // If the checkpoint directory has been overridden reset it before
   // setting up the model
   if (opts->has_string("ckpt_dir")) {
     for (auto&& c : ret_model->get_callbacks()) {
-      auto* ckpt = dynamic_cast<callback::checkpoint*>(c);
-      if(ckpt != nullptr) {
-        ckpt->set_checkpoint_dir(opts->get_string("ckpt_dir"));
-        std::cout << "Setting the checkpoint directory to " << ckpt->get_checkpoint_dir() << std::endl;
+      {
+        auto* cb = dynamic_cast<callback::checkpoint*>(c);
+        if(cb != nullptr) {
+          cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
+          std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
+        }
+      }
+      {
+        auto* cb = dynamic_cast<callback::dump_weights*>(c);
+        if(cb != nullptr) {
+          cb->set_target_dir(opts->get_string("ckpt_dir"));
+          std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+        }
+      }
+      {
+        auto* cb = dynamic_cast<callback::save_model*>(c);
+        if(cb != nullptr) {
+          cb->set_target_dir(opts->get_string("ckpt_dir"));
+          std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+        }
       }
     }
   }
