@@ -56,7 +56,7 @@ struct pair_hash
   }
 };
 
-/** Base class for LBANN trainers. */
+/** Represents an LBANN trainer and its context. */
 class trainer {
 public:
 
