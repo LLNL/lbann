@@ -215,36 +215,32 @@ template <typename C>
 void write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
   std::ofstream os(p.get_filename(pt) + suffix);
   if(!os.is_open()) {
-    throw NonexistentArchiveFile("Unable to open file for saving checkpoint " + p.get_filename(pt) + suffix);
+    throw NonexistentArchiveFile(p.get_filename(pt) + suffix);
   }
   cereal::XMLOutputArchive archive(os);
   archive(obj);
-  return;
 }
 
 template <typename C>
 void write_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
   const persist_type pt = execution_mode_to_persist_type(mode);
   write_cereal_archive<C>(obj, p, pt, suffix);
-  return;
 }
 
 template <typename C>
 void read_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
   std::ifstream is(p.get_filename(pt) + suffix);
   if(!is.is_open()) {
-    throw NonexistentArchiveFile("Unable to open file for loading checkpoint " + p.get_filename(pt) + suffix);
+    throw NonexistentArchiveFile(p.get_filename(pt) + suffix);
   }
   cereal::XMLInputArchive archive(is);
   archive(obj);
-  return;
 }
 
 template <typename C>
 void read_cereal_archive(C& obj, persist& p, execution_mode mode, const std::string& suffix) {
   const persist_type pt = execution_mode_to_persist_type(mode);
   read_cereal_archive<C>(obj, p, pt, suffix);
-  return;
 }
 
 template <typename C>
@@ -264,7 +260,6 @@ void unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
     cereal::BinaryInputArchive archive(ss);
     archive(obj);
   } // archive goes out of scope, ensuring all contents are flushed
-  return;
 }
 
 template <typename C>
@@ -279,7 +274,7 @@ void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
     // If you are not the trainer master, still check to see if the file exists
     std::ifstream is(p.get_filename(pt) + suffix);
     if(!is.is_open()) {
-      throw NonexistentArchiveFile("Unable to open file for loading checkpoint " + p.get_filename(pt) + suffix);
+      throw NonexistentArchiveFile(p.get_filename(pt) + suffix);
     }
   }
 
@@ -290,7 +285,6 @@ void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
   if (!comm.am_trainer_master()) {
     unpack_cereal_archive_binary_string<C>(obj, buf);
   }
-  return;
 }
 
 template <typename C>
