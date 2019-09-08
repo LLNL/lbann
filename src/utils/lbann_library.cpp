@@ -43,7 +43,6 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                                              lbann_data::Trainer* pb_trainer,
                                              options *opts) {
   bool master = comm->am_world_master();
-  if (master) std::cerr << "starting build_trainer_from_prototext\n";
   try {
     int procs_per_trainer = 0;
     if(pb_trainer->procs_per_trainer() > 0) {
