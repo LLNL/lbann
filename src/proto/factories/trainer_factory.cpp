@@ -30,24 +30,11 @@
 namespace lbann {
 namespace proto {
 
-namespace {
-
-/** Instantiate a trainer based on prototext. */
-std::unique_ptr<trainer> instantiate_trainer(lbann_comm* comm,
-                                             const lbann_data::Trainer& proto_trainer) {
-  std::stringstream err;
-
-  // Construct trainer
-  return make_unique<trainer>(comm);
-}
-
-} // namespace
-
 std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
                                            const lbann_data::Trainer& proto_trainer) {
 
   // Instantiate trainer
-  auto t = instantiate_trainer(comm, proto_trainer);
+  auto t = make_unique<trainer>(comm);
   const auto& name = proto_trainer.name();
   if (!name.empty()) {
     t->set_name(name);
