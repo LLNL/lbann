@@ -39,6 +39,8 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/polymorphic.hpp>
 
 #include <model.pb.h>
 
@@ -51,6 +53,9 @@
 #include <unordered_set>
 
 namespace lbann {
+
+CEREAL_REGISTER_DYNAMIC_INIT(optimizer);
+CEREAL_REGISTER_DYNAMIC_INIT(sgd);
 
 // =============================================
 // Life cycle functions

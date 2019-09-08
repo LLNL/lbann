@@ -45,8 +45,10 @@ enum class persist_type {
   train, // data should be saved in file with train data
   model, // data should be saved in file with model data
   metrics,
+  optimizers,
   validate,
   testing,
+  weights,
   prediction_context,
   training_context,
   testing_context,
@@ -79,6 +81,10 @@ inline std::string to_string(persist_type pt) {
     return "model";
   case persist_type::metrics:
     return "metrics";
+  case persist_type::weights:
+    return "weights";
+  case persist_type::optimizers:
+    return "optimizers";
   case persist_type::train:
     return "train";
   case persist_type::validate:
@@ -118,6 +124,13 @@ class persist {
  public:
   persist();
   ~persist() {};
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    /// Only save the checkpoint type -- do not save the file names,
+    /// FDs, etc.
+    ar(CEREAL_NVP(ckpt_type));
+  }
 
   callback_type get_cb_type() const {
     return ckpt_type;

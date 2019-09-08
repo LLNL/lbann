@@ -28,6 +28,9 @@
 #define LBANN_OPTIMIZERS_HYPERGRADIENT_ADAM_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
+#include <cereal/types/utility.hpp>
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/polymorphic.hpp>
 
 namespace lbann {
 
@@ -64,6 +67,17 @@ public:
   hypergradient_adam& operator=(const hypergradient_adam& other);
   ~hypergradient_adam() override = default;
   hypergradient_adam* copy() const override { return new hypergradient_adam(*this); }
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(/*cereal::base_class<optimizer>( this ),*/
+       CEREAL_NVP(m_hyper_learning_rate),
+       CEREAL_NVP(m_beta1),
+       CEREAL_NVP(m_beta2),
+       CEREAL_NVP(m_eps),
+       CEREAL_NVP(m_current_beta1),
+       CEREAL_NVP(m_current_beta2));
+  }
 
   /** @brief Human-readable type name. */
   std::string get_type() const override { return "hypergradient Adam"; }

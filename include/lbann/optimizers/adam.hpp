@@ -28,6 +28,9 @@
 #define LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
+#include <cereal/types/utility.hpp>
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/polymorphic.hpp>
 
 namespace lbann {
 namespace callback {
@@ -57,6 +60,16 @@ public:
   adam* copy() const override { return new adam(*this); }
 
   ///@}
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(/*cereal::base_class<optimizer>( this ),*/
+       CEREAL_NVP(m_beta1),
+       CEREAL_NVP(m_beta2),
+       CEREAL_NVP(m_eps),
+       CEREAL_NVP(m_current_beta1),
+       CEREAL_NVP(m_current_beta2));
+  }
 
   /** @name Descriptions */
   ///@{

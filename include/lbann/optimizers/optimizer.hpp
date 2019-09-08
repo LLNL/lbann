@@ -39,6 +39,11 @@
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/cuda.hpp"
 #endif // LBANN_HAS_GPU
+#include <cereal/types/utility.hpp>
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/polymorphic.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
 
 namespace lbann {
 
@@ -87,6 +92,11 @@ public:
    *  The caller is responsible for deallocating the returned object.
    */
   virtual optimizer* copy() const = 0;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_learning_rate));
+  }
 
   /** @brief Human-readable type name. */
   virtual std::string get_type() const = 0;

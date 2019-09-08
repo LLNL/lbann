@@ -184,6 +184,7 @@ bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
 
   if (get_comm().am_trainer_master()) {
     pack_scalars(p);
+    //    write_cereal_archive<sgd_execution_context>(*this, p, persist_type::mode, ".xml");
   }
 
   char l_name[512];

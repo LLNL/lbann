@@ -28,6 +28,11 @@
 #define LBANN_OPTIMIZERS_SGD_HPP_INCLUDED
 
 #include "lbann/optimizers/optimizer.hpp"
+#include <cereal/types/utility.hpp>
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/polymorphic.hpp> // Note that this has to occure before the archives
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
 
 namespace lbann {
 
@@ -51,6 +56,12 @@ public:
   sgd* copy() const override { return new sgd(*this); }
 
   ///@}
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(cereal::base_class<optimizer>( this ),
+       CEREAL_NVP(m_momentum));
+  }
 
   /** @name Descriptions */
   ///@{

@@ -33,6 +33,8 @@
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/description.hpp"
+#include <cereal/types/utility.hpp>
+#include <cereal/types/memory.hpp>
 
 #include <memory>
 #include <string>
@@ -75,6 +77,11 @@ public:
   weights(lbann_comm* comm);
   weights(const weights& other);
   weights& operator=(const weights& other);
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_optimizer));
+  }
 
   /** Set weights name.
    *  Each set of weights in a model should have a unique,

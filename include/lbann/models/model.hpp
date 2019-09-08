@@ -40,6 +40,8 @@
 #include "lbann/weights/weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include <cereal/types/utility.hpp>
+#include <cereal/types/memory.hpp>
 
 #include <vector>
 #include <string>
@@ -73,6 +75,12 @@ public:
   model& operator=(const model& other);
   virtual ~model();
   virtual std::unique_ptr<model> copy_model() const = 0;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_max_mini_batch_size),
+       CEREAL_NVP(m_weights));
+  }
 
   // ===========================================
   // Access functions
