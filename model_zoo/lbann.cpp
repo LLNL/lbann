@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
-    /// Load the prototexts specificed on the command line
+    // Load the prototexts specificed on the command line
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
     // Optionally over-ride some values in the prototext for each model
     for(size_t i = 0; i < pbs.size(); i++) {

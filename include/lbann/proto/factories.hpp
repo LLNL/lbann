@@ -33,6 +33,7 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/transforms/transform.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 #include <map>
 #include <memory>
