@@ -43,7 +43,7 @@ public:
   directed_acyclic_graph_model(const directed_acyclic_graph_model& other) = default;
   directed_acyclic_graph_model& operator=(const directed_acyclic_graph_model& other) = default;
   ~directed_acyclic_graph_model() override = default;
-  directed_acyclic_graph_model* copy() const override { return new directed_acyclic_graph_model(*this); }
+  std::unique_ptr<model> copy_model() const override { return make_unique<directed_acyclic_graph_model>(*this); }
   std::string get_type() const override { return "directed acyclic graph"; }
 
 protected:

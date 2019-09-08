@@ -74,7 +74,7 @@ protected:
     const auto& mean = (m_max + m_min) / 2;
     const auto& radius = (m_max - m_min) / 2;
     auto& output = get_activations();
-    if (this->m_model->get_execution_mode() == execution_mode::training) {
+    if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
       uniform_fill(output, output.Height(), output.Width(), mean, radius);
     } else {
       El::Fill(output, mean);

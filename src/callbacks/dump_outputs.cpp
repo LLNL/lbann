@@ -135,11 +135,12 @@ dump_outputs::dump_outputs(std::set<std::string> layer_names,
 }
 
 void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
+  const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
 
   // Get mini-batch step information
-  const auto& mode = m.get_execution_mode();
-  const auto& epoch = m.get_epoch();
-  const auto& step = m.get_step();
+  const auto& mode = c.get_execution_mode();
+  const auto& epoch = c.get_epoch();
+  const auto& step = c.get_step();
 
   // Quit if output dump isn't needed
   if (!m_modes.empty() && m_modes.count(mode) == 0) { return; }

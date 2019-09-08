@@ -41,7 +41,8 @@ early_stopping::early_stopping(int64_t patience) :
 /// Monitor the objective function to see if the validation score
 /// continues to improve
 void early_stopping::on_validation_end(model *m) {
-  execution_mode mode = m->get_execution_mode();
+  auto& c = m->get_execution_context();
+  execution_mode mode = c.get_execution_mode();
   EvalType score = m->get_objective_function()->get_mean_value(mode);
   if (score < m_last_score) {
     if (m->get_comm()->am_trainer_master()) {
@@ -53,7 +54,7 @@ void early_stopping::on_validation_end(model *m) {
     m_wait = 0;
   } else {
     if (m_wait >= m_patience) {
-      m->set_terminate_training(true);
+      c.set_terminate_training(true);
       if (m->get_comm()->am_trainer_master()) {
         std::cout << "Model " << m->get_comm()->get_trainer_rank() <<
           " terminating training due to early stopping: " << score <<

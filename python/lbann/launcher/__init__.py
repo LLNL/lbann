@@ -10,7 +10,7 @@ import lbann.launcher.lsf
 # Run experiments
 # ==============================================
 
-def run(model, data_reader, optimizer,
+def run(trainer, model, data_reader, optimizer,
         lbann_exe=lbann.lbann_exe(),
         lbann_args='',
         experiment_dir=None,
@@ -39,6 +39,7 @@ def run(model, data_reader, optimizer,
     can be set with the environment variable `LBANN_EXPERIMENT_DIR`.
 
     Args:
+        trainer (lbann.Trainer): LBANN Trainer (resource manager).
         model (lbann.model.Model or lbann_pb2.Model): Neural network
             model.
         data_reader (lbann_pb2.DataReader): Data reader.
@@ -94,6 +95,7 @@ def run(model, data_reader, optimizer,
     # Create experiment prototext file
     prototext_file = os.path.join(experiment_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
+                               trainer=trainer,
                                model=model,
                                data_reader=data_reader,
                                optimizer=optimizer)

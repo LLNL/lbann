@@ -15,6 +15,8 @@ if (LBANN_HAS_PROTOBUF)
     objective_functions.proto
     optimizers.proto
     reader.proto
+    trainer.proto
+    training_algorithm.proto
     transforms.proto
     weights.proto
     )

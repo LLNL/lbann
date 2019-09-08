@@ -86,7 +86,7 @@ class discrete_random_layer : public transform_layer {
     const auto& local_width = input.LocalWidth();
 
     // Initialize random numbers
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode == execution_mode::training) {
       uniform_fill(output, 1, width, DataType(0.5), DataType(0.5));
     }

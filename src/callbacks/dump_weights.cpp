@@ -45,14 +45,16 @@ void dump_weights::on_epoch_end(model *m) {
 }
 
 void dump_weights::do_dump_weights(model *m, std::string s) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  makedir(m_basename.c_str());
   for (weights *w : m->get_weights()) {
-    std::string epoch = "-epoch" + std::to_string(m->get_epoch()-1);
+    std::string epoch = "-epoch" + std::to_string(c.get_epoch()-1);
     if(s != "") {
       epoch = "-" + s;
     }
     const std::string file
       = (m_basename
-         + "model" + std::to_string(m->get_comm()->get_trainer_rank())
+         + "/model" + std::to_string(m->get_comm()->get_trainer_rank())
          + epoch
          + "-" + w->get_name()
          + "-Weights");

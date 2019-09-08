@@ -26,6 +26,7 @@
 
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/utils/cuda.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -296,7 +297,7 @@ __global__ void backprop2_kernel(
 template <>
 void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   constexpr DataType one = 1;
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
   CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
@@ -406,7 +407,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
 template <>
 void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   constexpr DataType one = 1;
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
   CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
@@ -430,7 +431,8 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   auto& local_bias_gradient = m_bias_gradient->Matrix();
 
   // Matrix parameters
-  const El::Int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();
   const auto& output_dims = get_output_dims();

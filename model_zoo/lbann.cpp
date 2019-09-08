@@ -71,16 +71,25 @@ int main(int argc, char *argv[]) {
     //to activate, must specify --st_on on cmd line
     stack_profiler::get()->activate(comm->get_rank_in_world());
 
-    // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
-
+    // Load the prototexts specificed on the command line
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
-    lbann_data::LbannPB pb = *(pbs[0]);
+    // Optionally over-ride some values in the prototext for each model
+    for(size_t i = 0; i < pbs.size(); i++) {
+      get_cmdline_overrides(*comm, *(pbs[i]));
+    }
+
+    lbann_data::LbannPB& pb = *(pbs[0]);
+    lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
+
+    // Construct the trainer
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
+
+    thread_pool& io_thread_pool = trainer->get_io_thread_pool();
 
     lbann_data::Model *pb_model = pb.mutable_model();
 
-    auto model = build_model_from_prototext(argc, argv, pb,
-                                            comm.get(), io_thread_pool, true);
+    auto model = build_model_from_prototext(argc, argv, pb_trainer, pb,
+                                            comm.get(), opts, io_thread_pool, true);
 
     if (opts->has_string("create_tarball")) {
       return EXIT_SUCCESS;
@@ -89,10 +98,10 @@ int main(int argc, char *argv[]) {
     if (! opts->get_bool("exit_after_setup")) {
 
       // Train model
-      model->train(pb_model->num_epochs());
+      trainer->train(model.get(), pb_model->num_epochs());
 
       // Evaluate model on test set
-      model->evaluate(execution_mode::testing);
+      trainer->evaluate(model.get(), execution_mode::testing);
 
       //has no affect unless option: --st_on was given
       stack_profiler::get()->print();
