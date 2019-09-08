@@ -106,12 +106,13 @@ model::model(const model& other) :
   }
 
   // Copy weights
-  m_weights = other.m_weights;
   std::unordered_map<weights*,weights*> weights_map;
-  for (auto& w : m_weights) {
-    auto&& w_copy = w->copy();
-    weights_map[w] = w_copy;
-    w = w_copy;
+  m_weights.reserve(other.m_weights.size());
+  for (const auto& w : other.m_weights) {
+    auto* old_weights = w.get();
+    auto new_weights = make_unique<weights>(*old_weights);
+    m_weights.emplace_back(std::move(new_weights));
+    weights_map[old_weights] = new_weights.get();
   }
 
   // Fix pointers
@@ -126,7 +127,7 @@ model& model::operator=(const model& other) {
   if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
   for (const auto& cb : m_callbacks)   { delete cb; }
-  for (const auto& w : m_weights)      { delete w; }
+  //  for (const auto& w : m_weights)      { delete w; }
 
   // Shallow copies
   m_comm = other.m_comm;
@@ -138,7 +139,7 @@ model& model::operator=(const model& other) {
   m_objective_function = other.m_objective_function;
   m_metrics            = other.m_metrics;
   m_callbacks          = other.m_callbacks;
-  m_weights            = other.m_weights;
+  //  m_weights            = other.m_weights;
   if (m_objective_function != nullptr) {
     m_objective_function = m_objective_function->copy();
   }
@@ -160,8 +161,14 @@ model& model::operator=(const model& other) {
     layer_map[old_layer] = new_layer;
   }
   std::unordered_map<weights*,weights*> weights_map;
-  for (auto& w : m_weights) {
-    w = weights_map[w] = w->copy();
+  m_weights.clear();
+  m_weights.reserve(other.m_weights.size());
+  for (auto& w : other.m_weights) {
+    //    w = weights_map[w] = w->copy();
+    auto* old_weights = w.get();
+    auto* new_weights = old_weights->copy();
+    m_weights.emplace_back(new_weights);
+    weights_map[old_weights] = new_weights;
   }
   remap_pointers(layer_map, weights_map);
 
@@ -171,7 +178,7 @@ model& model::operator=(const model& other) {
 model::~model() {
   if (m_objective_function != nullptr) { delete m_objective_function; }
   if (m_default_optimizer != nullptr)  { delete m_default_optimizer; }
-  for (const auto& w : m_weights)      { delete w; }
+  //  for (const auto& w : m_weights)      { delete w; }
   for (const auto& m : m_metrics)      { delete m; }
   for (const auto& cb : m_callbacks)   { delete cb; }
 }
@@ -247,11 +254,12 @@ description model::get_description() const {
 
   // Weights
   description weights_desc("Weights:");
-  for (const auto* w : m_weights) {
+  for (const auto& w : m_weights) {
+    //  for (const auto* w : m_weights) {
     if (w == nullptr) {
       weights_desc.add("unknown weights");
     } else {
-      weights_desc.add(w->get_description());
+      weights_desc.add(w.get()->get_description());
     }
   }
   desc.add(std::string{});
@@ -313,7 +321,7 @@ const std::vector<Layer*> model::get_layers() const {
 std::vector<weights*> model::get_weights() {
   std::vector<weights*> weights_list;
   for (const auto& w : m_weights) {
-    weights_list.push_back(w);
+    weights_list.push_back(w.get());
   }
   return weights_list;
 }
@@ -321,7 +329,7 @@ std::vector<weights*> model::get_weights() {
 const std::vector<weights*> model::get_weights() const {
   std::vector<weights*> weights_list;
   for (const auto& w : m_weights) {
-    weights_list.push_back(w);
+    weights_list.push_back(w.get());
   }
   return weights_list;
 }
@@ -371,7 +379,7 @@ void model::add_layer(std::unique_ptr<Layer> l) {
 
 }
 
-void model::add_weights(weights* w) {
+void model::add_weights(std::unique_ptr<weights> w) {
   std::stringstream err;
 
   // Check for null pointer
@@ -397,7 +405,7 @@ void model::add_weights(weights* w) {
   }
 
   // Add weights to model
-  m_weights.push_back(w);
+  m_weights.push_back(std::move(w));
 
 }
 
@@ -426,6 +434,8 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
     throw lbann_exception(err.str());
   }
 
+#if 0
+  /// @todo BVE FIXME
   // Replace weights in list
   std::vector<weights *> old_weights(m_weights.begin(),
                                      m_weights.begin() + new_weights.size());
@@ -440,6 +450,7 @@ void model::replace_weights(std::vector<weights*>& new_weights) {
   for (const auto& w : old_weights) {
     delete w;
   }
+#endif
 
 }
 
@@ -680,6 +691,8 @@ void model::setup_layers() {
 }
 
 void model::setup_weights() {
+#if 0
+  /// @todo BVE FIXME
 
   // List of used and unused weights
   std::unordered_set<weights*> weights_set(m_weights.begin(),
@@ -721,8 +734,9 @@ void model::setup_weights() {
               return x->get_name().compare(y->get_name()) < 0;
             });
 
+#endif
   // Setup weights
-  for (auto* w : m_weights) { w->setup(); }
+  for (auto&& w : m_weights) { w.get()->setup(); }
 
 }
 
@@ -1276,8 +1290,8 @@ bool model::save_to_checkpoint_shared(persist& p) {
     p.write_uint32(persist_type::model, "persist_callback_type",      (uint32_t) p.get_cb_type());
   }
 
-  for (weights *w : m_weights) {
-    w->save_to_checkpoint_shared(p);
+  for (auto&& w : m_weights) {
+    w.get()->save_to_checkpoint_shared(p);
   }
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
@@ -1310,8 +1324,8 @@ bool model::load_from_checkpoint_shared(persist& p) {
   // set state of persist object to know which type of ckpt we are returning from.
   p.set_cb_type((callback_type) header.callback_type);
 
-  for (weights *w : m_weights) {
-    w->load_from_checkpoint_shared(p);
+  for (std::unique_ptr<weights>& w : m_weights) {
+    w.get()->load_from_checkpoint_shared(p);
   }
 
   // read in each layer
@@ -1337,8 +1351,8 @@ bool model::save_to_checkpoint_distributed(persist& p){
   p.write_uint32(persist_type::train, "persist_callback_type",(uint32_t) p.get_cb_type());
 
   // for each execution context write out them out
-  for (weights *w : m_weights) {
-    w->save_to_checkpoint_distributed(p);
+  for (auto&& w : m_weights) {
+    w.get()->save_to_checkpoint_distributed(p);
   }
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
@@ -1364,8 +1378,8 @@ bool model::load_from_checkpoint_distributed(persist& p){
   p.set_cb_type((callback_type) header.callback_type);
   load_rng_from_checkpoint(p, m_comm);
 
-  for (weights *w : m_weights) {
-    w->load_from_checkpoint_distributed(p);
+  for (std::unique_ptr<weights>& w : m_weights) {
+    w.get()->load_from_checkpoint_distributed(p);
   }
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
@@ -1388,16 +1402,16 @@ void model::write_proto(lbann_data::Model* proto) {
 
 bool model::save_weights(persist& p) {
   // write out fields we need to save a model's weights
-  for (weights *w : m_weights) {
-    w->save_to_checkpoint_shared(p);
+  for (std::unique_ptr<weights>& w : m_weights) {
+    w.get()->save_to_checkpoint_shared(p);
   }
   return true;
 }
 
 bool model::reload_weights(const std::string latest, const std::vector<std::string>& weight_list) {
   // load weights that appear in weight list.
-  for(weights *w : m_weights) {
-    w->load_from_save(latest,weight_list);
+  for(std::unique_ptr<weights>& w : m_weights) {
+    w.get()->load_from_save(latest,weight_list);
   }
   return true;
 }

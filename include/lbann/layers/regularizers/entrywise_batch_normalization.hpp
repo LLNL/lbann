@@ -118,18 +118,20 @@ protected:
     }
     this->m_weights.resize(2, nullptr);
     if (this->m_weights[0] == nullptr) {
-      this->m_weights[0] = new weights(get_comm());
+      auto new_weights = make_unique<weights>(get_comm());
+      this->m_weights[0] = new_weights.get();
       this->m_weights[0]->set_name(get_name() + "_running_mean");
       auto init = make_unique<constant_initializer>(DataType{0});
       this->m_weights[0]->set_initializer(std::move(init));
-      this->m_model->add_weights(this->m_weights[0]);
+      this->m_model->add_weights(std::move(new_weights));
     }
     if (this->m_weights[1] == nullptr) {
-      this->m_weights[1] = new weights(get_comm());
+      auto new_weights = make_unique<weights>(get_comm());
+      this->m_weights[1] = new_weights.get();
       this->m_weights[1]->set_name(get_name() + "_running_variance");
       auto init = make_unique<constant_initializer>(DataType{1});
       this->m_weights[1]->set_initializer(std::move(init));
-      this->m_model->add_weights(this->m_weights[1]);
+      this->m_model->add_weights(std::move(new_weights));
     }
 
     // Setup weights

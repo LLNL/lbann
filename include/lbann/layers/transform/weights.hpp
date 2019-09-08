@@ -125,13 +125,14 @@ class weights_layer : public transform_layer {
     this->m_weights.resize(1, nullptr);
     auto& w = this->m_weights[0];
     if (w == nullptr) {
-      w = new weights(get_comm());
+      auto new_weight = make_unique<weights>(get_comm());
+      w = new_weight.get();
       auto init = make_unique<constant_initializer>(DataType(0));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_model->add_weights(w);
+      this->m_model->add_weights(std::move(new_weight));
     }
 
     // Setup weights and weights gradient

@@ -250,36 +250,40 @@ protected:
     }
     this->m_weights.resize(4, nullptr);
     if (this->m_weights[0] == nullptr) {
-      this->m_weights[0] = new weights(get_comm());
+      auto w = make_unique<weights>(get_comm());
+      this->m_weights[0] = w.get();
       auto init = make_unique<constant_initializer>(DataType(1));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       this->m_weights[0]->set_name(get_name() + "_scale");
       this->m_weights[0]->set_initializer(std::move(init));
       this->m_weights[0]->set_optimizer(std::move(opt));
-      this->m_model->add_weights(this->m_weights[0]);
+      this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[1] == nullptr) {
-      this->m_weights[1] = new weights(get_comm());
+      auto w = make_unique<weights>(get_comm());
+      this->m_weights[1] = w.get();
       auto init = make_unique<constant_initializer>(DataType(0));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       this->m_weights[1]->set_name(get_name() + "_bias");
       this->m_weights[1]->set_initializer(std::move(init));
       this->m_weights[1]->set_optimizer(std::move(opt));
-      this->m_model->add_weights(this->m_weights[1]);
+      this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[2] == nullptr) {
-      this->m_weights[2] = new weights(get_comm());
+      auto w = make_unique<weights>(get_comm());
+      this->m_weights[2] = w.get();
       this->m_weights[2]->set_name(get_name() + "_running_mean");
       auto init = make_unique<constant_initializer>(DataType(0));
       this->m_weights[2]->set_initializer(std::move(init));
-      this->m_model->add_weights(this->m_weights[2]);
+      this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[3] == nullptr) {
-      this->m_weights[3] = new weights(get_comm());
+      auto w = make_unique<weights>(get_comm());
+      this->m_weights[3] = w.get();
       this->m_weights[3]->set_name(get_name() + "_running_variance");
       auto init = make_unique<constant_initializer>(DataType(1));
       this->m_weights[3]->set_initializer(std::move(init));
-      this->m_model->add_weights(this->m_weights[3]);
+      this->m_model->add_weights(std::move(w));
     }
 
     // Setup weights

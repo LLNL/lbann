@@ -94,7 +94,8 @@ public:
 
     // Construct default weights if needed
     if (this->m_weights.size() < 1) {
-      this->m_weights.push_back(new weights(get_comm()));
+      std::unique_ptr<weights> w = make_unique<weights>(get_comm());
+      this->m_weights.push_back(w.get());
       std::vector<DataType> vals(2*num_channels, DataType{0});
       std::fill(vals.begin(), vals.begin()+num_channels, DataType{1});
       auto init = make_unique<value_initializer>(vals);
@@ -102,7 +103,7 @@ public:
       this->m_weights[0]->set_name(get_name() + "_weights");
       this->m_weights[0]->set_initializer(std::move(init));
       this->m_weights[0]->set_optimizer(std::move(opt));
-      this->m_model->add_weights(this->m_weights[0]);
+      this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights.size() != 1) {
       std::ostringstream err;
