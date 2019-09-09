@@ -86,7 +86,7 @@ else ()
 endif ()
 
 # ... then the tag.
-set(HYDROGEN_TAG "hydrogen"
+set(HYDROGEN_TAG "v1.1.0-1"
   CACHE STRING "The git tag or hash to checkout for Hydrogen")
 
 include(ExternalProject)
