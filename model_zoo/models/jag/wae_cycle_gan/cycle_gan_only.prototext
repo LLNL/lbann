@@ -1,8 +1,11 @@
+trainer {
+  block_size: 256
+  procs_per_trainer:0
+}
 model {
   name: "cycgan_model"
   shareable_training_data_reader:false
   serialize_io: true
-  procs_per_trainer:0
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -895,7 +898,6 @@ model {
 
    # }
  # }
-  block_size: 256
   ####For metric, loss per individual sample
   layer {
     name: "fw_latent_loss"

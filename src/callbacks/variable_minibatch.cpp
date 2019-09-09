@@ -40,12 +40,13 @@ namespace lbann {
 namespace callback {
 
 variable_minibatch::variable_minibatch(
-  int starting_mbsize) : m_starting_mbsize(starting_mbsize),
+  size_t starting_mbsize) : m_starting_mbsize(starting_mbsize),
                          m_current_mini_batch_size(starting_mbsize) {}
 
 void variable_minibatch::on_train_begin(model *m) {
   // Avoid issues with the train method being called multiple times.
-  if (m->get_epoch() != 0) { return; }
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  if (c.get_epoch() != 0) { return; }
 
   // Get first input layer in model
   generic_input_layer* input = nullptr;
@@ -70,6 +71,7 @@ void variable_minibatch::on_train_begin(model *m) {
 }
 
 void variable_minibatch::on_epoch_end(model *m) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
 
   // Get first input layer in model
   generic_input_layer* input = nullptr;
@@ -80,9 +82,9 @@ void variable_minibatch::on_epoch_end(model *m) {
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
 
   lbann_comm *comm = m->get_comm();
-  int new_mbsize = 0;
+  size_t new_mbsize = 0;
   float new_lr = 0.0f;
-  int ramp_time = 0;
+  size_t ramp_time = 0;
   if (schedule(m, new_mbsize, new_lr, ramp_time)) {
     if (new_mbsize > m->get_max_mini_batch_size()) {
       if (comm->am_trainer_master()) {
@@ -109,12 +111,12 @@ void variable_minibatch::on_epoch_end(model *m) {
         std::cout << "Model " << comm->get_trainer_rank() <<
           ": Changing mini-batch size to " << new_mbsize <<
           " and learning rate to " << new_lr << " at epoch " <<
-          m->get_epoch() << std::endl;
+          c.get_epoch() << std::endl;
       }
     } else if (comm->am_trainer_master()) {
       std::cout << "Model " << comm->get_trainer_rank() <<
         ": Changing mini-batch size to " << new_mbsize <<
-        " at epoch " << m->get_epoch() << std::endl;
+        " at epoch " << c.get_epoch() << std::endl;
     }
   }
   // Ramp the learning rate, if needed.
@@ -152,13 +154,14 @@ float variable_minibatch::get_current_learning_rate(
 }
 
 step_minibatch::step_minibatch(
-  int starting_mbsize, int step, int ramp_time) :
+  size_t starting_mbsize, size_t step, size_t ramp_time) :
   variable_minibatch(starting_mbsize), m_step(step),
   m_ramp_time(ramp_time) {}
 
 bool step_minibatch::schedule(
-  model *m, int& new_mbsize, float& new_lr, int& ramp_time) {
-  if (m->get_epoch() % m_step == 0) {
+  model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  if (c.get_epoch() % m_step == 0) {
     new_mbsize = m_current_mini_batch_size * 2;
     new_lr = get_current_learning_rate(m) * 2;
     ramp_time = m_ramp_time;
@@ -169,7 +172,7 @@ bool step_minibatch::schedule(
 }
 
 minibatch_schedule::minibatch_schedule(
-  int starting_mbsize, std::vector<minibatch_step> steps) :
+  size_t starting_mbsize, std::vector<minibatch_step> steps) :
   variable_minibatch(starting_mbsize), m_steps(std::move(steps)) {
   std::sort(m_steps.rbegin(), m_steps.rend(),
             [] (const minibatch_step& a, const minibatch_step& b) {
@@ -178,8 +181,9 @@ minibatch_schedule::minibatch_schedule(
 }
 
 bool minibatch_schedule::schedule(
-  model *m, int& new_mbsize, float& new_lr, int& ramp_time) {
-  if (!m_steps.empty() && m->get_epoch() == m_steps.back().epoch) {
+  model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  if (!m_steps.empty() && c.get_epoch() == m_steps.back().epoch) {
     new_mbsize = m_steps.back().mbsize;
     new_lr = m_steps.back().lr;
     ramp_time = m_steps.back().ramp_time;

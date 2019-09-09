@@ -144,7 +144,8 @@ save_images::save_images(std::vector<std::string> layer_names,
 }
 
 void save_images::on_epoch_end(model *m) {
-  save_image(m_image_prefix + "epoch" + std::to_string(m->get_epoch()),
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  save_image(m_image_prefix + "epoch" + std::to_string(c.get_epoch()),
              m_image_format,
              m->get_layers(),
              m_layer_names);

@@ -55,7 +55,7 @@ class image_data_reader : public generic_data_reader {
   // dataset specific functions
   void load() override;
 
-  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
+  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
 
   int get_num_labels() const override {
     return m_num_labels;
@@ -96,7 +96,7 @@ class image_data_reader : public generic_data_reader {
     return m_image_list.at(idx);
   }
 
-  void preload_data_store() override; 
+  void preload_data_store() override;
 
  protected:
    void copy_members(const image_data_reader &rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());

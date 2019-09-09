@@ -423,6 +423,7 @@ def get_command(cluster,
                 'super_node',
                 'write_sample_list',
                 'ltfb_verbose',
+                'ckpt_dir',
 
                 # DataReaders:
                 # 'data_filedir',
@@ -442,7 +443,6 @@ def get_command(cluster,
                 'no_im_comm',
 
                 # Not listed by `lbann --help`:
-                # 'ckpt_dir',
                 # 'exit_after_setup',
                 # 'procs_per_model'
             ]
