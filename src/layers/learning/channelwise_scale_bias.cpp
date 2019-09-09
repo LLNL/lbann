@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -125,7 +126,8 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
   // Update optimizer with gradient
   auto* opt = m_weights[0]->get_optimizer();
   if (opt != nullptr) {
-    const El::Int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+    const auto mini_batch_size = c.get_effective_mini_batch_size();
     opt->add_to_gradient(*m_weights_gradient,
                          DataType{1} / mini_batch_size,
                          true);

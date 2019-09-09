@@ -31,18 +31,20 @@ namespace lbann {
 namespace callback {
 
 void check_small::on_forward_prop_end(model *m, Layer *l) {
+  const auto& c = m->get_execution_context();
   const AbsDistMat& acts = l->get_activations();
   if (!is_good(acts)) {
     std::stringstream ss;
     ss << name() << ": "
        << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
        << "error in activations of " << l->get_name() << " "
-       << "(step=" << std::to_string(m->get_step(execution_mode::training)) << ")";
+       << "(step=" << std::to_string(c.get_step()) << ")";
     throw lbann_exception(ss.str());
   }
 }
 
 void check_small::on_backward_prop_end(model *m) {
+  const auto& c = m->get_execution_context();
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr && !is_good(opt->get_gradient())) {
@@ -50,20 +52,21 @@ void check_small::on_backward_prop_end(model *m) {
       ss << name() << ": "
          << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
          << "error in weights gradient of " << w->get_name() << " "
-         << "(step=" << std::to_string(m->get_step(execution_mode::training)) << ")";
+         << "(step=" << std::to_string(c.get_step()) << ")";
       throw lbann_exception(ss.str());
     }
   }
 }
 
 void check_small::on_batch_end(model *m) {
+  const auto& c = m->get_execution_context();
   for (weights *w : m->get_weights()) {
     if (!is_good(w->get_values())) {
       std::stringstream ss;
       ss << name() << ": "
          << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
          << "error in weights of " << w->get_name() << " "
-         << "(step=" << std::to_string(m->get_step(execution_mode::training)-1) << ")";
+         << "(step=" << std::to_string(c.get_step()-1) << ")";
       throw lbann_exception(ss.str());
     }
   }

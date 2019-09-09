@@ -4,7 +4,7 @@ from lbann.contrib.lc.systems import *
 import lbann.launcher
 from lbann.util import make_iterable
 
-def run(model, data_reader, optimizer,
+def run(trainer, model, data_reader, optimizer,
         experiment_dir=None,
         nodes=1,
         procs_per_node=procs_per_node(),
@@ -54,6 +54,7 @@ def run(model, data_reader, optimizer,
     lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
+                               trainer=trainer,
                                model=model,
                                data_reader=data_reader,
                                optimizer=optimizer)

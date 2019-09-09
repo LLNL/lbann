@@ -100,7 +100,7 @@ fast_rng_gen& get_fast_io_generator() {
   return ::fast_io_generator;
 }
 
-bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
+bool save_rng_to_checkpoint(persist& p, const lbann_comm* comm) {
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   makedir(dirname.c_str());
   std::string rng_name;
@@ -108,12 +108,16 @@ bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
   /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_seq_generator";
   std::ofstream rng_seq(rng_name);
+  if(!rng_seq) { LBANN_ERROR("Failed to open ", rng_name); }
   rng_seq << ::data_seq_generator;
+  rng_seq.close();
 
 #ifdef LBANN_SET_EL_RNG
   rng_name = dirname + "/EL_generator";
   std::ofstream rng_EL(rng_name);
+  if(!rng_EL) { LBANN_ERROR("Failed to open ", rng_name); }
   rng_EL << El::Generator();
+  rng_EL.close();
 #endif
 
   std::string rank_in_world;
@@ -126,38 +130,50 @@ bool save_rng_to_checkpoint_shared(persist& p, const lbann_comm* comm) {
   /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_io_generator_" + rank_in_world;
   std::ofstream rng_io(rng_name);
+  if(!rng_io) { LBANN_ERROR("Failed to open ", rng_name); }
   rng_io << ::io_generator;
+  rng_io.close();
 
   /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_fast_io_generator_" + rank_in_world;
   std::ofstream rng_fast_io(rng_name);
+  if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
   rng_fast_io << ::fast_io_generator;
+  rng_fast_io.close();
 
 #ifdef _OPENMP
   #pragma omp parallel private(rng_name)
   {
     rng_name = dirname + "/rng_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
     std::ofstream rng(rng_name);
+    if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
     rng << ::generator;
+    rng.close();
 
     rng_name = dirname + "/rng_fast_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
     std::ofstream rng_fast(rng_name);
+    if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
     rng_fast << ::fast_generator;
+    rng_fast.close();
   }
 #else
     rng_name = dirname + "/rng_generator_" + rank_in_world;
     std::ofstream rng(rng_name);
+    if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
     rng << ::generator;
+    rng.close();
 
     rng_name = dirname + "/rng_fast_generator_" + rank_in_world;
     std::ofstream rng_fast(rng_name);
+    if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
     rng_fast << ::fast_generator;
+    rng_fast.close();
 #endif
 
    return true;
 }
 
-bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
+bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
 
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   std::string rng_name;
@@ -165,11 +181,13 @@ bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
   /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_seq_generator";
   std::ifstream rng_seq(rng_name);
+  if(!rng_seq) { LBANN_ERROR("Failed to open ", rng_name); }
   rng_seq >> ::data_seq_generator;
 
 #ifdef LBANN_SET_EL_RNG
   rng_name = dirname + "/EL_generator";
   std::ifstream rng_EL(rng_name);
+  if(!rng_EL) { LBANN_ERROR("Failed to open ", rng_name); }
   rng_EL >> El::Generator();
 #endif
 
@@ -183,11 +201,13 @@ bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
   /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_io_generator_" + rank_in_world;
   std::ifstream rng_io(rng_name);
+  if(!rng_io) { LBANN_ERROR("Failed to open ", rng_name); }
   rng_io >> ::io_generator;
 
   /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_fast_io_generator_" + rank_in_world;
   std::ifstream rng_fast_io(rng_name);
+  if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
   rng_fast_io >> ::fast_io_generator;
 
 #ifdef _OPENMP
@@ -195,19 +215,23 @@ bool load_rng_from_checkpoint_shared(persist& p, const lbann_comm* comm) {
   {
     rng_name = dirname + "/rng_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
     std::ifstream rng(rng_name);
+    if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
     rng >> ::generator;
 
     rng_name = dirname + "/rng_fast_generator_" + rank_in_world + "_" + std::to_string(omp_get_thread_num());
     std::ifstream rng_fast(rng_name);
+    if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
     rng_fast >> ::fast_generator;
    }
 #else
     rng_name = dirname + "/rng_generator_" + rank_in_world;
     std::ifstream rng(rng_name);
+    if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
     rng >> ::generator;
 
     rng_name = dirname + "/rng_fast_generator_" + rank_in_world;
     std::ifstream rng_fast(rng_name);
+    if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
     rng_fast >> ::fast_generator;
    }
 #endif

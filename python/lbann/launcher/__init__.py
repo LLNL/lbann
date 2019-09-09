@@ -11,7 +11,7 @@ from lbann.util import make_iterable
 # Run experiments
 # ==============================================
 
-def run(model, data_reader, optimizer,
+def run(trainer, model, data_reader, optimizer,
         experiment_dir=None,
         nodes=1,
         procs_per_node=1,
@@ -38,11 +38,11 @@ def run(model, data_reader, optimizer,
     can be set with the environment variable `LBANN_EXPERIMENT_DIR`.
 
     Args:
-        model (lbann.model.Model or lbann_pb2.Model): Neural network
+        trainer (lbann.Trainer): LBANN trainer.
+        model (lbann.Model): Neural network model.
+        data_reader (lbann.reader_pb2.DataReader): Data reader.
+        optimizer (lbann.model.Optimizer): Default optimizer for
             model.
-        data_reader (lbann_pb2.DataReader): Data reader.
-        optimizer (lbann.model.Optimizer or lbann_pb2.Optimizer):
-            Default optimizer for model.
         experiment_dir (str, optional): Experiment directory.
         nodes (int, optional): Number of compute nodes.
         procs_per_node (int, optional): Number of processes per compute
@@ -98,6 +98,7 @@ def run(model, data_reader, optimizer,
     lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
+                               trainer=trainer,
                                model=model,
                                data_reader=data_reader,
                                optimizer=optimizer)

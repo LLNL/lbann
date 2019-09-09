@@ -151,7 +151,7 @@ std::string to_string(execution_mode m) {
   }
 }
 
-execution_mode exe_mode_from_string(std::string const& str) {
+execution_mode exec_mode_from_string(std::string const& str) {
   if (str == "training" || str == "train")
     return execution_mode::training;
   else if (str == "validation" || str == "validate")
@@ -169,7 +169,7 @@ execution_mode exe_mode_from_string(std::string const& str) {
 std::istream& operator>>(std::istream& is, execution_mode& m) {
   std::string tmp;
   is >> tmp;
-  m = exe_mode_from_string(tmp);
+  m = exec_mode_from_string(tmp);
   return is;
 }
 

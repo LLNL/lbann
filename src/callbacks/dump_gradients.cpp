@@ -36,14 +36,15 @@ namespace lbann {
 namespace callback {
 
 void dump_gradients::on_backward_prop_end(model *m) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
       const std::string file
         = (m_basename
            + "model" + std::to_string(m->get_comm()->get_trainer_rank())
-           + "-epoch" + std::to_string(m->get_epoch())
-           + "-step" + std::to_string(m->get_step())
+           + "-epoch" + std::to_string(c.get_epoch())
+           + "-step" + std::to_string(c.get_step())
            + "-" + w->get_name()
            + "-Gradient");
       El::Write(opt->get_gradient(), file, El::ASCII);
