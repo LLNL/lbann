@@ -487,6 +487,7 @@ void init_data_readers(
                                               params.sample_function(),
                                               params.num_samples_function(),
                                               params.sample_dims_function());
+        (*(python_reader *)reader_validation) = (*(python_reader *)reader);
 #else
         LBANN_ERROR("attempted to construct Python data reader, "
                     "but LBANN is not built with Python/C API");
