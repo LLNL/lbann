@@ -42,7 +42,8 @@ void mixup::on_forward_prop_end(model *m, Layer *l) {
   if (!m_layers.count(l->get_name())) {
     return;
   }
-  if (m->get_execution_mode() != execution_mode::training) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  if (c.get_execution_mode() != execution_mode::training) {
     return;  // No mixup outside of training.
   }
 

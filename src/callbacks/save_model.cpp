@@ -72,7 +72,7 @@ void save_model::write_proto_text(const lbann_data::Model& proto,
 bool save_model::do_save_model(model *m) {
   lbann_data::Model model_param;
 
-  p.set_cb_type(callback_type::inference);
+  p.set_cb_type(callback_type::model_only);
   do_save_model_weights(m);
   p.set_cb_type(callback_type::invalid);
 
@@ -90,6 +90,7 @@ bool save_model::do_save_model(model *m) {
 
 // Save model weights
 bool save_model::do_save_model_weights(model *m) {
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // if the checkpoint directory is not defined, bail
   if (m_dir.length() == 0) {
     return false;
@@ -100,8 +101,8 @@ bool save_model::do_save_model_weights(model *m) {
   lbann_comm *comm = m->get_comm();
   comm->trainer_barrier();
   // let user know we're saving the weights
-  int epoch = m->get_epoch();
-  int step = m->get_step(execution_mode::training);
+  int epoch = c.get_epoch();
+  int step = c.get_step();
   if (comm->am_trainer_master()) {
     timer.Start();
     printf("[%s.%d] Saving model weights: epoch %d step %d ...\n", m->get_name().c_str(), comm->get_trainer_rank(), epoch, step);
@@ -110,7 +111,7 @@ bool save_model::do_save_model_weights(model *m) {
 
   // Shared checkpoint, logic identical to Distributed.i
   makedir(m_dir.c_str());
-  std::string epochdir = get_shared_checkpoint_dirname(m, m_dir.c_str(), epoch, step);
+  std::string epochdir = get_shared_checkpoint_dirname(m, m_dir.c_str(), c.get_execution_mode(), epoch, step);
   if (comm->am_trainer_master()) {
     p.open_checkpoint(epochdir.c_str());
   }
@@ -121,7 +122,7 @@ bool save_model::do_save_model_weights(model *m) {
   p.close_checkpoint();
   if (comm->am_trainer_master()) {
     std::string latest_file = get_last_shared_checkpoint_filename(m, m_dir.c_str());
-    write_latest(latest_file, epoch, step);
+    write_latest(latest_file, c.get_execution_mode(), epoch, step);
   }
 
   uint64_t bytes_count = p.get_bytes();
@@ -146,16 +147,17 @@ bool save_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdi
   if(ckptdir_is_fullpath) {
     active_ckpt_dir = ckpt_dir;
   }else {
-    int epochLast = -1;
-    int stepLast = -1;
+    size_t epochLast = std::numeric_limits<size_t>::max();;
+    size_t stepLast = std::numeric_limits<size_t>::max();;
+    execution_mode mode = execution_mode::invalid;
     active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
 
     // get last epoch and step saved.
-    int success = read_latest(active_ckpt_dir, &epochLast, &stepLast);
+    int success = read_latest(active_ckpt_dir, &mode, &epochLast, &stepLast);
     if(!success) {
       return false;
     }
-    active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, epochLast, stepLast);
+    active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, mode, epochLast, stepLast);
   }
   lbann_comm *comm = m->get_comm();
   if(comm->am_trainer_master()) {

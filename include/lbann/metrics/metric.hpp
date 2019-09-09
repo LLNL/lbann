@@ -31,6 +31,8 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/io/persist.hpp"
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/map.hpp>
 
 namespace lbann {
 
@@ -56,6 +58,13 @@ struct metric_statistics {
   metric_statistics& operator=(const metric_statistics& other) = default;
   /** Destructor. */
   ~metric_statistics() = default;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_sum),
+       CEREAL_NVP(m_num_samples));
+  }
+
   /** Add metric value to statistics. */
   void add_value(EvalType value, int num_samples = 1);
   /** Get mean metric value.
@@ -67,19 +76,6 @@ struct metric_statistics {
   int get_num_samples() const { return m_num_samples; }
   /** Reset statistics. */
   void reset();
-
-  //************************************************************************
-  // Checkpointing
-  //************************************************************************
-  /** struct used to serialize mode fields in file and MPI transfer */
-  struct packing_header {
-    double sum;
-    uint64_t num_samples;
-  };
-  bool pack_scalars(persist& p);
-  bool unpack_scalars(persist& p, struct packing_header *header);
-  void unpack_header(struct packing_header& header);
-
 };
 
 /** Abstract base class for metric functions.
@@ -101,6 +97,11 @@ class metric {
   virtual ~metric() = default;
   /** Copy function. */
   virtual metric* copy() const = 0;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_statistics));
+  }
 
   /** Return a string name for this metric. */
   virtual std::string name() const = 0;

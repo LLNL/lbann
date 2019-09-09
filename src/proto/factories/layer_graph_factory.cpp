@@ -170,6 +170,7 @@ void setup_unpooling_pointers(lbann_comm* comm,
 std::vector<std::unique_ptr<Layer>> construct_layer_graph(
   lbann_comm* comm,
   const std::map<execution_mode, generic_data_reader *>& data_readers,
+  const lbann_data::Trainer& proto_trainer,
   const lbann_data::Model& proto_model) {
   std::stringstream err;
 
@@ -205,7 +206,7 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
     if (layout_str.empty())             { layout = data_layout::DATA_PARALLEL; }
     if (layout_str == "data_parallel")  { layout = data_layout::DATA_PARALLEL; }
     if (layout_str == "model_parallel") { layout = data_layout::MODEL_PARALLEL; }
-    const auto& num_parallel_readers = proto_model.num_parallel_readers();
+    const auto& num_parallel_readers = proto_trainer.num_parallel_readers();
     El::Device device = El::Device::CPU;
 #ifdef LBANN_HAS_GPU
     const auto& device_str = proto_layer.device_allocation();

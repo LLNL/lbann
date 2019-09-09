@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/learning/entrywise_scale_bias.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -139,22 +140,24 @@ void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
 template <>
 void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
      ::bp_compute() {
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   bp_impl(dynamic_cast<const CPUMat&>(get_local_prev_activations()),
           dynamic_cast<const CPUMat&>(get_local_prev_error_signals()),
           dynamic_cast<CPUMat&>(get_local_error_signals()),
           *this->m_weights[0],
           *m_weights_gradient,
-          this->m_model->get_effective_mini_batch_size());
+          c.get_effective_mini_batch_size());
 }
 template <>
 void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
      ::bp_compute() {
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   bp_impl(dynamic_cast<const CPUMat&>(get_local_prev_activations()),
           dynamic_cast<const CPUMat&>(get_local_prev_error_signals()),
           dynamic_cast<CPUMat&>(get_local_error_signals()),
           *this->m_weights[0],
           *m_weights_gradient,
-          this->m_model->get_effective_mini_batch_size());
+          c.get_effective_mini_batch_size());
 }
 
 } // namespace lbann

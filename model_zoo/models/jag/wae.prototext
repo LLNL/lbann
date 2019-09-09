@@ -1,3 +1,7 @@
+trainer {
+  block_size: 256
+  procs_per_trainer:0
+}
 model {
   random_init_models_differently: true
   serialize_io: true
@@ -570,6 +574,4 @@ model {
   #    }
 
  # }
-  block_size: 256
-  procs_per_trainer:0
 }

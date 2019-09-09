@@ -2,7 +2,7 @@ from lbann import lbann_exe
 from lbann.contrib.lc.systems import *
 import lbann.launcher
 
-def run(model, data_reader, optimizer,
+def run(trainer, model, data_reader, optimizer,
         lbann_exe=lbann_exe(),
         lbann_args='',
         experiment_dir=None,
@@ -66,7 +66,7 @@ def run(model, data_reader, optimizer,
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
 
     # Run LBANN
-    return lbann.launcher.run(model, data_reader, optimizer,
+    return lbann.launcher.run(trainer, model, data_reader, optimizer,
                               lbann_exe=lbann_exe,
                               lbann_args=lbann_args,
                               experiment_dir=experiment_dir,

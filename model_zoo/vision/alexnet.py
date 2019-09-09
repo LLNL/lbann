@@ -84,9 +84,13 @@ with open(args.data_reader, 'r') as f:
   txtf.Merge(f.read(), data_reader_proto)
 data_reader_proto = data_reader_proto.data_reader
 
+# Setup trainer
+trainer = lbann.Trainer()
+
 # Save prototext
 if args.prototext:
     lbann.proto.save_prototext(args.prototext,
+                               trainer=trainer,
                                model=model, optimizer=opt,
                                data_reader=data_reader_proto)
 
@@ -103,6 +107,6 @@ if not args.prototext:
                 imagenet_labels(data_set='train', num_classes=classes),
                 imagenet_dir(data_set='val', num_classes=classes),
                 imagenet_labels(data_set='val', num_classes=classes)))
-    lbann.contrib.lc.launcher.run(model, data_reader_proto, opt,
+    lbann.contrib.lc.launcher.run(trainer, model, data_reader_proto, opt,
                                   job_name = 'lbann_alexnet',
                                   **kwargs)

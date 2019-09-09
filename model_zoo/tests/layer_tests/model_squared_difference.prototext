@@ -1,6 +1,8 @@
+trainer {
+  block_size: 256
+}
 model {
   mini_batch_size: 11
-  block_size: 256
   num_epochs: 0
 
   ###################################################
