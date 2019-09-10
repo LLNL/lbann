@@ -133,7 +133,8 @@ const AbsDistMat& confusion_matrix::get_labels(const model& m) const {
 // ---------------------------------------------------------
 
 void confusion_matrix::reset_counts(const model& m) {
-  auto& counts = m_counts[m.get_execution_mode()];
+  const auto& c = m.get_execution_context();
+  auto& counts = m_counts[c.get_execution_mode()];
   const auto& num_classes = get_predictions(m).Height();
   counts.assign(num_classes * num_classes, 0);
 }
@@ -165,7 +166,8 @@ void confusion_matrix::update_counts(const model& m) {
   const auto& local_labels = m_labels_v->LockedMatrix();
 
   // Update counts
-  auto& counts = m_counts[m.get_execution_mode()];
+  const auto& c = m.get_execution_context();
+  auto& counts = m_counts[c.get_execution_mode()];
   const auto& local_height = local_predictions.Height();
   const auto& local_width = local_predictions.Width();
   for (El::Int local_col = 0; local_col < local_width; ++local_col) {
@@ -187,9 +189,10 @@ void confusion_matrix::update_counts(const model& m) {
 }
 
 void confusion_matrix::save_confusion_matrix(const model& m) {
+  const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
 
   // Get counts
-  const auto& mode = m.get_execution_mode();
+  const auto& mode = c.get_execution_mode();
   auto& counts = m_counts[mode];
 
   // Accumulate counts in master process
@@ -216,10 +219,10 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
     std::string mode_string;
     switch (mode) {
     case execution_mode::training:
-      mode_string = "train-epoch" + std::to_string(m.get_epoch());
+      mode_string = "train-epoch" + std::to_string(c.get_epoch());
       break;
     case execution_mode::validation:
-      mode_string = "validation-epoch" + std::to_string(m.get_epoch());
+      mode_string = "validation-epoch" + std::to_string(c.get_epoch());
       break;
     case execution_mode::testing:
       mode_string = "test";

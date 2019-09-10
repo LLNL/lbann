@@ -14,7 +14,6 @@
 #include <type_traits>
 
 #include <cereal/archives/binary.hpp>
-#include <sstream>
 #include <unistd.h>
 
 namespace lbann {
@@ -386,9 +385,11 @@ inline size_t sample_list<sample_name_t>
                    std::vector<T>& gathered_data,
                    lbann_comm& comm) {
   std::string archive;
-  std::stringstream ss;
-  cereal::BinaryOutputArchive oarchive(ss);
-  oarchive(data);
+  std::ostringstream ss;
+  {
+    cereal::BinaryOutputArchive oarchive(ss);
+    oarchive(data);
+  } // archive goes out of scope, ensuring all contents are flushed
   archive = ss.str();
 
   std::vector<std::string> gathered_archive(comm.get_procs_per_trainer());

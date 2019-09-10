@@ -27,6 +27,12 @@
 #ifndef LBANN_LBANN_HPP_INCLUDED
 #define LBANN_LBANN_HPP_INCLUDED
 
+/// Trainers
+#include "lbann/trainers/trainer.hpp"
+
+/// Training Algorithms
+#include "lbann/training_algorithms/training_algorithm.hpp"
+
 /// Models
 #include "lbann/models/directed_acyclic_graph.hpp"
 

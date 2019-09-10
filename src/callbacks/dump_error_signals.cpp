@@ -32,6 +32,7 @@ namespace lbann {
 namespace callback {
 
 void dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
 
   // Write each activation matrix to file
   for (int i = 0; i < l->get_num_parents(); ++i) {
@@ -40,8 +41,8 @@ void dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
     std::stringstream file;
     file << m_basename
          << "model" << m->get_comm()->get_trainer_rank() << "-"
-         << "epoch" << m->get_epoch() << "-"
-         << "step" << m->get_step() << "-"
+         << "epoch" << c.get_epoch() << "-"
+         << "step" << c.get_step() << "-"
          << l->get_name() << "-"
          << "ErrorSignals";
     if (l->get_num_parents() > 1) { file << i; }

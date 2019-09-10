@@ -55,6 +55,29 @@ if (TARGET ALUMINUM)
   endif (Hydrogen_ENABLE_ALUMINUM)
 endif (TARGET ALUMINUM)
 
+if (TARGET CUB)
+  option(Hydrogen_ENABLE_CUB "Whether to use CUB in Hydrogen" ON)
+  if (Hydrogen_ENABLE_CUB)
+    message(STATUS "Building Hydrogen with CUB support")
+    set(LBANN_SB_FWD_HYDROGEN_CUB_DIR "${CUB_DIR}"
+      CACHE STRING "The path to CUB for Hydrogen.")
+
+    set(_hydrogen_depends_tag DEPENDS)
+    list(APPEND _HYDROGEN_DEPENDS CUB)
+
+    set(Hydrogen_ENABLE_CUDA ON)
+  endif ()
+endif (TARGET CUB)
+
+if (TARGET CATCH2)
+  option(Hydrogen_ENABLE_UNIT_TESTS "Build catch2 unit tests in hydrogen" ON)
+  if (Hydrogen_ENABLE_UNIT_TESTS)
+    set(LBANN_SB_FWD_HYDROGEN_CATCH2_DIR ${CATCH2_DIR})
+    set(_hydrogen_depends_tag DEPENDS)
+    list(APPEND _HYDROGEN_DEPENDS CATCH2)
+  endif ()
+endif (TARGET CATCH2)
+
 if (Hydrogen_ENABLE_CUDA)
   enable_language(CUDA)
 endif ()
@@ -86,7 +109,7 @@ else ()
 endif ()
 
 # ... then the tag.
-set(HYDROGEN_TAG "hydrogen"
+set(HYDROGEN_TAG "v1.1.0-1"
   CACHE STRING "The git tag or hash to checkout for Hydrogen")
 
 if (HYDROGEN_CUSTOM_SOURCE_DIR)

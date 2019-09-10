@@ -29,11 +29,13 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/summary.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 #include <google/protobuf/message.h>
 

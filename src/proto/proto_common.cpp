@@ -487,6 +487,7 @@ void init_data_readers(
                                               params.sample_function(),
                                               params.num_samples_function(),
                                               params.sample_dims_function());
+        (*(python_reader *)reader_validation) = (*(python_reader *)reader);
 #else
         LBANN_ERROR("attempted to construct Python data reader, "
                     "but LBANN is not built with Python/C API");
@@ -588,10 +589,10 @@ bool write_prototext_file(const std::string& fn, lbann_data::LbannPB& pb)
   return true;
 }
 
-bool check_if_num_parallel_readers_set(const lbann_comm& comm, const lbann_data::Model& model)
+bool check_if_num_parallel_readers_set(const lbann_comm& comm, const lbann_data::Trainer& trainer)
 {
   const bool master = comm.am_world_master();
-  const int parallel_io = model.num_parallel_readers();
+  const int parallel_io = trainer.num_parallel_readers();
 
   if (parallel_io == 0) {
     if (master) {
@@ -608,24 +609,24 @@ bool check_if_num_parallel_readers_set(const lbann_comm& comm, const lbann_data:
 
 void set_num_parallel_readers(const lbann_comm& comm, lbann_data::LbannPB& p)
 {
-  lbann_data::Model *model = p.mutable_model();
-  const bool is_set = check_if_num_parallel_readers_set(comm, *model);
+  lbann_data::Trainer *trainer = p.mutable_trainer();
+  const bool is_set = check_if_num_parallel_readers_set(comm, *trainer);
 
   if (!is_set) {
     const int parallel_io = comm.get_procs_per_trainer();
-    model->set_num_parallel_readers(parallel_io); //adjust the prototext
+    trainer->set_num_parallel_readers(parallel_io); //adjust the prototext
   }
 }
 
 int get_requested_num_parallel_readers(const lbann_comm& comm, const lbann_data::LbannPB& p)
 {
-  const lbann_data::Model& model = p.model();
-  const bool is_set = check_if_num_parallel_readers_set(comm, model);
+  const lbann_data::Trainer& trainer = p.trainer();
+  const bool is_set = check_if_num_parallel_readers_set(comm, trainer);
 
   if (!is_set) {
     return comm.get_procs_per_trainer();
   }
-  return model.num_parallel_readers();
+  return trainer.num_parallel_readers();
 }
 
 void set_data_readers_filenames(
@@ -726,6 +727,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   std::ostringstream err;
 
   options *opts = options::get();
+  lbann_data::Trainer *trainer = p.mutable_trainer();
   lbann_data::Model *model = p.mutable_model();
   lbann_data::DataReader *d_reader = p.mutable_data_reader();
   int size = d_reader->reader_size();
@@ -776,13 +778,13 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     model->set_num_epochs(opts->get_int("num_epochs"));
   }
   if (opts->has_int("block_size")) {
-    model->set_block_size(opts->get_int("block_size"));
+    trainer->set_block_size(opts->get_int("block_size"));
   }
   if (opts->has_int("procs_per_trainer")) {
-    model->set_procs_per_trainer(opts->get_int("procs_per_trainer"));
+    trainer->set_procs_per_trainer(opts->get_int("procs_per_trainer"));
   }
   if (opts->has_int("num_parallel_readers")) {
-    model->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
+    trainer->set_num_parallel_readers(opts->get_int("num_parallel_readers"));
   }
   if (opts->get_bool("disable_cuda")) {
     model->set_disable_cuda(opts->get_bool("disable_cuda"));
@@ -802,7 +804,17 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
     return;
   }
 
+  const lbann_data::Trainer &t = p.trainer();
   const lbann_data::Model &m = p.model();
+
+  bool disable_cuda = m.disable_cuda();
+#ifndef LBANN_HAS_GPU
+  disable_cuda = false;
+#endif // LBANN_HAS_GPU
+  bool disable_cudnn = disable_cuda;
+#ifndef LBANN_HAS_CUDNN
+  disable_cudnn = false;
+#endif // LBANN_HAS_CUDNN
 
   std::cout << std::endl
             << "Running with these parameters:\n"
@@ -810,11 +822,12 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
             << "  datatype size:           " << sizeof(DataType) << std::endl
             << "  mini_batch_size:         " << m.mini_batch_size() << std::endl
             << "  num_epochs:              " << m.num_epochs()  << std::endl
-            << "  block_size:              " << m.block_size()  << std::endl
-            << "  procs_per_trainer:       " << m.procs_per_trainer()  << std::endl
-            << "  num_parallel_readers:    " << m.num_parallel_readers()  << std::endl
+            << "  block_size:              " << t.block_size()  << std::endl
+            << "  procs_per_trainer:       " << t.procs_per_trainer()  << std::endl
+            << "  num_parallel_readers:    " << t.num_parallel_readers()  << std::endl
             << "  serialize_io:            " << m.serialize_io()  << std::endl
-            << "  disable_cuda:            " << m.disable_cuda()  << std::endl
+            << "  cuda:                    " << (disable_cuda ? "disabled" : "enabled") << std::endl
+            << "  cudnn:                   " << (disable_cudnn ? "disabled" : "enabled") << std::endl
             << "  random_seed:             " << m.random_seed() << std::endl
             << "  data_layout:             " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n";
@@ -840,8 +853,6 @@ void print_help(std::ostream& os)
        "  is 'data.prototext'  You can specify an alternative name via the option:\n"
        "  --saveme=<string>  You can suppress writing the file via the option:\n"
        "  --saveme=0\n"
-       "\n"
-       "  To reload from a previous checkpoint you specify --ckpt_dir=<string>\n"
        "\n"
        "Some prototext values can be over-riden on the command line;\n"
        "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
@@ -881,6 +892,10 @@ void print_help(std::ostream& os)
        "      Writes out the sample list that was loaded into the current directory\n"
        "  --ltfb_verbose \n"
        "      Increases number of per-trainer messages that are reported\n"
+       "  --ckpt_dir=<string>\n"
+       "      Save to or reload from a specific checkpoint directory.\n"
+       "      Additionally, sets the output directory for dumping weights.\n"
+       "      Modifies callbacks: checkpoint, save_model, dump_weights\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir=<string>\n"

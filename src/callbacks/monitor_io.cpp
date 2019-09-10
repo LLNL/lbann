@@ -38,6 +38,7 @@ namespace lbann {
 namespace callback {
 
 void monitor_io::on_epoch_end(model *m) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   lbann_comm *comm = m->get_comm();
   for (Layer *layer : m->get_layers()) {
     if(m_layers.size() == 0
@@ -48,13 +49,14 @@ void monitor_io::on_epoch_end(model *m) {
                   << comm->get_rank_in_trainer() << " processed "
                   << input->get_num_samples_trained() << " training samples of "
                   << input->get_total_num_training_samples() << " ("
-                  << input->get_num_samples_trained() / m->get_epoch() << " per epoch)" << std::endl;
+                  << input->get_num_samples_trained() / c.get_epoch() << " per epoch)" << std::endl;
       }
     }
   }
 }
 
 void monitor_io::on_test_end(model *m) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   lbann_comm *comm = m->get_comm();
   for (Layer *layer : m->get_layers()) {
     if(m_layers.size() == 0
@@ -65,7 +67,7 @@ void monitor_io::on_test_end(model *m) {
                   << comm->get_rank_in_trainer() << " processed "
                   << input->get_num_samples_tested() << " test samples of "
                   << input->get_total_num_testing_samples() << " ("
-                  << input->get_num_samples_tested() / m->get_epoch()
+                  << input->get_num_samples_tested() / c.get_epoch()
                   << " per epoch)" << std::endl;
       }
     }
