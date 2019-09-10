@@ -4,15 +4,15 @@ Papers, Presentations, and Posters
 Publications about or related to using LBANN:
 
 + Nikoli Dryden, Naoya Maruyama, Tom Benson, Tim Moon, Marc Snir,
-  Brian Van Essen. `"Channel and Filter Parallelism for Large-Scale
-  CNN Training"`_, to appear in *International Conference for High
+  Brian Van Essen. "Channel and Filter Parallelism for Large-Scale
+  CNN Training", to appear in *International Conference for High
   Performance Computing, Networking, Storage and Analysis (SC'19)*, 2019.
 
 + Sam Ade Jacobs, Brian Van Essen, Tim Moon, Jae Seung Yeom, David
   Hysom, Brian Spears, Rushil Anirudh, Jayaraman Thiagaranjan, Shusen
   Liu, Jim Gaffney, Peer-Timo Bremer, Tom Benson, Peter Robinson, and
-  Luc Peterson, `"Parallelizing Training of Deep Generative Models on
-  Massive Scientific Datasets"`_, to appear in * Proceedings of Cluster
+  Luc Peterson, "Parallelizing Training of Deep Generative Models on
+  Massive Scientific Datasets", to appear in * Proceedings of Cluster
   Computing*, 2019
 
 + Shusen Liu, Di Wang, Dan Maljovec, Rushil Anirudh,
