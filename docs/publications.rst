@@ -4,9 +4,30 @@ Papers, Presentations, and Posters
 Publications about or related to using LBANN:
 
 + Nikoli Dryden, Naoya Maruyama, Tom Benson, Tim Moon, Marc Snir,
+  Brian Van Essen. "Channel and Filter Parallelism for Large-Scale
+  CNN Training", to appear in *International Conference for High
+  Performance Computing, Networking, Storage and Analysis (SC'19)*, 2019.
+
++ Sam Ade Jacobs, Brian Van Essen, Tim Moon, Jae Seung Yeom, David
+  Hysom, Brian Spears, Rushil Anirudh, Jayaraman Thiagaranjan, Shusen
+  Liu, Jim Gaffney, Peer-Timo Bremer, Tom Benson, Peter Robinson, and
+  Luc Peterson, "Parallelizing Training of Deep Generative Models on
+  Massive Scientific Datasets", to appear in *Proceedings of Cluster
+  Computing*, 2019
+
++ Shusen Liu, Di Wang, Dan Maljovec, Rushil Anirudh,
+  Jayaraman J. Thiagarajan, Sam Ade Jacobs, Brian C. Van Essen, David
+  Hysom, Jae-Seung Yeom, Jim Gaffney, Luc Peterson, Peter B. Robinson,
+  Harsh Bhatia, Valerio Pascucci, Brian K. Spears, Peer-Timo Bremer.
+  `"Scalable Topological Data Analysis and Visualization for
+  Evaluating Data-Driven Models in Scientific Applications"
+  <https://arxiv.org/abs/1907.08325>`_, to appear in *IEEE Transactions
+  on Visualization and Computer Graphics*, 2019
+
++ Nikoli Dryden, Naoya Maruyama, Tom Benson, Tim Moon, Marc Snir,
   Brian Van Essen. `"Improving Strong-Scaling of CNN Training by
   Exploiting Finer-Grained Parallelism"
-  <https://arxiv.org/abs/1903.06681>`_, to appear in *IEEE
+  <https://arxiv.org/abs/1903.06681>`_, in *Proceedings of IEEE
   International Parallel & Distributed Processing Symposium*, 2019.
 
   + `IPDPS'19 <http://www.ipdps.org/ipdps2019/2019-advance-program.html>`_
