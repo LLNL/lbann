@@ -113,43 +113,38 @@ class weights_layer : public transform_layer {
     transform_layer::setup_data();
 
     // Initialize default weights if none are provided
-    if (this->m_weights.size() > 1) {
-      std::stringstream err;
-      err << "attempted to setup "
-          << get_type() << " layer \"" << get_name() << "\" "
-          << "with an invalid number of weights "
-          << "(expected at most 1, "
-          << "but found " << this->m_weights.size() << ")";
-      LBANN_ERROR(err.str());
-    }
-    this->m_weights.resize(1, nullptr);
-    auto& w = this->m_weights[0];
-    if (w == nullptr) {
-      w = new weights(get_comm());
+    if (this->m_weights.empty()) {
+      auto w = make_unique<weights>(get_comm());
       auto init = make_unique<constant_initializer>(DataType(0));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_model->add_weights(w);
+      this->m_weights.push_back(w.get());
+      this->m_model->add_weights(std::move(w));
+    }
+    if (this->m_weights.size() != 1) {
+      LBANN_ERROR("attempted to setup ",
+                  get_type()," layer \"",get_name(),"\" ",
+                  "with an invalid number of weights ",
+                  "(expected at most 1, ",
+                  "but found ",this->m_weights.size(),")");
     }
 
     // Setup weights and weights gradient
     m_gradient->AlignWith(get_activations());
     m_gradient->Resize(get_output_size(), 1);
-    w->set_dims(get_output_dims());
-    w->set_matrix_distribution(m_gradient->DistData());
+    m_weights[0]->set_dims(get_output_dims());
+    m_weights[0]->set_matrix_distribution(m_gradient->DistData());
 
     // Initialize freeze state
-    if (this->m_frozen) { w->freeze(); }
-    else                { w->unfreeze(); }
-    if (w->is_frozen() != this->m_frozen) {
-      std::stringstream err;
-      err << (m_frozen ? "" : "un") << "frozen "
-          << "layer \"" << get_name() << "\" has "
-          << (w->is_frozen() ? "" : "un") << "frozen "
-          << "weights \"" << w->get_name() << "\"";
-      LBANN_ERROR(err.str());
+    if (this->m_frozen) { m_weights[0]->freeze(); }
+    else                { m_weights[0]->unfreeze(); }
+    if (m_weights[0]->is_frozen() != this->m_frozen) {
+      LBANN_ERROR((m_frozen ? "" : "un"),"frozen ",
+                  "layer \"",get_name(),"\" has ",
+                  (m_weights[0]->is_frozen() ? "" : "un"),"frozen ",
+                  "weights \"",m_weights[0]->get_name(),"\"");
     }
 
   }
