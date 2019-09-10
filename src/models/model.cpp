@@ -96,22 +96,26 @@ model::model(const model& other) :
   // Copy layers
   std::unordered_map<Layer*,Layer*> layer_map;
   m_layers.reserve(other.m_layers.size());
-  for (const auto& ptr : other.m_layers) {
-    if (ptr == nullptr) { LBANN_ERROR("unexpected null pointer"); }
-    auto* old_layer = ptr.get();
-    auto* new_layer = old_layer->copy();
-    new_layer->set_model(this);
-    m_layers.emplace_back(new_layer);
-    layer_map[old_layer] = new_layer;
+  for (const auto& other_layer : other.m_layers) {
+    if (other_layer == nullptr) {
+      LBANN_ERROR("model \"",other.get_name(),"\" ",
+                  "has a null pointer in its list of layers");
+    }
+    m_layers.emplace_back(other_layer->copy());
+    m_layers.back()->set_model(this);
+    layer_map[other_layer.get()] = m_layers.back().get();
   }
 
   // Copy weights
-  m_weights = other.m_weights;
   std::unordered_map<weights*,weights*> weights_map;
-  for (auto& w : m_weights) {
-    auto&& w_copy = w->copy();
-    weights_map[w] = w_copy;
-    w = w_copy;
+  m_weights.reserve(other.m_weights.size());
+  for (const auto& other_weights : other.m_weights) {
+    if (other_weights == nullptr) {
+      LBANN_ERROR("model \"",other.get_name(),"\" ",
+                  "has a null pointer in its list of weights");
+    }
+    m_weights.emplace_back(make_unique<weights>(*other_weights));
+    weights_map[other_weights.get()] = m_weights.back().get();
   }
 
   // Fix pointers
@@ -126,7 +130,6 @@ model& model::operator=(const model& other) {
   if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
   for (const auto& cb : m_callbacks)   { delete cb; }
-  for (const auto& w : m_weights)      { delete w; }
 
   // Shallow copies
   m_comm = other.m_comm;
@@ -138,7 +141,6 @@ model& model::operator=(const model& other) {
   m_objective_function = other.m_objective_function;
   m_metrics            = other.m_metrics;
   m_callbacks          = other.m_callbacks;
-  m_weights            = other.m_weights;
   if (m_objective_function != nullptr) {
     m_objective_function = m_objective_function->copy();
   }
@@ -148,21 +150,35 @@ model& model::operator=(const model& other) {
   for (auto& cb : m_callbacks) {
     cb = cb->copy();
   }
+
+  // Copy layers
   std::unordered_map<Layer*,Layer*> layer_map;
   m_layers.clear();
   m_layers.reserve(other.m_layers.size());
-  for (const auto& ptr : other.m_layers) {
-    if (ptr == nullptr) { LBANN_ERROR("unexpected null pointer"); }
-    auto* old_layer = ptr.get();
-    auto* new_layer = old_layer->copy();
-    new_layer->set_model(this);
-    m_layers.emplace_back(new_layer);
-    layer_map[old_layer] = new_layer;
+  for (const auto& other_layer : other.m_layers) {
+    if (other_layer == nullptr) {
+      LBANN_ERROR("model \"",other.get_name(),"\" ",
+                  "has a null pointer in its list of layers");
+    }
+    m_layers.emplace_back(other_layer->copy());
+    m_layers.back()->set_model(this);
+    layer_map[other_layer.get()] = m_layers.back().get();
   }
+
+  // Copy weights
   std::unordered_map<weights*,weights*> weights_map;
-  for (auto& w : m_weights) {
-    w = weights_map[w] = w->copy();
+  m_weights.clear();
+  m_weights.reserve(other.m_weights.size());
+  for (const auto& other_weights : other.m_weights) {
+    if (other_weights == nullptr) {
+      LBANN_ERROR("model \"",other.get_name(),"\" ",
+                  "has a null pointer in its list of weights");
+    }
+    m_weights.emplace_back(make_unique<weights>(*other_weights));
+    weights_map[other_weights.get()] = m_weights.back().get();
   }
+
+  // Fix pointers
   remap_pointers(layer_map, weights_map);
 
   return *this;
@@ -171,7 +187,6 @@ model& model::operator=(const model& other) {
 model::~model() {
   if (m_objective_function != nullptr) { delete m_objective_function; }
   if (m_default_optimizer != nullptr)  { delete m_default_optimizer; }
-  for (const auto& w : m_weights)      { delete w; }
   for (const auto& m : m_metrics)      { delete m; }
   for (const auto& cb : m_callbacks)   { delete cb; }
 }
@@ -247,7 +262,7 @@ description model::get_description() const {
 
   // Weights
   description weights_desc("Weights:");
-  for (const auto* w : m_weights) {
+  for (const auto& w : m_weights) {
     if (w == nullptr) {
       weights_desc.add("unknown weights");
     } else {
@@ -313,7 +328,7 @@ const std::vector<Layer*> model::get_layers() const {
 std::vector<weights*> model::get_weights() {
   std::vector<weights*> weights_list;
   for (const auto& w : m_weights) {
-    weights_list.push_back(w);
+    weights_list.push_back(w.get());
   }
   return weights_list;
 }
@@ -321,7 +336,7 @@ std::vector<weights*> model::get_weights() {
 const std::vector<weights*> model::get_weights() const {
   std::vector<weights*> weights_list;
   for (const auto& w : m_weights) {
-    weights_list.push_back(w);
+    weights_list.push_back(w.get());
   }
   return weights_list;
 }
@@ -340,14 +355,12 @@ size_t model::get_num_iterations_per_epoch(execution_mode mode) const {
 // Model specification
 // =============================================
 
-void model::add_layer(std::unique_ptr<Layer> l) {
-  std::stringstream err;
+void model::add_layer(std::unique_ptr<Layer> ptr) {
 
   // Check for null pointer
-  if (l == nullptr) {
-    err << "attempted to add a null pointer as a layer to "
-        << "model \"" << get_name() << "\"";
-    LBANN_ERROR(err.str());
+  if (ptr == nullptr) {
+    LBANN_ERROR("attempted to add a null pointer as layer to ",
+                "model \"",get_name(),"\"");
   }
 
   // Check that the new layer name is unique
@@ -355,30 +368,27 @@ void model::add_layer(std::unique_ptr<Layer> l) {
   // bottleneck. If it is, consider maintaining a hash table
   // containing all layer names (and properly updating it during
   // copies and pointer remaps).
-  const auto& name = l->get_name();
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (get_layer(i).get_name() == name) {
-      err << "attempted to add layer \"" << name << "\" to "
-          << "model \"" << get_name() << "\", "
-          << "but the model already contains a layer with that name";
-      LBANN_ERROR(err.str());
+  const auto& name = ptr->get_name();
+  for (const auto& l : m_layers) {
+    if (l->get_name() == name) {
+      LBANN_ERROR("attempted to add layer \"",name,"\" to ",
+                  "model \"",get_name(),"\", ",
+                  "but the model already contains a layer with that name");
     }
   }
 
   // Add layer to model
-  m_layers.emplace_back(std::move(l));
+  m_layers.emplace_back(std::move(ptr));
   m_layers.back()->set_model(this);
 
 }
 
-void model::add_weights(weights* w) {
-  std::stringstream err;
+void model::add_weights(std::unique_ptr<weights> ptr) {
 
   // Check for null pointer
-  if (w == nullptr) {
-    err << "attempted to add a null pointer as weights to "
-        << "model \"" << get_name() << "\"";
-    LBANN_ERROR(err.str());
+  if (ptr == nullptr) {
+    LBANN_ERROR("attempted to add a null pointer as weights to ",
+                "model \"",get_name(),"\"");
   }
 
   // Check that the new weights name is unique
@@ -386,18 +396,17 @@ void model::add_weights(weights* w) {
   // bottleneck. If it is, consider maintaining a hash table
   // containing all weights names (and properly updating it during
   // copies and pointer remaps).
-  const auto& name = w->get_name();
-  for (const auto& w2 : m_weights) {
-    if (w2->get_name() == name) {
-      err << "attempted to add weights \"" << name << "\" to "
-          << "model \"" << get_name() << "\", "
-          << "but the model already contains weights with that name";
-      LBANN_ERROR(err.str());
+  const auto& name = ptr->get_name();
+  for (const auto& w : m_weights) {
+    if (w->get_name() == name) {
+      LBANN_ERROR("attempted to add weights \"",name,"\" to ",
+                  "model \"",get_name(),"\", ",
+                  "but the model already contains weights with that name");
     }
   }
 
   // Add weights to model
-  m_weights.push_back(w);
+  m_weights.emplace_back(std::move(ptr));
 
 }
 
@@ -416,30 +425,25 @@ void model::add_metric(metric *m) {
 }
 
 void model::replace_weights(std::vector<weights*>& new_weights) {
+  /// @todo tym (9/9/19): This function isn't used anywhere. It's
+  /// probably safe to delete?
 
   // Check that number of weights is valid
   if (new_weights.size() > m_weights.size()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to replace weights with an invalid number of weights "
-        << "(expected at most " << m_weights.size() << ", found " << new_weights.size() << ")";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to replace weights with ",
+                "an invalid number of weights ",
+                "(expected at most ",m_weights.size(),", ",
+                "found ",new_weights.size(),")");
   }
 
   // Replace weights in list
-  std::vector<weights *> old_weights(m_weights.begin(),
-                                     m_weights.begin() + new_weights.size());
   std::unordered_map<weights*,weights*> weights_map;
   std::unordered_map<Layer*,Layer*> layer_map;
   for (size_t i = 0; i < new_weights.size(); ++i) {
-    m_weights[i] = weights_map[old_weights[i]] = new_weights[i];
+    weights_map[m_weights[i].get()] = new_weights[i];
+    m_weights[i].reset(new_weights[i]);
   }
   remap_pointers(layer_map, weights_map);
-
-  // Delete old weights
-  for (const auto& w : old_weights) {
-    delete w;
-  }
 
 }
 
@@ -681,48 +685,16 @@ void model::setup_layers() {
 
 void model::setup_weights() {
 
-  // List of used and unused weights
-  std::unordered_set<weights*> weights_set(m_weights.begin(),
-                                           m_weights.end());
-  std::set<weights*> unused_weights(m_weights.begin(),
-                                    m_weights.end());
-
-  // Find weights used by layers
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    for (const auto& w : get_layer(i).get_weights()) {
-      if (weights_set.count(w) == 0) {
-        m_weights.push_back(w);
-        weights_set.insert(w);
-      }
-      unused_weights.erase(w);
-    }
-  }
-
-  // Find weights used by objective function
-  for (const auto& w : m_objective_function->get_weights_pointers()) {
-    if (weights_set.count(w) == 0) {
-      m_weights.push_back(w);
-      weights_set.insert(w);
-    }
-    unused_weights.erase(w);
-  }
-
-  // Delete unused weights
-  for (auto&& w : unused_weights) {
-    m_weights.erase(std::remove(m_weights.begin(), m_weights.end(), w),
-                    m_weights.end());
-  }
-
-  // For run-to-run reproducibility, make sure the weights are
-  // initialized in the same order no matter how they are ordered in
-  // the prototext file.
+  // Sort weights by name
+  // Note: For run-to-run consistency. Names are assumed to be unique.
   std::sort(m_weights.begin(), m_weights.end(),
-            [](weights* const &x, weights* const &y) {
+            [] (const std::unique_ptr<weights>& x,
+                const std::unique_ptr<weights>& y) {
               return x->get_name().compare(y->get_name()) < 0;
             });
 
   // Setup weights
-  for (auto* w : m_weights) { w->setup(); }
+  for (auto&& w : m_weights) { w->setup(); }
 
 }
 
@@ -996,8 +968,8 @@ void model::evaluate_metrics(execution_mode mode, size_t current_mini_batch_size
 }
 
 void model::clear_gradients() {
-  for (const auto& w : m_weights) {
-    optimizer* opt = w->get_optimizer();
+  for (auto&& w : m_weights) {
+    auto&& opt = w->get_optimizer();
     if (opt != nullptr) { opt->clear_gradient(); }
   }
 }
@@ -1040,15 +1012,24 @@ void model::backward_prop() {
 
 void model::update_weights() {
   do_model_optimize_begin_cbs();
-  for (El::Int i = m_weights.size()-1; i >= 0; --i) {
-    auto& w = *m_weights[i];
-    optimizer* opt = w.get_optimizer();
+
+  // Apply optimization step to weights
+  // Note: Heuristically, forward prop consumes weights in the same
+  // order as m_weights and backprop computes weights gradients in
+  // reverse order. Also, we often launch a non-blocking allreduce
+  // after a weights gradient has been computed. Thus, iterating in
+  // reverse order will use gradients that have already finished their
+  // allreduce, giving more time for more recent allreduces to finish.
+  for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
+    auto& w = **rit;
+    auto&& opt = w.get_optimizer();
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(&w);
       opt->step();
       do_weight_optimize_end_cbs(&w);
     }
   }
+
   do_model_optimize_end_cbs();
 }
 
@@ -1061,11 +1042,24 @@ bool model::update_layers() {
 }
 
 void model::reconcile_weight_values() {
-  std::vector<Al::request> reqs(m_weights.size());
-  for (El::Int i = m_weights.size()-1; i >= 0; --i) {
-    m_weights[i]->reconcile_values(reqs[i]);
+
+  // Launch non-blocking communication to reconcile weights
+  // Note: Heuristically, forward prop consumes weights in the same
+  // order as m_weights. Also, weights tend to get larger as you get
+  // deeper into a neural network. Thus, iterating in reverse order
+  // means that we perform the expensive communication first, covering
+  // up the launch overheads for the subsequent cheap communication.
+  std::vector<Al::request> reqs;
+  reqs.reserve(m_weights.size());
+  for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
+    auto& w = **rit;
+    reqs.emplace_back();
+    w.reconcile_values(reqs.back());
   }
+
+  // Wait for communication to finish
   for (auto& req : reqs) { m_comm->wait(req); }
+
 }
 
 // =============================================
@@ -1276,7 +1270,7 @@ bool model::save_to_checkpoint_shared(persist& p) {
     p.write_uint32(persist_type::model, "persist_callback_type",      (uint32_t) p.get_cb_type());
   }
 
-  for (weights *w : m_weights) {
+  for (auto&& w : m_weights) {
     w->save_to_checkpoint_shared(p);
   }
 
@@ -1310,7 +1304,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
   // set state of persist object to know which type of ckpt we are returning from.
   p.set_cb_type((callback_type) header.callback_type);
 
-  for (weights *w : m_weights) {
+  for (auto&& w : m_weights) {
     w->load_from_checkpoint_shared(p);
   }
 
@@ -1337,7 +1331,7 @@ bool model::save_to_checkpoint_distributed(persist& p){
   p.write_uint32(persist_type::train, "persist_callback_type",(uint32_t) p.get_cb_type());
 
   // for each execution context write out them out
-  for (weights *w : m_weights) {
+  for (auto&& w : m_weights) {
     w->save_to_checkpoint_distributed(p);
   }
 
@@ -1364,7 +1358,7 @@ bool model::load_from_checkpoint_distributed(persist& p){
   p.set_cb_type((callback_type) header.callback_type);
   load_rng_from_checkpoint(p, m_comm);
 
-  for (weights *w : m_weights) {
+  for (auto&& w : m_weights) {
     w->load_from_checkpoint_distributed(p);
   }
 
@@ -1388,7 +1382,7 @@ void model::write_proto(lbann_data::Model* proto) {
 
 bool model::save_weights(persist& p) {
   // write out fields we need to save a model's weights
-  for (weights *w : m_weights) {
+  for (auto&& w : m_weights) {
     w->save_to_checkpoint_shared(p);
   }
   return true;
@@ -1396,7 +1390,7 @@ bool model::save_weights(persist& p) {
 
 bool model::reload_weights(const std::string latest, const std::vector<std::string>& weight_list) {
   // load weights that appear in weight list.
-  for(weights *w : m_weights) {
+  for(auto&& w : m_weights) {
     w->load_from_save(latest,weight_list);
   }
   return true;

@@ -163,7 +163,7 @@ public:
   virtual void add_layer(std::unique_ptr<Layer> l);
 
   /** @brief Add weights to model. */
-  void add_weights(weights *w);
+  void add_weights(std::unique_ptr<weights> w);
 
   /** @brief Register a new callback for the model. */
   void add_callback(callback_base *cb);
@@ -407,7 +407,7 @@ private:
   std::vector<std::unique_ptr<Layer>> m_layers;
 
   /** @brief Trainable parameters. */
-  std::vector<weights*> m_weights;
+  std::vector<std::unique_ptr<weights>> m_weights;
 
   /** @details Maximum possible minibatch size supported by layers in
    *  this model.  Note that this is local to the particular model,
