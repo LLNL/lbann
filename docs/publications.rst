@@ -12,7 +12,7 @@ Publications about or related to using LBANN:
   Hysom, Brian Spears, Rushil Anirudh, Jayaraman Thiagaranjan, Shusen
   Liu, Jim Gaffney, Peer-Timo Bremer, Tom Benson, Peter Robinson, and
   Luc Peterson, "Parallelizing Training of Deep Generative Models on
-  Massive Scientific Datasets", to appear in * Proceedings of Cluster
+  Massive Scientific Datasets", to appear in *Proceedings of Cluster
   Computing*, 2019
 
 + Shusen Liu, Di Wang, Dan Maljovec, Rushil Anirudh,
