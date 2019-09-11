@@ -91,7 +91,7 @@ def run(trainer, model, data_reader, optimizer,
         has_allocation = 'LSB_JOBID' in os.environ
 
     # Batch script prints start time
-    script.add_command('date | sed "s/^/Started at /"')
+    script.add_command('echo "Started at $(date)"')
 
     # Batch script invokes LBANN
     lbann_command = [lbann.lbann_exe()]
@@ -107,7 +107,7 @@ def run(trainer, model, data_reader, optimizer,
     script.add_command('status=$?')
 
     # Batch script prints finish time and returns status
-    script.add_command('date | sed "s/^/Finished at /"')
+    script.add_command('echo "Finished at $(date)"')
     script.add_command('exit ${status}')
 
     # Write, run, or submit batch script
