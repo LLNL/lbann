@@ -104,9 +104,11 @@ def run(trainer, model, data_reader, optimizer,
                                optimizer=optimizer)
     lbann_command.append('--prototext={}'.format(prototext_file))
     script.add_parallel_command(lbann_command)
+    script.add_command('status=$?')
 
-    # Batch script prints finish time
+    # Batch script prints finish time and returns status
     script.add_command('date | sed "s/^/Finished at /"')
+    script.add_command('exit ${status}')
 
     # Write, run, or submit batch script
     status = 0
