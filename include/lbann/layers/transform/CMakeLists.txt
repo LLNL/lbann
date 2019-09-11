@@ -25,6 +25,8 @@ set_full_path(THIS_DIR_HEADERS
   sort.hpp
   weights.hpp
   tessellate.hpp
+  argmax.hpp
+  tovec.hpp
   )
 
 # Propagate the files up the tree

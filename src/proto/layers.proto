@@ -73,6 +73,8 @@ message Layer {
     Sort sort = 325;
     WeightsLayer weights_layer = 326;
     Tessellate tessellate = 327;
+    ArgMax argmax = 331;
+    ToVec  tovec  = 332;
 
     // Learning layers
     FullyConnected fully_connected = 11;
@@ -435,6 +437,13 @@ message Layer {
 
   message Tessellate {
     string dims = 1;
+  }
+
+  message ArgMax {
+    string num_neurons=1;
+  }
+  message ToVec {
+    string num_neurons=1;
   }
 
   /////////////////////

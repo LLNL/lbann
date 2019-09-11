@@ -92,6 +92,8 @@
 #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/weights.hpp"
+#include "lbann/layers/transform/argmax.hpp"
+#include "lbann/layers/transform/tovec.hpp"
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/utils/peek_map.hpp"
@@ -497,6 +499,30 @@ std::unique_ptr<Layer> construct_layer(
     const auto& params = proto_layer.tessellate();
     const auto& dims = parse_list<int>(params.dims());
     return lbann::make_unique<tessellate_layer<Layout, Device>>(comm, dims);
+  }
+
+  if (proto_layer.has_argmax()) {
+    if (Layout == data_layout::DATA_PARALLEL
+        && Device == El::Device::CPU) {
+      const auto& params = proto_layer.argmax();
+      const auto& dims = parse_list<int>(params.num_neurons());
+      return lbann::make_unique<argmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm, dims);
+    } else {
+      LBANN_ERROR("argmax layer is currently only supported with "
+                  "data-parallel data layout and on CPU device");
+    }
+  }
+
+  if (proto_layer.has_tovec()) {
+    if (Layout == data_layout::DATA_PARALLEL
+        && Device == El::Device::CPU) {
+      const auto& params = proto_layer.tovec();
+      const auto& dims = parse_list<int>(params.num_neurons());
+      return lbann::make_unique<tovec_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm, dims);
+    } else {
+      LBANN_ERROR("tovec layer is currently only supported with "
+                  "data-parallel data layout and on CPU device");
+    }
   }
 
   // Regularizer layers

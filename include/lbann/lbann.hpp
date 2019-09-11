@@ -95,6 +95,8 @@
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/weights.hpp"
 #include "lbann/layers/transform/tessellate.hpp"
+#include "lbann/layers/transform/argmax.hpp"
+#include "lbann/layers/transform/tovec.hpp"
 
 /// Regularization layers
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
