@@ -325,6 +325,10 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     LBANN_ERROR("failed to open " + m_filenames[my_file] + " for reading");
   }
   in.close();
+  m_num_samples = m_filenames.size(); 
+  if (is_master()) { 
+    std::cout << "num samples: " << m_num_samples << "\n";
+  } 
 
   int data_id = 0; //meaningless
   conduit::Node node;
