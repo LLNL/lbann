@@ -24,67 +24,54 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_ARGMAX_HPP_INCLUDED
-#define LBANN_LAYER_ARGMAX_HPP_INCLUDED
+#ifndef LBANN_LAYERS_MISC_ARGMAX_HPP_INCLUDED
+#define LBANN_LAYERS_MISC_ARGMAX_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-/** @brief argmax of a column vector 
- *  temporarily supports data parallel data layout and CPU device
+/** @brief Get index of maximum-value tensor entry
  *
- *  
+ *  Expects a 1-D input tensor. If multiple entries have the same
+ *  maximum value, outputs the index of the first one.
  */
 template <data_layout Layout, El::Device Device>
-class argmax_layer : public transform_layer {
-private:
-
+class argmax_layer : public Layer {
 public:
 
-  argmax_layer(lbann_comm *comm,
-                std::vector<int> dims)
-    : transform_layer(comm) {
-    set_output_dims(dims);
+  argmax_layer(lbann_comm* comm) : Layer(comm) {
     static_assert(Layout == data_layout::DATA_PARALLEL,
                   "argmax layer only supports data parallel layout");
     static_assert(Device == El::Device::CPU,
                   "argmax layer only supports CPU");
-    this->m_expected_num_parent_layers = 1;
   }
   argmax_layer* copy() const override { return new argmax_layer(*this); }
   std::string get_type() const override { return "argmax"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  description get_description() const override {
-    auto desc = transform_layer::get_description();
-    return desc;
-  }
-
 protected:
 
-  void fp_compute() override {
-    El::Zero(get_activations());
-    // Local data
-    //check that local height is 1
-    const auto& local_input = get_local_prev_activations();
-    auto& local_output = get_local_activations();
-    const auto& local_width = local_input.Width();
-    const auto& local_height = local_input.Height();
-    CPUMat sample_v;
-    for (El::Int col = 0; col < local_width; ++ col) {
-      El::LockedView(sample_v, local_input, El::ALL, El::IR(col));
-      const auto max_it = std::max_element(sample_v.LockedBuffer(), 
-                                           sample_v.LockedBuffer() + local_height);
-      const auto max_index = std::distance(sample_v.LockedBuffer(), max_it);
-      local_output.Set(0, col, max_index);
+  void setup_dims() override {
+    Layer::setup_dims();
+    set_output_dims({1});
+
+    // Make sure input tensor is 1-D
+    const auto input_dims = get_input_dims();
+    if (input_dims.size() != 1) {
+      LBANN_ERROR(get_type()," layer \"",get_name(),"\" ",
+                  "expects a 1-D input tensor, ",
+                  "but parent layer \"",m_parent_layers[0]->get_name(),"\" ",
+                  "outputs a ",input_dims.size(),"-D tensor");
     }
 
   }
+
+  void fp_compute() override;
 
 };
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_ARGMAX_HPP_INCLUDED
+#endif // LBANN_LAYERS_MISC_ARGMAX_HPP_INCLUDED

@@ -73,7 +73,6 @@ message Layer {
     Sort sort = 325;
     WeightsLayer weights_layer = 326;
     Tessellate tessellate = 327;
-    ArgMax argmax = 331;
     ToVec  tovec  = 332;
 
     // Learning layers
@@ -177,6 +176,9 @@ message Layer {
     ChannelwiseMean channelwise_mean = 602;
     MiniBatchIndex mini_batch_index = 603;
     MiniBatchSize mini_batch_size = 604;
+    Argmax argmax = 605;
+    Argmin argmin = 606;
+
   }
 
   ///////////////////////
@@ -439,9 +441,6 @@ message Layer {
     string dims = 1;
   }
 
-  message ArgMax {
-    string num_neurons=1;
-  }
   message ToVec {
     string num_neurons=1;
   }
@@ -536,6 +535,7 @@ message Layer {
   //////////////////////////
   // Miscellaneous layers //
   //////////////////////////
+
   message Covariance {
     bool biased = 1; //Whether to use a biased covariance estimate
   }
@@ -545,6 +545,19 @@ message Layer {
   message ChannelwiseMean {}
   message MiniBatchIndex {}
   message MiniBatchSize {}
+
+  // Get index of maximum-value tensor entry
+  //
+  // Expects a 1-D input tensor. If multiple entries have the same
+  // maximum value, outputs the index of the first one.
+  message Argmax {}
+
+  // Get index of minimum-value tensor entry
+  //
+  // Expects a 1-D input tensor. If multiple entries have the same
+  // minimum value, outputs the index of the first one.
+  message Argmin {}
+
 }// message Layer
 
 //note: I'd like to put this enum inside of Layer, but if I do the enum values

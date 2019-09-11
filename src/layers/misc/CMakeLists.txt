@@ -3,6 +3,8 @@ set_full_path(THIS_DIR_SOURCES
   covariance.cpp
   variance.cpp
   channelwise_mean.cpp
+  argmax.cpp
+  argmin.cpp
   )
 
 if (LBANN_HAS_CUDA)

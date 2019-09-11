@@ -61,6 +61,8 @@
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
 #include "lbann/layers/misc/variance.hpp"
+#include "lbann/layers/misc/argmax.hpp"
+#include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -92,7 +94,6 @@
 #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/weights.hpp"
-#include "lbann/layers/transform/argmax.hpp"
 #include "lbann/layers/transform/tovec.hpp"
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
@@ -501,18 +502,6 @@ std::unique_ptr<Layer> construct_layer(
     return lbann::make_unique<tessellate_layer<Layout, Device>>(comm, dims);
   }
 
-  if (proto_layer.has_argmax()) {
-    if (Layout == data_layout::DATA_PARALLEL
-        && Device == El::Device::CPU) {
-      const auto& params = proto_layer.argmax();
-      const auto& dims = parse_list<int>(params.num_neurons());
-      return lbann::make_unique<argmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm, dims);
-    } else {
-      LBANN_ERROR("argmax layer is currently only supported with "
-                  "data-parallel data layout and on CPU device");
-    }
-  }
-
   if (proto_layer.has_tovec()) {
     if (Layout == data_layout::DATA_PARALLEL
         && Device == El::Device::CPU) {
@@ -729,6 +718,22 @@ std::unique_ptr<Layer> construct_layer(
     } else {
       LBANN_ERROR("channel-wise mean layer is only supported with "
                   "a data-parallel layout");
+    }
+  }
+  if (proto_layer.has_argmax()) {
+    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+      return lbann::make_unique<argmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+    } else {
+      LBANN_ERROR("argmax layer is only supported with "
+                  "a data-parallel layout and on CPU");
+    }
+  }
+  if (proto_layer.has_argmin()) {
+    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+      return lbann::make_unique<argmin_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+    } else {
+      LBANN_ERROR("argmin layer is only supported with "
+                  "a data-parallel layout and on CPU");
     }
   }
   CONSTRUCT_LAYER(mini_batch_index);
