@@ -38,7 +38,8 @@ namespace lbann {
 // Forward-declare this.
 class trainer;
 
-struct termination_criteria {
+class termination_criteria {
+public:
   size_t num_steps;
 };
 
