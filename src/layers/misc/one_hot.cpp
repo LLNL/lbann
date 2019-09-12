@@ -38,7 +38,7 @@ void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   const El::Int local_height = local_output.Height();
   const El::Int local_width = local_output.Width();
 
-  // Populate one-hot vector
+  // Populate one-hot vectors
   El::Zero(local_output);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {

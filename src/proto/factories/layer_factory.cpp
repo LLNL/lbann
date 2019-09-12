@@ -727,12 +727,12 @@ std::unique_ptr<Layer> construct_layer(
     }
   }
   if (proto_layer.has_one_hot()) {
-    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+    if (Layout == data_layout::DATA_PARALLEL) {
       const auto& params = proto_layer.one_hot();
-      return lbann::make_unique<one_hot_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm, params.size());
+      return lbann::make_unique<one_hot_layer<data_layout::DATA_PARALLEL, Device>>(comm, params.size());
     } else {
       LBANN_ERROR("one-hot layer is only supported with "
-                  "a data-parallel layout and on CPU");
+                  "a data-parallel layout");
     }
   }
 

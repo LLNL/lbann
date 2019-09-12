@@ -14,6 +14,7 @@ if (LBANN_HAS_CUDA)
     covariance.cu
     variance.cu
     channelwise_mean.cu
+    one_hot.cu
     )
 endif ()
 

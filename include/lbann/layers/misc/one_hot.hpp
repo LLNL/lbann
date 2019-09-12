@@ -47,8 +47,6 @@ public:
     set_output_dims({static_cast<int>(size)});
     static_assert(Layout == data_layout::DATA_PARALLEL,
                   "one-hot layer only supports data-parallel layout");
-    static_assert(Device == El::Device::CPU,
-                  "one-hot layer only supports CPU");
   }
   one_hot_layer* copy() const override { return new one_hot_layer(*this); }
   std::string get_type() const override { return "one-hot"; }
