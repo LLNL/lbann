@@ -107,7 +107,7 @@ std::unique_ptr<weights> construct_weights(
   std::stringstream err;
 
   // Instantiate weights
-  auto w = make_unique<weights>(comm);
+  auto w = make_unique<weights>();
 
   // Set weights name if provided
   const auto& name = proto_weights.name();
