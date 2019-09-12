@@ -7,7 +7,7 @@ model {
   data_layout: "data_parallel"
   mini_batch_size: 64
   num_epochs: 20
-  disable_cuda: true
+  disable_cuda: false
   ###################################################
   # Objective function
   ###################################################
