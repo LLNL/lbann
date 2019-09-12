@@ -57,7 +57,7 @@ instantiate_model(lbann_comm* comm,
                   const lbann_data::Model& proto_model) {
 
   // Default optimizer
-  auto opt = construct_optimizer(comm, proto_opt);
+  auto opt = construct_optimizer(proto_opt);
 
   // Construct model
   const auto& type = proto_model.type();

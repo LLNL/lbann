@@ -47,8 +47,7 @@ public:
   /** @name Life cycle functions */
   ///@{
 
-  adam(lbann_comm* comm,
-       DataType learning_rate,
+  adam(DataType learning_rate,
        DataType beta1 = 0.9,
        DataType beta2 = 0.99,
        DataType eps = 1e-8);
@@ -210,7 +209,7 @@ private:
 
 std::unique_ptr<optimizer>
 build_adam_optimizer_from_pbuf(
-  google::protobuf::Message const&, lbann_comm*);
+  google::protobuf::Message const&);
 
 } // namespace lbann
 

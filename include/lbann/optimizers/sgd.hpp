@@ -42,8 +42,7 @@ public:
   /** @name Life cycle functions */
   ///@{
 
-  sgd(lbann_comm *comm,
-      DataType learning_rate,
+  sgd(DataType learning_rate,
       DataType momentum = 0,
       bool nesterov = false);
   sgd(const sgd& other);
@@ -156,7 +155,7 @@ private:
 
 std::unique_ptr<optimizer>
 build_sgd_optimizer_from_pbuf(
-  google::protobuf::Message const&, lbann_comm*);
+  google::protobuf::Message const&);
 
 } // namespace lbann
 
