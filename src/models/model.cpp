@@ -574,6 +574,8 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // =============================================
 
 void model::setup() {
+  // Initialize explicitly weight matrices
+  init_weights();
 
   // Setup layers
   setup_layer_topology();
@@ -681,6 +683,11 @@ void model::setup_layers() {
     l.setup();
     l.check_setup();
   }
+}
+
+void model::init_weights() {
+  // Setup weights
+  for (auto&& w : m_weights) { w->init(*m_comm); }
 }
 
 void model::setup_weights() {

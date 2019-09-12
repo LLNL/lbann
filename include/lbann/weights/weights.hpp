@@ -65,7 +65,7 @@ class weights {
   friend class optimizer;
 
 public:
-  weights(lbann_comm* comm);
+  weights();
   weights(const weights& other);
   weights& operator=(const weights& other);
 
@@ -164,6 +164,11 @@ public:
   // -----------------------------------------------
   El::DistData get_matrix_distribution() const;
   void set_matrix_distribution(El::DistData dist);
+
+  // -----------------------------------------------
+  // Initialize the weight class
+  // -----------------------------------------------
+  void init(lbann_comm& comm);
 
   // -----------------------------------------------
   // Setup

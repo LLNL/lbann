@@ -313,6 +313,7 @@ protected:
    *  weights are deleted.
    */
   virtual void setup_weights();
+  virtual void init_weights();
 
 public:
   // ===========================================

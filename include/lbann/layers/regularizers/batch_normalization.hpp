@@ -250,7 +250,8 @@ protected:
     }
     this->m_weights.resize(4, nullptr);
     if (this->m_weights[0] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
+      auto w = make_unique<weights>();
+      w->init(*get_comm());
       auto init = make_unique<constant_initializer>(DataType(1));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_scale");
@@ -260,7 +261,8 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[1] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
+      auto w = make_unique<weights>();
+      w->init(*get_comm());
       auto init = make_unique<constant_initializer>(DataType(0));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_bias");
@@ -270,7 +272,8 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[2] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
+      auto w = make_unique<weights>();
+      w->init(*get_comm());
       auto init = make_unique<constant_initializer>(DataType(0));
       w->set_name(get_name() + "_running_mean");
       w->set_initializer(std::move(init));
@@ -278,7 +281,8 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[3] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
+      auto w = make_unique<weights>();
+      w->init(*get_comm());
       auto init = make_unique<constant_initializer>(DataType(1));
       w->set_name(get_name() + "_running_variance");
       w->set_initializer(std::move(init));
