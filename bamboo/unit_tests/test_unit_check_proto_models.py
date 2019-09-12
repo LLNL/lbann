@@ -5,7 +5,8 @@ import pytest
 import os
 
 
-def skeleton_models(cluster, dir_name, executables, compiler_name):
+def skeleton_models(cluster, dir_name, executables, compiler_name,
+                    weekly, data_reader_percent):
     if compiler_name not in executables:
         e = 'skeleton_models: default_exes[%s] does not exist' % compiler_name
         print('Skip - ' + e)
@@ -98,10 +99,11 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                         data_filename_test_default=data_filename_test_default,
                         data_reader_name=data_reader_name,
                         data_reader_path=data_reader_path,
+                        data_reader_percent=data_reader_percent,
                         exit_after_setup=True, model_path=model_path,
                         optimizer_name=opt,
                         output_file_name=output_file_name,
-                        error_file_name=error_file_name)
+                        error_file_name=error_file_name, weekly=weekly)
                     if os.system(cmd) != 0:
                         print("Error detected in " + model_path)
                         #defective_models.append(file_name)
@@ -121,23 +123,23 @@ def skeleton_models(cluster, dir_name, executables, compiler_name):
                 nd=num_defective, dms=defective_models))
 
 
-def test_unit_models_clang6(cluster, dirname, exes):
-    skeleton_models(cluster, dirname, exes, 'clang6')
+def test_unit_models_clang6(cluster, dirname, exes, weekly, data_reader_percent):
+    skeleton_models(cluster, dirname, exes, 'clang6', weekly, data_reader_percent)
 
 
-def test_unit_models_gcc7(cluster, dirname, exes):
-    skeleton_models(cluster, exes, dirname, 'gcc7')
+def test_unit_models_gcc7(cluster, dirname, exes, weekly, data_reader_percent):
+    skeleton_models(cluster, exes, dirname, 'gcc7', weekly, data_reader_percent)
 
 
-def test_unit_models_intel19(cluster, dirname, exes):
-    skeleton_models(cluster, dirname, exes, 'intel19')
+def test_unit_models_intel19(cluster, dirname, exes, weekly, data_reader_percent):
+    skeleton_models(cluster, dirname, exes, 'intel19', weekly, data_reader_percent)
 
 
 # Run with python3 -m pytest -s test_unit_check_proto_models.py -k 'test_unit_models_exe' --exe=<executable>
-def test_unit_models_exe(cluster, dirname, exe):
+def test_unit_models_exe(cluster, dirname, exe, weekly, data_reader_percent):
     if exe is None:
         e = 'test_unit_models_exe: Non-local testing'
         print('Skip - ' + e)
         pytest.skip(e)
     exes = {'exe' : exe}
-    skeleton_models(cluster, dirname, exes, 'exe')
+    skeleton_models(cluster, dirname, exes, 'exe', weekly, data_reader_percent)
