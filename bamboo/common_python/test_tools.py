@@ -1,5 +1,4 @@
 import pytest
-import subprocess
 import tools
 
 
@@ -33,6 +32,7 @@ def test_command_catalyst():
     actual = tools.get_command(cluster='catalyst', **d)
     expected = 'salloc --nodes=20 --partition=pdebug --time=30 srun --mpibind=off --time=30 --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --block_size=4 --print_affinity > output_file 2> error_file'
     assert actual == expected
+
 
 def test_command_corona():
     actual = tools.get_command(cluster='corona', **d)
@@ -439,7 +439,7 @@ def test_bad_extra_lbann_flags_invalid_flag():
                     " 'random_seed', 'objective_function', 'data_layout',"
                     " 'print_affinity', 'use_data_store', 'preload_data_store',"
                     " 'super_node', 'write_sample_list', 'ltfb_verbose',"
-                    " 'index_list_train', 'index_list_test',"
+                    " 'ckpt_dir', 'index_list_train', 'index_list_test',"
                     " 'label_filename_train', 'label_filename_test',"
                     " 'share_testing_data_readers', 'image_dir', 'no_im_comm']."
                     )
