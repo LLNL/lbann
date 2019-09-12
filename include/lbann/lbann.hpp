@@ -95,7 +95,6 @@
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/layers/transform/weights.hpp"
 #include "lbann/layers/transform/tessellate.hpp"
-#include "lbann/layers/transform/tovec.hpp"
 
 /// Regularization layers
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -115,6 +114,7 @@
 #include "lbann/layers/misc/mini_batch_size.hpp"
 #include "lbann/layers/misc/argmax.hpp"
 #include "lbann/layers/misc/argmin.hpp"
+#include "lbann/layers/misc/one_hot.hpp"
 
 /// Data readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"

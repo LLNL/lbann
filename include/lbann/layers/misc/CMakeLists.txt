@@ -7,6 +7,7 @@ set_full_path(THIS_DIR_HEADERS
   mini_batch_size.hpp
   argmax.hpp
   argmin.hpp
+  one_hot.hpp
   )
 
 # Propagate the files up the tree

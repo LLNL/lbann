@@ -24,61 +24,60 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYER_TOVEC_HPP_INCLUDED
-#define LBANN_LAYER_TOVEC_HPP_INCLUDED
+#ifndef LBANN_LAYERS_MISC_ONE_HOT_HPP_INCLUDED
+#define LBANN_LAYERS_MISC_ONE_HOT_HPP_INCLUDED
 
-#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/layer.hpp"
 
 namespace lbann {
 
-/** @brief Convert a given index to one-hot vector
+/** @brief Convert index to a one-hot vector
  *
- *  
+ *  Expects a scalar input tensor and outputs a 1-D output tensor with
+ *  @c size entries. The input is interpreted as an index, and output
+ *  entries are one if they correspond to that index and zero
+ *  otherwise. If the input is outside @f$[0,\text{size})@f$, then the
+ *  output is all zeros.
  */
 template <data_layout Layout, El::Device Device>
-class tovec_layer : public transform_layer {
-private:
-
+class one_hot_layer : public Layer {
 public:
 
-  tovec_layer(lbann_comm *comm,
-                std::vector<int> dims,
-                El::Int ignore_label=-1)
-    : transform_layer(comm) {
-    set_output_dims(dims);
+  one_hot_layer(lbann_comm* comm, size_t size) : Layer(comm) {
+    set_output_dims({static_cast<int>(size)});
     static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "tovec layer only supports data parallel layout");
+                  "one-hot layer only supports data-parallel layout");
     static_assert(Device == El::Device::CPU,
-                  "tovec layer only supports CPU");
-    this->m_expected_num_parent_layers = 1;
+                  "one-hot layer only supports CPU");
   }
-  tovec_layer* copy() const override { return new tovec_layer(*this); }
-  std::string get_type() const override { return "tovec"; }
+  one_hot_layer* copy() const override { return new one_hot_layer(*this); }
+  std::string get_type() const override { return "one-hot"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  description get_description() const override {
-    auto desc = transform_layer::get_description();
-    return desc;
-  }
-
 protected:
 
-  void fp_compute() override {
-    El::Zero(get_activations());
-    // Local data
-    const auto& local_input = get_local_prev_activations();
-    auto& local_output = get_local_activations();
-    const auto& local_width = local_input.Width();
-    for (El::Int col = 0; col < local_width; ++col) {
-      const El::Int ind = static_cast<El::Int>(local_input(0, col));
-      local_output.Set(ind, col, 1);
+  void setup_dims() override {
+    Layer::setup_dims();
+
+    // Make sure input tensor is scalar
+    if (get_input_size() != 1) {
+      const auto input_dims = get_input_dims();
+      std::ostringstream dim_ss;
+      for (size_t i = 0; i < input_dims.size(); ++i) {
+        dim_ss << (i > 0 ? "x" : "") << input_dims[i];
+      }
+      LBANN_ERROR(get_type()," layer \"",get_name(),"\" ",
+                  "received an input tensor with invalid dimensions ",
+                  "(expected 1, got ",dim_ss.str(),")");
     }
 
   }
+
+  void fp_compute() override;
 
 };
 
 } // namespace lbann
 
-#endif // LBANN_LAYER_TOVEC_HPP_INCLUDED
+#endif // LBANN_LAYERS_MISC_ONE_HOT_HPP_INCLUDED

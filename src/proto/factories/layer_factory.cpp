@@ -63,6 +63,7 @@
 #include "lbann/layers/misc/variance.hpp"
 #include "lbann/layers/misc/argmax.hpp"
 #include "lbann/layers/misc/argmin.hpp"
+#include "lbann/layers/misc/one_hot.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -94,7 +95,6 @@
 #include "lbann/layers/transform/unpooling.hpp"
 #include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/weights.hpp"
-#include "lbann/layers/transform/tovec.hpp"
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/utils/peek_map.hpp"
@@ -502,18 +502,6 @@ std::unique_ptr<Layer> construct_layer(
     return lbann::make_unique<tessellate_layer<Layout, Device>>(comm, dims);
   }
 
-  if (proto_layer.has_tovec()) {
-    if (Layout == data_layout::DATA_PARALLEL
-        && Device == El::Device::CPU) {
-      const auto& params = proto_layer.tovec();
-      const auto& dims = parse_list<int>(params.num_neurons());
-      return lbann::make_unique<tovec_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm, dims);
-    } else {
-      LBANN_ERROR("tovec layer is currently only supported with "
-                  "data-parallel data layout and on CPU device");
-    }
-  }
-
   // Regularizer layers
   if (proto_layer.has_batch_normalization()) {
     const auto& params = proto_layer.batch_normalization();
@@ -720,6 +708,8 @@ std::unique_ptr<Layer> construct_layer(
                   "a data-parallel layout");
     }
   }
+  CONSTRUCT_LAYER(mini_batch_index);
+  CONSTRUCT_LAYER(mini_batch_size);
   if (proto_layer.has_argmax()) {
     if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
       return lbann::make_unique<argmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
@@ -736,8 +726,15 @@ std::unique_ptr<Layer> construct_layer(
                   "a data-parallel layout and on CPU");
     }
   }
-  CONSTRUCT_LAYER(mini_batch_index);
-  CONSTRUCT_LAYER(mini_batch_size);
+  if (proto_layer.has_one_hot()) {
+    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+      const auto& params = proto_layer.one_hot();
+      return lbann::make_unique<one_hot_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm, params.size());
+    } else {
+      LBANN_ERROR("one-hot layer is only supported with "
+                  "a data-parallel layout and on CPU");
+    }
+  }
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();

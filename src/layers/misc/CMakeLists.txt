@@ -5,6 +5,7 @@ set_full_path(THIS_DIR_SOURCES
   channelwise_mean.cpp
   argmax.cpp
   argmin.cpp
+  one_hot.cpp
   )
 
 if (LBANN_HAS_CUDA)

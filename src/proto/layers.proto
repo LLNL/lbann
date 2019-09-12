@@ -73,7 +73,6 @@ message Layer {
     Sort sort = 325;
     WeightsLayer weights_layer = 326;
     Tessellate tessellate = 327;
-    ToVec  tovec  = 332;
 
     // Learning layers
     FullyConnected fully_connected = 11;
@@ -178,6 +177,7 @@ message Layer {
     MiniBatchSize mini_batch_size = 604;
     Argmax argmax = 605;
     Argmin argmin = 606;
+    OneHot one_hot = 607;
 
   }
 
@@ -441,10 +441,6 @@ message Layer {
     string dims = 1;
   }
 
-  message ToVec {
-    string num_neurons=1;
-  }
-
   /////////////////////
   // Learning layers //
   /////////////////////
@@ -557,6 +553,17 @@ message Layer {
   // Expects a 1-D input tensor. If multiple entries have the same
   // minimum value, outputs the index of the first one.
   message Argmin {}
+
+  // Convert index to a one-hot vector
+  //
+  // Expects a scalar input tensor and outputs a 1-D output tensor.
+  // The input is interpreted as an index, and output entries are one
+  // if they correspond to that index and zero otherwise. If the input
+  // is outside [0,size), then the output is all zeros.
+  message OneHot {
+    // Size of one-hot vector
+    int64 size = 1;
+  }
 
 }// message Layer
 
