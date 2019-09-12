@@ -134,7 +134,7 @@ protected:
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
       this->m_weights[0] = w.get();
-      this->m_model->add_weights(w.release());
+      this->m_model->add_weights(std::move(w));
     }
     auto& linearity_weights = *this->m_weights[0];
 
@@ -168,7 +168,7 @@ protected:
         w->set_name(get_name() + "_bias_weights");
         w->set_optimizer(std::move(opt));
         this->m_weights[1] = w.get();
-        this->m_model->add_weights(w.release());
+        this->m_model->add_weights(std::move(w));
       }
       auto& bias_weights = *this->m_weights[1];
       // Setup bias weights

@@ -358,7 +358,7 @@ public:
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
       this->m_weights[0] = w.get();
-      this->m_model->add_weights(w.release());
+      this->m_model->add_weights(std::move(w));
     }
     auto& kernel_weights = *this->m_weights[0];
 
@@ -385,7 +385,7 @@ public:
         w->set_name(get_name() + "_bias");
         w->set_optimizer(std::move(opt));
         this->m_weights[1] = w.get();
-        this->m_model->add_weights(w.release());
+        this->m_model->add_weights(std::move(w));
       }
       auto& bias_weights = *this->m_weights[1];
       bias_weights.set_dims(output_dims[0]);
