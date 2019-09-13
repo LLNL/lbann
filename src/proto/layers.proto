@@ -440,14 +440,22 @@ message Layer {
   /////////////////////
   // Learning layers //
   /////////////////////
-  message FullyConnected {
-    int64 num_neurons = 1;
-    bool has_bias = 3;                   //default: true
-    double bias_initial_value = 4;       //default: 0
-    bool transpose = 7;
 
-    repeated uint32 get_num_neurons_of_slice_from_reader = 13;
-    string get_slice_points_from_reader = 14;
+  // Affine transformation
+  //
+  // Flattens the input tensor, multiplies with a weights matrix, and
+  // optionally applies an entry-wise bias. Following the
+  // column-vector convention:
+  //   y = W * vec(x) + b
+  message FullyConnected {
+    // Output tensor size
+    int64 num_neurons = 1;
+    // Whether to apply entry-wise bias
+    bool has_bias = 2;
+    // Initial value of bias tensor
+    double bias_initial_value = 3;
+    // Whether to apply transpose of weights matrix
+    bool transpose = 4;
   }
 
   message Convolution {

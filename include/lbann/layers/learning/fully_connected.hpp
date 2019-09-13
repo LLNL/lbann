@@ -36,7 +36,13 @@
 
 namespace lbann {
 
-/** @brief Perform an affine transformation. */
+/** @brief Affine transformation
+ *
+ *  Flattens the input tensor, multiplies with a weights matrix, and
+ *  optionally applies an entry-wise bias. Following the
+ *  column-vector convention:
+ *    @f[ y = W * \text{vec}(x) + b @f]
+ */
 template <data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer {
 public:
