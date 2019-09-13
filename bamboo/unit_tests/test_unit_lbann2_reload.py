@@ -5,7 +5,7 @@ import pytest
 import os, sys
 
 
-def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
+def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name, data_reader_percent=1.0):
     if compiler_name not in executables:
       e = 'skeleton_lbann2_reload: default_exes[%s] does not exist' % compiler_name
       print('Skip - ' + e)
@@ -22,7 +22,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
         data_reader_name='mnist',
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         dir_name=dir_name,
-        data_reader_percent=1.0,
+        data_reader_percent=data_reader_percent,
         ckpt_dir=no_ckpt_dir,
         model_path=model_path,
         optimizer_name='sgd',
@@ -41,7 +41,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
         cluster=cluster, executable=lbann2, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=1.0,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name,
@@ -57,7 +57,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist',
-        data_reader_percent=1.0,
+        data_reader_percent=data_reader_percent,
         ckpt_dir=ckpt_dir,
         model_path='../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext',
         num_epochs=2, optimizer_name='sgd',
@@ -123,10 +123,10 @@ def test_unit_lbann2_reload_intel19(cluster, exes, dirname):
 
 
 # Run with python3 -m pytest -s test_unit_lbann2_reload.py -k 'test_unit_lbann2_reload_exe' --exe=<executable>
-def test_unit_lbann2_reload_exe(cluster, dirname, exe):
+def test_unit_lbann2_reload_exe(cluster, dirname, exe, data_reader_percent):
     if exe is None:
         e = 'test_unit_lbann2_reload_exe: Non-local testing'
         print('Skip - ' + e)
         pytest.skip(e)
     exes = {'exe': exe}
-    skeleton_lbann2_reload(cluster, exes, dirname, 'exe')
+    skeleton_lbann2_reload(cluster, exes, dirname, 'exe', data_reader_percent)
