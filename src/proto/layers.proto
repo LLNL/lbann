@@ -446,10 +446,6 @@ message Layer {
     double bias_initial_value = 4;       //default: 0
     bool transpose = 7;
 
-    bool get_input_dimension_from_reader = 9;
-    bool get_image_and_scalar_dimension_from_reader = 10;
-    bool get_image_dimension_from_reader = 11;
-    bool get_scalar_dimension_from_reader = 12;
     repeated uint32 get_num_neurons_of_slice_from_reader = 13;
     string get_slice_points_from_reader = 14;
   }
