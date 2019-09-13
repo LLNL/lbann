@@ -112,6 +112,9 @@
 #include "lbann/layers/misc/channelwise_mean.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
+#include "lbann/layers/misc/argmax.hpp"
+#include "lbann/layers/misc/argmin.hpp"
+#include "lbann/layers/misc/one_hot.hpp"
 
 /// Data readers
 #include "lbann/data_readers/data_reader_imagenet.hpp"
