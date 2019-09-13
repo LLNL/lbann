@@ -42,6 +42,12 @@ namespace lbann {
  *  optionally applies an entry-wise bias. Following the
  *  column-vector convention:
  *    @f[ y = W * \text{vec}(x) + b @f]
+ *
+ *  Two weights are required if bias is applied: the linearity and the
+ *  bias. Only the linearity weights are required if bias is not
+ *  applied. If weights aren't provided, the linearity weights are
+ *  initialized with He normal initialization and the bias weights are
+ *  initialized to zero.
  */
 template <data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer {
