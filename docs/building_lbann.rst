@@ -145,9 +145,9 @@ Hydrogen, and LBANN separately, by whatever means they choose.
         export LBANN_BUILD_DIR=/path/to/a/build/directory
         export LBANN_INSTALL_DIR=/path/to/an/install/directory
         cd ${LBANN_BUILD_DIR}
-        spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_<arch>_cuda_spack.yaml # where <arch> = x86_64 | ppc64le
+        spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_cuda_spack.yaml
         cp ${LBANN_HOME}/spack_environments/std_versions_and_variants_llnl_lc_cz.yaml .
-        cp ${LBANN_HOME}/spack_environments/externals_<arch>_llnl_lc_cz.yaml . # where <arch> = x86_64 | ppc64le
+        cp ${LBANN_HOME}/spack_environments/externals_<arch>_llnl_lc_cz.yaml externals_llnl_lc_cz.yaml # where <arch> = x86_64 | ppc64le
         spack install
         spack env loads # Spack creates a file named loads that has all of the correct modules
         source ${SPACK_ROOT}/share/spack/setup-env.sh # Rerun setup since spack doesn't modify MODULEPATH unless there are module files defined

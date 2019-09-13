@@ -18,13 +18,14 @@
 
     cuda::
       buildable: False
-      version: [10.0.130]
+      version: [10.0.130, 10.1.168]
       paths:
         cuda@10.0.130 arch=linux-rhel7-x86_64: /usr/tce/packages/cuda/cuda-10.0.130
+        cuda@10.1.168 arch=linux-rhel7-x86_64: /usr/tce/packages/cuda/cuda-10.1.168
 
     cudnn::
       buildable: true
-      version: [7.5.1-10.0-x86_64]
+      version: [7.6.3-10.1-x86_64]
 
     hwloc::
       buildable: False
@@ -45,6 +46,7 @@
 
     opencv::
       buildable: true
+      variants: build_type=RelWithDebInfo ~calib3d+core~cuda~dnn~eigen+fast-math~features2d~flann~gtk+highgui+imgproc~ipp~ipp_iw~jasper~java+jpeg~lapack~ml~opencl~opencl_svm~openclamdblas~openclamdfft~openmp+png~powerpc~pthreads_pf~python~qt+shared~stitching~superres+tiff~ts~video~videoio~videostab~vsx~vtk+zlib
       version: [4.1.0]
 
   compilers:
