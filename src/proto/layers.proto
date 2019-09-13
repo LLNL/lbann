@@ -445,7 +445,6 @@ message Layer {
     bool has_bias = 3;                   //default: true
     double bias_initial_value = 4;       //default: 0
     bool transpose = 7;
-    bool num_neurons_is_num_labels = 8;
 
     bool get_input_dimension_from_reader = 9;
     bool get_image_and_scalar_dimension_from_reader = 10;
