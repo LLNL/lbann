@@ -442,7 +442,6 @@ message Layer {
   /////////////////////
   message FullyConnected {
     int64 num_neurons = 1;
-    string weight_initialization = 2;    //DEPRECATED
     bool has_bias = 3;                   //default: true
     double bias_initial_value = 4;       //default: 0
     double l2_regularization_factor = 5; //default: 0

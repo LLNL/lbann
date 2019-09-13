@@ -59,7 +59,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -82,7 +81,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -105,7 +103,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 250
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -129,7 +126,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 30
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -142,7 +138,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 250
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -165,7 +160,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 500
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -189,7 +183,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
@@ -212,7 +205,6 @@ model {
     data_layout: "model_parallel"
     hint_layer: "image"
     fully_connected {
-      weight_initialization: "glorot_uniform"
       has_bias: true
     }
   }
