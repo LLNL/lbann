@@ -444,8 +444,6 @@ message Layer {
     int64 num_neurons = 1;
     bool has_bias = 3;                   //default: true
     double bias_initial_value = 4;       //default: 0
-    double l2_regularization_factor = 5; //default: 0
-    double group_lasso_regularization_factor = 6; //default: 0
     bool transpose = 7;
     bool num_neurons_is_num_labels = 8;
 
