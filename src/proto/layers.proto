@@ -452,10 +452,8 @@ message Layer {
     int64 num_neurons = 1;
     // Whether to apply entry-wise bias
     bool has_bias = 2;
-    // Initial value of bias tensor
-    double bias_initial_value = 3;
     // Whether to apply transpose of weights matrix
-    bool transpose = 4;
+    bool transpose = 3;
   }
 
   message Convolution {
