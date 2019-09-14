@@ -352,7 +352,7 @@ public:
     }
     if (this->m_weights[0] == nullptr) {
       auto w = make_unique<weights>();
-      w->init(*get_comm());
+      w->set_comm(*get_comm());
       auto init = make_unique<he_initializer>(probability_distribution::gaussian);
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_kernel");
@@ -382,7 +382,7 @@ public:
     if (m_bias_scaling_factor != DataType(0)) {
       if (this->m_weights[1] == nullptr) {
         auto w = make_unique<weights>();
-        w->init(*get_comm());
+        w->set_comm(*get_comm());
         std::unique_ptr<optimizer> opt(m_model->create_optimizer());
         w->set_name(get_name() + "_bias");
         w->set_optimizer(std::move(opt));

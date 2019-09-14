@@ -115,7 +115,7 @@ class weights_layer : public transform_layer {
     // Initialize default weights if none are provided
     if (this->m_weights.empty()) {
       auto w = make_unique<weights>();
-      w->init(*get_comm());
+      w->set_comm(*get_comm());
       auto init = make_unique<constant_initializer>(DataType(0));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_weights");

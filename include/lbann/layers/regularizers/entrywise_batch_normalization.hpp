@@ -119,7 +119,7 @@ protected:
     this->m_weights.resize(2, nullptr);
     if (this->m_weights[0] == nullptr) {
       auto w = make_unique<weights>();
-      w->init(*get_comm());
+      w->set_comm(*get_comm());
       auto init = make_unique<constant_initializer>(DataType{0});
       w->set_name(get_name() + "_running_mean");
       w->set_initializer(std::move(init));
@@ -128,7 +128,7 @@ protected:
     }
     if (this->m_weights[1] == nullptr) {
       auto w = make_unique<weights>();
-      w->init(*get_comm());
+      w->set_comm(*get_comm());
       auto init = make_unique<constant_initializer>(DataType{1});
       w->set_name(get_name() + "_running_variance");
       w->set_initializer(std::move(init));

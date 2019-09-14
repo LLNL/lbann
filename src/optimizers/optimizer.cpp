@@ -262,10 +262,7 @@ void optimizer::remove_gradient_source(const void* source) {
 }
 
 void optimizer::setup(weights* w) {
-  m_comm = w->get_comm();
-  if (m_comm == nullptr) {
-    LBANN_ERROR("setup got null pointer for lbann_comm");
-  }
+  m_comm = &w->get_comm();
   clear_gradient();
 
   // Set weights being optimized

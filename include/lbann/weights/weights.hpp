@@ -77,7 +77,10 @@ public:
   /** Get weights name. */
   std::string get_name() const { return m_name; }
 
-  lbann_comm* get_comm() const { return m_comm; }
+  lbann_comm& get_comm() const {
+    if(m_comm == nullptr) { LBANN_ERROR("weights class has null comm pointer"); }
+    return *m_comm;
+  }
 
   /** Create a copy of the weights.
    *  This function dynamically allocates memory for a weights
@@ -170,7 +173,7 @@ public:
   // -----------------------------------------------
   // Initialize the weight class
   // -----------------------------------------------
-  void init(lbann_comm& comm);
+  void set_comm(lbann_comm& comm);
 
   // -----------------------------------------------
   // Setup
