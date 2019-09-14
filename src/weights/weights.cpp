@@ -241,7 +241,7 @@ void weights::set_matrix_distribution(El::DistData dist) {
   m_matrix_dist = dist;
 }
 
-void weights::init(lbann_comm& comm) {
+void weights::set_comm(lbann_comm& comm) {
   m_comm = &comm;
   // Default matrix distribution
   m_matrix_dist.colDist = El::STAR;
