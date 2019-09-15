@@ -63,9 +63,16 @@ class optimizer;
  */
 class weights {
   friend class optimizer;
+private:
+  weights();
+  // -----------------------------------------------
+  // Internal method for setting the comm pointer
+  // -----------------------------------------------
+  void set_comm(lbann_comm& comm);
+  void setup_default_matrix_distribution();
 
 public:
-  weights();
+  weights(lbann_comm* comm);
   weights(const weights& other);
   weights& operator=(const weights& other);
 
@@ -169,11 +176,6 @@ public:
   // -----------------------------------------------
   El::DistData get_matrix_distribution() const;
   void set_matrix_distribution(El::DistData dist);
-
-  // -----------------------------------------------
-  // Initialize the weight class
-  // -----------------------------------------------
-  void set_comm(lbann_comm& comm);
 
   // -----------------------------------------------
   // Setup

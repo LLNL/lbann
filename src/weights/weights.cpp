@@ -70,7 +70,15 @@ weights::weights()
   static int num_weights = 0;
   m_name = "weights" + std::to_string(num_weights);
   num_weights++;
+}
 
+weights::weights(lbann_comm* comm)
+  : weights() {
+
+  m_comm = comm;
+  if(comm == nullptr) { LBANN_ERROR("Unable to construct weights with null comm ptr"); }
+
+  setup_default_matrix_distribution();
 }
 
 weights::weights(const weights& other)
@@ -243,6 +251,9 @@ void weights::set_matrix_distribution(El::DistData dist) {
 
 void weights::set_comm(lbann_comm& comm) {
   m_comm = &comm;
+}
+
+void weights::setup_default_matrix_distribution() {
   // Default matrix distribution
   m_matrix_dist.colDist = El::STAR;
   m_matrix_dist.rowDist = El::STAR;
@@ -253,7 +264,7 @@ void weights::set_comm(lbann_comm& comm) {
   m_matrix_dist.colCut = 0;
   m_matrix_dist.rowCut = 0;
   m_matrix_dist.root = 0;
-  m_matrix_dist.grid = &(comm.get_trainer_grid());
+  m_matrix_dist.grid = &(m_comm->get_trainer_grid());
   m_matrix_dist.device = El::Device::CPU;
 }
 
