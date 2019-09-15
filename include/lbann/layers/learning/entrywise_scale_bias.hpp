@@ -94,8 +94,7 @@ public:
     // Construct default weights if needed
     // Note: Scale is initialized to 1 and bias to 0
     if (this->m_weights.empty()) {
-      auto w = make_unique<weights>();
-      w->set_comm(*get_comm());
+      auto w = make_unique<weights>(get_comm());
       std::vector<DataType> vals(2*output_size, DataType{0});
       std::fill(vals.begin(), vals.begin()+output_size, DataType{1});
       auto init = make_unique<value_initializer>(vals);
