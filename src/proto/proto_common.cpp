@@ -863,7 +863,6 @@ void print_help(std::ostream& os)
        "  --num_epochs=<int>\n"
        "  --block_size=<int>\n"
        "  --procs_per_trainer=<int>\n"
-       "  --num_gpus=<int>\n"
        "  --num_parallel_readers=<int>\n"
        "  --num_io_threads=<int>\n"
        "      # of threads used for I/O by the data readers\n"
