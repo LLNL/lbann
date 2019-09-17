@@ -42,7 +42,7 @@ namespace callback {
 
 namespace {
 
-/** Generate partner trainer assignments.
+/** @brief Generate partner trainer assignments.
  *
  *  Requires a scatter from the world master process. If there are an
  *  odd number of trainers, one of them is partnered with itself.
@@ -93,19 +93,20 @@ El::Int get_partner_trainer(lbann_comm& comm,
   }
 }
 
-/** Exchange weights values with partner trainer.
- *
- *  @param weights_names    Names of weights to exchange. If empty,
+/// See @c lbann::callbacks::ltfb::communication_algorithm::sendrecv_weights
+namespace sendrecv_weights {
+
+/** @param weights_names    Names of weights to exchange. If empty,
  *                          then all weights are exchanged.
  *  @param send_weights     Weights values sent to partner.
  *  @param recv_weights     Weights values recieved from partner.
  */
-void exchange_models__sendrecv_weights(lbann_comm& comm,
-                                       El::Int partner_trainer,
-                                       const std::set<std::string>& weights_names,
-                                       const std::vector<weights*>& send_weights,
-                                       std::vector<weights*>& recv_weights,
-                                       bool exchange_hyperparameters) {
+void exchange_models(lbann_comm& comm,
+                     El::Int partner_trainer,
+                     const std::set<std::string>& weights_names,
+                     const std::vector<weights*>& send_weights,
+                     std::vector<weights*>& recv_weights,
+                     bool exchange_hyperparameters) {
 
   // Get partner process
   const El::Int rank_in_trainer = comm.get_rank_in_trainer();
@@ -197,15 +198,26 @@ void exchange_models__sendrecv_weights(lbann_comm& comm,
 
 }
 
-void exchange_models__checkpoint_file(lbann_comm& comm,
-                                      El::Int partner_trainer,
-                                      model& m,
-                                      const std::set<std::string>& weights_names,
-                                      const std::vector<weights*>& local_weights) {
+} // namespace sendrecv_weights
+
+/// See @c lbann::callbacks::ltfb::communication_algorithm::checkpoint_file
+namespace checkpoint_file {
+
+/** @param weights_names    Names of weights to exchange. If empty,
+ *                          then all weights are exchanged.
+ *  @param local_weight     Copies of weights. Used to restore weights
+ *                          that we don't want to exchange.
+ */
+void exchange_models(lbann_comm& comm,
+                     El::Int partner_trainer,
+                     model& m,
+                     const std::set<std::string>& weights_names,
+                     const std::vector<weights*>& local_weights) {
 
   // Checkpoint directories
+  const auto& c = m.get_execution_context();
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = m.get_step();
+  const auto step = c.get_step();
   const std::string send_dir = (m.get_name()
                                 + "_trainer" + std::to_string(local_trainer)
                                 + "_step" + std::to_string(step));
@@ -215,11 +227,11 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
   // Save model checkpoint
   persist p;
-  p.set_cb_type(callback_type::batch);
+  p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
-    p.open_checkpoint(send_dir.c_str());
+    p.open_checkpoint(send_dir);
   } else {
-    std::strcpy(p.m_checkpoint_dir, send_dir.c_str());
+    p.m_checkpoint_dir = send_dir;
   }
   m.save_to_checkpoint_shared(p);
   p.close_checkpoint();
@@ -234,11 +246,11 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
   }
 
   // Load model checkpoint from partner trainer
-  p.set_cb_type(callback_type::batch);
+  p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
-    p.open_restart(recv_dir.c_str());
+    p.open_restart(recv_dir);
   } else {
-    std::strcpy(p.m_checkpoint_dir, recv_dir.c_str());
+    p.m_checkpoint_dir = recv_dir;
   }
   m.load_from_checkpoint_shared(p);
   if (comm.am_trainer_master()) {
@@ -260,22 +272,23 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
 }
 
-void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
+void restore_local_model(lbann_comm& comm, model& m) {
 
   // Checkpoint directories
+  const auto& c = m.get_execution_context();
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = m.get_step();
+  const auto step = c.get_step();
   const std::string checkpoint_dir = (m.get_name()
                                       + "_trainer" + std::to_string(local_trainer)
                                       + "_step" + std::to_string(step));
 
   // Load local model checkpoint
   persist p;
-  p.set_cb_type(callback_type::batch);
+  p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
-    p.open_restart(checkpoint_dir.c_str());
+    p.open_restart(checkpoint_dir);
   } else {
-    std::strcpy(p.m_checkpoint_dir, checkpoint_dir.c_str());
+    p.m_checkpoint_dir = checkpoint_dir;
   }
   m.load_from_checkpoint_shared(p);
   if (comm.am_trainer_master()) {
@@ -283,12 +296,13 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
   }
 
 }
+} // namespace checkpoint_file
 
 /** Get mean metric value with validation set. */
 EvalType evaluate(model& m, const std::string& metric_name) {
-
+  auto& c = m.get_execution_context();
   // Make sure data readers finish asynchronous work
-  const auto original_mode = m.get_execution_mode();
+  const auto original_mode = c.get_execution_mode();
   m.collect_background_data_fetch(original_mode);
 
   // Mark the data store as loading - Note that this is a temporary fix
@@ -296,7 +310,7 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   m.mark_data_store_explicitly_loading(execution_mode::validation);
 
   // Evaluate model on validation set
-  m.evaluate(execution_mode::validation);
+  c.get_trainer().evaluate(&m, execution_mode::validation);
 
   // Get metric value
   bool found_metric = false;
@@ -309,10 +323,8 @@ EvalType evaluate(model& m, const std::string& metric_name) {
     }
   }
   if (!found_metric) {
-    std::stringstream err;
-    err << "could not find metric \"" << metric_name << "\""
-        << "in model \"" << m.get_name() << "\"";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("could not find metric \"",metric_name,"\" ",
+                "in model \"",m.get_name(),"\"");
   }
 
   // Mark the data store as loaded - Note that this is a temporary fix
@@ -320,12 +332,12 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   m.make_data_store_preloaded(execution_mode::validation);
 
   // Clean up and return metric value
-  m.set_execution_mode(original_mode);
+  c.set_execution_mode(original_mode);
   return metric_value;
 
 }
 
-} // namespace
+} // namespace <anon>
 
 ltfb::ltfb(El::Int batch_interval,
            std::string metric_name,
@@ -412,11 +424,12 @@ void ltfb::on_train_begin(model *m) {
 }
 
 void ltfb::on_batch_begin(model *m) {
+  const auto& c = m->get_execution_context();
   auto&& comm = *m->get_comm();
 
   // Check whether to start LTFB round
-  const auto mode = m->get_execution_mode();
-  const auto step = m->get_step();
+  const auto mode = c.get_execution_mode();
+  const auto step = c.get_step();
   if (mode != execution_mode::training || step == 0) { return; }
 
   // Print message
@@ -453,7 +466,7 @@ void ltfb::on_batch_begin(model *m) {
   }
   switch (m_comm_algo) {
   case communication_algorithm::sendrecv_weights:
-    exchange_models__sendrecv_weights(comm,
+    sendrecv_weights::exchange_models(comm,
                                       partner_trainer,
                                       m_weights_names,
                                       local_weights,
@@ -461,7 +474,7 @@ void ltfb::on_batch_begin(model *m) {
                                       m_exchange_hyperparameters);
     break;
   case communication_algorithm::checkpoint_file:
-    exchange_models__checkpoint_file(comm,
+    checkpoint_file::exchange_models(comm,
                                      partner_trainer,
                                      *m,
                                      m_weights_names,
@@ -490,7 +503,7 @@ void ltfb::on_batch_begin(model *m) {
       }
       break;
     case communication_algorithm::checkpoint_file:
-      restore_local_model__checkpoint_file(comm, *m);
+      checkpoint_file::restore_local_model(comm, *m);
       break;
     default:
       LBANN_ERROR("invalid LTFB communication algorithm");
@@ -522,9 +535,7 @@ ltfb::string_to_comm_algo(const std::string& str) {
   }
 
   // Invalid LTFB communication algorithm
-  std::stringstream err;
-  err << "invalid LTFB communication algorithm (" << str << ")";
-  LBANN_ERROR(err.str());
+  LBANN_ERROR("invalid LTFB communication algorithm (",str,")");
   return communication_algorithm::sendrecv_weights;
 
 }

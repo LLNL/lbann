@@ -65,10 +65,11 @@ std::string weights_string(const weights& w) {
 
 /** Get human-readable string describing current batch step. */
 std::string batch_step_string(const model& m) {
+  const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
   std::stringstream msg;
-  const auto& mode = m.get_execution_mode();
-  msg << to_string(mode) << " batch " << m.get_step();
-  msg << " (epoch " << m.get_epoch() << ")";
+  const auto& mode = c.get_execution_mode();
+  msg << to_string(mode) << " batch " << c.get_step();
+  msg << " (epoch " << c.get_epoch() << ")";
   return msg.str();
 }
 
@@ -76,7 +77,8 @@ std::string batch_step_string(const model& m) {
 
 // Status updates for batch beginnings/endings
 void debug::on_batch_begin(model *m) {
-  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+  const auto& c = m->get_execution_context();
+  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": "
         << "starting " << batch_step_string(*m) << std::endl;
@@ -84,7 +86,8 @@ void debug::on_batch_begin(model *m) {
   }
 }
 void debug::on_batch_end(model *m) {
-  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+  const auto& c = m->get_execution_context();
+  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": "
         << "ending " << batch_step_string(*m) << std::endl;
@@ -100,7 +103,8 @@ void debug::on_batch_evaluate_end(model *m) {
 
 // Status updates for beginning/ending of layer forward/backward prop
 void debug::on_forward_prop_begin(model *m, Layer *l) {
-  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+  const auto& c = m->get_execution_context();
+  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
         << " is starting forward prop for " << batch_step_string(*m)
@@ -109,7 +113,8 @@ void debug::on_forward_prop_begin(model *m, Layer *l) {
   }
 }
 void debug::on_forward_prop_end(model *m, Layer *l) {
-  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+  const auto& c = m->get_execution_context();
+  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
         << " is   ending forward prop for " << batch_step_string(*m)
@@ -118,7 +123,8 @@ void debug::on_forward_prop_end(model *m, Layer *l) {
   }
 }
 void debug::on_backward_prop_begin(model *m, Layer *l) {
-  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+  const auto& c = m->get_execution_context();
+  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
         << " is starting backward prop for " << batch_step_string(*m)
@@ -127,7 +133,8 @@ void debug::on_backward_prop_begin(model *m, Layer *l) {
   }
 }
 void debug::on_backward_prop_end(model *m, Layer *l) {
-  if(m_modes.empty() || m_modes.count(m->get_execution_mode()) > 0) {
+  const auto& c = m->get_execution_context();
+  if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
     msg << rank_string(*m->get_comm()) << ": " << layer_string(*l)
         << " is   ending backward prop for " << batch_step_string(*m)

@@ -397,6 +397,8 @@ def get_command(cluster,
         # this error to lbann_errors.
         if isinstance(extra_lbann_flags, dict):
             # See `lbann --help` or src/proto/proto_common.cpp
+            # Commented out flags already have their own parameters
+            # in this function.
             allowed_flags = [
                 # 'model',
                 # 'optimizer',
@@ -423,6 +425,7 @@ def get_command(cluster,
                 'super_node',
                 'write_sample_list',
                 'ltfb_verbose',
+                'ckpt_dir',
 
                 # DataReaders:
                 # 'data_filedir',
@@ -442,7 +445,6 @@ def get_command(cluster,
                 'no_im_comm',
 
                 # Not listed by `lbann --help`:
-                # 'ckpt_dir',
                 # 'exit_after_setup',
                 # 'procs_per_model'
             ]
@@ -494,10 +496,23 @@ def process_executable_existence(executable, skip_no_exe=True):
     if not executable_exists:
         error_string = 'Executable does not exist: %s' % executable
         if skip_no_exe:
+            print('Skip - ' + error_string)
             import pytest
             pytest.skip(error_string)
         else:
             raise Exception(error_string)
+
+
+def process_executable(name, compiler_name, executables):
+    if compiler_name not in executables:
+        e = '{n}: default_exes[{c}] does not exist'.format(
+            n=name, c=compiler_name)
+        print('Skip - ' + e)
+        import pytest
+        pytest.skip(e)
+    executable_path = executables[compiler_name]
+    print('{n}: executable_path={e}'.format(n=name, e=executable_path))
+    process_executable_existence(executable_path)
 
 
 def get_spack_exes(default_dirname, cluster):
@@ -558,7 +573,9 @@ def get_error_line(error_file_name):
         for line in error_file:
             if ('ERROR' in line) or ('LBANN error' in line) or \
                     ('Error:' in line) or \
-                    ('Expired or invalid job' in line):
+                    ('Expired or invalid job' in line) or \
+                    ('Segmentation fault (core dumped)' in line) or \
+                    ('Relinquishing job allocation' in line):
                 error_line = line
                 break
             elif ('Stack trace:' in line) or \

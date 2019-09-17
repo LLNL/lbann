@@ -109,7 +109,7 @@ class selu_dropout : public regularizer_layer {
  protected:
   /** Drop out units in forward propagation. */
   void fp_compute() override {
-    if (this->m_model->get_execution_mode() != execution_mode::training ||
+    if (this->m_model->get_execution_context().get_execution_mode() != execution_mode::training ||
         m_keep_prob < 0.0f) {
       // Do nothing if dropout is disabled
       El::Copy(get_prev_activations(), get_activations());
@@ -141,7 +141,7 @@ class selu_dropout : public regularizer_layer {
 
   /** Adjust gradients for dropout in backprop. */
   void bp_compute() override {
-    if (this->m_model->get_execution_mode() != execution_mode::training
+    if (this->m_model->get_execution_context().get_execution_mode() != execution_mode::training
         || m_keep_prob < 0.0f) {
       El::Copy(get_prev_error_signals(), get_error_signals());
     } else {

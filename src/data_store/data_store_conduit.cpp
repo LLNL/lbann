@@ -44,6 +44,7 @@
 namespace lbann {
 
 // Macro to throw an LBANN exception
+#if 0
 #undef LBANN_ERROR
 #define LBANN_ERROR(message)                                    \
   do {                                                          \
@@ -66,6 +67,7 @@ namespace lbann {
     }                                                           \
     throw lbann::exception(ss_LBANN_ERROR.str());               \
   } while (0)
+#endif
 
 data_store_conduit::data_store_conduit(
   generic_data_reader *reader) :
@@ -430,20 +432,20 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
   if (m_compacted_sample_size == 0) {
     m_compacted_sample_size = nd.total_bytes_compact();
   } else if (m_compacted_sample_size != nd.total_bytes_compact() && !m_node_sizes_vary) {
-    LBANN_ERROR("Conduit node being added data_id: " + std::to_string(data_id)
-                + " is not the same size as existing nodes in the data_store "
-                + std::to_string(m_compacted_sample_size) + " != "
-                + std::to_string(nd.total_bytes_compact())
-                + " role: " + m_reader->get_role());
+    LBANN_ERROR("Conduit node being added data_id: ", std::to_string(data_id),
+                " is not the same size as existing nodes in the data_store ",
+                std::to_string(m_compacted_sample_size), " != ",
+                std::to_string(nd.total_bytes_compact()),
+                " role: ", m_reader->get_role());
   }
   if (!nd.is_contiguous()) {
-    LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a contiguous layout");
+    LBANN_ERROR("m_data[",  std::to_string(data_id), "] does not have a contiguous layout");
   }
   if (nd.data_ptr() == nullptr) {
-    LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid data pointer");
+    LBANN_ERROR("m_data[", std::to_string(data_id), "] does not have a valid data pointer");
   }
   if (nd.contiguous_data_ptr() == nullptr) {
-    LBANN_ERROR("m_data[" + std::to_string(data_id) + "] does not have a valid contiguous data pointer");
+    LBANN_ERROR("m_data[", std::to_string(data_id), "] does not have a valid contiguous data pointer");
   }
 }
 
@@ -454,7 +456,7 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   }
   m_mutex.lock();
   if (already_have == false && m_data.find(data_id) != m_data.end()) {
-    LBANN_ERROR("duplicate data_id: " + std::to_string(data_id) + " in data_store_conduit::set_conduit_node");
+    LBANN_ERROR("duplicate data_id: ", std::to_string(data_id), " in data_store_conduit::set_conduit_node");
   }
 
   if (m_output) {
@@ -463,7 +465,7 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
 
   if (already_have && is_local_cache()) {
     if (m_data.find(data_id) == m_data.end()) {
-      LBANN_ERROR("you claim the passed node was obtained from this data_store, but the data_id (" + std::to_string(data_id) + ") doesn't exist in m_data");
+      LBANN_ERROR("you claim the passed node was obtained from this data_store, but the data_id (", std::to_string(data_id), ") doesn't exist in m_data");
     }
     m_mutex.unlock();
     return;
@@ -519,7 +521,7 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
   if (is_local_cache()) {
     std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
     if (t3 == m_data.end()) {
-      LBANN_ERROR("(local cache) failed to find data_id: " + std::to_string(data_id) + " in m_data; m_data.size: " + std::to_string(m_data.size()));
+      LBANN_ERROR("(local cache) failed to find data_id: ", std::to_string(data_id), " in m_data; m_data.size: ", std::to_string(m_data.size()));
     }
     return t3->second;
   }
@@ -532,7 +534,7 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
     if (t3 != m_data.end()) {
       return t3->second["data"];
     }
-    LBANN_ERROR("failed to find data_id: " + std::to_string(data_id) + " in m_minibatch_data; m_minibatch_data.size: " + std::to_string(m_minibatch_data.size())+ " and also failed to find it in m_data; m_data.size: " + std::to_string(m_data.size()) + "; role: " + m_reader->get_role());
+    LBANN_ERROR("failed to find data_id: ", std::to_string(data_id), " in m_minibatch_data; m_minibatch_data.size: ", std::to_string(m_minibatch_data.size()), " and also failed to find it in m_data; m_data.size: ", std::to_string(m_data.size()), "; role: ", m_reader->get_role());
     if (m_output) {
       m_output << "failed to find data_id: " << data_id << " in m_minibatch_data; my m_minibatch_data indices: ";
       for (auto t : m_minibatch_data) {
@@ -620,25 +622,25 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
     const std::unordered_set<int> &indices = m_indices_to_send[p];
     for (auto index : indices) {
       if (m_data.find(index) == m_data.end()) {
-        LBANN_ERROR("failed to find data_id: " + std::to_string(index) + " to be sent to " + std::to_string(p) + " in m_data");
+        LBANN_ERROR("failed to find data_id: ", std::to_string(index), " to be sent to ", std::to_string(p), " in m_data");
       }
       const conduit::Node& n = m_data[index];
       const El::byte *s = reinterpret_cast<const El::byte*>(n.data_ptr());
       if(!n.is_contiguous()) {
-        LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a contiguous layout");
+        LBANN_ERROR("data_id: ", std::to_string(index), " does not have a contiguous layout");
       }
       if(n.data_ptr() == nullptr) {
-        LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a valid data pointer");
+        LBANN_ERROR("data_id: ", std::to_string(index), " does not have a valid data pointer");
       }
       if(n.contiguous_data_ptr() == nullptr) {
-        LBANN_ERROR("data_id: " + std::to_string(index) + " does not have a valid contiguous data pointer");
+        LBANN_ERROR("data_id: ", std::to_string(index), " does not have a valid contiguous data pointer");
       }
 
       size_t sz = m_compacted_sample_size;
 
       if (m_node_sizes_vary) {
         if (m_sample_sizes.find(index) == m_sample_sizes.end()) {
-          LBANN_ERROR("m_sample_sizes.find(index) == m_sample_sizes.end() for index: " + std::to_string(index) + "; m_sample_sizes.size: " + std::to_string(m_sample_sizes.size()));
+          LBANN_ERROR("m_sample_sizes.find(index) == m_sample_sizes.end() for index: ", std::to_string(index), "; m_sample_sizes.size: ", std::to_string(m_sample_sizes.size()));
         }
         sz = m_sample_sizes[index];
       }
@@ -653,7 +655,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
 
   // sanity checks
   if (ss != m_send_requests.size()) {
-    LBANN_ERROR("ss != m_send_requests.size; ss: " + std::to_string(ss) + " m_send_requests.size: " + std::to_string(m_send_requests.size()));
+    LBANN_ERROR("ss != m_send_requests.size; ss: ", std::to_string(ss), " m_send_requests.size: ", std::to_string(m_send_requests.size()));
   }
 
   // start recvs for incoming data
@@ -667,7 +669,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
       int sz = m_compacted_sample_size;
       if (m_node_sizes_vary) {
         if (m_sample_sizes.find(index) == m_sample_sizes.end()) {
-          LBANN_ERROR("m_sample_sizes.find(index) == m_sample_sizes.end() for index: " + std::to_string(index) + "; m_sample_sizes.size(): " + std::to_string(m_sample_sizes.size()) + " role: " + m_reader->get_role() + " for index: " + std::to_string(sanity) + " of " + std::to_string(indices.size()));
+          LBANN_ERROR("m_sample_sizes.find(index) == m_sample_sizes.end() for index: ", std::to_string(index), "; m_sample_sizes.size(): ", std::to_string(m_sample_sizes.size()), " role: ", m_reader->get_role(), " for index: ", std::to_string(sanity), " of ", std::to_string(indices.size()));
         }
         sz = m_sample_sizes[index];
       }
@@ -682,10 +684,10 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
 
   // sanity checks
   if (ss != m_recv_buffer.size()) {
-    LBANN_ERROR("ss != m_recv_buffer.size; ss: " + std::to_string(ss) + " m_recv_buffer.size: " + std::to_string(m_recv_buffer.size()));
+    LBANN_ERROR("ss != m_recv_buffer.size; ss: ", std::to_string(ss), " m_recv_buffer.size: ", std::to_string(m_recv_buffer.size()));
   }
   if (m_recv_requests.size() != m_recv_buffer.size()) {
-    LBANN_ERROR("m_recv_requests.size != m_recv_buffer.size; m_recv_requests: " + std::to_string(m_recv_requests.size()) + " m_recv_buffer.size: " + std::to_string(m_recv_buffer.size()));
+    LBANN_ERROR("m_recv_requests.size != m_recv_buffer.size; m_recv_requests: ", std::to_string(m_recv_requests.size()), " m_recv_buffer.size: ", std::to_string(m_recv_buffer.size()));
   }
 
   // wait for all msgs to complete
@@ -805,7 +807,7 @@ const conduit::Node & data_store_conduit::get_random_node(const std::string &fie
 
 conduit::Node & data_store_conduit::get_empty_node(int data_id) {
   if (m_data.find(data_id) != m_data.end()) {
-    LBANN_ERROR("we already have a node with data_id= " + std::to_string(data_id));
+    LBANN_ERROR("we already have a node with data_id= ", std::to_string(data_id));
   }
   return m_data[data_id];
 }
@@ -869,7 +871,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
         std::stringstream s3(line);
         s3 >> line >> a_mem >> units;
         if (units != "kB") {
-          LBANN_ERROR("units is " + units + " but we only know how to handle kB; please contact Dave Hysom");
+          LBANN_ERROR("units is ", units, " but we only know how to handle kB; please contact Dave Hysom");
         }
         break;
       }
@@ -889,7 +891,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
     // get list of conduit files that I own, and compute my num_samples
     std::ifstream istr(sample_list_file);
     if (!istr.good()) {
-      LBANN_ERROR("failed to open " + sample_list_file + " for reading");
+      LBANN_ERROR("failed to open ", sample_list_file, " for reading");
     }
 
     std::string base_dir;
@@ -934,7 +936,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
         try {
           hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read(base_dir + '/' + filename);
         } catch (conduit::Error const& e) {
-          LBANN_ERROR(" failed to open " + base_dir + '/' + filename + " for reading");
+          LBANN_ERROR(" failed to open ", base_dir, '/', filename, " for reading");
         }
         std::vector<std::string> sample_names;
         try {
@@ -948,7 +950,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
           try {
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, useme);
           } catch (conduit::Error const& e) {
-            LBANN_ERROR("failed to read success flag for " + key);
+            LBANN_ERROR("failed to read success flag for ", key);
           }
           if (useme.to_int64() == 1) {
             got_one = true;
@@ -956,7 +958,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
               key = "/" + t;
               conduit::relay::io::hdf5_read(hdf5_file_hnd, key, useme);
             } catch (conduit::Error const& e) {
-              LBANN_ERROR("failed to load JAG sample: " + key);
+              LBANN_ERROR("failed to load JAG sample: ", key);
             }
             break;
           }
@@ -1045,7 +1047,7 @@ void data_store_conduit::exchange_sample_sizes() {
       m_comm->broadcast<size_t>(k, other_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
       for (size_t i=0; i<other_sizes.size(); i += 2) {
         if (m_sample_sizes.find(other_sizes[i]) != m_sample_sizes.end()) {
-          LBANN_ERROR("duplicate data_id: " + std::to_string(other_sizes[i]));
+          LBANN_ERROR("duplicate data_id: ", std::to_string(other_sizes[i]));
         }
         m_sample_sizes[other_sizes[i]] = other_sizes[i+1];
       }
@@ -1080,7 +1082,7 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,size_t> &file_si
       const std::string fn = m_reader->get_file_dir() + '/' + image_list[(*m_shuffled_indices)[h]].first;
       std::ifstream in(fn.c_str());
       if (!in) {
-        LBANN_ERROR("failed to open " + fn + " for reading; file_dir: " + m_reader->get_file_dir() + "  fn: " + image_list[h].first + "; role: " + m_reader->get_role());
+        LBANN_ERROR("failed to open ", fn, " for reading; file_dir: ", m_reader->get_file_dir(), "  fn: ", image_list[h].first, "; role: ", m_reader->get_role());
       }
       in.seekg(0, std::ios::end);
       my_image_sizes.push_back((*m_shuffled_indices)[h]);
@@ -1124,7 +1126,7 @@ void data_store_conduit::compute_image_offsets(std::unordered_map<int,size_t> &s
   for (size_t p=0; p<indices.size(); p++) {
     for (auto idx : indices[p]) {
       if (sizes.find(idx) == sizes.end()) {
-        LBANN_ERROR("sizes.find(idx) == sizes.end() for idx: " + std::to_string(idx));
+        LBANN_ERROR("sizes.find(idx) == sizes.end() for idx: ", std::to_string(idx));
       }
       size_t sz = sizes[idx];
       m_image_offsets[idx] = offset;
@@ -1157,7 +1159,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
               << msg.str() << "\n";
   }
   if (m_mem_seg_length >= avail_mem) {
-    LBANN_ERROR("insufficient available memory:\n" + msg.str());
+    LBANN_ERROR("insufficient available memory:\n", msg.str());
   }
 
   //need to ensure name is unique across all data readers
@@ -1181,7 +1183,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
     }
     int v = ftruncate(shm_fd, size);
     if (v != 0) {
-      LBANN_ERROR("ftruncate failed for size: " + std::to_string(size));
+      LBANN_ERROR("ftruncate failed for size: ", std::to_string(size));
     }
     void *m = mmap(0, size, PROT_WRITE | PROT_READ, MAP_SHARED, shm_fd, 0);
     if (m == MAP_FAILED) {
@@ -1200,7 +1202,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
   if (node_id != 0) {
     shm_fd = shm_open(m_seg_name.c_str(), O_RDONLY, 0666);
     if (shm_fd == -1) {
-      LBANN_ERROR("shm_open failed for filename: " + m_seg_name);
+      LBANN_ERROR("shm_open failed for filename: ", m_seg_name);
     }
     void *m = mmap(0, size, PROT_READ, MAP_SHARED, shm_fd, 0);
     if (m == MAP_FAILED) {
@@ -1214,7 +1216,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
       LBANN_ERROR("fstat failed");
     }
     if (b.st_size != size) {
-      LBANN_ERROR("b.st_size= " + std::to_string(b.st_size) + " should be equal to " + std::to_string(size));
+      LBANN_ERROR("b.st_size= ", std::to_string(b.st_size), " should be equal to ", std::to_string(size));
     }
   }
   close(shm_fd);

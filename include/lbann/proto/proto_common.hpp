@@ -32,6 +32,7 @@
 // Forward declaration of protobuf classes
 namespace lbann_data {
 class LbannPB;
+class Trainer;
 }
 
 namespace lbann {

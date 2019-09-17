@@ -3,6 +3,7 @@ sys.path.insert(0, '../common_python')
 import tools
 import pytest, re, subprocess
 
+
 def pytest_addoption(parser):
     cluster = re.sub('[0-9]+', '', subprocess.check_output(
         'hostname'.split()).decode('utf-8').strip())
@@ -17,7 +18,11 @@ def pytest_addoption(parser):
     parser.addoption('--exes', action='store', default=default_exes,
                      help='--exes={compiler_name: path}')
     # For local testing only
-    parser.addoption('--exe', action='store', help='--exe=<hand-picked executable>')
+    parser.addoption('--data-reader-percent', action='store', default=1.0,
+                     help='--data-reader-percent=<percent of dataset to be used'
+                     )
+    parser.addoption('--exe', action='store',
+                     help='--exe=<hand-picked executable>')
 
 
 @pytest.fixture
@@ -33,6 +38,11 @@ def dirname(request):
 @pytest.fixture
 def exes(request):
     return request.config.getoption('--exes')
+
+
+@pytest.fixture
+def data_reader_percent(request):
+    return request.config.getoption('--data-reader-percent')
 
 
 @pytest.fixture

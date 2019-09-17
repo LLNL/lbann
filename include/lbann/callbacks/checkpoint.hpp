@@ -34,6 +34,14 @@
 namespace lbann {
 namespace callback {
 
+enum class callback_phase {
+  batch,
+  epoch,
+  validation,
+  inference,
+  invalid
+};
+
 /** @brief Checkpoint at given interval in given directory */
 class checkpoint : public callback_base {
  public:
@@ -71,12 +79,17 @@ class checkpoint : public callback_base {
   checkpoint& operator=(const checkpoint&) = default;
   checkpoint* copy() const override { return new checkpoint(*this); }
   void setup(model *m) override;
+  void on_train_begin(model *m) override;
   void on_epoch_end(model *m) override;
   void on_batch_end(model *m) override;
   void on_validation_end(model *m) override;
 
-  inline void set_checkpoint_dir(std::string dir){
+  inline void set_checkpoint_dir(const std::string& dir){
     m_checkpoint_dir= dir;
+  }
+
+  inline const std::string& get_checkpoint_dir(){
+    return m_checkpoint_dir;
   }
 
   inline void set_checkpoint_epochs(int epochs){
@@ -103,7 +116,14 @@ class checkpoint : public callback_base {
     m_ckpt_dist_steps = ckpt_dist_steps;
   }
 
-  bool need_checkpoint(model *m);
+  bool need_checkpoint(model *m, callback_phase phase);
+  std::string find_latest_checkpoint(model *m, std::string& latest_file, size_t& epoch, size_t& step, int& shared);
+  std::string find_latest_checkpoint(model *m, std::string& latest_file, execution_mode& mode, size_t &epoch, size_t& step, int& shared);
+  bool open_latest_checkpoint(model *m,
+                              const std::string& task_label,
+                              std::function<void(/*const */persist&)> reload_shared_ckpt,
+                              std::function<void(/*const */persist&)> reload_distributed_ckpt);
+  bool reload_model(model *m);
   bool restart(model *m);
   std::string name() const override { return "checkpoint"; }
  protected:
@@ -123,6 +143,7 @@ class checkpoint : public callback_base {
 
   template<size_t _max_dir_len>
   struct header_t {
+    execution_mode mode;
     int epoch;
     int step;
     int shared;
@@ -130,52 +151,54 @@ class checkpoint : public callback_base {
   };
 };
 
-static inline std::string get_last_shared_checkpoint_filename(model *m, std::string dir) {
+inline std::string get_last_shared_checkpoint_filename(model *m, const std::string& dir) {
   lbann_comm *comm = m->get_comm();
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << dir << "/";
-  ss << m->get_name().c_str() << ".";
+  ss << m->get_name().c_str() << ".trainer.";
   ss << comm->get_trainer_rank() << ".last.shared.checkpoint";
   return ss.str();
 }
 
-static inline std::string get_shared_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
+inline std::string get_shared_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
   lbann_comm *comm = m->get_comm();
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << dir << "/" << m->get_name().c_str();
-  ss << "." << comm->get_trainer_rank();
-  ss << ".shared.epoch." << epoch;
+  ss << ".trainer." << comm->get_trainer_rank();
+  ss << ".shared." << to_string(mode);
+  ss << ".epoch." << epoch;
   ss << ".step."<< step << "/";
   return ss.str();
 }
 
-static inline std::string get_last_distributed_checkpoint_filename(model *m, std::string dir) {
+inline std::string get_last_distributed_checkpoint_filename(model *m, const std::string& dir) {
   lbann_comm *comm = m->get_comm();
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << dir << "/";
-  ss << m->get_name().c_str() << ".";
+  ss << m->get_name().c_str() << ".trainer.";
   ss << comm->get_trainer_rank() << ".last.distributed.checkpoint";
   return ss.str();
 }
 
-static inline std::string get_distributed_checkpoint_dirname(model *m, std::string dir, int epoch, int step) {
+inline std::string get_distributed_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
   lbann_comm *comm = m->get_comm();
-  std::stringstream ss;
+  std::ostringstream ss;
   ss << dir << "/" << m->get_name().c_str();
-  ss << "." << comm->get_trainer_rank();
+  ss << ".trainer." << comm->get_trainer_rank();
   ss << ".rank." << comm->get_rank_in_trainer();
+  ss << ".distributed." << to_string(mode);
   ss << ".epoch." << epoch;
   ss << ".step."<< step << "/";
   return ss.str();
 }
 
 // Print last checkpoint to file, used to determine which checkpoint to load from.
-static inline bool write_latest(std::string filename, int epoch, int train) {
+inline bool write_latest(std::string filename, execution_mode mode, size_t epoch, size_t train) {
   // open the file for writing
   int fd = openwrite(filename.c_str());
   if (fd != -1) {
     char field[256];
-    sprintf(field, "epoch=%d step=%d\n", epoch, train);
+    sprintf(field, "mode=%s epoch=%ld step=%ld\n", to_string(mode).c_str(), epoch, train);
     write_string(fd, filename.c_str(), field, strlen(field));
     // close our file
     closewrite(fd, filename.c_str());
@@ -186,22 +209,26 @@ static inline bool write_latest(std::string filename, int epoch, int train) {
 /** \brief Reads the "latest" file and returns the epoch number and
  *        sample offset for most recent checkpoint
  */
-static inline bool read_latest(std::string filename, int *epochLast, int *trainLast) {
+inline bool read_latest(std::string filename, execution_mode *mode, size_t *epochLast, size_t *trainLast) {
   // assume we don't have a file, we'll return -1 in that case
   *epochLast = -1;
   *trainLast = -1;
+  *mode = execution_mode::invalid;
   // open the file for reading
   int fd = openread(filename.c_str());
   if (fd != -1) {
     // read epoch from file
     char field[256];
     read_string(fd, filename.c_str(), field, sizeof(field));
-    int ret = sscanf(field, "epoch=%d step=%d\n", epochLast, trainLast);
+    char modeStr[64];
+    int ret = sscanf(field, "mode=%s epoch=%ld step=%ld\n", modeStr, epochLast, trainLast);
+    *mode = exec_mode_from_string(modeStr);
     // close our file
     closeread(fd, filename.c_str());
     if(ret != 2) { return false; }
+    return true;
   }
-  return true;
+  return false;
 }
 
 // Builder function

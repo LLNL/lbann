@@ -214,7 +214,8 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
     //note: if testing, and test set is touched more than once, the following
     //      will through an exception TODO: relook later
-    if (priming_data_store() || m_model->get_execution_mode() == execution_mode::testing) {
+    const auto& c = static_cast<const execution_context&>(m_model->get_execution_context());
+    if (priming_data_store() || c.get_execution_mode() == execution_mode::testing) {
       m_data_store->set_conduit_node(data_id, node);
     }
   }
@@ -324,6 +325,10 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     LBANN_ERROR("failed to open " + m_filenames[my_file] + " for reading");
   }
   in.close();
+  m_num_samples = m_filenames.size(); 
+  if (is_master()) { 
+    std::cout << "num samples: " << m_num_samples << "\n";
+  } 
 
   int data_id = 0; //meaningless
   conduit::Node node;

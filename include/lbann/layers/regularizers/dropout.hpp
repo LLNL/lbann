@@ -180,7 +180,7 @@ protected:
     auto& output = get_activations();
 
     // Do nothing if dropout is disabled
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(input, output);
       return;
@@ -213,7 +213,7 @@ protected:
   void bp_compute_cpu() {
     const auto& gradient_wrt_output = get_prev_error_signals();
     auto& gradient_wrt_input = get_error_signals();
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(gradient_wrt_output, gradient_wrt_input);
     } else {
@@ -233,7 +233,7 @@ protected:
     auto& local_output = output.Matrix();
 
     // Do nothing if dropout is disabled or there is no local data
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(input, output);
       return;
@@ -272,7 +272,7 @@ protected:
     auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
 
     // Copy error signal if dropout is disabled
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(gradient_wrt_output, gradient_wrt_input);
     } else {
