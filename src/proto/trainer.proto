@@ -54,6 +54,6 @@ message Trainer {
   // -------------------------------
 
   // Algorithmic block size for Hydrogen
-  int64 block_size = 100;
+  int64 hydrogen_block_size = 100;
 
 }

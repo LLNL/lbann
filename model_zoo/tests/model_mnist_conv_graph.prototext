@@ -1,5 +1,5 @@
 trainer {
-  block_size: 257
+  hydrogen_block_size: 257
 }
 model {
   data_layout: "data_parallel"

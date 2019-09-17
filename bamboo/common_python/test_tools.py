@@ -22,7 +22,7 @@ d = dict(
     num_epochs=7,
     optimizer_name='adagrad',
     processes_per_model=10,
-    extra_lbann_flags={'block_size': 4, 'print_affinity': None},
+    extra_lbann_flags={'print_affinity': None},
     output_file_name='output_file',
     error_file_name='error_file',
     check_executable_existence=False)
@@ -30,31 +30,31 @@ d = dict(
 
 def test_command_catalyst():
     actual = tools.get_command(cluster='catalyst', **d)
-    expected = 'salloc --nodes=20 --partition=pdebug --time=30 srun --mpibind=off --time=30 --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --block_size=4 --print_affinity > output_file 2> error_file'
+    expected = 'salloc --nodes=20 --partition=pdebug --time=30 srun --mpibind=off --time=30 --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --print_affinity > output_file 2> error_file'
     assert actual == expected
 
 
 def test_command_corona():
     actual = tools.get_command(cluster='corona', **d)
-    expected = 'salloc --nodes=20 --partition=pdebug --time=30 srun --mpibind=off --time=30 --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --block_size=4 --print_affinity > output_file 2> error_file'
+    expected = 'salloc --nodes=20 --partition=pdebug --time=30 srun --mpibind=off --time=30 --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --print_affinity > output_file 2> error_file'
     assert actual == expected
 
 
 def test_command_lassen():
     actual = tools.get_command(cluster='lassen', **d)
-    expected = 'bsub -G guests -Is -q pdebug -nnodes 20 -W 30 jsrun -b "packed:10" -c 40 -g 4 -d packed -n 16 -r 1 -a 4 exe --data_filedir=gpfs1/filedir --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --block_size=4 --print_affinity > output_file 2> error_file'
+    expected = 'bsub -G guests -Is -q pdebug -nnodes 20 -W 30 jsrun -b "packed:10" -c 40 -g 4 -d packed -n 16 -r 1 -a 4 exe --data_filedir=gpfs1/filedir --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --print_affinity > output_file 2> error_file'
     assert actual == expected
 
 
 def test_command_pascal():
     actual = tools.get_command(cluster='pascal', **d)
-    expected = 'salloc --nodes=20 --partition=pbatch --time=30 srun --mpibind=off --time=30 --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --block_size=4 --print_affinity > output_file 2> error_file'
+    expected = 'salloc --nodes=20 --partition=pbatch --time=30 srun --mpibind=off --time=30 --ntasks=40 exe --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --print_affinity > output_file 2> error_file'
     assert actual == expected
 
 
 def test_command_ray():
     actual = tools.get_command(cluster='ray', **d)
-    expected = 'bsub -x -G guests -Is -n 40 -q pdebug -R "span[ptile=2]" -W 30 mpirun --timeout=30 -np 40 -N 2 exe --data_filedir=gscratchr/filedir --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --block_size=4 --print_affinity > output_file 2> error_file'
+    expected = 'bsub -x -G guests -Is -n 40 -q pdebug -R "span[ptile=2]" -W 30 mpirun --timeout=30 -np 40 -N 2 exe --data_filedir=gscratchr/filedir --reader=dir/model_zoo/data_readers/data_reader_mnist.prototext --data_reader_percent=0.100000 --exit_after_setup --mini_batch_size=15 --model=dir/model_zoo/models/folder/model_lenet.prototext --num_epochs=7 --optimizer=dir/model_zoo/optimizers/opt_adagrad.prototext --procs_per_model=10 --print_affinity > output_file 2> error_file'
     assert actual == expected
 
 
@@ -433,7 +433,7 @@ def test_bad_extra_lbann_flags_invalid_flag():
         actual = str(e)
         expected = ("Invalid Usage: extra_lbann_flags includes invalid"
                     " flag=invalid_flag. Flags must"
-                    " be in ['block_size', 'procs_per_trainer',"
+                    " be in ['hydrogen_block_size', 'procs_per_trainer',"
                     " 'num_parallel_readers', 'num_io_threads', 'serialize_io',"
                     " 'disable_background_io_activity', 'disable_cuda',"
                     " 'random_seed', 'objective_function', 'data_layout',"

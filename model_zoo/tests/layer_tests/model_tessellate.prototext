@@ -1,5 +1,4 @@
 trainer {
-  block_size: 256
 }
 model {
   mini_batch_size: 11

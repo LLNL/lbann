@@ -408,7 +408,7 @@ def get_command(cluster,
                 # General:
                 # 'mini_batch_size',
                 # 'num_epochs',
-                'block_size',
+                'hydrogen_block_size',
                 'procs_per_trainer',
                 'num_parallel_readers',
                 'num_io_threads',
