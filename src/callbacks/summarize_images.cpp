@@ -87,7 +87,8 @@ construct_strategy(google::protobuf::Message const& proto_msg) {
 
 
 // categorical_accuracy_strategy
-std::vector<El::Int> categorical_accuracy_strategy::get_image_indices(model const& m) {
+std::vector<std::pair<size_t, El::Int>>
+categorical_accuracy_strategy::get_image_indices(model const& m) const {
 
   static size_t img_counter = 0;
   static size_t epoch_counter = 0;
@@ -95,7 +96,7 @@ std::vector<El::Int> categorical_accuracy_strategy::get_image_indices(model cons
     epoch_counter++;
     img_counter = 0;
   }
-  std::vector<El::Int> img_indices;
+  std::vector<std::pair<size_t, El::Int>> img_indices;
 
   auto const& cat_accuracy_layer = get_layer_by_name(m, m_cat_accuracy_layer_name);
 
@@ -125,7 +126,7 @@ std::vector<El::Int> categorical_accuracy_strategy::get_image_indices(model cons
         break;
 
       if (meets_criteria(correctness_value)){
-        img_indices.push_back(sample);
+        img_indices.push_back(std::make_pair(sample, El::Int(0)));
         img_counter++;
       }
 
@@ -133,17 +134,20 @@ std::vector<El::Int> categorical_accuracy_strategy::get_image_indices(model cons
   }
 
   return img_indices;
-
 }
 
-bool categorical_accuracy_strategy::meets_criteria( const DataType& match ) {
-  if( (match && (m_match_type == MatchType::MATCH)) ||
-      (!match && (m_match_type == MatchType::NOMATCH)) ||
-      (m_match_type == MatchType::ALL))
+bool categorical_accuracy_strategy::meets_criteria(
+  const DataType& match) const noexcept {
+  switch (m_match_type)
+  {
+  case MatchType::MATCH:
+    return (match == 1);
+  case MatchType::NOMATCH:
+    return (match == 0);
+  case MatchType::ALL:
     return true;
-
+  }
   return false;
-
 }
 
 // Builder function
@@ -166,38 +170,84 @@ build_categorical_accuracy_strategy_from_pbuf(google::protobuf::Message const& m
 
 // End categorical_accuracy_strategy
 
-std::vector<El::Int> autoencoder_strategy::get_image_indices(model const& m) {
+namespace {
+template <typename T>
+std::ostream& operator<<(std::ostream& os, std::vector<T> const& v)
+{
+  os << "{";
+  for (auto const& x : v)
+    os << " " << x;
+  return os << " }";
+}
+}
 
-  auto const& input_layer = get_layer_by_name(m, m_input_layer_name);
+std::vector<std::pair<size_t, El::Int>>
+autoencoder_strategy::get_image_indices(model const& m) const {
 
-  std::vector<El::Int> img_indices;
+  // Find the input layer
+  auto const& input_layer = dynamic_cast<generic_input_layer const&>(
+    get_layer_by_name(m, m_input_layer_name));
+
+  // Grab the data reader
+  auto const& data_reader =
+    *(input_layer.get_data_reader(m.get_execution_mode()));
+
+  // Get the indices for this minibatch
+  bool const i_am_root = m.get_comm()->am_trainer_master();
+  auto const& exe_mode = m.get_execution_mode();
+  auto const& total_steps = m.get_num_iterations_per_epoch(exe_mode);
+  auto const& current_step = ((m.get_step(exe_mode) - 1) % total_steps) + 1;
+  bool const last_mb = (current_step == total_steps);
+  size_t const mb_size =
+    (last_mb
+     ? data_reader.get_global_mini_batch_size()
+     : data_reader.get_global_last_mini_batch_size());
+
+  // FIXME (trb 08/20/19): Based on my testing, the data reader will
+  // reshuffle its indices before the end-of-batch callbacks are
+  // called in the final epoch. This is the simplest hack around that,
+  // though not very efficient.
+  if (current_step == decltype(current_step){1}) {
+    auto const& tmp_inds = data_reader.get_shuffled_indices();
+    m_shuffled_indices[&m].assign(tmp_inds.cbegin(), tmp_inds.cend());
+  }
+  auto const& shuffled_indices = m_shuffled_indices[&m];
+
+  size_t const minibatch_start_index =
+    (current_step - 1) * data_reader.get_global_mini_batch_size();
+  size_t const minibatch_end_index =
+    std::min(minibatch_start_index + mb_size, shuffled_indices.size());
+
   auto* sample_indices =
-    const_cast<Layer&>(input_layer).get_sample_indices_per_mb();
+    const_cast<generic_input_layer&>(input_layer).get_sample_indices_per_mb();
   if (sample_indices == nullptr)
-    LBANN_ERROR("NULL SAMPLE INDICES");
+    LBANN_ERROR("Sample indices is NULL.");
 
-  for(El::Int ii = 0; ii < sample_indices->Height(); ii++){
-    if (ii >= sample_indices->Height())
-      LBANN_ERROR(
-          "col_index: ", ii, " is greater than Matrix height: ",
-          sample_indices->Height());
-
-    if (m_tracked_images.find(sample_indices->Get(ii,0)) != m_tracked_images.end()){
-      std::cout << "I found a tracked index! Idx = " << sample_indices->Get(ii,0)
-                << "\n";
-      img_indices.push_back(ii);
-    }
-    else if(m_tracked_images.size() < m_num_images){
-      m_tracked_images.insert(sample_indices->Get(ii,0));
-      std::cout << "Adding to tracked indices Idx = " << sample_indices->Get(ii,0)
-                << "\n";
-      img_indices.push_back(ii);
+  std::vector<std::pair<size_t, El::Int>> img_indices;
+  if (i_am_root) {
+    using index_type = typename std::decay<decltype(shuffled_indices)>::type::value_type;
+    if (shuffled_indices[minibatch_start_index] != index_type(sample_indices->Get(0,0))) {
+      LBANN_ERROR("KABOOM. Interval = [",
+                  minibatch_start_index, ", ", minibatch_end_index, "]");
     }
 
-    flush(std::cout);
+    for (size_t ii = 0; ii < mb_size; ++ii) {
+      auto const& sample_index = shuffled_indices[minibatch_start_index + ii];
+
+      if (m_tracked_images.find(sample_index) != m_tracked_images.end()){
+        //std::cout << "I found a tracked index! Idx = " << sample_index << "\n";
+        img_indices.push_back(std::make_pair(ii, sample_index));
+      }
+      else if(m_tracked_images.size() < m_num_images) {
+        m_tracked_images.insert(sample_index);
+        img_indices.push_back(std::make_pair(ii, sample_index));
+        //std::cout << "Adding to tracked indices Idx = " << sample_index << "\n";
+      }
+
+      flush(std::cout);
+    }
   }
   return img_indices;
-
 }
 
 // Builder function
@@ -215,14 +265,12 @@ build_autoencoder_strategy_from_pbuf(google::protobuf::Message const& msg) {
 summarize_images::summarize_images(std::shared_ptr<lbann_summary> const& summarizer,
                                    std::shared_ptr<image_output_strategy> const& strategy,
                                    std::string const& img_layer_name,
-                                   std::string const& input_layer_name,
                                    uint64_t epoch_interval,
                                    std::string const& img_format)
   : callback_base(/*batch interval=*/1),
     m_summarizer(summarizer),
     m_strategy(strategy),
     m_img_source_layer_name(img_layer_name),
-    m_input_layer_name(input_layer_name),
     m_epoch_interval(std::max(epoch_interval, uint64_t{1})),
     m_img_format(img_format)
 {
@@ -236,26 +284,19 @@ void summarize_images::on_batch_evaluate_end(model* m) {
   if (m->get_epoch() % m_epoch_interval != 0)
     return;
 
-  dump_images_to_summary(get_layer_by_name(*m, m_img_source_layer_name), *m);
+  if (m->get_execution_mode() == execution_mode::validation)
+    dump_images_to_summary(*m);
 
 // FIXME: Dump original image for Autoencoder Strategy
 //  if(m->get_epoch() > 1)
 //    dump_images_to_summary(*m_img_layer, m->get_step());
 }
 
-void summarize_images::dump_images_to_summary(Layer const& layer, model const& m) {
-  auto const epoch = m.get_epoch();
-  auto const step = m.get_step();
+void summarize_images::dump_images_to_summary(model const& m) const {
 
-  auto const& input_layer = get_layer_by_name(m, m_input_layer_name);
-  auto sample_indices = const_cast<Layer&>(input_layer).get_sample_indices_per_mb();
-  if (sample_indices == nullptr)
-    LBANN_ERROR("NULL SAMPLE INDICES");
+  auto img_indices = m_strategy->get_image_indices(m);
 
-  std::vector<El::Int> img_indices = m_strategy->get_image_indices(m);
-
-  static size_t img_number = 0;
-
+  auto const& layer = get_layer_by_name(m, m_img_source_layer_name);
   const AbsDistMat& layer_activations = layer.get_activations();
 
   CircMat<El::Device::CPU> all_images(
@@ -266,28 +307,30 @@ void summarize_images::dump_images_to_summary(Layer const& layer, model const& m
     auto const& local_images = all_images.LockedMatrix();
     auto dims = layer.get_output_dims();
 
-    for (const El::Int& col_index : img_indices) {
-      if (col_index >= local_images.Height())
+    for (const auto& img_id : img_indices) {
+      auto const& col_index = img_id.first;
+      auto const& sample_index = img_id.second;
+      if (col_index >= size_t(local_images.Width())) {
         LBANN_ERROR(
-            "col_index: ", col_index, " is greater than Matrix height: ",
-            local_images.Height());
-      auto sample_index = sample_indices->Get(col_index, 0);
-      auto image_tag =  get_tag(sample_index, epoch, img_number++);
+            "column index (", col_index, "( is greater than Matrix height (",
+            local_images.Height(), ")");
+      }
+      auto image_tag =  get_tag(sample_index, m.get_epoch());
       auto const local_image = local_images(El::ALL, El::IR(col_index));
 
-      this->m_summarizer->report_image(image_tag, m_img_format, local_image, dims, step);
+      this->m_summarizer->report_image(
+        image_tag, m_img_format, local_image, dims, m.get_step());
     }
   }
 }
 
-std::string summarize_images::get_tag(El::Int index, El::Int epoch, size_t img_number){
-  std::string image_tag;
-
-  image_tag = "epoch: " + std::to_string(epoch) +
-              "/ sample_index-" + std::to_string(index) +
-              "/ image number: " + std::to_string(img_number);
-
-  return image_tag;
+std::string summarize_images::get_tag(El::Int index, El::Int epoch) const {
+#ifdef SORT_BY_EPOCH
+  return build_string("epoch ", epoch,
+                      "/sample_index-", index);
+#else /* SORT_BY_INDEX */
+  return build_string("image id ", index, "/epoch ", epoch);
+#endif
 }
 
 Layer const& get_layer_by_name(model const& m,
@@ -314,7 +357,6 @@ build_summarize_images_callback_from_pbuf(
     summarizer,
     construct_strategy(params.selection_strategy()),
     params.image_source_layer_name(),
-    params.input_layer_name(),
     params.epoch_interval());
 }
 

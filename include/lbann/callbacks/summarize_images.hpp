@@ -43,7 +43,8 @@ namespace callback {
 class image_output_strategy {
 
 public:
-  virtual std::vector<El::Int> get_image_indices(model const&) = 0;
+  virtual std::vector<std::pair<size_t, El::Int>>
+  get_image_indices(model const&) const = 0;
   virtual ~image_output_strategy() = default;
 
 }; //class image_output_strategy
@@ -76,13 +77,14 @@ public:
   /** @brief Get vector containing indices of images to be dumped.
    *  @returns std::vector<int> Vector with indices of images to dump.
    */
-  std::vector<El::Int> get_image_indices(model const& m) final;
+  std::vector<std::pair<size_t, El::Int>>
+  get_image_indices(model const& m) const final;
 
 private:
    /** @brief Tests whether image should be dumped based on criteria
     *  @returns bool Value is true if matches criteria and false otherwise
     */
-  bool meets_criteria(const DataType& match);
+  bool meets_criteria(const DataType& match) const noexcept;
 
   /** @brief Name of categorical accuracy layer*/
   std::string const m_cat_accuracy_layer_name;
@@ -116,18 +118,22 @@ public:
   /** @brief Get vector containing indices of images to be dumped.
    *  @returns std::vector<int> Vector with indices of images to dump.
    */
-  std::vector<El::Int> get_image_indices(model const& m) final;
+  std::vector<std::pair<size_t, El::Int>>
+  get_image_indices(model const& m) const final;
 
 private:
-
-  /** @brief Sample indices of images to track */
-  std::unordered_set<El::Int> m_tracked_images;
 
   /** @brief Name of input layer */
   std::string m_input_layer_name;
 
   /** @brief Number of images to be tracked */
   size_t m_num_images;
+
+  /** @brief Sample indices of images to track */
+  mutable std::unordered_set<El::Int> m_tracked_images;
+
+  /** @brief A map from models to shuffled indices */
+  mutable std::unordered_map<model const*, std::vector<size_t>> m_shuffled_indices;
 
 }; // class Autoencoder : image_output_strategy
 
@@ -152,7 +158,6 @@ public:
   summarize_images(std::shared_ptr<lbann_summary> const& summarizer,
                    std::shared_ptr<image_output_strategy> const& strategy,
                    std::string const& img_source_layer_name,
-                   std::string const& input_layer_name,
                    uint64_t interval = 1,
                    std::string const& img_format = ".jpg");
 
@@ -168,10 +173,10 @@ public:
 private:
 
   /** @brief Add image to event file */
-  void dump_images_to_summary(Layer const& layer, model const& m);
+  void dump_images_to_summary(model const& m) const;
 
   /** @brief Construct tag for image */
-  std::string get_tag(El::Int index, El::Int epoch, size_t img_number = 0);
+  std::string get_tag(El::Int index, El::Int epoch) const;
 
 private:
 
@@ -183,7 +188,6 @@ private:
 
   /* @brief Names of layers */
   std::string m_img_source_layer_name;
-  std::string m_input_layer_name;
 
   /* @brief Interval for dumping images */
   uint64_t m_epoch_interval;
