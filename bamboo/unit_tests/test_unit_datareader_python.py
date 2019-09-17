@@ -2,6 +2,13 @@ import os
 import os.path
 import sys
 import numpy as np
+import pytest
+
+# Local files
+current_file = os.path.realpath(__file__)
+current_dir = os.path.dirname(current_file)
+sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
+import tools
 
 # ==============================================
 # Objects for Python data reader
@@ -29,6 +36,19 @@ def sample_dims():
 # ==============================================
 # Setup LBANN experiment
 # ==============================================
+
+def setup_experiment(lbann):
+    """Construct LBANN experiment.
+
+    Args:
+        lbann (module): Module for LBANN Python frontend
+
+    """
+    trainer = lbann.Trainer()
+    model = construct_model(lbann)
+    data_reader = construct_data_reader(lbann)
+    optimizer = lbann.NoOptimizer()
+    return trainer, model, data_reader, optimizer
 
 def construct_model(lbann):
     """Construct LBANN model.
@@ -79,9 +99,7 @@ def construct_data_reader(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    module_file = os.path.realpath(__file__)
-    module_name = os.path.splitext(os.path.basename(module_file))[0]
-    module_dir = os.path.dirname(module_file)
+    module_name = os.path.splitext(os.path.basename(current_file))[0]
 
     # Base data reader message
     message = lbann.reader_pb2.DataReader()
@@ -94,7 +112,7 @@ def construct_data_reader(lbann):
     data_reader.role = 'train'
     data_reader.percent_of_data_to_use = 1.0
     data_reader.python.module = module_name
-    data_reader.python.module_dir = module_dir
+    data_reader.python.module_dir = current_dir
     data_reader.python.sample_function = 'get_sample'
     data_reader.python.num_samples_function = 'num_samples'
     data_reader.python.sample_dims_function = 'sample_dims'
@@ -105,7 +123,7 @@ def construct_data_reader(lbann):
     data_reader.role = 'test'
     data_reader.percent_of_data_to_use = 1.0
     data_reader.python.module = module_name
-    data_reader.python.module_dir = module_dir
+    data_reader.python.module_dir = current_dir
     data_reader.python.sample_function = 'get_sample'
     data_reader.python.num_samples_function = 'num_samples'
     data_reader.python.sample_dims_function = 'sample_dims'
@@ -116,15 +134,12 @@ def construct_data_reader(lbann):
 # Setup PyTest
 # ==============================================
 
-import pytest
-current_file = os.path.realpath(__file__)
-bamboo_dir = os.path.dirname(os.path.dirname(current_file))
-sys.path.insert(0, os.path.join(bamboo_dir, 'common_python'))
-import tools
+# Generate test name based on file name
+_test_name = os.path.splitext(os.path.basename(current_file))[0]
 
-def skeleton_datareader_python(cluster, executables, dir_name, compiler_name):
-    tools.process_executable(
-       'skeleton_datareader_python', compiler_name, executables)
+# Primary test method
+def _test(cluster, executables, dir_name, compiler_name):
+    tools.process_executable(_test_name, compiler_name, executables)
 
     # Import LBANN Python frontend
     if compiler_name == 'exe':
@@ -154,10 +169,7 @@ def skeleton_datareader_python(cluster, executables, dir_name, compiler_name):
     import lbann.contrib.lc.launcher
 
     # Setup LBANN experiment
-    trainer = lbann.Trainer()
-    model = construct_model(lbann)
-    data_reader = construct_data_reader(lbann)
-    optimizer = lbann.NoOptimizer()
+    trainer, model, data_reader, optimizer = setup_experiment(lbann)
 
     # Run LBANN experiment
     kwargs = {
@@ -165,8 +177,8 @@ def skeleton_datareader_python(cluster, executables, dir_name, compiler_name):
         'nodes': 1,
         'partition': 'pbatch'
     }
-    experiment_dir = '{d}/bamboo/unit_tests/experiments/datareader_python_{c}'.format(
-        d=dir_name, c=compiler_name)
+    experiment_dir = '{d}/bamboo/unit_tests/experiments/{t}_{c}'.format(
+        d=dir_name, t=_test_name, c=compiler_name)
     error_file_name = '{e}/err.log'.format(
         e=experiment_dir, c=compiler_name)
     return_code = lbann.contrib.lc.launcher.run(
@@ -175,28 +187,25 @@ def skeleton_datareader_python(cluster, executables, dir_name, compiler_name):
         data_reader=data_reader,
         optimizer=optimizer,
         experiment_dir=experiment_dir,
-        job_name='lbann_test_unit_datareader_python',
+        job_name='lbann_{}'.format(_test_name),
         **kwargs)
     tools.assert_success(return_code, error_file_name)
 
-
-def test_unit_datareader_python_clang6(cluster, exes, dirname):
-    skeleton_datareader_python(cluster, exes, dirname, 'clang6')
-
-
-def test_unit_datareader_python_gcc7(cluster, exes, dirname):
-    skeleton_datareader_python(cluster, exes, dirname, 'gcc7')
-
-
-def test_unit_datareader_python_intel19(cluster, exes, dirname):
-    skeleton_datareader_python(cluster, exes, dirname, 'intel19')
-
-
-# Run with python3 -m pytest -s test_unit_datareader_python.py -k 'test_unit_datareader_python_exe' --exe=<executable>
-def test_unit_datareader_python_exe(cluster, dirname, exe):
+# Construct methods that will be detected by PyTest
+def _test_clang6(cluster, exes, dirname):
+    _test(cluster, exes, dirname, 'clang6')
+def _test_gcc7(cluster, exes, dirname):
+    _test(cluster, exes, dirname, 'gcc7')
+def _test_intel19(cluster, exes, dirname):
+    _test(cluster, exes, dirname, 'intel19')
+def _test_exe(cluster, dirname, exe):
     if exe is None:
-        e = 'test_unit_datareader_python_exe: Non-local testing'
+        e = 'test_{}_exe: Non-local testing'.format(_test_name)
         print('Skip - ' + e)
         pytest.skip(e)
     exes = {'exe': exe}
-    skeleton_datareader_python(cluster, exes, dirname, 'exe')
+    _test(cluster, exes, dirname, 'exe')
+globals()['{}_clang6'.format(_test_name)] = _test_clang6
+globals()['{}_gcc7'.format(_test_name)] = _test_gcc7
+globals()['{}_intel19'.format(_test_name)] = _test_intel19
+globals()['{}_exe'.format(_test_name)] = _test_exe
