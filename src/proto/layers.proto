@@ -175,6 +175,10 @@ message Layer {
     ChannelwiseMean channelwise_mean = 602;
     MiniBatchIndex mini_batch_index = 603;
     MiniBatchSize mini_batch_size = 604;
+    Argmax argmax = 605;
+    Argmin argmin = 606;
+    OneHot one_hot = 607;
+
   }
 
   ///////////////////////
@@ -527,6 +531,7 @@ message Layer {
   //////////////////////////
   // Miscellaneous layers //
   //////////////////////////
+
   message Covariance {
     bool biased = 1; //Whether to use a biased covariance estimate
   }
@@ -536,6 +541,30 @@ message Layer {
   message ChannelwiseMean {}
   message MiniBatchIndex {}
   message MiniBatchSize {}
+
+  // Get index of maximum-value tensor entry
+  //
+  // Expects a 1-D input tensor. If multiple entries have the same
+  // maximum value, outputs the index of the first one.
+  message Argmax {}
+
+  // Get index of minimum-value tensor entry
+  //
+  // Expects a 1-D input tensor. If multiple entries have the same
+  // minimum value, outputs the index of the first one.
+  message Argmin {}
+
+  // Convert index to a one-hot vector
+  //
+  // Expects a scalar input tensor and outputs a 1-D output tensor.
+  // The input is interpreted as an index, and output entries are one
+  // if they correspond to that index and zero otherwise. If the input
+  // is outside [0,size), then the output is all zeros.
+  message OneHot {
+    // Size of one-hot vector
+    int64 size = 1;
+  }
+
 }// message Layer
 
 //note: I'd like to put this enum inside of Layer, but if I do the enum values
