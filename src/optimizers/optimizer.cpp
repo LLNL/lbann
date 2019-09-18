@@ -44,12 +44,8 @@ std::string to_string(optimizer_gradient_status status) {
   }
 }
 
-optimizer::optimizer(lbann_comm* comm, DataType learning_rate)
-  : m_comm(comm), m_learning_rate(learning_rate) {
-  if (m_comm == nullptr) {
-    LBANN_ERROR("got null pointer for lbann_comm");
-  }
-}
+optimizer::optimizer(DataType learning_rate)
+  : m_comm(nullptr), m_learning_rate(learning_rate) {}
 
 optimizer::optimizer(const optimizer& other)
   : m_comm(other.m_comm),
@@ -266,6 +262,7 @@ void optimizer::remove_gradient_source(const void* source) {
 }
 
 void optimizer::setup(weights* w) {
+  m_comm = &w->get_comm();
   clear_gradient();
 
   // Set weights being optimized

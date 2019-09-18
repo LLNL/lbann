@@ -55,8 +55,7 @@ public:
    *  @param eps                    Small factor to avoid division by
    *                                zero.
    */
-  hypergradient_adam(lbann_comm *comm,
-                     DataType init_learning_rate = 1e-3,
+  hypergradient_adam(DataType init_learning_rate = 1e-3,
                      DataType hyper_learning_rate = 1e-7,
                      DataType beta1 = 0.9,
                      DataType beta2 = 0.99,
@@ -163,7 +162,7 @@ private:
 
 std::unique_ptr<optimizer>
 build_hypergradient_adam_optimizer_from_pbuf(
-  google::protobuf::Message const&, lbann_comm*);
+  google::protobuf::Message const&);
 
 } // namespace lbann
 
