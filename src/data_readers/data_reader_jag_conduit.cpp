@@ -881,28 +881,30 @@ void data_reader_jag_conduit::preload_data_store() {
   }
 
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
     try {
       work.reset();
-      m_sample_list.open_samples_file_handle(idx, true);
-      load_conduit_node(idx, key, work);
-      conduit::Node & node = m_data_store->get_empty_node(idx);
-      const std::string padded_idx = '/' + LBANN_DATA_ID_STR(idx);
+      m_sample_list.open_samples_file_handle(index, true);
+      load_conduit_node(index, key, work);
+      conduit::Node & node = m_data_store->get_empty_node(index);
+      const std::string padded_idx = '/' + LBANN_DATA_ID_STR(index);
       node[padded_idx] = work;
 
-      m_data_store->set_preloaded_conduit_node(idx, node);
-    }catch (conduit::Error const& e) {
-      LBANN_ERROR(" :: trying to load the node " + std::to_string(idx) + " with key " + key + " and got " + e.what());
+      m_data_store->set_preloaded_conduit_node(index, node);
+    } catch (conduit::Error const& e) {
+      LBANN_ERROR(" :: trying to load the node " + std::to_string(index) + " with key " + key + " and got " + e.what());
     }
   }
   /// Once all of the data has been preloaded, close all of the file handles
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
-    m_sample_list.close_if_done_samples_file_handle(idx);
+    m_sample_list.close_if_done_samples_file_handle(index);
   }
   if (get_comm()->am_world_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {

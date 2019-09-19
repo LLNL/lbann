@@ -68,9 +68,8 @@ class data_store_conduit {
   //! dtor
   ~data_store_conduit();
 
-  /// normally not needed, since reader is passed to ctor. But may
-  /// be useful in some cases
-  void set_data_reader_ptr(generic_data_reader *reader) { m_reader = reader; }
+  /// required when the copy ctor is used to construct a validation set
+  void set_data_reader_ptr(generic_data_reader *reader);
 
   //! convenience handle
   void set_shuffled_indices(const std::vector<int> *indices);
@@ -124,22 +123,9 @@ class data_store_conduit {
   /// with the index
   int get_index_owner(int idx);
 
-  /// for use during development and debugging
-  void set_role(const std::string role);
-
   bool is_local_cache() const { return m_is_local_cache; }
 
-  void exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
-    if (is_local_cache()) {
-      return;
-    }
-    if (m_super_node) {
-      exchange_data_by_super_node(current_pos, mb_size);
-    } else {
-      exchange_data_by_sample(current_pos, mb_size);
-    }
-    ++m_n;
-  }
+  void exchange_mini_batch_data(size_t current_pos, size_t mb_size); 
 
   void set_super_node_mode() {
     m_super_node = true;
@@ -152,7 +138,7 @@ class data_store_conduit {
   /// only used for debugging; pass --debug on cmd line to get
   /// each data store to print to a different file. This is made
   /// public so data readers can also print to the file
-  mutable std::ofstream m_output;
+  mutable std::ofstream *m_output = nullptr;
 
   /// for use during development and debugging
   int get_data_size() { return m_data.size(); }
@@ -160,10 +146,11 @@ class data_store_conduit {
   /// made public for debugging during development
   void copy_members(const data_store_conduit& rhs, const std::vector<int>& = std::vector<int>());
 
+  void flush_debug_file(); 
+
 protected :
 
-  /// records the number of times exchange_mini_batch_data has been called
-  int m_n = 0;
+  int m_cur_epoch = 0;
 
   bool m_is_setup = false;
 
@@ -250,7 +237,7 @@ protected :
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
   /// fills in m_owner, which maps index -> owning processor
-  void build_owner_map(int mini_batch_size);
+  void exchange_owner_maps();
 
   /// for use when conduit Nodes have non-uniform size, e.g, imagenet,
   /// and when running in non-super_node mode
@@ -310,6 +297,8 @@ protected :
   char *m_mem_seg = 0;
   size_t m_mem_seg_length = 0;
   std::string m_seg_name;
+
+  std::string m_debug_filename;
 };
 
 }  // namespace lbann

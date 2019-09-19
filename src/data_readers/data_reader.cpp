@@ -719,12 +719,8 @@ void generic_data_reader::instantiate_data_store(const std::vector<int>& local_l
       std::cout << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
     }
     if (local_list_sizes.size() != 0) {
-      if (is_master()) std::cout << "XX local_list_sizes.size() != 0\n";
       m_data_store->build_preloaded_owner_map(local_list_sizes);
     }
-else {
-      if (is_master()) std::cout << "XX local_list_sizes.size() == 0\n";
-}
     preload_data_store();
     if(is_master()) {
      std::cout << "preload complete" << std::endl;
@@ -745,17 +741,18 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
 }
 
 bool generic_data_reader::data_store_active() const {
-  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_preloaded()) {
     return true;
   }
+
+  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
   return (m_data_store != nullptr
           && (((c.get_execution_mode() == execution_mode::training)
                && c.get_epoch() > 0)
               || ((c.get_execution_mode() == execution_mode::validation)
-                  && c.get_epoch() > 1)));
+                  && c.get_epoch() > 0)));
 }
 
 bool generic_data_reader::priming_data_store() const {
@@ -763,13 +760,14 @@ bool generic_data_reader::priming_data_store() const {
   if (m_data_store != nullptr && m_data_store->is_preloaded()) {
     return false;
   }
+
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
   return (m_data_store != nullptr
           && (((c.get_execution_mode() == execution_mode::training)
                && c.get_epoch() == 0)
               || ((c.get_execution_mode() == execution_mode::validation)
-                  && c.get_epoch() == 1)
+                  && c.get_epoch() == 0)
               || m_data_store->is_explicitly_loading()));
 }
 
@@ -804,11 +802,8 @@ void generic_data_reader::set_role(std::string role) {
       && get_role() == "train") {
     m_jag_partitioned = true;
     if (is_master()) {
-      std::cerr << "USING JAG DATA PARTITIONING\n";
+      std::cout << "USING JAG DATA PARTITIONING\n";
     }
-  }
-  if (m_data_store != nullptr) {
-    m_data_store->set_role(role);
   }
 }
 

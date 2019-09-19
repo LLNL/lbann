@@ -61,7 +61,6 @@ bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   El::Matrix<uint8_t> image;
   std::vector<size_t> dims;
   const std::string image_path = get_file_dir() + m_image_list[data_id].first;
-
   if (m_data_store != nullptr) {
     bool have_node = true;
     conduit::Node node;

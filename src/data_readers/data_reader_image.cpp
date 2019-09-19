@@ -212,11 +212,12 @@ void image_data_reader::preload_data_store() {
   if (is_master()) std::cerr << "Starting image_data_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
   int rank = m_comm->get_rank_in_trainer();
   for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
-    if (m_data_store->get_index_owner(data_id) != rank) {
+    int index = m_shuffled_indices[data_id];
+    if (m_data_store->get_index_owner(index) != rank) {
       continue;
     }
-    load_conduit_node_from_file(data_id, node);
-    m_data_store->set_preloaded_conduit_node(data_id, node);
+    load_conduit_node_from_file(index, node);
+    m_data_store->set_preloaded_conduit_node(index, node);
   }
 
   if (is_master()) {
