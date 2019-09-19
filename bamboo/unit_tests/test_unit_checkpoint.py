@@ -6,7 +6,7 @@ import os
 
 
 def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
-                                     compiler_name):
+                                     compiler_name, data_reader_percent=1.0):
     if compiler_name not in executables:
         e = 'skeleton_checkpoint_lenet_shared: default_exes[%s] does not exist' % compiler_name
         print('Skip - ' + e)
@@ -22,7 +22,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=1.0,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=no_ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -37,7 +37,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=1.0,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=1, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -51,14 +51,15 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=1.0,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
     return_code_ckpt_2 = os.system(command)
     tools.assert_success(return_code_ckpt_2, error_file_name)
 
-    diff_test = os.system('diff -rq {ckpt} {no_ckpt}'.format(ckpt=ckpt_dir, no_ckpt=no_ckpt_dir))
+    diff_test = os.system('diff -rq {ckpt} {no_ckpt}'.format(
+        ckpt=ckpt_dir, no_ckpt=no_ckpt_dir))
     path_prefix = '{d}/bamboo/unit_tests/'.format(d=dir_name)
     if diff_test !=0:
         raise AssertionError('diff_test={dt}\nCompare {ncd} and {cd} in {p}'.format(
@@ -66,7 +67,8 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
 
 
 def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
-                                          compiler_name):
+                                          compiler_name,
+                                          data_reader_percent=1.0):
     if compiler_name not in executables:
         e = 'skeleton_checkpoint_lenet_distributed: default_exes[%s] does not exist' % compiler_name
         print('Skip - ' + e)
@@ -82,7 +84,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=1.0,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=no_ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_dist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -97,7 +99,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=1.0,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_dist_ckpt', num_epochs=1, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
@@ -111,14 +113,15 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=1.0,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_dist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name)
     return_code_ckpt_2 = os.system(command)
     tools.assert_success(return_code_ckpt_2, error_file_name)
 
-    diff_test = os.system('diff -rq {ckpt} {no_ckpt}'.format(ckpt=ckpt_dir, no_ckpt=no_ckpt_dir))
+    diff_test = os.system('diff -rq {ckpt} {no_ckpt}'.format(
+        ckpt=ckpt_dir, no_ckpt=no_ckpt_dir))
     path_prefix = '{d}/bamboo/unit_tests'.format(d=dir_name)
     if diff_test != 0:
         raise AssertionError(
@@ -151,20 +154,20 @@ def test_unit_checkpoint_lenet_distributed_intel19(cluster, exes, dirname):
 
 
 # Run with python3 -m pytest -s test_unit_checkpoint.py -k 'test_unit_checkpoint_lenet_shared_exe' --exe=<executable>
-def test_unit_checkpoint_lenet_shared_exe(cluster, dirname, exe):
+def test_unit_checkpoint_lenet_shared_exe(cluster, dirname, exe, data_reader_percent):
     if exe is None:
         e = 'test_unit_checkpoint_lenet_exe: Non-local testing'
         print('Skip - ' + e)
         pytest.skip(e)
     exes = {'exe': exe}
-    skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'exe')
+    skeleton_checkpoint_lenet_shared(cluster, exes, dirname, 'exe', data_reader_percent)
 
 
 # Run with python3 -m pytest -s test_unit_checkpoint.py -k 'test_unit_checkpoint_lenet_distributed_exe' --exe=<executable>
-def test_unit_checkpoint_lenet_distributed_exe(cluster, dirname, exe):
+def test_unit_checkpoint_lenet_distributed_exe(cluster, dirname, exe, data_reader_percent):
     if exe is None:
         e = 'test_unit_checkpoint_lenet_exe: Non-local testing'
         print('Skip - ' + e)
         pytest.skip(e)
     exes = {'exe': exe}
-    skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'exe')
+    skeleton_checkpoint_lenet_distributed(cluster, exes, dirname, 'exe', data_reader_percent)

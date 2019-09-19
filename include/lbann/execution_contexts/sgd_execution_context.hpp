@@ -31,7 +31,8 @@
 #include <cereal/types/base_class.hpp>
 namespace lbann {
 
-struct sgd_termination_criteria : public termination_criteria {
+class sgd_termination_criteria : public termination_criteria {
+public:
   size_t num_epochs;
 };
 

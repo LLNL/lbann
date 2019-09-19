@@ -32,13 +32,12 @@
 
 namespace lbann {
 
-hypergradient_adam::hypergradient_adam(lbann_comm *comm,
-                                       DataType init_learning_rate,
+hypergradient_adam::hypergradient_adam(DataType init_learning_rate,
                                        DataType hyper_learning_rate,
                                        DataType beta1,
                                        DataType beta2,
                                        DataType eps)
-  : optimizer(comm, init_learning_rate),
+  : optimizer(init_learning_rate),
     m_hyper_learning_rate(hyper_learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),
@@ -222,11 +221,10 @@ bool hypergradient_adam::load_from_checkpoint_distributed(persist& p, std::strin
 
 std::unique_ptr<optimizer>
 build_hypergradient_adam_optimizer_from_pbuf(
-  google::protobuf::Message const& msg, lbann_comm* comm) {
+  google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::HypergradientAdam const&>(msg);
-  return make_unique<hypergradient_adam>(comm,
-                                         params.init_learning_rate(),
+  return make_unique<hypergradient_adam>(params.init_learning_rate(),
                                          params.hyper_learning_rate(),
                                          params.beta1(),
                                          params.beta2(),

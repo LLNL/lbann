@@ -61,6 +61,9 @@
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
 #include "lbann/layers/misc/variance.hpp"
+#include "lbann/layers/misc/argmax.hpp"
+#include "lbann/layers/misc/argmin.hpp"
+#include "lbann/layers/misc/one_hot.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -707,6 +710,31 @@ std::unique_ptr<Layer> construct_layer(
   }
   CONSTRUCT_LAYER(mini_batch_index);
   CONSTRUCT_LAYER(mini_batch_size);
+  if (proto_layer.has_argmax()) {
+    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+      return lbann::make_unique<argmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+    } else {
+      LBANN_ERROR("argmax layer is only supported with "
+                  "a data-parallel layout and on CPU");
+    }
+  }
+  if (proto_layer.has_argmin()) {
+    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+      return lbann::make_unique<argmin_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+    } else {
+      LBANN_ERROR("argmin layer is only supported with "
+                  "a data-parallel layout and on CPU");
+    }
+  }
+  if (proto_layer.has_one_hot()) {
+    if (Layout == data_layout::DATA_PARALLEL) {
+      const auto& params = proto_layer.one_hot();
+      return lbann::make_unique<one_hot_layer<data_layout::DATA_PARALLEL, Device>>(comm, params.size());
+    } else {
+      LBANN_ERROR("one-hot layer is only supported with "
+                  "a data-parallel layout");
+    }
+  }
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();

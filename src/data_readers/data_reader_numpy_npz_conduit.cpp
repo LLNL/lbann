@@ -132,6 +132,12 @@ void numpy_npz_conduit_reader::load() {
 }
 
 void numpy_npz_conduit_reader::preload_data_store() {
+  size_t count = get_absolute_sample_count(); 
+  double use_percent = get_use_percent();
+  if (count != 0 || use_percent != 1) {
+    LBANN_ERROR("numpy_npz_conduit_reader currently assumes you are using 100% of the data set; you specified get_absolute_sample_count() = ", count, " and get_use_percent() = ", use_percent, "; please ask Dave Hysom to modify the code, if you want to use less than 100%");
+  }
+
   double tm1 = get_time();
   m_data_store->set_preload();
   int rank = m_comm->get_rank_in_trainer();
@@ -325,6 +331,10 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     LBANN_ERROR("failed to open " + m_filenames[my_file] + " for reading");
   }
   in.close();
+  m_num_samples = m_filenames.size(); 
+  if (is_master()) { 
+    std::cout << "num samples: " << m_num_samples << "\n";
+  } 
 
   int data_id = 0; //meaningless
   conduit::Node node;
