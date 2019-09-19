@@ -86,6 +86,16 @@ trainer& trainer::operator=(const trainer& other) {
 }
 
 trainer::~trainer() {
+
+  // Synchronize the I/O thread pool
+  // Note: The thread pool may still be running asynchronously if the
+  // trainer is destroyed in the middle of an epoch. The thread pool
+  // needs to interact with data readers, etc., so it needs to be
+  // synchronized before any of them are destroyed.
+  if (m_io_thread_pool != nullptr) {
+    m_io_thread_pool->reap_threads();
+  }
+
 }
 
 ////////////////////////////////////////////////////////////
