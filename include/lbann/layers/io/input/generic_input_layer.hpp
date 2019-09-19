@@ -93,6 +93,16 @@ class generic_input_layer : public io_layer {
   }
 
   ~generic_input_layer() override {
+
+    // Synchronize the I/O thread pool
+    // Note: The thread pool may still be running asynchronously if the
+    // trainer is destroyed in the middle of an epoch. The thread pool
+    // needs to interact with data readers, etc., so it needs to be
+    // synchronized before any of them are destroyed.
+    if (this->m_model != nullptr) {
+      this->m_model->get_execution_context().get_io_thread_pool().reap_threads();
+    }
+
     for (auto& io_buffer : m_io_buffers) {
       delete io_buffer;
     }
