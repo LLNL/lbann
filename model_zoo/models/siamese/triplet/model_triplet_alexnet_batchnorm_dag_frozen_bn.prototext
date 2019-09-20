@@ -1610,8 +1610,8 @@ model {
     name: "fc9"
     children: "prob"
     data_layout: "data_parallel"
+    hint_layer: "label"
     fully_connected {
-      num_neurons_is_num_labels: true
       has_bias: false
     }
     weights: "fc9_linearity fc9_bias"
