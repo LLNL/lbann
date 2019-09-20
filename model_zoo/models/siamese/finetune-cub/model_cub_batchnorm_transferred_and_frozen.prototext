@@ -1032,10 +1032,10 @@ model {
     name: "fc8_new"
     children: "prob_new"
     data_layout: "data_parallel"
+    # The number of outputs specific to the dataset used.
+    # E.g., 200 for CUB, and 431 for CompCars.
+    hint_layer: "label_new"
     fully_connected {
-      # The number of outputs specific to the dataset used.
-      # E.g., 200 for CUB, and 431 for CompCars.
-      num_neurons_is_num_labels: true
       has_bias: false
     }
     weights: "fc8_new_linearity fc8_new_bias"

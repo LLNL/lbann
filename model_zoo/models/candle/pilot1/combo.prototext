@@ -91,7 +91,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -122,7 +121,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -153,7 +151,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -406,7 +403,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -437,7 +433,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -468,7 +463,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1000
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }
@@ -499,7 +493,6 @@ model {
     data_layout: "model_parallel"
     fully_connected {
       num_neurons: 1
-      weight_initialization: "he_normal"
       has_bias: true
     }
   }

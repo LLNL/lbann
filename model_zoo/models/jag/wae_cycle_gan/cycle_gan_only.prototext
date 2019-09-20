@@ -189,8 +189,6 @@ model {
   layer {
     fully_connected {
       #num_neurons: 2500
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 1 ]
       #replace image_dim with latent_dim
       #num_neurons: 20
       has_bias: true
@@ -199,6 +197,7 @@ model {
     data_layout: "data_parallel"
     weights: "gen1fc4linearity gen1fc4bias"
     parents: "gen1leaky_relu3"
+    hint_layer: "image_data_dummy"
   }
   #concat latenty sample (image_data_dummy) and param
   layer {
@@ -479,14 +478,13 @@ model {
   layer {
     fully_connected {
       #num_neurons: 11
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4"
     data_layout: "data_parallel"
     weights: "gen2fc4linearity gen2fc4bias"
     parents: "gen2leaky_relu3"
+    hint_layer: "param_data_id"
   }
   layer {
     name: "concat_param_n_img"
@@ -967,14 +965,13 @@ model {
   layer {
     fully_connected {
       #num_neurons: 11
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_cyclic"
     data_layout: "data_parallel"
     weights: "gen2fc4linearity gen2fc4bias"
     parents: "gen2leaky_relu3_cyclic"
+    hint_layer: "param_data_id"
   }
   layer {
     name: "L_cyc_x"
