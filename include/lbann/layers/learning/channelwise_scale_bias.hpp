@@ -48,7 +48,7 @@ namespace lbann {
  *  The scale and bias vectors are fused into a single weights tensor
  *  to reduce the number of gradient allreduces during backprop. In
  *  particular, the weights tensor is a
- *  @f$ \text{num_channels} \times 2 @f$ matrix, where the first
+ *  @f$ \text{num\_channels} \times 2 @f$ matrix, where the first
  *  column correspond to scale terms and the second column to bias
  *  terms.
  */
