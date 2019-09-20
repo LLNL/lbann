@@ -24,6 +24,8 @@ def pytest_addoption(parser):
     parser.addoption('--weekly', action='store_true', default=False,
                      help='--weekly specifies that the test should ONLY be run weekly, not nightly. Default False')
     # For local testing only
+    parser.addoption('--data-reader-percent', action='store', default=None,
+                     help='--data-reader-percent=<percent of dataset to be used>. Default None. Note that 1.0 is 100%.')
     parser.addoption('--exe', action='store', help='--exe=<hand-picked executable>')
 
 
@@ -55,6 +57,11 @@ def run(request):
 @pytest.fixture
 def weekly(request):
     return request.config.getoption('--weekly')
+
+
+@pytest.fixture
+def data_reader_percent(request):
+    return request.config.getoption('--data-reader-percent')
 
 
 @pytest.fixture
