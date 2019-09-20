@@ -9,6 +9,7 @@ lbann_rst_headers = {
     'callbacks' : 'Callback Interface',
     'data_readers' : 'Data Readers Interface',
     'data_store' : 'Data Store Interface',
+    'execution_contexts' : 'Execution Context Interface',
     'layers' : 'Layer Interface',
     'layers/activations' : 'Activation Layers',
     'layers/image' : 'Image Layers',
@@ -26,6 +27,9 @@ lbann_rst_headers = {
     'objective_functions/weight_regularization' : 'Objective Functions for Weight Regularization',
     'optimizers' : 'Optimizer Interface',
     'proto' : 'Protobuf and Front-End Utilities',
+    'trainers' : 'Trainer Interface',
+    'training_algorithms' : 'Training Algorithm Interface',
+    'transforms' : 'Transform Interface',
     'utils' : 'General Utilities',
     'utils/threads' : 'Multithreading Utilities',
     'weights' : 'Weights Interface'
