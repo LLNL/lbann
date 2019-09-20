@@ -251,6 +251,7 @@ void weights::set_matrix_distribution(El::DistData dist) {
 
 void weights::set_comm(lbann_comm& comm) {
   m_comm = &comm;
+  setup_default_matrix_distribution();
 }
 
 void weights::setup_default_matrix_distribution() {

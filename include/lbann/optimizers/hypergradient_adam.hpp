@@ -70,7 +70,7 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(/*cereal::base_class<optimizer>( this ),*/
+    ar(cereal::base_class<optimizer>( this ),
        CEREAL_NVP(m_hyper_learning_rate),
        CEREAL_NVP(m_beta1),
        CEREAL_NVP(m_beta2),

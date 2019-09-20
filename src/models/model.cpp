@@ -54,9 +54,6 @@
 
 namespace lbann {
 
-CEREAL_REGISTER_DYNAMIC_INIT(optimizer);
-CEREAL_REGISTER_DYNAMIC_INIT(sgd);
-
 // =============================================
 // Life cycle functions
 // =============================================
@@ -1275,6 +1272,10 @@ bool model::save_to_checkpoint_shared(persist& p) {
     p.write_uint32(persist_type::model, "persist_callback_type",      (uint32_t) p.get_cb_type());
   }
 
+  if (m_comm->am_trainer_master()) {
+    write_cereal_archive<model>(*this, p, persist_type::model, ".xml");
+  }
+
   for (auto&& w : m_weights) {
     w->save_to_checkpoint_shared(p);
   }
@@ -1300,6 +1301,9 @@ bool model::load_from_checkpoint_shared(persist& p) {
     p.read_uint64(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
     p.read_uint32(persist_type::model, "persist_callback_type",     &header.callback_type);
   }
+
+  load_from_shared_cereal_archive<model>(*this, p, persist_type::model, *get_comm(), ".xml");
+
   load_rng_from_checkpoint(p, m_comm);
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0

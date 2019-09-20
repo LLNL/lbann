@@ -63,12 +63,22 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(/*cereal::base_class<optimizer>( this ),*/
+    ar(cereal::base_class<optimizer>( this ),
        CEREAL_NVP(m_beta1),
        CEREAL_NVP(m_beta2),
        CEREAL_NVP(m_eps),
        CEREAL_NVP(m_current_beta1),
        CEREAL_NVP(m_current_beta2));
+  }
+
+  template <class Archive>
+  static void load_and_construct( Archive & ar, cereal::construct<adam> & construct ) {
+    DataType learning_rate;
+    DataType beta1;
+    DataType beta2;
+    DataType eps;
+    ar(learning_rate, beta1, beta2, eps);
+    construct(learning_rate, beta1, beta2, eps);
   }
 
   /** @name Descriptions */
@@ -225,5 +235,7 @@ build_adam_optimizer_from_pbuf(
   google::protobuf::Message const&);
 
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE(lbann::adam)
 
 #endif // LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED

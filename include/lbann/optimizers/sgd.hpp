@@ -63,6 +63,15 @@ public:
        CEREAL_NVP(m_momentum));
   }
 
+  template <class Archive>
+  static void load_and_construct( Archive & ar, cereal::construct<sgd> & construct ) {
+    DataType learning_rate;
+    DataType momentum;
+    bool nesterov;
+    ar(learning_rate, momentum, nesterov);
+    construct(learning_rate, momentum, nesterov);
+  }
+
   /** @name Descriptions */
   ///@{
 
@@ -169,5 +178,7 @@ build_sgd_optimizer_from_pbuf(
   google::protobuf::Message const&);
 
 } // namespace lbann
+
+CEREAL_REGISTER_TYPE(lbann::sgd)
 
 #endif // LBANN_OPTIMIZERS_SGD_HPP_INCLUDED

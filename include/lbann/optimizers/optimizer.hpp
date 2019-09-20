@@ -44,6 +44,7 @@
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/xml.hpp>
+#include <cereal/access.hpp>
 
 namespace lbann {
 
@@ -80,6 +81,7 @@ class persist;
  *  w.r.t. the weights.
  */
 class optimizer {
+  friend class cereal::access;
 public:
 
   optimizer(DataType learning_rate = 0);
@@ -96,6 +98,13 @@ public:
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
     ar(CEREAL_NVP(m_learning_rate));
+  }
+
+  template <class Archive>
+  static void load_and_construct( Archive & ar, cereal::construct<optimizer> & construct ) {
+    DataType learning_rate;
+    ar( learning_rate );
+    construct( learning_rate );
   }
 
   /** @brief Human-readable type name. */

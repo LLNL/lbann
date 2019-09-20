@@ -78,8 +78,13 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_max_mini_batch_size),
-       CEREAL_NVP(m_weights));
+    ar(CEREAL_NVP(m_max_mini_batch_size));
+
+    // Serialized each weight object explicitly, not the pointer to
+    // the weight
+    for(auto&& w : m_weights) {
+      ar(CEREAL_NVP(*w));
+    }
   }
 
   // ===========================================

@@ -35,6 +35,7 @@
 #include "lbann/utils/description.hpp"
 #include <cereal/types/utility.hpp>
 #include <cereal/types/memory.hpp>
+#include <cereal/access.hpp>
 
 #include <memory>
 #include <string>
@@ -65,12 +66,9 @@ class optimizer;
  */
 class weights {
   friend class optimizer;
+  friend class cereal::access;
 private:
   weights();
-  // -----------------------------------------------
-  // Internal method for setting the comm pointer
-  // -----------------------------------------------
-  void set_comm(lbann_comm& comm);
   void setup_default_matrix_distribution();
 
 public:
@@ -80,8 +78,18 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_optimizer));
+    ar(CEREAL_NVP(m_name));
+    // These should eventually saved to the archive
+    // CEREAL_NVP(m_matrix_height_dims),
+    // CEREAL_NVP(m_matrix_width_dims),
+    // CEREAL_NVP(m_frozen));
+    ar(CEREAL_NVP(*m_optimizer));
   }
+
+  // -----------------------------------------------
+  // Method for setting the comm pointer after a load_and_construct
+  // -----------------------------------------------
+  void set_comm(lbann_comm& comm);
 
   /** Set weights name.
    *  Each set of weights in a model should have a unique,
