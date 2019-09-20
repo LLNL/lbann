@@ -110,7 +110,8 @@ def skeleton_performance_lenet_mnist(cluster, dir_name, executables,
   should_log = True
   actual_performance = common_code.skeleton(
     cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS,
-    should_log, compiler_name=compiler_name)
+    should_log, compiler_name=compiler_name, weekly=weekly,
+    data_reader_percent=data_reader_percent)
   run_tests(actual_performance, model_name, dir_name, should_log,
             compiler_name, cluster)
 
@@ -127,7 +128,8 @@ def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name,
   should_log = True
   actual_performance = common_code.skeleton(
     cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS,
-    should_log, compiler_name=compiler_name, weekly=weekly)
+    should_log, compiler_name=compiler_name, weekly=weekly,
+    data_reader_percent=data_reader_percent)
   frequency_str = '_nightly'
   if weekly:
     frequency_str = '_weekly'
@@ -160,6 +162,8 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables,
   output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
   error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' %(dir_name, model_name, compiler_name) 
   # No use for data_reader_percent here.
+  # Keeping it as a parameter since a user may pass it in when
+  # running all exe tests.
   if cluster in ['catalyst']:
     command = 'salloc --nodes 128 %s/bamboo/integration_tests/%s.sh > %s 2> %s' % (dir_name, model_name, output_file_name, error_file_name)
   elif cluster in ['lassen', 'pascal', 'ray']:
