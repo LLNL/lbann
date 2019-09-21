@@ -39,8 +39,8 @@ namespace lbann {
  *  otherwise. If the input is outside @f$[0,\text{size})@f$, then the
  *  output is all zeros.
  */
-template <data_layout Layout, El::Device Device>
-class one_hot_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class one_hot_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "one-hot layer only supports data-parallel layout");
 public:

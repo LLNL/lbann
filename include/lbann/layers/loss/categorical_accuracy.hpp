@@ -42,8 +42,8 @@ namespace lbann {
  *  This is primarily intended for use as a metric since it is not
  *  differentiable.
  */
-template <data_layout T_layout, El::Device Dev>
-class categorical_accuracy_layer : public Layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class categorical_accuracy_layer : public data_type_layer<TensorDataType> {
 public:
 
   categorical_accuracy_layer(lbann_comm *comm) : Layer(comm) {

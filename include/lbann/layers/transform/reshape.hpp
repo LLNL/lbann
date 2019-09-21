@@ -36,8 +36,8 @@ namespace lbann {
  *  Forward and backward prop simply involve setting up tensor views,
  *  and hence are very cheap.
  */
-template <data_layout T_layout, El::Device Dev>
-class reshape_layer : public transform_layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class reshape_layer : public transform_layer<TensorDataType> {
 public:
   reshape_layer(lbann_comm *comm,
                 std::vector<int> dims)

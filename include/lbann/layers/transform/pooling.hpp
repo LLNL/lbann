@@ -37,12 +37,13 @@
 namespace lbann {
 
 // Forward declaration
-template <data_layout T_layout, El::Device Dev>
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class unpooling_layer;
 
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class pooling_layer : public transform_layer {
+class pooling_layer : public transform_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "pooling only supports DATA_PARALLEL");
 private:

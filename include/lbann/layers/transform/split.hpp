@@ -34,9 +34,10 @@
 namespace lbann {
 
 /** @brief Present input tensor to multiple outputs. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class split_layer : public transform_layer {
+class split_layer : public transform_layer<TensorDataType> {
 public:
 
   split_layer(lbann_comm *comm) : transform_layer(comm) {

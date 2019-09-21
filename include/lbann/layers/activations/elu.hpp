@@ -46,8 +46,8 @@ namespace lbann {
  *  and accurate deep network learning by exponential linear units
  *  (ELUs)." arXiv preprint arXiv:1511.07289 (2015).
  */
-template <data_layout Layout, El::Device Device>
-class elu_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class elu_layer : public data_type_layer<TensorDataType> {
 public:
   elu_layer(lbann_comm *comm, DataType alpha = 1)
     : Layer(comm), m_alpha(alpha) {}

@@ -32,9 +32,10 @@
 namespace lbann {
 
 /** @brief Sort tensor entries. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class sort_layer : public transform_layer {
+class sort_layer : public transform_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "sort layer only supports DATA_PARALLEL");
  public:

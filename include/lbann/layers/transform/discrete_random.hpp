@@ -40,9 +40,10 @@ namespace lbann {
  *
  *  @todo Remove.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class discrete_random_layer : public transform_layer {
+class discrete_random_layer : public transform_layer<TensorDataType> {
   static_assert(Dev == El::Device::CPU,
                 "discrete random layer currently only supports CPU");
   static_assert(T_layout == data_layout::DATA_PARALLEL,

@@ -41,9 +41,10 @@ namespace lbann {
  *
  *  @todo Remove.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class categorical_random_layer : public transform_layer {
+class categorical_random_layer : public transform_layer<TensorDataType> {
   static_assert(Dev == El::Device::CPU,
                 "categorical random layer currently only supports CPU");
   static_assert(T_layout == data_layout::DATA_PARALLEL,

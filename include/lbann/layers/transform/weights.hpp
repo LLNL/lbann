@@ -36,9 +36,10 @@ namespace lbann {
  *
  *  Interfaces with a @c weights object and outputs its tensor.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class weights_layer : public transform_layer {
+class weights_layer : public transform_layer<TensorDataType> {
 
  public:
   weights_layer(lbann_comm *comm, std::vector<El::Int> dims)

@@ -31,43 +31,43 @@
 
 namespace lbann {
 
-#define LBANN_DECLARE_ENTRYWISE_BINARY_LAYER(LAYER_NAME, LAYER_STRING)    \
-  template <data_layout Layout, El::Device Device>                        \
-  class LAYER_NAME : public Layer {                                       \
-  public:                                                                 \
-    LAYER_NAME(lbann_comm *comm) : Layer(comm) {                          \
-      this->m_expected_num_parent_layers = 2;                             \
-    }                                                                     \
-    LAYER_NAME* copy() const override {                                   \
-      return new LAYER_NAME<Layout,Device>(*this);                        \
-    }                                                                     \
-    std::string get_type() const override { return LAYER_STRING; }        \
-    data_layout get_data_layout() const override { return Layout; }       \
-    El::Device get_device_allocation() const override { return Device; }  \
-  protected:                                                              \
-    void setup_dims() override {                                          \
-      Layer::setup_dims();                                                \
-      set_output_dims(get_input_dims());                                  \
-      /* Check that input dimensions match */                             \
-      if (get_input_dims(0) != get_input_dims(1)) {                       \
-        const auto& parents = get_parent_layers();                        \
-        std::stringstream err;                                            \
-        err << get_type() << " layer \"" << get_name() << "\" "           \
-            << "has input tensors with different dimensions (";           \
-        for (int i = 0; i < get_num_parents(); ++i) {                     \
-          const auto& dims = get_input_dims(i);                           \
-          err << (i > 0 ? ", " : "")                                      \
-              << "layer \"" << parents[i]->get_name() << "\" outputs ";   \
-          for (size_t j = 0; j < dims.size(); ++j) {                      \
-            err << (j > 0 ? " x " : "") << dims[j];                       \
-          }                                                               \
-        }                                                                 \
-        err << ")";                                                       \
-        LBANN_ERROR(err.str());                                           \
-      }                                                                   \
-    }                                                                     \
-    void fp_compute() override;                                           \
-    void bp_compute() override;                                           \
+#define LBANN_DECLARE_ENTRYWISE_BINARY_LAYER(LAYER_NAME, LAYER_STRING)      \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  class LAYER_NAME : public data_type_layer<TensorDataType> {               \
+  public:                                                                   \
+    LAYER_NAME(lbann_comm *comm) : Layer(comm) {                            \
+      this->m_expected_num_parent_layers = 2;                               \
+    }                                                                       \
+    LAYER_NAME* copy() const override {                                     \
+      return new LAYER_NAME<TensorDataType, Layout,Device>(*this);          \
+    }                                                                       \
+    std::string get_type() const override { return LAYER_STRING; }          \
+    data_layout get_data_layout() const override { return Layout; }         \
+    El::Device get_device_allocation() const override { return Device; }    \
+  protected:                                                                \
+    void setup_dims() override {                                            \
+      Layer::setup_dims();                                                  \
+      set_output_dims(this->get_input_dims());                              \
+      /* Check that input dimensions match */                               \
+      if (get_input_dims(0) != this->get_input_dims(1)) {                   \
+        const auto& parents = this->get_parent_layers();                    \
+        std::stringstream err;                                              \
+        err << get_type() << " layer \"" << this->get_name() << "\" "       \
+            << "has input tensors with different dimensions (";             \
+        for (int i = 0; i < this->get_num_parents(); ++i) {                 \
+          const auto& dims = this->get_input_dims(i);                       \
+          err << (i > 0 ? ", " : "")                                        \
+              << "layer \"" << parents[i]->get_name() << "\" outputs ";     \
+          for (size_t j = 0; j < dims.size(); ++j) {                        \
+            err << (j > 0 ? " x " : "") << dims[j];                         \
+          }                                                                 \
+        }                                                                   \
+        err << ")";                                                         \
+        LBANN_ERROR(err.str());                                             \
+      }                                                                     \
+    }                                                                       \
+    void fp_compute() override;                                             \
+    void bp_compute() override;                                             \
   }
 
 // Convenience macros for ETI decls for binary layers

@@ -38,7 +38,7 @@ class imcomm;
 }
 
 /** @brief Transpose of the convolution layer. */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
+template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
 class deconvolution_layer : public base_convolution_layer<Device> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "deconvolution layer only supports DATA_PARALLEL");

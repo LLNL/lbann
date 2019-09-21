@@ -45,8 +45,8 @@ namespace lbann {
  *  weights matrix. Note that this is the transpose of the weights in
  *  the PyTorch embedding layer.
  */
-template <data_layout Layout, El::Device Device>
-class embedding_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class embedding_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "embedding layer only supports data parallel layout");
 public:

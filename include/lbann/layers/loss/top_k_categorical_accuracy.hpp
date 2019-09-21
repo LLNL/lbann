@@ -42,8 +42,8 @@ namespace lbann {
  *
  *  @todo Gracefully handle case where label is not a one-hot vector.
  */
-template <data_layout T_layout, El::Device Dev>
-class top_k_categorical_accuracy_layer : public Layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class top_k_categorical_accuracy_layer : public data_type_layer<TensorDataType> {
 public:
 
   top_k_categorical_accuracy_layer(lbann_comm *comm, El::Int k)

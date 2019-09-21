@@ -57,9 +57,9 @@ namespace lbann {
  *  e_n@f$. Then, denoting the modulo operator with @f$ \% @f$,
  *  @f[ Y_{i_1,\cdots,i_n} = X_{i_1\% d_1,\cdots,i_n\% d_n} @f]
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class tessellate_layer : public Layer {
+class tessellate_layer : public data_type_layer<TensorDataType> {
 public:
 
   tessellate_layer(lbann_comm *comm, std::vector<int> dims = {})

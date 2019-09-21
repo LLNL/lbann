@@ -40,7 +40,7 @@ namespace lbann {
  *  Hochreiter. "Self-normalizing neural networks." In Advances in
  *  Neural Information Processing Systems, pp. 971-980. 2017.
  */
-template <data_layout T_layout, El::Device Dev>
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class selu_dropout : public regularizer_layer {
  public:
   /** Keep units with probabiliy keep_prob. */

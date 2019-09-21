@@ -32,7 +32,7 @@
 namespace lbann {
 
 /** @brief Interface with objective function and metrics. */
-class abstract_evaluation_layer : public transform_layer {
+class abstract_evaluation_layer : public transform_layer<TensorDataType> {
 public:
 
   /** Get scaling factor. */
@@ -77,7 +77,8 @@ private:
  *  Computes the average value across a mini-batch. If the input
  *  tensor has multiple neurons, their values are added together.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
 class evaluation_layer : public abstract_evaluation_layer {
 public:

@@ -37,9 +37,9 @@ namespace lbann {
 /** @brief Transpose of pooling layer.
  *  @todo GPU support.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType, data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class unpooling_layer : public transform_layer {
+class unpooling_layer : public transform_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "unpooling only supports DATA_PARALLEL");
   static_assert(Dev == El::Device::CPU,

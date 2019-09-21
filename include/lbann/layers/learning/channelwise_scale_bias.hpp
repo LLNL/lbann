@@ -52,9 +52,9 @@ namespace lbann {
  *  column correspond to scale terms and the second column to bias
  *  terms.
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class channelwise_scale_bias_layer : public Layer {
+class channelwise_scale_bias_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "channelwise_mean_layer only supports "
                 "data-parallel data layout");

@@ -42,8 +42,8 @@ namespace lbann {
  *      \end{cases}
  *  @f]
  */
-template <data_layout Layout, El::Device Device>
-class clamp_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class clamp_layer : public data_type_layer<TensorDataType> {
 public:
   clamp_layer(lbann_comm *comm, DataType min, DataType max)
     : Layer(comm), m_min(min), m_max(max) {

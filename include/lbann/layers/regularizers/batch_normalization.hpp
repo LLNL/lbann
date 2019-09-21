@@ -54,7 +54,7 @@ enum class batch_normalization_stats_aggregation {
  *  Shift." In International Conference on Machine Learning,
  *  pp. 448-456. 2015.
  */
-template <data_layout T_layout, El::Device Dev>
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class batch_normalization_layer : public regularizer_layer {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "batch normalization only supports DATA_PARALLEL");

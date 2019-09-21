@@ -39,8 +39,8 @@ namespace lbann {
  *  means that computed gradients in preceeding layers are not exact
  *  gradients of the objective function.
  */
-template <data_layout T_layout, El::Device Dev>
-class stop_gradient_layer : public transform_layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class stop_gradient_layer : public transform_layer<TensorDataType> {
 public:
   stop_gradient_layer(lbann_comm *comm) : transform_layer(comm) {}
   stop_gradient_layer* copy() const override { return new stop_gradient_layer(*this); }

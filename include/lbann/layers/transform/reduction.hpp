@@ -38,9 +38,10 @@ enum class reduction_mode {INVALID, SUM, AVERAGE};
  *
  *  @todo Reduction over specified dimensions.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class reduction_layer : public transform_layer {
+class reduction_layer : public transform_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "reduction currently only supports DATA_PARALLEL");
 private:

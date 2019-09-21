@@ -44,9 +44,10 @@ namespace lbann {
  *    \cdots\times D_n @f$
  *  tensor.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class slice_layer : public transform_layer {
+class slice_layer : public transform_layer<TensorDataType> {
 public:
 
   slice_layer(lbann_comm *comm,

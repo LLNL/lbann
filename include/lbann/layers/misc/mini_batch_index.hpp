@@ -37,9 +37,10 @@ namespace lbann {
  *  mini-batch sample. Each sample in a model's mini-batch has a
  *  unique index in [0, mini_batch_size).
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class mini_batch_index_layer : public Layer {
+class mini_batch_index_layer : public data_type_layer<TensorDataType> {
 public:
 
   mini_batch_index_layer(lbann_comm* comm) : Layer(comm) {

@@ -36,8 +36,8 @@ namespace lbann {
  *  Expects a 1-D input tensor. If multiple entries have the same
  *  minimum value, outputs the index of the first one.
  */
-template <data_layout Layout, El::Device Device>
-class argmin_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class argmin_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "argmin layer only supports data parallel layout");
   static_assert(Device == El::Device::CPU,

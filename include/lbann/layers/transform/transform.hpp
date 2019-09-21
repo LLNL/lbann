@@ -34,7 +34,8 @@ namespace lbann {
 /** @todo Remove. Layers should inherit directly from the base layer
  *  class.
  */
-class transform_layer : public Layer {
+template <typename TensorDataType>
+class transform_layer : public data_type_layer<TensorDataType> {
  public:
   transform_layer(lbann_comm *comm) : Layer(comm) {}
 };

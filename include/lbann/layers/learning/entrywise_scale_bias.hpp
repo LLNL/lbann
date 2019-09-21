@@ -49,9 +49,9 @@ namespace lbann {
  *  column correspond to scale terms and the second column to bias
  *  terms.
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class entrywise_scale_bias_layer : public Layer {
+class entrywise_scale_bias_layer : public data_type_layer<TensorDataType> {
 public:
 
   entrywise_scale_bias_layer(lbann_comm *comm)

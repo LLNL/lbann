@@ -37,8 +37,8 @@ namespace lbann {
  *  distribution @f$\hat{y}@f$,
  *  @f[ CE(y,\hat{y}) = - \sum\limits_{i} \hat{y}_i \log y_i @f]
  */
-template <data_layout T_layout, El::Device Dev>
-class cross_entropy_layer : public Layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class cross_entropy_layer : public data_type_layer<TensorDataType> {
 public:
 
   cross_entropy_layer(lbann_comm *comm) : Layer(comm) {

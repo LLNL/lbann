@@ -44,8 +44,8 @@ namespace lbann {
 /**
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
  */
-template <data_layout Layout, El::Device Device>
-class softmax_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class softmax_layer : public data_type_layer<TensorDataType> {
 public:
 
   softmax_layer(lbann_comm *comm)

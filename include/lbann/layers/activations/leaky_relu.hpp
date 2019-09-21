@@ -46,8 +46,8 @@ namespace lbann {
  *  nonlinearities improve neural network acoustic models." In
  *  Proc. ICML, vol. 30, no. 1, p. 3. 2013.
  */
-template <data_layout Layout, El::Device Device>
-class leaky_relu_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class leaky_relu_layer : public data_type_layer<TensorDataType> {
 public:
   leaky_relu_layer(lbann_comm *comm, DataType negative_slope = 0.01)
     : Layer(comm), m_negative_slope(negative_slope) {}

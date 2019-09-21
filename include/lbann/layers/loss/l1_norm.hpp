@@ -35,8 +35,8 @@ namespace lbann {
  *
  *  @f[ \lVert x\rVert_1 = \sum\limits_{i} | x_i | @f]
  */
-template <data_layout T_layout, El::Device Dev>
-class l1_norm_layer : public Layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class l1_norm_layer : public data_type_layer<TensorDataType> {
 public:
 
   l1_norm_layer(lbann_comm *comm) : Layer(comm) {}

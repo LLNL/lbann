@@ -34,9 +34,10 @@
 namespace lbann {
 
 /** @brief Entry-wise tensor product. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class hadamard_layer : public transform_layer {
+class hadamard_layer : public transform_layer<TensorDataType> {
 public:
 
   hadamard_layer(lbann_comm *comm) : transform_layer(comm) {

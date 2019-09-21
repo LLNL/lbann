@@ -36,8 +36,8 @@ namespace lbann {
  *
  *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
  */
-template <data_layout Layout, El::Device Device>
-class log_softmax_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class log_softmax_layer : public data_type_layer<TensorDataType> {
 public:
 
   log_softmax_layer(lbann_comm *comm)

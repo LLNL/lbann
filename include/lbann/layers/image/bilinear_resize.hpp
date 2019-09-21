@@ -36,8 +36,8 @@ namespace lbann {
  *  Tensors are assumed to be image data in CHW format. Gradients are
  *  not propagated during backprop.
  */
-template <data_layout Layout, El::Device Device>
-class bilinear_resize_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class bilinear_resize_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "bilinear_resize_layer only supports DATA_PARALLEL");
 public:

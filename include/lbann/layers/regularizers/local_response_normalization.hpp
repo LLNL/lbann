@@ -43,7 +43,8 @@ namespace lbann {
  *  Advances in Neural Information Processing Systems,
  *  pp. 1097-1105. 2012.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
 class local_response_normalization_layer : public regularizer_layer {
   static_assert(T_layout == data_layout::DATA_PARALLEL,

@@ -36,9 +36,10 @@ namespace lbann {
  *  Does no computation and is primarily intended as a placeholder for
  *  unused layer outputs.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class dummy_layer : public transform_layer {
+class dummy_layer : public transform_layer<TensorDataType> {
 public:
   dummy_layer(lbann_comm *comm) : transform_layer(comm) {
     this->m_expected_num_child_layers = 0;

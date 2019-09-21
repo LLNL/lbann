@@ -37,9 +37,10 @@ namespace lbann {
  *
  *  During validation and testing, outputs are all zero.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class bernoulli_layer : public transform_layer {
+class bernoulli_layer : public transform_layer<TensorDataType> {
 private:
   /** Probability of outputting 1. */
   DataType m_prob;

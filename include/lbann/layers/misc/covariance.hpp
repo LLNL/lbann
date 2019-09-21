@@ -43,8 +43,8 @@ namespace lbann {
  *  Scaling by @f$ 1/n @f$ instead of @f$ 1/(n-1) @f$ is a biased
  *  estimator.
  */
-template <data_layout Layout, El::Device Device>
-class covariance_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class covariance_layer : public data_type_layer<TensorDataType> {
 public:
 
   covariance_layer(lbann_comm *comm, bool biased)

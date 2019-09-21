@@ -45,7 +45,7 @@ namespace lbann {
  *  prevent neural networks from overfitting." The Journal of Machine
  *  Learning Research 15, no. 1 (2014): 1929-1958.
  */
-template <data_layout T_layout, El::Device Dev>
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class dropout : public regularizer_layer {
 public:
   /** Keep units with probabiliy keep_prob. */

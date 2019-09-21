@@ -45,8 +45,8 @@ namespace lbann {
  *  Shift." In International Conference on Machine Learning,
  *  pp. 448-456. 2015.
  */
-template <data_layout Layout, El::Device Device>
-class entrywise_batch_normalization_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class entrywise_batch_normalization_layer : public data_type_layer<TensorDataType> {
 public:
 
   entrywise_batch_normalization_layer(lbann_comm* comm,

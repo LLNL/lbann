@@ -45,7 +45,7 @@ namespace lbann {
 /** @brief Computation kernels for convolution and deconvolution layers.
  */
 template <El::Device Device>
-class base_convolution_layer : public Layer {
+class base_convolution_layer : public data_type_layer<TensorDataType> {
 
 protected:
 

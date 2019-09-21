@@ -40,9 +40,10 @@ namespace lbann {
  *  to the red-top-left corner and (1,1,1) to the blue-bottom-right
  *  corner. The crop size is determined at setup.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class crop_layer : public transform_layer {
+class crop_layer : public transform_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "crop layer only supports DATA_PARALLEL");
 public:

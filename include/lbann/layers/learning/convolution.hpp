@@ -43,7 +43,8 @@ class imcomm;
  *  tensors. This is primarily optimized for image data in NCHW
  *  format.
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
 class convolution_layer : public base_convolution_layer<Device> {
   static_assert(Layout == data_layout::DATA_PARALLEL,

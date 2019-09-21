@@ -36,8 +36,8 @@ namespace lbann {
  *  Forward and backward prop simply involve setting up tensor views,
  *  and hence are very cheap.
  */
-template <data_layout Layout, El::Device Device>
-class identity_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class identity_layer : public data_type_layer<TensorDataType> {
 public:
   identity_layer(lbann_comm *comm) : Layer(comm) {}
   identity_layer* copy() const override { return new identity_layer(*this); }

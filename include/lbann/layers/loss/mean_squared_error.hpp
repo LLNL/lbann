@@ -39,8 +39,8 @@ namespace lbann {
  *      = \frac{1}{n} \sum\limits_{i=1}^{n} (y_i - \hat{y}_i)^2
  *  @f]
  */
-template <data_layout T_layout, El::Device Dev>
-class mean_squared_error_layer : public Layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class mean_squared_error_layer : public data_type_layer<TensorDataType> {
 public:
 
   mean_squared_error_layer(lbann_comm *comm) : Layer(comm) {

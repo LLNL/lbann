@@ -34,9 +34,10 @@
 namespace lbann {
 
 /** @brief Concatenate tensors along specified dimension. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class concatenation_layer : public transform_layer {
+class concatenation_layer : public transform_layer<TensorDataType> {
 public:
 
   concatenation_layer(lbann_comm *comm, El::Int concat_dim)
