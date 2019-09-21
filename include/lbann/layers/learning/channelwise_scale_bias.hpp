@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_LEARNING_CHANNELWISE_SCALE_BIAS_HPP_INCLUDED
 #define LBANN_LAYER_LEARNING_CHANNELWISE_SCALE_BIAS_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -61,15 +61,15 @@ class channelwise_scale_bias_layer : public data_type_layer<TensorDataType> {
 public:
 
   channelwise_scale_bias_layer(lbann_comm *comm)
-    : Layer(comm) {
+    : data_type_layer<TensorDataType>(comm) {
   }
 
   channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_weights_gradient(other.m_weights_gradient ?
                          other.m_weights_gradient->Copy() : nullptr) {}
   channelwise_scale_bias_layer& operator=(const channelwise_scale_bias_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_weights_gradient.reset(other.m_weights_gradient ?
                              other.m_weights_gradient->Copy() :
                              nullptr);
@@ -84,23 +84,23 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     m_weights_gradient.reset(new StarMat<Device>(grid));
   }
 
   void setup_data() override {
-    Layer::setup_data();
-    const El::Int num_channels = get_output_dims()[0];
+    data_type_layer<TensorDataType>::setup_data();
+    const El::Int num_channels = this->get_output_dims()[0];
 
     // Construct default weights if needed
     // Note: Scale is initialized to 1 and bias to 0
     if (this->m_weights.empty()) {
-      auto w = make_unique<weights>(get_comm());
+      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
       std::vector<DataType> vals(2*num_channels, DataType{0});
       std::fill(vals.begin(), vals.begin()+num_channels, DataType{1});
       auto init = make_unique<value_initializer>(vals);
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_weights");
+      std::unique_ptr<optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
+      w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
       this->m_weights.push_back(w.get());
@@ -114,12 +114,12 @@ public:
     }
 
     // Setup weights
-    auto dist = get_prev_activations().DistData();
+    auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
-    m_weights[0]->set_dims({static_cast<int>(num_channels)},
+    this->get_weights()[0]->set_dims({static_cast<int>(num_channels)},
                            {static_cast<int>(2)});
-    m_weights[0]->set_matrix_distribution(dist);
+    this->get_weights()[0]->set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
     m_weights_gradient->AlignWith(dist);
@@ -134,8 +134,12 @@ protected:
 private:
 
   /** Objective function gradient w.r.t. weights. */
-  std::unique_ptr<AbsDistMat> m_weights_gradient;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_weights_gradient;
 
+  template <typename U>
+  friend void fp_compute_impl(channelwise_scale_bias_layer<U, Layout, Device>& l);
+  template <typename U>
+  friend void bp_compute_impl(channelwise_scale_bias_layer<U, Layout, Device>& l);
 };
 
 #ifndef LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE

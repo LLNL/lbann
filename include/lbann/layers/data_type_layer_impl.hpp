@@ -56,6 +56,7 @@ data_type_layer<TensorDataType>::data_type_layer(const data_type_layer<TensorDat
 
 template <typename TensorDataType>
 data_type_layer<TensorDataType>& data_type_layer<TensorDataType>::operator=(const data_type_layer<TensorDataType>& other) {
+  Layer::operator=(other);
 
   // Shallow copies
   m_weights = other.m_weights;
