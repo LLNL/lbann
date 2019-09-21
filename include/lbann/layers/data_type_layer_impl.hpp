@@ -26,10 +26,9 @@
 
 namespace lbann {
 
-#if 0
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 data_type_layer<TensorDataType>::data_type_layer(const data_type_layer<TensorDataType>& other) :
-  Layer(other.m_comm),
+  Layer(other),
   m_weights(other.m_weights),
   m_frozen(other.m_frozen),
   m_output_dims_list(other.m_output_dims_list),
@@ -55,7 +54,7 @@ data_type_layer<TensorDataType>::data_type_layer(const data_type_layer<TensorDat
 
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 data_type_layer<TensorDataType>& data_type_layer<TensorDataType>::operator=(const data_type_layer<TensorDataType>& other) {
 
   // Shallow copies
@@ -89,7 +88,7 @@ data_type_layer<TensorDataType>& data_type_layer<TensorDataType>::operator=(cons
   return *this;
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 void data_type_layer<TensorDataType>::replace_weights(data_type_layer<TensorDataType>* other_layer) {
   if (other_layer == nullptr) {
     LBANN_ERROR("attempted to add null pointer as a replacement layer");
@@ -101,12 +100,12 @@ void data_type_layer<TensorDataType>::replace_weights(data_type_layer<TensorData
   }
 
 }
-#endif
+
 // ===================================================================
 // Tensor dimension access functions
 // ===================================================================
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 std::vector<int> data_type_layer<TensorDataType>::get_input_dims(int input_index) const {
 
   // Get parent layer
@@ -129,10 +128,11 @@ std::vector<int> data_type_layer<TensorDataType>::get_input_dims(int input_index
 
   // Get dimensions of corresponding output tensor in parent layer
   const auto num_parent_outputs = parent.get_num_children();
-  const int parent_output_index = (std::find(parent.m_child_layers.begin(),
-                                             parent.m_child_layers.end(),
-                                             this)
-                                   - parent.m_child_layers.begin());
+  // const int parent_output_index = (std::find(parent.m_child_layers.begin(),
+  //                                            parent.m_child_layers.end(),
+  //                                            this)
+  //                                  - parent.m_child_layers.begin());
+  const int parent_output_index = parent.find_layer_index(this);
   if (parent_output_index >= num_parent_outputs) {
     std::stringstream err;
     err << "layer \"" << parent.get_name() << "\" is a parent of "
@@ -141,11 +141,11 @@ std::vector<int> data_type_layer<TensorDataType>::get_input_dims(int input_index
         << "\"" << parent.get_name() << "\"";
     LBANN_ERROR(err.str());
   }
-  return parent.get_output_dims(parent_output_index);
+  return dynamic_cast<const data_type_layer<TensorDataType>&>(parent).get_output_dims(parent_output_index);
 
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 int data_type_layer<TensorDataType>::get_input_size(int input_index) const {
   const auto& dims = get_input_dims(input_index);
   if (dims.empty()) {
@@ -156,7 +156,7 @@ int data_type_layer<TensorDataType>::get_input_size(int input_index) const {
   }
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 std::vector<int> data_type_layer<TensorDataType>::get_output_dims(int output_index) const {
   const auto num_outputs = get_num_children();
   if ((int) m_output_dims_list.size() != num_outputs) {
@@ -176,7 +176,7 @@ std::vector<int> data_type_layer<TensorDataType>::get_output_dims(int output_ind
   return m_output_dims_list[output_index];
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 int data_type_layer<TensorDataType>::get_output_size(int output_index) const {
   const auto& dims = get_output_dims(output_index);
   if (dims.empty()) {
@@ -187,7 +187,7 @@ int data_type_layer<TensorDataType>::get_output_size(int output_index) const {
   }
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 void data_type_layer<TensorDataType>::set_output_dims(std::vector<int> dims, int output_index) {
   if ((int) m_output_dims_list.size() != get_num_children()
       || (int) m_output_dims_list.size() <= output_index) {
@@ -203,7 +203,7 @@ void data_type_layer<TensorDataType>::set_output_dims(std::vector<int> dims, int
 // ===================================================================
 
 // Accessing distributed matrices
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 const AbsDistMat& data_type_layer<TensorDataType>::get_prev_activations(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_inputs.size()) {
     std::stringstream err;
@@ -216,7 +216,7 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_prev_activations(int pare
   return *m_inputs[parent_index];
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 const AbsDistMat& data_type_layer<TensorDataType>::get_activations(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_outputs.size()) {
     std::stringstream err;
@@ -229,7 +229,7 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_activations(int child_ind
   return *m_outputs[child_index];
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 const AbsDistMat& data_type_layer<TensorDataType>::get_prev_error_signals(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_gradient_wrt_outputs.size()) {
     std::stringstream err;
@@ -242,7 +242,7 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_prev_error_signals(int ch
   return *m_gradient_wrt_outputs[child_index];
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 const AbsDistMat& data_type_layer<TensorDataType>::get_error_signals(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_gradient_wrt_inputs.size()) {
     std::stringstream err;
@@ -258,45 +258,45 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_error_signals(int parent_
 // Accessing non-const distributed matrices
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 AbsDistMat& data_type_layer<TensorDataType>::get_activations(int child_index) {
-  return const_cast<AbsDistMat&>(static_cast<const data_type_layer&>(*this).get_activations(child_index));
+  return const_cast<AbsDistMat&>(static_cast<const data_type_layer<TensorDataType>&>(*this).get_activations(child_index));
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 AbsDistMat& data_type_layer<TensorDataType>::get_error_signals(int parent_index) {
-  return const_cast<AbsDistMat&>(static_cast<const data_type_layer&>(*this).get_error_signals(parent_index));
+  return const_cast<AbsDistMat&>(static_cast<const data_type_layer<TensorDataType>&>(*this).get_error_signals(parent_index));
 }
 
 // Accessing local matrices
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 AbsMat& data_type_layer<TensorDataType>::get_local_activations(int child_index) {
   return get_activations(child_index).Matrix();
 }
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 AbsMat& data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) {
   return get_error_signals(parent_index).Matrix();
 }
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 const AbsMat& data_type_layer<TensorDataType>::get_local_prev_activations(int parent_index) const {
   return get_prev_activations(parent_index).LockedMatrix();
 }
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 const AbsMat& data_type_layer<TensorDataType>::get_local_activations(int child_index) const {
   return get_activations(child_index).LockedMatrix();
 }
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 const AbsMat& data_type_layer<TensorDataType>::get_local_prev_error_signals(int child_index) const {
   return get_prev_error_signals(child_index).LockedMatrix();
 }
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 const AbsMat& data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) const {
   return get_error_signals(parent_index).LockedMatrix();
 }
 
 // Accessing matrices corresponding to parent/child layer
-template <typename TensorDataType, typename>
-const AbsDistMat& data_type_layer<TensorDataType>::get_activations(const data_type_layer& child) const {
+template <typename TensorDataType>
+const AbsDistMat& data_type_layer<TensorDataType>::get_activations(const data_type_layer<TensorDataType>& child) const {
   const int child_index = (std::find(m_child_layers.begin(),
                                      m_child_layers.end(),
                                      &child)
@@ -311,8 +311,8 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_activations(const data_ty
   }
   return get_activations(child_index);
 }
-template <typename TensorDataType, typename>
-const AbsDistMat& data_type_layer<TensorDataType>::get_error_signals(const data_type_layer& parent) const {
+template <typename TensorDataType>
+const AbsDistMat& data_type_layer<TensorDataType>::get_error_signals(const data_type_layer<TensorDataType>& parent) const {
   const int parent_index = (std::find(m_parent_layers.begin(),
                                       m_parent_layers.end(),
                                       &parent)
@@ -328,7 +328,7 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_error_signals(const data_
   return get_error_signals(parent_index);
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 void data_type_layer<TensorDataType>::freeze() {
   m_frozen = true;
   for(auto& w : m_weights) {
@@ -336,7 +336,7 @@ void data_type_layer<TensorDataType>::freeze() {
   }
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 void data_type_layer<TensorDataType>::unfreeze() {
   m_frozen = false;
   for(auto& w : m_weights) {
@@ -344,7 +344,7 @@ void data_type_layer<TensorDataType>::unfreeze() {
   }
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 bool data_type_layer<TensorDataType>::is_frozen() const {
   for(auto& w : m_weights) {
     if (w->is_frozen() != m_frozen) {
@@ -354,7 +354,7 @@ bool data_type_layer<TensorDataType>::is_frozen() const {
   return m_frozen;
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 void data_type_layer<TensorDataType>::setup_dims() {
   m_output_dims_list.resize(get_num_children());
   if (m_hint_layer != nullptr) {
@@ -372,7 +372,7 @@ void data_type_layer<TensorDataType>::setup_dims() {
   }
 }
 
-template <typename TensorDataType, typename>
+template <typename TensorDataType>
 void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
 
   // Destroy previously setup matrices
@@ -402,15 +402,15 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   }
 }
 
-template <typename TensorDataType, typename>
-std::unique_ptr<AbsDistMat> data_type_layer<TensorDataType, true>::construct_matrix(const El::Grid& grid,
+template <typename TensorDataType>
+std::unique_ptr<AbsDistMat> data_type_layer<TensorDataType>::construct_matrix(const El::Grid& grid,
                                                                               std::string type,
                                                                               El::Int index) {
 
   // Choose matrix distribution
   El::Distribution col_dist, row_dist;
   El::DistWrap wrap;
-  El::Device device = get_device_allocation();
+  El::Device device = this->get_device_allocation();
   switch (get_data_layout()) {
   case data_layout::DATA_PARALLEL:
     col_dist = El::STAR;

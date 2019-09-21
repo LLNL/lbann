@@ -203,6 +203,11 @@ public:
   /** Get child layers. (const) */
   inline const std::vector<const Layer*>& get_child_layers() const { return m_child_layers; }
 
+  inline int find_layer_index(const Layer* l) const {
+    return (std::find(m_child_layers.begin(),
+                      m_child_layers.end(),
+                      l) - m_child_layers.begin()); }
+
   /** Get number of parent layers. */
   inline int get_num_parents() const { return get_parent_layers().size(); }
   /** Get number of child layers. */

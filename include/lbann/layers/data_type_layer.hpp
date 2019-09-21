@@ -46,15 +46,16 @@ struct IsElement<T, El::TypeList<>> : std::false_type {};
 
 template <typename T> using is_supported_layer_data_type = IsElement<T, supported_layer_data_type>;
 
-//template <typename TensorDataType, EnableWhen<is_supported_data_type<TensorDataType>>
-template <typename TensorDataType, typename=El::EnableIf<is_supported_layer_data_type<TensorDataType>>>
+template <typename TensorDataType>
 class data_type_layer : public Layer {
 public:
+  static_assert(is_supported_layer_data_type<TensorDataType>::value,
+                "Must use a supported type.");
+
   data_type_layer(lbann_comm *comm) : Layer(comm), m_frozen(false) {}
   data_type_layer(const data_type_layer<TensorDataType>& other);
   data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
   virtual ~data_type_layer() = default;
-
 
   // ===========================================================
   // Weights access functions
@@ -67,7 +68,7 @@ public:
   /** Set list of pointers to weights. */
   inline void set_weights(std::vector<weights*> w) { get_weights() = w; }
   /** Replace weights with another Layer's weights*/
-  void replace_weights(Layer* other_layer);
+  void replace_weights(data_type_layer<TensorDataType>* other_layer);
 
   // ===========================================================
   // Tensor dimension access functions
@@ -123,10 +124,10 @@ public:
    *  phase. For instance, the output tensor dimensions are set to
    *  match the hint layer's first output tensor.
    */
-  void set_hint_layer(const Layer* l) { m_hint_layer = l; }
+  void set_hint_layer(const data_type_layer* l) { m_hint_layer = l; }
 
   /** Get hint layer. */
-  const Layer* get_hint_layer() const { return m_hint_layer; }
+  const data_type_layer* get_hint_layer() const { return m_hint_layer; }
 
   // ===========================================================
   // Freeze management functions
@@ -180,9 +181,9 @@ private:
   // ===========================================================
 
   /** Get activation tensor corresponding to child layer. */
-  const AbsDistMat& get_activations(const Layer& child) const;
+  const AbsDistMat& get_activations(const data_type_layer& child) const;
   /** Get error signal tensor corresponding to parent layer. */
-  const AbsDistMat& get_error_signals(const Layer& parent) const;
+  const AbsDistMat& get_error_signals(const data_type_layer& parent) const;
 
   // ===========================================================
   // Private class members
@@ -213,11 +214,11 @@ private:
    *  first output tensor of the hint layer. Derived classes may do
    *  more elaborate setup based on the hint layer.
    */
-  const Layer* m_hint_layer = nullptr;
+  const data_type_layer* m_hint_layer = nullptr;
 };
 
-#include "data_type_layer_impl.hpp"
-
 } // namespace lbann
+
+#include "data_type_layer_impl.hpp"
 
 #endif // LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED
