@@ -123,6 +123,19 @@ private:
 
 };
 
+#ifndef LBANN_COVARIANCE_LAYER_INSTANTIATE
+extern template class covariance_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class covariance_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class covariance_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class covariance_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_COVARIANCE_LAYER_INSTANTIATE
+
 } // namespace lbann
 
 #endif // LBANN_LAYERS_MISC_COVARIANCE_HPP_INCLUDED

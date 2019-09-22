@@ -32,15 +32,16 @@
 namespace lbann {
 
 /** @todo Replace with more general reduction layer. */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
+template <data_layout Layout = data_layout::DATA_PARALLEL,
+          El::Device Device = El::Device::CPU>
 class channelwise_mean_layer : public Layer {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "channelwise_mean_layer only supports "
+                "data-parallel data layout");
 public:
 
   channelwise_mean_layer(lbann_comm *comm)
     : Layer(comm) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "channelwise_mean_layer only supports "
-                  "data-parallel data layout");
     if (comm->am_trainer_master()) {
       LBANN_WARNING("channelwise_mean_layer is experimental "
                     "and may be deprecated at any time");
@@ -64,6 +65,15 @@ protected:
   void bp_compute() override;
 
 };
+
+#ifndef LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
+extern template class channelwise_mean_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class channelwise_mean_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
 
 } // namespace lbann
 

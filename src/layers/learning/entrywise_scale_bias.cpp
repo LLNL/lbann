@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_ENTRYWISE_SCALE_BIAS_LAYER_INSTANTIATE
 #include "lbann/layers/learning/entrywise_scale_bias.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
@@ -159,5 +160,10 @@ void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
           *m_weights_gradient,
           c.get_effective_mini_batch_size());
 }
+
+template class entrywise_scale_bias_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class entrywise_scale_bias_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

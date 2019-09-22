@@ -56,7 +56,8 @@ enum class batch_normalization_stats_aggregation {
  */
 template <data_layout T_layout, El::Device Dev>
 class batch_normalization_layer : public regularizer_layer {
-
+  static_assert(T_layout == data_layout::DATA_PARALLEL,
+                "batch normalization only supports DATA_PARALLEL");
 private:
 
   /** Decay rate for the running statistics. */
@@ -116,8 +117,6 @@ public:
       m_decay(decay),
       m_epsilon(epsilon),
       m_statistics_group_size(statistics_group_size) {
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "batch normalization only supports DATA_PARALLEL");
 #ifdef LBANN_DETERMINISTIC
     // Force global computation.
     m_statistics_group_size = 0;
@@ -334,6 +333,15 @@ protected:
   void bp_compute() override;
 
 };
+
+#ifndef LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
+extern template class batch_normalization_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class batch_normalization_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

@@ -57,7 +57,8 @@ namespace lbann {
  *  e_n@f$. Then, denoting the modulo operator with @f$ \% @f$,
  *  @f[ Y_{i_1,\cdots,i_n} = X_{i_1\% d_1,\cdots,i_n\% d_n} @f]
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
+template <data_layout Layout = data_layout::DATA_PARALLEL,
+          El::Device Device = El::Device::CPU>
 class tessellate_layer : public Layer {
 public:
 
@@ -210,6 +211,19 @@ private:
                             AbsMat& gradient_wrt_input);
 
 };
+
+#ifndef LBANN_TESSELLATE_LAYER_INSTANTIATE
+extern template class tessellate_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class tessellate_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class tessellate_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class tessellate_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_TESSELLATE_LAYER_INSTANTIATE
 
 } // namespace lbann
 

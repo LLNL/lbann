@@ -112,7 +112,7 @@ void setup_unpooling_pointers(lbann_comm* comm,
         unpool->set_pooling_layer(pool);
       }
     }
-#ifdef LBANN_HAS_GPU
+#if defined(LBANN_HAS_GPU) && defined(LBANN_UNPOOLING_LAYER_SUPPORTS_GPU)
     {
       unpooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>* unpool
         = dynamic_cast<unpooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>*>(layers[i]);

@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_SORT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/sort.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
@@ -97,5 +98,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   }
 
 }
+
+template class sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

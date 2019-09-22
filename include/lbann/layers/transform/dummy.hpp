@@ -36,7 +36,8 @@ namespace lbann {
  *  Does no computation and is primarily intended as a placeholder for
  *  unused layer outputs.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class dummy_layer : public transform_layer {
 public:
   dummy_layer(lbann_comm *comm) : transform_layer(comm) {
@@ -49,6 +50,19 @@ public:
 protected:
   void fp_compute() override {}
 };
+
+#ifndef LBANN_DUMMY_LAYER_INSTANTIATE
+extern template class dummy_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class dummy_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class dummy_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class dummy_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_DUMMY_LAYER_INSTANTIATE
 
 } // namespace lbann
 

@@ -1,11 +1,13 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
-  covariance.cpp
-  variance.cpp
-  channelwise_mean.cpp
   argmax.cpp
   argmin.cpp
+  channelwise_mean.cpp
+  covariance.cpp
+  mini_batch_index.cpp
+  mini_batch_size.cpp
   one_hot.cpp
+  variance.cpp
   )
 
 if (LBANN_HAS_CUDA)

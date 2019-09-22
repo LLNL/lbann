@@ -38,14 +38,13 @@ namespace lbann {
  */
 template <data_layout Layout, El::Device Device>
 class argmax_layer : public Layer {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "argmax layer only supports data parallel layout");
+  static_assert(Device == El::Device::CPU,
+                "argmax layer only supports CPU");
 public:
 
-  argmax_layer(lbann_comm* comm) : Layer(comm) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "argmax layer only supports data parallel layout");
-    static_assert(Device == El::Device::CPU,
-                  "argmax layer only supports CPU");
-  }
+  argmax_layer(lbann_comm* comm) : Layer(comm) { }
   argmax_layer* copy() const override { return new argmax_layer(*this); }
   std::string get_type() const override { return "argmax"; }
   data_layout get_data_layout() const override { return Layout; }
@@ -71,6 +70,11 @@ protected:
   void fp_compute() override;
 
 };
+
+#ifndef LBANN_ARGMAX_LAYER_INSTANTIATE
+extern template class argmax_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#endif // LBANN_ARGMAX_LAYER_INSTANTIATE
 
 } // namespace lbann
 

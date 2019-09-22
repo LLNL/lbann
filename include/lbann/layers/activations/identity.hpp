@@ -61,15 +61,15 @@ protected:
 };
 
 #ifndef LBANN_IDENTITY_LAYER_INSTANTIATE
-LBANN_CLASS_ETI_DECL(
-  identity_layer, lbann::data_layout::DATA_PARALLEL, El::Device::CPU);
-LBANN_CLASS_ETI_DECL(
-  identity_layer, lbann::data_layout::MODEL_PARALLEL, El::Device::CPU);
+extern template class identity_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class identity_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-LBANN_CLASS_ETI_DECL(
-  identity_layer, lbann::data_layout::DATA_PARALLEL, El::Device::GPU);
-LBANN_CLASS_ETI_DECL(
-  identity_layer, lbann::data_layout::MODEL_PARALLEL, El::Device::GPU);
+extern template class identity_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class identity_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_IDENTITY_LAYER_INSTANTIATE
 

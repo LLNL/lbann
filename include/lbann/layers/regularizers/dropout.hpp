@@ -28,6 +28,7 @@
 #define LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/random.hpp"
 
@@ -88,7 +89,7 @@ public:
   dropout& operator=(const dropout& other) {
     regularizer_layer::operator=(other);
     m_keep_prob = other.m_keep_prob;
-    m_mask = other.m_mask ? other.m_mask->Copy() : nullptr;
+    m_mask = other.m_mask ? std::unique_ptr<AbsDistMat>(other.m_mask->Copy()) : nullptr;
 #ifdef LBANN_HAS_CUDNN
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
@@ -336,6 +337,15 @@ protected:
 #endif // LBANN_HAS_CUDNN
 
 };
+
+#ifndef LBANN_DROPOUT_LAYER_INSTANTIATE
+extern template class dropout<data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class dropout<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class dropout<data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class dropout<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_DROPOUT_LAYER_INSTANTIATE
 
 } // namespace lbann
 

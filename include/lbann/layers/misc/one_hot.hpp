@@ -41,12 +41,12 @@ namespace lbann {
  */
 template <data_layout Layout, El::Device Device>
 class one_hot_layer : public Layer {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "one-hot layer only supports data-parallel layout");
 public:
 
   one_hot_layer(lbann_comm* comm, size_t size) : Layer(comm) {
     set_output_dims({static_cast<int>(size)});
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "one-hot layer only supports data-parallel layout");
   }
   one_hot_layer* copy() const override { return new one_hot_layer(*this); }
   std::string get_type() const override { return "one-hot"; }
@@ -75,6 +75,15 @@ protected:
   void fp_compute() override;
 
 };
+
+#ifndef LBANN_ONE_HOT_LAYER_INSTANTIATE
+extern template class one_hot_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class one_hot_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_ONE_HOT_LAYER_INSTANTIATE
 
 } // namespace lbann
 

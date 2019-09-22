@@ -40,15 +40,16 @@ namespace lbann {
  *  to the red-top-left corner and (1,1,1) to the blue-bottom-right
  *  corner. The crop size is determined at setup.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class crop_layer : public transform_layer {
+  static_assert(T_layout == data_layout::DATA_PARALLEL,
+                "crop layer only supports DATA_PARALLEL");
 public:
 
   crop_layer(lbann_comm *comm,
              std::vector<int> dims)
     : transform_layer(comm) {
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "crop layer only supports DATA_PARALLEL");
     set_output_dims(dims);
     this->m_expected_num_parent_layers = 2;
   }
@@ -326,6 +327,13 @@ private:
   void bp_compute_3d();
 
 };
+
+#ifndef LBANN_CROP_LAYER_INSTANTIATE
+extern template class crop_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_CROP_LAYER_INSTANTIATE
 
 } // namespace lbann
 

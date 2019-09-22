@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
@@ -524,5 +525,8 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   }
 
 }
+
+template class batch_normalization_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
