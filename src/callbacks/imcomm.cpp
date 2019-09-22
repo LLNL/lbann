@@ -98,9 +98,10 @@ void imcomm::on_train_begin(model *m) {
 }
 
 void imcomm::on_backward_prop_end(model *m) {
+  const auto& c = m->get_execution_context();
   lbann_comm *comm = m->get_comm();
   if (comm->get_num_trainers() == 1 ||
-      m->get_execution_mode() != execution_mode::training) {
+      c.get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
   for (weights *w : m->get_weights()) {
@@ -131,9 +132,10 @@ void imcomm::do_summary(model *m, weights *w,
   if (m_summarizer == nullptr) {
     return;
   }
+  const auto& c = m->get_execution_context();
   std::string prefix = w->get_name() + "/imcomm_";
   m_summarizer->reduce_scalar(prefix + "time",
-                              im_time, m->get_step(execution_mode::training));
+                              im_time, c.get_step());
   // Use the same approximation the comm layer does.
   const CPUMat& local_gradients =
     static_cast<const CPUMat&>(w->get_optimizer()->get_gradient().LockedMatrix());
@@ -142,9 +144,9 @@ void imcomm::do_summary(model *m, weights *w,
   size_t bytes_received =
     sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
   m_summarizer->reduce_scalar(prefix + "bytes_sent",
-                              bytes_sent, m->get_step(execution_mode::training));
+                              bytes_sent, c.get_step());
   m_summarizer->reduce_scalar(prefix + "bytes_received",
-                              bytes_received, m->get_step(execution_mode::training));
+                              bytes_received, c.get_step());
 }
 
 static std::vector<std::string> comm_type_names  = { "none", "normal" };

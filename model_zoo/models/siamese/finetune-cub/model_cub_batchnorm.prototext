@@ -1,10 +1,12 @@
+trainer {
+  block_size: 256
+  procs_per_trainer: 0
+  num_parallel_readers: 0
+}
 model {
   data_layout: "data_parallel"
   mini_batch_size: 64
-  block_size: 256
   num_epochs: 50
-  num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -768,10 +770,10 @@ model {
     parents: "drop7_new"
     name: "fc8_new"
     data_layout: "data_parallel"
+    # The number of outputs specific to the dataset used.
+    # E.g., 200 for CUB, and 431 for CompCars.
+    hint_layer: "label_new"
     fully_connected {
-      # The number of outputs specific to the dataset used.
-      # E.g., 200 for CUB, and 431 for CompCars.
-      num_neurons_is_num_labels: true
       has_bias: false
     }
     weights: "fc8_new_linearity fc8_new_bias"

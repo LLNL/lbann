@@ -159,7 +159,7 @@ bool python_reader::fetch_label(CPUMat& Y, int data_id, int col) {
 }
 
 void python_reader::setup(int num_io_threads,
-                          std::shared_ptr<thread_pool> io_thread_pool) {
+                          observer_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
 
   // Acquire Python GIL

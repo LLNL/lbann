@@ -29,10 +29,13 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/summary.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 #include <google/protobuf/message.h>
 
@@ -89,6 +92,8 @@ public:
   /** @name Callback hooks */
   ///@{
 
+  /** @brief Called at the end of setup. */
+  virtual void on_setup_end(model *m) {}
   /** @brief Called at the beginning of training. */
   virtual void on_train_begin(model *m) {}
   /** @brief Called at the end of training. */
@@ -172,6 +177,9 @@ public:
 
   /** @brief Return this callback's name. */
   virtual std::string name() const = 0;
+
+  /** @brief Human-readable description. */
+  virtual description get_description() const;
 
   ///@}
 

@@ -54,17 +54,26 @@ int main(int argc, char *argv[]) {
 
     std::ostringstream err;
 
-    // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
-
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    // Optionally over-ride some values in the prototext for each model
+    for(size_t i = 0; i < pbs.size(); i++) {
+      get_cmdline_overrides(*comm, *(pbs[i]));
+    }
 
-    auto model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
-                                                comm.get(), io_thread_pool, true);
+    lbann_data::LbannPB& pb = *(pbs[0]);
+    lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
+
+    // Construct the trainer
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
+
+    thread_pool& io_thread_pool = trainer->get_io_thread_pool();
+
+    auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
+                                              comm.get(), opts, io_thread_pool, true);
     std::unique_ptr<model> model_2;
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
-                                           comm.get(), io_thread_pool, false);
+      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]),
+                                           comm.get(), opts, io_thread_pool, false);
     }
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
@@ -80,11 +89,11 @@ int main(int argc, char *argv[]) {
     // When using checkpoint states, skip training as those could be the result
     // of checkpointing by steps.
     if (!opts->has_string("no_model1_train")){
-      model_1->train( pb_model.num_epochs() );
+      trainer->train(model_1.get(), pb_model.num_epochs() );
     }
     // Evaluate model 1 unless it is set to skip
     if (!opts->has_string("no_model1_eval")){
-      model_1->evaluate(execution_mode::testing);
+      trainer->evaluate(model_1.get(), execution_mode::testing);
     }
 
     if (model_2 != nullptr) {
@@ -108,8 +117,8 @@ int main(int argc, char *argv[]) {
         std::cerr << "\n STARTING train - model 2\n\n";
       }
       const lbann_data::Model pb_model_2 = pbs[1]->model();
-      model_2->train( pb_model_2.num_epochs() );
-      model_2->evaluate(execution_mode::testing);
+      trainer->train(model_2.get(), pb_model_2.num_epochs() );
+      trainer->evaluate(model_2.get(), execution_mode::testing);
     }
 
   } catch (std::exception& e) {

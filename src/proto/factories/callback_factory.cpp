@@ -51,6 +51,7 @@
 #include "lbann/callbacks/monitor_io.hpp"
 #include "lbann/callbacks/perturb_adam.hpp"
 #include "lbann/callbacks/perturb_dropout.hpp"
+#include "lbann/callbacks/print_model_description.hpp"
 #include "lbann/callbacks/print_statistics.hpp"
 #include "lbann/callbacks/profiler.hpp"
 #include "lbann/callbacks/replace_weights.hpp"
@@ -155,6 +156,8 @@ void register_default_builders(factory_type& factory)
                            build_perturb_dropout_callback_from_pbuf);
   factory.register_builder("CallbackPolyLearningRate",
                            build_poly_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackPrintModelDescription",
+                           build_print_model_description_callback_from_pbuf);
   factory.register_builder("CallbackPrint",
                            build_print_statistics_callback_from_pbuf);
   factory.register_builder("CallbackProfiler",

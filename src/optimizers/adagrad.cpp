@@ -32,8 +32,8 @@
 
 namespace lbann {
 
-adagrad::adagrad(lbann_comm *comm, DataType learning_rate, DataType eps)
-  : optimizer(comm, learning_rate), m_eps(eps) {}
+adagrad::adagrad(DataType learning_rate, DataType eps)
+  : optimizer(learning_rate), m_eps(eps) {}
 
 adagrad::adagrad(const adagrad& other)
   : optimizer(other),
@@ -147,10 +147,10 @@ bool adagrad::load_from_checkpoint_distributed(persist& p, std::string name_pref
 
 std::unique_ptr<optimizer>
 build_adagrad_optimizer_from_pbuf(
-  google::protobuf::Message const& msg, lbann_comm* comm) {
+  google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::AdaGrad const&>(msg);
-  return make_unique<adagrad>(comm, params.learn_rate(), params.eps());
+  return make_unique<adagrad>(params.learn_rate(), params.eps());
 }
 
 } // namespace lbann

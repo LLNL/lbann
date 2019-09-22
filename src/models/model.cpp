@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/io/persist.hpp"
@@ -56,13 +57,12 @@ namespace lbann {
 // =============================================
 
 model::model(lbann_comm* comm,
-             El::Int mini_batch_size,
+             size_t mini_batch_size,
              objective_function* obj_fn,
              optimizer* default_optimizer)
-  : m_comm(comm),
-    m_current_mini_batch_size(mini_batch_size),
+  : m_execution_context(nullptr),
+    m_comm(comm),
     m_max_mini_batch_size(mini_batch_size),
-    m_effective_mini_batch_size(mini_batch_size),
     m_default_optimizer(default_optimizer),
     m_objective_function(obj_fn) {
 
@@ -74,16 +74,10 @@ model::model(lbann_comm* comm,
 }
 
 model::model(const model& other) :
+  m_execution_context(other.m_execution_context),
   m_comm(other.m_comm),
   m_name(other.m_name),
-  m_execution_mode(other.m_execution_mode),
-  m_epoch(other.m_epoch),
-  m_step(other.m_step),
-  m_terminate_training(other.m_terminate_training),
-  m_current_mini_batch_size(other.m_current_mini_batch_size),
-  m_max_mini_batch_size(other.m_max_mini_batch_size),
-  m_effective_mini_batch_size(other.m_effective_mini_batch_size),
-  m_background_io_allowed(other.m_background_io_allowed) {
+  m_max_mini_batch_size(other.m_max_mini_batch_size) {
 
   // Deep copies
   m_default_optimizer = (other.m_default_optimizer ?
@@ -102,22 +96,26 @@ model::model(const model& other) :
   // Copy layers
   std::unordered_map<Layer*,Layer*> layer_map;
   m_layers.reserve(other.m_layers.size());
-  for (const auto& ptr : other.m_layers) {
-    if (ptr == nullptr) { LBANN_ERROR("unexpected null pointer"); }
-    auto* old_layer = ptr.get();
-    auto* new_layer = old_layer->copy();
-    new_layer->set_model(this);
-    m_layers.emplace_back(new_layer);
-    layer_map[old_layer] = new_layer;
+  for (const auto& other_layer : other.m_layers) {
+    if (other_layer == nullptr) {
+      LBANN_ERROR("model \"",other.get_name(),"\" ",
+                  "has a null pointer in its list of layers");
+    }
+    m_layers.emplace_back(other_layer->copy());
+    m_layers.back()->set_model(this);
+    layer_map[other_layer.get()] = m_layers.back().get();
   }
 
   // Copy weights
-  m_weights = other.m_weights;
   std::unordered_map<weights*,weights*> weights_map;
-  for (auto& w : m_weights) {
-    auto&& w_copy = w->copy();
-    weights_map[w] = w_copy;
-    w = w_copy;
+  m_weights.reserve(other.m_weights.size());
+  for (const auto& other_weights : other.m_weights) {
+    if (other_weights == nullptr) {
+      LBANN_ERROR("model \"",other.get_name(),"\" ",
+                  "has a null pointer in its list of weights");
+    }
+    m_weights.emplace_back(make_unique<weights>(*other_weights));
+    weights_map[other_weights.get()] = m_weights.back().get();
   }
 
   // Fix pointers
@@ -128,28 +126,21 @@ model::model(const model& other) :
 model& model::operator=(const model& other) {
 
   // Delete objects
+  if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
   if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
   for (const auto& cb : m_callbacks)   { delete cb; }
-  for (const auto& w : m_weights)      { delete w; }
 
   // Shallow copies
   m_comm = other.m_comm;
   m_name = other.m_name;
-  m_execution_mode = other.m_execution_mode;
-  m_epoch = other.m_epoch;
-  m_step = other.m_step;
-  m_terminate_training = other.m_terminate_training;
-  m_current_mini_batch_size = other.m_current_mini_batch_size;
   m_max_mini_batch_size = other.m_max_mini_batch_size;
-  m_effective_mini_batch_size = other.m_effective_mini_batch_size;
-  m_background_io_allowed = other.m_background_io_allowed;
 
   // Deep copies
+  m_execution_context  = other.m_execution_context;
   m_objective_function = other.m_objective_function;
   m_metrics            = other.m_metrics;
   m_callbacks          = other.m_callbacks;
-  m_weights            = other.m_weights;
   if (m_objective_function != nullptr) {
     m_objective_function = m_objective_function->copy();
   }
@@ -159,21 +150,35 @@ model& model::operator=(const model& other) {
   for (auto& cb : m_callbacks) {
     cb = cb->copy();
   }
+
+  // Copy layers
   std::unordered_map<Layer*,Layer*> layer_map;
   m_layers.clear();
   m_layers.reserve(other.m_layers.size());
-  for (const auto& ptr : other.m_layers) {
-    if (ptr == nullptr) { LBANN_ERROR("unexpected null pointer"); }
-    auto* old_layer = ptr.get();
-    auto* new_layer = old_layer->copy();
-    new_layer->set_model(this);
-    m_layers.emplace_back(new_layer);
-    layer_map[old_layer] = new_layer;
+  for (const auto& other_layer : other.m_layers) {
+    if (other_layer == nullptr) {
+      LBANN_ERROR("model \"",other.get_name(),"\" ",
+                  "has a null pointer in its list of layers");
+    }
+    m_layers.emplace_back(other_layer->copy());
+    m_layers.back()->set_model(this);
+    layer_map[other_layer.get()] = m_layers.back().get();
   }
+
+  // Copy weights
   std::unordered_map<weights*,weights*> weights_map;
-  for (auto& w : m_weights) {
-    w = weights_map[w] = w->copy();
+  m_weights.clear();
+  m_weights.reserve(other.m_weights.size());
+  for (const auto& other_weights : other.m_weights) {
+    if (other_weights == nullptr) {
+      LBANN_ERROR("model \"",other.get_name(),"\" ",
+                  "has a null pointer in its list of weights");
+    }
+    m_weights.emplace_back(make_unique<weights>(*other_weights));
+    weights_map[other_weights.get()] = m_weights.back().get();
   }
+
+  // Fix pointers
   remap_pointers(layer_map, weights_map);
 
   return *this;
@@ -182,7 +187,6 @@ model& model::operator=(const model& other) {
 model::~model() {
   if (m_objective_function != nullptr) { delete m_objective_function; }
   if (m_default_optimizer != nullptr)  { delete m_default_optimizer; }
-  for (const auto& w : m_weights)      { delete w; }
   for (const auto& m : m_metrics)      { delete m; }
   for (const auto& cb : m_callbacks)   { delete cb; }
 }
@@ -258,7 +262,7 @@ description model::get_description() const {
 
   // Weights
   description weights_desc("Weights:");
-  for (const auto* w : m_weights) {
+  for (const auto& w : m_weights) {
     if (w == nullptr) {
       weights_desc.add("unknown weights");
     } else {
@@ -268,7 +272,15 @@ description model::get_description() const {
   desc.add(std::string{});
   desc.add(weights_desc);
 
-  /// @todo Descriptions for objective function, metrics, callbacks
+  // Callbacks
+  description callback_desc("Callbacks:");
+  for (const auto& cb : m_callbacks) {
+    callback_desc.add(cb->get_description());
+  }
+  desc.add(std::string{});
+  desc.add(callback_desc);
+
+  /// @todo Descriptions for objective function, metrics
 
   // Result
   return desc;
@@ -316,7 +328,7 @@ const std::vector<Layer*> model::get_layers() const {
 std::vector<weights*> model::get_weights() {
   std::vector<weights*> weights_list;
   for (const auto& w : m_weights) {
-    weights_list.push_back(w);
+    weights_list.push_back(w.get());
   }
   return weights_list;
 }
@@ -324,32 +336,12 @@ std::vector<weights*> model::get_weights() {
 const std::vector<weights*> model::get_weights() const {
   std::vector<weights*> weights_list;
   for (const auto& w : m_weights) {
-    weights_list.push_back(w);
+    weights_list.push_back(w.get());
   }
   return weights_list;
 }
 
-void model::set_execution_mode(execution_mode mode) {
-  m_execution_mode = mode;
-}
-
-execution_mode model::get_execution_mode() const noexcept {
-  return m_execution_mode;
-}
-
-El::Int model::get_step() const noexcept {
-  return get_step(get_execution_mode());
-}
-
-El::Int model::get_step(execution_mode mode) const noexcept {
-  if (m_step.count(mode) > 0) {
-    return m_step.at(mode);
-  } else {
-    return 0;
-  }
-}
-
-int model::get_num_iterations_per_epoch(execution_mode mode) const {
+size_t model::get_num_iterations_per_epoch(execution_mode mode) const {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     const auto* input = dynamic_cast<const generic_input_layer*>(&get_layer(i));
     if (input != nullptr) {
@@ -363,14 +355,12 @@ int model::get_num_iterations_per_epoch(execution_mode mode) const {
 // Model specification
 // =============================================
 
-void model::add_layer(std::unique_ptr<Layer> l) {
-  std::stringstream err;
+void model::add_layer(std::unique_ptr<Layer> ptr) {
 
   // Check for null pointer
-  if (l == nullptr) {
-    err << "attempted to add a null pointer as a layer to "
-        << "model \"" << get_name() << "\"";
-    LBANN_ERROR(err.str());
+  if (ptr == nullptr) {
+    LBANN_ERROR("attempted to add a null pointer as layer to ",
+                "model \"",get_name(),"\"");
   }
 
   // Check that the new layer name is unique
@@ -378,30 +368,27 @@ void model::add_layer(std::unique_ptr<Layer> l) {
   // bottleneck. If it is, consider maintaining a hash table
   // containing all layer names (and properly updating it during
   // copies and pointer remaps).
-  const auto& name = l->get_name();
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (get_layer(i).get_name() == name) {
-      err << "attempted to add layer \"" << name << "\" to "
-          << "model \"" << get_name() << "\", "
-          << "but the model already contains a layer with that name";
-      LBANN_ERROR(err.str());
+  const auto& name = ptr->get_name();
+  for (const auto& l : m_layers) {
+    if (l->get_name() == name) {
+      LBANN_ERROR("attempted to add layer \"",name,"\" to ",
+                  "model \"",get_name(),"\", ",
+                  "but the model already contains a layer with that name");
     }
   }
 
   // Add layer to model
-  m_layers.emplace_back(std::move(l));
+  m_layers.emplace_back(std::move(ptr));
   m_layers.back()->set_model(this);
 
 }
 
-void model::add_weights(weights* w) {
-  std::stringstream err;
+void model::add_weights(std::unique_ptr<weights> ptr) {
 
   // Check for null pointer
-  if (w == nullptr) {
-    err << "attempted to add a null pointer as weights to "
-        << "model \"" << get_name() << "\"";
-    LBANN_ERROR(err.str());
+  if (ptr == nullptr) {
+    LBANN_ERROR("attempted to add a null pointer as weights to ",
+                "model \"",get_name(),"\"");
   }
 
   // Check that the new weights name is unique
@@ -409,18 +396,17 @@ void model::add_weights(weights* w) {
   // bottleneck. If it is, consider maintaining a hash table
   // containing all weights names (and properly updating it during
   // copies and pointer remaps).
-  const auto& name = w->get_name();
-  for (const auto& w2 : m_weights) {
-    if (w2->get_name() == name) {
-      err << "attempted to add weights \"" << name << "\" to "
-          << "model \"" << get_name() << "\", "
-          << "but the model already contains weights with that name";
-      LBANN_ERROR(err.str());
+  const auto& name = ptr->get_name();
+  for (const auto& w : m_weights) {
+    if (w->get_name() == name) {
+      LBANN_ERROR("attempted to add weights \"",name,"\" to ",
+                  "model \"",get_name(),"\", ",
+                  "but the model already contains weights with that name");
     }
   }
 
   // Add weights to model
-  m_weights.push_back(w);
+  m_weights.emplace_back(std::move(ptr));
 
 }
 
@@ -439,30 +425,25 @@ void model::add_metric(metric *m) {
 }
 
 void model::replace_weights(std::vector<weights*>& new_weights) {
+  /// @todo tym (9/9/19): This function isn't used anywhere. It's
+  /// probably safe to delete?
 
   // Check that number of weights is valid
   if (new_weights.size() > m_weights.size()) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "attempted to replace weights with an invalid number of weights "
-        << "(expected at most " << m_weights.size() << ", found " << new_weights.size() << ")";
-    throw lbann_exception(err.str());
+    LBANN_ERROR("attempted to replace weights with ",
+                "an invalid number of weights ",
+                "(expected at most ",m_weights.size(),", ",
+                "found ",new_weights.size(),")");
   }
 
   // Replace weights in list
-  std::vector<weights *> old_weights(m_weights.begin(),
-                                     m_weights.begin() + new_weights.size());
   std::unordered_map<weights*,weights*> weights_map;
   std::unordered_map<Layer*,Layer*> layer_map;
   for (size_t i = 0; i < new_weights.size(); ++i) {
-    m_weights[i] = weights_map[old_weights[i]] = new_weights[i];
+    weights_map[m_weights[i].get()] = new_weights[i];
+    m_weights[i].reset(new_weights[i]);
   }
   remap_pointers(layer_map, weights_map);
-
-  // Delete old weights
-  for (const auto& w : old_weights) {
-    delete w;
-  }
 
 }
 
@@ -592,10 +573,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // Setup
 // =============================================
 
-void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
-  // Setup I/O threads - set up before setting up the layers (input
-  // layer depends on having a properly initialized thread pool)
-  m_io_thread_pool = std::move(io_thread_pool);
+void model::setup() {
 
   // Setup layers
   setup_layer_topology();
@@ -604,9 +582,6 @@ void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
 
   // Setup weights
   setup_weights();
-
-  // Setup objective function
-  m_objective_function->setup(*this);
 
   // Setup metrics
   for (const auto& m : m_metrics) {
@@ -617,6 +592,10 @@ void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
   for (const auto& cb : m_callbacks) {
     cb->setup(this);
   }
+
+  // Callback hooks at end of setup
+  do_setup_end_cbs();
+
 }
 
 void model::setup_layer_topology() {
@@ -706,48 +685,16 @@ void model::setup_layers() {
 
 void model::setup_weights() {
 
-  // List of used and unused weights
-  std::unordered_set<weights*> weights_set(m_weights.begin(),
-                                           m_weights.end());
-  std::set<weights*> unused_weights(m_weights.begin(),
-                                    m_weights.end());
-
-  // Find weights used by layers
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    for (const auto& w : get_layer(i).get_weights()) {
-      if (weights_set.count(w) == 0) {
-        m_weights.push_back(w);
-        weights_set.insert(w);
-      }
-      unused_weights.erase(w);
-    }
-  }
-
-  // Find weights used by objective function
-  for (const auto& w : m_objective_function->get_weights_pointers()) {
-    if (weights_set.count(w) == 0) {
-      m_weights.push_back(w);
-      weights_set.insert(w);
-    }
-    unused_weights.erase(w);
-  }
-
-  // Delete unused weights
-  for (auto&& w : unused_weights) {
-    m_weights.erase(std::remove(m_weights.begin(), m_weights.end(), w),
-                    m_weights.end());
-  }
-
-  // For run-to-run reproducibility, make sure the weights are
-  // initialized in the same order no matter how they are ordered in
-  // the prototext file.
+  // Sort weights by name
+  // Note: For run-to-run consistency. Names are assumed to be unique.
   std::sort(m_weights.begin(), m_weights.end(),
-            [](weights* const &x, weights* const &y) {
+            [] (const std::unique_ptr<weights>& x,
+                const std::unique_ptr<weights>& y) {
               return x->get_name().compare(y->get_name()) < 0;
             });
 
   // Setup weights
-  for (auto* w : m_weights) { w->setup(); }
+  for (auto&& w : m_weights) { w->setup(); }
 
 }
 
@@ -962,60 +909,6 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 // Execution
 // =============================================
 
-void model::evaluate(execution_mode mode, int num_batches) {
-
-  // Return early if execution mode is invalid
-  if (!is_execution_mode_valid(mode)) return;
-  if (mode != execution_mode::validation
-      && mode != execution_mode::testing) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__ << " :: "
-        << "invalid execution mode for evaluation";
-    throw lbann_exception(err.str());
-  }
-
-  // Evaluate on all mini-batches
-  reset_epoch_statistics(mode);
-  reset_mode_and_model(mode);
-  do_evaluate_begin_cbs(mode);
-  if (num_batches > 0) {
-    for (int i = 0; i < num_batches; i++) { evaluate_mini_batch(mode); }
-  } else {
-    while (!evaluate_mini_batch(mode)) {}
-  }
-  do_evaluate_end_cbs(mode);
-}
-
-void model::train(int num_epochs, int num_batches) {
-  do_train_begin_cbs();
-  for (int epoch = m_epoch; epoch < num_epochs; ++epoch) {
-    if (get_terminate_training()) { break; }
-
-    // Initialize epoch
-    reset_mode_and_model(execution_mode::training);
-    do_epoch_begin_cbs();
-
-    // Training iterations
-    if (num_batches > 0) {
-      for (int i = 0; i < num_batches; i++) { train_mini_batch(); }
-    } else {
-      while (!train_mini_batch()) {}
-    }
-
-    // Finalize epoch
-    ++m_epoch;
-    reconcile_weight_values();
-    do_epoch_end_cbs();
-    reset_epoch_statistics(execution_mode::training);
-
-    // Evaluate on validation set
-    evaluate(execution_mode::validation);
-
-  }
-  do_train_end_cbs();
-}
-
-
 void model::collect_background_data_fetch(execution_mode mode) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
@@ -1052,8 +945,9 @@ void model::mark_data_store_explicitly_loading(execution_mode mode) {
 
 // At the start of the epoch, set the execution mode and make sure
 // that each layer points to this model
-void model::reset_mode_and_model(execution_mode mode) {
-  set_execution_mode(mode);
+void model::reset_mode(execution_context& context, execution_mode mode) {
+  m_execution_context = static_cast<observer_ptr<execution_context>>(&context);
+  //  set_execution_mode(mode);
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     get_layer(i).set_model(this);
   }
@@ -1061,83 +955,21 @@ void model::reset_mode_and_model(execution_mode mode) {
 
 // At the end of the epoch, clean up the objective function and metrics
 void model::reset_epoch_statistics(execution_mode mode) {
-  m_objective_function->reset_statistics(mode);
+  get_objective_function()->reset_statistics(mode);
   for (const auto& m : m_metrics) {
     m->reset_statistics(mode);
   }
 }
 
-bool model::evaluate_mini_batch(execution_mode mode) {
-  reset_mode_and_model(mode);
-  do_batch_begin_cbs(mode);
-  forward_prop(mode);
-  m_objective_function->start_evaluation(mode, get_current_mini_batch_size());
-  m_objective_function->finish_evaluation(mode, get_current_mini_batch_size());
+void model::evaluate_metrics(execution_mode mode, size_t current_mini_batch_size) {
   for (const auto& m : m_metrics) {
-    m->evaluate(mode, get_current_mini_batch_size());
+    m->evaluate(mode, current_mini_batch_size);
   }
-  const bool finished = update_layers();
-
-  // Increment mini-batch step
-  /// @todo Move after the callbacks
-  if (m_step.count(mode) < 1) { m_step[mode] = 0; }
-  ++m_step[mode];
-
-  do_batch_end_cbs(mode);
-  return finished;
-}
-
-bool model::train_mini_batch() {
-  constexpr execution_mode mode = execution_mode::training;
-  reset_mode_and_model(mode);
-  do_batch_begin_cbs(mode);
-
-
-  bool finished;
-
-#if defined(LBANN_HAVE_OMP_TASKLOOP)
-  LBANN_OMP_PARALLEL
-  {
-    #pragma omp single
-    {
-#endif
-  // Forward prop step
-  clear_gradients();
-  forward_prop(mode);
-  // Result is not needed until the end of the mini-batch.
-  m_objective_function->start_evaluation(mode, get_current_mini_batch_size());
-
-  // Backward prop step
-  m_objective_function->differentiate();
-  backward_prop();
-  m_objective_function->compute_weight_regularization();
-
-  // Finish evaluation.
-  m_objective_function->finish_evaluation(mode, get_current_mini_batch_size());
-  for (const auto& m : m_metrics) {
-    m->evaluate(mode, get_current_mini_batch_size());
-  }
-
-  // Update step
-  update_weights();
-  finished = update_layers();
-#if defined(LBANN_HAVE_OMP_TASKLOOP)
-    }
-  }
-#endif
-
-  // Increment mini-batch step
-  /// @todo Move after the callbacks
-  if (m_step.count(mode) < 1) { m_step[mode] = 0; }
-  ++m_step[mode];
-
-  do_batch_end_cbs(execution_mode::training);
-  return finished;
 }
 
 void model::clear_gradients() {
-  for (const auto& w : m_weights) {
-    optimizer* opt = w->get_optimizer();
+  for (auto&& w : m_weights) {
+    auto&& opt = w->get_optimizer();
     if (opt != nullptr) { opt->clear_gradient(); }
   }
 }
@@ -1180,15 +1012,24 @@ void model::backward_prop() {
 
 void model::update_weights() {
   do_model_optimize_begin_cbs();
-  for (El::Int i = m_weights.size()-1; i >= 0; --i) {
-    auto& w = *m_weights[i];
-    optimizer* opt = w.get_optimizer();
+
+  // Apply optimization step to weights
+  // Note: Heuristically, forward prop consumes weights in the same
+  // order as m_weights and backprop computes weights gradients in
+  // reverse order. Also, we often launch a non-blocking allreduce
+  // after a weights gradient has been computed. Thus, iterating in
+  // reverse order will use gradients that have already finished their
+  // allreduce, giving more time for more recent allreduces to finish.
+  for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
+    auto& w = **rit;
+    auto&& opt = w.get_optimizer();
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(&w);
       opt->step();
       do_weight_optimize_end_cbs(&w);
     }
   }
+
   do_model_optimize_end_cbs();
 }
 
@@ -1201,106 +1042,33 @@ bool model::update_layers() {
 }
 
 void model::reconcile_weight_values() {
-  std::vector<Al::request> reqs(m_weights.size());
-  for (El::Int i = m_weights.size()-1; i >= 0; --i) {
-    m_weights[i]->reconcile_values(reqs[i]);
+
+  // Launch non-blocking communication to reconcile weights
+  // Note: Heuristically, forward prop consumes weights in the same
+  // order as m_weights. Also, weights tend to get larger as you get
+  // deeper into a neural network. Thus, iterating in reverse order
+  // means that we perform the expensive communication first, covering
+  // up the launch overheads for the subsequent cheap communication.
+  std::vector<Al::request> reqs;
+  reqs.reserve(m_weights.size());
+  for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
+    auto& w = **rit;
+    reqs.emplace_back();
+    w.reconcile_values(reqs.back());
   }
+
+  // Wait for communication to finish
   for (auto& req : reqs) { m_comm->wait(req); }
+
 }
 
 // =============================================
 // Callbacks
 // =============================================
 
-void model::do_train_begin_cbs() {
+void model::do_setup_end_cbs() {
   for (const auto& cb : m_callbacks) {
-    cb->on_train_begin(this);
-  }
-}
-
-void model::do_train_end_cbs() {
-  for (const auto& cb : m_callbacks) {
-    cb->on_train_end(this);
-  }
-}
-
-void model::do_evaluate_begin_cbs(execution_mode mode) {
-  for (const auto& cb : m_callbacks) {
-    switch (mode) {
-    case execution_mode::validation:
-      cb->on_validation_begin(this); break;
-    case execution_mode::testing:
-      cb->on_test_begin(this); break;
-    default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid execution mode";
-      throw lbann_exception(err.str());
-    }
-  }
-}
-
-void model::do_evaluate_end_cbs(execution_mode mode) {
-  for (const auto& cb : m_callbacks) {
-    switch (mode) {
-    case execution_mode::validation:
-      cb->on_validation_end(this); break;
-    case execution_mode::testing:
-      cb->on_test_end(this); break;
-    default:
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << "invalid execution mode";
-      throw lbann_exception(err.str());
-    }
-  }
-}
-
-void model::do_epoch_begin_cbs() {
-  for (const auto& cb : m_callbacks) {
-    cb->on_epoch_begin(this);
-  }
-}
-
-void model::do_epoch_end_cbs() {
-  for (const auto& cb : m_callbacks) {
-    cb->on_epoch_end(this);
-  }
-}
-
-void model::do_batch_begin_cbs(execution_mode mode) {
-  for (const auto& cb : m_callbacks) {
-    switch (mode) {
-    case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
-        cb->on_batch_begin(this);
-      }
-      break;
-    case execution_mode::validation:
-    case execution_mode::testing:
-      cb->on_batch_evaluate_begin(this);
-      break;
-    default:
-      LBANN_ERROR("invalid execution mode");
-    }
-  }
-}
-
-void model::do_batch_end_cbs(execution_mode mode) {
-  for (const auto& cb : m_callbacks) {
-    switch (mode) {
-    case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
-        cb->on_batch_end(this);
-      }
-      break;
-    case execution_mode::validation:
-    case execution_mode::testing:
-      cb->on_batch_evaluate_end(this);
-      break;
-    default:
-      LBANN_ERROR("invalid execution mode");
-    }
+    cb->on_setup_end(this);
   }
 }
 
@@ -1308,7 +1076,7 @@ void model::do_model_forward_prop_begin_cbs(execution_mode mode) {
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
+      if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
         cb->on_forward_prop_begin(this);
       }
       break;
@@ -1326,7 +1094,7 @@ void model::do_model_forward_prop_end_cbs(execution_mode mode) {
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
+      if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
         cb->on_forward_prop_end(this);
       }
       break;
@@ -1347,7 +1115,7 @@ void model::do_layer_forward_prop_begin_cbs(execution_mode mode, Layer *l) {
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
+      if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
         cb->on_forward_prop_begin(this, l);
       }
       break;
@@ -1368,7 +1136,7 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
   for (const auto& cb : m_callbacks) {
     switch (mode) {
     case execution_mode::training:
-      if (get_step() % cb->get_batch_interval() == 0) {
+      if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
         cb->on_forward_prop_end(this, l);
       }
       break;
@@ -1384,7 +1152,7 @@ void model::do_layer_forward_prop_end_cbs(execution_mode mode, Layer *l) {
 
 void model::do_model_backward_prop_begin_cbs() {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this);
     }
   }
@@ -1392,7 +1160,7 @@ void model::do_model_backward_prop_begin_cbs() {
 
 void model::do_model_backward_prop_end_cbs() {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this);
     }
   }
@@ -1400,7 +1168,7 @@ void model::do_model_backward_prop_end_cbs() {
 
 void model::do_layer_backward_prop_begin_cbs(Layer *l) {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_begin(this, l);
     }
   }
@@ -1408,7 +1176,7 @@ void model::do_layer_backward_prop_begin_cbs(Layer *l) {
 
 void model::do_layer_backward_prop_end_cbs(Layer *l) {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_backward_prop_end(this, l);
     }
   }
@@ -1416,7 +1184,7 @@ void model::do_layer_backward_prop_end_cbs(Layer *l) {
 
 void model::do_model_optimize_begin_cbs() {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_begin(this);
     }
   }
@@ -1424,7 +1192,7 @@ void model::do_model_optimize_begin_cbs() {
 
 void model::do_model_optimize_end_cbs() {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_end(this);
     }
   }
@@ -1432,7 +1200,7 @@ void model::do_model_optimize_end_cbs() {
 
 void model::do_weight_optimize_begin_cbs(weights *w) {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_begin(this, w);
     }
   }
@@ -1440,7 +1208,7 @@ void model::do_weight_optimize_begin_cbs(weights *w) {
 
 void model::do_weight_optimize_end_cbs(weights *w) {
   for (const auto& cb : m_callbacks) {
-    if (get_step() % cb->get_batch_interval() == 0) {
+    if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
       cb->on_optimize_end(this, w);
     }
   }
@@ -1451,20 +1219,21 @@ void model::do_weight_optimize_end_cbs(weights *w) {
 // =============================================
 
 void model::summarize_stats(lbann_summary& summarizer) {
+  const auto& c = get_execution_context();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    get_layer(i).summarize_stats(summarizer, get_step(execution_mode::training));
+    get_layer(i).summarize_stats(summarizer, c.get_step());
   }
   summarizer.reduce_scalar("objective",
-                           m_objective_function->get_mean_value(m_execution_mode),
-                           get_step(execution_mode::training));
+                           m_objective_function->get_mean_value(c.get_execution_mode()),
+                           c.get_step());
   summarizer.reduce_scalar(
     "objective_evaluation_time",
     m_objective_function->get_evaluation_time(),
-    get_step(execution_mode::training));
+    c.get_step());
   summarizer.reduce_scalar(
     "objective_differentiation_time",
     m_objective_function->get_differentiation_time(),
-    get_step(execution_mode::training));
+    c.get_step());
   m_objective_function->reset_counters();
   double total_metric_time = 0.0;
   for (auto&& m : m_metrics) {
@@ -1474,12 +1243,13 @@ void model::summarize_stats(lbann_summary& summarizer) {
   summarizer.reduce_scalar(
     "metric_evaluation_time",
     total_metric_time,
-    get_step(execution_mode::training));
+    c.get_step());
 }
 
 void model::summarize_matrices(lbann_summary& summarizer) {
+  const auto& c = get_execution_context();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    get_layer(i).summarize_matrices(summarizer, get_step(execution_mode::training));
+    get_layer(i).summarize_matrices(summarizer, c.get_step());
   }
 }
 
@@ -1489,65 +1259,29 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 
 /* struct used to serialize mode fields in file and MPI transfer */
 struct lbann_model_header {
-  uint32_t execution_mode;
-  uint32_t terminate_training;
-  uint64_t epoch;
-  uint64_t training_step;
-  uint64_t validation_step;
-  uint64_t testing_step;
-  uint32_t max_mini_batch_size;
-  uint32_t current_mini_batch_size;
-  uint32_t callback_type;;
+  uint64_t max_mini_batch_size;
+  uint32_t callback_type;
 };
 
 bool model::save_to_checkpoint_shared(persist& p) {
   // write out fields we need to save for model
-  if (p.get_cb_type() != callback_type::validation) {
-    if (m_comm->am_trainer_master()) {
-      p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
-      p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
-      p.write_uint64(persist_type::train, "epoch",              (uint64_t) m_epoch);
-      p.write_uint64(persist_type::train, "training_step",      (uint64_t) get_step(execution_mode::training));
-      p.write_uint64(persist_type::train, "testing_step",       (uint64_t) get_step(execution_mode::testing));
-      p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
-      p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
-      p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
-      if(p.get_cb_type() == callback_type::batch)
-        p.write_uint64(persist_type::validate, "validation_step",       (uint64_t) get_step(execution_mode::validation));
-    }
+  if (m_comm->am_trainer_master()) {
+    p.write_uint64(persist_type::model, "max_mini_batch_size",      (uint64_t) m_max_mini_batch_size);
+    p.write_uint32(persist_type::model, "persist_callback_type",      (uint32_t) p.get_cb_type());
+  }
 
-    for (weights *w : m_weights) {
-      w->save_to_checkpoint_shared(p);
-    }
+  for (auto&& w : m_weights) {
+    w->save_to_checkpoint_shared(p);
+  }
 
-    for (El::Int i = 0; i < get_num_layers(); ++i) {
-      if (!get_layer(i).save_to_checkpoint_shared(p)) {
-        return false;
-      }
-    }
-    if(p.get_cb_type() == callback_type::batch || get_num_iterations_per_epoch(execution_mode::validation) == 0){
-      save_rng_to_checkpoint_shared(p, m_comm);
-      for (const auto& m : m_metrics) {
-        m->save_to_checkpoint_shared(p);
-      }
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    if (!get_layer(i).save_to_checkpoint_shared(p)) {
+      LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
     }
   }
-  else{
-    if (m_comm->am_trainer_master()) {
-      p.write_uint64(persist_type::validate, "validation_step",       (uint64_t) get_step(execution_mode::validation));
-    }
-    save_rng_to_checkpoint_shared(p, m_comm);
-    for (weights *w : m_weights) {
-      w->save_to_checkpoint_shared(p);
-    }
-    for (El::Int i = 0; i < get_num_layers(); ++i) {
-      if (!get_layer(i).save_to_checkpoint_shared(p)) {
-        return false;
-      }
-    }
-    for (const auto& m : m_metrics) {
-      m->save_to_checkpoint_shared(p);
-    }
+  save_rng_to_checkpoint(p, m_comm);
+  for (const auto& m : m_metrics) {
+    m->save_to_checkpoint_shared(p);
   }
   return true;
 }
@@ -1558,50 +1292,26 @@ bool model::load_from_checkpoint_shared(persist& p) {
   struct lbann_model_header header;
   // Assume checkpoint reload from epoch end not step end
   if (m_comm->am_trainer_master()) {
-    if (p.get_cb_type() != callback_type::validation) {
-      p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
-      p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
-      p.read_uint64(persist_type::train, "epoch",              &header.epoch);
-      p.read_uint64(persist_type::train, "training_step",       &header.training_step);
-      if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
-        p.read_uint64(persist_type::validate, "validation_step",       &header.validation_step);
-      p.read_uint64(persist_type::train, "testing_step",       &header.testing_step);
-      p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
-      p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
-      p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
-    } else {
-      p.read_uint64(persist_type::validate, "validation_step",       &header.validation_step);
-    }
+    p.read_uint64(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
+    p.read_uint32(persist_type::model, "persist_callback_type",     &header.callback_type);
   }
-  load_rng_from_checkpoint_shared(p, m_comm);
+  load_rng_from_checkpoint(p, m_comm);
   // TODO: this assumes homogeneous processors
   // broadcast state from rank 0
   m_comm->trainer_broadcast(0, header);
   // set our member params from values read from disk
-  if (p.get_cb_type() != callback_type::validation) {
-    m_execution_mode     = (execution_mode) header.execution_mode;
-    m_terminate_training = (bool)           header.terminate_training;
-    m_epoch              = (int)            header.epoch;
-    m_step[execution_mode::training] = (int) header.training_step;
-    if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
-      m_step[execution_mode::validation] = (int) header.validation_step;
-    m_step[execution_mode::testing] = (int) header.testing_step;
-    m_max_mini_batch_size = (int)           header.max_mini_batch_size;
-    m_current_mini_batch_size = (int)       header.current_mini_batch_size;
-    // set state of persist object to know which type of ckpt we are returning from.
-    p.set_cb_type((callback_type) header.callback_type);
-  } else {
-    m_step[execution_mode::validation] = (int) header.validation_step;
-  }
+  m_max_mini_batch_size = (size_t)           header.max_mini_batch_size;
+  // set state of persist object to know which type of ckpt we are returning from.
+  p.set_cb_type((callback_type) header.callback_type);
 
-  for (weights *w : m_weights) {
+  for (auto&& w : m_weights) {
     w->load_from_checkpoint_shared(p);
   }
 
   // read in each layer
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     if (!get_layer(i).load_from_checkpoint_shared(p)) {
-      return false;
+      LBANN_ERROR("Unable to load layer[",i,"]=", get_layer(i).get_name());
     }
   }
   if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
@@ -1617,90 +1327,48 @@ bool model::load_from_checkpoint_shared(persist& p) {
 
 bool model::save_to_checkpoint_distributed(persist& p){
   // write out fields we need to save for model
-  if (p.get_cb_type() != callback_type::validation) {
-    p.write_uint32(persist_type::train, "execution_mode",     (uint32_t) m_execution_mode);
-    p.write_uint32(persist_type::train, "terminate_training", (uint32_t) m_terminate_training);
-    p.write_uint64(persist_type::train, "epoch",              (uint64_t) m_epoch);
-    p.write_uint64(persist_type::train, "training_step",      (uint64_t) get_step(execution_mode::training));
-    p.write_uint64(persist_type::train, "testing_step",       (uint64_t) get_step(execution_mode::testing));
-    p.write_uint32(persist_type::train, "max_mini_batch_size",      (uint32_t) m_max_mini_batch_size);
-    p.write_uint32(persist_type::train, "current_mini_batch_size",      (uint32_t) m_current_mini_batch_size);
-    p.write_uint32(persist_type::train, "persist_callback_type",      (uint32_t) p.get_cb_type());
-    if(p.get_cb_type() == callback_type::batch)
-      p.write_uint64(persist_type::validate, "validataion_step",       (uint64_t) get_step(execution_mode::validation));
+  p.write_uint64(persist_type::model, "max_mini_batch_size",  (uint64_t) m_max_mini_batch_size);
+  p.write_uint32(persist_type::train, "persist_callback_type",(uint32_t) p.get_cb_type());
 
-    for (weights *w : m_weights) {
-      w->save_to_checkpoint_distributed(p);
-    }
-
-    for (El::Int i = 0; i < get_num_layers(); ++i) {
-      if (!get_layer(i).save_to_checkpoint_distributed(p)) {
-        return false;
-      }
-    }
-    if(p.get_cb_type() == callback_type::batch || get_num_iterations_per_epoch(execution_mode::validation) == 0){
-       save_rng_to_checkpoint_shared(p, m_comm);
-      for (const auto& m : m_metrics) {
-        m->save_to_checkpoint_distributed(p);
-      }
-    }
+  // for each execution context write out them out
+  for (auto&& w : m_weights) {
+    w->save_to_checkpoint_distributed(p);
   }
 
-  else {
-    p.write_uint64(persist_type::validate, "validataion_step",       (uint64_t) get_step(execution_mode::validation));
-    save_rng_to_checkpoint_shared(p, m_comm);
-
-    for (El::Int i = 0; i < get_num_layers(); ++i) {
-      if (!get_layer(i).save_to_checkpoint_distributed(p)) {
-        return false;
-      }
-    }
-    for (const auto& m : m_metrics) {
-      m->save_to_checkpoint_distributed(p);
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    if (!get_layer(i).save_to_checkpoint_distributed(p)) {
+      LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
     }
   }
+  save_rng_to_checkpoint(p, m_comm);
+  for (const auto& m : m_metrics) {
+    m->save_to_checkpoint_distributed(p);
+  }
+
   return true;
 }
 
 bool model::load_from_checkpoint_distributed(persist& p){
   struct lbann_model_header header;
-  p.read_uint32(persist_type::train, "execution_mode",     &header.execution_mode);
-  p.read_uint32(persist_type::train, "terminate_training", &header.terminate_training);
-  p.read_uint64(persist_type::train, "epoch",              &header.epoch);
-  p.read_uint64(persist_type::train, "training_step",      &header.training_step);
-  if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
-    p.read_uint64(persist_type::validate, "validation_step",       &header.validation_step);
-  p.read_uint64(persist_type::train, "testing_step",               &header.testing_step);
-  p.read_uint32(persist_type::train, "max_mini_batch_size",      &header.max_mini_batch_size);
-  p.read_uint32(persist_type::train, "current_mini_batch_size",      &header.current_mini_batch_size);
+  p.read_uint64(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
   p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
 
-  m_execution_mode     = (execution_mode) header.execution_mode;
-  m_terminate_training = (bool)           header.terminate_training;
-  m_epoch              = (int)            header.epoch;
-  m_step[execution_mode::training] = (int) header.training_step;
-  if(get_num_iterations_per_epoch(execution_mode::validation) != 0)
-    m_step[execution_mode::validation] = (int) header.validation_step;
-  m_step[execution_mode::testing] = (int) header.testing_step;
-  m_max_mini_batch_size = (int)           header.max_mini_batch_size;
-  m_current_mini_batch_size = (int)       header.current_mini_batch_size;
+  m_max_mini_batch_size = (size_t)           header.max_mini_batch_size;
 
   p.set_cb_type((callback_type) header.callback_type);
-  load_rng_from_checkpoint_shared(p, m_comm);
+  load_rng_from_checkpoint(p, m_comm);
 
-  for (weights *w : m_weights) {
+  for (auto&& w : m_weights) {
     w->load_from_checkpoint_distributed(p);
   }
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     if (!get_layer(i).load_from_checkpoint_distributed(p)) {
-      return false;
+      LBANN_ERROR("Unable to load layer[",i,"]=", get_layer(i).get_name());
     }
   }
-  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
-    for (const auto& m : m_metrics) {
-      m->load_from_checkpoint_distributed(p);
-    }
+  for (const auto& m : m_metrics) {
+    m->load_from_checkpoint_distributed(p);
   }
   return true;
 }
@@ -1714,7 +1382,7 @@ void model::write_proto(lbann_data::Model* proto) {
 
 bool model::save_weights(persist& p) {
   // write out fields we need to save a model's weights
-  for (weights *w : m_weights) {
+  for (auto&& w : m_weights) {
     w->save_to_checkpoint_shared(p);
   }
   return true;
@@ -1722,7 +1390,7 @@ bool model::save_weights(persist& p) {
 
 bool model::reload_weights(const std::string latest, const std::vector<std::string>& weight_list) {
   // load weights that appear in weight list.
-  for(weights *w : m_weights) {
+  for(auto&& w : m_weights) {
     w->load_from_save(latest,weight_list);
   }
   return true;

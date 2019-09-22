@@ -31,6 +31,7 @@
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/enum_iterator.hpp"
 
 // Defines, among other things, DataType.
 #include "lbann_config.hpp"
@@ -47,6 +48,9 @@ namespace lbann {
 
 // Forward-declaration.
 class lbann_comm;
+
+/// Creating an observer_ptr to complement the unique_ptr and shared_ptr
+template <typename T> using observer_ptr = typename std::add_pointer<T>::type;
 
 // Note that this should only be used to wrap the thing coming out of
 // initialize()! This will be removed when we have proper RAII around
@@ -126,9 +130,10 @@ matrix_format data_layout_to_matrix_format(data_layout layout);
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
 std::string to_string(execution_mode m);
+using execution_mode_iterator = enum_iterator<execution_mode, execution_mode::training, execution_mode::invalid>;
 
 /** @brief Convert a string to an execution_mode. */
-execution_mode exe_mode_from_string(std::string const& str);
+execution_mode exec_mode_from_string(std::string const& str);
 /** @brief Extract an execution_mode from a stream. */
 std::istream& operator>>(std::istream& os, execution_mode& e);
 

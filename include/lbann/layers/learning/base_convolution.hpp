@@ -37,6 +37,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -357,7 +358,7 @@ public:
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
       this->m_weights[0] = w.get();
-      this->m_model->add_weights(w.release());
+      this->m_model->add_weights(std::move(w));
     }
     auto& kernel_weights = *this->m_weights[0];
 
@@ -384,7 +385,7 @@ public:
         w->set_name(get_name() + "_bias");
         w->set_optimizer(std::move(opt));
         this->m_weights[1] = w.get();
-        this->m_model->add_weights(w.release());
+        this->m_model->add_weights(std::move(w));
       }
       auto& bias_weights = *this->m_weights[1];
       bias_weights.set_dims(output_dims[0]);
@@ -643,8 +644,8 @@ protected:
     const auto& local_input = get_local_prev_activations();
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
 
-    // Useful constants
-    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
     const bool has_local_data = (local_input.Height() > 0
                                  && local_input.Width() > 0
                                  && local_gradient_wrt_output.Height() > 0
@@ -917,7 +918,8 @@ protected:
     const int num_input_channels = input_dims[0];
     const int num_output_channels = output_dims[0];
     const int num_per_output_channel = get_output_size() / num_output_channels;
-    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
     const auto& kernel_dims = get_kernel_dims();
     const auto& kernel_size = std::accumulate(kernel_dims.begin(),
                                               kernel_dims.end(),

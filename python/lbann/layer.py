@@ -46,7 +46,7 @@ class Layer(abc.ABC):
         for l in make_iterable(parents):
             self.add_parent(l)
         for l in make_iterable(children):
-            self.add_child(child)
+            self.add_child(l)
         for w in make_iterable(weights):
             self.add_weights(w)
 

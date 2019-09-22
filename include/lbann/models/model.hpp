@@ -30,6 +30,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/graph.hpp"
 #include "lbann/io/file_io.hpp"
@@ -52,6 +53,8 @@ class Model;
 namespace lbann {
 
 // Forward declarations
+class lbann_callback;
+class training_algorithm;
 class callback_base;
 
 /** @brief Abstract base class for neural network models. */
@@ -63,13 +66,13 @@ public:
   // ===========================================
 
   model(lbann_comm* comm,
-        El::Int mini_batch_size,
+        size_t mini_batch_size,
         objective_function* obj_fn,
         optimizer* default_optimizer = nullptr);
   model(const model& other);
   model& operator=(const model& other);
   virtual ~model();
-  virtual model* copy() const = 0;
+  virtual std::unique_ptr<model> copy_model() const = 0;
 
   // ===========================================
   // Access functions
@@ -129,59 +132,27 @@ public:
     return m_callbacks;
   }
 
-  /** @brief Return the I/O thread pool */
-  std::shared_ptr<thread_pool> get_io_thread_pool() { return m_io_thread_pool; }
-
   /** @brief Get the model's comm. */
-  inline lbann_comm *get_comm() const {
+  lbann_comm *get_comm() const {
     return m_comm;
   }
 
-  void set_execution_mode(execution_mode mode);
-  execution_mode get_execution_mode() const noexcept;
+  /** Check to see if there is a valid training context for the model */
+  bool has_valid_execution_context() const {
+    return (m_execution_context != nullptr);
+  }
 
-  /** @brief Number of times the training set has been traversed. */
-  inline El::Int get_epoch() const noexcept { return m_epoch; }
+  /** Grab the training context of the model */
+  const execution_context& get_execution_context() const {
+    if(m_execution_context == nullptr) {
+      LBANN_ERROR("execution context is not set");
+    }
+    return *m_execution_context;
+  }
 
-  /** @brief Current mini-batch step for current execution mode.
-   *  @details Step counts are not reset after each epoch.
-   */
-  El::Int get_step() const noexcept;
-
-  /** @brief Current mini-batch step for given execution mode.
-   *  @details Step counts are not reset after each epoch.
-   */
-  El::Int get_step(execution_mode mode) const noexcept;
-
-  /** @brief Set the model's current mini-batch size. */
-  inline void set_current_mini_batch_size(int mini_batch_size) {
-    m_current_mini_batch_size = mini_batch_size;
-  }
-  /** @brief Get the model's current mini-batch size. */
-  inline int get_current_mini_batch_size() const {
-    return m_current_mini_batch_size;
-  }
-  /** @brief Get the model's maximum mini-batch size. */
-  inline int get_max_mini_batch_size() const {
-    return m_max_mini_batch_size;
-  }
-  /** @brief Get the model's effective mini-batch size. */
-  inline int get_effective_mini_batch_size() const {
-    return m_effective_mini_batch_size;
-  }
-  /** @brief Set the model's effective mini-batch size. */
-  inline void set_effective_mini_batch_size(int mini_batch_size) {
-    m_effective_mini_batch_size = mini_batch_size;
-  }
-  int get_num_iterations_per_epoch(execution_mode mode) const;
-
-  /** @brief Return true if the flag to stop training is set. */
-  bool get_terminate_training() const {
-    return m_terminate_training;
-  }
-  /** @brief Set the terminate training flag (on or off). */
-  void set_terminate_training(bool f) {
-    m_terminate_training = f;
+  /** Grab the training context of the model */
+  execution_context& get_execution_context() {
+    return const_cast<execution_context&>(static_cast<const model&>(*this).get_execution_context());
   }
 
   // ===========================================
@@ -192,7 +163,7 @@ public:
   virtual void add_layer(std::unique_ptr<Layer> l);
 
   /** @brief Add weights to model. */
-  void add_weights(weights *w);
+  void add_weights(std::unique_ptr<weights> w);
 
   /** @brief Register a new callback for the model. */
   void add_callback(callback_base *cb);
@@ -216,6 +187,11 @@ public:
    */
   optimizer* create_optimizer() const;
 
+  /** Get the trainer's maximum mini-batch size. */
+  inline size_t get_max_mini_batch_size() const {
+    return m_max_mini_batch_size;
+  }
+
   /** @brief Set a flag that can be used to enable / disable the
    *         background I/O activities
    */
@@ -224,27 +200,15 @@ public:
   /** @brief Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
 
+  size_t get_num_iterations_per_epoch(execution_mode mode) const;
+
   // ===========================================
   // Setup
   // ===========================================
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);
-
-  // ===========================================
-  // Execution
-  // ===========================================
-
-  /** @brief Evaluate model. */
-  virtual void evaluate(execution_mode mode, int num_batches=0);
-
-  /** @brief Train model. */
-  virtual void train(int num_epochs, int num_batches=0);
-
-  /** @brief Complete any background I/O data fetch for the execution
-      mode requested */
-  virtual void collect_background_data_fetch(execution_mode mode);
+  virtual void setup();
 
   virtual void make_data_store_preloaded(execution_mode mode);
 
@@ -291,9 +255,6 @@ public:
   virtual void write_proto(lbann_data::Model* proto);
 
 protected:
-
-  /** @brief Check if the model execution mode is valid. */
-  virtual bool is_execution_mode_valid(execution_mode mode) const;
 
   /** @brief Reorder layer list with a gather.
    *
@@ -353,19 +314,31 @@ protected:
    */
   virtual void setup_weights();
 
+public:
+  // ===========================================
+  // Execution
+  // ===========================================
+
   /** @brief Reset model pointer and execution mode. */
-  virtual void reset_mode_and_model(execution_mode mode);
+  virtual void reset_mode(execution_context& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */
   virtual void reset_epoch_statistics(execution_mode mode);
-  /** @brief Evaluate model on a mini-batch */
-  virtual bool evaluate_mini_batch(execution_mode mode);
-  /** @brief Train model on a mini-batch. */
-  virtual bool train_mini_batch();
+
+  /** @brief Check if the trainer execution mode is valid for this model.
+    @todo this should be moved to the trainer when the data readers move. */
+  virtual bool is_execution_mode_valid(execution_mode mode) const;
+
+  /** @brief Complete any background I/O data fetch for the execution
+      mode requested */
+  virtual void collect_background_data_fetch(execution_mode mode);
 
   /** @brief Forward propagation step. */
   virtual void forward_prop(execution_mode mode);
   /** @brief Backward propagation step. */
   virtual void backward_prop();
+  /** Evaluate any metrics in the model */
+  virtual void evaluate_metrics(execution_mode mode,
+                                size_t current_mini_batch_size);
   /** @brief Clear each optimizer's gradient.
    *
    *  This must be called before training forward prop since layers
@@ -387,22 +360,8 @@ protected:
   // Callbacks
   // ===========================================
 
-  /** @brief Execute callbacks at start of training. */
-  virtual void do_train_begin_cbs();
-  /** @brief Execute callbacks at end of training. */
-  virtual void do_train_end_cbs();
-  /** @brief Execute callbacks at start of evaluation. */
-  virtual void do_evaluate_begin_cbs(execution_mode mode);
-  /** @brief Execute callbacks at end of evaluation. */
-  virtual void do_evaluate_end_cbs(execution_mode mode);
-  /** @brief Execute callbacks at start of epoch. */
-  virtual void do_epoch_begin_cbs();
-  /** @brief Execute callbacks at end of epoch. */
-  virtual void do_epoch_end_cbs();
-  /** @brief Execute callbacks at start of mini-batch. */
-  virtual void do_batch_begin_cbs(execution_mode mode);
-  /** @brief Execute callbacks at end of mini-batch. */
-  virtual void do_batch_end_cbs(execution_mode mode);
+  /** @brief Execute callbacks at end of setup. */
+  virtual void do_setup_end_cbs();
   /** @brief Execute callbacks at start of model forward propagation. */
   virtual void do_model_forward_prop_begin_cbs(execution_mode mode);
   /** @brief Execute callbacks at end of model forward propagation. */
@@ -430,6 +389,9 @@ protected:
 
 private:
 
+  /** Pointer to the execution context object used for training or evaluating this model */
+  observer_ptr<execution_context> m_execution_context;
+
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;
 
@@ -439,44 +401,19 @@ private:
    */
   std::string m_name;
 
-  /** @brief Current execution mode. */
-  execution_mode m_execution_mode = execution_mode::training;
-
-  /** @brief Number of times the training data set has been traversed. */
-  El::Int m_epoch = 0;
-
-  /** @brief Number of mini-batch steps performed.
-   *  @details Step counts are not reset after each epoch.
-   */
-  std::map<execution_mode, El::Int> m_step;
-
-  /** @brief Whether to terminate training.
-   *  @details If true, training will terminate immediately before
-   *  the next epoch.
-   */
-  bool m_terminate_training = false;
-
-  /** @brief Size of the current mini-batch in the model. */
-  int m_current_mini_batch_size;
-  /** @details Maximum possible minibatch size supported by layers in
-   *  this model.  Note that this is local to the particular model,
-   *  not across multiple models.
-   */
-  int m_max_mini_batch_size;
-  /** @brief The "effective" size of a minibatch.
-   *
-   *  This is the size of the minibatch across all models and used for
-   *  e.g.  correctly averaging gradients from multiple models.
-   */
-  int m_effective_mini_batch_size;
-
   /** @brief Tensor operations.
    *  @details The list is in execution order for forward propagation.
    */
   std::vector<std::unique_ptr<Layer>> m_layers;
 
   /** @brief Trainable parameters. */
-  std::vector<weights*> m_weights;
+  std::vector<std::unique_ptr<weights>> m_weights;
+
+  /** @details Maximum possible minibatch size supported by layers in
+   *  this model.  Note that this is local to the particular model,
+   *  not across multiple models.
+   */
+  size_t m_max_mini_batch_size;
 
   /** @details If a layer needs to construct an optimizer during
    *  setup, it will make a copy of the default optimizer. This object
@@ -495,9 +432,6 @@ private:
 
   /** @brief Current callbacks to process. */
   std::vector<callback_base*> m_callbacks;
-
-  /** @brief Threads available for I/O */
-  std::shared_ptr<thread_pool> m_io_thread_pool;
 
   /** @brief Flag that allows input layers to fetch data in the background */
   bool m_background_io_allowed = true;

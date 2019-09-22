@@ -22,52 +22,36 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// data_reader_ascii .hpp .cpp - generic_data_reader class for ASCII text files
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_DATA_READER_ASCII_HPP
-#define LBANN_DATA_READER_ASCII_HPP
+#ifndef LBANN_ENUM_ITERATOR_H
+#define LBANN_ENUM_ITERATOR_H
 
-#include "data_reader.hpp"
+#include <type_traits>
 
 namespace lbann {
 
-class ascii_reader : public generic_data_reader {
- public:
-  ascii_reader(int sequence_length = 1, bool shuffle = true);
-  ascii_reader(const ascii_reader&) = default;
-  ascii_reader& operator=(const ascii_reader&) = default;
-  ~ascii_reader() override = default;
-  ascii_reader* copy() const override { return new ascii_reader(*this); }
-
-  std::string get_type() const override {
-    return "ascii_reader";
+/** @brief Create an iterator that goes over a contiguous (unit-step)
+    enum class  */
+template < typename C, C beginVal, C endVal>
+class enum_iterator {
+  typedef typename std::underlying_type<C>::type val_t;
+  int val;
+public:
+  enum_iterator(const C & f) : val(static_cast<val_t>(f)) {}
+  enum_iterator() : val(static_cast<val_t>(beginVal)) {}
+  enum_iterator operator++() {
+    ++val;
+    return *this;
   }
-
-  void load() override;
-
-  int get_linearized_data_size() const override {
-    return 128 * m_sequence_length;
+  C operator*() { return static_cast<C>(val); }
+  enum_iterator begin() { return *this; } //default ctor is good
+  enum_iterator end() {
+      static const enum_iterator endIter=++enum_iterator(endVal); // cache it
+      return endIter;
   }
-  int get_linearized_label_size() const override {
-    return 128 * m_sequence_length;
-  }
-  const std::vector<int> get_data_dims() const override {
-    return {128 * m_sequence_length};
-  }
-
- protected:
-  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
-
-  /** Length of text sequence. */
-  int m_sequence_length;
-  /** Size of data file in bytes. */
-  int m_file_size;
-
+  bool operator!=(const enum_iterator& i) { return val != i.val; }
 };
 
-}  // namespace lbann
-
-#endif  // LBANN_DATA_READER_ASCII_HPP
+}
+#endif // LBANN_ENUM_ITERATOR_H

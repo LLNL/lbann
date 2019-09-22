@@ -76,6 +76,8 @@ class save_model : public callback_base {
                                  bool ckptdir_is_fullpath=false);
 
   std::string name() const override { return "save model"; }
+  void set_target_dir(const std::string& dir) { m_dir = dir; }
+  const std::string& get_target_dir() { return m_dir; }
 
  protected:
   friend class lbann::model;

@@ -48,7 +48,7 @@ namespace lbann {
  *  The scale and bias vectors are fused into a single weights tensor
  *  to reduce the number of gradient allreduces during backprop. In
  *  particular, the weights tensor is a
- *  @f$ \text{num_channels} \times 2 @f$ matrix, where the first
+ *  @f$ \text{num\_channels} \times 2 @f$ matrix, where the first
  *  column correspond to scale terms and the second column to bias
  *  terms.
  */
@@ -93,25 +93,24 @@ public:
     const El::Int num_channels = get_output_dims()[0];
 
     // Construct default weights if needed
-    if (this->m_weights.size() < 1) {
-      this->m_weights.push_back(new weights(get_comm()));
+    // Note: Scale is initialized to 1 and bias to 0
+    if (this->m_weights.empty()) {
+      auto w = make_unique<weights>(get_comm());
       std::vector<DataType> vals(2*num_channels, DataType{0});
       std::fill(vals.begin(), vals.begin()+num_channels, DataType{1});
       auto init = make_unique<value_initializer>(vals);
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      this->m_weights[0]->set_name(get_name() + "_weights");
-      this->m_weights[0]->set_initializer(std::move(init));
-      this->m_weights[0]->set_optimizer(std::move(opt));
-      this->m_model->add_weights(this->m_weights[0]);
+      w->set_name(get_name() + "_weights");
+      w->set_initializer(std::move(init));
+      w->set_optimizer(std::move(opt));
+      this->m_weights.push_back(w.get());
+      this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights.size() != 1) {
-      std::ostringstream err;
-      err << "attempted to setup "
-          << this->get_type() << " layer \"" << this->get_name() << "\" "
-          << "with an invalid number of weights "
-          << "(expected 1, "
-          << "found " << this->m_weights.size() << ")";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("attempted to setup ",
+                  this->get_type()," layer \"",this->get_name(),"\" ",
+                  "with an invalid number of weights ",
+                  "(expected 1, found ",this->m_weights.size(),")");
     }
 
     // Setup weights

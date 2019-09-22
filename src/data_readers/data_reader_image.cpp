@@ -159,6 +159,8 @@ void image_data_reader::load() {
   }
   fclose(fplist);
 
+  // TODO: this will probably need to change after sample_list class
+  //       is modified
   // reset indices
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_image_list.size());
@@ -210,19 +212,20 @@ void image_data_reader::preload_data_store() {
   if (is_master()) std::cerr << "Starting image_data_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
   int rank = m_comm->get_rank_in_trainer();
   for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
-    if (m_data_store->get_index_owner(data_id) != rank) {
+    int index = m_shuffled_indices[data_id];
+    if (m_data_store->get_index_owner(index) != rank) {
       continue;
     }
-    load_conduit_node_from_file(data_id, node);
-    m_data_store->set_preloaded_conduit_node(data_id, node);
+    load_conduit_node_from_file(index, node);
+    m_data_store->set_preloaded_conduit_node(index, node);
   }
 
   if (is_master()) {
     std::cout << "image_data_reader::preload_data_store time: " << (get_time() - tm1) << "\n";
-  }  
+  }
 }
 
-void image_data_reader::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+void image_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
    m_transform_pipeline.set_expected_out_dims(
     {static_cast<size_t>(m_image_num_channels),

@@ -132,6 +132,12 @@ void numpy_npz_conduit_reader::load() {
 }
 
 void numpy_npz_conduit_reader::preload_data_store() {
+  size_t count = get_absolute_sample_count(); 
+  double use_percent = get_use_percent();
+  if (count != 0 || use_percent != 1) {
+    LBANN_ERROR("numpy_npz_conduit_reader currently assumes you are using 100% of the data set; you specified get_absolute_sample_count() = ", count, " and get_use_percent() = ", use_percent, "; please ask Dave Hysom to modify the code, if you want to use less than 100%");
+  }
+
   double tm1 = get_time();
   m_data_store->set_preload();
   int rank = m_comm->get_rank_in_trainer();
@@ -214,7 +220,8 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
     //note: if testing, and test set is touched more than once, the following
     //      will through an exception TODO: relook later
-    if (priming_data_store() || m_model->get_execution_mode() == execution_mode::testing) {
+    const auto& c = static_cast<const execution_context&>(m_model->get_execution_context());
+    if (priming_data_store() || c.get_execution_mode() == execution_mode::testing) {
       m_data_store->set_conduit_node(data_id, node);
     }
   }
@@ -324,6 +331,10 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     LBANN_ERROR("failed to open " + m_filenames[my_file] + " for reading");
   }
   in.close();
+  m_num_samples = m_filenames.size(); 
+  if (is_master()) { 
+    std::cout << "num samples: " << m_num_samples << "\n";
+  } 
 
   int data_id = 0; //meaningless
   conduit::Node node;

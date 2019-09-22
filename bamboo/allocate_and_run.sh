@@ -5,6 +5,8 @@ CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 echo "allocate_and_run.sh CLUSTER="
 echo $CLUSTER
 
+export PYTHONPATH=${HOME}/.local/lib/python3.7/site-packages:${PYTHONPATH}
+
 WEEKLY=0
 while :; do
     case ${1} in
@@ -40,8 +42,8 @@ if [ "${CLUSTER}" = 'lassen' ]; then
         timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 16 -W $ALLOCATION_TIME_LIMIT ./run.sh
     fi
 elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
+    ALLOCATION_TIME_LIMIT=960
     if [ ${WEEKLY} -ne 0 ]; then
-        ALLOCATION_TIME_LIMIT=720
         timeout -k 5 24h salloc -N16 --partition=pbatch -t $ALLOCATION_TIME_LIMIT ./run.sh --weekly
         if [ "${CLUSTER}" = 'catalyst' ]; then
             cd integration_tests
@@ -51,11 +53,9 @@ elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTE
             cd ..
         fi
     else
-        if [ "${CLUSTER}" = 'catalyst' ]; then
-            ALLOCATION_TIME_LIMIT=240
-        elif [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
-            ALLOCATION_TIME_LIMIT=660
-        fi
         timeout -k 5 24h salloc -N16 --partition=pbatch -t $ALLOCATION_TIME_LIMIT ./run.sh
     fi
+else
+    echo "allocate_and_run.sh. Unsupported cluster CLUSTER="
+    echo $CLUSTER
 fi

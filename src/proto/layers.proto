@@ -175,6 +175,10 @@ message Layer {
     ChannelwiseMean channelwise_mean = 602;
     MiniBatchIndex mini_batch_index = 603;
     MiniBatchSize mini_batch_size = 604;
+    Argmax argmax = 605;
+    Argmin argmin = 606;
+    OneHot one_hot = 607;
+
   }
 
   ///////////////////////
@@ -440,22 +444,27 @@ message Layer {
   /////////////////////
   // Learning layers //
   /////////////////////
-  message FullyConnected {
-    int64 num_neurons = 1;
-    string weight_initialization = 2;    //DEPRECATED
-    bool has_bias = 3;                   //default: true
-    double bias_initial_value = 4;       //default: 0
-    double l2_regularization_factor = 5; //default: 0
-    double group_lasso_regularization_factor = 6; //default: 0
-    bool transpose = 7;
-    bool num_neurons_is_num_labels = 8;
 
-    bool get_input_dimension_from_reader = 9;
-    bool get_image_and_scalar_dimension_from_reader = 10;
-    bool get_image_dimension_from_reader = 11;
-    bool get_scalar_dimension_from_reader = 12;
-    repeated uint32 get_num_neurons_of_slice_from_reader = 13;
-    string get_slice_points_from_reader = 14;
+  /** @brief Affine transformation
+   *
+   *  Flattens the input tensor, multiplies with a weights matrix, and
+   *  optionally applies an entry-wise bias. Following the
+   *  column-vector convention:
+   *    @f[ y = W * \text{vec}(x) + b @f]
+   *
+   *  Two weights are required if bias is applied: the linearity and the
+   *  bias. Only the linearity weights are required if bias is not
+   *  applied. If weights aren't provided, the linearity weights are
+   *  initialized with He normal initialization and the bias weights are
+   *  initialized to zero.
+   */
+  message FullyConnected {
+    // Output tensor size
+    int64 num_neurons = 1;
+    // Whether to apply entry-wise bias
+    bool has_bias = 2;
+    // Whether to apply transpose of weights matrix
+    bool transpose = 3;
   }
 
   message Convolution {
@@ -527,6 +536,7 @@ message Layer {
   //////////////////////////
   // Miscellaneous layers //
   //////////////////////////
+
   message Covariance {
     bool biased = 1; //Whether to use a biased covariance estimate
   }
@@ -536,6 +546,30 @@ message Layer {
   message ChannelwiseMean {}
   message MiniBatchIndex {}
   message MiniBatchSize {}
+
+  // Get index of maximum-value tensor entry
+  //
+  // Expects a 1-D input tensor. If multiple entries have the same
+  // maximum value, outputs the index of the first one.
+  message Argmax {}
+
+  // Get index of minimum-value tensor entry
+  //
+  // Expects a 1-D input tensor. If multiple entries have the same
+  // minimum value, outputs the index of the first one.
+  message Argmin {}
+
+  // Convert index to a one-hot vector
+  //
+  // Expects a scalar input tensor and outputs a 1-D output tensor.
+  // The input is interpreted as an index, and output entries are one
+  // if they correspond to that index and zero otherwise. If the input
+  // is outside [0,size), then the output is all zeros.
+  message OneHot {
+    // Size of one-hot vector
+    int64 size = 1;
+  }
+
 }// message Layer
 
 //note: I'd like to put this enum inside of Layer, but if I do the enum values

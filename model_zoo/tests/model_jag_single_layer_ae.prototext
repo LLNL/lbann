@@ -2,16 +2,18 @@
 # Run time for this example is about 2s per epoch on 16 nodes (32 tasks)
 # Example on how to run:
 # srun --nodes=16 --ntasks=32  build/gnu.Release.catalyst.llnl.gov/lbann/build/model_zoo/lbann --model=model_zoo/tests/model_jag_single_layer_ae.prototext --optimizer=model_zoo/optimizers/opt_adam.prototext --reader=model_zoo/data_readers/data_reader_jag.prototext --metadata=model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext
+trainer {
+  block_size: 256
+  procs_per_trainer:0
+  num_parallel_readers: 0
+}
 model {
   name: "ae_model"
-  shareable_training_data_reader:false 
+  shareable_training_data_reader:false
   serialize_io: true
   data_layout: "data_parallel"
-  mini_batch_size: 128 
-  block_size: 256
+  mini_batch_size: 128
   num_epochs: 4
-  num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -54,6 +56,12 @@ model {
       execution_modes: "testing"
     }
   }
+
+  callback { checkpoint {
+              checkpoint_dir: "ckpt"
+              checkpoint_epochs: 1
+#              checkpoint_steps: 1
+              } }
 
   ###################################################
   # start of layers
@@ -110,14 +118,13 @@ model {
     data_layout: "data_parallel"
     elu {}
   }
-  #Y'(reconstructed images and scalar) 
+  #Y'(reconstructed images and scalar)
   layer {
     parents: "encodeelu"
     name: "decode"
     data_layout: "data_parallel"
+    hint_layer: "image_data_dummy"
     fully_connected {
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
   }

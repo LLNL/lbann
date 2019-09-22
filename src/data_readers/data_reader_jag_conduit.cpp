@@ -29,6 +29,7 @@
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/image.hpp"
 #include "lbann/utils/opencv.hpp"
@@ -263,7 +264,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_list_per_model = false;
 }
 
-void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+void data_reader_jag_conduit::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
 }
 
@@ -880,28 +881,30 @@ void data_reader_jag_conduit::preload_data_store() {
   }
 
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
     try {
       work.reset();
-      m_sample_list.open_samples_file_handle(idx, true);
-      load_conduit_node(idx, key, work);
-      conduit::Node & node = m_data_store->get_empty_node(idx);
-      const std::string padded_idx = '/' + LBANN_DATA_ID_STR(idx);
+      m_sample_list.open_samples_file_handle(index, true);
+      load_conduit_node(index, key, work);
+      conduit::Node & node = m_data_store->get_empty_node(index);
+      const std::string padded_idx = '/' + LBANN_DATA_ID_STR(index);
       node[padded_idx] = work;
 
-      m_data_store->set_preloaded_conduit_node(idx, node);
-    }catch (conduit::Error const& e) {
-      LBANN_ERROR(" :: trying to load the node " + std::to_string(idx) + " with key " + key + " and got " + e.what());
+      m_data_store->set_preloaded_conduit_node(index, node);
+    } catch (conduit::Error const& e) {
+      LBANN_ERROR(" :: trying to load the node " + std::to_string(index) + " with key " + key + " and got " + e.what());
     }
   }
   /// Once all of the data has been preloaded, close all of the file handles
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
-    m_sample_list.close_if_done_samples_file_handle(idx);
+    m_sample_list.close_if_done_samples_file_handle(index);
   }
   if (get_comm()->am_world_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
@@ -1465,20 +1468,21 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 }
 
 bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
+  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
-  if (m_data_store != nullptr && m_model->get_epoch() > 0) {
+  if (m_data_store != nullptr && c.get_epoch() > 0) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
   }
-  if (m_data_store != nullptr && m_model->get_epoch() == 0) {
+  if (m_data_store != nullptr && c.get_epoch() == 0) {
     // Once the node has been populated save it in the data store
     if (m_data_store != nullptr) {
       m_data_store->set_conduit_node(data_id, node);

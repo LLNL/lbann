@@ -2,10 +2,11 @@ import sys
 sys.path.insert(0, '../common_python')
 import tools
 import pytest
-import os, sys
+import os
 
 
-def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
+def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name,
+                           weekly, data_reader_percent):
     if compiler_name not in executables:
       e = 'skeleton_lbann2_reload: default_exes[%s] does not exist' % compiler_name
       print('Skip - ' + e)
@@ -16,66 +17,60 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
     model_path = '{../../model_zoo/models/lenet_mnist/model_lenet_mnist.prototext,../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext}'
     output_file_name = '%s/bamboo/unit_tests/output/lbann2_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/lbann2_no_checkpoint_%s_error.txt' % (dir_name, compiler_name)
+    no_ckpt_dir = 'ckpt_lbann2_reload/lbann2_no_ckpt_{c}'.format(c=compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=lbann2, num_nodes=1, num_processes=2,
         data_reader_name='mnist',
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         dir_name=dir_name,
+        data_reader_percent=data_reader_percent,
+        ckpt_dir=no_ckpt_dir,
         model_path=model_path,
         optimizer_name='sgd',
         num_epochs=2,
         output_file_name=output_file_name,
-        error_file_name=error_file_name)
+        error_file_name=error_file_name, weekly=weekly)
 
-    os.mkdir('lbann2_ckpt')
-    return_code = os.system(command)
-    if return_code != 0:
-        sys.stderr.write('LBANN2 LeNet execution failed, exiting with error')
-        sys.exit(1)
-
-    os.system('mkdir ckpt_lbann2_reload')
-    no_ckpt_dir = 'ckpt_lbann2_reload/lbann2_no_ckpt_{c}'.format(c=compiler_name)
-    os.system('mv lbann2_ckpt {c}'.format(c=no_ckpt_dir))
+    return_code_no_ckpt = os.system(command)
+    tools.assert_success(return_code_no_ckpt, error_file_name)
 
     # Run to checkpoint, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/lbann2_checkpoint_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/lbann2_checkpoint_%s_error.txt' % (dir_name, compiler_name)
+    ckpt_dir = 'ckpt_lbann2_reload/lbann2_ckpt_{c}'.format(c=compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=lbann2, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', model_folder='tests',
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
+        ckpt_dir=ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name,
-        error_file_name=error_file_name)
+        error_file_name=error_file_name, weekly=weekly)
     return_code_ckpt_1 = os.system(command)
-    if return_code_ckpt_1 != 0:
-        sys.stderr.write(
-            'LeNet (checkpoint) execution failed, exiting with error')
-        sys.exit(1)
+    tools.assert_success(return_code_ckpt_1, error_file_name)
 
     # Pick up from checkpoint, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/lbann2_restart_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/lbann2_restart_%s_error.txt' % (dir_name, compiler_name)
-    os.mkdir('lbann2_ckpt')
     command = tools.get_command(
         cluster=cluster, executable=lbann2, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist',
+        data_reader_percent=data_reader_percent,
+        ckpt_dir=ckpt_dir,
         model_path='../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext',
-        num_epochs=2, optimizer_name='sgd', ckpt_dir='ckpt/',
+        num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name,
-        error_file_name=error_file_name)
+        error_file_name=error_file_name, weekly=weekly)
     return_code_ckpt_2 = os.system(command)
-    if return_code_ckpt_2 != 0:
-        sys.stderr.write(
-            'LBANN2 LeNet weight reload failed, exiting with error')
-        sys.exit(1)
-    os.system('rm lbann2_ckpt/model0-epoch*')
-    os.system('rm lbann2_nockpt/model0-epoch*')
+    tools.assert_success(return_code_ckpt_2, error_file_name)
+#    os.system('rm lbann2_ckpt/model0-epoch*')
+#    os.system('rm lbann2_nockpt/model0-epoch*')
 
-    diff_result = os.system('diff -rq lbann2_ckpt/ {c}'.format(c=no_ckpt_dir))
+    diff_result = os.system('diff -rq {ckpt} {no_ckpt}'.format(
+        ckpt=ckpt_dir, no_ckpt=no_ckpt_dir))
     allow_epsilon_diff = False
     if allow_epsilon_diff and (diff_result != 0):
         equal_within_epsilon = True
@@ -109,8 +104,6 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
                         print(error_string)
         if equal_within_epsilon:
             diff_result = 0
-    ckpt_dir = 'ckpt_lbann2_reload/lbann2_ckpt_{c}'.format(c=compiler_name)
-    os.system('mv lbann2_ckpt {c}'.format(c=ckpt_dir))
     path_prefix = '{d}/bamboo/unit_tests'.format(d=dir_name)
     if diff_result != 0:
         raise AssertionError(
@@ -119,23 +112,26 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name):
     assert diff_result == 0
 
 
-def test_unit_lbann2_reload_clang6(cluster, exes, dirname):
-    skeleton_lbann2_reload(cluster, exes, dirname, 'clang6')
+def test_unit_lbann2_reload_clang6(cluster, exes, dirname, weekly, data_reader_percent):
+    skeleton_lbann2_reload(cluster, exes, dirname, 'clang6',
+                           weekly, data_reader_percent)
 
 
-def test_unit_lbann2_reload_gcc7(cluster, exes, dirname):
-    skeleton_lbann2_reload(cluster, exes, dirname, 'gcc7')
+def test_unit_lbann2_reload_gcc7(cluster, exes, dirname, weekly, data_reader_percent):
+    skeleton_lbann2_reload(cluster, exes, dirname, 'gcc7', weekly, data_reader_percent)
 
 
-def test_unit_lbann2_reload_intel19(cluster, exes, dirname):
-    skeleton_lbann2_reload(cluster, exes, dirname, 'intel19')
+def test_unit_lbann2_reload_intel19(cluster, exes, dirname,
+                                    weekly, data_reader_percent):
+    skeleton_lbann2_reload(cluster, exes, dirname, 'intel19',
+                           weekly, data_reader_percent)
 
 
 # Run with python3 -m pytest -s test_unit_lbann2_reload.py -k 'test_unit_lbann2_reload_exe' --exe=<executable>
-def test_unit_lbann2_reload_exe(cluster, dirname, exe):
+def test_unit_lbann2_reload_exe(cluster, dirname, exe, weekly, data_reader_percent):
     if exe is None:
         e = 'test_unit_lbann2_reload_exe: Non-local testing'
         print('Skip - ' + e)
         pytest.skip(e)
     exes = {'exe': exe}
-    skeleton_lbann2_reload(cluster, exes, dirname, 'exe')
+    skeleton_lbann2_reload(cluster, exes, dirname, 'exe', weekly, data_reader_percent)

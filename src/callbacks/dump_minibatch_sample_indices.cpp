@@ -40,6 +40,7 @@ namespace lbann {
 namespace callback {
 
 void dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t step) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   // Print minibatch sample indices of input layers
   auto *input = dynamic_cast<generic_input_layer*>(l);
   if (input != nullptr) {
@@ -59,11 +60,11 @@ void dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t ste
 
     const std::string file
       = (m_basename
-         + to_string(m->get_execution_mode())
+         + to_string(c.get_execution_mode())
          + "-model" + std::to_string(m->get_comm()->get_trainer_rank())
          + "-rank" + std::to_string(m->get_comm()->get_rank_in_trainer())
-         + "-epoch" + std::to_string(m->get_epoch())
-         + "-step" + std::to_string(m->get_step(execution_mode::training))
+         + "-epoch" + std::to_string(c.get_epoch())
+         + "-step" + std::to_string(c.get_step())
          + "-" + l->get_name()
          + "-MB_Sample_Indices");
     El::Write(*indices, file, El::ASCII);
@@ -71,11 +72,13 @@ void dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t ste
 }
 
 void dump_minibatch_sample_indices::on_forward_prop_end(model *m, Layer *l) {
-  dump_to_file(m, l, m->get_step());
+  const auto& c = m->get_execution_context();
+  dump_to_file(m, l, c.get_step());
 }
 
 void dump_minibatch_sample_indices::on_evaluate_forward_prop_end(model *m, Layer *l) {
-  dump_to_file(m, l, m->get_step());
+  const auto& c = m->get_execution_context();
+  dump_to_file(m, l, c.get_step());
 }
 
 std::unique_ptr<callback_base>
