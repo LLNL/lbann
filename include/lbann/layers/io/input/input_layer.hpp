@@ -100,6 +100,19 @@ template<>
 inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>::validate_data_layout() {}
 #endif // LBANN_HAS_GPU
 
-}
+#ifndef LBANN_INPUT_LAYER_INSTANTIATE
+extern template class input_layer<
+  partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class input_layer<
+  partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class input_layer<
+  partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class input_layer<
+  partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_INPUT_LAYER_INSTANTIATE
+
+} // namespace lbann
 
 #endif  // LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
