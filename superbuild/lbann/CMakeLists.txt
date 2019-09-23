@@ -187,5 +187,14 @@ ExternalProject_Add(LBANN
   ${LBANN_CMAKE_ARGS}
   )
 
+# Ensure the JAG utils are built
+ExternalProject_Add_Step(LBANN build-jag-utils
+  COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target jag-utils
+  COMMENT "Performing building of JAG utils for 'LBANN'"
+  DEPENDEES build
+  DEPENDERS install
+  LOG 1
+  USES_TERMINAL 1)
+
 set(LBANN_DIR ${LBANN_CMAKE_INSTALL_PREFIX}
   CACHE INTERNAL "The install prefix of LBANN.")
