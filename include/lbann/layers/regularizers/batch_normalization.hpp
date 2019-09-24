@@ -388,8 +388,9 @@ protected:
     const int num_channels = this->get_output_dims()[0];
     // Sanity check that the shared tensors have the correct shape
     assert_ne(num_channels, 0);
-    assert_eq(m_mean->Matrix().Width() * m_mean->Matrix().Height(),
-              num_channels);
+    assert_eq(m_mean_and_var->Matrix().Width() *
+              m_mean_and_var->Matrix().Height(),
+              num_channels * 2);
 
     dc::Shape per_channel_stat_shape(dc::num_dims, 1);
     per_channel_stat_shape[dc::num_spatial_dims] = num_channels;
@@ -405,10 +406,10 @@ protected:
 
     // mean
     m_mean_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
-    assert0(dc::tensor::View(m_mean_t, this->m_mean->Buffer()));
+    assert0(dc::tensor::View(m_mean_t, this->m_mean_v->Buffer()));
     // var
     m_var_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
-    assert0(dc::tensor::View(m_var_t, this->m_var->Buffer()));
+    assert0(dc::tensor::View(m_var_t, this->m_var_v->Buffer()));
     // scale: view to weights[0]
     m_scale_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
     // bias: view to weights[1]
@@ -428,11 +429,11 @@ protected:
     // mean_gradient
     m_mean_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
     assert0(dc::tensor::View(
-        m_mean_gradient_t, this->m_mean_gradient->Buffer()));
+        m_mean_gradient_t, this->m_mean_gradient_v->Buffer()));
     // var_gradient
     m_var_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
     assert0(dc::tensor::View(
-        m_var_gradient_t, this->m_var_gradient->Buffer()));
+        m_var_gradient_t, this->m_var_gradient_v->Buffer()));
   }
 
   void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {

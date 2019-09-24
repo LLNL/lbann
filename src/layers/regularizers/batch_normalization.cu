@@ -324,14 +324,11 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
 
   switch (m_stats_aggregation) {
     case batch_normalization_stats_aggregation::global:
-      m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
-      m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
+      m_comm->allreduce(*m_mean_and_var, m_mean_and_var->RedundantComm(),
+                        El::mpi::SUM);
       break;
     case batch_normalization_stats_aggregation::spatial:
-      m_comm->allreduce(*m_mean,
-                        *dc::get_spatial_el_comm(m_spatial_loc),
-                        El::mpi::SUM);
-      m_comm->allreduce(*m_var,
+      m_comm->allreduce(*m_mean_and_var,
                         *dc::get_spatial_el_comm(m_spatial_loc),
                         El::mpi::SUM);
       break;
@@ -374,24 +371,17 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   // Accumulate gradients
   if (is_training) {
     if (m_stats_aggregation == batch_normalization_stats_aggregation::global) {
-      m_comm->allreduce(*m_mean_gradient,
-                        m_mean_gradient->RedundantComm(),
-                        El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient,
-                        m_var_gradient->RedundantComm(),
+      m_comm->allreduce(*m_mean_and_var_gradient,
+                        m_mean_and_var_gradient->RedundantComm(),
                         El::mpi::SUM);
     } else if (m_stats_aggregation ==
                batch_normalization_stats_aggregation::spatial) {
-      m_comm->allreduce(*m_mean_gradient,
-                        *dc::get_spatial_el_comm(m_spatial_loc),
-                        El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient,
+      m_comm->allreduce(*m_mean_and_var_gradient,
                         *dc::get_spatial_el_comm(m_spatial_loc),
                         El::mpi::SUM);
     }
   } else {
-    Zero(*m_mean_gradient);
-    Zero(*m_var_gradient);
+    Zero(*m_mean_and_var_gradient);
   }
 
   const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
