@@ -100,7 +100,9 @@ class generic_input_layer : public io_layer {
     // needs to interact with data readers, etc., so it needs to be
     // synchronized before any of them are destroyed.
     if (this->m_model != nullptr) {
-      this->m_model->get_execution_context().get_io_thread_pool().reap_threads();
+      if (this->m_model->has_valid_execution_context()) {
+        this->m_model->get_execution_context().get_io_thread_pool().reap_threads();
+      }
     }
 
     for (auto& io_buffer : m_io_buffers) {
