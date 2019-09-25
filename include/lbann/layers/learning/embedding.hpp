@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LEARNING_EMBEDDING_HPP_INCLUDED
 #define LBANN_LAYERS_LEARNING_EMBEDDING_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -101,8 +101,12 @@ private:
   El::Int m_padding_idx;
 
   /** Gradient w.r.t. embedding weights. */
-  std::unique_ptr<AbsDistMat> m_gradient_wrt_embeddings;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient_wrt_embeddings;
 
+  template <typename U>
+  friend void fp_compute_impl(embedding_layer<U, Layout, Device>& l);
+  template <typename U>
+  friend void bp_compute_impl(embedding_layer<U, Layout, Device>& l);
 };
 
 // =========================================================
@@ -115,7 +119,7 @@ embedding_layer<Layout,Device>::embedding_layer(
   size_t num_embeddings,
   size_t embedding_dim,
   El::Int padding_idx)
-  : Layer(comm),
+  : data_type_layer<TensorDataType>(comm),
     m_num_embeddings{num_embeddings},
     m_embedding_dim{embedding_dim},
     m_padding_idx{padding_idx} {}
@@ -123,7 +127,7 @@ embedding_layer<Layout,Device>::embedding_layer(
 template <data_layout Layout, El::Device Device>
 embedding_layer<Layout,Device>::embedding_layer(
   const embedding_layer<Layout,Device>& other)
-  : Layer(other),
+  : data_type_layer<TensorDataType>(other),
     m_num_embeddings{other.m_num_embeddings},
     m_embedding_dim{other.m_embedding_dim},
     m_padding_idx{other.m_padding_idx},
@@ -134,7 +138,7 @@ embedding_layer<Layout,Device>::embedding_layer(
 template <data_layout Layout, El::Device Device>
 embedding_layer<Layout,Device>& embedding_layer<Layout,Device>::operator=(
   const embedding_layer<Layout,Device>& other) {
-  Layer::operator=(other);
+  data_type_layer<TensorDataType>::operator=(other);
   m_num_embeddings = other.m_num_embeddings;
   m_embedding_dim = other.m_embedding_dim;
   m_padding_idx = other.m_padding_idx;
@@ -146,7 +150,7 @@ embedding_layer<Layout,Device>& embedding_layer<Layout,Device>::operator=(
 
 template <data_layout Layout, El::Device Device>
 description embedding_layer<Layout,Device>::get_description() const {
-  auto desc = Layer::get_description();
+  auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Num embeddings", m_num_embeddings);
   desc.add("Embedding dim", m_embedding_dim);
   desc.add("Padding index", m_padding_idx);
@@ -155,7 +159,7 @@ description embedding_layer<Layout,Device>::get_description() const {
 
 template <data_layout Layout, El::Device Device>
 void embedding_layer<Layout,Device>::setup_dims() {
-  Layer::setup_dims();
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Make sure input dimensions are valid
   if (this->get_input_size() != 1) {
@@ -176,7 +180,7 @@ void embedding_layer<Layout,Device>::setup_dims() {
 
 template <data_layout Layout, El::Device Device>
 void embedding_layer<Layout,Device>::setup_data() {
-  Layer::setup_data();
+  data_type_layer<TensorDataType>::setup_data();
 
   // Construct default weights if needed
   // Note: Randomly drawn from normal distribution with mean 0 and
