@@ -216,8 +216,8 @@ void bp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::MOD
 }
 
 template class entrywise_scale_bias_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class entrywise_scale_bias_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

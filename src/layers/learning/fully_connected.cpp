@@ -461,28 +461,20 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   bp_compute_impl<TensorDataType>(*this);
 }
 
-template class fully_connected_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class fully_connected_layer<
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 // template class fully_connected_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class fully_connected_layer<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+template class fully_connected_layer<
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 // template class fully_connected_layer<double, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 #ifdef LBANN_HAS_GPU
-template class fully_connected_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class fully_connected_layer<
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 // template class fully_connected_layer<double, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class fully_connected_layer<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+template class fully_connected_layer<
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 // template class fully_connected_layer<double, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
-
-template class fully_connected_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class fully_connected_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
-
-#ifdef LBANN_HAS_GPU
-template class fully_connected_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class fully_connected_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
 } // namespace lbann

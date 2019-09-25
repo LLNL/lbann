@@ -87,7 +87,7 @@ public:
     data_type_layer<TensorDataType>::setup_data();
 
     // Initialize output dimensions
-    set_output_dims(this->get_input_dims());
+    this->set_output_dims(this->get_input_dims());
     const auto output_dims = this->get_output_dims();
     const El::Int output_size = this->get_output_size();
 

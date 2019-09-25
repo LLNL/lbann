@@ -271,6 +271,6 @@ void bp_compute_impl(channelwise_scale_bias_layer<TensorDataType, data_layout::D
 }
 
 template class channelwise_scale_bias_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
