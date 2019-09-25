@@ -28,6 +28,7 @@
 #define LBANN_LAYER_WEIGHTS_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
@@ -36,7 +37,8 @@ namespace lbann {
  *
  *  Interfaces with a @c weights object and outputs its tensor.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class weights_layer : public transform_layer {
 
  public:
@@ -202,6 +204,19 @@ class weights_layer : public transform_layer {
   std::unique_ptr<AbsMat> m_workspace;
 
 };
+
+#ifndef LBANN_WEIGHTS_LAYER_INSTANTIATE
+extern template class weights_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class weights_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class weights_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class weights_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_WEIGHTS_LAYER_INSTANTIATE
 
 } // namespace lbann
 

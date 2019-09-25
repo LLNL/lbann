@@ -38,14 +38,13 @@ namespace lbann {
  */
 template <data_layout Layout, El::Device Device>
 class argmin_layer : public Layer {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "argmin layer only supports data parallel layout");
+  static_assert(Device == El::Device::CPU,
+                "argmin layer only supports CPU");
 public:
 
-  argmin_layer(lbann_comm* comm) : Layer(comm) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "argmin layer only supports data parallel layout");
-    static_assert(Device == El::Device::CPU,
-                  "argmin layer only supports CPU");
-  }
+  argmin_layer(lbann_comm* comm) : Layer(comm) { }
   argmin_layer* copy() const override { return new argmin_layer(*this); }
   std::string get_type() const override { return "argmin"; }
   data_layout get_data_layout() const override { return Layout; }
@@ -72,6 +71,10 @@ protected:
 
 };
 
+#ifndef LBANN_ARGMIN_LAYER_INSTANTIATE
+extern template class argmin_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#endif // LBANN_ARGMIN_LAYER_INSTANTIATE
 } // namespace lbann
 
 #endif // LBANN_LAYERS_MISC_ARGMIN_HPP_INCLUDED

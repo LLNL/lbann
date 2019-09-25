@@ -55,13 +55,13 @@ namespace lbann {
 template <data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
 class channelwise_scale_bias_layer : public Layer {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "channelwise_mean_layer only supports "
+                "data-parallel data layout");
 public:
 
   channelwise_scale_bias_layer(lbann_comm *comm)
     : Layer(comm) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "channelwise_mean_layer only supports "
-                  "data-parallel data layout");
   }
 
   channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other)
@@ -137,6 +137,15 @@ private:
   std::unique_ptr<AbsDistMat> m_weights_gradient;
 
 };
+
+#ifndef LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
+extern template class channelwise_scale_bias_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class channelwise_scale_bias_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
 
 } // namespace lbann
 

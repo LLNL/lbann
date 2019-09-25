@@ -37,8 +37,13 @@ namespace lbann {
 /** @brief Transpose of pooling layer.
  *  @todo GPU support.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class unpooling_layer : public transform_layer {
+  static_assert(T_layout == data_layout::DATA_PARALLEL,
+                "unpooling only supports DATA_PARALLEL");
+  static_assert(Dev == El::Device::CPU,
+                "unpooling only supports CPU");
  private:
 
   /** Corresponding pooling layer. */
@@ -49,12 +54,7 @@ class unpooling_layer : public transform_layer {
   unpooling_layer(lbann_comm *comm,
                   pooling_layer<T_layout, Dev>* pool = nullptr)
     : transform_layer(comm),
-      m_pooling_layer(pool) {
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "unpooling only supports DATA_PARALLEL");
-    static_assert(Dev == El::Device::CPU,
-                  "unpooling only supports CPU");
-  }
+      m_pooling_layer(pool) { }
 
   unpooling_layer* copy() const override { return new unpooling_layer(*this); }
   std::string get_type() const override { return "unpooling"; }
@@ -252,6 +252,11 @@ class unpooling_layer : public transform_layer {
 
 };
 
+#ifndef LBANN_UNPOOLING_LAYER_INSTANTIATE
+extern template class unpooling_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#endif // LBANN_UNPOOLING_LAYER_INSTANTIATE
+
 }  // namespace lbann
 
-#endif  // LBANN_LAYER_POOLING_HPP_INCLUDED
+#endif  // LBANN_LAYER_UNPOOLING_HPP_INCLUDED

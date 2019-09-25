@@ -102,6 +102,19 @@ protected:
 
 };
 
+#ifndef LBANN_RESHAPE_LAYER_INSTANTIATE
+extern template class reshape_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class reshape_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class reshape_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class reshape_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_RESHAPE_LAYER_INSTANTIATE
+
 } // namespace lbann
 
 #endif // RESHAPE_HPP_INCLUDED

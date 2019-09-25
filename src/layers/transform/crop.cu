@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CROP_LAYER_INSTANTIATE
 #include "lbann/layers/transform/crop.hpp"
 #include "lbann/utils/cuda.hpp"
 
@@ -228,5 +229,7 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
   }
 
 }
+
+template class crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

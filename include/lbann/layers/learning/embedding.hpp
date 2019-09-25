@@ -33,6 +33,10 @@ namespace lbann {
 
 template <data_layout Layout, El::Device Device>
 class embedding_layer : public Layer {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "embedding layer only supports data parallel layout");
+  static_assert(Device == El::Device::CPU,
+                "embedding layer only supports CPU");
 public:
 
   embedding_layer(lbann_comm* comm,
@@ -41,10 +45,6 @@ public:
     : Layer(comm),
       m_dictionary_size{dictionary_size},
       m_embedding_size{embedding_size} {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "embedding layer only supports data parallel layout");
-    static_assert(Device == El::Device::CPU,
-                  "embedding layer only supports CPU");
   }
 
   embedding_layer(const embedding_layer& other) = default;
@@ -82,6 +82,11 @@ private:
   StarMat<El::Device::CPU> m_dictionary_gradient;
 
 };
+
+#ifndef LBANN_EMBEDDING_LAYER_INSTANTIATE
+extern template class embedding_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#endif // LBANN_EMBEDDING_LAYER_INSTANTIATE
 
 } // namespace lbann
 
