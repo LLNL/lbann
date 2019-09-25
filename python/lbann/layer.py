@@ -66,7 +66,7 @@ class Layer(abc.ABC):
             proto.data_layout = self.data_layout
         if self.hint_layer:
             proto.hint_layer = self.hint_layer.name
-       if hasattr(proto, "parallel_strategy"):
+        if hasattr(proto, "parallel_strategy"):
             for k, v in self.parallel_strategy.items():
                 setattr(proto.parallel_strategy, k, v)
         return proto
