@@ -106,9 +106,13 @@ trainer = lbann.Trainer()
 # Note: Use `lbann.contrib.lc.launcher.run` instead for optimized
 # defaults on LC systems.
 
+import lbann.contrib
+import lbann.contrib.lc
+import lbann.contrib.lc.launcher
 kwargs = {}
 if args.partition: kwargs['partition'] = args.partition
 if args.account: kwargs['account'] = args.account
+#lbann.contrib.lc.launcher.run(model, data_reader_proto, opt,
 lbann.run(trainer, model, data_reader_proto, opt,
           job_name='lbann_lenet',
           **kwargs)
