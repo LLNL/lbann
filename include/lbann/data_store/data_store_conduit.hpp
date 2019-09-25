@@ -75,7 +75,7 @@ class data_store_conduit {
   void set_shuffled_indices(const std::vector<int> *indices);
 
   /// for use during development and debugging
-  int get_num_indices() { return m_shuffled_indices->size(); }
+  size_t get_num_indices() const;
 
   void setup(int mini_batch_size);
 
@@ -149,6 +149,10 @@ class data_store_conduit {
   void flush_debug_file(); 
 
 protected :
+
+  double m_exchange_time = 0;
+  double m_rebuild_time = 0;
+  double m_super_node_packaging_time = 0;
 
   int m_cur_epoch = 0;
 
