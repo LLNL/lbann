@@ -27,6 +27,10 @@
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
+#if defined(LBANN_HAS_NVSHMEM)
+#include "nvshmem.h"
+#include "nvshmemx.h"
+#endif
 
 namespace lbann {
 
@@ -301,35 +305,37 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
 
   // CUDA objects
   CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-  auto&& stream = El::GPUManager::Stream();
+  auto&& stream = El::GPUManager::Stream(); // && makes stream an r-value reference.  https://www.tutorialspoint.com/What-is-double-address-operator-and-and-in-Cplusplus
+  // Q: What is the stream used for?
 
   // Matrices
-  const auto& input = get_prev_activations();
-  const auto& local_input = input.LockedMatrix();
-  auto& local_output = get_local_activations();
+  const AbsDistMat& input = get_prev_activations(); // AbsDistMat is an El::AbstractDistMatrix
+  const auto& local_input = input.LockedMatrix(); // Local portion of input, an El::AbstractMatrix
+  AbsMat& local_output = get_local_activations(); // Probably also an El::AbstractMatrix from El/core/AbstractMatrix.hpp
 
   // Matrix parameters
   const auto& width = input.Width();
-  const auto& local_width = local_input.Width();
-  const auto& output_dims = get_output_dims();
-  const auto& num_channels = output_dims[0];
-  const auto& channel_size = get_output_size() / num_channels;
+  const auto& local_width = local_input.Width(); // Const local part of input matrix.
+  const std::vector<int>& output_dims = get_output_dims(); // Output tensor dimensions.
+  const int& num_channels = output_dims[0];
+  const int& channel_size = get_output_size() / num_channels; // get_output_size = output tensor size across all dimensions, so channel_size is size per channel.
 
   // Compute statistics
   if (is_training) {
 
     // Local matrices
-    auto& local_mean = m_mean_v->Matrix();
-    auto& local_var = m_var_v->Matrix();
-    auto& local_running_mean = this->m_weights[2]->get_values().Matrix();
+    AbsMat& local_mean = m_mean_v->Matrix(); // Mutable local portion of mini-batch means.
+    AbsMat& local_var = m_var_v->Matrix(); // Mutable local portion of mini-bach std deviations.
+    auto& local_running_mean = this->m_weights[2]->get_values().Matrix(); // layer::m_weights contains references to layer weights.
     auto& local_running_var = this->m_weights[3]->get_values().Matrix();
+    // ASK: what is in index 2 of m_weights?  Index 3?
 
     // Compute sums and sums of squares
     El::Zero(local_mean);
     El::Zero(local_var);
     if (!local_input.IsEmpty()) {
       const El::Int block_size = 256;
-      dim3 block_dims, grid_dims;
+      dim3 block_dims, grid_dims; // dim3 is a CUDA struct containing x, y and z.
       block_dims.x = block_size;
       grid_dims.x = (channel_size + block_size - 1) / block_size;
       grid_dims.y = num_channels;
@@ -342,8 +348,49 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
     El::Int num_per_sum;
     if (m_statistics_group_size == 0) {
       // Global statistics aggregation; allreduce on fused buffer.
+      /*
+        m_mean_and_var is a std::unique_ptr<AbsDistMat> with global statistics.
+        It's globalized data, computed using views m_mean_v and m_var_v.
+        (Maybe the _v suffix means view.)
+        Is m_mean_and_var's memory contiguous?
+      */
+#if defined(LBANN_HAS_NVSHMEM)
+      // Need a temporary buffer because in-place reduction is not supported.
+      std::unique_ptr<StarMat> tmp_mean_and_var(new StarMat<Dev>(m_mean_and_var->Grid()));
+
+      const int buffer_size = mean_and_var->Height() * mean_and_var->Width();
+      int pWrkSize = buffer_size/2 + 1 > NVSHMEM_REDUCE_MIN_WRKDATA_SIZE ?
+        buffer_size/2 + 1 : NVSHMEM_REDUCE_MIN_WRKDATA_SIZE;
+      int *pWrk = (int*)nvshmem_malloc(pWrkSize*sizeof(int));
+      long *pSync = (long*)nvshmem_malloc(NVSHMEM_REDUCE_SYNC_SIZE*sizeof(long));
+      long tmplong = NVSHMEM_SYNC_VALUE;
+      /*
+        Populate pSync with NVSHMEM_REDUCE_SYNC_SIZE as required.
+        Crashes if treat pSync like an long*.  Use cudaMemcpy instead.
+        (Is there a different memcpy for nvshmem?)
+
+        Note: nvshmem_malloc is a host function.  Can't be called from device code.
+      */
+      for ( int i=0; i<NVSHMEM_REDUCE_SYNC_SIZE; ++i )
+        cudaMemcpy( &pSync[i], &tmplong, sizeof(long), cudaMemcpyDefault);
+
+      if ( std::is_same<AbsMat::data_type,float>::value ) {
+        nvshmem_float_sum_to_all(tmp_mean_and_var->Buffer(),
+                                 m_mean_and_var->LockedBuffer(), buffer_size,
+                                 0 /* Pe_start */,
+                                 0 /* logPe_stride */,
+                                 m_statistics_group_size /* Pe_size */,
+                                 float *pWrk, long *pSync);
+      }
+      else {
+        assert(false);
+      }
+      nvshmem_free(pWrk);
+      nvshmem_free(pSync);
+#else
       m_comm->allreduce(*m_mean_and_var, m_mean_and_var->RedundantComm(),
                         El::mpi::SUM);
+#endif
       num_per_sum = channel_size * width;
     } else if (m_statistics_group_size == 1) {
       // Local aggregation, no allreduce needed.
