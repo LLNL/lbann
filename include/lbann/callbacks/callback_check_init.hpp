@@ -53,6 +53,10 @@ class lbann_callback_check_init : public lbann_callback {
   bool check_equal(const AbsMat& x, const AbsMat& y) const;
 };
 
+// Builder function
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
+  lbann_callback_check_init, build_callback_check_init_from_pbuf)
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED

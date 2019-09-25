@@ -6,18 +6,24 @@ if (LBANN_HAS_PROTOBUF)
   # implementation of "protobuf_generate_cpp" but it gives us a custom
   # command on which we can depend. Using this, when lbann.proto is
   # touched, CMake will rebuild the LbannProto library.
-  set(PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/lbann.pb.cc")
-  set(PROTO_HDRS "${CMAKE_CURRENT_BINARY_DIR}/lbann.pb.h")
-  set(PROTO_PY "${CMAKE_CURRENT_BINARY_DIR}/lbann_pb2.py")
+  set_full_path(PROTO_INPUTS lbann.proto callbacks.proto)
+
+  foreach (proto IN LISTS PROTO_INPUTS)
+    get_filename_component(name "${proto}" NAME_WE)
+    list(APPEND PROTO_SRCS "${CMAKE_CURRENT_BINARY_DIR}/${name}.pb.cc")
+    list(APPEND PROTO_HDRS "${CMAKE_CURRENT_BINARY_DIR}/${name}.pb.h")
+    list(APPEND PROTO_PY "${CMAKE_CURRENT_BINARY_DIR}/${name}_pb2.py")
+  endforeach ()
   add_custom_command(
     COMMAND protobuf::protoc
     "--cpp_out=${CMAKE_CURRENT_BINARY_DIR}"
     "--python_out=${CMAKE_CURRENT_BINARY_DIR}"
     "-I" "${CMAKE_CURRENT_SOURCE_DIR}"
-    "${CMAKE_CURRENT_SOURCE_DIR}/lbann.proto"
+    "${PROTO_INPUTS}"
     OUTPUT ${PROTO_SRCS} ${PROTO_HDRS} ${PROTO_PY}
     DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/lbann.proto" protobuf::protoc
     COMMENT "Running protoc on lbann.proto"
+    COMMAND_EXPAND_LISTS
     VERBATIM)
 
   add_custom_target(LbannProto_genSrc
@@ -54,6 +60,7 @@ endif (LBANN_HAS_PROTOBUF)
 set_full_path(THIS_DIR_SOURCES
   init_image_data_readers.cpp
   proto_common.cpp
+  helpers.cpp
   )
 
 # Add the subdirectories

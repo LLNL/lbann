@@ -269,14 +269,10 @@ model* construct_model(lbann_comm* comm,
   assign_layers_to_metrics(layer_pointers, metric_list, proto_model);
 
   // Construct callbacks
-  std::vector<lbann_callback*> callback_list;
+  std::vector<std::unique_ptr<lbann_callback>> callback_list;
   auto&& summarizer = construct_summarizer(comm, proto_model);
   for (int i=0; i<proto_model.callback_size(); i++) {
-    callback_list.push_back(construct_callback(comm,
-                                               proto_model.callback(i),
-                                               data_readers,
-                                               layer_pointers,
-                                               weights_list,
+    callback_list.push_back(construct_callback(proto_model.callback(i),
                                                summarizer));
   }
 
@@ -285,7 +281,7 @@ model* construct_model(lbann_comm* comm,
   for (auto&& l   : layer_list   ) { m->add_layer(std::move(l)); }
   for (auto&& w   : weights_list ) { m->add_weights(w);   }
   for (auto&& met : metric_list  ) { m->add_metric(met);  }
-  for (auto&& cb  : callback_list) { m->add_callback(cb); }
+  for (auto&& cb  : callback_list) { m->add_callback(cb.release()); }
   const auto& name = proto_model.name();
   if (!name.empty()) {
     m->set_name(name);

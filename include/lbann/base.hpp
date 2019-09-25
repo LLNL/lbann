@@ -39,6 +39,9 @@
 #include "lbann/utils/omp_pragma.hpp"
 
 #include <functional>
+#include <iostream>
+#include <memory>
+#include <string>
 
 namespace lbann {
 
@@ -118,40 +121,16 @@ enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid
 
 /// Data layout that is optimized for different modes of parallelism
 enum class data_layout {MODEL_PARALLEL, DATA_PARALLEL, invalid};
-static matrix_format __attribute__((used)) data_layout_to_matrix_format(data_layout layout) {
-  matrix_format format;
-  switch(layout) {
-  case data_layout::MODEL_PARALLEL:
-    format = matrix_format::MC_MR;
-    break;
-  case data_layout::DATA_PARALLEL:
-    /// Weights are stored in STAR_STAR and data in STAR_VC
-    format = matrix_format::STAR_STAR;
-    break;
-  default:
-    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid data layout selected");
-  }
-  return format;
-}
+matrix_format data_layout_to_matrix_format(data_layout layout);
 
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
-static const char *__attribute__((used)) _to_string(execution_mode m) {
-  switch(m) {
-  case execution_mode::training:
-    return "training";
-  case execution_mode::validation:
-    return "validation";
-  case execution_mode::testing:
-    return "testing";
-  case execution_mode::prediction:
-    return "prediction";
-  case execution_mode::invalid:
-    return "invalid";
-  default:
-    throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
-  }
-}
+std::string to_string(execution_mode m);
+
+/** @brief Convert a string to an execution_mode. */
+execution_mode exe_mode_from_string(std::string const& str);
+/** @brief Extract an execution_mode from a stream. */
+std::istream& operator>>(std::istream& os, execution_mode& e);
 
 /** Pooling layer mode */
 enum class pool_mode {invalid, max, average, average_no_pad};
@@ -168,47 +147,18 @@ enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, 
  * It checks if the string 'mainStr' ends with given string
  * 'toMatch'
  */
-static bool __attribute__((used)) endsWith(const std::string mainStr, const std::string &toMatch)
-{
-  if(mainStr.size() >= toMatch.size() &&
-     mainStr.compare(mainStr.size() - toMatch.size(), toMatch.size(), toMatch) == 0)
-    return true;
-  else
-    return false;
-}
+bool endsWith(const std::string mainStr, const std::string &toMatch);
 
 /// Print the dimensions and name of a Elemental matrix
-static void __attribute__((used)) _print_matrix_dims(AbsDistMat *m, const char *name) {
-  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
-}
-#define PRINT_MATRIX_DIMS(x) _print_matrix_dims(x, #x);
+void print_matrix_dims(AbsDistMat *m, const char *name);
+#define LBANN_PRINT_MATRIX_DIMS(x) print_matrix_dims(x, #x);
 
 /// Print the dimensions and name of a Elemental matrix
-static void __attribute__((used)) _print_local_matrix_dims(AbsMat *m, const char *name) {
-  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
-}
-#define PRINT_LOCAL_MATRIX_DIMS(x) _print_local_matrix_dims(x, #x);
+void print_local_matrix_dims(AbsMat *m, const char *name);
+#define LBANN_PRINT_LOCAL_MATRIX_DIMS(x) print_local_matrix_dims(x, #x);
 
-// FIXME
-#if 1
-// __FILE__
-#define log_msg(...) {\
-  char str[256];\
-  sprintf(str, __VA_ARGS__);\
-  std::cout << "[" << m_comm->get_trainer_rank() << "." << m_comm->get_rank_in_trainer() << "][" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
-  }
-#define log_simple_msg(...) {\
-  char str[256];\
-  sprintf(str, __VA_ARGS__);\
-  std::cout << "[" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
-  }
-#else
-#define log_msg(...)
-#define log_simple_msg(...)
-#endif
-
-#define LBANN_MAKE_STR(x) _LBANN_MAKE_STR(x)
-#define _LBANN_MAKE_STR(x) #x
+#define LBANN_MAKE_STR_(x) #x
+#define LBANN_MAKE_STR(x) LBANN_MAKE_STR_(x)
 
 } // namespace lbann
 

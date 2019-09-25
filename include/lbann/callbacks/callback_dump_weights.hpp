@@ -65,6 +65,11 @@ class lbann_callback_dump_weights : public lbann_callback {
   void dump_weights(model *m, std::string s = "");
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_dump_weights_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_DUMP_WEIGHTS_HPP_INCLUDED

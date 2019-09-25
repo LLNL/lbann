@@ -42,13 +42,15 @@ namespace lbann {
  */
 class lbann_callback_replace_weights : public lbann_callback {
  public:
-  lbann_callback_replace_weights(std::vector<Layer*> src,
-    std::vector<Layer*> dst, int batch_interval=1) :
-    lbann_callback(batch_interval),
-    m_src_layers(std::move(src)),
-    m_dst_layers(std::move(dst)){
-    if(m_src_layers.size() != m_dst_layers.size())
-     throw lbann_exception("In replace weights callback: number of src and dest layers does not match.");
+  lbann_callback_replace_weights(
+    std::vector<std::string> src,
+    std::vector<std::string> dst,
+    int batch_interval=1)
+    : lbann_callback(batch_interval),
+      m_src_layer_names(std::move(src)),
+      m_dst_layer_names(std::move(dst)) {
+    if(m_src_layer_names.size() != m_dst_layer_names.size())
+      LBANN_ERROR("In replace weights callback: number of src and dest layers does not match.");
   }
 
   lbann_callback_replace_weights(
@@ -58,13 +60,19 @@ class lbann_callback_replace_weights : public lbann_callback {
   lbann_callback_replace_weights* copy() const override {
     return new lbann_callback_replace_weights(*this);
   }
+  void setup(model *m) override;
   void on_batch_end(model *m) override;
 
   std::string name() const override { return "replace weights"; }
  private:
+  std::vector<std::string> m_src_layer_names, m_dst_layer_names;
   std::vector<Layer*> m_src_layers, m_dst_layers;
-
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_replace_weights_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 }  // namespace lbann
 

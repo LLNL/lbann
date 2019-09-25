@@ -26,6 +26,8 @@
 
 #include "lbann/callbacks/callback_check_metric.hpp"
 
+#include "lbann/proto/factories.hpp"
+
 namespace lbann {
 
 lbann_callback_check_metric::lbann_callback_check_metric(std::string metric_name,
@@ -84,6 +86,20 @@ void lbann_callback_check_metric::check_metric(const model& m) const {
     }
   }
 
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_check_metric_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackCheckMetric&>(proto_msg);
+  const auto& modes =
+    parse_set<execution_mode>(params.execution_modes());
+  return make_unique<lbann_callback_check_metric>(params.metric(),
+                                                  modes,
+                                                  params.lower_bound(),
+                                                  params.upper_bound(),
+                                                  params.error_on_failure());
 }
 
 }  // namespace lbann

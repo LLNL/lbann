@@ -34,6 +34,14 @@
 #include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
 
+// A utility macro for easily adding default-constructed sub-class
+// builders.
+#define LBANN_ADD_DEFAULT_CALLBACK_BUILDER(Class, FunctionName)  \
+  inline std::unique_ptr<lbann_callback> FunctionName(           \
+    const google::protobuf::Message&, lbann_summary*) {          \
+    return lbann::make_unique<Class>();                          \
+  }
+
 namespace lbann {
 
 /** @class lbann_callback

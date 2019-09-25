@@ -68,6 +68,10 @@ class lbann_callback_check_dataset : public lbann_callback {
   std::set<long> testing_set;
 };
 
+// Builder function
+LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
+  lbann_callback_check_dataset, build_callback_check_dataset_from_pbuf);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_CHECK_DATASET_HPP_INCLUDED

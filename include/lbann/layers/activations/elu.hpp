@@ -57,7 +57,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description() const override {
-    auto&& desc = Layer::get_description();
+    auto desc = Layer::get_description();
     desc.add("alpha", m_alpha);
     return desc;
   }

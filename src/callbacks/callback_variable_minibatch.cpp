@@ -183,4 +183,31 @@ bool lbann_callback_minibatch_schedule::schedule(
   return false;
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_step_minibatch_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackStepMinibatch&>(proto_msg);
+  return make_unique<lbann_callback_step_minibatch>(params.starting_mbsize(),
+                                                    params.step(),
+                                                    params.ramp_time());
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_minibatch_schedule_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackMinibatchSchedule&>(proto_msg);
+  std::vector<lbann_callback_minibatch_schedule::minibatch_step> steps;
+  for (int i = 0; i < params.step_size(); ++i) {
+    const auto& proto_step = params.step(i);
+    steps.emplace_back(proto_step.epoch(),
+                       proto_step.mbsize(),
+                       proto_step.lr(),
+                       proto_step.ramp_time());
+  }
+  return make_unique<lbann_callback_minibatch_schedule>(params.starting_mbsize(),
+                                                        steps);
+}
+
 }  // namespace lbann

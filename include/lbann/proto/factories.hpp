@@ -61,12 +61,9 @@ weights* construct_weights(lbann_comm* comm,
                            const lbann_data::Weights& proto_weights);
 
 /** Construct a callback specified with prototext. */
-lbann_callback* construct_callback(lbann_comm* comm,
-                                   const lbann_data::Callback& proto_cb,
-                                   const std::map<execution_mode, generic_data_reader*>& data_readers,
-                                   std::vector<Layer*> layer_list,
-                                   std::vector<weights*> weights_list,
-                                   lbann_summary* summarizer);
+std::unique_ptr<lbann_callback>
+construct_callback(const google::protobuf::Message& proto_cb,
+                   lbann_summary* summarizer);
 
 /** Construct a summarizer specified with prototext.
  *  The summarizer is only constructed if the summarizer callback is
@@ -88,29 +85,6 @@ std::unique_ptr<transform::transform> construct_transform(
 /** Construct a transform pipeline given a data reader prototext. */
 transform::transform_pipeline construct_transform_pipeline(
   const lbann_data::Reader& data_reader);
-
-/** Parse a space-separated list. */
-template <typename T = std::string>
-std::vector<T> parse_list(std::string str) {
-  std::vector<T> list;
-  std::stringstream ss(str);
-  for (T entry; ss >> entry;) {
-    list.push_back(entry);
-  }
-  return list;
-}
-template <>
-std::vector<execution_mode> parse_list<execution_mode>(std::string str);
-
-/** Parse a space-separated set. */
-template <typename T = std::string>
-std::set<T> parse_set(std::string str) {
-  std::set<T> set;
-  for (const auto& entry : parse_list<T>(str)) {
-    set.insert(entry);
-  }
-  return set;
-}
 
 } // namespace proto
 } // namespace lbann

@@ -26,6 +26,10 @@
 
 #include "lbann/callbacks/callback_debug.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/proto/factories.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include "callbacks.pb.h"
 
 namespace lbann {
 
@@ -62,7 +66,7 @@ std::string weights_string(const weights& w) {
 std::string batch_step_string(const model& m) {
   std::stringstream msg;
   const auto& mode = m.get_execution_mode();
-  msg << _to_string(mode) << " batch " << m.get_step();
+  msg << to_string(mode) << " batch " << m.get_step();
   msg << " (epoch " << m.get_epoch() << ")";
   return msg.str();
 }
@@ -151,6 +155,16 @@ void lbann_callback_debug::on_optimize_end(model *m, weights *w) {
       << " is   ending optimization step for " << batch_step_string(*m)
       << std::endl;
   std::cerr << msg.str();
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_debug_from_pbuf(const google::protobuf::Message& proto_msg,
+                               lbann_summary* summarizer) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackDebug&>(proto_msg);
+  const auto& modes =
+    parse_set<execution_mode>(params.phase());
+  return make_unique<lbann_callback_debug>(modes, summarizer);
 }
 
 } // namespace lbann

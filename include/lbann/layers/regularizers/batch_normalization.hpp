@@ -70,8 +70,12 @@ private:
   DataType m_decay;
   /** Small number to avoid division by zero. */
   DataType m_epsilon;
-  /** Type of statistics aggregation to use. */
-  batch_normalization_stats_aggregation m_stats_aggregation;
+  /** @brief Size of group to aggregate statistics over.
+   *
+   * If this is 1, the group consists of one process and aggregation
+   * is local. If it is 0, statistics are aggregated globally.
+   */
+  int m_statistics_group_size;
   /**
    * Cache of node-local num_per_sum results for node-local stats.
    * Indexed by effective mini-batch size.
@@ -108,22 +112,22 @@ public:
    *  @param decay Controls the momentum of the running mean/standard
    *         deviation averages.
    *  @param epsilon A small number to avoid division by zero.
-   *  @param stats_aggregation The type of statistics to use when training.
+   *  @param statistics_group_size Number of processors to aggregate
+   *         statistics over. Defaults to 1 (i.e. local aggregation).
    */
   batch_normalization_layer(lbann_comm *comm,
                             DataType decay=0.9,
                             DataType epsilon=1e-5,
-                            batch_normalization_stats_aggregation stats_aggregation =
-                            batch_normalization_stats_aggregation::local)
+                            int statistics_group_size=1)
     : regularizer_layer(comm),
       m_decay(decay),
       m_epsilon(epsilon),
-      m_stats_aggregation(stats_aggregation) {
+      m_statistics_group_size(statistics_group_size) {
     static_assert(T_layout == data_layout::DATA_PARALLEL,
                   "batch normalization only supports DATA_PARALLEL");
 #ifdef LBANN_DETERMINISTIC
     // Force global computation.
-    m_stats_aggregation = batch_normalization_stats_aggregation::global;
+    m_statistics_group_size = 0;
 #endif
   }
 
@@ -131,7 +135,7 @@ public:
     : regularizer_layer(other),
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
-      m_stats_aggregation(other.m_stats_aggregation),
+      m_statistics_group_size(other.m_statistics_group_size),
       m_num_per_sum_cache(other.m_num_per_sum_cache),
       m_mean_and_var(other.m_mean_and_var ?
                      other.m_mean_and_var->Copy() : nullptr),
@@ -152,7 +156,7 @@ public:
     regularizer_layer::operator=(other);
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;
-    m_stats_aggregation = other.m_stats_aggregation;
+    m_statistics_group_size = other.m_statistics_group_size;
     m_num_per_sum_cache = other.m_num_per_sum_cache;
 
     // Deep copy matrices
@@ -182,23 +186,10 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = regularizer_layer::get_description();
+    auto desc = regularizer_layer::get_description();
     desc.add("Decay", m_decay);
     desc.add("Epsilon", m_epsilon);
-    switch (m_stats_aggregation) {
-    case batch_normalization_stats_aggregation::local:
-      desc.add("Statistics aggregation", "local");
-      break;
-    case batch_normalization_stats_aggregation::node_local:
-      desc.add("Statistics aggregation", "node-local");
-      break;
-    case batch_normalization_stats_aggregation::global:
-      desc.add("Statistics aggregation", "global");
-      break;
-    case batch_normalization_stats_aggregation::spatial:
-      desc.add("Statistics aggregation", "spatial");
-      break;
-    }
+    desc.add("Statistics group size", m_statistics_group_size);
     return desc;
   }
 
@@ -230,38 +221,29 @@ protected:
     const auto& output = get_activations();
     const auto& mini_batch_size = output.Width();
     const auto& local_mini_batch_size = mini_batch_size / output.DistSize();
-    if (m_stats_aggregation == batch_normalization_stats_aggregation::global
-        && mini_batch_size <= 4) {
-      std::stringstream err;
-      err << "LBANN warning: "
-          << get_type() << " layer \"" << get_name() << "\" "
-          << "is using global statistics and "
-          << "the mini-batch size (" << mini_batch_size << ") "
-          << "may be too small to get good statistics";
+    if (m_statistics_group_size == 0 && mini_batch_size <= 4) {
       if (output.DistRank() == 0) {
+        std::stringstream err;
+        err << "LBANN warning: "
+            << get_type() << " layer \"" << get_name() << "\" "
+            << "is using global statistics and "
+            << "the mini-batch size (" << mini_batch_size << ") "
+            << "may be too small to get good statistics";
         std::cerr << err.str() << std::endl;
       }
-    } else if (m_stats_aggregation == batch_normalization_stats_aggregation::node_local
-               && local_mini_batch_size*m_comm->get_procs_per_node() <= 4) {
-      std::stringstream err;
+    } else if (m_statistics_group_size != 0 &&
+               m_statistics_group_size*local_mini_batch_size <= 4) {
+      // This possibly underestimates the aggregation size for processors with
+      // smaller local mini-batch sizes.
+      if (output.DistRank() == 0) {
+        std::stringstream err;
       err << "LBANN warning: "
           << get_type() << " layer \"" << get_name() << "\" "
-          << "is using node-local statistics and "
-          << "the node-local mini-batch size ("
-          << (local_mini_batch_size*m_comm->get_procs_per_node()) << ") "
+          << "is aggregating statistics over "
+          << m_statistics_group_size
+          << "processors and the aggregated mini-batch size ("
+          << (m_statistics_group_size*local_mini_batch_size) << ") "
           << "may be too small to get good statistics";
-      if (output.DistRank() == 0) {
-        std::cerr << err.str() << std::endl;
-      }
-    } else if (m_stats_aggregation == batch_normalization_stats_aggregation::local
-               && local_mini_batch_size <= 4) {
-      std::stringstream err;
-      err << "LBANN warning: "
-          << get_type() << " layer \"" << get_name() << "\" "
-          << "is using local statistics and "
-          << "the local mini-batch size (" << local_mini_batch_size << ") "
-          << "may be too small to get good statistics";
-      if (output.DistRank() == 0) {
         std::cerr << err.str() << std::endl;
       }
     }
@@ -445,23 +427,12 @@ protected:
     setup_error_signals_copyout_tensor(dists);
 
     std::vector<bool> reduced_dims;
-    switch (m_stats_aggregation) {
-    case batch_normalization_stats_aggregation::local:
-      reduced_dims = std::vector<bool>(dc::num_dims, false);
-      break;
-    case batch_normalization_stats_aggregation::node_local:
-      // Not supproted
-      LBANN_ERROR("Node-local aggregation is not supported in Distconv");
-    case batch_normalization_stats_aggregation::global:
+    if (m_statistics_group_size  == 0) {
       reduced_dims = std::vector<bool>(dc::num_dims, true);
-      break;
-    case batch_normalization_stats_aggregation::spatial:
+    } else if (m_statistics_group_size == 1) {
       reduced_dims = std::vector<bool>(dc::num_dims, false);
-      for (int i = 0; i < m_prev_activations_t.get_num_spatial_dims(); ++i) {
-        reduced_dims[i] = true;
-      }
-      m_spatial_loc = m_mean_t.get_spatial_locale();
-      break;
+    } else {
+      LBANN_ERROR("statistics_group_size must be either 0 or 1 for now.");
     }
 
     m_bn = new dc::BatchNormalization(

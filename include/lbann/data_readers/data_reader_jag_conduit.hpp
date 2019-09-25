@@ -175,8 +175,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Set every reader instances in a model to have an independent index list
   void set_list_per_model(bool flag) { m_list_per_model = flag; };
 
-  bool has_list_per_model() const { return m_list_per_model; }
-  bool has_list_per_trainer() const { return m_list_per_trainer; }
+  bool has_list_per_model() const override { return m_list_per_model; }
+  bool has_list_per_trainer() const override { return m_list_per_trainer; }
 
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
@@ -361,12 +361,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Obtain image data
   std::vector< std::vector<DataType> > get_image_data(const size_t i, conduit::Node& sample) const;
 
-  bool data_store_active() const {
+  bool data_store_active() const override {
     bool flag = generic_data_reader::data_store_active();
     return (m_data_store != nullptr && flag);
   }
 
-  bool priming_data_store() const {
+  bool priming_data_store() const override {
     bool flag = generic_data_reader::priming_data_store();
     return (m_data_store != nullptr && flag);
   }
