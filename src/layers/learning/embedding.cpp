@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_EMBEDDING_LAYER_INSTANTIATE
 #include "lbann/layers/learning/embedding.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
@@ -140,5 +141,8 @@ void embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::bp_compute() {
                       true);
 
 }
+
+// Explicit instantiation
+template class embedding_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

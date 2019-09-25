@@ -32,14 +32,15 @@
 namespace lbann {
 
 /** @brief Sort tensor entries. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class sort_layer : public transform_layer {
+  static_assert(T_layout == data_layout::DATA_PARALLEL,
+                "sort layer only supports DATA_PARALLEL");
  public:
 
   sort_layer(lbann_comm *comm, bool descending = false)
     : transform_layer(comm), m_descending(descending) {
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "sort layer only supports DATA_PARALLEL");
   }
   sort_layer(const sort_layer& other)
     : transform_layer(other),
@@ -137,6 +138,15 @@ class sort_layer : public transform_layer {
   std::unique_ptr<El::AbstractMatrix<El::Int>> m_indices;
 
 };
+
+#ifndef LBANN_SORT_LAYER_INSTANTIATE
+extern template class sort_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class sort_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_SORT_LAYER_INSTANTIATE
 
 } // namespace lbann
 

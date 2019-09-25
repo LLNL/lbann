@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 #include "lbann/layers/loss/categorical_accuracy.hpp"
 #include "lbann/utils/cuda.hpp"
 
@@ -382,5 +383,10 @@ void categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
          get_prev_activations(1),
          get_activations());
 }
+
+template class categorical_accuracy_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class categorical_accuracy_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

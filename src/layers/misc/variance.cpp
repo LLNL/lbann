@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_VARIANCE_LAYER_INSTANTIATE
 #include "lbann/layers/misc/variance.hpp"
 
 namespace lbann {
@@ -166,5 +167,10 @@ void variance_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
          *m_workspace,
          m_biased);
 }
+
+template class variance_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class variance_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

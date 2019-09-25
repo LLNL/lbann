@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_ARGMIN_LAYER_INSTANTIATE
 #include "lbann/layers/misc/argmin.hpp"
 #include <algorithm>
 
@@ -45,5 +46,8 @@ void argmin_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
     local_output(0, col) = static_cast<DataType>(min_ind);
   }
 }
+
+template class argmin_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_ACTIVATIONS_LAYER_INSTANTIATE
 #include "lbann/layers/activations/activations.hpp"
 #include "lbann/utils/entrywise_operator.hpp"
 
@@ -158,12 +159,14 @@ struct softsign_op {
     apply_entrywise_binary_operator<op>(get_prev_activations(),         \
                                         get_prev_error_signals(),       \
                                         get_error_signals());           \
-  }
-  INSTANTIATE(log_sigmoid_layer, log_sigmoid_op)
-  INSTANTIATE(relu_layer, relu_op)
-  INSTANTIATE(selu_layer, selu_op)
-  INSTANTIATE(sigmoid_layer, sigmoid_op)
-  INSTANTIATE(softplus_layer, softplus_op)
-  INSTANTIATE(softsign_layer, softsign_op)
+  }                                                                     \
+  UNARY_ETI_INST_MACRO_DEV(layer, El::Device::CPU)
+
+INSTANTIATE(log_sigmoid_layer, log_sigmoid_op);
+INSTANTIATE(relu_layer, relu_op);
+INSTANTIATE(selu_layer, selu_op);
+INSTANTIATE(sigmoid_layer, sigmoid_op);
+INSTANTIATE(softplus_layer, softplus_op);
+INSTANTIATE(softsign_layer, softsign_op);
 
 } // namespace lbann

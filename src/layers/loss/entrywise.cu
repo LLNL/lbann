@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_ENTRYWISE_LAYER_INSTANTIATE
 #include "lbann/layers/loss/entrywise.hpp"
 #include "lbann/utils/cuda.hpp"
 
@@ -267,11 +268,14 @@ struct boolean_false_positive_op {
                                        get_local_prev_error_signals(),  \
                                        get_local_error_signals(0),      \
                                        get_local_error_signals(1));     \
-  }
-  INSTANTIATE(binary_cross_entropy_layer, binary_cross_entropy_op)
-  INSTANTIATE(sigmoid_binary_cross_entropy_layer, sigmoid_binary_cross_entropy_op)
-  INSTANTIATE(boolean_accuracy_layer, boolean_accuracy_op)
-  INSTANTIATE(boolean_false_negative_layer, boolean_false_negative_op)
-  INSTANTIATE(boolean_false_positive_layer, boolean_false_positive_op)
+  }                                                                     \
+  BINARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
+
+INSTANTIATE(binary_cross_entropy_layer, binary_cross_entropy_op);
+INSTANTIATE(sigmoid_binary_cross_entropy_layer,
+            sigmoid_binary_cross_entropy_op);
+INSTANTIATE(boolean_accuracy_layer, boolean_accuracy_op);
+INSTANTIATE(boolean_false_negative_layer, boolean_false_negative_op);
+INSTANTIATE(boolean_false_positive_layer, boolean_false_positive_op);
 
 } // namespace lbann

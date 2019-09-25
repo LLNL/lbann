@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
 #include "lbann/layers/image/bilinear_resize.hpp"
 
 namespace lbann {
@@ -109,5 +110,8 @@ void bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_comp
   }
 
 }
+
+template class bilinear_resize_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

@@ -36,7 +36,8 @@ namespace lbann {
  *  Output tensor is a 1D tensor with a single entry containing the
  *  model's current mini-batch size.
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
+template <data_layout Layout = data_layout::DATA_PARALLEL,
+          El::Device Device = El::Device::CPU>
 class mini_batch_size_layer : public Layer {
 public:
 
@@ -71,6 +72,19 @@ private:
   El::Int m_mini_batch_size = 0;
 
 };
+
+#ifndef LBANN_MINI_BATCH_SIZE_LAYER_INSTANTIATE
+extern template class mini_batch_size_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class mini_batch_size_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class mini_batch_size_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class mini_batch_size_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_MINI_BATCH_SIZE_LAYER_INSTANTIATE
 
 } // namespace lbann
 

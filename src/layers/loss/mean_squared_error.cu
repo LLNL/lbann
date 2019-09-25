@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_MEAN_SQUARED_ERROR_LAYER_INSTANTIATE
 #include "lbann/layers/loss/mean_squared_error.hpp"
 
 namespace lbann {
@@ -212,5 +213,10 @@ void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
                local_gradient_wrt_prediction,
                local_gradient_wrt_ground_truth);
 }
+
+template class mean_squared_error_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class mean_squared_error_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

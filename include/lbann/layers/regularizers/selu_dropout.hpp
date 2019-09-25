@@ -28,6 +28,7 @@
 #define LBANN_LAYER_REGULARIZER_SELU_DROPOUT_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/models/model.hpp"
 
 namespace lbann {
 
@@ -174,6 +175,19 @@ class selu_dropout : public regularizer_layer {
   /** Current dropout mask (a scaled Bernoulli random matrix). */
   AbsDistMat *m_mask;
 };
+
+#ifndef LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
+extern template class selu_dropout<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class selu_dropout<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class selu_dropout<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class selu_dropout<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
 
 } // namespace lbann
 
