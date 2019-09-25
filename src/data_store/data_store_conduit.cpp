@@ -268,7 +268,7 @@ void data_store_conduit::exchange_data_by_super_node(size_t current_pos, size_t 
     (*m_output) << "starting data_store_conduit::exchange_data_by_super_node; mb_size: " << mb_size << std::endl;
   }
 
-  if (m_cur_epoch == 0) {
+  if (m_send_buffer.size() == 0) {
     setup_data_store_buffers();
   }
 
@@ -280,6 +280,11 @@ void data_store_conduit::exchange_data_by_super_node(size_t current_pos, size_t 
 
   // construct a super node for each processor; the super node
   // contains all samples this proc owns that other procs need
+  if (m_send_buffer.size() != (size_t)m_np_in_trainer) {
+    LBANN_ERROR("m_send_buffer.size() != m_np_in_trainer; m_send_buffer.size: ", m_send_buffer.size());
+  }
+
+  double tm3 = get_time();
   for (int p=0; p<m_np_in_trainer; p++) {
     m_send_buffer[p].reset();
     for (auto idx : m_indices_to_send[p]) {
@@ -287,6 +292,7 @@ void data_store_conduit::exchange_data_by_super_node(size_t current_pos, size_t 
     }
     build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
   }
+  m_super_node_packaging_time += (get_time() - tm3);
 
   //========================================================================
   //part 1.5: exchange super_node sizes
@@ -376,13 +382,18 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &
       (*m_output) << "set_preloaded_conduit_node: " << data_id << " for non-super_node mode\n";
     }
     conduit::Node n2 = node;
+    m_mutex.lock();
     build_node_for_sending(n2, m_data[data_id]);
+    m_mutex.unlock();
     if (!m_node_sizes_vary) {
       error_check_compacted_node(m_data[data_id], data_id);
     } else {
+      m_mutex.lock();
       m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
+      m_mutex.unlock();
     }
   } else {
+    m_mutex.lock();
     if (m_data.find(data_id) == m_data.end()) {
       m_data[data_id] = node;
       if (m_output) {
@@ -393,6 +404,7 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &
         (*m_output) << "set_preloaded_conduit_node: " << data_id << " is already in m_data\n";
       }
     }
+    m_mutex.unlock();
   }
 }
 
@@ -668,6 +680,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
 
   conduit::Node nd;
   m_minibatch_data.clear();
+  double tm2 = get_time();
   for (size_t j=0; j < m_recv_buffer.size(); j++) {
     conduit::uint8 *n_buff_ptr = (conduit::uint8*)m_recv_buffer[j].data_ptr();
     conduit::Node n_msg;
@@ -683,6 +696,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
     int data_id = m_recv_data_ids[j];
     m_minibatch_data[data_id].set_external(n_msg["data"]);
   }
+  m_rebuild_time += (get_time() - tm2);
 }
 
 int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size) {
@@ -1011,14 +1025,41 @@ void data_store_conduit::exchange_sample_sizes() {
 
   std::vector<size_t> other_sizes;
   for (int k=0; k<m_np_in_trainer; k++) {
+    if (m_output) {
+      (*m_output) << "sample sizes for P_" << k << std::endl;
+      flush_debug_file();
+    }
     other_sizes.resize(all_counts[k]*2);
     if (m_rank_in_trainer == k) {
       m_comm->broadcast<size_t>(k, my_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
     } else {
       m_comm->broadcast<size_t>(k, other_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
+
+/* XX
+      if (m_world_master) std::cout  << "SAMPLE SIZES for P_" << k << std::endl;
+      for (size_t h=0; h<other_sizes.size(); h += 2) {
+        if (m_world_master) std::cout << other_sizes[h] << " size: " << other_sizes[h+1] << std::endl;
+      }  
+*/
+      /*
+      if (m_output) {
+        (*m_output) << "SAMPLE SIZES for P_" << k << std::endl;
+        for (size_t h=0; h<other_sizes.size(); h += 2) {
+          (*m_output) << other_sizes[h] << " SIZE: " << other_sizes[h+1] << std::endl;
+        }
+      }
+      */
+
       for (size_t i=0; i<other_sizes.size(); i += 2) {
         if (m_sample_sizes.find(other_sizes[i]) != m_sample_sizes.end()) {
-          LBANN_ERROR("duplicate data_id: ", other_sizes[i]);
+          if (m_output) {
+            (*m_output) << "SAMPLE SIZES for P_" << k << std::endl;
+            for (size_t h=0; h<other_sizes.size(); h += 2) {
+              (*m_output) << other_sizes[h] << " SIZE: " << other_sizes[h+1] << std::endl;
+            }
+            flush_debug_file();
+          }
+          LBANN_ERROR("m_sample_sizes.find(other_sizes[i]) != m_sample_sizes.end() for data_id: ", other_sizes[i]);
         }
         m_sample_sizes[other_sizes[i]] = other_sizes[i+1];
       }
@@ -1356,10 +1397,24 @@ void data_store_conduit::exchange_owner_maps() {
 }
 
 void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
+  double tm1 = get_time();
   if (is_local_cache()) {
     return;
   }
   if (m_reader->at_new_epoch()) {
+    if (m_world_master && m_cur_epoch > 0) {
+      std::cout << "time for exchange_mini_batch_data calls: " 
+                << m_exchange_time << std::endl
+                << "time for constructing conduit Nodes: " << m_rebuild_time 
+                << std::endl;
+      if (m_super_node) {
+        std::cout << "time for constructing super_nodes: " << m_super_node_packaging_time;
+      }
+      std::cout << std::endl;
+      m_exchange_time = 0.;
+      m_rebuild_time = 0.;
+      m_super_node_packaging_time = 0.;
+    }
     ++m_cur_epoch;
   }
 
@@ -1372,6 +1427,7 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
   } else {
     exchange_data_by_sample(current_pos, mb_size);
   }
+  m_exchange_time += (get_time() - tm1);
 }
 
 void data_store_conduit::flush_debug_file() {
@@ -1380,6 +1436,12 @@ void data_store_conduit::flush_debug_file() {
   }
   m_output->close();
   m_output->open(m_debug_filename.c_str(), std::ios::app);
+}
+
+size_t data_store_conduit::get_num_indices() const {
+  size_t num = m_data.size();
+  size_t n = m_comm->trainer_allreduce<size_t>(num);
+  return n;
 }
 
 }  // namespace lbann
