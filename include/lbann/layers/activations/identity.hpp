@@ -28,7 +28,6 @@
 #define LBANN_LAYERS_ACTIVATIONS_IDENTITY_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include "lbann/utils/eti_macros.hpp"
 
 namespace lbann {
 
