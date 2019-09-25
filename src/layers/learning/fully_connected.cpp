@@ -39,13 +39,11 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
       // Allocate a MCStarMat (RowSumMat)
       this->m_bias_gradient = new El::DistMatrix<TensorDataType, El::MC, El::STAR, El::ELEMENT, El::Device::CPU>(grid);
     } else if(T_layout == data_layout::DATA_PARALLEL) {
-      // Allocate a StarMat    =
+      // Allocate a StarMat
       this->m_bias_gradient = new El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>(grid);
     }
   }
 }
-
-namespace {
 
 /** CPU implementation of forward prop computation. */
 template <typename TensorDataType>
@@ -75,9 +73,9 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
     const auto& local_bias = l.get_weights()[1]->get_values().LockedMatrix();
     auto& local_output = output.Matrix();
     El::IndexDependentMap(local_output,
-                          (std::function<TensorDataType(El::Int,El::Int,const DataType&)>)
-                          ([&l,&local_bias](El::Int r, El::Int c,const DataType& z)
-                           ->DataType {
+                          (std::function<TensorDataType(El::Int,El::Int,const TensorDataType&)>)
+                          ([&l,&local_bias](El::Int r, El::Int c,const TensorDataType& z)
+                           ->TensorDataType {
                             return z + l.m_bias_scaling_factor * local_bias(r, 0);
                           }));
   }
@@ -100,7 +98,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
-    optimizer* bias_optimizer = l.get_weights()[1]->get_optimizer();
+    optimizer<TensorDataType>* bias_optimizer = l.get_weights()[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       El::RowSum(local_gradient_wrt_output,
                  l.m_bias_gradient->Matrix());
@@ -113,7 +111,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Compute gradient w.r.t. linearity if needed
   // Note: Perform GEMMs independently if possible
-  optimizer* linearity_optimizer = l.get_weights()[0]->get_optimizer();
+  optimizer<TensorDataType>* linearity_optimizer = l.get_weights()[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
     DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(1);
     if (linearity.DistSize() == 1) {
@@ -178,9 +176,9 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   if(l.m_bias_scaling_factor != TensorDataType(0)) {
     const auto& local_bias = l.get_weights()[1]->get_values().LockedMatrix();
     El::IndexDependentMap(local_output,
-                          (std::function<TensorDataType(El::Int,El::Int,const DataType&)>)
-                          ([&l,&local_bias](El::Int r, El::Int c,const DataType& z)
-                           ->DataType {
+                          (std::function<TensorDataType(El::Int,El::Int,const TensorDataType&)>)
+                          ([&l,&local_bias](El::Int r, El::Int c,const TensorDataType& z)
+                           ->TensorDataType {
                             return z + l.m_bias_scaling_factor * local_bias(r, 0);
                           }));
   }
@@ -199,7 +197,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
-    optimizer* bias_optimizer = l.get_weights()[1]->get_optimizer();
+    optimizer<TensorDataType>* bias_optimizer = l.get_weights()[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       El::RowSum(local_gradient_wrt_output,
                  l.m_bias_gradient->Matrix());
@@ -211,7 +209,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   }
 
   // Compute gradient w.r.t. linearity if needed
-  optimizer* linearity_optimizer = l.get_weights()[0]->get_optimizer();
+  optimizer<TensorDataType>* linearity_optimizer = l.get_weights()[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
     DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
@@ -254,7 +252,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   // Apply bias if needed
   if(l.m_bias_scaling_factor != TensorDataType(0)) {
     const auto& local_bias = l.get_weights()[1]->get_values().LockedMatrix();
-    GPUMat ones;
+    El::Matrix<TensorDataType, El::Device::GPU> ones;
 #ifdef HYDROGEN_HAVE_CUB
     ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
@@ -269,7 +267,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
 
 /** GPU implementation of backward prop computation. */
 template <typename TensorDataType>
-void bp_compute(fully_connected_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
   // Matrices
   const auto& local_linearity = l.get_weights()[0]->get_values().LockedMatrix();
@@ -279,7 +277,7 @@ void bp_compute(fully_connected_layer<TensorDataType, data_layout::DATA_PARALLEL
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
-    optimizer* bias_optimizer = l.get_weights()[1]->get_optimizer();
+    optimizer<TensorDataType>* bias_optimizer = l.get_weights()[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
       DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
@@ -288,7 +286,7 @@ void bp_compute(fully_connected_layer<TensorDataType, data_layout::DATA_PARALLEL
           || local_gradient_wrt_output.Width() < 1) {
         El::Scale(dst_scale, bias_gradient);
       } else {
-        GPUMat ones;
+        El::Matrix<TensorDataType, El::Device::GPU> ones;
 #ifdef HYDROGEN_HAVE_CUB
         ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
@@ -302,9 +300,9 @@ void bp_compute(fully_connected_layer<TensorDataType, data_layout::DATA_PARALLEL
   }
 
   // Compute gradient w.r.t. linearity if needed
-  optimizer* linearity_optimizer = l.get_weights()[0]->get_optimizer();
+  optimizer<TensorDataType>* linearity_optimizer = l.get_weights()[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
-    DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
+    TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
     if (l.m_transpose) {
@@ -352,7 +350,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   // Note: local outer product is sufficient, no need for global GEMM
   if(l.m_bias_scaling_factor != TensorDataType(0)) {
     const auto& bias = l.get_weights()[1]->get_values();
-    GPUMat ones;
+    El::Matrix<TensorDataType, El::Device::GPU> ones;
 #ifdef HYDROGEN_HAVE_CUB
     ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
@@ -381,16 +379,16 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   // Compute gradient w.r.t. bias if needed
   // Note: local GEMV is sufficient, no need for global row sum
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
-    optimizer* bias_optimizer = l.get_weights()[1]->get_optimizer();
+    optimizer<TensorDataType>* bias_optimizer = l.get_weights()[1]->get_optimizer();
     if (bias_optimizer != nullptr) {
-      DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
+      TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
       if (local_gradient_wrt_output.Height() < 1
           || local_gradient_wrt_output.Width() < 1) {
         El::Scale(dst_scale, bias_gradient);
       } else {
-        GPUMat ones;
+        El::Matrix<TensorDataType, El::Device::GPU> ones;
 #ifdef HYDROGEN_HAVE_CUB
         ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
@@ -405,9 +403,9 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Compute gradient w.r.t. linearity if needed
   // Note: Perform GEMMs independently if possible
-  optimizer* linearity_optimizer = l.get_weights()[0]->get_optimizer();
+  optimizer<TensorDataType>* linearity_optimizer = l.get_weights()[0]->get_optimizer();
   if (linearity_optimizer != nullptr) {
-    DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
+    TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
     if (linearity.DistSize() == 1) {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
@@ -453,28 +451,26 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
 #endif // LBANN_HAS_GPU
 
-} // end namespace
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  fp_compute_impl<TensorDataType, T_layout, Dev>(*this);
+  fp_compute_impl<TensorDataType>(*this);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>::bp_compute() {
-  bp_compute_impl<TensorDataType, T_layout, Dev>(*this);
+  bp_compute_impl<TensorDataType>(*this);
 }
 
 template class fully_connected_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class fully_connected_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>;
+// template class fully_connected_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class fully_connected_layer<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-template class fully_connected_layer<double, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+// template class fully_connected_layer<double, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 #ifdef LBANN_HAS_GPU
 template class fully_connected_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class fully_connected_layer<double, data_layout::DATA_PARALLEL, El::Device::GPU>;
+// template class fully_connected_layer<double, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class fully_connected_layer<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-template class fully_connected_layer<double, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+// template class fully_connected_layer<double, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
 template class fully_connected_layer<

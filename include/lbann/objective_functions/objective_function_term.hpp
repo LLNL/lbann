@@ -34,6 +34,7 @@
 namespace lbann {
 
 /** Abstract class for objective function terms. */
+template <typename TensorDataType>
 class objective_function_term {
  public:
 
@@ -80,9 +81,9 @@ class objective_function_term {
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<Layer*> layers) { m_layers = layers; }
   /** Get list of pointers to weights. */
-  std::vector<weights*> get_weights_pointers() const { return m_weights; }
+  std::vector<weights<TensorDataType>*> get_weights_pointers() const { return m_weights; }
   /** Set list of pointers to weights. */
-  void set_weights_pointers(std::vector<weights*> w) { m_weights = w; }
+  void set_weights_pointers(std::vector<weights<TensorDataType>*> w) { m_weights = w; }
 
  protected:
 
@@ -92,7 +93,7 @@ class objective_function_term {
   /** Layers used to compute objective function term. */
   std::vector<Layer*> m_layers;
   /** Weights used to compute objective function term. */
-  std::vector<weights*> m_weights;
+  std::vector<weights<TensorDataType>*> m_weights;
 
   /** Get LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }

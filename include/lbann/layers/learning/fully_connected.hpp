@@ -57,7 +57,7 @@ public:
   fully_connected_layer(lbann_comm *comm,
                         int output_size,
                         bool transpose = false,
-                        weights* weight = nullptr,
+                        weights<TensorDataType>* weight = nullptr,
                         bool has_bias = true)
     : learning_layer<TensorDataType>(comm),
       m_bias_gradient(nullptr),
@@ -136,9 +136,9 @@ protected:
       this->m_weights.resize(1, nullptr);
     }
     if (this->m_weights[0] == nullptr) {
-      auto w = make_unique<weights>(this->get_comm());
+      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<he_initializer>(probability_distribution::gaussian);
-      std::unique_ptr<optimizer> opt(this->get_model()->create_optimizer());
+      std::unique_ptr<optimizer<TensorDataType>> opt(this->get_model()->create_optimizer());
       w->set_name(this->get_name() + "_linearity_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -172,8 +172,8 @@ protected:
     // Set up bias if needed.
     if (m_bias_scaling_factor != TensorDataType(0)) {
       if (this->m_weights[1] == nullptr) {
-        auto w = make_unique<weights>(this->get_comm());
-        std::unique_ptr<optimizer> opt(this->get_model()->create_optimizer());
+        auto w = make_unique<weights<TensorDataType>>(this->get_comm());
+        std::unique_ptr<optimizer<TensorDataType>> opt(this->get_model()->create_optimizer());
         w->set_name(this->get_name() + "_bias_weights");
         w->set_optimizer(std::move(opt));
         this->m_weights[1] = w.get();
@@ -235,10 +235,10 @@ private:
     if (m_bias_gradient != nullptr) delete m_bias_gradient;
   }
 
-  template <typename U, data_layout V, El::Device X>
-  friend void fp_compute_impl(fully_connected_layer<U, V, X>& l);
-  template <typename U, data_layout V, El::Device X>
-  friend void bp_compute_impl(fully_connected_layer<U, V, X>& l);
+  template <typename U>
+  friend void fp_compute_impl(fully_connected_layer<U, T_layout, Dev>& l);
+  template <typename U>
+  friend void bp_compute_impl(fully_connected_layer<U, T_layout, Dev>& l);
 };
 
 #ifndef LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE

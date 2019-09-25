@@ -31,7 +31,8 @@
 
 namespace lbann {
 
-objective_function::objective_function(const objective_function& other)
+template <typename TensorDataType>
+objective_function<TensorDataType>::objective_function(const objective_function<TensorDataType>& other)
   : m_statistics(other.m_statistics),
     m_evaluation_time(other.m_evaluation_time),
     m_differentiation_time(other.m_differentiation_time) {
@@ -41,7 +42,8 @@ objective_function::objective_function(const objective_function& other)
   }
 }
 
-objective_function& objective_function::operator=(const objective_function& other) {
+template <typename TensorDataType>
+objective_function<TensorDataType>& objective_function::operator=(const objective_function<TensorDataType>& other) {
   for (const auto& term : m_terms) {
     if (term != nullptr) { delete term; }
   }
@@ -55,13 +57,15 @@ objective_function& objective_function::operator=(const objective_function& othe
   return *this;
 }
 
-objective_function::~objective_function() {
+template <typename TensorDataType>
+objective_function<TensorDataType>::~objective_function() {
   for (const auto& term : m_terms) {
     if (term != nullptr) { delete term; }
   }
 }
 
-void objective_function::setup(model& m) {
+template <typename TensorDataType>
+void objective_function<TensorDataType>::setup(model& m) {
   for (objective_function_term *term : m_terms) {
     if (term == nullptr) {
       std::stringstream err;
@@ -73,7 +77,8 @@ void objective_function::setup(model& m) {
   }
 }
 
-void objective_function::start_evaluation(execution_mode mode,
+template <typename TensorDataType>
+void objective_function<TensorDataType>::start_evaluation(execution_mode mode,
                                           int mini_batch_size) {
   const auto start_time = get_time();
   prof_region_begin("obj-start-eval", prof_colors[0], false);
@@ -86,7 +91,8 @@ void objective_function::start_evaluation(execution_mode mode,
   m_evaluation_time += get_time() - start_time;
 }
 
-EvalType objective_function::finish_evaluation(execution_mode mode,
+template <typename TensorDataType>
+EvalType objective_function<TensorDataType>::finish_evaluation(execution_mode mode,
                                                int mini_batch_size) {
   const auto start_time = get_time();
   EvalType value = EvalType(0);
@@ -103,7 +109,8 @@ EvalType objective_function::finish_evaluation(execution_mode mode,
   return value;
 }
 
-void objective_function::differentiate() {
+template <typename TensorDataType>
+void objective_function<TensorDataType>::differentiate() {
   const auto start_time = get_time();
   prof_region_begin("obj-differentiate", prof_colors[0], false);
   for (const auto& term : m_terms) {
@@ -115,7 +122,8 @@ void objective_function::differentiate() {
   m_differentiation_time += get_time() - start_time;
 }
 
-void objective_function::compute_weight_regularization() {
+template <typename TensorDataType>
+void objective_function<TensorDataType>::compute_weight_regularization() {
   const auto start_time = get_time();
   prof_region_begin("obj-weight-regularization", prof_colors[0], false);
   for (const auto& term : m_terms) {
@@ -127,7 +135,8 @@ void objective_function::compute_weight_regularization() {
   m_differentiation_time += get_time() - start_time;
 }
 
-EvalType objective_function::get_mean_value(execution_mode mode) const {
+template <typename TensorDataType>
+EvalType objective_function<TensorDataType>::get_mean_value(execution_mode mode) const {
   if (m_statistics.count(mode) == 0
       || m_statistics.at(mode).get_num_samples() == 0) {
     std::stringstream err;
@@ -138,7 +147,8 @@ EvalType objective_function::get_mean_value(execution_mode mode) const {
   return m_statistics.at(mode).get_mean();
 }
 
-int objective_function::get_statistics_num_samples(execution_mode mode) const {
+template <typename TensorDataType>
+int objective_function<TensorDataType>::get_statistics_num_samples(execution_mode mode) const {
   if (m_statistics.count(mode) == 0) {
     return 0;
   } else {
@@ -146,7 +156,8 @@ int objective_function::get_statistics_num_samples(execution_mode mode) const {
   }
 }
 
-std::vector<Layer*> objective_function::get_layer_pointers() const {
+template <typename TensorDataType>
+std::vector<Layer*> objective_function<TensorDataType>::get_layer_pointers() const {
   std::vector<Layer*> layers;
   for (objective_function_term *term : m_terms) {
     std::vector<Layer*> term_layers = term->get_layer_pointers();
@@ -155,7 +166,8 @@ std::vector<Layer*> objective_function::get_layer_pointers() const {
   return layers;
 }
 
-void objective_function::set_layer_pointers(std::vector<Layer*> layers) {
+template <typename TensorDataType>
+void objective_function<TensorDataType>::set_layer_pointers(std::vector<Layer*> layers) {
   auto it = layers.begin();
   for (objective_function_term *term : m_terms) {
     const size_t num_layers = term->get_layer_pointers().size();
@@ -173,8 +185,9 @@ void objective_function::set_layer_pointers(std::vector<Layer*> layers) {
   }
 }
 
-std::vector<weights*> objective_function::get_weights_pointers() const {
-  std::vector<weights*> w;
+template <typename TensorDataType>
+std::vector<weights<TensorDataType>*> objective_function<TensorDataType>::get_weights_pointers() const {
+  std::vector<weights<TensorDataType>*> w;
   for (objective_function_term *term : m_terms) {
     std::vector<weights*> term_weights = term->get_weights_pointers();
     w.insert(w.end(), term_weights.begin(), term_weights.end());
@@ -182,7 +195,8 @@ std::vector<weights*> objective_function::get_weights_pointers() const {
   return w;
 }
 
-void objective_function::set_weights_pointers(std::vector<weights*> w) {
+template <typename TensorDataType>
+void objective_function<TensorDataType>::set_weights_pointers(std::vector<weights<TensorDataType>*> w) {
   auto it = w.begin();
   for (objective_function_term *term : m_terms) {
     const size_t num_weights = term->get_weights_pointers().size();

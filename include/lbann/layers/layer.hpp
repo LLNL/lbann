@@ -47,7 +47,6 @@ namespace lbann {
 
 // Forward declarations
 class model;
-class weights;
 namespace callback {
 class sync_layers;
 } // namespace callback

@@ -44,10 +44,12 @@ std::string to_string(optimizer_gradient_status status) {
   }
 }
 
-optimizer::optimizer(DataType learning_rate)
+template <typename TensorDataType>
+optimizer<TensorDataType>::optimizer(TensorDataType learning_rate)
   : m_comm(nullptr), m_learning_rate(learning_rate) {}
 
-optimizer::optimizer(const optimizer& other)
+template <typename TensorDataType>
+optimizer<TensorDataType>::optimizer(const optimizer<TensorDataType>& other)
   : m_comm(other.m_comm),
     m_weights(other.m_weights),
     m_gradient(other.m_gradient ? other.m_gradient->Copy() : nullptr),
@@ -62,7 +64,8 @@ optimizer::optimizer(const optimizer& other)
   }
 }
 
-optimizer& optimizer::operator=(const optimizer& other) {
+template <typename TensorDataType>
+optimizer<TensorDataType>& optimizer<TensorDataType>::operator=(const optimizer<TensorDataType>& other) {
   m_comm = other.m_comm;
   m_weights = other.m_weights;
   m_gradient.reset(other.m_gradient ? other.m_gradient->Copy() : nullptr);
@@ -78,18 +81,21 @@ optimizer& optimizer::operator=(const optimizer& other) {
   return *this;
 }
 
-description optimizer::get_description() const {
+template <typename TensorDataType>
+description optimizer<TensorDataType>::get_description() const {
   description desc(get_type() + " optimizer");
   desc.add("Learning rate", m_learning_rate);
   return desc;
 }
 
-weights& optimizer::get_weights() {
+template <typename TensorDataType>
+weights<TensorDataType>& optimizer<TensorDataType>::get_weights() {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<weights&>(static_cast<const optimizer&>(*this).get_weights());
+  return const_cast<weights<TensorDataType>&>(static_cast<const optimizer&>(*this).get_weights());
 }
 
-const weights& optimizer::get_weights() const {
+template <typename TensorDataType>
+const weights<TensorDataType>& optimizer<TensorDataType>::get_weights() const {
   if (m_weights == nullptr) {
     LBANN_ERROR("attempted to access the weights being optimized "
                 "before they are set");
@@ -97,7 +103,8 @@ const weights& optimizer::get_weights() const {
   return *m_weights;
 }
 
-AbsDistMat& optimizer::get_gradient() {
+template <typename TensorDataType>
+El::AbstractDistMatrix<TensorDataType>& optimizer<TensorDataType>::get_gradient() {
 
   // Make sure gradient matrix has been setup
   if (m_gradient == nullptr) {
@@ -124,7 +131,8 @@ AbsDistMat& optimizer::get_gradient() {
 
 }
 
-void optimizer::add_to_gradient(const AbsDistMat& gradient,
+template <typename TensorDataType>
+void optimizer<TensorDataType>::add_to_gradient(const El::AbstractDistMatrix<TensorDataType>& gradient,
                                 DataType scale,
                                 bool allreduce_needed) {
 
@@ -143,7 +151,7 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
   if (m_gradient_v->DistData() == gradient.DistData()) {
     El::LockedView(*m_gradient_v, gradient);
   } else if (allreduce_needed) {
-    std::unique_ptr<AbsDistMat> temp(gradient.Copy());
+    std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> temp(gradient.Copy());
     get_comm().allreduce(*temp, temp->RedundantComm());
     El::Copy(*temp, *m_gradient_v);
     allreduce_needed = false;
@@ -192,7 +200,8 @@ void optimizer::add_to_gradient(const AbsDistMat& gradient,
 
 }
 
-void optimizer::clear_gradient() {
+template <typename TensorDataType>
+void optimizer<TensorDataType>::clear_gradient() {
   if (m_gradient_status == optimizer_gradient_status::allreduce_started) {
     finish_gradient_allreduce();
   }
@@ -200,8 +209,9 @@ void optimizer::clear_gradient() {
   m_gradient_sources.clear();
 }
 
-AbsDistMat& optimizer::get_gradient_buffer(DataType& buf_scale,
-                                           DataType& in_scale,
+template <typename TensorDataType>
+El::AbstractDistMatrix<TensorDataType>& optimizer<TensorDataType>::get_gradient_buffer(TensorDataType& buf_scale,
+                                           TensorDataType& in_scale,
                                            bool allreduce_needed) {
   if (m_gradient == nullptr) {
     LBANN_ERROR("attempted to access gradient before it is set up");
@@ -243,17 +253,20 @@ AbsDistMat& optimizer::get_gradient_buffer(DataType& buf_scale,
   return *m_gradient;
 }
 
-El::Int optimizer::get_num_gradient_sources() const {
+template <typename TensorDataType>
+El::Int optimizer<TensorDataType>::get_num_gradient_sources() const {
   return m_gradient_sources.size();
 }
 
-void optimizer::add_gradient_source(const void* source) {
+template <typename TensorDataType>
+void optimizer<TensorDataType>::add_gradient_source(const void* source) {
   if (source != nullptr) {
     m_gradient_sources.insert(source);
   }
 }
 
-void optimizer::remove_gradient_source(const void* source) {
+template <typename TensorDataType>
+void optimizer<TensorDataType>::remove_gradient_source(const void* source) {
   m_gradient_sources.erase(nullptr);
   m_gradient_sources.erase(source);
   if (m_gradient_sources.empty()) {
@@ -261,7 +274,8 @@ void optimizer::remove_gradient_source(const void* source) {
   }
 }
 
-void optimizer::setup(weights* w) {
+template <typename TensorDataType>
+void optimizer<TensorDataType>::setup(weights<TensorDataType>* w) {
   m_comm = &w->get_comm();
   clear_gradient();
 
@@ -274,11 +288,11 @@ void optimizer::setup(weights* w) {
   // Initialize matrices
   const auto& height = m_weights->get_matrix_height();
   const auto& width = m_weights->get_matrix_width();
-  const AbsDistMat& values = m_weights->get_values();
-  m_gradient.reset(AbsDistMat::Instantiate(values.DistData()));
+  const El::AbstractDistMatrix<TensorDataType>& values = m_weights->get_values();
+  m_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(values.DistData()));
   m_gradient->AlignWith(values);
   m_gradient->Resize(height, width);
-  m_gradient_v.reset(AbsDistMat::Instantiate(values.DistData()));
+  m_gradient_v.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(values.DistData()));
   m_gradient_v->AlignWith(values);
 #ifdef HYDROGEN_HAVE_CUB
   if (m_gradient_v->GetLocalDevice() == El::Device::GPU) {
@@ -288,7 +302,8 @@ void optimizer::setup(weights* w) {
 
 }
 
-void optimizer::step() {
+template <typename TensorDataType>
+void optimizer<TensorDataType>::step() {
   if (m_weights == nullptr) {
     LBANN_ERROR("attempted to perform optimization step without weights");
   }
@@ -297,15 +312,18 @@ void optimizer::step() {
   m_step_time += get_time() - start_time;
 }
 
-DataType optimizer::get_learning_rate() const {
+template <typename TensorDataType>
+TensorDataType optimizer<TensorDataType>::get_learning_rate() const {
   return m_learning_rate;
 }
 
-void optimizer::set_learning_rate(DataType learning_rate) {
+template <typename TensorDataType>
+void optimizer<TensorDataType>::set_learning_rate(TensorDataType learning_rate) {
   m_learning_rate = learning_rate;
 };
 
-void optimizer::start_gradient_allreduce() {
+template <typename TensorDataType>
+void optimizer<TensorDataType>::start_gradient_allreduce() {
   switch (m_gradient_status) {
   case optimizer_gradient_status::allreduce_needed:
     get_comm().nb_allreduce(*m_gradient,
@@ -322,7 +340,8 @@ void optimizer::start_gradient_allreduce() {
   }
 }
 
-void optimizer::finish_gradient_allreduce() {
+template <typename TensorDataType>
+void optimizer<TensorDataType>::finish_gradient_allreduce() {
   switch (m_gradient_status) {
   case optimizer_gradient_status::allreduce_started:
     get_comm().wait(m_gradient_allreduce_req);
@@ -345,24 +364,28 @@ void optimizer::finish_gradient_allreduce() {
 // Checkpointing
 // =============================
 
-bool optimizer::save_to_checkpoint_shared(persist& p, std::string m_name) {
+template <typename TensorDataType>
+bool optimizer<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string m_name) {
   //  m_learning_rate;
   p.write_datatype(persist_type::train, "learning_rate", m_learning_rate);
   return true;
 }
 
-bool optimizer::load_from_checkpoint_shared(persist& p, std::string m_name) {
+template <typename TensorDataType>
+bool optimizer<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string m_name) {
   p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
   get_comm().trainer_broadcast(0, m_learning_rate);
   return true;
 }
 
-bool optimizer::save_to_checkpoint_distributed(persist& p, std::string m_name) {
+template <typename TensorDataType>
+bool optimizer<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string m_name) {
   p.write_datatype(persist_type::train, "learning_rate", m_learning_rate);
   return true;
 }
 
-bool optimizer::load_from_checkpoint_distributed(persist& p, std::string m_name) {
+template <typename TensorDataType>
+bool optimizer<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string m_name) {
   p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
   return true;
 }

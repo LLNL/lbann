@@ -62,7 +62,8 @@ std::string get_dims_string(const std::vector<int>& matrix_height_dims,
 
 } // namespace
 
-weights::weights()
+template <typename TensorDataType>
+weights<TensorDataType>::weights()
   : m_comm(nullptr),
     m_frozen(false) {
 
@@ -72,7 +73,8 @@ weights::weights()
   num_weights++;
 }
 
-weights::weights(lbann_comm* comm)
+template <typename TensorDataType>
+weights<TensorDataType>::weights(lbann_comm* comm)
   : weights() {
 
   m_comm = comm;
@@ -81,7 +83,8 @@ weights::weights(lbann_comm* comm)
   setup_default_matrix_distribution();
 }
 
-weights::weights(const weights& other)
+template <typename TensorDataType>
+weights<TensorDataType>::weights(const weights<TensorDataType>& other)
   : m_name(other.m_name),
     m_comm(other.m_comm),
     m_matrix_height_dims(other.m_matrix_height_dims),
@@ -101,7 +104,8 @@ weights::weights(const weights& other)
 
 }
 
-weights& weights::operator=(const weights& other) {
+template <typename TensorDataType>
+weights<TensorDataType>& weights<TensorDataType>::operator=(const weights<TensorDataType>& other) {
   m_name = other.m_name;
   m_comm = other.m_comm;
   m_matrix_height_dims = other.m_matrix_height_dims;
@@ -122,7 +126,8 @@ weights& weights::operator=(const weights& other) {
   return *this;
 }
 
-description weights::get_description() const {
+template <typename TensorDataType>
+description weights<TensorDataType>::get_description() const {
   std::stringstream ss;
 
   // Construct description object
@@ -159,34 +164,41 @@ description weights::get_description() const {
 // Dimension accessors
 // -----------------------------------------------
 
-std::vector<int> weights::get_dims() const {
+template <typename TensorDataType>
+std::vector<int> weights<TensorDataType>::get_dims() const {
   std::vector<int> dims;
   for (const auto& d : get_matrix_width_dims())  { dims.push_back(d); }
   for (const auto& d : get_matrix_height_dims()) { dims.push_back(d); }
   return dims;
 }
-int weights::get_size() const {
+template <typename TensorDataType>
+int weights<TensorDataType>::get_size() const {
   const auto& dims = get_dims();
   return std::accumulate(dims.begin(), dims.end(),
                          1, std::multiplies<int>());
 }
-std::vector<int> weights::get_matrix_height_dims() const {
+template <typename TensorDataType>
+std::vector<int> weights<TensorDataType>::get_matrix_height_dims() const {
   return m_matrix_height_dims;
 }
-std::vector<int> weights::get_matrix_width_dims() const {
+template <typename TensorDataType>
+std::vector<int> weights<TensorDataType>::get_matrix_width_dims() const {
   return m_matrix_width_dims;
 }
-int weights::get_matrix_height() const {
+template <typename TensorDataType>
+int weights<TensorDataType>::get_matrix_height() const {
   const auto& dims = get_matrix_height_dims();
   return std::accumulate(dims.begin(), dims.end(),
                          1, std::multiplies<int>());
 }
-int weights::get_matrix_width() const {
+template <typename TensorDataType>
+int weights<TensorDataType>::get_matrix_width() const {
   const auto& dims = get_matrix_width_dims();
   return std::accumulate(dims.begin(), dims.end(),
                          1, std::multiplies<int>());
 }
-void weights::set_dims(std::vector<int> matrix_height_dims,
+template <typename TensorDataType>
+void weights<TensorDataType>::set_dims(std::vector<int> matrix_height_dims,
                        std::vector<int> matrix_width_dims) {
   m_matrix_height_dims = matrix_height_dims;
   m_matrix_width_dims = matrix_width_dims;
@@ -210,13 +222,16 @@ void weights::set_dims(std::vector<int> matrix_height_dims,
 // Initializer accessors
 // -----------------------------------------------
 
-weights_initializer* weights::get_initializer() {
+template <typename TensorDataType>
+weights_initializer* weights<TensorDataType>::get_initializer() {
   return const_cast<weights_initializer*>(static_cast<const weights&>(*this).get_initializer());
 }
-const weights_initializer* weights::get_initializer() const {
+template <typename TensorDataType>
+const weights_initializer* weights<TensorDataType>::get_initializer() const {
   return m_initializer.get();
 }
-void weights::set_initializer(std::unique_ptr<weights_initializer>&& init) {
+template <typename TensorDataType>
+void weights<TensorDataType>::set_initializer(std::unique_ptr<weights_initializer>&& init) {
   m_initializer = std::move(init);
 }
 
@@ -224,17 +239,20 @@ void weights::set_initializer(std::unique_ptr<weights_initializer>&& init) {
 // Optimizer accessors
 // -----------------------------------------------
 
-optimizer* weights::get_optimizer() {
-  return const_cast<optimizer*>(static_cast<const weights&>(*this).get_optimizer());
+template <typename TensorDataType>
+optimizer<TensorDataType>* weights<TensorDataType>::get_optimizer() {
+  return const_cast<optimizer<TensorDataType>*>(static_cast<const weights&>(*this).get_optimizer());
 }
-const optimizer* weights::get_optimizer() const {
+template <typename TensorDataType>
+const optimizer<TensorDataType>* weights<TensorDataType>::get_optimizer() const {
   if (m_frozen) {
     return nullptr;
   } else {
     return m_optimizer.get();
   }
 }
-void weights::set_optimizer(std::unique_ptr<optimizer>&& opt) {
+template <typename TensorDataType>
+void weights<TensorDataType>::set_optimizer(std::unique_ptr<optimizer<TensorDataType>>&& opt) {
   m_optimizer = std::move(opt);
 }
 
@@ -242,18 +260,22 @@ void weights::set_optimizer(std::unique_ptr<optimizer>&& opt) {
 // Matrix distribution accessors
 // -----------------------------------------------
 
-El::DistData weights::get_matrix_distribution() const {
+template <typename TensorDataType>
+El::DistData weights<TensorDataType>::get_matrix_distribution() const {
   return m_matrix_dist;
 }
-void weights::set_matrix_distribution(El::DistData dist) {
+template <typename TensorDataType>
+void weights<TensorDataType>::set_matrix_distribution(El::DistData dist) {
   m_matrix_dist = dist;
 }
 
-void weights::set_comm(lbann_comm& comm) {
+template <typename TensorDataType>
+void weights<TensorDataType>::set_comm(lbann_comm& comm) {
   m_comm = &comm;
 }
 
-void weights::setup_default_matrix_distribution() {
+template <typename TensorDataType>
+void weights<TensorDataType>::setup_default_matrix_distribution() {
   // Default matrix distribution
   m_matrix_dist.colDist = El::STAR;
   m_matrix_dist.rowDist = El::STAR;
@@ -272,7 +294,8 @@ void weights::setup_default_matrix_distribution() {
 // Setup
 // -----------------------------------------------
 
-void weights::setup() {
+template <typename TensorDataType>
+void weights<TensorDataType>::setup() {
 
   // Return immediately if weights have already been setup
   if (m_values != nullptr) { return; }
@@ -293,7 +316,7 @@ void weights::setup() {
   }
 
   // Construct weights matrix
-  m_values.reset(AbsDistMat::Instantiate(*m_matrix_dist.grid,
+  m_values.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(*m_matrix_dist.grid,
                                          m_matrix_dist.root,
                                          m_matrix_dist.colDist,
                                          m_matrix_dist.rowDist,
@@ -320,10 +343,12 @@ void weights::setup() {
 // Weight matrix accessors
 // -----------------------------------------------
 
-AbsDistMat& weights::get_values() {
-  return const_cast<AbsDistMat&>(static_cast<const weights&>(*this).get_values());
+template <typename TensorDataType>
+El::AbstractDistMatrix<TensorDataType>& weights<TensorDataType>::get_values() {
+  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const weights&>(*this).get_values());
 }
-const AbsDistMat& weights::get_values() const {
+template <typename TensorDataType>
+const El::AbstractDistMatrix<TensorDataType>& weights<TensorDataType>::get_values() const {
   if (m_values == nullptr) {
     LBANN_ERROR("attempted to access values of "
                 "weights \"" + get_name() + "\" "
@@ -332,11 +357,13 @@ const AbsDistMat& weights::get_values() const {
   return *m_values;
 }
 
-void weights::set_values(const AbsDistMat& values) {
+template <typename TensorDataType>
+void weights<TensorDataType>::set_values(const El::AbstractDistMatrix<TensorDataType>& values) {
   El::Copy(values, get_values());
 }
 
-void weights::set_value(DataType value, int index) {
+template <typename TensorDataType>
+void weights<TensorDataType>::set_value(DataType value, int index) {
 
 #ifdef LBANN_DEBUG
   // Check that tensor position is valid
@@ -357,7 +384,8 @@ void weights::set_value(DataType value, int index) {
 
 }
 
-void weights::set_value(DataType value, std::vector<int> pos) {
+template <typename TensorDataType>
+void weights<TensorDataType>::set_value(DataType value, std::vector<int> pos) {
 
   // Get tensor dimensions
   const auto& dims = get_dims();
@@ -393,7 +421,8 @@ void weights::set_value(DataType value, std::vector<int> pos) {
 
 }
 
-void weights::set_value(DataType value, int row, int col) {
+template <typename TensorDataType>
+void weights<TensorDataType>::set_value(DataType value, int row, int col) {
 
 #ifdef LBANN_DEBUG
   // Check that matrix entry is valid
@@ -417,7 +446,8 @@ void weights::set_value(DataType value, int row, int col) {
 
 }
 
-void weights::reconcile_values() {
+template <typename TensorDataType>
+void weights<TensorDataType>::reconcile_values() {
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
     El::Scale(DataType(1) / values.RedundantSize(), values);
@@ -425,7 +455,8 @@ void weights::reconcile_values() {
   }
 }
 
-void weights::reconcile_values(Al::request& req) {
+template <typename TensorDataType>
+void weights<TensorDataType>::reconcile_values(Al::request& req) {
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
     El::Scale(DataType(1) / values.RedundantSize(), values);
@@ -437,7 +468,8 @@ void weights::reconcile_values(Al::request& req) {
 // Checkpointing
 // -----------------------------------------------
 
-bool weights::save_to_checkpoint_shared(lbann::persist& p)
+template <typename TensorDataType>
+bool weights<TensorDataType>::save_to_checkpoint_shared(lbann::persist& p)
 {
   // define name to store weight values
   char l_name[512];
@@ -452,7 +484,8 @@ bool weights::save_to_checkpoint_shared(lbann::persist& p)
   return true;
 }
 
-void weights::write_proto(lbann_data::WeightsData* proto) const {
+template <typename TensorDataType>
+void weights<TensorDataType>::write_proto(lbann_data::WeightsData* proto) const {
 
   // Set proto properties
   proto->Clear();
@@ -487,7 +520,8 @@ void weights::write_proto(lbann_data::WeightsData* proto) const {
 
 }
 
-bool weights::load_from_checkpoint_shared(lbann::persist& p)
+template <typename TensorDataType>
+bool weights<TensorDataType>::load_from_checkpoint_shared(lbann::persist& p)
 {
   // define filename containing saved weight values
   auto f_name = El::BuildString("weights_", m_name, "_",
@@ -501,7 +535,8 @@ bool weights::load_from_checkpoint_shared(lbann::persist& p)
   return true;
 }
 
-bool weights::load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list){
+template <typename TensorDataType>
+bool weights<TensorDataType>::load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list){
   // create weight file name to match to weight list entry
   auto l_name = El::BuildString("model_weights_", m_name, "_",
                                 m_values->Height(), "x", m_values->Width(), ".bin");
@@ -523,7 +558,8 @@ bool weights::load_from_save(std::string const& ckpt_dir, std::vector<std::strin
   return true;
 }
 
-bool weights::save_to_checkpoint_distributed(lbann::persist& p){
+template <typename TensorDataType>
+bool weights<TensorDataType>::save_to_checkpoint_distributed(lbann::persist& p){
   // Functions identically to shared checkpoint except weights and parameters are saved on a per rank basis
   auto l_name = El::BuildString("weights_", m_name,
                                 "_", m_values->LocalHeight(),
@@ -535,7 +571,8 @@ bool weights::save_to_checkpoint_distributed(lbann::persist& p){
   return true;
 }
 
-bool weights::load_from_checkpoint_distributed(lbann::persist& p){
+template <typename TensorDataType>
+bool weights<TensorDataType>::load_from_checkpoint_distributed(lbann::persist& p){
   // Functions identically to shared checkpoint except weights and parameters are loaded on a per rank basis
   auto l_name = El::BuildString("weights_", m_name,
                                 "_", m_values->LocalHeight(),

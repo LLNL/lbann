@@ -95,7 +95,7 @@ void data_type_layer<TensorDataType>::replace_weights(data_type_layer<TensorData
     LBANN_ERROR("attempted to add null pointer as a replacement layer");
   }
 
-  const std::vector<weights *> other_layer_weights = other_layer->get_weights();
+  const std::vector<weights<TensorDataType> *> other_layer_weights = other_layer->get_weights();
   for (size_t i = 0; i < m_weights.size(); ++i) {
     m_weights[i]->set_values(other_layer_weights[i]->get_values());
   }
@@ -205,7 +205,7 @@ void data_type_layer<TensorDataType>::set_output_dims(std::vector<int> dims, int
 
 // Accessing distributed matrices
 template <typename TensorDataType>
-const AbsDistMat& data_type_layer<TensorDataType>::get_prev_activations(int parent_index) const {
+const El::AbstractDistMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_prev_activations(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_inputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid previous activation matrix "
@@ -218,7 +218,7 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_prev_activations(int pare
 }
 
 template <typename TensorDataType>
-const AbsDistMat& data_type_layer<TensorDataType>::get_activations(int child_index) const {
+const El::AbstractDistMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_activations(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_outputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid activation matrix "
@@ -231,7 +231,7 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_activations(int child_ind
 }
 
 template <typename TensorDataType>
-const AbsDistMat& data_type_layer<TensorDataType>::get_prev_error_signals(int child_index) const {
+const El::AbstractDistMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_prev_error_signals(int child_index) const {
   if (child_index < 0 || child_index >= (int) m_gradient_wrt_outputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid previous error signal matrix "
@@ -244,7 +244,7 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_prev_error_signals(int ch
 }
 
 template <typename TensorDataType>
-const AbsDistMat& data_type_layer<TensorDataType>::get_error_signals(int parent_index) const {
+const El::AbstractDistMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_error_signals(int parent_index) const {
   if (parent_index < 0 || parent_index >= (int) m_gradient_wrt_inputs.size()) {
     std::stringstream err;
     err << "attempted to access invalid error signal matrix "
@@ -260,44 +260,44 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_error_signals(int parent_
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.
 template <typename TensorDataType>
-AbsDistMat& data_type_layer<TensorDataType>::get_activations(int child_index) {
-  return const_cast<AbsDistMat&>(static_cast<const data_type_layer<TensorDataType>&>(*this).get_activations(child_index));
+El::AbstractDistMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_activations(int child_index) {
+  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const data_type_layer<TensorDataType>&>(*this).get_activations(child_index));
 }
 
 template <typename TensorDataType>
-AbsDistMat& data_type_layer<TensorDataType>::get_error_signals(int parent_index) {
-  return const_cast<AbsDistMat&>(static_cast<const data_type_layer<TensorDataType>&>(*this).get_error_signals(parent_index));
+El::AbstractDistMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_error_signals(int parent_index) {
+  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const data_type_layer<TensorDataType>&>(*this).get_error_signals(parent_index));
 }
 
 // Accessing local matrices
 template <typename TensorDataType>
-AbsMat& data_type_layer<TensorDataType>::get_local_activations(int child_index) {
+El::AbstractMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_local_activations(int child_index) {
   return get_activations(child_index).Matrix();
 }
 template <typename TensorDataType>
-AbsMat& data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) {
+El::AbstractMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) {
   return get_error_signals(parent_index).Matrix();
 }
 template <typename TensorDataType>
-const AbsMat& data_type_layer<TensorDataType>::get_local_prev_activations(int parent_index) const {
+const El::AbstractMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_local_prev_activations(int parent_index) const {
   return get_prev_activations(parent_index).LockedMatrix();
 }
 template <typename TensorDataType>
-const AbsMat& data_type_layer<TensorDataType>::get_local_activations(int child_index) const {
+const El::AbstractMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_local_activations(int child_index) const {
   return get_activations(child_index).LockedMatrix();
 }
 template <typename TensorDataType>
-const AbsMat& data_type_layer<TensorDataType>::get_local_prev_error_signals(int child_index) const {
+const El::AbstractMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_local_prev_error_signals(int child_index) const {
   return get_prev_error_signals(child_index).LockedMatrix();
 }
 template <typename TensorDataType>
-const AbsMat& data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) const {
+const El::AbstractMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) const {
   return get_error_signals(parent_index).LockedMatrix();
 }
 
 // Accessing matrices corresponding to parent/child layer
 template <typename TensorDataType>
-const AbsDistMat& data_type_layer<TensorDataType>::get_activations(const data_type_layer<TensorDataType>& child) const {
+const El::AbstractDistMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_activations(const data_type_layer<TensorDataType>& child) const {
   const int child_index = (std::find(m_child_layers.begin(),
                                      m_child_layers.end(),
                                      &child)
@@ -313,7 +313,7 @@ const AbsDistMat& data_type_layer<TensorDataType>::get_activations(const data_ty
   return get_activations(child_index);
 }
 template <typename TensorDataType>
-const AbsDistMat& data_type_layer<TensorDataType>::get_error_signals(const data_type_layer<TensorDataType>& parent) const {
+const El::AbstractDistMatrix<TensorDataType>& data_type_layer<TensorDataType>::get_error_signals(const data_type_layer<TensorDataType>& parent) const {
   const int parent_index = (std::find(m_parent_layers.begin(),
                                       m_parent_layers.end(),
                                       &parent)
@@ -404,7 +404,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
 }
 
 template <typename TensorDataType>
-std::unique_ptr<AbsDistMat> data_type_layer<TensorDataType>::construct_matrix(const El::Grid& grid,
+std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> data_type_layer<TensorDataType>::construct_matrix(const El::Grid& grid,
                                                                               std::string type,
                                                                               El::Int index) {
 
@@ -427,8 +427,8 @@ std::unique_ptr<AbsDistMat> data_type_layer<TensorDataType>::construct_matrix(co
   }
 
   // Construct matrix
-  std::unique_ptr<AbsDistMat> mat;
-  mat.reset(AbsDistMat::Instantiate(grid, 0,
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> mat;
+  mat.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(grid, 0,
                                     col_dist, row_dist, wrap, device));
 
 #ifdef LBANN_HAS_GPU

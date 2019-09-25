@@ -63,6 +63,7 @@ enum class optimizer_gradient_status {
 std::string to_string(optimizer_gradient_status status);
 
 // Forward declarations
+template <typename TensorDataType>
 class weights;
 class persist;
 
@@ -74,10 +75,11 @@ class persist;
  *  optimization step requires the objective function gradient
  *  w.r.t. the weights.
  */
+template <typename TensorDataType>
 class optimizer {
 public:
 
-  optimizer(DataType learning_rate = 0);
+  optimizer(TensorDataType learning_rate = 0);
   optimizer(const optimizer& other);
   optimizer& operator=(const optimizer& other);
   virtual ~optimizer() = default;
@@ -94,17 +96,17 @@ public:
   virtual description get_description() const;
 
   /** @brief Weights being optimized. */
-  weights& get_weights();
+  weights<TensorDataType>& get_weights();
   /** @brief Weights being optimized. */
-  const weights& get_weights() const;
+  const weights<TensorDataType>& get_weights() const;
   /** @brief Weights being optimized. */
-  void set_weights(weights* w) { m_weights = w; }
+  void set_weights(weights<TensorDataType>* w) { m_weights = w; }
 
   /** @brief Objective function gradient w.r.t. the weights.
    *
    *  An allreduce may be launched and/or synchronized if needed.
    */
-  AbsDistMat& get_gradient();
+  El::AbstractDistMatrix<TensorDataType>& get_gradient();
 
   /** @brief Add to the objective function gradient w.r.t. the weights.
    *  @param gradient           Contribution to gradient.
@@ -118,7 +120,7 @@ public:
    *                            allreduce is performed lazily when the
    *                            gradient is accessed.
    */
-  void add_to_gradient(const AbsDistMat& gradient,
+  void add_to_gradient(const El::AbstractDistMatrix<TensorDataType>& gradient,
                        DataType scale = DataType(1),
                        bool allreduce_needed = false);
   /** @brief Zero out the objective function gradient w.r.t. the weights. */
@@ -143,8 +145,8 @@ public:
    *  @param allreduce_needed Whether this gradient contribution will need to
    *  be allreduced.
    */
-  AbsDistMat& get_gradient_buffer(DataType& buf_scale,
-                                  DataType& in_scale,
+  El::AbstractDistMatrix<TensorDataType>& get_gradient_buffer(TensorDataType& buf_scale,
+                                  TensorDataType& in_scale,
                                   bool allreduce_needed = false);
 
   /** @brief Objects that are expected to contribute to the gradient. */
@@ -171,7 +173,7 @@ public:
    *  @param w Weights being optimized. If null, no change is made to
    *  the weights.
    */
-  virtual void setup(weights* w = nullptr);
+  virtual void setup(weights<TensorDataType>* w = nullptr);
 
   /** @brief Optimization step. */
   void step();
@@ -182,9 +184,9 @@ public:
   const lbann_comm& get_comm() const { return *m_comm; }
 
   /** @brief Scaling factor for optimization step sizes. */
-  DataType get_learning_rate() const;
+  TensorDataType get_learning_rate() const;
   /** @brief Scaling factor for optimization step sizes. */
-  void set_learning_rate(DataType learning_rate);
+  void set_learning_rate(TensorDataType learning_rate);
 
   /** @brief Time spent in optimization step. */
   EvalType get_step_time() const { return m_step_time; }
@@ -198,8 +200,8 @@ protected:
    *  @c values and @c gradient can be assumed to have the same
    *  distribution.
    */
-  virtual void step_compute(AbsDistMat& values,
-                            const AbsDistMat& gradient) = 0;
+  virtual void step_compute(El::AbstractDistMatrix<TensorDataType>& values,
+                            const El::AbstractDistMatrix<TensorDataType>& gradient) = 0;
 
 private:
 
@@ -207,10 +209,10 @@ private:
   lbann_comm* m_comm;
 
   /** @brief Weights being optimized. */
-  weights* m_weights = nullptr;
+  weights<TensorDataType>* m_weights = nullptr;
 
   /** @brief Objective function gradient w.r.t. weights. */
-  std::unique_ptr<AbsDistMat> m_gradient;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient;
 
   /** @brief Workspace matrix.
    *
@@ -218,7 +220,7 @@ private:
    *  distribution. Most of the time, this should just be a matrix
    *  view.
    */
-  std::unique_ptr<AbsDistMat> m_gradient_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient_v;
 
   /** @brief Sources of gradient contributions.
    *
@@ -249,7 +251,7 @@ private:
    *  e.g. for variable learning rate schedules.
    *  @todo Consider moving this to the derived classes.
    */
-  DataType m_learning_rate;
+  TensorDataType m_learning_rate;
 
   /** @brief Time spent in optimization step. */
   EvalType m_step_time = 0;

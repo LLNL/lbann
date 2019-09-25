@@ -45,6 +45,7 @@ class WeightsData;
 namespace lbann {
 
 // Forward declaration
+template <typename TensorDataType>
 class optimizer;
 
 /** Neural network weights.
@@ -61,8 +62,9 @@ class optimizer;
  *  Note that LBANN weights are similar to Tensorflow variables and
  *  Caffe parameters.
  */
+template <typename TensorDataType>
 class weights {
-  friend class optimizer;
+  friend class optimizer<TensorDataType>;
 private:
   weights();
   // -----------------------------------------------
@@ -161,15 +163,15 @@ public:
   /** Get weights optimizer.
    *  Returns a null pointer if the weights are frozen.
    */
-  optimizer* get_optimizer();
+  optimizer<TensorDataType>* get_optimizer();
   /** Get weights optimizer.
    *  Returns a null pointer if the weights are frozen.
    */
-  const optimizer* get_optimizer() const;
+  const optimizer<TensorDataType>* get_optimizer() const;
   /** Set weights optimizer.
    *  The contents of opt are moved to a class member.
    */
-  void set_optimizer(std::unique_ptr<optimizer>&& opt);
+  void set_optimizer(std::unique_ptr<optimizer<TensorDataType>>&& opt);
 
   // -----------------------------------------------
   // Matrix distribution accessors
@@ -187,11 +189,11 @@ public:
   // -----------------------------------------------
 
   /** Get the weight matrix. */
-  AbsDistMat& get_values();
+  El::AbstractDistMatrix<TensorDataType>& get_values();
   /** Get the weight matrix. */
-  const AbsDistMat& get_values() const;
+  const El::AbstractDistMatrix<TensorDataType>& get_values() const;
   /** Set the weight matrix. */
-  void set_values(const AbsDistMat& values);
+  void set_values(const El::AbstractDistMatrix<TensorDataType>& values);
 
   /** Set a weight value. */
   void set_value(DataType value, int index);
@@ -259,7 +261,7 @@ private:
   bool m_frozen;
 
   /** Weight matrix. */
-  std::unique_ptr<AbsDistMat> m_values;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_values;
 
   /** Weights initializer.
    *  Default is nullptr, which corresponds to zero initialization.
@@ -268,7 +270,7 @@ private:
   /** Weights optimizer.
    *  Default is nullptr, which corresponds to no optimizer.
    */
-  std::unique_ptr<optimizer> m_optimizer;
+  std::unique_ptr<optimizer<TensorDataType>> m_optimizer;
 
 };
 

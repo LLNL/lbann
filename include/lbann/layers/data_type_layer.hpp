@@ -31,7 +31,11 @@
 
 namespace lbann {
 
-using supported_layer_data_type = El::TypeList<float, double>;
+// Forward declarations
+template <typename TensorDataType>
+class weights;
+
+using supported_layer_data_type = El::TypeList<float/*, double*/>;
 
 template <typename T, typename List> struct IsElement;
 
@@ -62,11 +66,11 @@ public:
   // ===========================================================
 
   /** Get references to weights. */
-  inline std::vector<weights*>& get_weights() { return m_weights; }
+  inline std::vector<weights<TensorDataType>*>& get_weights() { return m_weights; }
   /** Get references to weights. (const) */
-  inline const std::vector<weights*>& get_weights() const { return m_weights; }
+  inline const std::vector<weights<TensorDataType>*>& get_weights() const { return m_weights; }
   /** Set list of pointers to weights. */
-  inline void set_weights(std::vector<weights*> w) { get_weights() = w; }
+  inline void set_weights(std::vector<weights<TensorDataType>*> w) { get_weights() = w; }
   /** Replace weights with another Layer's weights*/
   void replace_weights(data_type_layer<TensorDataType>* other_layer);
 
@@ -91,29 +95,29 @@ public:
   // ===========================================================
 
   /** Get activation tensor. */
-  AbsDistMat& get_activations(int child_index = 0);
+  El::AbstractDistMatrix<TensorDataType>& get_activations(int child_index = 0);
   /** Get error signal tensor. */
-  AbsDistMat& get_error_signals(int parent_index = 0);
+  El::AbstractDistMatrix<TensorDataType>& get_error_signals(int parent_index = 0);
   /** Get previous activation tensor. */
-  const AbsDistMat& get_prev_activations(int parent_index = 0) const;
+  const El::AbstractDistMatrix<TensorDataType>& get_prev_activations(int parent_index = 0) const;
   /** Get activation tensor. */
-  const AbsDistMat& get_activations(int child_index = 0) const;
+  const El::AbstractDistMatrix<TensorDataType>& get_activations(int child_index = 0) const;
   /** Get previous error signal tensor. */
-  const AbsDistMat& get_prev_error_signals(int child_index = 0) const;
+  const El::AbstractDistMatrix<TensorDataType>& get_prev_error_signals(int child_index = 0) const;
   /** Get error signal tensor. */
-  const AbsDistMat& get_error_signals(int parent_index = 0) const;
+  const El::AbstractDistMatrix<TensorDataType>& get_error_signals(int parent_index = 0) const;
   /** Get local portion of activation tensor. */
-  AbsMat& get_local_activations(int child_index = 0);
+  El::AbstractMatrix<TensorDataType>& get_local_activations(int child_index = 0);
   /** Get local portion of error signal tensor. */
-  AbsMat& get_local_error_signals(int parent_index = 0);
+  El::AbstractMatrix<TensorDataType>& get_local_error_signals(int parent_index = 0);
   /** Get local portion of previous activation tensor. */
-  const AbsMat& get_local_prev_activations(int parent_index = 0) const;
+  const El::AbstractMatrix<TensorDataType>& get_local_prev_activations(int parent_index = 0) const;
   /** Get local portion of activation tensor. */
-  const AbsMat& get_local_activations(int child_index = 0) const;
+  const El::AbstractMatrix<TensorDataType>& get_local_activations(int child_index = 0) const;
   /** Get local portion of previous error signal tensor. */
-  const AbsMat& get_local_prev_error_signals(int child_index = 0) const;
+  const El::AbstractMatrix<TensorDataType>& get_local_prev_error_signals(int child_index = 0) const;
   /** Get local portion of error signal tensor. */
-  const AbsMat& get_local_error_signals(int parent_index = 0) const;
+  const El::AbstractMatrix<TensorDataType>& get_local_error_signals(int parent_index = 0) const;
 
   // ===========================================================
   // Hint layer access functions
@@ -161,7 +165,7 @@ protected:
    *  following: "input", "output", "gradient_wrt_output",
    *  "gradient_wrt_input".
    */
-  virtual std::unique_ptr<AbsDistMat> construct_matrix(const El::Grid& grid,
+  virtual std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> construct_matrix(const El::Grid& grid,
                                                        std::string type,
                                                        El::Int index);
 
@@ -169,7 +173,7 @@ protected:
   // Protected class members
   // ===========================================================
   /** References to layer weights. */
-  std::vector<weights*> m_weights;
+  std::vector<weights<TensorDataType>*> m_weights;
 
   /** Avoid back prop if frozen */
   bool m_frozen;
@@ -181,9 +185,9 @@ private:
   // ===========================================================
 
   /** Get activation tensor corresponding to child layer. */
-  const AbsDistMat& get_activations(const data_type_layer& child) const;
+  const El::AbstractDistMatrix<TensorDataType>& get_activations(const data_type_layer& child) const;
   /** Get error signal tensor corresponding to parent layer. */
-  const AbsDistMat& get_error_signals(const data_type_layer& parent) const;
+  const El::AbstractDistMatrix<TensorDataType>& get_error_signals(const data_type_layer& parent) const;
 
   // ===========================================================
   // Private class members
@@ -195,19 +199,19 @@ private:
   /** Input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMat>> m_inputs;
+  std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_inputs;
   /** Output tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMat>> m_outputs;
+  std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_outputs;
   /** Objective function gradients w.r.t. the output tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_outputs;
+  std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_gradient_wrt_outputs;
   /** Objective function gradients w.r.t. the input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
+  std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_gradient_wrt_inputs;
 
   /** Hint layer.
    *  During setup, the output tensor dimensions are set to match the
