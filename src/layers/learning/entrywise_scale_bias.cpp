@@ -31,9 +31,10 @@ namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 void fp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
              El::Matrix<TensorDataType, El::Device::CPU>& local_output,
-             const weights& scale_bias) {
+             const weights<TensorDataType>& scale_bias) {
 
   // Local matrices
   const auto& local_scale_bias
@@ -59,10 +60,11 @@ void fp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
 
 }
 
+template <typename TensorDataType>
 void bp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
              const El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_output,
              El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_input,
-             weights& scale_bias,
+             weights<TensorDataType>& scale_bias,
              AbsDistMat& gradient_wrt_scale_bias) {
 
   // Local matrices
@@ -120,37 +122,43 @@ void bp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
 } // namespace
 
 // Template instantiation
-template <>
-void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
-     ::fp_compute() {
-  fp_impl(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_prev_activations()),
-          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_activations()),
-          *m_weights[0]);
+template <typename TensorDataType>
+void fp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
+  fp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_activations()),
+                          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_activations()),
+                          *l.get_weights()[0]);
 }
-template <>
-void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
-     ::fp_compute() {
-  fp_impl(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_prev_activations()),
-          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_activations()),
-          *m_weights[0]);
+template <typename TensorDataType>
+void fp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::MODEL_PARALLEL,El::Device::CPU>& l) {
+  fp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_activations()),
+                          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_activations()),
+                          *l.get_weights()[0]);
 }
-template <>
-void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
-     ::bp_compute() {
-  bp_impl(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_prev_activations()),
-          dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_prev_error_signals()),
-          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_error_signals()),
-          *this->m_weights[0],
-          *m_weights_gradient);
+template <typename TensorDataType>
+void bp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
+  bp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_activations()),
+                          dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_error_signals()),
+                          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_error_signals()),
+                          *l.get_weights()[0],
+                          *l.m_weights_gradient);
 }
-template <>
-void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::CPU>
-     ::bp_compute() {
-  bp_impl(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_prev_activations()),
-          dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_prev_error_signals()),
-          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_error_signals()),
-          *this->m_weights[0],
-          *m_weights_gradient);
+template <typename TensorDataType>
+void bp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::MODEL_PARALLEL,El::Device::CPU>& l) {
+  bp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_activations()),
+                          dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_error_signals()),
+                          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_error_signals()),
+                          *l.get_weights()[0],
+                          *l.m_weights_gradient);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
 }
 
 template class entrywise_scale_bias_layer<
