@@ -19,6 +19,8 @@ def get_command(cluster,
                 time_limit=None,
                 # LBANN Parameters
                 ckpt_dir=None,
+                restart_dir=None,
+                disable_cuda=None,
                 dir_name=None,
                 data_filedir_default=None,
                 data_filedir_train_default=None,
@@ -253,6 +255,8 @@ def get_command(cluster,
 
     # Create LBANN command
     option_ckpt_dir = ''
+    option_restart_dir = ''
+    option_disable_cuda = ''
     option_data_filedir = ''
     option_data_filedir_train = ''
     option_data_filename_train = ''
@@ -394,23 +398,27 @@ def get_command(cluster,
                  '_test_default] is set, but neither data_reader_name or'
                  ' data_reader_path are.'))
         # else: no conflicts
-    if data_reader_percent is not None:
-        # If data_reader_percent is not None, then it will override `weekly`.
-        # If it is None however, we choose its value based on `weekly`.
-        try:
-            data_reader_percent = float(data_reader_percent)
+    if data_reader_percent != "prototext":
+        if data_reader_percent is not None:
 
-        except ValueError:
-            lbann_errors.append(
-                'data_reader_percent={d} is not a float.'.format(
-                    d=data_reader_percent))
-    elif weekly:
-        data_reader_percent = 1.00
+            # If data_reader_percent is not None, then it will override `weekly`.
+            # If it is None however, we choose its value based on `weekly`.
+            try:
+                data_reader_percent = float(data_reader_percent)
+
+            except ValueError:
+                lbann_errors.append(
+                    'data_reader_percent={d} is not a float.'.format(
+                        d=data_reader_percent))
+        elif weekly:
+            data_reader_percent = 1.00
+        else:
+            # Nightly
+            data_reader_percent = 0.10
+        option_data_reader_percent = ' --data_reader_percent={d}'.format(
+            d=data_reader_percent)
     else:
-        # Nightly
-        data_reader_percent = 0.10
-    option_data_reader_percent = ' --data_reader_percent={d}'.format(
-        d=data_reader_percent)
+        option_data_reader_percent = ''
     if exit_after_setup:
         option_exit_after_setup = ' --exit_after_setup'
     if metadata is not None:
@@ -423,6 +431,10 @@ def get_command(cluster,
         option_processes_per_model = ' --procs_per_model=%d' % processes_per_model
     if ckpt_dir is not None:
         option_ckpt_dir = ' --ckpt_dir=%s' % ckpt_dir
+    if restart_dir is not None:
+        option_restart_dir = ' --restart_dir=%s' % restart_dir
+    if disable_cuda is not None:
+        option_disable_cuda = ' --disable_cuda=%d' % int(bool(disable_cuda))
     extra_options = ''
     if extra_lbann_flags is not None:
         # If extra_lbann_flags is not a dict, then we have already appended
@@ -458,6 +470,7 @@ def get_command(cluster,
                 'write_sample_list',
                 'ltfb_verbose',
                 'ckpt_dir',
+                'restart_dir',
 
                 # DataReaders:
                 # 'data_filedir',
@@ -494,8 +507,9 @@ def get_command(cluster,
     if lbann_errors != []:
         print('lbann_errors={lbann_errors}.'.format(lbann_errors=lbann_errors))
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
-    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
-        executable, option_ckpt_dir, option_data_filedir,
+    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
+        executable, option_ckpt_dir, option_restart_dir, option_disable_cuda,
+        option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
         option_data_reader, option_data_reader_percent,
