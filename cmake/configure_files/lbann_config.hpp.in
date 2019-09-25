@@ -29,6 +29,7 @@
 #cmakedefine LBANN_HAS_CNPY
 #cmakedefine LBANN_HAS_VTUNE
 #cmakedefine LBANN_HAS_ALUMINUM
+#cmakedefine LBANN_HAS_NVSHMEM
 #cmakedefine LBANN_ALUMINUM_MPI_PASSTHROUGH
 #cmakedefine LBANN_HAS_PYTHON
 
