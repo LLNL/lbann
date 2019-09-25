@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_COVARIANCE_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_COVARIANCE_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -48,11 +48,11 @@ class covariance_layer : public data_type_layer<TensorDataType> {
 public:
 
   covariance_layer(lbann_comm *comm, bool biased)
-    : Layer(comm), m_biased(biased) {
+    : data_type_layer<TensorDataType>(comm), m_biased(biased) {
     this->m_expected_num_parent_layers = 2;
   }
   covariance_layer(const covariance_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_biased(other.m_biased),
       m_means(other.m_means ? other.m_means->Copy() : nullptr),
       m_workspace(other.m_workspace ?

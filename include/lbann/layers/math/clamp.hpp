@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MATH_CLAMP_HPP_INCLUDED
 #define LBANN_LAYERS_MATH_CLAMP_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -46,7 +46,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 class clamp_layer : public data_type_layer<TensorDataType> {
 public:
   clamp_layer(lbann_comm *comm, DataType min, DataType max)
-    : Layer(comm), m_min(min), m_max(max) {
+    : data_type_layer<TensorDataType>(comm), m_min(min), m_max(max) {
     if (m_min > m_max) {
       std::stringstream err;
       err << "[" << m_min << "," << m_max << "] is an invalid range";

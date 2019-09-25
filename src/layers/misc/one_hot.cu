@@ -62,8 +62,8 @@ void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const GPUMat&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<GPUMat&>(get_local_activations());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_prev_activations());
+  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_activations());
 
   // Populate one-hot vectors
   El::Zero(local_output);

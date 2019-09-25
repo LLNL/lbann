@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_ONE_HOT_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_ONE_HOT_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -45,7 +45,7 @@ class one_hot_layer : public data_type_layer<TensorDataType> {
                 "one-hot layer only supports data-parallel layout");
 public:
 
-  one_hot_layer(lbann_comm* comm, size_t size) : Layer(comm) {
+  one_hot_layer(lbann_comm* comm, size_t size) : data_type_layer<TensorDataType>(comm) {
     set_output_dims({static_cast<int>(size)});
   }
   one_hot_layer* copy() const override { return new one_hot_layer(*this); }

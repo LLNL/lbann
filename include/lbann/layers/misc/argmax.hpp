@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_ARGMAX_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_ARGMAX_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -44,7 +44,7 @@ class argmax_layer : public data_type_layer<TensorDataType> {
                 "argmax layer only supports CPU");
 public:
 
-  argmax_layer(lbann_comm* comm) : Layer(comm) { }
+  argmax_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) { }
   argmax_layer* copy() const override { return new argmax_layer(*this); }
   std::string get_type() const override { return "argmax"; }
   data_layout get_data_layout() const override { return Layout; }

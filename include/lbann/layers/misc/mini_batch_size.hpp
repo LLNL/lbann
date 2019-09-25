@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_MINI_BATCH_SIZE_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_MINI_BATCH_SIZE_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -42,7 +42,7 @@ template <typename TensorDataType,
 class mini_batch_size_layer : public data_type_layer<TensorDataType> {
 public:
 
-  mini_batch_size_layer(lbann_comm* comm) : Layer(comm) {
+  mini_batch_size_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = 0;
   }
 

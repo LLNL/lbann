@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_LEARNING_ENTRYWISE_SCALE_BIAS_HPP_INCLUDED
 #define LBANN_LAYER_LEARNING_ENTRYWISE_SCALE_BIAS_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -55,10 +55,10 @@ class entrywise_scale_bias_layer : public data_type_layer<TensorDataType> {
 public:
 
   entrywise_scale_bias_layer(lbann_comm *comm)
-    : Layer(comm) {}
+    : data_type_layer<TensorDataType>(comm) {}
 
   entrywise_scale_bias_layer(const entrywise_scale_bias_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_weights_gradient(other.m_weights_gradient ?
                          other.m_weights_gradient->Copy() : nullptr) {}
   entrywise_scale_bias_layer& operator=(const entrywise_scale_bias_layer& other) {

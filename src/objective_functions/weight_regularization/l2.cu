@@ -75,8 +75,8 @@ __global__ void accumulate_contribution_kernel(El::Int height,
 } // namespace
 
 template <>
-void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(const GPUMat& vals,
-                                                                        GPUMat& contribution) {
+void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(const El::Matrix<TensorDataType, El::Device::GPU>& vals,
+                                                                        El::Matrix<TensorDataType, El::Device::GPU>& contribution) {
   if (!vals.IsEmpty()) {
     const auto& size = vals.Height() * vals.Width();
     const El::Int block_size = 256;

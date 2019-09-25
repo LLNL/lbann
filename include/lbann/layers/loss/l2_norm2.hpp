@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LOSS_L2_NORM2_HPP_INCLUDED
 #define LBANN_LAYERS_LOSS_L2_NORM2_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -39,10 +39,10 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class l2_norm2_layer : public data_type_layer<TensorDataType> {
 public:
 
-  l2_norm2_layer(lbann_comm *comm) : Layer(comm) {}
+  l2_norm2_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
 
   l2_norm2_layer(const l2_norm2_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr) {}
   l2_norm2_layer& operator=(const l2_norm2_layer& other) {

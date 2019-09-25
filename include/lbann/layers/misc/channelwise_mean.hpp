@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_CHANNELWISE_MEAN_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_CHANNELWISE_MEAN_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -42,7 +42,7 @@ class channelwise_mean_layer : public data_type_layer<TensorDataType> {
 public:
 
   channelwise_mean_layer(lbann_comm *comm)
-    : Layer(comm) {
+    : data_type_layer<TensorDataType>(comm) {
     if (comm->am_trainer_master()) {
       LBANN_WARNING("channelwise_mean_layer is experimental "
                     "and may be deprecated at any time");

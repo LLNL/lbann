@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_ACTIVATIONS_ELU_HPP_INCLUDED
 #define LBANN_LAYERS_ACTIVATIONS_ELU_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -50,7 +50,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 class elu_layer : public data_type_layer<TensorDataType> {
 public:
   elu_layer(lbann_comm *comm, DataType alpha = 1)
-    : Layer(comm), m_alpha(alpha) {}
+    : data_type_layer<TensorDataType>(comm), m_alpha(alpha) {}
   elu_layer* copy() const override { return new elu_layer(*this); }
   std::string get_type() const override { return "ELU"; }
   data_layout get_data_layout() const override { return Layout; }

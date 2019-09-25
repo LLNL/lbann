@@ -42,9 +42,9 @@ void fp_cpu(const AbsDistMat& input,
             bool biased) {
 
   // Local matrices
-  const auto& local_input = static_cast<const CPUMat&>(input.LockedMatrix());
-  auto& local_means = static_cast<CPUMat&>(means.Matrix());
-  auto& local_workspace = static_cast<CPUMat&>(workspace.Matrix());
+  const auto& local_input = static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
+  auto& local_means = static_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(means.Matrix());
+  auto& local_workspace = static_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input.Height();
@@ -96,10 +96,10 @@ void bp_cpu(const AbsDistMat& input,
             bool biased) {
 
   // Local matrices
-  const auto& local_input = static_cast<const CPUMat&>(input.LockedMatrix());
-  auto& local_gradient_wrt_input = static_cast<CPUMat&>(gradient_wrt_input.Matrix());
-  const auto& local_means = static_cast<const CPUMat&>(means.LockedMatrix());
-  auto& local_workspace = static_cast<CPUMat&>(workspace.Matrix());
+  const auto& local_input = static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
+  auto& local_gradient_wrt_input = static_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_input.Matrix());
+  const auto& local_means = static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(means.LockedMatrix());
+  auto& local_workspace = static_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input.Height();

@@ -29,6 +29,7 @@
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
 #include "lbann/utils/cudnn.hpp"
@@ -102,7 +103,7 @@ public:
                          std::vector<int> dilations,
                          int groups,
                          bool has_bias)
-    : Layer(comm),
+    : data_type_layer<TensorDataType>(comm),
       m_output_channels(output_channels),
       m_conv_dims(std::move(conv_dims)),
       m_pads(std::move(pads)),
@@ -116,7 +117,7 @@ public:
   {}
 
   base_convolution_layer(const base_convolution_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_output_channels(other.m_output_channels),
       m_conv_dims(other.m_conv_dims),
       m_pads(other.m_pads),
@@ -485,7 +486,7 @@ protected:
     }
 
     // Initialize GPU workspace
-    GPUMat workspace;
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
 #ifdef HYDROGEN_HAVE_CUB
     workspace.SetMemoryMode(1);
 #endif // HYDROGEN_HAVE_CUB
@@ -563,7 +564,7 @@ protected:
 
     // Initialize GPU workspace
     // Note: Use CUB GPU memory pool if possible
-    GPUMat workspace;
+    El::Matrix<TensorDataType, El::Device::GPU> workspace;
 #ifdef HYDROGEN_HAVE_CUB
     workspace.SetMemoryMode(1);
 #endif // HYDROGEN_HAVE_CUB
@@ -679,7 +680,7 @@ protected:
         dst_scale, gradient_scale, true);
       if (has_local_data) {
         // Initialize GPU workspace
-        GPUMat workspace;
+        El::Matrix<TensorDataType, El::Device::GPU> workspace;
 #ifdef HYDROGEN_HAVE_CUB
         workspace.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
@@ -1189,7 +1190,7 @@ private:
       bool deterministic = false;
 #endif
       // Temporary filter gradient buffer.
-      GPUMat kernel_gradient;
+      El::Matrix<TensorDataType, El::Device::GPU> kernel_gradient;
 #ifdef HYDROGEN_HAVE_CUB
       kernel_gradient.SetMemoryMode(1);
 #endif

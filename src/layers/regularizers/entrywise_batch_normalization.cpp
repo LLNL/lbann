@@ -49,12 +49,12 @@ void compute_batch_statistics(lbann_comm& comm,
                               AbsDistMat& running_var) {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
-  auto& local_batch_statistics = dynamic_cast<CPUMat&>(batch_statistics.Matrix());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
+  auto& local_batch_statistics = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(batch_statistics.Matrix());
   auto local_batch_mean = El::View(local_batch_statistics, El::ALL, El::IR(0));
   auto local_batch_var = El::View(local_batch_statistics, El::ALL, El::IR(1));
-  auto& local_running_mean = dynamic_cast<CPUMat&>(running_mean.Matrix());
-  auto& local_running_var = dynamic_cast<CPUMat&>(running_var.Matrix());
+  auto& local_running_mean = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(running_mean.Matrix());
+  auto& local_running_var = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(running_var.Matrix());
 
   // Dimensions
   const El::Int local_height = local_input.Height();
@@ -111,10 +111,10 @@ void compute_batch_statistics(lbann_comm& comm,
  *  y_i = (x_i - mean) / sqrt(var + epsilon)
  */
 void apply_batchnorm(DataType epsilon,
-                     const CPUMat& local_input,
-                     CPUMat& local_output,
-                     const CPUMat& local_mean,
-                     const CPUMat& local_var) {
+                     const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
+                     El::Matrix<TensorDataType, El::Device::CPU>& local_output,
+                     const El::Matrix<TensorDataType, El::Device::CPU>& local_mean,
+                     const El::Matrix<TensorDataType, El::Device::CPU>& local_var) {
   const El::Int local_height = local_input.Height();
   const El::Int local_width = local_input.Width();
   LBANN_OMP_PARALLEL_FOR
@@ -150,8 +150,8 @@ void fp_impl(lbann_comm& comm,
              AbsDistMat& running_var) {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
-  auto& local_output = dynamic_cast<CPUMat&>(output.Matrix());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
+  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(output.Matrix());
 
   // Batchnorm has different behavior for training and inference
   if (is_training) {
@@ -164,7 +164,7 @@ void fp_impl(lbann_comm& comm,
                              running_mean,
                              running_var);
     const auto& local_batch_statistics
-      = dynamic_cast<const CPUMat&>(batch_statistics.LockedMatrix());
+      = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(batch_statistics.LockedMatrix());
     const auto local_batch_mean = El::LockedView(local_batch_statistics,
                                                  El::ALL, El::IR(0));
     const auto local_batch_var = El::LockedView(local_batch_statistics,
@@ -179,8 +179,8 @@ void fp_impl(lbann_comm& comm,
   else {
 
     // For inference, normalize with running statistics
-    const auto& local_running_mean = dynamic_cast<const CPUMat&>(running_mean.LockedMatrix());
-    const auto& local_running_var = dynamic_cast<const CPUMat&>(running_var.LockedMatrix());
+    const auto& local_running_mean = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(running_mean.LockedMatrix());
+    const auto& local_running_var = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(running_var.LockedMatrix());
     apply_batchnorm(epsilon,
                     local_input,
                     local_output,
@@ -205,13 +205,13 @@ void bp_training_impl(lbann_comm& comm,
                       AbsDistMat& gradient_wrt_statistics) {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
-  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMat&>(gradient_wrt_output.LockedMatrix());
-  auto& local_gradient_wrt_input = dynamic_cast<CPUMat&>(gradient_wrt_input.Matrix());
-  const auto& local_statistics = dynamic_cast<const CPUMat&>(statistics.LockedMatrix());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
+  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_output.LockedMatrix());
+  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_input.Matrix());
+  const auto& local_statistics = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(statistics.LockedMatrix());
   const auto local_mean = El::LockedView(local_statistics, El::ALL, El::IR(0));
   const auto local_var = El::LockedView(local_statistics, El::ALL, El::IR(1));
-  auto& local_gradient_wrt_statistics = dynamic_cast<CPUMat&>(gradient_wrt_statistics.Matrix());
+  auto& local_gradient_wrt_statistics = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_statistics.Matrix());
   auto local_gradient_wrt_mean = El::View(local_gradient_wrt_statistics, El::ALL, El::IR(0));
   auto local_gradient_wrt_var = El::View(local_gradient_wrt_statistics, El::ALL, El::IR(1));
 
@@ -312,9 +312,9 @@ void bp_inference_impl(DataType epsilon,
                        const AbsDistMat& running_var) {
 
   // Local matrices
-  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMat&>(gradient_wrt_output.LockedMatrix());
-  auto& local_gradient_wrt_input = dynamic_cast<CPUMat&>(gradient_wrt_input.Matrix());
-  const auto& local_running_var = dynamic_cast<const CPUMat&>(running_var.LockedMatrix());
+  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_output.LockedMatrix());
+  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_input.Matrix());
+  const auto& local_running_var = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(running_var.LockedMatrix());
 
   // Compute gradient w.r.t. input
   //   dL/dx_i = dL/dy_i / sqrt(var+epsilon)

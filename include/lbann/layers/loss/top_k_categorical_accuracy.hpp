@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LOSS_TOP_K_CATEGORICAL_ACCURACY_HPP_INCLUDED
 #define LBANN_LAYERS_LOSS_TOP_K_CATEGORICAL_ACCURACY_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -47,7 +47,7 @@ class top_k_categorical_accuracy_layer : public data_type_layer<TensorDataType> 
 public:
 
   top_k_categorical_accuracy_layer(lbann_comm *comm, El::Int k)
-    : Layer(comm), m_k(k) {
+    : data_type_layer<TensorDataType>(comm), m_k(k) {
     this->m_expected_num_parent_layers = 2;
   }
 

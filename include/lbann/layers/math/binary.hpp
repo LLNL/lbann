@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MATH_BINARY_HPP_INCLUDED
 #define LBANN_LAYERS_MATH_BINARY_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -35,11 +35,11 @@ namespace lbann {
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   class LAYER_NAME : public data_type_layer<TensorDataType> {               \
   public:                                                                   \
-    LAYER_NAME(lbann_comm *comm) : Layer(comm) {                            \
+    LAYER_NAME(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {  \
       this->m_expected_num_parent_layers = 2;                               \
     }                                                                       \
     LAYER_NAME* copy() const override {                                     \
-      return new LAYER_NAME<TensorDataType, Layout,Device>(*this);          \
+      return new LAYER_NAME<TensorDataType,Layout,Device>(*this);           \
     }                                                                       \
     std::string get_type() const override { return LAYER_STRING; }          \
     data_layout get_data_layout() const override { return Layout; }         \

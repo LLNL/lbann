@@ -184,10 +184,10 @@ void fp_gpu(const AbsDistMat& input0,
             bool biased) {
 
   // Local matrices
-  const auto& local_input0 = static_cast<const GPUMat&>(input0.LockedMatrix());
-  const auto& local_input1 = static_cast<const GPUMat&>(input1.LockedMatrix());
-  auto& local_means = static_cast<GPUMat&>(means.Matrix());
-  auto& local_workspace = static_cast<GPUMat&>(workspace.Matrix());
+  const auto& local_input0 = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input0.LockedMatrix());
+  const auto& local_input1 = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input1.LockedMatrix());
+  auto& local_means = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(means.Matrix());
+  auto& local_workspace = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input0.Height();
@@ -252,12 +252,12 @@ void bp_gpu(const AbsDistMat& input0,
             bool biased) {
 
   // Local matrices
-  const auto& local_input0 = static_cast<const GPUMat&>(input0.LockedMatrix());
-  const auto& local_input1 = static_cast<const GPUMat&>(input1.LockedMatrix());
-  auto& local_gradient_wrt_input0 = static_cast<GPUMat&>(gradient_wrt_input0.Matrix());
-  auto& local_gradient_wrt_input1 = static_cast<GPUMat&>(gradient_wrt_input1.Matrix());
-  const auto& local_means = static_cast<const GPUMat&>(means.LockedMatrix());
-  auto& local_workspace = static_cast<GPUMat&>(workspace.Matrix());
+  const auto& local_input0 = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input0.LockedMatrix());
+  const auto& local_input1 = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input1.LockedMatrix());
+  auto& local_gradient_wrt_input0 = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_input0.Matrix());
+  auto& local_gradient_wrt_input1 = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_input1.Matrix());
+  const auto& local_means = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(means.LockedMatrix());
+  auto& local_workspace = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input0.Height();

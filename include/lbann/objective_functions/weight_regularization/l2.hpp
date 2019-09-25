@@ -69,7 +69,7 @@ public:
 private:
 
   /** Contributions to evaluated value. */
-  std::map<El::Device, CPUMat> m_contributions;
+  std::map<El::Device, El::Matrix<TensorDataType, El::Device::CPU>> m_contributions;
 
   /** For non-blocking allreduces. */
   Al::request m_allreduce_req;

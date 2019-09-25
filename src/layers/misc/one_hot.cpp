@@ -34,8 +34,8 @@ void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::fp_compute() {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMat&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<CPUMat&>(get_local_activations());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_prev_activations());
+  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(get_local_activations());
   const El::Int local_height = local_output.Height();
   const El::Int local_width = local_output.Width();
 

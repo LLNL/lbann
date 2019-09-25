@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_ARGMIN_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_ARGMIN_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -44,7 +44,7 @@ class argmin_layer : public data_type_layer<TensorDataType> {
                 "argmin layer only supports CPU");
 public:
 
-  argmin_layer(lbann_comm* comm) : Layer(comm) { }
+  argmin_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) { }
   argmin_layer* copy() const override { return new argmin_layer(*this); }
   std::string get_type() const override { return "argmin"; }
   data_layout get_data_layout() const override { return Layout; }

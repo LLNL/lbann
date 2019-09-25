@@ -331,9 +331,9 @@ protected:
   /** Tensor cuDNN descriptors. */
   cudnn::entrywise_layer_tensor_manager m_tensors_cudnn_desc;
   /** RNG state for cuDNN dropout. */
-  GPUMat m_states;
+  El::Matrix<TensorDataType, El::Device::GPU> m_states;
   /** Work space for cuDNN dropout. */
-  GPUMat m_reserve_space;
+  El::Matrix<TensorDataType, El::Device::GPU> m_reserve_space;
 #endif // LBANN_HAS_CUDNN
 
 };

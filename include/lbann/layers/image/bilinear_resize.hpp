@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_IMAGE_BILINEAR_RESIZE_HPP_INCLUDED
 #define LBANN_LAYERS_IMAGE_BILINEAR_RESIZE_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -43,7 +43,7 @@ class bilinear_resize_layer : public data_type_layer<TensorDataType> {
 public:
 
   bilinear_resize_layer(lbann_comm *comm, El::Int height, El::Int width)
-    : Layer(comm), m_height(height), m_width(width) {
+    : data_type_layer<TensorDataType>(comm), m_height(height), m_width(width) {
   }
 
   bilinear_resize_layer* copy() const override {

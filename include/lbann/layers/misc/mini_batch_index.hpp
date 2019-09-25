@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_MINI_BATCH_INDEX_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_MINI_BATCH_INDEX_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -43,7 +43,7 @@ template <typename TensorDataType,
 class mini_batch_index_layer : public data_type_layer<TensorDataType> {
 public:
 
-  mini_batch_index_layer(lbann_comm* comm) : Layer(comm) {
+  mini_batch_index_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = 0;
   }
 
@@ -67,7 +67,7 @@ protected:
     const auto& local_width = local_output.Width();
 
     // Create temporary matrix if output matrix is not on CPU
-    CPUMat local_output_v;
+    El::Matrix<TensorDataType, El::Device::CPU> local_output_v;
     if (local_output.GetDevice() == El::Device::CPU) {
       El::View(local_output_v, local_output);
     } else {

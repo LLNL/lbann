@@ -26,7 +26,7 @@
 
 #ifndef LBANN_LAYER_REGULARIZER_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_HPP_INCLUDED
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -35,7 +35,7 @@ namespace lbann {
  */
 class regularizer_layer : public data_type_layer<TensorDataType> {
  public:
-  regularizer_layer(lbann_comm *comm) : Layer(comm) {}
+  regularizer_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
 };
 
 } // namespace lbann

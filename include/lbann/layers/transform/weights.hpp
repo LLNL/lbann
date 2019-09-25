@@ -55,9 +55,9 @@ class weights_layer : public transform_layer<TensorDataType> {
       m_gradient(other.m_gradient ? other.m_gradient->Copy() : nullptr) {
     if (other.m_workspace) {
       switch (other.m_workspace->GetDevice()) {
-      case El::Device::CPU: m_workspace.reset(new CPUMat()); break;
+      case El::Device::CPU: m_workspace.reset(new El::Matrix<TensorDataType, El::Device::CPU>()); break;
 #ifdef LBANN_HAS_GPU
-      case El::Device::GPU: m_workspace.reset(new GPUMat()); break;
+      case El::Device::GPU: m_workspace.reset(new El::Matrix<TensorDataType, El::Device::GPU>()); break;
 #endif // LBANN_HAS_GPU
       default: LBANN_ERROR("unknown device type");
       }
@@ -70,9 +70,9 @@ class weights_layer : public transform_layer<TensorDataType> {
     m_workspace.reset();
     if (other.m_workspace) {
       switch (other.m_workspace->GetDevice()) {
-      case El::Device::CPU: m_workspace.reset(new CPUMat()); break;
+      case El::Device::CPU: m_workspace.reset(new El::Matrix<TensorDataType, El::Device::CPU>()); break;
 #ifdef LBANN_HAS_GPU
-      case El::Device::GPU: m_workspace.reset(new GPUMat()); break;
+      case El::Device::GPU: m_workspace.reset(new El::Matrix<TensorDataType, El::Device::GPU>()); break;
 #endif // LBANN_HAS_GPU
       default: LBANN_ERROR("unknown device type");
       }
@@ -97,10 +97,10 @@ class weights_layer : public transform_layer<TensorDataType> {
 
     // Initialize workspace
     switch (Dev) {
-    case El::Device::CPU: m_workspace.reset(new CPUMat()); break;
+    case El::Device::CPU: m_workspace.reset(new El::Matrix<TensorDataType, El::Device::CPU>()); break;
 #ifdef LBANN_HAS_GPU
     case El::Device::GPU:
-      m_workspace.reset(new GPUMat());
+      m_workspace.reset(new El::Matrix<TensorDataType, El::Device::GPU>());
 #ifdef HYDROGEN_HAVE_CUB
       m_workspace->SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB

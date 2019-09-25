@@ -93,13 +93,13 @@ __global__ void bp_kernel(size_t height,
   }
 }
 
-void fp_impl(const GPUMat& local_input,
-             GPUMat& local_output,
+void fp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
+             El::Matrix<TensorDataType, El::Device::GPU>& local_output,
              const weights& scale_bias) {
 
   // Local matrices
   const auto& local_scale_bias
-    = dynamic_cast<const GPUMat&>(scale_bias.get_values().LockedMatrix());
+    = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(scale_bias.get_values().LockedMatrix());
   const auto local_scale = El::LockedView(local_scale_bias,
                                           El::ALL, El::IR(0));
   const auto local_bias = El::LockedView(local_scale_bias,
@@ -127,17 +127,17 @@ void fp_impl(const GPUMat& local_input,
 
 }
 
-void bp_impl(const GPUMat& local_input,
-             const GPUMat& local_gradient_wrt_output,
-             GPUMat& local_gradient_wrt_input,
+void bp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
+             const El::Matrix<TensorDataType, El::Device::GPU>& local_gradient_wrt_output,
+             El::Matrix<TensorDataType, El::Device::GPU>& local_gradient_wrt_input,
              weights& scale_bias,
              AbsDistMat& gradient_wrt_scale_bias) {
 
   // Local matrices
   const auto& local_scale_bias
-    = dynamic_cast<const GPUMat&>(scale_bias.get_values().LockedMatrix());
+    = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(scale_bias.get_values().LockedMatrix());
   auto& local_gradient_wrt_scale_bias
-    = dynamic_cast<GPUMat&>(gradient_wrt_scale_bias.Matrix());
+    = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_scale_bias.Matrix());
   const auto local_scale = El::LockedView(local_scale_bias,
                                           El::ALL, El::IR(0));
   auto local_gradient_wrt_scale = El::View(local_gradient_wrt_scale_bias,
@@ -179,32 +179,32 @@ void bp_impl(const GPUMat& local_input,
 template <>
 void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::GPU>
      ::fp_compute() {
-  fp_impl(dynamic_cast<const GPUMat&>(get_local_prev_activations()),
-          dynamic_cast<GPUMat&>(get_local_activations()),
+  fp_impl(dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_prev_activations()),
+          dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_activations()),
           *m_weights[0]);
 }
 template <>
 void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::GPU>
      ::fp_compute() {
-  fp_impl(dynamic_cast<const GPUMat&>(get_local_prev_activations()),
-          dynamic_cast<GPUMat&>(get_local_activations()),
+  fp_impl(dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_prev_activations()),
+          dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_activations()),
           *m_weights[0]);
 }
 template <>
 void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::GPU>
      ::bp_compute() {
-  bp_impl(dynamic_cast<const GPUMat&>(get_local_prev_activations()),
-          dynamic_cast<const GPUMat&>(get_local_prev_error_signals()),
-          dynamic_cast<GPUMat&>(get_local_error_signals()),
+  bp_impl(dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_prev_activations()),
+          dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_prev_error_signals()),
+          dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_error_signals()),
           *this->m_weights[0],
           *m_weights_gradient);
 }
 template <>
 void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::GPU>
      ::bp_compute() {
-  bp_impl(dynamic_cast<const GPUMat&>(get_local_prev_activations()),
-          dynamic_cast<const GPUMat&>(get_local_prev_error_signals()),
-          dynamic_cast<GPUMat&>(get_local_error_signals()),
+  bp_impl(dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_prev_activations()),
+          dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_prev_error_signals()),
+          dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_error_signals()),
           *this->m_weights[0],
           *m_weights_gradient);
 }

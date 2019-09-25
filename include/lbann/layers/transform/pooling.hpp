@@ -438,8 +438,8 @@ private:
     const int num_per_input_channel = get_output_size() / num_channels;
 
     // Initialize matrices
-    CPUMat im2col_mat(m_pool_size * num_channels, num_per_input_channel);
-    CPUMat gradient_wrt_input_col;
+    El::Matrix<TensorDataType, El::Device::CPU> im2col_mat(m_pool_size * num_channels, num_per_input_channel);
+    El::Matrix<TensorDataType, El::Device::CPU> gradient_wrt_input_col;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {

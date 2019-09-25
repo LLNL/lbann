@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LOSS_MEAN_SQUARED_ERROR_HPP_INCLUDED
 #define LBANN_LAYERS_LOSS_MEAN_SQUARED_ERROR_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -43,12 +43,12 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class mean_squared_error_layer : public data_type_layer<TensorDataType> {
 public:
 
-  mean_squared_error_layer(lbann_comm *comm) : Layer(comm) {
+  mean_squared_error_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = 2;
   }
 
   mean_squared_error_layer(const mean_squared_error_layer& other)
-    : Layer(other) {
+    : data_type_layer<TensorDataType>(other) {
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() :
                       nullptr);

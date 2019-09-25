@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_VARIANCE_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_VARIANCE_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -47,9 +47,9 @@ class variance_layer : public data_type_layer<TensorDataType> {
 public:
 
   variance_layer(lbann_comm *comm, bool biased)
-    : Layer(comm), m_biased(biased) {}
+    : data_type_layer<TensorDataType>(comm), m_biased(biased) {}
   variance_layer(const variance_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_biased(other.m_biased),
       m_means(other.m_means ? other.m_means->Copy() : nullptr),
       m_workspace(other.m_workspace ?

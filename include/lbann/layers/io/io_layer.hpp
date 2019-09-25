@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_IO_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_IO_LAYER_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/utils/dataset.hpp"
 #include "lbann/io/persist.hpp"
@@ -53,7 +53,7 @@ class io_layer : public data_type_layer<TensorDataType> {
   io_layer(lbann_comm *comm,
            bool data_set_spans_models = true,
            data_reader_target_mode data_reader_mode = data_reader_target_mode::CLASSIFICATION)
-    : Layer(comm),
+    : data_type_layer<TensorDataType>(comm),
       m_data_set_spans_models(data_set_spans_models),
       m_data_reader_mode(data_reader_mode) {
   }

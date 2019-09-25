@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LOSS_CATEGORICAL_ACCURACY_HPP_INCLUDED
 #define LBANN_LAYERS_LOSS_CATEGORICAL_ACCURACY_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -46,7 +46,7 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class categorical_accuracy_layer : public data_type_layer<TensorDataType> {
 public:
 
-  categorical_accuracy_layer(lbann_comm *comm) : Layer(comm) {
+  categorical_accuracy_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = 2;
   }
 

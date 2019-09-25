@@ -71,7 +71,7 @@ void value_initializer::fill(AbsDistMat& matrix) {
   // Note: If the weights matrix is on CPU, the CPU matrix is a matrix
   // view. Otherwise, the CPU matrix values are copied to the weights
   // matrix.
-  CPUMat matrix_cpu;
+  El::Matrix<TensorDataType, El::Device::CPU> matrix_cpu;
   if (matrix.GetLocalDevice() == El::Device::CPU) {
     El::View(matrix_cpu, matrix.Matrix());
   } else {

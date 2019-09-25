@@ -63,7 +63,7 @@ private:
   /** Evaluated value.
    *  The value may be stored in pinned memory.
    */
-  CPUMat m_value;
+  El::Matrix<TensorDataType, El::Device::CPU> m_value;
   /** Non-blocking allreduce request. */
   Al::request m_allreduce_req;
 #ifdef LBANN_HAS_GPU

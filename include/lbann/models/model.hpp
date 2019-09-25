@@ -57,6 +57,8 @@ class lbann_callback;
 class training_algorithm;
 class callback_base;
 
+using TensorDataType = float;
+
 /** @brief Abstract base class for neural network models. */
 class model {
 public:
@@ -67,8 +69,8 @@ public:
 
   model(lbann_comm* comm,
         size_t mini_batch_size,
-        objective_function* obj_fn,
-        optimizer* default_optimizer = nullptr);
+        objective_function<TensorDataType>* obj_fn,
+        optimizer<TensorDataType>* default_optimizer = nullptr);
   model(const model& other);
   model& operator=(const model& other);
   virtual ~model();
@@ -99,7 +101,7 @@ public:
   virtual description get_description() const;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function* get_objective_function() const {
+  objective_function<TensorDataType>* get_objective_function() const {
     return m_objective_function;
   }
 
@@ -123,9 +125,9 @@ public:
    */
   const std::vector<Layer*> get_layers() const;
 
-  const std::vector<weights*> get_weights() const;
+  const std::vector<weights<TensorDataType>*> get_weights() const;
 
-  std::vector<weights*> get_weights();
+  std::vector<weights<TensorDataType>*> get_weights();
 
   /** @brief Get the list of callbacks for the model. */
   virtual std::vector<callback_base*>& get_callbacks() {
@@ -163,7 +165,7 @@ public:
   virtual void add_layer(std::unique_ptr<Layer> l);
 
   /** @brief Add weights to model. */
-  void add_weights(std::unique_ptr<weights> w);
+  void add_weights(std::unique_ptr<weights<TensorDataType>> w);
 
   /** @brief Register a new callback for the model. */
   void add_callback(callback_base *cb);
@@ -172,20 +174,20 @@ public:
   void add_metric(metric *m);
 
   /** @brief Replace the model's weights. */
-  void replace_weights(std::vector<weights *>& w);
+  void replace_weights(std::vector<weights<TensorDataType> *>& w);
 
   /** @brief Copy trained weights from input parameter w.
    *
    *  Only weight values are placed, pointers and layer structure are in place.
    *  Weights to be copied are of the same name
    */
-  void copy_trained_weights_from(std::vector<weights *>& w);
+  void copy_trained_weights_from(std::vector<weights<TensorDataType> *>& w);
 
   /** @brief Construct an instance of the default optimizer.
    *
    *  If there is no default optimizer, a null pointer is returned.
    */
-  optimizer* create_optimizer() const;
+  optimizer<TensorDataType>* create_optimizer() const;
 
   /** Get the trainer's maximum mini-batch size. */
   inline size_t get_max_mini_batch_size() const {
@@ -274,7 +276,7 @@ protected:
    *  pointer is not changed.
    */
   virtual void remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
-                              const std::unordered_map<weights*,weights*>& weights_map);
+                              const std::unordered_map<weights<TensorDataType>*,weights<TensorDataType>*>& weights_map);
 
   /** @brief
    *
@@ -383,9 +385,9 @@ public:
   /** @brief Execute callbacks at end of model optimization. */
   virtual void do_model_optimize_end_cbs();
   /** @brief Execute callbacks at the start of weight optimization. */
-  virtual void do_weight_optimize_begin_cbs(weights *w);
+  virtual void do_weight_optimize_begin_cbs(weights<TensorDataType> *w);
   /** @brief Execute callbacks at the end of weight optimization. */
-  virtual void do_weight_optimize_end_cbs(weights *w);
+  virtual void do_weight_optimize_end_cbs(weights<TensorDataType> *w);
 
 private:
 
@@ -407,7 +409,7 @@ private:
   std::vector<std::unique_ptr<Layer>> m_layers;
 
   /** @brief Trainable parameters. */
-  std::vector<std::unique_ptr<weights>> m_weights;
+  std::vector<std::unique_ptr<weights<TensorDataType>>> m_weights;
 
   /** @details Maximum possible minibatch size supported by layers in
    *  this model.  Note that this is local to the particular model,
@@ -420,10 +422,10 @@ private:
    *  is just used to create copies and is not actually used for
    *  optimization.
    */
-  optimizer* m_default_optimizer = nullptr;
+  optimizer<TensorDataType>* m_default_optimizer = nullptr;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function* m_objective_function;
+  objective_function<TensorDataType>* m_objective_function;
 
   /** @brief Numerical quantities to evaluate model performance.
    *  @details Does not affect training.

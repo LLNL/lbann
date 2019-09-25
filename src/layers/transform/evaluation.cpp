@@ -73,7 +73,7 @@ void fp_gpu(lbann_comm& comm,
   const auto& mini_batch_size = input.Width();
 
   // GPU objects
-  GPUMat sum_d, ones_d;
+  El::Matrix<TensorDataType, El::Device::GPU> sum_d, ones_d;
 #ifdef HYDROGEN_HAVE_CUB
   sum_d.SetMemoryMode(1);  // Use CUB GPU memory pool
   ones_d.SetMemoryMode(1); // Use CUB GPU memory pool
@@ -103,7 +103,7 @@ void fp_gpu(lbann_comm& comm,
                 ones_d.LockedBuffer(), 1,
                 sum_d.Buffer());
   } else {
-    GPUMat col_sums_d;
+    El::Matrix<TensorDataType, El::Device::GPU> col_sums_d;
 #ifdef HYDROGEN_HAVE_CUB
     col_sums_d.SetMemoryMode(1);  // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB

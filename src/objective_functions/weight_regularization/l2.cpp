@@ -33,8 +33,8 @@
 namespace lbann {
 
 template <>
-void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CPUMat& vals,
-                                                                        CPUMat& contribution) {
+void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const El::Matrix<TensorDataType, El::Device::CPU>& vals,
+                                                                        El::Matrix<TensorDataType, El::Device::CPU>& contribution) {
   auto& sqsum = contribution(0, 0);
   if (vals.IsEmpty()) {
   } else if (vals.Contiguous()) {
@@ -101,7 +101,7 @@ void l2_weight_regularization::start_evaluation() {
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
         accumulate_contribution<El::Device::CPU>(
-          static_cast<const CPUMat&>(vals.LockedMatrix()),
+          static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(vals.LockedMatrix()),
           contribution);
       }
     }
@@ -114,7 +114,7 @@ void l2_weight_regularization::start_evaluation() {
   // Compute contributions from GPU weights
   if (m_contributions.count(El::Device::GPU) > 0) {
     auto&& stream = El::GPUManager::Stream();
-    GPUMat contribution;
+    El::Matrix<TensorDataType, El::Device::GPU> contribution;
 #ifdef HYDROGEN_HAVE_CUB
     contribution.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
@@ -125,7 +125,7 @@ void l2_weight_regularization::start_evaluation() {
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
         accumulate_contribution<El::Device::GPU>(
-          static_cast<const GPUMat&>(vals.LockedMatrix()),
+          static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(vals.LockedMatrix()),
           contribution);
       }
     }

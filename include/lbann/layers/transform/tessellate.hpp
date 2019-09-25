@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_TRANSFORM_TESSELLATE_HPP_INCLUDED
 #define LBANN_LAYERS_TRANSFORM_TESSELLATE_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -63,12 +63,12 @@ class tessellate_layer : public data_type_layer<TensorDataType> {
 public:
 
   tessellate_layer(lbann_comm *comm, std::vector<int> dims = {})
-    : Layer(comm) {
+    : data_type_layer<TensorDataType>(comm) {
     set_output_dims(dims);
   }
 
   tessellate_layer(const tessellate_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_input_v(other.m_input_v ? other.m_input_v->Copy() : nullptr) {}
   tessellate_layer& operator=(const tessellate_layer& other) {
     Layer::operator=(other);

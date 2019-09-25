@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_REGULARIZERS_ENTRYWISE_BATCH_NORMALIZATION_HPP_INCLUDED
 #define LBANN_LAYERS_REGULARIZERS_ENTRYWISE_BATCH_NORMALIZATION_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -52,10 +52,10 @@ public:
   entrywise_batch_normalization_layer(lbann_comm* comm,
                                       DataType decay=0.9,
                                       DataType epsilon=1e-5)
-    : Layer(comm), m_decay(decay), m_epsilon(epsilon) {}
+    : data_type_layer<TensorDataType>(comm), m_decay(decay), m_epsilon(epsilon) {}
 
   entrywise_batch_normalization_layer(const entrywise_batch_normalization_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
       m_batch_statistics(other.m_batch_statistics ?

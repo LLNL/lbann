@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_ACTIVATIONS_IDENTITY_HPP_INCLUDED
 #define LBANN_LAYERS_ACTIVATIONS_IDENTITY_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -39,7 +39,7 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class identity_layer : public data_type_layer<TensorDataType> {
 public:
-  identity_layer(lbann_comm *comm) : Layer(comm) {}
+  identity_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
   identity_layer* copy() const override { return new identity_layer(*this); }
   std::string get_type() const override { return "identity"; }
   data_layout get_data_layout() const override { return Layout; }

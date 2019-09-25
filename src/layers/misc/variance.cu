@@ -111,9 +111,9 @@ void fp_gpu(const AbsDistMat& input,
             bool biased) {
 
   // Local matrices
-  const auto& local_input = static_cast<const GPUMat&>(input.LockedMatrix());
-  auto& local_means = static_cast<GPUMat&>(means.Matrix());
-  auto& local_workspace = static_cast<GPUMat&>(workspace.Matrix());
+  const auto& local_input = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input.LockedMatrix());
+  auto& local_means = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(means.Matrix());
+  auto& local_workspace = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input.Height();
@@ -125,7 +125,7 @@ void fp_gpu(const AbsDistMat& input,
   means.Empty(false);
   means.AlignWith(input);
   means.Resize(1, width);
-  GPUMat ones;
+  El::Matrix<TensorDataType, El::Device::GPU> ones;
 #ifdef HYDROGEN_HAVE_CUB
   ones.SetMemoryMode(1); // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
@@ -170,10 +170,10 @@ void bp_gpu(const AbsDistMat& input,
             bool biased) {
 
   // Local matrices
-  const auto& local_input = static_cast<const GPUMat&>(input.LockedMatrix());
-  auto& local_gradient_wrt_input = static_cast<GPUMat&>(gradient_wrt_input.Matrix());
-  const auto& local_means = static_cast<const GPUMat&>(means.LockedMatrix());
-  auto& local_workspace = static_cast<GPUMat&>(workspace.Matrix());
+  const auto& local_input = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input.LockedMatrix());
+  auto& local_gradient_wrt_input = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_input.Matrix());
+  const auto& local_means = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(means.LockedMatrix());
+  auto& local_workspace = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input.Height();

@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 #define LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/cudnn.hpp"
 
 // Threshold outputs to a minimum value.
@@ -49,14 +49,14 @@ class softmax_layer : public data_type_layer<TensorDataType> {
 public:
 
   softmax_layer(lbann_comm *comm)
-    : Layer(comm)
+    : data_type_layer<TensorDataType>(comm)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {}
 
   softmax_layer(const softmax_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
