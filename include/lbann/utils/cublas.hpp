@@ -29,6 +29,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/utils/cuda.hpp"
+#include "lbann/utils/exception.hpp"
 
 #ifdef LBANN_HAS_CUDA
 #include <cuda_runtime.h>
@@ -44,8 +45,9 @@
       const cublasStatus_t status_FORCE_CHECK_CUBLAS = (cublas_call);   \
       if (status_FORCE_CHECK_CUBLAS != CUBLAS_STATUS_SUCCESS) {         \
         cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("cuBLAS error: ")                       \
-                    + lbann::cublas::get_error_string(status_FORCE_CHECK_CUBLAS)); \
+        LBANN_ERROR("cuBLAS error: ",                                   \
+                    lbann::cublas::get_error_string(                    \
+                      status_FORCE_CHECK_CUBLAS));                      \
       }                                                                 \
     }                                                                   \
     {                                                                   \
@@ -55,8 +57,8 @@
         status_FORCE_CHECK_CUBLAS = cudaGetLastError();                 \
       if (status_FORCE_CHECK_CUBLAS != cudaSuccess) {                   \
         cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("CUDA error: ")                         \
-                    + cudaGetErrorString(status_FORCE_CHECK_CUBLAS));   \
+        LBANN_ERROR("CUDA error: ",                                     \
+                    cudaGetErrorString(status_FORCE_CHECK_CUBLAS));     \
       }                                                                 \
     }                                                                   \
   } while (0)
@@ -67,20 +69,19 @@
       const cublasStatus_t status_FORCE_CHECK_CUBLAS = (cublas_call);   \
       if (status_FORCE_CHECK_CUBLAS != CUBLAS_STATUS_SUCCESS) {         \
         cudaDeviceReset();                                              \
-        LBANN_ERROR(std::string("cuBLAS error: ")                       \
-                    + lbann::cublas::get_error_string(status_FORCE_CHECK_CUBLAS)); \
+        LBANN_ERROR("cuBLAS error: ",                                   \
+                    lbann::cublas::get_error_string(                    \
+                      status_FORCE_CHECK_CUBLAS));                      \
       }                                                                 \
     }                                                                   \
   } while (0)
-#define FORCE_CHECK_CUBLAS_SYNC(cuda_call)                                    \
-  do {                                                                        \
-    const cudaError_t cuda_status = cuda_call;                                \
-    if (cuda_status != cudaSuccess) {                                         \
-      std::cerr << "CUDA error: " << cudaGetErrorString(cuda_status) << "\n"; \
-      std::cerr << "Error at " << __FILE__ << ":" << __LINE__ << "\n";        \
-      cudaDeviceReset();                                                      \
-      throw lbann::lbann_exception("CUDA error");                             \
-    }                                                                         \
+#define FORCE_CHECK_CUBLAS_SYNC(cuda_call)                              \
+  do {                                                                  \
+    const cudaError_t cuda_status = cuda_call;                          \
+    if (cuda_status != cudaSuccess) {                                   \
+      cudaDeviceReset();                                                \
+      LBANN_ERROR("CUDA error: ", cudaGetErrorString(cuda_status));     \
+    }                                                                   \
   } while (0)
 #ifdef LBANN_DEBUG
 #define CHECK_CUBLAS(cublas_call)                       \

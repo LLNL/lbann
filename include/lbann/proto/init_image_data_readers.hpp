@@ -26,8 +26,14 @@
 
 #ifndef LBANN_PROTO_INIT_IMAGE_DATA_READERS_HPP_INCLUDED
 #define LBANN_PROTO_INIT_IMAGE_DATA_READERS_HPP_INCLUDED
+
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/comm.hpp"
+
+namespace lbann_data {
+class Reader;
+class DataSetMetaData;
+}
 
 namespace lbann {
 

@@ -25,7 +25,24 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
+
+#include "lbann/metrics/layer_metric.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/models/directed_acyclic_graph.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/objective_functions/weight_regularization/l2.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <model.pb.h>
+#include <objective_functions.pb.h>
+
+#include <iostream>
+#include <map>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 namespace lbann {
 namespace proto {
@@ -33,47 +50,45 @@ namespace proto {
 namespace {
 
 /** Instantiate a model based on prototext. */
-model* instantiate_model(lbann_comm* comm,
-                         objective_function* obj,
-                         const lbann_data::Optimizer& proto_opt,
-                         const lbann_data::Model& proto_model) {
-  std::stringstream err;
+std::unique_ptr<model>
+instantiate_model(lbann_comm* comm,
+                  std::unique_ptr<objective_function> obj,
+                  const lbann_data::Optimizer& proto_opt,
+                  const lbann_data::Model& proto_model) {
 
   // Default optimizer
-  auto&& opt = construct_optimizer(comm, proto_opt);
+  auto opt = construct_optimizer(comm, proto_opt);
 
   // Construct model
   const auto& type = proto_model.type();
   const auto& mini_batch_size = proto_model.mini_batch_size();
   if (type.empty() || type == "directed_acyclic_graph_model") {
-    return new directed_acyclic_graph_model(comm, mini_batch_size, obj, opt);
+    return make_unique<directed_acyclic_graph_model>(
+      comm, mini_batch_size, obj.release(), opt.release());
   }
 
   // Throw error if model type is not supported
-  err << "unknown model type (" << type << ")";
-  LBANN_ERROR(err.str());
+  LBANN_ERROR("unknown model type (", type, ")");
   return nullptr;
-
 }
 
 /** Setup pointers from objective function to layers.
  *
  *  Layer terms require pointers to layers.
  */
-void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
-                                         objective_function& obj,
-                                         const lbann_data::ObjectiveFunction& proto_obj) {
-  std::stringstream err;
+void assign_layers_to_objective_function(
+  const std::vector<std::unique_ptr<Layer>>& layer_list,
+  objective_function& obj,
+  const lbann_data::ObjectiveFunction& proto_obj) {
 
   // Construct map from layer names to layers
   std::unordered_map<std::string, Layer*> names_to_layers;
   for (auto&& l : layer_list) {
     const auto& name = l->get_name();
     if (names_to_layers.count(name) > 0) {
-      err << "layer name \"" << name << "\" is not unique";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("layer name \"", name, "\" is not unique");
     }
-    names_to_layers[name] = l;
+    names_to_layers[name] = l.get();
   }
 
   // Assign layers to layer terms in objective function
@@ -86,10 +101,9 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
       const auto& params = proto_obj.layer_term(num_layer_terms-1);
       auto* l = names_to_layers[params.layer()];
       if (l == nullptr) {
-        err << "attempted to set objective function layer term "
-            << "to correspond to layer \"" << params.layer() << "\", "
-            << "but no such layer exists";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR("attempted to set objective function layer term ",
+                    "to correspond to layer \"", params.layer(), "\", ",
+                    "but no such layer exists");
       }
       term->set_layer(*l);
     }
@@ -97,43 +111,38 @@ void assign_layers_to_objective_function(std::vector<Layer*>& layer_list,
 
   // Check that layer terms in objective function match prototext
   if (num_layer_terms != proto_obj.layer_term_size()) {
-    err << "recieved " << num_layer_terms << " "
-        << "objective function layer terms, "
-        << "but there are " << proto_obj.layer_term_size() << " "
-        << "in the prototext";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("recieved ", num_layer_terms,
+                " objective function layer terms, but there are ",
+                proto_obj.layer_term_size(), " in the prototext");
   }
-
 }
 
-void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
-                              std::vector<metric*>& metric_list,
-                              const lbann_data::Model& proto_model) {
+void assign_layers_to_metrics(
+  const std::vector<std::unique_ptr<Layer>>& layer_list,
+  std::vector<std::unique_ptr<metric>>& metric_list,
+  const lbann_data::Model& proto_model) {
 
   // Construct map from layer names to layers
   std::unordered_map<std::string, Layer*> names_to_layers;
   for (auto&& l : layer_list) {
     const auto& name = l->get_name();
     if (names_to_layers.count(name) > 0) {
-      std::stringstream err;
-      err << "layer name \"" << name << "\" is not unique";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("layer name \"", name, "\" is not unique");
     }
-    names_to_layers[name] = l;
+    names_to_layers[name] = l.get();
   }
 
   // Assign layers to layer metrics
   for (int i=0; i<proto_model.metric_size(); ++i) {
-    auto&& m = dynamic_cast<layer_metric*>(metric_list[i]);
+    auto&& m = dynamic_cast<layer_metric*>(metric_list[i].get());
     if (m != nullptr) {
       const auto& params = proto_model.metric(i).layer_metric();
       auto* l = names_to_layers[params.layer()];
       if (l == nullptr) {
-        std::stringstream err;
-        err << "attempted to set layer metric \"" << m->name() << "\" "
-            << "to correspond to layer \"" << params.layer() << "\", "
-            << "but no such layer exists";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR("attempted to set layer metric "
+                    "\"", m->name(), "\" "
+                    "to correspond to layer \"", params.layer(), "\", "
+                    "but no such layer exists");
       }
       m->set_layer(*l);
     }
@@ -142,20 +151,19 @@ void assign_layers_to_metrics(std::vector<Layer*>& layer_list,
 }
 
 /** Setup pointers from layers to weights. */
-void assign_weights_to_layers(std::vector<Layer*>& layer_list,
-                              std::vector<weights*>& weights_list,
-                              const lbann_data::Model& proto_model) {
-  std::stringstream err;
+void assign_weights_to_layers(
+  const std::vector<std::unique_ptr<Layer>>& layer_list,
+  std::vector<std::unique_ptr<weights>>& weights_list,
+  const lbann_data::Model& proto_model) {
 
   // Construct map from weights names to weights
   std::unordered_map<std::string, weights*> names_to_weights;
   for (auto&& w : weights_list) {
     const auto& name = w->get_name();
     if (names_to_weights.count(name) > 0) {
-      err << "weights name \"" << name << "\" is not unique";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("weights name \"", name, "\" is not unique");
     }
-    names_to_weights[name] = w;
+    names_to_weights[name] = w.get();
   }
 
   // Find weights assigned to each layer
@@ -165,10 +173,11 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
     const bool is_frozen = layer_list[i]->is_frozen();
     for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
       auto&& w = names_to_weights[name];
-      if (w == nullptr) {
-        err << "could not find weights named \"" << name << "\", "
-            << "which are expected by layer " << layer_list[i]->get_name();
-        LBANN_ERROR(err.str());
+      if (!w) {
+        LBANN_ERROR("could not find weights named "
+                    "\"", name, "\", "
+                    "which are expected by layer ",
+                    layer_list[i]->get_name());
       }
       if (is_frozen) {
         w->freeze();
@@ -185,20 +194,19 @@ void assign_weights_to_layers(std::vector<Layer*>& layer_list,
  *
  *  L2 weight regularization requires pointers to weights.
  */
-void assign_weights_to_objective_function(std::vector<weights*>& weights_list,
-                                          objective_function& obj,
-                                          const lbann_data::ObjectiveFunction& proto_obj) {
-  std::stringstream err;
+void assign_weights_to_objective_function(
+  const std::vector<std::unique_ptr<weights>>& weights_list,
+  objective_function& obj,
+  const lbann_data::ObjectiveFunction& proto_obj) {
 
   // Construct map from weights names to weights
   std::unordered_map<std::string, weights*> names_to_weights;
   for (auto&& w : weights_list) {
     const auto& name = w->get_name();
     if (names_to_weights.count(name) > 0) {
-      err << "weights name \"" << name << "\" is not unique";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("weights name \"", name, "\" is not unique");
     }
-    names_to_weights[name] = w;
+    names_to_weights[name] = w.get();
   }
 
   // Setup weights with L2 regularization
@@ -212,11 +220,10 @@ void assign_weights_to_objective_function(std::vector<weights*>& weights_list,
       std::vector<weights*> term_weights;
       for (auto&& weights_name : parse_list<std::string>(params.weights())) {
         auto&& w = names_to_weights[weights_name];
-        if (w == nullptr) {
-          err << "attempted to apply L2 weight regularization to "
-              << "weights \"" << weights_name << "\", "
-              << "but no such weights exists";
-          LBANN_ERROR(err.str());
+        if (!w) {
+          LBANN_ERROR("attempted to apply L2 weight regularization to "
+                      "weights \"", weights_name, "\", "
+                      "but no such weights exists");
         }
         term_weights.push_back(w);
       }
@@ -228,66 +235,63 @@ void assign_weights_to_objective_function(std::vector<weights*>& weights_list,
 
 } // namespace
 
-model* construct_model(lbann_comm* comm,
-                       const std::map<execution_mode, generic_data_reader*>& data_readers,
-                       const lbann_data::Optimizer& proto_opt,
-                       const lbann_data::Model& proto_model) {
+std::unique_ptr<model> construct_model(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  const lbann_data::Optimizer& proto_opt,
+  const lbann_data::Model& proto_model) {
 
   // Construct layer graph
   auto&& layer_list = construct_layer_graph(comm,
                                             data_readers,
                                             proto_model);
-  std::vector<Layer*> layer_pointers;
-  layer_pointers.reserve(layer_list.size());
-  for (auto&& ptr : layer_list) {
-    layer_pointers.push_back(ptr.get());
-  }
 
   // Construct objective function
   const auto& proto_obj = proto_model.objective_function();
-  auto&& obj = construct_objective_function(proto_obj);
-  assign_layers_to_objective_function(layer_pointers, *obj, proto_obj);
+  auto obj = construct_objective_function(proto_obj);
+  assign_layers_to_objective_function(layer_list, *obj, proto_obj);
 
   // Construct weights
-  std::vector<weights*> weights_list;
+  std::vector<std::unique_ptr<weights>> weights_list;
   for (int i=0; i<proto_model.weights_size(); i++) {
-    weights_list.push_back(construct_weights(comm,
-                                             proto_opt,
-                                             proto_model.weights(i)));
+    weights_list.push_back(
+      construct_weights(comm,
+                        proto_opt,
+                        proto_model.weights(i)));
   }
-  assign_weights_to_layers(layer_pointers, weights_list, proto_model);
+  assign_weights_to_layers(layer_list, weights_list, proto_model);
   assign_weights_to_objective_function(weights_list, *obj, proto_obj);
 
   // Construct metrics
-  std::vector<metric*> metric_list;
+  std::vector<std::unique_ptr<metric>> metric_list;
   for (int i=0; i<proto_model.metric_size(); ++i) {
     const auto& params = proto_model.metric(i).layer_metric();
-    metric_list.push_back(new layer_metric(comm,
-                                           params.name(),
-                                           params.unit()));
+    metric_list.push_back(make_unique<layer_metric>(comm,
+                                                    params.name(),
+                                                    params.unit()));
   }
-  assign_layers_to_metrics(layer_pointers, metric_list, proto_model);
+  assign_layers_to_metrics(layer_list, metric_list, proto_model);
 
   // Construct callbacks
-  std::vector<std::unique_ptr<lbann_callback>> callback_list;
-  auto&& summarizer = construct_summarizer(comm, proto_model);
+  std::vector<std::unique_ptr<callback_base>> callback_list;
+  auto summarizer = std::shared_ptr<lbann_summary>(construct_summarizer(comm, proto_model));
   for (int i=0; i<proto_model.callback_size(); i++) {
     callback_list.push_back(construct_callback(proto_model.callback(i),
                                                summarizer));
   }
 
   // Instantiate model
-  auto&& m = instantiate_model(comm, obj, proto_opt, proto_model);
+  auto m = instantiate_model(comm, std::move(obj), proto_opt, proto_model);
   for (auto&& l   : layer_list   ) { m->add_layer(std::move(l)); }
-  for (auto&& w   : weights_list ) { m->add_weights(w);   }
-  for (auto&& met : metric_list  ) { m->add_metric(met);  }
+  for (auto&& w   : weights_list ) { m->add_weights(w.release());   }
+  for (auto&& met : metric_list  ) { m->add_metric(met.release());  }
   for (auto&& cb  : callback_list) { m->add_callback(cb.release()); }
   const auto& name = proto_model.name();
   if (!name.empty()) {
     m->set_name(name);
   }
   for (auto t : data_readers) {
-    t.second->set_model(m);
+    t.second->set_model(m.get());
   }
   return m;
 

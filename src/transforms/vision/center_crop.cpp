@@ -24,9 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cmath>
 #include "lbann/transforms/vision/center_crop.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
+
+#include <cmath>
 
 namespace lbann {
 namespace transform {
@@ -59,6 +63,12 @@ void center_crop::apply(utils::type_erased_matrix& data, std::vector<size_t>& di
   src(cv::Rect(x, y, m_h, m_w)).copyTo(dst);
   data.emplace<uint8_t>(std::move(dst_real));
   dims = new_dims;
+}
+
+std::unique_ptr<transform>
+build_center_crop_transform_from_pbuf(google::protobuf::Message const& msg) {
+  auto const& params = dynamic_cast<lbann_data::Transform::CenterCrop const&>(msg);
+  return make_unique<center_crop>(params.height(), params.width());
 }
 
 }  // namespace transform

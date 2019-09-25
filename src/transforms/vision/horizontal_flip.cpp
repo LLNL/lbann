@@ -25,7 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/horizontal_flip.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
 
 namespace lbann {
 namespace transform {
@@ -38,6 +41,12 @@ void horizontal_flip::apply(utils::type_erased_matrix& data, std::vector<size_t>
     cv::flip(src, dst, 1);
     data.emplace<uint8_t>(std::move(dst_real));
   }
+}
+
+std::unique_ptr<transform>
+build_horizontal_flip_transform_from_pbuf(google::protobuf::Message const& msg) {
+  auto const& params = dynamic_cast<lbann_data::Transform::HorizontalFlip const&>(msg);
+  return make_unique<horizontal_flip>(params.p());
 }
 
 }  // namespace transform

@@ -33,14 +33,16 @@
 namespace lbann {
 
 // Forward declaration.
-class lbann_callback_imcomm;
+namespace callback {
+class imcomm;
+}
 
 /** @brief Transpose of the convolution layer. */
 template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
 class deconvolution_layer : public base_convolution_layer<Device> {
 private:
 
-  friend class lbann_callback_imcomm;
+  friend class callback::imcomm;
 
 public:
 

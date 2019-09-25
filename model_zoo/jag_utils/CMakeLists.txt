@@ -65,3 +65,13 @@
   add_executable( convert-bin convert.cpp )
   target_link_libraries(convert-bin lbann )
   set_target_properties(convert-bin PROPERTIES OUTPUT_NAME convert)
+
+# Install the binaries
+install(
+  TARGETS select_samples-bin build_sample_id_mapping-bin build_index-bin
+  EXPORT LBANNTargets
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+  )

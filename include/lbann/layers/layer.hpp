@@ -36,19 +36,25 @@
 #include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/distconv.hpp"
-#include <lbann.pb.h>
 #include <string>
 #include <vector>
 #include <set>
 #include <map>
 #include <array>
 
+// Forward-declare protobuf classes
+namespace lbann_data {
+class Layer;
+}
+
 namespace lbann {
 
 // Forward declarations
 class model;
 class weights;
-class lbann_callback_sync_layers;
+namespace callback {
+class sync_layers;
+} // namespace callback
 
 /** Represents a parallel strategy for a layer. */
 struct ParallelStrategy {
@@ -141,8 +147,7 @@ inline std::ostream &operator<<(std::ostream &os,
  * the weights.
  */
 class Layer {
-  friend class lbann_callback_sync_layers;
-  friend class lbann_callback_sync_selected;
+  friend class callback::sync_layers;
 
 public:
 

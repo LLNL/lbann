@@ -27,16 +27,14 @@
 #ifndef LBANN_PROTO_PROTO_COMMON_HPP_INCLUDED
 #define LBANN_PROTO_PROTO_COMMON_HPP_INCLUDED
 
-#include "lbann/lbann.hpp"
-#include <lbann.pb.h>
-#include "lbann/proto/factories.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+
+// Forward declaration of protobuf classes
+namespace lbann_data {
+class LbannPB;
+}
 
 namespace lbann {
-
-/** @brief Returns true if the Model contains at least one MotifLayer */
-bool has_motifs(const lbann_comm& comm, const lbann_data::LbannPB& p);
-
-void expand_motifs(const lbann_comm& comm, lbann_data::LbannPB& pb);
 
 /** @brief Customize the name of the index list
  *
@@ -51,27 +49,27 @@ void expand_motifs(const lbann_comm& comm, lbann_data::LbannPB& pb);
     <model name>_t<ID>_<basename>.<extension> @endverbatim
  */
 void customize_data_readers_index_list(const lbann_comm& comm,
-                                       lbann_data::LbannPB& p);
+                                       ::lbann_data::LbannPB& p);
 
 /** @brief instantiates one or more generic_data_readers and inserts
  *         them in &data_readers
  */
 void init_data_readers(
   lbann_comm *comm,
-  const lbann_data::LbannPB& p,
+  const ::lbann_data::LbannPB& p,
   std::map<execution_mode, generic_data_reader *>& data_readers,
   bool is_shareable_training_data_reader,
   bool is_shareable_testing_data_reader,
   bool is_shareable_validation_data_reader = false);
 
 /** @brief adjusts the number of parallel data readers */
-void set_num_parallel_readers(const lbann_comm& comm, lbann_data::LbannPB& p);
+void set_num_parallel_readers(const lbann_comm& comm, ::lbann_data::LbannPB& p);
 
 /** @brief adjusts the values in p by querying the options db */
-void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p);
+void get_cmdline_overrides(const lbann_comm& comm, ::lbann_data::LbannPB& p);
 
 /** @brief print various params (learn_rate, etc) to cout */
-void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p);
+void print_parameters(const lbann_comm& comm, ::lbann_data::LbannPB& p);
 
 /** @brief prints usage information */
 void print_help(const lbann_comm& comm);
@@ -82,39 +80,74 @@ void print_help(std::ostream& os);
 /** @brief prints prototext file, cmd line, etc to file */
 void save_session(const lbann_comm& comm,
                   const int argc, char * const* argv,
-                  lbann_data::LbannPB& p);
+                  ::lbann_data::LbannPB& p);
 
 /** @brief Read prototext from a file into a protobuf message. */
 void read_prototext_file(
   const std::string& fn,
-  lbann_data::LbannPB& pb,
+  ::lbann_data::LbannPB& pb,
   const bool master);
 
 /** @brief Write a protobuf message into a prototext file. */
 bool write_prototext_file(
   const std::string& fn,
-  lbann_data::LbannPB& pb);
+  ::lbann_data::LbannPB& pb);
 
-/** @brief Parse a space-separated list. */
-template <typename T = std::string>
-std::vector<T> parse_list(std::string str) {
+/** @brief Trim leading and trailing whitespace from a string. */
+std::string trim(std::string const& str);
+
+// These functions work on trimmed, nonempty strings
+namespace details {
+
+template <typename T>
+std::vector<T> parse_list_impl(std::string const& str) {
+  T entry;
   std::vector<T> list;
-  std::istringstream ss(str);
-  for (T entry; ss >> entry;) {
-    list.push_back(entry);
+  std::istringstream iss(str);
+  while (iss.good()) {
+    iss >> entry;
+    list.emplace_back(std::move(entry));
   }
   return list;
 }
 
-/** @brief Parse a space-separated set. */
-template <typename T = std::string>
-std::set<T> parse_set(std::string str) {
+template <typename T>
+std::set<T> parse_set_impl(std::string const& str) {
+  T entry;
   std::set<T> set;
   std::istringstream iss(str);
-  for (T entry; iss >> entry;) {
-    set.insert(entry);
+  while(iss.good()) {
+    iss >> entry;
+    set.emplace(std::move(entry));
   }
   return set;
+}
+
+// TODO (trb 07/25/19): we should think about what to do about bad
+// input. That is, if a user calls parse_list<int>("one two three"),
+// the result is undefined (one test I did gave [0,0,0] and another
+// gave [INT_MAX,INT_MAX,INT_MAX]). In most cases in LBANN, I would
+// guess that this will result in a logic error further down the
+// codepath, but we shouldn't count on it.
+
+}// namespace details
+
+/** @brief Parse a space-separated list. */
+template <typename T = std::string>
+std::vector<T> parse_list(std::string const& str) {
+  auto trim_str = trim(str);
+  if (trim_str.size())
+    return details::parse_list_impl<T>(trim_str);
+  return {};
+}
+
+/** @brief Parse a space-separated set. */
+template <typename T = std::string>
+std::set<T> parse_set(std::string const& str) {
+  auto trim_str = trim(str);
+  if (trim_str.size())
+    return details::parse_set_impl<T>(trim_str);
+  return {};
 }
 } // namespace lbann
 

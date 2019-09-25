@@ -25,7 +25,81 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
+
+#include "lbann/layers/layer.hpp"
+#include "lbann/layers/activations/activations.hpp"
+#include "lbann/layers/activations/elu.hpp"
+#include "lbann/layers/activations/identity.hpp"
+#include "lbann/layers/activations/leaky_relu.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/activations/relu.hpp"
+#endif // LBANN_HAS_DISTCONV
+#include "lbann/layers/activations/log_softmax.hpp"
+#include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/image/bilinear_resize.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/io_layer.hpp"
+#include "lbann/layers/learning/base_convolution.hpp"
+#include "lbann/layers/learning/channelwise_scale_bias.hpp"
+#include "lbann/layers/learning/convolution.hpp"
+#include "lbann/layers/learning/deconvolution.hpp"
+#include "lbann/layers/learning/embedding.hpp"
+#include "lbann/layers/learning/entrywise_scale_bias.hpp"
+#include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/learning/learning.hpp"
+#include "lbann/layers/loss/categorical_accuracy.hpp"
+#include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/entrywise.hpp"
+#include "lbann/layers/loss/l1_norm.hpp"
+#include "lbann/layers/loss/l2_norm2.hpp"
+#include "lbann/layers/loss/mean_absolute_error.hpp"
+#include "lbann/layers/loss/mean_squared_error.hpp"
+#include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
+#include "lbann/layers/math/binary.hpp"
+#include "lbann/layers/math/clamp.hpp"
+#include "lbann/layers/math/unary.hpp"
+#include "lbann/layers/misc/channelwise_mean.hpp"
+#include "lbann/layers/misc/covariance.hpp"
+#include "lbann/layers/misc/mini_batch_index.hpp"
+#include "lbann/layers/misc/mini_batch_size.hpp"
+#include "lbann/layers/misc/variance.hpp"
+#include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/layers/regularizers/dropout.hpp"
+#include "lbann/layers/regularizers/local_response_normalization.hpp"
+#include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/layers/regularizers/selu_dropout.hpp"
+#include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
+#include "lbann/layers/transform/bernoulli.hpp"
+#include "lbann/layers/transform/categorical_random.hpp"
+#include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/layers/transform/constant.hpp"
+#include "lbann/layers/transform/crop.hpp"
+#include "lbann/layers/transform/discrete_random.hpp"
+#include "lbann/layers/transform/dummy.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/layers/transform/gaussian.hpp"
+#include "lbann/layers/transform/hadamard.hpp"
+#include "lbann/layers/transform/in_top_k.hpp"
+#include "lbann/layers/transform/pooling.hpp"
+#include "lbann/layers/transform/reduction.hpp"
+#include "lbann/layers/transform/reshape.hpp"
+#include "lbann/layers/transform/slice.hpp"
+#include "lbann/layers/transform/sort.hpp"
+#include "lbann/layers/transform/split.hpp"
+#include "lbann/layers/transform/stop_gradient.hpp"
+#include "lbann/layers/transform/sum.hpp"
+#include "lbann/layers/transform/tessellate.hpp"
+#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/transform/uniform.hpp"
+#include "lbann/layers/transform/unpooling.hpp"
+#include "lbann/layers/transform/weighted_sum.hpp"
+#include "lbann/layers/transform/weights.hpp"
+
+#include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/utils/peek_map.hpp"
+
+#include <layers.pb.h>
 
 namespace lbann {
 namespace proto {
@@ -198,7 +272,7 @@ std::unique_ptr<Layer> construct_layer(
     }
   }
 
-  // Embedding layer
+  // Learning layers
   if (proto_layer.has_embedding()) {
     const auto& params = proto_layer.embedding();
     if (Layout == data_layout::DATA_PARALLEL
@@ -209,6 +283,17 @@ std::unique_ptr<Layer> construct_layer(
       LBANN_ERROR("embedding layer is only supported with "
                   "data-parallel data layout and on CPU");
     }
+  }
+  if (proto_layer.has_channelwise_scale_bias()) {
+    if (Layout == data_layout::DATA_PARALLEL) {
+      return lbann::make_unique<channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,Device>>(comm);
+    } else {
+      LBANN_ERROR("channel-wise scale/bias layer is only supported "
+                  "with data-parallel data layout");
+    }
+  }
+  if (proto_layer.has_entrywise_scale_bias()) {
+    return lbann::make_unique<entrywise_scale_bias_layer<Layout,Device>>(comm);
   }
 
   // Transform layers
@@ -489,6 +574,10 @@ std::unique_ptr<Layer> construct_layer(
     } else {
       return lbann::make_unique<selu_dropout<Layout, Device>>(comm, keep_prob);
     }
+  }
+  if (proto_layer.has_entrywise_batch_normalization()) {
+    const auto& params = proto_layer.entrywise_batch_normalization();
+    return lbann::make_unique<entrywise_batch_normalization_layer<Layout, Device>>(comm, params.decay(), params.epsilon());
   }
 
   // Math layers

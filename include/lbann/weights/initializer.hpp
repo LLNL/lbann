@@ -30,6 +30,8 @@
 #include "lbann/base.hpp"
 #include "lbann/utils/description.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 
 /** @brief Scheme for initializing weight values. */
@@ -138,6 +140,15 @@ private:
   DataType m_standard_deviation;
 
 };
+
+std::unique_ptr<weights_initializer>
+build_constant_initializer_from_pbuf(google::protobuf::Message const& msg);
+std::unique_ptr<weights_initializer>
+build_value_initializer_from_pbuf(google::protobuf::Message const& msg);
+std::unique_ptr<weights_initializer>
+build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg);
+std::unique_ptr<weights_initializer>
+build_normal_initializer_from_pbuf(google::protobuf::Message const& msg);
 
 } // namespace lbann
 

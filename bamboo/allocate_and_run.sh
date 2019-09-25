@@ -40,22 +40,17 @@ if [ "${CLUSTER}" = 'lassen' ]; then
         timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 16 -W $ALLOCATION_TIME_LIMIT ./run.sh
     fi
 elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
+    ALLOCATION_TIME_LIMIT=960
     if [ ${WEEKLY} -ne 0 ]; then
-        ALLOCATION_TIME_LIMIT=720
         timeout -k 5 24h salloc -N16 --partition=pbatch -t $ALLOCATION_TIME_LIMIT ./run.sh --weekly
         if [ "${CLUSTER}" = 'catalyst' ]; then
             cd integration_tests
-            python -m pytest -s test_integration_performance_full_alexnet_clang6 --weekly --run --junitxml=../full_alexnet_clang6/results.xml
-            python -m pytest -s test_integration_performance_full_alexnet_gcc7 --weekly --run --junitxml=../full_alexnet_gcc7/results.xml
-            # python -m pytest -s test_integration_performance_full_alexnet_intel19 --weekly --run --junitxml=../full_alexnet_intel19/results.xml
+            python -m pytest -s test_integration_performance.py -k test_integration_performance_full_alexnet_clang6 --weekly --run --junitxml=../full_alexnet_clang6/results.xml
+            python -m pytest -s test_integration_performance.py -k test_integration_performance_full_alexnet_gcc7 --weekly --run --junitxml=../full_alexnet_gcc7/results.xml
+            # python -m pytest -s test_integration_performance.py -k test_integration_performance_full_alexnet_intel19 --weekly --run --junitxml=../full_alexnet_intel19/results.xml
             cd ..
         fi
     else
-        if [ "${CLUSTER}" = 'catalyst' ]; then
-            ALLOCATION_TIME_LIMIT=240
-        elif [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
-            ALLOCATION_TIME_LIMIT=660
-        fi
         timeout -k 5 24h salloc -N16 --partition=pbatch -t $ALLOCATION_TIME_LIMIT ./run.sh
     fi
 fi
