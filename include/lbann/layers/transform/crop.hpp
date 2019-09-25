@@ -87,7 +87,7 @@ public:
     m_output_v.reset(input.Construct(input.Grid(), input.Root()));
 
     /// @todo Setup the input tensor with this data distribution
-    m_crop_pos_v.reset(AbsDistMat::Instantiate(*dist.grid,
+    m_crop_pos_v.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(*dist.grid,
                                                dist.root,
                                                El::STAR,
                                                dist.rowDist,
@@ -148,11 +148,11 @@ protected:
 
 private:
   /** View into input tensor. */
-  std::unique_ptr<AbsDistMat> m_input_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_input_v;
   /** View into output tensor. */
-  std::unique_ptr<AbsDistMat> m_output_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_output_v;
   /** View into crop positions. */
-  std::unique_ptr<AbsDistMat> m_crop_pos_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_crop_pos_v;
 
   /** Forward prop implementation for n-dimensional tensors. */
   void fp_compute_nd() {

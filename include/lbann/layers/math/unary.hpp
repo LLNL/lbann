@@ -44,7 +44,7 @@ namespace lbann {
     El::Device get_device_allocation() const override { return Device; }    \
   protected:                                                                \
     void setup_dims() override {                                            \
-      Layer::setup_dims();                                                  \
+      data_type_Layer<TensorDataType>::setup_dims();                        \
       set_output_dims(this->get_input_dims());                              \
     }                                                                       \
     void fp_compute() override;                                             \

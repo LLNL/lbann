@@ -66,7 +66,7 @@ public:
                                   nullptr) {}
 
   entrywise_batch_normalization_layer& operator=(const entrywise_batch_normalization_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;
     m_batch_statistics.reset(other.m_batch_statistics ?
@@ -84,7 +84,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description() const override {
-    auto desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Decay", m_decay);
     desc.add("Epsilon", m_epsilon);
     return desc;
@@ -93,15 +93,15 @@ public:
 protected:
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist = get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    m_batch_statistics.reset(AbsDistMat::Instantiate(dist));
-    m_batch_statistics_gradient.reset(AbsDistMat::Instantiate(dist));
+    m_batch_statistics.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
+    m_batch_statistics_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
   }
 
   void setup_data() override {
-    Layer::setup_data();
+    data_type_layer<TensorDataType>::setup_data();
 
     // Initialize output dimensions
     set_output_dims(get_input_dims());
@@ -151,7 +151,7 @@ protected:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    Layer::fp_setup_outputs(mini_batch_size);
+    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
     const auto& input = get_prev_activations();
     const auto input_size = get_input_size();
 
@@ -190,7 +190,7 @@ protected:
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    Layer::bp_setup_gradient_wrt_inputs(mini_batch_size);
+    data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
     m_batch_statistics_gradient->Empty(false);
     m_batch_statistics_gradient->AlignWith(get_prev_activations());
     m_batch_statistics_gradient->Resize(get_input_size(), 2);
@@ -210,12 +210,12 @@ private:
    *
    *  These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<AbsDistMat> m_batch_statistics;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_batch_statistics;
   /** @brief Gradients w.r.t. current mini-batch statistics.
    *
    * These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<AbsDistMat> m_batch_statistics_gradient;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_batch_statistics_gradient;
 
 };
 

@@ -46,7 +46,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 protected:
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     set_output_dims(get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override {

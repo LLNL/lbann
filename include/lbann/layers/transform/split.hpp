@@ -52,7 +52,7 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     for (int i = 0; i < get_num_children(); ++i) {
       set_output_dims(get_input_dims(), i);
     }

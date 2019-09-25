@@ -58,7 +58,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     set_output_dims({1});
 
     // Check that input dimensions match

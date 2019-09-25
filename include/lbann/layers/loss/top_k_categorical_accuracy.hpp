@@ -59,7 +59,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("k", m_k);
     return desc;
   }
@@ -67,7 +67,7 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     set_output_dims({1});
 
     // Check that input dimensions match

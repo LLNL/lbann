@@ -46,7 +46,7 @@ public:
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr) {}
   l1_norm_layer& operator=(const l1_norm_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() : nullptr);
     return *this;
@@ -58,17 +58,17 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     set_output_dims({1});
   }
 
   void setup_data() override {
-    Layer::setup_data();
+    data_type_layer<TensorDataType>::setup_data();
 
     // Initialize workspace
     auto dist = get_prev_activations().DistData();
     dist.colDist = El::STAR;
-    m_workspace.reset(AbsDistMat::Instantiate(dist));
+    m_workspace.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
 #ifdef HYDROGEN_HAVE_CUB
     if (m_workspace->GetLocalDevice() == El::Device::GPU) {
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
@@ -116,15 +116,15 @@ public:
 private:
 
   /** Compute local contributions to L2 norm. */
-  static void local_fp_compute(const AbsMat& local_input,
-                               AbsMat& local_contribution);
+  static void local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
+                               El::AbstractMatrix<TensorDataType>& local_contribution);
   /** Compute local gradients. */
-  static void local_bp_compute(const AbsMat& local_input,
-                               const AbsMat& local_gradient_wrt_output,
-                               AbsMat& local_gradient_wrt_input);
+  static void local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
+                               const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                               El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input);
 
   /** Workspace matrix. */
-  std::unique_ptr<AbsDistMat> m_workspace;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;
 
 };
 

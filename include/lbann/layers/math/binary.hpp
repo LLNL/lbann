@@ -46,13 +46,13 @@ namespace lbann {
     El::Device get_device_allocation() const override { return Device; }    \
   protected:                                                                \
     void setup_dims() override {                                            \
-      Layer::setup_dims();                                                  \
+      data_type_layer<TensorDataType>::setup_dims();                        \
       set_output_dims(this->get_input_dims());                              \
       /* Check that input dimensions match */                               \
-      if (get_input_dims(0) != this->get_input_dims(1)) {                   \
+      if (this->get_input_dims(0) != this->get_input_dims(1)) {             \
         const auto& parents = this->get_parent_layers();                    \
         std::stringstream err;                                              \
-        err << get_type() << " layer \"" << this->get_name() << "\" "       \
+        err << this->get_type() << " layer \"" << this->get_name() << "\" " \
             << "has input tensors with different dimensions (";             \
         for (int i = 0; i < this->get_num_parents(); ++i) {                 \
           const auto& dims = this->get_input_dims(i);                       \

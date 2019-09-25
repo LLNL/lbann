@@ -80,24 +80,24 @@ private:
    *
    * These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<AbsDistMat> m_mean_and_var;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_mean_and_var;
   /** View of current mini-batch means. */
-  std::unique_ptr<AbsDistMat> m_mean_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_mean_v;
   /** View of current mini-batch standard deviations. */
-  std::unique_ptr<AbsDistMat> m_var_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_var_v;
   /** @brief Gradients w.r.t. means and standard deviations.
    *
    * These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<AbsDistMat> m_mean_and_var_gradient;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_mean_and_var_gradient;
   /** View of gradient w.r.t. means. */
-  std::unique_ptr<AbsDistMat> m_mean_gradient_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_mean_gradient_v;
   /** View of gradient w.r.t. standard deviations. */
-  std::unique_ptr<AbsDistMat> m_var_gradient_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_var_gradient_v;
   /** Gradient w.r.t. scaling terms. */
-  std::unique_ptr<AbsDistMat> m_scale_gradient;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_scale_gradient;
   /** Gradient w.r.t. bias terms. */
-  std::unique_ptr<AbsDistMat> m_bias_gradient;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_bias_gradient;
 
 public:
   /** @brief Set up batch normalization.

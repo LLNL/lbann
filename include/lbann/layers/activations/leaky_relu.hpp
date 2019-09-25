@@ -57,14 +57,14 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description() const override {
-    auto desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Negative slope", m_negative_slope);
     return desc;
   }
 
 protected:
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     set_output_dims(get_input_dims());
   }
   void fp_compute() override;

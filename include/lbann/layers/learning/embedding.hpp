@@ -148,7 +148,7 @@ embedding_layer<Layout,Device>& embedding_layer<Layout,Device>::operator=(
   return *this;
 }
 
-template <data_layout Layout, El::Device Device>
+template <typename TensorDataType, data_layout Layout, El::Device Device>
 description embedding_layer<Layout,Device>::get_description() const {
   auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Num embeddings", m_num_embeddings);
@@ -157,9 +157,9 @@ description embedding_layer<Layout,Device>::get_description() const {
   return desc;
 }
 
-template <data_layout Layout, El::Device Device>
-void embedding_layer<Layout,Device>::setup_dims() {
-  data_type_layer<TensorDataType>::setup_dims();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void embedding_layer<TensorDataType,Layout,Device>::setup_dims() {
+  data_type_layer::setup_dims();
 
   // Make sure input dimensions are valid
   if (this->get_input_size() != 1) {
@@ -178,9 +178,9 @@ void embedding_layer<Layout,Device>::setup_dims() {
 
 }
 
-template <data_layout Layout, El::Device Device>
-void embedding_layer<Layout,Device>::setup_data() {
-  data_type_layer<TensorDataType>::setup_data();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void embedding_layer<TensorDataType, Layout,Device>::setup_data() {
+  data_type_layer::setup_data();
 
   // Construct default weights if needed
   // Note: Randomly drawn from normal distribution with mean 0 and
@@ -230,10 +230,10 @@ void embedding_layer<Layout,Device>::setup_data() {
 
 #ifndef LBANN_EMBEDDING_LAYER_INSTANTIATE
 extern template class embedding_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class embedding_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_EMBEDDING_LAYER_INSTANTIATE
 

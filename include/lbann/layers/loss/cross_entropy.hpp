@@ -53,7 +53,7 @@ public:
   }
 
   cross_entropy_layer& operator=(const cross_entropy_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() :
                       nullptr);
@@ -66,7 +66,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     set_output_dims({1});
 
     // Check that input dimensions match
@@ -90,7 +90,7 @@ public:
   }
 
   void setup_data() override {
-    Layer::setup_data();
+    data_type_layer<TensorDataType>::setup_data();
 
     // Initialize workspace
     const auto& prediction = get_prev_activations(0);
@@ -149,18 +149,18 @@ public:
 private:
 
   /** Compute local contributions to cross entropy loss. */
-  static void local_fp_compute(const AbsMat& local_prediction,
-                               const AbsMat& local_ground_truth,
-                               AbsMat& local_contribution);
+  static void local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                               const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                               El::AbstractMatrix<TensorDataType>& local_contribution);
   /** Compute local gradients. */
-  static void local_bp_compute(const AbsMat& local_prediction,
-                               const AbsMat& local_ground_truth,
-                               const AbsMat& local_gradient_wrt_output,
-                               AbsMat& local_gradient_wrt_prediction,
-                               AbsMat& local_gradient_wrt_ground_truth);
+  static void local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                               const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                               const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                               El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                               El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth);
 
   /** Workspace matrix. */
-  std::unique_ptr<AbsDistMat> m_workspace;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;
 
 };
 

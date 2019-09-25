@@ -71,7 +71,7 @@ public:
     : data_type_layer<TensorDataType>(other),
       m_input_v(other.m_input_v ? other.m_input_v->Copy() : nullptr) {}
   tessellate_layer& operator=(const tessellate_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
     return *this;
   }
@@ -82,7 +82,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     std::stringstream err;
 
     // Check input and output dimensions
@@ -116,10 +116,10 @@ public:
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist_data = get_prev_activations().DistData();
     dist_data.colDist = El::STAR;
-    m_input_v.reset(AbsDistMat::Instantiate(dist_data));
+    m_input_v.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist_data));
   }
 
 protected:
@@ -190,7 +190,7 @@ protected:
 private:
 
   /** View into input tensor. */
-  std::unique_ptr<AbsDistMat> m_input_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_input_v;
 
   /** Apply tessellation.
    *  Columns of 'input' should be intact mini-batch samples. If the
@@ -199,16 +199,16 @@ private:
    */
   static void fp_compute_3d(const std::vector<int>& input_dims,
                             const std::vector<int>& output_dims,
-                            const AbsMat& input,
-                            AbsDistMat& output);
+                            const El::AbstractMatrix<TensorDataType>& input,
+                            El::AbstractDistMatrix<TensorDataType>& output);
   /** Compute local contribution to tessellation back prop
    *  The global gradient w.r.t. input can be obtained by performing
    *  an allreduce over the input matrix's column communicator.
    */
   static void bp_compute_3d(const std::vector<int>& input_dims,
                             const std::vector<int>& output_dims,
-                            const AbsDistMat& gradient_wrt_output,
-                            AbsMat& gradient_wrt_input);
+                            const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                            El::AbstractMatrix<TensorDataType>& gradient_wrt_input);
 
 };
 

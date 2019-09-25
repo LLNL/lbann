@@ -55,7 +55,7 @@ public:
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr) {}
   variance_layer& operator=(const variance_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_biased = other.m_biased;
     m_means.reset(other.m_means ? other.m_means->Copy() : nullptr);
     m_workspace.reset(other.m_workspace ?
@@ -69,7 +69,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description() const override {
-    auto desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Biased", m_biased);
     return desc;
   }
@@ -77,15 +77,15 @@ public:
 protected:
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist_data = get_prev_activations().DistData();
     dist_data.colDist = El::STAR;
-    m_means.reset(AbsDistMat::Instantiate(dist_data));
-    m_workspace.reset(AbsDistMat::Instantiate(dist_data));
+    m_means.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist_data));
+    m_workspace.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist_data));
   }
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     set_output_dims({1});
     if (get_input_size() <= 1) {
       std::stringstream err;
@@ -111,9 +111,9 @@ private:
   bool m_biased;
 
   /** Means for each mini-batch sample.  */
-  std::unique_ptr<AbsDistMat> m_means;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_means;
   /** Workspace. */
-  std::unique_ptr<AbsDistMat> m_workspace;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;
 
 };
 

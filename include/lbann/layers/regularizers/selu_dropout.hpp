@@ -173,7 +173,7 @@ class selu_dropout : public regularizer_layer {
   /** Probability of keeping each unit. */
   float m_keep_prob;
   /** Current dropout mask (a scaled Bernoulli random matrix). */
-  AbsDistMat *m_mask;
+  El::AbstractDistMatrix<TensorDataType> *m_mask;
 };
 
 #ifndef LBANN_SELU_DROPOUT_LAYER_INSTANTIATE

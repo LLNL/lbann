@@ -69,7 +69,7 @@ public:
   }
 
   softmax_layer& operator=(const softmax_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() : nullptr);
 #ifdef LBANN_HAS_CUDNN
@@ -87,15 +87,15 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     set_output_dims(get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
+    data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist = get_prev_activations().DistData();
     dist.colDist = El::STAR;
-    m_workspace.reset(AbsDistMat::Instantiate(dist));
+    m_workspace.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
 #ifdef HYDROGEN_HAVE_CUB
     if (m_workspace->GetLocalDevice() == El::Device::GPU) {
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
@@ -104,7 +104,7 @@ public:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    Layer::fp_setup_outputs(mini_batch_size);
+    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
     const auto& dist_data = get_prev_activations().DistData();
     m_workspace->Empty(false);
     m_workspace->AlignWith(dist_data);
@@ -117,7 +117,7 @@ public:
 private:
 
   /** Workspace for column-wise reductions. */
-  std::unique_ptr<AbsDistMat> m_workspace;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;
 
 #ifdef LBANN_HAS_CUDNN
   /** Tensor cuDNN descriptors. */

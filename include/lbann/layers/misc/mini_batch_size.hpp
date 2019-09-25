@@ -54,12 +54,12 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     set_output_dims({1});
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    Layer::fp_setup_outputs(mini_batch_size);
+    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
     m_mini_batch_size = mini_batch_size;
   }
 

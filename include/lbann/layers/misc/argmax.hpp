@@ -53,7 +53,7 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     set_output_dims({1});
 
     // Make sure input tensor is 1-D

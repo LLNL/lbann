@@ -58,7 +58,7 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
 
     // Get input dimensions
     auto dims = get_input_dims();

@@ -57,7 +57,7 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
     const auto& input_dims = get_input_dims();
     set_output_dims({input_dims[0]});
   }

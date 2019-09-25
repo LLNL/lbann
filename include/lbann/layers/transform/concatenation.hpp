@@ -281,9 +281,9 @@ private:
   std::vector<El::Int> m_concat_points;
 
   /** View into input tensor. */
-  std::unique_ptr<AbsDistMat> m_input_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_input_v;
   /** View into output tensor. */
-  std::unique_ptr<AbsDistMat> m_output_v;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_output_v;
 
 };
 

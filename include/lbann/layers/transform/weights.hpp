@@ -93,7 +93,7 @@ class weights_layer : public transform_layer<TensorDataType> {
     // Initialize weights gradient
     auto dist = get_activations().DistData();
     dist.rowDist = El::STAR;
-    m_gradient.reset(AbsDistMat::Instantiate(dist));
+    m_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
 
     // Initialize workspace
     switch (Dev) {
@@ -194,9 +194,9 @@ class weights_layer : public transform_layer<TensorDataType> {
  private:
 
   /** Weights gradient. */
-  std::unique_ptr<AbsDistMat> m_gradient;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient;
   /** Workspace. */
-  std::unique_ptr<AbsMat> m_workspace;
+  std::unique_ptr<El::AbstractMatrix<TensorDataType>> m_workspace;
 
 };
 
