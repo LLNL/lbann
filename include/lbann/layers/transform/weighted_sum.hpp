@@ -46,7 +46,7 @@ private:
 public:
   weighted_sum_layer(lbann_comm *comm,
                      std::vector<DataType> scaling_factors)
-    : transform_layer(comm),
+    : transform_layer<TensorDataType>(comm),
       m_scaling_factors(scaling_factors) {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
@@ -69,15 +69,15 @@ public:
 protected:
 
   void setup_pointers() override {
-    transform_layer::setup_pointers();
+    transform_layer<TensorDataType>::setup_pointers();
     std::stringstream err;
     if (get_num_parents() < 1) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has no parent layers";
       LBANN_ERROR(err.str());
     }
     if ((int) m_scaling_factors.size() != get_num_parents()) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has an invalid number of scaling factors "
           << "(found " << m_scaling_factors.size() << ", "
           << "but there are " << get_num_parents() << " parent layers)";
@@ -86,19 +86,19 @@ protected:
   }
 
   void setup_dims() override {
-    transform_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    transform_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match
-    const auto& output_dims = get_output_dims();
+    const auto& output_dims = this->get_output_dims();
     for (int i = 0; i < get_num_parents(); ++i) {
-      if (get_input_dims(i) != output_dims) {
+      if (this->get_input_dims(i) != output_dims) {
         const auto& parents = get_parent_layers();
         std::stringstream err;
-        err << get_type() << " layer \"" << get_name() << "\" "
+        err << get_type() << " layer \"" << this->get_name() << "\" "
             << "has input tensors with incompatible dimensions (";
         for (int j = 0; j < get_num_parents(); ++j) {
-          const auto& dims = get_input_dims(j);
+          const auto& dims = this->get_input_dims(j);
           err << (j > 0 ? ", " : "")
               << "layer \"" << parents[j]->get_name() << "\" outputs ";
           for (size_t k = 0; k < dims.size(); ++k) {
@@ -113,17 +113,17 @@ protected:
   }
 
   void fp_compute() override {
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     El::Zero(output);
     for (int i = 0; i < get_num_parents(); ++i) {
-      El::Axpy(m_scaling_factors[i], get_prev_activations(i), output);
+      El::Axpy(m_scaling_factors[i], this->get_prev_activations(i), output);
     }
   }
 
   void bp_compute() override {
-    const auto& gradient_wrt_output = get_prev_error_signals();
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
     for (int i = 0; i < get_num_parents(); ++i) {
-      auto& gradient_wrt_input = get_error_signals(i);
+      auto& gradient_wrt_input = this->get_error_signals(i);
       El::Zero(gradient_wrt_input);
       El::Axpy(m_scaling_factors[i], gradient_wrt_output,
                gradient_wrt_input);

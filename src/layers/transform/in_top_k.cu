@@ -39,7 +39,7 @@ namespace {
 /** Sparse vector entry. */
 struct entry {
   /** Vector entry value. */
-  DataType value;
+  TensorDataType value;
   /** Vector entry index. */
   El::Int index;
 };
@@ -65,7 +65,7 @@ __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
                                                El::Int global_matrix_height,
                                                El::Int global_matrix_col_shift,
                                                El::Int global_matrix_col_stride,
-                                               const DataType* __restrict__ local_matrix,
+                                               const TensorDataType* __restrict__ local_matrix,
                                                El::Int local_matrix_ldim,
                                                entry* __restrict__ local_entries,
                                                El::Int local_entries_ldim) {
@@ -123,7 +123,7 @@ __global__ void indicate_matrix_entries(El::Int k,
                                         El::Int global_matrix_col_align,
                                         El::Int global_matrix_col_shift,
                                         El::Int global_matrix_col_stride,
-                                        DataType* __restrict__ local_matrix,
+                                        TensorDataType* __restrict__ local_matrix,
                                         El::Int local_matrix_ldim,
                                         const entry*  __restrict__ entries,
                                         El::Int entries_ldim) {
@@ -143,7 +143,7 @@ __global__ void indicate_matrix_entries(El::Int k,
         local_row = ((global_row - global_matrix_col_shift - 1)
                      / global_matrix_col_stride + 1);
       }
-      local_matrix[local_row + local_col * local_matrix_ldim] = DataType(1);
+      local_matrix[local_row + local_col * local_matrix_ldim] = TensorDataType(1);
     }
   }
 }
@@ -168,7 +168,7 @@ void fp_gpu(lbann_comm& comm,
     El::Zero(output);
     return;
   } else if (k >= height) {
-    El::Fill(output, DataType(1));
+    El::Fill(output, TensorDataType(1));
     return;
   } else if (local_width < 1) {
     return;
@@ -275,12 +275,12 @@ void fp_gpu(lbann_comm& comm,
 template <>
 void in_top_k_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::fp_compute() {
-  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
+  fp_gpu(*get_comm(), m_k, this->get_prev_activations(), this->get_activations());
 }
 template <>
 void in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
-  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
+  fp_gpu(*get_comm(), m_k, this->get_prev_activations(), this->get_activations());
 }
 
 template class in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;

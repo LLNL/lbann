@@ -46,8 +46,8 @@ class selu_dropout : public regularizer_layer {
   /** Keep units with probabiliy keep_prob. */
   selu_dropout(lbann_comm *comm,
                float keep_prob=0.95f,
-               DataType alpha = DataType(1.6732632423543772848170429916717),
-               DataType scale = DataType(1.0507009873554804934193349852946)) :
+               TensorDataType alpha = TensorDataType(1.6732632423543772848170429916717),
+               TensorDataType scale = TensorDataType(1.0507009873554804934193349852946)) :
     regularizer_layer(comm),
     m_keep_prob(keep_prob),
     m_mask(nullptr) {
@@ -58,7 +58,7 @@ class selu_dropout : public regularizer_layer {
     m_alpha_prime = -scale*alpha;
     m_a = keep_prob +
       m_alpha_prime*m_alpha_prime*keep_prob*(DataType(1) - keep_prob);
-    m_a = DataType(1) / std::sqrt(m_a);
+    m_a = TensorDataType(1) / std::sqrt(m_a);
     m_b = -m_a * m_alpha_prime*(DataType(1) - keep_prob);
   }
 
@@ -165,11 +165,11 @@ class selu_dropout : public regularizer_layer {
 
  private:
   /** Alpha prime, the low-variance saturation point. */
-  DataType m_alpha_prime;
+  TensorDataType m_alpha_prime;
   /** Affine scaling parameter to keep mean/variance at desired value. */
-  DataType m_a;
+  TensorDataType m_a;
   /** Affine additive parameter to keep mean/variance at desired value. */
-  DataType m_b;
+  TensorDataType m_b;
   /** Probability of keeping each unit. */
   float m_keep_prob;
   /** Current dropout mask (a scaled Bernoulli random matrix). */

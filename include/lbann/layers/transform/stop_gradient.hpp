@@ -42,7 +42,7 @@ namespace lbann {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class stop_gradient_layer : public transform_layer<TensorDataType> {
 public:
-  stop_gradient_layer(lbann_comm *comm) : transform_layer(comm) {}
+  stop_gradient_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {}
   stop_gradient_layer* copy() const override { return new stop_gradient_layer(*this); }
   std::string get_type() const override { return "stop_gradient"; }
   data_layout get_data_layout() const override { return T_layout; }
@@ -50,11 +50,11 @@ public:
 
 protected:
   void setup_dims() override {
-    transform_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    transform_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    El::LockedView(get_activations(), get_prev_activations());
+    El::LockedView(get_activations(), this->get_prev_activations());
   }
   void fp_compute() override {}
 

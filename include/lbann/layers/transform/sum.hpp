@@ -39,7 +39,7 @@ class sum_layer : public transform_layer<TensorDataType> {
 public:
 
   sum_layer(lbann_comm *comm)
-    : transform_layer(comm) {
+    : transform_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
@@ -51,29 +51,29 @@ public:
 protected:
 
   void setup_pointers() override {
-    transform_layer::setup_pointers();
+    transform_layer<TensorDataType>::setup_pointers();
     if (get_num_parents() < 1) {
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has no parent layers";
       LBANN_ERROR(err.str());
     }
   }
 
   void setup_dims() override {
-    transform_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    transform_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match
-    const auto& output_dims = get_output_dims();
+    const auto& output_dims = this->get_output_dims();
     for (int i = 0; i < get_num_parents(); ++i) {
-      if (get_input_dims(i) != output_dims) {
+      if (this->get_input_dims(i) != output_dims) {
         const auto& parents = get_parent_layers();
         std::stringstream err;
-        err << get_type() << " layer \"" << get_name() << "\" "
+        err << get_type() << " layer \"" << this->get_name() << "\" "
             << "has input tensors with incompatible dimensions (";
         for (int j = 0; j < get_num_parents(); ++j) {
-          const auto& dims = get_input_dims(j);
+          const auto& dims = this->get_input_dims(j);
           err << (j > 0 ? ", " : "")
               << "layer \"" << parents[j]->get_name() << "\" outputs ";
           for (size_t k = 0; k < dims.size(); ++k) {
@@ -88,17 +88,17 @@ protected:
   }
 
   void fp_compute() override {
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     El::Copy(get_prev_activations(0), output);
     for (int i = 1; i < get_num_parents(); ++i) {
-      El::Axpy(DataType(1), get_prev_activations(i), output);
+      El::Axpy(DataType(1), this->get_prev_activations(i), output);
     }
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    const auto& gradient_wrt_output = get_prev_error_signals();
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
     for (int i = 0; i < get_num_parents(); ++i) {
-      El::LockedView(get_error_signals(i), gradient_wrt_output);
+      El::LockedView(this->get_error_signals(i), gradient_wrt_output);
     }
   }
 

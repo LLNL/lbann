@@ -42,9 +42,9 @@ __global__ void fp_compute_3d_kernel(
   El::Int input_dimx, El::Int input_dimy, El::Int input_dimz,
   El::Int output_dimx, El::Int output_dimy, El::Int output_dimz,
   El::Int width,
-  const DataType * __restrict__ input, int input_ldim,
-        DataType * __restrict__ output, int output_ldim,
-  const DataType * __restrict__ crop_pos, int crop_pos_ldim) {
+  const TensorDataType * __restrict__ input, int input_ldim,
+        TensorDataType * __restrict__ output, int output_ldim,
+  const TensorDataType * __restrict__ crop_pos, int crop_pos_ldim) {
 
   // Indices
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -106,9 +106,9 @@ __global__ void bp_compute_3d_kernel(
   El::Int input_dimx, El::Int input_dimy, El::Int input_dimz,
   El::Int output_dimx, El::Int output_dimy, El::Int output_dimz,
   El::Int width,
-  const DataType * __restrict__ gradient_wrt_output, int gradient_wrt_output_ldim,
-        DataType * __restrict__ gradient_wrt_input, int gradient_wrt_input_ldim,
-  const DataType * __restrict__ crop_pos, int crop_pos_ldim) {
+  const TensorDataType * __restrict__ gradient_wrt_output, int gradient_wrt_output_ldim,
+        TensorDataType * __restrict__ gradient_wrt_input, int gradient_wrt_input_ldim,
+  const TensorDataType * __restrict__ crop_pos, int crop_pos_ldim) {
 
   // Indices
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -172,7 +172,7 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_3d() {
 
   // Tensor dimensions
   const auto& local_width = local_input.Width();
-  const auto input_dims = get_input_dims();
+  const auto input_dims = this->get_input_dims();
   const auto output_dims = get_output_dims();
   const auto& output_size = get_output_size();
 
@@ -198,8 +198,8 @@ template <>
 void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
 
   // Clear error signals
-  El::Zero(get_error_signals(0));
-  El::Zero(get_error_signals(1));
+  El::Zero(this->get_error_signals(0));
+  El::Zero(this->get_error_signals(1));
 
   // Local matrices
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
@@ -208,7 +208,7 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
 
   // Tensor dimensions
   const auto& local_width = local_gradient_wrt_input.Width();
-  const auto input_dims = get_input_dims();
+  const auto input_dims = this->get_input_dims();
   const auto output_dims = get_output_dims();
   const auto& output_size = get_output_size();
 

@@ -41,7 +41,7 @@ template <typename TensorDataType,
           El::Device Dev = El::Device::CPU>
 class dummy_layer : public transform_layer<TensorDataType> {
 public:
-  dummy_layer(lbann_comm *comm) : transform_layer(comm) {
+  dummy_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {
     this->m_expected_num_child_layers = 0;
   }
   dummy_layer* copy() const override { return new dummy_layer(*this); }

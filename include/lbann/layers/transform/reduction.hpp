@@ -56,7 +56,7 @@ public:
 
   reduction_layer(lbann_comm *comm,
                   reduction_mode mode)
-    : transform_layer(comm),
+    : transform_layer<TensorDataType>(comm),
       m_mode(mode) {
     if (mode == reduction_mode::INVALID) {
       LBANN_ERROR("invalid reduction mode");
@@ -86,7 +86,7 @@ protected:
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims({1});
+    this->set_output_dims({1});
   }
 
   void fp_compute() override {
@@ -101,14 +101,14 @@ protected:
     case reduction_mode::SUM:
       El::Ones(m_ones, input_size, 1);
       El::Gemv(El::TRANSPOSE,
-               DataType(1), local_input, m_ones,
-               DataType(0), local_output);
+               TensorDataType(1), local_input, m_ones,
+               TensorDataType(0), local_output);
       break;
     case reduction_mode::AVERAGE:
       El::Ones(m_ones, input_size, 1);
       El::Gemv(El::TRANSPOSE,
-               DataType(1) / input_size, local_input, m_ones,
-               DataType(0), local_output);
+               TensorDataType(1) / input_size, local_input, m_ones,
+               TensorDataType(0), local_output);
       break;
     default:
       LBANN_ERROR("invalid reduction mode");
@@ -128,14 +128,14 @@ protected:
     case reduction_mode::SUM:
       El::Ones(m_ones, input_size, 1);
       El::Gemm(El::NORMAL, El::NORMAL,
-               DataType(1), m_ones, local_gradient_wrt_output,
-               DataType(0), local_gradient_wrt_input);
+               TensorDataType(1), m_ones, local_gradient_wrt_output,
+               TensorDataType(0), local_gradient_wrt_input);
       break;
     case reduction_mode::AVERAGE:
       El::Ones(m_ones, input_size, 1);
       El::Gemm(El::NORMAL, El::NORMAL,
-               DataType(1) / input_size, m_ones, local_gradient_wrt_output,
-               DataType(0), local_gradient_wrt_input);
+               TensorDataType(1) / input_size, m_ones, local_gradient_wrt_output,
+               TensorDataType(0), local_gradient_wrt_input);
       break;
     default:
       LBANN_ERROR("invalid reduction mode");

@@ -52,7 +52,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
                 "supports DATA_PARALLEL");
  public:
   categorical_random_layer(lbann_comm *comm)
-    : transform_layer(comm) {
+    : transform_layer<TensorDataType>(comm) {
   }
   categorical_random_layer* copy() const override { return new categorical_random_layer(*this); }
   std::string get_type() const override { return "categorical random"; }
@@ -64,7 +64,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
   void fp_compute() override {
 
     // Input and output matrices
-    const auto& input = get_prev_activations();
+    const auto& input = this->get_prev_activations();
     const auto& local_input = input.LockedMatrix();
     auto& local_output = get_local_activations();
     const auto& width = input.Width();
@@ -76,7 +76,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
     El::Zero(local_output);
     StarVCMat<El::Device::CPU> rand_mat(input.Grid(), input.Root());
     if (mode == execution_mode::training) {
-      uniform_fill(rand_mat, 1, width, DataType(0.5), DataType(0.5));
+      uniform_fill(rand_mat, 1, width, TensorDataType(0.5), TensorDataType(0.5));
     }
 
     // Process each mini-batch sample
@@ -88,7 +88,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
       if (mode == execution_mode::training) {
         // Choose first output with CDF above random number in (0,1)
         const auto& rand = rand_mat.GetLocal(0, col);
-        DataType cdf = DataType(0);
+        TensorDataType cdf = TensorDataType(0);
         for (El::Int row = 0; row < local_height; ++row) {
           cdf += local_input(row, col);
           if (rand < cdf) {
@@ -104,7 +104,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
       }
 
       // Output a one-hot vector
-      local_output(index, col) = DataType(1);
+      local_output(index, col) = TensorDataType(1);
 
     }
 

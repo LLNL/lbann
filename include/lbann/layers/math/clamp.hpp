@@ -45,7 +45,7 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class clamp_layer : public data_type_layer<TensorDataType> {
 public:
-  clamp_layer(lbann_comm *comm, DataType min, DataType max)
+  clamp_layer(lbann_comm *comm, TensorDataType min, TensorDataType max)
     : data_type_layer<TensorDataType>(comm), m_min(min), m_max(max) {
     if (m_min > m_max) {
       std::stringstream err;
@@ -76,9 +76,9 @@ protected:
 
 private:
   /** Minimum output. */
-  DataType m_min;
+  TensorDataType m_min;
   /** Maximum output. */
-  DataType m_max;
+  TensorDataType m_max;
 
 };
 

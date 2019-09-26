@@ -43,14 +43,14 @@ template <typename TensorDataType,
 class bernoulli_layer : public transform_layer<TensorDataType> {
 private:
   /** Probability of outputting 1. */
-  DataType m_prob;
+  TensorDataType m_prob;
 
 public:
   bernoulli_layer(lbann_comm *comm,
                   std::vector<int> dims,
-                  DataType prob = DataType(0.5))
-    : transform_layer(comm), m_prob(prob) {
-    set_output_dims(dims);
+                  TensorDataType prob = TensorDataType(0.5))
+    : transform_layer<TensorDataType>(comm), m_prob(prob) {
+    this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
   bernoulli_layer* copy() const override { return new bernoulli_layer(*this); }
@@ -67,7 +67,7 @@ public:
 protected:
 
   void fp_compute() override {
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
       bernoulli_fill(output, output.Height(), output.Width(), m_prob);
     } else {

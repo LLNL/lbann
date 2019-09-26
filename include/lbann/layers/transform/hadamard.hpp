@@ -40,7 +40,7 @@ template <typename TensorDataType,
 class hadamard_layer : public transform_layer<TensorDataType> {
 public:
 
-  hadamard_layer(lbann_comm *comm) : transform_layer(comm) {
+  hadamard_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
@@ -52,29 +52,29 @@ public:
 protected:
 
   void setup_pointers() override {
-    transform_layer::setup_pointers();
+    transform_layer<TensorDataType>::setup_pointers();
     if (get_num_parents() < 1) {
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has no parent layers";
       LBANN_ERROR(err.str());
     }
   }
 
   void setup_dims() override {
-    transform_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    transform_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match
-    const auto& output_dims = get_output_dims();
+    const auto& output_dims = this->get_output_dims();
     for (int i = 0; i < get_num_parents(); ++i) {
-      if (get_input_dims(i) != output_dims) {
+      if (this->get_input_dims(i) != output_dims) {
         const auto& parents = get_parent_layers();
         std::stringstream err;
-        err << get_type() << " layer \"" << get_name() << "\" "
+        err << get_type() << " layer \"" << this->get_name() << "\" "
             << "has input tensors with incompatible dimensions (";
         for (int j = 0; j < get_num_parents(); ++j) {
-          const auto& dims = get_input_dims(j);
+          const auto& dims = this->get_input_dims(j);
           err << (j > 0 ? ", " : "")
               << "layer \"" << parents[j]->get_name() << "\" outputs ";
           for (size_t k = 0; k < dims.size(); ++k) {
@@ -89,13 +89,13 @@ protected:
   }
 
   void fp_compute() override {
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     switch (get_num_parents()) {
-    case 0: El::Fill(output, DataType(1)); break;
-    case 1: El::LockedView(output, get_prev_activations()); break;
+    case 0: El::Fill(output, TensorDataType(1)); break;
+    case 1: El::LockedView(output, this->get_prev_activations()); break;
     default:
       El::Hadamard(get_prev_activations(0),
-                   get_prev_activations(1),
+                   this->get_prev_activations(1),
                    output);
       for (int i = 2; i < get_num_parents(); ++i) {
         El::Hadamard(get_prev_activations(i), output, output);
@@ -105,15 +105,15 @@ protected:
 
   void bp_compute() override {
     const int num_parents = get_num_parents();
-    const auto& gradient_wrt_output = get_prev_error_signals();
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
     switch (num_parents) {
     case 0: break;
     case 1:
-      El::LockedView(get_error_signals(), gradient_wrt_output);
+      El::LockedView(this->get_error_signals(), gradient_wrt_output);
       break;
     default:
       for (int i = 0; i < num_parents; ++i) {
-        auto& gradient_wrt_input = get_error_signals(i);
+        auto& gradient_wrt_input = this->get_error_signals(i);
         El::Copy(gradient_wrt_output, gradient_wrt_input);
         for (int j = 0; j < num_parents; ++j) {
           if (i != j) {

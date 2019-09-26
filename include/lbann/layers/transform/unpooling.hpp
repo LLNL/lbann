@@ -53,7 +53,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
 
   unpooling_layer(lbann_comm *comm,
                   pooling_layer<T_layout, Dev>* pool = nullptr)
-    : transform_layer(comm),
+    : transform_layer<TensorDataType>(comm),
       m_pooling_layer(pool) { }
 
   unpooling_layer* copy() const override { return new unpooling_layer(*this); }
@@ -75,20 +75,20 @@ class unpooling_layer : public transform_layer<TensorDataType> {
   }
 
   void setup_dims() override {
-    transform_layer::setup_dims();
+    transform_layer<TensorDataType>::setup_dims();
 
     // Check that input tensor is valid
-    const auto& input_dims = get_input_dims();
+    const auto& input_dims = this->get_input_dims();
     const auto& pool_output_dims = m_pooling_layer->get_output_dims();
     if (input_dims != pool_output_dims) {
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "expects input tensors with dimensions ";
       for (size_t i = 0; i < pool_output_dims.size(); ++i) {
         err << (i > 0 ? " x " : "") << pool_output_dims[i];
       }
       err << ", but parent layer "
-          << "\"" << m_parent_layers[0]->get_name() << "\" "
+          << "\"" << this->get_parent_layers()[0]->get_name() << "\" "
           << "outputs with dimensions ";
       for (size_t i = 0; i < input_dims.size(); ++i) {
         err << (i > 0 ? " x " : "") << input_dims[i];
@@ -97,7 +97,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
     }
 
     // Initialize output tensor based on corresponding pooling layer
-    set_output_dims(m_pooling_layer->get_input_dims());
+    this->set_output_dims(m_pooling_layer->get_input_dims());
 
   }
 
@@ -152,7 +152,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
 
     // Get parameters
     const int local_width = prev_activations_local.Width();
-    const auto& output_dims = get_output_dims();
+    const auto& output_dims = this->get_output_dims();
     const int num_channels = output_dims[0];
     const int num_per_input_channel = get_input_size() / num_channels;
     const int pool_size = m_pooling_layer->m_pool_size;
@@ -167,7 +167,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
       El::Zero(im2col_mat);
 
       // Populate im2col matrix
-      const DataType *prev_activations_buffer
+      const TensorDataType *prev_activations_buffer
         = prev_activations_local.LockedBuffer(0, sample);
       const int *indices_buffer
         = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
@@ -176,7 +176,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
         for(int j = 0; j < num_per_input_channel; ++j) {
           const int input_index = j + channel * num_per_input_channel;
           const int max_index = indices_buffer[input_index];
-          DataType *im2col_buffer
+          TensorDataType *im2col_buffer
             = im2col_mat.Buffer(channel * pool_size, j);
           im2col_buffer[max_index]
             = prev_activations_buffer[input_index];
@@ -193,7 +193,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
              m_pooling_layer->m_pads.data(),
              m_pooling_layer->m_pool_dims.data(),
              m_pooling_layer->m_strides.data(),
-             static_cast<const DataType&(*)(const DataType&,const DataType&)>(&std::max<DataType>));
+             static_cast<const TensorDataType&(*)(const TensorDataType&,const TensorDataType&)>(&std::max<DataType>));
 
     }
 
@@ -208,7 +208,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
 
     // Get parameters
     const int local_width = prev_error_signal_local.Width();
-    const auto& output_dims = get_output_dims();
+    const auto& output_dims = this->get_output_dims();
     const int num_channels = output_dims[0];
     const int num_per_output_channel = get_input_size() / num_channels;
     const int pool_size = m_pooling_layer->m_pool_size;
@@ -232,7 +232,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
              m_pooling_layer->m_strides.data());
 
       // Propagate error signal based on pooling layer
-      DataType *output_buffer = error_signal_local.Buffer(0, sample);
+      TensorDataType *output_buffer = error_signal_local.Buffer(0, sample);
       const int *indices_buffer
         = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
       LBANN_OMP_PARALLEL_FOR
@@ -240,7 +240,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
         for(int j = 0; j < num_per_output_channel; ++j) {
           const int output_index = j + channel * num_per_output_channel;
           const int max_index = indices_buffer[output_index];
-          DataType *im2col_buffer
+          TensorDataType *im2col_buffer
             = im2col_mat.Buffer(channel * pool_size, j);
           output_buffer[output_index] = im2col_buffer[max_index];
         }

@@ -57,9 +57,9 @@ class discrete_random_layer : public transform_layer<TensorDataType> {
   discrete_random_layer(lbann_comm *comm,
                         std::vector<DataType> values,
                         std::vector<int> dims)
-    : transform_layer(comm),
+    : transform_layer<TensorDataType>(comm),
       m_values(values) {
-    set_output_dims(dims);
+    this->set_output_dims(dims);
   }
   discrete_random_layer* copy() const override { return new discrete_random_layer(*this); }
   std::string get_type() const override { return "discrete random"; }
@@ -69,7 +69,7 @@ class discrete_random_layer : public transform_layer<TensorDataType> {
  protected:
 
   void setup_dims() override {
-    transform_layer::setup_dims();
+    transform_layer<TensorDataType>::setup_dims();
     if (get_input_size() != (int) m_values.size()) {
       LBANN_ERROR("input tensor dimensions don't match number of "
                   "values in discrete distribution");
@@ -79,9 +79,9 @@ class discrete_random_layer : public transform_layer<TensorDataType> {
   void fp_compute() override {
 
     // Input and output matrices
-    const auto& input = get_prev_activations();
+    const auto& input = this->get_prev_activations();
     const auto& local_input = input.LockedMatrix();
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     auto& local_output = output.Matrix();
     const int num_values = m_values.size();
     const auto& num_outputs = local_output.Height();

@@ -49,7 +49,7 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class elu_layer : public data_type_layer<TensorDataType> {
 public:
-  elu_layer(lbann_comm *comm, DataType alpha = 1)
+  elu_layer(lbann_comm *comm, TensorDataType alpha = 1)
     : data_type_layer<TensorDataType>(comm), m_alpha(alpha) {}
   elu_layer* copy() const override { return new elu_layer(*this); }
   std::string get_type() const override { return "ELU"; }
@@ -72,7 +72,7 @@ protected:
 
 private:
   /** Scale parameter for negative region. */
-  DataType m_alpha;
+  TensorDataType m_alpha;
 
 };
 

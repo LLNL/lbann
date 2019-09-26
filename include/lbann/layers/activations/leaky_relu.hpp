@@ -49,7 +49,7 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class leaky_relu_layer : public data_type_layer<TensorDataType> {
 public:
-  leaky_relu_layer(lbann_comm *comm, DataType negative_slope = 0.01)
+  leaky_relu_layer(lbann_comm *comm, TensorDataType negative_slope = 0.01)
     : data_type_layer<TensorDataType>(comm), m_negative_slope(negative_slope) {}
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
   std::string get_type() const override { return "leaky ReLU"; }
@@ -72,7 +72,7 @@ protected:
 
 private:
   /** Function slope in negative region. */
-  DataType m_negative_slope;
+  TensorDataType m_negative_slope;
 
 };
 

@@ -40,7 +40,7 @@ template <typename TensorDataType,
 class split_layer : public transform_layer<TensorDataType> {
 public:
 
-  split_layer(lbann_comm *comm) : transform_layer(comm) {
+  split_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {
     this->m_expected_num_child_layers = -1; // No limit on children
   }
 
@@ -54,12 +54,12 @@ protected:
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
     for (int i = 0; i < get_num_children(); ++i) {
-      set_output_dims(get_input_dims(), i);
+      this->set_output_dims(this->get_input_dims(), i);
     }
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    const auto& input = get_prev_activations();
+    const auto& input = this->get_prev_activations();
     for (int i = 0; i < get_num_children(); ++i) {
       El::LockedView(get_activations(i), input);
     }
@@ -68,14 +68,14 @@ protected:
   void fp_compute() override {}
 
   void bp_compute() override {
-    auto& gradient_wrt_input = get_error_signals();
+    auto& gradient_wrt_input = this->get_error_signals();
     if (get_num_children() > 0) {
       El::Copy(get_prev_error_signals(0), gradient_wrt_input);
     } else {
       El::Zero(gradient_wrt_input);
     }
     for (int i = 1; i < get_num_children(); ++i) {
-      El::Axpy(DataType(1), get_prev_error_signals(i),
+      El::Axpy(DataType(1), this->get_prev_error_signals(i),
                gradient_wrt_input);
     }
   }

@@ -50,8 +50,8 @@ class entrywise_batch_normalization_layer : public data_type_layer<TensorDataTyp
 public:
 
   entrywise_batch_normalization_layer(lbann_comm* comm,
-                                      DataType decay=0.9,
-                                      DataType epsilon=1e-5)
+                                      TensorDataType decay=0.9,
+                                      TensorDataType epsilon=1e-5)
     : data_type_layer<TensorDataType>(comm), m_decay(decay), m_epsilon(epsilon) {}
 
   entrywise_batch_normalization_layer(const entrywise_batch_normalization_layer& other)
@@ -202,9 +202,9 @@ protected:
 private:
 
   /** Decay rate for the running statistics. */
-  DataType m_decay;
+  TensorDataType m_decay;
   /** Small number to avoid division by zero. */
-  DataType m_epsilon;
+  TensorDataType m_epsilon;
 
   /** @brief Current mini-batch statistics.
    *

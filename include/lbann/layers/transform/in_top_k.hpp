@@ -45,7 +45,7 @@ class in_top_k_layer : public transform_layer<TensorDataType> {
  public:
 
   in_top_k_layer(lbann_comm *comm, El::Int k)
-    : transform_layer(comm), m_k(k) {
+    : transform_layer<TensorDataType>(comm), m_k(k) {
     if (m_k < 0) {
       std::stringstream err;
       err << "invalid parameter for top-k search (k=" << m_k << ")";
@@ -68,7 +68,7 @@ class in_top_k_layer : public transform_layer<TensorDataType> {
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims(get_input_dims());
+    this->set_output_dims(this->get_input_dims());
   }
 
   void fp_compute() override;

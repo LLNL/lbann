@@ -43,15 +43,15 @@ class weights_layer : public transform_layer<TensorDataType> {
 
  public:
   weights_layer(lbann_comm *comm, std::vector<El::Int> dims)
-    : transform_layer(comm) {
+    : transform_layer<TensorDataType>(comm) {
     std::vector<int> dims_;
     for (const auto& d : dims) { dims_.push_back(d); }
-    set_output_dims(dims_);
+    this->set_output_dims(dims_);
     this->m_expected_num_parent_layers = 0;
   }
 
   weights_layer(const weights_layer& other)
-    : transform_layer(other),
+    : transform_layer<TensorDataType>(other),
       m_gradient(other.m_gradient ? other.m_gradient->Copy() : nullptr) {
     if (other.m_workspace) {
       switch (other.m_workspace->GetDevice()) {
@@ -65,7 +65,7 @@ class weights_layer : public transform_layer<TensorDataType> {
     }
   }
   weights_layer& operator=(const weights_layer& other){
-    transform_layer::operator=(other);
+    transform_layer<TensorDataType>::operator=(other);
     m_gradient.reset(other.m_gradient ? other.m_gradient->Copy() : nullptr);
     m_workspace.reset();
     if (other.m_workspace) {
@@ -88,10 +88,10 @@ class weights_layer : public transform_layer<TensorDataType> {
  protected:
 
   void setup_matrices(const El::Grid& grid) override {
-    transform_layer::setup_matrices(grid);
+    transform_layer<TensorDataType>::setup_matrices(grid);
 
     // Initialize weights gradient
-    auto dist = get_activations().DistData();
+    auto dist = this->get_activations().DistData();
     dist.rowDist = El::STAR;
     m_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
 
@@ -112,13 +112,13 @@ class weights_layer : public transform_layer<TensorDataType> {
   }
 
   void setup_data() override {
-    transform_layer::setup_data();
+    transform_layer<TensorDataType>::setup_data();
 
     // Initialize default weights if none are provided
     if (this->m_weights.empty()) {
       auto w = make_unique<weights>(get_comm());
       auto init = make_unique<constant_initializer>(DataType(0));
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      std::unique_ptr<optimizer<TensorDataType>> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));

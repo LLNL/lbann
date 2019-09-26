@@ -61,9 +61,9 @@ class batch_normalization_layer : public regularizer_layer {
 private:
 
   /** Decay rate for the running statistics. */
-  DataType m_decay;
+  TensorDataType m_decay;
   /** Small number to avoid division by zero. */
-  DataType m_epsilon;
+  TensorDataType m_epsilon;
   /** @brief Size of group to aggregate statistics over.
    *
    * If this is 1, the group consists of one process and aggregation
@@ -110,8 +110,8 @@ public:
    *         statistics over. Defaults to 1 (i.e. local aggregation).
    */
   batch_normalization_layer(lbann_comm *comm,
-                            DataType decay=0.9,
-                            DataType epsilon=1e-5,
+                            TensorDataType decay=0.9,
+                            TensorDataType epsilon=1e-5,
                             int statistics_group_size=1)
     : regularizer_layer(comm),
       m_decay(decay),

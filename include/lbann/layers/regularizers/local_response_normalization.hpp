@@ -53,9 +53,9 @@ public:
 
   local_response_normalization_layer(lbann_comm *comm,
                                      int window_width,
-                                     DataType alpha,
-                                     DataType beta,
-                                     DataType k)
+                                     TensorDataType alpha,
+                                     TensorDataType beta,
+                                     TensorDataType k)
     : regularizer_layer(comm),
       m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
 #ifdef LBANN_HAS_CUDNN
@@ -180,11 +180,11 @@ private:
   /** Normalization window width. */
   int m_window_width;
   /** LRN alpha scaling parameter. */
-  DataType m_alpha;
+  TensorDataType m_alpha;
   /** LRN beta power parameter. */
-  DataType m_beta;
+  TensorDataType m_beta;
   /** LRN k parameter. */
-  DataType m_k;
+  TensorDataType m_k;
 
 #ifdef LBANN_HAS_CUDNN
   /** LRN cuDNN descriptor. */
@@ -201,8 +201,8 @@ private:
     const auto& local_input = get_local_prev_activations();
     auto& local_output = get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const DataType zero = DataType(0);
-      const DataType one = DataType(1);
+      const TensorDataType zero = TensorDataType(0);
+      const TensorDataType one = TensorDataType(1);
       CHECK_CUDNN(cudnnLRNCrossChannelForward(cudnn::get_handle(),
                                               m_lrn_cudnn_desc,
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
@@ -226,8 +226,8 @@ private:
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
     auto& local_gradient_wrt_input = get_local_error_signals();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const DataType zero = DataType(0);
-      const DataType one = DataType(1);
+      const TensorDataType zero = TensorDataType(0);
+      const TensorDataType one = TensorDataType(1);
       CHECK_CUDNN(cudnnLRNCrossChannelBackward(cudnn::get_handle(),
                                                m_lrn_cudnn_desc,
                                                CUDNN_LRN_CROSS_CHANNEL_DIM1,
@@ -254,9 +254,9 @@ private:
 
     // Matrix parameters
     const int local_width = local_input.Width();
-    const DataType* input_buffer = local_input.LockedBuffer();
+    const TensorDataType* input_buffer = local_input.LockedBuffer();
     const int input_ldim = local_input.LDim();
-    DataType* output_buffer = local_output.Buffer();
+    TensorDataType* output_buffer = local_output.Buffer();
     const int output_ldim = local_output.LDim();
 
     // Get LRN parameters
@@ -284,7 +284,7 @@ private:
           block_start += max_block_size) {
         const int block_size = std::min(max_block_size,
                                         num_per_channel - block_start);
-        DataType workspace[max_block_size];
+        TensorDataType workspace[max_block_size];
 
         // Iterate through channels
         for (int channel = 0; channel < num_channels; ++channel) {
@@ -292,11 +292,11 @@ private:
           const int window_end = std::min(channel + m_window_width / 2, num_channels - 1);
 
           // Compute sum of squares in workspace
-          std::fill(workspace, workspace + block_size, DataType(0));
+          std::fill(workspace, workspace + block_size, TensorDataType(0));
           for (int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for (int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType input_entry = input_buffer[index + sample * input_ldim];
+              const TensorDataType input_entry = input_buffer[index + sample * input_ldim];
               workspace[block_pos] += input_entry * input_entry;
             }
           }
@@ -309,9 +309,9 @@ private:
           // Compute output
           for (int block_pos = 0; block_pos < block_size; ++block_pos) {
             const int index = block_start + block_pos + channel * num_per_channel;
-            const DataType scale_factor = workspace[block_pos];
-            const DataType input_entry = input_buffer[index + sample * input_ldim];
-            DataType& output_entry = output_buffer[index + sample * output_ldim];
+            const TensorDataType scale_factor = workspace[block_pos];
+            const TensorDataType input_entry = input_buffer[index + sample * input_ldim];
+            TensorDataType& output_entry = output_buffer[index + sample * output_ldim];
             if (default_beta) { // Special case when beta = 0.75
               output_entry = (input_entry
                               * std::sqrt(scale_factor * std::sqrt(scale_factor)));
@@ -339,13 +339,13 @@ private:
 
     // Get matrix buffers
     const int local_width = local_input.Width();
-    const DataType* input_buffer = local_input.LockedBuffer();
+    const TensorDataType* input_buffer = local_input.LockedBuffer();
     const int input_ldim = local_input.LDim();
-    const DataType* output_buffer = local_output.LockedBuffer();
+    const TensorDataType* output_buffer = local_output.LockedBuffer();
     const int output_ldim = local_output.LDim();
-    const DataType* gradient_wrt_output_buffer = local_gradient_wrt_output.LockedBuffer();
+    const TensorDataType* gradient_wrt_output_buffer = local_gradient_wrt_output.LockedBuffer();
     const int gradient_wrt_output_ldim = local_gradient_wrt_output.LDim();
-    DataType* gradient_wrt_input_buffer = local_gradient_wrt_input.Buffer();
+    TensorDataType* gradient_wrt_input_buffer = local_gradient_wrt_input.Buffer();
     const int gradient_wrt_input_ldim = local_gradient_wrt_input.LDim();
 
     // Get LRN parameters
@@ -377,7 +377,7 @@ private:
           block_start += max_block_size) {
         const int block_size = std::min(max_block_size,
                                         num_per_channel - block_start);
-        DataType workspace[max_block_size];
+        TensorDataType workspace[max_block_size];
 
         // Iterate through channels
         for (int channel = 0; channel < num_channels; ++channel) {
@@ -385,11 +385,11 @@ private:
           const int window_end = std::min(channel + m_window_width / 2, num_channels - 1);
 
           // Compute sum of squares in workspace
-          std::fill(workspace, workspace + block_size, DataType(0));
+          std::fill(workspace, workspace + block_size, TensorDataType(0));
           for (int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for (int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType input_entry = input_buffer[index + sample * input_ldim];
+              const TensorDataType input_entry = input_buffer[index + sample * input_ldim];
               workspace[block_pos] += input_entry * input_entry;
             }
           }
@@ -402,10 +402,10 @@ private:
           // Compute error signal contribution for current entry
           for (int block_pos = 0; block_pos < block_size; ++block_pos) {
             const int index = block_start + block_pos + channel * num_per_channel;
-            const DataType scale_factor = workspace[block_pos];
-            const DataType gradient_wrt_output_entry
+            const TensorDataType scale_factor = workspace[block_pos];
+            const TensorDataType gradient_wrt_output_entry
               = gradient_wrt_output_buffer[index + sample * gradient_wrt_output_ldim];
-            DataType& gradient_wrt_input_entry
+            TensorDataType& gradient_wrt_input_entry
               = gradient_wrt_input_buffer[index + sample * gradient_wrt_input_ldim];
             if (default_beta) { // Special case when beta = 0.75
               gradient_wrt_input_entry
@@ -420,8 +420,8 @@ private:
           // Compute y * dy / (k + alpha * sum(x^2) ) in workspace
           for (int block_pos = 0; block_pos < block_size; ++block_pos) {
             const int index = block_start + block_pos + channel * num_per_channel;
-            const DataType output_entry = output_buffer[index + sample * output_ldim];
-            const DataType gradient_wrt_output_entry
+            const TensorDataType output_entry = output_buffer[index + sample * output_ldim];
+            const TensorDataType gradient_wrt_output_entry
               = gradient_wrt_output_buffer[index + sample * gradient_wrt_output_ldim];
             workspace[block_pos] = (-2 * m_alpha * m_beta * workspace[block_pos]
                                     * output_entry * gradient_wrt_output_entry);
@@ -431,7 +431,7 @@ private:
           for (int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for (int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
-              const DataType input_entry = input_buffer[index + sample * input_ldim];
+              const TensorDataType input_entry = input_buffer[index + sample * input_ldim];
               gradient_wrt_input_buffer[index + sample * gradient_wrt_input_ldim]
                 += workspace[block_pos] * input_entry;
             }

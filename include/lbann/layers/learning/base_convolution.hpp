@@ -71,7 +71,7 @@ protected:
   /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
    */
-  DataType m_bias_scaling_factor;
+  TensorDataType m_bias_scaling_factor;
 
 #ifdef LBANN_HAS_CUDNN
 
@@ -137,7 +137,7 @@ public:
                            m_kernel_cudnn_desc);
     copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
                                 m_convolution_cudnn_desc);
-    if (other.m_bias_scaling_factor != DataType(0)) {
+    if (other.m_bias_scaling_factor != TensorDataType(0)) {
       cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
                               m_bias_cudnn_desc);
     }
@@ -161,7 +161,7 @@ public:
                            m_kernel_cudnn_desc);
     copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
                                 m_convolution_cudnn_desc);
-    if (other.m_bias_scaling_factor != DataType(0)) {
+    if (other.m_bias_scaling_factor != TensorDataType(0)) {
       cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
                               m_bias_cudnn_desc);
     }
@@ -231,7 +231,7 @@ public:
     // Bias
     ss.str(std::string{});
     ss.clear();
-    ss << (m_bias_scaling_factor == DataType(0) ?
+    ss << (m_bias_scaling_factor == TensorDataType(0) ?
            "disabled" : "enabled");
     desc.add("Bias", ss.str());
 
@@ -347,7 +347,7 @@ public:
           << "found " << this->m_weights.size() << ")";
       LBANN_ERROR(err.str());
     }
-    if (m_bias_scaling_factor != DataType(0)) {
+    if (m_bias_scaling_factor != TensorDataType(0)) {
       this->m_weights.resize(2, nullptr);
     } else {
       this->m_weights.resize(1, nullptr);
@@ -380,7 +380,7 @@ public:
     kernel_weights.set_matrix_distribution(dist);
 
     // Set up bias if needed.
-    if (m_bias_scaling_factor != DataType(0)) {
+    if (m_bias_scaling_factor != TensorDataType(0)) {
       if (this->m_weights[1] == nullptr) {
         auto w = make_unique<weights>(get_comm());
         std::unique_ptr<optimizer> opt(m_model->create_optimizer());
@@ -446,7 +446,7 @@ public:
                                               m_groups));
 
     // Set bias tensor descriptor
-    if (m_bias_scaling_factor != DataType(0)) {
+    if (m_bias_scaling_factor != TensorDataType(0)) {
       std::vector<int> bias_dims(output_dims.size() + 1, 1);
       bias_dims[1] = output_dims[0];
       cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
@@ -467,8 +467,8 @@ protected:
 #else
 
     // Useful constants
-    const DataType zero = DataType(0);
-    const DataType one = DataType(1);
+    const TensorDataType zero = TensorDataType(0);
+    const TensorDataType one = TensorDataType(1);
 
     // Matrices
     const auto& kernel = m_weights[0]->get_values();
@@ -544,8 +544,8 @@ protected:
 #else
 
     // Useful constants
-    const DataType zero = DataType(0);
-    const DataType one = DataType(1);
+    const TensorDataType zero = TensorDataType(0);
+    const TensorDataType one = TensorDataType(1);
 
     // GPU data
     const auto& kernel = m_weights[0]->get_values();
@@ -621,10 +621,10 @@ protected:
     LBANN_ERROR("cuDNN not detected");
 #else
     auto& local_output = get_local_activations();
-    if (m_bias_scaling_factor != DataType(0)
+    if (m_bias_scaling_factor != TensorDataType(0)
         && local_output.Height() > 0
         && local_output.Width() > 0) {
-      const DataType one = 1;
+      const TensorDataType one = 1;
       const auto& bias = m_weights[1]->get_values();
       CHECK_CUDNN(cudnnAddTensor(cudnn::get_handle(),
                                  &m_bias_scaling_factor,
@@ -652,10 +652,10 @@ protected:
                                  && local_gradient_wrt_output.Width() > 0);
 
     // Compute bias gradient
-    if (m_bias_scaling_factor != DataType(0)
+    if (m_bias_scaling_factor != TensorDataType(0)
         && m_weights[1]->get_optimizer() != nullptr) {
       optimizer* bias_optimizer = m_weights[1]->get_optimizer();
-      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
       if (has_local_data) {
@@ -675,7 +675,7 @@ protected:
     // Compute kernel gradient
     optimizer* kernel_optimizer = m_weights[0]->get_optimizer();
     if (kernel_optimizer != nullptr) {
-      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
       if (has_local_data) {
@@ -802,8 +802,8 @@ protected:
       // Apply convolution to current input column
       output_col.Attach(m, n, local_output.Buffer(0, col), m);
       El::Gemm(El::TRANSPOSE, El::NORMAL,
-               DataType(1), im2col_matrix, kernel_matrix,
-               DataType(0), output_col);
+               TensorDataType(1), im2col_matrix, kernel_matrix,
+               TensorDataType(0), output_col);
 
     }
 
@@ -852,8 +852,8 @@ protected:
       // Apply transposed convolution to current input column
       input_col.LockedAttach(n, k, local_input.LockedBuffer(0, col), n);
       El::Gemm(El::NORMAL, El::TRANSPOSE,
-               DataType(1), kernel_matrix, input_col,
-               DataType(0), im2col_matrix);
+               TensorDataType(1), kernel_matrix, input_col,
+               TensorDataType(0), im2col_matrix);
 
       // Perform col2im to accumulate contributions from each kernel
       // position
@@ -874,7 +874,7 @@ protected:
   void apply_bias_cpu() {
 
     // Return immediately if there is no bias
-    if (m_bias_scaling_factor == DataType(0)) return;
+    if (m_bias_scaling_factor == TensorDataType(0)) return;
 
     // Local matrices
     const auto& local_bias = m_weights[1]->get_values().LockedMatrix();
@@ -891,7 +891,7 @@ protected:
     for (El::Int channel = 0; channel < num_output_channels; ++channel) {
       const El::Int row_start = channel * num_per_output_channel;
       const El::Int row_end = (channel+1) * num_per_output_channel;
-      const DataType bias_term = m_bias_scaling_factor * local_bias(channel, 0);
+      const TensorDataType bias_term = m_bias_scaling_factor * local_bias(channel, 0);
       for (El::Int col = 0; col < local_width; ++col) {
         for (El::Int row = row_start; row < row_end; ++row) {
           local_output(row, col) += bias_term;
@@ -923,10 +923,10 @@ protected:
 
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
-    if (m_bias_scaling_factor != DataType(0)
+    if (m_bias_scaling_factor != TensorDataType(0)
         && this->m_weights[1]->get_optimizer() != nullptr) {
       optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
-      DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
       if (has_local_data) {
@@ -935,13 +935,13 @@ protected:
         for (int channel = 0; channel < num_output_channels; ++channel) {
           const El::Int row_start = channel * num_per_output_channel;
           const El::Int row_end = (channel+1) * num_per_output_channel;
-          DataType sum = 0;
-          DataType correction = 0;
+          TensorDataType sum = 0;
+          TensorDataType correction = 0;
           for (El::Int col = 0; col < local_width; ++col) {
             for (El::Int row = row_start; row < row_end; ++row) {
-              DataType term = local_gradient_wrt_output(row, col);
+              TensorDataType term = local_gradient_wrt_output(row, col);
               term += correction;
-              const DataType next_sum = sum + term;
+              const TensorDataType next_sum = sum + term;
               correction = term - (next_sum - sum);
               sum = next_sum;
             }
@@ -968,7 +968,7 @@ protected:
     const int k = (using_transposed_convolution ?
                    get_input_size() / num_input_channels :
                    get_output_size() / num_output_channels);
-    DataType dst_scale = 0, gradient_scale = 0;
+    TensorDataType dst_scale = 0, gradient_scale = 0;
     auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
     El::Scale(dst_scale, kernel_gradient);
@@ -991,7 +991,7 @@ protected:
                m_strides.data());
         El::Gemm(El::NORMAL, El::NORMAL,
                  gradient_scale, im2col_matrix, input_col,
-                 DataType(1), kernel_gradient_matrix);
+                 TensorDataType(1), kernel_gradient_matrix);
       }
       else {
         const DMat<Device> input_col
@@ -1007,7 +1007,7 @@ protected:
                m_strides.data());
         El::Gemm(El::NORMAL, El::NORMAL,
                  gradient_scale, im2col_matrix, gradient_wrt_output_col,
-                 DataType(1), kernel_gradient_matrix);
+                 TensorDataType(1), kernel_gradient_matrix);
       }
     }
 
@@ -1113,14 +1113,14 @@ private:
   cudnnConvolutionFwdAlgo_t get_forward_algo_cudnn(
     const int local_mini_batch_size,
     const cudnnTensorDescriptor_t& input_desc,
-    const DataType* input,
+    const TensorDataType* input,
     const cudnnFilterDescriptor_t& kernel_desc,
-    const DataType* kernel,
+    const TensorDataType* kernel,
     const cudnnConvolutionDescriptor_t& conv_desc,
     const cudnnTensorDescriptor_t& output_desc,
-    DataType* output,
+    TensorDataType* output,
     size_t ws_size,
-    DataType* ws) {
+    TensorDataType* ws) {
     if (m_fwd_cudnn_algos.count(local_mini_batch_size) == 0) {
 #ifdef LBANN_DETERMINISTIC
       bool deterministic = true;
@@ -1143,14 +1143,14 @@ private:
   cudnnConvolutionBwdDataAlgo_t get_backward_data_algo_cudnn(
     const int local_mini_batch_size,
     const cudnnFilterDescriptor_t& kernel_desc,
-    const DataType* kernel,
+    const TensorDataType* kernel,
     const cudnnTensorDescriptor_t& prev_error_signal_desc,
-    const DataType* prev_error_signal,
+    const TensorDataType* prev_error_signal,
     const cudnnConvolutionDescriptor_t& conv_desc,
     const cudnnTensorDescriptor_t& error_signal_desc,
-    DataType* error_signal,
+    TensorDataType* error_signal,
     size_t ws_size,
-    DataType* ws) {
+    TensorDataType* ws) {
     if (m_bwd_data_cudnn_algos.count(local_mini_batch_size) == 0) {
 #ifdef LBANN_DETERMINISTIC
       bool deterministic = true;
@@ -1176,13 +1176,13 @@ private:
   cudnnConvolutionBwdFilterAlgo_t get_backward_filter_algo_cudnn(
     const int local_mini_batch_size,
     const cudnnTensorDescriptor_t& input_desc,
-    const DataType* input,
+    const TensorDataType* input,
     const cudnnTensorDescriptor_t& prev_error_signal_desc,
-    const DataType* prev_error_signal,
+    const TensorDataType* prev_error_signal,
     const cudnnConvolutionDescriptor_t& conv_desc,
     const cudnnFilterDescriptor_t& kernel_gradient_desc,
     size_t ws_size,
-    DataType* ws) {
+    TensorDataType* ws) {
     if (m_bwd_filter_cudnn_algos.count(local_mini_batch_size) == 0) {
 #ifdef LBANN_DETERMINISTIC
       bool deterministic = true;

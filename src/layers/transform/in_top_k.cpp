@@ -38,12 +38,12 @@ namespace {
 struct entry {
 
   /** Vector entry value. */
-  DataType value = min_value;
+  TensorDataType value = min_value;
   /** Vector entry index. */
   El::Int index = max_index;
 
   /** Minimum possible value. */
-  static constexpr DataType min_value = -std::numeric_limits<DataType>::infinity();
+  static constexpr TensorDataType min_value = -std::numeric_limits<DataType>::infinity();
   /** Maximum possible index. */
   static constexpr El::Int max_index = std::numeric_limits<El::Int>::max();
 
@@ -75,7 +75,7 @@ void fp_cpu(lbann_comm& comm,
     El::Zero(output);
     return;
   } else if (k >= height) {
-    El::Fill(output, DataType(1));
+    El::Fill(output, TensorDataType(1));
     return;
   } else if (local_width < 1) {
     return;
@@ -132,7 +132,7 @@ void fp_cpu(lbann_comm& comm,
       const auto& global_row = top_entries[col*k+i].index;
       if (global_row < height && output.IsLocalRow(global_row)) {
         const auto& row = output.LocalRow(global_row);
-        local_output(row, col) = DataType(1);
+        local_output(row, col) = TensorDataType(1);
       }
     }
   }
@@ -144,12 +144,12 @@ void fp_cpu(lbann_comm& comm,
 template <>
 void in_top_k_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
      ::fp_compute() {
-  fp_cpu(*get_comm(), m_k, get_prev_activations(), get_activations());
+  fp_cpu(*get_comm(), m_k, this->get_prev_activations(), this->get_activations());
 }
 template <>
 void in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::fp_compute() {
-  fp_cpu(*get_comm(), m_k, get_prev_activations(), get_activations());
+  fp_cpu(*get_comm(), m_k, this->get_prev_activations(), this->get_activations());
 }
 
 template class in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;

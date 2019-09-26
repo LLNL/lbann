@@ -39,10 +39,10 @@ class constant_layer : public transform_layer<TensorDataType> {
 public:
 
   constant_layer(lbann_comm *comm,
-                 DataType value,
+                 TensorDataType value,
                  std::vector<int> dims)
-    : transform_layer(comm), m_value(value) {
-    set_output_dims(dims);
+    : transform_layer<TensorDataType>(comm), m_value(value) {
+    this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
 
@@ -70,7 +70,7 @@ protected:
 private:
 
   /** Constant value. */
-  DataType m_value;
+  TensorDataType m_value;
 
 };
 

@@ -41,10 +41,10 @@ class sort_layer : public transform_layer<TensorDataType> {
  public:
 
   sort_layer(lbann_comm *comm, bool descending = false)
-    : transform_layer(comm), m_descending(descending) {
+    : transform_layer<TensorDataType>(comm), m_descending(descending) {
   }
   sort_layer(const sort_layer& other)
-    : transform_layer(other),
+    : transform_layer<TensorDataType>(other),
       m_descending(other.m_descending) {
     if (other.m_indices) {
       switch (other.m_indices->GetDevice()) {
@@ -62,7 +62,7 @@ class sort_layer : public transform_layer<TensorDataType> {
     }
   }
   sort_layer& operator=(const sort_layer& other) {
-    transform_layer::operator=(other);
+    transform_layer<TensorDataType>::operator=(other);
     m_descending = other.m_descending;
     if (!other.m_indices) {
       m_indices.reset(nullptr);
@@ -97,13 +97,13 @@ class sort_layer : public transform_layer<TensorDataType> {
  protected:
 
   void setup_dims() override {
-    transform_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    transform_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    transform_layer::setup_matrices(grid);
-    const auto& dist = get_activations().DistData();
+    transform_layer<TensorDataType>::setup_matrices(grid);
+    const auto& dist = this->get_activations().DistData();
     switch (dist.device) {
     case El::Device::CPU:
       m_indices.reset(new El::Matrix<El::Int, El::Device::CPU>());
@@ -120,7 +120,7 @@ class sort_layer : public transform_layer<TensorDataType> {
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
     transform_layer::fp_setup_outputs(mini_batch_size);
-    const auto& output = get_activations();
+    const auto& output = this->get_activations();
     m_indices->Resize(output.LocalHeight(), output.LocalWidth());
   }
 

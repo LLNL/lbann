@@ -44,18 +44,18 @@ template <typename TensorDataType,
 class uniform_layer : public transform_layer<TensorDataType> {
 private:
   /** Uniform distribution mean. */
-  DataType m_min;
+  TensorDataType m_min;
   /** Uniform distribution standard deviation. */
-  DataType m_max;
+  TensorDataType m_max;
 
 public:
 
   uniform_layer(lbann_comm *comm,
                 std::vector<int> dims,
-                DataType min = DataType(0),
-                DataType max = DataType(1))
-    : transform_layer(comm), m_min(min), m_max(max) {
-    set_output_dims(dims);
+                TensorDataType min = TensorDataType(0),
+                TensorDataType max = TensorDataType(1))
+    : transform_layer<TensorDataType>(comm), m_min(min), m_max(max) {
+    this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
   uniform_layer* copy() const override { return new uniform_layer(*this); }
@@ -76,7 +76,7 @@ protected:
   void fp_compute() override {
     const auto& mean = (m_max + m_min) / 2;
     const auto& radius = (m_max - m_min) / 2;
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
       uniform_fill(output, output.Height(), output.Width(), mean, radius);
     } else {

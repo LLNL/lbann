@@ -188,20 +188,20 @@ protected:
     }
 
     // Construct mask matrix
-    const DataType scale = 1 / m_keep_prob;
+    const TensorDataType scale = 1 / m_keep_prob;
     const auto& height = input.Height();
     const auto& width = input.Width();
     m_mask->Resize(height, width);
 #ifdef LBANN_DETERMINISTIC
-    bernoulli_fill_procdet(*m_mask, height, width, DataType(m_keep_prob));
+    bernoulli_fill_procdet(*m_mask, height, width, TensorDataType(m_keep_prob));
     El::Scale(scale, *m_mask);
 #else
     El::EntrywiseMap(*m_mask,
-                     (std::function<DataType(const DataType&)>)
-                     ([this,scale](const DataType& z)->DataType {
+                     (std::function<DataType(const TensorDataType&)>)
+                     ([this,scale](const TensorDataType& z)->DataType {
                        auto& gen = get_fast_generator();
                        std::bernoulli_distribution dist(m_keep_prob);
-                       return dist(gen) ? scale : DataType(0);
+                       return dist(gen) ? scale : TensorDataType(0);
                      }));
 #endif // LBANN_DETERMINISTIC
 

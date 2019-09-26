@@ -35,8 +35,8 @@ __global__ void fp_gpu_3d_kernel(
   El::Int input_dim0, El::Int input_dim1, El::Int input_dim2,
   El::Int output_dim0, El::Int output_dim1, El::Int output_dim2,
   El::Int local_output_height, El::Int local_output_width,
-  const DataType * __restrict__ input, El::Int input_ldim,
-  DataType * __restrict__ local_output, El::Int local_output_ldim,
+  const TensorDataType * __restrict__ input, El::Int input_ldim,
+  TensorDataType * __restrict__ local_output, El::Int local_output_ldim,
   El::Int output_col_shift, El::Int output_col_stride) {
 
   // Indices
@@ -75,11 +75,11 @@ __global__ void bp_gpu_3d_kernel(
   El::Int input_dim0, El::Int input_dim1, El::Int input_dim2,
   El::Int output_dim0, El::Int output_dim1, El::Int output_dim2,
   El::Int local_output_height, El::Int local_output_width,
-  const DataType * __restrict__ local_gradient_wrt_output,
+  const TensorDataType * __restrict__ local_gradient_wrt_output,
   El::Int local_gradient_wrt_output_ldim,
   El::Int gradient_wrt_output_col_shift,
   El::Int gradient_wrt_output_col_stride,
-  DataType * __restrict__ gradient_wrt_input,
+  TensorDataType * __restrict__ gradient_wrt_input,
   El::Int gradient_wrt_input_ldim) {
 
   // Indices
