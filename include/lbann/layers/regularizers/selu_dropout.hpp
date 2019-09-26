@@ -98,13 +98,13 @@ class selu_dropout : public regularizer_layer {
 
   void setup_dims() override {
     regularizer_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
     if (m_mask != nullptr) { delete m_mask; }
-    m_mask = get_activations().Copy();
+    m_mask = this->get_activations().Copy();
   }
 
  protected:
@@ -113,7 +113,7 @@ class selu_dropout : public regularizer_layer {
     if (this->m_model->get_execution_context().get_execution_mode() != execution_mode::training ||
         m_keep_prob < 0.0f) {
       // Do nothing if dropout is disabled
-      El::Copy(get_prev_activations(), get_activations());
+      El::Copy(get_prev_activations(), this->get_activations());
     } else {
 
       const auto *input_acts = &get_prev_activations();
@@ -144,7 +144,7 @@ class selu_dropout : public regularizer_layer {
   void bp_compute() override {
     if (this->m_model->get_execution_context().get_execution_mode() != execution_mode::training
         || m_keep_prob < 0.0f) {
-      El::Copy(get_prev_error_signals(), get_error_signals());
+      El::Copy(get_prev_error_signals(), this->get_error_signals());
     } else {
 
       const auto& local_prev_error_signal = get_local_prev_error_signals();

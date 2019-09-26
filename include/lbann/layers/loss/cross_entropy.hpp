@@ -67,16 +67,16 @@ public:
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims({1});
+    this->set_output_dims({1});
 
     // Check that input dimensions match
-    if (get_input_dims(0) != get_input_dims(1)) {
+    if (this->get_input_dims(0) != this->get_input_dims(1)) {
       const auto& parents = get_parent_layers();
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has input tensors with different dimensions (";
       for (int i = 0; i < get_num_parents(); ++i) {
-        const auto& dims = get_input_dims(i);
+        const auto& dims = this->get_input_dims(i);
         err << (i > 0 ? ", " : "")
             << "layer \"" << parents[i]->get_name() << "\" outputs ";
         for (size_t j = 0; j < dims.size(); ++j) {
@@ -93,7 +93,7 @@ public:
     data_type_layer<TensorDataType>::setup_data();
 
     // Initialize workspace
-    const auto& prediction = get_prev_activations(0);
+    const auto& prediction = this->get_prev_activations(0);
     switch (get_data_layout()) {
     case data_layout::DATA_PARALLEL:
       m_workspace.reset(new StarVCMat<Dev>(prediction.Grid(),
@@ -116,7 +116,7 @@ public:
   void fp_compute() override {
 
     // Initialize workspace
-    const auto& prediction = get_prev_activations(0);
+    const auto& prediction = this->get_prev_activations(0);
     m_workspace->AlignWith(prediction.DistData());
     m_workspace->Resize(1, prediction.Width());
 
@@ -126,14 +126,14 @@ public:
                      get_local_prev_activations(1),
                      m_workspace->Matrix());
     m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
-    El::Copy(*m_workspace, get_activations());
+    El::Copy(*m_workspace, this->get_activations());
 
   }
 
   void bp_compute() override {
 
     // Initialize workspace
-    const auto& prediction = get_prev_activations(0);
+    const auto& prediction = this->get_prev_activations(0);
     m_workspace->AlignWith(prediction.DistData());
     El::Copy(get_prev_error_signals(), *m_workspace);
 

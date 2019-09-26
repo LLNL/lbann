@@ -47,7 +47,7 @@ namespace lbann {
   protected:                                                                \
     void setup_dims() override {                                            \
       data_type_layer<TensorDataType>::setup_dims();                        \
-      set_output_dims(this->get_input_dims());                              \
+      this->set_output_dims(this->get_input_dims());                        \
       /* Check that input dimensions match */                               \
       if (this->get_input_dims(0) != this->get_input_dims(1)) {             \
         const auto& parents = this->get_parent_layers();                    \

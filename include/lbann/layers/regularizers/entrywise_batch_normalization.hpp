@@ -94,7 +94,7 @@ protected:
 
   void setup_matrices(const El::Grid& grid) override {
     data_type_layer<TensorDataType>::setup_matrices(grid);
-    auto dist = get_prev_activations().DistData();
+    auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
     m_batch_statistics.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
     m_batch_statistics_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
@@ -104,7 +104,7 @@ protected:
     data_type_layer<TensorDataType>::setup_data();
 
     // Initialize output dimensions
-    set_output_dims(get_input_dims());
+    this->set_output_dims(this->get_input_dims());
     const auto output_dims = get_output_dims();
     const auto output_size = get_output_size();
 
@@ -135,7 +135,7 @@ protected:
     }
 
     // Setup weights
-    auto dist = get_prev_activations().DistData();
+    auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
     for (auto* w : this->m_weights) {
       w->set_dims(output_dims);
@@ -152,7 +152,7 @@ protected:
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
     data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-    const auto& input = get_prev_activations();
+    const auto& input = this->get_prev_activations();
     const auto input_size = get_input_size();
 
     // Make sure batch statistics tensor is aligned with input tensor
@@ -193,7 +193,7 @@ protected:
     data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
     m_batch_statistics_gradient->Empty(false);
     m_batch_statistics_gradient->AlignWith(get_prev_activations());
-    m_batch_statistics_gradient->Resize(get_input_size(), 2);
+    m_batch_statistics_gradient->Resize(this->get_input_size(), 2);
   }
 
   void fp_compute() override;

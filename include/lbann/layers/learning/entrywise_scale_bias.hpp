@@ -134,7 +134,7 @@ public:
     /// @todo Realign weights tensor if misaligned
     bool aligned = true;
     try {
-      const auto& x = get_prev_activations();
+      const auto& x = this->get_prev_activations();
       const auto& w = m_weights[0]->get_values();
       aligned = (x.ColAlign() == w.ColAlign()
                  && x.RowAlign() == w.RowAlign());

@@ -78,7 +78,7 @@ protected:
 
   void setup_matrices(const El::Grid& grid) override {
     data_type_layer<TensorDataType>::setup_matrices(grid);
-    auto dist_data = get_prev_activations().DistData();
+    auto dist_data = this->get_prev_activations().DistData();
     dist_data.colDist = El::STAR;
     m_means.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist_data));
     m_workspace.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist_data));
@@ -86,12 +86,12 @@ protected:
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims({1});
-    if (get_input_size() <= 1) {
+    this->set_output_dims({1});
+    if (this->get_input_size() <= 1) {
       std::stringstream err;
       const auto& parents = get_parent_layers();
-      const auto& dims = get_input_dims();
-      err << get_type() << " layer \"" << get_name() << "\" "
+      const auto& dims = this->get_input_dims();
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "expects an input tensor with at least two entries, "
           << "but parent layer \"" << parents[0]->get_name() << "\" "
           << "outputs a tensor with dimensions ";

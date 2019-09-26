@@ -61,7 +61,7 @@ protected:
   void fp_setup_outputs(El::Int mini_batch_size) override {
     const auto& input = this->get_prev_activations();
     for (int i = 0; i < get_num_children(); ++i) {
-      El::LockedView(get_activations(i), input);
+      El::LockedView(this->get_activations(i), input);
     }
   }
 

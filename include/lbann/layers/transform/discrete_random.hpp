@@ -70,7 +70,7 @@ class discrete_random_layer : public transform_layer<TensorDataType> {
 
   void setup_dims() override {
     transform_layer<TensorDataType>::setup_dims();
-    if (get_input_size() != (int) m_values.size()) {
+    if (this->get_input_size() != (int) m_values.size()) {
       LBANN_ERROR("input tensor dimensions don't match number of "
                   "values in discrete distribution");
     }
@@ -91,7 +91,7 @@ class discrete_random_layer : public transform_layer<TensorDataType> {
     // Initialize random numbers
     const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode == execution_mode::training) {
-      uniform_fill(output, 1, width, DataType(0.5), DataType(0.5));
+      uniform_fill(output, 1, width, TensorDataType(0.5), TensorDataType(0.5));
     }
 
     // Process each mini-batch sample

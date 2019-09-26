@@ -157,7 +157,7 @@ protected:
     output.Empty(false);
     if (num_inputs > 1) {
       output.AlignWith(get_prev_activations());
-      output.Resize(get_output_size(), mini_batch_size);
+      output.Resize(this->get_output_size(), mini_batch_size);
     } else {
       El::LockedView(output, this->get_prev_activations());
       return;

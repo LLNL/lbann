@@ -56,13 +56,13 @@ protected:
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims({1});
+    this->set_output_dims({1});
   }
 
   void fp_compute() override {
 
     // Get output matrix
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     auto& local_output = output.Matrix();
     const auto& local_width = local_output.Width();
 

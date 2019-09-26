@@ -54,7 +54,7 @@ protected:
     this->set_output_dims(this->get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    El::LockedView(get_activations(), this->get_prev_activations());
+    El::LockedView(this->get_activations(), this->get_prev_activations());
   }
   void fp_compute() override {}
 

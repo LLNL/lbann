@@ -46,7 +46,7 @@ class one_hot_layer : public data_type_layer<TensorDataType> {
 public:
 
   one_hot_layer(lbann_comm* comm, size_t size) : data_type_layer<TensorDataType>(comm) {
-    set_output_dims({static_cast<int>(size)});
+    this->set_output_dims({static_cast<int>(size)});
   }
   one_hot_layer* copy() const override { return new one_hot_layer(*this); }
   std::string get_type() const override { return "one-hot"; }
@@ -59,8 +59,8 @@ protected:
     data_type_layer<TensorDataType>::setup_dims();
 
     // Make sure input tensor is scalar
-    if (get_input_size() != 1) {
-      const auto input_dims = get_input_dims();
+    if (this->get_input_size() != 1) {
+      const auto input_dims = this->get_input_dims();
       std::ostringstream dim_ss;
       for (size_t i = 0; i < input_dims.size(); ++i) {
         dim_ss << (i > 0 ? "x" : "") << input_dims[i];

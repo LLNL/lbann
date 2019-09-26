@@ -134,9 +134,9 @@ class weights_layer : public transform_layer<TensorDataType> {
     }
 
     // Setup weights and weights gradient
-    m_gradient->AlignWith(get_activations());
-    m_gradient->Resize(get_output_size(), 1);
-    m_weights[0]->set_dims(get_output_dims());
+    m_gradient->AlignWith(this->get_activations());
+    m_gradient->Resize(this->get_output_size(), 1);
+    m_weights[0]->set_dims(this->get_output_dims());
     m_weights[0]->set_matrix_distribution(m_gradient->DistData());
 
     // Initialize freeze state
@@ -157,12 +157,12 @@ class weights_layer : public transform_layer<TensorDataType> {
     const auto& local_weights = m_weights[0]->get_values().LockedMatrix();
     auto& local_output = get_local_activations();
     m_workspace->Resize(local_output.Width(), 1);
-    El::Fill(*m_workspace, DataType(1));
+    El::Fill(*m_workspace, TensorDataType(1));
 
     // Duplicate weights across matrix columns
     El::Gemm(El::NORMAL, El::TRANSPOSE,
-             DataType(1), local_weights, *m_workspace,
-             DataType(0), local_output);
+             TensorDataType(1), local_weights, *m_workspace,
+             TensorDataType(0), local_output);
 
     // Clean up
     m_workspace->Empty();
@@ -170,6 +170,8 @@ class weights_layer : public transform_layer<TensorDataType> {
   }
 
   void bp_compute() override {
+    constexpr TensorDataType zero = 0;
+    constexpr TensorDataType one = 1;
 
     // Get optimizer
     // Note: Nothing needs to be done if there is no optimizer

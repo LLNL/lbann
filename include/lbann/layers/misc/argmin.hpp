@@ -54,10 +54,10 @@ protected:
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims({1});
+    this->set_output_dims({1});
 
     // Make sure input tensor is 1-D
-    const auto input_dims = get_input_dims();
+    const auto input_dims = this->get_input_dims();
     if (input_dims.size() != 1) {
       LBANN_ERROR(get_type()," layer \"",get_name(),"\" ",
                   "expects a 1-D input tensor, ",

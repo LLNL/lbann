@@ -141,7 +141,7 @@ protected:
 
   void setup_dims() override {
     regularizer_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    this->set_output_dims(this->get_input_dims());
   }
 
   /// Initialize GPU objects

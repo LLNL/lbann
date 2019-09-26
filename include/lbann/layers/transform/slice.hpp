@@ -223,7 +223,7 @@ protected:
     auto& gradient_wrt_input = this->get_error_signals();
     gradient_wrt_input.Empty(false);
     gradient_wrt_input.AlignWith(get_prev_activations());
-    gradient_wrt_input.Resize(get_input_size(), mini_batch_size);
+    gradient_wrt_input.Resize(this->get_input_size(), mini_batch_size);
     if (m_slice_points[0] != 0
         || m_slice_points[num_outputs] != input_dims[m_slice_dim]) {
       El::Zero(gradient_wrt_input);

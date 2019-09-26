@@ -136,12 +136,12 @@ protected:
 
   void setup_dims() override {
     regularizer_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer::setup_matrices(grid);
-    m_mask = std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>(get_activations().Copy());
+    m_mask = std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>(this->get_activations().Copy());
   }
 
   void setup_gpu() override {
@@ -177,8 +177,8 @@ protected:
   void fp_compute_cpu() {
 
     // Matrices
-    const auto& input = get_prev_activations();
-    auto& output = get_activations();
+    const auto& input = this->get_prev_activations();
+    auto& output = this->get_activations();
 
     // Do nothing if dropout is disabled
     const auto& mode = this->m_model->get_execution_context().get_execution_mode();
@@ -212,8 +212,8 @@ protected:
 
   /** Adjust gradients for dropout in backprop. */
   void bp_compute_cpu() {
-    const auto& gradient_wrt_output = get_prev_error_signals();
-    auto& gradient_wrt_input = get_error_signals();
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
+    auto& gradient_wrt_input = this->get_error_signals();
     const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(gradient_wrt_output, gradient_wrt_input);
@@ -228,9 +228,9 @@ protected:
 #else
 
     // Matrices
-    const auto& input = get_prev_activations();
+    const auto& input = this->get_prev_activations();
     const auto& local_input = input.LockedMatrix();
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     auto& local_output = output.Matrix();
 
     // Do nothing if dropout is disabled or there is no local data
@@ -267,9 +267,9 @@ protected:
 #else
 
     // Matrices
-    const auto& gradient_wrt_output = get_prev_error_signals();
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
     const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
-    auto& gradient_wrt_input = get_error_signals();
+    auto& gradient_wrt_input = this->get_error_signals();
     auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
 
     // Copy error signal if dropout is disabled

@@ -68,16 +68,16 @@ protected:
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims({1});
+    this->set_output_dims({1});
 
     // Check that input dimensions match
-    if (get_input_dims(0) != get_input_dims(1)) {
+    if (this->get_input_dims(0) != this->get_input_dims(1)) {
       const auto& parents = get_parent_layers();
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has input tensors with different dimensions (";
       for (int i = 0; i < get_num_parents(); ++i) {
-        const auto& dims = get_input_dims(i);
+        const auto& dims = this->get_input_dims(i);
         err << (i > 0 ? ", " : "")
             << "layer \"" << parents[i]->get_name() << "\" outputs ";
         for (size_t j = 0; j < dims.size(); ++j) {

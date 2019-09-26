@@ -165,7 +165,7 @@ class generic_input_layer : public io_layer {
   void setup_dims() override {
     io_layer::setup_dims();
     for (int i = 0; i < get_num_children(); ++i) {
-      set_output_dims(get_data_dims(i), i);
+      this->set_output_dims(get_data_dims(i), i);
     }
   }
 
@@ -175,7 +175,7 @@ class generic_input_layer : public io_layer {
     // Resize output to maximum mini-batch size
     const auto& max_mb_size = this->m_model->get_max_mini_batch_size();
     for (int i = 0; i < get_num_children(); ++i) {
-      auto& output = get_activations(i);
+      auto& output = this->get_activations(i);
       output.Resize(output.Height(), max_mb_size);
     }
 
@@ -201,7 +201,7 @@ class generic_input_layer : public io_layer {
       default:
         linearized_target_size = 0;
       }
-      io_buffer->setup_data(get_output_size(0),
+      io_buffer->setup_data(this->get_output_size(0),
                             linearized_target_size,
                             max_mb_size);
     }
@@ -303,9 +303,9 @@ class generic_input_layer : public io_layer {
 
       update_num_samples_processed(num_samples_in_batch);
       if(m_expected_num_child_layers == 1) {
-        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0));
+        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, this->get_activations(0));
       }else {
-        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, get_activations(0), get_activations(1));
+        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, this->get_activations(0), this->get_activations(1));
       }
     }else {
           LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");

@@ -58,8 +58,8 @@ protected:
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    const auto& input_dims = get_input_dims();
-    set_output_dims({input_dims[0]});
+    const auto& input_dims = this->get_input_dims();
+    this->set_output_dims({input_dims[0]});
   }
 
   void fp_compute() override;

@@ -201,7 +201,7 @@ protected:
 
   void setup_dims() override {
     regularizer_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    this->set_output_dims(this->get_input_dims());
   }
 
   void setup_data() override {
@@ -210,14 +210,14 @@ protected:
     const auto& num_channels = output_dims[0];
 
     // Display warning if mini-batch size is small
-    const auto& output = get_activations();
+    const auto& output = this->get_activations();
     const auto& mini_batch_size = output.Width();
     const auto& local_mini_batch_size = mini_batch_size / output.DistSize();
     if (m_statistics_group_size == 0 && mini_batch_size <= 4) {
       if (output.DistRank() == 0) {
         std::stringstream err;
         err << "LBANN warning: "
-            << get_type() << " layer \"" << get_name() << "\" "
+            << get_type() << " layer \"" << this->get_name() << "\" "
             << "is using global statistics and "
             << "the mini-batch size (" << mini_batch_size << ") "
             << "may be too small to get good statistics";
@@ -230,7 +230,7 @@ protected:
       if (output.DistRank() == 0) {
         std::stringstream err;
       err << "LBANN warning: "
-          << get_type() << " layer \"" << get_name() << "\" "
+          << get_type() << " layer \"" << this->get_name() << "\" "
           << "is aggregating statistics over "
           << m_statistics_group_size
           << "processors and the aggregated mini-batch size ("
@@ -251,7 +251,7 @@ protected:
     if (this->m_weights[0] == nullptr) {
       auto w = make_unique<weights>(get_comm());
       auto init = make_unique<constant_initializer>(DataType(1));
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      std::unique_ptr<optimizer<TensorDataType>> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -261,7 +261,7 @@ protected:
     if (this->m_weights[1] == nullptr) {
       auto w = make_unique<weights>(get_comm());
       auto init = make_unique<constant_initializer>(DataType(0));
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
+      std::unique_ptr<optimizer<TensorDataType>> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -286,7 +286,7 @@ protected:
     }
 
     // Setup weights
-    auto dist = get_prev_activations().DistData();
+    auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
     for (auto* w : this->m_weights) {
@@ -320,7 +320,7 @@ protected:
       if (w->is_frozen() != m_frozen) {
         std::stringstream err;
         err << (m_frozen ? "" : "un") << "frozen "
-            << "layer \"" << get_name() << "\" has "
+            << "layer \"" << this->get_name() << "\" has "
             << (w->is_frozen() ? "" : "un") << "frozen "
             << "weights \"" << w->get_name() << "\"";
         LBANN_ERROR(err.str());

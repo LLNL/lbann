@@ -69,7 +69,7 @@ public:
 protected:
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims(get_input_dims());
+    this->set_output_dims(this->get_input_dims());
   }
   void fp_compute() override;
   void bp_compute() override;

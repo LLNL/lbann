@@ -188,7 +188,7 @@ private:
       std::vector<El::Int> crop_offsets;
       for (El::Int d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, local_col);
-        if (pos < DataType(0) || pos > DataType(1)) {
+        if (pos < TensorDataType(0) || pos > TensorDataType(1)) {
           std::stringstream err;
           err << "crop position not in range [0,1] (pos=(";
           for (El::Int i = 0; i < local_crop_pos.Height(); ++i) {
@@ -267,7 +267,7 @@ private:
       std::vector<El::Int> crop_offsets;
       for (El::Int d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, local_col);
-        if (pos < DataType(0) || pos > DataType(1)) {
+        if (pos < TensorDataType(0) || pos > TensorDataType(1)) {
           std::stringstream err;
           err << "crop position not in range [0,1] (pos=(";
           for (El::Int i = 0; i < local_crop_pos.Height(); ++i) {

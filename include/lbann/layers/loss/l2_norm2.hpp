@@ -59,14 +59,14 @@ public:
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims({1});
+    this->set_output_dims({1});
   }
 
   void setup_data() override {
     data_type_layer<TensorDataType>::setup_data();
 
     // Initialize workspace
-    auto dist = get_prev_activations().DistData();
+    auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     m_workspace.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
 #ifdef HYDROGEN_HAVE_CUB
@@ -82,14 +82,14 @@ public:
     // Initialize workspace
     m_workspace->Empty();
     m_workspace->AlignWith(get_prev_activations());
-    m_workspace->Resize(1, get_prev_activations().Width());
+    m_workspace->Resize(1, this->get_prev_activations().Width());
 
     // Compute local contributions and accumulate
     /// @todo Consider reduce rather than allreduce
     local_fp_compute(get_local_prev_activations(),
                      m_workspace->Matrix());
     m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
-    El::Copy(*m_workspace, get_activations());
+    El::Copy(*m_workspace, this->get_activations());
 
     // Clean up
     m_workspace->Empty();

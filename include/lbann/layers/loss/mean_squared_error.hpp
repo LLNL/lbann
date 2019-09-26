@@ -69,16 +69,16 @@ public:
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims({1});
+    this->set_output_dims({1});
 
     // Check that input dimensions match
-    if (get_input_dims(0) != get_input_dims(1)) {
+    if (this->get_input_dims(0) != this->get_input_dims(1)) {
       const auto& parents = get_parent_layers();
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has input tensors with different dimensions (";
       for (int i = 0; i < get_num_parents(); ++i) {
-        const auto& dims = get_input_dims(i);
+        const auto& dims = this->get_input_dims(i);
         err << (i > 0 ? ", " : "")
             << "layer \"" << parents[i]->get_name() << "\" outputs ";
         for (size_t j = 0; j < dims.size(); ++j) {
@@ -95,7 +95,7 @@ public:
     data_type_layer<TensorDataType>::setup_data();
 
     // Initialize workspace
-    const auto& input_dist = get_prev_activations(0).DistData();
+    const auto& input_dist = this->get_prev_activations(0).DistData();
     m_workspace.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(*input_dist.grid,
                                               input_dist.root,
                                               El::STAR,
@@ -117,16 +117,16 @@ public:
     // Initialize workspace
     m_workspace->Empty();
     m_workspace->AlignWith(get_prev_activations());
-    m_workspace->Resize(1, get_prev_activations().Width());
+    m_workspace->Resize(1, this->get_prev_activations().Width());
 
     // Compute local contributions and accumulate
     /// @todo Consider reduce rather than allreduce
-    local_fp_compute(get_input_size(),
+    local_fp_compute(this->get_input_size(),
                      get_local_prev_activations(0),
                      get_local_prev_activations(1),
                      m_workspace->Matrix());
     m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
-    El::Copy(*m_workspace, get_activations());
+    El::Copy(*m_workspace, this->get_activations());
 
     // Clean up
     m_workspace->Empty();
@@ -141,7 +141,7 @@ public:
     El::Copy(get_prev_error_signals(), *m_workspace);
 
     // Compute local gradients
-    local_bp_compute(get_input_size(),
+    local_bp_compute(this->get_input_size(),
                      get_local_prev_activations(0),
                      get_local_prev_activations(1),
                      m_workspace->LockedMatrix(),

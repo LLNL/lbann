@@ -61,9 +61,9 @@ protected:
 
   void fp_compute() override {
     if (m_value == EvalType(0)) {
-      El::Zero(get_activations());
+      El::Zero(this->get_activations());
     } else {
-      El::Fill(get_activations(), m_value);
+      El::Fill(this->get_activations(), m_value);
     }
   }
 

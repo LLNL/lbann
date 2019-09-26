@@ -75,7 +75,7 @@ protected:
     }
 
     // Check that reshape is valid
-    if (get_input_size() != get_output_size()) {
+    if (this->get_input_size() != get_output_size()) {
       std::stringstream err;
       err << "input tensor dimensions (";
       for (size_t i = 0; i < input_dims.size(); ++i) {
@@ -92,7 +92,7 @@ protected:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    El::LockedView(get_activations(), this->get_prev_activations());
+    El::LockedView(this->get_activations(), this->get_prev_activations());
   }
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     El::LockedView(this->get_error_signals(), this->get_prev_error_signals());

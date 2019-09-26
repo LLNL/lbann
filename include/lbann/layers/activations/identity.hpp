@@ -47,13 +47,13 @@ public:
 protected:
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    set_output_dims(get_input_dims());
+    this->set_output_dims(this->get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    El::LockedView(get_activations(), get_prev_activations());
+    El::LockedView(this->get_activations(), this->get_prev_activations());
   }
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    El::LockedView(get_error_signals(), get_prev_error_signals());
+    El::LockedView(this->get_error_signals(), this->get_prev_error_signals());
   }
   void fp_compute() override {}
   void bp_compute() override {}

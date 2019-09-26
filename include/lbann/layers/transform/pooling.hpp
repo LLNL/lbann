@@ -352,7 +352,7 @@ private:
 
     // Initialize max pool indices if needed
     if(m_pool_mode == pool_mode::max) {
-      m_max_pool_indices.assign(get_output_size() * local_width, 0);
+      m_max_pool_indices.assign(this->get_output_size() * local_width, 0);
     }
 
     // Initialize matrices
