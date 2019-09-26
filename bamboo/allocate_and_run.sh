@@ -53,7 +53,7 @@ elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTE
             cd ..
         fi
     else
-        timeout -k 5 24h salloc -N2 --partition=pvis -t $ALLOCATION_TIME_LIMIT ./run.sh
+        timeout -k 5 24h salloc -N2 --partition=pvis -t 120 ./run.sh
     fi
 else
     echo "allocate_and_run.sh. Unsupported cluster CLUSTER="
