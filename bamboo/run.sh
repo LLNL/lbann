@@ -39,15 +39,14 @@ module load cmake/3.9.2
 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 cd ..
 
-echo "Task: Integration Tests"
-cd integration_tests
-if [ ${WEEKLY} -ne 0 ]; then
-    $PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
-else
-    $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
-fi
-
-cd ..
+# echo "Task: Integration Tests"
+# cd integration_tests
+# if [ ${WEEKLY} -ne 0 ]; then
+#     $PYTHON -m pytest -s -vv --durations=0 --weekly --junitxml=results.xml
+# else
+#     $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+# fi
+# cd ..
 
 echo "Task: Unit Tests"
 cd unit_tests
