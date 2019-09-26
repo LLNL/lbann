@@ -38,6 +38,7 @@ namespace {
  *  - Output - width x output_dimz x output_dimy x output_dimx
  *  - Crop position - width x 3 (i.e. a 3 x width matrix)
  */
+template <typename TensorDataType>
 __global__ void fp_compute_3d_kernel(
   El::Int input_dimx, El::Int input_dimy, El::Int input_dimz,
   El::Int output_dimx, El::Int output_dimy, El::Int output_dimz,
@@ -102,6 +103,7 @@ __global__ void fp_compute_3d_kernel(
  *  - Gradient w.r.t. input - width x input_dimz x input_dimy x input_dimx
  *  - Crop position - width x 3 (i.e. a 3 x width matrix)
  */
+template <typename TensorDataType>
 __global__ void bp_compute_3d_kernel(
   El::Int input_dimx, El::Int input_dimy, El::Int input_dimz,
   El::Int output_dimx, El::Int output_dimy, El::Int output_dimz,
@@ -162,19 +164,19 @@ __global__ void bp_compute_3d_kernel(
 
 } // namespace
 
-template <>
-void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_3d() {
+template <typename TensorDataType>
+void fp_compute_3d_impl(crop_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
   // Local matrices
-  const auto& local_input = get_local_prev_activations(0);
-  const auto& local_crop_pos = get_local_prev_activations(1);
-  auto& local_output = get_local_activations();
+  const auto& local_input = l.get_local_prev_activations(0);
+  const auto& local_crop_pos = l.get_local_prev_activations(1);
+  auto& local_output = l.get_local_activations();
 
   // Tensor dimensions
   const auto& local_width = local_input.Width();
-  const auto input_dims = this->get_input_dims();
-  const auto output_dims = get_output_dims();
-  const auto& output_size = get_output_size();
+  const auto input_dims = l.get_input_dims();
+  const auto output_dims = l.get_output_dims();
+  const auto& output_size = l.get_output_size();
 
   // Launch CUDA kernel
   if (!local_output.IsEmpty()) {
@@ -183,7 +185,7 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_3d() {
     block_dims.x = block_size;
     grid_dims.x = (output_size + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    fp_compute_3d_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    fp_compute_3d_kernel<TensorDataType><<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
       input_dims[2], input_dims[1], input_dims[0],
       output_dims[2], output_dims[1], output_dims[0],
       local_width,
@@ -194,23 +196,23 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_3d() {
 
 }
 
-template <>
-void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
+template <typename TensorDataType>
+void bp_compute_3d_impl(crop_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
   // Clear error signals
-  El::Zero(this->get_error_signals(0));
-  El::Zero(this->get_error_signals(1));
+  El::Zero(l.get_error_signals(0));
+  El::Zero(l.get_error_signals(1));
 
   // Local matrices
-  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-  const auto& local_crop_pos = get_local_prev_activations(1);
-  auto& local_gradient_wrt_input = get_local_error_signals(0);
+  const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
+  const auto& local_crop_pos = l.get_local_prev_activations(1);
+  auto& local_gradient_wrt_input = l.get_local_error_signals(0);
 
   // Tensor dimensions
   const auto& local_width = local_gradient_wrt_input.Width();
-  const auto input_dims = this->get_input_dims();
-  const auto output_dims = get_output_dims();
-  const auto& output_size = get_output_size();
+  const auto input_dims = l.get_input_dims();
+  const auto output_dims = l.get_output_dims();
+  const auto& output_size = l.get_output_size();
 
   // Launch CUDA kernel
   if (!local_gradient_wrt_output.IsEmpty()) {
@@ -219,7 +221,7 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
     block_dims.x = block_size;
     grid_dims.x = (output_size + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    bp_compute_3d_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    bp_compute_3d_kernel<TensorDataType><<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
       input_dims[2], input_dims[1], input_dims[0],
       output_dims[2], output_dims[1], output_dims[0],
       local_width,
@@ -230,6 +232,6 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
 
 }
 
-template class crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class crop_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

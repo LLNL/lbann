@@ -321,12 +321,16 @@ private:
   /** Forward prop implementation for 3D tensors.
    *  E.g. image data.
    */
-  void fp_compute_3d() { fp_compute_nd(); }
+  void fp_compute_3d();
   /** Backward prop implementation for 3D tensors.
    *  E.g. image data.
    */
-  void bp_compute_3d() { bp_compute_nd(); }
+  void bp_compute_3d();
 
+  template <typename U>
+  friend void fp_compute_3d_impl(crop_layer<U, T_layout, Dev>& l);
+  template <typename U>
+  friend void bp_compute_3d_impl(crop_layer<U, T_layout, Dev>& l);
 };
 
 #ifndef LBANN_CROP_LAYER_INSTANTIATE
