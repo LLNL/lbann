@@ -176,11 +176,11 @@ void covariance_backprop_kernel(El::Int height,
  *  We use a two-pass algorithm since it is more numerically stable
  *  than the naive single-pass algorithm.
  */
-void fp_gpu(const AbsDistMat& input0,
-            const AbsDistMat& input1,
-            AbsDistMat& output,
-            AbsDistMat& means,
-            AbsDistMat& workspace,
+void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
+            const El::AbstractDistMatrix<TensorDataType>& input1,
+            El::AbstractDistMatrix<TensorDataType>& output,
+            El::AbstractDistMatrix<TensorDataType>& means,
+            El::AbstractDistMatrix<TensorDataType>& workspace,
             bool biased) {
 
   // Local matrices
@@ -242,13 +242,13 @@ void fp_gpu(const AbsDistMat& input0,
 /** GPU backprop implementation.
  *  Means have already been computed in forward prop.
  */
-void bp_gpu(const AbsDistMat& input0,
-            const AbsDistMat& input1,
-            const AbsDistMat& gradient_wrt_output,
-            AbsDistMat& gradient_wrt_input0,
-            AbsDistMat& gradient_wrt_input1,
-            const AbsDistMat& means,
-            AbsDistMat& workspace,
+void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
+            const El::AbstractDistMatrix<TensorDataType>& input1,
+            const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+            El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input0,
+            El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input1,
+            const El::AbstractDistMatrix<TensorDataType>& means,
+            El::AbstractDistMatrix<TensorDataType>& workspace,
             bool biased) {
 
   // Local matrices

@@ -76,8 +76,8 @@ __global__ void bp_kernel(DataType alpha,
 
 /** Local forward prop computation. */
 void local_fp(DataType alpha,
-              const AbsMat& input,
-              AbsMat& output) {
+              const El::AbstractMatrix<TensorDataType>& input,
+              El::AbstractMatrix<TensorDataType>& output) {
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -103,9 +103,9 @@ void local_fp(DataType alpha,
 
 /** Local backprop computation. */
 void local_bp(DataType alpha,
-              const AbsMat& input,
-              const AbsMat& gradient_wrt_output,
-              AbsMat& gradient_wrt_input) {
+              const El::AbstractMatrix<TensorDataType>& input,
+              const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
+              El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1

@@ -116,8 +116,8 @@ __global__ void bp_gpu_3d_kernel(
 
 void fp_gpu_3d(const std::vector<int>& input_dims,
                const std::vector<int>& output_dims,
-               const AbsMat& input,
-               AbsDistMat& output) {
+               const El::AbstractMatrix<TensorDataType>& input,
+               El::AbstractDistMatrix<TensorDataType>& output) {
   auto& local_output = output.Matrix();
   if (!local_output.IsEmpty()) {
     const auto& local_height = local_output.Height();
@@ -137,8 +137,8 @@ void fp_gpu_3d(const std::vector<int>& input_dims,
 
 void bp_gpu_3d(const std::vector<int>& input_dims,
                const std::vector<int>& output_dims,
-               const AbsDistMat& gradient_wrt_output,
-               AbsMat& gradient_wrt_input) {
+               const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+               El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   El::Zero(gradient_wrt_input);
   if (!local_gradient_wrt_output.IsEmpty()) {
@@ -166,16 +166,16 @@ template <>
 void tessellate_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute_3d(const std::vector<int>& input_dims,
                      const std::vector<int>& output_dims,
-                     const AbsMat& input,
-                     AbsDistMat& output) {
+                     const El::AbstractMatrix<TensorDataType>& input,
+                     El::AbstractDistMatrix<TensorDataType>& output) {
   fp_gpu_3d(input_dims, output_dims, input, output);
 }
 template <>
 void tessellate_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::fp_compute_3d(const std::vector<int>& input_dims,
                      const std::vector<int>& output_dims,
-                     const AbsMat& input,
-                     AbsDistMat& output) {
+                     const El::AbstractMatrix<TensorDataType>& input,
+                     El::AbstractDistMatrix<TensorDataType>& output) {
   fp_gpu_3d(input_dims, output_dims, input, output);
 }
 
@@ -183,8 +183,8 @@ template <>
 void tessellate_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::bp_compute_3d(const std::vector<int>& input_dims,
                      const std::vector<int>& output_dims,
-                     const AbsDistMat& gradient_wrt_output,
-                     AbsMat& gradient_wrt_input) {
+                     const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                     El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
   bp_gpu_3d(input_dims, output_dims,
             gradient_wrt_output, gradient_wrt_input);
 }
@@ -192,8 +192,8 @@ template <>
 void tessellate_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::bp_compute_3d(const std::vector<int>& input_dims,
                      const std::vector<int>& output_dims,
-                     const AbsDistMat& gradient_wrt_output,
-                     AbsMat& gradient_wrt_input) {
+                     const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                     El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
   bp_gpu_3d(input_dims, output_dims,
             gradient_wrt_output, gradient_wrt_input);
 }

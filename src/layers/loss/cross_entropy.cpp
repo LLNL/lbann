@@ -32,9 +32,9 @@ namespace lbann {
 
 namespace {
 
-void local_fp_cpu(const AbsMat& local_prediction,
-                  const AbsMat& local_ground_truth,
-                  AbsMat& local_contribution) {
+void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                  El::AbstractMatrix<TensorDataType>& local_contribution) {
 
   // Useful constants
   const DataType zero = DataType(0);
@@ -60,11 +60,11 @@ void local_fp_cpu(const AbsMat& local_prediction,
 
 }
 
-void local_bp_cpu(const AbsMat& local_prediction,
-                  const AbsMat& local_ground_truth,
-                  const AbsMat& local_gradient_wrt_output,
-                  AbsMat& local_gradient_wrt_prediction,
-                  AbsMat& local_gradient_wrt_ground_truth) {
+void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
 
   // Useful constants
   const DataType zero = DataType(0);
@@ -91,19 +91,19 @@ void local_bp_cpu(const AbsMat& local_prediction,
 
 template <>
 void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        AbsMat& local_contribution) {
+     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        El::AbstractMatrix<TensorDataType>& local_contribution) {
   local_fp_cpu(local_prediction, local_ground_truth, local_contribution);
 }
 
 template <>
 void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_prediction,
-                        AbsMat& local_gradient_wrt_ground_truth) {
+     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
   local_bp_cpu(local_prediction,
                local_ground_truth,
                local_gradient_wrt_output,
@@ -113,19 +113,19 @@ void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 template <>
 void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        AbsMat& local_contribution) {
+     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        El::AbstractMatrix<TensorDataType>& local_contribution) {
   local_fp_cpu(local_prediction, local_ground_truth, local_contribution);
 }
 
 template <>
 void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_prediction,
-                        AbsMat& local_gradient_wrt_ground_truth) {
+     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
   local_bp_cpu(local_prediction,
                local_ground_truth,
                local_gradient_wrt_output,

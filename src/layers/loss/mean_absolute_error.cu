@@ -77,9 +77,9 @@ __global__ void fp_kernel(int global_height,
 }
 
 void local_fp_gpu(El::Int height,
-                  const AbsMat& local_prediction,
-                  const AbsMat& local_ground_truth,
-                  AbsMat& local_contribution) {
+                  const El::AbstractMatrix<TensorDataType>& local_prediction,
+                  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                  El::AbstractMatrix<TensorDataType>& local_contribution) {
   El::Zero(local_contribution);
   const auto& local_height = local_prediction.Height();
   const auto& local_width = local_prediction.Width();
@@ -141,11 +141,11 @@ __global__ void bp_kernel(int global_height,
 }
 
 void local_bp_gpu(El::Int height,
-                  const AbsMat& local_prediction,
-                  const AbsMat& local_ground_truth,
-                  const AbsMat& local_gradient_wrt_output,
-                  AbsMat& local_gradient_wrt_prediction,
-                  AbsMat& local_gradient_wrt_ground_truth) {
+                  const El::AbstractMatrix<TensorDataType>& local_prediction,
+                  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
   const auto& local_height = local_prediction.Height();
   const auto& local_width = local_prediction.Width();
   if (local_height > 0 && local_width > 0) {
@@ -173,9 +173,9 @@ void local_bp_gpu(El::Int height,
 template <>
 void mean_absolute_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::local_fp_compute(El::Int height,
-                        const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        AbsMat& local_contribution) {
+                        const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        El::AbstractMatrix<TensorDataType>& local_contribution) {
   local_fp_gpu(height, local_prediction, local_ground_truth,
                local_contribution);
 }
@@ -183,11 +183,11 @@ void mean_absolute_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
 template <>
 void mean_absolute_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::local_bp_compute(El::Int height,
-                        const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_prediction,
-                        AbsMat& local_gradient_wrt_ground_truth) {
+                        const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
   local_bp_gpu(height,
                local_prediction,
                local_ground_truth,
@@ -199,9 +199,9 @@ void mean_absolute_error_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
 template <>
 void mean_absolute_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::local_fp_compute(El::Int height,
-                        const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        AbsMat& local_contribution) {
+                        const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        El::AbstractMatrix<TensorDataType>& local_contribution) {
   local_fp_gpu(height, local_prediction, local_ground_truth,
                local_contribution);
 }
@@ -209,11 +209,11 @@ void mean_absolute_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 template <>
 void mean_absolute_error_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::local_bp_compute(El::Int height,
-                        const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_prediction,
-                        AbsMat& local_gradient_wrt_ground_truth) {
+                        const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
   local_bp_gpu(height,
                local_prediction,
                local_ground_truth,

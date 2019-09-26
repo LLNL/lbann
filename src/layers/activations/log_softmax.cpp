@@ -32,9 +32,9 @@ namespace lbann {
 namespace {
 
 void fp(lbann_comm& comm,
-        const AbsDistMat& input,
-        AbsDistMat& output,
-        AbsDistMat& workspace) {
+        const El::AbstractDistMatrix<TensorDataType>& input,
+        El::AbstractDistMatrix<TensorDataType>& output,
+        El::AbstractDistMatrix<TensorDataType>& workspace) {
 
   // Local matrices
   const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
@@ -83,10 +83,10 @@ void fp(lbann_comm& comm,
 }
 
 void bp(lbann_comm& comm,
-        const AbsDistMat& output,
-        const AbsDistMat& gradient_wrt_output,
-        AbsDistMat& gradient_wrt_input,
-        AbsDistMat& workspace) {
+        const El::AbstractDistMatrix<TensorDataType>& output,
+        const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+        El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+        El::AbstractDistMatrix<TensorDataType>& workspace) {
 
   // Local matrices
   const auto& local_output = dynamic_cast<const CPUMat&>(output.LockedMatrix());

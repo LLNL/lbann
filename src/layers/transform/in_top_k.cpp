@@ -60,8 +60,8 @@ struct entry {
 /** CPU implementation of in_top_k layer forward prop. */
 void fp_cpu(lbann_comm& comm,
             El::Int k,
-            const AbsDistMat& input,
-            AbsDistMat& output) {
+            const El::AbstractDistMatrix<TensorDataType>& input,
+            El::AbstractDistMatrix<TensorDataType>& output) {
 
   // Local matrices
   const auto& local_input = input.LockedMatrix();

@@ -36,8 +36,8 @@ constexpr DataType zero = 0;
 
 /** Local forward prop computation. */
 void local_fp(DataType alpha,
-              const AbsMat& input,
-              AbsMat& output) {
+              const El::AbstractMatrix<TensorDataType>& input,
+              El::AbstractMatrix<TensorDataType>& output) {
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -52,9 +52,9 @@ void local_fp(DataType alpha,
 
 /** Local backprop computation. */
 void local_bp(DataType alpha,
-              const AbsMat& input,
-              const AbsMat& gradient_wrt_output,
-              AbsMat& gradient_wrt_input) {
+              const El::AbstractMatrix<TensorDataType>& input,
+              const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
+              El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2

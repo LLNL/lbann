@@ -65,7 +65,7 @@ void bp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
              const El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_output,
              El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_input,
              weights<TensorDataType>& scale_bias,
-             AbsDistMat& gradient_wrt_scale_bias) {
+             El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias) {
 
   // Local matrices
   const auto& local_scale_bias

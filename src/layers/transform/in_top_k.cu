@@ -150,7 +150,7 @@ __global__ void indicate_matrix_entries(El::Int k,
 
 /** GPU implementation of in_top_k layer forward prop. */
 void fp_gpu(lbann_comm& comm,
-            El::Int k, const AbsDistMat& input, AbsDistMat& output) {
+            El::Int k, const El::AbstractDistMatrix<TensorDataType>& input, El::AbstractDistMatrix<TensorDataType>& output) {
   if (input.Wrap() != El::ELEMENT || output.Wrap() != El::ELEMENT) {
     LBANN_ERROR("in_top_k layer GPU implementation assumes elemental "
                 "distributed matrices");

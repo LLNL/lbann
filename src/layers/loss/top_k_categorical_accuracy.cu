@@ -165,9 +165,9 @@ __global__ void compute_categorical_accuracy(El::Int k,
 /** GPU implementation of top-k categorical accuracy layer forward prop. */
 void fp_gpu(lbann_comm& comm,
             El::Int k,
-            const AbsDistMat& predictions,
-            const AbsDistMat& labels,
-            AbsDistMat& loss) {
+            const El::AbstractDistMatrix<TensorDataType>& predictions,
+            const El::AbstractDistMatrix<TensorDataType>& labels,
+            El::AbstractDistMatrix<TensorDataType>& loss) {
 
   // Local matrices
   const auto& local_predictions = predictions.LockedMatrix();

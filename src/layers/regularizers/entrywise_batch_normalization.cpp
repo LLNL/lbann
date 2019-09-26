@@ -43,10 +43,10 @@ constexpr El::Int bsize = _bsize > 1 ? _bsize : 1;
  */
 void compute_batch_statistics(lbann_comm& comm,
                               DataType decay,
-                              const AbsDistMat& input,
-                              AbsDistMat& batch_statistics,
-                              AbsDistMat& running_mean,
-                              AbsDistMat& running_var) {
+                              const El::AbstractDistMatrix<TensorDataType>& input,
+                              El::AbstractDistMatrix<TensorDataType>& batch_statistics,
+                              El::AbstractDistMatrix<TensorDataType>& running_mean,
+                              El::AbstractDistMatrix<TensorDataType>& running_var) {
 
   // Local matrices
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
@@ -143,11 +143,11 @@ void fp_impl(lbann_comm& comm,
              DataType decay,
              DataType epsilon,
              bool is_training,
-             const AbsDistMat& input,
-             AbsDistMat& output,
-             AbsDistMat& batch_statistics,
-             AbsDistMat& running_mean,
-             AbsDistMat& running_var) {
+             const El::AbstractDistMatrix<TensorDataType>& input,
+             El::AbstractDistMatrix<TensorDataType>& output,
+             El::AbstractDistMatrix<TensorDataType>& batch_statistics,
+             El::AbstractDistMatrix<TensorDataType>& running_mean,
+             El::AbstractDistMatrix<TensorDataType>& running_var) {
 
   // Local matrices
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
@@ -198,11 +198,11 @@ void fp_impl(lbann_comm& comm,
  */
 void bp_training_impl(lbann_comm& comm,
                       DataType epsilon,
-                      const AbsDistMat& input,
-                      const AbsDistMat& gradient_wrt_output,
-                      AbsDistMat& gradient_wrt_input,
-                      const AbsDistMat& statistics,
-                      AbsDistMat& gradient_wrt_statistics) {
+                      const El::AbstractDistMatrix<TensorDataType>& input,
+                      const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                      El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+                      const El::AbstractDistMatrix<TensorDataType>& statistics,
+                      El::AbstractDistMatrix<TensorDataType>& gradient_wrt_statistics) {
 
   // Local matrices
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
@@ -307,9 +307,9 @@ void bp_training_impl(lbann_comm& comm,
  *  input.
  */
 void bp_inference_impl(DataType epsilon,
-                       const AbsDistMat& gradient_wrt_output,
-                       AbsDistMat& gradient_wrt_input,
-                       const AbsDistMat& running_var) {
+                       const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                       El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+                       const El::AbstractDistMatrix<TensorDataType>& running_var) {
 
   // Local matrices
   const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_output.LockedMatrix());
@@ -345,12 +345,12 @@ void bp_inference_impl(DataType epsilon,
 void bp_impl(lbann_comm& comm,
              DataType epsilon,
              bool is_training,
-             const AbsDistMat& input,
-             const AbsDistMat& gradient_wrt_output,
-             AbsDistMat& gradient_wrt_input,
-             const AbsDistMat& batch_statistics,
-             AbsDistMat& gradient_wrt_batch_statistics,
-             const AbsDistMat& running_var) {
+             const El::AbstractDistMatrix<TensorDataType>& input,
+             const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+             El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+             const El::AbstractDistMatrix<TensorDataType>& batch_statistics,
+             El::AbstractDistMatrix<TensorDataType>& gradient_wrt_batch_statistics,
+             const El::AbstractDistMatrix<TensorDataType>& running_var) {
 
   // Batchnorm has different behavior for training and inference
   if (is_training) {

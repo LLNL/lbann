@@ -31,8 +31,8 @@ namespace lbann {
 
 namespace {
 
-void local_fp_cpu(const AbsMat& local_input,
-                  AbsMat& local_contribution) {
+void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
+                  El::AbstractMatrix<TensorDataType>& local_contribution) {
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_input.Width(); ++col) {
     DataType sum = 0;
@@ -44,9 +44,9 @@ void local_fp_cpu(const AbsMat& local_input,
   }
 }
 
-void local_bp_cpu(const AbsMat& local_input,
-                  const AbsMat& local_gradient_wrt_output,
-                  AbsMat& local_gradient_wrt_input) {
+void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
+                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
   auto const width = local_input.Width();
   auto const height = local_input.Height();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -64,30 +64,30 @@ void local_bp_cpu(const AbsMat& local_input,
 
 template <>
 void l2_norm2_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(const AbsMat& local_input,
-                        AbsMat& local_contribution) {
+     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
+                        El::AbstractMatrix<TensorDataType>& local_contribution) {
   local_fp_cpu(local_input, local_contribution);
 }
 template <>
 void l2_norm2_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(const AbsMat& local_input,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_input) {
+     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
+                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
   local_bp_cpu(local_input,
                local_gradient_wrt_output,
                local_gradient_wrt_input);
 }
 template <>
 void l2_norm2_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(const AbsMat& local_input,
-                        AbsMat& local_contribution) {
+     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
+                        El::AbstractMatrix<TensorDataType>& local_contribution) {
   local_fp_cpu(local_input, local_contribution);
 }
 template <>
 void l2_norm2_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(const AbsMat& local_input,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_input) {
+     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
+                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
   local_bp_cpu(local_input,
                local_gradient_wrt_output,
                local_gradient_wrt_input);

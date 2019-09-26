@@ -72,7 +72,7 @@ __global__ void fp_kernel(El::Int local_height,
 
 }
 
-void local_fp_gpu(const AbsMat& local_input, AbsMat& local_contribution) {
+void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::AbstractMatrix<TensorDataType>& local_contribution) {
   El::Zero(local_contribution);
   if (!local_input.IsEmpty()) {
     const auto& local_height = local_input.Height();
@@ -118,9 +118,9 @@ __global__ void bp_kernel(El::Int local_height, El::Int local_width,
   }
 }
 
-void local_bp_gpu(const AbsMat& local_input,
-                  const AbsMat& local_gradient_wrt_output,
-                  AbsMat& local_gradient_wrt_input) {
+void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
+                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
   if (!local_input.IsEmpty()) {
     const auto& local_height = local_input.Height();
     const auto& local_width = local_input.Width();
@@ -144,30 +144,30 @@ void local_bp_gpu(const AbsMat& local_input,
 
 template <>
 void l1_norm_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(const AbsMat& local_input,
-                        AbsMat& local_contribution) {
+     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
+                        El::AbstractMatrix<TensorDataType>& local_contribution) {
   local_fp_gpu(local_input, local_contribution);
 }
 template <>
 void l1_norm_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(const AbsMat& local_input,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_input) {
+     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
+                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
   local_bp_gpu(local_input,
                local_gradient_wrt_output,
                local_gradient_wrt_input);
 }
 template <>
 void l1_norm_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(const AbsMat& local_input,
-                        AbsMat& local_contribution) {
+     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
+                        El::AbstractMatrix<TensorDataType>& local_contribution) {
   local_fp_gpu(local_input, local_contribution);
 }
 template <>
 void l1_norm_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(const AbsMat& local_input,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_input) {
+     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
+                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
   local_bp_gpu(local_input,
                local_gradient_wrt_output,
                local_gradient_wrt_input);

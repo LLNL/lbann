@@ -78,9 +78,9 @@ __global__ void fp_kernel(int height, int width,
 
 }
 
-void local_fp_gpu(const AbsMat& local_prediction,
-                  const AbsMat& local_ground_truth,
-                  AbsMat& local_contribution) {
+void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                  El::AbstractMatrix<TensorDataType>& local_contribution) {
   El::Zero(local_contribution);
   const auto& height = local_prediction.Height();
   const auto& width = local_prediction.Width();
@@ -132,11 +132,11 @@ __global__ void bp_kernel(int height, int width,
 
 }
 
-void local_bp_gpu(const AbsMat& local_prediction,
-                  const AbsMat& local_ground_truth,
-                  const AbsMat& local_gradient_wrt_output,
-                  AbsMat& local_gradient_wrt_prediction,
-                  AbsMat& local_gradient_wrt_ground_truth) {
+void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
   const auto& height = local_prediction.Height();
   const auto& width = local_prediction.Width();
   if (height > 0 && width > 0) {
@@ -163,19 +163,19 @@ void local_bp_gpu(const AbsMat& local_prediction,
 
 template <>
 void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        AbsMat& local_contribution) {
+     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        El::AbstractMatrix<TensorDataType>& local_contribution) {
   local_fp_gpu(local_prediction, local_ground_truth, local_contribution);
 }
 
 template <>
 void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_prediction,
-                        AbsMat& local_gradient_wrt_ground_truth) {
+     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
   local_bp_gpu(local_prediction,
                local_ground_truth,
                local_gradient_wrt_output,
@@ -185,19 +185,19 @@ void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
 
 template <>
 void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        AbsMat& local_contribution) {
+     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        El::AbstractMatrix<TensorDataType>& local_contribution) {
   local_fp_gpu(local_prediction, local_ground_truth, local_contribution);
 }
 
 template <>
 void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_prediction,
-                        AbsMat& local_gradient_wrt_ground_truth) {
+     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
+                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
   local_bp_gpu(local_prediction,
                local_ground_truth,
                local_gradient_wrt_output,

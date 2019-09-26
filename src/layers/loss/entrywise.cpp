@@ -45,11 +45,11 @@ constexpr DataType one = 1;
  *  the BinaryBackPropOperator is called.
  */
 template <typename BinaryBackPropOperator>
-void apply_binary_backprop_operator(const AbsMat& x1,
-                                    const AbsMat& x2,
-                                    const AbsMat& dy,
-                                    AbsMat& dx1,
-                                    AbsMat& dx2) {
+void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1,
+                                    const El::AbstractMatrix<TensorDataType>& x2,
+                                    const El::AbstractMatrix<TensorDataType>& dy,
+                                    El::AbstractMatrix<TensorDataType>& dx1,
+                                    El::AbstractMatrix<TensorDataType>& dx2) {
   if (x1.Contiguous() && x2.Contiguous() && dy.Contiguous()
       && dx1.Contiguous() && dx2.Contiguous()) {
     const auto* x1_buffer = x1.LockedBuffer();

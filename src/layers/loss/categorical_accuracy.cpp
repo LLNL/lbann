@@ -35,9 +35,9 @@ namespace {
 
 /** CPU implementation of categorical accuracy layer forward prop. */
 void fp_cpu(lbann_comm& comm,
-            const AbsDistMat& predictions,
-            const AbsDistMat& labels,
-            AbsDistMat& loss) {
+            const El::AbstractDistMatrix<TensorDataType>& predictions,
+            const El::AbstractDistMatrix<TensorDataType>& labels,
+            El::AbstractDistMatrix<TensorDataType>& loss) {
 
   // Local matrices
   const auto& local_predictions = predictions.LockedMatrix();

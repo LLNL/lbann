@@ -70,11 +70,11 @@ void binary_backprop_operator_kernel(El::Int height, El::Int width,
  *  the BinaryBackPropOperator is called.
  */
 template <typename BinaryBackPropOperator>
-void apply_binary_backprop_operator(const AbsMat& x1,
-                                    const AbsMat& x2,
-                                    const AbsMat& dy,
-                                    AbsMat& dx1,
-                                    AbsMat& dx2) {
+void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1,
+                                    const El::AbstractMatrix<TensorDataType>& x2,
+                                    const El::AbstractMatrix<TensorDataType>& dy,
+                                    El::AbstractMatrix<TensorDataType>& dx1,
+                                    El::AbstractMatrix<TensorDataType>& dx2) {
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1

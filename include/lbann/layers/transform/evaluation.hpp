@@ -32,6 +32,7 @@
 namespace lbann {
 
 /** @brief Interface with objective function and metrics. */
+template <typename TensorDataType>
 class abstract_evaluation_layer : public transform_layer<TensorDataType> {
 public:
 
@@ -80,9 +81,9 @@ private:
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class evaluation_layer : public abstract_evaluation_layer {
+class evaluation_layer : public abstract_evaluation_layer<TensorDataType> {
 public:
-  evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer(comm) {}
+  evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer<TensorDataType>(comm) {}
   evaluation_layer* copy() const override { return new evaluation_layer(*this); }
   std::string get_type() const override { return "evaluation"; }
   data_layout get_data_layout() const override { return T_layout; }
