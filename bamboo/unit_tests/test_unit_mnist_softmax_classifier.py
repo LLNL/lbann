@@ -47,6 +47,10 @@ def test_unit_mnist_softmax_classifier_intel19(cluster, exes, dirname,
 # Run with python3 -m pytest -s test_unit_softmax_classifier.py -k 'test_unit_mnist_softmax_classifier_exe' --exe=<executable>
 def test_unit_mnist_softmax_classifier_exe(cluster, dirname, exe,
                                            weekly, data_reader_percent):
+    if not weekly:
+        e = 'Not a nightly test.'
+        print('SKIP - ' + e)
+        pytest.skip(e)
     if exe is None:
         e = 'test_unit_mnist_softmax_classifier_exe: Non-local testing'
         print('Skip - ' + e)
