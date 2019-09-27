@@ -106,7 +106,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
   }
 
   std::vector<Layer*> get_layer_pointers() override {
-    std::vector<Layer*> layers = transform_layer::get_layer_pointers();
+    std::vector<Layer*> layers = transform_layer<TensorDataType>::get_layer_pointers();
     layers.push_back((Layer*) m_pooling_layer);
     return layers;
   }
@@ -120,7 +120,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
       throw lbann_exception(err.str());
     }
     layers.pop_back();
-    transform_layer::set_layer_pointers(layers);
+    transform_layer<TensorDataType>::set_layer_pointers(layers);
   }
 
   protected:

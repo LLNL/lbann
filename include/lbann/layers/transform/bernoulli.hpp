@@ -59,7 +59,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("Probability", m_prob);
     return desc;
   }

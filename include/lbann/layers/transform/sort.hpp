@@ -89,7 +89,7 @@ class sort_layer : public transform_layer<TensorDataType> {
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("Descending", m_descending);
     return desc;
   }
@@ -119,7 +119,7 @@ class sort_layer : public transform_layer<TensorDataType> {
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    transform_layer::fp_setup_outputs(mini_batch_size);
+    transform_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
     const auto& output = this->get_activations();
     m_indices->Resize(output.LocalHeight(), output.LocalWidth());
   }
