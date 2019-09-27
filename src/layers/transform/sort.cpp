@@ -29,14 +29,13 @@
 
 namespace lbann {
 
-template <>
-void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
+template <typename TensorDataType>
+void fp_compute_impl(sort_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
 
   // Local matrices
-  const auto& local_input = get_local_prev_activations();
-  auto& local_output = get_local_activations();
-  auto& local_indices = *m_indices;
+  const auto& local_input = l.get_local_prev_activations();
+  auto& local_output = l.get_local_activations();
+  auto& local_indices = *l.m_indices;
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
 
@@ -47,7 +46,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
     for (El::Int row = 0; row < local_height; ++row) {
       sorted_list.emplace(local_input(row, col), row);
     }
-    if (m_descending) {
+    if (l.m_descending) {
       auto&& it = sorted_list.rbegin();
       for (El::Int row = 0; row < local_height; ++row, ++it) {
         local_output(row, col) = it->first;
@@ -64,14 +63,13 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
 
 }
 
-template <>
-void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(sort_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
 
   // Local matrices
-  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-  auto& local_gradient_wrt_input = get_local_error_signals();
-  const auto& local_indices = *m_indices;
+  const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = l.get_local_error_signals();
+  const auto& local_indices = *l.m_indices;
   const auto& local_height = local_gradient_wrt_input.Height();
   const auto& local_width = local_gradient_wrt_input.Width();
 
@@ -87,6 +85,16 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
 
 }
 
-template class sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
+template class sort_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

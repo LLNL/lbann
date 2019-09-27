@@ -138,6 +138,10 @@ class sort_layer : public transform_layer<TensorDataType> {
    */
   std::unique_ptr<El::AbstractMatrix<El::Int>> m_indices;
 
+  template <typename U>
+  friend void fp_compute_impl(sort_layer<U, T_layout, Dev>& l);
+  template <typename U>
+  friend void bp_compute_impl(sort_layer<U, T_layout, Dev>& l);
 };
 
 #ifndef LBANN_SORT_LAYER_INSTANTIATE

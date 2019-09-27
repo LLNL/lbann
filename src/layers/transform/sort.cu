@@ -37,14 +37,13 @@
 
 namespace lbann {
 
-template <>
-void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
+template <typename TensorDataType>
+void fp_compute_impl(sort_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
   // Local matrices
-  const auto& local_input = get_local_prev_activations();
-  auto& local_output = get_local_activations();
-  auto& local_indices = *m_indices;
+  const auto& local_input = l.get_local_prev_activations();
+  auto& local_output = l.get_local_activations();
+  auto& local_indices = *l.m_indices;
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
 
@@ -59,7 +58,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
     ::thrust::device_ptr<El::Int> inds(local_indices.Buffer(0, col));
     ::thrust::sequence(thrust::cuda::par(alloc).on(stream),
                        inds, inds + local_height);
-    if (m_descending) {
+    if (l.m_descending) {
       ::thrust::sort_by_key(thrust::cuda::par(alloc).on(stream),
                             vals, vals + local_height, inds,
                             ::thrust::greater<DataType>());
@@ -72,14 +71,13 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 
 }
 
-template <>
-void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(sort_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
   // Local matrices
-  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-  auto& local_gradient_wrt_input = get_local_error_signals();
-  const auto& local_indices = *m_indices;
+  const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = l.get_local_error_signals();
+  const auto& local_indices = *l.m_indices;
   const auto& local_height = local_gradient_wrt_input.Height();
   const auto& local_width = local_gradient_wrt_input.Width();
 
@@ -89,7 +87,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 
   // Scatter gradients based on sorted indices
   for (El::Int col = 0; col < local_width; ++col) {
-    const ::thrust::device_ptr<const El::Int> inds(m_indices->LockedBuffer(0, col));
+    const ::thrust::device_ptr<const El::Int> inds(l.m_indices->LockedBuffer(0, col));
     const ::thrust::device_ptr<const TensorDataType> grad_wrt_out(local_gradient_wrt_output.LockedBuffer(0, col));
     ::thrust::device_ptr<DataType> grad_wrt_in(local_gradient_wrt_input.Buffer(0, col));
     ::thrust::scatter(thrust::cuda::par(alloc).on(stream),
@@ -99,6 +97,6 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 
 }
 
-template class sort_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class sort_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
