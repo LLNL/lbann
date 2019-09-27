@@ -59,6 +59,8 @@ class dump_weights : public callback_base {
   void on_train_begin(model *m) override;
   void on_epoch_end(model *m) override;
   std::string name() const override { return "dump weights"; }
+  void set_target_dir(const std::string& basename) { m_basename = basename; }
+  const std::string& get_target_dir() { return m_basename; }
  private:
   /** Basename for writing files. */
   std::string m_basename;

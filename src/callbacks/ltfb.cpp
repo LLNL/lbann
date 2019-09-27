@@ -204,8 +204,9 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
                                       const std::vector<weights*>& local_weights) {
 
   // Checkpoint directories
+  const auto& c = m.get_execution_context();
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = m.get_step();
+  const auto step = c.get_step();
   const std::string send_dir = (m.get_name()
                                 + "_trainer" + std::to_string(local_trainer)
                                 + "_step" + std::to_string(step));
@@ -215,11 +216,11 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 
   // Save model checkpoint
   persist p;
-  p.set_cb_type(callback_type::batch);
+  p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
-    p.open_checkpoint(send_dir.c_str());
+    p.open_checkpoint(send_dir);
   } else {
-    std::strcpy(p.m_checkpoint_dir, send_dir.c_str());
+    p.m_checkpoint_dir = send_dir;
   }
   m.save_to_checkpoint_shared(p);
   p.close_checkpoint();
@@ -234,11 +235,11 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
   }
 
   // Load model checkpoint from partner trainer
-  p.set_cb_type(callback_type::batch);
+  p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
-    p.open_restart(recv_dir.c_str());
+    p.open_restart(recv_dir);
   } else {
-    std::strcpy(p.m_checkpoint_dir, recv_dir.c_str());
+    p.m_checkpoint_dir = recv_dir;
   }
   m.load_from_checkpoint_shared(p);
   if (comm.am_trainer_master()) {
@@ -263,19 +264,20 @@ void exchange_models__checkpoint_file(lbann_comm& comm,
 void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
   // Checkpoint directories
+  const auto& c = m.get_execution_context();
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = m.get_step();
+  const auto step = c.get_step();
   const std::string checkpoint_dir = (m.get_name()
                                       + "_trainer" + std::to_string(local_trainer)
                                       + "_step" + std::to_string(step));
 
   // Load local model checkpoint
   persist p;
-  p.set_cb_type(callback_type::batch);
+  p.set_cb_type(callback_type::model_only);
   if (comm.am_trainer_master()) {
-    p.open_restart(checkpoint_dir.c_str());
+    p.open_restart(checkpoint_dir);
   } else {
-    std::strcpy(p.m_checkpoint_dir, checkpoint_dir.c_str());
+    p.m_checkpoint_dir = checkpoint_dir;
   }
   m.load_from_checkpoint_shared(p);
   if (comm.am_trainer_master()) {
@@ -286,9 +288,9 @@ void restore_local_model__checkpoint_file(lbann_comm& comm, model& m) {
 
 /** Get mean metric value with validation set. */
 EvalType evaluate(model& m, const std::string& metric_name) {
-
+  auto& c = m.get_execution_context();
   // Make sure data readers finish asynchronous work
-  const auto original_mode = m.get_execution_mode();
+  const auto original_mode = c.get_execution_mode();
   m.collect_background_data_fetch(original_mode);
 
   // Mark the data store as loading - Note that this is a temporary fix
@@ -296,7 +298,7 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   m.mark_data_store_explicitly_loading(execution_mode::validation);
 
   // Evaluate model on validation set
-  m.evaluate(execution_mode::validation);
+  c.get_trainer().evaluate(&m, execution_mode::validation);
 
   // Get metric value
   bool found_metric = false;
@@ -320,7 +322,7 @@ EvalType evaluate(model& m, const std::string& metric_name) {
   m.make_data_store_preloaded(execution_mode::validation);
 
   // Clean up and return metric value
-  m.set_execution_mode(original_mode);
+  c.set_execution_mode(original_mode);
   return metric_value;
 
 }
@@ -412,11 +414,12 @@ void ltfb::on_train_begin(model *m) {
 }
 
 void ltfb::on_batch_begin(model *m) {
+  const auto& c = m->get_execution_context();
   auto&& comm = *m->get_comm();
 
   // Check whether to start LTFB round
-  const auto mode = m->get_execution_mode();
-  const auto step = m->get_step();
+  const auto mode = c.get_execution_mode();
+  const auto step = c.get_step();
   if (mode != execution_mode::training || step == 0) { return; }
 
   // Print message

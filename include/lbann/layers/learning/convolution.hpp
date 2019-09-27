@@ -272,8 +272,8 @@ protected:
 #else
     dc::MPIPrintStreamDebug() << this->get_name() << ": Compute gradients";
 
-    const int effective_mini_batch_size =
-        this->m_model->get_effective_mini_batch_size();
+    const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
     const bool has_local_data = this->m_prev_activations_t.get_local_size() > 0 &&
         this->m_prev_error_signals_t.get_local_size() > 0;
 

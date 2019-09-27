@@ -145,8 +145,7 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
 }
 
 bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::save_to_checkpoint_shared(p,name_prefix);
+  optimizer::save_to_checkpoint_shared(p,name_prefix);
   if (get_comm().am_trainer_master()) {
     pack_scalars(p);
   }
@@ -165,8 +164,7 @@ bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_
 }
 
 bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::load_from_checkpoint_shared(p,name_prefix);
+  optimizer::load_from_checkpoint_shared(p,name_prefix);
   struct packing_header header;
   if (get_comm().am_trainer_master()) {
     unpack_scalars(p, &header);
@@ -189,8 +187,7 @@ bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string nam
 }
 
 bool hypergradient_adam::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::save_to_checkpoint_distributed(p,name_prefix);
+  optimizer::save_to_checkpoint_distributed(p,name_prefix);
   pack_scalars(p);
 
   char l_name[512];
@@ -207,8 +204,7 @@ bool hypergradient_adam::save_to_checkpoint_distributed(persist& p, std::string 
 }
 
 bool hypergradient_adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::load_from_checkpoint_distributed(p,name_prefix);
+  optimizer::load_from_checkpoint_distributed(p,name_prefix);
   struct packing_header header;
   unpack_scalars(p, &header);
 

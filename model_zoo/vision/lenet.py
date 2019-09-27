@@ -97,6 +97,9 @@ with open(data_reader_file, 'r') as f:
     txtf.Merge(f.read(), data_reader_proto)
 data_reader_proto = data_reader_proto.data_reader
 
+# Setup trainer
+trainer = lbann.Trainer()
+
 # ----------------------------------
 # Run experiment
 # ----------------------------------
@@ -106,6 +109,6 @@ data_reader_proto = data_reader_proto.data_reader
 kwargs = {}
 if args.partition: kwargs['partition'] = args.partition
 if args.account: kwargs['account'] = args.account
-lbann.run(model, data_reader_proto, opt,
+lbann.run(trainer, model, data_reader_proto, opt,
           job_name='lbann_lenet',
           **kwargs)

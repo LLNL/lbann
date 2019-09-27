@@ -154,8 +154,7 @@ __global__ void indicate_matrix_entries(El::Int k,
 
 /** GPU implementation of in_top_k layer forward prop. */
 void fp_gpu(lbann_comm& comm,
-            El::Int k, const AbsDistMat& input, AbsDistMat& output,
-            execution_mode mode) {
+            El::Int k, const AbsDistMat& input, AbsDistMat& output) {
   if (input.Wrap() != El::ELEMENT || output.Wrap() != El::ELEMENT) {
     LBANN_ERROR("in_top_k layer GPU implementation assumes elemental "
                 "distributed matrices");
@@ -286,14 +285,12 @@ void fp_gpu(lbann_comm& comm,
 template <>
 void in_top_k_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::fp_compute() {
-  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations(),
-         get_model()->get_execution_mode());
+  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
 }
 template <>
 void in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
-  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations(),
-         get_model()->get_execution_mode());
+  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
 }
 
 } // namespace lbann

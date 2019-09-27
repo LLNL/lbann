@@ -54,7 +54,7 @@ public:
   int get_linearized_data_size() const override;
   int get_linearized_label_size() const override;
 
-  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
+  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
   void load() override;
 
 protected:
