@@ -411,6 +411,9 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &
 void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int data_id) {
   if (m_compacted_sample_size == 0) {
     m_compacted_sample_size = nd.total_bytes_compact();
+    if (m_world_master) {
+      std::cout << "num bytes for nodes to be transmitted: " << nd.total_bytes_compact() << " per node" << std::endl;
+    }
   } else if (m_compacted_sample_size != nd.total_bytes_compact() && !m_node_sizes_vary) {
     LBANN_ERROR("Conduit node being added data_id: ", data_id,
                 " is not the same size as existing nodes in the data_store ",
@@ -534,7 +537,6 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
 // code in the following method is a modification of code from
 // conduit/src/libs/relay/conduit_relay_mpi.cpp
 void data_store_conduit::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
-
   node_out.reset();
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
@@ -1034,21 +1036,6 @@ void data_store_conduit::exchange_sample_sizes() {
       m_comm->broadcast<size_t>(k, my_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
     } else {
       m_comm->broadcast<size_t>(k, other_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
-
-/* XX
-      if (m_world_master) std::cout  << "SAMPLE SIZES for P_" << k << std::endl;
-      for (size_t h=0; h<other_sizes.size(); h += 2) {
-        if (m_world_master) std::cout << other_sizes[h] << " size: " << other_sizes[h+1] << std::endl;
-      }  
-*/
-      /*
-      if (m_output) {
-        (*m_output) << "SAMPLE SIZES for P_" << k << std::endl;
-        for (size_t h=0; h<other_sizes.size(); h += 2) {
-          (*m_output) << other_sizes[h] << " SIZE: " << other_sizes[h+1] << std::endl;
-        }
-      }
-      */
 
       for (size_t i=0; i<other_sizes.size(); i += 2) {
         if (m_sample_sizes.find(other_sizes[i]) != m_sample_sizes.end()) {
