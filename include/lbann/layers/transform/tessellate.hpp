@@ -57,7 +57,8 @@ namespace lbann {
  *  e_n@f$. Then, denoting the modulo operator with @f$ \% @f$,
  *  @f[ Y_{i_1,\cdots,i_n} = X_{i_1\% d_1,\cdots,i_n\% d_n} @f]
  */
-template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
 class tessellate_layer : public data_type_layer<TensorDataType> {
 public:
@@ -181,7 +182,7 @@ protected:
 
     // Accumulate local error signals, if needed
     if (m_input_v->DistData() != gradient_wrt_input.DistData()) {
-      m_comm->allreduce(*m_input_v, m_input_v->RedundantComm());
+      this->m_comm->allreduce(*m_input_v, m_input_v->RedundantComm());
       El::Copy(*m_input_v, gradient_wrt_input);
     }
 
@@ -197,18 +198,18 @@ private:
    *  data layout is not purely data-parallel, this means input data
    *  is duplicated over the input matrix's column communicator.
    */
-  static void fp_compute_3d(const std::vector<int>& input_dims,
-                            const std::vector<int>& output_dims,
-                            const El::AbstractMatrix<TensorDataType>& input,
-                            El::AbstractDistMatrix<TensorDataType>& output);
+  void fp_compute_3d(const std::vector<int>& input_dims,
+                     const std::vector<int>& output_dims,
+                     const El::AbstractMatrix<TensorDataType>& input,
+                     El::AbstractDistMatrix<TensorDataType>& output);
   /** Compute local contribution to tessellation back prop
    *  The global gradient w.r.t. input can be obtained by performing
    *  an allreduce over the input matrix's column communicator.
    */
-  static void bp_compute_3d(const std::vector<int>& input_dims,
-                            const std::vector<int>& output_dims,
-                            const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
-                            El::AbstractMatrix<TensorDataType>& gradient_wrt_input);
+  void bp_compute_3d(const std::vector<int>& input_dims,
+                     const std::vector<int>& output_dims,
+                     const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                     El::AbstractMatrix<TensorDataType>& gradient_wrt_input);
 
 };
 
