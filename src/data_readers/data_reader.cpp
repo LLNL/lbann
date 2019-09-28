@@ -717,7 +717,7 @@ void generic_data_reader::instantiate_data_store(const std::vector<int>& local_l
   // optionally preload the data store
   if (opts->get_bool("preload_data_store") && !opts->get_bool("data_store_cache")) {
     if(is_master()) {
-      std::cout << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
+      std::cerr << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
     }
     double tm2 = get_time();
     if (local_list_sizes.size() != 0) {
