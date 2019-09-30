@@ -114,7 +114,7 @@ def skeleton_mnist_ridge_regression(cluster, executables, dir_name,
         model=model,
         data_reader=data_reader_proto,
         optimizer=optimizer,
-        overwrite=True,
+        overwrite_script=True,
         job_name='lbann_ridge_regression',
         **kwargs)
 
