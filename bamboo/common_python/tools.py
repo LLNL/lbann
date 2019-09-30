@@ -19,7 +19,6 @@ def get_command(cluster,
                 time_limit=None,
                 # LBANN Parameters
                 ckpt_dir=None,
-                restart_dir=None,
                 disable_cuda=None,
                 dir_name=None,
                 data_filedir_default=None,
@@ -40,6 +39,7 @@ def get_command(cluster,
                 optimizer_name=None,
                 optimizer_path=None,
                 processes_per_model=None,
+                restart_dir=None,
                 extra_lbann_flags=None,
                 # Error/Output Redirect
                 error_file_name=None,
@@ -62,7 +62,7 @@ def get_command(cluster,
         data_filename_test_default, data_reader_name, data_reader_path,
         data_reader_percent, exit_after_setup, metadata, mini_batch_size,
         model_folder, model_name, model_path, num_epochs, optimizer_name,
-        optimizer_path, processes_per_model,
+        optimizer_path, processes_per_model, restart_dir,
         # Error/Output Redirect
         error_file_name, output_file_name,
         # Misc. Parameters
@@ -255,7 +255,6 @@ def get_command(cluster,
 
     # Create LBANN command
     option_ckpt_dir = ''
-    option_restart_dir = ''
     option_disable_cuda = ''
     option_data_filedir = ''
     option_data_filedir_train = ''
@@ -271,6 +270,7 @@ def get_command(cluster,
     option_num_epochs = ''
     option_optimizer = ''
     option_processes_per_model = ''
+    option_restart_dir = ''
     if model_path is not None:
         # If model_folder and/or model_name are set, an exception will be
         # raised later.
@@ -417,8 +417,7 @@ def get_command(cluster,
             data_reader_percent = 0.10
         option_data_reader_percent = ' --data_reader_percent={d}'.format(
             d=data_reader_percent)
-    else:
-        option_data_reader_percent = ''
+    # else: use the data reader's value
     if exit_after_setup:
         option_exit_after_setup = ' --exit_after_setup'
     if metadata is not None:
@@ -459,7 +458,7 @@ def get_command(cluster,
                 'num_io_threads',
                 'serialize_io',
                 'disable_background_io_activity',
-                'disable_cuda',
+                #'disable_cuda',
                 'random_seed',
                 'objective_function',
                 'data_layout',
@@ -470,8 +469,9 @@ def get_command(cluster,
                 'write_sample_list',
                 'ltfb_verbose',
                 'ckpt_dir',
-                'restart_dir',
-
+                #'restart_dir',
+                'restart_dir_is_fullpath',
+                
                 # DataReaders:
                 # 'data_filedir',
                 # 'data_filedir_train',
@@ -508,14 +508,14 @@ def get_command(cluster,
         print('lbann_errors={lbann_errors}.'.format(lbann_errors=lbann_errors))
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
     command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
-        executable, option_ckpt_dir, option_restart_dir, option_disable_cuda,
+        executable, option_ckpt_dir, option_disable_cuda,
         option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
         option_data_reader, option_data_reader_percent,
         option_exit_after_setup, option_metadata, option_mini_batch_size,
         option_model, option_num_epochs, option_optimizer,
-        option_processes_per_model, extra_options)
+        option_processes_per_model, option_restart_dir, extra_options)
 
     # Create redirect command
     command_output = ''
