@@ -17,6 +17,9 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name,
     ckpt_base_dir = 'ckpt_lbann2_reload'
     os.system('rm -rf ' + ckpt_base_dir)
 
+    if data_reader_percent is None:
+        data_reader_percent=0.005
+        
     # No checkpointing, printing weights to files.
     model_path = '{../../model_zoo/tests/model_lenet_mnist_ckpt.prototext,../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext}'
     output_file_name = '%s/bamboo/unit_tests/output/lbann2_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
@@ -27,7 +30,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name,
         data_reader_name='mnist',
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         dir_name=dir_name,
-        data_reader_percent=0.005,
+        data_reader_percent=data_reader_percent,
         ckpt_dir=no_ckpt_dir,
         model_path=model_path,
         optimizer_name='sgd',
@@ -51,7 +54,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name,
         ckpt_dir=ckpt_dir,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist',
-        data_reader_percent=0.005,
+        data_reader_percent=data_reader_percent,
         dir_name=dir_name,
         disable_cuda=1,
         model_folder='tests',
@@ -75,7 +78,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name,
         ckpt_dir=ckpt_dir,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist',
-        data_reader_percent=0.005,
+        data_reader_percent=data_reader_percent,
         dir_name=dir_name,
         disable_cuda=1,
         model_path='../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext',
