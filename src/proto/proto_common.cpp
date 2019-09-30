@@ -1,3 +1,29 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
 #include "lbann/proto/proto_common.hpp"
 
 #include "lbann/lbann.hpp"
@@ -321,14 +347,14 @@ void init_data_readers(
       if (readme.num_labels() != 0) {
         reader = new data_reader_synthetic(
           readme.num_samples(),
-          proto::parse_list<int>(readme.synth_dimensions()),
+          parse_list<int>(readme.synth_dimensions()),
           readme.num_labels(),
           shuffle);
       } else {
         reader = new data_reader_synthetic(
           readme.num_samples(),
-          proto::parse_list<int>(readme.synth_dimensions()),
-          proto::parse_list<int>(readme.synth_response_dimensions()),
+          parse_list<int>(readme.synth_dimensions()),
+          parse_list<int>(readme.synth_response_dimensions()),
           shuffle);
       }
     } else if (name == "mesh") {
@@ -356,7 +382,7 @@ void init_data_readers(
 
     if (set_transform_pipeline) {
       reader->set_transform_pipeline(
-        std::move(proto::construct_transform_pipeline(readme)));
+        proto::construct_transform_pipeline(readme));
     }
 
     if (readme.data_filename() != "") {

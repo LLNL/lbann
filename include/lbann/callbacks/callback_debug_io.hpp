@@ -84,6 +84,11 @@ class lbann_callback_debug_io : public lbann_callback {
   int m_debug_lvl; /** Debugging level: 0 - epoch begin, 1 - fwd prop */
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_debug_io_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_DEBUG_IO_HPP_INCLUDED

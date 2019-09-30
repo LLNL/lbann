@@ -26,8 +26,11 @@
 // lbann_callback_dump_gradients .hpp .cpp - Callbacks to dump gradients
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <vector>
 #include "lbann/callbacks/callback_dump_gradients.hpp"
+
+#include <callbacks.pb.h>
+
+#include <vector>
 
 namespace lbann {
 
@@ -45,6 +48,15 @@ void lbann_callback_dump_gradients::on_backward_prop_end(model *m) {
       El::Write(opt->get_gradient(), file, El::ASCII);
     }
   }
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_dump_gradients_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackDumpGradients&>(proto_msg);
+  return make_unique<lbann_callback_dump_gradients>(params.basename(),
+                                                    params.interval());
 }
 
 }  // namespace lbann

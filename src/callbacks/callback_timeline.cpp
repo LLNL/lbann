@@ -98,4 +98,12 @@ void lbann_callback_timeline::on_optimize_end(model *m, weights *w) {
   m_opt_times[w->get_name()].emplace_back(m_opt_start_time, end);
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_timeline_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackTimeline&>(proto_msg);
+  return make_unique<lbann_callback_timeline>(params.directory());
+}
+
 }  // namespace lbann

@@ -13,7 +13,7 @@ class WideResNet50_2(lbann.models.resnet.ResNet):
 
     def __init__(self, output_size,
                  zero_init_residual=True,
-                 bn_stats_aggregation='local',
+                 bn_statistics_group_size=1,
                  name=None):
         """Initialize WRN-50-2.
 
@@ -22,8 +22,8 @@ class WideResNet50_2(lbann.models.resnet.ResNet):
             zero_init_residual (bool, optional): Whether to initialize
                 the final batch normalization in residual branches
                 with zeros.
-            bn_stats_aggregation (str, optional): Aggregation mode for
-                batch normalization statistics.
+            bn_statistics_group_size (str, optional): Group size for
+                aggregating batch normalization statistics.
             name (str, optional): Module name.
                 (default: 'wide_resnet50_module<index>')
 
@@ -33,5 +33,5 @@ class WideResNet50_2(lbann.models.resnet.ResNet):
             WideResNet50_2.global_count)
         super().__init__(lbann.models.resnet.BottleneckBlock,
                          output_size, (3,4,6,3), (64,128,256,512),
-                         zero_init_residual, bn_stats_aggregation, name,
+                         zero_init_residual, bn_statistics_group_size, name,
                          width=2)

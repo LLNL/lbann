@@ -25,8 +25,37 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_check_gradients.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/data_readers/data_reader.hpp"
+
+#include "callbacks.pb.h"
 
 namespace lbann {
+
+namespace {
+
+/** @details Forward prop is applied to all layers, except input
+ *  layers. It is assumed that input layers have already loaded data.
+ */
+DataType compute_objective_function(model& m) {
+
+  // Forward prop, skipping input layers
+  for (auto&& l : m.get_layers()) {
+    if (dynamic_cast<generic_input_layer*>(l) == nullptr) {
+      l->forward_prop();
+    }
+  }
+
+  // Get objective function value
+  auto&& obj = m.get_objective_function();
+  const auto mode = m.get_execution_mode();
+  const auto mini_batch_size = m.get_current_mini_batch_size();
+  obj->start_evaluation(mode, mini_batch_size);
+  return obj->finish_evaluation(mode, mini_batch_size);
+
+}
+
+} // namespace
 
 lbann_callback_check_gradients
   ::lbann_callback_check_gradients(DataType step_size,
@@ -36,21 +65,32 @@ lbann_callback_check_gradients
     m_verbose(verbose),
     m_error_on_failure(error_on_failure) {}
 
-void lbann_callback_check_gradients::on_test_begin(model *m) {
+void lbann_callback_check_gradients::on_test_end(model *m) {
 
-  // Get model members
+  // Get objects from model
   lbann_comm *comm = m->get_comm();
-  const std::vector<Layer*>& layers = m->get_layers();
+  auto mode = m->get_execution_mode();
+  const auto& layers = m->get_layers();
 
-  // Initialize network for testing
+  // Reset statistics and gradients
+  m->get_objective_function()->reset_statistics(mode);
+  for (auto&& met : m->get_metrics()) {
+    met->reset_statistics(mode);
+  }
   for (auto&& w : m->get_weights()) {
     auto&& opt = w->get_optimizer();
     if (opt != nullptr) { opt->clear_gradient(); }
   }
-  layers[0]->forward_prop();
+
+  // Load data in input layers
+  for (auto&& l : m->get_layers()) {
+    if (dynamic_cast<generic_input_layer*>(l) != nullptr) {
+      l->forward_prop();
+    }
+  }
 
   // Compute objective function
-  const DataType objective = compute_objective_function(m);
+  const DataType objective = compute_objective_function(*m);
 
   // Choose finite difference step
   // Note: Consider a central difference scheme:
@@ -80,11 +120,11 @@ void lbann_callback_check_gradients::on_test_begin(model *m) {
 
   // Print objective function value
   if (comm->am_world_master()) {
-    std::cout << "--------------------------------------------------------------------------------" << std::endl
-              << "Gradient checking..." << std::endl
-              << "  Objective function value = " << objective << std::endl
-              << "  Step size                = " << step_size << std::endl
-              << "  Expected gradient error  = " << expected_error << std::endl;
+    std::cout << "----------------------------------------------------------------\n"
+              << "Gradient checking...\n"
+              << "  Objective function value = " << objective << "\n"
+              << "  Step size                = " << step_size << "\n"
+              << "  Expected gradient error  = " << expected_error << "\n";
   }
 
   for (weights *w : m->get_weights()) {
@@ -118,13 +158,13 @@ void lbann_callback_check_gradients::on_test_begin(model *m) {
         // Note: matrix entry is reset after computing objective
         // function values
         w->set_value(initial_weight + 2 * step_size, row, col);
-        const DataType f_2h = compute_objective_function(m);
+        const DataType f_2h = compute_objective_function(*m);
         w->set_value(initial_weight + step_size, row, col);
-        const DataType f_h = compute_objective_function(m);
+        const DataType f_h = compute_objective_function(*m);
         w->set_value(initial_weight - step_size, row, col);
-        const DataType f_nh = compute_objective_function(m);
+        const DataType f_nh = compute_objective_function(*m);
         w->set_value(initial_weight - 2 * step_size, row, col);
-        const DataType f_n2h = compute_objective_function(m);
+        const DataType f_n2h = compute_objective_function(*m);
         w->set_value(initial_weight, row, col);
 
         // Compute relative error in gradient.
@@ -168,23 +208,35 @@ void lbann_callback_check_gradients::on_test_begin(model *m) {
     }
 
   }
-
   if (comm->am_world_master()) {
-    std::cout << "--------------------------------------------------------------------------------" << std::endl;
+    std::cout << "----------------------------------------------------------------\n";
+  }
+
+  // Clean up
+  /// @todo tym: I'm not sure if data readers are properly reset
+  for (auto&& l : m->get_layers()) {
+    auto&& input = dynamic_cast<generic_input_layer*>(l);
+    if (input != nullptr) {
+      auto&& reader = input->get_data_reader(mode);
+      reader->set_initial_position();
+    }
+  }
+  m->get_objective_function()->reset_statistics(mode);
+  for (auto&& met : m->get_metrics()) {
+    met->reset_statistics(mode);
   }
 
 }
 
-DataType lbann_callback_check_gradients::compute_objective_function(model *m) {
-  const std::vector<Layer*>& layers = m->get_layers();
-  objective_function* obj_fn = m->get_objective_function();
-  for (size_t l = 1; l < layers.size(); l++) {
-    layers[l]->forward_prop();
-  }
-  obj_fn->start_evaluation(m->get_execution_mode(),
-                           m->get_current_mini_batch_size());
-  return obj_fn->finish_evaluation(m->get_execution_mode(),
-                                   m->get_current_mini_batch_size());
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_check_gradients_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackCheckGradients&>(proto_msg);
+  return make_unique<lbann_callback_check_gradients>(params.step_size(),
+                                                     params.verbose(),
+                                                     params.error_on_failure());
 }
 
-}  // namespace lbann
+} // namespace lbann

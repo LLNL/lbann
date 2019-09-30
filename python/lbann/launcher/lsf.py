@@ -94,7 +94,7 @@ def run(command,
     # Time and node list.
     s += '\n# ==== Useful info ====\n'
     s += 'date\n'
-    s += 'jsrun -n {} -a 1 hostname > {}\n'.format(nodes, nodes_file)
+    s += 'jsrun -n {} -a 1 -r 1 hostname > {}\n'.format(nodes, nodes_file)
     s += 'sort --unique --output={0} {0}\n'.format(nodes_file)
 
     # Run experiment.

@@ -30,19 +30,15 @@
 
 #include "lbann/callbacks/callback_io.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/proto/proto_common.hpp"
 
 namespace lbann {
-
-lbann_callback_io::lbann_callback_io() : lbann_callback() {}
-
-lbann_callback_io::lbann_callback_io(
-  std::unordered_set<Layer *> layers) : lbann_callback(), m_layer_indices(std::move(layers)) {}
 
 void lbann_callback_io::on_epoch_end(model *m) {
   lbann_comm *comm = m->get_comm();
   for (Layer *layer : m->get_layers()) {
-    if(m_layer_indices.size() == 0
-       || m_layer_indices.find(layer) != m_layer_indices.end()) {
+    if(m_layers.size() == 0
+       || m_layers.find(layer->get_name()) != m_layers.end()) {
       auto *input = (generic_input_layer *) dynamic_cast<generic_input_layer *> (layer);
       if(input != nullptr) {
         std::cout << "Rank " << comm->get_trainer_rank() << "." << comm->get_rank_in_trainer() << " processed "
@@ -57,8 +53,8 @@ void lbann_callback_io::on_epoch_end(model *m) {
 void lbann_callback_io::on_test_end(model *m) {
   lbann_comm *comm = m->get_comm();
   for (Layer *layer : m->get_layers()) {
-    if(m_layer_indices.size() == 0
-       || m_layer_indices.find(layer) != m_layer_indices.end()) {
+    if(m_layers.size() == 0
+       || m_layers.find(layer->get_name()) != m_layers.end()) {
       auto *input = (generic_input_layer *) dynamic_cast<generic_input_layer *> (layer);
       if(input != nullptr) {
         std::cout << "Rank " << comm->get_trainer_rank() << "." << comm->get_rank_in_trainer() << " processed "
@@ -68,6 +64,15 @@ void lbann_callback_io::on_test_end(model *m) {
       }
     }
   }
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_disp_io_stats_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackDispIOStats&>(proto_msg);
+  return make_unique<lbann_callback_io>(
+    parse_list<std::string>(params.layers()));
 }
 
 }  // namespace lbann

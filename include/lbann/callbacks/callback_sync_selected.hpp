@@ -133,6 +133,11 @@ class lbann_callback_sync_selected : public lbann_callback_sync_layers {
   static bool m_cuda_profiler_initialized;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_sync_selected_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_CALLBACK_SYNC_SELECTED_HPP_INCLUDED

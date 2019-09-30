@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/callback_perturb_dropout.hpp"
+#include "lbann/proto/factories.hpp"
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
@@ -56,7 +57,7 @@ void lbann_callback_perturb_dropout::perturb(model& m) {
     }
     if (m_layer_names.empty()
         || m_layer_names.count(l->get_name()) > 0) {
-      
+
       auto d_dp_cpu = get_dropout_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(l);
       auto d_mp_cpu = get_dropout_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(l);
       #ifdef LBANN_HAS_GPU
@@ -64,7 +65,7 @@ void lbann_callback_perturb_dropout::perturb(model& m) {
       auto d_mp_gpu = get_dropout_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(l);
       #endif
       // Perturb dropout layer
-        if(d_dp_cpu != nullptr || d_mp_cpu != nullptr 
+        if(d_dp_cpu != nullptr || d_mp_cpu != nullptr
            #ifdef LBANN_HAS_GPU
            || d_dp_gpu != nullptr || d_mp_gpu != nullptr
            #endif
@@ -116,5 +117,14 @@ void lbann_callback_perturb_dropout::perturb(model& m) {
   }
 }
 
+std::unique_ptr<lbann_callback>
+build_callback_perturb_dropout_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackPerturbDropout&>(proto_msg);
+  return make_unique<lbann_callback_perturb_dropout>(
+    params.keep_dropout_factor(),
+    parse_set<std::string>(params.layers()));
+}
 
 } // namespace lbann

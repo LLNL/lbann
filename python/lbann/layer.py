@@ -9,9 +9,15 @@ class Layer(abc.ABC):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, parents = [], children = [], weights = [],
-                 name = None, data_layout = 'data_parallel',
-                 hint_layer = None, parallel_strategy={}):
+    def __init__(self,
+                 parents=[],
+                 children=[],
+                 weights=[],
+                 name=None,
+                 device=None,
+                 data_layout=None,
+                 hint_layer=None,
+                 parallel_strategy={}):
         """Constructor.
 
         Args:
@@ -23,6 +29,7 @@ class Layer(abc.ABC):
                 parameters.
             name (str, optional): Unique identifier (default is
                 'layer<index>').
+            device (str, optional): Device to use, e.g. CPU or GPU.
             data_layout (str, optional): Data distribution scheme.
             hint_layer (Layer, optional): Hint for output dimensions.
             parallel_storategy (Map of str, optional): Parallel strategy.
@@ -33,6 +40,7 @@ class Layer(abc.ABC):
         self.children = []
         self.weights = []
         self.name = name if name else 'layer{0}'.format(Layer.global_count)
+        self.device = device
         self.data_layout = data_layout
         self.hint_layer = hint_layer
         self.parallel_strategy = parallel_strategy
@@ -52,8 +60,12 @@ class Layer(abc.ABC):
         proto.children = ' '.join([l.name for l in self.children])
         proto.weights = ' '.join([w.name for w in self.weights])
         proto.name = self.name
-        proto.data_layout = self.data_layout
-        proto.hint_layer = self.hint_layer.name if self.hint_layer else ''
+        if self.device:
+            proto.device_allocation = self.device
+        if self.data_layout:
+            proto.data_layout = self.data_layout
+        if self.hint_layer:
+            proto.hint_layer = self.hint_layer.name
         if hasattr(proto, "parallel_strategy"):
             for k, v in self.parallel_strategy.items():
                 setattr(proto.parallel_strategy, k, v)
@@ -96,7 +108,7 @@ classes = lbann.util.class_generator.generate_classes_from_protobuf_message(
     base_class = Layer,
     base_kwargs = set([
         'parents', 'children', 'weights',
-        'name', 'data_layout', 'hint_layer', 'parallel_strategy']),
+        'name', 'device', 'data_layout', 'hint_layer', 'parallel_strategy']),
     base_has_export_proto = True)
 for c in classes:
     globals()[c.__name__] = c

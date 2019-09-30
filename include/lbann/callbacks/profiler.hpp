@@ -79,6 +79,11 @@ class lbann_callback_profiler : public lbann_callback {
   bool m_skip_init;
 };
 
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_profiler_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
+
 }  // namespace lbann
 
 #endif  // LBANN_CALLBACKS_PROFILER_HPP_INCLUDED

@@ -80,8 +80,8 @@ public:
 
   void on_forward_prop_end(model* m, Layer* l) override          { dump_outputs(*m, *l); }
   void on_evaluate_forward_prop_end(model* m, Layer* l) override {
-       if(m->get_step() % m_batch_interval == 0) { 
-         dump_outputs(*m, *l); 
+       if(m->get_step() % m_batch_interval == 0) {
+         dump_outputs(*m, *l);
        }
   }
 
@@ -111,6 +111,11 @@ private:
   void dump_outputs(const model& m, const Layer& l);
 
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_dump_outputs_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 } // namespace lbann
 

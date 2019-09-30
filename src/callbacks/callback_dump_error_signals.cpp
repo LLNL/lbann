@@ -26,6 +26,8 @@
 
 #include "lbann/callbacks/callback_dump_error_signals.hpp"
 
+#include <callbacks.pb.h>
+
 namespace lbann {
 
 void lbann_callback_dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
@@ -48,6 +50,14 @@ void lbann_callback_dump_error_signals::on_backward_prop_end(model *m, Layer *l)
 
   }
 
+}
+
+std::unique_ptr<lbann_callback>
+build_callback_dump_error_signals_from_pbuf(
+  const google::protobuf::Message& proto_msg, lbann_summary*) {
+  const auto& params =
+    dynamic_cast<const lbann_data::Callback::CallbackDumpErrorSignals&>(proto_msg);
+  return make_unique<lbann_callback_dump_error_signals>(params.basename());
 }
 
 }  // namespace lbann

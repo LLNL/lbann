@@ -155,7 +155,7 @@ private:
 
   /** Inter-trainer communication scheme. */
   communication_algorithm m_comm_algo;
- 
+
   /** Whether to exchange training hyperparameters between trainers
   */
   bool m_exchange_hyperparameters;
@@ -167,6 +167,11 @@ private:
   std::vector<std::unique_ptr<weights>> m_workspace_weights;
 
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_ltfb_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 } // namespace lbann
 

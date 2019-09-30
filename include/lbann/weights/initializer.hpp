@@ -60,8 +60,8 @@ public:
   constant_initializer* copy() const override {
     return new constant_initializer(*this);
   }
-  std::string get_type() const { return "constant"; }
-  description get_description() const;
+  std::string get_type() const override { return "constant"; }
+  description get_description() const override;
   void fill(AbsDistMat& matrix) override;
 
 private:
@@ -83,7 +83,7 @@ public:
   value_initializer* copy() const override {
     return new value_initializer(*this);
   }
-  std::string get_type() const { return "value"; }
+  std::string get_type() const override { return "value"; }
   void fill(AbsDistMat& matrix) override;
 
 private:
@@ -102,8 +102,8 @@ class uniform_initializer : public weights_initializer {
   uniform_initializer* copy() const override {
     return new uniform_initializer(*this);
   }
-  std::string get_type() const { return "uniform"; }
-  description get_description() const;
+  std::string get_type() const override{ return "uniform"; }
+  description get_description() const override;
   void fill(AbsDistMat& matrix) override;
 
 private:
@@ -126,8 +126,8 @@ public:
   normal_initializer* copy() const override {
     return new normal_initializer(*this);
   }
-  std::string get_type() const { return "normal"; }
-  description get_description() const;
+  std::string get_type() const override { return "normal"; }
+  description get_description() const override;
   void fill(AbsDistMat& matrix) override;
 
 private:

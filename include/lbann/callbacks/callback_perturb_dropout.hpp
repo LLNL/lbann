@@ -52,7 +52,7 @@ public:
   lbann_callback_perturb_dropout* copy() const override { return new lbann_callback_perturb_dropout(*this); }
   std::string name() const override { return "perturb dropout"; }
 
-  void setup(model* m);
+  void setup(model* m) override;
 
 private:
 
@@ -67,14 +67,19 @@ private:
    *  If empty, all dropout layers  in the model will be perturbed.
    */
   std::set<std::string> m_layer_names;
-  
+
   template <data_layout T_layout, El::Device Dev>
-  dropout<T_layout, Dev>* get_dropout_layer(Layer* l); 
+  dropout<T_layout, Dev>* get_dropout_layer(Layer* l);
 
   /** Perturb dropout keep prob in model. */
   void perturb(model& m);
 
 };
+
+// Builder function
+std::unique_ptr<lbann_callback>
+build_callback_perturb_dropout_from_pbuf(
+  const google::protobuf::Message&, lbann_summary*);
 
 } // namespace lbann
 
