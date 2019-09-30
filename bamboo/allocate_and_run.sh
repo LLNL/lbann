@@ -56,7 +56,12 @@ elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTE
         then
             timeout -k 5 24h salloc -N2 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh
         else
-            echo "Partition \"pbatch\" on cluster \"${CLUSTER}\" appears to be down. Nothing to do."
+            echo "Partition \"pbatch\" on cluster \"${CLUSTER}\" appears to be down."
+            if [[ "${CLUSTER}" =~ ^corona$ ]];
+            then
+               echo "Trying \"pgpu\"."
+               timeout -k 5 24h salloc -N2 --partition=pgpu -t ${ALLOCATION_TIME_LIMIT} ./run.sh
+            fi
         fi
     fi
 else
