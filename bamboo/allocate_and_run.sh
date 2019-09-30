@@ -52,7 +52,12 @@ elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTE
         fi
     else
         ALLOCATION_TIME_LIMIT=60 # Start with 1 hr; may adjust for CPU clusters
-        timeout -k 5 24h salloc -N2 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh
+        if [[ $(mjstat -c | awk 'match($1, "pbatch") { print $5 }') -ne "0" ]];
+        then
+            timeout -k 5 24h salloc -N2 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh
+        else
+            echo "Partition \"pbatch\" on cluster \"${CLUSTER\" appears to be down. Nothing to do."
+        fi
     fi
 else
     echo "allocate_and_run.sh. Unsupported cluster CLUSTER=${CLUSTER}"

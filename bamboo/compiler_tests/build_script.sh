@@ -39,7 +39,7 @@ then
         else
             MPI_MODULE=$(echo ${MPI_LIBRARY} | sed -e 's|-|/|g')
         fi
-        
+
         # Use the latest CUDA 10, since it's compatible with other
         # CUDA 10.* libraries
         CUDA_MODULE=$(ml --terse avail cuda |& sed -n '/\/10\./p' | tail -n1)
@@ -61,14 +61,15 @@ then
 
     # Add Ninja support
     export PATH=${DEPENDENCY_DIR_BASE}/ninja/bin:${PATH}
-    
+
     # Setup paths to match the build_lbann_lc.sh script (ugh)
     BUILD_DIR_BASE=${LBANN_DIR}/build/gnu.Release.${CLUSTER}.llnl.gov
     BUILD_DIR=${BUILD_DIR_BASE}/lbann/build
     INSTALL_DIR=${BUILD_DIR_BASE}/install
-    
+
     # Setup a path for Catch2 to use
     CATCH2_OUTPUT_DIR=${LBANN_DIR}/bamboo/compiler_tests
+    rm -f ${CATCH2_OUTPUT_DIR}/*.xml
 
     # Decide if CUDA should be used.
     if [[ "${CLUSTER}" =~ ^(pascal|lassen|ray)$ ]];
@@ -77,7 +78,7 @@ then
     else
         USE_CUDA=OFF
     fi
-    
+
     # Cleanup
     [[ -e ${BUILD_DIR_BASE} ]] && rm -rf ${BUILD_DIR_BASE}
     mkdir -p ${BUILD_DIR} && cd ${BUILD_DIR}
@@ -89,7 +90,7 @@ then
     else
         unset LAUNCH_CMD
     fi
-    
+
     cmake \
         -GNinja \
         -DCMAKE_BUILD_TYPE=Release \
@@ -126,7 +127,7 @@ then
         -DPROTOBUF_DIR=${DEPENDENCY_DIR} \
         -Dprotobuf_MODULE_COMPATIBLE=ON \
         \
-        ${LBANN_DIR} && ${LAUNCH_CMD} ninja && ${LAUNCH_CMD} ninja install && ${LAUNCH_CMD} ./unit_test/seq-catch-tests -r junit -o ${CATCH2_OUTPUT_DIR}/seq_catch_tests_output.xml
+        ${LBANN_DIR} && ${LAUNCH_CMD} ninja && ${LAUNCH_CMD} ninja install && ${LAUNCH_CMD} ./unit_test/seq-catch-tests -r junit -o ${CATCH2_OUTPUT_DIR}/seq_catch_tests_output-${CLUSTER}.xml
 else
     ${LBANN_DIR}/scripts/build_lbann_lc.sh --with-conduit
 fi
