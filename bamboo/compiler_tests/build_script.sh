@@ -26,7 +26,7 @@ if [ -e ${DEPENDENCY_DIR} ];
 then
     SAVELIST_NAME=$(echo ${CLUSTER}_${LATEST_GCC}_${MPI_LIBRARY} | sed -e 's/\./x/g')
 
-    if ml -t savelist |& grep ${SAVELIST_NAME}
+    if ml -t savelist |& grep ${SAVELIST_NAME} > /dev/null 2>&1
     then
         ml restore ${SAVELIST_NAME}
     else
