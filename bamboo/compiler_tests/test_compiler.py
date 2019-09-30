@@ -67,7 +67,7 @@ def test_compiler_intel19_debug(cluster, dirname):
 
 
 def skeleton_clang6(cluster, dir_name, debug):
-    if cluster not in ['']:
+    if cluster not in []:
         e = 'skeleton_clang6: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
