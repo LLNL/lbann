@@ -47,7 +47,7 @@ def get_command(cluster, dir_name, model_folder, model_name, executable,
             time_limit = 600
         else:
             partition = 'pdebug'
-            time_limit = 30
+            time_limit = 60
         if (cluster == 'ray') and (model_name == 'conv_autoencoder_mnist'):
             num_processes = 20
         else:
@@ -72,15 +72,14 @@ def run_lbann(command, model_name, output_file_name, error_file_name,
     print('About to run: %s' % command)
     print('%s began waiting in the queue at ' % model_name +
           time.strftime('%H:%M:%S', time.localtime()))
-    output_value = os.system(command)
+    return_code = os.system(command)
     print('%s finished at ' % model_name +
           time.strftime('%H:%M:%S', time.localtime()))
     lbann_exceptions = []
     timed_out = False
-    if should_log or (output_value != 0):
+    if should_log or (return_code != 0):
         output_file = open(output_file_name, 'r')
         for line in output_file:
-            print('%s: %s' % (output_file_name, line))
             is_match = re.search(
                 'This lbann_exception is about to be thrown:(.*)', line)
             if is_match:
@@ -90,17 +89,16 @@ def run_lbann(command, model_name, output_file_name, error_file_name,
                 timed_out = True
         error_file = open(error_file_name, 'r')
         for line in error_file:
-            print('%s: %s' % (error_file_name, line))
             is_match = re.search('LBANN error on (.*)', line)
             if is_match:
                 lbann_exceptions.append(is_match.group(1))
-    if output_value != 0:
-        error_string = ('Model %s crashed with output_value=%d, timed_out=%s,'
+    if return_code != 0:
+        error_string = ('Model %s crashed with return_code=%d, timed_out=%s,'
                         ' and lbann exceptions=%s. Command was: %s') % (
-            model_name, output_value, str(timed_out),
+            model_name, return_code, str(timed_out),
             str(collections.Counter(lbann_exceptions)), command)
-        raise Exception(error_string)
-    return output_value
+        print(error_string)
+    tools.assert_success(return_code, error_file_name)
 
 # Extract data from output ####################################################
 
@@ -191,10 +189,21 @@ def extract_data(output_file_name, data_fields, should_log):
                     print('extract_data: stdev={sv}'.format(sv=stdev_value))
                     data_dict[data_field][model_id][epoch_id] = stdev_value
 
+            # This will re-populate the value for 'test_accuracy'
+            # on each epoch, thus keeping the final value.
+            # Just keep the data_field as 'test_accuracy' so we don't have
+            # to update code and csv files to include 'validation_accuracy'.
+            regex = 'validation categorical accuracy : ([0-9.]+)'
+            data_field = 'test_accuracy'
+            populate_data_dict_overall(regex, line, data_field, data_fields,
+                                       data_dict, model_id)
+
+            # Overwrite accuracy from validation if we have test accuracy.
             regex = 'test categorical accuracy : ([0-9.]+)'
             data_field = 'test_accuracy'
             populate_data_dict_overall(regex, line, data_field, data_fields,
                                        data_dict, model_id)
+
     output_file.close()
     if should_log:
         print('extract_data: Extracted Data below:')
@@ -216,7 +225,7 @@ def skeleton(cluster, dir_name, executable, model_folder, model_name,
         cluster, dir_name, model_folder, model_name, executable,
         output_file_name, error_file_name, compiler_name, weekly=weekly)
     run_lbann(command, model_name, output_file_name,
-              error_file_name, should_log)  # Don't need return value
+              error_file_name, should_log)
     return extract_data(output_file_name, data_fields, should_log)
 
 # Misc. functions  ############################################################
@@ -226,7 +235,7 @@ def skeleton(cluster, dir_name, executable, model_folder, model_name,
 def csv_to_dict(csv_path):
     with open(csv_path, 'r') as csv_file:
         reader = csv.reader(csv_file, skipinitialspace=True)
-        column_headers = reader.next()
+        column_headers = next(reader)
         values = {}
         for row in reader:
             row_header = row[0]

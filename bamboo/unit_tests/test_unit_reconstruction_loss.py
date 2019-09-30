@@ -18,7 +18,7 @@ def skeleton_jag_reconstruction_loss(cluster, executables, dir_name, compiler_na
         num_nodes=16,
         num_processes=32,
         dir_name=dir_name,
-        data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
+        data_filedir_default='/p/lscratchh/brainusr/datasets/10MJAG/1M_A/100K4trainers',
         data_reader_name='jag',
         metadata='model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext',
         model_folder='tests',
@@ -27,7 +27,7 @@ def skeleton_jag_reconstruction_loss(cluster, executables, dir_name, compiler_na
         output_file_name=output_file_name,
         error_file_name=error_file_name)
     return_code = os.system(command)
-    assert return_code == 0
+    tools.assert_success(return_code, error_file_name)
 
 
 def test_unit_jag_reconstruction_loss_clang6(cluster, exes, dirname):
@@ -42,7 +42,7 @@ def test_unit_jag_reconstruction_loss_intel19(cluster, exes, dirname):
     skeleton_jag_reconstruction_loss(cluster, exes, dirname, 'intel19')
 
 
-# Run with python -m pytest -s test_unit_ridge_regression.py -k 'test_unit_jag_reconstruction_loss_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_unit_ridge_regression.py -k 'test_unit_jag_reconstruction_loss_exe' --exe=<executable>
 def test_unit_jag_reconstruction_loss_exe(cluster, dirname, exe):
     if exe is None:
         e = 'test_unit_jag_reconstruction_loss_exe: Non-local testing'

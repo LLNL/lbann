@@ -24,9 +24,13 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <opencv2/imgproc.hpp>
 #include "lbann/transforms/vision/adjust_contrast.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
+
+#include <opencv2/imgproc.hpp>
 
 namespace lbann {
 namespace transform {
@@ -78,6 +82,12 @@ void adjust_contrast::apply(utils::type_erased_matrix& data, std::vector<size_t>
     src_buf[i] = cv::saturate_cast<uint8_t>(
       src_buf[i]*m_factor + gray_mean*one_minus_factor);
   }
+}
+
+std::unique_ptr<transform>
+build_adjust_contrast_transform_from_pbuf(google::protobuf::Message const& msg) {
+  auto const& params = dynamic_cast<lbann_data::Transform::AdjustContrast const&>(msg);
+  return make_unique<adjust_contrast>(params.factor());
 }
 
 }  // namespace transform

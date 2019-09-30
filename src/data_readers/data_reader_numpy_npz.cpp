@@ -157,6 +157,7 @@ namespace lbann {
     m_shuffled_indices.clear();
     m_shuffled_indices.resize(m_num_samples);
     std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+    resize_shuffled_indices();
     select_subset_of_data();
   }
 

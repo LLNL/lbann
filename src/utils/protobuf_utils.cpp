@@ -29,6 +29,8 @@
 #include "lbann/utils/protobuf_utils.hpp"
 #include "lbann/proto/proto_common.hpp"
 
+#include <lbann.pb.h> // Actually use LbannPB here
+
 /**
  * all methods in protobuf_utils are static
  */

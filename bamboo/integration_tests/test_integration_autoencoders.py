@@ -36,9 +36,6 @@ def run_tests(actual_objective_functions, model_name, dir_name, cluster,
              actual_objective_functions, expected_objective_functions,
              model_name, errors, all_values, frequency_str)
 
-    print('Errors for: %s %s (%d)' % (model_name, compiler_name, len(errors)))
-    for error in errors:
-        print(error)
     if should_log:
         print('All values for: %s %s (%d)' % (model_name, compiler_name,
                                               len(all_values)))
@@ -88,7 +85,7 @@ def test_integration_autoencoder_imagenet_intel19(cluster, dirname, exes,
     skeleton_autoencoder_imagenet(cluster, dirname, exes, 'intel19', weekly)
 
 
-# Run with python -m pytest -s test_integration_autoencoder.py -k 'test_integration_autoencoder_imagenet_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_integration_autoencoder.py -k 'test_integration_autoencoder_imagenet_exe' --exe=<executable>
 def test_integration_autoencoder_imagenet_exe(cluster, dirname, exe):
     if exe is None:
         e = 'test_integration_autoencoder_imagenet_exe: Non-local testing'

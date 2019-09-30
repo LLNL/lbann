@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -47,6 +49,9 @@ private:
   /** Height and width of the resized image. */
   size_t m_h, m_w;
 };
+
+std::unique_ptr<transform>
+build_resize_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

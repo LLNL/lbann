@@ -26,8 +26,8 @@ def skeleton_mnist_debug(cluster, dir_name, executables, compiler_name, weekly,
         data_reader_name='mnist', model_folder='models/' + model_name,
         model_name=model_name, num_epochs=5, optimizer_name='adagrad',
         output_file_name=output_file_name, error_file_name=error_file_name)
-    output_value = common_code.run_lbann(command, model_name, output_file_name, error_file_name, should_log)
-    assert output_value == 0
+    common_code.run_lbann(command, model_name, output_file_name,
+                          error_file_name, should_log)
 
 
 def skeleton_cifar_debug(cluster, dir_name, executables, compiler_name, weekly,
@@ -56,8 +56,8 @@ def skeleton_cifar_debug(cluster, dir_name, executables, compiler_name, weekly,
         data_reader_name='cifar10', data_reader_percent=0.01, model_folder='models/' + model_name,
         model_name='conv_' + model_name, num_epochs=5, optimizer_name='adagrad',
         output_file_name=output_file_name, error_file_name=error_file_name)
-    output_value = common_code.run_lbann(command, model_name, output_file_name, error_file_name, should_log)
-    assert output_value == 0
+    common_code.run_lbann(command, model_name, output_file_name,
+                          error_file_name, should_log)
 
 
 def test_integration_mnist_clang6_debug(cluster, dirname, exes, weekly, debug_build):
@@ -84,7 +84,7 @@ def test_integration_cifar_intel19_debug(cluster, dirname, exes, weekly, debug_b
     skeleton_cifar_debug(cluster, dirname, exes, 'intel19_debug', weekly, debug_build)
 
 
-# Run with python -m pytest -s test_integration_debug.py -k 'test_integration_mnist_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_integration_debug.py -k 'test_integration_mnist_exe' --exe=<executable>
 def test_integration_mnist_exe(cluster, dirname, exe):
     if exe is None:
         e = 'test_integration_mnist_exe: Non-local testing'
@@ -94,7 +94,7 @@ def test_integration_mnist_exe(cluster, dirname, exe):
     skeleton_mnist_debug(cluster, dirname, exes, 'exe', True, True)
 
 
-# Run with python -m pytest -s test_integration_debug.py -k 'test_integration_cifar_exe' --exe=<executable>
+# Run with python3 -m pytest -s test_integration_debug.py -k 'test_integration_cifar_exe' --exe=<executable>
 def test_integration_cifar_exe(cluster, dirname, exe):
     if exe == None:
         e = 'test_integration_cifar_exe: Non-local testing'

@@ -26,7 +26,7 @@
 
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/callback.hpp"
-#include "lbann/callbacks/callback_save_model.hpp"
+#include "lbann/callbacks/save_model.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
@@ -38,21 +38,20 @@
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
+
+#include <model.pb.h>
+
+#include <mpi.h>
+
 #include <string>
 #include <unistd.h>
 #include <iomanip>
 #include <queue>
 #include <unordered_set>
-#include <lbann.pb.h>
-#include <set>
-#include <map>
-#include <cmath>
 
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/utils/distconv.hpp"
 #endif
-
-#include "mpi.h"
 
 namespace lbann {
 
@@ -273,7 +272,15 @@ description model::get_description() const {
   desc.add(std::string{});
   desc.add(weights_desc);
 
-  /// @todo Descriptions for objective function, metrics, callbacks
+  // Callbacks
+  description callback_desc("Callbacks:");
+  for (const auto& cb : m_callbacks) {
+    callback_desc.add(cb->get_description());
+  }
+  desc.add(std::string{});
+  desc.add(callback_desc);
+
+  /// @todo Descriptions for objective function, metrics
 
   // Result
   return desc;
@@ -429,7 +436,7 @@ void model::add_weights(weights* w) {
 
 }
 
-void model::add_callback(lbann_callback *cb) {
+void model::add_callback(callback_base *cb) {
   if (cb == nullptr) {
     throw lbann_exception("model: Attempted to add null pointer as a callback.");
   }
@@ -598,6 +605,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // =============================================
 
 void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
+
   // Setup I/O threads - set up before setting up the layers (input
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
@@ -626,6 +634,9 @@ void model::setup(std::shared_ptr<thread_pool> io_thread_pool) {
 #ifdef LBANN_HAS_DISTCONV
   setup_distconv();
 #endif
+
+  // Callback hooks at end of setup
+  do_setup_end_cbs();
 }
 
 void model::setup_layer_topology() {
@@ -1251,6 +1262,12 @@ void model::reconcile_weight_values() {
 // Callbacks
 // =============================================
 
+void model::do_setup_end_cbs() {
+  for (const auto& cb : m_callbacks) {
+    cb->on_setup_end(this);
+  }
+}
+
 void model::do_train_begin_cbs() {
   for (const auto& cb : m_callbacks) {
     cb->on_train_begin(this);
@@ -1768,12 +1785,11 @@ bool model::reload_weights(const std::string latest, const std::vector<std::stri
 
 bool model::save_model() {
   for (auto* c : m_callbacks) {
-    auto *cb = dynamic_cast<lbann_callback_save_model*>(c);
-    if(cb != nullptr) {
-      return cb->save_model(this);
+    if (auto *cb = dynamic_cast<callback::save_model*>(c)) {
+      return cb->do_save_model(this);
     }
   }
-  if(m_comm->am_trainer_master()) {
+  if (m_comm->am_trainer_master()) {
     LBANN_WARNING("save_model was called, but the callback_save_model was not loaded");
   }
   return false;

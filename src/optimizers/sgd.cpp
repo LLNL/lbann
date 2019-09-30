@@ -26,6 +26,9 @@
 
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <optimizers.pb.h>
 
 namespace lbann {
 
@@ -216,6 +219,16 @@ bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) 
   p.read_rank_distmat(persist_type::train, l_name, *m_velocity);
 
   return true;
+}
+
+std::unique_ptr<optimizer>
+build_sgd_optimizer_from_pbuf(
+  google::protobuf::Message const& msg, lbann_comm* comm) {
+  const auto& params = dynamic_cast<lbann_data::Optimizer::SGD const&>(msg);
+  return make_unique<sgd>(comm,
+                          params.learn_rate(),
+                          params.momentum(),
+                          params.nesterov());
 }
 
 } // namespace lbann

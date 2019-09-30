@@ -51,6 +51,10 @@ using generate_builder_type =
 namespace helpers
 {
 
+/** @brief Test whether the message has the oneof field. */
+bool has_oneof(
+  google::protobuf::Message const& msg, std::string const& oneof_name);
+
 /** @brief Get a "derived type" message from the given message. */
 google::protobuf::Message const&
 get_oneof_message(

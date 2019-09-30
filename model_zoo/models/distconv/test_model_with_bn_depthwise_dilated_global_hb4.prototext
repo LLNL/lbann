@@ -32,12 +32,6 @@ model {
   callback { print {} }
   callback { gpu_memory_usage {} }
   callback { timer {} }
-  callback {
-    summary {
-      dir: "."
-      mat_interval: 0
-    }
-  }
   callback { profiler {} }
 
   layer {

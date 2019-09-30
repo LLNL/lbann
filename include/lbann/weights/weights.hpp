@@ -27,17 +27,20 @@
 #ifndef LBANN_WEIGHTS_HPP
 #define LBANN_WEIGHTS_HPP
 
-#include <string>
-#include <vector>
-#include <memory>
-
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/description.hpp"
-#include <lbann.pb.h>
+
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace lbann_data {
+class WeightsData;
+}
 
 namespace lbann {
 
@@ -138,7 +141,7 @@ public:
   /** Set weights initializer.
    *  The contents of 'init' are moved to a class member.
    */
-  void set_initializer(std::unique_ptr<weights_initializer>& init);
+  void set_initializer(std::unique_ptr<weights_initializer>&& init);
 
   // -----------------------------------------------
   // Optimizer accessors
@@ -154,7 +157,7 @@ public:
   /** Set weights optimizer.
    *  The contents of opt are moved to a class member.
    */
-  void set_optimizer(std::unique_ptr<optimizer>& opt);
+  void set_optimizer(std::unique_ptr<optimizer>&& opt);
 
   // -----------------------------------------------
   // Matrix distribution accessors

@@ -27,19 +27,34 @@
 #ifndef LBANN_PROTO_FACTORIES_HPP_INCLUDED
 #define LBANN_PROTO_FACTORIES_HPP_INCLUDED
 
-#include "lbann/proto/proto_common.hpp"
+#include "lbann/callbacks/callback.hpp"
 #include "lbann/data_readers/data_reader.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/transforms/transform.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
+
+#include <map>
+#include <memory>
+
+namespace lbann_data {
+class Model;
+class ObjectiveFunction;
+class Optimizer;
+class Reader;
+class Transform;
+class Weights;
+}// namespace lbann_data
 
 namespace lbann {
 namespace proto {
 
 /** Construct a model specified with a prototext. */
-model* construct_model(lbann_comm* comm,
-                       const std::map<execution_mode, generic_data_reader*>& data_readers,
-                       const lbann_data::Optimizer& proto_opt,
-                       const lbann_data::Model& proto_model);
+std::unique_ptr<model> construct_model(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  const lbann_data::Optimizer& proto_opt,
+  const lbann_data::Model& proto_model);
 
 /** Construct a layer graph specified with a prototext. */
 std::vector<std::unique_ptr<Layer>> construct_layer_graph(
@@ -56,28 +71,31 @@ std::unique_ptr<Layer> construct_layer(
   const lbann_data::Layer& proto_layer);
 
 /** Construct weights specified with prototext. */
-weights* construct_weights(lbann_comm* comm,
-                           const lbann_data::Optimizer& proto_opt,
-                           const lbann_data::Weights& proto_weights);
+std::unique_ptr<weights> construct_weights(
+  lbann_comm* comm,
+  const lbann_data::Optimizer& proto_opt,
+  const lbann_data::Weights& proto_weights);
 
 /** Construct a callback specified with prototext. */
-std::unique_ptr<lbann_callback>
+std::unique_ptr<callback_base>
 construct_callback(const google::protobuf::Message& proto_cb,
-                   lbann_summary* summarizer);
+                   std::shared_ptr<lbann_summary> const& summarizer);
 
 /** Construct a summarizer specified with prototext.
  *  The summarizer is only constructed if the summarizer callback is
  *  enabled.
  */
-lbann_summary* construct_summarizer(lbann_comm* comm,
-                                    const lbann_data::Model& m);
+std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
+                                                    const lbann_data::Model& m);
 
 /** Construct an optimizer specified with prototext. */
-optimizer* construct_optimizer(lbann_comm* comm,
-                               const lbann_data::Optimizer& proto_opt);
+std::unique_ptr<optimizer> construct_optimizer(
+  lbann_comm* comm,
+  const lbann_data::Optimizer& proto_opt);
 
 /** Construct an objective function specified with prototext. */
-objective_function* construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj);
+std::unique_ptr<objective_function>
+construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj);
 
 /** Construct a transform given a prototext. */
 std::unique_ptr<transform::transform> construct_transform(
