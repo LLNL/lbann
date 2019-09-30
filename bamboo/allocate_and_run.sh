@@ -52,7 +52,7 @@ elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTE
         fi
     else
         ALLOCATION_TIME_LIMIT=60 # Start with 1 hr; may adjust for CPU clusters
-        if [[ $(mjstat -c | awk 'match($1, "pbatch") { print $5 }') -ne "0" ]];
+        if [[ $(mjstat -c | awk 'match($1, "pbatch") && NF < 7 { print $5 }') -ne "0" ]];
         then
             timeout -k 5 24h salloc -N2 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh
         else
