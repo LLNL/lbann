@@ -12,7 +12,9 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         print('Skip - ' + e)
         pytest.skip(e)
     exe = executables[compiler_name]
-
+    # Handle data
+    if data_reader_percent is None:
+        data_reader_percent = 0.01
     # No checkpointing, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_shared_no_checkpoint_%s_error.txt' % (dir_name, compiler_name)
@@ -22,7 +24,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=0.01,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=no_ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name, weekly=weekly)
@@ -37,7 +39,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=0.01,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=1, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name, weekly=weekly)
@@ -51,7 +53,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=0.01,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name, weekly=weekly)
@@ -74,6 +76,9 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
         print('Skip - ' + e)
         pytest.skip(e)
     exe = executables[compiler_name]
+    # Handle data
+    if data_reader_percent is None:
+        data_reader_percent = 0.01
 
     # No checkpointing, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
@@ -84,7 +89,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=0.01,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=no_ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_dist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name, weekly=weekly)
@@ -99,7 +104,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=0.01,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_dist_ckpt', num_epochs=1, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name, weekly=weekly)
@@ -113,7 +118,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-        data_reader_name='mnist', data_reader_percent=0.01,
+        data_reader_name='mnist', data_reader_percent=data_reader_percent,
         ckpt_dir=ckpt_dir, model_folder='tests',
         model_name='lenet_mnist_dist_ckpt', num_epochs=2, optimizer_name='sgd',
         output_file_name=output_file_name, error_file_name=error_file_name, weekly=weekly)

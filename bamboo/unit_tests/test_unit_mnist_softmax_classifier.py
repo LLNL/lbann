@@ -18,7 +18,7 @@ def skeleton_mnist_softmax_classifier(cluster, executables, dir_name, compiler_n
         num_processes=1, dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         data_reader_name='mnist',
-        data_reader_percent=0.01,
+        data_reader_percent=data_reader_percent,
         model_folder='tests', model_name='mnist_softmax_classifier',
         optimizer_name='adam',
         output_file_name=output_file_name, error_file_name=error_file_name, weekly=weekly)
