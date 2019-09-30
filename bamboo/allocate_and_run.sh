@@ -2,8 +2,7 @@
 
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
-echo "allocate_and_run.sh CLUSTER="
-echo $CLUSTER
+echo "allocate_and_run.sh CLUSTER=${CLUSTER}"
 
 export PYTHONPATH=${HOME}/.local/lib/python3.7/site-packages:${PYTHONPATH}
 
@@ -27,8 +26,7 @@ while :; do
     shift
 done
 
-echo "allocate_and_run.sh WEEKLY="
-echo $WEEKLY
+echo "allocate_and_run.sh WEEKLY=${WEEKLY}"
 
 if [ "${CLUSTER}" = 'pascal' ]; then
     export MV2_USE_CUDA=1
@@ -37,14 +35,14 @@ fi
 if [ "${CLUSTER}" = 'lassen' ]; then
     ALLOCATION_TIME_LIMIT=600
     if [ ${WEEKLY} -ne 0 ]; then
-        timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 16 -W $ALLOCATION_TIME_LIMIT ./run.sh --weekly
+        timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 16 -W ${ALLOCATION_TIME_LIMIT} ./run.sh --weekly
     else
-        timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 16 -W $ALLOCATION_TIME_LIMIT ./run.sh
+        timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 16 -W ${ALLOCATION_TIME_LIMIT} ./run.sh
     fi
 elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
     ALLOCATION_TIME_LIMIT=960
     if [ ${WEEKLY} -ne 0 ]; then
-        timeout -k 5 24h salloc -N16 --partition=pbatch -t $ALLOCATION_TIME_LIMIT ./run.sh --weekly
+        timeout -k 5 24h salloc -N16 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh --weekly
         if [ "${CLUSTER}" = 'catalyst' ]; then
             cd integration_tests
             python -m pytest -s test_integration_performance.py -k test_integration_performance_full_alexnet_clang6 --weekly --run --junitxml=../full_alexnet_clang6/results.xml
@@ -53,9 +51,9 @@ elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTE
             cd ..
         fi
     else
-        timeout -k 5 24h salloc -N2 --partition=pvis -t 120 ./run.sh
+        ALLOCATION_TIME_LIMIT=60 # Start with 1 hr; may adjust for CPU clusters
+        timeout -k 5 24h salloc -N2 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh
     fi
 else
-    echo "allocate_and_run.sh. Unsupported cluster CLUSTER="
-    echo $CLUSTER
+    echo "allocate_and_run.sh. Unsupported cluster CLUSTER=${CLUSTER}"
 fi
