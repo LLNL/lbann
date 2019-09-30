@@ -73,9 +73,9 @@ then
     # Decide if CUDA should be used.
     if [[ "${CLUSTER}" =~ ^(pascal|lassen|ray)$ ]];
     then
-            USE_CUDA=ON
+        USE_CUDA=ON
     else
-            USE_CUDA=OFF
+        USE_CUDA=OFF
     fi
     
     # Cleanup
