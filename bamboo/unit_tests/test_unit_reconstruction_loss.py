@@ -17,7 +17,7 @@ def skeleton_jag_reconstruction_loss(cluster, executables, dir_name, compiler_na
         cluster=cluster,
         executable=executables[compiler_name],
         num_nodes=2,
-         num_processes=4,
+         num_processes=32,
         disable_cuda=1,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/10MJAG/1M_A/100K4trainers',
