@@ -594,7 +594,7 @@ def get_default_exes(default_dirname, cluster):
 
     default_exes = {}
     default_exes['default'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if cluster in ['catalyst', 'corona', 'lassen', 'pascal']:
+    if cluster in ['catalyst', 'corona', 'lassen', 'pascal', 'ray']:
         # Define all compilers.
         # x86_cpu - catalyst
         # x86_gpu_pascal - pascal
