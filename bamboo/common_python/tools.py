@@ -216,7 +216,7 @@ def get_command(cluster,
             # Cannot specify time limit for jsrun.
             command_run = '{s}jsrun'.format(s=space)
         else:
-            command_run = '{s}mpirun --timeout={t}'.format(s=space, t=time_limit)
+            command_run = '{s}mpirun --timeout {t}'.format(s=space, t=time_limit*60)
         option_bind = ''
         option_cpu_per_resource = ''
         option_gpu_per_resource = ''
