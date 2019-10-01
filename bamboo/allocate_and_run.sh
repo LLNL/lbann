@@ -37,7 +37,14 @@ if [ "${CLUSTER}" = 'lassen' ]; then
     if [ ${WEEKLY} -ne 0 ]; then
         timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 16 -W ${ALLOCATION_TIME_LIMIT} ./run.sh --weekly
     else
-        timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 16 -W ${ALLOCATION_TIME_LIMIT} ./run.sh
+        timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 2 -W ${ALLOCATION_TIME_LIMIT} ./run.sh
+    fi
+elif [ "${CLUSTER}" = 'ray' ]; then
+    if [ ${WEEKLY} -ne 0 ]; then
+        echo "No ray testing in weekly."
+    else
+        ALLOCATION_TIME_LIMIT=240
+        timeout -k 5 24h bsub -Is -q pbatch -nnodes 2 -W ${ALLOCATION_TIME_LIMIT} ./run.sh
     fi
 elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
     ALLOCATION_TIME_LIMIT=960
@@ -51,7 +58,7 @@ elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTE
             cd ..
         fi
     else
-        ALLOCATION_TIME_LIMIT=60 # Start with 1 hr; may adjust for CPU clusters
+        ALLOCATION_TIME_LIMIT=90 # Start with 1.5 hrs; may adjust for CPU clusters
         if [[ $(mjstat -c | awk 'match($1, "pbatch") && NF < 7 { print $5 }') -ne "0" ]];
         then
             timeout -k 5 24h salloc -N2 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh
