@@ -100,6 +100,8 @@ def skeleton_mnist_ridge_regression(cluster, executables, dir_name,
     lbann_args = '--data_reader_percent={drp}'.format(drp=data_reader_percent)
     if cluster == 'lassen':
         lbann_args += ' --data_filedir_train=/p/gpfs1/brainusr/datasets/MNIST --data_filedir_test=/p/gpfs1/brainusr/datasets/MNIST'
+    if cluster == 'ray':
+        lbann_args += ' --data_filedir_train=/p/gscratchr/brainusr/datasets/MNIST --data_filedir_test=/p/gscratchr/brainusr/datasets/MNIST'
     kwargs['lbann_args'] = lbann_args
 
     # Run

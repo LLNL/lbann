@@ -33,7 +33,7 @@ then
         # Compilers are easy...
         COMPILER_MODULE=$(echo ${LATEST_GCC} | sed -e 's|-|/|g')
 
-        if [[ ${MPI_LIBRARY} =~ "spectrum-mpi-.*" ]]
+        if [[ ${MPI_LIBRARY} =~ ^spectrum-mpi-.*$ ]]
         then
             MPI_MODULE=$(echo ${MPI_LIBRARY} | sed -e 's|spectrum-mpi-|spectrum-mpi/|g')
         else
