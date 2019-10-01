@@ -41,7 +41,7 @@ namespace callback {
  */
 class variable_minibatch : public callback_base {
  public:
-  variable_minibatch(int starting_mbsize);
+  variable_minibatch(size_t starting_mbsize);
   variable_minibatch(
     const variable_minibatch&) = default;
   variable_minibatch& operator=(
@@ -64,24 +64,24 @@ class variable_minibatch : public callback_base {
    * behavior; also be aware of interactions with other learning rate
    * schedules.
    */
-  virtual bool schedule(model *m, int& new_mbsize, float& new_lr,
-                        int& ramp_time) = 0;
+  virtual bool schedule(model *m, size_t& new_mbsize, float& new_lr,
+                        size_t& ramp_time) = 0;
   /// Change the learning rate of every layer in m to new_lr.
   void change_learning_rate(model *m, float new_lr) const;
   /// Get the current learning rate (assumes every layer has the same one).
   float get_current_learning_rate(model *m) const;
 
   /// Initial mini-batch size.
-  int m_starting_mbsize;
+  size_t m_starting_mbsize;
   /**
    * The current mini-batch size for this epoch.
    * This is kept separately from the model's get_current_mini_batch_size()
    * method, as calling that in on_epoch_end returns the size of the last mini-
    * batch, not the "base" mini-batch.
    */
-  int m_current_mini_batch_size;
+  size_t m_current_mini_batch_size;
   /// Current number of epochs left to ramp the learning rate.
-  int m_ramp_count = 0;
+  size_t m_ramp_count = 0;
   /// Amount to increment the learning rate by when ramping.
   float m_lr_incr = 0.0f;
 };
@@ -92,8 +92,8 @@ class variable_minibatch : public callback_base {
  */
 class step_minibatch : public variable_minibatch {
  public:
-  step_minibatch(int starting_mbsize, int step,
-                                int ramp_time = 0);
+  step_minibatch(size_t starting_mbsize, size_t step,
+                                size_t ramp_time = 0);
   step_minibatch(const step_minibatch&) = default;
   step_minibatch& operator=(
     const step_minibatch&) = delete;
@@ -102,13 +102,13 @@ class step_minibatch : public variable_minibatch {
   }
   std::string name() const override { return "step minibatch"; }
  protected:
-  bool schedule(model *m, int& new_mbsize, float& new_lr, int& ramp_time) override;
+  bool schedule(model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) override;
 
  private:
   /// Number of epochs between mini-batch size increases.
-  int m_step;
+  size_t m_step;
   /// Number of steps to ramp the learning rate over.
-  int m_ramp_time;
+  size_t m_ramp_time;
 };
 
 // Builder function
@@ -121,19 +121,19 @@ class minibatch_schedule : public variable_minibatch {
   /// Represents a step in a schedule of mini-batch sizes.
   struct minibatch_step {
     /// Epoch for this schedule to start.
-    int epoch;
+    size_t epoch;
     /// Mini-batch size to use.
-    int mbsize;
+    size_t mbsize;
     /// Learning rate to use.
     float lr;
     /// Number of epochs to ramp the learning rate over.
-    int ramp_time;
-    minibatch_step(int _epoch, int _mbsize, float _lr, int _ramp_time) :
+    size_t ramp_time;
+    minibatch_step(size_t _epoch, size_t _mbsize, float _lr, size_t _ramp_time) :
       epoch(_epoch), mbsize(_mbsize), lr(_lr), ramp_time(_ramp_time) {}
   };
 
   minibatch_schedule(
-    int starting_mbsize, std::vector<minibatch_step> steps);
+    size_t starting_mbsize, std::vector<minibatch_step> steps);
   minibatch_schedule(
     const minibatch_schedule&) = default;
   minibatch_schedule& operator=(
@@ -143,7 +143,7 @@ class minibatch_schedule : public variable_minibatch {
   }
   std::string name() const override { return "minibatch schedule"; }
  protected:
-  bool schedule(model *m, int& new_mbsize, float& new_lr, int& ramp_time) override;
+  bool schedule(model *m, size_t& new_mbsize, float& new_lr, size_t& ramp_time) override;
  private:
   /// Steps in the mini-batch schedule, stored in reverse sorted order.
   std::vector<minibatch_step> m_steps;

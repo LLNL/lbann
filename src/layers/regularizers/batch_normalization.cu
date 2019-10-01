@@ -26,6 +26,7 @@
 
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/utils/cuda.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -300,12 +301,13 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
   dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
   assert_always(distconv_enabled());
 
-  const bool is_training =
-      this->m_model->get_execution_mode() == execution_mode::training;
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   if (keep_original_input()) {
-    assert_always(this->m_model->get_current_mini_batch_size() ==
-                  get_prev_activations().Width());
+    const auto& c = static_cast<sgd_execution_context&>(
+        this->m_model->get_execution_context());
+    const auto& mini_batch_size = c.get_current_mini_batch_size();
+    assert_eq(mini_batch_size, get_prev_activations().Width());
   }
 
   assert0(dc::tensor::View(
@@ -350,9 +352,10 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   assert_always(distconv_enabled());
 
   // Check execution mode
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
-
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
   assert_always(is_training);
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
 
   assert0(dc::tensor::View(
       m_scale_t, get_weights()[0]->get_values().LockedBuffer()));
@@ -375,8 +378,6 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   } else {
     Zero(*m_mean_and_var_gradient);
   }
-
-  const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
 
   optimizer* scale_optimizer = m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
@@ -415,7 +416,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
   }
 #endif // LBANN_HAS_DISTCONV
   constexpr DataType one = 1;
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
   CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
@@ -539,7 +540,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   }
 #endif // LBANN_HAS_DISTCONV
   constexpr DataType one = 1;
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
   CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
@@ -563,7 +564,8 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   auto& local_bias_gradient = m_bias_gradient->Matrix();
 
   // Matrix parameters
-  const El::Int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();
   const auto& output_dims = get_output_dims();

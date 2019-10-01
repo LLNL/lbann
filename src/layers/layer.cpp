@@ -29,6 +29,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 #include <layers.pb.h>
 
@@ -254,7 +255,8 @@ void Layer::forward_prop() {
   const auto fp_start = get_time();
 
   // Setup tensors
-  const auto& mini_batch_size = m_model->get_current_mini_batch_size();
+  const auto& c = static_cast<sgd_execution_context&>(m_model->get_execution_context());
+  const auto& mini_batch_size = c.get_current_mini_batch_size();
   fp_setup_inputs(mini_batch_size);
   fp_setup_outputs(mini_batch_size);
 
@@ -264,7 +266,7 @@ void Layer::forward_prop() {
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
 #ifdef LBANN_HAS_DISTCONV
-  fp_setup_distconv(m_model->get_current_mini_batch_size());
+  fp_setup_distconv(mini_batch_size);
 #endif
 
   // Apply layer's compute function
@@ -296,7 +298,8 @@ void Layer::back_prop() {
   const auto bp_start = get_time();
 
   // Setup tensors
-  const auto& mini_batch_size = m_model->get_current_mini_batch_size();
+  const auto& c = static_cast<sgd_execution_context&>(m_model->get_execution_context());
+  const auto& mini_batch_size = c.get_current_mini_batch_size();
   bp_setup_gradient_wrt_outputs(mini_batch_size);
   bp_setup_gradient_wrt_inputs(mini_batch_size);
 
@@ -306,7 +309,7 @@ void Layer::back_prop() {
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
 #ifdef LBANN_HAS_DISTCONV
-  bp_setup_distconv(m_model->get_current_mini_batch_size());
+  bp_setup_distconv(mini_batch_size);
 #endif
 
   // Backprop the compute function.
@@ -1815,14 +1818,16 @@ TensorShuffler *get_shuffler(Layer *layer,
                              const TensorDev &src,
                              const TensorDev &dst) {
   TensorShuffler *shuffler = nullptr;
-  if (layer->get_model()->get_max_mini_batch_size() ==
-      layer->get_model()->get_current_mini_batch_size()) {
+  const auto& c = static_cast<sgd_execution_context&>(
+      layer->get_model()->get_execution_context());
+  const auto& mini_batch_size = c.get_current_mini_batch_size();
+  if (layer->get_model()->get_max_mini_batch_size() == mini_batch_size) {
     shuffler = main_shuffler;
   } else {
     // The last remaining mini-batches for the train, validation, and
     // testing modes
-    int shfl_idx = static_cast<int>(
-        layer->get_model()->get_execution_mode());
+    execution_mode mode = layer->get_model()->get_execution_context().get_execution_mode();
+    int shfl_idx = static_cast<int>(mode);
     assert_always(shfl_idx >= 0 && shfl_idx < 3);
     if (last_mb_shufflers[shfl_idx] == nullptr) {
       last_mb_shufflers[shfl_idx] = get_tensor_shuffler(src, dst);

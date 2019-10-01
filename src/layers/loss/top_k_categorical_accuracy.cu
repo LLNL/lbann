@@ -171,8 +171,7 @@ void fp_gpu(lbann_comm& comm,
             El::Int k,
             const AbsDistMat& predictions,
             const AbsDistMat& labels,
-            AbsDistMat& loss,
-            execution_mode mode) {
+            AbsDistMat& loss) {
   if (predictions.Wrap() != El::ELEMENT
       || labels.Wrap() != El::ELEMENT
       || loss.Wrap() != El::ELEMENT) {
@@ -336,8 +335,7 @@ void top_k_categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::G
          m_k,
          get_prev_activations(0),
          get_prev_activations(1),
-         get_activations(),
-         get_model()->get_execution_mode());
+         get_activations());
 }
 template <>
 void top_k_categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
@@ -346,8 +344,7 @@ void top_k_categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GP
          m_k,
          get_prev_activations(0),
          get_prev_activations(1),
-         get_activations(),
-         get_model()->get_execution_mode());
+         get_activations());
 }
 
 } // namespace lbann

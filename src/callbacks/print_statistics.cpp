@@ -53,6 +53,7 @@ void print_statistics::setup(model *m) {
 }
 
 void print_statistics::on_epoch_begin(model *m) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
 
@@ -67,7 +68,7 @@ void print_statistics::on_epoch_begin(model *m) {
     // Print message
     std::cout << "--------------------------------------------------------------------------------"
               << std::endl;
-    std::cout << "[" << m->get_epoch() << "] Epoch : stats formated [tr/v/te]"
+    std::cout << "[" << c.get_epoch() << "] Epoch : stats formated [tr/v/te]"
               << " iter/epoch ="
               << " ["
               << input->get_num_iterations_per_epoch(execution_mode::training)
@@ -137,14 +138,15 @@ void print_statistics::on_test_end(model *m) {
 }
 
 void print_statistics::report_results(model *m) {
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   lbann_comm *comm = m->get_comm();
 
   // Get string for execution mode
-  const execution_mode mode = m->get_execution_mode();
+  const execution_mode mode = c.get_execution_mode();
   std::string mode_string;
   switch (mode) {
   case execution_mode::training:
-    mode_string = "training epoch " + std::to_string(m->get_epoch()-1);
+    mode_string = "training epoch " + std::to_string(c.get_epoch()-1);
     break;
   case execution_mode::validation:
     mode_string = "validation";

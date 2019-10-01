@@ -46,6 +46,7 @@ namespace {
  *  layers. It is assumed that input layers have already loaded data.
  */
 DataType compute_objective_function(model& m) {
+  const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
 
   // Forward prop, skipping input layers
   for (auto&& l : m.get_layers()) {
@@ -56,8 +57,8 @@ DataType compute_objective_function(model& m) {
 
   // Get objective function value
   auto&& obj = m.get_objective_function();
-  const auto mode = m.get_execution_mode();
-  const auto mini_batch_size = m.get_current_mini_batch_size();
+  const auto mode = c.get_execution_mode();
+  const auto mini_batch_size = c.get_current_mini_batch_size();
   obj->start_evaluation(mode, mini_batch_size);
   return obj->finish_evaluation(mode, mini_batch_size);
 
@@ -77,8 +78,9 @@ check_gradients::check_gradients(std::set<execution_mode> modes,
 void check_gradients::do_check_gradients(model& m) const {
 
   // Get objects from model
+  const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
   auto& comm = *m.get_comm();
-  const auto mode = m.get_execution_mode();
+  const auto mode = c.get_execution_mode();
   const auto& layers = m.get_layers();
 
   // Return immediately if gradient check isn't currently needed

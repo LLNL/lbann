@@ -28,6 +28,7 @@
 #define LBANN_DATASET_HPP_INCLUDED
 
 #include "lbann/data_readers/data_reader.hpp"
+#include <cereal/types/utility.hpp>
 
 namespace lbann {
 
@@ -38,6 +39,11 @@ class dataset {
   // the data reader.
   dataset(const dataset& other) = default;
   dataset& operator=(const dataset& other) = default;
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_num_samples_processed),
+       CEREAL_NVP(m_total_samples));
+  }
+
   long get_num_samples_processed() const { return m_num_samples_processed; }
   long& num_samples_processed() { return m_num_samples_processed; }
   long get_total_samples() const { return m_total_samples; }

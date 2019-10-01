@@ -48,6 +48,7 @@ void save_topk_models::on_test_end(model *m) {
 }
 
 bool save_topk_models::am_in_topk(model *m) {
+  const auto& c = static_cast<const execution_context&>(m->get_execution_context());
   lbann_comm *comm = m->get_comm();
   const int num_trainers = comm->get_num_trainers();
   std::string mode_string = "test";
@@ -56,7 +57,7 @@ bool save_topk_models::am_in_topk(model *m) {
   for (const auto& met : m->get_metrics()) {
     if (met->name() == m_metric_name) {
       found_metric = true;
-      score = met->get_mean_value(m->get_execution_mode());
+      score = met->get_mean_value(c.get_execution_mode());
       break;
     }
   }

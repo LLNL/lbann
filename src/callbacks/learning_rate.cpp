@@ -78,6 +78,7 @@ void learning_rate::setup(model *m) {
 }
 
 void learning_rate::on_epoch_end(model *m) {
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   const float new_lr = global_schedule(m);
   const float old_global_lr = m_cur_global_lr;
   m_cur_global_lr = new_lr;
@@ -85,7 +86,7 @@ void learning_rate::on_epoch_end(model *m) {
   if (comm->am_trainer_master() && new_lr != old_global_lr) {
     std::cout << "Model " << comm->get_trainer_rank() << ": "
               << "changing global learning rate to " << new_lr
-              << " at epoch " << m->get_epoch() << std::endl;
+              << " at epoch " << c.get_epoch() << std::endl;
   }
   for (weights *w : this->get_weights()) {
     optimizer *opt = w->get_optimizer();
@@ -108,16 +109,17 @@ void learning_rate::on_backward_prop_end(model *m) {
 }
 
 step_learning_rate::step_learning_rate(
-  int step, float amt) :
+  size_t step, float amt) :
   learning_rate(), m_step(step), m_amt(amt) {}
 
 step_learning_rate::step_learning_rate(
-  int step, float amt, std::vector<std::string> weights_names) :
+  size_t step, float amt, std::vector<std::string> weights_names) :
   learning_rate(std::move(weights_names)),
   m_step(step), m_amt(amt) {}
 
 float step_learning_rate::global_schedule(model *m) {
-  if (m->get_epoch() % m_step == 0) {
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  if (c.get_epoch() % m_step == 0) {
     return get_current_global_learning_rate() * m_amt;
   } else {
     return get_current_global_learning_rate();
@@ -125,20 +127,21 @@ float step_learning_rate::global_schedule(model *m) {
 }
 
 adaptive_learning_rate::adaptive_learning_rate(
-  int64_t patience, float amt) :
+  size_t patience, float amt) :
   adaptive_learning_rate(patience, amt,
                                         std::vector<std::string>()) {}
 
 adaptive_learning_rate::adaptive_learning_rate(
-  int64_t patience, float amt, std::vector<std::string> weights_list) :
+  size_t patience, float amt, std::vector<std::string> weights_list) :
   learning_rate(std::move(weights_list)),
   m_patience(patience), m_amt(amt) {}
 
 float adaptive_learning_rate::global_schedule(model *m) {
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // Determine behavior the first time this is called in an epoch
-  if (m_cur_epoch != m->get_epoch()) {
-    m_cur_epoch = m->get_epoch();
-    const execution_mode mode = m->get_execution_mode();
+  if (m_cur_epoch != c.get_epoch()) {
+    m_cur_epoch = c.get_epoch();
+    const auto mode = c.get_execution_mode();
     const EvalType score = m->get_objective_function()->get_mean_value(mode);
     if (score < m_last_score) {
       // Reset wait counter if score has decreased
@@ -166,12 +169,12 @@ float adaptive_learning_rate::global_schedule(model *m) {
 }
 
 drop_fixed_learning_rate::drop_fixed_learning_rate(
-  std::vector<int64_t> drop_epochs, float amt) :
+  std::vector<size_t> drop_epochs, float amt) :
   drop_fixed_learning_rate(std::move(drop_epochs), amt,
                                           std::vector<std::string>()) {}
 
 drop_fixed_learning_rate::drop_fixed_learning_rate(
-  std::vector<int64_t> drop_epochs, float amt, std::vector<std::string> weights_names) :
+  std::vector<size_t> drop_epochs, float amt, std::vector<std::string> weights_names) :
   learning_rate(std::move(weights_names)),
   m_amt(amt), m_drop_epochs(std::move(drop_epochs)) {
   // Sort in reverse order.
@@ -179,14 +182,15 @@ drop_fixed_learning_rate::drop_fixed_learning_rate(
 }
 
 float drop_fixed_learning_rate::global_schedule(model* m) {
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // Delete last drop epoch if we have already passed it
   while (!m_drop_epochs.empty()
-         && m->get_epoch() > m_drop_epochs.back()) {
+         && c.get_epoch() > m_drop_epochs.back()) {
     m_drop_epochs.pop_back();
   }
 
   // Adjust learning rate if at a drop epoch
-  if (!m_drop_epochs.empty() && m->get_epoch() == m_drop_epochs.back()) {
+  if (!m_drop_epochs.empty() && c.get_epoch() == m_drop_epochs.back()) {
     return get_current_global_learning_rate() * m_amt;
   } else {
     return get_current_global_learning_rate();
@@ -194,17 +198,17 @@ float drop_fixed_learning_rate::global_schedule(model* m) {
 }
 
 linear_growth_learning_rate::linear_growth_learning_rate(
-  float target, int64_t num_epochs) :
+  float target, size_t num_epochs) :
   linear_growth_learning_rate(target, num_epochs, 0,
                                              std::vector<std::string>()) {}
 
 linear_growth_learning_rate::linear_growth_learning_rate(
-  float target, int64_t num_epochs, int64_t delay) :
+  float target, size_t num_epochs, size_t delay) :
   linear_growth_learning_rate(target, num_epochs, delay,
                                              std::vector<std::string>()) {}
 
 linear_growth_learning_rate::linear_growth_learning_rate(
-  float target, int64_t num_epochs, int64_t delay,
+  float target, size_t num_epochs, size_t delay,
   std::vector<std::string> weights_names) :
   learning_rate(std::move(weights_names)),
   m_target(target), m_inc(0),
@@ -221,10 +225,11 @@ void linear_growth_learning_rate::setup(model *m) {
 }
 
 float linear_growth_learning_rate::global_schedule(model *m) {
-  if (m->get_epoch() < m_delay) {
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  if (c.get_epoch() < m_delay) {
     return get_current_global_learning_rate();
-  } else if (m->get_epoch() <= m_num_epochs + m_delay) {
-    int num_left = m_num_epochs + m_delay - m->get_epoch();
+  } else if (c.get_epoch() <= m_num_epochs + m_delay) {
+    int num_left = m_num_epochs + m_delay - c.get_epoch();
     return m_base_lr + m_inc*(m_num_epochs - num_left);
   } else {
     return get_current_global_learning_rate();
@@ -238,14 +243,14 @@ float linear_growth_learning_rate::global_schedule(model *m) {
  * epochs (n_epochs). n_epochs is not used otherwise.
  */
 poly_learning_rate::poly_learning_rate(
-  double p, uint64_t n_epochs, uint64_t max_iter)
+  double p, size_t n_epochs, size_t max_iter)
   : learning_rate(std::vector<std::string>()),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
     m_end_lr(0.0f),
     m_lr(1.0f), m_last_epoch_lr(1.0f) {}
 
 poly_learning_rate::poly_learning_rate(
-  double p, uint64_t n_epochs, uint64_t max_iter, double end_lr,  std::vector<std::string> weights_names)
+  double p, size_t n_epochs, size_t max_iter, double end_lr,  std::vector<std::string> weights_names)
   : learning_rate(std::move(weights_names)),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
     m_end_lr(end_lr),
@@ -275,7 +280,8 @@ float poly_learning_rate::global_schedule(model *m) {
  * Compute the learning rate for the next iteration.
  */
 float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
-  const uint64_t cur_iter = static_cast<uint64_t>(m->get_step(execution_mode::training));
+  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const size_t cur_iter = c.get_step();
   if (m_max_iter > cur_iter) {
     m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
   }
@@ -334,7 +340,7 @@ build_drop_fixed_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDropFixedLearningRate&>(proto_msg);
-  std::vector<int64_t> drop_epochs;
+  std::vector<size_t> drop_epochs;
   for (int i = 0; i < params.drop_epoch_size(); ++i) {
     drop_epochs.push_back(params.drop_epoch(i));
   }
