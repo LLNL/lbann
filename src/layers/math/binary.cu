@@ -320,7 +320,7 @@ struct equal_op {
 struct not_equal_op {
   inline __device__ DataType operator()(const DataType& x1,
                                         const DataType& x2) const {
-    return x1 == x2 ? DataType(1) : DataType(0);
+    return x1 == x2 ? DataType(0) : DataType(1);
   }
   inline __device__ void operator()(const DataType& x1,
                                     const DataType& x2,
