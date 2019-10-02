@@ -38,12 +38,12 @@ namespace lbann {
  */
 template <data_layout Layout, El::Device Device>
 class bilinear_resize_layer : public Layer {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "bilinear_resize_layer only supports DATA_PARALLEL");
 public:
 
   bilinear_resize_layer(lbann_comm *comm, El::Int height, El::Int width)
     : Layer(comm), m_height(height), m_width(width) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "bilinear_resize_layer only supports DATA_PARALLEL");
   }
 
   bilinear_resize_layer* copy() const override {
@@ -105,6 +105,15 @@ private:
   El::Int m_width;
 
 };
+
+#ifndef LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
+extern template class bilinear_resize_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class bilinear_resize_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
 
 } // namespace lbann
 

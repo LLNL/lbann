@@ -578,9 +578,8 @@ model {
     name: "decode0"
     weights: "decode0linearity decode0bias"
     data_layout: "data_parallel"
+    hint_layer: "image_data_dummy"
     fully_connected {
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
   }

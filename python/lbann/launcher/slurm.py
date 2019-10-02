@@ -1,136 +1,155 @@
 """Utility functions for Slurm."""
-import os, os.path
+
+import os
 import subprocess
 from lbann.util import make_iterable
+from .batch_script import BatchScript
 
-def run(command,
-        experiment_dir=os.getcwd(),
-        nodes=1,
-        procs_per_node=1,
-        time_limit=-1,
-        job_name=None,
-        partition=None,
-        account=None,
-        reservation=None,
-        srun_args='',
-        environment={},
-        setup_only=False):
-    """Run executable with Slurm.
+class SlurmBatchScript(BatchScript):
+    """Utility class to write Slurm batch scripts."""
 
-    Creates a Slurm batch script in the experiment directory. If a
-    Slurm job allocation is detected, the script is run
-    directly. Otherwise, the script is submitted to sbatch.
+    def __init__(self,
+                 script_file=None,
+                 work_dir=os.getcwd(),
+                 nodes=1,
+                 procs_per_node=1,
+                 time_limit=None,
+                 job_name=None,
+                 partition=None,
+                 account=None,
+                 launcher='srun',
+                 launcher_args=[],
+                 interpreter='/bin/bash'):
+        """Construct Slurm batch script manager.
 
-    Args:
-        command (str): Program to run under Slurm, i.e. an executable
-            and its command-line arguments.
-        experiment_dir (str, optional): Experiment directory.
-        nodes (int, optional): Number of compute nodes.
-        procs_per_node (int, optional): Number of processes per compute
-            node.
-        time_limit (int, optional): Job time limit, in minutes. A
-            negative value implies the system-default time limit.
-        job_name (str, optional): Batch job name.
-        partition (str, optional): Scheduler partition.
-        account (str, optional): Scheduler account.
-        reservation (str, optional): Scheduler reservation name.
-        srun_args (str, optional): Command-line arguments to srun.
-        environment (dict of {str: str}, optional): Environment
-            variables.
-        setup_only (bool, optional): If true, the experiment is not
-            run after the batch script is created.
+        Args:
+            script_file (str): Script file.
+            work_dir (str, optional): Working directory
+                (default: current working directory).
+            nodes (int, optional): Number of compute nodes
+                (default: 1).
+            procs_per_node (int, optional): Parallel processes per
+                compute node (default: 1).
+            time_limit (int, optional): Job time limit, in minutes
+                (default: none).
+            job_name (str, optional): Job name (default: none).
+            partition (str, optional): Scheduler partition
+                (default: none).
+            account (str, optional): Scheduler account
+                (default: none).
+            launcher (str, optional): Parallel command launcher
+                (default: srun).
+            launcher_args (`Iterable` of `str`, optional):
+                Command-line arguments to srun.
+            interpreter (str, optional): Script interpreter
+                (default: /bin/bash).
 
-    Returns:
-        int: Exit status from Slurm. This is really only meaningful if
-            the script is run on an existing node allocation. If a
-            batch job is submitted, Slurm will probably return 0
-            trivially.
+        """
+        super().__init__(script_file=script_file,
+                         work_dir=work_dir,
+                         interpreter=interpreter)
+        self.nodes = nodes
+        self.procs_per_node = procs_per_node
+        self.launcher = launcher
+        self.launcher_args = launcher_args
 
-    """
+        # Configure header with Slurm job options
+        self._construct_header(job_name=job_name,
+                               nodes=self.nodes,
+                               time_limit=time_limit,
+                               partition=partition,
+                               account=account)
 
-    # Check for an existing job allocation from Slurm
-    # Note: Settings for current job allocation take precedence
-    has_allocation = 'SLURM_JOB_ID' in os.environ
-    if has_allocation:
-        job_name = os.environ['SLURM_JOB_NAME']
-        partition = os.environ['SLURM_JOB_PARTITION']
-        account = os.environ['SLURM_JOB_ACCOUNT']
-        time_limit = -1
-
-    # Experiment directory
-    experiment_dir = os.path.abspath(experiment_dir)
-    os.makedirs(experiment_dir, exist_ok=True)
-    batch_file = os.path.join(experiment_dir, 'batch.sh')
-    out_file = os.path.join(experiment_dir, 'out.log')
-    err_file = os.path.join(experiment_dir, 'err.log')
-    nodes_file = os.path.join(experiment_dir, 'nodes.txt')
-
-    # Write batch script
-    with open(batch_file, 'w') as f:
-        f.write('#!/bin/sh\n')
-
-        # Slurm job settings
+    def _construct_header(self,
+                          job_name=None,
+                          nodes=1,
+                          time_limit=None,
+                          partition=None,
+                          account=None):
+        """Construct script header with options for sbatch."""
         if job_name:
-            f.write('#SBATCH --job-name={}\n'.format(job_name))
-        f.write('#SBATCH --nodes={}\n'.format(nodes))
-        if partition:
-            f.write('#SBATCH --partition={}\n'.format(partition))
-        if account:
-            f.write('#SBATCH --account={}\n'.format(account))
-        if reservation:
-            raise ValueError('Slurm reservations not supported')
-        f.write('#SBATCH --workdir={}\n'.format(experiment_dir))
-        f.write('#SBATCH --output={}\n'.format(out_file))
-        f.write('#SBATCH --error={}\n'.format(err_file))
-        if time_limit >= 0:
+            self.add_header_line('#SBATCH --job-name={}'.format(job_name))
+        self.add_header_line('#SBATCH --nodes={}'.format(nodes))
+        if time_limit is not None:
+            time_limit = max(time_limit, 0)
             seconds = int((time_limit % 1) * 60)
             hours, minutes = divmod(int(time_limit), 60)
             days, hours = divmod(hours, 24)
-            f.write('#SBATCH --time={}-{:02d}:{:02d}:{:02d}\n'
-                    .format(days, hours, minutes, seconds))
+            self.add_header_line('#SBATCH --time={}-{:02d}:{:02d}:{:02d}'
+                                 .format(days, hours, minutes, seconds))
+        self.add_header_line('#SBATCH --workdir={}'.format(self.work_dir))
+        self.add_header_line('#SBATCH --output={}'.format(self.out_log_file))
+        self.add_header_line('#SBATCH --error={}'.format(self.err_log_file))
+        if partition:
+            self.add_header_line('#SBATCH --partition={}'.format(partition))
+        if account:
+            self.add_header_line('#SBATCH --account={}'.format(account))
 
-        # Set environment
-        if environment:
-            f.write('\n')
-            f.write('# ==== Environment ====\n')
-            for variable, value in environment.items():
-                f.write('export {}={}\n'.format(variable, value))
+    def add_parallel_command(self,
+                             command,
+                             launcher=None,
+                             launcher_args=None,
+                             nodes=None,
+                             procs_per_node=None):
+        """Add command to be executed in parallel.
 
-        # Display time and node list
-        f.write('\n')
-        f.write('# ==== Useful info ====\n')
-        f.write('date\n')
-        f.write('srun --nodes={0} --ntasks={0} hostname > {1}\n'
-                .format(nodes, nodes_file))
-        f.write('sort --unique --output={0} {0}\n'.format(nodes_file))
+        The command is launched with srun. Parallel processes are
+        distributed evenly amongst the compute nodes.
 
-        # Run experiment
-        f.write('\n')
-        f.write('# ==== Experiment ====\n')
-        for cmd in make_iterable(command):
-            f.write('srun {} --nodes={} --ntasks={} {}\n'
-                    .format(srun_args, nodes, nodes * procs_per_node,
-                            cmd))
+        Args:
+            command (`str` or `Iterable` of `str`s): Command to be
+                executed in parallel.
+            launcher (str, optional): srun executable.
+            launcher_args (`Iterable` of `str`s, optional):
+                Command-line arguments to srun.
+            nodes (int, optional): Number of compute nodes.
+            procs_per_node (int, optional): Number of parallel
+                processes per compute node.
 
-    # Make batch script executable
-    os.chmod(batch_file, 0o755)
+        """
+        if launcher is None:
+            launcher = self.launcher
+        if launcher_args is None:
+            launcher_args = self.launcher_args
+        if nodes is None:
+            nodes = self.nodes
+        if procs_per_node is None:
+            procs_per_node = self.procs_per_node
+        args = [launcher]
+        args.extend(make_iterable(launcher_args))
+        args.append('--nodes={}'.format(nodes))
+        args.append('--ntasks={}'.format(nodes * procs_per_node))
+        args.extend(make_iterable(command))
+        self.add_command(args)
 
-    # Launch job if needed
-    # Note: Pipes output to log files
-    if setup_only:
-        return 0
-    else:
-        run_exe = 'sh' if has_allocation else 'sbatch'
-        run_proc = subprocess.Popen([run_exe, batch_file],
-                                    stdout = subprocess.PIPE,
-                                    stderr = subprocess.PIPE,
-                                    cwd = experiment_dir)
-        out_proc = subprocess.Popen(['tee', out_file],
-                                    stdin = run_proc.stdout,
-                                    cwd = experiment_dir)
-        err_proc = subprocess.Popen(['tee', err_file],
-                                    stdin = run_proc.stderr,
-                                    cwd = experiment_dir)
+    def submit(self, overwrite=False):
+        """Submit batch job to Slurm with sbatch.
+
+        The script file is written before being submitted.
+
+        Args:
+            overwrite (bool): Whether to overwrite script file if it
+                already exists (default: false).
+
+        Returns:
+            int: Exit status from sbatch.
+
+        """
+
+        # Construct script file
+        self.write(overwrite=overwrite)
+
+        # Submit batch script and pipe output to log files
+        run_proc = subprocess.Popen(['sbatch', self.script_file],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    cwd=self.work_dir)
+        out_proc = subprocess.Popen(['tee', self.out_log_file],
+                                    stdin=run_proc.stdout,
+                                    cwd=self.work_dir)
+        err_proc = subprocess.Popen(['tee', self.err_log_file],
+                                    stdin=run_proc.stderr,
+                                    cwd=self.work_dir)
         run_proc.stdout.close()
         run_proc.stderr.close()
         run_proc.wait()

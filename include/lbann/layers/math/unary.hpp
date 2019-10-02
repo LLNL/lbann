@@ -55,14 +55,42 @@ protected:
   void bp_compute() override;
 };
 
+// Convenience macros for ETI decls for unary layers
+
+#ifndef LBANN_UNARY_LAYER_INSTANTIATE
+#define UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, DEVICE)               \
+  extern template class entrywise_unary_layer<                     \
+    data_layout::DATA_PARALLEL, DEVICE, LAYER_NAME##_name_struct>; \
+  extern template class entrywise_unary_layer<                     \
+    data_layout::MODEL_PARALLEL, DEVICE, LAYER_NAME##_name_struct>
+#else
+#define UNARY_ETI_DECL_MACRO_DEV(...)
+#endif // LBANN_UNARY_LAYER_INSTANTIATE
+
+#define UNARY_ETI_INST_MACRO_DEV(LAYER_NAME, DEVICE)               \
+  template class entrywise_unary_layer<                            \
+    data_layout::DATA_PARALLEL, DEVICE, LAYER_NAME##_name_struct>; \
+  template class entrywise_unary_layer<                            \
+    data_layout::MODEL_PARALLEL, DEVICE, LAYER_NAME##_name_struct>
+
+#ifdef LBANN_HAS_GPU
+#define UNARY_ETI_DECL_MACRO(LAYER_NAME)                       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU);       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::GPU)
+#else
+#define UNARY_ETI_DECL_MACRO(LAYER_NAME)                       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU)
+#endif // LBANN_HAS_GPU
+
 // Convenience macro to define an entry-wise unary layer class
-#define DEFINE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string)          \
+#define DEFINE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string)    \
   struct layer_name##_name_struct {                                     \
     inline operator std::string() { return layer_string; }              \
   };                                                                    \
   template <data_layout Layout, El::Device Device>                      \
   using layer_name                                                      \
-  = entrywise_unary_layer<Layout, Device, layer_name##_name_struct>;
+  = entrywise_unary_layer<Layout, Device, layer_name##_name_struct>;    \
+  UNARY_ETI_DECL_MACRO(layer_name)
 
 // Logical operations
 DEFINE_ENTRYWISE_UNARY_LAYER(logical_not_layer, "logical not");
@@ -109,4 +137,7 @@ DEFINE_ENTRYWISE_UNARY_LAYER(atanh_layer, "hyperbolic arctangent");
 } // namespace lbann
 
 #undef DEFINE_ENTRYWISE_UNARY_LAYER
+#undef UNARY_ETI_DECL_MACRO
+#undef UNARY_ETI_DECL_MACRO_DEV
+
 #endif // LBANN_LAYERS_MATH_UNARY_HPP_INCLUDED

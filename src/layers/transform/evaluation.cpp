@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_EVALUATION_LAYER_INSTANTIATE
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/utils/exception.hpp"
 #ifdef LBANN_HAS_GPU
@@ -241,5 +242,12 @@ abstract_evaluation_layer::construct(lbann_comm *comm,
   return nullptr;
 
 }
+
+template class evaluation_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class evaluation_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+template class evaluation_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class evaluation_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
 
 } // namespace lbann

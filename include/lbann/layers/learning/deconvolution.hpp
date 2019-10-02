@@ -40,6 +40,8 @@ class imcomm;
 /** @brief Transpose of the convolution layer. */
 template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
 class deconvolution_layer : public base_convolution_layer<Device> {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "deconvolution layer only supports DATA_PARALLEL");
 private:
 
   friend class callback::imcomm;
@@ -84,9 +86,6 @@ public:
         std::move(dilations),
         groups,
         has_bias) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "deconvolution layer only supports DATA_PARALLEL");
-
   }
 
   deconvolution_layer* copy() const override { return new deconvolution_layer(*this); }
@@ -175,6 +174,15 @@ protected:
   }
 
 };
+
+#ifndef LBANN_DECONVOLUTION_LAYER_INSTANTIATE
+extern template class deconvolution_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class deconvolution_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_DECONVOLUTION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

@@ -81,6 +81,33 @@ protected:
 
 };
 
+// Convenience macros for ETI decls for binary layers
+
+#ifndef LBANN_BINARY_LAYER_INSTANTIATE
+#define BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, DEVICE)               \
+  extern template class entrywise_binary_layer<                     \
+    data_layout::DATA_PARALLEL, DEVICE, LAYER_NAME##_name_struct>;  \
+  extern template class entrywise_binary_layer<                     \
+    data_layout::MODEL_PARALLEL, DEVICE, LAYER_NAME##_name_struct>
+#else
+#define BINARY_ETI_DECL_MACRO_DEV(...)
+#endif // LBANN_BINARY_LAYER_INSTANTIATE
+
+#define BINARY_ETI_INST_MACRO_DEV(LAYER_NAME, DEVICE)               \
+  template class entrywise_binary_layer<                            \
+    data_layout::DATA_PARALLEL, DEVICE, LAYER_NAME##_name_struct>;  \
+  template class entrywise_binary_layer<                            \
+    data_layout::MODEL_PARALLEL, DEVICE, LAYER_NAME##_name_struct>
+
+#ifdef LBANN_HAS_GPU
+#define BINARY_ETI_DECL_MACRO(LAYER_NAME)                       \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU);       \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::GPU)
+#else
+#define BINARY_ETI_DECL_MACRO(LAYER_NAME)                       \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU)
+#endif // LBANN_HAS_GPU
+
 // Convenience macro to define an entry-wise binary layer class
 #define DEFINE_ENTRYWISE_BINARY_LAYER(layer_name, layer_string)         \
   struct layer_name##_name_struct {                                     \
@@ -88,7 +115,8 @@ protected:
   };                                                                    \
   template <data_layout Layout, El::Device Device>                      \
   using layer_name                                                      \
-  = entrywise_binary_layer<Layout, Device, layer_name##_name_struct>;
+  = entrywise_binary_layer<Layout, Device, layer_name##_name_struct>;   \
+  BINARY_ETI_DECL_MACRO(layer_name)
 
 // Arithmetic operations
 DEFINE_ENTRYWISE_BINARY_LAYER(add_layer,                "add");
@@ -118,4 +146,7 @@ DEFINE_ENTRYWISE_BINARY_LAYER(logical_xor_layer, "logical xor");
 } // namespace lbann
 
 #undef DEFINE_ENTRYWISE_BINARY_LAYER
+#undef BINARY_ETI_DECL_MACRO
+#undef BINARY_ETI_DECL_MACRO_DEV
+
 #endif // LBANN_LAYERS_MATH_BINARY_HPP_INCLUDED

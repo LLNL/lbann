@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_TESSELLATE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/tessellate.hpp"
 
 namespace lbann {
@@ -137,5 +138,8 @@ void tessellate_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
   bp_cpu_3d(input_dims, output_dims,
             gradient_wrt_output, gradient_wrt_input);
 }
+
+template class tessellate_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class tessellate_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

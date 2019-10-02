@@ -31,6 +31,27 @@
 
 namespace lbann {
 
+// Convenience macros for ETI decls for unary layers
+
+#ifndef LBANN_ACTIVATIONS_LAYER_INSTANTIATE
+#define UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, DEVICE)               \
+  extern template class entrywise_unary_layer<                     \
+    data_layout::DATA_PARALLEL, DEVICE, LAYER_NAME##_name_struct>; \
+  extern template class entrywise_unary_layer<                     \
+    data_layout::MODEL_PARALLEL, DEVICE, LAYER_NAME##_name_struct>
+#else
+#define UNARY_ETI_DECL_MACRO_DEV(...)
+#endif // LBANN_UNARY_LAYER_INSTANTIATE
+
+#ifdef LBANN_HAS_GPU
+#define UNARY_ETI_DECL_MACRO(LAYER_NAME)                       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU);       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::GPU)
+#else
+#define UNARY_ETI_DECL_MACRO(LAYER_NAME)                       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU)
+#endif // LBANN_HAS_GPU
+
 // Convenience macro to define an entry-wise unary layer class
 #define DEFINE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string)          \
   struct layer_name##_name_struct {                                     \
@@ -38,7 +59,8 @@ namespace lbann {
   };                                                                    \
   template <data_layout Layout, El::Device Device>                      \
   using layer_name                                                      \
-  = entrywise_unary_layer<Layout, Device, layer_name##_name_struct>;
+  = entrywise_unary_layer<Layout, Device, layer_name##_name_struct>;    \
+  UNARY_ETI_DECL_MACRO(layer_name)
 
 /** @class lbann::log_sigmoid_layer
  *  @brief Logarithm of sigmoid function.
@@ -46,7 +68,7 @@ namespace lbann {
  *  @f[ \log(\sigma(x)) = -\log(1 + e^{-x}) @f]
  *  See https://en.wikipedia.org/wiki/Sigmoid_function.
  */
-DEFINE_ENTRYWISE_UNARY_LAYER(log_sigmoid_layer, "log sigmoid")
+DEFINE_ENTRYWISE_UNARY_LAYER(log_sigmoid_layer, "log sigmoid");
 
 // DISTCONV does not support the unary-op layer yet. ReLU is still
 // defined in its own header and source files.
@@ -57,7 +79,7 @@ DEFINE_ENTRYWISE_UNARY_LAYER(log_sigmoid_layer, "log sigmoid")
  *  @f[ \text{ReLU}(x) = \text{max}(x, 0) @f]
  *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks).
  */
-DEFINE_ENTRYWISE_UNARY_LAYER(relu_layer, "ReLU")
+DEFINE_ENTRYWISE_UNARY_LAYER(relu_layer, "ReLU");
 #endif // LBANN_HAS_DISTCONV
 
 /** @class lbann::selu_layer
@@ -77,7 +99,7 @@ DEFINE_ENTRYWISE_UNARY_LAYER(relu_layer, "ReLU")
  *  Hochreiter. "Self-normalizing neural networks." In Advances in
  *  Neural Information Processing Systems, pp. 971-980. 2017.
  */
-DEFINE_ENTRYWISE_UNARY_LAYER(selu_layer, "SELU")
+DEFINE_ENTRYWISE_UNARY_LAYER(selu_layer, "SELU");
 
 /** @class lbann::sigmoid_layer
  *  @brief Special case of logistic function.
@@ -85,7 +107,7 @@ DEFINE_ENTRYWISE_UNARY_LAYER(selu_layer, "SELU")
  *  @f[ \sigma(x) = \frac{1}{1 + e^{-x}} @f]
  *  See https://en.wikipedia.org/wiki/Sigmoid_function.
  */
-DEFINE_ENTRYWISE_UNARY_LAYER(sigmoid_layer, "sigmoid")
+DEFINE_ENTRYWISE_UNARY_LAYER(sigmoid_layer, "sigmoid");
 // Sigmoid function output is strictly in (0,1)
 // Note: Output is in the range [eps,1-eps], where 'eps' is machine
 // epsilon. This avoids denormalized floats and helps mitigate some
@@ -98,16 +120,19 @@ DEFINE_ENTRYWISE_UNARY_LAYER(sigmoid_layer, "sigmoid")
  *  @f[ \text{softplus}(x) = \log (e^x + 1) @f]
  *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
-DEFINE_ENTRYWISE_UNARY_LAYER(softplus_layer, "softplus")
+DEFINE_ENTRYWISE_UNARY_LAYER(softplus_layer, "softplus");
 
 /** @class lbann::softsign_layer
  *  @brief Smooth approximation to sign function.
  *
  *  @f[ \text{softsign}(x) = \frac{x}{1 + |x|} @f]
  */
-DEFINE_ENTRYWISE_UNARY_LAYER(softsign_layer, "softsign")
+DEFINE_ENTRYWISE_UNARY_LAYER(softsign_layer, "softsign");
 
 } // namespace lbann
 
 #undef DEFINE_ENTRYWISE_UNARY_LAYER
+#undef UNARY_ETI_DECL_MACRO
+#undef UNARY_ETI_DECL_MACRO_DEV
+
 #endif // LBANN_LAYERS_ACTIVATIONS_ACTIVATIONS_HPP_INCLUDED

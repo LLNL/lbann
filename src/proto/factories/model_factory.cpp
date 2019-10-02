@@ -57,7 +57,7 @@ instantiate_model(lbann_comm* comm,
                   const lbann_data::Model& proto_model) {
 
   // Default optimizer
-  auto opt = construct_optimizer(comm, proto_opt);
+  auto opt = construct_optimizer(proto_opt);
 
   // Construct model
   const auto& type = proto_model.type();
@@ -284,8 +284,8 @@ std::unique_ptr<model> construct_model(
 
   // Instantiate model
   auto m = instantiate_model(comm, std::move(obj), proto_opt, proto_model);
-  for (auto&& l   : layer_list   ) { m->add_layer(std::move(l)); }
-  for (auto&& w   : weights_list ) { m->add_weights(w.release());   }
+  for (auto&& l   : layer_list   ) { m->add_layer(std::move(l));    }
+  for (auto&& w   : weights_list ) { m->add_weights(std::move(w));  }
   for (auto&& met : metric_list  ) { m->add_metric(met.release());  }
   for (auto&& cb  : callback_list) { m->add_callback(cb.release()); }
   const auto& name = proto_model.name();

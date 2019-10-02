@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_SORT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/sort.hpp"
 
 namespace lbann {
@@ -85,5 +86,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   }
 
 }
+
+template class sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

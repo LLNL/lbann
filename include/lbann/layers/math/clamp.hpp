@@ -82,6 +82,19 @@ private:
 
 };
 
+#ifndef LBANN_CLAMP_LAYER_INSTANTIATE
+extern template class clamp_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class clamp_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class clamp_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class clamp_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_CLAMP_LAYER_INSTANTIATE
+
 } // namespace lbann
 
 #endif // LBANN_LAYERS_MATH_CLAMP_HPP_INCLUDED

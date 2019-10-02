@@ -498,6 +498,7 @@ void init_data_readers(
                                               params.sample_function(),
                                               params.num_samples_function(),
                                               params.sample_dims_function());
+        (*(python_reader *)reader_validation) = (*(python_reader *)reader);
 #else
         LBANN_ERROR("attempted to construct Python data reader, "
                     "but LBANN is not built with Python/C API");
@@ -506,9 +507,12 @@ void init_data_readers(
 
       reader_validation->set_role("validate");
       reader_validation->use_unused_index_set();
-      if(reader_validation->get_data_store_ptr() != nullptr) {
+      data_store_conduit *store = reader_validation->get_data_store_ptr();
+      if (store != nullptr) {
+        store->set_data_reader_ptr(reader_validation);
         reader_validation->get_data_store_ptr()->compact_nodes();
-      }
+      } 
+
       /// At this point clean up any unused samples from the main data store
       if(reader->get_data_store_ptr() != nullptr) {
         auto&& data_store = reader->get_data_store_ptr();

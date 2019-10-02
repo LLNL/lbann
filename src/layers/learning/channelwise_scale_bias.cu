@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 #ifdef HYDROGEN_HAVE_CUB
 #include "cub/block/block_reduce.cuh"
@@ -274,5 +275,8 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 
 
 }
+
+template class channelwise_scale_bias_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

@@ -31,6 +31,8 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
+#include "lbann/utils/lbann_library.hpp"
 #include <fstream>
 
 namespace lbann {
@@ -204,23 +206,59 @@ void read_raw_data(const std::string &filename, std::vector<char> &data) {
   in.close();
 }
 
+
 void image_data_reader::preload_data_store() {
-  double tm1 = get_time();
   m_data_store->set_preload();
+  options *opts = options::get();
 
-  conduit::Node node;
-  if (is_master()) std::cerr << "Starting image_data_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
+  if (is_master()) std::cout << "Starting image_data_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
   int rank = m_comm->get_rank_in_trainer();
-  for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
-    if (m_data_store->get_index_owner(data_id) != rank) {
-      continue;
-    }
-    load_conduit_node_from_file(data_id, node);
-    m_data_store->set_preloaded_conduit_node(data_id, node);
-  }
 
-  if (is_master()) {
-    std::cout << "image_data_reader::preload_data_store time: " << (get_time() - tm1) << "\n";
+  bool threaded = ! options::get()->get_bool("data_store_no_thread");
+  if (threaded) {
+    if (is_master()) {
+      std::cout << "mode: data_store_thread\n";
+    }
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, opts);
+    int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
+
+    std::vector<std::unordered_set<int>> data_ids(num_threads);
+    int j = 0;
+    for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
+      int index = m_shuffled_indices[data_id];
+      if (m_data_store->get_index_owner(index) != rank) {
+        continue;
+      }
+      data_ids[j++].insert(index);
+      if (j == num_threads) {
+        j = 0;
+      }
+    }
+
+    for (int t = 0; t < num_threads; t++) {
+      if(t == io_thread_pool->get_local_thread_id()) {
+        continue;
+      } else {
+        io_thread_pool->submit_job_to_work_group(std::bind(&image_data_reader::load_conduit_nodes_from_file, this, data_ids[t]));
+      }
+    }
+    load_conduit_nodes_from_file(data_ids[io_thread_pool->get_local_thread_id()]);
+    io_thread_pool->finish_work_group();
+  }
+  
+  else {
+    conduit::Node node;
+    if (is_master()) {
+      std::cout << "mode: NOT data_store_thread\n";
+    }  
+    for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
+      int index = m_shuffled_indices[data_id];
+      if (m_data_store->get_index_owner(index) != rank) {
+        continue;
+      }
+      load_conduit_node_from_file(index, node);
+      m_data_store->set_preloaded_conduit_node(index, node);
+    }
   }
 }
 
@@ -236,6 +274,15 @@ std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_cu
   std::vector<sample_t> ret;
   ret.reserve(m_mini_batch_size);
   return ret;
+}
+
+bool image_data_reader::load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids) {
+  conduit::Node node;
+  for (auto t : data_ids) {
+    load_conduit_node_from_file(t, node);
+    m_data_store->set_preloaded_conduit_node(t, node);
+  }
+  return true;
 }
 
 void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &node) {

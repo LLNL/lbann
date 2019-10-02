@@ -31,14 +31,15 @@
 #include <cereal/types/base_class.hpp>
 namespace lbann {
 
-struct sgd_termination_criteria : public termination_criteria {
+class sgd_termination_criteria : public termination_criteria {
+public:
   size_t num_epochs;
 };
 
 
 /** @brief SGD Uses the step to track the Current mini-batch step for
   *  execution mode.
-  *  @detailed Step counts are not reset after each epoch.
+  *  @details Step counts are not reset after each epoch.
   */
 class sgd_execution_context final : public execution_context {
 public:
@@ -70,7 +71,7 @@ public:
   inline size_t get_epoch() const noexcept { return m_epoch; }
 
   /** @brief Increment the current epoch in the execution context
-    *  @detailed Increment the counter tracking the number of times
+    *  @details Increment the counter tracking the number of times
     *  that the data set has been traversed.
     */
   void inc_epoch() noexcept { ++m_epoch; }

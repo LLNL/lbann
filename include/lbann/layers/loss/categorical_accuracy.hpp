@@ -85,6 +85,19 @@ public:
 
 };
 
+#ifndef LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
+extern template class categorical_accuracy_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class categorical_accuracy_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class categorical_accuracy_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class categorical_accuracy_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
+
 } // namespace lbann
 
 #endif // LBANN_LAYERS_LOSS_CATEGORICAL_ACCURACY_HPP_INCLUDED
