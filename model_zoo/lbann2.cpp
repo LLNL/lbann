@@ -70,11 +70,7 @@ int main(int argc, char *argv[]) {
 
     auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
                                               comm.get(), opts, io_thread_pool, true);
-    std::unique_ptr<model> model_2;
-    if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]),
-                                           comm.get(), opts, io_thread_pool, false);
-    }
+
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
       callback::save_model::load_model_weights(opts->get_string("ckpt_dir"),
@@ -96,6 +92,17 @@ int main(int argc, char *argv[]) {
       trainer->evaluate(model_1.get(), execution_mode::testing);
     }
 
+
+    std::unique_ptr<model> model_2;
+    if (pbs.size() > 1) {
+      // Reset the RNGs
+      init_random(random_seed);
+      init_data_seq_random(random_seed);
+
+      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]),
+                                           comm.get(), opts, io_thread_pool, false);
+
+    }
     if (model_2 != nullptr) {
       const auto layers1 = model_1->get_layers();
       const auto layers2 = model_2->get_layers();
