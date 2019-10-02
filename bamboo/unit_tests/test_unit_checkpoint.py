@@ -12,7 +12,9 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
         print('Skip - ' + e)
         pytest.skip(e)
     exe = executables[compiler_name]
-
+    # Handle data
+    if data_reader_percent is None:
+        data_reader_percent = 0.01
     # No checkpointing, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_shared_no_checkpoint_%s_error.txt' % (dir_name, compiler_name)
@@ -74,6 +76,9 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
         print('Skip - ' + e)
         pytest.skip(e)
     exe = executables[compiler_name]
+    # Handle data
+    if data_reader_percent is None:
+        data_reader_percent = 0.01
 
     # No checkpointing, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
