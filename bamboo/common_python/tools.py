@@ -1,4 +1,8 @@
-import math, os, re
+import math
+import os
+import re
+import sys
+import pytest
 
 
 def check_list(substrings, strings):
@@ -643,3 +647,111 @@ def assert_failure(return_code, expected_error, error_file_name):
         'return_code={rc}\nFailed with error different than expected.\nactual_error={ae}\nexpected_error={ee}\nSee {efn}'.format(
             rc=return_code, ae=actual_error, ee=expected_error,
             efn=error_file_name))
+
+
+def create_tests(setup_func, test_name):
+    """Create functions that can interact with PyTest.
+
+    This function creates tests that involve setting up and running an
+    LBANN experiment with the Python frontend. `setup_func` should be
+    a function that takes in the LBANN Python module and outputs
+    objects for an LBANN experiment. A test succeeds if LBANN runs and
+    exits with an exit code of 0, and fails otherwise.
+
+    PyTest detects tests by loading in a Python script and looking for
+    functions prefixed with 'test_'. After you call this function
+    within a script to generate test functions, make sure to add the
+    test functions to the script's scope. For example:
+
+        _test_funcs = tools.create_tests(setup_func, test_name)
+        for t in _test_funcs:
+            globals()[t.__name__] = t
+
+    Args:
+        setup_func (function): Sets up an LBANN experiment using the
+            Python frontend. It takes in the LBANN Python module as
+            input and returns a `(lbann.Trainer, lbann.Model,
+            lbann.reader_pb2.DataReader, lbann.Optimizer)`.
+        test_name (str): Descriptive name. Should be prefixed with
+            'test_'.
+
+    Returns:
+        Iterable of function: Tests that can interact with PyTest.
+
+    """
+
+    # Basic test function
+    def test_func(cluster, executables, dir_name, compiler_name):
+        process_executable(test_name, compiler_name, executables)
+
+        # Choose LBANN build and load Python frontend
+        if compiler_name == 'exe':
+            exe = executables[compiler_name]
+            bin_dir = os.path.dirname(exe)
+            install_dir = os.path.dirname(bin_dir)
+            build_path = '{i}/lib/python3.7/site-packages'.format(i=install_dir)
+        else:
+            if compiler_name == 'clang6':
+                path = 'clang.Release'
+            elif compiler_name == 'clang6_debug':
+                path = 'clang.Debug'
+            elif compiler_name == 'gcc7':
+                path = 'gnu.Release'
+            elif compiler_name == 'clang6_debug':
+                path = 'gnu.Debug'
+            elif compiler_name == 'intel19':
+                path = 'intel.Release'
+            elif compiler_name == 'intel19_debug':
+                path = 'intel.Debug'
+            path = '{p}.{c}.llnl.gov'.format(p=path, c=cluster)
+            build_path = '{d}/build/{p}/install/lib/python3.7/site-packages'.format(
+                d=dir_name, p=path)
+        print('build_path={b}'.format(b=build_path))
+        sys.path.append(build_path)
+        import lbann
+        import lbann.contrib.lc.launcher
+
+        # Setup LBANN experiment
+        trainer, model, data_reader, optimizer = setup_func(lbann)
+
+        # Run LBANN experiment
+        kwargs = {
+            'nodes': 1,
+        }
+        experiment_dir = '{d}/bamboo/unit_tests/experiments/{t}_{c}'.format(
+            d=dir_name, t=test_name, c=compiler_name)
+        error_file_name = '{e}/err.log'.format(
+            e=experiment_dir, c=compiler_name)
+        return_code = lbann.contrib.lc.launcher.run(
+            trainer=trainer,
+            model=model,
+            data_reader=data_reader,
+            optimizer=optimizer,
+            experiment_dir=experiment_dir,
+            job_name='lbann_{}'.format(test_name),
+            **kwargs)
+        assert_success(return_code, error_file_name)
+
+    # Specific test functions for different build configuration
+    def test_func_exe(cluster, dirname, exe):
+        if exe is None:
+            e = 'test_{}_exe: Non-local testing'.format(test_name)
+            print('Skip - ' + e)
+            pytest.skip(e)
+        exes = {'exe': exe}
+        test_func(cluster, exes, dirname, 'exe')
+    def test_func_clang6(cluster, exes, dirname):
+        test_func(cluster, exes, dirname, 'clang6')
+    def test_func_gcc7(cluster, exes, dirname):
+        test_func(cluster, exes, dirname, 'gcc7')
+    def test_func_intel19(cluster, exes, dirname):
+        test_func(cluster, exes, dirname, 'intel19')
+    test_func_exe.__name__ = '{}_exe'.format(test_name)
+    test_func_clang6.__name__ = '{}_clang6'.format(test_name)
+    test_func_gcc7.__name__ = '{}_gcc7'.format(test_name)
+    test_func_intel19.__name__ = '{}_intel19'.format(test_name)
+
+    return (test_func_exe,
+            test_func_clang6,
+            test_func_gcc7,
+            test_func_intel19)
