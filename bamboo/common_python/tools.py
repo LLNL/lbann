@@ -23,6 +23,7 @@ def get_command(cluster,
                 time_limit=None,
                 # LBANN Parameters
                 ckpt_dir=None,
+                disable_cuda=None,
                 dir_name=None,
                 data_filedir_default=None,
                 data_filedir_train_default=None,
@@ -42,6 +43,7 @@ def get_command(cluster,
                 optimizer_name=None,
                 optimizer_path=None,
                 processes_per_model=None,
+                restart_dir=None,
                 extra_lbann_flags=None,
                 # Error/Output Redirect
                 error_file_name=None,
@@ -64,7 +66,7 @@ def get_command(cluster,
         data_filename_test_default, data_reader_name, data_reader_path,
         data_reader_percent, exit_after_setup, metadata, mini_batch_size,
         model_folder, model_name, model_path, num_epochs, optimizer_name,
-        optimizer_path, processes_per_model,
+        optimizer_path, processes_per_model, restart_dir,
         # Error/Output Redirect
         error_file_name, output_file_name,
         # Misc. Parameters
@@ -218,7 +220,7 @@ def get_command(cluster,
             # Cannot specify time limit for jsrun.
             command_run = '{s}jsrun'.format(s=space)
         else:
-            command_run = '{s}mpirun --timeout={t}'.format(s=space, t=time_limit)
+            command_run = '{s}mpirun --timeout {t}'.format(s=space, t=time_limit*60)
         option_bind = ''
         option_cpu_per_resource = ''
         option_gpu_per_resource = ''
@@ -257,6 +259,7 @@ def get_command(cluster,
 
     # Create LBANN command
     option_ckpt_dir = ''
+    option_disable_cuda = ''
     option_data_filedir = ''
     option_data_filedir_train = ''
     option_data_filename_train = ''
@@ -271,6 +274,7 @@ def get_command(cluster,
     option_num_epochs = ''
     option_optimizer = ''
     option_processes_per_model = ''
+    option_restart_dir = ''
     if model_path is not None:
         # If model_folder and/or model_name are set, an exception will be
         # raised later.
@@ -398,23 +402,26 @@ def get_command(cluster,
                  '_test_default] is set, but neither data_reader_name or'
                  ' data_reader_path are.'))
         # else: no conflicts
-    if data_reader_percent is not None:
-        # If data_reader_percent is not None, then it will override `weekly`.
-        # If it is None however, we choose its value based on `weekly`.
-        try:
-            data_reader_percent = float(data_reader_percent)
+    if data_reader_percent != "prototext":
+        if data_reader_percent is not None:
 
-        except ValueError:
-            lbann_errors.append(
-                'data_reader_percent={d} is not a float.'.format(
-                    d=data_reader_percent))
-    elif weekly:
-        data_reader_percent = 1.00
-    else:
-        # Nightly
-        data_reader_percent = 0.10
-    option_data_reader_percent = ' --data_reader_percent={d}'.format(
-        d=data_reader_percent)
+            # If data_reader_percent is not None, then it will override `weekly`.
+            # If it is None however, we choose its value based on `weekly`.
+            try:
+                data_reader_percent = float(data_reader_percent)
+
+            except ValueError:
+                lbann_errors.append(
+                    'data_reader_percent={d} is not a float.'.format(
+                        d=data_reader_percent))
+        elif weekly:
+            data_reader_percent = 1.00
+        else:
+            # Nightly
+            data_reader_percent = 0.10
+        option_data_reader_percent = ' --data_reader_percent={d}'.format(
+            d=data_reader_percent)
+    # else: use the data reader's value
     if exit_after_setup:
         option_exit_after_setup = ' --exit_after_setup'
     if metadata is not None:
@@ -427,6 +434,10 @@ def get_command(cluster,
         option_processes_per_model = ' --procs_per_model=%d' % processes_per_model
     if ckpt_dir is not None:
         option_ckpt_dir = ' --ckpt_dir=%s' % ckpt_dir
+    if restart_dir is not None:
+        option_restart_dir = ' --restart_dir=%s' % restart_dir
+    if disable_cuda is not None:
+        option_disable_cuda = ' --disable_cuda=%d' % int(bool(disable_cuda))
     extra_options = ''
     if extra_lbann_flags is not None:
         # If extra_lbann_flags is not a dict, then we have already appended
@@ -451,7 +462,7 @@ def get_command(cluster,
                 'num_io_threads',
                 'serialize_io',
                 'disable_background_io_activity',
-                'disable_cuda',
+                #'disable_cuda',
                 'random_seed',
                 'objective_function',
                 'data_layout',
@@ -462,6 +473,8 @@ def get_command(cluster,
                 'write_sample_list',
                 'ltfb_verbose',
                 'ckpt_dir',
+                #'restart_dir',
+                'restart_dir_is_fullpath',
 
                 # DataReaders:
                 # 'data_filedir',
@@ -498,14 +511,15 @@ def get_command(cluster,
     if lbann_errors != []:
         print('lbann_errors={lbann_errors}.'.format(lbann_errors=lbann_errors))
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
-    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
-        executable, option_ckpt_dir, option_data_filedir,
+    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
+        executable, option_ckpt_dir, option_disable_cuda,
+        option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
         option_data_reader, option_data_reader_percent,
         option_exit_after_setup, option_metadata, option_mini_batch_size,
         option_model, option_num_epochs, option_optimizer,
-        option_processes_per_model, extra_options)
+        option_processes_per_model, option_restart_dir, extra_options)
 
     # Create redirect command
     command_output = ''
@@ -584,7 +598,7 @@ def get_default_exes(default_dirname, cluster):
 
     default_exes = {}
     default_exes['default'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if cluster in ['catalyst', 'corona', 'lassen', 'pascal']:
+    if cluster in ['catalyst', 'corona', 'lassen', 'pascal', 'ray']:
         # Define all compilers.
         # x86_cpu - catalyst
         # x86_gpu_pascal - pascal
@@ -717,6 +731,7 @@ def create_tests(setup_func, test_name):
         # Run LBANN experiment
         kwargs = {
             'nodes': 1,
+            'overwrite_script': True
         }
         experiment_dir = '{d}/bamboo/unit_tests/experiments/{t}_{c}'.format(
             d=dir_name, t=test_name, c=compiler_name)
