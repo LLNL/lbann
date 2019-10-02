@@ -27,9 +27,9 @@
 #ifndef LBANN_LAYERS_LEARNING_BASE_CONVOLUTION_HPP_INCLUDED
 #define LBANN_LAYERS_LEARNING_BASE_CONVOLUTION_HPP_INCLUDED
 
-#include <vector>
-#include <omp.h>
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
 #include "lbann/utils/cudnn.hpp"
@@ -37,7 +37,9 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
+
+#include <vector>
+#include <omp.h>
 
 namespace lbann {
 
@@ -358,7 +360,7 @@ public:
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
       this->m_weights[0] = w.get();
-      this->m_model->add_weights(w.release());
+      this->m_model->add_weights(std::move(w));
     }
     auto& kernel_weights = *this->m_weights[0];
 
@@ -385,7 +387,7 @@ public:
         w->set_name(get_name() + "_bias");
         w->set_optimizer(std::move(opt));
         this->m_weights[1] = w.get();
-        this->m_model->add_weights(w.release());
+        this->m_model->add_weights(std::move(w));
       }
       auto& bias_weights = *this->m_weights[1];
       bias_weights.set_dims(output_dims[0]);
@@ -1229,6 +1231,13 @@ private:
 #endif // LBANN_HAS_CUDNN
 
 };
+
+#ifndef LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
+extern template class base_convolution_layer<El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class base_convolution_layer<El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

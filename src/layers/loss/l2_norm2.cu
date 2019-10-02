@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_L2_NORM2_LAYER_INSTANTIATE
 #include "lbann/layers/loss/l2_norm2.hpp"
 
 namespace lbann {
@@ -164,5 +165,10 @@ void l2_norm2_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
                local_gradient_wrt_output,
                local_gradient_wrt_input);
 }
+
+template class l2_norm2_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class l2_norm2_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

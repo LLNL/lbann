@@ -38,7 +38,8 @@ namespace lbann {
 // Forward-declare this.
 class trainer;
 
-struct termination_criteria {
+class termination_criteria {
+public:
   size_t num_steps;
 };
 
@@ -64,13 +65,13 @@ public:
   }
 
   /** @brief Current step in the training algorithm
-    *  @detailed Step counts the number of iterations in the training
+    *  @details Step counts the number of iterations in the training
     *  algorithm's internal state
     */
   size_t get_step() const noexcept { return m_step; }
 
   /** @brief Increment the current step in the training algorithm
-    *  @detailed Increment the step count in the training
+    *  @details Increment the step count in the training
     *  algorithm's internal state
     */
   void inc_step() noexcept { ++m_step; }
@@ -138,13 +139,13 @@ private:
   execution_mode m_execution_mode = execution_mode::training;
 
   /** @brief Current step in the training algorithm
-    *  @detailed Step counts the number of iterations in the training
+    *  @details Step counts the number of iterations in the training
     *  algorithm's internal state
     */
   size_t m_step = 0;
 
   /** @brief Whether to terminate training.
-   *  @detailed If true, training will terminate immediately before
+   *  @details If true, training will terminate immediately before
    *  the next epoch.
    */
   bool m_terminate_training = false;

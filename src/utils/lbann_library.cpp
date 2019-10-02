@@ -220,11 +220,6 @@ std::unique_ptr<model> build_model_from_prototext(
     is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
   }
   init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
-  /// Setup the data readers with the I/O thread pool
-  for(auto&& dr: data_readers) {
-    dr.second->setup(io_threads_per_process, &io_thread_pool);
-    dr.second->set_rank(comm->get_rank_in_trainer());
-  }
 
   // hack to prevent all data readers from loading identical data; instead,
   // share a single copy. See data_reader_jag_conduit_hdf5 for example
@@ -274,6 +269,13 @@ std::unique_ptr<model> build_model_from_prototext(
     }
   }
 
+  // Setup data readers
+  for(auto&& dr: data_readers) {
+    dr.second->setup(io_threads_per_process, &io_thread_pool);
+    dr.second->set_rank(comm->get_rank_in_trainer());
+  }
+
+  // Setup models
   ret_model->setup();
 
   if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
@@ -303,6 +305,18 @@ std::unique_ptr<model> build_model_from_prototext(
       "--------------------------------------------------------------------------------\n";
   }
 #endif
+
+  if (opts && opts->has_string("restart_dir")) {
+    bool loaded = callback::save_model::load_model_weights(
+      opts->get_string("restart_dir"),
+      ret_model.get(),
+      opts->get_bool("restart_dir_is_fullpath"));
+    if(!loaded) {
+      LBANN_ERROR("Unable to reload model from given restart directory: ",
+                  opts->get_string("restart_dir"));
+    }
+  }
+
   return ret_model;
 }
 

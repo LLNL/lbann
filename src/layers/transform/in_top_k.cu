@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_IN_TOP_K_LAYER_INSTANTIATE
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
@@ -292,5 +293,8 @@ void in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
   fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
 }
+
+template class in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class in_top_k_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

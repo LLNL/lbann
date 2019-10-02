@@ -44,8 +44,11 @@ class imcomm;
  *  tensors. This is primarily optimized for image data in NCHW
  *  format.
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
+template <data_layout Layout = data_layout::DATA_PARALLEL,
+          El::Device Device = El::Device::CPU>
 class convolution_layer : public base_convolution_layer<Device> {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "convolution layer only supports DATA_PARALLEL");
 private:
 
   friend class callback::imcomm;
@@ -91,9 +94,6 @@ public:
         std::move(dilations),
         groups,
         has_bias) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "convolution layer only supports DATA_PARALLEL");
-
   }
 
   convolution_layer* copy() const override { return new convolution_layer(*this); }
@@ -519,6 +519,15 @@ protected:
 
 #endif // LBANN_HAS_DISTCONV
 };
+
+#ifndef LBANN_CONVOLUTION_LAYER_INSTANTIATE
+extern template class convolution_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class convolution_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_CONVOLUTION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

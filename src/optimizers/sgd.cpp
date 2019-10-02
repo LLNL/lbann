@@ -32,11 +32,10 @@
 
 namespace lbann {
 
-sgd::sgd(lbann_comm* comm,
-         DataType learning_rate,
+sgd::sgd(DataType learning_rate,
          DataType momentum,
          bool nesterov)
-  : optimizer(comm, learning_rate),
+  : optimizer(learning_rate),
     m_momentum(momentum),
     m_nesterov(nesterov) {}
 
@@ -223,10 +222,9 @@ bool sgd::load_from_checkpoint_distributed(persist& p, std::string name_prefix) 
 
 std::unique_ptr<optimizer>
 build_sgd_optimizer_from_pbuf(
-  google::protobuf::Message const& msg, lbann_comm* comm) {
+  google::protobuf::Message const& msg) {
   const auto& params = dynamic_cast<lbann_data::Optimizer::SGD const&>(msg);
-  return make_unique<sgd>(comm,
-                          params.learn_rate(),
+  return make_unique<sgd>(params.learn_rate(),
                           params.momentum(),
                           params.nesterov());
 }

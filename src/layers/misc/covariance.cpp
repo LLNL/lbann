@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_COVARIANCE_LAYER_INSTANTIATE
 #include "lbann/layers/misc/covariance.hpp"
 
 namespace lbann {
@@ -186,5 +187,10 @@ void covariance_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
          *m_workspace,
          m_biased);
 }
+
+template class covariance_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class covariance_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

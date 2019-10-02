@@ -225,7 +225,7 @@ inline bool read_latest(std::string filename, execution_mode *mode, size_t *epoc
     *mode = exec_mode_from_string(modeStr);
     // close our file
     closeread(fd, filename.c_str());
-    if(ret != 2) { return false; }
+    if(ret != 3) { return false; }
     return true;
   }
   return false;

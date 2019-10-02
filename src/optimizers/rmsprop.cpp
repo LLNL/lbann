@@ -32,11 +32,10 @@
 
 namespace lbann {
 
-rmsprop::rmsprop(lbann_comm *comm,
-                 DataType learning_rate,
+rmsprop::rmsprop(DataType learning_rate,
                  DataType decay_rate,
                  DataType eps)
-  : optimizer(comm, learning_rate),
+  : optimizer(learning_rate),
     m_decay_rate(decay_rate),
     m_eps(eps) {}
 
@@ -155,11 +154,10 @@ bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
 
 std::unique_ptr<optimizer>
 build_rmsprop_optimizer_from_pbuf(
-  google::protobuf::Message const& msg, lbann_comm* comm) {
+  google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::RMSprop const&>(msg);
-  return make_unique<rmsprop>(comm,
-                              params.learn_rate(),
+  return make_unique<rmsprop>(params.learn_rate(),
                               params.decay_rate(),
                               params.eps());
 }

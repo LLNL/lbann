@@ -63,7 +63,8 @@ enum class batch_normalization_stats_aggregation {
  */
 template <data_layout T_layout, El::Device Dev>
 class batch_normalization_layer : public regularizer_layer {
-
+  static_assert(T_layout == data_layout::DATA_PARALLEL,
+                "batch normalization only supports DATA_PARALLEL");
 private:
 
   /** Decay rate for the running statistics. */
@@ -123,8 +124,6 @@ public:
       m_decay(decay),
       m_epsilon(epsilon),
       m_statistics_group_size(statistics_group_size) {
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "batch normalization only supports DATA_PARALLEL");
 #ifdef LBANN_DETERMINISTIC
     // Force global computation.
     m_statistics_group_size = 0;
@@ -257,36 +256,40 @@ protected:
     }
     this->m_weights.resize(4, nullptr);
     if (this->m_weights[0] == nullptr) {
-      this->m_weights[0] = new weights(get_comm());
+      auto w = make_unique<weights>(get_comm());
       auto init = make_unique<constant_initializer>(DataType(1));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      this->m_weights[0]->set_name(get_name() + "_scale");
-      this->m_weights[0]->set_initializer(std::move(init));
-      this->m_weights[0]->set_optimizer(std::move(opt));
-      this->m_model->add_weights(this->m_weights[0]);
+      w->set_name(get_name() + "_scale");
+      w->set_initializer(std::move(init));
+      w->set_optimizer(std::move(opt));
+      this->m_weights[0] = w.get();
+      this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[1] == nullptr) {
-      this->m_weights[1] = new weights(get_comm());
+      auto w = make_unique<weights>(get_comm());
       auto init = make_unique<constant_initializer>(DataType(0));
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      this->m_weights[1]->set_name(get_name() + "_bias");
-      this->m_weights[1]->set_initializer(std::move(init));
-      this->m_weights[1]->set_optimizer(std::move(opt));
-      this->m_model->add_weights(this->m_weights[1]);
+      w->set_name(get_name() + "_bias");
+      w->set_initializer(std::move(init));
+      w->set_optimizer(std::move(opt));
+      this->m_weights[1] = w.get();
+      this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[2] == nullptr) {
-      this->m_weights[2] = new weights(get_comm());
-      this->m_weights[2]->set_name(get_name() + "_running_mean");
+      auto w = make_unique<weights>(get_comm());
       auto init = make_unique<constant_initializer>(DataType(0));
-      this->m_weights[2]->set_initializer(std::move(init));
-      this->m_model->add_weights(this->m_weights[2]);
+      w->set_name(get_name() + "_running_mean");
+      w->set_initializer(std::move(init));
+      this->m_weights[2] = w.get();
+      this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[3] == nullptr) {
-      this->m_weights[3] = new weights(get_comm());
-      this->m_weights[3]->set_name(get_name() + "_running_variance");
+      auto w = make_unique<weights>(get_comm());
       auto init = make_unique<constant_initializer>(DataType(1));
-      this->m_weights[3]->set_initializer(std::move(init));
-      this->m_model->add_weights(this->m_weights[3]);
+      w->set_name(get_name() + "_running_variance");
+      w->set_initializer(std::move(init));
+      this->m_weights[3] = w.get();
+      this->m_model->add_weights(std::move(w));
     }
 
     // Setup weights
@@ -446,6 +449,15 @@ protected:
 #endif
 
 };
+
+#ifndef LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
+extern template class batch_normalization_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class batch_normalization_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

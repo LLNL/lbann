@@ -28,6 +28,7 @@
 #define LBANN_LAYER_DISCRETE_RANDOM_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
@@ -39,8 +40,13 @@ namespace lbann {
  *
  *  @todo Remove.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class discrete_random_layer : public transform_layer {
+  static_assert(Dev == El::Device::CPU,
+                "discrete random layer currently only supports CPU");
+  static_assert(T_layout == data_layout::DATA_PARALLEL,
+                "discrete random layer currently only supports DATA_PARALLEL");
  private:
 
   /** Values in discrete distribution. */
@@ -52,10 +58,6 @@ class discrete_random_layer : public transform_layer {
                         std::vector<int> dims)
     : transform_layer(comm),
       m_values(values) {
-    static_assert(Dev == El::Device::CPU,
-                  "discrete random layer currently only supports CPU");
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "discrete random layer currently only supports DATA_PARALLEL");
     set_output_dims(dims);
   }
   discrete_random_layer* copy() const override { return new discrete_random_layer(*this); }
@@ -119,6 +121,10 @@ class discrete_random_layer : public transform_layer {
 
 };
 
+#ifndef LBANN_DISCRETE_RANDOM_LAYER_INSTANTIATE
+extern template class discrete_random_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#endif // LBANN_DISCRETE_RANDOM_LAYER_INSTANTIATE
 } // namespace lbann
 
 #endif // LBANN_LAYER_DISCRETE_RANDOM_HPP_INCLUDED

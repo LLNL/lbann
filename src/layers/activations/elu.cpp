@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_ELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/elu.hpp"
 
 namespace lbann {
@@ -99,5 +100,8 @@ void elu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
            get_local_prev_error_signals(),
            get_local_error_signals());
 }
+
+template class elu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class elu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann
