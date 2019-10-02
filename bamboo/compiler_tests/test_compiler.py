@@ -6,7 +6,7 @@ import os, re, subprocess
 
 
 def test_compiler_build_script(cluster, dirname):
-    if cluster not in ['corona', 'lassen', 'pascal']:
+    if cluster not in ['catalyst', 'corona', 'lassen', 'pascal', 'ray']:
         e = 'test_compiler_build_script: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
@@ -67,7 +67,7 @@ def test_compiler_intel19_debug(cluster, dirname):
 
 
 def skeleton_clang6(cluster, dir_name, debug):
-    if cluster not in ['catalyst']:
+    if cluster not in []:
         e = 'skeleton_clang6: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)
@@ -80,7 +80,7 @@ def skeleton_clang6(cluster, dir_name, debug):
 
 
 def skeleton_gcc7(cluster, dir_name, debug):
-    if cluster not in ['catalyst', 'pascal']:
+    if cluster not in []:
         e = 'skeleton_gcc7: Unsupported Cluster %s' % cluster
         print('Skip - ' + e)
         pytest.skip(e)

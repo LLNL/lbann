@@ -175,7 +175,8 @@ def _test(cluster, executables, dir_name, compiler_name):
     kwargs = {
         'account': 'guests',
         'nodes': 1,
-        'partition': 'pbatch'
+        'partition': 'pbatch',
+        'overwrite_script': True
     }
     experiment_dir = '{d}/bamboo/unit_tests/experiments/{t}_{c}'.format(
         d=dir_name, t=_test_name, c=compiler_name)

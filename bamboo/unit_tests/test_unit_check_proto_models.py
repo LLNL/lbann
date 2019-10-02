@@ -66,6 +66,8 @@ def skeleton_models(cluster, dir_name, executables, compiler_name,
                         time_limit = 3
                     if 'resnet50' in file_name:
                         node_count = 8
+                        if not weekly:
+                            continue # This is too many nodes for nightly.
                 elif 'cifar' in file_name:
                     data_filename_train_default = '/p/lscratchh/brainusr/datasets/cifar10-bin/data_all.bin'
                     data_filename_test_default = '/p/lscratchh/brainusr/datasets/cifar10-bin/test_batch.bin'
