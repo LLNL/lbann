@@ -27,6 +27,7 @@
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/utils/distconv.hpp"
 
 lbann::partitioned_io_buffer::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers) {
@@ -348,6 +349,9 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_single_mod
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = max_mini_batch_size;
   int base_offset  = m_comm->get_rank_in_trainer();
+#ifdef LBANN_HAS_DISTCONV
+  base_offset /= dc::get_number_of_io_partitions();
+#endif
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
