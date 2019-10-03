@@ -14,10 +14,8 @@ import tools
 # ==============================================
 # Objects for Python data reader
 # ==============================================
-# Note: The Python data reader imports this file and calls the
-# functions below to ingest data. This is the only part of the script
-# that should be executed when the script is imported, or else the
-# Python data reader might misbehave.
+# Note: The Python data reader imports this file as a module and calls
+# the functions below to ingest data.
 
 # Data
 np.random.seed(20190911)
