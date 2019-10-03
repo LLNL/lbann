@@ -571,26 +571,6 @@ message Layer {
     int64 size = 1;
   }
 
-  //========================================================================
-  // Parallel strategies for model-parallelism
-  //========================================================================
-  message ParallelStrategy {
-    int64 sample_groups = 1;
-    int64 sample_splits = 2;
-    int64 height_groups = 3;
-    int64 height_splits = 4;
-    int64 width_groups = 5;
-    int64 width_splits = 6;
-    int64 channel_groups = 7;
-    int64 channel_splits = 8;
-    int64 filter_groups = 9;
-    int64 filter_splits = 10;
-    // For fully-connected layers.
-    int64 replications = 11;
-    int64 procs_per_replica = 12;
-    int64 depth_groups = 13; // The depth fields will be ignored if num_dims < 4.
-    int64 depth_splits = 14;
-  }
 }// message Layer
 
 //note: I'd like to put this enum inside of Layer, but if I do the enum values
@@ -618,4 +598,25 @@ message WeightsData {
   repeated float data = 4 [packed=true];
 
   Imcomm imcomm = 55;
+}
+
+//========================================================================
+// Parallel strategies for model-parallelism
+//========================================================================
+message ParallelStrategy {
+  int64 sample_groups = 1;
+  int64 sample_splits = 2;
+  int64 height_groups = 3;
+  int64 height_splits = 4;
+  int64 width_groups = 5;
+  int64 width_splits = 6;
+  int64 channel_groups = 7;
+  int64 channel_splits = 8;
+  int64 filter_groups = 9;
+  int64 filter_splits = 10;
+  // For fully-connected layers.
+  int64 replications = 11;
+  int64 procs_per_replica = 12;
+  int64 depth_groups = 13; // The depth fields will be ignored if num_dims < 4.
+  int64 depth_splits = 14;
 }
