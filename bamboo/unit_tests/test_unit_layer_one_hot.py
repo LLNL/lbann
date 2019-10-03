@@ -1,3 +1,5 @@
+import functools
+import operator
 import os
 import os.path
 import sys
@@ -16,19 +18,17 @@ import tools
 # the functions below to ingest data.
 
 # Data
-np.random.seed(20190708)
-_num_samples = 23
-_sample_size = 7
-_samples = np.random.normal(size=(_num_samples,_sample_size))
-_samples = _samples.astype(np.float32)
+one_hot_size = 7
+seed = 201909113
 
 # Sample access functions
 def get_sample(index):
-    return _samples[index,:]
+    np.random.seed(seed+index)
+    return [np.random.uniform(-1, one_hot_size+1)]
 def num_samples():
-    return _num_samples
+    return 47
 def sample_dims():
-    return (_sample_size,)
+    return (1,)
 
 # ==============================================
 # Setup LBANN experiment
@@ -57,17 +57,25 @@ def construct_model(lbann):
 
     # Layer graph
     x = lbann.Input()
-    obj = lbann.L2Norm2(x)
+    y1 = lbann.OneHot(x, size=one_hot_size)
+    y2 = lbann.Concatenation([lbann.Constant(value=i+1, num_neurons='1')
+                              for i in range(one_hot_size)])
+    y = lbann.Multiply([y1, y2])
+    z = lbann.L2Norm2(y)
+
+    # Objects for LBANN model
     layers = list(lbann.traverse_layer_graph(x))
-    metric = lbann.Metric(obj, name='obj')
+    metric = lbann.Metric(z, name='obj')
+    obj = lbann.ObjectiveFunction(z)
     callbacks = []
 
-    # Compute expected value with NumPy
+    # Compute expected metric value
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
-        obj = np.inner(x, x)
-        vals.append(obj)
+        x = get_sample(i)[0]
+        y = int(x) + 1 if (0 <= x and x < one_hot_size) else 0
+        z = y * y
+        vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
@@ -78,11 +86,12 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # Construct model
-    mini_batch_size = 5
+    mini_batch_size = 19
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
                        layers=layers,
+                       objective_function=obj,
                        metrics=[metric],
                        callbacks=callbacks)
 
