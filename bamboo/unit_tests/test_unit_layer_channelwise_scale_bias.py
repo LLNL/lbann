@@ -1,3 +1,5 @@
+import functools
+import operator
 import os
 import os.path
 import sys
@@ -16,11 +18,13 @@ import tools
 # the functions below to ingest data.
 
 # Data
-np.random.seed(20190708)
-_num_samples = 23
-_sample_size = 7
-_samples = np.random.normal(size=(_num_samples,_sample_size))
-_samples = _samples.astype(np.float32)
+np.random.seed(20190719)
+_num_samples = 29
+_sample_dims = (7,5,3)
+_sample_size = functools.reduce(operator.mul, _sample_dims)
+_samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
+_scale = np.random.normal(loc=1, size=(_sample_dims[0],1,1)).astype(np.float32)
+_bias = np.random.normal(loc=0, size=(_sample_dims[0],1,1)).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):
@@ -55,19 +59,51 @@ def construct_model(lbann):
 
     """
 
-    # Layer graph
-    x = lbann.Input()
-    obj = lbann.L2Norm2(x)
-    layers = list(lbann.traverse_layer_graph(x))
-    metric = lbann.Metric(obj, name='obj')
+    # Convenience function to convert list to a space-separated string
+    def str_list(it):
+        return ' '.join([str(i) for i in it])
+
+    # Convenience function to compute L2 norm squared with NumPy
+    def l2_norm2(x):
+        x = x.reshape(-1)
+        return np.inner(x, x)
+
+    # Input data
+    # Note: Sum with a weights layer so that gradient checking will
+    # verify that error signals are correct.
+    x_weights = lbann.Weights(optimizer=lbann.SGD(),
+                              initializer=lbann.ConstantInitializer(value=0.0),
+                              name='input_weights')
+    x0 = lbann.WeightsLayer(weights=x_weights,
+                            dims=str_list(_sample_dims))
+    x1 = lbann.Reshape(lbann.Input(), dims=str_list(_sample_dims))
+    x = lbann.Sum([x0, x1])
+
+    # Apply channel-wise scale/bias
+    scale_values = str_list(np.nditer(_scale))
+    bias_values = str_list(np.nditer(_bias))
+    scalebias_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(values='{} {}'.format(scale_values,
+                                                                 bias_values)),
+        name='scalebias_weights'
+    )
+    y = lbann.ChannelwiseScaleBias(x, weights=scalebias_weights)
+    z = lbann.L2Norm2(y)
+
+    # Objects for LBANN model
+    obj = z
+    metric = lbann.Metric(z, name='obj')
+    layers = list(lbann.traverse_layer_graph(z))
     callbacks = []
 
-    # Compute expected value with NumPy
+    # Get expected metric value from NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
-        obj = np.inner(x, x)
-        vals.append(obj)
+        x = get_sample(i).reshape(_sample_dims)
+        y = _scale * x + _bias
+        z = l2_norm2(y)
+        vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
@@ -77,13 +113,17 @@ def construct_model(lbann):
         error_on_failure=True,
         execution_modes='test'))
 
+    # Gradient checking
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+
     # Construct model
-    mini_batch_size = 5
+    mini_batch_size = 17
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
                        layers=layers,
-                       metrics=[metric],
+                       objective_function=obj,
+                       metrics=metric,
                        callbacks=callbacks)
 
 def construct_data_reader(lbann):
