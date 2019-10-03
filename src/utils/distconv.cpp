@@ -55,6 +55,7 @@ std::string opt_convolution_bwd_filter_algorithm("DEFAULT");
 std::string opt_synthetic_data_reader_randgen("MINSTD");
 int opt_num_pre_generated_synthetic_data = 0;
 bool opt_deterministic = false;
+int opt_num_io_partitions = 1;
 
 void set_options() {
   if (options_set) return;
@@ -101,6 +102,10 @@ void set_options() {
   if (env) {
     opt_deterministic = true;
   }
+  env = getenv("LBANN_NUM_IO_PARTITIONS");
+  if (env) {
+    opt_num_io_partitions = std::atoi(env);
+  }
   options_set = true;
 }
 
@@ -131,6 +136,9 @@ void print_options(std::ostream &os) {
        << std::endl;
     ss << "  deterministic: "
        << opt_deterministic
+       << std::endl;
+    ss << "  num_io_partitions: "
+       << opt_num_io_partitions
        << std::endl;
     os << ss.str();
   }
@@ -337,6 +345,10 @@ int get_number_of_pre_generated_synthetic_data() {
 
 bool is_deterministic() {
   return opt_deterministic;
+}
+
+int get_number_of_io_partitions() {
+  return opt_num_io_partitions;
 }
 
 p2p::P2P &get_p2p() {

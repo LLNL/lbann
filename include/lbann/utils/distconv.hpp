@@ -184,6 +184,10 @@ int get_number_of_pre_generated_synthetic_data();
  */
 bool is_deterministic();
 
+/** Query the number of partitions in the depth dimension.
+ */
+int get_number_of_io_partitions();
+
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();
