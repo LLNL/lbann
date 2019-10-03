@@ -119,35 +119,30 @@ def construct_data_reader(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    module_name = os.path.splitext(os.path.basename(current_file))[0]
 
-    # Base data reader message
-    message = lbann.reader_pb2.DataReader()
-
-    # Training set data reader
-    # TODO: This can be removed once
+    # Note: The training data reader should be removed when
     # https://github.com/LLNL/lbann/issues/1098 is resolved.
-    data_reader = message.reader.add()
-    data_reader.name = 'python'
-    data_reader.role = 'train'
-    data_reader.percent_of_data_to_use = 1.0
-    data_reader.python.module = module_name
-    data_reader.python.module_dir = current_dir
-    data_reader.python.sample_function = 'get_sample'
-    data_reader.python.num_samples_function = 'num_samples'
-    data_reader.python.sample_dims_function = 'sample_dims'
-
-    # Test set data reader
-    data_reader = message.reader.add()
-    data_reader.name = 'python'
-    data_reader.role = 'test'
-    data_reader.percent_of_data_to_use = 1.0
-    data_reader.python.module = module_name
-    data_reader.python.module_dir = current_dir
-    data_reader.python.sample_function = 'get_sample'
-    data_reader.python.num_samples_function = 'num_samples'
-    data_reader.python.sample_dims_function = 'sample_dims'
-
+    message = lbann.reader_pb2.DataReader()
+    message.reader.extend([
+        tools.create_python_data_reader(
+            lbann,
+            current_file,
+            'get_sample',
+            'num_samples',
+            'sample_dims',
+            'train'
+        )
+    ])
+    message.reader.extend([
+        tools.create_python_data_reader(
+            lbann,
+            current_file,
+            'get_sample',
+            'num_samples',
+            'sample_dims',
+            'test'
+        )
+    ])
     return message
 
 # ==============================================

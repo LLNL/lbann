@@ -770,3 +770,49 @@ def create_tests(setup_func, test_name):
             test_func_clang6,
             test_func_gcc7,
             test_func_intel19)
+
+
+def create_python_data_reader(lbann,
+                              file_name,
+                              sample_function_name,
+                              num_samples_function_name,
+                              sample_dims_function_name,
+                              execution_mode):
+    """Create protobuf message for Python data reader.
+
+    A Python data reader gets data by importing a Python module and
+    calling functions in its scope.
+
+    Args:
+        lbann (module): Module for LBANN Python frontend.
+        file_name (str): Python file.
+        sample_function_name (str): Function to get a data sample. It
+            takes one integer argument for the sample index and
+            returns an `Iterator` of `float`s.
+        sample_dims_function_name (str): Function to get dimensions of
+            a data sample. It takes no arguments and returns a
+            `(int,)`.
+        num_samples_function_name (str): Function to get number of
+            data samples in data set. It takes no arguments and
+            returns an `int`.
+        execution_mode (str): 'train', 'validation', or 'test'
+
+    """
+
+    # Extract paths
+    file_name = os.path.realpath(file_name)
+    dir_name = os.path.dirname(file_name)
+    module_name = os.path.splitext(os.path.basename(file_name))[0]
+
+    # Construct protobuf message for data reader
+    reader = lbann.reader_pb2.Reader()
+    reader.name = 'python'
+    reader.role = execution_mode
+    reader.percent_of_data_to_use = 1.0
+    reader.python.module = module_name
+    reader.python.module_dir = dir_name
+    reader.python.sample_function = sample_function_name
+    reader.python.num_samples_function = num_samples_function_name
+    reader.python.sample_dims_function = sample_dims_function_name
+
+    return reader
