@@ -747,7 +747,7 @@ def create_tests(setup_func, test_name):
             **kwargs)
         assert_success(return_code, error_file_name)
 
-    # Specific test functions for different build configuration
+    # Specific test functions for different build configurations
     def test_func_exe(cluster, dirname, exe):
         if exe is None:
             e = 'test_{}_exe: Non-local testing'.format(test_name)
