@@ -184,6 +184,12 @@ endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
+# Not the ideal fix, but should be fine for now.
+if (Aluminum_FOUND)
+  message(STATUS "Aluminum found in Hydrogen. Using Aluminum.")
+  set(LBANN_WITH_ALUMINUM ON CACHE BOOL "Use aluminum." FORCE)
+endif ()
+
 include(SetupOpenMP)
 include(SetupMPI)
 include(SetupProtobuf)
