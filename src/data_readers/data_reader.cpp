@@ -30,6 +30,7 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/omp_pragma.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/utils/distconv.hpp"
 #include "lbann/models/model.hpp"
 #include <omp.h>
 #include <future>
@@ -116,6 +117,11 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   const int end_pos = std::min(static_cast<size_t>(m_current_pos+loaded_batch_size), m_shuffled_indices.size());
   const int mb_size = std::min(El::Int{((end_pos - m_current_pos) + m_sample_stride - 1) / m_sample_stride},
       X.Width());
+
+  dc::MPIPrintStreamInfo() << "loaded batch size: " << loaded_batch_size
+                           << ", mb_size: " << mb_size
+                           << ", sample_stride: " << m_sample_stride
+                           << ", X.Width(): " << X.Width();
 
 #ifndef LBANN_IO_DISABLE_ZEROS
   prof_region_begin("fetch_data_zeros", prof_colors[0], false);
