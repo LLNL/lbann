@@ -46,7 +46,7 @@ namespace lbann {
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class local_response_normalization_layer : public regularizer_layer {
+class local_response_normalization_layer : public regularizer_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "local_response_normalization only supports DATA_PARALLEL");
 public:
@@ -56,7 +56,7 @@ public:
                                      TensorDataType alpha,
                                      TensorDataType beta,
                                      TensorDataType k)
-    : regularizer_layer(comm),
+    : regularizer_layer<TensorDataType>(comm),
       m_window_width(window_width), m_alpha(alpha), m_beta(beta), m_k(k)
 #ifdef LBANN_HAS_CUDNN
     , m_lrn_cudnn_desc(nullptr),
@@ -65,7 +65,7 @@ public:
   { }
 
   local_response_normalization_layer(const local_response_normalization_layer& other)
-    : regularizer_layer(other),
+    : regularizer_layer<TensorDataType>(other),
       m_window_width(other.m_window_width),
       m_alpha(other.m_alpha),
       m_beta(other.m_beta),
@@ -88,7 +88,7 @@ public:
   }
 
   local_response_normalization_layer& operator=(const local_response_normalization_layer& other) {
-    regularizer_layer::operator=(other);
+    regularizer_layer<TensorDataType>::operator=(other);
     m_window_width = other.m_window_width;
     m_alpha = other.m_alpha;
     m_beta = other.m_beta;
@@ -130,7 +130,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = regularizer_layer::get_description();
+    auto desc = regularizer_layer<TensorDataType>::get_description();
     desc.add("alpha", m_alpha);
     desc.add("beta", m_beta);
     desc.add("k", m_k);
@@ -140,13 +140,13 @@ public:
 protected:
 
   void setup_dims() override {
-    regularizer_layer::setup_dims();
+    regularizer_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 
   /// Initialize GPU objects
   void setup_gpu() override {
-    regularizer_layer::setup_gpu();
+    regularizer_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else

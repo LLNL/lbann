@@ -55,7 +55,7 @@ enum class batch_normalization_stats_aggregation {
  *  pp. 448-456. 2015.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class batch_normalization_layer : public regularizer_layer {
+class batch_normalization_layer : public regularizer_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "batch normalization only supports DATA_PARALLEL");
 private:
@@ -113,7 +113,7 @@ public:
                             TensorDataType decay=0.9,
                             TensorDataType epsilon=1e-5,
                             int statistics_group_size=1)
-    : regularizer_layer(comm),
+    : regularizer_layer<TensorDataType>(comm),
       m_decay(decay),
       m_epsilon(epsilon),
       m_statistics_group_size(statistics_group_size) {
@@ -124,7 +124,7 @@ public:
   }
 
   batch_normalization_layer(const batch_normalization_layer& other)
-    : regularizer_layer(other),
+    : regularizer_layer<TensorDataType>(other),
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
       m_statistics_group_size(other.m_statistics_group_size),
@@ -145,7 +145,7 @@ public:
                       other.m_bias_gradient->Copy() : nullptr) {}
 
   batch_normalization_layer& operator=(const batch_normalization_layer& other) {
-    regularizer_layer::operator=(other);
+    regularizer_layer<TensorDataType>::operator=(other);
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;
     m_statistics_group_size = other.m_statistics_group_size;
@@ -178,7 +178,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = regularizer_layer::get_description();
+    auto desc = regularizer_layer<TensorDataType>::get_description();
     desc.add("Decay", m_decay);
     desc.add("Epsilon", m_epsilon);
     desc.add("Statistics group size", m_statistics_group_size);
@@ -188,7 +188,7 @@ public:
 protected:
 
   void setup_matrices(const El::Grid& grid) override {
-    regularizer_layer::setup_matrices(grid);
+    regularizer_layer<TensorDataType>::setup_matrices(grid);
     m_mean_and_var.reset(new StarMat<Dev>(grid));
     m_mean_v.reset(new StarMat<Dev>(grid));
     m_var_v.reset(new StarMat<Dev>(grid));
@@ -200,13 +200,13 @@ protected:
   }
 
   void setup_dims() override {
-    regularizer_layer::setup_dims();
+    regularizer_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 
   void setup_data() override {
-    regularizer_layer::setup_data();
-    const auto& output_dims = get_output_dims();
+    regularizer_layer<TensorDataType>::setup_data();
+    const auto& output_dims = this->get_output_dims();
     const auto& num_channels = output_dims[0];
 
     // Display warning if mini-batch size is small
@@ -243,43 +243,43 @@ protected:
     // Initialize default weights if none are provided
     if (this->m_weights.size() > 4) {
       std::stringstream err;
-      err << "attempted to setup layer \"" << m_name << "\" "
+      err << "attempted to setup layer \"" << this->m_name << "\" "
           << "with an invalid number of weights";
       LBANN_ERROR(err.str());
     }
     this->m_weights.resize(4, nullptr);
     if (this->m_weights[0] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType(1));
-      std::unique_ptr<optimizer<TensorDataType>> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_scale");
+      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<constant_initializer>(TensorDataType(1));
+      std::unique_ptr<optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
+      w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
       this->m_weights[0] = w.get();
       this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[1] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType(0));
-      std::unique_ptr<optimizer<TensorDataType>> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_bias");
+      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<constant_initializer>(TensorDataType(0));
+      std::unique_ptr<optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
+      w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
       this->m_weights[1] = w.get();
       this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[2] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType(0));
-      w->set_name(get_name() + "_running_mean");
+      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<constant_initializer>(TensorDataType(0));
+      w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->m_weights[2] = w.get();
       this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights[3] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType(1));
-      w->set_name(get_name() + "_running_variance");
+      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<constant_initializer>(TensorDataType(1));
+      w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->m_weights[3] = w.get();
       this->m_model->add_weights(std::move(w));
@@ -310,16 +310,16 @@ protected:
 
     // Initialize freeze state
     for (auto&& w : this->m_weights) {
-      if (m_frozen) {
+      if (this->m_frozen) {
         w->freeze();
       } else {
         w->unfreeze();
       }
     }
     for (auto&& w : this->m_weights) {
-      if (w->is_frozen() != m_frozen) {
+      if (w->is_frozen() != this->m_frozen) {
         std::stringstream err;
-        err << (m_frozen ? "" : "un") << "frozen "
+        err << (this->m_frozen ? "" : "un") << "frozen "
             << "layer \"" << this->get_name() << "\" has "
             << (w->is_frozen() ? "" : "un") << "frozen "
             << "weights \"" << w->get_name() << "\"";
@@ -332,6 +332,10 @@ protected:
   void fp_compute() override;
   void bp_compute() override;
 
+  template <typename U>
+  friend void fp_compute_impl(batch_normalization_layer<U, T_layout, Dev>& l);
+  template <typename U>
+  friend void bp_compute_impl(batch_normalization_layer<U, T_layout, Dev>& l);
 };
 
 #ifndef LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE

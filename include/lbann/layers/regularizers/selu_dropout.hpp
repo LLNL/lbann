@@ -41,14 +41,14 @@ namespace lbann {
  *  Neural Information Processing Systems, pp. 971-980. 2017.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class selu_dropout : public regularizer_layer {
+class selu_dropout : public regularizer_layer<TensorDataType> {
  public:
   /** Keep units with probabiliy keep_prob. */
   selu_dropout(lbann_comm *comm,
                float keep_prob=0.95f,
                TensorDataType alpha = TensorDataType(1.6732632423543772848170429916717),
                TensorDataType scale = TensorDataType(1.0507009873554804934193349852946)) :
-    regularizer_layer(comm),
+    regularizer_layer<TensorDataType>(comm),
     m_keep_prob(keep_prob),
     m_mask(nullptr) {
 #ifdef LBANN_DETERMINISTIC
@@ -57,13 +57,13 @@ class selu_dropout : public regularizer_layer {
     // Compute alpha' and the affine transform.
     m_alpha_prime = -scale*alpha;
     m_a = keep_prob +
-      m_alpha_prime*m_alpha_prime*keep_prob*(DataType(1) - keep_prob);
+      m_alpha_prime*m_alpha_prime*keep_prob*(TensorDataType(1) - keep_prob);
     m_a = TensorDataType(1) / std::sqrt(m_a);
-    m_b = -m_a * m_alpha_prime*(DataType(1) - keep_prob);
+    m_b = -m_a * m_alpha_prime*(TensorDataType(1) - keep_prob);
   }
 
   selu_dropout(const selu_dropout& other) :
-    regularizer_layer(other),
+    regularizer_layer<TensorDataType>(other),
     m_alpha_prime(other.m_alpha_prime),
     m_a(other.m_a),
     m_b(other.m_b),
@@ -73,7 +73,7 @@ class selu_dropout : public regularizer_layer {
   }
 
   selu_dropout& operator=(const selu_dropout& other) {
-    regularizer_layer::operator=(other);
+    regularizer_layer<TensorDataType>::operator=(other);
     m_alpha_prime = other.m_alpha_prime;
     m_a = other.m_a;
     m_b = other.m_b;
@@ -97,12 +97,12 @@ class selu_dropout : public regularizer_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_dims() override {
-    regularizer_layer::setup_dims();
+    regularizer_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    regularizer_layer::setup_matrices(grid);
+    regularizer_layer<TensorDataType>::setup_matrices(grid);
     if (m_mask != nullptr) { delete m_mask; }
     m_mask = this->get_activations().Copy();
   }

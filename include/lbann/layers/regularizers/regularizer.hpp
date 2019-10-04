@@ -33,6 +33,7 @@ namespace lbann {
 /** @todo Remove. Layers should inherit directly from the base layer
  *  class.
  */
+template <typename TensorDataType>
 class regularizer_layer : public data_type_layer<TensorDataType> {
  public:
   regularizer_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}

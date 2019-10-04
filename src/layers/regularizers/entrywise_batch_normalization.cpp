@@ -42,7 +42,7 @@ constexpr El::Int bsize = _bsize > 1 ? _bsize : 1;
  *  var = ( sum(x_i^2)/n - mean^2 ) * n/(n-1)
  */
 void compute_batch_statistics(lbann_comm& comm,
-                              DataType decay,
+                              TensorDataType decay,
                               const El::AbstractDistMatrix<TensorDataType>& input,
                               El::AbstractDistMatrix<TensorDataType>& batch_statistics,
                               El::AbstractDistMatrix<TensorDataType>& running_mean,
@@ -87,7 +87,7 @@ void compute_batch_statistics(lbann_comm& comm,
   // Compute mini-batch statistics from sums
   if (statistics_count <= 1) {
     // local_mean already has correct values
-    El::Fill(local_batch_var, DataType{1});
+    El::Fill(local_batch_var, TensorDataType{1});
   } else {
     LBANN_OMP_PARALLEL_FOR
     for (El::Int row = 0; row < local_height; ++row) {
@@ -122,7 +122,7 @@ void apply_batchnorm(DataType epsilon,
     const El::Int row_end = std::min(row_start + bsize, local_height);
     const El::Int col_start = 0;
     const El::Int col_end = local_width;
-    DataType _inv_stdev[bsize];
+    TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_var(row, 0);
       _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
@@ -140,8 +140,8 @@ void apply_batchnorm(DataType epsilon,
 }
 
 void fp_impl(lbann_comm& comm,
-             DataType decay,
-             DataType epsilon,
+             TensorDataType decay,
+             TensorDataType epsilon,
              bool is_training,
              const El::AbstractDistMatrix<TensorDataType>& input,
              El::AbstractDistMatrix<TensorDataType>& output,
@@ -197,7 +197,7 @@ void fp_impl(lbann_comm& comm,
  *  statistics are dependent on input.
  */
 void bp_training_impl(lbann_comm& comm,
-                      DataType epsilon,
+                      TensorDataType epsilon,
                       const El::AbstractDistMatrix<TensorDataType>& input,
                       const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
                       El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
@@ -239,7 +239,7 @@ void bp_training_impl(lbann_comm& comm,
     const El::Int row_end = std::min(row_start + bsize, local_height);
     const El::Int col_start = 0;
     const El::Int col_end = local_width;
-    DataType _inv_stdev[bsize];
+    TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_var(row, 0);
       _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
@@ -269,14 +269,14 @@ void bp_training_impl(lbann_comm& comm,
   //   dL/dx_i = ( dL/dy_i / sqrt(var+epsilon)
   //             + dL/dmean / n
   //             + dL/dvar * (x_i - mean) * 2/(n-1) )
-  const DataType inv_stats_count = DataType{1} / statistics_count;
-  const DataType inv_stats_countm1 = DataType{1} / (statistics_count - 1);
+  const TensorDataType inv_stats_count = TensorDataType{1} / statistics_count;
+  const TensorDataType inv_stats_countm1 = TensorDataType{1} / (statistics_count - 1);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int row_start = 0; row_start < local_height; row_start += bsize) {
     const El::Int row_end = std::min(row_start + bsize, local_height);
     const El::Int col_start = 0;
     const El::Int col_end = local_width;
-    DataType _inv_stdev[bsize];
+    TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_var(row, 0);
       _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
@@ -325,7 +325,7 @@ void bp_inference_impl(DataType epsilon,
     const El::Int row_end = std::min(row_start + bsize, local_height);
     const El::Int col_start = 0;
     const El::Int col_end = local_width;
-    DataType _inv_stdev[bsize];
+    TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_running_var(row, 0);
       _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
@@ -343,7 +343,7 @@ void bp_inference_impl(DataType epsilon,
 }
 
 void bp_impl(lbann_comm& comm,
-             DataType epsilon,
+             TensorDataType epsilon,
              bool is_training,
              const El::AbstractDistMatrix<TensorDataType>& input,
              const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
@@ -378,53 +378,53 @@ template <>
 void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
   const auto mode = this->m_model->get_execution_context().get_execution_mode();
   fp_impl(*get_comm(),
-          m_decay,
-          m_epsilon,
+          l.m_decay,
+          l.m_epsilon,
           mode == execution_mode::training,
-          get_prev_activations(),
-          get_activations(),
-          *m_batch_statistics,
-          m_weights[0]->get_values(),
-          m_weights[1]->get_values());
+          l.get_prev_activations(),
+          l.get_activations(),
+          *l.m_batch_statistics,
+          l.m_weights[0]->get_values(),
+          l.m_weights[1]->get_values());
 }
 template <>
 void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
   const auto mode = this->m_model->get_execution_context().get_execution_mode();
   fp_impl(*get_comm(),
-          m_decay,
-          m_epsilon,
+          l.m_decay,
+          l.m_epsilon,
           mode == execution_mode::training,
-          get_prev_activations(),
-          get_activations(),
-          *m_batch_statistics,
-          m_weights[0]->get_values(),
-          m_weights[1]->get_values());
+          l.get_prev_activations(),
+          l.get_activations(),
+          *l.m_batch_statistics,
+          l.m_weights[0]->get_values(),
+          l.m_weights[1]->get_values());
 }
 template <>
 void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
   const auto mode = this->m_model->get_execution_context().get_execution_mode();
   bp_impl(*get_comm(),
-          m_epsilon,
+          l.m_epsilon,
           mode == execution_mode::training,
-          get_prev_activations(),
-          get_prev_error_signals(),
-          get_error_signals(),
-          *m_batch_statistics,
-          *m_batch_statistics_gradient,
-          m_weights[1]->get_values());
+          l.get_prev_activations(),
+          l.get_prev_error_signals(),
+          l.get_error_signals(),
+          *l.m_batch_statistics,
+          *l.m_batch_statistics_gradient,
+          l.m_weights[1]->get_values());
 }
 template <>
 void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
   const auto mode = this->m_model->get_execution_context().get_execution_mode();
   bp_impl(*get_comm(),
-          m_epsilon,
+          l.m_epsilon,
           mode == execution_mode::training,
-          get_prev_activations(),
-          get_prev_error_signals(),
-          get_error_signals(),
-          *m_batch_statistics,
-          *m_batch_statistics_gradient,
-          m_weights[1]->get_values());
+          l.get_prev_activations(),
+          l.get_prev_error_signals(),
+          l.get_error_signals(),
+          *l.m_batch_statistics,
+          *l.m_batch_statistics_gradient,
+          l.m_weights[1]->get_values());
 }
 
 template class entrywise_batch_normalization_layer<

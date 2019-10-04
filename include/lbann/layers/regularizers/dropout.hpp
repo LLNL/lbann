@@ -46,12 +46,12 @@ namespace lbann {
  *  Learning Research 15, no. 1 (2014): 1929-1958.
  */
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-class dropout : public regularizer_layer {
+class dropout : public regularizer_layer<TensorDataType> {
 public:
   /** Keep units with probabiliy keep_prob. */
   dropout(lbann_comm *comm,
           EvalType keep_prob = EvalType(0.5))
-    : regularizer_layer(comm),
+    : regularizer_layer<TensorDataType>(comm),
       m_keep_prob(keep_prob)
 #ifdef LBANN_HAS_CUDNN
     , m_dropout_cudnn_desc(nullptr),
@@ -68,7 +68,7 @@ public:
   }
 
   dropout(const dropout& other)
-    : regularizer_layer(other),
+    : regularizer_layer<TensorDataType>(other),
       m_keep_prob(other.m_keep_prob),
       m_mask(other.m_mask ? other.m_mask->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
@@ -87,7 +87,7 @@ public:
   }
 
   dropout& operator=(const dropout& other) {
-    regularizer_layer::operator=(other);
+    regularizer_layer<TensorDataType>::operator=(other);
     m_keep_prob = other.m_keep_prob;
     m_mask = other.m_mask ? std::unique_ptr<AbsDistMat>(other.m_mask->Copy()) : nullptr;
 #ifdef LBANN_HAS_CUDNN
@@ -119,7 +119,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = regularizer_layer::get_description();
+    auto desc = regularizer_layer<TensorDataType>::get_description();
     desc.add("Keep probability", m_keep_prob);
     return desc;
   }
@@ -135,17 +135,17 @@ public:
 protected:
 
   void setup_dims() override {
-    regularizer_layer::setup_dims();
+    regularizer_layer<TensorDataType>::setup_dims();
     this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    regularizer_layer::setup_matrices(grid);
+    regularizer_layer<TensorDataType>::setup_matrices(grid);
     m_mask = std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>(this->get_activations().Copy());
   }
 
   void setup_gpu() override {
-    regularizer_layer::setup_gpu();
+    regularizer_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
@@ -246,7 +246,7 @@ protected:
     auto&& output_desc = m_tensors_cudnn_desc.get_activations();
     size_t size;
     CHECK_CUDNN(cudnnDropoutGetReserveSpaceSize(input_desc, &size));
-    m_reserve_space.Resize((size + sizeof(DataType) - 1) / sizeof(DataType), 1);
+    m_reserve_space.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Apply dropout on the GPU
     CHECK_CUDNN(cudnnDropoutForward(cudnn::get_handle(),
@@ -256,7 +256,7 @@ protected:
                                     output_desc,
                                     local_output.Buffer(),
                                     m_reserve_space.Buffer(),
-                                    m_reserve_space.Height() * sizeof(DataType)));
+                                    m_reserve_space.Height() * sizeof(TensorDataType)));
 
 #endif // LBANN_HAS_CUDNN
   }
@@ -286,7 +286,7 @@ protected:
                                          m_tensors_cudnn_desc.get_error_signals(),
                                          local_gradient_wrt_input.Buffer(),
                                          m_reserve_space.Buffer(),
-                                         m_reserve_space.Height() * sizeof(DataType)));
+                                         m_reserve_space.Height() * sizeof(TensorDataType)));
       }
     }
 #endif // LBANN_HAS_CUDNN
@@ -306,7 +306,7 @@ protected:
     // Setup RNG state
     size_t size;
     CHECK_CUDNN(cudnnDropoutGetStatesSize(cudnn::get_handle(), &size));
-    m_states.Resize((size + sizeof(DataType) - 1) / sizeof(DataType), 1);
+    m_states.Resize((size + sizeof(TensorDataType) - 1) / sizeof(TensorDataType), 1);
 
     // Setup dropout descriptor
     CHECK_CUDNN(cudnnCreateDropoutDescriptor(&m_dropout_cudnn_desc));
@@ -314,7 +314,7 @@ protected:
                                           cudnn::get_handle(),
                                           float(1 - m_keep_prob),
                                           m_states.Buffer(),
-                                          m_states.Height() * sizeof(DataType),
+                                          m_states.Height() * sizeof(TensorDataType),
                                           get_generator()()));
 
   }
