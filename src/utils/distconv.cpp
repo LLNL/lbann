@@ -56,6 +56,7 @@ std::string opt_synthetic_data_reader_randgen("MINSTD");
 int opt_num_pre_generated_synthetic_data = 0;
 bool opt_deterministic = false;
 int opt_num_io_partitions = 1;
+bool opt_cosmoflow_parallel_io = false;
 
 void set_options() {
   if (options_set) return;
@@ -102,9 +103,13 @@ void set_options() {
   if (env) {
     opt_deterministic = true;
   }
-  env = getenv("LBANN_NUM_IO_PARTITIONS");
+  env = getenv("LBANN_DISTCONV_NUM_IO_PARTITIONS");
   if (env) {
     opt_num_io_partitions = std::atoi(env);
+  }
+  env = getenv("LBANN_DISTCONV_COSMOFLOW_PARALLEL_IO");
+  if (env) {
+    opt_cosmoflow_parallel_io = true;
   }
   options_set = true;
 }
@@ -139,6 +144,9 @@ void print_options(std::ostream &os) {
        << std::endl;
     ss << "  num_io_partitions: "
        << opt_num_io_partitions
+       << std::endl;
+    ss << "  cosmoflow_parallel_io: "
+       << opt_cosmoflow_parallel_io
        << std::endl;
     os << ss.str();
   }
@@ -349,6 +357,10 @@ bool is_deterministic() {
 
 int get_number_of_io_partitions() {
   return opt_num_io_partitions;
+}
+
+bool is_cosmoflow_parallel_io_enabled() {
+  return opt_cosmoflow_parallel_io;
 }
 
 p2p::P2P &get_p2p() {

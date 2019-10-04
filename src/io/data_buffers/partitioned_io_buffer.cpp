@@ -140,10 +140,16 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
 }
 
 void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {
+  prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer *buf = get_data_buffer(mode);
   Copy(*buf->m_input_buffers[0], sample);
   Copy(*buf->m_input_buffers[1], response);
+#ifdef LBANN_HAS_DISTCONV
+  response.Resize(response.Height(), response.Width() /
+                  dc::get_number_of_io_partitions());
+#endif
   buf->m_num_samples_fetched = 0;
+  prof_region_end("distribute_from_local_matrix", false);
   return;
 }
 

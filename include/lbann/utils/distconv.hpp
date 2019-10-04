@@ -188,6 +188,10 @@ bool is_deterministic();
  */
 int get_number_of_io_partitions();
 
+/** Query if Cosmoflow parallel I/O is enabled.
+ */
+bool is_cosmoflow_parallel_io_enabled();
+
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();
