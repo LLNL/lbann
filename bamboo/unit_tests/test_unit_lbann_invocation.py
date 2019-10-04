@@ -35,7 +35,6 @@ def test_unit_no_params_bad(cluster, dirname, exes):
     command = tools.get_command(
         cluster=cluster, executable=exe,
         exit_after_setup=True,
-        num_processes=1,
         output_file_name=output_file_name,
         error_file_name=error_file_name
     )
@@ -58,7 +57,6 @@ def test_unit_one_model_bad(cluster, dirname, exes):
         cluster=cluster, executable=exe,
         exit_after_setup=True,
         model_path=model_path,
-        num_processes=1,
         output_file_name=output_file_name,
         error_file_name=error_file_name
     )
@@ -81,7 +79,6 @@ def test_unit_two_models_bad(cluster, dirname, exes):
         cluster=cluster, executable=exe,
         exit_after_setup=True,
         model_path=model_path,
-        num_processes=1,
         output_file_name=output_file_name,
         error_file_name=error_file_name
     )
@@ -105,7 +102,6 @@ def test_unit_two_models_bad2(cluster, dirname, exes):
         cluster=cluster, executable=exe,
         exit_after_setup=True,
         model_path=model_path,
-        num_processes=1,
         output_file_name=output_file_name,
         error_file_name=error_file_name
     )
@@ -129,7 +125,6 @@ def test_unit_missing_optimizer(cluster, dirname, exes):
         data_reader_path=data_reader_path,
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         exit_after_setup=True, model_path=model_path,
-        num_processes=1,
         output_file_name=output_file_name,
         error_file_name=error_file_name
     )
@@ -152,7 +147,6 @@ def test_unit_missing_reader(cluster, dirname, exes):
         cluster=cluster, executable=exe,
         exit_after_setup=True,
         model_path=model_path, optimizer_path=optimizer_path,
-        num_processes=1,
         output_file_name=output_file_name,
         error_file_name=error_file_name
     )
@@ -173,7 +167,6 @@ def test_unit_bad_params(cluster, dirname, exes):
         dirname)
     (command_allocate, command_run, _, _) = tools.get_command(
         cluster=cluster, executable=exe,
-        num_processes=1,
         return_tuple=True)
     (output_file_name, error_file_name) = get_file_names(dirname, 'bad_params')
     command_string = '{ca}{cr} {e} -exit_after_setup --reader={d} --model={m} --optimizer={o} > {ofn} 2> {efn}'.format(
@@ -202,7 +195,6 @@ def test_unit_should_work(cluster, dirname, exes):
         data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
         exit_after_setup=True, model_path=model_path,
         optimizer_path=optimizer_path,
-        num_processes=1,
         output_file_name=output_file_name,
         error_file_name=error_file_name)
     return_code = os.system(command)
