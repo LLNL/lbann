@@ -108,12 +108,6 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   data_buffer *buf = get_data_buffer(mode);
   buf->m_num_samples_fetched = 0;
 
-  dc::MPIPrintStreamInfo()
-      << "m_input_buffers[0]->Height(): " << buf->m_input_buffers[0]->Height()
-      << ", m_input_buffers[0]->Width(): " << buf->m_input_buffers[0]->Width()
-      << ", m_input_buffers[0]->Matrix().Width(): "
-      << buf->m_input_buffers[0]->Matrix().Width();
-
   if (m_comm->get_rank_in_trainer() < num_parallel_readers && (buf->m_input_buffers[0]->Height() != 0 && buf->m_input_buffers[0]->Width() != 0)) {
 #ifndef LBANN_IO_DISABLE_ZEROS
     prof_region_begin("fetch_to_local_matrix_zeros", prof_colors[3], false);
@@ -286,8 +280,6 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
 #ifdef LBANN_HAS_DISTCONV
-  dc::MPIPrintStreamInfo() << "sample stride: " <<
-      num_parallel_readers_per_model / dc::get_number_of_io_partitions();
   data_reader->set_sample_stride(num_parallel_readers_per_model / dc::get_number_of_io_partitions());
 #else
   data_reader->set_sample_stride(num_parallel_readers_per_model);
@@ -359,12 +351,6 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
 #endif
   }
 
-#ifdef LBANN_HAS_DISTCONV
-  dc::MPIPrintStreamInfo()
-      << "stride_to_last_mini_batch: " << data_reader->get_stride_to_last_mini_batch()
-      << ", stride_to_next_mini_batch: " << data_reader->get_stride_to_next_mini_batch();
-#endif
-
   //  cout << "[" << m_comm->get_rank_in_world() << "] " << m_comm->get_trainer_rank() << " model rank, "<< m_comm->get_rank_in_trainer() << " rank in model, num_whole_mini_batches_per_model " << num_whole_mini_batches_per_model << " parallel_readers_with_extra_mini_batch " << /*parallel_readers_with_extra_mini_batch <<*/ " partial_mini_batch_size=" << per_model_partial_mini_batch_size << " last mini bath size=" << data_reader->get_last_mini_batch_size() << " world_master_remainder_data=" << world_master_remainder_data << " with a last stride of " << data_reader->get_stride_to_last_mini_batch() << " and stride of " << data_reader->get_stride_to_next_mini_batch() << " and there are " << num_parallel_readers_per_model << " parallel readers per model" << " last mini batch offset = " << last_mini_batch_offset <<  " parallel reader with extra minibatch = " << /*parallel_readers_with_extra_mini_batch << */" model bracket = " << (/*parallel_readers_with_extra_mini_batch **/ max_mini_batch_size + per_model_partial_mini_batch_size + world_master_remainder_data) <<" base ofset "<< data_reader->get_base_offset() << " model offset " << data_reader->get_model_offset() <<endl;
 //cout << "[" << m_comm->get_rank_in_world() << "] " << m_comm->get_trainer_rank() << " model rank, "<< m_comm->get_rank_in_trainer() << " rank in model, num_whole_mini_batches_per_model " << num_whole_mini_batches_per_model << " num_whole_mini_batches_per_reader " << num_whole_mini_batches_per_reader << "(m_num_mini_batches_per_reader=" << data_reader->get_num_mini_batches_per_reader() << ") parallel_readers_with_extra_mini_batch " << /*parallel_readers_with_extra_mini_batch <<*/ " partial_mini_batch_size=" << per_model_partial_mini_batch_size << " last mini bath size=" << data_reader->get_last_mini_batch_size() << " world_master_remainder_data=" << world_master_remainder_data << " threshold " << data_reader->get_last_mini_batch_threshold() << " with a last stride of " << data_reader->get_stride_to_last_mini_batch() << " and stride of " << data_reader->get_batch_stride() << " and there are " << num_parallel_readers_per_model << " parallel readers per model" << " last mini batch offset = " << last_mini_batch_offset <<  " parallel reader with extra minibatch = " << /*parallel_readers_with_extra_mini_batch << */" model bracket = " << (/*parallel_readers_with_extra_mini_batch **/ max_mini_batch_size + per_model_partial_mini_batch_size + world_master_remainder_data) <<" base ofset "<< data_reader->get_base_offset() << " model offset " << data_reader->get_model_offset() <<endl;
   return;
@@ -399,8 +385,6 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_single_mod
   data_reader->set_mini_batch_size(max_mini_batch_size);
   data_reader->set_stride_to_next_mini_batch(batch_stride);
 #ifdef LBANN_HAS_DISTCONV
-  dc::MPIPrintStreamInfo() << "sample stride: " <<
-      num_parallel_readers_per_model / dc::get_number_of_io_partitions();
   data_reader->set_sample_stride(num_parallel_readers_per_model / dc::get_number_of_io_partitions());
 #else
   data_reader->set_sample_stride(num_parallel_readers_per_model);
