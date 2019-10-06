@@ -1,0 +1,51 @@
+  packages:
+    all:
+      providers:
+        mpi: [openmpi@4.0 arch=darwin-highsierra-broadwell]
+        lapack: [openblas]
+        blas: [openblas]
+      buildable: true
+      version: []
+      paths: {}
+      modules: {}
+      compiler: [clang@9.0.0 arch=darwin-highsierra-broadwell]
+
+    cmake::
+      variants: ~openssl ~ncurses
+      version: [3.14.0]
+      paths:
+        cmake@3.14.0 arch=darwin-highsierra-broadwell:  /usr/local/
+
+    hwloc::
+      buildable: True
+      version: [2.0.2]
+
+    openblas::
+      buildable: True
+      variants: cpu_target=auto ~ilp64+pic+shared threads=none ~virtual_machine
+      version: [0.3.7]
+
+    opencv::
+      buildable: true
+      version: [4.1.0]
+
+    openmpi:
+      buildable: False
+      version: [4.0]
+      paths:
+        openmpi@4.0 arch=darwin-highsierra-broadwell: /usr/local/
+
+  compilers:
+  - compiler:
+      environment: {}
+      extra_rpaths: []
+      flags: {}
+      modules: []
+      operating_system: highsierra
+      paths:
+        cc: /usr/local/Cellar/llvm/9.0.0/bin/clang
+        cxx: /usr/local/Cellar/llvm/9.0.0/bin/clang++
+        f77: /usr/local/bin/gfortran
+        fc: /usr/local/bin/gfortran
+      spec: clang@9.0.0
+      target: x86_64
