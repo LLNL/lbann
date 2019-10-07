@@ -33,7 +33,7 @@
 #include "lbann/utils/jag_utils.hpp"  // read_filelist(..) TODO should be move to file_utils
 #include "lbann/utils/timer.hpp"
 #include "lbann/models/model.hpp"
-
+#include "lbann/utils/lbann_library.hpp"
 
 namespace lbann {
 
@@ -154,7 +154,7 @@ void numpy_npz_conduit_reader::preload_data_store() {
     if (is_master()) {
       std::cout << "mode: data_store_thread\n";
     }
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, opts);
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, options::get());
     int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
 
     //collect the set of indices that belong to this rank
@@ -176,25 +176,12 @@ void numpy_npz_conduit_reader::preload_data_store() {
       if(t == io_thread_pool->get_local_thread_id()) {
         continue;
       } else {
-        io_thread_pool->submit_job_to_work_group(std::bind(&numpy_npz_conduit_reader::load_numpy_npz_from_file, this, data_ids[t]));
+        io_thread_pool->submit_job_to_work_group(std::bind(&numpy_npz_conduit_reader::load_numpy_npz_from_file, this, data_ids[t], label_classes));
       }
     }
-    load_numpy_npz_from_file(data_ids[io_thread_pool->get_local_thread_id()]);
+    load_numpy_npz_from_file(data_ids[io_thread_pool->get_local_thread_id()], label_classes);
     io_thread_pool->finish_work_group();
   } //end: threaded mode
-
-
-bool numpy_npz_conduit_reader::load_numpy_npz_from_file(const std::unordered_set<int> &data_ids) {
-  conduit::Node node;
-  for (auto t : data_ids) {
-    conduit::Node node;
-    numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
-    const char *char_ptr = node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
-    const int* label_ptr = reinterpret_cast<const int*>(char_ptr);
-    label_classes.insert(*label_ptr);
-    m_data_store->set_conduit_node(data_id, node);
-  }
-}
 
   //non-threaded mode
   else {
@@ -269,6 +256,18 @@ bool numpy_npz_conduit_reader::load_numpy_npz_from_file(const std::unordered_set
   if (is_master()) {
     std::cout << "time to preload: " << tm2 - tm1 << " for role: " << get_role() << "\n";
   }
+}
+
+bool numpy_npz_conduit_reader::load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int> &label_classes) {
+  for (auto data_id : data_ids) {
+    conduit::Node node;
+    numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
+    const char *char_ptr = node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
+    const int* label_ptr = reinterpret_cast<const int*>(char_ptr);
+    label_classes.insert(*label_ptr);
+    m_data_store->set_conduit_node(data_id, node);
+  }
+  return true;
 }
 
 bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
