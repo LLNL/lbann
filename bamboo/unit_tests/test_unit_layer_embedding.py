@@ -18,15 +18,15 @@ import tools
 # the functions below to ingest data.
 
 # Data
-dictionary_size = 7
-embedding_size = 5
+num_embeddings = 7
+embedding_dim = 5
 np.random.seed(4321)
-embedding_array = np.random.normal(size=(dictionary_size,embedding_size))
+embedding_array = np.random.normal(size=(num_embeddings,embedding_dim))
 
 # Sample access functions
 def get_sample(index):
     np.random.seed(1234+index)
-    return [np.random.randint(dictionary_size)]
+    return [np.random.randint(num_embeddings)]
 def num_samples():
     return 41
 def sample_dims():
@@ -66,8 +66,8 @@ def construct_model(lbann):
     input = lbann.Input()
     embedding = lbann.Embedding(input,
                                 weights=w,
-                                dictionary_size=dictionary_size,
-                                embedding_size=embedding_size,
+                                num_embeddings=num_embeddings,
+                                embedding_dim=embedding_dim,
                                 device='cpu')
     l2_norm2 = lbann.L2Norm2(embedding)
     layers = list(lbann.traverse_layer_graph(input))

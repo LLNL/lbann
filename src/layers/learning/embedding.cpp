@@ -56,7 +56,7 @@ void embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::setup_dims() {
   }
 
   // Output is size of embedding vector
-  this->set_output_dims({static_cast<int>(m_embedding_size)});
+  this->set_output_dims({static_cast<int>(m_embedding_dim)});
 
 }
 
@@ -80,12 +80,12 @@ void embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::setup_data() {
   auto matrix_dist = get_prev_activations().DistData();
   matrix_dist.colDist = El::STAR;
   matrix_dist.rowDist = El::STAR;
-  dict.set_dims({static_cast<int>(m_embedding_size)},
-                {static_cast<int>(m_dictionary_size)});
+  dict.set_dims({static_cast<int>(m_embedding_dim)},
+                {static_cast<int>(m_num_embeddings)});
   dict.set_matrix_distribution(matrix_dist);
 
   // Initialize gradient w.r.t. dictionary
-  m_dictionary_gradient.Resize(m_embedding_size, m_dictionary_size);
+  m_dictionary_gradient.Resize(m_embedding_dim, m_num_embeddings);
 
 }
 

@@ -31,6 +31,12 @@
 
 namespace lbann {
 
+/** @brief Lookup table to vectors of fixed size.
+ *
+ *  Takes a scalar input, interprets it as an index, and outputs the
+ *  corresponding vector. If the index is out-of-range, then the
+ *  output is a vector of zeros.
+ */
 template <data_layout Layout, El::Device Device>
 class embedding_layer : public Layer {
   static_assert(Layout == data_layout::DATA_PARALLEL,
@@ -39,12 +45,17 @@ class embedding_layer : public Layer {
                 "embedding layer only supports CPU");
 public:
 
+  /**
+   *  @param comm           LBANN communicator.
+   *  @param num_embeddings Size of dictionary of embeddings.
+   *  @param embedding_dim  Size of embedding vectors.
+   */
   embedding_layer(lbann_comm* comm,
-                  El::Int dictionary_size,
-                  El::Int embedding_size)
+                  size_t num_embeddings,
+                  size_t embedding_dim)
     : Layer(comm),
-      m_dictionary_size{dictionary_size},
-      m_embedding_size{embedding_size} {
+      m_num_embeddings{num_embeddings},
+      m_embedding_dim{embedding_dim} {
   }
 
   embedding_layer(const embedding_layer& other) = default;
@@ -61,8 +72,8 @@ public:
 
   description get_description() const override {
     auto desc = Layer::get_description();
-    desc.add("Dictionary size", m_dictionary_size);
-    desc.add("Embedding size", m_embedding_size);
+    desc.add("Num embeddings", m_num_embeddings);
+    desc.add("Embedding dim", m_embedding_dim);
     return desc;
   }
 
@@ -77,8 +88,11 @@ protected:
 
 private:
 
-  El::Int m_dictionary_size;
-  El::Int m_embedding_size;
+  /** Size of dictionary of embeddings. */
+  size_t m_num_embeddings;
+  /** Size of embedding vectors. */
+  size_t m_embedding_dim;
+  /** Gradient w.r.t. embedding weights. */
   StarMat<El::Device::CPU> m_dictionary_gradient;
 
 };

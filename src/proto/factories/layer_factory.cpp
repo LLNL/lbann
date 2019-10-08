@@ -246,7 +246,7 @@ std::unique_ptr<Layer> construct_layer(
     if (Layout == data_layout::DATA_PARALLEL
         && Device == El::Device::CPU) {
       return lbann::make_unique<embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>>(
-               comm, params.dictionary_size(), params.embedding_size());
+               comm, params.num_embeddings(), params.embedding_dim());
     } else {
       LBANN_ERROR("embedding layer is only supported with "
                   "data-parallel data layout and on CPU");

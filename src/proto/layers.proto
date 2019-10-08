@@ -517,9 +517,17 @@ message Layer {
     double l2_regularization_factor = 12; //default: 0
   }
 
+  /** @brief Lookup table to vectors of fixed size.
+   *
+   *  Takes a scalar input, interprets it as an index, and outputs the
+   *  corresponding vector. If the index is out-of-range, then the
+   *  output is a vector of zeros.
+   */
   message Embedding {
-    int64 dictionary_size = 1;
-    int64 embedding_size = 2;
+    // Size of dictionary of embeddings
+    int64 num_embeddings = 1;
+    // Size of embedding vectors
+    int64 embedding_dim = 2;
   }
 
   message ChannelwiseScaleBias {}
