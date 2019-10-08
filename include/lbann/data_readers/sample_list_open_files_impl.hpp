@@ -219,40 +219,27 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
                             + " :: data file '" + filename + "' does not exist.");
     }
 
-    std::vector<std::string> sample_names;
-    file_handle_t file_hnd = get_bundled_sample_names(file_path, sample_names, included_samples, excluded_samples);
+    file_handle_t file_hnd = open_file_handle(file_path);
     if (!is_file_handle_valid(file_hnd)) {
       continue; // skipping the file
     }
-
-    if(m_file_map.count(filename) > 0) {
-      if(sample_names.size() != m_file_map[filename]) {
-        LBANN_ERROR(std::string("The same file ")
-                    + filename
-                    + " was opened multiple times and reported different sizes: "
-                    + std::to_string(sample_names.size())
-                    + " and "
-                    + std::to_string(m_file_map[filename]));
-      }
-    }else {
-      m_file_map[filename] = sample_names.size();
-    }
-
-    std::unordered_set<std::string> set_of_samples(sample_names.begin(), sample_names.end());
 
     sample_file_id_t index = m_file_id_stats_map.size();
     m_file_id_stats_map.emplace_back(std::make_tuple(filename, uninitialized_file_handle<file_handle_t>(), std::deque<std::pair<int,int>>{}));
     set_files_handle(filename, file_hnd);
 
     size_t valid_sample_count = 0u;
+    //#define VALIDATE_SAMPLE_LIST
+#ifdef VALIDATE_SAMPLE_LIST
+    std::vector<std::string> sample_names;
+#endif
     while(!sstr.eof()) {
       std::string sample_name_str;
       sstr >> sample_name_str;
-      std::unordered_set<std::string>::const_iterator found = set_of_samples.find(sample_name_str);
-      if (found == set_of_samples.cend()) {
-        LBANN_ERROR(std::string("Illegal request for a data ID that does not exist: ") + sample_name_str);
-      }
       m_sample_list.emplace_back(index, to_sample_name_t<sample_name_t>(sample_name_str));
+#ifdef VALIDATE_SAMPLE_LIST
+      sample_names.emplace_back(sample_name_str);
+#endif
       valid_sample_count++;
     }
     if(valid_sample_count != included_samples) {
@@ -261,6 +248,22 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
                   + std::string(" samples, but found ")
                   + std::to_string(valid_sample_count));
     }
+
+    if(m_file_map.count(filename) > 0) {
+      if(valid_sample_count != m_file_map[filename]) {
+        LBANN_ERROR(std::string("The same file ")
+                    + filename
+                    + " was opened multiple times and reported different sizes: "
+                    + std::to_string(valid_sample_count)
+                    + " and "
+                    + std::to_string(m_file_map[filename]));
+      }
+    }else {
+      m_file_map[filename] = /*valid_sample_count*/ included_samples + excluded_samples;
+    }
+#ifdef VALIDATE_SAMPLE_LIST
+    validate_implicit_bundles_sample_names(file_path, filename, sample_names, included_samples, excluded_samples);
+#endif
   }
 
   if (m_header.get_num_files() != cnt_files) {
@@ -420,10 +423,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
 template <typename sample_name_t, typename file_handle_t>
 inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
-::get_bundled_sample_names(std::string file_path,
-                           std::vector<std::string>& sample_names,
-                           size_t included_samples,
-                           size_t excluded_samples) {
+::open_file_handle(std::string file_path) {
   file_handle_t file_hnd;
   clear_file_handle(file_hnd);
   bool retry = false;
@@ -437,6 +437,17 @@ inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
       retry_cnt++;
     }
   }while(retry && retry_cnt < LBANN_MAX_OPEN_FILE_RETRY);
+
+  return file_hnd;
+}
+
+template <typename sample_name_t, typename file_handle_t>
+inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
+::get_bundled_sample_names(std::string file_path,
+                           std::vector<std::string>& sample_names,
+                           size_t included_samples,
+                           size_t excluded_samples) {
+  file_handle_t file_hnd = open_file_handle(file_path);
 
   if (!is_file_handle_valid(file_hnd)) {
     std::cout << "Opening the file didn't work" << std::endl;
@@ -455,6 +466,40 @@ inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
   }
 
   return file_hnd;
+}
+
+template <typename sample_name_t, typename file_handle_t>
+inline void sample_list_open_files<sample_name_t, file_handle_t>
+::validate_implicit_bundles_sample_names(std::string file_path,
+                                         std::string filename,
+                                         std::vector<std::string>& sample_names,
+                                         size_t included_samples,
+                                         size_t excluded_samples) {
+  std::vector<std::string> all_sample_names;
+  file_handle_t file_hnd = get_bundled_sample_names(file_path, all_sample_names, included_samples, excluded_samples);
+  if (!is_file_handle_valid(file_hnd)) {
+    return; // skipping the file
+  }
+  if(m_file_map.count(filename) > 0) {
+    if(all_sample_names.size() != m_file_map[filename]) {
+      LBANN_ERROR(std::string("The same file ")
+                  + filename
+                  + " was opened multiple times and reported different sizes: "
+                  + std::to_string(all_sample_names.size())
+                  + " and "
+                  + std::to_string(m_file_map[filename]));
+    }
+  }else {
+    m_file_map[filename] = all_sample_names.size();
+  }
+  std::unordered_set<std::string> set_of_samples(all_sample_names.begin(), all_sample_names.end());
+  for(auto&& sample_name : sample_names) {
+    std::unordered_set<std::string>::const_iterator found = set_of_samples.find(sample_name);
+    if (found == set_of_samples.cend()) {
+      LBANN_ERROR(std::string("Illegal request for a data ID that does not exist: ") + sample_name);
+    }
+  }
+  return;
 }
 
 template <typename sample_name_t, typename file_handle_t>
@@ -612,17 +657,8 @@ inline file_handle_t sample_list_open_files<sample_name_t, file_handle_t>
     if (file_name.empty() || !check_if_file_exists(file_path)) {
       LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
     }
-    bool retry = false;
-    int retry_cnt = 0;
-    do {
-      try {
-        h = open_file_handle_for_read( file_path );
-      }catch (conduit::Error const& e) {
-        LBANN_WARNING(" :: trying to open the file " + file_path + " and got " + e.what());
-        retry = true;
-        retry_cnt++;
-      }
-    }while(retry && retry_cnt < 3);
+
+    h = open_file_handle(file_path);
 
     if (!is_file_handle_valid(h)) {
       LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' could not be opened.");
