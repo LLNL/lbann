@@ -147,7 +147,7 @@ void numpy_npz_conduit_reader::preload_data_store() {
 
   std::unordered_set<int> label_classes;
 
-  bool threaded = options::get()->get_bool("data_store_threaded");
+  bool threaded = ! options::get()->get_bool("data_store_no_thread");
 
   //threaded mode
   if (threaded) {
