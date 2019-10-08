@@ -494,10 +494,6 @@ target_include_directories(lbann PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
-if (LBANN_HAS_PYTHON)
-  target_include_directories(lbann PUBLIC ${Python_INCLUDE_DIRS})
-endif ()
-
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
 target_link_libraries(lbann PUBLIC Threads::Threads)
@@ -530,7 +526,7 @@ if (LBANN_HAS_VTUNE)
 endif ()
 
 if (LBANN_HAS_PYTHON)
-  target_link_libraries(lbann PUBLIC ${Python_LIBRARIES})
+  target_link_libraries(lbann PUBLIC Python::Python)
 endif ()
 
 if (TARGET LBANN_CXX_FLAGS_werror)
