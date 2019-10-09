@@ -533,6 +533,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
   m_file_id_stats_map.reserve(num_ids);
   m_file_map.reserve(num_files);
 
+  std::unordered_map<std::string, size_t> mp;
   for(int r = 0; r < num_ranks; r++) {
     const samples_t& s_list = per_rank_samples[r];
     const auto& files = per_rank_files[r];
@@ -548,13 +549,13 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
         if(m_file_map.count(filename) == 0) {
           m_file_map[filename] = file_map.at(filename);
         }
+        mp[filename] = index;
       }else {
-        for(size_t i = 0; i < m_file_id_stats_map.size(); i++) {
-          if(filename == get_samples_filename(i)) {
-            index = i;
-            break;
-          }
+        auto search_result = mp.find(filename);
+        if (search_result == mp.end()) {
+          LBANN_ERROR("mp.find(filename) == mp.end()");
         }
+        index = search_result->second;
       }
       m_sample_list.emplace_back(std::make_pair(index, s.second));
     }
