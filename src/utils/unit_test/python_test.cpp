@@ -7,14 +7,15 @@
 #ifdef LBANN_HAS_PYTHON
 TEST_CASE ("Testing the embedded Python session", "[python][utilities]") {
 
-  /// @todo Test finalization and reinitialization
-  SECTION("Before initialization") {
-    // Check twice to make sure interacting doesn't initialize Python
-    CHECK_FALSE(lbann::python::is_active());
-    CHECK_FALSE(lbann::python::is_active());
-  }
-
   SECTION("Initialization") {
+    REQUIRE_NOTHROW(lbann::python::initialize());
+    REQUIRE(lbann::python::is_active());
+    REQUIRE_NOTHROW(lbann::python::initialize());
+    REQUIRE(lbann::python::is_active());
+    REQUIRE_NOTHROW(lbann::python::finalize());
+    REQUIRE_FALSE(lbann::python::is_active());
+    REQUIRE_NOTHROW(lbann::python::finalize());
+    REQUIRE_FALSE(lbann::python::is_active());
     REQUIRE_NOTHROW(lbann::python::initialize());
     REQUIRE(lbann::python::is_active());
   }
