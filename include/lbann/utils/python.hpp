@@ -61,8 +61,9 @@ bool is_active();
 
 /** @brief Check if a Python error has occurred.
  *
- *  Throws an exception if a Python error is detected. The GIL is
- *  acquired internally.
+ *  If a Python error is detected, then the Python error indicator is
+ *  cleared and a C++ exception is thrown. The GIL is acquired
+ *  internally.
  *
  *  @param force_error Whether to force an exception to be thrown.
  */

@@ -7,7 +7,7 @@
 #ifdef LBANN_HAS_PYTHON
 TEST_CASE ("Testing the embedded Python session", "[python][utilities]") {
 
-  SECTION("Initialization and finalization") {
+  SECTION ("Initializing and finalizing the Python session") {
     REQUIRE_NOTHROW(lbann::python::initialize());
     REQUIRE(lbann::python::is_active());
     REQUIRE_NOTHROW(lbann::python::initialize());
@@ -20,13 +20,13 @@ TEST_CASE ("Testing the embedded Python session", "[python][utilities]") {
     REQUIRE(lbann::python::is_active());
   }
 
-  SECTION("Global interpreter lock") {
-    SECTION("Acquire GIL once") {
+  SECTION ("Acquiring the global interpreter lock") {
+    SECTION ("Acquiring GIL once") {
       std::unique_ptr<lbann::python::global_interpreter_lock> gil;
       REQUIRE_NOTHROW(gil.reset(new lbann::python::global_interpreter_lock()));
       REQUIRE_NOTHROW(gil.reset());
     }
-    SECTION("Acquire GIL recursively") {
+    SECTION ("Acquiring GIL recursively") {
       std::unique_ptr<lbann::python::global_interpreter_lock> gil1, gil2, gil3;
       REQUIRE_NOTHROW(gil1.reset(new lbann::python::global_interpreter_lock()));
       REQUIRE_NOTHROW(gil2.reset(new lbann::python::global_interpreter_lock()));
@@ -37,12 +37,13 @@ TEST_CASE ("Testing the embedded Python session", "[python][utilities]") {
     }
   }
 
-  SECTION("Python error checking") {
+  SECTION ("Python error checking") {
     lbann::python::global_interpreter_lock gil;
     REQUIRE_NOTHROW(lbann::python::check_error());
     REQUIRE_THROWS(lbann::python::check_error(true));
+    REQUIRE_NOTHROW(lbann::python::check_error());
 
-    SECTION("Raise Python exception") {
+    SECTION ("Raising Python exception") {
       PyObject* main = PyImport_ImportModule("__main__");
       std::string func_def = R"(
 def throw_exception():
@@ -55,7 +56,7 @@ def throw_exception():
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
 
-    SECTION("Make syntax error") {
+    SECTION ("Making syntax error") {
       PyObject* main = PyImport_ImportModule("__main__");
       std::string func_def = R"(
 def make_syntax_error():
@@ -68,7 +69,7 @@ def make_syntax_error():
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
 
-    SECTION("Pass bad arguments into Python/C API") {
+    SECTION ("Passing bad arguments into Python/C API") {
       PyLong_AsLong(nullptr);
       REQUIRE_THROWS(lbann::python::check_error());
       REQUIRE_NOTHROW(lbann::python::check_error());
@@ -76,17 +77,17 @@ def make_syntax_error():
 
   }
 
-  SECTION("Python object") {
+  SECTION ("Python object wrapper") {
     lbann::python::global_interpreter_lock gil;
 
-    SECTION("Default constructor") {
+    SECTION ("Default constructor") {
       std::unique_ptr<lbann::python::object> obj;
       REQUIRE_NOTHROW(obj.reset(new lbann::python::object()));
       REQUIRE(*obj == nullptr);
       REQUIRE_NOTHROW(obj.reset());
     }
 
-    SECTION("PyObject* constructor") {
+    SECTION ("Constructor with raw Python object pointer") {
       PyObject* ptr = Py_BuildValue("(i,d,s)", 987, 6.54, "321");
       REQUIRE(ptr != nullptr);
       Py_INCREF(ptr);
@@ -100,14 +101,14 @@ def make_syntax_error():
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
 
-    SECTION("PyObject* constructor with null pointer") {
+    SECTION ("Constructor with null pointer") {
       std::unique_ptr<lbann::python::object> obj;
       REQUIRE_NOTHROW(obj.reset(new lbann::python::object(nullptr)));
       REQUIRE_NOTHROW(obj.reset());
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
 
-    SECTION("PyObject* access functions") {
+    SECTION ("Access functions to raw Python object pointer") {
       PyObject* ptr = Py_BuildValue("(i,d,s)", 12, 3.4, "56");
       REQUIRE(ptr != nullptr);
       Py_INCREF(ptr);
@@ -132,7 +133,7 @@ def make_syntax_error():
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
 
-    SECTION("Copy constructor") {
+    SECTION ("Copy constructor") {
       PyObject* ptr = Py_BuildValue("(i,d,s)", 98, 7.6, "54");
       std::unique_ptr<lbann::python::object> obj1(new lbann::python::object(ptr));
       std::unique_ptr<lbann::python::object> obj2;
@@ -146,7 +147,7 @@ def make_syntax_error():
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
 
-    SECTION("Copy assignment operator") {
+    SECTION ("Copy assignment operator") {
       PyObject* ptr1 = Py_BuildValue("(i,d,s)", 1, 2., "3");
       PyObject* ptr2 = Py_BuildValue("(i,d,s)", 4, 5., "6");
       Py_INCREF(ptr1);
@@ -166,7 +167,7 @@ def make_syntax_error():
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
 
-    SECTION("Move constructor") {
+    SECTION ("Move constructor") {
       PyObject* ptr = Py_BuildValue("(i,d,s)", 987, 65.4, "three two one");
       std::unique_ptr<lbann::python::object> obj1(new lbann::python::object(ptr));
       std::unique_ptr<lbann::python::object> obj2;
@@ -180,7 +181,7 @@ def make_syntax_error():
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
 
-    SECTION("Move assignment operator") {
+    SECTION ("Move assignment operator") {
       PyObject* ptr1 = Py_BuildValue("(i,d,s)", 9, 8., "7");
       PyObject* ptr2 = Py_BuildValue("(i,d,s)", 6, 5., "4");
       Py_INCREF(ptr1);
@@ -200,52 +201,65 @@ def make_syntax_error():
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
 
-    SECTION("str") {
-      SECTION("Empty string"){
+    SECTION ("Convenience functions for Python str") {
+      SECTION ("Empty string"){
         std::unique_ptr<lbann::python::object> obj;
         REQUIRE_NOTHROW(obj.reset(new lbann::python::object("")));
         REQUIRE(static_cast<std::string>(*obj).empty());
       }
-      SECTION("Non-empty string"){
+      SECTION ("Non-empty string"){
         std::unique_ptr<lbann::python::object> obj;
         REQUIRE_NOTHROW(obj.reset(new lbann::python::object("one two three")));
         REQUIRE(static_cast<std::string>(*obj) == "one two three");
       }
     }
 
-    SECTION("int") {
-      SECTION("Zero") {
+    SECTION ("Convenience functions for Python int") {
+      SECTION ("Zero value") {
         std::unique_ptr<lbann::python::object> obj;
         REQUIRE_NOTHROW(obj.reset(new lbann::python::object(0l)));
         REQUIRE(static_cast<long>(*obj) == 0l);
       }
-      SECTION("Positive") {
+      SECTION ("Positive value") {
         std::unique_ptr<lbann::python::object> obj;
         REQUIRE_NOTHROW(obj.reset(new lbann::python::object(123l)));
         REQUIRE(static_cast<long>(*obj) == 123l);
       }
-      SECTION("Negative") {
+      SECTION ("Negative value") {
         std::unique_ptr<lbann::python::object> obj;
         REQUIRE_NOTHROW(obj.reset(new lbann::python::object(-321l)));
         REQUIRE(static_cast<long>(*obj) == -321l);
       }
     }
 
-    SECTION("float") {
-      SECTION("Zero") {
+    SECTION ("Convenience functions for Python float") {
+      SECTION ("Zero value") {
         std::unique_ptr<lbann::python::object> obj;
         REQUIRE_NOTHROW(obj.reset(new lbann::python::object(0.0)));
         REQUIRE(static_cast<double>(*obj) == 0.0);
       }
-      SECTION("Positive") {
+      SECTION ("Positive value") {
         std::unique_ptr<lbann::python::object> obj;
         REQUIRE_NOTHROW(obj.reset(new lbann::python::object(3.21)));
         REQUIRE(static_cast<double>(*obj) == 3.21);
       }
-      SECTION("Negative") {
+      SECTION ("Negative value") {
         std::unique_ptr<lbann::python::object> obj;
         REQUIRE_NOTHROW(obj.reset(new lbann::python::object(-12.3)));
         REQUIRE(static_cast<double>(*obj) == -12.3);
+      }
+      SECTION ("Infinite value") {
+        constexpr double inf = std::numeric_limits<double>::infinity();
+        std::unique_ptr<lbann::python::object> obj;
+        REQUIRE_NOTHROW(obj.reset(new lbann::python::object(inf)));
+        REQUIRE(static_cast<double>(*obj) == inf);
+        REQUIRE_NOTHROW(obj.reset(new lbann::python::object(-inf)));
+        REQUIRE(static_cast<double>(*obj) == -inf);
+      }
+      SECTION ("NaN value") {
+        std::unique_ptr<lbann::python::object> obj;
+        REQUIRE_NOTHROW(obj.reset(new lbann::python::object(std::nan(""))));
+        REQUIRE(std::isnan(static_cast<double>(*obj)));
       }
     }
 
