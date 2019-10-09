@@ -136,6 +136,7 @@ void check_error(bool force_error) {
 
     // Clean up and throw exception
     PyErr_Restore(type.release(), value.release(), traceback.release());
+    PyErr_Clear();
     LBANN_ERROR(err.str());
 
   }

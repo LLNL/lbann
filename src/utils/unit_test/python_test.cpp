@@ -7,7 +7,7 @@
 #ifdef LBANN_HAS_PYTHON
 TEST_CASE ("Testing the embedded Python session", "[python][utilities]") {
 
-  SECTION("Initialization") {
+  SECTION("Initialization and finalization") {
     REQUIRE_NOTHROW(lbann::python::initialize());
     REQUIRE(lbann::python::is_active());
     REQUIRE_NOTHROW(lbann::python::initialize());
@@ -42,14 +42,37 @@ TEST_CASE ("Testing the embedded Python session", "[python][utilities]") {
     REQUIRE_NOTHROW(lbann::python::check_error());
     REQUIRE_THROWS(lbann::python::check_error(true));
 
-    // Syntax error
-    /// @todo Handle exception gracefully
-    // auto main = PyImport_ImportModule("__main__");
-    // auto x = PyObject_GetAttrString(main, "_bogus_variable_name({)}))");
-    // REQUIRE(x == nullptr);
-    //REQUIRE_THROWS(lbann::python::check_error());
-    // Py_DECREF(main);
-    REQUIRE_NOTHROW(lbann::python::check_error());
+    SECTION("Raise Python exception") {
+      PyObject* main = PyImport_ImportModule("__main__");
+      std::string func_def = R"(
+def throw_exception():
+    raise RuntimeError('This error is expected')
+)";
+      PyRun_SimpleString(func_def.c_str());
+      PyObject_CallMethod(main, "throw_exception", "()");
+      REQUIRE_THROWS(lbann::python::check_error());
+      Py_DECREF(main);
+      REQUIRE_NOTHROW(lbann::python::check_error());
+    }
+
+    SECTION("Make syntax error") {
+      PyObject* main = PyImport_ImportModule("__main__");
+      std::string func_def = R"(
+def make_syntax_error():
+    this should throw a NameError
+)";
+      PyRun_SimpleString(func_def.c_str());
+      PyObject_CallMethod(main, "make_syntax_error", "()");
+      REQUIRE_THROWS(lbann::python::check_error());
+      Py_DECREF(main);
+      REQUIRE_NOTHROW(lbann::python::check_error());
+    }
+
+    SECTION("Pass bad arguments into Python/C API") {
+      PyLong_AsLong(nullptr);
+      REQUIRE_THROWS(lbann::python::check_error());
+      REQUIRE_NOTHROW(lbann::python::check_error());
+    }
 
   }
 
