@@ -51,7 +51,7 @@ cd ..
 echo "Task: Unit Tests"
 cd unit_tests
 module load python/3.6.4
-$PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
+OMP_NUM_THREADS=10 $PYTHON -m pytest -s -vv --durations=0 --junitxml=results.xml
 cd ..
 
 echo "Task: Finished"
