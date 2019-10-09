@@ -100,6 +100,13 @@ def make_syntax_error():
       REQUIRE_NOTHROW(lbann::python::check_error());
     }
 
+    SECTION("PyObject* constructor with null pointer") {
+      std::unique_ptr<lbann::python::object> obj;
+      REQUIRE_NOTHROW(obj.reset(new lbann::python::object(nullptr)));
+      REQUIRE_NOTHROW(obj.reset());
+      REQUIRE_NOTHROW(lbann::python::check_error());
+    }
+
     SECTION("PyObject* access functions") {
       PyObject* ptr = Py_BuildValue("(i,d,s)", 12, 3.4, "56");
       REQUIRE(ptr != nullptr);
