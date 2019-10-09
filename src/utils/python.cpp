@@ -221,6 +221,41 @@ PyObject* object::release() noexcept {
   return old_ptr;
 }
 
+object::operator std::string() {
+  global_interpreter_lock gil;
+  if (m_ptr == nullptr) {
+    LBANN_ERROR("Attempted to convert Python object to std::string, "
+                "but it has not been set");
+  }
+  object python_str = PyObject_Str(m_ptr);
+  std::ostringstream ss;
+  ss << PyUnicode_AsUTF8(python_str);
+  check_error();
+  return ss.str();
+}
+
+object::operator long() {
+  global_interpreter_lock gil;
+  if (m_ptr == nullptr) {
+    LBANN_ERROR("Attempted to convert Python object to long, "
+                "but it has not been set");
+  }
+  auto val = PyLong_AsLong(m_ptr);
+  check_error();
+  return val;
+}
+
+object::operator double() {
+  global_interpreter_lock gil;
+  if (m_ptr == nullptr) {
+    LBANN_ERROR("Attempted to convert Python object to double, "
+                "but it has not been set");
+  }
+  auto val = PyFloat_AsDouble(m_ptr);
+  check_error();
+  return val;
+}
+
 } // namespace python
 } // namespace lbann
 

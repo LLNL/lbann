@@ -148,6 +148,13 @@ public:
    */
   PyObject* release() noexcept;
 
+  /** Convert Python @c str to C++ @c std::string. */
+  operator std::string();
+  /** Convert Python @c int to C++ @c long. */
+  operator long();
+  /** Convert Python @c float to C++ @c double. */
+  operator double();
+
 private:
 
   /** Python object pointer. */
