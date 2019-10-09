@@ -551,10 +551,11 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
         }
         mp[filename] = index;
       }else {
-        if (mp.find(filename) == mp.end()) {
+        auto search_result = mp.find(filename);
+        if (search_result == mp.end()) {
           LBANN_ERROR("mp.find(filename) == mp.end()");
         }
-        index = mp[filename];
+        index = search_result->second;
       }
       m_sample_list.emplace_back(std::make_pair(index, s.second));
     }
