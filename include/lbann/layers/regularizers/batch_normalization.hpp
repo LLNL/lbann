@@ -241,47 +241,47 @@ protected:
     }
 
     // Initialize default weights if none are provided
-    if (this->m_weights.size() > 4) {
+    if (this->get_weights().size() > 4) {
       std::stringstream err;
       err << "attempted to setup layer \"" << this->m_name << "\" "
           << "with an invalid number of weights";
       LBANN_ERROR(err.str());
     }
-    this->m_weights.resize(4, nullptr);
-    if (this->m_weights[0] == nullptr) {
+    this->get_weights().resize(4, nullptr);
+    if (this->get_weights()[0] == nullptr) {
       auto w = make_unique<weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<constant_initializer>(TensorDataType(1));
       std::unique_ptr<optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
       w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_weights[0] = w.get();
+      this->get_weights()[0] = w.get();
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights[1] == nullptr) {
+    if (this->get_weights()[1] == nullptr) {
       auto w = make_unique<weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<constant_initializer>(TensorDataType(0));
       std::unique_ptr<optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
       w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_weights[1] = w.get();
+      this->get_weights()[1] = w.get();
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights[2] == nullptr) {
+    if (this->get_weights()[2] == nullptr) {
       auto w = make_unique<weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<constant_initializer>(TensorDataType(0));
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
-      this->m_weights[2] = w.get();
+      this->get_weights()[2] = w.get();
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights[3] == nullptr) {
+    if (this->get_weights()[3] == nullptr) {
       auto w = make_unique<weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<constant_initializer>(TensorDataType(1));
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
-      this->m_weights[3] = w.get();
+      this->get_weights()[3] = w.get();
       this->m_model->add_weights(std::move(w));
     }
 
@@ -289,7 +289,7 @@ protected:
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
-    for (auto* w : this->m_weights) {
+    for (auto* w : this->get_weights()) {
       w->set_dims(num_channels);
       w->set_matrix_distribution(dist);
     }
@@ -309,14 +309,14 @@ protected:
              El::ALL, El::IR(1, 2));
 
     // Initialize freeze state
-    for (auto&& w : this->m_weights) {
+    for (auto&& w : this->get_weights()) {
       if (this->m_frozen) {
         w->freeze();
       } else {
         w->unfreeze();
       }
     }
-    for (auto&& w : this->m_weights) {
+    for (auto&& w : this->get_weights()) {
       if (w->is_frozen() != this->m_frozen) {
         std::stringstream err;
         err << (this->m_frozen ? "" : "un") << "frozen "

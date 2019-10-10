@@ -105,39 +105,39 @@ protected:
 
     // Initialize output dimensions
     this->set_output_dims(this->get_input_dims());
-    const auto output_dims = get_output_dims();
-    const auto output_size = get_output_size();
+    const auto output_dims = this->get_output_dims();
+    const auto output_size = this->get_output_size();
 
     // Initialize default weights if none are provided
-    if (this->m_weights.size() > 2) {
+    if (this->get_weights().size() > 2) {
       std::stringstream err;
-      err << "attempted to setup layer \"" << m_name << "\" "
+      err << "attempted to setup layer \"" << this->get_name() << "\" "
           << "with an invalid number of weights "
-          << "(found " << this->m_weights.size() << ", expected 2)";
+          << "(found " << this->get_weights().size() << ", expected 2)";
       LBANN_ERROR(err.str());
     }
-    this->m_weights.resize(2, nullptr);
-    if (this->m_weights[0] == nullptr) {
+    this->get_weights().resize(2, nullptr);
+    if (this->get_weights()[0] == nullptr) {
       auto w = make_unique<weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<constant_initializer>(TensorDataType{0});
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
-      this->m_weights[0] = w.get();
+      this->get_weights()[0] = w.get();
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights[1] == nullptr) {
+    if (this->get_weights()[1] == nullptr) {
       auto w = make_unique<weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<constant_initializer>(TensorDataType{1});
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
-      this->m_weights[1] = w.get();
+      this->get_weights()[1] = w.get();
       this->m_model->add_weights(std::move(w));
     }
 
     // Setup weights
     auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    for (auto* w : this->m_weights) {
+    for (auto* w : this->get_weights()) {
       w->set_dims(output_dims);
       w->set_matrix_distribution(dist);
     }
@@ -153,7 +153,7 @@ protected:
   void fp_setup_outputs(El::Int mini_batch_size) override {
     data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
     const auto& input = this->get_prev_activations();
-    const auto input_size = get_input_size();
+    const auto input_size = this->get_input_size();
 
     // Make sure batch statistics tensor is aligned with input tensor
     m_batch_statistics->Empty(false);
@@ -166,8 +166,8 @@ protected:
     /// @todo Realign tensors if misaligned
     bool aligned = true;
     try {
-      const auto& running_mean = m_weights[0]->get_values();
-      const auto& running_var = m_weights[1]->get_values();
+      const auto& running_mean = get_weights()[0]->get_values();
+      const auto& running_var = get_weights()[1]->get_values();
       aligned = (input.ColAlign() == running_mean.ColAlign()
                  && input.RowAlign() == running_mean.RowAlign()
                  && input.ColAlign() == running_var.ColAlign()
@@ -192,12 +192,17 @@ protected:
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
     m_batch_statistics_gradient->Empty(false);
-    m_batch_statistics_gradient->AlignWith(get_prev_activations());
+    m_batch_statistics_gradient->AlignWith(this->get_prev_activations());
     m_batch_statistics_gradient->Resize(this->get_input_size(), 2);
   }
 
   void fp_compute() override;
   void bp_compute() override;
+
+  template <typename U>
+  friend void fp_compute_impl(entrywise_batch_normalization_layer<U, Layout, Device>& l);
+  template <typename U>
+  friend void bp_compute_impl(entrywise_batch_normalization_layer<U, Layout, Device>& l);
 
 private:
 

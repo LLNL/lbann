@@ -113,7 +113,7 @@ class selu_dropout : public regularizer_layer<TensorDataType> {
     if (this->m_model->get_execution_context().get_execution_mode() != execution_mode::training ||
         m_keep_prob < 0.0f) {
       // Do nothing if dropout is disabled
-      El::Copy(get_prev_activations(), this->get_activations());
+      El::Copy(this->get_prev_activations(), this->get_activations());
     } else {
 
       const auto *input_acts = &get_prev_activations();
@@ -144,7 +144,7 @@ class selu_dropout : public regularizer_layer<TensorDataType> {
   void bp_compute() override {
     if (this->m_model->get_execution_context().get_execution_mode() != execution_mode::training
         || m_keep_prob < 0.0f) {
-      El::Copy(get_prev_error_signals(), this->get_error_signals());
+      El::Copy(this->get_prev_error_signals(), this->get_error_signals());
     } else {
 
       const auto& local_prev_error_signal = get_local_prev_error_signals();

@@ -157,7 +157,7 @@ protected:
   }
 
   void fp_compute () override {
-    if (using_gpus()) {
+    if (this->using_gpus()) {
       fp_compute_gpu();
     } else {
       fp_compute_cpu();
@@ -165,7 +165,7 @@ protected:
   }
 
   void bp_compute () override {
-    if (using_gpus()) {
+    if (this->using_gpus()) {
       bp_compute_gpu();
     } else {
       bp_compute_cpu();
