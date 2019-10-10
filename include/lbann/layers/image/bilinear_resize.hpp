@@ -55,6 +55,9 @@ public:
 
   void fp_compute() override;
 
+  template <typename U>
+  friend void fp_compute_impl(bilinear_resize_layer<U, Layout, Device>& l);
+
 protected:
 
   void setup_dims() override {

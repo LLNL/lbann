@@ -32,12 +32,12 @@ namespace lbann {
 
 namespace {
 
-template <int block_size>
+template <typename TensorDataType, int block_size>
 __global__ void fp_kernel(El::Int num_samples,
                           El::Int num_channels,
                           El::Int input_height,
                           El::Int input_width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
                           El::Int output_height,
                           El::Int output_width,
@@ -45,8 +45,8 @@ __global__ void fp_kernel(El::Int num_samples,
                           El::Int output_ldim) {
 
   // Useful constants
-  constexpr DataType half = 0.5;
-  constexpr DataType one = 1;
+  constexpr TensorDataType half = 0.5;
+  constexpr TensorDataType one = 1;
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
 
@@ -115,15 +115,15 @@ __global__ void fp_kernel(El::Int num_samples,
 }
 
 
-template <>
-void bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+template <typename TensorDataType>
+void fp_compute(bilinear_resize_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
   // Matrices
-  const auto& local_input = get_local_prev_activations();
-  auto& local_output = get_local_activations();
+  const auto& local_input = l.get_local_prev_activations();
+  auto& local_output = l.get_local_activations();
 
   // Dimensions
-  const auto& input_dims = get_input_dims();
+  const auto& input_dims = l.get_input_dims();
   const auto& num_dims = input_dims.size();
   const auto& num_samples = local_input.Width();
   const El::Int num_channels = std::accumulate(input_dims.begin(),
@@ -146,18 +146,18 @@ void bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_comp
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    fp_kernel<block_dim>
+    fp_kernel<TensorDataType, block_dim>
       <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
         num_samples, num_channels,
         input_height, input_width,
         local_input.LockedBuffer(), local_input.LDim(),
-        m_height, m_width,
+        l.m_height, l.m_width,
         local_output.Buffer(), local_output.LDim());
   }
 
 }
 
 template class bilinear_resize_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
