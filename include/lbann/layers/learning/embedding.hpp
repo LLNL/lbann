@@ -34,8 +34,14 @@ namespace lbann {
 /** @brief Lookup table to vectors of fixed size.
  *
  *  Takes a scalar input, interprets it as an index, and outputs the
- *  corresponding vector. If the index is out-of-range, then the
+ *  corresponding vector. The number of embedding vectors and the size
+ *  of vectors are fixed. If the index is out-of-range, then the
  *  output is a vector of zeros.
+ *
+ *  The embedding vectors are stored in an
+ *  @f$ \text{embedding_dim} \times \text{num_embeddings} @f$
+ *  weights matrix. Note that this is the transpose of the weights in
+ *  the PyTorch embedding layer.
  */
 template <data_layout Layout, El::Device Device>
 class embedding_layer : public Layer {
