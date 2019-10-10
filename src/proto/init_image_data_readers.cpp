@@ -34,6 +34,7 @@
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
 #include "lbann/data_readers/data_reader_multihead_siamese.hpp"
+#include "lbann/data_readers/data_reader_hdf5.hpp"
 
 #include <reader.pb.h>
 
