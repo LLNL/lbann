@@ -12,6 +12,7 @@
 #include <unordered_set>
 #include <memory>
 #include <type_traits>
+#include <limits>
 
 #include <cereal/archives/binary.hpp>
 #include <unistd.h>
@@ -392,12 +393,14 @@ inline void sample_list<sample_name_t>
   // there's commented out code below to deal with the case where
   // archive.size() > INT_MAX; but for now let's assume we won't
   // encounter that (which is true for the 100M JAG set)
+  int constexpr max_int = std::numeric_limits<int>::max();
   size_t n = archive.size();
-  if (n > INT_MAX) {
-    LBANN_ERROR("(n > INT_MAX");
+  if (n > max_int
+    LBANN_ERROR("(n > max_int");
   }
 
-  // change int to size_t for case where n > INT_MAX
+  // change int to size_t for case where n > max_int (see commented out
+  // code block below)
   int size_of_my_archive= archive.size();
   std::vector<int> packed_sizes(comm.get_procs_per_trainer());
   comm.trainer_all_gather(size_of_my_archive, packed_sizes);
