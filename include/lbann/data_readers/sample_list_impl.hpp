@@ -395,7 +395,7 @@ inline void sample_list<sample_name_t>
   // encounter that (which is true for the 100M JAG set)
   int constexpr max_int = std::numeric_limits<int>::max();
   size_t n = archive.size();
-  if (n > max_int
+  if (n > max_int) {
     LBANN_ERROR("(n > max_int");
   }
 
