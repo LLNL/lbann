@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_TOP_K_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
@@ -329,5 +330,10 @@ void top_k_categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GP
          get_prev_activations(1),
          get_activations());
 }
+
+template class top_k_categorical_accuracy_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class top_k_categorical_accuracy_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

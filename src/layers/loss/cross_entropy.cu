@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CROSS_ENTROPY_LAYER_INSTANTIATE
 #include "lbann/layers/loss/cross_entropy.hpp"
 #include "lbann/utils/exception.hpp"
 #include "math.h"
@@ -203,5 +204,10 @@ void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
                local_gradient_wrt_prediction,
                local_gradient_wrt_ground_truth);
 }
+
+template class cross_entropy_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class cross_entropy_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

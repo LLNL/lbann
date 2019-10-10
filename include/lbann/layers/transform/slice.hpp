@@ -44,7 +44,8 @@ namespace lbann {
  *    \cdots\times D_n @f$
  *  tensor.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class slice_layer : public transform_layer {
 public:
 
@@ -71,6 +72,7 @@ public:
     m_slice_points = other.m_slice_points;
     m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
     m_output_v.reset(other.m_output_v ? other.m_output_v->Copy() : nullptr);
+    return *this;
   }
 
   slice_layer* copy() const override { return new slice_layer(*this); }
@@ -285,6 +287,15 @@ private:
   std::unique_ptr<AbsDistMat> m_output_v;
 
 };
+
+#ifndef LBANN_SLICE_LAYER_INSTANTIATE
+extern template class slice_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class slice_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class slice_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class slice_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_SLICE_LAYER_INSTANTIATE
 
 } // namespace lbann
 

@@ -28,12 +28,14 @@
 #define LBANN_LAYER_CONCATENATION_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
 /** @brief Concatenate tensors along specified dimension. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class concatenation_layer : public transform_layer {
 public:
 
@@ -56,6 +58,7 @@ public:
     m_concat_points = other.m_concat_points;
     m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
     m_output_v.reset(other.m_output_v ? other.m_output_v->Copy() : nullptr);
+    return *this;
   }
 
   concatenation_layer* copy() const override { return new concatenation_layer(*this); }
@@ -282,6 +285,19 @@ private:
   std::unique_ptr<AbsDistMat> m_output_v;
 
 };
+
+#ifndef LBANN_CONCATENATION_LAYER_INSTANTIATE
+extern template class concatenation_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class concatenation_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class concatenation_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class concatenation_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_CONCATENATION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

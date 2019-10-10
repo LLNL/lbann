@@ -134,7 +134,7 @@ std::unique_ptr<weights> construct_weights(
 
   std::unique_ptr<optimizer> opt =
     (helpers::has_oneof(opt_msg, "optimizer_type")
-     ? construct_optimizer(comm, opt_msg)
+     ? construct_optimizer(opt_msg)
      : nullptr);
   w->set_initializer(std::move(init));
   w->set_optimizer(std::move(opt));

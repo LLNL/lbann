@@ -7,7 +7,6 @@ model {
   data_layout: "data_parallel"
   mini_batch_size: 128
   num_epochs: 10
-  procs_per_trainer: 0
   disable_cuda: true
 
   ###################################################

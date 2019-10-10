@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_BINARY_LAYER_INSTANTIATE
 #include "lbann/layers/math/binary.hpp"
 #include "lbann/utils/entrywise_operator.hpp"
 
@@ -460,25 +461,27 @@ struct logical_xor_op {
                                        get_local_prev_error_signals(),  \
                                        get_local_error_signals(0),      \
                                        get_local_error_signals(1));     \
-  }
-  INSTANTIATE(add_layer, add_op)
-  INSTANTIATE(subtract_layer, subtract_op)
-  INSTANTIATE(multiply_layer, multiply_op)
-  INSTANTIATE(divide_layer, divide_op)
-  INSTANTIATE(mod_layer, mod_op)
-  INSTANTIATE(pow_layer, pow_op)
-  INSTANTIATE(safe_divide_layer, safe_divide_op)
-  INSTANTIATE(squared_difference_layer, squared_difference_op)
-  INSTANTIATE(max_layer, max_op)
-  INSTANTIATE(min_layer, min_op)
-  INSTANTIATE(equal_layer, equal_op)
-  INSTANTIATE(not_equal_layer, not_equal_op)
-  INSTANTIATE(less_layer, less_op)
-  INSTANTIATE(less_equal_layer, less_equal_op)
-  INSTANTIATE(greater_layer, greater_op)
-  INSTANTIATE(greater_equal_layer, greater_equal_op)
-  INSTANTIATE(logical_and_layer, logical_and_op)
-  INSTANTIATE(logical_or_layer, logical_or_op)
-  INSTANTIATE(logical_xor_layer, logical_xor_op)
+  }                                                                     \
+  BINARY_ETI_INST_MACRO_DEV(layer, El::Device::CPU)
+
+INSTANTIATE(add_layer, add_op);
+INSTANTIATE(subtract_layer, subtract_op);
+INSTANTIATE(multiply_layer, multiply_op);
+INSTANTIATE(divide_layer, divide_op);
+INSTANTIATE(mod_layer, mod_op);
+INSTANTIATE(pow_layer, pow_op);
+INSTANTIATE(safe_divide_layer, safe_divide_op);
+INSTANTIATE(squared_difference_layer, squared_difference_op);
+INSTANTIATE(max_layer, max_op);
+INSTANTIATE(min_layer, min_op);
+INSTANTIATE(equal_layer, equal_op);
+INSTANTIATE(not_equal_layer, not_equal_op);
+INSTANTIATE(less_layer, less_op);
+INSTANTIATE(less_equal_layer, less_equal_op);
+INSTANTIATE(greater_layer, greater_op);
+INSTANTIATE(greater_equal_layer, greater_equal_op);
+INSTANTIATE(logical_and_layer, logical_and_op);
+INSTANTIATE(logical_or_layer, logical_or_op);
+INSTANTIATE(logical_xor_layer, logical_xor_op);
 
 } // namespace lbann

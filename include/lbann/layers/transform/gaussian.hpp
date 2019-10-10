@@ -28,6 +28,7 @@
 #define LBANN_LAYER_GAUSSIAN_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
@@ -37,7 +38,8 @@ namespace lbann {
  *  During validation and testing, outputs are all equal to the
  *  distribution mean.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class gaussian_layer : public transform_layer {
 private:
   /** Gaussian distribution mean. */
@@ -78,6 +80,19 @@ protected:
   }
 
 };
+
+#ifndef LBANN_GAUSSIAN_LAYER_INSTANTIATE
+extern template class gaussian_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class gaussian_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class gaussian_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class gaussian_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_GAUSSIAN_LAYER_INSTANTIATE
 
 } // namespace lbann
 

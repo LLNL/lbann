@@ -7,7 +7,7 @@ import pytest
 
 
 def skeleton_mnist_ridge_regression(cluster, executables, dir_name,
-                                    compiler_name):
+                                    compiler_name, weekly, data_reader_percent):
     tools.process_executable(
        'skeleton_mnist_ridge_regression', compiler_name, executables)
 
@@ -91,8 +91,18 @@ def skeleton_mnist_ridge_regression(cluster, executables, dir_name,
         'procs_per_node': 1
     }
 
+    if data_reader_percent is None:
+        if weekly:
+            data_reader_percent = 1.00
+        else:
+            # Nightly
+            data_reader_percent = 0.10
+    lbann_args = '--data_reader_percent={drp}'.format(drp=data_reader_percent)
     if cluster == 'lassen':
-        kwargs['lbann_args'] = '--data_filedir_train=/p/gpfs1/brainusr/datasets/MNIST --data_filedir_test=/p/gpfs1/brainusr/datasets/MNIST'
+        lbann_args += ' --data_filedir_train=/p/gpfs1/brainusr/datasets/MNIST --data_filedir_test=/p/gpfs1/brainusr/datasets/MNIST'
+    if cluster == 'ray':
+        lbann_args += ' --data_filedir_train=/p/gscratchr/brainusr/datasets/MNIST --data_filedir_test=/p/gscratchr/brainusr/datasets/MNIST'
+    kwargs['lbann_args'] = lbann_args
 
     # Run
     experiment_dir = '{d}/bamboo/unit_tests/experiments/mnist_ridge_regression_{c}'.format(
@@ -106,6 +116,7 @@ def skeleton_mnist_ridge_regression(cluster, executables, dir_name,
         model=model,
         data_reader=data_reader_proto,
         optimizer=optimizer,
+        overwrite_script=True,
         job_name='lbann_ridge_regression',
         **kwargs)
 
@@ -114,23 +125,31 @@ def skeleton_mnist_ridge_regression(cluster, executables, dir_name,
     tools.assert_success(return_code, error_file_name)
 
 
-def test_unit_mnist_ridge_regression_clang6(cluster, exes, dirname):
-    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'clang6')
+def test_unit_mnist_ridge_regression_clang6(cluster, exes, dirname,
+                                            weekly, data_reader_percent):
+    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'clang6',
+                                    weekly, data_reader_percent)
 
 
-def test_unit_mnist_ridge_regression_gcc7(cluster, exes, dirname):
-    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'gcc7')
+def test_unit_mnist_ridge_regression_gcc7(cluster, exes, dirname,
+                                          weekly, data_reader_percent):
+    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'gcc7',
+                                    weekly, data_reader_percent)
 
 
-def test_unit_mnist_ridge_regression_intel19(cluster, exes, dirname):
-    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'intel19')
+def test_unit_mnist_ridge_regression_intel19(cluster, exes, dirname,
+                                             weekly, data_reader_percent):
+    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'intel19',
+                                    weekly, data_reader_percent)
 
 
 # Run with python3 -m pytest -s test_unit_ridge_regression.py -k 'test_unit_mnist_ridge_regression_exe' --exe=<executable>
-def test_unit_mnist_ridge_regression_exe(cluster, dirname, exe):
+def test_unit_mnist_ridge_regression_exe(cluster, dirname, exe,
+                                         weekly, data_reader_percent):
     if exe is None:
         e = 'test_unit_mnist_ridge_regression_exe: Non-local testing'
         print('Skip - ' + e)
         pytest.skip(e)
     exes = {'exe': exe}
-    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'exe')
+    skeleton_mnist_ridge_regression(cluster, exes, dirname, 'exe',
+                                    weekly, data_reader_percent)

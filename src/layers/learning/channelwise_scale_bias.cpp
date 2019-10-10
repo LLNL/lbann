@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
@@ -134,5 +135,8 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::CPU>
   }
 
 }
+
+template class channelwise_scale_bias_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

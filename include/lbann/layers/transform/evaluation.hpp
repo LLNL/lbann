@@ -77,7 +77,8 @@ private:
  *  Computes the average value across a mini-batch. If the input
  *  tensor has multiple neurons, their values are added together.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class evaluation_layer : public abstract_evaluation_layer {
 public:
   evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer(comm) {}
@@ -86,6 +87,19 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 };
+
+#ifndef LBANN_EVALUATION_LAYER_INSTANTIATE
+extern template class evaluation_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class evaluation_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class evaluation_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class evaluation_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_EVALUATION_LAYER_INSTANTIATE
 
 } // namespace lbann
 
