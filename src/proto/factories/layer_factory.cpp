@@ -149,41 +149,9 @@ std::unique_ptr<Layer> construct_layer(
   // Fully connected layer
   if (proto_layer.has_fully_connected()) {
     const auto& params = proto_layer.fully_connected();
-    int num_neurons = 0;
-    std::string num_neurons_method_name;
-
-    if (params.get_num_neurons_of_slice_from_reader_size() > 0) {
-      num_neurons_method_name = "get_num_neurons_of_slice_from_reader";
-      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
-      const int num_slice_indices = params.get_num_neurons_of_slice_from_reader_size();
-      if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
-        const std::string& var = params.get_slice_points_from_reader();
-        bool is_supported = false; /// @todo Remove unneeded function parameter
-        const auto slice_points = get_slice_points_from_reader(dr_generic, var, is_supported);
-        for (int i = 0; i < num_slice_indices; ++i) {
-          const size_t idx = static_cast<size_t>(params.get_num_neurons_of_slice_from_reader(i));
-          if ((idx == 0u) || (idx >= slice_points.size())) {
-            err << "invalid slice index from get_num_neurons_of_slice_from_reader";
-            LBANN_ERROR(err.str());
-          }
-          const int diff = static_cast<int>(slice_points[idx] - slice_points[idx-1]);
-          num_neurons += diff;
-        }
-      }
-    } else {
-      num_neurons_method_name = "num_neurons";
-      num_neurons = params.num_neurons();
-      if (proto_layer.num_neurons_from_data_reader()) {
-        const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
-        if (!dr) {
-          LBANN_ERROR("training data reader does not exist!");
-        }
-        num_neurons = dr->get_linearized_data_size();
-      }
-    }
     return lbann::make_unique<fully_connected_layer<Layout, Device>>(
              comm,
-             num_neurons,
+             params.num_neurons(),
              params.transpose(),
              nullptr,
              params.has_bias());

@@ -40,12 +40,15 @@ namespace lbann {
 template <data_layout T_layout, El::Device Dev>
 class unpooling_layer;
 
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class pooling_layer : public transform_layer {
+  static_assert(T_layout == data_layout::DATA_PARALLEL,
+                "pooling only supports DATA_PARALLEL");
 private:
 
   /** Pooling mode. */
-  const pool_mode m_pool_mode;
+  pool_mode m_pool_mode;
 
   /** Pooling window dimensions. */
   std::vector<int> m_pool_dims;
@@ -103,9 +106,6 @@ public:
       m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "pooling only supports DATA_PARALLEL");
-
     // Initialize input dimensions and pooling parameters
     m_pool_size = std::accumulate(m_pool_dims.begin(),
                                   m_pool_dims.end(),
@@ -552,6 +552,15 @@ private:
 #endif // LBANN_HAS_CUDNN
 
 };
+
+#ifndef LBANN_POOLING_LAYER_INSTANTIATE
+extern template class pooling_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class pooling_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_POOLING_LAYER_INSTANTIATE
 
 } // namespace lbann
 

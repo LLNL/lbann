@@ -496,9 +496,12 @@ void init_data_readers(
 
       reader_validation->set_role("validate");
       reader_validation->use_unused_index_set();
-      if(reader_validation->get_data_store_ptr() != nullptr) {
+      data_store_conduit *store = reader_validation->get_data_store_ptr();
+      if (store != nullptr) {
+        store->set_data_reader_ptr(reader_validation);
         reader_validation->get_data_store_ptr()->compact_nodes();
       }
+
       /// At this point clean up any unused samples from the main data store
       if(reader->get_data_store_ptr() != nullptr) {
         auto&& data_store = reader->get_data_store_ptr();
@@ -892,9 +895,15 @@ void print_help(std::ostream& os)
        "  --ltfb_verbose \n"
        "      Increases number of per-trainer messages that are reported\n"
        "  --ckpt_dir=<string>\n"
-       "      Save to or reload from a specific checkpoint directory.\n"
+       "      Save to or restart from a specific checkpoint directory.\n"
        "      Additionally, sets the output directory for dumping weights.\n"
        "      Modifies callbacks: checkpoint, save_model, dump_weights\n"
+       "  --restart_dir=<string>\n"
+       "      Restart from a checkpoint found in the given directory.\n"
+       "      If the directory doesn't exist or doesn't contain a checkpoint,\n"
+       "      an error will be thrown.\n"
+       "  --restart_dir_is_fullpath=<bool>\n"
+       "      Indicate whether the restart_dir is a full path.\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir=<string>\n"

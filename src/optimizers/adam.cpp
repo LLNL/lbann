@@ -32,12 +32,11 @@
 
 namespace lbann {
 
-adam::adam(lbann_comm* comm,
-           DataType learning_rate,
+adam::adam(DataType learning_rate,
            DataType beta1,
            DataType beta2,
            DataType eps)
-  : optimizer(comm, learning_rate),
+  : optimizer(learning_rate),
     m_beta1(beta1), m_beta2(beta2), m_eps(eps) {}
 
 adam::adam(const adam& other)
@@ -250,11 +249,10 @@ bool adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix)
 
 std::unique_ptr<optimizer>
 build_adam_optimizer_from_pbuf(
-  google::protobuf::Message const& msg, lbann_comm* comm) {
+  google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::Adam const&>(msg);
-  return make_unique<adam>(comm,
-                           params.learn_rate(),
+  return make_unique<adam>(params.learn_rate(),
                            params.beta1(),
                            params.beta2(),
                            params.eps());

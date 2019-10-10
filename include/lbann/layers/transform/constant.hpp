@@ -32,7 +32,8 @@
 namespace lbann {
 
 /** @brief Constant output. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class constant_layer : public transform_layer {
 public:
 
@@ -71,6 +72,19 @@ private:
   DataType m_value;
 
 };
+
+#ifndef LBANN_CONSTANT_LAYER_INSTANTIATE
+extern template class constant_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class constant_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class constant_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class constant_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_CONSTANT_LAYER_INSTANTIATE
 
 } // namespace lbann
 

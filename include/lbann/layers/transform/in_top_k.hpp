@@ -38,7 +38,8 @@ namespace lbann {
  *  one and the rest to zero. Ties are broken in favor of entries with
  *  smaller indices.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class in_top_k_layer : public transform_layer {
  public:
 
@@ -77,6 +78,19 @@ class in_top_k_layer : public transform_layer {
   const El::Int m_k;
 
 };
+
+#ifndef LBANN_IN_TOP_K_LAYER_INSTANTIATE
+extern template class in_top_k_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class in_top_k_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class in_top_k_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class in_top_k_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_IN_TOP_K_LAYER_INSTANTIATE
 
 } // namespace lbann
 

@@ -97,7 +97,6 @@ std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
 
 /** Construct an optimizer specified with prototext. */
 std::unique_ptr<optimizer> construct_optimizer(
-  lbann_comm* comm,
   const lbann_data::Optimizer& proto_opt);
 
 /** Construct an objective function specified with prototext. */

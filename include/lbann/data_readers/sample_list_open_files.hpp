@@ -88,8 +88,13 @@ class sample_list_open_files : public sample_list<sample_name_t> {
   /// Get the list of samples from a specific type of bundle file
   virtual void obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const = 0;
 
+  file_handle_t open_file_handle(std::string file_path);
+
   /// Get the list of samples that exist in a bundle file
   file_handle_t get_bundled_sample_names(std::string file_path, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
+
+  /// Check that the list of samples given actually exist in a bundle file
+  void validate_implicit_bundles_sample_names(std::string file_path, std::string filename, std::vector<std::string>& sample_names, size_t included_samples, size_t excluded_samples);
 
   /// read the body of exclusive sample list
   void read_exclusive_list(std::istream& istrm, size_t stride=1, size_t offset=0);

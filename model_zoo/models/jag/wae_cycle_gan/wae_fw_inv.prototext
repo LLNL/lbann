@@ -445,10 +445,9 @@ model {
     name: "decode0"
     data_layout: "data_parallel"
     weights: "decode0linearity decode0bias"
+    hint_layer: "image_data_id"
     fully_connected {
       #num_neurons: 16384
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
   }
@@ -617,10 +616,9 @@ model {
     name: "ae_decode0"
     data_layout: "data_parallel"
     weights: "decode0linearity decode0bias"
+    hint_layer: "image_data_id"
     fully_connected {
       #num_neurons: 16384
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
   }
@@ -801,14 +799,13 @@ model {
   layer {
     fully_connected {
       #num_neurons: 11
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4"
     data_layout: "data_parallel"
     weights: "gen2fc4linearity gen2fc4bias"
     parents: "gen2leaky_relu3"
+    hint_layer: "param_data_id"
   }
 
 
@@ -897,14 +894,13 @@ model {
   layer {
     fully_connected {
       #num_neurons: 11
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_cyclic"
     data_layout: "data_parallel"
     weights: "gen2fc4linearity gen2fc4bias"
     parents: "gen2leaky_relu3_cyclic"
+    hint_layer: "param_data_id"
   }
   layer {
     name: "L_cyc_x"

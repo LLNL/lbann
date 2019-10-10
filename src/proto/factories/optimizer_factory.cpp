@@ -45,7 +45,7 @@ namespace {
 
 std::unique_ptr<optimizer>
 build_no_optimizer_from_pbuf(
-  google::protobuf::Message const& msg, lbann_comm* comm) {
+  google::protobuf::Message const& msg) {
   return nullptr;
 }
 
@@ -53,8 +53,7 @@ using factory_type = lbann::generic_factory<
   lbann::optimizer,
   std::string,
   generate_builder_type<lbann::optimizer,
-                        google::protobuf::Message const&,
-                        lbann_comm*>,
+                        google::protobuf::Message const&>,
   default_key_error_policy>;
 
 void register_default_builders(factory_type& factory) {
@@ -84,12 +83,11 @@ factory_type const& get_optimizer_factory() noexcept {
 }// namespace <anon>
 
 std::unique_ptr<optimizer> construct_optimizer(
-  lbann_comm* comm,
   const lbann_data::Optimizer& proto_opt) {
   auto const& factory = get_optimizer_factory();
   auto const& msg =
     helpers::get_oneof_message(proto_opt, "optimizer_type");
-  return factory.create_object(msg.GetDescriptor()->name(), msg, comm);
+  return factory.create_object(msg.GetDescriptor()->name(), msg);
 }
 
 } // namespace proto

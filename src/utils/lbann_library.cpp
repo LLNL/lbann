@@ -303,6 +303,18 @@ std::unique_ptr<model> build_model_from_prototext(
       "--------------------------------------------------------------------------------\n";
   }
 #endif
+
+  if (opts && opts->has_string("restart_dir")) {
+    bool loaded = callback::save_model::load_model_weights(
+      opts->get_string("restart_dir"),
+      ret_model.get(),
+      opts->get_bool("restart_dir_is_fullpath"));
+    if(!loaded) {
+      LBANN_ERROR("Unable to reload model from given restart directory: ",
+                  opts->get_string("restart_dir"));
+    }
+  }
+
   return ret_model;
 }
 

@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_ARGMAX_LAYER_INSTANTIATE
 #include "lbann/layers/misc/argmax.hpp"
 #include <algorithm>
 
@@ -45,5 +46,8 @@ void argmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
     local_output(0, col) = static_cast<DataType>(max_ind);
   }
 }
+
+template class argmax_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

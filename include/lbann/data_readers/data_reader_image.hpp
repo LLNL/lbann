@@ -115,6 +115,7 @@ class image_data_reader : public generic_data_reader {
   int m_num_labels; ///< number of labels
 
   void load_conduit_node_from_file(int data_id, conduit::Node &node);
+  bool  load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids);
 
 };
 

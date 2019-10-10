@@ -105,6 +105,8 @@ namespace lbann {
     void fill_in_metadata();
 
     std::vector<std::string> m_filenames;
+
+    bool load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int>& label_classes); 
   };
 
 }  // namespace lbann

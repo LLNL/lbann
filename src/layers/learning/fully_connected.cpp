@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
@@ -488,6 +489,18 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
   }
 
 }
+#endif // LBANN_HAS_GPU
+
+template class fully_connected_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class fully_connected_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+
+#ifdef LBANN_HAS_GPU
+template class fully_connected_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class fully_connected_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
 } // namespace lbann
