@@ -198,8 +198,8 @@ private:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    const auto& local_input = get_local_prev_activations();
-    auto& local_output = get_local_activations();
+    const auto& local_input = this->get_local_prev_activations();
+    auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const TensorDataType zero = TensorDataType(0);
       const TensorDataType one = TensorDataType(1);
@@ -221,10 +221,10 @@ private:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    const auto& local_input = get_local_prev_activations();
-    const auto& local_output = get_local_activations();
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = get_local_error_signals();
+    const auto& local_input = this->get_local_prev_activations();
+    const auto& local_output = this->get_local_activations();
+    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = this->get_local_error_signals();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
       const TensorDataType zero = TensorDataType(0);
       const TensorDataType one = TensorDataType(1);
@@ -249,8 +249,8 @@ private:
   void fp_compute_cpu() {
 
     // Local matrices
-    const auto& local_input = get_local_prev_activations();
-    auto& local_output = get_local_activations();
+    const auto& local_input = this->get_local_prev_activations();
+    auto& local_output = this->get_local_activations();
 
     // Matrix parameters
     const int local_width = local_input.Width();
@@ -260,9 +260,9 @@ private:
     const int output_ldim = local_output.LDim();
 
     // Get LRN parameters
-    const auto& output_dims = get_output_dims();
+    const auto& output_dims = this->get_output_dims();
     const int num_channels = output_dims[0];
-    const int num_per_channel = get_output_size() / num_channels;
+    const int num_per_channel = this->get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
     const bool default_beta = (std::fabs((m_beta - 0.75) / 0.75)
@@ -332,10 +332,10 @@ private:
   void bp_compute_cpu() {
 
     // Get local matrices
-    const auto& local_input = get_local_prev_activations();
-    const auto& local_output = get_local_activations();
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = get_local_error_signals();
+    const auto& local_input = this->get_local_prev_activations();
+    const auto& local_output = this->get_local_activations();
+    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = this->get_local_error_signals();
 
     // Get matrix buffers
     const int local_width = local_input.Width();
@@ -349,9 +349,9 @@ private:
     const int gradient_wrt_input_ldim = local_gradient_wrt_input.LDim();
 
     // Get LRN parameters
-    const auto& output_dims = get_output_dims();
+    const auto& output_dims = this->get_output_dims();
     const int num_channels = output_dims[0];
-    const int num_per_channel = get_output_size() / num_channels;
+    const int num_per_channel = this->get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
     const bool default_beta = (std::fabs((m_beta - 0.75) / 0.75)
