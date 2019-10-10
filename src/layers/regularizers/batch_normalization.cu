@@ -35,7 +35,7 @@ namespace {
 /** CUDA kernel to compute channel sums.
  *  Sums and squares of sums are used to compute mean and variance.
  */
-template <TensorDataType, El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void channel_sums_kernel(
   El::Int channel_height,
   El::Int width,
@@ -122,7 +122,7 @@ __global__ void compute_statistics_kernel(
 }
 
 /** CUDA kernel to apply batch normalization. */
-template <TensorDataType, El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void batch_normalization_kernel(
   El::Int channel_height,
   El::Int width,
@@ -161,7 +161,7 @@ __global__ void batch_normalization_kernel(
 }
 
 /** CUDA kernel to compute gradients w.r.t. batch norm parameters. */
-template <TensorDataType, El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void backprop1_kernel(
   El::Int channel_height,
   El::Int width,
@@ -245,7 +245,7 @@ __global__ void backprop1_kernel(
 }
 
 /** CUDA kernel to compute gradients w.r.t. input. */
-template <TensorDataType, El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void backprop2_kernel(
   El::Int channel_height,
   El::Int local_width,
@@ -295,8 +295,8 @@ __global__ void backprop2_kernel(
 
 } // namespace
 
-template <>
-void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+template <typename TensorDataType>
+void fp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
   constexpr TensorDataType one = 1;
   const bool is_training = l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
@@ -405,8 +405,8 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
 
 }
 
-template <>
-void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
   constexpr TensorDataType one = 1;
   const bool is_training = l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
@@ -478,11 +478,11 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
     // Zero fused buffer.
     El::Zero(*l.m_mean_and_var_gradient);
   }
-  optimizer* scale_optimizer = l.m_weights[0]->get_optimizer();
+  optimizer<TensorDataType>* scale_optimizer = l.m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
     scale_optimizer->add_to_gradient(*l.m_scale_gradient, TensorDataType{1}, true);
   }
-  optimizer* bias_optimizer = l.m_weights[1]->get_optimizer();
+  optimizer<TensorDataType>* bias_optimizer = l.m_weights[1]->get_optimizer();
   if (bias_optimizer != nullptr) {
     bias_optimizer->add_to_gradient(*l.m_bias_gradient, TensorDataType{1}, true);
   }
