@@ -116,14 +116,14 @@ class selu_dropout : public regularizer_layer<TensorDataType> {
       El::Copy(this->get_prev_activations(), this->get_activations());
     } else {
 
-      const auto *input_acts = &get_prev_activations();
+      const auto *input_acts = &this->get_prev_activations();
       const El::Int height = input_acts->Height();
       const El::Int width = input_acts->Width();
       const El::Int local_height = input_acts->LocalHeight();
       const El::Int local_width = input_acts->LocalWidth();
 
       const auto& local_input_acts = input_acts->LockedMatrix();
-      Mat& local_output_acts = get_local_activations();
+      Mat& local_output_acts = this->get_local_activations();
       Mat& local_mask = m_mask->Matrix();
 
       // Construct and apply mask and the affine transform.
@@ -147,8 +147,8 @@ class selu_dropout : public regularizer_layer<TensorDataType> {
       El::Copy(this->get_prev_error_signals(), this->get_error_signals());
     } else {
 
-      const auto& local_prev_error_signal = get_local_prev_error_signals();
-      Mat& local_error_signal = get_local_error_signals();
+      const auto& local_prev_error_signal = this->get_local_prev_error_signals();
+      Mat& local_error_signal = this->get_local_error_signals();
       Mat& local_mask = m_mask->Matrix();
       const El::Int local_height = local_prev_error_signal.Height();
       const El::Int local_width = local_prev_error_signal.Width();
