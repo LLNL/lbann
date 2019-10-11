@@ -62,7 +62,7 @@ namespace lbann {
 
     // necessary for the hdf5 lib
     hid_t memspace = H5Screate_simple(4, dims_local, NULL);
-    int spatial_offset = rank%num_io_parts
+    int spatial_offset = rank%num_io_parts;
 
     hsize_t offset[4] = {0, zPerNode*spatial_offset, 0, 0};
     
