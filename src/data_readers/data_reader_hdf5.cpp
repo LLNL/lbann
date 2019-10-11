@@ -62,12 +62,12 @@ namespace lbann {
     int spatial_offset = rank%num_io_parts;
 
     hsize_t offset[4] = {0, zPerNode*spatial_offset, 0, 0};
-    
+
     // from an explanation of the hdf5 select_hyperslab:
     // start -> a starting location for the hyperslab
     // stride -> the number of elements to separate each element or block to be selected
     // count -> the number of elemenets or blocks to select along each dimension
-    // block -> the size of the block selected from the dataspace 
+    // block -> the size of the block selected from the dataspace
     //hsize_t status;
 
     //todo add error checking
@@ -80,7 +80,7 @@ namespace lbann {
     const El::mpi::Comm & w_comm = l_comm->get_world_comm();
     MPI_Comm mpi_comm = w_comm.GetMPIComm();
     int world_rank = get_rank_in_world();
-    int color = world_rank/dc::get_number_of_io_partitions(); 
+    int color = world_rank/dc::get_number_of_io_partitions();
     MPI_Comm_split(mpi_comm, color, world_rank, &m_comm);
     m_shuffled_indices.clear();
     m_shuffled_indices.resize(m_file_paths.size());
@@ -96,7 +96,7 @@ namespace lbann {
     return true;
   }
   bool hdf5_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
-    prof_region_begin("fetch_datum", prof_colors[0], false); 
+    prof_region_begin("fetch_datum", prof_colors[0], false);
     int world_rank = get_rank_in_world();
 
     auto file = m_file_paths[data_id];
@@ -104,11 +104,11 @@ namespace lbann {
     hid_t fapl_id = H5Pcreate(H5P_FILE_ACCESS);
     H5Pset_fapl_mpio(fapl_id, m_comm, MPI_INFO_NULL);
     hid_t dxpl_id = H5Pcreate(H5P_DATASET_XFER);
-    H5Pset_dxpl_mpio(dxpl_id, H5FD_MPIO_COLLECTIVE); 
+    H5Pset_dxpl_mpio(dxpl_id, H5FD_MPIO_COLLECTIVE);
     hid_t h_file = H5Fopen(file.c_str(), H5F_ACC_RDONLY, fapl_id);
-    
+
     if (h_file < 0) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + 
+      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
           " hdf5_reader::load() - can't open file : " + file);
     }
 
@@ -141,7 +141,7 @@ namespace lbann {
       H5Dclose(h_data);
     }
     H5Fclose(h_file);
-  
+
     //TODO do i need this?
     // not if I pass a ref to X I dont think
     //this should be equal to num_nuerons/LBANN_NUM_IO_PARTITIONS
@@ -175,7 +175,6 @@ namespace lbann {
        m_num_responses_features*4);
     prof_region_end("fetch_response", false);
     return true;
-  } 
+  }
 
 };
-
