@@ -48,13 +48,10 @@ namespace lbann {
     int zlines = num_io_parts;
     int channellines = 1;
 
-    // todo: when taking care of the odd case this cant be an int
-    int xPerNode = dims[3]/xlines;
-    int yPerNode = dims[2]/ylines;
-    int zPerNode = dims[1]/zlines;
-    int cPerNode = dims[0]/channellines;
-    // offset in each dimension
-    hsize_t offset[4];
+    hsize_t xPerNode = dims[3]/xlines;
+    hsize_t yPerNode = dims[2]/ylines;
+    hsize_t zPerNode = dims[1]/zlines;
+    hsize_t cPerNode = dims[0]/channellines;
     // how many times the pattern should repeat in the hyperslab
     hsize_t count[4] = {1,1,1,1};
     // local dimensions aka the dimensions of the slab we will read in
