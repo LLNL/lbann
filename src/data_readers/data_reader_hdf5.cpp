@@ -33,6 +33,20 @@
 #include <iostream>
 #include <cstring>
 #include "lbann/utils/distconv.hpp"
+
+namespace {
+inline hid_t check_hdf5(hid_t hid, const char *file, int line) {
+  if (hid < 0) {
+    std::cerr << "HDF5 error" << std::endl;
+    std::cerr << "Error at " << file << ":" << line << std::endl;
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+  return hid;
+}
+}
+
+#define CHECK_HDF5(call) check_hdf5(call, __FILE__, __LINE__)
+
 namespace lbann {
   const std::string hdf5_reader::HDF5_KEY_DATA = "full";
   const std::string hdf5_reader::HDF5_KEY_RESPONSES = "physPar";
@@ -90,6 +104,11 @@ namespace lbann {
     if ((nprocs%dc::get_number_of_io_partitions()) !=0) {
       std::cerr<<"nprocs should be divisible by num of io partitions otherwise this wont work \n";
     }
+    m_data_dims = {4, 512, 512, 512};
+    m_num_features = std::accumulate(m_data_dims.begin(),
+                                     m_data_dims.end(),
+                                     (size_t) 1,
+                                     std::multiplies<size_t>());
     select_subset_of_data();
   }
   bool hdf5_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
@@ -107,19 +126,25 @@ namespace lbann {
     H5Pset_dxpl_mpio(dxpl_id, H5FD_MPIO_COLLECTIVE);
     hid_t h_file = H5Fopen(file.c_str(), H5F_ACC_RDONLY, fapl_id);
 
+#if 0
+    dc::MPIPrintStreamInfo() << "HDF5 file opened: "
+                             << file;
+#endif
+
     if (h_file < 0) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
           " hdf5_reader::load() - can't open file : " + file);
     }
 
     // load in dataset
-    hid_t h_data =  H5Dopen(h_file, HDF5_KEY_DATA.c_str(), dxpl_id);
-    hid_t filespace = H5Dget_space(h_data);
+    hid_t h_data = CHECK_HDF5(
+        H5Dopen(h_file, HDF5_KEY_DATA.c_str(), H5P_DEFAULT));
+    hid_t filespace = CHECK_HDF5(H5Dget_space(h_data));
     //get the number of dimesnionse from the dataset
     int rank1 = H5Sget_simple_extent_ndims(filespace);
     hsize_t dims[rank1];
     // read in what the dimensions are
-    H5Sget_simple_extent_dims(filespace, dims, NULL);
+    CHECK_HDF5(H5Sget_simple_extent_dims(filespace, dims, NULL));
 
     if (h_data < 0) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
@@ -129,9 +154,10 @@ namespace lbann {
     //TODO: add the int 16 stuff
     // check if mb_idx needs to be changed to not be hard coded
     //int adj_mb_idx = mb_idx+(world_rank%dc::get_number_of_io_partitions());
-    Mat X_v = El::View(X, El::IR(0,X.Height()), El::IR(mb_idx, adj_mb_idx+1));
+    //Mat X_v = El::View(X, El::IR(0,X.Height()), El::IR(mb_idx, adj_mb_idx+1));
 
-    DataType *dest = X_v.Buffer();
+    //DataType *dest = X_v.Buffer();
+    DataType *dest = X.Buffer();
     read_hdf5(h_data, filespace, world_rank, HDF5_KEY_DATA, dims, dest);
     //close data set
     H5Dclose(h_data);
@@ -169,10 +195,9 @@ namespace lbann {
   //get from a cached response
   bool hdf5_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
     prof_region_begin("fetch_response", prof_colors[0], false);
-    Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx+1));
-    //TODO: possibly 4 tho, python tells me its float64
-    std::memcpy(Y_v.Buffer(), &m_all_responses,
-       m_num_responses_features*4);
+    //Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx+1));
+    std::memcpy(Y.Buffer(), &m_all_responses,
+                m_num_response_features*sizeof(DataType));
     prof_region_end("fetch_response", false);
     return true;
   }
