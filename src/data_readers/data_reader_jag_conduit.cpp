@@ -918,7 +918,6 @@ void data_reader_jag_conduit::load() {
 
 
 void data_reader_jag_conduit::preload_data_store() {
-  m_data_store->set_preload();
   conduit::Node work;
   const std::string key; // key = "" is intentional
 

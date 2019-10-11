@@ -32,6 +32,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include <unordered_set>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -40,6 +41,10 @@
 #include <unistd.h>
 #include <unistd.h>
 #include <sys/statvfs.h>
+
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
+
 
 namespace lbann {
 
@@ -55,6 +60,7 @@ data_store_conduit::data_store_conduit(
   m_world_master = m_comm->am_world_master();
   m_trainer_master = m_comm->am_trainer_master();
   m_rank_in_trainer = m_comm->get_rank_in_trainer();
+  m_rank_in_world = m_comm->get_rank_in_world();
   m_np_in_trainer = m_comm->get_procs_per_trainer();
 
   options *opts = options::get();
@@ -71,8 +77,7 @@ data_store_conduit::data_store_conduit(
   }
 
   m_is_local_cache = opts->get_bool("data_store_cache");
-  m_preload = opts->get_bool("preload_data_store");
-  if (m_is_local_cache && !m_preload) {
+  if (m_is_local_cache && !opts->get_bool("preload_data_store")) {
     LBANN_ERROR("data_store_cache is currently only implemented for preload mode; this will change in the future. For now, pleas pass both flags: data_store_cache and --preload_data_store");
   }
 
@@ -241,6 +246,7 @@ void data_store_conduit::setup(int mini_batch_size) {
   if (m_world_master) {
     std::cerr << "TIME for data_store_conduit setup: " << get_time() - tm1 << "\n";
   }
+
 }
 
 void data_store_conduit::setup_data_store_buffers() {
@@ -412,7 +418,7 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
   if (m_compacted_sample_size == 0) {
     m_compacted_sample_size = nd.total_bytes_compact();
     if (m_world_master) {
-      std::cout << "num bytes for nodes to be transmitted: " << nd.total_bytes_compact() << " per node" << std::endl;
+      std::cerr << "num bytes for nodes to be transmitted: " << nd.total_bytes_compact() << " per node" << std::endl;
     }
   } else if (m_compacted_sample_size != nd.total_bytes_compact() && !m_node_sizes_vary) {
     LBANN_ERROR("Conduit node being added data_id: ", data_id,
@@ -1056,8 +1062,18 @@ void data_store_conduit::exchange_sample_sizes() {
   m_have_sample_sizes = true;
 }
 
-void data_store_conduit::set_preload() {
+void data_store_conduit::set_is_preloaded() {
+if (m_world_master) std::cerr << "starting data_store_conduit::set_is_preloaded(); m_preload: " << m_preload << std::endl;
+  //this should be called by generic_data_reader, however, it may also
+  //be called by callbacks/ltfb.cpp
+  if (m_preload) {
+    return;
+  }
   m_preload = true;
+  std::string dir = options::get()->get_string("data_store_test_checkpoint");
+  if (dir != "") {
+    test_checkpoint(dir);
+  }
 }
 
 void data_store_conduit::get_image_sizes(std::unordered_map<int,size_t> &file_sizes, std::vector<std::vector<int>> &indices) {
@@ -1390,14 +1406,14 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
   }
   if (m_reader->at_new_epoch()) {
     if (m_world_master && m_cur_epoch > 0) {
-      std::cout << "time for exchange_mini_batch_data calls: " 
+      std::cerr << "time for exchange_mini_batch_data calls: " 
                 << m_exchange_time << std::endl
                 << "time for constructing conduit Nodes: " << m_rebuild_time 
                 << std::endl;
       if (m_super_node) {
-        std::cout << "time for constructing super_nodes: " << m_super_node_packaging_time;
+        std::cerr << "time for constructing super_nodes: " << m_super_node_packaging_time;
       }
-      std::cout << std::endl;
+      std::cerr << std::endl;
       m_exchange_time = 0.;
       m_rebuild_time = 0.;
       m_super_node_packaging_time = 0.;
@@ -1429,6 +1445,203 @@ size_t data_store_conduit::get_num_indices() const {
   size_t num = m_data.size();
   size_t n = m_comm->trainer_allreduce<size_t>(num);
   return n;
+}
+
+void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
+  if (m_world_master) {
+    std::cerr << "starting data_store_conduit::test_checkpoint\n"
+              << "here is part of the owner map; m_owner.size(): " << m_owner.size() << std::endl;
+    size_t j = 0;
+    for (auto t : m_owner) {
+      ++j;
+      std::cerr << "  sample_id: " << t.first << " owner: " << t.second << std::endl;
+      if (j >= 10) break;
+    }
+    print_variables();
+    std::cerr << "\nCalling spill_to_file(testme_xyz)" << std::endl;
+  }
+  spill_to_file(checkpoint_dir);
+
+  std::unordered_map<int,int> sanity = m_owner;
+  m_owner.clear();
+  m_sample_sizes.clear();
+  m_data.clear();
+  m_cur_epoch = -1;
+  m_is_setup = false;
+  m_preload = false;
+  m_explicit_loading = true;
+  m_owner_map_mb_size = 0;
+  m_super_node = true;
+  m_compacted_sample_size = 0;
+  m_node_sizes_vary = true;
+
+  if (m_world_master) {
+    print_variables();
+  }
+
+
+  if (m_world_master) {
+    std::cerr << "Cleared the owner map; m_owner.size() = " << m_owner.size() << std::endl
+              << "Calling load_from_file" << std::endl;
+  }
+  load_from_file(checkpoint_dir, nullptr);
+  if (m_world_master) {
+    std::cerr << "Here is part of the re-loaded owner map; map.size(): " << m_owner.size() << std::endl;
+    size_t j = 0;
+    for (auto t : m_owner) {
+      ++j;
+      std::cerr << "  sample_id: " << t.first << " owner: " << t.second << std::endl;
+      if (j >= 10) break;
+    }
+    print_variables();
+  }
+
+  for (auto t : m_owner) {
+    if (sanity.find(t.first) == sanity.end()) {
+      LBANN_ERROR("sanity.find(t.first) == sanity.end() for t.first= ", t.first);
+    } else if (sanity[t.first] != m_owner[t.first]) {
+      LBANN_ERROR("sanity[t.first] != m_owner[t.first] for t.first= ", t.first, " and m_owner[t.first]= ", m_owner[t.first]);
+    }
+  }
+
+  m_comm->global_barrier();
+}
+
+void data_store_conduit::spill_to_file(std::string dir_name) {
+  const std::string conduit_dir = get_conduit_dir_name(dir_name);
+  int node_rank = m_comm->get_rank_in_node();
+  if (node_rank == 0) {
+    bool exists = file::directory_exists(dir_name);
+    if (!exists) {
+      if (m_world_master) {
+        std::cerr << "data_store_conduit::spill_to_file; the directory '" << dir_name << "' doesn't exist; creating it\n";
+      }
+      file::make_directory(dir_name);
+    } 
+
+    exists = file::directory_exists(conduit_dir);
+    if (!exists) {
+      file::make_directory(conduit_dir);
+    }
+  }
+  m_comm->trainer_barrier();
+
+  const std::string metadata_fn = get_metadata_fn(dir_name);
+  std::ofstream metadata(metadata_fn);
+  if (!metadata) {
+    LBANN_ERROR("failed to open ", metadata_fn, " for writing");
+  }
+
+  //TODO should have two levels of directory to ensure
+  //     there's not too many files in any directory
+  metadata << conduit_dir << "\n";
+  int cur_dir = -1;
+  int num_files = m_max_files_per_directory;
+  const std::string my_conduit_dir = conduit_dir + "/conduit_" + std::to_string(m_rank_in_world);
+  std::string cur_dir_name;
+  for (auto t : m_data) {
+    if (num_files == m_max_files_per_directory) {
+      num_files = 0;
+      cur_dir += 1;
+      cur_dir_name = conduit_dir + "/" + to_string(cur_dir);
+      bool exists = file::directory_exists(cur_dir_name);
+      if (!exists) {
+        file::make_directory(cur_dir_name);
+      }
+    }
+
+    const std::string f = cur_dir_name + '/' + std::to_string(t.first);
+    t.second.save(cur_dir_name + '/' + std::to_string(t.first));
+    metadata << cur_dir << "/" << t.first << std::endl;
+  }
+  metadata.close();
+
+  // checkpoint remaining state using cereal
+  const std::string fn = get_cereal_fn(dir_name);
+  std::ofstream os(fn);
+  if (!os) {
+    LBANN_ERROR("failed to open ", fn, " for writing");
+  }
+
+  {
+  cereal::XMLOutputArchive archive(os);
+    archive(CEREAL_NVP(m_cur_epoch), 
+            CEREAL_NVP(m_is_setup),
+            CEREAL_NVP(m_preload), 
+            CEREAL_NVP(m_explicit_loading),
+            CEREAL_NVP(m_owner_map_mb_size), 
+            CEREAL_NVP(m_super_node),
+            CEREAL_NVP(m_compacted_sample_size), 
+            CEREAL_NVP(m_is_local_cache),
+            CEREAL_NVP(m_node_sizes_vary), 
+            CEREAL_NVP(m_have_sample_sizes),
+            CEREAL_NVP(m_owner),
+            CEREAL_NVP(m_sample_sizes));
+  }
+  os.close();
+}
+
+void data_store_conduit::load_from_file(std::string dir_name, generic_data_reader *reader) {
+#if 0
+  if (m_world_master) std::cerr << "starting data_store_conduit::load_from_file" << std::endl;
+
+  bool exists = file::directory_exists(dir_name);
+  if (!exists) {
+    LBANN_ERROR("cannot load data_store from file, since the specified directory ", dir_name, "doesn't exist");
+  }
+
+  const std::string fn = get_cereal_fn(dir_name);
+  std::ifstream in(fn);
+  if (!in) {
+    LBANN_ERROR("failed to open ", m_cereal_fn, " for reading");
+  }
+
+  cereal::XMLInputArchive iarchive(in);
+  iarchive(m_cur_epoch, m_is_setup,
+           m_preload, m_explicit_loading,
+           m_owner_map_mb_size, m_super_node,
+           m_compacted_sample_size, m_is_local_cache,
+           m_node_sizes_vary, m_have_sample_sizes,
+           m_owner, m_sample_sizes);
+
+  if (reader != nullptr) {
+    m_reader = reader;
+    m_comm = m_reader->get_comm();
+    m_shuffled_indices = &(m_reader->get_shuffled_indices());
+    m_world_master = m_comm->am_world_master();
+    m_trainer_master = m_comm->am_trainer_master();
+    m_rank_in_trainer = m_comm->get_rank_in_trainer();
+    m_rank_in_world = m_comm->get_rank_in_world();
+    m_np_in_trainer = m_comm->get_procs_per_trainer();
+  }  
+  m_was_loaded_from_file = true;
+#endif
+}
+
+void data_store_conduit::print_variables() {
+  if (!m_world_master) {
+    return;
+  }
+  std::cout << "m_cur_epoch: " << m_cur_epoch << std::endl
+            << "m_is_setup: " << m_is_setup << std::endl
+            << "m_preload: " << m_preload << std::endl
+            << "m_explicit_loading: " << m_explicit_loading << std::endl
+            << "m_owner_map_mb_size: " << m_owner_map_mb_size << std::endl
+            << "m_super_node: " << m_super_node << std::endl
+            << "m_compacted_sample_size: " << m_compacted_sample_size << std::endl
+            << "m_node_sizes_vary: " << m_node_sizes_vary << std::endl;
+}
+
+std::string data_store_conduit::get_conduit_dir_name(const std::string& dir_name) const {
+  return dir_name + "/conduit_" + std::to_string(m_rank_in_world);
+}
+
+std::string data_store_conduit::get_metadata_fn(const std::string& dir_name) const {
+  return dir_name + "/metadata_" + std::to_string(m_rank_in_world);
+}
+
+std::string data_store_conduit::get_cereal_fn(const std::string& dir_name) const {
+  return dir_name + '/' + m_cereal_fn + "_" + std::to_string(m_rank_in_world); 
 }
 
 }  // namespace lbann

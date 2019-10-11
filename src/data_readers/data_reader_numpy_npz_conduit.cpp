@@ -139,7 +139,6 @@ void numpy_npz_conduit_reader::preload_data_store() {
   }
 
   double tm1 = get_time();
-  m_data_store->set_preload();
   int rank = m_comm->get_rank_in_trainer();
 
   std::unordered_set<int> label_classes;

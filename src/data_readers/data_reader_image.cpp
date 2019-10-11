@@ -208,7 +208,6 @@ void read_raw_data(const std::string &filename, std::vector<char> &data) {
 
 
 void image_data_reader::preload_data_store() {
-  m_data_store->set_preload();
   options *opts = options::get();
 
   if (is_master()) std::cout << "Starting image_data_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
