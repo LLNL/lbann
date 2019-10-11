@@ -703,6 +703,7 @@ void generic_data_reader::instantiate_data_store(const std::vector<int>& local_l
   if (m_shuffled_indices.size() == 0) {
     LBANN_ERROR("shuffled_indices.size() == 0");
   }
+  m_data_store->set_preload();
 
   if (opts->get_bool("node_sizes_vary")) {
     m_data_store->set_node_sizes_vary();
@@ -724,6 +725,7 @@ void generic_data_reader::instantiate_data_store(const std::vector<int>& local_l
       m_data_store->build_preloaded_owner_map(local_list_sizes);
     }
     preload_data_store();
+    m_data_store->set_is_preloaded();
     if(is_master()) {
      std::cout << "Preload complete; time: " << get_time() - tm2 << std::endl;
     }

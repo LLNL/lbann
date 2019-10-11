@@ -37,6 +37,10 @@
 #include <unordered_set>
 #include <mutex>
 
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/archives/binary.hpp>
+
+
 
 namespace lbann {
 
@@ -100,8 +104,7 @@ class data_store_conduit {
   conduit::Node & get_empty_node(int data_id);
 
   /// As of this writing, will be called if cmd line includes: --preload_data_store
-  /// This may change in the future; TODO revisit
-  void set_preload(); 
+  void set_is_preloaded(); 
 
   bool is_preloaded() { return m_preload; }
 
@@ -148,7 +151,32 @@ class data_store_conduit {
 
   void flush_debug_file(); 
 
+  /// write m_data to file; may also write other data structures
+  /// (e.g, src/data_store/data_store_conduit.cpp) to file
+  void spill_to_file(std::string dir_name);
+  
+  /// load m_data from local file; may also write other data structures
+  /// (e.g, src/data_store/data_store_conduit.cpp) to file
+  /// (reader may be nullptr for testing and development purposes)
+  void load_from_file(std::string dir_name, generic_data_reader *reader = nullptr);
+
 protected :
+  /// used in set_conduit_node(...)
+  std::mutex m_mutex;
+
+  /// for use in local cache mode
+  char *m_mem_seg = 0;
+  size_t m_mem_seg_length = 0;
+  std::string m_seg_name;
+
+  std::string m_debug_filename;
+
+  bool m_was_loaded_from_file = false;
+  const std::string m_cereal_fn = "data_store_cereal";
+
+  /// used in spill_to_file
+  /// TODO: make this on optional option
+  int m_max_files_per_directory = 500;
 
   double m_exchange_time = 0;
   double m_rebuild_time = 0;
@@ -197,6 +225,7 @@ protected :
 
   /// rank in the trainer; convenience handle
   int  m_rank_in_trainer;
+  int  m_rank_in_world;
 
   /// number of procs in the trainer; convenience handle
   int  m_np_in_trainer;
@@ -207,16 +236,14 @@ protected :
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
 
-  void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
-  void exchange_data_by_sample(size_t current_pos, size_t mb_size);
+  /// contains the Nodes that this processor owns;
+  /// maps data_id to conduit::Node
+  mutable std::unordered_map<int, conduit::Node> m_data;
+
 
   /// Contains the list of data IDs that will be received
   std::vector<int> m_recv_data_ids;
   std::unordered_map<int, int> m_recv_sample_sizes;
-
-  /// contains the Nodes that this processor owns;
-  /// maps data_id to conduit::Node
-  mutable std::unordered_map<int, conduit::Node> m_data;
 
   /// This vector contains Nodes that this processor needs for
   /// the current minibatch; this is filled in by exchange_data()
@@ -235,6 +262,29 @@ protected :
   /// after they have been converted from compacted format
   std::vector<conduit::Node> m_reconstituted;
 
+  /// for use when conduit Nodes have non-uniform size, e.g, imagenet
+  std::unordered_map<int, size_t> m_sample_sizes;
+
+  /// maps processor id -> set of indices (whose associated samples)
+  /// this proc needs to send. (formerly called "proc_to_indices);
+  /// this is filled in by build_indices_i_will_send()
+  std::vector<std::unordered_set<int>> m_indices_to_send;
+
+  /// maps processor id -> set of indices (whose associated samples)
+  /// this proc needs to recv from others. (formerly called "needed")
+  std::vector<std::unordered_set<int>> m_indices_to_recv;
+
+  /// offset at which the raw image will be stored in a shared memory segment;
+  /// for use in local cache mode; maps data_id to offset
+  std::unordered_map<int,size_t> m_image_offsets;
+
+  //=========================================================================
+  // methods follow 
+  //=========================================================================
+
+  void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
+  void exchange_data_by_sample(size_t current_pos, size_t mb_size);
+
   void setup_data_store_buffers();
 
   /// called by exchange_data
@@ -247,18 +297,9 @@ protected :
   /// and when running in non-super_node mode
   void exchange_sample_sizes();
 
-  /// maps processor id -> set of indices (whose associated samples)
-  /// this proc needs to send. (formerly called "proc_to_indices);
-  /// this is filled in by build_indices_i_will_send()
-  std::vector<std::unordered_set<int>> m_indices_to_send;
-
   /// fills in m_indices_to_send and returns the number of samples
   /// that will be sent
   int build_indices_i_will_send(int current_pos, int mb_size);
-
-  /// maps processor id -> set of indices (whose associated samples)
-  /// this proc needs to recv from others. (formerly called "needed")
-  std::vector<std::unordered_set<int>> m_indices_to_recv;
 
   /// fills in m_indices_to_recv and returns the number of samples
   /// that will be received
@@ -266,19 +307,10 @@ protected :
 
   void error_check_compacted_node(const conduit::Node &nd, int data_id);
 
-  /// for use when conduit Nodes have non-uniform size, e.g, imagenet
-  std::unordered_map<int, size_t> m_sample_sizes;
-
-  /// used in set_conduit_node(...)
-  std::mutex m_mutex;
-
   /// Currently only used for imagenet. On return, 'sizes' maps a sample_id to image size, and indices[p] contains the sample_ids that P_p owns
   /// for use in local cache mode
   void get_image_sizes(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices);
 
-  /// offset at which the raw image will be stored in a shared memory segment;
-  /// for use in local cache mode; maps data_id to offset
-  std::unordered_map<int,size_t> m_image_offsets;
   /// fills in m_image_offsets for use in local cache mode
   void compute_image_offsets(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices);
 
@@ -297,12 +329,14 @@ protected :
   /// for use in local cache mode
   void fillin_shared_images(const std::vector<char> &images, size_t offset);
 
-  /// for use in local cache mode
-  char *m_mem_seg = 0;
-  size_t m_mem_seg_length = 0;
-  std::string m_seg_name;
+  void test_checkpoint(const std::string&);
 
-  std::string m_debug_filename;
+  /// called by test_checkpoint
+  void print_variables();
+
+  std::string get_conduit_dir_name(const std::string&) const;
+  std::string get_metadata_fn(const std::string&) const;
+  std::string get_cereal_fn(const std::string&) const;
 };
 
 }  // namespace lbann
