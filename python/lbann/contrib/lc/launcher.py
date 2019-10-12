@@ -15,6 +15,7 @@ def run(trainer, model, data_reader, optimizer,
         partition=partition(),
         account=account(),
         reservation=None,
+        overwrite_script=False,
         launcher_args=[],
         lbann_args=[],
         environment={},
@@ -69,11 +70,11 @@ def run(trainer, model, data_reader, optimizer,
     # Write, run, or submit batch script
     status = 0
     if setup_only:
-        script.write()
+        script.write(overwrite=overwrite_script)
     elif has_allocation:
-        status = script.run()
+        status = script.run(overwrite=overwrite_script)
     else:
-        status = script.submit()
+        status = script.submit(overwrite=overwrite_script)
     return status
 
 def make_batch_script(script_file=None,

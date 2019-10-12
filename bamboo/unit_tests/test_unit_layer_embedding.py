@@ -1,3 +1,5 @@
+import functools
+import operator
 import os
 import os.path
 import sys
@@ -16,19 +18,19 @@ import tools
 # the functions below to ingest data.
 
 # Data
-np.random.seed(20190708)
-_num_samples = 23
-_sample_size = 7
-_samples = np.random.normal(size=(_num_samples,_sample_size))
-_samples = _samples.astype(np.float32)
+dictionary_size = 7
+embedding_size = 5
+np.random.seed(4321)
+embedding_array = np.random.normal(size=(dictionary_size,embedding_size))
 
 # Sample access functions
 def get_sample(index):
-    return _samples[index,:]
+    np.random.seed(1234+index)
+    return [np.random.randint(dictionary_size)]
 def num_samples():
-    return _num_samples
+    return 41
 def sample_dims():
-    return (_sample_size,)
+    return (1,)
 
 # ==============================================
 # Setup LBANN experiment
@@ -55,34 +57,48 @@ def construct_model(lbann):
 
     """
 
-    # Layer graph
-    x = lbann.Input()
-    obj = lbann.L2Norm2(x)
-    layers = list(lbann.traverse_layer_graph(x))
-    metric = lbann.Metric(obj, name='obj')
-    callbacks = []
+    # Construct weights for embeddings
+    embedding_values = ' '.join([str(i) for i in np.nditer(embedding_array)])
+    init = lbann.ValueInitializer(values=embedding_values)
+    w = lbann.Weights(optimizer=lbann.SGD(), initializer=init)
 
-    # Compute expected value with NumPy
-    vals = []
+    # Layer graph
+    input = lbann.Input()
+    embedding = lbann.Embedding(input,
+                                weights=w,
+                                dictionary_size=dictionary_size,
+                                embedding_size=embedding_size,
+                                device='cpu')
+    l2_norm2 = lbann.L2Norm2(embedding)
+    layers = list(lbann.traverse_layer_graph(input))
+    metric = lbann.Metric(l2_norm2, name='L2 norm squared')
+    obj = lbann.ObjectiveFunction(l2_norm2)
+
+    # Compute expected value
+    metric_vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
-        obj = np.inner(x, x)
-        vals.append(obj)
-    val = np.mean(vals)
-    tol = 8 * val * np.finfo(np.float32).eps
-    callbacks.append(lbann.CallbackCheckMetric(
-        metric=metric.name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
-        error_on_failure=True,
-        execution_modes='test'))
+        input = get_sample(i)
+        embedding = embedding_array[int(input[0]), :]
+        l2_norm2 = np.inner(embedding, embedding)
+        metric_vals.append(l2_norm2)
+    expected_metric_value = np.mean(metric_vals)
+    tol = 8 * expected_metric_value * np.finfo(np.float32).eps
+
+    # Initialize check metric callback
+    callbacks = [lbann.CallbackCheckMetric(metric='L2 norm squared',
+                                           lower_bound=expected_metric_value-tol,
+                                           upper_bound=expected_metric_value+tol,
+                                           error_on_failure=True,
+                                           execution_modes='test'),
+                 lbann.CallbackCheckGradients(error_on_failure=True)]
 
     # Construct model
-    mini_batch_size = 5
+    mini_batch_size = 17
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
                        layers=layers,
+                       objective_function=obj,
                        metrics=[metric],
                        callbacks=callbacks)
 

@@ -8,20 +8,25 @@ import tools
 def skeleton_jag_reconstruction_loss(cluster, executables, dir_name, compiler_name,
                                      weekly, data_reader_percent):
     if compiler_name not in executables:
-      e = 'skeleton_jag_reconstruction_loss: default_exes[%s] does not exist' % compiler_name
-      print('Skip - ' + e)
-      pytest.skip(e)
+        e = 'skeleton_jag_reconstruction_loss: default_exes[%s] does not exist' % compiler_name
+        print('Skip - ' + e)
+        pytest.skip(e)
+    if cluster == 'ray':
+        e = 'skeleton_jag_reconstruction_loss: dataset does not exist on %s' % cluster
+        print('Skip - ' + e)
+        pytest.skip(e)    
     output_file_name = '%s/bamboo/unit_tests/output/jag_reconstruction_loss_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/jag_reconstruction_loss_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
         cluster=cluster,
         executable=executables[compiler_name],
-        num_nodes=16,
+        num_nodes=2,
         num_processes=32,
+        disable_cuda=1,
         dir_name=dir_name,
         data_filedir_default='/p/lscratchh/brainusr/datasets/10MJAG/1M_A/100K4trainers',
         data_reader_name='jag',
-        data_reader_percent=data_reader_percent,
+        data_reader_percent='prototext',
         metadata='model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext',
         model_folder='tests',
         model_name='jag_single_layer_ae',

@@ -833,12 +833,12 @@ void data_reader_jag_conduit::load() {
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
+  double tm2 = get_time();
   load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
   if(is_master()) {
-    if (check_data) {
-      std::cout << "Finished sample list, check data" << std::endl;
-    } else {
-      std::cout << "Finished sample list, skipping check data" << std::endl;
+      std::cout << "Finished loadingsample list; time: " << get_time() - tm2 << std::endl;
+    if (!check_data) {
+      std::cout << "Skipping check data" << std::endl;
     }
   }
 
@@ -874,6 +874,7 @@ void data_reader_jag_conduit::load() {
   }
 
   /// Merge all of the sample lists
+  tm2 = get_time();
   m_sample_list.all_gather_packed_lists(*m_comm);
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
     {
@@ -885,6 +886,9 @@ void data_reader_jag_conduit::load() {
     std::string ext = get_ext_name(sample_list_file);
     s << basename << "." << ext;
     m_sample_list.write(s.str());
+  }
+  if (is_master()) {
+    std::cout << "time for all_gather_packed_lists: " << get_time() - tm2 << std::endl;
   }
 
   m_shuffled_indices.resize(m_sample_list.size());
