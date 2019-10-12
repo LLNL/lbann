@@ -103,7 +103,6 @@ class data_store_conduit {
   /// returns an empty node
   conduit::Node & get_empty_node(int data_id);
 
-  /// As of this writing, will be called if cmd line includes: --preload_data_store
   void set_is_preloaded(); 
 
   bool is_preloaded() { return m_preload; }
@@ -175,8 +174,7 @@ protected :
   const std::string m_cereal_fn = "data_store_cereal";
 
   /// used in spill_to_file
-  /// TODO: make this on optional option
-  int m_max_files_per_directory = 500;
+  const int m_max_files_per_directory = 500;
 
   double m_exchange_time = 0;
   double m_rebuild_time = 0;
