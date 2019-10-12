@@ -447,17 +447,22 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   if (m_is_local_cache && m_preload) {
     LBANN_ERROR("you called data_store_conduit::set_conduit_node, but you're running in local cache mode with preloading; something is broken; please contact Dave Hysom");
   }
-  //m_mutex.lock();
+
+  m_mutex.lock();
   if (already_have == false && m_data.find(data_id) != m_data.end()) {
+    m_mutex.unlock();
     LBANN_ERROR("duplicate data_id: ", data_id, " in data_store_conduit::set_conduit_node; role: ", m_reader->get_role());
   }
+  m_mutex.unlock();
 
 
   if (already_have && is_local_cache()) {
+    m_mutex.lock();
     if (m_data.find(data_id) == m_data.end()) {
+      m_mutex.unlock();
       LBANN_ERROR("you claim the passed node was obtained from this data_store, but the data_id (", data_id, ") doesn't exist in m_data");
     }
-    //m_mutex.unlock();
+    m_mutex.unlock();
     return;
   }
 
@@ -466,14 +471,6 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
     m_data[data_id] = node;
     m_mutex.unlock();
   }
-
-  #if 0
-  else if (m_owner[data_id] != m_rank_in_trainer) {
-    LBANN_ERROR("set_conduit_node error for data id: ", data_id, " m_owner: ", 
-                 m_owner[data_id], " me: ", m_rank_in_trainer,
-                 "; data reader role: ", m_reader->get_role());
-  }
-  #endif
 
   else if (! m_super_node) {
     m_mutex.lock();
@@ -496,21 +493,7 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
   if (m_output) {
     (*m_output) << "get_conduit_node: " << data_id << std::endl;
   }
-  /**
-   * dah: commenting this out since it gives a false positive for test
-   *      case with unshuffled indices. Since we currently send samples
-   *      to ourselves, they should be in m_minibatch_data. The following
-   *      block is only useful if, at some future time, we do not send
-   *      indices to ourself
-  std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
-  if (t != m_data.end()) {
-    if(m_super_node) {
-      return t->second;
-    } else {
-      return t->second["data"];
-    }
-  }
-  */
+
   if (is_local_cache()) {
     std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
     if (t3 == m_data.end()) {
