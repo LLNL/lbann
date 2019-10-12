@@ -151,12 +151,14 @@ namespace lbann {
           " hdf5_reader::load() - can't find hdf5 key : " + HDF5_KEY_DATA);
     }
 
-    //TODO: add the int 16 stuff
-    // check if mb_idx needs to be changed to not be hard coded
-    //int adj_mb_idx = mb_idx+(world_rank%dc::get_number_of_io_partitions());
-    //Mat X_v = El::View(X, El::IR(0,X.Height()), El::IR(mb_idx, adj_mb_idx+1));
+    // In the Cosmoflow case, each minibatch should have only one
+    // sample per rank.
+    assert_eq(X.Width(), 1);
+    // Assuming 512^3 samples
+    assert_eq(X.Height(),
+              512 * 512 * 512 * 4 / dc::get_number_of_io_partitions()
+              / (sizeof(DataType) / sizeof(short)));
 
-    //DataType *dest = X_v.Buffer();
     DataType *dest = X.Buffer();
     read_hdf5(h_data, filespace, world_rank, HDF5_KEY_DATA, dims, dest);
     //close data set
@@ -195,7 +197,7 @@ namespace lbann {
   //get from a cached response
   bool hdf5_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
     prof_region_begin("fetch_response", prof_colors[0], false);
-    //Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx+1));
+    assert_eq(Y.Height(), 4);
     std::memcpy(Y.Buffer(), &m_all_responses,
                 m_num_response_features*sizeof(DataType));
     prof_region_end("fetch_response", false);

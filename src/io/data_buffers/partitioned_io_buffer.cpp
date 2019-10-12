@@ -73,6 +73,8 @@ void lbann::partitioned_io_buffer::fp_setup_data(El::Int cur_mini_batch_size, in
 
 void lbann::partitioned_io_buffer::setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
+  num_neurons /= dc::get_number_of_io_partitions();
+  num_neurons /= sizeof(DataType) / sizeof(short);
   max_mini_batch_size *= dc::get_number_of_io_partitions();
 #endif
   El::Int local_mini_batch_size = max_mini_batch_size / m_comm->get_procs_per_trainer();
