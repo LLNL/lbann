@@ -91,9 +91,8 @@ namespace lbann {
 
   void hdf5_reader::load() {
     lbann_comm* l_comm = get_comm();
-    const El::mpi::Comm & w_comm = l_comm->get_world_comm();
-    MPI_Comm mpi_comm = w_comm.GetMPIComm();
-    int world_rank = get_rank_in_world();
+    MPI_Comm mpi_comm = dc::get_input_comm(*l_comm);
+    int world_rank = dc::get_input_rank(*l_comm);
     int color = world_rank/dc::get_number_of_io_partitions();
     MPI_Comm_split(mpi_comm, color, world_rank, &m_comm);
     m_shuffled_indices.clear();
@@ -116,7 +115,7 @@ namespace lbann {
   }
   bool hdf5_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     prof_region_begin("fetch_datum", prof_colors[0], false);
-    int world_rank = get_rank_in_world();
+    int world_rank = dc::get_input_rank(*get_comm());
 
     auto file = m_file_paths[data_id];
 

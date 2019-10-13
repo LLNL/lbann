@@ -73,12 +73,18 @@ void lbann::partitioned_io_buffer::fp_setup_data(El::Int cur_mini_batch_size, in
 
 void lbann::partitioned_io_buffer::setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
-  num_neurons /= dc::get_number_of_io_partitions();
-  num_neurons /= sizeof(DataType) / sizeof(short);
-  max_mini_batch_size *= dc::get_number_of_io_partitions();
+  if (dc::is_cosmoflow_parallel_io_enabled()) {
+    num_neurons /= dc::get_number_of_io_partitions();
+    num_neurons /= sizeof(DataType) / sizeof(short);
+    max_mini_batch_size *= dc::get_number_of_io_partitions();
+  }
 #endif
   El::Int local_mini_batch_size = max_mini_batch_size / m_comm->get_procs_per_trainer();
   El::Int partial_mini_batch_size = max_mini_batch_size % m_comm->get_procs_per_trainer();
+  if (dc::is_cosmoflow_parallel_io_enabled()) {
+    assert_eq(local_mini_batch_size, 1);
+    assert_eq(partial_mini_batch_size, 0);
+  }
   if(partial_mini_batch_size > 0 && m_comm->get_rank_in_trainer() < partial_mini_batch_size) {
     local_mini_batch_size++;
   }
@@ -267,9 +273,11 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
 
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = m_comm->get_num_trainers() * max_mini_batch_size;
+#ifndef LBANN_HAS_DISTCONV
   int base_offset  = m_comm->get_rank_in_trainer();
-#ifdef LBANN_HAS_DISTCONV
-  base_offset /= dc::get_number_of_io_partitions();
+#else
+  int base_offset  = dc::get_input_rank(*m_comm) /
+      dc::get_number_of_io_partitions();
 #endif
   int model_offset = m_comm->get_trainer_rank() * max_mini_batch_size;
 
@@ -347,7 +355,7 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
   ///  The last mini-batch may be partial and thus may have a smaller stride
   if(per_model_partial_mini_batch_size > 0 || world_master_remainder_adjustment > 0) {
 #ifdef LBANN_HAS_DISTCONV
-    data_reader->set_stride_to_last_mini_batch((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + m_comm->get_trainer_rank() * per_model_partial_mini_batch_size + m_comm->get_rank_in_trainer() / dc::get_number_of_io_partitions());
+    data_reader->set_stride_to_last_mini_batch((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + m_comm->get_trainer_rank() * per_model_partial_mini_batch_size + dc::get_input_rank(*m_comm) / dc::get_number_of_io_partitions());
 #else
     data_reader->set_stride_to_last_mini_batch((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + m_comm->get_trainer_rank() * per_model_partial_mini_batch_size + m_comm->get_rank_in_trainer());
 #endif
@@ -379,9 +387,11 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_single_mod
 
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = max_mini_batch_size;
+#ifndef LBANN_HAS_DISTCONV
   int base_offset  = m_comm->get_rank_in_trainer();
-#ifdef LBANN_HAS_DISTCONV
-  base_offset /= dc::get_number_of_io_partitions();
+#else
+  int base_offset  = dc::get_input_rank(*m_comm) /
+      dc::get_number_of_io_partitions();
 #endif
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
