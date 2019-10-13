@@ -115,6 +115,7 @@ namespace util = ::distconv::util;
 
 using ::distconv::get_sample_dim;
 
+int get_strided_mpi_rank(MPI_Comm comm);
 MPI_Comm get_strided_mpi_comm(MPI_Comm comm);
 
 /** Initialize Distconv
@@ -212,6 +213,12 @@ cudaStream_t get_stream();
 
 TensorShuffler *get_tensor_shuffler(const TensorDev &src,
                                     const TensorDev &dst);
+
+MPI_Comm get_input_comm(const lbann_comm &comm);
+/** Return the MPI rank when reading input dataset
+ */
+int get_input_rank(const lbann_comm &comm);
+
 } // namespace dc
 } // namespace lbann
 
