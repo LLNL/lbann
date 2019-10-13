@@ -108,6 +108,15 @@ namespace lbann {
                                      m_data_dims.end(),
                                      (size_t) 1,
                                      std::multiplies<size_t>());
+#ifdef DATA_READER_HDF5_USE_MPI_IO
+    m_fapl = H5Pcreate(H5P_FILE_ACCESS);
+    CHECK_HDF5(H5Pset_fapl_mpio(m_fapl, m_comm, MPI_INFO_NULL));
+    m_dxpl = H5Pcreate(H5P_DATASET_XFER);
+    CHECK_HDF5(H5Pset_dxpl_mpio(m_dxpl, H5FD_MPIO_COLLECTIVE));
+#else
+    m_fapl = H5P_DEFAULT;
+    m_dxpl = H5P_DEFAULT;
+#endif
     select_subset_of_data();
   }
   bool hdf5_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
@@ -118,14 +127,9 @@ namespace lbann {
     int world_rank = dc::get_input_rank(*get_comm());
 
     auto file = m_file_paths[data_id];
+    hid_t h_file = H5Fopen(file.c_str(), H5F_ACC_RDONLY, m_fapl);
 
-    hid_t fapl_id = H5Pcreate(H5P_FILE_ACCESS);
-    H5Pset_fapl_mpio(fapl_id, m_comm, MPI_INFO_NULL);
-    hid_t dxpl_id = H5Pcreate(H5P_DATASET_XFER);
-    H5Pset_dxpl_mpio(dxpl_id, H5FD_MPIO_COLLECTIVE);
-    hid_t h_file = H5Fopen(file.c_str(), H5F_ACC_RDONLY, fapl_id);
-
-#if 0
+#if 1
     dc::MPIPrintStreamInfo() << "HDF5 file opened: "
                              << file;
 #endif

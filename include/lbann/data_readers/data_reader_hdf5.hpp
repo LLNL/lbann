@@ -65,6 +65,8 @@ class hdf5_reader : public generic_data_reader {
   std::vector<std::string> m_file_paths;
   MPI_Comm m_comm;
   std::vector<int> m_data_dims;
+  hid_t m_fapl;
+  hid_t m_dxpl;
  private:
   static const std::string HDF5_KEY_DATA, HDF5_KEY_LABELS, HDF5_KEY_RESPONSES;
 };
