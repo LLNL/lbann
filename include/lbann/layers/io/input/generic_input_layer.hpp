@@ -967,6 +967,16 @@ class generic_input_layer : public io_layer {
     m_input_dev = TensorDevInput(tensor_shape, loc, dist);
     assert0(m_input_dev.allocate());
     m_input_dev.zero(dc::get_stream());
+
+    // Allocate pinned memory buffer for copying input
+    if (dc::is_cosmoflow_parallel_io_enabled()) {
+      CHECK_CUDA(cudaMallocHost(
+          &m_copy_pinned_buffer,
+          m_input_dev.get_local_real_size() * sizeof(InputType)));
+
+    } else {
+      m_copy_pinned_buffer = nullptr;
+    }
   }
 
   void setup_tensors_bwd(
@@ -1008,6 +1018,8 @@ class generic_input_layer : public io_layer {
   std::vector<std::unique_ptr<InputType>> m_input_shuffler_dst_bufs;
 
   TensorDevInput m_input_dev;
+
+  InputType *m_copy_pinned_buffer;
 
   TensorShuffler &get_shuffler(const TensorHost &src,
                                const TensorHost &dst,
@@ -1110,6 +1122,12 @@ class generic_input_layer : public io_layer {
           input_tensor.get_base_ptr());
     }
 
+    // After this, there is no inter-process communication, so it's
+    // safe to exit if the local tensor is empty.
+    if (input_tensor.get_local_size() == 0) {
+      return;
+    }
+
     dc::MPIPrintStreamDebug()
         << this->get_name()
         << ": Copy the host tensor to device tensor";
@@ -1117,8 +1135,31 @@ class generic_input_layer : public io_layer {
     // be the same except for overlapping width. Device copy should be
     // done with cudaMemcpy3D.
     prof_region_begin("copy-to-device", prof_colors[1], false);
-    assert0(dc::tensor::Copy(m_input_dev, input_tensor, dc::get_stream()));
+    // TODO: Copy doesn't seem to be working correctly, likely because
+    // of the additional halo region in the destination buffer. For
+    // now, avoid this with the manual copy below. Also, in the
+    // Cosmoflow case, "input_tensor" is not a pinned buffer.
+    if (!dc::is_cosmoflow_parallel_io_enabled()) {
+      assert0(dc::tensor::Copy(m_input_dev, input_tensor, dc::get_stream()));
+    } else {
+      int chan_dim = input_tensor.get_local_shape()[::distconv::get_channel_dim()];
+      size_t block_size = input_tensor.get_local_size() / chan_dim;
+      for (int i = 0; i < chan_dim; ++i) {
+        auto dev_off =
+            m_input_dev.get_local_offset(dc::IndexVector({0,0,0,i,0}));
+        auto host_off = block_size * i;
+        // First copy to temporary pinned buffer
+        std::memcpy(m_copy_pinned_buffer + dev_off,
+                    input_tensor.get_const_buffer() + host_off,
+                    sizeof(short) * block_size);
+      }
+      CHECK_CUDA(cudaMemcpyAsync(
+          m_input_dev.get_buffer(),  m_copy_pinned_buffer,
+          m_input_dev.get_local_real_size() * sizeof(InputType),
+          cudaMemcpyHostToDevice, dc::get_stream()));
+    }
     prof_region_end("copy-to-device", false);
+
     {
       const auto norm_alpha_p = std::getenv("COSMOFLOW_NORMALIZE_ALPHA");
       const auto norm_beta_p  = std::getenv("COSMOFLOW_NORMALIZE_BETA");
