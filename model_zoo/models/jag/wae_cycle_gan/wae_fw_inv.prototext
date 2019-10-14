@@ -1,8 +1,5 @@
 #Augumented version of ae_cyc.prototext so we can we ae_loss, fw_latent_loss and fw_out_loss all in the same file instead of 3 files, a request from MLSI ML team. This augmentation involves replicating blocks for fw_model from cycle gan and encode from autoencoder.
 trainer {
-  block_size: 256
-  procs_per_trainer: 0
-  num_parallel_readers: 0
 }
 model {
   name: "wae_fw_inv_model"
