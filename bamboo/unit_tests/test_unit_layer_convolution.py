@@ -19,7 +19,7 @@ import tools
 
 # Data
 np.random.seed(20191014)
-_samples = np.random.normal(size=(23,2,11,7)).astype(np.float32)
+_samples = np.random.normal(size=(23,6,11,7)).astype(np.float32)
 _num_samples = _samples.shape[0]
 _sample_dims = _samples.shape[1:]
 _sample_size = functools.reduce(operator.mul, _sample_dims)
@@ -53,11 +53,11 @@ def pytorch_convolution(data,
     import torch
     import torch.nn.functional
     if type(data) is np.ndarray:
-        data = torch.from_numpy(data)
+        data = torch.from_numpy(data.astype(np.float64))
     if type(kernel) is np.ndarray:
-        kernel = torch.from_numpy(kernel)
+        kernel = torch.from_numpy(kernel.astype(np.float64))
     if type(bias) is np.ndarray:
-        bias = torch.from_numpy(bias)
+        bias = torch.from_numpy(bias.astype(np.float64))
 
     # Perform convolution with PyTorch
     output = None
@@ -180,7 +180,62 @@ def construct_model(lbann):
         val = z
     except:
         # Precomputed value
-        val = 4409.33195701707
+        val = 16563.404296221477
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # 2x4 strided convolution
+    # ------------------------------------------
+
+    # Convolution settings
+    kernel_dims = (3, _sample_dims[0], 2, 4)
+    strides = (3, 1)
+    pads = (3, 0)
+    dilations = (1, 1)
+    num_groups = 1
+    kernel = np.random.normal(size=kernel_dims).astype(np.float32)
+
+    # Apply convolution
+    kernel_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(values=str_list(np.nditer(kernel))),
+        name='kernel2'
+    )
+    x = x_lbann
+    y = lbann.Convolution(x,
+                          weights=(kernel_weights),
+                          num_dims=3,
+                          num_output_channels=kernel_dims[0],
+                          has_vectors=True,
+                          conv_dims=str_list(kernel_dims[2:]),
+                          conv_strides=str_list(strides),
+                          conv_pads=str_list(pads),
+                          conv_dilations=str_list(dilations),
+                          num_groups=num_groups,
+                          has_bias=False)
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='2x4 convolution'))
+
+    # PyTorch implementation
+    try:
+        x = _samples
+        y = pytorch_convolution(
+            x, kernel, bias=None,
+            stride=strides, padding=pads,
+            dilation=dilations, groups=num_groups
+        )
+        z = l2_norm2(y) / _num_samples
+        val = z
+    except:
+        # Precomputed value
+        val = 2244.2759732448058
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
