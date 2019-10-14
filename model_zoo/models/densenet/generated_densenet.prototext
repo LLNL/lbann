@@ -83,7 +83,6 @@ model {
   }
   mini_batch_size: 256
   num_epochs: 90
-  block_size: 256
   layer {
     name: "layer1"
     children: "layer2 layer3"
