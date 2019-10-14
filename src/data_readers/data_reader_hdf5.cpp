@@ -49,7 +49,7 @@ inline hid_t check_hdf5(hid_t hid, const char *file, int line) {
 
 namespace lbann {
   const std::string hdf5_reader::HDF5_KEY_DATA = "full";
-  const std::string hdf5_reader::HDF5_KEY_RESPONSES = "physPar";
+  const std::string hdf5_reader::HDF5_KEY_RESPONSES = "unitPar";
 
   hdf5_reader::hdf5_reader(const bool shuffle)
     : generic_data_reader(shuffle) {}
