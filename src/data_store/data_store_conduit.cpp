@@ -1431,4 +1431,5 @@ size_t data_store_conduit::get_num_indices() const {
   return n;
 }
 
+
 }  // namespace lbann
