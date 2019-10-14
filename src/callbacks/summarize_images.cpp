@@ -92,7 +92,8 @@ categorical_accuracy_strategy::get_image_indices(model const& m) const {
 
   static size_t img_counter = 0;
   static size_t epoch_counter = 0;
-  if(static_cast<size_t>(m.get_epoch()) > epoch_counter){
+  auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(m.get_execution_context());
+  if(exe_ctx.get_epoch() > epoch_counter){
     epoch_counter++;
     img_counter = 0;
   }
@@ -190,13 +191,13 @@ autoencoder_strategy::get_image_indices(model const& m) const {
 
   // Grab the data reader
   auto const& data_reader =
-    *(input_layer.get_data_reader(m.get_execution_mode()));
+    *(input_layer.get_data_reader(m.get_execution_context().get_execution_mode()));
 
   // Get the indices for this minibatch
   bool const i_am_root = m.get_comm()->am_trainer_master();
-  auto const& exe_mode = m.get_execution_mode();
+  auto const& exe_mode = m.get_execution_context().get_execution_mode();
   auto const& total_steps = m.get_num_iterations_per_epoch(exe_mode);
-  auto const& current_step = ((m.get_step(exe_mode) - 1) % total_steps) + 1;
+  auto const& current_step = ((m.get_execution_context().get_step() - 1) % total_steps) + 1;
   bool const last_mb = (current_step == total_steps);
   size_t const mb_size =
     (last_mb
@@ -281,10 +282,11 @@ summarize_images::summarize_images(std::shared_ptr<lbann_summary> const& summari
 
 void summarize_images::on_batch_evaluate_end(model* m) {
 
-  if (m->get_epoch() % m_epoch_interval != 0)
+  auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(m->get_execution_context());
+  if (exe_ctx.get_epoch() % m_epoch_interval != 0)
     return;
 
-  if (m->get_execution_mode() == execution_mode::validation)
+  if (m->get_execution_context().get_execution_mode() == execution_mode::validation)
     dump_images_to_summary(*m);
 
 // FIXME: Dump original image for Autoencoder Strategy
@@ -315,11 +317,13 @@ void summarize_images::dump_images_to_summary(model const& m) const {
             "column index (", col_index, "( is greater than Matrix height (",
             local_images.Height(), ")");
       }
-      auto image_tag =  get_tag(sample_index, m.get_epoch());
+       auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(
+         m.get_execution_context());
+      auto image_tag =  get_tag(sample_index, exe_ctx.get_epoch());
       auto const local_image = local_images(El::ALL, El::IR(col_index));
 
       this->m_summarizer->report_image(
-        image_tag, m_img_format, local_image, dims, m.get_step());
+        image_tag, m_img_format, local_image, dims, m.get_execution_context().get_step());
     }
   }
 }
