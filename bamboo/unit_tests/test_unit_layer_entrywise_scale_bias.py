@@ -155,7 +155,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # ------------------------------------------
-    # Gradient checkint
+    # Gradient checking
     # ------------------------------------------
 
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
