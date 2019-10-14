@@ -37,7 +37,8 @@ namespace lbann {
    * Data reader for data stored in numpy (.npz) files that are encapsulated .
    * in conduit::Nodes
    */
-  class numpy_npz_conduit_reader : public generic_data_reader {
+class numpy_npz_conduit_reader : public generic_data_reader {
+
  public:
   numpy_npz_conduit_reader(const bool shuffle);
   // These need to be explicit because of some issue with the cnpy copy
@@ -107,7 +108,10 @@ namespace lbann {
     std::vector<std::string> m_filenames;
 
     bool load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int>& label_classes); 
-  };
+
+    void load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset = true);
+
+};
 
 }  // namespace lbann
 

@@ -261,7 +261,7 @@ void numpy_npz_conduit_reader::preload_data_store() {
 bool numpy_npz_conduit_reader::load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int> &label_classes) {
   for (auto data_id : data_ids) {
     conduit::Node node;
-    numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
+    load_conduit_node(m_filenames[data_id], data_id, node);
     const char *char_ptr = node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
     const int* label_ptr = reinterpret_cast<const int*>(char_ptr);
     label_classes.insert(*label_ptr);
@@ -444,6 +444,42 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
       std::cout << "response word size: " << m_response_word_size << "\n";
       std::cout << "num response features: " << m_num_response_features<< "\n";
     }
+  }
+}
+
+void numpy_npz_conduit_reader::load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset) {
+
+  try {
+    if (reset) {
+      output.reset();
+    }
+
+    std::vector<size_t> shape;
+    std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filename);
+
+    for (auto &&t : a) {
+      cnpy::NpyArray &b = t.second;
+      if (b.shape[0] != 1) {
+        LBANN_ERROR("lbann currently only supports one sample per npz file; this file appears to contain " + std::to_string(b.shape[0]) + " samples; (", filename);
+      }
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/word_size"] = b.word_size;
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/num_vals"] = b.num_vals;
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/shape"] = b.shape;
+
+      if (b.data_holder->size() / b.word_size != b.num_vals) {
+        LBANN_ERROR("b.data_holder->size() / b.word_size (" + std::to_string(b.data_holder->size()) + " / " + std::to_string(b.word_size) + ") != b.num_vals (" + std::to_string(b.num_vals));
+      }
+
+      // conduit makes a copy of the data, hence owns the data, hence it
+      // will be properly deleted when then conduit::Node is deleted
+      char *data = b.data_holder->data();
+      output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/data"].set_char_ptr(data, b.word_size*b.num_vals);
+    }
+  } catch (...) {
+    //note: npz_load throws std::runtime_error, but I don't want to assume
+    //      that won't change in the future
+    LBANN_ERROR("failed to open " + filename + " during cnpy::npz_load");
   }
 }
 
