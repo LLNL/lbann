@@ -338,7 +338,7 @@ inline void sample_list<sample_name_t>
 ::all_gather_archive(const std::string &archive,
                      std::vector<std::string>& gathered_archive,
                      lbann_comm& comm) {
-  if (options::get()->get_bool("all_gather_new")) {
+  if (!options::get()->get_bool("all_gather_old")) {
     all_gather_archive_new(archive, gathered_archive, comm);
     return;
   }
@@ -386,7 +386,7 @@ inline void sample_list<sample_name_t>
 
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
-::all_gather_archive_new(const std::string &archive,
+::all_gather_archive(const std::string &archive,
                      std::vector<std::string>& gathered_archive,
                      lbann_comm& comm) {
 
