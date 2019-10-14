@@ -556,7 +556,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
           LBANN_ERROR("mp.find(filename) == mp.end()");
         }
         index = search_result->second;
-      }
+      }  
       m_sample_list.emplace_back(std::make_pair(index, s.second));
     }
   }
