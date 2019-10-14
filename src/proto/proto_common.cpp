@@ -780,8 +780,8 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   if (opts->has_int("num_epochs")) {
     model->set_num_epochs(opts->get_int("num_epochs"));
   }
-  if (opts->has_int("block_size")) {
-    trainer->set_block_size(opts->get_int("block_size"));
+  if (opts->has_int("hydrogen_block_size")) {
+    trainer->set_hydrogen_block_size(opts->get_int("hydrogen_block_size"));
   }
   if (opts->has_int("procs_per_trainer")) {
     trainer->set_procs_per_trainer(opts->get_int("procs_per_trainer"));
@@ -825,7 +825,7 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
             << "  datatype size:           " << sizeof(DataType) << std::endl
             << "  mini_batch_size:         " << m.mini_batch_size() << std::endl
             << "  num_epochs:              " << m.num_epochs()  << std::endl
-            << "  block_size:              " << t.block_size()  << std::endl
+            << "  hydrogen_block_size:     " << t.hydrogen_block_size()  << std::endl
             << "  procs_per_trainer:       " << t.procs_per_trainer()  << std::endl
             << "  num_parallel_readers:    " << t.num_parallel_readers()  << std::endl
             << "  serialize_io:            " << m.serialize_io()  << std::endl
@@ -864,9 +864,8 @@ void print_help(std::ostream& os)
        "General:\n"
        "  --mini_batch_size=<int>\n"
        "  --num_epochs=<int>\n"
-       "  --block_size=<int>\n"
+       "  --hydrogen_block_size=<int>\n"
        "  --procs_per_trainer=<int>\n"
-       "  --num_gpus=<int>\n"
        "  --num_parallel_readers=<int>\n"
        "  --num_io_threads=<int>\n"
        "      # of threads used for I/O by the data readers\n"

@@ -1,6 +1,4 @@
 trainer {
-  block_size: 256
-  #procs_per_trainer: 12
   num_parallel_readers: 1
 }
 model {
