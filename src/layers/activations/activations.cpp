@@ -32,11 +32,6 @@ namespace lbann {
 
 namespace {
 
-// Helpful constants
-constexpr DataType zero = 0;
-constexpr DataType one = 1;
-constexpr DataType eps = std::numeric_limits<DataType>::epsilon();
-
 // =========================================================
 // Operator objects for entry-wise unary layers
 // =========================================================
@@ -46,86 +41,93 @@ constexpr DataType eps = std::numeric_limits<DataType>::epsilon();
 // (\f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$).
 
 /** Log sigmoid operator. */
+template <typename TensorDataType>
 struct log_sigmoid_op {
-  inline DataType operator()(const DataType& x) const {
-    if (x >= zero) {
+  inline TensorDataType operator()(const TensorDataType& x) const {
+    if (x >= TensorDataType(0)) {
       return -std::log1p(std::exp(-x));
     } else {
       return x - std::log1p(std::exp(x));
     }
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / (one + std::exp(x));
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return dy / (TensorDataType(1) + std::exp(x));
   }
 };
 
 /** ReLU operator. */
+template <typename TensorDataType>
 struct relu_op {
-  inline DataType operator()(const DataType& x) const {
-    return std::max(x, zero);
+  inline TensorDataType operator()(const TensorDataType& x) const {
+    return std::max(x, TensorDataType(0));
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return x > zero ? dy : zero;
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return x > TensorDataType(0) ? dy : TensorDataType(0);
   }
 };
 
 /** SELU operator. */
+template <typename TensorDataType>
 struct selu_op {
-  inline DataType operator()(const DataType& x) const {
-    return (x > zero ?
+  inline TensorDataType operator()(const TensorDataType& x) const {
+    return (x > TensorDataType(0) ?
             scale * x :
             scale * alpha * std::expm1(x));
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return (x > zero ?
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return (x > TensorDataType(0) ?
             dy * scale :
             dy * scale * alpha * std::exp(x));
   }
 private:
-  static constexpr DataType alpha = 1.6732632423543772848170429916717;
-  static constexpr DataType scale = 1.0507009873554804934193349852946;
+  static constexpr TensorDataType alpha = 1.6732632423543772848170429916717;
+  static constexpr TensorDataType scale = 1.0507009873554804934193349852946;
 };
 
 /** Sigmoid operator. */
+template <typename TensorDataType>
 struct sigmoid_op {
-  inline DataType operator()(const DataType& x) const {
-    const auto& y = 1 / (one + std::exp(-x));
+  TensorDataType eps = std::numeric_limits<TensorDataType>::epsilon();
+  inline TensorDataType operator()(const TensorDataType& x) const {
+    const auto& y = 1 / (TensorDataType(1) + std::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
     if (y <= eps)            { return eps; }
-    else if (y >= one - eps) { return one - eps; }
+    else if (y >= TensorDataType(1) - eps) { return TensorDataType(1) - eps; }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
     return y;
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    const auto& y = 1 / (one + std::exp(-x));
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    const auto& y = 1 / (TensorDataType(1) + std::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    if (y <= eps || y >= one - eps) { return zero; }
+    if (y <= eps || y >= TensorDataType(1) - eps) { return TensorDataType(0); }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    return dy * y * (one - y);
+    return dy * y * (TensorDataType(1) - y);
   }
 };
 
 /** Softplus operator. */
+template <typename TensorDataType>
 struct softplus_op {
-  inline DataType operator()(const DataType& x) const {
-    if (x > zero) {
+  inline TensorDataType operator()(const TensorDataType& x) const {
+    if (x > TensorDataType(0)) {
       return std::log1p(std::exp(-x)) + x;
     } else {
       return std::log1p(std::exp(x));
     }
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / (one + std::exp(-x));
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return dy / (TensorDataType(1) + std::exp(-x));
   }
 };
 
 /** Softsign operator. */
+template <typename TensorDataType>
 struct softsign_op {
-  inline DataType operator()(const DataType& x) const {
-    return x / (one + std::fabs(x));
+  inline TensorDataType operator()(const TensorDataType& x) const {
+    return x / (TensorDataType(1) + std::fabs(x));
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    const auto& denom = one + std::fabs(x);
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    const auto& denom = TensorDataType(1) + std::fabs(x);
     return dy / (denom * denom);
   }
 };
@@ -133,33 +135,37 @@ struct softsign_op {
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::CPU>              \
-  ::fp_compute() {                                                      \
-    apply_entrywise_unary_operator<op>(get_prev_activations(),          \
-                                       get_activations());              \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::CPU>              \
-  ::bp_compute() {                                                      \
-    apply_entrywise_binary_operator<op>(get_prev_activations(),         \
-                                        get_prev_error_signals(),       \
-                                        get_error_signals());           \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::CPU>               \
-  ::fp_compute() {                                                      \
-    apply_entrywise_unary_operator<op>(get_prev_activations(),          \
-                                       get_activations());              \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::CPU>               \
-  ::bp_compute() {                                                      \
-    apply_entrywise_binary_operator<op>(get_prev_activations(),         \
-                                        get_prev_error_signals(),       \
-                                        get_error_signals());           \
-  }                                                                     \
+#define INSTANTIATE(layer, op)                                                                   \
+  template <typename TensorDataType>                                                             \
+  void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
+    apply_entrywise_unary_operator<op>(l.get_prev_activations(),                                 \
+                                       l.get_activations());                                     \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
+    apply_entrywise_binary_operator<op>(l.get_prev_activations(),                                \
+                                        l.get_prev_error_signals(),                              \
+                                        l.get_error_signals());                                  \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {  \
+    apply_entrywise_unary_operator<op>(l.get_prev_activations(),                                 \
+                                       l.get_activations());                                     \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {  \
+    apply_entrywise_binary_operator<op>(l.get_prev_activations(),                                \
+                                        l.get_prev_error_signals(),                              \
+                                        l.get_error_signals());                                  \
+  }                                                                                              \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
+  void layer<TensorDataType, Layout, Device>::fp_compute() {                                     \
+    fp_compute_impl<TensorDataType>(*this);                                                      \
+  }                                                                                              \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
+  void layer<TensorDataType, Layout, Device>::bp_compute() {                                     \
+    bp_compute_impl<TensorDataType>(*this);                                                      \
+  }                                                                                              \
   UNARY_ETI_INST_MACRO_DEV(layer, El::Device::CPU)
 
 INSTANTIATE(log_sigmoid_layer, log_sigmoid_op);

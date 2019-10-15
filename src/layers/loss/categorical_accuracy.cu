@@ -58,13 +58,13 @@ __global__ void fill_indices_kernel(El::Int local_height,
  */
 template <El::Int block_size>
 __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
-                                          const DataType* __restrict__ values,
+                                          const TensorDataType* __restrict__ values,
                                           El::Int values_row_stride,
                                           El::Int values_col_stride,
                                           const El::Int* __restrict__ indices,
                                           El::Int indices_row_stride,
                                           El::Int indices_col_stride,
-                                          DataType* __restrict__ max_values,
+                                          TensorDataType* __restrict__ max_values,
                                           El::Int* __restrict__ max_indices) {
 
   // Indices
@@ -79,7 +79,7 @@ __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
   for (El::Int col = bidy; col < width; col += gridDim.y) {
 
     // Find largest entry for each thread
-    DataType private_max_val = -cuda::infinity<DataType>();
+    TensorDataType private_max_val = -cuda::infinity<TensorDataType>();
     El::Int private_max_ind = cuda::max<El::Int>();
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       const auto& val = values[row * values_row_stride
@@ -94,7 +94,7 @@ __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
     }
 
     // Shared memory reduction to get largest entry for each block
-    __shared__ DataType shared_max_vals[block_size];
+    __shared__ TensorDataType shared_max_vals[block_size];
     __shared__ El::Int shared_max_inds[block_size];
     shared_max_vals[tid] = private_max_val;
     shared_max_inds[tid] = private_max_ind;
@@ -126,7 +126,7 @@ __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
 __global__ void compute_accuracy_kernel(El::Int local_width,
                                         const El::Int* __restrict__ prediction_indices,
                                         const El::Int* __restrict__ label_indices,
-                                        DataType* __restrict__ loss,
+                                        TensorDataType* __restrict__ loss,
                                         El::Int loss_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int nthreads = blockDim.x * gridDim.x;
@@ -135,7 +135,7 @@ __global__ void compute_accuracy_kernel(El::Int local_width,
     const auto& prediction = prediction_indices[col];
     const auto& label = label_indices[col];
     loss[col*loss_ldim] = (prediction == label && prediction < max_ind ?
-                           DataType(1) : DataType(0));
+                           TensorDataType(1) : TensorDataType(0));
   }
 }
 
@@ -188,7 +188,7 @@ void fp_gpu(lbann_comm& comm,
   // Find largest prediction entries in local data
   grid_dims.x = (local_height + block_size - 1) / block_size;
   if (grid_dims.x < 1) { grid_dims.x = 1; }
-  cuda::thrust::vector<DataType> prediction_vals(grid_dims.x * local_width);
+  cuda::thrust::vector<TensorDataType> prediction_vals(grid_dims.x * local_width);
   cuda::thrust::vector<El::Int> prediction_inds(grid_dims.x * local_width);
   reduce_max_entries_kernel<block_size>
     <<<grid_dims, block_dims, 0, stream>>>(
@@ -200,7 +200,7 @@ void fp_gpu(lbann_comm& comm,
   while (grid_dims.x > 1) {
     const El::Int prev_height = grid_dims.x;
     grid_dims.x = (prev_height + block_size - 1) / block_size;
-    cuda::thrust::vector<DataType> prev_vals(std::move(prediction_vals));
+    cuda::thrust::vector<TensorDataType> prev_vals(std::move(prediction_vals));
     cuda::thrust::vector<El::Int> prev_inds(std::move(prediction_inds));
     prediction_vals.resize(grid_dims.x * local_width);
     prediction_inds.resize(grid_dims.x * local_width);
@@ -216,7 +216,7 @@ void fp_gpu(lbann_comm& comm,
   // Gather large prediction entries
   /// @todo Non-blocking gather
   Al::request prediction_vals_req, prediction_inds_req;
-  cuda::thrust::vector<DataType> gathered_prediction_vals;
+  cuda::thrust::vector<TensorDataType> gathered_prediction_vals;
   cuda::thrust::vector<El::Int> gathered_prediction_inds;
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
@@ -239,7 +239,7 @@ void fp_gpu(lbann_comm& comm,
   // Find largest label entries in local data
   grid_dims.x = (local_height + block_size - 1) / block_size;
   if (grid_dims.x < 1) { grid_dims.x = 1; }
-  cuda::thrust::vector<DataType> label_vals(grid_dims.x * local_width);
+  cuda::thrust::vector<TensorDataType> label_vals(grid_dims.x * local_width);
   cuda::thrust::vector<El::Int> label_inds(grid_dims.x * local_width);
   reduce_max_entries_kernel<block_size>
     <<<grid_dims, block_dims, 0, stream>>>(
@@ -251,7 +251,7 @@ void fp_gpu(lbann_comm& comm,
   while (grid_dims.x > 1) {
     const El::Int prev_height = grid_dims.x;
     grid_dims.x = (prev_height + block_size - 1) / block_size;
-    cuda::thrust::vector<DataType> prev_vals(std::move(label_vals));
+    cuda::thrust::vector<TensorDataType> prev_vals(std::move(label_vals));
     cuda::thrust::vector<El::Int> prev_inds(std::move(label_inds));
     label_vals.resize(grid_dims.x * local_width);
     label_inds.resize(grid_dims.x * local_width);
@@ -267,7 +267,7 @@ void fp_gpu(lbann_comm& comm,
   // Gather large label entries
   /// @todo Non-blocking gather
   Al::request label_vals_req, label_inds_req;
-  cuda::thrust::vector<DataType> gathered_label_vals;
+  cuda::thrust::vector<TensorDataType> gathered_label_vals;
   cuda::thrust::vector<El::Int> gathered_label_inds;
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
@@ -308,7 +308,7 @@ void fp_gpu(lbann_comm& comm,
     while (grid_dims.x > 1) {
       const El::Int prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<DataType> prev_vals(std::move(prediction_vals));
+      cuda::thrust::vector<TensorDataType> prev_vals(std::move(prediction_vals));
       cuda::thrust::vector<El::Int> prev_inds(std::move(prediction_inds));
       prediction_vals.resize(grid_dims.x * local_width);
       prediction_inds.resize(grid_dims.x * local_width);
@@ -340,7 +340,7 @@ void fp_gpu(lbann_comm& comm,
     while (grid_dims.x > 1) {
       const El::Int prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<DataType> prev_vals(std::move(label_vals));
+      cuda::thrust::vector<TensorDataType> prev_vals(std::move(label_vals));
       cuda::thrust::vector<El::Int> prev_inds(std::move(label_inds));
       label_vals.resize(grid_dims.x * local_width);
       label_inds.resize(grid_dims.x * local_width);
@@ -371,17 +371,17 @@ template <>
 void categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::fp_compute() {
   fp_gpu(*get_comm(),
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations());
+        this->get_prev_activations(0),
+        this->get_prev_activations(1),
+        this->get_activations());
 }
 template <>
 void categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
   fp_gpu(*get_comm(),
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations());
+        this->get_prev_activations(0),
+        this->get_prev_activations(1),
+        this->get_activations());
 }
 
 template class categorical_accuracy_layer<

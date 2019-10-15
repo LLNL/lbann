@@ -43,7 +43,7 @@ void argmin_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
     const auto buf_min = std::min_element(buf_start,
                                           buf_start+local_height);
     const auto min_ind = std::distance(buf_start, buf_min);
-    local_output(0, col) = static_cast<DataType>(min_ind);
+    local_output(0, col) = static_cast<TensorDataType>(min_ind);
   }
 }
 

@@ -41,12 +41,12 @@ namespace {
 template <El::Int block_size>
 __global__ void mean_contribution_kernel(El::Int height,
                                          El::Int width,
-                                         DataType scale,
-                                         const DataType* __restrict__ input0,
+                                         TensorDataType scale,
+                                         const TensorDataType* __restrict__ input0,
                                          El::Int input0_ldim,
-                                         const DataType* __restrict__ input1,
+                                         const TensorDataType* __restrict__ input1,
                                          El::Int input1_ldim,
-                                         DataType* __restrict__ contribution) {
+                                         TensorDataType* __restrict__ contribution) {
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -58,8 +58,8 @@ __global__ void mean_contribution_kernel(El::Int height,
   for (El::Int col = bidy; col < width; col += gridDim.y) {
 
     // Compute contributions for each thread
-    DataType private_contribution0 = 0;
-    DataType private_contribution1 = 0;
+    TensorDataType private_contribution0 = 0;
+    TensorDataType private_contribution1 = 0;
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       private_contribution0 += input0[row + col * input0_ldim];
       private_contribution1 += input1[row + col * input1_ldim];
@@ -67,8 +67,8 @@ __global__ void mean_contribution_kernel(El::Int height,
 
     // Shared memory reduction to get contribution for each block
     /// @todo unroll loops
-    __shared__ DataType shared_contribution0[block_size];
-    __shared__ DataType shared_contribution1[block_size];
+    __shared__ TensorDataType shared_contribution0[block_size];
+    __shared__ TensorDataType shared_contribution1[block_size];
     shared_contribution0[tid] = private_contribution0;
     shared_contribution1[tid] = private_contribution1;
     for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
@@ -93,13 +93,13 @@ __global__ void mean_contribution_kernel(El::Int height,
 template <El::Int block_size>
 __global__ void covariance_contribution_kernel(El::Int height,
                                                El::Int width,
-                                               DataType scale,
-                                               const DataType* __restrict__ input0,
+                                               TensorDataType scale,
+                                               const TensorDataType* __restrict__ input0,
                                                El::Int input0_ldim,
-                                               const DataType* __restrict__ input1,
+                                               const TensorDataType* __restrict__ input1,
                                                El::Int input1_ldim,
-                                               const DataType* __restrict__ means,
-                                               DataType* __restrict__ contribution) {
+                                               const TensorDataType* __restrict__ means,
+                                               TensorDataType* __restrict__ contribution) {
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -113,7 +113,7 @@ __global__ void covariance_contribution_kernel(El::Int height,
     const auto& mean1 = means[2*col+1];
 
     // Compute contributions for each thread
-    DataType private_contribution = 0;
+    TensorDataType private_contribution = 0;
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       const auto& x0 = input0[row + col * input0_ldim];
       const auto& x1 = input1[row + col * input1_ldim];
@@ -122,7 +122,7 @@ __global__ void covariance_contribution_kernel(El::Int height,
 
     // Shared memory reduction to get contribution for each block
     /// @todo unroll loops
-    __shared__ DataType shared_contribution[block_size];
+    __shared__ TensorDataType shared_contribution[block_size];
     shared_contribution[tid] = private_contribution;
     for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
       __syncthreads();
@@ -143,16 +143,16 @@ __global__ void covariance_contribution_kernel(El::Int height,
 __global__
 void covariance_backprop_kernel(El::Int height,
                                 El::Int width,
-                                DataType scale,
-                                const DataType* __restrict__ gradient_wrt_output,
-                                const DataType* __restrict__ input0,
+                                TensorDataType scale,
+                                const TensorDataType* __restrict__ gradient_wrt_output,
+                                const TensorDataType* __restrict__ input0,
                                 El::Int input0_ldim,
-                                const DataType* __restrict__ input1,
+                                const TensorDataType* __restrict__ input1,
                                 El::Int input1_ldim,
-                                const DataType* __restrict__ means,
-                                DataType* __restrict__ gradient_wrt_input0,
+                                const TensorDataType* __restrict__ means,
+                                TensorDataType* __restrict__ gradient_wrt_input0,
                                 El::Int gradient_wrt_input0_ldim,
-                                DataType* __restrict__ gradient_wrt_input1,
+                                TensorDataType* __restrict__ gradient_wrt_input1,
                                 El::Int gradient_wrt_input1_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
@@ -205,7 +205,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    const auto& scale = DataType(1) / height;
+    const auto& scale = TensorDataType(1) / height;
     mean_contribution_kernel<block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
@@ -225,7 +225,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    const auto& scale = DataType(1) / (biased ? height : height - 1);
+    const auto& scale = TensorDataType(1) / (biased ? height : height - 1);
     covariance_contribution_kernel<block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
@@ -268,7 +268,7 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
   El::Copy(gradient_wrt_output, workspace);
 
   // Compute gradients w.r.t. input
-  const DataType scale = DataType(1) / (biased ? height : height - 1);
+  const TensorDataType scale = TensorDataType(1) / (biased ? height : height - 1);
   constexpr El::Int block_size = 256;
   El::Int grid_size = (local_height * local_width + block_size - 1) / block_size;
   if (grid_size > 0) {
@@ -291,8 +291,8 @@ template <>
 void covariance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
   fp_gpu(get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations(),
+        this->get_prev_activations(1),
+        this->get_activations(),
          *m_means,
          *m_workspace,
          m_biased);
@@ -302,10 +302,10 @@ template <>
 void covariance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::bp_compute() {
   bp_gpu(get_prev_activations(0),
-         get_prev_activations(1),
-         get_prev_error_signals(),
-         get_error_signals(0),
-         get_error_signals(1),
+        this->get_prev_activations(1),
+        this->get_prev_error_signals(),
+        this->get_error_signals(0),
+        this->get_error_signals(1),
          *m_means,
          *m_workspace,
          m_biased);
@@ -315,8 +315,8 @@ template <>
 void covariance_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::fp_compute() {
   fp_gpu(get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations(),
+        this->get_prev_activations(1),
+        this->get_activations(),
          *m_means,
          *m_workspace,
          m_biased);
@@ -326,10 +326,10 @@ template <>
 void covariance_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::bp_compute() {
   bp_gpu(get_prev_activations(0),
-         get_prev_activations(1),
-         get_prev_error_signals(),
-         get_error_signals(0),
-         get_error_signals(1),
+        this->get_prev_activations(1),
+        this->get_prev_error_signals(),
+        this->get_error_signals(0),
+        this->get_error_signals(1),
          *m_means,
          *m_workspace,
          m_biased);

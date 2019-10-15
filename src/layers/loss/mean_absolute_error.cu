@@ -34,11 +34,11 @@ namespace {
 template <int block_size>
 __global__ void fp_kernel(int global_height,
                           int local_height, int local_width,
-                          const DataType* __restrict__ prediction,
+                          const TensorDataType* __restrict__ prediction,
                           int prediction_ldim,
-                          const DataType* __restrict__ ground_truth,
+                          const TensorDataType* __restrict__ ground_truth,
                           int ground_truth_ldim,
-                          DataType* __restrict__ contribution) {
+                          TensorDataType* __restrict__ contribution) {
 
   // Indices
   const int tid = threadIdx.x;
@@ -50,7 +50,7 @@ __global__ void fp_kernel(int global_height,
   for (int col = bidy; col < local_width; col += gridDim.y) {
 
     // Compute contributions for each thread
-    DataType private_contribution = DataType(0);
+    TensorDataType private_contribution = TensorDataType(0);
     for (int row = gidx; row < local_height; row += nthreadsx) {
       const auto& x = prediction[row + col * prediction_ldim];
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
@@ -59,7 +59,7 @@ __global__ void fp_kernel(int global_height,
 
     // Shared memory reduction to get contribution for each block
     /// @todo unroll loops
-    __shared__ DataType shared_contribution[block_size];
+    __shared__ TensorDataType shared_contribution[block_size];
     shared_contribution[tid] = private_contribution;
     for (int stride = block_size / 2; stride > 0; stride /= 2) {
       __syncthreads();
@@ -102,14 +102,14 @@ void local_fp_gpu(El::Int height,
 template <int block_size>
 __global__ void bp_kernel(int global_height,
                           int local_height, int local_width,
-                          const DataType* __restrict__ prediction,
+                          const TensorDataType* __restrict__ prediction,
                           int prediction_ldim,
-                          const DataType* __restrict__ ground_truth,
+                          const TensorDataType* __restrict__ ground_truth,
                           int ground_truth_ldim,
-                          const DataType* __restrict__ gradient_wrt_output,
-                          DataType* __restrict__ gradient_wrt_prediction,
+                          const TensorDataType* __restrict__ gradient_wrt_output,
+                          TensorDataType* __restrict__ gradient_wrt_prediction,
                           int gradient_wrt_prediction_ldim,
-                          DataType* __restrict__ gradient_wrt_ground_truth,
+                          TensorDataType* __restrict__ gradient_wrt_ground_truth,
                           int gradient_wrt_ground_truth_ldim) {
 
   // Indices
@@ -132,8 +132,8 @@ __global__ void bp_kernel(int global_height,
         dx = -dy / global_height;
         dxhat = dy / global_height;
       } else {
-        dx = DataType(0);
-        dxhat = DataType(0);
+        dx = TensorDataType(0);
+        dxhat = TensorDataType(0);
       }
     }
   }

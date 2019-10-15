@@ -44,7 +44,7 @@ void fp(lbann_comm& comm,
   const auto local_width = local_input.Width();
 
   // Find column-wise maximum entries
-  El::Fill(workspace, std::numeric_limits<DataType>::lowest());
+  El::Fill(workspace, std::numeric_limits<TensorDataType>::lowest());
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     auto& max_entry = local_workspace(0, col);
@@ -59,7 +59,7 @@ void fp(lbann_comm& comm,
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto shift = local_workspace(0, col);
-    DataType sum{0};
+    TensorDataType sum{0};
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x = local_input(row, col);
       auto& y = local_output(row, col);
@@ -73,7 +73,7 @@ void fp(lbann_comm& comm,
   // Compute output by subtracting LogSumExp
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    const DataType log_sum_exp = std::log(local_workspace(0, col));
+    const TensorDataType log_sum_exp = std::log(local_workspace(0, col));
     for (El::Int row = 0; row < local_height; ++row) {
       auto& y = local_output(row, col);
       y -= log_sum_exp;
@@ -127,31 +127,31 @@ void bp(lbann_comm& comm,
 template <>
 void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
   fp(*get_comm(),
-     get_prev_activations(),
-     get_activations(),
+    this->get_prev_activations(),
+    this->get_activations(),
      *m_workspace);
 }
 template <>
 void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
   bp(*get_comm(),
-     get_activations(),
-     get_prev_error_signals(),
-     get_error_signals(),
+    this->get_activations(),
+    this->get_prev_error_signals(),
+    this->get_error_signals(),
      *m_workspace);
 }
 template <>
 void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
   fp(*get_comm(),
-     get_prev_activations(),
-     get_activations(),
+    this->get_prev_activations(),
+    this->get_activations(),
      *m_workspace);
 }
 template <>
 void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
   bp(*get_comm(),
-     get_activations(),
-     get_prev_error_signals(),
-     get_error_signals(),
+    this->get_activations(),
+    this->get_prev_error_signals(),
+    this->get_error_signals(),
      *m_workspace);
 }
 

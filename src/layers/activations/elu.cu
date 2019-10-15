@@ -32,12 +32,12 @@ namespace lbann {
 namespace {
 
 /** CUDA kernel for forward prop computation. */
-__global__ void fp_kernel(DataType alpha,
+__global__ void fp_kernel(TensorDataType alpha,
                           El::Int height,
                           El::Int width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
-                          DataType* __restrict__ output,
+                          TensorDataType* __restrict__ output,
                           El::Int output_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
@@ -47,19 +47,19 @@ __global__ void fp_kernel(DataType alpha,
     const auto& col = pos / height;
     const auto& x = input[row + col * input_ldim];
     auto& y = output[row + col * output_ldim];
-    y = (x > DataType(0)) ? x : alpha * cuda::expm1(x);
+    y = (x > TensorDataType(0)) ? x : alpha * cuda::expm1(x);
   }
 }
 
 /** CUDA kernel for backprop computation. */
-__global__ void bp_kernel(DataType alpha,
+__global__ void bp_kernel(TensorDataType alpha,
                           El::Int height,
                           El::Int width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
-                          const DataType* __restrict__ gradient_wrt_output,
+                          const TensorDataType* __restrict__ gradient_wrt_output,
                           El::Int gradient_wrt_output_ldim,
-                          DataType* __restrict__ gradient_wrt_input,
+                          TensorDataType* __restrict__ gradient_wrt_input,
                           El::Int gradient_wrt_input_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
@@ -70,12 +70,12 @@ __global__ void bp_kernel(DataType alpha,
     const auto& x = input[row + col * input_ldim];
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-    dx = (x > DataType(0)) ? dy : dy * alpha * cuda::exp(x);
+    dx = (x > TensorDataType(0)) ? dy : dy * alpha * cuda::exp(x);
   }
 }
 
 /** Local forward prop computation. */
-void local_fp(DataType alpha,
+void local_fp(TensorDataType alpha,
               const El::AbstractMatrix<TensorDataType>& input,
               El::AbstractMatrix<TensorDataType>& output) {
 
@@ -102,7 +102,7 @@ void local_fp(DataType alpha,
 }
 
 /** Local backprop computation. */
-void local_bp(DataType alpha,
+void local_bp(TensorDataType alpha,
               const El::AbstractMatrix<TensorDataType>& input,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
               El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
@@ -136,31 +136,31 @@ template <>
 void elu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
        ::fp_compute() {
   local_fp(m_alpha,
-           get_local_prev_activations(),
-           get_local_activations());
+          this->get_local_prev_activations(),
+          this->get_local_activations());
 }
 template <>
 void elu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::bp_compute() {
   local_bp(m_alpha,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+          this->get_local_prev_activations(),
+          this->get_local_prev_error_signals(),
+          this->get_local_error_signals());
 }
 template <>
 void elu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
        ::fp_compute() {
   local_fp(m_alpha,
-           get_local_prev_activations(),
-           get_local_activations());
+          this->get_local_prev_activations(),
+          this->get_local_activations());
 }
 template <>
 void elu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::bp_compute() {
   local_bp(m_alpha,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+          this->get_local_prev_activations(),
+          this->get_local_prev_error_signals(),
+          this->get_local_error_signals());
 }
 
 template class elu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;

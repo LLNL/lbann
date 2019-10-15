@@ -34,11 +34,11 @@ namespace {
 template <El::Int block_size>
 __global__ void variance_contribution_kernel(El::Int height,
                                              El::Int width,
-                                             DataType scale,
-                                             const DataType* __restrict__ input,
+                                             TensorDataType scale,
+                                             const TensorDataType* __restrict__ input,
                                              El::Int input_ldim,
-                                             const DataType* __restrict__ means,
-                                             DataType* __restrict__ contribution) {
+                                             const TensorDataType* __restrict__ means,
+                                             TensorDataType* __restrict__ contribution) {
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -51,7 +51,7 @@ __global__ void variance_contribution_kernel(El::Int height,
     const auto& mean = means[col];
 
     // Compute contributions for each thread
-    DataType private_contribution = 0;
+    TensorDataType private_contribution = 0;
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       const auto& diff = input[row + col * input_ldim] - mean;
       private_contribution += diff * diff;
@@ -59,7 +59,7 @@ __global__ void variance_contribution_kernel(El::Int height,
 
     // Shared memory reduction to get contribution for each block
     /// @todo unroll loops
-    __shared__ DataType shared_contribution[block_size];
+    __shared__ TensorDataType shared_contribution[block_size];
     shared_contribution[tid] = private_contribution;
     for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
       __syncthreads();
@@ -79,12 +79,12 @@ __global__ void variance_contribution_kernel(El::Int height,
 __global__
 void variance_backprop_kernel(El::Int height,
                               El::Int width,
-                              DataType scale,
-                              const DataType* __restrict__ gradient_wrt_output,
-                              const DataType* __restrict__ input,
+                              TensorDataType scale,
+                              const TensorDataType* __restrict__ gradient_wrt_output,
+                              const TensorDataType* __restrict__ input,
                               El::Int input_ldim,
-                              const DataType* __restrict__ means,
-                              DataType* __restrict__ gradient_wrt_input,
+                              const TensorDataType* __restrict__ means,
+                              TensorDataType* __restrict__ gradient_wrt_input,
                               El::Int gradient_wrt_input_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
@@ -130,10 +130,10 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
   ones.SetMemoryMode(1); // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
   ones.Resize(local_height, 1);
-  El::Fill(ones, DataType(1));
+  El::Fill(ones, TensorDataType(1));
   El::Gemv(El::TRANSPOSE,
-           DataType(1) / height, local_input, ones,
-           DataType(0), local_means);
+           TensorDataType(1) / height, local_input, ones,
+           TensorDataType(0), local_means);
   El::AllReduce(means, means.RedundantComm());
 
   // Compute column-wise variance
@@ -146,7 +146,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    const auto& scale = DataType(1) / (biased ? height : height - 1);
+    const auto& scale = TensorDataType(1) / (biased ? height : height - 1);
     variance_contribution_kernel<block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
@@ -184,7 +184,7 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
   El::Copy(gradient_wrt_output, workspace);
 
   // Compute gradients w.r.t. input
-  const DataType scale = DataType(2) / (biased ? height : height - 1);
+  const TensorDataType scale = TensorDataType(2) / (biased ? height : height - 1);
   constexpr El::Int block_size = 256;
   El::Int grid_size = (local_height * local_width + block_size - 1) / block_size;
   if (grid_size > 0) {
@@ -205,7 +205,7 @@ template <>
 void variance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
   fp_gpu(get_prev_activations(),
-         get_activations(),
+        this->get_activations(),
          *m_means,
          *m_workspace,
          m_biased);
@@ -215,8 +215,8 @@ template <>
 void variance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::bp_compute() {
   bp_gpu(get_prev_activations(),
-         get_prev_error_signals(),
-         get_error_signals(),
+        this->get_prev_error_signals(),
+        this->get_error_signals(),
          *m_means,
          *m_workspace,
          m_biased);
@@ -226,7 +226,7 @@ template <>
 void variance_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::fp_compute() {
   fp_gpu(get_prev_activations(),
-         get_activations(),
+        this->get_activations(),
          *m_means,
          *m_workspace,
          m_biased);
@@ -236,8 +236,8 @@ template <>
 void variance_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
      ::bp_compute() {
   bp_gpu(get_prev_activations(),
-         get_prev_error_signals(),
-         get_error_signals(),
+        this->get_prev_error_signals(),
+        this->get_error_signals(),
          *m_means,
          *m_workspace,
          m_biased);

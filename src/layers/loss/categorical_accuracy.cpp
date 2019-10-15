@@ -57,11 +57,11 @@ void fp_cpu(lbann_comm& comm,
   const auto& col_comm_root = loss.RowOwner(0);
 
   // Find largest prediction entries in local data
-  std::vector<DataType> prediction_vals(local_width);
+  std::vector<TensorDataType> prediction_vals(local_width);
   std::vector<El::Int> prediction_inds(local_width);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    DataType max_val = -std::numeric_limits<DataType>::infinity();
+    TensorDataType max_val = -std::numeric_limits<TensorDataType>::infinity();
     El::Int max_ind = height;
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& val = local_predictions(row, col);
@@ -77,7 +77,7 @@ void fp_cpu(lbann_comm& comm,
   // Gather large prediction entries
   /// @todo Non-blocking gather
   Al::request prediction_vals_req, prediction_inds_req;
-  std::vector<DataType> gathered_prediction_vals;
+  std::vector<TensorDataType> gathered_prediction_vals;
   std::vector<El::Int> gathered_prediction_inds;
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
@@ -100,11 +100,11 @@ void fp_cpu(lbann_comm& comm,
   }
 
   // Find largest label entries in local data
-  std::vector<DataType> label_vals(local_width);
+  std::vector<TensorDataType> label_vals(local_width);
   std::vector<El::Int> label_inds(local_width);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    DataType max_val = -std::numeric_limits<DataType>::infinity();
+    TensorDataType max_val = -std::numeric_limits<TensorDataType>::infinity();
     El::Int max_ind = height;
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& val = local_labels(row, col);
@@ -120,7 +120,7 @@ void fp_cpu(lbann_comm& comm,
   // Gather large label entries
   /// @todo Non-blocking gather
   Al::request label_vals_req, label_inds_req;
-  std::vector<DataType> gathered_label_vals;
+  std::vector<TensorDataType> gathered_label_vals;
   std::vector<El::Int> gathered_label_inds;
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
@@ -148,7 +148,7 @@ void fp_cpu(lbann_comm& comm,
   if (col_comm_size > 1 && col_comm_rank == col_comm_root) {
     LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
-      DataType max_val = -std::numeric_limits<DataType>::infinity();
+      TensorDataType max_val = -std::numeric_limits<TensorDataType>::infinity();
       El::Int max_ind = height;
       for (El::Int rank = 0; rank < col_comm_size; ++rank) {
         const auto& val = gathered_prediction_vals[col + rank * local_width];
@@ -169,7 +169,7 @@ void fp_cpu(lbann_comm& comm,
   if (col_comm_size > 1 && col_comm_rank == col_comm_root) {
     LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
-      DataType max_val = -std::numeric_limits<DataType>::infinity();
+      TensorDataType max_val = -std::numeric_limits<TensorDataType>::infinity();
       El::Int max_ind = height;
       for (El::Int rank = 0; rank < col_comm_size; ++rank) {
         const auto& val = gathered_label_vals[col + rank * local_width];
@@ -189,7 +189,7 @@ void fp_cpu(lbann_comm& comm,
     LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
       local_loss(0, col) = (prediction_inds[col] == label_inds[col] ?
-                            DataType(1) : DataType(0));
+                            TensorDataType(1) : TensorDataType(0));
     }
   }
 
@@ -201,17 +201,17 @@ template <>
 void categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
      ::fp_compute() {
   fp_cpu(*get_comm(),
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations());
+        this->get_prev_activations(0),
+        this->get_prev_activations(1),
+        this->get_activations());
 }
 template <>
 void categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::fp_compute() {
   fp_cpu(*get_comm(),
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations());
+        this->get_prev_activations(0),
+        this->get_prev_activations(1),
+        this->get_activations());
 }
 
 template class categorical_accuracy_layer<

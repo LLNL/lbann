@@ -44,9 +44,9 @@ void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& ind = local_input(0, col);
-    if (DataType{0} <= ind && ind < DataType(local_height)) {
+    if (TensorDataType{0} <= ind && ind < TensorDataType(local_height)) {
       const El::Int row = static_cast<El::Int>(ind);
-      local_output(row, col) = DataType{1};
+      local_output(row, col) = TensorDataType{1};
     }
   }
 

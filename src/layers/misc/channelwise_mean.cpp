@@ -34,13 +34,13 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::fp_compute() {
 
   // Local matrices
-  const auto& local_input = get_local_prev_activations();
-  auto& local_output = get_local_activations();
+  const auto& local_input =this->get_local_prev_activations();
+  auto& local_output =this->get_local_activations();
 
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
-  const auto& input_dims = get_input_dims();
+  const auto& input_dims =this->get_input_dims();
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
                                                input_dims.end(),
@@ -51,7 +51,7 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int channel = 0; channel < num_channels; ++channel) {
-      DataType sum = 0;
+      TensorDataType sum = 0;
       for (El::Int i = 0; i < channel_size; ++i) {
         sum += local_input(i + channel * channel_size, col);
       }
@@ -66,13 +66,13 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::bp_compute() {
 
   // Local matrices
-  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-  auto& local_gradient_wrt_input = get_local_error_signals();
+  const auto& local_gradient_wrt_output =this->get_local_prev_error_signals();
+  auto& local_gradient_wrt_input =this->get_local_error_signals();
 
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
-  const auto& input_dims = get_input_dims();
+  const auto& input_dims =this->get_input_dims();
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
                                                input_dims.end(),

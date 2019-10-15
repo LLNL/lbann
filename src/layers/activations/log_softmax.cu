@@ -57,10 +57,9 @@ struct max_op {
 template <size_t bsize>
 __global__ void reduce_max_kernel(size_t height,
                                   size_t width,
-                                  const DataType* __restrict__ values,
+                                  const TensorDataType* __restrict__ values,
                                   size_t values_ldim,
-                                  DataType* __restrict__ max_values) {
-
+                                  TensorDataType* __restrict__ max_values) {
   // Indices
   const size_t tid = threadIdx.x;
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -73,14 +72,14 @@ __global__ void reduce_max_kernel(size_t height,
   for (size_t col = bidy; col < width; col += nblocksy) {
 
     // Find largest value for each thread
-    DataType thread_max_val{-cuda::infinity<DataType>()};
+    TensorDataType thread_max_val{-cuda::infinity<DataType>()};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& val = values[row+col*values_ldim];
       thread_max_val = cuda::max(thread_max_val, val);
     }
 
     // Find largest value for each block
-    const DataType block_max_val
+    const TensorDataType block_max_val
       = cuda::block_reduce<bsize,1,1,DataType,max_op<DataType>>(thread_max_val);
     if (tid == 0) {
       max_values[bidx+col*nblocksx] = block_max_val;
@@ -102,9 +101,9 @@ __global__ void reduce_max_kernel(size_t height,
 template <size_t bsize>
 __global__ void reduce_sum_kernel(size_t height,
                                   size_t width,
-                                  const DataType* __restrict__ values,
+                                  const TensorDataType* __restrict__ values,
                                   size_t values_ldim,
-                                  DataType* __restrict__ sums) {
+                                  TensorDataType* __restrict__ sums) {
 
   // Indices
   const size_t tid = threadIdx.x;
@@ -116,7 +115,7 @@ __global__ void reduce_sum_kernel(size_t height,
   for (size_t col = bidy; col < width; col += nblocksy) {
 
     // Compute sum for each thread
-    DataType thread_sum{0};
+    TensorDataType thread_sum{0};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       thread_sum += values[row+col*values_ldim];
     }
@@ -144,10 +143,10 @@ __global__ void reduce_sum_kernel(size_t height,
 template <size_t bsize>
 __global__ void fp_sumexp_kernel(size_t height,
                                  size_t width,
-                                 const DataType* __restrict__ input,
+                                 const TensorDataType* __restrict__ input,
                                  size_t input_ldim,
-                                 const DataType* __restrict__ shifts,
-                                 DataType* __restrict__ sums) {
+                                 const TensorDataType* __restrict__ shifts,
+                                 TensorDataType* __restrict__ sums) {
 
   // Indices
   const size_t tid = threadIdx.x;
@@ -160,7 +159,7 @@ __global__ void fp_sumexp_kernel(size_t height,
     const auto& shift = shifts[col];
 
     // Exponentiate inputs and compute sum for each thread
-    DataType thread_sum{0};
+    TensorDataType thread_sum{0};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& x = input[row+col*input_ldim];
       thread_sum += cuda::exp(x-shift);
@@ -189,19 +188,19 @@ __global__ void fp_sumexp_kernel(size_t height,
  */
 __global__ void fp_output_kernel(size_t height,
                                  size_t width,
-                                 const DataType* __restrict__ input,
+                                 const TensorDataType* __restrict__ input,
                                  size_t input_ldim,
-                                 DataType* __restrict__ output,
+                                 TensorDataType* __restrict__ output,
                                  size_t output_ldim,
-                                 const DataType* __restrict__ shifts,
-                                 const DataType* __restrict__ sums) {
+                                 const TensorDataType* __restrict__ shifts,
+                                 const TensorDataType* __restrict__ sums) {
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
   const size_t nthreadsx = blockDim.x * gridDim.x;
   const size_t nthreadsy = blockDim.y * gridDim.y;
   for (size_t col = gidy; col < width; col += nthreadsy) {
     const auto& shift = shifts[col];
-    const DataType log_sum_exp = cuda::log(sums[col]);
+    const TensorDataType log_sum_exp = cuda::log(sums[col]);
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& x = input[row+col*input_ldim];
       auto& y = output[row+col*output_ldim];
@@ -222,12 +221,12 @@ __global__ void fp_output_kernel(size_t height,
  */
 __global__ void bp_kernel(size_t height,
                           size_t width,
-                          const DataType* __restrict__ output,
+                          const TensorDataType* __restrict__ output,
                           size_t output_ldim,
-                          const DataType* __restrict__ gradient_wrt_output,
+                          const TensorDataType* __restrict__ gradient_wrt_output,
                           size_t gradient_wrt_output_ldim,
-                          const DataType* __restrict__ sums,
-                          DataType* __restrict__ gradient_wrt_input,
+                          const TensorDataType* __restrict__ sums,
+                          TensorDataType* __restrict__ gradient_wrt_input,
                           size_t gradient_wrt_input_ldim) {
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
@@ -248,10 +247,10 @@ __global__ void bp_kernel(size_t height,
 
 template <>
 void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  constexpr DataType zero = 0;
-  constexpr DataType one = 1;
-  const auto& local_input = dynamic_cast<const GPUMat&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<GPUMat&>(get_local_activations());
+  constexpr TensorDataType zero = 0;
+  constexpr TensorDataType one = 1;
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(this->get_local_prev_activations());
+  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(this->get_local_activations());
   if (!local_input.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxForward(cudnn::get_handle(),
                                     CUDNN_SOFTMAX_LOG,
@@ -267,11 +266,11 @@ void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute(
 
 template <>
 void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  constexpr DataType zero = 0;
-  constexpr DataType one = 1;
-  const auto& local_output = dynamic_cast<const GPUMat&>(get_local_activations());
-  const auto& local_gradient_wrt_output = dynamic_cast<const GPUMat&>(get_local_prev_error_signals());
-  auto& local_gradient_wrt_input = dynamic_cast<GPUMat&>(get_local_error_signals());
+  constexpr TensorDataType zero = 0;
+  constexpr TensorDataType one = 1;
+  const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(this->get_local_activations());
+  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(this->get_local_prev_error_signals()>;
+                                                                                                           auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(this->get_local_error_signals());
   if (!local_output.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxBackward(cudnn::get_handle(),
                                      CUDNN_SOFTMAX_LOG,
@@ -291,11 +290,11 @@ template <>
 void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const GPUMat&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<GPUMat&>(get_local_activations());
-  auto& local_workspace = dynamic_cast<GPUMat&>(m_workspace->Matrix());
-  const size_t local_height = local_input.Height();
-  const size_t local_width = local_input.Width();
+  const auto& local_input =this->get_local_prev_activations();
+  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(this->get_local_activations());
+  auto& local_workspace = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(m_workspace->Matrix());
+  const auto& local_height = local_input.Height();
+  const auto& local_width = local_input.Width();
 
   // GPU objects
   auto&& stream = El::GPUManager::Stream();
@@ -303,7 +302,7 @@ void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute
   El::SyncInfo<El::Device::GPU> sync_info{stream, event};
 
   // Find max value in each column
-  cuda::thrust::vector<DataType> max_vals;
+  cuda::thrust::vector<TensorDataType> max_vals;
   if (local_input.IsEmpty()) {
     max_vals.resize(local_width,
                     -std::numeric_limits<DataType>::infinity());
@@ -372,12 +371,12 @@ template <>
 void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
 
   // Local matrices
-  const auto& local_output = dynamic_cast<const GPUMat&>(get_local_activations());
-  const auto& local_gradient_wrt_output = dynamic_cast<const GPUMat&>(get_local_prev_error_signals());
-  auto& local_gradient_wrt_input = dynamic_cast<GPUMat&>(get_local_error_signals());
-  auto& local_workspace = dynamic_cast<GPUMat&>(m_workspace->Matrix());
-  const size_t local_height = local_output.Height();
-  const size_t local_width = local_output.Width();
+  const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(this->get_local_activations());
+  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(this->get_local_prev_error_signals());
+  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(this->get_local_error_signals());
+  auto& local_workspace = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(m_workspace->Matrix());
+  const auto& local_height = local_output.Height();
+  const auto& local_width = local_output.Width();
 
   // GPU objects
   auto&& stream = El::GPUManager::Stream();

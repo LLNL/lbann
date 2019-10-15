@@ -42,89 +42,89 @@ namespace {
 
 /** Log sigmoid operator. */
 struct log_sigmoid_op {
-  inline __device__ DataType operator()(const DataType& x) const {
-    if (x >= DataType(0)) {
+  inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    if (x >= TensorDataType(0)) {
       return -cuda::log1p(cuda::exp(-x));
     } else {
       return x - cuda::log1p(cuda::exp(x));
     }
   }
-  inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / (DataType(1) + cuda::exp(x));
+  inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return dy / (TensorDataType(1) + cuda::exp(x));
   }
 };
 
 /** ReLU operator. */
 struct relu_op {
-  inline __device__ DataType operator()(const DataType& x) const {
-    return cuda::max(x, DataType(0));
+  inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    return cuda::max(x, TensorDataType(0));
   }
-  inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return x > DataType(0) ? dy : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return x > TensorDataType(0) ? dy : TensorDataType(0);
   }
 };
 
 /** SELU operator. */
 struct selu_op {
-  inline __device__ DataType operator()(const DataType& x) const {
-    return (x > DataType(0) ?
+  inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    return (x > TensorDataType(0) ?
             scale * x :
             scale * alpha * cuda::expm1(x));
   }
-  inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return (x > DataType(0) ?
+  inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return (x > TensorDataType(0) ?
             dy * scale :
             dy * scale * alpha * cuda::exp(x));
   }
 private:
-  static constexpr DataType alpha = 1.6732632423543772848170429916717;
-  static constexpr DataType scale = 1.0507009873554804934193349852946;
+  static constexpr TensorDataType alpha = 1.6732632423543772848170429916717;
+  static constexpr TensorDataType scale = 1.0507009873554804934193349852946;
 };
 
 /** Sigmoid operator. */
 struct sigmoid_op {
-  inline __device__ DataType operator()(const DataType& x) const {
-    constexpr DataType one = 1;
+  inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    constexpr TensorDataType one = 1;
     const auto& y = 1 / (one + cuda::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    constexpr DataType eps = cuda::epsilon<DataType>();
+    constexpr TensorDataType eps = cuda::epsilon<TensorDataType>();
     if (y <= eps) { return eps; }
     else if (y >= one - eps) { return one - eps; }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
     return y;
   }
-  inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    constexpr DataType one = 1;
+  inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    constexpr TensorDataType one = 1;
     const auto& y = 1 / (one + cuda::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    constexpr DataType eps = cuda::epsilon<DataType>();
-    if (y <= eps || y >= DataType(1) - eps) { return DataType(0); }
+    constexpr TensorDataType eps = cuda::epsilon<TensorDataType>();
+    if (y <= eps || y >= TensorDataType(1) - eps) { return TensorDataType(0); }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    return dy * y * (DataType(1) - y);
+    return dy * y * (TensorDataType(1) - y);
   }
 };
 
 /** Softplus operator. */
 struct softplus_op {
-  inline __device__ DataType operator()(const DataType& x) const {
-    if (x > DataType(0)) {
+  inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    if (x > TensorDataType(0)) {
       return cuda::log1p(cuda::exp(-x)) + x;
     } else {
       return cuda::log1p(cuda::exp(x));
     }
   }
-  inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / (DataType(1) + cuda::exp(-x));
+  inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return dy / (TensorDataType(1) + cuda::exp(-x));
   }
 };
 
 /** Softsign operator. */
 struct softsign_op {
-  inline __device__ DataType operator()(const DataType& x) const {
-    return x / (DataType(1) + cuda::abs(x));
+  inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    return x / (TensorDataType(1) + cuda::abs(x));
   }
-  inline __device__ DataType operator()(const DataType& x, const DataType& dy) const {
-    const auto& denom = DataType(1) + cuda::abs(x);
+  inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    const auto& denom = TensorDataType(1) + cuda::abs(x);
     return dy / (denom * denom);
   }
 };
@@ -136,28 +136,28 @@ struct softsign_op {
   template <>                                                           \
   void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
   ::fp_compute() {                                                      \
-    cuda::apply_entrywise_unary_operator<op>(get_prev_activations(),    \
-                                             get_activations());        \
+    cuda::apply_entrywise_unary_operator<op>(this->get_prev_activations(),    \
+                                            this->get_activations());        \
   }                                                                     \
   template <>                                                           \
   void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
   ::bp_compute() {                                                      \
-    cuda::apply_entrywise_binary_operator<op>(get_prev_activations(),   \
-                                              get_prev_error_signals(), \
-                                              get_error_signals());     \
+    cuda::apply_entrywise_binary_operator<op>(this->get_prev_activations(),   \
+                                             this->get_prev_error_signals(), \
+                                             this->get_error_signals());     \
   }                                                                     \
   template <>                                                           \
   void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
   ::fp_compute() {                                                      \
-    cuda::apply_entrywise_unary_operator<op>(get_prev_activations(),    \
-                                             get_activations());        \
+    cuda::apply_entrywise_unary_operator<op>(this->get_prev_activations(),    \
+                                            this->get_activations());        \
   }                                                                     \
   template <>                                                           \
   void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
   ::bp_compute() {                                                      \
-    cuda::apply_entrywise_binary_operator<op>(get_prev_activations(),   \
-                                              get_prev_error_signals(), \
-                                              get_error_signals());     \
+    cuda::apply_entrywise_binary_operator<op>(this->get_prev_activations(),   \
+                                             this->get_prev_error_signals(), \
+                                             this->get_error_signals());     \
   }                                                                     \
   UNARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
 

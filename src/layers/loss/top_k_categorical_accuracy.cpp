@@ -38,12 +38,12 @@ namespace {
 struct entry {
 
   /** Vector entry value. */
-  DataType value = min_value;
+  TensorDataType value = min_value;
   /** Vector entry index. */
   El::Int index = max_index;
 
   /** Minimum possible value. */
-  static constexpr DataType min_value = -std::numeric_limits<DataType>::infinity();
+  static constexpr TensorDataType min_value = -std::numeric_limits<TensorDataType>::infinity();
   /** Maximum possible index. */
   static constexpr El::Int max_index = std::numeric_limits<El::Int>::max();
 
@@ -77,7 +77,7 @@ void fp_cpu(lbann_comm& comm,
     El::Zero(loss);
     return;
   } else if (k >= height) {
-    El::Fill(loss, DataType(1));
+    El::Fill(loss, TensorDataType(1));
     return;
   } else if (local_width < 1) {
     return;
@@ -97,7 +97,7 @@ void fp_cpu(lbann_comm& comm,
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
-      if (local_labels(row, col) > DataType(0)) {
+      if (local_labels(row, col) > TensorDataType(0)) {
         label_indices[col] = labels.GlobalRow(row);
       }
     }
@@ -164,7 +164,7 @@ void fp_cpu(lbann_comm& comm,
         const auto& label_index = label_indices[col];
         if (top_entries[col*k+i].index == label_index
             && label_index < height) {
-          local_loss(0, col) = DataType(1);
+          local_loss(0, col) = TensorDataType(1);
         }
       }
     }
@@ -179,18 +179,18 @@ void top_k_categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::C
      ::fp_compute() {
   fp_cpu(*get_comm(),
          m_k,
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations());
+        this->get_prev_activations(0),
+        this->get_prev_activations(1),
+        this->get_activations());
 }
 template <>
 void top_k_categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::fp_compute() {
   fp_cpu(*get_comm(),
          m_k,
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations());
+        this->get_prev_activations(0),
+        this->get_prev_activations(1),
+        this->get_activations());
 }
 
 template class top_k_categorical_accuracy_layer<

@@ -32,10 +32,6 @@ namespace lbann {
 
 namespace {
 
-// Helpful constants
-constexpr DataType zero = 0;
-constexpr DataType one = 1;
-
 // =========================================================
 // Operator objects for entry-wise unary layers
 // =========================================================
@@ -45,332 +41,364 @@ constexpr DataType one = 1;
 // (\f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$).
 
 /** Logical not operator. */
+template <typename TensorDataType>
 struct logical_not_op {
-  inline DataType operator()(const DataType& x) const {
-    const auto& b = x != zero && !std::isnan(x);
-    return !b ? one : zero;
+  inline TensorDataType operator()(const TensorDataType& x) const {
+    const auto& b = x != TensorDataType(0) && !std::isnan(x);
+    return !b ? TensorDataType(1) : TensorDataType(0);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return zero;
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return TensorDataType(0);
   }
 };
 
 /** Absolute value operator. */
+template <typename TensorDataType>
 struct abs_op {
-  inline DataType operator()(const DataType& x) const {
-    return x >= zero ? x : -x;
+  inline TensorDataType operator()(const TensorDataType& x) const {
+    return x >= TensorDataType(0) ? x : -x;
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    if      (x > zero) { return dy;   }
-    else if (x < zero) { return -dy;  }
-    else               { return zero; }
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    if      (x > TensorDataType(0)) { return dy;   }
+    else if (x < TensorDataType(0)) { return -dy;  }
+    else               { return TensorDataType(0); }
   }
 };
 
 /** Negative operator. */
+template <typename TensorDataType>
 struct negative_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return -x;
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return -dy;
   }
 };
 
 /** Sign operator. */
+template <typename TensorDataType>
 struct sign_op {
-  inline DataType operator()(const DataType& x) const {
-    if      (x > zero) { return one;  }
-    else if (x < zero) { return -one; }
-    else               { return zero; }
+  inline TensorDataType operator()(const TensorDataType& x) const {
+    if      (x > TensorDataType(0)) { return TensorDataType(1);  }
+    else if (x < TensorDataType(0)) { return -TensorDataType(1); }
+    else               { return TensorDataType(0); }
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return zero;
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return TensorDataType(0);
   }
 };
 
 /** Round operator. */
+template <typename TensorDataType>
 struct round_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::round(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return zero;
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return TensorDataType(0);
   }
 };
 
 /** Ceiling operator. */
+template <typename TensorDataType>
 struct ceil_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::ceil(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return zero;
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return TensorDataType(0);
   }
 };
 
 /** Floor operator. */
+template <typename TensorDataType>
 struct floor_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::floor(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return zero;
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return TensorDataType(0);
   }
 };
 
 /** Reciprocal operator.
- *  If a standard reciprocal produces an infinity or NaN, zero is
+ *  If a standard reciprocal produces an infinity or NaN, TensorDataType(0) is
  *  output instead.
  */
+template <typename TensorDataType>
 struct reciprocal_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return 1 / x;
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    if (dy == zero) { return zero; }
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    if (dy == TensorDataType(0)) { return TensorDataType(0); }
     else            { return - dy / (x*x); }
   }
 };
 
 /** Square operator. */
+template <typename TensorDataType>
 struct square_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return x*x;
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return 2*x * dy;
   }
 };
 
 
 /** Square root operator. */
+template <typename TensorDataType>
 struct sqrt_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::sqrt(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy / (2 * std::sqrt(x));
   }
 };
 
 /** Reciprocal square root operator. */
+template <typename TensorDataType>
 struct rsqrt_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return 1 / std::sqrt(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const auto& s = std::sqrt(x);
     return - dy / (2 * x * s);
   }
 };
 
 /** Safe reciprocal operator. */
+template <typename TensorDataType>
 struct safe_reciprocal_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     const auto& y = 1 / x;
     if (std::isfinite(y)) { return y; }
-    else                  { return zero; }
+    else                  { return TensorDataType(0); }
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const auto& y = 1 / x;
     if (std::isfinite(y)) { return - dy * y*y; }
-    else                  { return zero; }
+    else                  { return TensorDataType(0); }
   }
 };
 
-/** Exponential operator. */
+/** ExpTensorDataType(1)ntial operator. */
+template <typename TensorDataType>
 struct exp_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::exp(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy * std::exp(x);
   }
 };
 
-/** Exponential minus one operator. */
+/** ExpTensorDataType(1)ntial minus TensorDataType(1) operator. */
+template <typename TensorDataType>
 struct expm1_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::expm1(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy * std::exp(x);
   }
 };
 
 /** Natural logarithm operator. */
+template <typename TensorDataType>
 struct log_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::log(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy / x;
   }
 };
 
-/** Natural logarithm one plus operator. */
+/** Natural logarithm TensorDataType(1) plus operator. */
+template <typename TensorDataType>
 struct log1p_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::log1p(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / (x + one);
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return dy / (x + TensorDataType(1));
   }
 };
 
 /** Cosine operator. */
+template <typename TensorDataType>
 struct cos_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::cos(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return -dy * std::sin(x);
   }
 };
 
 /** Sine operator. */
+template <typename TensorDataType>
 struct sin_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::sin(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy * std::cos(x);
   }
 };
 
 /** Tangent operator. */
+template <typename TensorDataType>
 struct tan_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::tan(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const auto& c = std::cos(x);
     return dy / (c*c);
   }
 };
 
 /** Arccosine operator. */
+template <typename TensorDataType>
 struct acos_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::acos(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return -dy / std::sqrt(one - x*x);
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return -dy / std::sqrt(TensorDataType(1) - x*x);
   }
 };
 
 /** Arcsine operator. */
+template <typename TensorDataType>
 struct asin_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::asin(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / std::sqrt(one - x*x);
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return dy / std::sqrt(TensorDataType(1) - x*x);
   }
 };
 
 /** Arctangent operator. */
+template <typename TensorDataType>
 struct atan_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::atan(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / (one + x*x);
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return dy / (TensorDataType(1) + x*x);
   }
 };
 
 /** Hyperbolic cosine operator. */
+template <typename TensorDataType>
 struct cosh_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::cosh(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy * std::sinh(x);
   }
 };
 
 /** Hyperbolic sine operator. */
+template <typename TensorDataType>
 struct sinh_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::sinh(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy * std::cosh(x);
   }
 };
 
 /** Hyperbolic tangent operator. */
+template <typename TensorDataType>
 struct tanh_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::tanh(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const auto& c = std::cosh(x);
     return dy / (c*c);
   }
 };
 
 /** Hyperbolic arccosine operator. */
+template <typename TensorDataType>
 struct acosh_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::acosh(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return -dy / (std::sqrt(x - one) * std::sqrt(x + one));
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return -dy / (std::sqrt(x - TensorDataType(1)) * std::sqrt(x + TensorDataType(1)));
   }
 };
 
 /** Hyperbolic arcsine operator. */
+template <typename TensorDataType>
 struct asinh_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::asinh(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / std::sqrt(one + x*x);
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return dy / std::sqrt(TensorDataType(1) + x*x);
   }
 };
 
 /** Hyperbolic arctangent operator. */
+template <typename TensorDataType>
 struct atanh_op {
-  inline DataType operator()(const DataType& x) const {
+  inline TensorDataType operator()(const TensorDataType& x) const {
     return std::atanh(x);
   }
-  inline DataType operator()(const DataType& x, const DataType& dy) const {
-    return dy / (one - x*x);
+  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    return dy / (TensorDataType(1) - x*x);
   }
 };
 
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::CPU>              \
-         ::fp_compute() {                                               \
-    apply_entrywise_unary_operator<op>(get_prev_activations(),          \
-                                       get_activations());              \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::CPU>              \
-         ::bp_compute() {                                               \
-    apply_entrywise_binary_operator<op>(get_prev_activations(),         \
-                                        get_prev_error_signals(),       \
-                                        get_error_signals());           \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::CPU>               \
-         ::fp_compute() {                                               \
-    apply_entrywise_unary_operator<op>(get_prev_activations(),          \
-                                       get_activations());              \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::CPU>               \
-         ::bp_compute() {                                               \
-    apply_entrywise_binary_operator<op>(get_prev_activations(),         \
-                                        get_prev_error_signals(),       \
-                                        get_error_signals());           \
-  }                                                                     \
+#define INSTANTIATE(layer, op)                                                                   \
+  template <typename TensorDataType>                                                             \
+  void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
+    apply_entrywise_unary_operator<op>(l.get_prev_activations(),                                 \
+                                       l.get_activations());                                     \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
+    apply_entrywise_binary_operator<op>(l.get_prev_activations(),                                \
+                                        l.get_prev_error_signals(),                              \
+                                        l.get_error_signals());                                  \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {  \
+    apply_entrywise_unary_operator<op>(l.get_prev_activations(),                                 \
+                                       l.get_activations());                                     \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {  \
+    apply_entrywise_binary_operator<op>(l.get_prev_activations(),                                \
+                                        l.get_prev_error_signals(),                              \
+                                        l.get_error_signals());                                  \
+  }                                                                                              \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
+  void layer<TensorDataType, Layout, Device>::fp_compute() {                                     \
+    fp_compute_impl<TensorDataType>(*this);                                                      \
+  }                                                                                              \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
+  void layer<TensorDataType, Layout, Device>::bp_compute() {                                     \
+    bp_compute_impl<TensorDataType>(*this);                                                      \
+  }                                                                                              \
   UNARY_ETI_INST_MACRO_DEV(layer, El::Device::CPU)
 
 INSTANTIATE(logical_not_layer, logical_not_op);

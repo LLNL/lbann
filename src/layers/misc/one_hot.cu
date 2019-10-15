@@ -40,17 +40,17 @@ namespace {
  */
 __global__ void fp_kernel(size_t height,
                           size_t width,
-                          const DataType* __restrict__ indices,
+                          const TensorDataType* __restrict__ indices,
                           size_t indices_stride,
-                          DataType* __restrict__ output,
+                          TensorDataType* __restrict__ output,
                           size_t output_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = blockDim.x * gridDim.x;
   for (size_t col = gid; col < width; col += nthreads) {
     const auto& ind = indices[col*indices_stride];
-    if (DataType{0} <= ind && ind < DataType(height)) {
+    if (TensorDataType{0} <= ind && ind < TensorDataType(height)) {
       const size_t row = static_cast<size_t>(ind);
-      output[row+col*output_ldim] = DataType{1};
+      output[row+col*output_ldim] = TensorDataType{1};
     }
   }
 }

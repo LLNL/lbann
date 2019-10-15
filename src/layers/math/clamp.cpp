@@ -32,8 +32,8 @@ namespace lbann {
 namespace {
 
 /** Local forward prop computation. */
-void local_fp(DataType min,
-              DataType max,
+void local_fp(TensorDataType min,
+              TensorDataType max,
               const El::AbstractMatrix<TensorDataType>& input,
               El::AbstractMatrix<TensorDataType>& output) {
   const auto& height = input.Height();
@@ -51,8 +51,8 @@ void local_fp(DataType min,
 }
 
 /** Local backprop computation. */
-void local_bp(DataType min,
-              DataType max,
+void local_bp(TensorDataType min,
+              TensorDataType max,
               const El::AbstractMatrix<TensorDataType>& input,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
               El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
@@ -64,7 +64,7 @@ void local_bp(DataType min,
       const auto& x = input(row, col);
       const auto& dy = gradient_wrt_output(row, col);
       auto& dx = gradient_wrt_input(row, col);
-      dx = (x <= min || x >= max) ? DataType(0) : dy;
+      dx = (x <= min || x >= max) ? TensorDataType(0) : dy;
     }
   }
 }
@@ -75,31 +75,31 @@ template <>
 void clamp_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
        ::fp_compute() {
   local_fp(m_min, m_max,
-           get_local_prev_activations(),
-           get_local_activations());
+          this->get_local_prev_activations(),
+          this->get_local_activations());
 }
 template <>
 void clamp_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::bp_compute() {
   local_bp(m_min, m_max,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+          this->get_local_prev_activations(),
+          this->get_local_prev_error_signals(),
+          this->get_local_error_signals());
 }
 template <>
 void clamp_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
        ::fp_compute() {
   local_fp(m_min, m_max,
-           get_local_prev_activations(),
-           get_local_activations());
+          this->get_local_prev_activations(),
+          this->get_local_activations());
 }
 template <>
 void clamp_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
      ::bp_compute() {
   local_bp(m_min, m_max,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+          this->get_local_prev_activations(),
+          this->get_local_prev_error_signals(),
+          this->get_local_error_signals());
 }
 
 template class clamp_layer<

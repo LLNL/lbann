@@ -39,7 +39,7 @@ namespace {
 /** Sparse vector entry. */
 struct entry {
   /** Vector entry value. */
-  DataType value;
+  TensorDataType value;
   /** Vector entry index. */
   El::Int index;
 };
@@ -65,7 +65,7 @@ __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
                                                El::Int global_matrix_height,
                                                El::Int global_matrix_col_shift,
                                                El::Int global_matrix_col_stride,
-                                               const DataType* __restrict__ local_matrix,
+                                               const TensorDataType* __restrict__ local_matrix,
                                                El::Int local_matrix_ldim,
                                                entry* __restrict__ local_entries,
                                                El::Int local_entries_ldim) {
@@ -82,7 +82,7 @@ __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
       current_entry.value = local_matrix[local_row + local_col * local_matrix_ldim];
       current_entry.index = global_row;
     } else {
-      current_entry.value = -cuda::infinity<DataType>();
+      current_entry.value = -cuda::infinity<TensorDataType>();
       current_entry.index = global_matrix_height;
     }
   }
@@ -119,7 +119,7 @@ __global__ void one_hot_matrix_to_indices(El::Int local_height,
                                           El::Int local_width,
                                           El::Int global_matrix_col_shift,
                                           El::Int global_matrix_col_stride,
-                                          const DataType* __restrict__ local_matrix,
+                                          const TensorDataType* __restrict__ local_matrix,
                                           El::Int local_matrix_ldim,
                                           El::Int* __restrict__ indices) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -128,7 +128,7 @@ __global__ void one_hot_matrix_to_indices(El::Int local_height,
   for (El::Int i = gid; i < local_size; i += num_threads) {
     const auto& local_row = i % local_height;
     const auto& local_col = i / local_height;
-    if (local_matrix[local_row + local_col * local_matrix_ldim] > DataType(0)) {
+    if (local_matrix[local_row + local_col * local_matrix_ldim] > TensorDataType(0)) {
       const auto& global_row = (global_matrix_col_shift
                                 + local_row * global_matrix_col_stride);
       indices[local_col] = global_row;
@@ -146,7 +146,7 @@ __global__ void compute_categorical_accuracy(El::Int k,
                                              const entry*  __restrict__ top_entries,
                                              El::Int top_entries_ldim,
                                              const El::Int*  __restrict__ label_indices,
-                                             DataType* __restrict__ loss,
+                                             TensorDataType* __restrict__ loss,
                                              El::Int loss_stride) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
@@ -157,7 +157,7 @@ __global__ void compute_categorical_accuracy(El::Int k,
     const auto& label_index = label_indices[col];
     if (top_entries[ind + col * top_entries_ldim].index == label_index
         && label_index <= max_entry) {
-      loss[col * loss_stride] = DataType(1);
+      loss[col * loss_stride] = TensorDataType(1);
     }
   }
 }
@@ -182,7 +182,7 @@ void fp_gpu(lbann_comm& comm,
     El::Zero(loss);
     return;
   } else if (k >= height) {
-    El::Fill(loss, DataType(1));
+    El::Fill(loss, TensorDataType(1));
     return;
   } else if (local_width < 1) {
     return;
@@ -212,7 +212,7 @@ void fp_gpu(lbann_comm& comm,
       local_labels.LockedBuffer(), local_labels.LDim(),
       label_indices.data().get());
     /// @todo The LBANN Aluminum interface doesn't gracefully handle
-    /// GPU data that is not DataType.
+    /// GPU data that is not TensorDataType.
     El::mpi::AllReduce(label_indices.data().get(),
                        label_indices.size(),
                        El::mpi::MIN,
@@ -317,18 +317,18 @@ void top_k_categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::G
      ::fp_compute() {
   fp_gpu(*get_comm(),
          m_k,
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations());
+        this->get_prev_activations(0),
+        this->get_prev_activations(1),
+        this->get_activations());
 }
 template <>
 void top_k_categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
      ::fp_compute() {
   fp_gpu(*get_comm(),
          m_k,
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations());
+        this->get_prev_activations(0),
+        this->get_prev_activations(1),
+        this->get_activations());
 }
 
 template class top_k_categorical_accuracy_layer<

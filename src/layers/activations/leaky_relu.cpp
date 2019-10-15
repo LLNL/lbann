@@ -32,10 +32,10 @@ namespace lbann {
 namespace {
 
 // Useful constants
-constexpr DataType zero = 0;
+constexpr TensorDataType zero = 0;
 
 /** Local forward prop computation. */
-void local_fp(DataType negative_slope,
+void local_fp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& input,
               El::AbstractMatrix<TensorDataType>& output) {
   const auto& height = input.Height();
@@ -51,7 +51,7 @@ void local_fp(DataType negative_slope,
 }
 
 /** Local backprop computation. */
-void local_bp(DataType negative_slope,
+void local_bp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& input,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
               El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
@@ -74,31 +74,31 @@ template <>
 void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
        ::fp_compute() {
   local_fp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_activations());
+          this->get_local_prev_activations(),
+          this->get_local_activations());
 }
 template <>
 void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::bp_compute() {
   local_bp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+          this->get_local_prev_activations(),
+          this->get_local_prev_error_signals(),
+          this->get_local_error_signals());
 }
 template <>
 void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
        ::fp_compute() {
   local_fp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_activations());
+          this->get_local_prev_activations(),
+          this->get_local_activations());
 }
 template <>
 void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
      ::bp_compute() {
   local_bp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+          this->get_local_prev_activations(),
+          this->get_local_prev_error_signals(),
+          this->get_local_error_signals());
 }
 
 template class leaky_relu_layer<

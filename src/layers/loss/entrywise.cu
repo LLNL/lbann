@@ -36,15 +36,15 @@ namespace {
 template <typename BinaryBackPropOperator>
 __global__
 void binary_backprop_operator_kernel(El::Int height, El::Int width,
-                                     const DataType* __restrict__ x1,
+                                     const TensorDataType* __restrict__ x1,
                                      El::Int x1_ldim,
-                                     const DataType* __restrict__ x2,
+                                     const TensorDataType* __restrict__ x2,
                                      El::Int x2_ldim,
-                                     const DataType* __restrict__ dy,
+                                     const TensorDataType* __restrict__ dy,
                                      El::Int dy_ldim,
-                                     DataType* __restrict__ dx1,
+                                     TensorDataType* __restrict__ dx1,
                                      El::Int dx1_ldim,
-                                     DataType* __restrict__ dx2,
+                                     TensorDataType* __restrict__ dx2,
                                      El::Int dx2_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
@@ -113,22 +113,22 @@ void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1
 
 /** Binary cross entropy operator. */
 struct binary_cross_entropy_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    constexpr DataType zero = 0;
-    constexpr DataType one = 1;
-    DataType y = zero;
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    constexpr TensorDataType zero = 0;
+    constexpr TensorDataType one = 1;
+    TensorDataType y = zero;
     if (x2 > zero) { y += -x2 * cuda::log(x1); }
     if (x2 < one)  { y += -(one-x2) * cuda::log(one-x1); }
     return y;
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    constexpr DataType zero = 0;
-    constexpr DataType one = 1;
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    constexpr TensorDataType zero = 0;
+    constexpr TensorDataType one = 1;
     dx1 = zero;
     dx2 = zero;
     if (dy == zero) { return; }
@@ -150,10 +150,10 @@ struct binary_cross_entropy_op {
  *  https://www.tensorflow.org/api_docs/python/tf/nn/sigmoid_cross_entropy_with_logits.
  */
 struct sigmoid_binary_cross_entropy_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    constexpr DataType zero = 0;
-    constexpr DataType one = 1;
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    constexpr TensorDataType zero = 0;
+    constexpr TensorDataType one = 1;
     const auto& z = cuda::max(zero, cuda::min(x2, one));
     if (x1 > zero) {
       return (one - z) * x1 + cuda::log1p(cuda::exp(-x1));
@@ -161,13 +161,13 @@ struct sigmoid_binary_cross_entropy_op {
       return - x1 * z + cuda::log1p(cuda::exp(x1));
     }
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    constexpr DataType zero = 0;
-    constexpr DataType one = 1;
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    constexpr TensorDataType zero = 0;
+    constexpr TensorDataType one = 1;
     const auto& z = cuda::max(zero, cuda::min(x2, one));
     if (x1 > zero) {
       dx1 = -z + 1 / (one + cuda::exp(-x1));
@@ -181,55 +181,55 @@ struct sigmoid_binary_cross_entropy_op {
 
 /** Boolean accuracy operator. */
 struct boolean_accuracy_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    const auto& b1 = x1 >= DataType(0.5);
-    const auto& b2 = x2 >= DataType(0.5);
-    return b1 == b2 ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    const auto& b1 = x1 >= TensorDataType(0.5);
+    const auto& b2 = x2 >= TensorDataType(0.5);
+    return b1 == b2 ? TensorDataType(1) : TensorDataType(0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0);
+    dx2 = TensorDataType(0);
   }
 };
 
 /** Boolean false negative operator. */
 struct boolean_false_negative_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    const auto& b1 = x1 >= DataType(0.5);
-    const auto& b2 = x2 >= DataType(0.5);
-    return (!b1 && b2) ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    const auto& b1 = x1 >= TensorDataType(0.5);
+    const auto& b2 = x2 >= TensorDataType(0.5);
+    return (!b1 && b2) ? TensorDataType(1) : TensorDataType(0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0);
+    dx2 = TensorDataType(0);
   }
 };
 
 /** Boolean false positive operator. */
 struct boolean_false_positive_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    const auto& b1 = x1 >= DataType(0.5);
-    const auto& b2 = x2 >= DataType(0.5);
-    return (b1 && !b2) ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    const auto& b1 = x1 >= TensorDataType(0.5);
+    const auto& b2 = x2 >= TensorDataType(0.5);
+    return (b1 && !b2) ? TensorDataType(1) : TensorDataType(0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0);
+    dx2 = TensorDataType(0);
   }
 };
 
@@ -241,33 +241,33 @@ struct boolean_false_positive_op {
   void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
          ::fp_compute() {                                               \
     cuda::apply_entrywise_binary_operator<op>(get_prev_activations(0),  \
-                                              get_prev_activations(1),  \
-                                              get_activations());       \
+                                             this->get_prev_activations(1),  \
+                                             this->get_activations());       \
   }                                                                     \
   template <>                                                           \
   void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
          ::bp_compute() {                                               \
     apply_binary_backprop_operator<op>(get_local_prev_activations(0),   \
-                                       get_local_prev_activations(1),   \
-                                       get_local_prev_error_signals(),  \
-                                       get_local_error_signals(0),      \
-                                       get_local_error_signals(1));     \
+                                      this->get_local_prev_activations(1),   \
+                                      this->get_local_prev_error_signals(),  \
+                                      this->get_local_error_signals(0),      \
+                                      this->get_local_error_signals(1));     \
   }                                                                     \
   template <>                                                           \
   void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
          ::fp_compute() {                                               \
     cuda::apply_entrywise_binary_operator<op>(get_prev_activations(0),  \
-                                              get_prev_activations(1),  \
-                                              get_activations());       \
+                                             this->get_prev_activations(1),  \
+                                             this->get_activations());       \
   }                                                                     \
   template <>                                                           \
   void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
   ::bp_compute() {                                                      \
     apply_binary_backprop_operator<op>(get_local_prev_activations(0),   \
-                                       get_local_prev_activations(1),   \
-                                       get_local_prev_error_signals(),  \
-                                       get_local_error_signals(0),      \
-                                       get_local_error_signals(1));     \
+                                      this->get_local_prev_activations(1),   \
+                                      this->get_local_prev_error_signals(),  \
+                                      this->get_local_error_signals(0),      \
+                                      this->get_local_error_signals(1));     \
   }                                                                     \
   BINARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
 

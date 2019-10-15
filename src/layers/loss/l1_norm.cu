@@ -34,9 +34,9 @@ namespace {
 template <El::Int block_size>
 __global__ void fp_kernel(El::Int local_height,
                           El::Int local_width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
-                          DataType* __restrict__ contribution) {
+                          TensorDataType* __restrict__ contribution) {
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -48,7 +48,7 @@ __global__ void fp_kernel(El::Int local_height,
   for (El::Int col = bidy; col < local_width; col += gridDim.y) {
 
     // Compute contributions for each thread
-    DataType private_contribution = 0;
+    TensorDataType private_contribution = 0;
     for (El::Int row = gidx; row < local_height; row += nthreadsx) {
       const auto& x = input[row + col * input_ldim];
       private_contribution += cuda::abs(x);
@@ -56,7 +56,7 @@ __global__ void fp_kernel(El::Int local_height,
 
     // Shared memory reduction to get contribution for each block
     /// @todo unroll loops
-    __shared__ DataType shared_contribution[block_size];
+    __shared__ TensorDataType shared_contribution[block_size];
     shared_contribution[tid] = private_contribution;
     for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
       __syncthreads();
@@ -93,12 +93,12 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::Abs
 
 template <El::Int block_size>
 __global__ void bp_kernel(El::Int local_height, El::Int local_width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
-                          const DataType* __restrict__ gradient_wrt_output,
-                          DataType* __restrict__ gradient_wrt_input,
+                          const TensorDataType* __restrict__ gradient_wrt_output,
+                          TensorDataType* __restrict__ gradient_wrt_input,
                           El::Int gradient_wrt_input_ldim) {
-  constexpr DataType zero = 0;
+  constexpr TensorDataType zero = 0;
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int bidy = blockIdx.y;
   const El::Int nthreadsx = blockDim.x * gridDim.x;

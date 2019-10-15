@@ -43,7 +43,7 @@ void argmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
     const auto buf_max = std::max_element(buf_start,
                                           buf_start+local_height);
     const auto max_ind = std::distance(buf_start, buf_max);
-    local_output(0, col) = static_cast<DataType>(max_ind);
+    local_output(0, col) = static_cast<TensorDataType>(max_ind);
   }
 }
 

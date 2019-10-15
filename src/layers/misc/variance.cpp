@@ -58,7 +58,7 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
   means.Resize(1, width);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    DataType sum = 0;
+    TensorDataType sum = 0;
     for (El::Int row = 0; row < local_height; ++row) {
       sum += local_input(row, col);
     }
@@ -73,7 +73,7 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& mean = local_means(0, col);
-    DataType sum = 0;
+    TensorDataType sum = 0;
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& diff = local_input(row, col) - mean;
       sum += diff * diff;
@@ -110,7 +110,7 @@ void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
   El::Copy(gradient_wrt_output, workspace);
 
   // Compute gradients w.r.t. input
-  const DataType scale = DataType(2) / (biased? height : height - 1);
+  const TensorDataType scale = TensorDataType(2) / (biased? height : height - 1);
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
@@ -130,7 +130,7 @@ template <>
 void variance_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::fp_compute() {
   fp_cpu(get_prev_activations(),
-         get_activations(),
+        this->get_activations(),
          *m_means,
          *m_workspace,
          m_biased);
@@ -140,8 +140,8 @@ template <>
 void variance_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
      ::bp_compute() {
   bp_cpu(get_prev_activations(),
-         get_prev_error_signals(),
-         get_error_signals(),
+        this->get_prev_error_signals(),
+        this->get_error_signals(),
          *m_means,
          *m_workspace,
          m_biased);
@@ -151,7 +151,7 @@ template <>
 void variance_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
      ::fp_compute() {
   fp_cpu(get_prev_activations(),
-         get_activations(),
+        this->get_activations(),
          *m_means,
          *m_workspace,
          m_biased);
@@ -161,8 +161,8 @@ template <>
 void variance_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
      ::bp_compute() {
   bp_cpu(get_prev_activations(),
-         get_prev_error_signals(),
-         get_error_signals(),
+        this->get_prev_error_signals(),
+        this->get_error_signals(),
          *m_means,
          *m_workspace,
          m_biased);

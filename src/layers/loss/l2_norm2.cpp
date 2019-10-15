@@ -35,7 +35,7 @@ void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
                   El::AbstractMatrix<TensorDataType>& local_contribution) {
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_input.Width(); ++col) {
-    DataType sum = 0;
+    TensorDataType sum = 0;
     for (El::Int row = 0; row < local_input.Height(); ++row) {
       const auto& x = local_input(row, col);
       sum += x * x;

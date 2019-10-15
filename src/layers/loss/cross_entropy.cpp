@@ -37,14 +37,14 @@ void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
                   El::AbstractMatrix<TensorDataType>& local_contribution) {
 
   // Useful constants
-  const DataType zero = DataType(0);
+  const TensorDataType zero = TensorDataType(0);
   const El::Int local_height = local_prediction.Height();
   const El::Int local_width = local_prediction.Width();
 
   // Compute local contribution to cross entropy
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    DataType sum = zero;
+    TensorDataType sum = zero;
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& xhat = local_ground_truth(row, col);
       if (xhat > zero) {
@@ -67,7 +67,7 @@ void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
 
   // Useful constants
-  const DataType zero = DataType(0);
+  const TensorDataType zero = TensorDataType(0);
   const El::Int local_height = local_prediction.Height();
   const El::Int local_width = local_prediction.Width();
 

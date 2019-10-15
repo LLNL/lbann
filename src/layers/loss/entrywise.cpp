@@ -33,8 +33,8 @@ namespace lbann {
 namespace {
 
 // Helpful constants
-constexpr DataType zero = 0;
-constexpr DataType one = 1;
+constexpr TensorDataType zero = 0;
+constexpr TensorDataType one = 1;
 
 /** Apply a binary backprop operator to CPU data.
  *  The input and output data must be on CPU and must have the same
@@ -89,18 +89,18 @@ void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1
 
 /** Binary cross entropy operator. */
 struct binary_cross_entropy_op {
-  inline DataType operator()(const DataType& x1,
-                             const DataType& x2) const {
-    DataType y = zero;
+  inline TensorDataType operator()(const TensorDataType& x1,
+                             const TensorDataType& x2) const {
+    TensorDataType y = zero;
     if (x2 > zero) { y += -x2 * std::log(x1); }
     if (x2 < one)  { y += -(one-x2) * std::log(one-x1); }
     return y;
   }
-  inline void operator()(const DataType& x1,
-                         const DataType& x2,
-                         const DataType& dy,
-                         DataType& dx1,
-                         DataType& dx2) const {
+  inline void operator()(const TensorDataType& x1,
+                         const TensorDataType& x2,
+                         const TensorDataType& dy,
+                         TensorDataType& dx1,
+                         TensorDataType& dx2) const {
     dx1 = zero;
     dx2 = zero;
     if (dy == zero) { return; }
@@ -122,8 +122,8 @@ struct binary_cross_entropy_op {
  *  https://www.tensorflow.org/api_docs/python/tf/nn/sigmoid_cross_entropy_with_logits.
  */
 struct sigmoid_binary_cross_entropy_op {
-  inline DataType operator()(const DataType& x1,
-                             const DataType& x2) const {
+  inline TensorDataType operator()(const TensorDataType& x1,
+                             const TensorDataType& x2) const {
     const auto& z = std::max(zero, std::min(x2, one));
     if (x1 > zero) {
       return (one - z) * x1 + std::log1p(std::exp(-x1));
@@ -131,11 +131,11 @@ struct sigmoid_binary_cross_entropy_op {
       return - x1 * z + std::log1p(std::exp(x1));
     }
   }
-  inline void operator()(const DataType& x1,
-                         const DataType& x2,
-                         const DataType& dy,
-                         DataType& dx1,
-                         DataType& dx2) const {
+  inline void operator()(const TensorDataType& x1,
+                         const TensorDataType& x2,
+                         const TensorDataType& dy,
+                         TensorDataType& dx1,
+                         TensorDataType& dx2) const {
     const auto& z = std::max(zero, std::min(x2, one));
     if (x1 > zero) {
       dx1 = -z + 1 / (one + std::exp(-x1));
@@ -149,17 +149,17 @@ struct sigmoid_binary_cross_entropy_op {
 
 /** Boolean accuracy operator. */
 struct boolean_accuracy_op {
-  inline DataType operator()(const DataType& x1,
-                             const DataType& x2) const {
-    const auto& b1 = x1 >= DataType(0.5);
-    const auto& b2 = x2 >= DataType(0.5);
+  inline TensorDataType operator()(const TensorDataType& x1,
+                             const TensorDataType& x2) const {
+    const auto& b1 = x1 >= TensorDataType(0.5);
+    const auto& b2 = x2 >= TensorDataType(0.5);
     return b1 == b2 ? one : zero;
   }
-  inline void operator()(const DataType& x1,
-                         const DataType& x2,
-                         const DataType& dy,
-                         DataType& dx1,
-                         DataType& dx2) const {
+  inline void operator()(const TensorDataType& x1,
+                         const TensorDataType& x2,
+                         const TensorDataType& dy,
+                         TensorDataType& dx1,
+                         TensorDataType& dx2) const {
     dx1 = zero;
     dx2 = zero;
   }
@@ -167,17 +167,17 @@ struct boolean_accuracy_op {
 
 /** Boolean false negative operator. */
 struct boolean_false_negative_op {
-  inline DataType operator()(const DataType& x1,
-                             const DataType& x2) const {
-    const auto& b1 = x1 >= DataType(0.5);
-    const auto& b2 = x2 >= DataType(0.5);
+  inline TensorDataType operator()(const TensorDataType& x1,
+                             const TensorDataType& x2) const {
+    const auto& b1 = x1 >= TensorDataType(0.5);
+    const auto& b2 = x2 >= TensorDataType(0.5);
     return (!b1 && b2) ? one : zero;
   }
-  inline void operator()(const DataType& x1,
-                         const DataType& x2,
-                         const DataType& dy,
-                         DataType& dx1,
-                         DataType& dx2) const {
+  inline void operator()(const TensorDataType& x1,
+                         const TensorDataType& x2,
+                         const TensorDataType& dy,
+                         TensorDataType& dx1,
+                         TensorDataType& dx2) const {
     dx1 = zero;
     dx2 = zero;
   }
@@ -185,17 +185,17 @@ struct boolean_false_negative_op {
 
 /** Boolean false positive operator. */
 struct boolean_false_positive_op {
-  inline DataType operator()(const DataType& x1,
-                             const DataType& x2) const {
-    const auto& b1 = x1 >= DataType(0.5);
-    const auto& b2 = x2 >= DataType(0.5);
+  inline TensorDataType operator()(const TensorDataType& x1,
+                             const TensorDataType& x2) const {
+    const auto& b1 = x1 >= TensorDataType(0.5);
+    const auto& b2 = x2 >= TensorDataType(0.5);
     return (b1 && !b2) ? one : zero;
   }
-  inline void operator()(const DataType& x1,
-                         const DataType& x2,
-                         const DataType& dy,
-                         DataType& dx1,
-                         DataType& dx2) const {
+  inline void operator()(const TensorDataType& x1,
+                         const TensorDataType& x2,
+                         const TensorDataType& dy,
+                         TensorDataType& dx1,
+                         TensorDataType& dx2) const {
     dx1 = zero;
     dx2 = zero;
   }
@@ -208,34 +208,34 @@ struct boolean_false_positive_op {
   template <>                                                           \
   void layer<data_layout::MODEL_PARALLEL, El::Device::CPU>              \
          ::fp_compute() {                                               \
-    apply_entrywise_binary_operator<op>(get_prev_activations(0),        \
-                                        get_prev_activations(1),        \
-                                        get_activations());             \
+    apply_entrywise_binary_operator<op>(this->get_prev_activations(0),        \
+                                       this->get_prev_activations(1),        \
+                                       this->get_activations());             \
   }                                                                     \
   template <>                                                           \
   void layer<data_layout::MODEL_PARALLEL, El::Device::CPU>              \
          ::bp_compute() {                                               \
     apply_binary_backprop_operator<op>(get_local_prev_activations(0),   \
-                                       get_local_prev_activations(1),   \
-                                       get_local_prev_error_signals(),  \
-                                       get_local_error_signals(0),      \
-                                       get_local_error_signals(1));     \
+                                      this->get_local_prev_activations(1),   \
+                                      this->get_local_prev_error_signals(),  \
+                                      this->get_local_error_signals(0),      \
+                                      this->get_local_error_signals(1));     \
   }                                                                     \
   template <>                                                           \
   void layer<data_layout::DATA_PARALLEL, El::Device::CPU>               \
          ::fp_compute() {                                               \
     apply_entrywise_binary_operator<op>(get_prev_activations(0),        \
-                                        get_prev_activations(1),        \
-                                        get_activations());             \
+                                       this->get_prev_activations(1),        \
+                                       this->get_activations());             \
   }                                                                     \
   template <>                                                           \
   void layer<data_layout::DATA_PARALLEL, El::Device::CPU>               \
   ::bp_compute() {                                                      \
     apply_binary_backprop_operator<op>(get_local_prev_activations(0),   \
-                                       get_local_prev_activations(1),   \
-                                       get_local_prev_error_signals(),  \
-                                       get_local_error_signals(0),      \
-                                       get_local_error_signals(1));     \
+                                      this->get_local_prev_activations(1),   \
+                                      this->get_local_prev_error_signals(),  \
+                                      this->get_local_error_signals(0),      \
+                                      this->get_local_error_signals(1));     \
   }                                                                     \
   BINARY_ETI_INST_MACRO_DEV(layer, El::Device::CPU)
 
