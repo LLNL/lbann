@@ -120,6 +120,7 @@ description embedding_layer<Layout,Device>::get_description() const {
   auto desc = Layer::get_description();
   desc.add("Num embeddings", m_num_embeddings);
   desc.add("Embedding dim", m_embedding_dim);
+  desc.add("Padding index", m_padding_idx);
   return desc;
 }
 
@@ -176,6 +177,17 @@ void embedding_layer<Layout,Device>::setup_data() {
   dict.set_dims({static_cast<int>(m_embedding_dim)},
                 {static_cast<int>(m_num_embeddings)});
   dict.set_matrix_distribution(matrix_dist);
+  dict.setup();
+
+  // Zero out embedding vector for padding index
+  if (0 <= m_padding_idx
+      && m_padding_idx < static_cast<El::Int>(m_embedding_dim)) {
+    auto& dict_values = dict.get_values();
+    std::unique_ptr<AbsDistMat> pad_embedding(dict_values.Construct(dict_values.Grid(),
+                                                                    dict_values.Root()));
+    El::View(*pad_embedding, dict_values, El::ALL, El::IR(m_padding_idx));
+    El::Zero(*pad_embedding);
+  }
 
   // Initialize gradient w.r.t. dictionary
   m_dictionary_gradient.Resize(m_embedding_dim, m_num_embeddings);

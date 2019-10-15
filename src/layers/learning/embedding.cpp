@@ -41,18 +41,22 @@ template <>
 void embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::fp_compute() {
 
   // Local data
-  const auto& local_dict = m_weights[0]->get_values().LockedMatrix();
-  const auto& local_input = get_local_prev_activations();
-  auto& local_output = get_local_activations();
+  const auto& local_dict = dynamic_cast<const CPUMat&>(m_weights[0]->get_values().LockedMatrix());
+  const auto& local_input = dynamic_cast<const CPUMat&>(get_local_prev_activations());
+  auto& local_output = dynamic_cast<CPUMat&>(get_local_activations());
   const auto& local_width = local_input.Width();
 
   // Populate output matrix with appropriate columns of dictionary
   CPUMat dict_v, output_v;
   for (El::Int col = 0; col < local_width; ++ col) {
-    const El::Int ind = static_cast<El::Int>(local_input(0, col));
-    El::LockedView(dict_v, local_dict, El::ALL, El::IR(ind));
     El::View(output_v, local_output, El::ALL, El::IR(col));
-    El::Copy(dict_v, output_v);
+    const El::Int ind = static_cast<El::Int>(std::floor(local_input(0, col)));
+    if (0 <= ind && ind < static_cast<El::Int>(m_num_embeddings)) {
+      El::LockedView(dict_v, local_dict, El::ALL, El::IR(ind));
+      El::Copy(dict_v, output_v);
+    } else {
+      El::Zero(output_v);
+    }
   }
 
 }
@@ -68,21 +72,26 @@ void embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::bp_compute() {
   auto& opt = *m_weights[0]->get_optimizer();
 
   // Local data
-  const auto& local_input = get_local_prev_activations();
-  auto& local_dict_grad = m_dictionary_gradient.Matrix();
-  const auto& local_output_grad = get_local_prev_error_signals();
+  const auto& local_input = dynamic_cast<const CPUMat&>(get_local_prev_activations());
+  auto& local_dict_grad = dynamic_cast<CPUMat&>(m_dictionary_gradient.Matrix());
+  const auto& local_output_grad = dynamic_cast<const CPUMat&>(get_local_prev_error_signals());
   const auto& local_width = local_input.Width();
   const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   const auto& mini_batch_size = c.get_effective_mini_batch_size();
 
   // Update appropriate columns of gradient w.r.t. dictionary
+  // Note: Don't update gradient for padding index
   El::Zero(local_dict_grad);
   CPUMat dict_grad_v, output_grad_v;
   for (El::Int col = 0; col < local_width; ++ col) {
-    const El::Int ind = static_cast<El::Int>(local_input(0, col));
-    El::View(dict_grad_v, local_dict_grad, El::ALL, El::IR(ind));
-    El::LockedView(output_grad_v, local_output_grad, El::ALL, El::IR(col));
-    El::Axpy(DataType{1}, output_grad_v, dict_grad_v);
+    const El::Int ind = static_cast<El::Int>(std::floor(local_input(0, col)));
+    if (0 <= ind
+        && ind < static_cast<El::Int>(m_num_embeddings)
+        && ind != m_padding_idx) {
+      El::View(dict_grad_v, local_dict_grad, El::ALL, El::IR(ind));
+      El::LockedView(output_grad_v, local_output_grad, El::ALL, El::IR(col));
+      El::Axpy(DataType{1}, output_grad_v, dict_grad_v);
+    }
   }
   opt.add_to_gradient(m_dictionary_gradient,
                       DataType{1} / mini_batch_size,

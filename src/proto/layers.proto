@@ -539,7 +539,6 @@ message Layer {
     /** If the padding index is set, then the corresponding embedding
      *  vector is initialized with zeros. The objective function
      *  gradient w.r.t. this embedding vector is always zero.
-     *  @todo Implement
      */
     google.protobuf.Int64Value padding_idx = 3;
   }

@@ -20,12 +20,12 @@ import tools
 # Data
 num_embeddings = 7
 embedding_dim = 5
-np.random.seed(4321)
+np.random.seed(20191015)
 embedding_array = np.random.normal(size=(num_embeddings,embedding_dim))
 
 # Sample access functions
 def get_sample(index):
-    np.random.seed(1234+index)
+    np.random.seed(2019101500+index)
     return [np.random.randint(num_embeddings)]
 def num_samples():
     return 41
