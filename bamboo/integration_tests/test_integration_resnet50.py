@@ -29,9 +29,7 @@ expected_train_accuracy_range = (1.5, 3.5)
 # Average mini-batch time (in sec) for each LC system
 expected_mini_batch_times = {
     'pascal': 0.25,
-    'catalyst': -1,
-    'lassen': -1,
-    'corona': -1
+    'lassen': -1
 }
 
 # ==============================================
@@ -143,7 +141,7 @@ def _test_func(cluster, weekly, executables, dir_name, compiler_name):
     # Skip test with nightly builds and on CPU systems
     if not weekly:
         pytest.skip('only run {} with weekly builds'.format(_test_name))
-    if cluster in ('catalyst', 'corona'):
+    if cluster not in ('pascal', 'lassen'):
         pytest.skip('only run {} on GPU systems'.format(_test_name))
 
     # Choose LBANN build and load Python frontend
