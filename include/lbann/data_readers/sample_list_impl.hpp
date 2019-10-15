@@ -386,7 +386,7 @@ inline void sample_list<sample_name_t>
 
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
-::all_gather_archive(const std::string &archive,
+::all_gather_archive_new(const std::string &archive,
                      std::vector<std::string>& gathered_archive,
                      lbann_comm& comm) {
 
@@ -415,7 +415,6 @@ inline void sample_list<sample_name_t>
   if (!me) {
     std::cout << "global archive size: " << g << std::endl;
   }
-
 
   for (int p=0; p<np; p++) {
     gathered_archive[p].resize(packed_sizes[p]);
