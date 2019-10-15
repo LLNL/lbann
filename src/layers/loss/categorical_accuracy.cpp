@@ -34,6 +34,7 @@ namespace lbann {
 namespace {
 
 /** CPU implementation of categorical accuracy layer forward prop. */
+template <typename TensorDataType>
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& predictions,
             const El::AbstractDistMatrix<TensorDataType>& labels,
@@ -197,26 +198,30 @@ void fp_cpu(lbann_comm& comm,
 
 } // namespace
 
-template <>
-void categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  fp_cpu(*get_comm(),
-        this->get_prev_activations(0),
-        this->get_prev_activations(1),
-        this->get_activations());
+template <typename TensorDataType>
+void fp_compute_impl(categorical_accuracy_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  fp_cpu<TensorDataType>(*l.get_comm(),
+                         l.get_prev_activations(0),
+                         l.get_prev_activations(1),
+                         l.get_activations());
 }
-template <>
-void categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  fp_cpu(*get_comm(),
-        this->get_prev_activations(0),
-        this->get_prev_activations(1),
-        this->get_activations());
+template <typename TensorDataType>
+void fp_compute_impl(categorical_accuracy_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  fp_cpu<TensorDataType>(*l.get_comm(),
+                         l.get_prev_activations(0),
+                         l.get_prev_activations(1),
+                         l.get_activations());
+}
+
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
 }
 
 template class categorical_accuracy_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class categorical_accuracy_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

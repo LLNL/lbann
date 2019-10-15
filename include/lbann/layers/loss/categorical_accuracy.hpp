@@ -63,11 +63,11 @@ public:
 
     // Check that input dimensions match
     if (this->get_input_dims(0) != this->get_input_dims(1)) {
-      const auto& parents = get_parent_layers();
+      const auto& parents = this->get_parent_layers();
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has input tensors with different dimensions (";
-      for (int i = 0; i < get_num_parents(); ++i) {
+      for (int i = 0; i < this->get_num_parents(); ++i) {
         const auto& dims = this->get_input_dims(i);
         err << (i > 0 ? ", " : "")
             << "layer \"" << parents[i]->get_name() << "\" outputs ";
@@ -87,14 +87,14 @@ public:
 
 #ifndef LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 extern template class categorical_accuracy_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class categorical_accuracy_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class categorical_accuracy_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class categorical_accuracy_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 
