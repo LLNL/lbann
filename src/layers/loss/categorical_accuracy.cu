@@ -36,6 +36,7 @@ namespace {
  *  Indices are equivalent to the global row indices of the input
  *  matrix.
  */
+template <typename TensorDataType>
 __global__ void fill_indices_kernel(El::Int local_height,
                                     El::Int local_width,
                                     El::Int col_shift,
@@ -56,7 +57,7 @@ __global__ void fill_indices_kernel(El::Int local_height,
  *  sample and it finds the largest entry. Results are output to
  *  nblocksx x width matrices.
  */
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
                                           const TensorDataType* __restrict__ values,
                                           El::Int values_row_stride,
@@ -123,6 +124,7 @@ __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
  *  Outputs one if the prediction and label indices match and
  *  otherwise outputs zero.
  */
+template <typename TensorDataType>
 __global__ void compute_accuracy_kernel(El::Int local_width,
                                         const El::Int* __restrict__ prediction_indices,
                                         const El::Int* __restrict__ label_indices,
@@ -140,6 +142,7 @@ __global__ void compute_accuracy_kernel(El::Int local_width,
 }
 
 /** GPU implementation of categorical accuracy layer forward prop. */
+template <typename TensorDataType>
 void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& predictions,
             const El::AbstractDistMatrix<TensorDataType>& labels,
@@ -179,7 +182,7 @@ void fp_gpu(lbann_comm& comm,
   cuda::thrust::vector<El::Int> full_inds(local_height * local_width);
   if (full_inds.size() > 0) {
     const El::Int grid_size = (full_inds.size() + block_size - 1) / block_size;
-    fill_indices_kernel<<<grid_size, block_size, 0, stream>>>(
+    fill_indices_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       local_height, local_width,
       predictions.ColShift(), predictions.ColStride(),
       full_inds.data().get());
@@ -190,7 +193,7 @@ void fp_gpu(lbann_comm& comm,
   if (grid_dims.x < 1) { grid_dims.x = 1; }
   cuda::thrust::vector<TensorDataType> prediction_vals(grid_dims.x * local_width);
   cuda::thrust::vector<El::Int> prediction_inds(grid_dims.x * local_width);
-  reduce_max_entries_kernel<block_size>
+  reduce_max_entries_kernel<TensorDataType, block_size>
     <<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_predictions.LockedBuffer(), 1, local_predictions.LDim(),
@@ -204,7 +207,7 @@ void fp_gpu(lbann_comm& comm,
     cuda::thrust::vector<El::Int> prev_inds(std::move(prediction_inds));
     prediction_vals.resize(grid_dims.x * local_width);
     prediction_inds.resize(grid_dims.x * local_width);
-    reduce_max_entries_kernel<block_size>
+    reduce_max_entries_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
         prev_vals.data().get(), 1, prev_height,
@@ -241,7 +244,7 @@ void fp_gpu(lbann_comm& comm,
   if (grid_dims.x < 1) { grid_dims.x = 1; }
   cuda::thrust::vector<TensorDataType> label_vals(grid_dims.x * local_width);
   cuda::thrust::vector<El::Int> label_inds(grid_dims.x * local_width);
-  reduce_max_entries_kernel<block_size>
+  reduce_max_entries_kernel<TensorDataType, block_size>
     <<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_labels.LockedBuffer(), 1, local_labels.LDim(),
@@ -255,7 +258,7 @@ void fp_gpu(lbann_comm& comm,
     cuda::thrust::vector<El::Int> prev_inds(std::move(label_inds));
     label_vals.resize(grid_dims.x * local_width);
     label_inds.resize(grid_dims.x * local_width);
-    reduce_max_entries_kernel<block_size>
+    reduce_max_entries_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
         prev_vals.data().get(), 1, prev_height,
@@ -298,7 +301,7 @@ void fp_gpu(lbann_comm& comm,
     if (grid_dims.x < 1) { grid_dims.x = 1; }
     prediction_vals.resize(grid_dims.x * local_width);
     prediction_inds.resize(grid_dims.x * local_width);
-    reduce_max_entries_kernel<block_size>
+    reduce_max_entries_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, stream>>>(
         col_comm_size, local_width,
         gathered_prediction_vals.data().get(), col_comm_size, 1,
@@ -312,7 +315,7 @@ void fp_gpu(lbann_comm& comm,
       cuda::thrust::vector<El::Int> prev_inds(std::move(prediction_inds));
       prediction_vals.resize(grid_dims.x * local_width);
       prediction_inds.resize(grid_dims.x * local_width);
-      reduce_max_entries_kernel<block_size>
+      reduce_max_entries_kernel<TensorDataType, block_size>
         <<<grid_dims, block_dims, 0, stream>>>(
           prev_height, local_width,
           prev_vals.data().get(), 1, prev_height,
@@ -330,7 +333,7 @@ void fp_gpu(lbann_comm& comm,
     if (grid_dims.x < 1) { grid_dims.x = 1; }
     label_vals.resize(grid_dims.x * local_width);
     label_inds.resize(grid_dims.x * local_width);
-    reduce_max_entries_kernel<block_size>
+    reduce_max_entries_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, stream>>>(
         col_comm_size, local_width,
         gathered_label_vals.data().get(), col_comm_size, 1,
@@ -344,7 +347,7 @@ void fp_gpu(lbann_comm& comm,
       cuda::thrust::vector<El::Int> prev_inds(std::move(label_inds));
       label_vals.resize(grid_dims.x * local_width);
       label_inds.resize(grid_dims.x * local_width);
-      reduce_max_entries_kernel<block_size>
+      reduce_max_entries_kernel<TensorDataType, block_size>
         <<<grid_dims, block_dims, 0, stream>>>(
           prev_height, local_width,
           prev_vals.data().get(), 1, prev_height,
@@ -357,7 +360,7 @@ void fp_gpu(lbann_comm& comm,
   // Compute categorical accuracy
   if (col_comm_rank == col_comm_root) {
     const El::Int grid_size = (local_width + block_size - 1) / block_size;
-    compute_accuracy_kernel<<<grid_size, block_size, 0, stream>>>(
+    compute_accuracy_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       local_width,
       prediction_inds.data().get(), label_inds.data().get(),
       local_loss.Buffer(), local_loss.LDim());
@@ -367,26 +370,24 @@ void fp_gpu(lbann_comm& comm,
 
 } // namespace
 
-template <>
-void categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(*get_comm(),
-        this->get_prev_activations(0),
-        this->get_prev_activations(1),
-        this->get_activations());
+template <typename TensorDataType>
+void fp_compute_impl(categorical_accuracy_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  fp_gpu(*l.get_comm(),
+         l.get_prev_activations(0),
+         l.get_prev_activations(1),
+         l.get_activations());
 }
-template <>
-void categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(*get_comm(),
-        this->get_prev_activations(0),
-        this->get_prev_activations(1),
-        this->get_activations());
+template <typename TensorDataType>
+void fp_compute_impl(categorical_accuracy_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  fp_gpu(*l.get_comm(),
+         l.get_prev_activations(0),
+         l.get_prev_activations(1),
+         l.get_activations());
 }
 
 template class categorical_accuracy_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class categorical_accuracy_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
