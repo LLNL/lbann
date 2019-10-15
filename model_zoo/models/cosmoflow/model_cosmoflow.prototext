@@ -1,7 +1,4 @@
 trainer {
-  block_size: 256
-  procs_per_trainer: 0
-  num_parallel_readers: 0
 }
 model {
   type: "directed_acyclic_graph_model"
