@@ -105,8 +105,6 @@ class sample_list {
   const std::string& get_samples_dirname() const;
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
-  void all_gather_archive_new(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
-
   template<typename T> size_t all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm);
   virtual void all_gather_packed_lists(lbann_comm& comm);
 
