@@ -38,58 +38,6 @@ void embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::setup_matrices
 }
 
 template <>
-void embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::setup_dims() {
-  Layer::setup_dims();
-
-  // Make sure input dimensions are valid
-  if (this->get_input_size() != 1) {
-    const auto& input_dims = this->get_input_dims();
-    std::ostringstream err;
-    err << get_type() << " layer \"" << get_name() << "\" "
-        << "recieved an input tensor with invalid dimensions "
-        << "(expected 1, got ";
-    for (size_t i = 0; i < input_dims.size(); ++i) {
-      err << (i > 0 ? "x" : "") << input_dims[i];
-    }
-    err << ")";
-    LBANN_ERROR(err.str());
-  }
-
-  // Output is size of embedding vector
-  this->set_output_dims({static_cast<int>(m_embedding_dim)});
-
-}
-
-template <>
-void embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::setup_data() {
-  Layer::setup_data();
-
-  // Make sure layer has weights for dictionary
-  if (this->m_weights.size() != 1) {
-    std::ostringstream err;
-    err << "attempted to setup "
-        << this->get_type() << " layer \"" << this->get_name() << "\" "
-        << "with an invalid number of weights "
-        << "(expected 1, "
-        << "found " << this->m_weights.size() << ")";
-    LBANN_ERROR(err.str());
-  }
-
-  // Initialize dictionary
-  auto& dict = *m_weights[0];
-  auto matrix_dist = get_prev_activations().DistData();
-  matrix_dist.colDist = El::STAR;
-  matrix_dist.rowDist = El::STAR;
-  dict.set_dims({static_cast<int>(m_embedding_dim)},
-                {static_cast<int>(m_num_embeddings)});
-  dict.set_matrix_distribution(matrix_dist);
-
-  // Initialize gradient w.r.t. dictionary
-  m_dictionary_gradient.Resize(m_embedding_dim, m_num_embeddings);
-
-}
-
-template <>
 void embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::fp_compute() {
 
   // Local data
