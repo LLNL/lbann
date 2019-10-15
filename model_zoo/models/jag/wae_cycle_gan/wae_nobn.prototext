@@ -1,5 +1,4 @@
 trainer {
-  block_size: 256
 }
 model {
   random_init_models_differently: true
