@@ -371,25 +371,25 @@ struct atanh_op {
 #define INSTANTIATE(layer, op)                                                                   \
   template <typename TensorDataType>                                                             \
   void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
-    apply_entrywise_unary_operator<op>(l.get_prev_activations(),                                 \
-                                       l.get_activations());                                     \
+    apply_entrywise_unary_operator<op<TensorDataType>>(l.get_prev_activations(),                 \
+                                                       l.get_activations());                     \
   }                                                                                              \
   template <typename TensorDataType>                                                             \
   void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
-    apply_entrywise_binary_operator<op>(l.get_prev_activations(),                                \
-                                        l.get_prev_error_signals(),                              \
-                                        l.get_error_signals());                                  \
+    apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(),                \
+                                                        l.get_prev_error_signals(),              \
+                                                        l.get_error_signals());                  \
   }                                                                                              \
   template <typename TensorDataType>                                                             \
   void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {  \
-    apply_entrywise_unary_operator<op>(l.get_prev_activations(),                                 \
-                                       l.get_activations());                                     \
+    apply_entrywise_unary_operator<op<TensorDataType>>(l.get_prev_activations(),                 \
+                                                       l.get_activations());                     \
   }                                                                                              \
   template <typename TensorDataType>                                                             \
   void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {  \
-    apply_entrywise_binary_operator<op>(l.get_prev_activations(),                                \
-                                        l.get_prev_error_signals(),                              \
-                                        l.get_error_signals());                                  \
+    apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(),                \
+                                                        l.get_prev_error_signals(),              \
+                                                        l.get_error_signals());                  \
   }                                                                                              \
   template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
   void layer<TensorDataType, Layout, Device>::fp_compute() {                                     \
