@@ -42,7 +42,6 @@ namespace lbann {
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                                              lbann_data::Trainer* pb_trainer,
                                              options *opts) {
-  bool master = comm->am_world_master();
   try {
     int procs_per_trainer = 0;
     if(pb_trainer->procs_per_trainer() > 0) {
@@ -69,11 +68,10 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     auto io_threads_per_process = io_thread_pool->get_num_threads();
     auto io_threads_offset = io_thread_pool->get_threads_offset();
 
-    // Set algorithmic blocksize
-    if (pb_trainer->block_size() == 0 and master) {
-      LBANN_ERROR("model does not provide a valid block size (", pb_trainer->block_size(), ")");
+    // Set algorithmic blocksize in Hydrogen
+    if (pb_trainer->hydrogen_block_size() > 0) {
+      El::SetBlocksize(pb_trainer->hydrogen_block_size());
     }
-    El::SetBlocksize(pb_trainer->block_size());
 
     // Set up the communicator and get the grid based on the trainers' spec.
     // We do not currently support splitting different trainers in different ways,
@@ -305,6 +303,18 @@ std::unique_ptr<model> build_model_from_prototext(
       "--------------------------------------------------------------------------------\n";
   }
 #endif
+
+  if (opts && opts->has_string("restart_dir")) {
+    bool loaded = callback::save_model::load_model_weights(
+      opts->get_string("restart_dir"),
+      ret_model.get(),
+      opts->get_bool("restart_dir_is_fullpath"));
+    if(!loaded) {
+      LBANN_ERROR("Unable to reload model from given restart directory: ",
+                  opts->get_string("restart_dir"));
+    }
+  }
+
   return ret_model;
 }
 

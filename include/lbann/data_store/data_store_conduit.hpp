@@ -129,10 +129,6 @@ class data_store_conduit {
 
   void exchange_mini_batch_data(size_t current_pos, size_t mb_size); 
 
-  void set_super_node_mode() {
-    m_super_node = true;
-  }
-
   void set_node_sizes_vary() { m_node_sizes_vary = true; }
 
   bool has_conduit_node(int data_id) const;
@@ -178,7 +174,6 @@ protected :
 
   double m_exchange_time = 0;
   double m_rebuild_time = 0;
-  double m_super_node_packaging_time = 0;
 
   int m_cur_epoch = 0;
 
@@ -196,10 +191,6 @@ protected :
   /// used consistently when computing the indices that will be sent
   /// and received.
   int m_owner_map_mb_size = 0;
-
-  /// if true, use exchange_data_by_super_node, else use
-  /// exchange_data_by_sample; default if false
-  bool m_super_node = false;
 
   /// size of a compacted conduit::Node that contains a single sample
   int m_compacted_sample_size = 0;
@@ -238,6 +229,7 @@ protected :
   /// maps data_id to conduit::Node
   mutable std::unordered_map<int, conduit::Node> m_data;
 
+  void exchange_data_by_sample(size_t current_pos, size_t mb_size);
 
   /// Contains the list of data IDs that will be received
   std::vector<int> m_recv_data_ids;

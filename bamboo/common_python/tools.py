@@ -1,4 +1,8 @@
-import math, os, re
+import math
+import os
+import re
+import sys
+import pytest
 
 
 def check_list(substrings, strings):
@@ -19,6 +23,7 @@ def get_command(cluster,
                 time_limit=None,
                 # LBANN Parameters
                 ckpt_dir=None,
+                disable_cuda=None,
                 dir_name=None,
                 data_filedir_default=None,
                 data_filedir_train_default=None,
@@ -38,6 +43,7 @@ def get_command(cluster,
                 optimizer_name=None,
                 optimizer_path=None,
                 processes_per_model=None,
+                restart_dir=None,
                 extra_lbann_flags=None,
                 # Error/Output Redirect
                 error_file_name=None,
@@ -60,7 +66,7 @@ def get_command(cluster,
         data_filename_test_default, data_reader_name, data_reader_path,
         data_reader_percent, exit_after_setup, metadata, mini_batch_size,
         model_folder, model_name, model_path, num_epochs, optimizer_name,
-        optimizer_path, processes_per_model,
+        optimizer_path, processes_per_model, restart_dir,
         # Error/Output Redirect
         error_file_name, output_file_name,
         # Misc. Parameters
@@ -214,7 +220,7 @@ def get_command(cluster,
             # Cannot specify time limit for jsrun.
             command_run = '{s}jsrun'.format(s=space)
         else:
-            command_run = '{s}mpirun --timeout={t}'.format(s=space, t=time_limit)
+            command_run = '{s}mpirun --timeout {t}'.format(s=space, t=time_limit*60)
         option_bind = ''
         option_cpu_per_resource = ''
         option_gpu_per_resource = ''
@@ -253,6 +259,7 @@ def get_command(cluster,
 
     # Create LBANN command
     option_ckpt_dir = ''
+    option_disable_cuda = ''
     option_data_filedir = ''
     option_data_filedir_train = ''
     option_data_filename_train = ''
@@ -267,6 +274,7 @@ def get_command(cluster,
     option_num_epochs = ''
     option_optimizer = ''
     option_processes_per_model = ''
+    option_restart_dir = ''
     if model_path is not None:
         # If model_folder and/or model_name are set, an exception will be
         # raised later.
@@ -394,23 +402,26 @@ def get_command(cluster,
                  '_test_default] is set, but neither data_reader_name or'
                  ' data_reader_path are.'))
         # else: no conflicts
-    if data_reader_percent is not None:
-        # If data_reader_percent is not None, then it will override `weekly`.
-        # If it is None however, we choose its value based on `weekly`.
-        try:
-            data_reader_percent = float(data_reader_percent)
+    if data_reader_percent != "prototext":
+        if data_reader_percent is not None:
 
-        except ValueError:
-            lbann_errors.append(
-                'data_reader_percent={d} is not a float.'.format(
-                    d=data_reader_percent))
-    elif weekly:
-        data_reader_percent = 1.00
-    else:
-        # Nightly
-        data_reader_percent = 0.10
-    option_data_reader_percent = ' --data_reader_percent={d}'.format(
-        d=data_reader_percent)
+            # If data_reader_percent is not None, then it will override `weekly`.
+            # If it is None however, we choose its value based on `weekly`.
+            try:
+                data_reader_percent = float(data_reader_percent)
+
+            except ValueError:
+                lbann_errors.append(
+                    'data_reader_percent={d} is not a float.'.format(
+                        d=data_reader_percent))
+        elif weekly:
+            data_reader_percent = 1.00
+        else:
+            # Nightly
+            data_reader_percent = 0.10
+        option_data_reader_percent = ' --data_reader_percent={d}'.format(
+            d=data_reader_percent)
+    # else: use the data reader's value
     if exit_after_setup:
         option_exit_after_setup = ' --exit_after_setup'
     if metadata is not None:
@@ -423,6 +434,10 @@ def get_command(cluster,
         option_processes_per_model = ' --procs_per_model=%d' % processes_per_model
     if ckpt_dir is not None:
         option_ckpt_dir = ' --ckpt_dir=%s' % ckpt_dir
+    if restart_dir is not None:
+        option_restart_dir = ' --restart_dir=%s' % restart_dir
+    if disable_cuda is not None:
+        option_disable_cuda = ' --disable_cuda=%d' % int(bool(disable_cuda))
     extra_options = ''
     if extra_lbann_flags is not None:
         # If extra_lbann_flags is not a dict, then we have already appended
@@ -440,14 +455,13 @@ def get_command(cluster,
                 # General:
                 # 'mini_batch_size',
                 # 'num_epochs',
-                'block_size',
+                'hydrogen_block_size',
                 'procs_per_trainer',
-                'num_gpus',
                 'num_parallel_readers',
                 'num_io_threads',
                 'serialize_io',
                 'disable_background_io_activity',
-                'disable_cuda',
+                #'disable_cuda',
                 'random_seed',
                 'objective_function',
                 'data_layout',
@@ -458,6 +472,8 @@ def get_command(cluster,
                 'write_sample_list',
                 'ltfb_verbose',
                 'ckpt_dir',
+                #'restart_dir',
+                'restart_dir_is_fullpath',
 
                 # DataReaders:
                 # 'data_filedir',
@@ -494,14 +510,15 @@ def get_command(cluster,
     if lbann_errors != []:
         print('lbann_errors={lbann_errors}.'.format(lbann_errors=lbann_errors))
         raise Exception('Invalid Usage: ' + ' , '.join(lbann_errors))
-    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
-        executable, option_ckpt_dir, option_data_filedir,
+    command_lbann = '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' % (
+        executable, option_ckpt_dir, option_disable_cuda,
+        option_data_filedir,
         option_data_filedir_train, option_data_filename_train,
         option_data_filedir_test, option_data_filename_test,
         option_data_reader, option_data_reader_percent,
         option_exit_after_setup, option_metadata, option_mini_batch_size,
         option_model, option_num_epochs, option_optimizer,
-        option_processes_per_model, extra_options)
+        option_processes_per_model, option_restart_dir, extra_options)
 
     # Create redirect command
     command_output = ''
@@ -580,7 +597,7 @@ def get_default_exes(default_dirname, cluster):
 
     default_exes = {}
     default_exes['default'] = '%s/build/gnu.Release.%s.llnl.gov/install/bin/lbann' % (default_dirname, cluster)
-    if cluster in ['catalyst', 'corona', 'lassen', 'pascal']:
+    if cluster in ['catalyst', 'corona', 'lassen', 'pascal', 'ray']:
         # Define all compilers.
         # x86_cpu - catalyst
         # x86_gpu_pascal - pascal
@@ -643,3 +660,158 @@ def assert_failure(return_code, expected_error, error_file_name):
         'return_code={rc}\nFailed with error different than expected.\nactual_error={ae}\nexpected_error={ee}\nSee {efn}'.format(
             rc=return_code, ae=actual_error, ee=expected_error,
             efn=error_file_name))
+
+
+def create_tests(setup_func, test_name):
+    """Create functions that can interact with PyTest.
+
+    This function creates tests that involve setting up and running an
+    LBANN experiment with the Python frontend. `setup_func` should be
+    a function that takes in the LBANN Python module and outputs
+    objects for an LBANN experiment. A test succeeds if LBANN runs and
+    exits with an exit code of 0, and fails otherwise.
+
+    PyTest detects tests by loading in a Python script and looking for
+    functions prefixed with 'test_'. After you call this function
+    within a script to generate test functions, make sure to add the
+    test functions to the script's scope. For example:
+
+        _test_funcs = tools.create_tests(setup_func, test_name)
+        for t in _test_funcs:
+            globals()[t.__name__] = t
+
+    Args:
+        setup_func (function): Sets up an LBANN experiment using the
+            Python frontend. It takes in the LBANN Python module as
+            input and returns a `(lbann.Trainer, lbann.Model,
+            lbann.reader_pb2.DataReader, lbann.Optimizer)`.
+        test_name (str): Descriptive name. Should be prefixed with
+            'test_'.
+
+    Returns:
+        Iterable of function: Tests that can interact with PyTest.
+
+    """
+
+    # Basic test function
+    def test_func(cluster, executables, dir_name, compiler_name):
+        process_executable(test_name, compiler_name, executables)
+
+        # Choose LBANN build and load Python frontend
+        if compiler_name == 'exe':
+            exe = executables[compiler_name]
+            bin_dir = os.path.dirname(exe)
+            install_dir = os.path.dirname(bin_dir)
+            build_path = '{i}/lib/python3.7/site-packages'.format(i=install_dir)
+        else:
+            if compiler_name == 'clang6':
+                path = 'clang.Release'
+            elif compiler_name == 'clang6_debug':
+                path = 'clang.Debug'
+            elif compiler_name == 'gcc7':
+                path = 'gnu.Release'
+            elif compiler_name == 'clang6_debug':
+                path = 'gnu.Debug'
+            elif compiler_name == 'intel19':
+                path = 'intel.Release'
+            elif compiler_name == 'intel19_debug':
+                path = 'intel.Debug'
+            path = '{p}.{c}.llnl.gov'.format(p=path, c=cluster)
+            build_path = '{d}/build/{p}/install/lib/python3.7/site-packages'.format(
+                d=dir_name, p=path)
+        print('build_path={b}'.format(b=build_path))
+        sys.path.append(build_path)
+        import lbann
+        import lbann.contrib.lc.launcher
+
+        # Setup LBANN experiment
+        trainer, model, data_reader, optimizer = setup_func(lbann)
+
+        # Run LBANN experiment
+        kwargs = {
+            'nodes': 1,
+            'overwrite_script': True
+        }
+        experiment_dir = '{d}/bamboo/unit_tests/experiments/{t}_{c}'.format(
+            d=dir_name, t=test_name, c=compiler_name)
+        error_file_name = '{e}/err.log'.format(
+            e=experiment_dir, c=compiler_name)
+        return_code = lbann.contrib.lc.launcher.run(
+            trainer=trainer,
+            model=model,
+            data_reader=data_reader,
+            optimizer=optimizer,
+            experiment_dir=experiment_dir,
+            job_name='lbann_{}'.format(test_name),
+            **kwargs)
+        assert_success(return_code, error_file_name)
+
+    # Specific test functions for different build configurations
+    def test_func_exe(cluster, dirname, exe):
+        if exe is None:
+            e = 'test_{}_exe: Non-local testing'.format(test_name)
+            print('Skip - ' + e)
+            pytest.skip(e)
+        exes = {'exe': exe}
+        test_func(cluster, exes, dirname, 'exe')
+    def test_func_clang6(cluster, exes, dirname):
+        test_func(cluster, exes, dirname, 'clang6')
+    def test_func_gcc7(cluster, exes, dirname):
+        test_func(cluster, exes, dirname, 'gcc7')
+    def test_func_intel19(cluster, exes, dirname):
+        test_func(cluster, exes, dirname, 'intel19')
+    test_func_exe.__name__ = '{}_exe'.format(test_name)
+    test_func_clang6.__name__ = '{}_clang6'.format(test_name)
+    test_func_gcc7.__name__ = '{}_gcc7'.format(test_name)
+    test_func_intel19.__name__ = '{}_intel19'.format(test_name)
+
+    return (test_func_exe,
+            test_func_clang6,
+            test_func_gcc7,
+            test_func_intel19)
+
+
+def create_python_data_reader(lbann,
+                              file_name,
+                              sample_function_name,
+                              num_samples_function_name,
+                              sample_dims_function_name,
+                              execution_mode):
+    """Create protobuf message for Python data reader.
+
+    A Python data reader gets data by importing a Python module and
+    calling functions in its scope.
+
+    Args:
+        lbann (module): Module for LBANN Python frontend.
+        file_name (str): Python file.
+        sample_function_name (str): Function to get a data sample. It
+            takes one integer argument for the sample index and
+            returns an `Iterator` of `float`s.
+        sample_dims_function_name (str): Function to get dimensions of
+            a data sample. It takes no arguments and returns a
+            `(int,)`.
+        num_samples_function_name (str): Function to get number of
+            data samples in data set. It takes no arguments and
+            returns an `int`.
+        execution_mode (str): 'train', 'validation', or 'test'
+
+    """
+
+    # Extract paths
+    file_name = os.path.realpath(file_name)
+    dir_name = os.path.dirname(file_name)
+    module_name = os.path.splitext(os.path.basename(file_name))[0]
+
+    # Construct protobuf message for data reader
+    reader = lbann.reader_pb2.Reader()
+    reader.name = 'python'
+    reader.role = execution_mode
+    reader.percent_of_data_to_use = 1.0
+    reader.python.module = module_name
+    reader.python.module_dir = dir_name
+    reader.python.sample_function = sample_function_name
+    reader.python.num_samples_function = num_samples_function_name
+    reader.python.sample_dims_function = sample_dims_function_name
+
+    return reader

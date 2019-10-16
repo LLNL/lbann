@@ -1,5 +1,4 @@
 trainer {
-  block_size: 256
 }
 model {
   objective_function {

@@ -46,7 +46,7 @@ void numpy_conduit_converter::load_conduit_node(const std::string filename, int 
     for (auto &&t : a) {
       cnpy::NpyArray &b = t.second;
       if (b.shape[0] != 1) {
-        LBANN_ERROR("lbann currently only supports one sample per npz file; this file appears to contain " + std::to_string(b.shape[0]) + " samples");
+        LBANN_ERROR("lbann currently only supports one sample per npz file; this file appears to contain " + std::to_string(b.shape[0]) + " samples; (", filename);
       }
       output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/word_size"] = b.word_size;
       output[LBANN_DATA_ID_STR(data_id) + "/" + t.first + "/fortran_order"] = b.fortran_order;
