@@ -36,7 +36,7 @@ namespace lbann {
 /** @brief Combine two hash values
  *
  *  A hash function is applied to an object and the resulting hash
- *  value is "mixed" with another hash value. See
+ *  value is mixed with another hash value. See
  *  https://www.boost.org/doc/libs/1_55_0/doc/html/hash/reference.html#boost.hash_combine.
  *
  *  @param seed     Hash value.
