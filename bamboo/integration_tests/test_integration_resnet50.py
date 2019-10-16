@@ -24,12 +24,13 @@ mini_batch_size = 256
 num_nodes = 4
 
 # Top-5 classificaiton accuracy
-expected_train_accuracy_range = (1.5, 3.5)
+expected_train_accuracy_range = (68, 72)
+expected_test_accuracy_range = (72, 76)
 
 # Average mini-batch time (in sec) for each LC system
 expected_mini_batch_times = {
     'pascal': 0.25,
-    'lassen': -1
+    'lassen': 0.10,
 }
 
 # ==============================================
@@ -124,6 +125,9 @@ def construct_data_reader(lbann):
     message.reader[1].data_filedir = lbann.contrib.lc.paths.imagenet_dir(data_set='val')
     message.reader[1].data_filename = lbann.contrib.lc.paths.imagenet_labels(data_set='val')
 
+    # Only evaluate on ImageNet validation set at end of training
+    message.reader[1].role = 'test'
+
     return message
 
 # ==============================================
@@ -195,23 +199,32 @@ def _test_func(cluster, weekly, executables, dir_name, compiler_name):
     tools.assert_success(return_code, stderr_file_name)
 
     # Parse LBANN log file
-    train_accuracies = []
+    train_accuracy = None
+    test_accuracy = None
     mini_batch_times = []
     with open(stdout_file_name) as f:
         for line in f:
             match = re.search('training epoch [0-9]+ top-5 accuracy : ([0-9.]+)%', line)
             if match:
-                train_accuracies.append(float(match.group(1)))
+                train_accuracy = float(match.group(1))
+            match = re.search('test top-5 accuracy : ([0-9.]+)%', line)
+            if match:
+                test_accuracy = float(match.group(1))
             match = re.search('training epoch [0-9]+ mini-batch time statistics : ([0-9.]+)s mean', line)
             if match:
                 mini_batch_times.append(float(match.group(1)))
 
     # Check if training accuracy is within expected range
-    train_accuracy = train_accuracies[-1]
     assert (expected_train_accuracy_range[0]
             < train_accuracy
             < expected_train_accuracy_range[1]), \
             'train accuracy is outside expected range'
+
+    # Check if testing accuracy is within expected range
+    assert (expected_test_accuracy_range[0]
+            < test_accuracy
+            < expected_test_accuracy_range[1]), \
+            'test accuracy is outside expected range'
 
     # Check if mini-batch time is within expected range
     # Note: Skip first epoch since its runtime is usually an outlier

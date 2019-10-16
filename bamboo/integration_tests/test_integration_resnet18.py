@@ -31,8 +31,8 @@ expected_train_accuracy_range = (1.5, 3.5)
 expected_mini_batch_times = {
     'pascal': 0.15,
     'catalyst': 6.0,
-    'lassen': -1,
-    'corona': 28.5
+    'lassen': 0.055,
+    'corona': 28.5,
 }
 
 # ==============================================
