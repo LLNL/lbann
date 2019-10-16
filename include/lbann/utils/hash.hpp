@@ -59,7 +59,7 @@ struct enum_hash {
   = typename std::conditional<std::is_enum<T>::value,
                               typename std::underlying_type<T>::type,
                               T>::type;
-  std::size_t operator()(T val) {
+  std::size_t operator()(T val) const {
     return std::hash<underlying_t>()(static_cast<underlying_t>(val));
   }
 };
@@ -70,7 +70,7 @@ template <class T1,
           class Hash1=std::hash<T1>,
           class Hash2=std::hash<T2>>
 struct pair_hash {
-  std::size_t operator()(const std::pair<T1,T2>& val) {
+  std::size_t operator()(const std::pair<T1,T2>& val) const {
     auto seed = Hash1()(val.first);
     return hash_combine<T2,Hash2>(seed, val.second);
   }
