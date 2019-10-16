@@ -30,6 +30,7 @@
 #define LBANN_DATA_READER_NUMPY_NPZ_CONDUIT_HPP
 
 #include "lbann/data_readers/data_reader.hpp"
+#include "conduit/conduit.hpp"
 #include <cnpy.h>
 
 namespace lbann {
@@ -110,6 +111,10 @@ class numpy_npz_conduit_reader : public generic_data_reader {
     bool load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int>& label_classes); 
 
     void load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset = true);
+
+    std::unordered_map<int, std::map<std::string, cnpy::NpyArray>> m_npz_cache;
+
+    void load_npz(const std::string filename, int data_id, conduit::Node &node);
 
 };
 
