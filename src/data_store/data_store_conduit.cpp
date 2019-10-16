@@ -209,7 +209,6 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   m_outgoing_msg_sizes = rhs.m_outgoing_msg_sizes;
   m_incoming_msg_sizes = rhs.m_incoming_msg_sizes;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
-  m_reconstituted = rhs.m_reconstituted;
   m_indices_to_send = rhs.m_indices_to_send;
   m_indices_to_recv = rhs.m_indices_to_recv;
 }
@@ -248,7 +247,6 @@ void data_store_conduit::setup_data_store_buffers() {
   m_outgoing_msg_sizes.resize(m_np_in_trainer);
   m_incoming_msg_sizes.resize(m_np_in_trainer);
   m_recv_buffer.resize(m_np_in_trainer);
-  m_reconstituted.resize(m_np_in_trainer);
 }
 
 void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &node) {
@@ -1291,7 +1289,6 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
   m_preload = false;
   m_explicit_loading = true;
   m_owner_map_mb_size = 0;
-  m_super_node = true;
   m_compacted_sample_size = 0;
   m_node_sizes_vary = true;
 
@@ -1390,7 +1387,6 @@ void data_store_conduit::spill_to_file(std::string dir_name) {
             CEREAL_NVP(m_preload), 
             CEREAL_NVP(m_explicit_loading),
             CEREAL_NVP(m_owner_map_mb_size), 
-            CEREAL_NVP(m_super_node),
             CEREAL_NVP(m_compacted_sample_size), 
             CEREAL_NVP(m_is_local_cache),
             CEREAL_NVP(m_node_sizes_vary), 
@@ -1418,7 +1414,7 @@ void data_store_conduit::load_from_file(std::string dir_name, generic_data_reade
   cereal::XMLInputArchive iarchive(in);
   iarchive(m_cur_epoch, m_is_setup,
            m_preload, m_explicit_loading,
-           m_owner_map_mb_size, m_super_node,
+           m_owner_map_mb_size,
            m_compacted_sample_size, m_is_local_cache,
            m_node_sizes_vary, m_have_sample_sizes,
            m_owner, m_sample_sizes);
@@ -1476,7 +1472,6 @@ void data_store_conduit::print_variables() {
             << "m_preload: " << m_preload << std::endl
             << "m_explicit_loading: " << m_explicit_loading << std::endl
             << "m_owner_map_mb_size: " << m_owner_map_mb_size << std::endl
-            << "m_super_node: " << m_super_node << std::endl
             << "m_compacted_sample_size: " << m_compacted_sample_size << std::endl
             << "m_node_sizes_vary: " << m_node_sizes_vary << std::endl;
 }

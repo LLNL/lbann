@@ -229,8 +229,6 @@ protected :
   /// maps data_id to conduit::Node
   mutable std::unordered_map<int, conduit::Node> m_data;
 
-  void exchange_data_by_sample(size_t current_pos, size_t mb_size);
-
   /// Contains the list of data IDs that will be received
   std::vector<int> m_recv_data_ids;
   std::unordered_map<int, int> m_recv_sample_sizes;
@@ -247,10 +245,6 @@ protected :
   std::vector<conduit::Node> m_recv_buffer;
   std::vector<size_t> m_outgoing_msg_sizes;
   std::vector<size_t> m_incoming_msg_sizes;
-
-  /// used in exchange_data_by_super_node(); contains the super_nodes,
-  /// after they have been converted from compacted format
-  std::vector<conduit::Node> m_reconstituted;
 
   /// for use when conduit Nodes have non-uniform size, e.g, imagenet
   std::unordered_map<int, size_t> m_sample_sizes;
@@ -272,7 +266,6 @@ protected :
   // methods follow 
   //=========================================================================
 
-  void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
 
   void setup_data_store_buffers();
@@ -283,8 +276,7 @@ protected :
   /// fills in m_owner, which maps index -> owning processor
   void exchange_owner_maps();
 
-  /// for use when conduit Nodes have non-uniform size, e.g, imagenet,
-  /// and when running in non-super_node mode
+  /// for use when conduit Nodes have non-uniform size, e.g, imagenet
   void exchange_sample_sizes();
 
   /// fills in m_indices_to_send and returns the number of samples
