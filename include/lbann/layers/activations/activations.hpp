@@ -35,10 +35,8 @@ namespace lbann {
 
 #ifndef LBANN_ACTIVATIONS_LAYER_INSTANTIATE
 #define UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, DEVICE)               \
-  extern template class entrywise_unary_layer<                     \
-    data_layout::DATA_PARALLEL, DEVICE, LAYER_NAME##_name_struct>; \
-  extern template class entrywise_unary_layer<                     \
-    data_layout::MODEL_PARALLEL, DEVICE, LAYER_NAME##_name_struct>
+  extern template class LAYER_NAME<data_layout::DATA_PARALLEL, DEVICE>; \
+  extern template class LAYER_NAME<data_layout::MODEL_PARALLEL, DEVICE>
 #else
 #define UNARY_ETI_DECL_MACRO_DEV(...)
 #endif // LBANN_UNARY_LAYER_INSTANTIATE
@@ -54,12 +52,7 @@ namespace lbann {
 
 // Convenience macro to define an entry-wise unary layer class
 #define DEFINE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string)          \
-  struct layer_name##_name_struct {                                     \
-    inline operator std::string() { return layer_string; }              \
-  };                                                                    \
-  template <data_layout Layout, El::Device Device>                      \
-  using layer_name                                                      \
-  = entrywise_unary_layer<Layout, Device, layer_name##_name_struct>;    \
+  LBANN_DECLARE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string);        \
   UNARY_ETI_DECL_MACRO(layer_name)
 
 /** @class lbann::log_sigmoid_layer
