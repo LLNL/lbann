@@ -25,7 +25,7 @@ num_nodes = 4
 
 # Top-5 classificaiton accuracy
 expected_train_accuracy_range = (68, 72)
-expected_test_accuracy_range = (72, 76)
+expected_test_accuracy_range = (70, 76)
 
 # Average mini-batch time (in sec) for each LC system
 expected_mini_batch_times = {
