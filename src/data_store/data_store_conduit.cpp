@@ -32,6 +32,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include <unordered_set>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -40,6 +41,10 @@
 #include <unistd.h>
 #include <unistd.h>
 #include <sys/statvfs.h>
+
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
+
 
 namespace lbann {
 
@@ -55,6 +60,7 @@ data_store_conduit::data_store_conduit(
   m_world_master = m_comm->am_world_master();
   m_trainer_master = m_comm->am_trainer_master();
   m_rank_in_trainer = m_comm->get_rank_in_trainer();
+  m_rank_in_world = m_comm->get_rank_in_world();
   m_np_in_trainer = m_comm->get_procs_per_trainer();
 
   options *opts = options::get();
@@ -65,21 +71,20 @@ data_store_conduit::data_store_conduit(
     m_output = new std::ofstream(ss.str().c_str());
     m_debug_filename = ss.str();
     if (m_world_master) {
-      std::cerr << "opened " << ss.str() << " for writing\n";
+      std::cout << "opened " << ss.str() << " for writing\n";
     }
   }
 
   m_is_local_cache = opts->get_bool("data_store_cache");
-  m_preload = opts->get_bool("preload_data_store");
-  if (m_is_local_cache && !m_preload) {
+  if (m_is_local_cache && !opts->get_bool("preload_data_store")) {
     LBANN_ERROR("data_store_cache is currently only implemented for preload mode; this will change in the future. For now, pleas pass both flags: data_store_cache and --preload_data_store");
   }
 
   if (m_world_master) {
     if (m_is_local_cache) {
-      std::cerr << "data_store_conduit is running in local_cache mode\n";
+      std::cout << "data_store_conduit is running in local_cache mode\n";
     } else {
-      std::cerr << "data_store_conduit is running in multi-message mode\n";
+      std::cout << "data_store_conduit is running in multi-message mode\n";
     }
   }
 }
@@ -91,11 +96,11 @@ data_store_conduit::~data_store_conduit() {
   if (m_is_local_cache && m_mem_seg) {
     int sanity = shm_unlink(m_seg_name.c_str());
     if (sanity != 0) {
-      std::cerr << "\nWARNING: shm_unlink failed in data_store_conduit::~data_store_conduit()\n";
+      std::cout << "\nWARNING: shm_unlink failed in data_store_conduit::~data_store_conduit()\n";
     }
     sanity = munmap(reinterpret_cast<void*>(m_mem_seg), m_mem_seg_length);
     if (sanity != 0) {
-      std::cerr << "\nWARNING: munmap failed in data_store_conduit::~data_store_conduit()\n";
+      std::cout << "\nWARNING: munmap failed in data_store_conduit::~data_store_conduit()\n";
     }
   }
 }
@@ -125,7 +130,7 @@ void data_store_conduit::set_data_reader_ptr(generic_data_reader *reader) {
     m_output = new std::ofstream(ss.str().c_str());
     m_debug_filename = ss.str();
     if (m_world_master) {
-      std::cerr << "data_store_conduit::set_data_reader_ptr; opened " << ss.str() << " for writing\n";
+      std::cout << "data_store_conduit::set_data_reader_ptr; opened " << ss.str() << " for writing\n";
     }
   }
 }
@@ -204,18 +209,17 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   m_outgoing_msg_sizes = rhs.m_outgoing_msg_sizes;
   m_incoming_msg_sizes = rhs.m_incoming_msg_sizes;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
-  m_reconstituted = rhs.m_reconstituted;
   m_indices_to_send = rhs.m_indices_to_send;
   m_indices_to_recv = rhs.m_indices_to_recv;
 }
 
 void data_store_conduit::setup(int mini_batch_size) {
   if (m_world_master) {
-    std::cerr << "starting data_store_conduit::setup() for role: " << m_reader->get_role() << "\n";
+    std::cout << "starting data_store_conduit::setup() for role: " << m_reader->get_role() << "\n";
     if (m_is_local_cache) {
-      std::cerr << "data store mode: local cache\n";
+      std::cout << "data store mode: local cache\n";
     } else {
-      std::cerr << "data store mode: exchange_data via individual samples\n";
+      std::cout << "data store mode: exchange_data via individual samples\n";
     }
   }
 
@@ -229,8 +233,9 @@ void data_store_conduit::setup(int mini_batch_size) {
   }
 
   if (m_world_master) {
-    std::cerr << "TIME for data_store_conduit setup: " << get_time() - tm1 << "\n";
+    std::cout << "TIME for data_store_conduit setup: " << get_time() - tm1 << "\n";
   }
+
 }
 
 void data_store_conduit::setup_data_store_buffers() {
@@ -242,16 +247,15 @@ void data_store_conduit::setup_data_store_buffers() {
   m_outgoing_msg_sizes.resize(m_np_in_trainer);
   m_incoming_msg_sizes.resize(m_np_in_trainer);
   m_recv_buffer.resize(m_np_in_trainer);
-  m_reconstituted.resize(m_np_in_trainer);
 }
 
-void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &node) {
+void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::Node &node) {
   // note: at this point m_data[data_id] = node
   if (m_output) {
     (*m_output) << "set_preloaded_conduit_node: " << data_id << std::endl;
   }
-  conduit::Node n2 = node;
   m_mutex.lock();
+  conduit::Node n2 = node;
   build_node_for_sending(n2, m_data[data_id]);
   m_mutex.unlock();
   if (!m_node_sizes_vary) {
@@ -296,17 +300,21 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   if (m_is_local_cache && m_preload) {
     LBANN_ERROR("you called data_store_conduit::set_conduit_node, but you're running in local cache mode with preloading; something is broken; please contact Dave Hysom");
   }
-  //m_mutex.lock();
+
+  m_mutex.lock();
   if (already_have == false && m_data.find(data_id) != m_data.end()) {
+    m_mutex.unlock();
     LBANN_ERROR("duplicate data_id: ", data_id, " in data_store_conduit::set_conduit_node; role: ", m_reader->get_role());
   }
-
+  m_mutex.unlock();
 
   if (already_have && is_local_cache()) {
+    m_mutex.lock();
     if (m_data.find(data_id) == m_data.end()) {
+      m_mutex.unlock();
       LBANN_ERROR("you claim the passed node was obtained from this data_store, but the data_id (", data_id, ") doesn't exist in m_data");
     }
-    //m_mutex.unlock();
+    m_mutex.unlock();
     return;
   }
 
@@ -330,21 +338,7 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
   if (m_output) {
     (*m_output) << "get_conduit_node: " << data_id << std::endl;
   }
-  /**
-   * dah: commenting this out since it gives a false positive for test
-   *      case with unshuffled indices. Since we currently send samples
-   *      to ourselves, they should be in m_minibatch_data. The following
-   *      block is only useful if, at some future time, we do not send
-   *      indices to ourself
-  std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
-  if (t != m_data.end()) {
-    if(m_super_node) {
-      return t->second;
-    } else {
-      return t->second["data"];
-    }
-  }
-  */
+
   if (is_local_cache()) {
     std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
     if (t3 == m_data.end()) {
@@ -597,7 +591,7 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
 
 #if 0
 void data_store_conduit::build_owner_map(int mini_batch_size) {
-  if (m_world_master) std::cerr << "starting data_store_conduit::build_owner_map for role: " << m_reader->get_role() << " with mini_batch_size: " << mini_batch_size << " num indices: " << m_shuffled_indices->size() << "\n";
+  if (m_world_master) std::cout << "starting data_store_conduit::build_owner_map for role: " << m_reader->get_role() << " with mini_batch_size: " << mini_batch_size << " num indices: " << m_shuffled_indices->size() << "\n";
   if (mini_batch_size == 0) {
     LBANN_ERROR("mini_batch_size == 0; can't build owner_map");
   }
@@ -804,7 +798,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
     double mem_this_proc = bytes_per_sample * my_sample_count;
     double mem_this_node = mem_this_proc * procs_per_node;
 
-    std::cerr
+    std::cout
       << "\n"
       << "==============================================================\n"
       << "Estimated memory requirements for JAG samples:\n"
@@ -815,12 +809,12 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
       << "Total mem for all ranks on a node: " << mem_this_node << " kB\n"
       << "Available memory: " << a_mem << " kB (RAM only; not virtual)\n";
     if (mem_this_node > static_cast<double>(a_mem)) {
-      std::cerr << "\nYOU DO NOT HAVE ENOUGH MEMORY\n"
+      std::cout << "\nYOU DO NOT HAVE ENOUGH MEMORY\n"
         << "==============================================================\n\n";
       LBANN_ERROR("insufficient memory to load data\n");
     } else {
       double m = 100 * mem_this_node / a_mem;
-      std::cerr << "Estimate that data will consume at least " << m << " % of memory\n"
+      std::cout << "Estimate that data will consume at least " << m << " % of memory\n"
         << "==============================================================\n\n";
     }
   }
@@ -893,8 +887,18 @@ void data_store_conduit::exchange_sample_sizes() {
   m_have_sample_sizes = true;
 }
 
-void data_store_conduit::set_preload() {
+void data_store_conduit::set_is_preloaded() {
+if (m_world_master) std::cout << "starting data_store_conduit::set_is_preloaded(); m_preload: " << m_preload << std::endl;
+  //this should be called by generic_data_reader, however, it may also
+  //be called by callbacks/ltfb.cpp
+  if (m_preload) {
+    return;
+  }
   m_preload = true;
+  if (options::get()->has_string("data_store_test_checkpoint")) {
+    std::string dir = options::get()->get_string("data_store_test_checkpoint");
+    test_checkpoint(dir);
+  }
 }
 
 void data_store_conduit::get_image_sizes(std::unordered_map<int,size_t> &file_sizes, std::vector<std::vector<int>> &indices) {
@@ -991,7 +995,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
       << "  available mem: " << avail_mem << "\n"
       << "  required size is " << percent << " percent of available\n";
   if (m_world_master) {
-    std::cerr << "\nShared memory segment statistics:\n"
+    std::cout << "\nShared memory segment statistics:\n"
               << msg.str() << "\n";
   }
   if (m_mem_seg_length >= avail_mem) {
@@ -1063,39 +1067,39 @@ void data_store_conduit::preload_local_cache() {
   std::vector<std::vector<int>> indices;
 
   double tm1 = get_time();
-  if (m_world_master) std::cerr << "calling get_image_sizes" << std::endl;
+  if (m_world_master) std::cout << "calling get_image_sizes" << std::endl;
   get_image_sizes(file_sizes, indices);
-  if (m_world_master) std::cerr << "  get_image_sizes time: " << (get_time()-tm1) << std::endl;
+  if (m_world_master) std::cout << "  get_image_sizes time: " << (get_time()-tm1) << std::endl;
   tm1 = get_time();
   //indices[j] contains the indices (wrt m_reader->get_image_list())
   //that P_j will read from disk, and subsequently bcast to all others
   //
   //file_sizes maps an index to its file size
 
-  if (m_world_master) std::cerr << "calling allocate_shared_segment" << std::endl;
+  if (m_world_master) std::cout << "calling allocate_shared_segment" << std::endl;
   allocate_shared_segment(file_sizes, indices);
-  if (m_world_master) std::cerr << "  allocate_shared_segment time: " << (get_time()-tm1) << std::endl;
+  if (m_world_master) std::cout << "  allocate_shared_segment time: " << (get_time()-tm1) << std::endl;
   tm1 = get_time();
 
-  if (m_world_master) std::cerr << "calling read_files" << std::endl;
+  if (m_world_master) std::cout << "calling read_files" << std::endl;
   std::vector<char> work;
   read_files(work, file_sizes, indices[m_rank_in_trainer]);
-  if (m_world_master) std::cerr << "  read_files time: " << (get_time()- tm1) << std::endl;
+  if (m_world_master) std::cout << "  read_files time: " << (get_time()- tm1) << std::endl;
   tm1 = get_time();
 
-  if (m_world_master) std::cerr << "calling compute_image_offsets" << std::endl;
+  if (m_world_master) std::cout << "calling compute_image_offsets" << std::endl;
   compute_image_offsets(file_sizes, indices);
-  if (m_world_master) std::cerr << "  compute_image_offsets time: " << (get_time()-tm1) << std::endl;
+  if (m_world_master) std::cout << "  compute_image_offsets time: " << (get_time()-tm1) << std::endl;
   tm1 = get_time();
 
-  if (m_world_master) std::cerr << "calling exchange_images" << std::endl;
+  if (m_world_master) std::cout << "calling exchange_images" << std::endl;
   exchange_images(work, file_sizes, indices);
-  if (m_world_master) std::cerr << "  exchange_images time: " << (get_time()-tm1) << std::endl;
+  if (m_world_master) std::cout << "  exchange_images time: " << (get_time()-tm1) << std::endl;
   tm1 = get_time();
 
-  if (m_world_master) std::cerr << "calling build_conduit_nodes" << std::endl;
+  if (m_world_master) std::cout << "calling build_conduit_nodes" << std::endl;
   build_conduit_nodes(file_sizes);
-  if (m_world_master) std::cerr << "  build_conduit_nodes time: " << (get_time()-tm1) << std::endl;
+  if (m_world_master) std::cout << "  build_conduit_nodes time: " << (get_time()-tm1) << std::endl;
 }
 
 void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,size_t> &sizes, std::vector<int> &indices) {
@@ -1117,7 +1121,7 @@ void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<
 
   //read the images
   size_t offset = 0;
-  if (m_world_master) std::cerr << "  my num files: " << indices.size() << std::endl;
+  if (m_world_master) std::cout << "  my num files: " << indices.size() << std::endl;
   for (size_t j=0; j<indices.size(); ++j) {
     int idx = indices[j];
     size_t s = sizes[idx];
@@ -1127,7 +1131,7 @@ void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<
     in.close();
     offset += s;
   }
-  if (m_world_master) std::cerr << "  finished reading files\n";
+  if (m_world_master) std::cout << "  finished reading files\n";
 }
 
 void data_store_conduit::build_conduit_nodes(std::unordered_map<int,size_t> &sizes) {
@@ -1260,5 +1264,227 @@ size_t data_store_conduit::get_num_indices() const {
   return n;
 }
 
+void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
+  if (m_world_master) {
+    std::cout << "starting data_store_conduit::test_checkpoint\n"
+              << "here is part of the owner map; m_owner.size(): " << m_owner.size() << std::endl;
+    size_t j = 0;
+    for (auto t : m_owner) {
+      ++j;
+      std::cout << "  sample_id: " << t.first << " owner: " << t.second << std::endl;
+      if (j >= 10) break;
+    }
+    print_variables();
+    std::cout << "\nCalling spill_to_file(testme_xyz)" << std::endl;
+  }
+  spill_to_file(checkpoint_dir);
+
+  std::unordered_map<int,int> sanity = m_owner;
+  m_owner.clear();
+  m_sample_sizes.clear();
+  m_data.clear();
+  m_cur_epoch = -1;
+  m_is_setup = false;
+  m_preload = false;
+  m_explicit_loading = true;
+  m_owner_map_mb_size = 0;
+  m_compacted_sample_size = 0;
+  m_node_sizes_vary = true;
+
+  if (m_world_master) {
+    print_variables();
+  }
+
+
+  if (m_world_master) {
+    std::cout << "Cleared the owner map; m_owner.size() = " << m_owner.size() << std::endl
+              << "Calling load_from_file" << std::endl;
+  }
+  load_from_file(checkpoint_dir, nullptr);
+  if (m_world_master) {
+    std::cout << "Here is part of the re-loaded owner map; map.size(): " << m_owner.size() << std::endl;
+    size_t j = 0;
+    for (auto t : m_owner) {
+      ++j;
+      std::cout << "  sample_id: " << t.first << " owner: " << t.second << std::endl;
+      if (j >= 10) break;
+    }
+    print_variables();
+  }
+
+  for (auto t : m_owner) {
+    if (sanity.find(t.first) == sanity.end()) {
+      LBANN_ERROR("sanity.find(t.first) == sanity.end() for t.first= ", t.first);
+    } else if (sanity[t.first] != m_owner[t.first]) {
+      LBANN_ERROR("sanity[t.first] != m_owner[t.first] for t.first= ", t.first, " and m_owner[t.first]= ", m_owner[t.first]);
+    }
+  }
+
+  m_comm->global_barrier();
+}
+
+void data_store_conduit::spill_to_file(std::string dir_name) {
+  const std::string conduit_dir = get_conduit_dir_name(dir_name);
+  int node_rank = m_comm->get_rank_in_node();
+  if (node_rank == 0) {
+    bool exists = file::directory_exists(dir_name);
+    if (!exists) {
+      if (m_world_master) {
+        std::cout << "data_store_conduit::spill_to_file; the directory '" << dir_name << "' doesn't exist; creating it\n";
+      }
+      file::make_directory(dir_name);
+    } 
+
+    exists = file::directory_exists(conduit_dir);
+    if (!exists) {
+      file::make_directory(conduit_dir);
+    }
+  }
+  m_comm->trainer_barrier();
+
+  const std::string metadata_fn = get_metadata_fn(dir_name);
+  std::ofstream metadata(metadata_fn);
+  if (!metadata) {
+    LBANN_ERROR("failed to open ", metadata_fn, " for writing");
+  }
+
+  //TODO should have two levels of directory to ensure
+  //     there's not too many files in any directory
+  metadata << conduit_dir << "\n";
+  int cur_dir = -1;
+  int num_files = m_max_files_per_directory;
+  const std::string my_conduit_dir = conduit_dir + "/conduit_" + std::to_string(m_rank_in_world);
+  std::string cur_dir_name;
+  for (auto t : m_data) {
+    if (num_files == m_max_files_per_directory) {
+      num_files = 0;
+      cur_dir += 1;
+      cur_dir_name = conduit_dir + "/" + to_string(cur_dir);
+      bool exists = file::directory_exists(cur_dir_name);
+      if (!exists) {
+        file::make_directory(cur_dir_name);
+      }
+    }
+
+    const std::string f = cur_dir_name + '/' + std::to_string(t.first);
+    t.second.save(cur_dir_name + '/' + std::to_string(t.first));
+    metadata << cur_dir << "/" << t.first << " " << t.first << std::endl;
+  }
+  metadata.close();
+
+  // checkpoint remaining state using cereal
+  const std::string fn = get_cereal_fn(dir_name);
+  std::ofstream os(fn);
+  if (!os) {
+    LBANN_ERROR("failed to open ", fn, " for writing");
+  }
+
+  {
+  cereal::XMLOutputArchive archive(os);
+    archive(CEREAL_NVP(m_cur_epoch), 
+            CEREAL_NVP(m_is_setup),
+            CEREAL_NVP(m_preload), 
+            CEREAL_NVP(m_explicit_loading),
+            CEREAL_NVP(m_owner_map_mb_size), 
+            CEREAL_NVP(m_compacted_sample_size), 
+            CEREAL_NVP(m_is_local_cache),
+            CEREAL_NVP(m_node_sizes_vary), 
+            CEREAL_NVP(m_have_sample_sizes),
+            CEREAL_NVP(m_owner),
+            CEREAL_NVP(m_sample_sizes));
+  }
+  os.close();
+}
+
+void data_store_conduit::load_from_file(std::string dir_name, generic_data_reader *reader) {
+  if (m_world_master) std::cout << "starting data_store_conduit::load_from_file" << std::endl;
+
+  bool exists = file::directory_exists(dir_name);
+  if (!exists) {
+    LBANN_ERROR("cannot load data_store from file, since the specified directory ", dir_name, "doesn't exist");
+  }
+
+  const std::string fn = get_cereal_fn(dir_name);
+  std::ifstream in(fn);
+  if (!in) {
+    LBANN_ERROR("failed to open ", m_cereal_fn, " for reading");
+  }
+
+  cereal::XMLInputArchive iarchive(in);
+  iarchive(m_cur_epoch, m_is_setup,
+           m_preload, m_explicit_loading,
+           m_owner_map_mb_size,
+           m_compacted_sample_size, m_is_local_cache,
+           m_node_sizes_vary, m_have_sample_sizes,
+           m_owner, m_sample_sizes);
+
+  if (reader != nullptr) {
+    m_reader = reader;
+    m_comm = m_reader->get_comm();
+    m_shuffled_indices = &(m_reader->get_shuffled_indices());
+    m_world_master = m_comm->am_world_master();
+    m_trainer_master = m_comm->am_trainer_master();
+    m_rank_in_trainer = m_comm->get_rank_in_trainer();
+    m_rank_in_world = m_comm->get_rank_in_world();
+    m_np_in_trainer = m_comm->get_procs_per_trainer();
+  }  
+
+  const std::string metadata_fn = get_metadata_fn(dir_name);
+  std::ifstream metadata(metadata_fn);
+  if (!metadata) {
+    LBANN_ERROR("failed to open ", metadata_fn, " for reading");
+  }
+
+  std::string base_dir;
+  getline(metadata, base_dir);
+  std::string tmp;
+  int sample_id;
+  while (metadata >> tmp >> sample_id) {
+    if (tmp.size() > 2) {
+      const std::string fn2 = base_dir + "/" + tmp;
+      conduit::Node nd;
+      nd.load(fn2);
+
+      // if you're wondering why we're doing the following, see the
+      // note in copy_members: "Repack the nodes ..."
+      conduit::Node n2;
+      const std::vector<std::string> &names = nd["data"].child_names();
+      const std::vector<std::string> &names2 = nd["data"][names[0]].child_names();
+      for (auto t : names2) {
+        n2[names[0]][t] = nd["data"][names[0]][t];
+      }
+      build_node_for_sending(n2, m_data[sample_id]);
+      build_node_for_sending(nd["data"], m_data[sample_id]);
+    }
+  }
+  metadata.close();
+
+  m_was_loaded_from_file = true;
+}
+
+void data_store_conduit::print_variables() {
+  if (!m_world_master) {
+    return;
+  }
+  std::cout << "m_cur_epoch: " << m_cur_epoch << std::endl
+            << "m_is_setup: " << m_is_setup << std::endl
+            << "m_preload: " << m_preload << std::endl
+            << "m_explicit_loading: " << m_explicit_loading << std::endl
+            << "m_owner_map_mb_size: " << m_owner_map_mb_size << std::endl
+            << "m_compacted_sample_size: " << m_compacted_sample_size << std::endl
+            << "m_node_sizes_vary: " << m_node_sizes_vary << std::endl;
+}
+
+std::string data_store_conduit::get_conduit_dir_name(const std::string& dir_name) const {
+  return dir_name + "/conduit_" + std::to_string(m_rank_in_world);
+}
+
+std::string data_store_conduit::get_metadata_fn(const std::string& dir_name) const {
+  return dir_name + "/metadata_" + std::to_string(m_rank_in_world);
+}
+
+std::string data_store_conduit::get_cereal_fn(const std::string& dir_name) const {
+  return dir_name + '/' + m_cereal_fn + "_" + std::to_string(m_rank_in_world); 
+}
 
 }  // namespace lbann

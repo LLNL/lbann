@@ -142,7 +142,6 @@ void numpy_npz_conduit_reader::preload_data_store() {
     LBANN_ERROR("numpy_npz_conduit_reader currently assumes you are using 100% of the data set; you specified get_absolute_sample_count() = ", count, " and get_use_percent() = ", use_percent, "; please ask Dave Hysom to modify the code, if you want to use less than 100%");
   }
 
-  m_data_store->set_preload();
   int rank = m_comm->get_rank_in_trainer();
 
   std::unordered_set<int> label_classes;
