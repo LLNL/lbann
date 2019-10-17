@@ -1,4 +1,5 @@
 import functools
+import math
 import operator
 import os
 import os.path
@@ -17,12 +18,32 @@ import tools
 # Note: The Python data reader imports this file as a module and calls
 # the functions below to ingest data.
 
+def make_random_array(shape, seed):
+    """Hacked function to generate a random array.
+
+    NumPy's RNG produces different values with different NumPy
+    versions. This function is helpful when array values must be
+    identical across all runs, e.g. when checking against precomputed
+    metric values.
+
+    Args:
+        shape (Iterable of int): Array dimensions
+        seed (int): Parameter for RNG. Must be non-zero.
+    Returns:
+        numpy.ndarray: Array of `np.float32`. Values will be in
+            [-0.5,0.5).
+
+    """
+    size = functools.reduce(operator.mul, shape)
+    eps = np.finfo(np.float32).eps
+    x = (seed / np.linspace(math.sqrt(eps), 0.1, size)) % 1 - 0.5
+    return x.reshape(shape).astype(np.float32)
+
 # Data
-np.random.seed(20191014)
-_samples = np.random.normal(size=(23,6,11,7)).astype(np.float32)
-_num_samples = _samples.shape[0]
-_sample_dims = _samples.shape[1:]
+_num_samples = 23
+_sample_dims = [6,11,7]
 _sample_size = functools.reduce(operator.mul, _sample_dims)
+_samples = make_random_array([_num_samples] + _sample_dims, 7)
 
 # Sample access functions
 def get_sample(index):
@@ -33,7 +54,7 @@ def sample_dims():
     return (_sample_size,)
 
 # ==============================================
-# PyTorch implementation
+# PyTorch convolution
 # ==============================================
 
 def pytorch_convolution(data,
@@ -110,7 +131,7 @@ def construct_model(lbann):
 
     # Convenience function to compute L2 norm squared with NumPy
     def l2_norm2(x):
-        x = x.reshape(-1)
+        x = x.reshape(-1).astype(np.float64)
         return np.inner(x, x)
 
     # Input data
@@ -140,8 +161,8 @@ def construct_model(lbann):
     strides = (1, 1)
     pads = (1, 1)
     dilations = (1, 1)
-    kernel = np.random.normal(size=kernel_dims).astype(np.float32)
-    bias = np.random.normal(size=kernel_dims[0]).astype(np.float32)
+    kernel = make_random_array(kernel_dims, 11)
+    bias = make_random_array([kernel_dims[0]], 123)
 
     # Apply convolution
     kernel_weights = lbann.Weights(
@@ -180,7 +201,7 @@ def construct_model(lbann):
         val = z
     except:
         # Precomputed value
-        val = 16563.404296221477
+        val = 153.84937996554953
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
@@ -199,7 +220,7 @@ def construct_model(lbann):
     pads = (3, 0)
     dilations = (1, 1)
     num_groups = 1
-    kernel = np.random.normal(size=kernel_dims).astype(np.float32)
+    kernel = make_random_array(kernel_dims, 19)
 
     # Apply convolution
     kernel_weights = lbann.Weights(
@@ -235,7 +256,7 @@ def construct_model(lbann):
         val = z
     except:
         # Precomputed value
-        val = 2244.2759732448058
+        val = 19.24587403346207
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
