@@ -249,13 +249,14 @@ void data_store_conduit::setup_data_store_buffers() {
   m_recv_buffer.resize(m_np_in_trainer);
 }
 
-void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &node) {
+void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::Node &node) {
   // note: at this point m_data[data_id] = node
   if (m_output) {
     (*m_output) << "set_preloaded_conduit_node: " << data_id << std::endl;
   }
   m_mutex.lock();
-  build_node_for_sending(node, m_data[data_id]);
+  conduit::Node n2 = node;
+  build_node_for_sending(n2, m_data[data_id]);
   m_mutex.unlock();
   if (!m_node_sizes_vary) {
     error_check_compacted_node(m_data[data_id], data_id);
