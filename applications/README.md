@@ -27,9 +27,9 @@ The general structure of a project directory should be:
 └─── README.md
 └─── <app>.py
 └─── lib_<app>.py
-│   └─── experiments
-│   └───   └─── run_<app>.py
-│   └─── utils
+└─── experiments
+      └─── run_<app>.py
+└─── utils
 
 ```
 
