@@ -254,9 +254,8 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &
   if (m_output) {
     (*m_output) << "set_preloaded_conduit_node: " << data_id << std::endl;
   }
-  conduit::Node n2 = node;
   m_mutex.lock();
-  build_node_for_sending(n2, m_data[data_id]);
+  build_node_for_sending(node, m_data[data_id]);
   m_mutex.unlock();
   if (!m_node_sizes_vary) {
     error_check_compacted_node(m_data[data_id], data_id);
@@ -307,7 +306,6 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
     LBANN_ERROR("duplicate data_id: ", data_id, " in data_store_conduit::set_conduit_node; role: ", m_reader->get_role());
   }
   m_mutex.unlock();
-
 
   if (already_have && is_local_cache()) {
     m_mutex.lock();
