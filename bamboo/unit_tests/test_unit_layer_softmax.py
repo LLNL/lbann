@@ -4,7 +4,6 @@ import os
 import os.path
 import sys
 import numpy as np
-import scipy.special
 
 # Local files
 current_file = os.path.realpath(__file__)
@@ -31,6 +30,20 @@ def num_samples():
     return _num_samples
 def sample_dims():
     return (_sample_size,)
+
+# ==============================================
+# NumPy softmax
+# ==============================================
+
+def numpy_softmax(x):
+    """NumPy implementation of softmax.
+
+    There is an implementation in SciPy 1.2.0 (scipy.special.softmax).
+
+    """
+    x = x.astype(np.float64)
+    y = np.exp(x - np.max(x))
+    return y / np.sum(y)
 
 # ==============================================
 # Setup LBANN experiment
@@ -63,7 +76,7 @@ def construct_model(lbann):
 
     # Convenience function to compute L2 norm squared with NumPy
     def l2_norm2(x):
-        x = x.reshape(-1)
+        x = x.reshape(-1).astype(np.float64)
         return np.inner(x, x)
 
     # Input data
@@ -92,11 +105,11 @@ def construct_model(lbann):
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel output'))
 
-    # SciPy implementation
+    # NumPy implementation
     vals = []
     for i in range(num_samples()):
         x = get_sample(i)
-        y = scipy.special.softmax(x)
+        y = numpy_softmax(x)
         z = l2_norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -123,7 +136,7 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i)
-        y = scipy.special.softmax(x)
+        y = numpy_softmax(x)
         z = l2_norm2(y)
         vals.append(z)
     val = np.mean(vals)
