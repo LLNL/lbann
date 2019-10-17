@@ -103,23 +103,28 @@ def make_batch_script(script_file=None,
     environment = environment.copy()
 
     # Setup GPU bindings
-    # Note: Hydrogen processes take ownership of the GPU indices that
-    # matches their node communicator ranks. mpibind assigns each rank
-    # a unique GPU with index 0, so it should be disabled. Processes
-    # may touch the wrong GPUs in the process of figuring out GPU
-    # ownership, so an exclusive GPU compute mode causes problems.
+    # Note: Each Hydrogen process is assigned to the GPU index that
+    # matches its node communicator rank. This is not compatible with
+    # mpibind, which assigns a GPU with index 0 to each process. We
+    # can't use an exclusive GPU compute mode since processes may
+    # touch the wrong GPU while figuring out ownership.
     if scheduler == 'slurm' and has_gpu(system):
         launcher_args.extend(['--mpibind=off',
                               '--nvidia_compute_mode=default'])
 
     # Deal with Pascal's hardware topology
-    # Note: Both GPUs on a Pascal node are on the same socket, so we
-    # only use cores on that socket.
-    if system == 'pascal' and procs_per_node == 2:
+    # Note: Both GPUs are on socket 0, so we only use cores on that
+    # socket.
+    if system == 'pascal':
+        cores_per_proc = (cores_per_node(system) // 2) // procs_per_node
+        environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_node
+        environment['OMP_NUM_THREADS'] = cores_per_proc - 1
         if scheduler == 'slurm':
-            launcher_args.append('--cpu_bind=mask_cpu:0x000001ff,0x0003fe00')
-        environment['OMP_NUM_THREADS'] = 8
-        environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
+            masks = [2**cores_per_proc - 1]
+            while len(masks) < procs_per_node:
+                masks.append(masks[-1] << cores_per_proc)
+            mask_str = ','.join([hex(mask) for mask in masks])
+            launcher_args.append('--cpu_bind=mask_cpu:{}'.format(mask_str))
 
     # Hacked bugfix for MPI_Init in MVAPICH2-2.3
     # Note: MPI_Init hangs when started with more than 35
@@ -127,21 +132,23 @@ def make_batch_script(script_file=None,
     # present in MVAPICH2-2.3rc2.
     environment['MV2_USE_RDMA_CM'] = 0
 
-    # Magic default arguments to jsrun/etc.
-    # Note: Pack processes using ten cores for each, with 40 cores total, and
-    # all four GPUs visible to each process.
+    # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen'):
-        if scheduler == 'lsf':
-            launcher_args.extend([
-                '--launch_distribution packed',
-                '--bind "packed:10"',
-                '--rs_per_host 1',
-                '--cpu_per_rs 40',
-                '--gpu_per_rs 4'
-            ])
-        environment['OMP_NUM_THREADS'] = 4
-        # Deal with topology mis-identification on Sierra/Lassen.
-        environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = 2
+
+        # Deal with hardware topology
+        # Note: The default thread affinity is incorrect since hwloc
+        # treats GPUs as NUMA domains.
+        cores_per_socket = cores_per_node(system) // 2
+        procs_per_socket = (procs_per_node + 1) // 2
+        cores_per_proc = cores_per_socket // procs_per_socket
+        environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_socket
+        environment['OMP_NUM_THREADS'] = cores_per_proc - 1
+
+        # Hack to enable process forking
+        # Note: OpenMPI and InfiniBand sometimes fail if an MPI
+        # process is forked. See
+        # https://www.open-mpi.org/faq/?category=openfabrics#ofa-fork.
+        environment['IBV_FORK_SAFE'] = 1
 
     return lbann.launcher.make_batch_script(script_file=script_file,
                                             work_dir=work_dir,
