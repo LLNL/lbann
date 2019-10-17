@@ -31,38 +31,54 @@
 
 namespace lbann {
 
-/** @brief Templated class for entry-wise unary layers.
- *  @param Layout   Parallelism scheme.
- *  @param Device   Device allocation.
- *  @param Name     Type that can be converted into a string.
- */
-template <data_layout Layout, El::Device Device, typename Name>
-class entrywise_unary_layer : public Layer {
-public:
-  entrywise_unary_layer(lbann_comm *comm) : Layer(comm) {}
-  entrywise_unary_layer* copy() const override {
-    return new entrywise_unary_layer<Layout,Device,Name>(*this);
+
+#define LBANN_DECLARE_ENTRYWISE_UNARY_LAYER(LAYER_NAME, LAYER_STRING)   \
+  template <data_layout Layout, El::Device Device>                      \
+  class LAYER_NAME : public Layer {                                     \
+  public:                                                               \
+  LAYER_NAME(lbann_comm *comm) : Layer(comm) {}                         \
+    LAYER_NAME* copy() const override {                                 \
+      return new LAYER_NAME<Layout,Device>(*this);                      \
+    }                                                                   \
+    std::string get_type() const override { return LAYER_STRING; }      \
+    data_layout get_data_layout() const override { return Layout; }     \
+    El::Device get_device_allocation() const override { return Device; } \
+  protected:                                                            \
+    void setup_dims() override {                                        \
+      Layer::setup_dims();                                              \
+      set_output_dims(get_input_dims());                                \
+    }                                                                   \
+    void fp_compute() override;                                         \
+    void bp_compute() override;                                         \
   }
-  std::string get_type() const override { return Name(); }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
-protected:
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
-  }
-  void fp_compute() override;
-  void bp_compute() override;
-};
+
+// Convenience macros for ETI decls for unary layers
+
+#ifndef LBANN_UNARY_LAYER_INSTANTIATE
+#define UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, DEVICE)                    \
+  extern template class LAYER_NAME<data_layout::DATA_PARALLEL, DEVICE>; \
+  extern template class LAYER_NAME<data_layout::MODEL_PARALLEL, DEVICE>
+#else
+#define UNARY_ETI_DECL_MACRO_DEV(...)
+#endif // LBANN_UNARY_LAYER_INSTANTIATE
+
+#define UNARY_ETI_INST_MACRO_DEV(LAYER_NAME, DEVICE)               \
+  template class LAYER_NAME<data_layout::DATA_PARALLEL, DEVICE>;   \
+  template class LAYER_NAME<data_layout::MODEL_PARALLEL, DEVICE>
+
+#ifdef LBANN_HAS_GPU
+#define UNARY_ETI_DECL_MACRO(LAYER_NAME)                       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU);       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::GPU)
+#else
+#define UNARY_ETI_DECL_MACRO(LAYER_NAME)                       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU)
+#endif // LBANN_HAS_GPU
 
 // Convenience macro to define an entry-wise unary layer class
-#define DEFINE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string)          \
-  struct layer_name##_name_struct {                                     \
-    inline operator std::string() { return layer_string; }              \
-  };                                                                    \
-  template <data_layout Layout, El::Device Device>                      \
-  using layer_name                                                      \
-  = entrywise_unary_layer<Layout, Device, layer_name##_name_struct>;
+#define DEFINE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string)    \
+  LBANN_DECLARE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string);        \
+  UNARY_ETI_DECL_MACRO(layer_name)
 
 // Logical operations
 DEFINE_ENTRYWISE_UNARY_LAYER(logical_not_layer, "logical not");
@@ -109,4 +125,7 @@ DEFINE_ENTRYWISE_UNARY_LAYER(atanh_layer, "hyperbolic arctangent");
 } // namespace lbann
 
 #undef DEFINE_ENTRYWISE_UNARY_LAYER
+#undef UNARY_ETI_DECL_MACRO
+#undef UNARY_ETI_DECL_MACRO_DEV
+
 #endif // LBANN_LAYERS_MATH_UNARY_HPP_INCLUDED

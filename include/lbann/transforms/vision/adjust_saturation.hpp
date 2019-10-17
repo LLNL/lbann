@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -51,7 +53,7 @@ public:
       LBANN_ERROR("Saturation factor must be non-negative.");
     }
   }
-  
+
   transform* copy() const override { return new adjust_saturation(*this); }
 
   std::string get_type() const override { return "adjust_saturation"; }
@@ -62,6 +64,10 @@ private:
   /** Factor to adjust saturation by. */
   float m_factor;
 };
+
+
+std::unique_ptr<transform>
+build_adjust_saturation_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

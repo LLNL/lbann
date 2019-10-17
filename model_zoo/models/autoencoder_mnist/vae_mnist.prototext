@@ -1,9 +1,10 @@
 # LBANN implementation of MNIST VAE in Doersch's autoencoder tutorial
 # See https://github.com/cdoersch/vae_tutorial/blob/master/mnist_vae.prototxt
+trainer {
+}
 model {
   data_layout: "data_parallel"
   mini_batch_size: 100
-  block_size: 256
   num_epochs: 50
 
   ##############################################

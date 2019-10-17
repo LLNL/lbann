@@ -5,66 +5,63 @@ data_reader {
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/"
     data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/labels/train.txt"
-    validation_percent: 0.01
     percent_of_data_to_use: 1.0
-    image_preprocessor {
-      cropper {
-        crop_randomly: true
-        crop_width: 224
-        crop_height: 224
-        resized_width: 256
-        resized_height: 256
-      }
-      augmenter {
-        horizontal_flip: true
-      }
-      colorizer {
-      }
-      subtractor {
-        disable: true
-        image_to_sub: "mean-256x256x3-6.bin"
-      }
-      normalizer {
-        z_score: true
+    num_labels: 1000
+    transforms {
+      random_resized_crop {
+        height: 224
+        width: 224
       }
     }
-    num_labels: 1000
+    transforms {
+      horizontal_flip {
+        p: 0.5
+      }
+    }
+    transforms {
+      colorize {
+      }
+    }
+    transforms {
+      normalize_to_lbann_layout {
+        means: "0.406 0.456 0.485"
+        stddevs: "0.225 0.224 0.229"
+      }
+    }
   }
   reader {
     name: "imagenet"
-    role: "test"
+    role: "validate"
     shuffle: true
     data_filedir: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/"
     data_filename: "/p/lscratchh/brainusr/datasets/ILSVRC2012/original/labels/val.txt"
     percent_of_data_to_use: 1.0
-    image_preprocessor {
-      cropper {
-        crop_width: 224
+    num_labels: 1000
+    transforms {
+      resized_center_crop {
+        height: 256
+        width: 256
         crop_height: 224
-        resized_width: 256
-        resized_height: 256
-      }
-      augmenter {
-        disable: true
-      }
-      colorizer {
-      }
-      subtractor {
-        disable: true
-        image_to_sub: "mean-256x256x3-6.bin"
-      }
-      normalizer {
-        z_score: true
+        crop_width: 224
       }
     }
-    num_labels: 1000
+    transforms {
+      colorize {
+      }
+    }
+    transforms {
+      normalize_to_lbann_layout {
+        means: "0.406 0.456 0.485"
+        stddevs: "0.225 0.224 0.229"
+      }
+    }
   }
 }
 model {
   objective_function {
     layer_term {
       scale_factor: 1.0
-      layer: "layer434"
+      layer: "layer435"
     }
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -72,33 +69,30 @@ model {
   }
   metric {
     layer_metric {
-      layer: "layer435"
+      layer: "layer436"
       name: "top-1 accuracy"
       unit: "%"
     }
   }
   metric {
     layer_metric {
-      layer: "layer436"
+      layer: "layer437"
       name: "top-5 accuracy"
       unit: "%"
     }
   }
   mini_batch_size: 256
   num_epochs: 90
-  block_size: 256
   layer {
     name: "layer1"
     children: "layer2 layer3"
-    data_layout: "data_parallel"
     input {
     }
   }
   layer {
     name: "layer3"
     parents: "layer1"
-    children: "layer434 layer435 layer436"
-    data_layout: "data_parallel"
+    children: "layer435 layer436 layer437"
     identity {
     }
   }
@@ -106,7 +100,6 @@ model {
     name: "layer2"
     parents: "layer1"
     children: "layer4"
-    data_layout: "data_parallel"
     identity {
     }
   }
@@ -114,7 +107,6 @@ model {
     name: "layer4"
     parents: "layer2"
     children: "layer5"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 64
@@ -127,18 +119,17 @@ model {
     name: "layer5"
     parents: "layer4"
     children: "layer6"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer6"
     parents: "layer5"
     children: "layer7"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -146,7 +137,6 @@ model {
     name: "layer7"
     parents: "layer6"
     children: "layer8 layer15 layer22 layer29 layer36 layer43 layer50"
-    data_layout: "data_parallel"
     pooling {
       num_dims: 2
       pool_dims_i: 3
@@ -159,7 +149,6 @@ model {
     name: "layer8"
     parents: "layer7"
     children: "layer9"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -167,18 +156,17 @@ model {
     name: "layer9"
     parents: "layer8"
     children: "layer10"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer10"
     parents: "layer9"
     children: "layer11"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -186,7 +174,6 @@ model {
     name: "layer11"
     parents: "layer10"
     children: "layer12"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -198,18 +185,17 @@ model {
     name: "layer12"
     parents: "layer11"
     children: "layer13"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer13"
     parents: "layer12"
     children: "layer14"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -217,7 +203,6 @@ model {
     name: "layer14"
     parents: "layer13"
     children: "layer15 layer22 layer29 layer36 layer43 layer50"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -230,7 +215,6 @@ model {
     name: "layer15"
     parents: "layer7 layer14"
     children: "layer16"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -238,18 +222,17 @@ model {
     name: "layer16"
     parents: "layer15"
     children: "layer17"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer17"
     parents: "layer16"
     children: "layer18"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -257,7 +240,6 @@ model {
     name: "layer18"
     parents: "layer17"
     children: "layer19"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -269,18 +251,17 @@ model {
     name: "layer19"
     parents: "layer18"
     children: "layer20"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer20"
     parents: "layer19"
     children: "layer21"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -288,7 +269,6 @@ model {
     name: "layer21"
     parents: "layer20"
     children: "layer22 layer29 layer36 layer43 layer50"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -301,7 +281,6 @@ model {
     name: "layer22"
     parents: "layer7 layer14 layer21"
     children: "layer23"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -309,18 +288,17 @@ model {
     name: "layer23"
     parents: "layer22"
     children: "layer24"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer24"
     parents: "layer23"
     children: "layer25"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -328,7 +306,6 @@ model {
     name: "layer25"
     parents: "layer24"
     children: "layer26"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -340,18 +317,17 @@ model {
     name: "layer26"
     parents: "layer25"
     children: "layer27"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer27"
     parents: "layer26"
     children: "layer28"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -359,7 +335,6 @@ model {
     name: "layer28"
     parents: "layer27"
     children: "layer29 layer36 layer43 layer50"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -372,7 +347,6 @@ model {
     name: "layer29"
     parents: "layer7 layer14 layer21 layer28"
     children: "layer30"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -380,18 +354,17 @@ model {
     name: "layer30"
     parents: "layer29"
     children: "layer31"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer31"
     parents: "layer30"
     children: "layer32"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -399,7 +372,6 @@ model {
     name: "layer32"
     parents: "layer31"
     children: "layer33"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -411,18 +383,17 @@ model {
     name: "layer33"
     parents: "layer32"
     children: "layer34"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer34"
     parents: "layer33"
     children: "layer35"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -430,7 +401,6 @@ model {
     name: "layer35"
     parents: "layer34"
     children: "layer36 layer43 layer50"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -443,7 +413,6 @@ model {
     name: "layer36"
     parents: "layer7 layer14 layer21 layer28 layer35"
     children: "layer37"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -451,18 +420,17 @@ model {
     name: "layer37"
     parents: "layer36"
     children: "layer38"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer38"
     parents: "layer37"
     children: "layer39"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -470,7 +438,6 @@ model {
     name: "layer39"
     parents: "layer38"
     children: "layer40"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -482,18 +449,17 @@ model {
     name: "layer40"
     parents: "layer39"
     children: "layer41"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer41"
     parents: "layer40"
     children: "layer42"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -501,7 +467,6 @@ model {
     name: "layer42"
     parents: "layer41"
     children: "layer43 layer50"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -514,7 +479,6 @@ model {
     name: "layer43"
     parents: "layer7 layer14 layer21 layer28 layer35 layer42"
     children: "layer44"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -522,18 +486,17 @@ model {
     name: "layer44"
     parents: "layer43"
     children: "layer45"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer45"
     parents: "layer44"
     children: "layer46"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -541,7 +504,6 @@ model {
     name: "layer46"
     parents: "layer45"
     children: "layer47"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -553,18 +515,17 @@ model {
     name: "layer47"
     parents: "layer46"
     children: "layer48"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer48"
     parents: "layer47"
     children: "layer49"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -572,7 +533,6 @@ model {
     name: "layer49"
     parents: "layer48"
     children: "layer50"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -585,7 +545,6 @@ model {
     name: "layer50"
     parents: "layer7 layer14 layer21 layer28 layer35 layer42 layer49"
     children: "layer51"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -593,18 +552,17 @@ model {
     name: "layer51"
     parents: "layer50"
     children: "layer52"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer52"
     parents: "layer51"
     children: "layer53"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -612,7 +570,6 @@ model {
     name: "layer53"
     parents: "layer52"
     children: "layer54"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -624,7 +581,6 @@ model {
     name: "layer54"
     parents: "layer53"
     children: "layer55 layer62 layer69 layer76 layer83 layer90 layer97 layer104 layer111 layer118 layer125 layer132 layer139"
-    data_layout: "data_parallel"
     pooling {
       num_dims: 2
       pool_dims_i: 2
@@ -636,7 +592,6 @@ model {
     name: "layer55"
     parents: "layer54"
     children: "layer56"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -644,18 +599,17 @@ model {
     name: "layer56"
     parents: "layer55"
     children: "layer57"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer57"
     parents: "layer56"
     children: "layer58"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -663,7 +617,6 @@ model {
     name: "layer58"
     parents: "layer57"
     children: "layer59"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -675,18 +628,17 @@ model {
     name: "layer59"
     parents: "layer58"
     children: "layer60"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer60"
     parents: "layer59"
     children: "layer61"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -694,7 +646,6 @@ model {
     name: "layer61"
     parents: "layer60"
     children: "layer62 layer69 layer76 layer83 layer90 layer97 layer104 layer111 layer118 layer125 layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -707,7 +658,6 @@ model {
     name: "layer62"
     parents: "layer54 layer61"
     children: "layer63"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -715,18 +665,17 @@ model {
     name: "layer63"
     parents: "layer62"
     children: "layer64"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer64"
     parents: "layer63"
     children: "layer65"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -734,7 +683,6 @@ model {
     name: "layer65"
     parents: "layer64"
     children: "layer66"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -746,18 +694,17 @@ model {
     name: "layer66"
     parents: "layer65"
     children: "layer67"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer67"
     parents: "layer66"
     children: "layer68"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -765,7 +712,6 @@ model {
     name: "layer68"
     parents: "layer67"
     children: "layer69 layer76 layer83 layer90 layer97 layer104 layer111 layer118 layer125 layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -778,7 +724,6 @@ model {
     name: "layer69"
     parents: "layer54 layer61 layer68"
     children: "layer70"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -786,18 +731,17 @@ model {
     name: "layer70"
     parents: "layer69"
     children: "layer71"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer71"
     parents: "layer70"
     children: "layer72"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -805,7 +749,6 @@ model {
     name: "layer72"
     parents: "layer71"
     children: "layer73"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -817,18 +760,17 @@ model {
     name: "layer73"
     parents: "layer72"
     children: "layer74"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer74"
     parents: "layer73"
     children: "layer75"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -836,7 +778,6 @@ model {
     name: "layer75"
     parents: "layer74"
     children: "layer76 layer83 layer90 layer97 layer104 layer111 layer118 layer125 layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -849,7 +790,6 @@ model {
     name: "layer76"
     parents: "layer54 layer61 layer68 layer75"
     children: "layer77"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -857,18 +797,17 @@ model {
     name: "layer77"
     parents: "layer76"
     children: "layer78"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer78"
     parents: "layer77"
     children: "layer79"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -876,7 +815,6 @@ model {
     name: "layer79"
     parents: "layer78"
     children: "layer80"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -888,18 +826,17 @@ model {
     name: "layer80"
     parents: "layer79"
     children: "layer81"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer81"
     parents: "layer80"
     children: "layer82"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -907,7 +844,6 @@ model {
     name: "layer82"
     parents: "layer81"
     children: "layer83 layer90 layer97 layer104 layer111 layer118 layer125 layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -920,7 +856,6 @@ model {
     name: "layer83"
     parents: "layer54 layer61 layer68 layer75 layer82"
     children: "layer84"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -928,18 +863,17 @@ model {
     name: "layer84"
     parents: "layer83"
     children: "layer85"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer85"
     parents: "layer84"
     children: "layer86"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -947,7 +881,6 @@ model {
     name: "layer86"
     parents: "layer85"
     children: "layer87"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -959,18 +892,17 @@ model {
     name: "layer87"
     parents: "layer86"
     children: "layer88"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer88"
     parents: "layer87"
     children: "layer89"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -978,7 +910,6 @@ model {
     name: "layer89"
     parents: "layer88"
     children: "layer90 layer97 layer104 layer111 layer118 layer125 layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -991,7 +922,6 @@ model {
     name: "layer90"
     parents: "layer54 layer61 layer68 layer75 layer82 layer89"
     children: "layer91"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -999,18 +929,17 @@ model {
     name: "layer91"
     parents: "layer90"
     children: "layer92"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer92"
     parents: "layer91"
     children: "layer93"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1018,7 +947,6 @@ model {
     name: "layer93"
     parents: "layer92"
     children: "layer94"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1030,18 +958,17 @@ model {
     name: "layer94"
     parents: "layer93"
     children: "layer95"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer95"
     parents: "layer94"
     children: "layer96"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1049,7 +976,6 @@ model {
     name: "layer96"
     parents: "layer95"
     children: "layer97 layer104 layer111 layer118 layer125 layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1062,7 +988,6 @@ model {
     name: "layer97"
     parents: "layer54 layer61 layer68 layer75 layer82 layer89 layer96"
     children: "layer98"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1070,18 +995,17 @@ model {
     name: "layer98"
     parents: "layer97"
     children: "layer99"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer99"
     parents: "layer98"
     children: "layer100"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1089,7 +1013,6 @@ model {
     name: "layer100"
     parents: "layer99"
     children: "layer101"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1101,18 +1024,17 @@ model {
     name: "layer101"
     parents: "layer100"
     children: "layer102"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer102"
     parents: "layer101"
     children: "layer103"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1120,7 +1042,6 @@ model {
     name: "layer103"
     parents: "layer102"
     children: "layer104 layer111 layer118 layer125 layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1133,7 +1054,6 @@ model {
     name: "layer104"
     parents: "layer54 layer61 layer68 layer75 layer82 layer89 layer96 layer103"
     children: "layer105"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1141,18 +1061,17 @@ model {
     name: "layer105"
     parents: "layer104"
     children: "layer106"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer106"
     parents: "layer105"
     children: "layer107"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1160,7 +1079,6 @@ model {
     name: "layer107"
     parents: "layer106"
     children: "layer108"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1172,18 +1090,17 @@ model {
     name: "layer108"
     parents: "layer107"
     children: "layer109"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer109"
     parents: "layer108"
     children: "layer110"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1191,7 +1108,6 @@ model {
     name: "layer110"
     parents: "layer109"
     children: "layer111 layer118 layer125 layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1204,7 +1120,6 @@ model {
     name: "layer111"
     parents: "layer54 layer61 layer68 layer75 layer82 layer89 layer96 layer103 layer110"
     children: "layer112"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1212,18 +1127,17 @@ model {
     name: "layer112"
     parents: "layer111"
     children: "layer113"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer113"
     parents: "layer112"
     children: "layer114"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1231,7 +1145,6 @@ model {
     name: "layer114"
     parents: "layer113"
     children: "layer115"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1243,18 +1156,17 @@ model {
     name: "layer115"
     parents: "layer114"
     children: "layer116"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer116"
     parents: "layer115"
     children: "layer117"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1262,7 +1174,6 @@ model {
     name: "layer117"
     parents: "layer116"
     children: "layer118 layer125 layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1275,7 +1186,6 @@ model {
     name: "layer118"
     parents: "layer54 layer61 layer68 layer75 layer82 layer89 layer96 layer103 layer110 layer117"
     children: "layer119"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1283,18 +1193,17 @@ model {
     name: "layer119"
     parents: "layer118"
     children: "layer120"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer120"
     parents: "layer119"
     children: "layer121"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1302,7 +1211,6 @@ model {
     name: "layer121"
     parents: "layer120"
     children: "layer122"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1314,18 +1222,17 @@ model {
     name: "layer122"
     parents: "layer121"
     children: "layer123"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer123"
     parents: "layer122"
     children: "layer124"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1333,7 +1240,6 @@ model {
     name: "layer124"
     parents: "layer123"
     children: "layer125 layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1346,7 +1252,6 @@ model {
     name: "layer125"
     parents: "layer54 layer61 layer68 layer75 layer82 layer89 layer96 layer103 layer110 layer117 layer124"
     children: "layer126"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1354,18 +1259,17 @@ model {
     name: "layer126"
     parents: "layer125"
     children: "layer127"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer127"
     parents: "layer126"
     children: "layer128"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1373,7 +1277,6 @@ model {
     name: "layer128"
     parents: "layer127"
     children: "layer129"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1385,18 +1288,17 @@ model {
     name: "layer129"
     parents: "layer128"
     children: "layer130"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer130"
     parents: "layer129"
     children: "layer131"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1404,7 +1306,6 @@ model {
     name: "layer131"
     parents: "layer130"
     children: "layer132 layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1417,7 +1318,6 @@ model {
     name: "layer132"
     parents: "layer54 layer61 layer68 layer75 layer82 layer89 layer96 layer103 layer110 layer117 layer124 layer131"
     children: "layer133"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1425,18 +1325,17 @@ model {
     name: "layer133"
     parents: "layer132"
     children: "layer134"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer134"
     parents: "layer133"
     children: "layer135"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1444,7 +1343,6 @@ model {
     name: "layer135"
     parents: "layer134"
     children: "layer136"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1456,18 +1354,17 @@ model {
     name: "layer136"
     parents: "layer135"
     children: "layer137"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer137"
     parents: "layer136"
     children: "layer138"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1475,7 +1372,6 @@ model {
     name: "layer138"
     parents: "layer137"
     children: "layer139"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1488,7 +1384,6 @@ model {
     name: "layer139"
     parents: "layer54 layer61 layer68 layer75 layer82 layer89 layer96 layer103 layer110 layer117 layer124 layer131 layer138"
     children: "layer140"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1496,18 +1391,17 @@ model {
     name: "layer140"
     parents: "layer139"
     children: "layer141"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer141"
     parents: "layer140"
     children: "layer142"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1515,7 +1409,6 @@ model {
     name: "layer142"
     parents: "layer141"
     children: "layer143"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 256
@@ -1527,7 +1420,6 @@ model {
     name: "layer143"
     parents: "layer142"
     children: "layer144 layer151 layer158 layer165 layer172 layer179 layer186 layer193 layer200 layer207 layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     pooling {
       num_dims: 2
       pool_dims_i: 2
@@ -1539,7 +1431,6 @@ model {
     name: "layer144"
     parents: "layer143"
     children: "layer145"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1547,18 +1438,17 @@ model {
     name: "layer145"
     parents: "layer144"
     children: "layer146"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer146"
     parents: "layer145"
     children: "layer147"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1566,7 +1456,6 @@ model {
     name: "layer147"
     parents: "layer146"
     children: "layer148"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1578,18 +1467,17 @@ model {
     name: "layer148"
     parents: "layer147"
     children: "layer149"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer149"
     parents: "layer148"
     children: "layer150"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1597,7 +1485,6 @@ model {
     name: "layer150"
     parents: "layer149"
     children: "layer151 layer158 layer165 layer172 layer179 layer186 layer193 layer200 layer207 layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1610,7 +1497,6 @@ model {
     name: "layer151"
     parents: "layer143 layer150"
     children: "layer152"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1618,18 +1504,17 @@ model {
     name: "layer152"
     parents: "layer151"
     children: "layer153"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer153"
     parents: "layer152"
     children: "layer154"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1637,7 +1522,6 @@ model {
     name: "layer154"
     parents: "layer153"
     children: "layer155"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1649,18 +1533,17 @@ model {
     name: "layer155"
     parents: "layer154"
     children: "layer156"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer156"
     parents: "layer155"
     children: "layer157"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1668,7 +1551,6 @@ model {
     name: "layer157"
     parents: "layer156"
     children: "layer158 layer165 layer172 layer179 layer186 layer193 layer200 layer207 layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1681,7 +1563,6 @@ model {
     name: "layer158"
     parents: "layer143 layer150 layer157"
     children: "layer159"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1689,18 +1570,17 @@ model {
     name: "layer159"
     parents: "layer158"
     children: "layer160"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer160"
     parents: "layer159"
     children: "layer161"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1708,7 +1588,6 @@ model {
     name: "layer161"
     parents: "layer160"
     children: "layer162"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1720,18 +1599,17 @@ model {
     name: "layer162"
     parents: "layer161"
     children: "layer163"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer163"
     parents: "layer162"
     children: "layer164"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1739,7 +1617,6 @@ model {
     name: "layer164"
     parents: "layer163"
     children: "layer165 layer172 layer179 layer186 layer193 layer200 layer207 layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1752,7 +1629,6 @@ model {
     name: "layer165"
     parents: "layer143 layer150 layer157 layer164"
     children: "layer166"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1760,18 +1636,17 @@ model {
     name: "layer166"
     parents: "layer165"
     children: "layer167"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer167"
     parents: "layer166"
     children: "layer168"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1779,7 +1654,6 @@ model {
     name: "layer168"
     parents: "layer167"
     children: "layer169"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1791,18 +1665,17 @@ model {
     name: "layer169"
     parents: "layer168"
     children: "layer170"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer170"
     parents: "layer169"
     children: "layer171"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1810,7 +1683,6 @@ model {
     name: "layer171"
     parents: "layer170"
     children: "layer172 layer179 layer186 layer193 layer200 layer207 layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1823,7 +1695,6 @@ model {
     name: "layer172"
     parents: "layer143 layer150 layer157 layer164 layer171"
     children: "layer173"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1831,18 +1702,17 @@ model {
     name: "layer173"
     parents: "layer172"
     children: "layer174"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer174"
     parents: "layer173"
     children: "layer175"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1850,7 +1720,6 @@ model {
     name: "layer175"
     parents: "layer174"
     children: "layer176"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1862,18 +1731,17 @@ model {
     name: "layer176"
     parents: "layer175"
     children: "layer177"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer177"
     parents: "layer176"
     children: "layer178"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1881,7 +1749,6 @@ model {
     name: "layer178"
     parents: "layer177"
     children: "layer179 layer186 layer193 layer200 layer207 layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1894,7 +1761,6 @@ model {
     name: "layer179"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178"
     children: "layer180"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1902,18 +1768,17 @@ model {
     name: "layer180"
     parents: "layer179"
     children: "layer181"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer181"
     parents: "layer180"
     children: "layer182"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1921,7 +1786,6 @@ model {
     name: "layer182"
     parents: "layer181"
     children: "layer183"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -1933,18 +1797,17 @@ model {
     name: "layer183"
     parents: "layer182"
     children: "layer184"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer184"
     parents: "layer183"
     children: "layer185"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1952,7 +1815,6 @@ model {
     name: "layer185"
     parents: "layer184"
     children: "layer186 layer193 layer200 layer207 layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -1965,7 +1827,6 @@ model {
     name: "layer186"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185"
     children: "layer187"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -1973,18 +1834,17 @@ model {
     name: "layer187"
     parents: "layer186"
     children: "layer188"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer188"
     parents: "layer187"
     children: "layer189"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -1992,7 +1852,6 @@ model {
     name: "layer189"
     parents: "layer188"
     children: "layer190"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2004,18 +1863,17 @@ model {
     name: "layer190"
     parents: "layer189"
     children: "layer191"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer191"
     parents: "layer190"
     children: "layer192"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2023,7 +1881,6 @@ model {
     name: "layer192"
     parents: "layer191"
     children: "layer193 layer200 layer207 layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2036,7 +1893,6 @@ model {
     name: "layer193"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192"
     children: "layer194"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2044,18 +1900,17 @@ model {
     name: "layer194"
     parents: "layer193"
     children: "layer195"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer195"
     parents: "layer194"
     children: "layer196"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2063,7 +1918,6 @@ model {
     name: "layer196"
     parents: "layer195"
     children: "layer197"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2075,18 +1929,17 @@ model {
     name: "layer197"
     parents: "layer196"
     children: "layer198"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer198"
     parents: "layer197"
     children: "layer199"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2094,7 +1947,6 @@ model {
     name: "layer199"
     parents: "layer198"
     children: "layer200 layer207 layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2107,7 +1959,6 @@ model {
     name: "layer200"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199"
     children: "layer201"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2115,18 +1966,17 @@ model {
     name: "layer201"
     parents: "layer200"
     children: "layer202"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer202"
     parents: "layer201"
     children: "layer203"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2134,7 +1984,6 @@ model {
     name: "layer203"
     parents: "layer202"
     children: "layer204"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2146,18 +1995,17 @@ model {
     name: "layer204"
     parents: "layer203"
     children: "layer205"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer205"
     parents: "layer204"
     children: "layer206"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2165,7 +2013,6 @@ model {
     name: "layer206"
     parents: "layer205"
     children: "layer207 layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2178,7 +2025,6 @@ model {
     name: "layer207"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206"
     children: "layer208"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2186,18 +2032,17 @@ model {
     name: "layer208"
     parents: "layer207"
     children: "layer209"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer209"
     parents: "layer208"
     children: "layer210"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2205,7 +2050,6 @@ model {
     name: "layer210"
     parents: "layer209"
     children: "layer211"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2217,18 +2061,17 @@ model {
     name: "layer211"
     parents: "layer210"
     children: "layer212"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer212"
     parents: "layer211"
     children: "layer213"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2236,7 +2079,6 @@ model {
     name: "layer213"
     parents: "layer212"
     children: "layer214 layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2249,7 +2091,6 @@ model {
     name: "layer214"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213"
     children: "layer215"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2257,18 +2098,17 @@ model {
     name: "layer215"
     parents: "layer214"
     children: "layer216"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer216"
     parents: "layer215"
     children: "layer217"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2276,7 +2116,6 @@ model {
     name: "layer217"
     parents: "layer216"
     children: "layer218"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2288,18 +2127,17 @@ model {
     name: "layer218"
     parents: "layer217"
     children: "layer219"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer219"
     parents: "layer218"
     children: "layer220"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2307,7 +2145,6 @@ model {
     name: "layer220"
     parents: "layer219"
     children: "layer221 layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2320,7 +2157,6 @@ model {
     name: "layer221"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220"
     children: "layer222"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2328,18 +2164,17 @@ model {
     name: "layer222"
     parents: "layer221"
     children: "layer223"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer223"
     parents: "layer222"
     children: "layer224"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2347,7 +2182,6 @@ model {
     name: "layer224"
     parents: "layer223"
     children: "layer225"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2359,18 +2193,17 @@ model {
     name: "layer225"
     parents: "layer224"
     children: "layer226"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer226"
     parents: "layer225"
     children: "layer227"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2378,7 +2211,6 @@ model {
     name: "layer227"
     parents: "layer226"
     children: "layer228 layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2391,7 +2223,6 @@ model {
     name: "layer228"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227"
     children: "layer229"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2399,18 +2230,17 @@ model {
     name: "layer229"
     parents: "layer228"
     children: "layer230"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer230"
     parents: "layer229"
     children: "layer231"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2418,7 +2248,6 @@ model {
     name: "layer231"
     parents: "layer230"
     children: "layer232"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2430,18 +2259,17 @@ model {
     name: "layer232"
     parents: "layer231"
     children: "layer233"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer233"
     parents: "layer232"
     children: "layer234"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2449,7 +2277,6 @@ model {
     name: "layer234"
     parents: "layer233"
     children: "layer235 layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2462,7 +2289,6 @@ model {
     name: "layer235"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234"
     children: "layer236"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2470,18 +2296,17 @@ model {
     name: "layer236"
     parents: "layer235"
     children: "layer237"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer237"
     parents: "layer236"
     children: "layer238"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2489,7 +2314,6 @@ model {
     name: "layer238"
     parents: "layer237"
     children: "layer239"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2501,18 +2325,17 @@ model {
     name: "layer239"
     parents: "layer238"
     children: "layer240"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer240"
     parents: "layer239"
     children: "layer241"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2520,7 +2343,6 @@ model {
     name: "layer241"
     parents: "layer240"
     children: "layer242 layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2533,7 +2355,6 @@ model {
     name: "layer242"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241"
     children: "layer243"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2541,18 +2362,17 @@ model {
     name: "layer243"
     parents: "layer242"
     children: "layer244"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer244"
     parents: "layer243"
     children: "layer245"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2560,7 +2380,6 @@ model {
     name: "layer245"
     parents: "layer244"
     children: "layer246"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2572,18 +2391,17 @@ model {
     name: "layer246"
     parents: "layer245"
     children: "layer247"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer247"
     parents: "layer246"
     children: "layer248"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2591,7 +2409,6 @@ model {
     name: "layer248"
     parents: "layer247"
     children: "layer249 layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2604,7 +2421,6 @@ model {
     name: "layer249"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241 layer248"
     children: "layer250"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2612,18 +2428,17 @@ model {
     name: "layer250"
     parents: "layer249"
     children: "layer251"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer251"
     parents: "layer250"
     children: "layer252"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2631,7 +2446,6 @@ model {
     name: "layer252"
     parents: "layer251"
     children: "layer253"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2643,18 +2457,17 @@ model {
     name: "layer253"
     parents: "layer252"
     children: "layer254"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer254"
     parents: "layer253"
     children: "layer255"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2662,7 +2475,6 @@ model {
     name: "layer255"
     parents: "layer254"
     children: "layer256 layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2675,7 +2487,6 @@ model {
     name: "layer256"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241 layer248 layer255"
     children: "layer257"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2683,18 +2494,17 @@ model {
     name: "layer257"
     parents: "layer256"
     children: "layer258"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer258"
     parents: "layer257"
     children: "layer259"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2702,7 +2512,6 @@ model {
     name: "layer259"
     parents: "layer258"
     children: "layer260"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2714,18 +2523,17 @@ model {
     name: "layer260"
     parents: "layer259"
     children: "layer261"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer261"
     parents: "layer260"
     children: "layer262"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2733,7 +2541,6 @@ model {
     name: "layer262"
     parents: "layer261"
     children: "layer263 layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2746,7 +2553,6 @@ model {
     name: "layer263"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241 layer248 layer255 layer262"
     children: "layer264"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2754,18 +2560,17 @@ model {
     name: "layer264"
     parents: "layer263"
     children: "layer265"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer265"
     parents: "layer264"
     children: "layer266"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2773,7 +2578,6 @@ model {
     name: "layer266"
     parents: "layer265"
     children: "layer267"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2785,18 +2589,17 @@ model {
     name: "layer267"
     parents: "layer266"
     children: "layer268"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer268"
     parents: "layer267"
     children: "layer269"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2804,7 +2607,6 @@ model {
     name: "layer269"
     parents: "layer268"
     children: "layer270 layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2817,7 +2619,6 @@ model {
     name: "layer270"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241 layer248 layer255 layer262 layer269"
     children: "layer271"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2825,18 +2626,17 @@ model {
     name: "layer271"
     parents: "layer270"
     children: "layer272"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer272"
     parents: "layer271"
     children: "layer273"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2844,7 +2644,6 @@ model {
     name: "layer273"
     parents: "layer272"
     children: "layer274"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2856,18 +2655,17 @@ model {
     name: "layer274"
     parents: "layer273"
     children: "layer275"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer275"
     parents: "layer274"
     children: "layer276"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2875,7 +2673,6 @@ model {
     name: "layer276"
     parents: "layer275"
     children: "layer277 layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2888,7 +2685,6 @@ model {
     name: "layer277"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241 layer248 layer255 layer262 layer269 layer276"
     children: "layer278"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2896,18 +2692,17 @@ model {
     name: "layer278"
     parents: "layer277"
     children: "layer279"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer279"
     parents: "layer278"
     children: "layer280"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2915,7 +2710,6 @@ model {
     name: "layer280"
     parents: "layer279"
     children: "layer281"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2927,18 +2721,17 @@ model {
     name: "layer281"
     parents: "layer280"
     children: "layer282"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer282"
     parents: "layer281"
     children: "layer283"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2946,7 +2739,6 @@ model {
     name: "layer283"
     parents: "layer282"
     children: "layer284 layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -2959,7 +2751,6 @@ model {
     name: "layer284"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241 layer248 layer255 layer262 layer269 layer276 layer283"
     children: "layer285"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -2967,18 +2758,17 @@ model {
     name: "layer285"
     parents: "layer284"
     children: "layer286"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer286"
     parents: "layer285"
     children: "layer287"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -2986,7 +2776,6 @@ model {
     name: "layer287"
     parents: "layer286"
     children: "layer288"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -2998,18 +2787,17 @@ model {
     name: "layer288"
     parents: "layer287"
     children: "layer289"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer289"
     parents: "layer288"
     children: "layer290"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3017,7 +2805,6 @@ model {
     name: "layer290"
     parents: "layer289"
     children: "layer291 layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3030,7 +2817,6 @@ model {
     name: "layer291"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241 layer248 layer255 layer262 layer269 layer276 layer283 layer290"
     children: "layer292"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3038,18 +2824,17 @@ model {
     name: "layer292"
     parents: "layer291"
     children: "layer293"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer293"
     parents: "layer292"
     children: "layer294"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3057,7 +2842,6 @@ model {
     name: "layer294"
     parents: "layer293"
     children: "layer295"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3069,18 +2853,17 @@ model {
     name: "layer295"
     parents: "layer294"
     children: "layer296"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer296"
     parents: "layer295"
     children: "layer297"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3088,7 +2871,6 @@ model {
     name: "layer297"
     parents: "layer296"
     children: "layer298 layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3101,7 +2883,6 @@ model {
     name: "layer298"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241 layer248 layer255 layer262 layer269 layer276 layer283 layer290 layer297"
     children: "layer299"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3109,18 +2890,17 @@ model {
     name: "layer299"
     parents: "layer298"
     children: "layer300"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer300"
     parents: "layer299"
     children: "layer301"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3128,7 +2908,6 @@ model {
     name: "layer301"
     parents: "layer300"
     children: "layer302"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3140,18 +2919,17 @@ model {
     name: "layer302"
     parents: "layer301"
     children: "layer303"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer303"
     parents: "layer302"
     children: "layer304"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3159,7 +2937,6 @@ model {
     name: "layer304"
     parents: "layer303"
     children: "layer305 layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3172,7 +2949,6 @@ model {
     name: "layer305"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241 layer248 layer255 layer262 layer269 layer276 layer283 layer290 layer297 layer304"
     children: "layer306"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3180,18 +2956,17 @@ model {
     name: "layer306"
     parents: "layer305"
     children: "layer307"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer307"
     parents: "layer306"
     children: "layer308"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3199,7 +2974,6 @@ model {
     name: "layer308"
     parents: "layer307"
     children: "layer309"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3211,18 +2985,17 @@ model {
     name: "layer309"
     parents: "layer308"
     children: "layer310"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer310"
     parents: "layer309"
     children: "layer311"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3230,7 +3003,6 @@ model {
     name: "layer311"
     parents: "layer310"
     children: "layer312"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3243,7 +3015,6 @@ model {
     name: "layer312"
     parents: "layer143 layer150 layer157 layer164 layer171 layer178 layer185 layer192 layer199 layer206 layer213 layer220 layer227 layer234 layer241 layer248 layer255 layer262 layer269 layer276 layer283 layer290 layer297 layer304 layer311"
     children: "layer313"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3251,18 +3022,17 @@ model {
     name: "layer313"
     parents: "layer312"
     children: "layer314"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer314"
     parents: "layer313"
     children: "layer315"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3270,7 +3040,6 @@ model {
     name: "layer315"
     parents: "layer314"
     children: "layer316"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 512
@@ -3282,7 +3051,6 @@ model {
     name: "layer316"
     parents: "layer315"
     children: "layer317 layer324 layer331 layer338 layer345 layer352 layer359 layer366 layer373 layer380 layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     pooling {
       num_dims: 2
       pool_dims_i: 2
@@ -3294,7 +3062,6 @@ model {
     name: "layer317"
     parents: "layer316"
     children: "layer318"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3302,18 +3069,17 @@ model {
     name: "layer318"
     parents: "layer317"
     children: "layer319"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer319"
     parents: "layer318"
     children: "layer320"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3321,7 +3087,6 @@ model {
     name: "layer320"
     parents: "layer319"
     children: "layer321"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3333,18 +3098,17 @@ model {
     name: "layer321"
     parents: "layer320"
     children: "layer322"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer322"
     parents: "layer321"
     children: "layer323"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3352,7 +3116,6 @@ model {
     name: "layer323"
     parents: "layer322"
     children: "layer324 layer331 layer338 layer345 layer352 layer359 layer366 layer373 layer380 layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3365,7 +3128,6 @@ model {
     name: "layer324"
     parents: "layer316 layer323"
     children: "layer325"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3373,18 +3135,17 @@ model {
     name: "layer325"
     parents: "layer324"
     children: "layer326"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer326"
     parents: "layer325"
     children: "layer327"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3392,7 +3153,6 @@ model {
     name: "layer327"
     parents: "layer326"
     children: "layer328"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3404,18 +3164,17 @@ model {
     name: "layer328"
     parents: "layer327"
     children: "layer329"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer329"
     parents: "layer328"
     children: "layer330"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3423,7 +3182,6 @@ model {
     name: "layer330"
     parents: "layer329"
     children: "layer331 layer338 layer345 layer352 layer359 layer366 layer373 layer380 layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3436,7 +3194,6 @@ model {
     name: "layer331"
     parents: "layer316 layer323 layer330"
     children: "layer332"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3444,18 +3201,17 @@ model {
     name: "layer332"
     parents: "layer331"
     children: "layer333"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer333"
     parents: "layer332"
     children: "layer334"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3463,7 +3219,6 @@ model {
     name: "layer334"
     parents: "layer333"
     children: "layer335"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3475,18 +3230,17 @@ model {
     name: "layer335"
     parents: "layer334"
     children: "layer336"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer336"
     parents: "layer335"
     children: "layer337"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3494,7 +3248,6 @@ model {
     name: "layer337"
     parents: "layer336"
     children: "layer338 layer345 layer352 layer359 layer366 layer373 layer380 layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3507,7 +3260,6 @@ model {
     name: "layer338"
     parents: "layer316 layer323 layer330 layer337"
     children: "layer339"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3515,18 +3267,17 @@ model {
     name: "layer339"
     parents: "layer338"
     children: "layer340"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer340"
     parents: "layer339"
     children: "layer341"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3534,7 +3285,6 @@ model {
     name: "layer341"
     parents: "layer340"
     children: "layer342"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3546,18 +3296,17 @@ model {
     name: "layer342"
     parents: "layer341"
     children: "layer343"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer343"
     parents: "layer342"
     children: "layer344"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3565,7 +3314,6 @@ model {
     name: "layer344"
     parents: "layer343"
     children: "layer345 layer352 layer359 layer366 layer373 layer380 layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3578,7 +3326,6 @@ model {
     name: "layer345"
     parents: "layer316 layer323 layer330 layer337 layer344"
     children: "layer346"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3586,18 +3333,17 @@ model {
     name: "layer346"
     parents: "layer345"
     children: "layer347"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer347"
     parents: "layer346"
     children: "layer348"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3605,7 +3351,6 @@ model {
     name: "layer348"
     parents: "layer347"
     children: "layer349"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3617,18 +3362,17 @@ model {
     name: "layer349"
     parents: "layer348"
     children: "layer350"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer350"
     parents: "layer349"
     children: "layer351"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3636,7 +3380,6 @@ model {
     name: "layer351"
     parents: "layer350"
     children: "layer352 layer359 layer366 layer373 layer380 layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3649,7 +3392,6 @@ model {
     name: "layer352"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351"
     children: "layer353"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3657,18 +3399,17 @@ model {
     name: "layer353"
     parents: "layer352"
     children: "layer354"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer354"
     parents: "layer353"
     children: "layer355"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3676,7 +3417,6 @@ model {
     name: "layer355"
     parents: "layer354"
     children: "layer356"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3688,18 +3428,17 @@ model {
     name: "layer356"
     parents: "layer355"
     children: "layer357"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer357"
     parents: "layer356"
     children: "layer358"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3707,7 +3446,6 @@ model {
     name: "layer358"
     parents: "layer357"
     children: "layer359 layer366 layer373 layer380 layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3720,7 +3458,6 @@ model {
     name: "layer359"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358"
     children: "layer360"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3728,18 +3465,17 @@ model {
     name: "layer360"
     parents: "layer359"
     children: "layer361"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer361"
     parents: "layer360"
     children: "layer362"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3747,7 +3483,6 @@ model {
     name: "layer362"
     parents: "layer361"
     children: "layer363"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3759,18 +3494,17 @@ model {
     name: "layer363"
     parents: "layer362"
     children: "layer364"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer364"
     parents: "layer363"
     children: "layer365"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3778,7 +3512,6 @@ model {
     name: "layer365"
     parents: "layer364"
     children: "layer366 layer373 layer380 layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3791,7 +3524,6 @@ model {
     name: "layer366"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358 layer365"
     children: "layer367"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3799,18 +3531,17 @@ model {
     name: "layer367"
     parents: "layer366"
     children: "layer368"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer368"
     parents: "layer367"
     children: "layer369"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3818,7 +3549,6 @@ model {
     name: "layer369"
     parents: "layer368"
     children: "layer370"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3830,18 +3560,17 @@ model {
     name: "layer370"
     parents: "layer369"
     children: "layer371"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer371"
     parents: "layer370"
     children: "layer372"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3849,7 +3578,6 @@ model {
     name: "layer372"
     parents: "layer371"
     children: "layer373 layer380 layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3862,7 +3590,6 @@ model {
     name: "layer373"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358 layer365 layer372"
     children: "layer374"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3870,18 +3597,17 @@ model {
     name: "layer374"
     parents: "layer373"
     children: "layer375"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer375"
     parents: "layer374"
     children: "layer376"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3889,7 +3615,6 @@ model {
     name: "layer376"
     parents: "layer375"
     children: "layer377"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3901,18 +3626,17 @@ model {
     name: "layer377"
     parents: "layer376"
     children: "layer378"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer378"
     parents: "layer377"
     children: "layer379"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3920,7 +3644,6 @@ model {
     name: "layer379"
     parents: "layer378"
     children: "layer380 layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -3933,7 +3656,6 @@ model {
     name: "layer380"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358 layer365 layer372 layer379"
     children: "layer381"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -3941,18 +3663,17 @@ model {
     name: "layer381"
     parents: "layer380"
     children: "layer382"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer382"
     parents: "layer381"
     children: "layer383"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3960,7 +3681,6 @@ model {
     name: "layer383"
     parents: "layer382"
     children: "layer384"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -3972,18 +3692,17 @@ model {
     name: "layer384"
     parents: "layer383"
     children: "layer385"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer385"
     parents: "layer384"
     children: "layer386"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -3991,7 +3710,6 @@ model {
     name: "layer386"
     parents: "layer385"
     children: "layer387 layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -4004,7 +3722,6 @@ model {
     name: "layer387"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358 layer365 layer372 layer379 layer386"
     children: "layer388"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -4012,18 +3729,17 @@ model {
     name: "layer388"
     parents: "layer387"
     children: "layer389"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer389"
     parents: "layer388"
     children: "layer390"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4031,7 +3747,6 @@ model {
     name: "layer390"
     parents: "layer389"
     children: "layer391"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -4043,18 +3758,17 @@ model {
     name: "layer391"
     parents: "layer390"
     children: "layer392"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer392"
     parents: "layer391"
     children: "layer393"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4062,7 +3776,6 @@ model {
     name: "layer393"
     parents: "layer392"
     children: "layer394 layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -4075,7 +3788,6 @@ model {
     name: "layer394"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358 layer365 layer372 layer379 layer386 layer393"
     children: "layer395"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -4083,18 +3795,17 @@ model {
     name: "layer395"
     parents: "layer394"
     children: "layer396"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer396"
     parents: "layer395"
     children: "layer397"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4102,7 +3813,6 @@ model {
     name: "layer397"
     parents: "layer396"
     children: "layer398"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -4114,18 +3824,17 @@ model {
     name: "layer398"
     parents: "layer397"
     children: "layer399"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer399"
     parents: "layer398"
     children: "layer400"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4133,7 +3842,6 @@ model {
     name: "layer400"
     parents: "layer399"
     children: "layer401 layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -4146,7 +3854,6 @@ model {
     name: "layer401"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358 layer365 layer372 layer379 layer386 layer393 layer400"
     children: "layer402"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -4154,18 +3861,17 @@ model {
     name: "layer402"
     parents: "layer401"
     children: "layer403"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer403"
     parents: "layer402"
     children: "layer404"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4173,7 +3879,6 @@ model {
     name: "layer404"
     parents: "layer403"
     children: "layer405"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -4185,18 +3890,17 @@ model {
     name: "layer405"
     parents: "layer404"
     children: "layer406"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer406"
     parents: "layer405"
     children: "layer407"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4204,7 +3908,6 @@ model {
     name: "layer407"
     parents: "layer406"
     children: "layer408 layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -4217,7 +3920,6 @@ model {
     name: "layer408"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358 layer365 layer372 layer379 layer386 layer393 layer400 layer407"
     children: "layer409"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -4225,18 +3927,17 @@ model {
     name: "layer409"
     parents: "layer408"
     children: "layer410"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer410"
     parents: "layer409"
     children: "layer411"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4244,7 +3945,6 @@ model {
     name: "layer411"
     parents: "layer410"
     children: "layer412"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -4256,18 +3956,17 @@ model {
     name: "layer412"
     parents: "layer411"
     children: "layer413"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer413"
     parents: "layer412"
     children: "layer414"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4275,7 +3974,6 @@ model {
     name: "layer414"
     parents: "layer413"
     children: "layer415 layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -4288,7 +3986,6 @@ model {
     name: "layer415"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358 layer365 layer372 layer379 layer386 layer393 layer400 layer407 layer414"
     children: "layer416"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -4296,18 +3993,17 @@ model {
     name: "layer416"
     parents: "layer415"
     children: "layer417"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer417"
     parents: "layer416"
     children: "layer418"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4315,7 +4011,6 @@ model {
     name: "layer418"
     parents: "layer417"
     children: "layer419"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -4327,18 +4022,17 @@ model {
     name: "layer419"
     parents: "layer418"
     children: "layer420"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer420"
     parents: "layer419"
     children: "layer421"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4346,7 +4040,6 @@ model {
     name: "layer421"
     parents: "layer420"
     children: "layer422 layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -4359,7 +4052,6 @@ model {
     name: "layer422"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358 layer365 layer372 layer379 layer386 layer393 layer400 layer407 layer414 layer421"
     children: "layer423"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -4367,18 +4059,17 @@ model {
     name: "layer423"
     parents: "layer422"
     children: "layer424"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer424"
     parents: "layer423"
     children: "layer425"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4386,7 +4077,6 @@ model {
     name: "layer425"
     parents: "layer424"
     children: "layer426"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 128
@@ -4398,18 +4088,17 @@ model {
     name: "layer426"
     parents: "layer425"
     children: "layer427"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer427"
     parents: "layer426"
     children: "layer428"
-    data_layout: "data_parallel"
     relu {
     }
   }
@@ -4417,7 +4106,6 @@ model {
     name: "layer428"
     parents: "layer427"
     children: "layer429"
-    data_layout: "data_parallel"
     convolution {
       num_dims: 2
       num_output_channels: 32
@@ -4430,7 +4118,6 @@ model {
     name: "layer429"
     parents: "layer316 layer323 layer330 layer337 layer344 layer351 layer358 layer365 layer372 layer379 layer386 layer393 layer400 layer407 layer414 layer421 layer428"
     children: "layer430"
-    data_layout: "data_parallel"
     concatenation {
     }
   }
@@ -4438,18 +4125,24 @@ model {
     name: "layer430"
     parents: "layer429"
     children: "layer431"
-    data_layout: "data_parallel"
     batch_normalization {
       decay: 0.9
       scale_init: 1.0
       epsilon: 1e-05
+      statistics_group_size: 2
     }
   }
   layer {
     name: "layer431"
     parents: "layer430"
     children: "layer432"
-    data_layout: "data_parallel"
+    relu {
+    }
+  }
+  layer {
+    name: "layer432"
+    parents: "layer431"
+    children: "layer433"
     pooling {
       num_dims: 2
       pool_dims_i: 7
@@ -4459,41 +4152,36 @@ model {
     }
   }
   layer {
-    name: "layer432"
-    parents: "layer431"
-    children: "layer433"
-    data_layout: "data_parallel"
+    name: "layer433"
+    parents: "layer432"
+    children: "layer434"
     fully_connected {
       num_neurons: 1000
     }
   }
   layer {
-    name: "layer433"
-    parents: "layer432"
-    children: "layer434 layer435 layer436"
-    data_layout: "data_parallel"
+    name: "layer434"
+    parents: "layer433"
+    children: "layer435 layer436 layer437"
     softmax {
     }
   }
   layer {
-    name: "layer436"
-    parents: "layer433 layer3"
-    data_layout: "data_parallel"
+    name: "layer437"
+    parents: "layer434 layer3"
     top_k_categorical_accuracy {
       k: 5
     }
   }
   layer {
-    name: "layer435"
-    parents: "layer433 layer3"
-    data_layout: "data_parallel"
+    name: "layer436"
+    parents: "layer434 layer3"
     categorical_accuracy {
     }
   }
   layer {
-    name: "layer434"
-    parents: "layer433 layer3"
-    data_layout: "data_parallel"
+    name: "layer435"
+    parents: "layer434 layer3"
     cross_entropy {
     }
   }

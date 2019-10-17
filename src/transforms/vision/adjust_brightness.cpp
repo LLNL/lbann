@@ -25,7 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/transforms/vision/adjust_brightness.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
+
+#include <transforms.pb.h>
 
 namespace lbann {
 namespace transform {
@@ -43,6 +46,12 @@ void adjust_brightness::apply(utils::type_erased_matrix& data, std::vector<size_
   for (size_t i = 0; i < size; ++i) {
     src_buf[i] = cv::saturate_cast<uint8_t>(src_buf[i]*m_factor);
   }
+}
+
+std::unique_ptr<transform>
+build_adjust_brightness_transform_from_pbuf(google::protobuf::Message const& msg) {
+  auto const& params = dynamic_cast<lbann_data::Transform::AdjustBrightness const&>(msg);
+  return make_unique<adjust_brightness>(params.factor());
 }
 
 }  // namespace transform

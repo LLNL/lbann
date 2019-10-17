@@ -26,11 +26,14 @@
 
 #include "lbann/optimizers/adagrad.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <optimizers.pb.h>
 
 namespace lbann {
 
-adagrad::adagrad(lbann_comm *comm, DataType learning_rate, DataType eps)
-  : optimizer(comm, learning_rate), m_eps(eps) {}
+adagrad::adagrad(DataType learning_rate, DataType eps)
+  : optimizer(learning_rate), m_eps(eps) {}
 
 adagrad::adagrad(const adagrad& other)
   : optimizer(other),
@@ -140,6 +143,14 @@ bool adagrad::load_from_checkpoint_distributed(persist& p, std::string name_pref
   p.read_rank_distmat(persist_type::train, l_name, *m_cache);
 
   return true;
+}
+
+std::unique_ptr<optimizer>
+build_adagrad_optimizer_from_pbuf(
+  google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Optimizer::AdaGrad const&>(msg);
+  return make_unique<adagrad>(params.learn_rate(), params.eps());
 }
 
 } // namespace lbann

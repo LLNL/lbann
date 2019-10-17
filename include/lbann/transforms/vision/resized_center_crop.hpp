@@ -29,6 +29,8 @@
 
 #include "lbann/transforms/transform.hpp"
 
+#include <google/protobuf/message.h>
+
 namespace lbann {
 namespace transform {
 
@@ -50,6 +52,9 @@ private:
   /** Height and width of the crop. */
   size_t m_crop_h, m_crop_w;
 };
+
+std::unique_ptr<transform>
+build_resized_center_crop_transform_from_pbuf(google::protobuf::Message const&);
 
 }  // namespace transform
 }  // namespace lbann

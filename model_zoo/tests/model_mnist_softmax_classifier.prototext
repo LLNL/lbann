@@ -1,10 +1,10 @@
+trainer {
+  hydrogen_block_size: 199
+}
 model {
   data_layout: "data_parallel"
   mini_batch_size: 103
-  block_size: 199
   num_epochs: 4
-  num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -28,6 +28,7 @@ model {
   callback { timer {} }
   callback {
     check_gradients {
+      execution_modes: "test"
       verbose: false
       error_on_failure: true
     }

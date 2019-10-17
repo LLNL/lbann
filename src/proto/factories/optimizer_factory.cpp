@@ -26,60 +26,68 @@
 
 #include "lbann/proto/factories.hpp"
 
+#include "lbann/optimizers/optimizer.hpp"
+
+#include "lbann/optimizers/adagrad.hpp"
+#include "lbann/optimizers/adam.hpp"
+#include "lbann/optimizers/hypergradient_adam.hpp"
+#include "lbann/optimizers/rmsprop.hpp"
+#include "lbann/optimizers/sgd.hpp"
+
+#include "lbann/proto/helpers.hpp"
+#include "lbann/utils/factory.hpp"
+
+#include <optimizers.pb.h>
+
 namespace lbann {
 namespace proto {
+namespace {
 
-optimizer* construct_optimizer(lbann_comm* comm,
-                               const lbann_data::Optimizer& proto_opt) {
-
-  // Stochastic gradient descent
-  if (proto_opt.has_sgd()) {
-    const auto& params = proto_opt.sgd();
-    return new sgd(comm,
-                   params.learn_rate(),
-                   params.momentum(),
-                   params.nesterov());
-  }
-
-  // AdaGrad
-  if (proto_opt.has_adagrad()) {
-    const auto& params = proto_opt.adagrad();
-    return new adagrad(comm, params.learn_rate(), params.eps());
-  }
-
-  // RMSProp
-  if (proto_opt.has_rmsprop()) {
-    const auto& params = proto_opt.rmsprop();
-    return new rmsprop(comm,
-                       params.learn_rate(),
-                       params.decay_rate(),
-                       params.eps());
-  }
-
-  // Adam
-  if (proto_opt.has_adam()) {
-    const auto& params = proto_opt.adam();
-    return new adam(comm,
-                    params.learn_rate(),
-                    params.beta1(),
-                    params.beta2(),
-                    params.eps());
-  }
-
-  // Hypergradient Adam
-  if (proto_opt.has_hypergradient_adam()) {
-    const auto& params = proto_opt.hypergradient_adam();
-    return new hypergradient_adam(comm,
-                                  params.init_learning_rate(),
-                                  params.hyper_learning_rate(),
-                                  params.beta1(),
-                                  params.beta2(),
-                                  params.eps());
-  }
-
-  // Return null pointer if no optimizer is specified
+std::unique_ptr<optimizer>
+build_no_optimizer_from_pbuf(
+  google::protobuf::Message const& msg) {
   return nullptr;
+}
 
+using factory_type = lbann::generic_factory<
+  lbann::optimizer,
+  std::string,
+  generate_builder_type<lbann::optimizer,
+                        google::protobuf::Message const&>,
+  default_key_error_policy>;
+
+void register_default_builders(factory_type& factory) {
+  factory.register_builder("NoOptimizer", build_no_optimizer_from_pbuf);
+  factory.register_builder("AdaGrad", build_adagrad_optimizer_from_pbuf);
+  factory.register_builder("Adam", build_adam_optimizer_from_pbuf);
+  factory.register_builder("HypergradientAdam",
+                           build_hypergradient_adam_optimizer_from_pbuf);
+  factory.register_builder("RMSprop", build_rmsprop_optimizer_from_pbuf);
+  factory.register_builder("SGD", build_sgd_optimizer_from_pbuf);
+}
+
+// Manage a global factory
+struct factory_manager {
+  factory_type factory_;
+
+  factory_manager() {
+    register_default_builders(factory_);
+  }
+};
+
+factory_manager factory_mgr_;
+factory_type const& get_optimizer_factory() noexcept {
+  return factory_mgr_.factory_;
+}
+
+}// namespace <anon>
+
+std::unique_ptr<optimizer> construct_optimizer(
+  const lbann_data::Optimizer& proto_opt) {
+  auto const& factory = get_optimizer_factory();
+  auto const& msg =
+    helpers::get_oneof_message(proto_opt, "optimizer_type");
+  return factory.create_object(msg.GetDescriptor()->name(), msg);
 }
 
 } // namespace proto

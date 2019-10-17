@@ -28,6 +28,7 @@
 #define LBANN_LAYER_REGULARIZER_DROPOUT_HPP_INCLUDED
 
 #include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/random.hpp"
 
@@ -88,7 +89,7 @@ public:
   dropout& operator=(const dropout& other) {
     regularizer_layer::operator=(other);
     m_keep_prob = other.m_keep_prob;
-    m_mask = other.m_mask ? other.m_mask->Copy() : nullptr;
+    m_mask = other.m_mask ? std::unique_ptr<AbsDistMat>(other.m_mask->Copy()) : nullptr;
 #ifdef LBANN_HAS_CUDNN
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
@@ -180,7 +181,7 @@ protected:
     auto& output = get_activations();
 
     // Do nothing if dropout is disabled
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(input, output);
       return;
@@ -213,7 +214,7 @@ protected:
   void bp_compute_cpu() {
     const auto& gradient_wrt_output = get_prev_error_signals();
     auto& gradient_wrt_input = get_error_signals();
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(gradient_wrt_output, gradient_wrt_input);
     } else {
@@ -233,7 +234,7 @@ protected:
     auto& local_output = output.Matrix();
 
     // Do nothing if dropout is disabled or there is no local data
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(input, output);
       return;
@@ -272,7 +273,7 @@ protected:
     auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
 
     // Copy error signal if dropout is disabled
-    const auto& mode = this->m_model->get_execution_mode();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     if (mode != execution_mode::training || m_keep_prob < EvalType(0)) {
       El::Copy(gradient_wrt_output, gradient_wrt_input);
     } else {
@@ -336,6 +337,15 @@ protected:
 #endif // LBANN_HAS_CUDNN
 
 };
+
+#ifndef LBANN_DROPOUT_LAYER_INSTANTIATE
+extern template class dropout<data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class dropout<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class dropout<data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class dropout<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_DROPOUT_LAYER_INSTANTIATE
 
 } // namespace lbann
 

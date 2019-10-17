@@ -38,10 +38,15 @@ def log(string):
 # To avoid needing to stay logged into ssh, create a script
 # densenet_batch_job.cmd such as:
 # #!/bin/bash
-# #SBATCH --nodes 16
+# #SBATCH --nodes 8
 # #SBATCH --partition pbatch
-# #SBATCH --time 240
-# ./densenet.py --nodes 16 --procs-per-node 2 --mini-batch-size 256 --num-epochs 10 > /usr/workspace/wsb/<username>/lbann/model_zoo/vision/output.txt
+# #SBATCH --time 840
+#
+# module load gcc/7.1.0
+# ../../scripts/build_lbann_lc.sh --compiler gnu --reconfigure
+#
+# module load python/3.6.4
+# ./densenet.py --nodes 8 --procs-per-node 2 --mini-batch-size 256 --num-epochs 10 &> /usr/workspace/wsb/<username>/lbann/model_zoo/vision/output.txt
 
 # and from lbann/model_zoo/vision run:
 # sbatch densenet_batch_job.cmd
@@ -52,7 +57,7 @@ def log(string):
 # Copy the output file, experiment directory, and visualization
 # from LC to your computer by running the following commands from your computer:
 # scp <username>@pascal.llnl.gov:/usr/workspace/wsb/<username>/lbann/model_zoo/vision/output.txt .
-# scp -r <username>@pascal.llnl.gov:/usr/workspace/wsb/<username>/lbann/experiments/<date_time>_lbann_densenet/ .
+# scp -r <username>@pascal.llnl.gov:/usr/workspace/wsb/<username>/lbann/model_zoo/vision/<date_time>_lbann_densenet/ .
 # scp <username>@pascal.llnl.gov:/usr/workspace/wsb/<username>/lbann/graph.pdf .
 
 
@@ -61,7 +66,8 @@ def log(string):
 # See PyTorch DenseNet:
 # https://github.com/pytorch/vision/blob/master/torchvision/models/densenet.py
 # See "Densely Connected Convolutional Networks" by Huang et. al p.4
-def densenet(version,
+def densenet(statistics_group_size,
+             version,
              cumulative_layer_num,
              images_node
              ):
@@ -78,12 +84,14 @@ def densenet(version,
     batch_norm_size = 4
 
     parent_node, cumulative_layer_num = initial_layer(
+        statistics_group_size,
         cumulative_layer_num, images_node,
         num_initial_features)
     num_features = num_initial_features
     # Start counting dense blocks at 1.
     for current_block_num, num_layers in enumerate(layers_per_block, 1):
         parent_nodes, cumulative_layer_num = dense_block(
+            statistics_group_size,
             cumulative_layer_num,
             parent_node,
             batch_norm_size=batch_norm_size,
@@ -101,6 +109,7 @@ def densenet(version,
             b=current_block_num, n=cumulative_layer_num))
         if current_block_num != len(layers_per_block):
             parent_node, cumulative_layer_num = transition_layer(
+                statistics_group_size,
                 current_block_num,
                 cumulative_layer_num,
                 parent_node,
@@ -109,19 +118,26 @@ def densenet(version,
             )
             num_features //= 2
 
-    batch_normalization_node = standard_batchnorm(parent_node)
+    batch_normalization_node = standard_batchnorm(statistics_group_size,
+                                                  parent_node)
     cumulative_layer_num += 1
     log('densenet BatchNormalization. cumulative_layer_num={n}'.format(
         b=current_block_num, n=cumulative_layer_num))
 
+    relu_node = lbann.Relu(batch_normalization_node)
+    cumulative_layer_num += 1
+    log('densenet Relu. cumulative_layer_num={n}'.format(
+        b=current_block_num, n=cumulative_layer_num))
+
     probs = classification_layer(
         cumulative_layer_num,
-        batch_normalization_node
+        relu_node
     )
     return probs
 
 
-def initial_layer(cumulative_layer_num,
+def initial_layer(statistics_group_size,
+                  cumulative_layer_num,
                   images_node,
                   num_initial_channels
                   ):
@@ -139,7 +155,8 @@ def initial_layer(cumulative_layer_num,
     log('initial_layer Convolution. cumulative_layer_num={n}'.format(
         n=cumulative_layer_num))
 
-    batch_normalization_node = standard_batchnorm(convolution_node)
+    batch_normalization_node = standard_batchnorm(statistics_group_size,
+                                                  convolution_node)
     cumulative_layer_num += 1
     log('initial_layer BatchNormalization. cumulative_layer_num={n}'.format(
         n=cumulative_layer_num))
@@ -165,17 +182,19 @@ def initial_layer(cumulative_layer_num,
     return pooling_node, cumulative_layer_num
 
 
-def standard_batchnorm(parent_node):
+def standard_batchnorm(statistics_group_size, parent_node):
     return lbann.BatchNormalization(
         parent_node,
         bias_init=0.0,
         decay=0.9,
         epsilon=1e-5,
-        scale_init=1.0
+        scale_init=1.0,
+        statistics_group_size=statistics_group_size
     )
 
 
-def dense_block(cumulative_layer_num,
+def dense_block(statistics_group_size,
+                cumulative_layer_num,
                 parent_node,
                 batch_norm_size,
                 current_block_num,
@@ -190,6 +209,7 @@ def dense_block(cumulative_layer_num,
         num_input_channels = num_initial_channels + (current_layer_num - 1) * growth_rate
         print('num_input_channels={c}'.format(c=num_input_channels))
         parent_node, cumulative_layer_num = dense_layer(
+            statistics_group_size,
             current_block_num,
             current_layer_num,
             cumulative_layer_num,
@@ -201,7 +221,8 @@ def dense_block(cumulative_layer_num,
     return parent_nodes, cumulative_layer_num
 
 
-def dense_layer(current_block_num,
+def dense_layer(statistics_group_size,
+                current_block_num,
                 current_layer_num,
                 cumulative_layer_num,
                 parent_nodes,
@@ -213,6 +234,7 @@ def dense_layer(current_block_num,
     log('dense_block={b} dense_layer={l} Concatenation. cumulative_layer_num={n}'.format(
         b=current_block_num, l=current_layer_num, n=cumulative_layer_num))
     conv_block_1_node, cumulative_layer_num = conv_block(
+        statistics_group_size,
         current_block_num,
         current_layer_num,
         cumulative_layer_num,
@@ -222,6 +244,7 @@ def dense_layer(current_block_num,
         num_output_channels=batch_norm_size * growth_rate
     )
     conv_block_2_node, cumulative_layer_num = conv_block(
+        statistics_group_size,
         current_block_num,
         current_layer_num,
         cumulative_layer_num,
@@ -233,7 +256,8 @@ def dense_layer(current_block_num,
     return conv_block_2_node, cumulative_layer_num
 
 
-def conv_block(current_block_num,
+def conv_block(statistics_group_size,
+               current_block_num,
                current_layer_num,
                cumulative_layer_num,
                parent_node,
@@ -241,7 +265,8 @@ def conv_block(current_block_num,
                conv_pads_i,
                num_output_channels
                ):
-    batch_normalization_node = standard_batchnorm(parent_node)
+    batch_normalization_node = standard_batchnorm(statistics_group_size,
+                                                  parent_node)
     cumulative_layer_num += 1
     log('dense_block={b} dense_layer={l} BatchNormalization. cumulative_layer_num={n}'.format(
         b=current_block_num, l=current_layer_num, n=cumulative_layer_num))
@@ -268,12 +293,14 @@ def conv_block(current_block_num,
     return convolution_node, cumulative_layer_num
 
 
-def transition_layer(current_block_num,
+def transition_layer(statistics_group_size,
+                     current_block_num,
                      cumulative_layer_num,
                      parent_node,
                      num_output_channels
                      ):
-    batch_normalization_node = standard_batchnorm(parent_node)
+    batch_normalization_node = standard_batchnorm(statistics_group_size,
+                                                  parent_node)
     cumulative_layer_num += 1
     log('dense_block={b} > transition_layer BatchNormalization. cumulative_layer_num={n}'.format(
         b=current_block_num,  n=cumulative_layer_num))
@@ -394,6 +421,7 @@ def get_args():
 
 
 def construct_layer_graph(
+        statistics_group_size,
         version,
         cumulative_layer_num,
         input_node):
@@ -408,7 +436,8 @@ def construct_layer_graph(
     log('Identity. cumulative_layer_num={n}'.format(n=cumulative_layer_num))
 
     # Use images_node, not image_labels_node.
-    probabilities = densenet(version, cumulative_layer_num, images_node)
+    probabilities = densenet(statistics_group_size, version,
+                             cumulative_layer_num, images_node)
 
     return probabilities, image_labels_node
 
@@ -420,11 +449,12 @@ def set_up_experiment(args,
     # Set up objective function
     cross_entropy = lbann.CrossEntropy([probs, labels])
     layers = list(lbann.traverse_layer_graph(input_))
-    weights = set()
+    l2_reg_weights = set()
     for l in layers:
-        weights.update(l.weights)
+        if type(l) == lbann.Convolution or type(l) == lbann.FullyConnected:
+            l2_reg_weights.update(l.weights)
     # scale = weight decay
-    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
+    l2_reg = lbann.L2WeightRegularization(weights=l2_reg_weights, scale=1e-4)
     objective_function = lbann.ObjectiveFunction([cross_entropy, l2_reg])
 
     # Set up model
@@ -439,7 +469,6 @@ def set_up_experiment(args,
     model = lbann.Model(args.mini_batch_size,
                         args.num_epochs,
                         layers=layers,
-                        weights=weights,
                         objective_function=objective_function,
                         metrics=metrics,
                         callbacks=callbacks)
@@ -461,17 +490,22 @@ def set_up_experiment(args,
     else:
         optimizer = lbann.contrib.args.create_optimizer(args)
 
+    # Setup trainer
+    trainer = lbann.Trainer()
+
     # Save prototext to args.prototext
     if args.prototext:
         lbann.proto.save_prototext(args.prototext,
+                                   trainer=trainer,
                                    model=model,
                                    optimizer=optimizer,
                                    data_reader=data_reader_proto)
 
-    return model, data_reader_proto, optimizer
+    return trainer, model, data_reader_proto, optimizer
 
 
 def run_experiment(args,
+                   trainer,
                    model,
                    data_reader_proto,
                    optimizer):
@@ -501,7 +535,7 @@ def run_experiment(args,
                             imagenet_dir(data_set='val', num_classes=classes),
                             imagenet_labels(data_set='val',
                                             num_classes=classes)))
-        lbann.contrib.lc.launcher.run(model,
+        lbann.contrib.lc.launcher.run(trainer, model,
                                       data_reader_proto,
                                       optimizer,
                                       job_name='lbann_densenet',
@@ -515,6 +549,12 @@ def main():
     # ----------------------------------
     args = get_args()
 
+    # Match this with number of GPUs per node
+    # On Lassen, this will be 4.
+    # On Pascal, this will be 2.
+    # If there are no GPUs, then match the number of processes per node.
+    statistics_group_size = 2
+
     # ----------------------------------
     # Construct layer graph
     # ----------------------------------
@@ -523,13 +563,14 @@ def main():
     cumulative_layer_num = 1
     log('Input. cumulative_layer_num={n}'.format(n=cumulative_layer_num))
     (probs, labels) = construct_layer_graph(
+        statistics_group_size,
         121, cumulative_layer_num, input_node)
 
     # ----------------------------------
     # Setup experiment
     # ----------------------------------
 
-    (model, data_reader_proto, optimizer) = set_up_experiment(
+    (trainer, model, data_reader_proto, optimizer) = set_up_experiment(
         args, input_node, probs, labels)
 
     # ----------------------------------
@@ -537,7 +578,7 @@ def main():
     # ----------------------------------
     # Note: Use `lbann.run` instead for non-LC systems.
 
-    run_experiment(args, model, data_reader_proto, optimizer)
+    run_experiment(args, trainer, model, data_reader_proto, optimizer)
 
 
 if __name__ == '__main__':

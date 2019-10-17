@@ -27,9 +27,9 @@
 #ifndef LBANN_LAYERS_LEARNING_BASE_CONVOLUTION_HPP_INCLUDED
 #define LBANN_LAYERS_LEARNING_BASE_CONVOLUTION_HPP_INCLUDED
 
-#include <vector>
-#include <omp.h>
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
 #include "lbann/utils/cudnn.hpp"
@@ -37,6 +37,9 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
+
+#include <vector>
+#include <omp.h>
 
 namespace lbann {
 
@@ -350,14 +353,14 @@ public:
       this->m_weights.resize(1, nullptr);
     }
     if (this->m_weights[0] == nullptr) {
-      auto* w = new weights(get_comm());
-      std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
+      auto w = make_unique<weights>(get_comm());
+      auto init = make_unique<he_initializer>(probability_distribution::gaussian);
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_kernel");
-      w->set_initializer(init);
-      w->set_optimizer(opt);
-      this->m_weights[0] = w;
-      this->m_model->add_weights(w);
+      w->set_initializer(std::move(init));
+      w->set_optimizer(std::move(opt));
+      this->m_weights[0] = w.get();
+      this->m_model->add_weights(std::move(w));
     }
     auto& kernel_weights = *this->m_weights[0];
 
@@ -379,12 +382,12 @@ public:
     // Set up bias if needed.
     if (m_bias_scaling_factor != DataType(0)) {
       if (this->m_weights[1] == nullptr) {
-        auto* w = new weights(get_comm());
+        auto w = make_unique<weights>(get_comm());
         std::unique_ptr<optimizer> opt(m_model->create_optimizer());
         w->set_name(get_name() + "_bias");
-        w->set_optimizer(opt);
-        this->m_weights[1] = w;
-        this->m_model->add_weights(w);
+        w->set_optimizer(std::move(opt));
+        this->m_weights[1] = w.get();
+        this->m_model->add_weights(std::move(w));
       }
       auto& bias_weights = *this->m_weights[1];
       bias_weights.set_dims(output_dims[0]);
@@ -643,8 +646,8 @@ protected:
     const auto& local_input = get_local_prev_activations();
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
 
-    // Useful constants
-    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
     const bool has_local_data = (local_input.Height() > 0
                                  && local_input.Width() > 0
                                  && local_gradient_wrt_output.Height() > 0
@@ -917,7 +920,8 @@ protected:
     const int num_input_channels = input_dims[0];
     const int num_output_channels = output_dims[0];
     const int num_per_output_channel = get_output_size() / num_output_channels;
-    const int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
     const auto& kernel_dims = get_kernel_dims();
     const auto& kernel_size = std::accumulate(kernel_dims.begin(),
                                               kernel_dims.end(),
@@ -1215,6 +1219,13 @@ private:
 #endif // LBANN_HAS_CUDNN
 
 };
+
+#ifndef LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
+extern template class base_convolution_layer<El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class base_convolution_layer<El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

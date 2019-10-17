@@ -28,6 +28,7 @@
 #define LBANN_LAYER_BERNOULLI_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
@@ -36,7 +37,8 @@ namespace lbann {
  *
  *  During validation and testing, outputs are all zero.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class bernoulli_layer : public transform_layer {
 private:
   /** Probability of outputting 1. */
@@ -65,7 +67,7 @@ protected:
 
   void fp_compute() override {
     auto& output = get_activations();
-    if (this->m_model->get_execution_mode() == execution_mode::training) {
+    if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
       bernoulli_fill(output, output.Height(), output.Width(), m_prob);
     } else {
       El::Zero(output);
@@ -73,6 +75,19 @@ protected:
   }
 
 };
+
+#ifndef LBANN_BERNOULLI_LAYER_INSTANTIATE
+extern template class bernoulli_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class bernoulli_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class bernoulli_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class bernoulli_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_BERNOULLI_LAYER_INSTANTIATE
 
 } // namespace lbann
 

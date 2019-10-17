@@ -26,16 +26,18 @@
 
 #include "lbann/optimizers/hypergradient_adam.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <optimizers.pb.h>
 
 namespace lbann {
 
-hypergradient_adam::hypergradient_adam(lbann_comm *comm,
-                                       DataType init_learning_rate,
+hypergradient_adam::hypergradient_adam(DataType init_learning_rate,
                                        DataType hyper_learning_rate,
                                        DataType beta1,
                                        DataType beta2,
                                        DataType eps)
-  : optimizer(comm, init_learning_rate),
+  : optimizer(init_learning_rate),
     m_hyper_learning_rate(hyper_learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),
@@ -142,8 +144,7 @@ void hypergradient_adam::step_compute(AbsDistMat& values,
 }
 
 bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::save_to_checkpoint_shared(p,name_prefix);
+  optimizer::save_to_checkpoint_shared(p,name_prefix);
   if (get_comm().am_trainer_master()) {
     pack_scalars(p);
   }
@@ -162,8 +163,7 @@ bool hypergradient_adam::save_to_checkpoint_shared(persist& p, std::string name_
 }
 
 bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::load_from_checkpoint_shared(p,name_prefix);
+  optimizer::load_from_checkpoint_shared(p,name_prefix);
   struct packing_header header;
   if (get_comm().am_trainer_master()) {
     unpack_scalars(p, &header);
@@ -186,8 +186,7 @@ bool hypergradient_adam::load_from_checkpoint_shared(persist& p, std::string nam
 }
 
 bool hypergradient_adam::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::save_to_checkpoint_distributed(p,name_prefix);
+  optimizer::save_to_checkpoint_distributed(p,name_prefix);
   pack_scalars(p);
 
   char l_name[512];
@@ -204,8 +203,7 @@ bool hypergradient_adam::save_to_checkpoint_distributed(persist& p, std::string 
 }
 
 bool hypergradient_adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  if(p.get_cb_type() == callback_type::batch)
-    optimizer::load_from_checkpoint_distributed(p,name_prefix);
+  optimizer::load_from_checkpoint_distributed(p,name_prefix);
   struct packing_header header;
   unpack_scalars(p, &header);
 
@@ -219,6 +217,18 @@ bool hypergradient_adam::load_from_checkpoint_distributed(persist& p, std::strin
   sprintf(l_name, "%s_optimizer_adam_old_gradient_%lldx%lld", name_prefix.c_str(), m_old_gradient->Height(), m_old_gradient->Width());
   p.read_rank_distmat(persist_type::train, l_name, *m_old_gradient);
   return true;
+}
+
+std::unique_ptr<optimizer>
+build_hypergradient_adam_optimizer_from_pbuf(
+  google::protobuf::Message const& msg) {
+  const auto& params =
+    dynamic_cast<lbann_data::Optimizer::HypergradientAdam const&>(msg);
+  return make_unique<hypergradient_adam>(params.init_learning_rate(),
+                                         params.hyper_learning_rate(),
+                                         params.beta1(),
+                                         params.beta2(),
+                                         params.eps());
 }
 
 }  // namespace lbann

@@ -45,6 +45,9 @@
 #ifdef LBANN_HAS_CUDNN
 #include "lbann/utils/cudnn.hpp"
 #endif
+#ifdef LBANN_HAS_PYTHON
+#include "lbann/utils/python.hpp"
+#endif
 
 #include <iostream>
 #include <string>
@@ -94,6 +97,9 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed) {
 void finalize(lbann_comm* comm) {
 #ifdef LBANN_HAS_CUDNN
   cudnn::destroy();
+#endif
+#ifdef LBANN_HAS_PYTHON
+  python::finalize();
 #endif
   if (comm != nullptr) {
     delete comm;
@@ -145,7 +151,7 @@ std::string to_string(execution_mode m) {
   }
 }
 
-execution_mode exe_mode_from_string(std::string const& str) {
+execution_mode exec_mode_from_string(std::string const& str) {
   if (str == "training" || str == "train")
     return execution_mode::training;
   else if (str == "validation" || str == "validate")
@@ -163,7 +169,7 @@ execution_mode exe_mode_from_string(std::string const& str) {
 std::istream& operator>>(std::istream& is, execution_mode& m) {
   std::string tmp;
   is >> tmp;
-  m = exe_mode_from_string(tmp);
+  m = exec_mode_from_string(tmp);
   return is;
 }
 

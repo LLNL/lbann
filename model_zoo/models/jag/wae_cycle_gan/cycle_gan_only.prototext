@@ -1,8 +1,9 @@
+trainer {
+}
 model {
   name: "cycgan_model"
-  shareable_training_data_reader:false 
+  shareable_training_data_reader:false
   serialize_io: true
-  procs_per_trainer:0 
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
@@ -48,7 +49,7 @@ model {
       layer: "L_cyc_x"
     }
   }
-  num_epochs: 40 
+  num_epochs: 40
   super_steps: 10
   metric {
     layer_metric {
@@ -186,8 +187,6 @@ model {
   layer {
     fully_connected {
       #num_neurons: 2500
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 1 ]
       #replace image_dim with latent_dim
       #num_neurons: 20
       has_bias: true
@@ -196,6 +195,7 @@ model {
     data_layout: "data_parallel"
     weights: "gen1fc4linearity gen1fc4bias"
     parents: "gen1leaky_relu3"
+    hint_layer: "image_data_dummy"
   }
   #concat latenty sample (image_data_dummy) and param
   layer {
@@ -476,14 +476,13 @@ model {
   layer {
     fully_connected {
       #num_neurons: 11
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4"
     data_layout: "data_parallel"
     weights: "gen2fc4linearity gen2fc4bias"
     parents: "gen2leaky_relu3"
+    hint_layer: "param_data_id"
   }
   layer {
     name: "concat_param_n_img"
@@ -696,7 +695,9 @@ model {
   }
   weights {
     name: "gen1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -704,7 +705,9 @@ model {
   }
   weights {
     name: "gen1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -712,7 +715,9 @@ model {
   }
   weights {
     name: "gen1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -720,7 +725,9 @@ model {
   }
   weights {
     name: "gen1fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -728,7 +735,9 @@ model {
   }
   weights {
     name: "d1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -736,7 +745,9 @@ model {
   }
   weights {
     name: "d1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -744,7 +755,9 @@ model {
   }
   weights {
     name: "d1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -752,22 +765,30 @@ model {
   }
   weights {
     name: "gen2fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -784,7 +805,9 @@ model {
   }
   weights {
     name: "d1_invfc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -792,7 +815,9 @@ model {
   }
   weights {
     name: "d1_invfc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -800,7 +825,9 @@ model {
   }
   weights {
     name: "d1_invfc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -843,9 +870,11 @@ model {
   }
   callback { gpu_memory_usage {} }
   #callback { debug {} }
+  #summarizer {
+  #  dir: "."
+  #}
   #callback {
   #  summary {
-  #    dir: "."
   #    mat_interval: 25
   #  }
   #}
@@ -865,7 +894,6 @@ model {
 
    # }
  # }
-  block_size: 256
   ####For metric, loss per individual sample
   layer {
     name: "fw_latent_loss"
@@ -935,14 +963,13 @@ model {
   layer {
     fully_connected {
       #num_neurons: 11
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_cyclic"
     data_layout: "data_parallel"
     weights: "gen2fc4linearity gen2fc4bias"
     parents: "gen2leaky_relu3_cyclic"
+    hint_layer: "param_data_id"
   }
   layer {
     name: "L_cyc_x"

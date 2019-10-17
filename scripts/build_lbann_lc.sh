@@ -43,8 +43,6 @@ if [ "${ARCH}" == "x86_64" ]; then
 fi
 
 
-ELEMENTAL_MATH_LIBS=
-PATCH_OPENBLAS=ON
 C_FLAGS=
 CXX_FLAGS=-DLBANN_SET_EL_RNG
 Fortran_FLAGS=
@@ -408,8 +406,8 @@ fi
 # Add compiler optimization flags
 if [ "${BUILD_TYPE}" == "Release" ]; then
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -O3 ${INSTRUMENT}"
-        CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT}"
+        C_FLAGS="${C_FLAGS} -O3 ${INSTRUMENT} -fno-omit-frame-pointer"
+        CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT} -fno-omit-frame-pointer"
         Fortran_FLAGS="${Fortran_FLAGS} -O3"
         if [ "${CLUSTER}" == "catalyst" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
@@ -435,8 +433,8 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
     fi
 else
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -g ${INSTRUMENT}"
-        CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT}"
+        C_FLAGS="${C_FLAGS} -g ${INSTRUMENT} -fno-omit-frame-pointer"
+        CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT} -fno-omit-frame-pointer"
         Fortran_FLAGS="${Fortran_FLAGS} -g"
     fi
 fi
@@ -564,8 +562,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
-    WITH_CUB=ON
-    ELEMENTAL_USE_CUBLAS=OFF
+    WITH_CUB=${WITH_CUB:-ON}
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
 	if [[ ${CORAL} -eq 1 ]]; then
@@ -629,7 +626,9 @@ else
     HAS_GPU=0
     WITH_CUDA=${WITH_CUDA:-OFF}
     WITH_CUDNN=OFF
-    ELEMENTAL_USE_CUBLAS=OFF
+    WITH_CUB=OFF
+    ALUMINUM_WITH_NCCL=OFF
+    ALUMINUM_WITH_MPI_CUDA=OFF
 fi
 
 ################################################################
@@ -708,9 +707,6 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable WITH_CUDA
     print_variable WITH_CUDNN
     print_variable WITH_NVPROF
-    print_variable ELEMENTAL_USE_CUBLAS
-    print_variable ELEMENTAL_MATH_LIBS
-    print_variable PATCH_OPENBLAS
     print_variable DETERMINISTIC
     print_variable CLEAN_BUILD
     print_variable VERBOSE
@@ -791,6 +787,7 @@ cmake \
 -D LBANN_DATATYPE=${DATATYPE} \
 -D LBANN_DETERMINISTIC=${DETERMINISTIC} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
+-D LBANN_SB_BUILD_CATCH2=ON \
 -D LBANN_NO_OMP_FOR_DATA_READERS=${NO_OMP_FOR_DATA_READERS} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \

@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CLAMP_LAYER_INSTANTIATE
 #include "lbann/layers/math/clamp.hpp"
 
 namespace lbann {
@@ -167,5 +168,10 @@ void clamp_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
            get_local_prev_error_signals(),
            get_local_error_signals());
 }
+
+template class clamp_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class clamp_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

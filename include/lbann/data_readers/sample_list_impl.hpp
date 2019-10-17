@@ -12,9 +12,9 @@
 #include <unordered_set>
 #include <memory>
 #include <type_traits>
+#include <limits>
 
 #include <cereal/archives/binary.hpp>
-#include <sstream>
 #include <unistd.h>
 
 namespace lbann {
@@ -338,6 +338,11 @@ inline void sample_list<sample_name_t>
 ::all_gather_archive(const std::string &archive,
                      std::vector<std::string>& gathered_archive,
                      lbann_comm& comm) {
+  if (!options::get()->get_bool("all_gather_old")) {
+    all_gather_archive_new(archive, gathered_archive, comm);
+    return;
+  }
+
   int size_of_list_archive = archive.size();
   std::vector<int> packed_sizes(comm.get_procs_per_trainer());
 
@@ -380,15 +385,104 @@ inline void sample_list<sample_name_t>
 }
 
 template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::all_gather_archive_new(const std::string &archive,
+                     std::vector<std::string>& gathered_archive,
+                     lbann_comm& comm) {
+
+  // there's commented out code below to deal with the case where
+  // archive.size() > INT_MAX; but for now let's assume we won't
+  // encounter that (which is true for the 100M JAG set)
+  int constexpr max_int = std::numeric_limits<int>::max();
+  size_t n = archive.size();
+  if (n > max_int) {
+    LBANN_ERROR("(n > max_int");
+  }
+
+  // change int to size_t for case where n > max_int (see commented out
+  // code block below)
+  int size_of_my_archive= archive.size();
+  std::vector<int> packed_sizes(comm.get_procs_per_trainer());
+  comm.trainer_all_gather(size_of_my_archive, packed_sizes);
+
+  int me = comm.get_rank_in_trainer();
+  int np = comm.get_procs_per_trainer();
+
+  size_t g = 0;
+  for (auto t : packed_sizes) {
+    g += t;
+  }
+  if (!me) {
+    std::cout << "global archive size: " << g << std::endl;
+  }
+
+  for (int p=0; p<np; p++) {
+    gathered_archive[p].resize(packed_sizes[p]);
+    if (me == p) {
+      gathered_archive[p] = archive;
+    } 
+    int sz = packed_sizes[p];
+    char *data = const_cast<char*>(gathered_archive[p].data());
+    comm.trainer_broadcast<char>(p, data, sz);
+  }
+
+#if 0
+  std::vector<int> rounds;
+  for (int p=0; p<np; p++) {
+    std::string& buf = gathered_archive[p];
+    buf.resize(packed_sizes[p]);
+
+    rounds.clear();
+    int n = packed_sizes[p]/INT_MAX;
+    if (n < 0) {
+      LBANN_ERROR("(n < 0; that shouldn't be possible; there's a bug; n: ", n, " packed_sizes[p]: ", packed_sizes[p], " packed_sizes[p]/INT_MAX: ", n);
+    }
+    for (int k=0; k<n; k++) {
+      rounds.push_back(INT_MAX);
+    }
+    int remainder = packed_sizes[p] - (n*INT_MAX);
+    rounds.push_back(remainder);
+
+    if (p != me) {
+      gathered_archive[p].resize(packed_sizes[p]);
+    }
+else {
+std::cout << "XX me: " << me << " rounds: ";
+for (auto t : rounds) std::cout << t << " ";
+std::cout << std::endl;
+}
+    size_t offset = 0;
+    for (size_t k=0; k<rounds.size(); k++) {
+      if (me == p) {
+        char *data = const_cast<char*>(archive.data() + offset);
+        comm.trainer_broadcast<char>(p, data, rounds[k]);
+      } else {
+        char *data = const_cast<char*>(gathered_archive[p].data() + offset);
+        comm.trainer_broadcast<char>(p, data, rounds[k]);
+      }
+      offset += rounds[k];
+if (me == p) {
+std::cout << "XX finished round" << std::endl;
+}
+    }
+  }
+#endif
+
+  return;
+}
+
+template <typename sample_name_t>
 template <typename T>
 inline size_t sample_list<sample_name_t>
 ::all_gather_field(T data,
                    std::vector<T>& gathered_data,
                    lbann_comm& comm) {
   std::string archive;
-  std::stringstream ss;
-  cereal::BinaryOutputArchive oarchive(ss);
-  oarchive(data);
+  std::ostringstream ss;
+  {
+    cereal::BinaryOutputArchive oarchive(ss);
+    oarchive(data);
+  } // archive goes out of scope, ensuring all contents are flushed
   archive = ss.str();
 
   std::vector<std::string> gathered_archive(comm.get_procs_per_trainer());

@@ -33,7 +33,7 @@
 #include "lbann/utils/jag_utils.hpp"  // read_filelist(..) TODO should be move to file_utils
 #include "lbann/utils/timer.hpp"
 #include "lbann/models/model.hpp"
-
+#include "lbann/utils/lbann_library.hpp"
 
 namespace lbann {
 
@@ -94,9 +94,16 @@ void numpy_npz_conduit_reader::load() {
   std::string infile = get_data_filename();
   read_filelist(m_comm, infile, m_filenames);
 
-  // fills in: m_num_samples, m_num_features, m_num_response_features,
+  // fills in: m_num_features, m_num_response_features,
   // m_data_dims, m_data_word_size, m_response_word_size
   fill_in_metadata();
+
+  // Reset indices.
+  m_shuffled_indices.clear();
+  m_shuffled_indices.resize(m_num_samples);
+  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  resize_shuffled_indices();
+  m_num_samples = m_shuffled_indices.size();
 
   if (m_num_labels == 0 && !opts->get_bool("preload_data_store") && opts->get_bool("use_data_store")) {
     LBANN_WARNING("when not preloading you must specify the number of labels in the prototext file if you are doing classification");
@@ -119,38 +126,82 @@ void numpy_npz_conduit_reader::load() {
     }
   }
 
-  // Reset indices.
-  m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_num_samples);
-  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-
   instantiate_data_store(local_list_sizes);
 
-  // TODO: this may need fixing up for efficiency. If using an absolute
-  //       num samples, or percentage of samples, and we've preloaded,
-  //       this is wasteful and not what we want
   select_subset_of_data();
 }
 
 void numpy_npz_conduit_reader::preload_data_store() {
   double tm1 = get_time();
+
+  if (is_master()) std::cout << "Starting numpy_npz_conduit_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
+
+  size_t count = get_absolute_sample_count(); 
+  double use_percent = get_use_percent();
+  if (count != 0 || use_percent != 1) {
+    LBANN_ERROR("numpy_npz_conduit_reader currently assumes you are using 100% of the data set; you specified get_absolute_sample_count() = ", count, " and get_use_percent() = ", use_percent, "; please ask Dave Hysom to modify the code, if you want to use less than 100%");
+  }
+
   m_data_store->set_preload();
   int rank = m_comm->get_rank_in_trainer();
 
   std::unordered_set<int> label_classes;
-  for (size_t data_id=0; data_id<m_filenames.size(); data_id++) {
-    if (m_data_store->get_index_owner(data_id) != rank) {
-      continue;
+
+  bool threaded = ! options::get()->get_bool("data_store_no_thread");
+
+  //threaded mode
+  if (threaded) {
+    if (is_master()) {
+      std::cout << "mode: data_store_thread\n";
+    }
+    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(m_comm, options::get());
+    int num_threads = static_cast<int>(io_thread_pool->get_num_threads());
+
+    //collect the set of indices that belong to this rank
+    std::vector<std::unordered_set<int>> data_ids(num_threads);
+    int j = 0;
+    for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
+      int index = m_shuffled_indices[data_id];
+      if (m_data_store->get_index_owner(index) != rank) {
+        continue;
+      }
+      data_ids[j++].insert(index);
+      if (j == num_threads) {
+        j = 0;
+      }
     }
 
-    conduit::Node node;
-    numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
-    const char *char_ptr = node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
-    const int* label_ptr = reinterpret_cast<const int*>(char_ptr);
-    label_classes.insert(*label_ptr);
-    m_data_store->set_conduit_node(data_id, node);
-  }
+    //load the samples
+    for (int t = 0; t < num_threads; t++) {
+      if(t == io_thread_pool->get_local_thread_id()) {
+        continue;
+      } else {
+        io_thread_pool->submit_job_to_work_group(std::bind(&numpy_npz_conduit_reader::load_numpy_npz_from_file, this, data_ids[t], label_classes));
+      }
+    }
+    load_numpy_npz_from_file(data_ids[io_thread_pool->get_local_thread_id()], label_classes);
+    io_thread_pool->finish_work_group();
+  } //end: threaded mode
 
+  //non-threaded mode
+  else {
+    for (size_t data_id=0; data_id<m_filenames.size(); data_id++) {
+      if (m_data_store->get_index_owner(data_id) != rank) {
+        continue;
+      }
+
+      conduit::Node node;
+      numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
+      const char *char_ptr = node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
+      const int* label_ptr = reinterpret_cast<const int*>(char_ptr);
+      label_classes.insert(*label_ptr);
+      m_data_store->set_conduit_node(data_id, node);
+    }
+  } //end: non-threaded mode
+
+  // Nikoli says we're not using labels, so I'm commenting this section out
+  // (this section is a mess, anyway)
+  #if 0
   if (m_has_labels) {
 
     // get max element. Yes, I know you can do this with, e.g, lambda
@@ -199,10 +250,24 @@ void numpy_npz_conduit_reader::preload_data_store() {
     m_num_labels = label_classes.size();
     #endif
   }
+  #endif
+
   double tm2 = get_time();
   if (is_master()) {
     std::cout << "time to preload: " << tm2 - tm1 << " for role: " << get_role() << "\n";
   }
+}
+
+bool numpy_npz_conduit_reader::load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int> &label_classes) {
+  for (auto data_id : data_ids) {
+    conduit::Node node;
+    numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
+    const char *char_ptr = node[LBANN_DATA_ID_STR(data_id) + "/frm/data"].value();
+    const int* label_ptr = reinterpret_cast<const int*>(char_ptr);
+    label_classes.insert(*label_ptr);
+    m_data_store->set_conduit_node(data_id, node);
+  }
+  return true;
 }
 
 bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
@@ -215,7 +280,8 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     numpy_conduit_converter::load_conduit_node(m_filenames[data_id], data_id, node);
     //note: if testing, and test set is touched more than once, the following
     //      will through an exception TODO: relook later
-    if (priming_data_store() || m_model->get_execution_mode() == execution_mode::testing) {
+    const auto& c = static_cast<const execution_context&>(m_model->get_execution_context());
+    if (priming_data_store() || c.get_execution_mode() == execution_mode::testing) {
       m_data_store->set_conduit_node(data_id, node);
     }
   }
@@ -325,11 +391,10 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     LBANN_ERROR("failed to open " + m_filenames[my_file] + " for reading");
   }
   in.close();
-
-  m_num_samples = m_filenames.size();
-  if (is_master()) {
+  m_num_samples = m_filenames.size(); 
+  if (is_master()) { 
     std::cout << "num samples: " << m_num_samples << "\n";
-  }
+  } 
 
   int data_id = 0; //meaningless
   conduit::Node node;

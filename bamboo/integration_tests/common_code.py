@@ -6,40 +6,55 @@ import collections, csv, os, pprint, re, time
 
 # Set up the command ##########################################################
 def get_command(cluster, dir_name, model_folder, model_name, executable,
-                output_file_name, error_file_name, compiler_name, weekly=False):
+                output_file_name, error_file_name, compiler_name, weekly=False,
+                data_reader_percent=None):
     if model_name in ['alexnet', 'conv_autoencoder_imagenet']:
         if weekly:
-            data_reader_percent = 0.10
-            time_limit = 600
+            time_limit = 360
         else:
-            data_reader_percent = 0.01
             time_limit = 60
         if cluster == 'lassen':
             command = tools.get_command(
-                cluster=cluster, executable=executable, num_nodes=16,
-                partition='pbatch', time_limit=time_limit, num_processes=32,
+                cluster=cluster, executable=executable,
+                # Allocation/Run Parameters
+                num_nodes=16, num_processes=32, partition='pbatch',
+                time_limit=time_limit,
+                # LBANN Parameters
                 dir_name=dir_name,
                 data_filedir_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/',
                 data_filename_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/train.txt',
                 data_filedir_test_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/',
                 data_filename_test_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/val.txt',
-                data_reader_name='imagenet_lassen', data_reader_percent=data_reader_percent,
+                data_reader_name='imagenet_lassen',
+                data_reader_percent=data_reader_percent,
                 model_folder=model_folder, model_name=model_name, num_epochs=20,
-                optimizer_name='adagrad', output_file_name=output_file_name,
-                error_file_name=error_file_name)
+                optimizer_name='adagrad',
+                # Error/Output Redirect
+                error_file_name=error_file_name,
+                output_file_name=output_file_name,
+                # Misc. Parameters
+                weekly=weekly)
         else:
             command = tools.get_command(
-                cluster=cluster, executable=executable, num_nodes=16,
-                partition='pbatch', time_limit=time_limit, num_processes=32,
+                cluster=cluster, executable=executable,
+                # Allocation/Run Parameters
+                num_nodes=16, num_processes=32, partition='pbatch',
+                time_limit=time_limit,
+                # LBANN Parameters
                 dir_name=dir_name,
                 data_filedir_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/train/',
                 data_filename_train_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/train.txt',
                 data_filedir_test_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/original/val/',
                 data_filename_test_default='/p/lscratchh/brainusr/datasets/ILSVRC2012/labels/val.txt',
-                data_reader_name='imagenet', data_reader_percent=data_reader_percent,
+                data_reader_name='imagenet',
+                data_reader_percent=data_reader_percent,
                 model_folder=model_folder, model_name=model_name, num_epochs=20,
-                optimizer_name='adagrad', output_file_name=output_file_name,
-                error_file_name=error_file_name)
+                optimizer_name='adagrad',
+                # Error/Output Redirect
+                error_file_name=error_file_name,
+                output_file_name=output_file_name,
+                # Misc. Parameters
+                weekly=weekly)
     elif model_name in ['conv_autoencoder_mnist', 'lenet_mnist']:
         if (model_name == 'lenet_mnist') and \
                 (compiler_name in ['clang6', 'intel19']):
@@ -47,19 +62,27 @@ def get_command(cluster, dir_name, model_folder, model_name, executable,
             time_limit = 600
         else:
             partition = 'pdebug'
-            time_limit = 30
+            time_limit = 60
         if (cluster == 'ray') and (model_name == 'conv_autoencoder_mnist'):
             num_processes = 20
         else:
             num_processes = 2
         command = tools.get_command(
-            cluster=cluster, executable=executable, num_nodes=1,
-            partition=partition, time_limit=time_limit,
-            num_processes=num_processes, dir_name=dir_name,
+            cluster=cluster, executable=executable,
+            # Allocation/Run Parameters
+            num_nodes=1, num_processes=num_processes, partition=partition,
+            time_limit=time_limit,
+            # LBANN Parameters
+            dir_name=dir_name,
             data_filedir_default='/p/lscratchh/brainusr/datasets/MNIST',
-            data_reader_name='mnist', model_folder=model_folder,
-            model_name=model_name, num_epochs=5, optimizer_name='adagrad',
-            output_file_name=output_file_name, error_file_name=error_file_name)
+            data_reader_name='mnist', data_reader_percent=data_reader_percent,
+            model_folder=model_folder, model_name=model_name, num_epochs=5,
+            optimizer_name='adagrad',
+            # Error/Output Redirect
+            error_file_name=error_file_name,
+            output_file_name=output_file_name,
+            # Misc. Parameters
+            weekly=weekly)
     else:
         raise Exception('Invalid model: %s' % model_name)
     return command
@@ -72,15 +95,14 @@ def run_lbann(command, model_name, output_file_name, error_file_name,
     print('About to run: %s' % command)
     print('%s began waiting in the queue at ' % model_name +
           time.strftime('%H:%M:%S', time.localtime()))
-    output_value = os.system(command)
+    return_code = os.system(command)
     print('%s finished at ' % model_name +
           time.strftime('%H:%M:%S', time.localtime()))
     lbann_exceptions = []
     timed_out = False
-    if should_log or (output_value != 0):
+    if should_log or (return_code != 0):
         output_file = open(output_file_name, 'r')
         for line in output_file:
-            print('%s: %s' % (output_file_name, line))
             is_match = re.search(
                 'This lbann_exception is about to be thrown:(.*)', line)
             if is_match:
@@ -90,17 +112,16 @@ def run_lbann(command, model_name, output_file_name, error_file_name,
                 timed_out = True
         error_file = open(error_file_name, 'r')
         for line in error_file:
-            print('%s: %s' % (error_file_name, line))
             is_match = re.search('LBANN error on (.*)', line)
             if is_match:
                 lbann_exceptions.append(is_match.group(1))
-    if output_value != 0:
-        error_string = ('Model %s crashed with output_value=%d, timed_out=%s,'
+    if return_code != 0:
+        error_string = ('Model %s crashed with return_code=%d, timed_out=%s,'
                         ' and lbann exceptions=%s. Command was: %s') % (
-            model_name, output_value, str(timed_out),
+            model_name, return_code, str(timed_out),
             str(collections.Counter(lbann_exceptions)), command)
-        raise Exception(error_string)
-    return output_value
+        print(error_string)
+    tools.assert_success(return_code, error_file_name)
 
 # Extract data from output ####################################################
 
@@ -191,10 +212,21 @@ def extract_data(output_file_name, data_fields, should_log):
                     print('extract_data: stdev={sv}'.format(sv=stdev_value))
                     data_dict[data_field][model_id][epoch_id] = stdev_value
 
+            # This will re-populate the value for 'test_accuracy'
+            # on each epoch, thus keeping the final value.
+            # Just keep the data_field as 'test_accuracy' so we don't have
+            # to update code and csv files to include 'validation_accuracy'.
+            regex = 'validation categorical accuracy : ([0-9.]+)'
+            data_field = 'test_accuracy'
+            populate_data_dict_overall(regex, line, data_field, data_fields,
+                                       data_dict, model_id)
+
+            # Overwrite accuracy from validation if we have test accuracy.
             regex = 'test categorical accuracy : ([0-9.]+)'
             data_field = 'test_accuracy'
             populate_data_dict_overall(regex, line, data_field, data_fields,
                                        data_dict, model_id)
+
     output_file.close()
     if should_log:
         print('extract_data: Extracted Data below:')
@@ -205,7 +237,8 @@ def extract_data(output_file_name, data_fields, should_log):
 
 
 def skeleton(cluster, dir_name, executable, model_folder, model_name,
-             data_fields, should_log, compiler_name=None, weekly=False):
+             data_fields, should_log, compiler_name=None, weekly=False,
+             data_reader_percent=None):
     if compiler_name is None:
         output_file_name = '%s/bamboo/integration_tests/output/%s_output.txt' % (dir_name, model_name)
         error_file_name = '%s/bamboo/integration_tests/error/%s_error.txt' % (dir_name, model_name)
@@ -214,9 +247,10 @@ def skeleton(cluster, dir_name, executable, model_folder, model_name,
         error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' % (dir_name, model_name, compiler_name)
     command = get_command(
         cluster, dir_name, model_folder, model_name, executable,
-        output_file_name, error_file_name, compiler_name, weekly=weekly)
+        output_file_name, error_file_name, compiler_name, weekly=weekly,
+        data_reader_percent=data_reader_percent)
     run_lbann(command, model_name, output_file_name,
-              error_file_name, should_log)  # Don't need return value
+              error_file_name, should_log)
     return extract_data(output_file_name, data_fields, should_log)
 
 # Misc. functions  ############################################################

@@ -42,7 +42,7 @@ namespace lbann {
 class adagrad : public optimizer {
 public:
 
-  adagrad(lbann_comm* comm, DataType learning_rate, DataType eps = 1e-8);
+  adagrad(DataType learning_rate, DataType eps = 1e-8);
   adagrad(const adagrad& other);
   adagrad& operator=(const adagrad& other);
   ~adagrad() override = default;
@@ -84,6 +84,10 @@ private:
   bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 
 };
+
+std::unique_ptr<optimizer>
+build_adagrad_optimizer_from_pbuf(
+  google::protobuf::Message const&);
 
 } // namespace lbann
 

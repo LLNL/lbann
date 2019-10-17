@@ -30,6 +30,9 @@
 #include "lbann/optimizers/optimizer.hpp"
 
 namespace lbann {
+namespace callback {
+class perturb_adam;
+} // namespace callback
 
 /** @brief Adam optimizer.
  *
@@ -44,8 +47,7 @@ public:
   /** @name Life cycle functions */
   ///@{
 
-  adam(lbann_comm* comm,
-       DataType learning_rate,
+  adam(DataType learning_rate,
        DataType beta1 = 0.9,
        DataType beta2 = 0.99,
        DataType eps = 1e-8);
@@ -141,7 +143,7 @@ private:
   std::unique_ptr<AbsDistMat> m_moment2;
 
   /** Hyperparameter exploration. */
-  friend class lbann_callback_perturb_adam;
+  friend class callback::perturb_adam;
 
   /** CPU implementation of optimization step. */
   void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
@@ -204,6 +206,10 @@ private:
   ///@}
 
 };
+
+std::unique_ptr<optimizer>
+build_adam_optimizer_from_pbuf(
+  google::protobuf::Message const&);
 
 } // namespace lbann
 

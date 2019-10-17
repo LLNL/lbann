@@ -29,6 +29,7 @@
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/image.hpp"
 #include "lbann/utils/opencv.hpp"
@@ -263,7 +264,7 @@ void data_reader_jag_conduit::set_defaults() {
   m_list_per_model = false;
 }
 
-void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+void data_reader_jag_conduit::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
 }
 
@@ -354,10 +355,54 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
     }
   }
 
-  read_node(h, path, node);
+  if (options::get()->get_bool("old_method") || ! options::get()->get_bool("preload_data_store")) {
+    read_node(h, path, node);
+  } else {
+    read_partial_node(h, path, node);
+  }
 
   return true;
 }
+
+#ifdef _USE_IO_HANDLE_
+void data_reader_jag_conduit::read_partial_node(const data_reader_jag_conduit::file_handle_t& h, const std::string& path, conduit::Node& n) const {
+  LBANN_ERROR("Not implemented; please contact Dave Hysom");
+}
+#else
+
+void data_reader_jag_conduit::read_partial_node(const data_reader_jag_conduit::file_handle_t& h, const std::string& path, conduit::Node& n) const {
+  conduit::Node work;
+  if (!has_path(h, path)) {
+    LBANN_ERROR("has_path failed for: ", path, ": num nodes successfully loaded by this rank: ", m_data_store->get_data_size());
+  }
+  const std::string key = path + "/inputs";
+  const std::string key2 = path + "/outputs/scalars";
+
+  if (! has_path(h, key)) {
+    LBANN_ERROR("has_path failed for: ", key, ": num nodes successfully loaded by this rank: ", m_data_store->get_data_size());
+  }
+  conduit::relay::io::hdf5_read(h, key, work);
+  n["inputs"] = work;
+  //n[key2] = work;
+
+  if (! has_path(h, key2)) {
+    LBANN_ERROR("has_path failed for: ", key2, ": num nodes successfully loaded by this rank: ", m_data_store->get_data_size());
+  }
+  conduit::relay::io::hdf5_read(h, key2, work);
+  n["/outputs/scalars"] = work;
+  //n[key] = work;
+
+  for (auto &&t : m_emi_image_keys) {
+    const std::string key3 = "/" + path + "/outputs/images/" + t;
+    if (! has_path(h, key3)) {
+      LBANN_ERROR("has_path failed for: ", key3, ": num nodes successfully loaded by this rank: ", m_data_store->get_data_size());
+    }
+    conduit::relay::io::hdf5_read(h, key3, work);
+    //n[key3] = work;
+    n["/outputs/images/" + t] = work;
+  }
+}
+#endif
 
 bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string& key) const {
   const sample_t& s = m_sample_list[i];
@@ -777,19 +822,24 @@ void data_reader_jag_conduit::load() {
   m_shuffled_indices.clear();
 
   if(is_master()) {
-    std::cout << "starting load" << std::endl;
+    std::cout << "data_reader_jag_conduit - starting load" << std::endl;
   }
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = data_dir + get_data_index_list();
 
   options *opts = options::get();
+  bool check_data = ! opts->get_bool("no_check_data");
 
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
+  double tm2 = get_time();
   load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
   if(is_master()) {
-    std::cout << "Finished sample list, check data" << std::endl;
+      std::cout << "Finished loadingsample list; time: " << get_time() - tm2 << std::endl;
+    if (!check_data) {
+      std::cout << "Skipping check data" << std::endl;
+    }
   }
 
   /// Check the data that each rank loaded
@@ -802,14 +852,20 @@ void data_reader_jag_conduit::load() {
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
     }
-    check_scalar_keys();
+    if (check_data) {
+      check_scalar_keys();
+    }  
 
     if (m_input_keys.size() == 0u) {
       set_all_input_choices(); // use all by default if none is specified
     }
-    check_input_keys();
+    if (check_data) {
+      check_input_keys();
+    }  
 
-    check_image_data();
+    if (check_data) {
+      check_image_data();
+    }  
 
     m_sample_list.close_if_done_samples_file_handle(0);
   }
@@ -817,18 +873,8 @@ void data_reader_jag_conduit::load() {
     std::cout << "Done with data checking" << std::endl;
   }
 
-
-  // need to resize and init shuffled indices here, since it's needed in
-  // preload_data_store, which must be called before merging the sample lists
-  int sz = m_sample_list.size();
-  std::vector<int> local_list_sizes(m_comm->get_procs_per_trainer());
-  m_comm->trainer_all_gather(sz, local_list_sizes);
-
-  if(is_master()) {
-    std::cout << "We now have the proper size" << std::endl;
-  }
-
   /// Merge all of the sample lists
+  tm2 = get_time();
   m_sample_list.all_gather_packed_lists(*m_comm);
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
     {
@@ -841,13 +887,34 @@ void data_reader_jag_conduit::load() {
     s << basename << "." << ext;
     m_sample_list.write(s.str());
   }
+  if (is_master()) {
+    std::cout << "time for all_gather_packed_lists: " << get_time() - tm2 << std::endl;
+  }
+
   m_shuffled_indices.resize(m_sample_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  resize_shuffled_indices();
 
   if(is_master()) {
     std::cout << "Lists have been gathered" << std::endl;
   }
 
+  std::vector<int> local_list_sizes;
+  if (opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
+    int np = m_comm->get_procs_per_trainer();
+    int base_files_per_rank = m_shuffled_indices.size() / np;
+    int extra = m_shuffled_indices.size() - (base_files_per_rank*np);
+    if (extra > np) {
+      LBANN_ERROR("extra > np");
+    }
+    local_list_sizes.resize(np, 0);
+    for (int j=0; j<np; j++) {
+      local_list_sizes[j] = base_files_per_rank;
+      if (j < extra) {
+        local_list_sizes[j] += 1;
+      }
+    }
+  }
   instantiate_data_store(local_list_sizes);
 
   select_subset_of_data();
@@ -866,35 +933,36 @@ void data_reader_jag_conduit::preload_data_store() {
   double tm1 = get_time();
   if (get_comm()->am_world_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
-    std::stringstream msg;
-    msg << " for role: " << get_role() << " starting preload";
-    LBANN_WARNING(msg.str());
+    LBANN_WARNING("starting preload for role: ", get_role(), "; --old_method=", opts->get_bool("old_method"));
   }
 
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
     try {
       work.reset();
-      m_sample_list.open_samples_file_handle(idx, true);
-      load_conduit_node(idx, key, work);
-      conduit::Node & node = m_data_store->get_empty_node(idx);
-      const std::string padded_idx = '/' + LBANN_DATA_ID_STR(idx);
+      m_sample_list.open_samples_file_handle(index, true);
+      load_conduit_node(index, key, work);
+      conduit::Node & node = m_data_store->get_empty_node(index);
+      const std::string padded_idx = '/' + LBANN_DATA_ID_STR(index);
       node[padded_idx] = work;
-
-      m_data_store->set_preloaded_conduit_node(idx, node);
-    }catch (conduit::Error const& e) {
-      LBANN_ERROR(" :: trying to load the node " + std::to_string(idx) + " with key " + key + " and got " + e.what());
+      m_data_store->set_preloaded_conduit_node(index, node);
+    } catch (conduit::Error const& e) {
+      LBANN_ERROR(" :: trying to load the node " + std::to_string(index) + " with key " + key + " and got " + e.what());
     }
   }
   /// Once all of the data has been preloaded, close all of the file handles
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
-    m_sample_list.close_if_done_samples_file_handle(idx);
+    m_sample_list.close_if_done_samples_file_handle(index);
   }
+
+
   if (get_comm()->am_world_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
     std::stringstream msg;
@@ -1198,11 +1266,13 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
 
   for (const auto& emi_tag : m_emi_image_keys) {
     const std::string conduit_field = m_output_image_prefix + emi_tag;
-    const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
+    const std::string conduit_obj = LBANN_DATA_ID_STR(sample_id) + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
       if (data_store_active()) {
-        LBANN_ERROR("Unable to find field " + conduit_obj
-                    + " in conduit node: " + std::to_string(sample_id));
+        LBANN_ERROR("Unable to find field ", conduit_obj,
+                    " in conduit node: ", std::to_string(sample_id),
+                    ": num nodes successfully loaded by this rank: ", 
+                    m_data_store->get_data_size(), " num successful calls to get_image_data on this rank: ");
       }
       conduit::Node n_image;
       bool from_file = load_conduit_node(sample_id, conduit_field, n_image);
@@ -1221,6 +1291,7 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
 
   return image_ptrs;
 }
+
 
 std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id, conduit::Node& sample) const {
   std::vector<scalar_t> scalars;
@@ -1457,20 +1528,21 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 }
 
 bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
+  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
-  if (m_data_store != nullptr && m_model->get_epoch() > 0) {
+  if (m_data_store != nullptr && c.get_epoch() > 0) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
   }
-  if (m_data_store != nullptr && m_model->get_epoch() == 0) {
+  if (m_data_store != nullptr && c.get_epoch() == 0) {
     // Once the node has been populated save it in the data store
     if (m_data_store != nullptr) {
       m_data_store->set_conduit_node(data_id, node);

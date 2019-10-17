@@ -29,59 +29,45 @@
 
 #include "lbann/base.hpp"
 #ifdef LBANN_HAS_PYTHON
-#include <string>
+
 #include <Python.h>
+
+#include <mutex>
+#include <string>
 
 namespace lbann {
 namespace python {
 
-/** @brief Singleton class to manage embedded Python session.
+/** @brief Start embedded Python session.
  *
- *  This mostly manages the initialization and finalization of the
- *  Python session. It is rarely necessary to interact with the
- *  singleton instance directly.
+ *  Does nothing if Python has already been started. This function is
+ *  thread-safe.
  *
- *  All static member functions are thread-safe.
+ *  Be warned that restarting Python after it has been ended is a bad
+ *  idea since any Python objects left over from the first session
+ *  will be invalid in the second. Expect segfaults.
  */
-class session {
-public:
+void initialize();
 
-  /** @brief Start embedded Python session if not already running.
-   *  @details Does nothing if Python has already been started.
-   */
-  static void start_once();
+/** @brief End embedded Python session.
+ *
+ *  Does nothing if Python is not running. This function is
+ *  thread-safe.
+ */
+void finalize();
 
-  /** @brief Check if embedded Python session is running. */
-  static bool is_active() noexcept;
+/** @brief Check if embedded Python session is running. */
+bool is_active();
 
-  /** @brief Check if a Python error has occurred.
-   *
-   *  Throws an exception if a Python error is detected.
-   *
-   *  @param force_error Whether to force an exception to be thrown.
-   */
-  static void check_error(bool force_error = false);
-
-  /** @brief Get singleton instance.
-   *
-   *  Initializes an embedded Python session the first time it is
-   *  called.
-   */
-  static session& get();
-
-  ~session();
-
-private:
-
-  /** @brief State on main Python thread. */
-  PyThreadState* m_thread_state = nullptr;
-
-  // Lifetime functions
-  session();
-  session(const session&) = delete;
-  session& operator=(const session&) = delete;
-
-};
+/** @brief Check if a Python error has occurred.
+ *
+ *  If a Python error is detected, then the Python error indicator is
+ *  cleared and a C++ exception is thrown. The GIL is acquired
+ *  internally.
+ *
+ *  @param force_error Whether to force an exception to be thrown.
+ */
+void check_error(bool force_error = false);
 
 /** @brief RAII wrapper for Python GIL.
  *
@@ -90,6 +76,8 @@ private:
  *  time. Make sure to acquire the GIL before calling Python C API
  *  functions. The GIL can be acquired recursively, i.e. you can
  *  acquire the GIL even if you already control it.
+ *
+ *  If an Python session is not running, one is started.
  */
 class global_interpreter_lock {
 public:
@@ -160,6 +148,13 @@ public:
    *  @returns @a New reference.
    */
   PyObject* release() noexcept;
+
+  /** Convert Python @c str to C++ @c std::string. */
+  operator std::string();
+  /** Convert Python @c int to C++ @c long. */
+  operator long();
+  /** Convert Python @c float to C++ @c double. */
+  operator double();
 
 private:
 

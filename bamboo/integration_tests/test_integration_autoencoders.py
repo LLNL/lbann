@@ -36,9 +36,6 @@ def run_tests(actual_objective_functions, model_name, dir_name, cluster,
              actual_objective_functions, expected_objective_functions,
              model_name, errors, all_values, frequency_str)
 
-    print('Errors for: %s %s (%d)' % (model_name, compiler_name, len(errors)))
-    for error in errors:
-        print(error)
     if should_log:
         print('All values for: %s %s (%d)' % (model_name, compiler_name,
                                               len(all_values)))
@@ -52,7 +49,7 @@ DATA_FIELDS = [
 
 
 def skeleton_autoencoder_imagenet(cluster, dir_name, executables, compiler_name,
-                                  weekly):
+                                  weekly, data_reader_percent):
   if cluster in ['lassen', 'pascal']:
       e = 'skeleton_autoencoder_imagenet: does not run on GPU'
       print('Skip - ' + e)
@@ -66,7 +63,8 @@ def skeleton_autoencoder_imagenet(cluster, dir_name, executables, compiler_name,
   should_log = False
   actual_objective_functions = common_code.skeleton(
       cluster, dir_name, executables[compiler_name], model_folder, model_name,
-      DATA_FIELDS, should_log, compiler_name=compiler_name, weekly=weekly)
+      DATA_FIELDS, should_log, compiler_name=compiler_name, weekly=weekly,
+      data_reader_percent=data_reader_percent)
   frequency_str = '_nightly'
   if weekly:
     frequency_str = '_weekly'
@@ -75,24 +73,30 @@ def skeleton_autoencoder_imagenet(cluster, dir_name, executables, compiler_name,
 
 
 def test_integration_autoencoder_imagenet_clang6(cluster, dirname, exes,
-                                                 weekly):
-    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'clang6', weekly)
+                                                 weekly, data_reader_percent):
+    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'clang6', weekly,
+                                  data_reader_percent)
 
 
-def test_integration_autoencoder_imagenet_gcc7(cluster, dirname, exes, weekly):
-    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc7', weekly)
+def test_integration_autoencoder_imagenet_gcc7(cluster, dirname, exes, weekly,
+                                               data_reader_percent):
+    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'gcc7', weekly,
+                                  data_reader_percent)
 
 
 def test_integration_autoencoder_imagenet_intel19(cluster, dirname, exes,
-                                                  weekly):
-    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'intel19', weekly)
+                                                  weekly, data_reader_percent):
+    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'intel19', weekly,
+                                  data_reader_percent)
 
 
-# Run with python -m pytest -s test_integration_autoencoder.py -k 'test_integration_autoencoder_imagenet_exe' --exe=<executable>
-def test_integration_autoencoder_imagenet_exe(cluster, dirname, exe):
+# Run with python3 -m pytest -s test_integration_autoencoder.py -k 'test_integration_autoencoder_imagenet_exe' --exe=<executable>
+def test_integration_autoencoder_imagenet_exe(cluster, dirname, exe, weekly,
+                                              data_reader_percent):
     if exe is None:
         e = 'test_integration_autoencoder_imagenet_exe: Non-local testing'
         print('Skip - ' + e)
         pytest.skip()
     exes = {'exe': exe}
-    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'exe', True)
+    skeleton_autoencoder_imagenet(cluster, dirname, exes, 'exe', weekly,
+                                  data_reader_percent)

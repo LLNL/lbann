@@ -27,17 +27,20 @@
 #ifndef LBANN_WEIGHTS_HPP
 #define LBANN_WEIGHTS_HPP
 
-#include <string>
-#include <vector>
-#include <memory>
-
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/description.hpp"
-#include <lbann.pb.h>
+
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace lbann_data {
+class WeightsData;
+}
 
 namespace lbann {
 
@@ -60,6 +63,13 @@ class optimizer;
  */
 class weights {
   friend class optimizer;
+private:
+  weights();
+  // -----------------------------------------------
+  // Internal method for setting the comm pointer
+  // -----------------------------------------------
+  void set_comm(lbann_comm& comm);
+  void setup_default_matrix_distribution();
 
 public:
   weights(lbann_comm* comm);
@@ -73,6 +83,11 @@ public:
   void set_name(std::string name) { m_name = name; }
   /** Get weights name. */
   std::string get_name() const { return m_name; }
+
+  lbann_comm& get_comm() const {
+    if(m_comm == nullptr) { LBANN_ERROR("weights class has null comm pointer"); }
+    return *m_comm;
+  }
 
   /** Create a copy of the weights.
    *  This function dynamically allocates memory for a weights
@@ -138,7 +153,7 @@ public:
   /** Set weights initializer.
    *  The contents of 'init' are moved to a class member.
    */
-  void set_initializer(std::unique_ptr<weights_initializer>& init);
+  void set_initializer(std::unique_ptr<weights_initializer>&& init);
 
   // -----------------------------------------------
   // Optimizer accessors
@@ -154,7 +169,7 @@ public:
   /** Set weights optimizer.
    *  The contents of opt are moved to a class member.
    */
-  void set_optimizer(std::unique_ptr<optimizer>& opt);
+  void set_optimizer(std::unique_ptr<optimizer>&& opt);
 
   // -----------------------------------------------
   // Matrix distribution accessors

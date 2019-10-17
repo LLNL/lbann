@@ -25,7 +25,81 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
+
+#include "lbann/layers/layer.hpp"
+#include "lbann/layers/activations/activations.hpp"
+#include "lbann/layers/activations/elu.hpp"
+#include "lbann/layers/activations/identity.hpp"
+#include "lbann/layers/activations/leaky_relu.hpp"
+#include "lbann/layers/activations/log_softmax.hpp"
+#include "lbann/layers/activations/softmax.hpp"
+#include "lbann/layers/image/bilinear_resize.hpp"
+#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/io_layer.hpp"
+#include "lbann/layers/learning/base_convolution.hpp"
+#include "lbann/layers/learning/channelwise_scale_bias.hpp"
+#include "lbann/layers/learning/convolution.hpp"
+#include "lbann/layers/learning/deconvolution.hpp"
+#include "lbann/layers/learning/embedding.hpp"
+#include "lbann/layers/learning/entrywise_scale_bias.hpp"
+#include "lbann/layers/learning/fully_connected.hpp"
+#include "lbann/layers/learning/learning.hpp"
+#include "lbann/layers/loss/categorical_accuracy.hpp"
+#include "lbann/layers/loss/cross_entropy.hpp"
+#include "lbann/layers/loss/entrywise.hpp"
+#include "lbann/layers/loss/l1_norm.hpp"
+#include "lbann/layers/loss/l2_norm2.hpp"
+#include "lbann/layers/loss/mean_absolute_error.hpp"
+#include "lbann/layers/loss/mean_squared_error.hpp"
+#include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
+#include "lbann/layers/math/binary.hpp"
+#include "lbann/layers/math/clamp.hpp"
+#include "lbann/layers/math/unary.hpp"
+#include "lbann/layers/misc/channelwise_mean.hpp"
+#include "lbann/layers/misc/covariance.hpp"
+#include "lbann/layers/misc/mini_batch_index.hpp"
+#include "lbann/layers/misc/mini_batch_size.hpp"
+#include "lbann/layers/misc/variance.hpp"
+#include "lbann/layers/misc/argmax.hpp"
+#include "lbann/layers/misc/argmin.hpp"
+#include "lbann/layers/misc/one_hot.hpp"
+#include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/layers/regularizers/dropout.hpp"
+#include "lbann/layers/regularizers/local_response_normalization.hpp"
+#include "lbann/layers/regularizers/regularizer.hpp"
+#include "lbann/layers/regularizers/selu_dropout.hpp"
+#include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
+#include "lbann/layers/transform/bernoulli.hpp"
+#include "lbann/layers/transform/categorical_random.hpp"
+#include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/layers/transform/constant.hpp"
+#include "lbann/layers/transform/crop.hpp"
+#include "lbann/layers/transform/discrete_random.hpp"
+#include "lbann/layers/transform/dummy.hpp"
+#include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/layers/transform/gaussian.hpp"
+#include "lbann/layers/transform/hadamard.hpp"
+#include "lbann/layers/transform/in_top_k.hpp"
+#include "lbann/layers/transform/pooling.hpp"
+#include "lbann/layers/transform/reduction.hpp"
+#include "lbann/layers/transform/reshape.hpp"
+#include "lbann/layers/transform/slice.hpp"
+#include "lbann/layers/transform/sort.hpp"
+#include "lbann/layers/transform/split.hpp"
+#include "lbann/layers/transform/stop_gradient.hpp"
+#include "lbann/layers/transform/sum.hpp"
+#include "lbann/layers/transform/tessellate.hpp"
+#include "lbann/layers/transform/transform.hpp"
+#include "lbann/layers/transform/uniform.hpp"
+#include "lbann/layers/transform/unpooling.hpp"
+#include "lbann/layers/transform/weighted_sum.hpp"
+#include "lbann/layers/transform/weights.hpp"
+
+#include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/utils/peek_map.hpp"
+
+#include <layers.pb.h>
 
 namespace lbann {
 namespace proto {
@@ -75,41 +149,9 @@ std::unique_ptr<Layer> construct_layer(
   // Fully connected layer
   if (proto_layer.has_fully_connected()) {
     const auto& params = proto_layer.fully_connected();
-    int num_neurons = 0;
-    std::string num_neurons_method_name;
-
-    if (params.get_num_neurons_of_slice_from_reader_size() > 0) {
-      num_neurons_method_name = "get_num_neurons_of_slice_from_reader";
-      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
-      const int num_slice_indices = params.get_num_neurons_of_slice_from_reader_size();
-      if (dynamic_cast<lbann::data_reader_jag_conduit*>(dr_generic) != nullptr) {
-        const std::string& var = params.get_slice_points_from_reader();
-        bool is_supported = false; /// @todo Remove unneeded function parameter
-        const auto slice_points = get_slice_points_from_reader(dr_generic, var, is_supported);
-        for (int i = 0; i < num_slice_indices; ++i) {
-          const size_t idx = static_cast<size_t>(params.get_num_neurons_of_slice_from_reader(i));
-          if ((idx == 0u) || (idx >= slice_points.size())) {
-            err << "invalid slice index from get_num_neurons_of_slice_from_reader";
-            LBANN_ERROR(err.str());
-          }
-          const int diff = static_cast<int>(slice_points[idx] - slice_points[idx-1]);
-          num_neurons += diff;
-        }
-      }
-    } else {
-      num_neurons_method_name = "num_neurons";
-      num_neurons = params.num_neurons();
-      if (proto_layer.num_neurons_from_data_reader()) {
-        const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
-        if (!dr) {
-          LBANN_ERROR("training data reader does not exist!");
-        }
-        num_neurons = dr->get_linearized_data_size();
-      }
-    }
     return lbann::make_unique<fully_connected_layer<Layout, Device>>(
              comm,
-             num_neurons,
+             params.num_neurons(),
              params.transpose(),
              nullptr,
              params.has_bias());
@@ -501,6 +543,10 @@ std::unique_ptr<Layer> construct_layer(
       return lbann::make_unique<selu_dropout<Layout, Device>>(comm, keep_prob);
     }
   }
+  if (proto_layer.has_entrywise_batch_normalization()) {
+    const auto& params = proto_layer.entrywise_batch_normalization();
+    return lbann::make_unique<entrywise_batch_normalization_layer<Layout, Device>>(comm, params.decay(), params.epsilon());
+  }
 
   // Math layers
   CONSTRUCT_LAYER(logical_not);
@@ -632,6 +678,31 @@ std::unique_ptr<Layer> construct_layer(
   }
   CONSTRUCT_LAYER(mini_batch_index);
   CONSTRUCT_LAYER(mini_batch_size);
+  if (proto_layer.has_argmax()) {
+    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+      return lbann::make_unique<argmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+    } else {
+      LBANN_ERROR("argmax layer is only supported with "
+                  "a data-parallel layout and on CPU");
+    }
+  }
+  if (proto_layer.has_argmin()) {
+    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+      return lbann::make_unique<argmin_layer<data_layout::DATA_PARALLEL, El::Device::CPU>>(comm);
+    } else {
+      LBANN_ERROR("argmin layer is only supported with "
+                  "a data-parallel layout and on CPU");
+    }
+  }
+  if (proto_layer.has_one_hot()) {
+    if (Layout == data_layout::DATA_PARALLEL) {
+      const auto& params = proto_layer.one_hot();
+      return lbann::make_unique<one_hot_layer<data_layout::DATA_PARALLEL, Device>>(comm, params.size());
+    } else {
+      LBANN_ERROR("one-hot layer is only supported with "
+                  "a data-parallel layout");
+    }
+  }
 
   // Throw exception if layer has not been constructed
   err << "could not construct layer " << proto_layer.name();

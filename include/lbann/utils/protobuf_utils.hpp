@@ -1,9 +1,14 @@
 #ifndef LBANN_UTILS_PROTOBUF_UTILS_HPP_INCLUDED
 #define LBANN_UTILS_PROTOBUF_UTILS_HPP_INCLUDED
 
+#include <memory>
+#include <string>
 #include <vector>
-#include "lbann/lbann.hpp"
-#include <lbann.pb.h>
+
+// Forward-declare protobuf class
+namespace lbann_data {
+class LbannPB;
+}
 
 namespace lbann {
 

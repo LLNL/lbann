@@ -14,6 +14,15 @@ Building LBANN on OS X
 Getting Started
 --------------------
 
+.. warning:: If using OSX 10.14 or newer, be sure that
+             :bash:`/usr/include` has been restored. In version 10.14,
+             this may be accomplished by installing
+             :bash:`/Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg`.
+             If this package is not available, it's possible command
+             line tools have not been installed; do so by executing
+             :bash:`xcode-select --install`.
+
+
 .. _osx-setup-spack:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -41,6 +50,7 @@ Setup Homebrew
        brew install open-mpi
        brew install scalapack
        brew install cmake
+       brew install hwloc
 
     Put the brew based clang in your path:
 
@@ -98,17 +108,24 @@ Building & Installing LBANN as a developer
         cd ${LBANN_BUILD_DIR}
         cmake \
           -G Ninja \
+          -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
           -D CMAKE_BUILD_TYPE:STRING=Release \
           -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
           \
           -D LBANN_SB_BUILD_ALUMINUM=ON \
           -D ALUMINUM_ENABLE_MPI_CUDA=OFF \
           -D ALUMINUM_ENABLE_NCCL=OFF \
+          -D LBANN_SB_FWD_ALUMINUM_OpenMP_CXX_LIB_NAMES=omp \
+          -D LBANN_SB_FWD_ALUMINUM_OpenMP_CXX_FLAGS=-fopenmp \
+          -D LBANN_SB_FWD_ALUMINUM_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib \
           \
           -D LBANN_SB_BUILD_HYDROGEN=ON \
           -D Hydrogen_ENABLE_ALUMINUM=ON \
           -D Hydrogen_ENABLE_CUB=OFF \
           -D Hydrogen_ENABLE_CUDA=OFF \
+          -D LBANN_SB_FWD_HYDROGEN_OpenMP_CXX_LIB_NAMES=omp \
+          -D LBANN_SB_FWD_HYDROGEN_OpenMP_CXX_FLAGS="-fopenmp=libomp" \
+          -D LBANN_SB_FWD_HYDROGEN_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib \
           \
           -D LBANN_SB_BUILD_LBANN=ON \
           -D LBANN_DATATYPE:STRING=float \
@@ -123,12 +140,13 @@ Building & Installing LBANN as a developer
           -D LBANN_WITH_TOPO_AWARE:BOOL=ON \
           -D LBANN_WITH_TBINF=OFF \
           -D LBANN_WITH_VTUNE:BOOL=OFF \
+          -D LBANN_SB_FWD_LBANN_HWLOC_DIR=/usr/local/opt/hwloc \
+          -D LBANN_SB_FWD_LBANN_OpenMP_CXX_LIB_NAMES=omp \
+          -D LBANN_SB_FWD_LBANN_OpenMP_CXX_FLAGS="-fopenmp=libomp" \
+          -D LBANN_SB_FWD_LBANN_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib \
           \
-          -D CMAKE_CXX_COMPILER=$(which clang) \
+          -D CMAKE_CXX_COMPILER=$(which clang++) \
           -D CMAKE_C_COMPILER=$(which clang) \
-          -D LBANN_SB_FWD_ALUMINUM_OpenMP_CXX_LIB_NAMES=omp \
-          -D LBANN_SB_FWD_ALUMINUM_OpenMP_CXX_FLAGS=-fopenmp \
-          -D LBANN_SB_FWD_ALUMINUM_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib \
           ${LBANN_HOME}/superbuild
 
         ninja

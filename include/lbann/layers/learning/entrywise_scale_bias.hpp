@@ -85,41 +85,43 @@ public:
 
   void setup_data() override {
     Layer::setup_data();
-    const auto dims = get_output_dims();
-    const El::Int size = get_output_size();
+
+    // Initialize output dimensions
+    set_output_dims(get_input_dims());
+    const auto output_dims = get_output_dims();
+    const El::Int output_size = get_output_size();
 
     // Construct default weights if needed
-    if (this->m_weights.size() < 1) {
-      this->m_weights.push_back(new weights(get_comm()));
-      std::vector<DataType> vals(2*size, DataType{0});
-      std::fill(vals.begin(), vals.begin()+size, DataType{1});
-      std::unique_ptr<weights_initializer> init(new value_initializer(vals));
+    // Note: Scale is initialized to 1 and bias to 0
+    if (this->m_weights.empty()) {
+      auto w = make_unique<weights>(get_comm());
+      std::vector<DataType> vals(2*output_size, DataType{0});
+      std::fill(vals.begin(), vals.begin()+output_size, DataType{1});
+      auto init = make_unique<value_initializer>(vals);
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      this->m_weights[0]->set_name(get_name() + "_weights");
-      this->m_weights[0]->set_initializer(init);
-      this->m_weights[0]->set_optimizer(opt);
-      this->m_model->add_weights(this->m_weights[0]);
+      w->set_name(get_name() + "_weights");
+      w->set_initializer(std::move(init));
+      w->set_optimizer(std::move(opt));
+      this->m_weights.push_back(w.get());
+      this->m_model->add_weights(std::move(w));
     }
     if (this->m_weights.size() != 1) {
-      std::ostringstream err;
-      err << "attempted to setup "
-          << this->get_type() << " layer \"" << this->get_name() << "\" "
-          << "with an invalid number of weights "
-          << "(expected 1, "
-          << "found " << this->m_weights.size() << ")";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("attempted to setup ",
+                  this->get_type()," layer \"",this->get_name(),"\" ",
+                  "with an invalid number of weights ",
+                  "(expected 1, found ",this->m_weights.size(),")");
     }
 
     // Setup weights
     auto dist = get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    m_weights[0]->set_dims(dims,
+    m_weights[0]->set_dims(output_dims,
                            {static_cast<int>(2)});
     m_weights[0]->set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
     m_weights_gradient->AlignWith(dist);
-    m_weights_gradient->Resize(size, 2);
+    m_weights_gradient->Resize(output_size, 2);
 
   }
 
@@ -153,11 +155,11 @@ public:
 
   }
 
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     Layer::bp_setup_gradient_wrt_inputs(mini_batch_size);
     m_weights_gradient->Empty(false);
     m_weights_gradient->AlignWith(get_prev_activations());
-    m_weights_gradient->Resize(get_input_size(), mini_batch_size);
+    m_weights_gradient->Resize(get_input_size(), 2);
   }
 
 protected:
@@ -170,6 +172,19 @@ private:
   std::unique_ptr<AbsDistMat> m_weights_gradient;
 
 };
+
+#ifndef LBANN_ENTRYWISE_SCALE_BIAS_LAYER_INSTANTIATE
+extern template class entrywise_scale_bias_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class entrywise_scale_bias_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class entrywise_scale_bias_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class entrywise_scale_bias_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_ENTRYWISE_SCALE_BIAS_LAYER_INSTANTIATE
 
 } // namespace lbann
 

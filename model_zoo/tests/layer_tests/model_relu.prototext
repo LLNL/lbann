@@ -1,10 +1,9 @@
+trainer {
+}
 model {
   data_layout: "data_parallel"
   mini_batch_size: 11
-  block_size: 256
   num_epochs: 0
-  num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function and metrics
@@ -37,6 +36,7 @@ model {
   }
   callback {
     check_gradients {
+      execution_modes: "test"
       verbose: false
       error_on_failure: true
     }
@@ -63,8 +63,10 @@ model {
   }
   weights {
     name: "x_vals"
-    value_initializer {
-      values: "-1.5 -0.25 0.25 0.5 1"
+    initializer {
+      value_initializer {
+        values: "-1.5 -0.25 0.25 0.5 1"
+      }
     }
   }
 

@@ -80,9 +80,6 @@ def run_tests(actual_performance, model_name, dir_name, should_log,
   else:
     print('os.environ["LOGNAME"]=%s' % os.environ['LOGNAME'])
 
-  print('Errors for: %s %s (%d)' % (model_name, compiler_name, len(errors)))
-  for error in errors:
-    print(error)
   if should_log:
     print('All values for: %s %s (%d)' % (
       model_name, compiler_name, len(all_values)))
@@ -101,7 +98,8 @@ DATA_FIELDS = [
 
 
 def skeleton_performance_lenet_mnist(cluster, dir_name, executables,
-                                     compiler_name):
+                                     compiler_name, weekly,
+                                     data_reader_percent):
   if compiler_name not in executables:
     e = 'skeleton_performance_lenet_mnist: default_exes[%s] does not exist' % compiler_name
     print('Skip - ' + e)
@@ -112,13 +110,17 @@ def skeleton_performance_lenet_mnist(cluster, dir_name, executables,
   should_log = True
   actual_performance = common_code.skeleton(
     cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS,
-    should_log, compiler_name=compiler_name)
+    should_log, compiler_name=compiler_name, weekly=weekly,
+    data_reader_percent=data_reader_percent)
+  frequency_str = '_nightly'
+  if weekly:
+    frequency_str = '_weekly'
   run_tests(actual_performance, model_name, dir_name, should_log,
-            compiler_name, cluster)
+            compiler_name, cluster, frequency_str=frequency_str)
 
 
 def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name,
-                                 weekly):
+                                 weekly, data_reader_percent):
   if compiler_name not in executables:
     e = 'skeleton_performance_alexnet: default_exes[%s] does not exist' % compiler_name
     print('Skip - ' + e)
@@ -129,22 +131,26 @@ def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name,
   should_log = True
   actual_performance = common_code.skeleton(
     cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS,
-    should_log, compiler_name=compiler_name, weekly=weekly)
+    should_log, compiler_name=compiler_name, weekly=weekly,
+    data_reader_percent=data_reader_percent)
   frequency_str = '_nightly'
   if weekly:
     frequency_str = '_weekly'
   run_tests(actual_performance, model_name, dir_name, should_log,
-            compiler_name, cluster, frequency_str)
+            compiler_name, cluster, frequency_str=frequency_str)
 
 
 def skeleton_performance_full_alexnet(cluster, dir_name, executables,
-                                      compiler_name, weekly, run):
+                                      compiler_name, weekly, run,
+                                      data_reader_percent):
+  # `run` is False for calls to run.sh.
+  # `run` is True, in allocate_and_run.sh, if this is a Weekly test on Catalyst.
   if not run:
     e = 'skeleton_performance_full_alexnet: Ignored'
     print('Skip - ' + e)
     pytest.skip(e)
   if not weekly:
-    e = 'skeleton_performance_full_alexnet: Non-local testing'
+    e = 'skeleton_performance_full_alexnet: Not doing weekly testing'
     print('Skip - ' + e)
     pytest.skip(e)
   if compiler_name not in executables:
@@ -158,9 +164,12 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables,
   should_log = True
   output_file_name = '%s/bamboo/integration_tests/output/%s_%s_output.txt' %(dir_name, model_name, compiler_name)
   error_file_name = '%s/bamboo/integration_tests/error/%s_%s_error.txt' %(dir_name, model_name, compiler_name) 
+  # No use for data_reader_percent here.
+  # Keeping it as a parameter since a user may pass it in when
+  # running all exe tests.
   if cluster in ['catalyst']:
     command = 'salloc --nodes 128 %s/bamboo/integration_tests/%s.sh > %s 2> %s' % (dir_name, model_name, output_file_name, error_file_name)
-  elif cluster in ['pascal', 'ray']:
+  elif cluster in ['lassen', 'pascal', 'ray']:
     e = 'skeleton_performance_full_alexnet: Pascal, Ray are unsupported for skeleton_performance_full_alexnet'
     print('Skip - ' + e)
     pytest.skip(e)
@@ -174,73 +183,96 @@ def skeleton_performance_full_alexnet(cluster, dir_name, executables,
             cluster)
 
 
-def test_integration_performance_lenet_mnist_clang6(cluster, dirname, exes):
-  skeleton_performance_lenet_mnist(cluster, dirname, exes, 'clang6')
+def test_integration_performance_lenet_mnist_clang6(cluster, dirname, exes,
+                                                    weekly, data_reader_percent):
+  skeleton_performance_lenet_mnist(cluster, dirname, exes, 'clang6', weekly,
+                                   data_reader_percent)
 
 
-def test_integration_performance_alexnet_clang6(cluster, dirname, exes, weekly):
-  skeleton_performance_alexnet(cluster, dirname, exes, 'clang6', weekly)
+def test_integration_performance_alexnet_clang6(cluster, dirname, exes, weekly,
+                                                data_reader_percent):
+  skeleton_performance_alexnet(cluster, dirname, exes, 'clang6', weekly,
+                               data_reader_percent)
 
 
 def test_integration_performance_full_alexnet_clang6(cluster, dirname, exes,
-                                                     weekly, run):
+                                                     weekly, run,
+                                                     data_reader_percent):
   skeleton_performance_full_alexnet(cluster, dirname, exes, 'clang6', weekly,
-                                    run)
+                                    run, data_reader_percent)
 
 
-def test_integration_performance_lenet_mnist_gcc7(cluster, dirname, exes):
-  skeleton_performance_lenet_mnist(cluster, dirname, exes, 'gcc7')
+def test_integration_performance_lenet_mnist_gcc7(cluster, dirname, exes,
+                                                  weekly, data_reader_percent):
+  skeleton_performance_lenet_mnist(cluster, dirname, exes, 'gcc7', weekly,
+                                   data_reader_percent)
 
 
-def test_integration_performance_alexnet_gcc7(cluster, dirname, exes, weekly):
-  skeleton_performance_alexnet(cluster, dirname, exes, 'gcc7', weekly)
+def test_integration_performance_alexnet_gcc7(cluster, dirname, exes, weekly,
+                                              data_reader_percent):
+  skeleton_performance_alexnet(cluster, dirname, exes, 'gcc7', weekly,
+                               data_reader_percent)
 
 
 def test_integration_performance_full_alexnet_gcc7(cluster, dirname, exes,
-                                                   weekly, run):
-  skeleton_performance_full_alexnet(cluster, dirname, exes, 'gcc7', weekly, run)
+                                                   weekly, run,
+                                                   data_reader_percent):
+  skeleton_performance_full_alexnet(cluster, dirname, exes, 'gcc7', weekly, run,
+                                    data_reader_percent)
 
 
-def test_integration_performance_lenet_mnist_intel19(cluster, dirname, exes):
-  skeleton_performance_lenet_mnist(cluster, dirname, exes, 'intel19')
+def test_integration_performance_lenet_mnist_intel19(cluster, dirname, exes,
+                                                     weekly,
+                                                     data_reader_percent):
+  skeleton_performance_lenet_mnist(cluster, dirname, exes, 'intel19', weekly,
+                                   data_reader_percent)
 
 
 def test_integration_performance_alexnet_intel19(cluster, dirname, exes,
-                                                 weekly):
-  skeleton_performance_alexnet(cluster, dirname, exes, 'intel19', weekly)
+                                                 weekly, data_reader_percent):
+  skeleton_performance_alexnet(cluster, dirname, exes, 'intel19', weekly,
+                               data_reader_percent)
 
 
 def test_integration_performance_full_alexnet_intel19(cluster, dirname, exes,
-                                                      weekly, run):
+                                                      weekly, run,
+                                                      data_reader_percent):
   skeleton_performance_full_alexnet(cluster, dirname, exes, 'intel19', weekly,
-                                    run)
+                                    run, data_reader_percent)
 
 
-# Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_lenet_mnist_exe' --exe=<executable>
-def test_integration_performance_lenet_mnist_exe(cluster, dirname, exe):
+# Run with python3 -m pytest -s test_integration_performance.py -k 'test_integration_performance_lenet_mnist_exe' --exe=<executable>
+def test_integration_performance_lenet_mnist_exe(cluster, dirname, exe, weekly,
+                                                 data_reader_percent):
     if exe is None:
       e = 'test_integration_performance_lenet_mnist_exe: Non-local testing'
       print('Skip - ' + e)
       pytest.skip(e)
     exes = {'exe': exe}
-    skeleton_performance_lenet_mnist(cluster, dirname, exes, 'exe')
+    skeleton_performance_lenet_mnist(cluster, dirname, exes, 'exe', weekly,
+                                     data_reader_percent)
 
 
-# Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_alexnet_exe' --exe=<executable>
-def test_integration_performance_alexnet_exe(cluster, dirname, exe):
+# Run with python3 -m pytest -s test_integration_performance.py -k 'test_integration_performance_alexnet_exe' --exe=<executable>
+def test_integration_performance_alexnet_exe(cluster, dirname, exe, weekly,
+                                             data_reader_percent):
     if exe is None:
       e = 'stest_integration_performance_alexnet_exe: Non-local testing'
       print('Skip - ' + e)
       pytest.skip(e)
     exes = {'exe': exe}
-    skeleton_performance_alexnet(cluster, dirname, exes, 'exe', True)
+    skeleton_performance_alexnet(cluster, dirname, exes, 'exe', weekly,
+                                 data_reader_percent)
 
 
-# Run with python -m pytest -s test_integration_performance.py -k 'test_integration_performance_full_alexnet_exe' --exe=<executable>
-def test_integration_performance_full_alexnet_exe(cluster, dirname, exe):
+# Run with python3 -m pytest -s test_integration_performance.py -k 'test_integration_performance_full_alexnet_exe' --weekly --run --exe=<executable>
+def test_integration_performance_full_alexnet_exe(cluster, dirname, weekly,
+                                                  run, exe,
+                                                  data_reader_percent):
     if exe is None:
       e = 'test_integration_performance_full_alexnet_exe: Non-local testing'
       print('Skip - ' + e)
       pytest.skip(e)
     exes = {'exe': exe}
-    skeleton_performance_full_alexnet(cluster, dirname, exes, 'exe', True)
+    skeleton_performance_full_alexnet(cluster, dirname, exes, 'exe', weekly,
+                                      run, data_reader_percent)

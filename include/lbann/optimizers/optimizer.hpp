@@ -77,7 +77,7 @@ class persist;
 class optimizer {
 public:
 
-  optimizer(lbann_comm* comm, DataType learning_rate = 0);
+  optimizer(DataType learning_rate = 0);
   optimizer(const optimizer& other);
   optimizer& operator=(const optimizer& other);
   virtual ~optimizer() = default;

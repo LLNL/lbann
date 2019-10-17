@@ -1,10 +1,9 @@
+trainer {
+}
 model {
   data_layout: "model_parallel"
   mini_batch_size: 32
-  block_size: 256
   num_epochs: 100
-  num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function

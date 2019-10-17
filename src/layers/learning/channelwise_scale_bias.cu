@@ -24,8 +24,12 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
+#ifdef HYDROGEN_HAVE_CUB
 #include "cub/block/block_reduce.cuh"
+#endif // HYDROGEN_HAVE_CUB
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -122,7 +126,7 @@ __global__ void bp_kernel(size_t num_channels,
     }
 
     // Accumulate gradient contributions for block and add to result
-    // Note: Perform block reduction with CUB
+#ifdef HYDROGEN_HAVE_CUB
     constexpr auto reduce_algo = cub::BLOCK_REDUCE_WARP_REDUCTIONS;
     using BlockReduce = cub::BlockReduce<DataType, bsizex, reduce_algo, bsizey>;
     __shared__ typename BlockReduce::TempStorage workspace;
@@ -136,6 +140,29 @@ __global__ void bp_kernel(size_t num_channels,
     if (tid == 0) {
       cuda::atomic_add(&gradient_wrt_bias[channel], db);
     }
+#else
+    __shared__ DataType workspace[bsizex*bsizey];
+    workspace[tid] = private_da;
+    for (size_t stride = bsizex*bsizey/2; stride > 0; stride /= 2) {
+      __syncthreads();
+      if (tid < stride) {
+        workspace[tid] += workspace[tid + stride];
+      }
+    }
+    if (tid == 0) {
+      cuda::atomic_add(&gradient_wrt_scale[channel], workspace[0]);
+    }
+    workspace[tid] = private_db;
+    for (size_t stride = bsizex*bsizey/2; stride > 0; stride /= 2) {
+      __syncthreads();
+      if (tid < stride) {
+        workspace[tid] += workspace[tid + stride];
+      }
+    }
+    if (tid == 0) {
+      cuda::atomic_add(&gradient_wrt_bias[channel], workspace[0]);
+    }
+#endif // HYDROGEN_HAVE_CUB
 
   }
 
@@ -239,7 +266,8 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
   // Update optimizer with gradient
   auto* opt = m_weights[0]->get_optimizer();
   if (opt != nullptr) {
-    const El::Int mini_batch_size = this->m_model->get_effective_mini_batch_size();
+    const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+    const auto mini_batch_size = c.get_effective_mini_batch_size();
     opt->add_to_gradient(*m_weights_gradient,
                          DataType{1} / mini_batch_size,
                          true);
@@ -247,5 +275,8 @@ void channelwise_scale_bias_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 
 
 }
+
+template class channelwise_scale_bias_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

@@ -161,6 +161,8 @@ include(SetupCXX)
 ################################################################
 
 # Required dependencies
+find_package(Threads REQUIRED)
+
 find_package(CEREAL NO_MODULE
   HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
   PATH_SUFFIXES share/cmake/cereal
@@ -181,6 +183,12 @@ if (NOT Hydrogen_FOUND)
 endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
+
+# Not the ideal fix, but should be fine for now.
+if (Aluminum_FOUND)
+  message(STATUS "Aluminum found in Hydrogen. Using Aluminum.")
+  set(LBANN_WITH_ALUMINUM ON CACHE BOOL "Use aluminum." FORCE)
+endif ()
 
 include(SetupOpenMP)
 include(SetupMPI)
@@ -468,15 +476,15 @@ add_subdirectory(docs)
 # Build LBANN
 ################################################################
 
+# Add LBANN source files
+add_subdirectory(include)
+add_subdirectory(src)
+
 # Write the configure file
 configure_file(
   "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_config.hpp.in"
   "${CMAKE_BINARY_DIR}/lbann_config.hpp"
   @ONLY)
-
-# Add LBANN source files
-add_subdirectory(include)
-add_subdirectory(src)
 
 # Create the LBANN library
 add_library(lbann ${LBANN_SOURCES} ${LBANN_HEADERS} ${LBANN_CUDA_SOURCES})
@@ -486,12 +494,9 @@ target_include_directories(lbann PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
-if (LBANN_HAS_PYTHON)
-  target_include_directories(lbann PUBLIC ${Python_INCLUDE_DIRS})
-endif ()
-
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
+target_link_libraries(lbann PUBLIC Threads::Threads)
 target_link_libraries(lbann PUBLIC cereal)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
@@ -521,7 +526,7 @@ if (LBANN_HAS_VTUNE)
 endif ()
 
 if (LBANN_HAS_PYTHON)
-  target_link_libraries(lbann PUBLIC ${Python_LIBRARIES})
+  target_link_libraries(lbann PUBLIC Python::Python)
 endif ()
 
 if (TARGET LBANN_CXX_FLAGS_werror)

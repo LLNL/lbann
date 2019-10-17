@@ -176,7 +176,7 @@ void data_reader_multi_images::load() {
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_image_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-
+  resize_shuffled_indices();
   select_subset_of_data();
 }
 

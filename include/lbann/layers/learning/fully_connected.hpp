@@ -36,7 +36,19 @@
 
 namespace lbann {
 
-/** @brief Perform an affine transformation. */
+/** @brief Affine transformation
+ *
+ *  Flattens the input tensor, multiplies with a weights matrix, and
+ *  optionally applies an entry-wise bias. Following the
+ *  column-vector convention:
+ *    @f[ y = W * \text{vec}(x) + b @f]
+ *
+ *  Two weights are required if bias is applied: the linearity and the
+ *  bias. Only the linearity weights are required if bias is not
+ *  applied. If weights aren't provided, the linearity weights are
+ *  initialized with He normal initialization and the bias weights are
+ *  initialized to zero.
+ */
 template <data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer {
 public:
@@ -127,14 +139,14 @@ protected:
       this->m_weights.resize(1, nullptr);
     }
     if (this->m_weights[0] == nullptr) {
-      auto* w = new weights(get_comm());
-      std::unique_ptr<weights_initializer> init(new he_initializer(probability_distribution::gaussian));
+      auto w = make_unique<weights>(get_comm());
+      auto init = make_unique<he_initializer>(probability_distribution::gaussian);
       std::unique_ptr<optimizer> opt(m_model->create_optimizer());
       w->set_name(get_name() + "_linearity_weights");
-      w->set_initializer(init);
-      w->set_optimizer(opt);
-      this->m_weights[0] = w;
-      this->m_model->add_weights(w);
+      w->set_initializer(std::move(init));
+      w->set_optimizer(std::move(opt));
+      this->m_weights[0] = w.get();
+      this->m_model->add_weights(std::move(w));
     }
     auto& linearity_weights = *this->m_weights[0];
 
@@ -163,12 +175,12 @@ protected:
     // Set up bias if needed.
     if (m_bias_scaling_factor != DataType(0)) {
       if (this->m_weights[1] == nullptr) {
-        auto* w = new weights(get_comm());
+        auto w = make_unique<weights>(get_comm());
         std::unique_ptr<optimizer> opt(m_model->create_optimizer());
         w->set_name(get_name() + "_bias_weights");
-        w->set_optimizer(opt);
-        this->m_weights[1] = w;
-        this->m_model->add_weights(w);
+        w->set_optimizer(std::move(opt));
+        this->m_weights[1] = w.get();
+        this->m_model->add_weights(std::move(w));
       }
       auto& bias_weights = *this->m_weights[1];
       // Setup bias weights
@@ -229,6 +241,19 @@ private:
   }
 
 };
+
+#ifndef LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
+extern template class fully_connected_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class fully_connected_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class fully_connected_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class fully_connected_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 
 } // namespace lbann
 

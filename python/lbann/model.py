@@ -1,6 +1,6 @@
 """Neural network model."""
 import abc
-from lbann import lbann_pb2
+from lbann import model_pb2
 from lbann.util import make_iterable
 import lbann.layer
 import lbann.objective_function
@@ -10,16 +10,14 @@ class Model:
 
     def __init__(self, mini_batch_size, epochs,
                  layers=[], weights=[], objective_function=None,
-                 metrics=[], callbacks=[], random_seed=None):
+                 metrics=[], callbacks=[], random_seed=None,
+                 summary_dir=None):
 
         # Scalar fields
         self.mini_batch_size = mini_batch_size
         self.epochs = epochs
-        self.block_size = 256           # TODO: Make configurable
-        self.num_parallel_readers = 0   # TODO: Make configurable
-        self.procs_per_trainer = 0      # TODO: Make configurable
         self.random_seed = random_seed
-
+        self.summary_dir = summary_dir
         # Get connected layers
         self.layers = list(lbann.layer.traverse_layer_graph(layers))
 
@@ -44,14 +42,13 @@ class Model:
     def export_proto(self):
         """Construct and return a protobuf message."""
         # Initialize protobuf message
-        model = lbann_pb2.Model()
+        model = model_pb2.Model()
         model.mini_batch_size = self.mini_batch_size
         model.num_epochs = self.epochs
-        model.block_size = self.block_size
-        model.num_parallel_readers = self.num_parallel_readers
-        model.procs_per_trainer = self.procs_per_trainer
         if self.random_seed is not None:
             model.random_seed = self.random_seed
+        if self.summary_dir is not None:
+            model.summarizer.dir = self.summary_dir
 
         # Add model components
         model.layer.extend([l.export_proto() for l in self.layers])
@@ -61,7 +58,3 @@ class Model:
         model.callback.extend([c.export_proto() for c in self.callbacks])
 
         return model
-
-    def save_proto(self, filename):
-        """Export model to prototext file."""
-        save_prototext(filename, model=self.export_proto())

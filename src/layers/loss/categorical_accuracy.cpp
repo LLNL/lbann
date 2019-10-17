@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 #include "lbann/layers/loss/categorical_accuracy.hpp"
 #include <limits>
 
@@ -212,5 +213,10 @@ void categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
          get_prev_activations(1),
          get_activations());
 }
+
+template class categorical_accuracy_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class categorical_accuracy_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann
