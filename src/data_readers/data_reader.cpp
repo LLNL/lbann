@@ -686,6 +686,7 @@ double generic_data_reader::get_use_percent() const {
 }
 
 void generic_data_reader::instantiate_data_store(const std::vector<int>& local_list_sizes) {
+  double tm1 = get_time();
   options *opts = options::get();
   if (! (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache"))) {
     if (m_data_store != nullptr) {
@@ -716,20 +717,24 @@ void generic_data_reader::instantiate_data_store(const std::vector<int>& local_l
   // optionally preload the data store
   if (opts->get_bool("preload_data_store") && !opts->get_bool("data_store_cache")) {
     if(is_master()) {
-      std::cout << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
+      std::cerr << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
     }
+    double tm2 = get_time();
     if (local_list_sizes.size() != 0) {
       m_data_store->build_preloaded_owner_map(local_list_sizes);
     }
     preload_data_store();
     if(is_master()) {
-     std::cout << "preload complete" << std::endl;
-     std::cout << "num loaded samples in P_0: " << m_data_store->get_data_size() << std::endl;
+     std::cout << "Preload complete; time: " << get_time() - tm2 << std::endl;
+    }
+
+    size_t n = m_data_store->get_num_indices();
+    if (n != m_shuffled_indices.size()) {
+      LBANN_ERROR("num samples loaded: ", n, " != shuffled-indices.size(): ", m_shuffled_indices.size());
     }
   }
-
-  if(is_master()) {
-    std::cout << "Setting up the data store is complete" << std::endl;
+  if (is_master()) {
+    std::cout << "generic_data_reader::instantiate_data_store time: : " << (get_time() - tm1) << std::endl;
   }
 }
 

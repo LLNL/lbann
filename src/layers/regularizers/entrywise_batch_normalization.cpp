@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
@@ -426,5 +427,10 @@ void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device
           *m_batch_statistics_gradient,
           m_weights[1]->get_values());
 }
+
+template class entrywise_batch_normalization_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class entrywise_batch_normalization_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

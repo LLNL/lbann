@@ -60,6 +60,19 @@ protected:
 
 };
 
+#ifndef LBANN_STOP_GRADIENT_LAYER_INSTANTIATE
+extern template class stop_gradient_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class stop_gradient_layer<
+  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class stop_gradient_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class stop_gradient_layer<
+  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_STOP_GRADIENT_LAYER_INSTANTIATE
+
 } // namespace lbann
 
 #endif // STOP_GRADIENT_HPP_INCLUDED

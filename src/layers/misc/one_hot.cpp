@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_ONE_HOT_LAYER_INSTANTIATE
 #include "lbann/layers/misc/one_hot.hpp"
 
 namespace lbann {
@@ -50,5 +51,8 @@ void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   }
 
 }
+
+template class one_hot_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

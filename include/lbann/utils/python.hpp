@@ -61,8 +61,9 @@ bool is_active();
 
 /** @brief Check if a Python error has occurred.
  *
- *  Throws an exception if a Python error is detected. The GIL is
- *  acquired internally.
+ *  If a Python error is detected, then the Python error indicator is
+ *  cleared and a C++ exception is thrown. The GIL is acquired
+ *  internally.
  *
  *  @param force_error Whether to force an exception to be thrown.
  */
@@ -147,6 +148,13 @@ public:
    *  @returns @a New reference.
    */
   PyObject* release() noexcept;
+
+  /** Convert Python @c str to C++ @c std::string. */
+  operator std::string();
+  /** Convert Python @c int to C++ @c long. */
+  operator long();
+  /** Convert Python @c float to C++ @c double. */
+  operator double();
 
 private:
 

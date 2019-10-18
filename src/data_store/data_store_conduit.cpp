@@ -58,7 +58,6 @@ data_store_conduit::data_store_conduit(
   m_np_in_trainer = m_comm->get_procs_per_trainer();
 
   options *opts = options::get();
-  m_super_node = opts->get_bool("super_node");
 
   if (opts->get_bool("debug")) {
     std::stringstream ss;
@@ -79,8 +78,6 @@ data_store_conduit::data_store_conduit(
   if (m_world_master) {
     if (m_is_local_cache) {
       std::cerr << "data_store_conduit is running in local_cache mode\n";
-    } else if (m_super_node) {
-      std::cerr << "data_store_conduit is running in super_node mode\n";
     } else {
       std::cerr << "data_store_conduit is running in multi-message mode\n";
     }
@@ -138,7 +135,6 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   m_preload = rhs.m_preload;
   m_explicit_loading = rhs.m_explicit_loading;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
-  m_super_node = rhs.m_super_node;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
   m_is_local_cache = rhs.m_is_local_cache;
   m_node_sizes_vary = rhs.m_node_sizes_vary;
@@ -169,25 +165,21 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
     for(auto&& i : ds_sample_move_list) {
 
       if(rhs.m_data.find(i) != rhs.m_data.end()){
-        if (!m_super_node) {
-          /// Repack the nodes because they don't seem to copy correctly
-          //
-          //dah - previously this code block only contained the line:
-          //  build_node_for_sending(rhs.m_data[i]["data"], m_data[i]);
-          //However, this resulted in errors in the schema; not sure why,
-          //as it used to work; some change in the conduit library?
-          conduit::Node n2;
-          const std::vector<std::string> &names = rhs.m_data[i]["data"].child_names();
-          const std::vector<std::string> &names2 = rhs.m_data[i]["data"][names[0]].child_names();
-          for (auto t : names2) {
-            n2[names[0]][t] = rhs.m_data[i]["data"][names[0]][t];
-          }
-          build_node_for_sending(n2, m_data[i]);
-        } else {
-          m_data[i] = rhs.m_data[i];
+        /// Repack the nodes because they don't seem to copy correctly
+        //
+        //dah - previously this code block only contained the line:
+        //  build_node_for_sending(rhs.m_data[i]["data"], m_data[i]);
+        //However, this resulted in errors in the schema; not sure why,
+        //as it used to work; some change in the conduit library?
+        conduit::Node n2;
+        const std::vector<std::string> &names = rhs.m_data[i]["data"].child_names();
+        const std::vector<std::string> &names2 = rhs.m_data[i]["data"][names[0]].child_names();
+        for (auto t : names2) {
+          n2[names[0]][t] = rhs.m_data[i]["data"][names[0]][t];
         }
-        rhs.m_data.erase(i);
+        build_node_for_sending(n2, m_data[i]);
       }
+      rhs.m_data.erase(i);
 
       /// Removed migrated nodes from the original data store's owner list
       if(rhs.m_owner.find(i) != rhs.m_owner.end()) {
@@ -222,8 +214,6 @@ void data_store_conduit::setup(int mini_batch_size) {
     std::cerr << "starting data_store_conduit::setup() for role: " << m_reader->get_role() << "\n";
     if (m_is_local_cache) {
       std::cerr << "data store mode: local cache\n";
-    } else if (m_super_node) {
-      std::cerr << "data store mode: exchange_data via super nodes\n";
     } else {
       std::cerr << "data store mode: exchange_data via individual samples\n";
     }
@@ -255,150 +245,30 @@ void data_store_conduit::setup_data_store_buffers() {
   m_reconstituted.resize(m_np_in_trainer);
 }
 
-// Note: conduit has a very nice interface for communicating nodes
-//       in blocking scenarios. Unf, for non-blocking we need to
-//       handle things ourselves. TODO: possibly modify conduit to
-//       handle non-blocking comms
-void data_store_conduit::exchange_data_by_super_node(size_t current_pos, size_t mb_size) {
-  if (! m_is_setup) {
-    LBANN_ERROR("setup(mb_size) has not been called");
-  }
-
-  if (m_output) {
-    (*m_output) << "starting data_store_conduit::exchange_data_by_super_node; mb_size: " << mb_size << std::endl;
-  }
-
-  if (m_cur_epoch == 0) {
-    setup_data_store_buffers();
-  }
-
-  //========================================================================
-  //part 1: construct the super_nodes
-
-  build_indices_i_will_send(current_pos, mb_size);
-  build_indices_i_will_recv(current_pos, mb_size);
-
-  // construct a super node for each processor; the super node
-  // contains all samples this proc owns that other procs need
-  for (int p=0; p<m_np_in_trainer; p++) {
-    m_send_buffer[p].reset();
-    for (auto idx : m_indices_to_send[p]) {
-      m_send_buffer[p].update_external(m_data[idx]);
-    }
-    build_node_for_sending(m_send_buffer[p], m_send_buffer_2[p]);
-  }
-
-  //========================================================================
-  //part 1.5: exchange super_node sizes
-
-  for (int p=0; p<m_np_in_trainer; p++) {
-    m_outgoing_msg_sizes[p] = m_send_buffer_2[p].total_bytes_compact();
-    El::byte *s = reinterpret_cast<El::byte*>(&m_outgoing_msg_sizes[p]);
-    m_comm->nb_send<El::byte>(s, sizeof(int), m_comm->get_trainer_rank(), p, m_send_requests[p]);
-  }
-
-  for (int p=0; p<m_np_in_trainer; p++) {
-    El::byte *s = reinterpret_cast<El::byte*>(&m_incoming_msg_sizes[p]);
-    m_comm->nb_recv<El::byte>(s, sizeof(int), m_comm->get_trainer_rank(), p, m_recv_requests[p]);
-  }
-  m_comm->wait_all<El::byte>(m_send_requests);
-  m_comm->wait_all<El::byte>(m_recv_requests);
-
-  //========================================================================
-  //part 2: exchange the actual data
-
-  // start sends for outgoing data
-  for (int p=0; p<m_np_in_trainer; p++) {
-    const El::byte *s = reinterpret_cast<El::byte*>(m_send_buffer_2[p].data_ptr());
-    m_comm->nb_send<El::byte>(s, m_outgoing_msg_sizes[p], m_comm->get_trainer_rank(), p, m_send_requests[p]);
-  }
-
-  // start recvs for incoming data
-  for (int p=0; p<m_np_in_trainer; p++) {
-    m_recv_buffer[p].set(conduit::DataType::uint8(m_incoming_msg_sizes[p]));
-    m_comm->nb_recv<El::byte>((El::byte*)m_recv_buffer[p].data_ptr(), m_incoming_msg_sizes[p], m_comm->get_trainer_rank(), p, m_recv_requests[p]);
-  }
-
-  // wait for all msgs to complete
-  m_comm->wait_all<El::byte>(m_send_requests);
-  m_comm->wait_all<El::byte>(m_recv_requests);
-
-  //========================================================================
-  //part 3: construct the Nodes needed by me for the current minibatch
-
-  m_minibatch_data.clear();
-  for (int p=0; p<m_np_in_trainer; p++) {
-    if (m_output) {
-      (*m_output) << "unpacking nodes from " << p << std::endl;
-    }
-    conduit::uint8 *n_buff_ptr = (conduit::uint8*)m_recv_buffer[p].data_ptr();
-    conduit::Node n_msg;
-    n_msg["schema_len"].set_external((conduit::int64*)n_buff_ptr);
-    n_buff_ptr +=8;
-    n_msg["schema"].set_external_char8_str((char*)(n_buff_ptr));
-    conduit::Schema rcv_schema;
-    conduit::Generator gen(n_msg["schema"].as_char8_str());
-    gen.walk(rcv_schema);
-    n_buff_ptr += n_msg["schema"].total_bytes_compact();
-    n_msg["data"].set_external(rcv_schema,n_buff_ptr);
-    m_reconstituted[p].reset();
-
-    // I'm unsure what happens here: m_reconstituted is persistent, but
-    // we're updating from n_msg, which is transitory. Best guess,
-    // when n_msg goes out of scope a deep copy is made. Possibly
-    // there's room for optimization here.
-    m_reconstituted[p].update_external(n_msg["data"]);
-    const std::vector<std::string> &names = m_reconstituted[p].child_names();
-
-    for (auto &t : names) {
-      if (m_output) {
-        (*m_output) << "next name: " << t << std::endl;
-      }
-      m_minibatch_data[atoi(t.c_str())][t].update_external(m_reconstituted[p][t]);
-    }
-  }
-
-  if (m_output) {
-    (*m_output) << "m_minibatch_data.size(): " << m_minibatch_data.size() << "; indices: ";
-    for (auto t : m_minibatch_data) {
-      (*m_output) << t.first << " ";
-    }
-    (*m_output) << std::endl;
-  }
-}
-
 void data_store_conduit::set_preloaded_conduit_node(int data_id, conduit::Node &node) {
   // note: at this point m_data[data_id] = node
-  // note: if running in super_node mode, nothing to do
-  // note2: this may depend on the particular data reader
-  if (!m_super_node) {
-    if (m_output) {
-      (*m_output) << "set_preloaded_conduit_node: " << data_id << " for non-super_node mode\n";
-    }
-    conduit::Node n2 = node;
-    build_node_for_sending(n2, m_data[data_id]);
-    if (!m_node_sizes_vary) {
-      error_check_compacted_node(m_data[data_id], data_id);
-    } else {
-      m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
-    }
+  if (m_output) {
+    (*m_output) << "set_preloaded_conduit_node: " << data_id << std::endl;
+  }
+  conduit::Node n2 = node;
+  m_mutex.lock();
+  build_node_for_sending(n2, m_data[data_id]);
+  m_mutex.unlock();
+  if (!m_node_sizes_vary) {
+    error_check_compacted_node(m_data[data_id], data_id);
   } else {
-    if (m_data.find(data_id) == m_data.end()) {
-      m_data[data_id] = node;
-      if (m_output) {
-        (*m_output) << "set_preloaded_conduit_node: " << data_id << " for super_node mode\n";
-      }
-    } else {
-      if (m_output) {
-        (*m_output) << "set_preloaded_conduit_node: " << data_id << " is already in m_data\n";
-      }
-    }
+    m_mutex.lock();
+    m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
+    m_mutex.unlock();
   }
 }
 
 void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int data_id) {
   if (m_compacted_sample_size == 0) {
     m_compacted_sample_size = nd.total_bytes_compact();
+    if (m_world_master) {
+      std::cout << "num bytes for nodes to be transmitted: " << nd.total_bytes_compact() << " per node" << std::endl;
+    }
   } else if (m_compacted_sample_size != nd.total_bytes_compact() && !m_node_sizes_vary) {
     LBANN_ERROR("Conduit node being added data_id: ", data_id,
                 " is not the same size as existing nodes in the data_store ",
@@ -446,27 +316,12 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
     m_mutex.unlock();
   }
 
-  #if 0
-  else if (m_owner[data_id] != m_rank_in_trainer) {
-    LBANN_ERROR("set_conduit_node error for data id: ", data_id, " m_owner: ", 
-                 m_owner[data_id], " me: ", m_rank_in_trainer,
-                 "; data reader role: ", m_reader->get_role());
-  }
-  #endif
-
-  else if (! m_super_node) {
+  else {
     m_mutex.lock();
     m_owner[data_id] = m_rank_in_trainer;
     build_node_for_sending(node, m_data[data_id]);
     error_check_compacted_node(m_data[data_id], data_id);
     m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
-    m_mutex.unlock();
-  }
-
-  else {
-    m_mutex.lock();
-    m_owner[data_id] = m_rank_in_trainer;
-    m_data[data_id] = node;
     m_mutex.unlock();
   }
 }
@@ -522,7 +377,6 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
 // code in the following method is a modification of code from
 // conduit/src/libs/relay/conduit_relay_mpi.cpp
 void data_store_conduit::build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out) {
-
   node_out.reset();
   conduit::Schema s_data_compact;
   if( node_in.is_compact() && node_in.is_contiguous()) {
@@ -668,6 +522,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
 
   conduit::Node nd;
   m_minibatch_data.clear();
+  double tm2 = get_time();
   for (size_t j=0; j < m_recv_buffer.size(); j++) {
     conduit::uint8 *n_buff_ptr = (conduit::uint8*)m_recv_buffer[j].data_ptr();
     conduit::Node n_msg;
@@ -683,6 +538,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
     int data_id = m_recv_data_ids[j];
     m_minibatch_data[data_id].set_external(n_msg["data"]);
   }
+  m_rebuild_time += (get_time() - tm2);
 }
 
 int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size) {
@@ -802,9 +658,6 @@ void data_store_conduit::purge_unused_samples(const std::vector<int>& indices) {
 }
 
 void data_store_conduit::compact_nodes() {
-  if (m_super_node) {
-    return;
-  }
   for(auto&& j : *m_shuffled_indices) {
     if(m_data.find(j) != m_data.end()){
       if(! (m_data[j].is_contiguous() && m_data[j].is_compact()) ) {
@@ -1011,14 +864,26 @@ void data_store_conduit::exchange_sample_sizes() {
 
   std::vector<size_t> other_sizes;
   for (int k=0; k<m_np_in_trainer; k++) {
+    if (m_output) {
+      (*m_output) << "sample sizes for P_" << k << std::endl;
+      flush_debug_file();
+    }
     other_sizes.resize(all_counts[k]*2);
     if (m_rank_in_trainer == k) {
       m_comm->broadcast<size_t>(k, my_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
     } else {
       m_comm->broadcast<size_t>(k, other_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
+
       for (size_t i=0; i<other_sizes.size(); i += 2) {
         if (m_sample_sizes.find(other_sizes[i]) != m_sample_sizes.end()) {
-          LBANN_ERROR("duplicate data_id: ", other_sizes[i]);
+          if (m_output) {
+            (*m_output) << "SAMPLE SIZES for P_" << k << std::endl;
+            for (size_t h=0; h<other_sizes.size(); h += 2) {
+              (*m_output) << other_sizes[h] << " SIZE: " << other_sizes[h+1] << std::endl;
+            }
+            flush_debug_file();
+          }
+          LBANN_ERROR("m_sample_sizes.find(other_sizes[i]) != m_sample_sizes.end() for data_id: ", other_sizes[i]);
         }
         m_sample_sizes[other_sizes[i]] = other_sizes[i+1];
       }
@@ -1356,10 +1221,20 @@ void data_store_conduit::exchange_owner_maps() {
 }
 
 void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
+  double tm1 = get_time();
   if (is_local_cache()) {
     return;
   }
   if (m_reader->at_new_epoch()) {
+    if (m_world_master && m_cur_epoch > 0) {
+      std::cout << "time for exchange_mini_batch_data calls: " 
+                << m_exchange_time << std::endl
+                << "time for constructing conduit Nodes: " << m_rebuild_time 
+                << std::endl;
+      std::cout << std::endl;
+      m_exchange_time = 0.;
+      m_rebuild_time = 0.;
+    }
     ++m_cur_epoch;
   }
 
@@ -1367,11 +1242,8 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
     exchange_owner_maps();
   }
 
-  if (m_super_node) {
-    exchange_data_by_super_node(current_pos, mb_size);
-  } else {
-    exchange_data_by_sample(current_pos, mb_size);
-  }
+  exchange_data_by_sample(current_pos, mb_size);
+  m_exchange_time += (get_time() - tm1);
 }
 
 void data_store_conduit::flush_debug_file() {
@@ -1380,6 +1252,12 @@ void data_store_conduit::flush_debug_file() {
   }
   m_output->close();
   m_output->open(m_debug_filename.c_str(), std::ios::app);
+}
+
+size_t data_store_conduit::get_num_indices() const {
+  size_t num = m_data.size();
+  size_t n = m_comm->trainer_allreduce<size_t>(num);
+  return n;
 }
 
 }  // namespace lbann

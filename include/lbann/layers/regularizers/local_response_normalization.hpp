@@ -43,8 +43,11 @@ namespace lbann {
  *  Advances in Neural Information Processing Systems,
  *  pp. 1097-1105. 2012.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
+template <data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
 class local_response_normalization_layer : public regularizer_layer {
+  static_assert(T_layout == data_layout::DATA_PARALLEL,
+                "local_response_normalization only supports DATA_PARALLEL");
 public:
 
   local_response_normalization_layer(lbann_comm *comm,
@@ -58,10 +61,7 @@ public:
     , m_lrn_cudnn_desc(nullptr),
       m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
-  {
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "local_response_normalization only supports DATA_PARALLEL");
-  }
+  { }
 
   local_response_normalization_layer(const local_response_normalization_layer& other)
     : regularizer_layer(other),
@@ -110,6 +110,7 @@ public:
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
+    return *this;
   }
 
   ~local_response_normalization_layer() override {
@@ -443,6 +444,15 @@ private:
   }
 
 };
+
+#ifndef LBANN_LOCAL_RESPONSE_NORMALIZATION_LAYER_INSTANTIATE
+extern template class local_response_normalization_layer<
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class local_response_normalization_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_LOCAL_RESPONSE_NORMALIZATION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

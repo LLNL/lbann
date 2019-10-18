@@ -112,8 +112,11 @@ def skeleton_performance_lenet_mnist(cluster, dir_name, executables,
     cluster, dir_name, executable, model_folder, model_name, DATA_FIELDS,
     should_log, compiler_name=compiler_name, weekly=weekly,
     data_reader_percent=data_reader_percent)
+  frequency_str = '_nightly'
+  if weekly:
+    frequency_str = '_weekly'
   run_tests(actual_performance, model_name, dir_name, should_log,
-            compiler_name, cluster)
+            compiler_name, cluster, frequency_str=frequency_str)
 
 
 def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name,
@@ -134,7 +137,7 @@ def skeleton_performance_alexnet(cluster, dir_name, executables, compiler_name,
   if weekly:
     frequency_str = '_weekly'
   run_tests(actual_performance, model_name, dir_name, should_log,
-            compiler_name, cluster, frequency_str)
+            compiler_name, cluster, frequency_str=frequency_str)
 
 
 def skeleton_performance_full_alexnet(cluster, dir_name, executables,

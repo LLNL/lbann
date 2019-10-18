@@ -75,7 +75,7 @@ class data_store_conduit {
   void set_shuffled_indices(const std::vector<int> *indices);
 
   /// for use during development and debugging
-  int get_num_indices() { return m_shuffled_indices->size(); }
+  size_t get_num_indices() const;
 
   void setup(int mini_batch_size);
 
@@ -127,10 +127,6 @@ class data_store_conduit {
 
   void exchange_mini_batch_data(size_t current_pos, size_t mb_size); 
 
-  void set_super_node_mode() {
-    m_super_node = true;
-  }
-
   void set_node_sizes_vary() { m_node_sizes_vary = true; }
 
   bool has_conduit_node(int data_id) const;
@@ -150,6 +146,9 @@ class data_store_conduit {
 
 protected :
 
+  double m_exchange_time = 0;
+  double m_rebuild_time = 0;
+
   int m_cur_epoch = 0;
 
   bool m_is_setup = false;
@@ -166,10 +165,6 @@ protected :
   /// used consistently when computing the indices that will be sent
   /// and received.
   int m_owner_map_mb_size = 0;
-
-  /// if true, use exchange_data_by_super_node, else use
-  /// exchange_data_by_sample; default if false
-  bool m_super_node = false;
 
   /// size of a compacted conduit::Node that contains a single sample
   int m_compacted_sample_size = 0;
@@ -203,7 +198,6 @@ protected :
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
 
-  void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
 
   /// Contains the list of data IDs that will be received
