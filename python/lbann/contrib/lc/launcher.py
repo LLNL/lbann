@@ -112,11 +112,12 @@ def make_batch_script(script_file=None,
         launcher_args.extend(['--mpibind=off',
                               '--nvidia_compute_mode=default'])
 
-    # Deal with Pascal's hardware topology
+    # Optimized thread affinity for Pascal
     # Note: Both GPUs are on socket 0, so we only use cores on that
     # socket.
     if system == 'pascal':
-        cores_per_proc = (cores_per_node(system) // 2) // procs_per_node
+        cores_per_socket = cores_per_node(system) // 2
+        cores_per_proc = cores_per_socket // procs_per_node
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_node
         environment['OMP_NUM_THREADS'] = cores_per_proc - 1
         if scheduler == 'slurm':
@@ -135,14 +136,18 @@ def make_batch_script(script_file=None,
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen'):
 
-        # Deal with hardware topology
-        # Note: The default thread affinity is incorrect since hwloc
-        # treats GPUs as NUMA domains.
-        cores_per_socket = cores_per_node(system) // 2
+        # Set thread affinity
+        # Note: Aluminum's default thread affinity is incorrect since
+        # hwloc treats GPUs as NUMA domains.
+        # Note: There are actually 22 cores/socket, but it seems that
+        # powers of 2 are better for performance.
+        cores_per_socket = 16
         procs_per_socket = (procs_per_node + 1) // 2
         cores_per_proc = cores_per_socket // procs_per_socket
         environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_socket
-        environment['OMP_NUM_THREADS'] = cores_per_proc - 1
+        environment['OMP_NUM_THREADS'] = cores_per_proc
+        if scheduler == 'lsf':
+            launcher_args.append('--bind packed:{}'.format(cores_per_proc))
 
         # Hack to enable process forking
         # Note: OpenMPI and InfiniBand sometimes fail if an MPI
