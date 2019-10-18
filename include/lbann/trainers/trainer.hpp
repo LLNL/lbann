@@ -33,6 +33,7 @@
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/utils/hash.hpp"
 #include <lbann.pb.h>
 #include <vector>
 #include <string>
@@ -44,17 +45,6 @@ namespace lbann {
 class lbann_callback;
 class training_algorithm;
 class termination_criteria;
-
-/** Create a hash function for hashing a std::pair type */
-struct pair_hash
-{
-  template <class T1>
-  std::size_t operator() (const std::pair<T1, execution_mode> &pair) const
-  {
-    using underlying_t = typename std::underlying_type<execution_mode>::type;
-    return std::hash<T1>()(pair.first) ^ std::hash<underlying_t>()(static_cast<underlying_t>(pair.second));
-  }
-};
 
 /** Represents an LBANN trainer and its context. */
 class trainer {
@@ -151,10 +141,16 @@ private:
   /** Flag that allows input layers to fetch data in the background */
   bool m_background_io_allowed;
 
+  /** Hash function for @c m_model_execution_context */
+  using model_execution_context_hash_t = pair_hash<observer_ptr<model>,
+                                                   execution_mode,
+                                                   std::hash<observer_ptr<model>>,
+                                                   enum_hash<execution_mode>>;
+
   /** @brief Map from model and execution mode to its execution context */
   std::unordered_map<std::pair<observer_ptr<model>, execution_mode>,
                      std::unique_ptr<execution_context>,
-                     pair_hash> m_model_execution_context;
+                     model_execution_context_hash_t> m_model_execution_context;
 };
 
 }  // namespace lbann
