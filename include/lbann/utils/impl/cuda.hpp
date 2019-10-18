@@ -25,7 +25,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <thrust/system/cuda/execution_policy.h>
+
+// Headers for NVCC
 #ifdef __CUDACC__
+#ifdef HYDROGEN_HAVE_CUB
+#include "cub/block/block_reduce.cuh"
+#endif // HYDROGEN_HAVE_CUB
 #include <math_constants.h>
 #include <cuda_fp16.hpp>
 #endif // __CUDACC__
@@ -81,6 +86,59 @@ double atomic_add<double>(double* address, double val) {
   } while (assumed != old);
   return __longlong_as_double(old);
 #endif // __CUDA_ARCH__ < 600
+}
+
+// Block reduction
+template <size_t bdimx, size_t bdimy, size_t bdimz, class T>
+__device__ __forceinline__
+T block_reduce(T val) {
+#ifdef HYDROGEN_HAVE_CUB
+  constexpr auto reduce_algo = cub::BLOCK_REDUCE_WARP_REDUCTIONS;
+  using BlockReduce = cub::BlockReduce<T, bdimx, reduce_algo, bdimy, bdimz>;
+  __shared__ typename BlockReduce::TempStorage workspace;
+  val = BlockReduce(workspace).Sum(val);
+#else
+  const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
+  constexpr size_t bsize = bdimx * bdimy * bdimz;
+  __shared__ DataType shared_max_vals[bsize];
+  shared_vals[tid] = val;
+  for (size_t stride = bsize/2; stride > 0; stride /= 2) {
+    __syncthreads();
+    if (tid < stride) {
+      shared_vals[tid] = shared_vals[tid] + shared_vals[tid+stride];
+    }
+  }
+  if (tid == 0) {
+    val = shared_vals[0];
+  }
+#endif // HYDROGEN_HAVE_CUB
+  return val;
+}
+template <size_t bdimx, size_t bdimy, size_t bdimz, class T, class Op>
+__device__ __forceinline__
+T block_reduce(T val) {
+#ifdef HYDROGEN_HAVE_CUB
+  constexpr auto reduce_algo = cub::BLOCK_REDUCE_WARP_REDUCTIONS;
+  using BlockReduce = cub::BlockReduce<T, bdimx, reduce_algo, bdimy, bdimz>;
+  __shared__ typename BlockReduce::TempStorage workspace;
+  val = BlockReduce(workspace).Reduce(val, Op());
+#else
+  Op op;
+  const size_t tid = threadIdx.x + threadIdx.y*bdimx + threadIdx.z*bdimx*bdimy;
+  constexpr size_t bsize = bdimx * bdimy * bdimz;
+  __shared__ DataType shared_max_vals[bsize];
+  shared_vals[tid] = val;
+  for (size_t stride = bsize/2; stride > 0; stride /= 2) {
+    __syncthreads();
+    if (tid < stride) {
+      shared_vals[tid] = op(shared_vals[tid], shared_vals[tid+stride]);
+    }
+  }
+  if (tid == 0) {
+    val = shared_vals[0];
+  }
+#endif // HYDROGEN_HAVE_CUB
+  return val;
 }
 
 // Unary math functions
