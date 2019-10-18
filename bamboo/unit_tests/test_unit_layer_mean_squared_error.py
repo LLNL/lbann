@@ -18,21 +18,23 @@ import tools
 # the functions below to ingest data.
 
 # Data
-np.random.seed(20190723)
-_num_samples = 29
-_sample_dims = (7,5,3)
-_sample_size = functools.reduce(operator.mul, _sample_dims)
-_samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
-_scale = np.random.normal(loc=1, size=_sample_dims).astype(np.float32)
-_bias = np.random.normal(loc=0, size=_sample_dims).astype(np.float32)
+# Note: The error bounds for gradient checking assume that the fourth
+# derivative of the objective function is ~1. However, given our loss
+# function:
+#   L = ( -xhat * log(x) )^2
+#   L'''' = O( xhat^2 * log(x) / x^4 )
+# We have x >= 0.25 to make sure the fourth derivative does not get
+# too big and mess up the error bounds.
+np.random.seed(201910144)
+_samples = np.random.normal(size=(13,2,9)).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):
-    return _samples[index,:]
+    return _samples[index].reshape(-1)
 def num_samples():
-    return _num_samples
+    return _samples.shape[0]
 def sample_dims():
-    return (_sample_size,)
+    return (2*_samples.shape[-1],)
 
 # ==============================================
 # Setup LBANN experiment
@@ -69,15 +71,25 @@ def construct_model(lbann):
         return np.inner(x, x)
 
     # Input data
-    # Note: Sum with a weights layer so that gradient checking will
+    # Note: Sum with weights layers so that gradient checking will
     # verify that error signals are correct.
-    x_weights = lbann.Weights(optimizer=lbann.SGD(),
-                              initializer=lbann.ConstantInitializer(value=0.0))
-    x0 = lbann.WeightsLayer(weights=x_weights,
-                            dims=str_list(_sample_dims))
-    x1 = lbann.Reshape(lbann.Input(), dims=str_list(_sample_dims))
-    x = lbann.Sum([x0, x1])
-    x_lbann = x
+    slice_size = _samples.shape[-1]
+    x0_weights = lbann.Weights(optimizer=lbann.SGD(),
+                               initializer=lbann.ConstantInitializer(value=0.0),
+                               name='input0_weights')
+    x1_weights = lbann.Weights(optimizer=lbann.SGD(),
+                               initializer=lbann.ConstantInitializer(value=0.0),
+                               name='input1_weights')
+    x_slice = lbann.Slice(lbann.Input(),
+                          slice_points=str_list([0, slice_size, 2*slice_size]))
+    x0 = lbann.Sum([x_slice,
+                    lbann.WeightsLayer(weights=x0_weights,
+                                       dims=str(slice_size))])
+    x1 = lbann.Sum([x_slice,
+                    lbann.WeightsLayer(weights=x1_weights,
+                                       dims=str(slice_size))])
+    x0_lbann = x0
+    x1_lbann = x1
 
     # Objects for LBANN model
     obj = []
@@ -89,16 +101,9 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    scale_values = str_list(np.nditer(_scale))
-    bias_values = str_list(np.nditer(_bias))
-    scalebias_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values='{} {}'.format(scale_values,
-                                                                 bias_values)))
-    x = x_lbann
-    y = lbann.EntrywiseScaleBias(x,
-                                 weights=scalebias_weights,
-                                 data_layout='data_parallel')
+    x0 = x0_lbann
+    x1 = x1_lbann
+    y = lbann.MeanSquaredError([x0, x1], data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel output'))
@@ -106,8 +111,10 @@ def construct_model(lbann):
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
-        y = _scale * x + _bias
+        x = get_sample(i)
+        x0 = x[:slice_size]
+        x1 = x[slice_size:]
+        y = l2_norm2(x0-x1) / slice_size
         z = l2_norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -124,16 +131,9 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    scale_values = str_list(np.nditer(_scale))
-    bias_values = str_list(np.nditer(_bias))
-    scalebias_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values='{} {}'.format(scale_values,
-                                                                 bias_values)))
-    x = x_lbann
-    y = lbann.EntrywiseScaleBias(x,
-                                 weights=scalebias_weights,
-                                 data_layout='model_parallel')
+    x0 = x0_lbann
+    x1 = x1_lbann
+    y = lbann.MeanSquaredError([x0, x1], data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel output'))
@@ -141,8 +141,10 @@ def construct_model(lbann):
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
-        y = _scale * x + _bias
+        x = get_sample(i)
+        x0 = x[:slice_size]
+        x1 = x[slice_size:]
+        y = l2_norm2(x0-x1) / slice_size
         z = l2_norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -164,11 +166,11 @@ def construct_model(lbann):
     # Construct model
     # ------------------------------------------
 
-    mini_batch_size = 17
+    mini_batch_size = 11
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
-                       layers=lbann.traverse_layer_graph(x_lbann),
+                       layers=lbann.traverse_layer_graph(x0_lbann),
                        objective_function=obj,
                        metrics=metrics,
                        callbacks=callbacks)
