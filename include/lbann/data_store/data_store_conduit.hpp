@@ -351,7 +351,12 @@ protected :
   std::string get_cereal_fn(const std::string&) const;
 
   void make_dir_if_it_doesnt_exist(const std::string &dir); 
+
+  /** @brief Writes conduit node to file */
   void spill_conduit_node(const conduit::Node &node, int data_id);
+
+  /** @brief Loads conduit nodes from file into m_data */
+  void load_spilled_conduit_nodes();
 };
 
 }  // namespace lbann

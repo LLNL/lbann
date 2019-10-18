@@ -445,6 +445,10 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   }
 
   int num_send_req = build_indices_i_will_send(current_pos, mb_size);
+  if (m_spill) {
+    load_spilled_conduit_nodes();
+  }
+
   int num_recv_req = build_indices_i_will_recv(current_pos, mb_size);
 
   m_send_requests.resize(num_send_req);
@@ -1478,7 +1482,7 @@ void data_store_conduit::load_from_file(std::string dir_name, generic_data_reade
       for (auto t : names2) {
         n2[names[0]][t] = nd["data"][names[0]][t];
       }
-      build_node_for_sending(n2, m_data[sample_id]);
+      //build_node_for_sending(n2, m_data[sample_id]);
       build_node_for_sending(nd["data"], m_data[sample_id]);
     }
   }
@@ -1522,6 +1526,40 @@ void data_store_conduit::spill_conduit_node(const conduit::Node &node, int data_
       file::make_directory(m_cur_dir);
     }
     node.save(m_cur_dir + '/' + std::to_string(data_id));
+  }
+}
+
+void data_store_conduit::load_spilled_conduit_nodes() {
+  std::unordered_set<int> indices_that_are_already_loaded;
+  std::unordered_set<int> indices_to_be_loaded;
+  for (const auto &t : m_indices_to_send) {
+    for (const auto &t2 : t) {
+      if (m_data.find(t2) == m_data.end()) {
+        indices_to_be_loaded.insert(t2);
+      } else {
+        indices_that_are_already_loaded.insert(t2);
+      }
+    }
+  }
+
+  //note: in general, I expect that indices_that_are_already_loaded will be empty;
+  //      one exception may be during the first call to exchange_data() at the 
+  //      beginning of an epoch
+  for (const auto &t : m_data) {
+    if (indices_that_are_already_loaded.find(t.first) == indices_that_are_already_loaded.end()) {
+      m_data.erase(t.first);
+    }
+  }
+
+  for (const auto &t : indices_to_be_loaded) {
+    std::unordered_map<int, int>::const_iterator it = m_spilled_nodes.find(t);
+    if (it == m_spilled_nodes.end()) {
+      LBANN_ERROR("t == m_spilled_nodes.end()");
+    }
+    const std::string fn = m_spill_dir_base + "/" + std::to_string(it->second);
+    conduit::Node node;
+    node.load(fn);
+    build_node_for_sending(node, m_data[t]);
   }
 }
 
