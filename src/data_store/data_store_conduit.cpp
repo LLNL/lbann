@@ -75,6 +75,16 @@ data_store_conduit::data_store_conduit(
     }
   }
 
+  if (opts->has_string("data_store_spill")) {
+    m_spill_dir_base = opts->get_string("data_store_spill");
+    make_dir_if_it_doesnt_exist(m_spill_dir_base);
+    m_comm->trainer_barrier();
+    m_spill_dir_base = m_spill_dir_base + "/conduit_" + std::to_string(m_rank_in_world);
+    make_dir_if_it_doesnt_exist(m_spill_dir_base);
+    m_cur_spill_dir = -1;
+    m_num_files_in_cur_spill_dir = m_max_files_per_directory;
+  }
+
   m_is_local_cache = opts->get_bool("data_store_cache");
   if (m_is_local_cache && !opts->get_bool("preload_data_store")) {
     LBANN_ERROR("data_store_cache is currently only implemented for preload mode; this will change in the future. For now, pleas pass both flags: data_store_cache and --preload_data_store");
@@ -325,12 +335,24 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   }
 
   else {
-    m_mutex.lock();
-    m_owner[data_id] = m_rank_in_trainer;
-    build_node_for_sending(node, m_data[data_id]);
-    error_check_compacted_node(m_data[data_id], data_id);
-    m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
-    m_mutex.unlock();
+    if (m_spill) {
+      conduit::Node n2;
+      build_node_for_sending(node, n2);
+      error_check_compacted_node(n2, data_id);
+      m_mutex.lock();
+      m_sample_sizes[data_id] = n2.total_bytes_compact();
+      m_mutex.unlock();
+      spill_conduit_node(node, data_id);
+      m_spilled_nodes[data_id] = m_cur_spill_dir;
+    }
+
+    else {
+      m_mutex.lock();
+      build_node_for_sending(node, m_data[data_id]);
+      error_check_compacted_node(m_data[data_id], data_id);
+      m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
+      m_mutex.unlock();
+    }  
   }
 }
 
@@ -1284,6 +1306,7 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
   m_sample_sizes.clear();
   m_data.clear();
   m_cur_epoch = -1;
+
   m_is_setup = false;
   m_preload = false;
   m_explicit_loading = true;
@@ -1323,24 +1346,25 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
   m_comm->global_barrier();
 }
 
-void data_store_conduit::spill_to_file(std::string dir_name) {
-  const std::string conduit_dir = get_conduit_dir_name(dir_name);
+void data_store_conduit::make_dir_if_it_doesnt_exist(const std::string &dir_name) {
   int node_rank = m_comm->get_rank_in_node();
   if (node_rank == 0) {
     bool exists = file::directory_exists(dir_name);
     if (!exists) {
       if (m_world_master) {
-        std::cout << "data_store_conduit::spill_to_file; the directory '" << dir_name << "' doesn't exist; creating it\n";
+        std::cout << "data_store_conduit; the directory '" << dir_name << "' doesn't exist; creating it\n";
       }
       file::make_directory(dir_name);
-    } 
-
-    exists = file::directory_exists(conduit_dir);
-    if (!exists) {
-      file::make_directory(conduit_dir);
     }
   }
+}
+
+void data_store_conduit::spill_to_file(std::string dir_name) {
+  make_dir_if_it_doesnt_exist(dir_name);
   m_comm->trainer_barrier();
+  const std::string conduit_dir = get_conduit_dir_name(dir_name);
+  make_dir_if_it_doesnt_exist(conduit_dir);
+
 
   const std::string metadata_fn = get_metadata_fn(dir_name);
   std::ofstream metadata(metadata_fn);
@@ -1369,6 +1393,7 @@ void data_store_conduit::spill_to_file(std::string dir_name) {
     const std::string f = cur_dir_name + '/' + std::to_string(t.first);
     t.second.save(cur_dir_name + '/' + std::to_string(t.first));
     metadata << cur_dir << "/" << t.first << " " << t.first << std::endl;
+    ++num_files;
   }
   metadata.close();
 
@@ -1486,5 +1511,19 @@ std::string data_store_conduit::get_metadata_fn(const std::string& dir_name) con
 std::string data_store_conduit::get_cereal_fn(const std::string& dir_name) const {
   return dir_name + '/' + m_cereal_fn + "_" + std::to_string(m_rank_in_world); 
 }
+
+void data_store_conduit::spill_conduit_node(const conduit::Node &node, int data_id) {
+  if (m_num_files_in_cur_spill_dir == m_max_files_per_directory) {
+    m_num_files_in_cur_spill_dir = 0;
+    m_cur_dir += 1;
+    m_cur_dir = m_spill_dir_base + "/" + to_string(m_cur_dir);
+    bool exists = file::directory_exists(m_cur_dir);
+    if (!exists) {
+      file::make_directory(m_cur_dir);
+    }
+    node.save(m_cur_dir + '/' + std::to_string(data_id));
+  }
+}
+
 
 }  // namespace lbann

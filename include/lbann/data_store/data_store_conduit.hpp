@@ -156,6 +156,36 @@ class data_store_conduit {
   void load_from_file(std::string dir_name, generic_data_reader *reader = nullptr);
 
 protected :
+  bool m_spill = false;
+
+  /** @brief Base directory for spilling (offloading) conduit nodes 
+   *
+   * The base directory is specified by the user, either as an option
+   * or in the data_reader prototext file; we append
+   * "/conduit_<m_rank_in_world>" to the string.
+   */
+  std::string m_spill_dir_base;
+
+  /** @brief Used to form the directory path for spilling conduit nodes */
+  int m_cur_spill_dir = -1;
+
+  /** @brief @brief Current directory for spilling (writing to file) conduit nodes 
+   *
+   * m_cur_dir = m_spill_dir_base/<m_cur_spill_dir_int>
+   */
+  std::string m_cur_dir;
+
+
+  /** @brief Contains the number of conduit nodes that have been written to m_cur_dir
+   *
+   * When m_num_files_in_cur_spill_dir == m_max_files_per_directory,
+   * m_cur_spill_dir_int is incremented and a new m_cur_dir is created
+   */
+  int m_num_files_in_cur_spill_dir;
+
+  /** @brief maps data_id to m_cur_spill_dir_int. */
+  std::unordered_map<int, int> m_spilled_nodes;
+
   /// used in set_conduit_node(...)
   std::mutex m_mutex;
 
@@ -319,6 +349,9 @@ protected :
   std::string get_conduit_dir_name(const std::string&) const;
   std::string get_metadata_fn(const std::string&) const;
   std::string get_cereal_fn(const std::string&) const;
+
+  void make_dir_if_it_doesnt_exist(const std::string &dir); 
+  void spill_conduit_node(const conduit::Node &node, int data_id);
 };
 
 }  // namespace lbann
