@@ -162,7 +162,6 @@ include(SetupCXX)
 
 # Required dependencies
 find_package(Threads REQUIRED)
-find_package(Clara REQUIRED)
 
 # Argument parsing backend
 find_package(Clara REQUIRED)
@@ -500,11 +499,8 @@ target_include_directories(lbann PUBLIC
 
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
-<<<<<<< HEAD
 target_link_libraries(lbann PUBLIC Threads::Threads)
-=======
 target_link_libraries(lbann PUBLIC clara::clara)
->>>>>>> argument parser compiles
 target_link_libraries(lbann PUBLIC cereal)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
