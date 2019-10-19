@@ -41,7 +41,7 @@ struct max_op {
   }
 };
 
-/** @brief Helper kernel for max reduction on matrix columns
+/** @brief Kernel for max reduction on matrix columns
  *
  *  Each CUDA block computes the max over a subset of matrix entries
  *  and outputs the result. This is repeated multiple times for
@@ -121,7 +121,7 @@ __global__ void reduce_sum_kernel(size_t height,
     // Compute sum for each block
     const DataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
     if (tid == 0) {
-      sums[col] = block_sum;
+      cuda::atomic_add(&sums[col], block_sum);
     }
 
   }
@@ -149,7 +149,6 @@ __global__ void fp_sumexp_kernel(size_t height,
   const size_t nthreadsx = blockDim.x * gridDim.x;
   const size_t nblocksy = gridDim.y;
 
-  // Reduce each matrix column independently
   for (size_t col = bidy; col < width; col += nblocksy) {
     const auto& shift = shifts[col];
 
@@ -161,8 +160,7 @@ __global__ void fp_sumexp_kernel(size_t height,
     }
 
     // Compute sum for each block
-    const DataType block_sum
-      = cuda::block_reduce<bsize,1,1>(thread_sum);
+    const DataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
     if (tid == 0) {
       cuda::atomic_add(&sums[col], block_sum);
     }
@@ -416,6 +414,7 @@ void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute
 
 }
 
+// Template instantiation
 template class log_softmax_layer<
   data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class log_softmax_layer<
