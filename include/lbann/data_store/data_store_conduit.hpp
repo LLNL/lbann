@@ -148,15 +148,22 @@ class data_store_conduit {
 
   /// write m_data to file; may also write other data structures
   /// (e.g, src/data_store/data_store_conduit.cpp) to file
-  void spill_to_file(std::string dir_name);
+  void write_checkpoint(std::string dir_name);
   
   /// load m_data from local file; may also write other data structures
   /// (e.g, src/data_store/data_store_conduit.cpp) to file
   /// (reader may be nullptr for testing and development purposes)
-  void load_from_file(std::string dir_name, generic_data_reader *reader = nullptr);
+  void load_checkpoint(std::string dir_name, generic_data_reader *reader = nullptr);
 
 protected :
+  /** @brief if true, then we are spilling (offloading) samples to disk */
   bool m_spill = false;
+
+  /** @brief if true, then all samples have been spilled */
+  bool m_is_spilled = false;
+
+  /** During spilling, the conduit file pathnames are written to this file */
+  std::ofstream m_metadata;
 
   /** @brief Base directory for spilling (offloading) conduit nodes 
    *
@@ -167,19 +174,19 @@ protected :
   std::string m_spill_dir_base;
 
   /** @brief Used to form the directory path for spilling conduit nodes */
-  int m_cur_spill_dir = -1;
+  int m_cur_spill_dir_integer = -1;
 
   /** @brief @brief Current directory for spilling (writing to file) conduit nodes 
    *
-   * m_cur_dir = m_spill_dir_base/<m_cur_spill_dir_int>
+   * m_cur_dir = m_spill_dir_base/<m_cur_spill_dir_integer>
    */
-  std::string m_cur_dir;
+  std::string m_cur_spill_dir;
 
 
   /** @brief Contains the number of conduit nodes that have been written to m_cur_dir
    *
    * When m_num_files_in_cur_spill_dir == m_max_files_per_directory,
-   * m_cur_spill_dir_int is incremented and a new m_cur_dir is created
+   * m_cur_spill_dir_integer is incremented and a new m_cur_dir is created
    */
   int m_num_files_in_cur_spill_dir;
 
@@ -346,9 +353,10 @@ protected :
   /// called by test_checkpoint
   void print_variables();
 
-  std::string get_conduit_dir_name(const std::string&) const;
-  std::string get_metadata_fn(const std::string&) const;
-  std::string get_cereal_fn(const std::string&) const;
+  std::string get_conduit_dir() const;
+  std::string get_cereal_fn() const;
+  std::string get_metadata_fn() const;
+
 
   void make_dir_if_it_doesnt_exist(const std::string &dir); 
 
@@ -357,6 +365,16 @@ protected :
 
   /** @brief Loads conduit nodes from file into m_data */
   void load_spilled_conduit_nodes();
+
+  /** @brief Creates directory structure, opens metadata file for output, etc */
+  void setup_spill();
+
+  /** @brief Saves this objects state to file
+   *
+   * Here, "state" is all data, except for conduit nodes, that is
+   * needed to reload from checkpoint
+   */
+  void save_state();
 };
 
 }  // namespace lbann

@@ -70,19 +70,10 @@ data_store_conduit::data_store_conduit(
     ss << "debug_" << m_reader->get_role() << "." << m_comm->get_rank_in_world();
     m_output = new std::ofstream(ss.str().c_str());
     m_debug_filename = ss.str();
-    if (m_world_master) {
-      std::cout << "opened " << ss.str() << " for writing\n";
-    }
   }
 
   if (opts->has_string("data_store_spill")) {
-    m_spill_dir_base = opts->get_string("data_store_spill");
-    make_dir_if_it_doesnt_exist(m_spill_dir_base);
-    m_comm->trainer_barrier();
-    m_spill_dir_base = m_spill_dir_base + "/conduit_" + std::to_string(m_rank_in_world);
-    make_dir_if_it_doesnt_exist(m_spill_dir_base);
-    m_cur_spill_dir = -1;
-    m_num_files_in_cur_spill_dir = m_max_files_per_directory;
+    setup_spill();
   }
 
   m_is_local_cache = opts->get_bool("data_store_cache");
@@ -336,14 +327,17 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
 
   else {
     if (m_spill) {
+
+      //TODO: rethink how we go about exchanging sample sizes
       conduit::Node n2;
       build_node_for_sending(node, n2);
       error_check_compacted_node(n2, data_id);
       m_mutex.lock();
       m_sample_sizes[data_id] = n2.total_bytes_compact();
       m_mutex.unlock();
+
       spill_conduit_node(node, data_id);
-      m_spilled_nodes[data_id] = m_cur_spill_dir;
+      m_spilled_nodes[data_id] = m_cur_spill_dir_integer;
     }
 
     else {
@@ -1270,6 +1264,11 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
 
   if (m_reader->at_new_epoch() && !m_preload && !m_is_local_cache && m_cur_epoch == 1) {
     exchange_owner_maps();
+    if (m_spill) {
+      m_is_spilled = true;
+      m_metadata.close();
+      save_state();
+    }
   }
 
   exchange_data_by_sample(current_pos, mb_size);
@@ -1301,9 +1300,9 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
       if (j >= 10) break;
     }
     print_variables();
-    std::cout << "\nCalling spill_to_file(testme_xyz)" << std::endl;
+    std::cout << "\nCalling write_checkpoint()" << std::endl;
   }
-  spill_to_file(checkpoint_dir);
+  write_checkpoint(checkpoint_dir);
 
   std::unordered_map<int,int> sanity = m_owner;
   m_owner.clear();
@@ -1325,9 +1324,9 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
 
   if (m_world_master) {
     std::cout << "Cleared the owner map; m_owner.size() = " << m_owner.size() << std::endl
-              << "Calling load_from_file" << std::endl;
+              << "Calling load_checkpoint" << std::endl;
   }
-  load_from_file(checkpoint_dir, nullptr);
+  load_checkpoint(checkpoint_dir, nullptr);
   if (m_world_master) {
     std::cout << "Here is part of the re-loaded owner map; map.size(): " << m_owner.size() << std::endl;
     size_t j = 0;
@@ -1363,46 +1362,54 @@ void data_store_conduit::make_dir_if_it_doesnt_exist(const std::string &dir_name
   }
 }
 
-void data_store_conduit::spill_to_file(std::string dir_name) {
-  make_dir_if_it_doesnt_exist(dir_name);
+void data_store_conduit::setup_spill() {
+  options *opts = options::get();
+  // create director structure for spilling data
+  if (! (opts->has_string("data_store_spill")
+      || opts->has_string("data_store_test_checkpoint"))) {
+    LBANN_ERROR("data_store_conduit::spill_setup() was called, but you are missing the cmd line flag: --data_store_spill or --data_store_test_checkpoint");
+  }
+  m_cur_spill_dir = -1;
+  m_num_files_in_cur_spill_dir = m_max_files_per_directory;
+  if (opts->has_string("data_store_spill")) {
+    m_spill_dir_base = options::get()->get_string("data_store_spill");
+  } else {
+    m_spill_dir_base = options::get()->get_string("data_store_test_checkpoint");
+  }
+
+  make_dir_if_it_doesnt_exist(m_spill_dir_base);
   m_comm->trainer_barrier();
-  const std::string conduit_dir = get_conduit_dir_name(dir_name);
+  const std::string conduit_dir = get_conduit_dir();
   make_dir_if_it_doesnt_exist(conduit_dir);
 
+  // open metadata file; this will contains the file pathnames of spilled
+  // conduit nodes
+  const std::string fnn = get_metadata_fn();
+  m_metadata.open(fnn.c_str()); 
+  if (!m_metadata) {
+    LBANN_ERROR("failed to open ", fnn, " for writing");
+  }
+}
 
-  const std::string metadata_fn = get_metadata_fn(dir_name);
-  std::ofstream metadata(metadata_fn);
-  if (!metadata) {
-    LBANN_ERROR("failed to open ", metadata_fn, " for writing");
+void data_store_conduit::write_checkpoint(std::string dir_name) {
+  // if we're spilling data, everything has already been written to file
+  if (m_is_spilled) {
+    return;
   }
 
-  //TODO should have two levels of directory to ensure
-  //     there's not too many files in any directory
-  metadata << conduit_dir << "\n";
-  int cur_dir = -1;
-  int num_files = m_max_files_per_directory;
-  const std::string my_conduit_dir = conduit_dir + "/conduit_" + std::to_string(m_rank_in_world);
-  std::string cur_dir_name;
+  setup_spill();
+  save_state();
+
+  m_metadata << get_conduit_dir() << "\n";
   for (auto t : m_data) {
-    if (num_files == m_max_files_per_directory) {
-      num_files = 0;
-      cur_dir += 1;
-      cur_dir_name = conduit_dir + "/" + to_string(cur_dir);
-      bool exists = file::directory_exists(cur_dir_name);
-      if (!exists) {
-        file::make_directory(cur_dir_name);
-      }
-    }
-
-    const std::string f = cur_dir_name + '/' + std::to_string(t.first);
-    t.second.save(cur_dir_name + '/' + std::to_string(t.first));
-    metadata << cur_dir << "/" << t.first << " " << t.first << std::endl;
-    ++num_files;
+    spill_conduit_node(t.second["data"], t.first);
   }
-  metadata.close();
+  m_metadata.close();
+}
 
+void data_store_conduit::save_state() {
   // checkpoint remaining state using cereal
-  const std::string fn = get_cereal_fn(dir_name);
+  const std::string fn = get_cereal_fn();
   std::ofstream os(fn);
   if (!os) {
     LBANN_ERROR("failed to open ", fn, " for writing");
@@ -1425,20 +1432,25 @@ void data_store_conduit::spill_to_file(std::string dir_name) {
   os.close();
 }
 
-void data_store_conduit::load_from_file(std::string dir_name, generic_data_reader *reader) {
-  if (m_world_master) std::cout << "starting data_store_conduit::load_from_file" << std::endl;
+void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_reader *reader) {
+  if (m_world_master) std::cout << "starting data_store_conduit::load_checkpoint" << std::endl;
 
-  bool exists = file::directory_exists(dir_name);
+  m_spill_dir_base = dir_name;
+  bool exists = file::directory_exists(m_spill_dir_base);
   if (!exists) {
     LBANN_ERROR("cannot load data_store from file, since the specified directory ", dir_name, "doesn't exist");
   }
+  const std::string conduit_dir = get_conduit_dir();
+  exists = file::directory_exists(conduit_dir);
+  if (!exists) {
+    LBANN_ERROR("cannot load data_store from file, since the specified directory ", conduit_dir, "doesn't exist");
+  }
 
-  const std::string fn = get_cereal_fn(dir_name);
+  const std::string fn = get_cereal_fn();
   std::ifstream in(fn);
   if (!in) {
     LBANN_ERROR("failed to open ", m_cereal_fn, " for reading");
   }
-
   cereal::XMLInputArchive iarchive(in);
   iarchive(m_cur_epoch, m_is_setup,
            m_preload, m_explicit_loading,
@@ -1458,7 +1470,7 @@ void data_store_conduit::load_from_file(std::string dir_name, generic_data_reade
     m_np_in_trainer = m_comm->get_procs_per_trainer();
   }  
 
-  const std::string metadata_fn = get_metadata_fn(dir_name);
+  const std::string metadata_fn = get_metadata_fn();
   std::ifstream metadata(metadata_fn);
   if (!metadata) {
     LBANN_ERROR("failed to open ", metadata_fn, " for reading");
@@ -1466,6 +1478,10 @@ void data_store_conduit::load_from_file(std::string dir_name, generic_data_reade
 
   std::string base_dir;
   getline(metadata, base_dir);
+  if (conduit_dir != base_dir) {
+    LBANN_ERROR("conduit_dir != base_dir (", conduit_dir, ", ", base_dir);
+  }
+
   std::string tmp;
   int sample_id;
   while (metadata >> tmp >> sample_id) {
@@ -1473,21 +1489,10 @@ void data_store_conduit::load_from_file(std::string dir_name, generic_data_reade
       const std::string fn2 = base_dir + "/" + tmp;
       conduit::Node nd;
       nd.load(fn2);
-
-      // if you're wondering why we're doing the following, see the
-      // note in copy_members: "Repack the nodes ..."
-      conduit::Node n2;
-      const std::vector<std::string> &names = nd["data"].child_names();
-      const std::vector<std::string> &names2 = nd["data"][names[0]].child_names();
-      for (auto t : names2) {
-        n2[names[0]][t] = nd["data"][names[0]][t];
-      }
-      //build_node_for_sending(n2, m_data[sample_id]);
-      build_node_for_sending(nd["data"], m_data[sample_id]);
+      build_node_for_sending(nd, m_data[sample_id]);
     }
   }
   metadata.close();
-
   m_was_loaded_from_file = true;
 }
 
@@ -1504,29 +1509,34 @@ void data_store_conduit::print_variables() {
             << "m_node_sizes_vary: " << m_node_sizes_vary << std::endl;
 }
 
-std::string data_store_conduit::get_conduit_dir_name(const std::string& dir_name) const {
-  return dir_name + "/conduit_" + std::to_string(m_rank_in_world);
+std::string data_store_conduit::get_conduit_dir() const {
+  return m_spill_dir_base + "/conduit_" + std::to_string(m_rank_in_world);
 }
 
-std::string data_store_conduit::get_metadata_fn(const std::string& dir_name) const {
-  return dir_name + "/metadata_" + std::to_string(m_rank_in_world);
+std::string data_store_conduit::get_cereal_fn() const {
+  return m_spill_dir_base + '/' + m_cereal_fn + "_" + std::to_string(m_rank_in_world); 
 }
 
-std::string data_store_conduit::get_cereal_fn(const std::string& dir_name) const {
-  return dir_name + '/' + m_cereal_fn + "_" + std::to_string(m_rank_in_world); 
+std::string data_store_conduit::get_metadata_fn() const {
+  return m_spill_dir_base + "/metadata_" + std::to_string(m_rank_in_world);
 }
 
 void data_store_conduit::spill_conduit_node(const conduit::Node &node, int data_id) {
   if (m_num_files_in_cur_spill_dir == m_max_files_per_directory) {
     m_num_files_in_cur_spill_dir = 0;
-    m_cur_dir += 1;
-    m_cur_dir = m_spill_dir_base + "/" + to_string(m_cur_dir);
-    bool exists = file::directory_exists(m_cur_dir);
+    m_cur_spill_dir_integer += 1;
+    m_cur_spill_dir = get_conduit_dir() + "/" + to_string(m_cur_spill_dir_integer);
+    bool exists = file::directory_exists(m_cur_spill_dir);
     if (!exists) {
-      file::make_directory(m_cur_dir);
+      file::make_directory(m_cur_spill_dir);
     }
-    node.save(m_cur_dir + '/' + std::to_string(data_id));
   }
+  const std::string fn = m_cur_spill_dir + "/" + std::to_string(data_id);
+  node.save(fn);
+  if (!m_metadata.is_open()) {
+    LBANN_ERROR("metadata file is not open");
+  }
+  m_metadata <<  m_cur_spill_dir_integer << "/" << data_id << " " << data_id << std::endl;
 }
 
 void data_store_conduit::load_spilled_conduit_nodes() {
