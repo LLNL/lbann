@@ -328,7 +328,15 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   else {
     if (m_spill) {
 
-      //TODO: rethink how we go about exchanging sample sizes
+      //TODO: rethink how we go about exchanging sample sizes.
+      //currently, we exchange sample sizes a single time, and
+      //the exchange is for all samples. To make this work with
+      //spilling we need to compute the sample size by building
+      //a node_for_sending (below), then we throw it away.
+      //Also, see not in copy_members() about problems with the
+      //schema that cause us to rebuild the node_for_sending after
+      //copying or loading from disk. I need to revisit this and
+      //figure out what's going on.
       conduit::Node n2;
       build_node_for_sending(node, n2);
       error_check_compacted_node(n2, data_id);
