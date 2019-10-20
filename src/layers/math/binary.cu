@@ -32,7 +32,7 @@ namespace lbann {
 namespace {
 
 /** CUDA kernel to apply an binary backprop operator. */
-template <typename BinaryBackPropOperator>
+template <typename TensorDataType, typename BinaryBackPropOperator>
 __global__
 void binary_backprop_operator_kernel(El::Int height, El::Int width,
                                      const TensorDataType* __restrict__ x1,
@@ -69,7 +69,7 @@ void binary_backprop_operator_kernel(El::Int height, El::Int width,
  *  \f$ dL/dx_2 \f$. The last two arguments should be overwritten when
  *  the BinaryBackPropOperator is called.
  */
-template <typename BinaryBackPropOperator>
+template <typename TensorDataType, typename BinaryBackPropOperator>
 void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1,
                                     const El::AbstractMatrix<TensorDataType>& x2,
                                     const El::AbstractMatrix<TensorDataType>& dy,
@@ -112,6 +112,7 @@ void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1
 // (\f$ \frac{dL}{dx_i} = \frac{dL}{dy} \frac{df}{dx_i}(x_1,x_2) \f$).
 
 /** Add operator. */
+template <typename TensorDataType>
 struct add_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -128,6 +129,7 @@ struct add_op {
 };
 
 /** Subtract operator. */
+template <typename TensorDataType>
 struct subtract_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -144,6 +146,7 @@ struct subtract_op {
 };
 
 /** Multiply operator. */
+template <typename TensorDataType>
 struct multiply_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -160,6 +163,7 @@ struct multiply_op {
 };
 
 /** Divide operator. */
+template <typename TensorDataType>
 struct divide_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -176,6 +180,7 @@ struct divide_op {
 };
 
 /** Modulo operator. */
+template <typename TensorDataType>
 struct mod_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -192,6 +197,7 @@ struct mod_op {
 };
 
 /** Power operator. */
+template <typename TensorDataType>
 struct pow_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -212,6 +218,7 @@ struct pow_op {
  *  If a standard division produces an infinity or NaN, zero is output
  *  instead.
  */
+template <typename TensorDataType>
 struct safe_divide_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -236,6 +243,7 @@ struct safe_divide_op {
 };
 
 /** Squared difference operator. */
+template <typename TensorDataType>
 struct squared_difference_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -253,6 +261,7 @@ struct squared_difference_op {
 };
 
 /** Maximum operator. */
+template <typename TensorDataType>
 struct max_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -277,6 +286,7 @@ struct max_op {
 };
 
 /** Minimum operator. */
+template <typename TensorDataType>
 struct min_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -301,6 +311,7 @@ struct min_op {
 };
 
 /** Equal operator. */
+template <typename TensorDataType>
 struct equal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -317,6 +328,7 @@ struct equal_op {
 };
 
 /** Not equal operator. */
+template <typename TensorDataType>
 struct not_equal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -333,6 +345,7 @@ struct not_equal_op {
 };
 
 /** Less than operator. */
+template <typename TensorDataType>
 struct less_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -349,6 +362,7 @@ struct less_op {
 };
 
 /** Less than or equal operator. */
+template <typename TensorDataType>
 struct less_equal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -365,6 +379,7 @@ struct less_equal_op {
 };
 
 /** Greater than operator. */
+template <typename TensorDataType>
 struct greater_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -381,6 +396,7 @@ struct greater_op {
 };
 
 /** Greater than or equal operator. */
+template <typename TensorDataType>
 struct greater_equal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -397,6 +413,7 @@ struct greater_equal_op {
 };
 
 /** Logical and operator. */
+template <typename TensorDataType>
 struct logical_and_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -415,6 +432,7 @@ struct logical_and_op {
 };
 
 /** Logical or operator. */
+template <typename TensorDataType>
 struct logical_or_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -433,6 +451,7 @@ struct logical_or_op {
 };
 
 /** Logical xor operator. */
+template <typename TensorDataType>
 struct logical_xor_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
@@ -453,39 +472,35 @@ struct logical_xor_op {
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
-         ::fp_compute() {                                               \
-    cuda::apply_entrywise_binary_operator<op>(get_prev_activations(0),  \
-                                             this->get_prev_activations(1),  \
-                                             this->get_activations());       \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
-         ::bp_compute() {                                               \
-    apply_binary_backprop_operator<op>(get_local_prev_activations(0),   \
-                                      this->get_local_prev_activations(1),   \
-                                      this->get_local_prev_error_signals(),  \
-                                      this->get_local_error_signals(0),      \
-                                      this->get_local_error_signals(1));     \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
-         ::fp_compute() {                                               \
-    cuda::apply_entrywise_binary_operator<op>(get_prev_activations(0),  \
-                                             this->get_prev_activations(1),  \
-                                             this->get_activations());       \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
-  ::bp_compute() {                                                      \
-    apply_binary_backprop_operator<op>(get_local_prev_activations(0),   \
-                                      this->get_local_prev_activations(1),   \
-                                      this->get_local_prev_error_signals(),  \
-                                      this->get_local_error_signals(0),      \
-                                      this->get_local_error_signals(1));     \
-  }                                                                     \
+#define INSTANTIATE(layer, op)                                                                   \
+  template <typename TensorDataType>                                                             \
+  void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
+    cuda::apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(0),         \
+                                                              l.get_prev_activations(1),         \
+                                                              l.get_activations());              \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
+    apply_binary_backprop_operator<op<TensorDataType>>(l.get_local_prev_activations(0),          \
+                                                       l.get_local_prev_activations(1),          \
+                                                       l.get_local_prev_error_signals(),         \
+                                                       l.get_local_error_signals(0),             \
+                                                       l.get_local_error_signals(1));            \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {  \
+    cuda::apply_entrywise_binary_operator<op>(l.get_prev_activations(0),                         \
+                                              l.get_prev_activations(1),                         \
+                                              l.get_activations());                              \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {  \
+    apply_binary_backprop_operator<op>(l.get_local_prev_activations(0),                          \
+                                       l.get_local_prev_activations(1),                          \
+                                       l.get_local_prev_error_signals(),                         \
+                                       l.get_local_error_signals(0),                             \
+                                       l.get_local_error_signals(1));                            \
+  }                                                                                              \
   BINARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
 
 INSTANTIATE(add_layer, add_op);
