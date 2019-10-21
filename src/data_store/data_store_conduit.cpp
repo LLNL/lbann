@@ -916,9 +916,6 @@ void data_store_conduit::exchange_sample_sizes() {
 }
 
 void data_store_conduit::set_is_preloaded() {
-if (m_world_master) std::cout << "starting data_store_conduit::set_is_preloaded(); m_preload: " << m_preload << std::endl;
-  //this should be called by generic_data_reader, however, it may also
-  //be called by callbacks/ltfb.cpp
   if (m_preload) {
     return;
   }
@@ -1270,12 +1267,16 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
     ++m_cur_epoch;
   }
 
-  if (m_reader->at_new_epoch() && !m_preload && !m_is_local_cache && m_cur_epoch == 1) {
+  if (m_reader->at_new_epoch() && !is_preloaded() && is_local_cache() && m_cur_epoch == 1) {
     exchange_owner_maps();
     if (m_spill) {
       m_is_spilled = true;
       m_metadata.close();
       save_state();
+    }  
+    if (options::get()->has_string("data_store_test_checkpoint")) {
+      std::string dir = options::get()->get_string("data_store_test_checkpoint");
+      test_checkpoint(dir);
     }
   }
 
