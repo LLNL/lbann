@@ -28,6 +28,8 @@ syntax = "proto3";
 
 package lbann_data;
 
+import "google/protobuf/wrappers.proto";
+
 message Layer {
   string name = 50;
   string parents = 151;
@@ -517,9 +519,28 @@ message Layer {
     double l2_regularization_factor = 12; //default: 0
   }
 
+  /** @brief Lookup table to embedding vectors.
+   *
+   *  Takes a scalar input, interprets it as an index, and outputs the
+   *  corresponding vector. The number of embedding vectors and the
+   *  size of vectors are fixed. If the index is out-of-range, then
+   *  the output is a vector of zeros.
+   *
+   *  The embedding vectors are stored in an
+   *  @f$ \text{embedding_dim} \times \text{num_embeddings} @f$
+   *  weights matrix. Note that this is the transpose of the weights
+   *  in the PyTorch embedding layer.
+   */
   message Embedding {
-    int64 dictionary_size = 1;
-    int64 embedding_size = 2;
+    /// Size of dictionary of embeddings
+    int64 num_embeddings = 1;
+    /// Size of embedding vectors
+    int64 embedding_dim = 2;
+    /** If the padding index is set, then the corresponding embedding
+     *  vector is initialized with zeros. The objective function
+     *  gradient w.r.t. this embedding vector is always zero.
+     */
+    google.protobuf.Int64Value padding_idx = 3;
   }
 
   message ChannelwiseScaleBias {}
