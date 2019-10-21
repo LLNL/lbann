@@ -28,7 +28,7 @@ import tools
 np.random.seed(201910143)
 _samples = np.random.uniform(low=0.25,
                              high=1,
-                             size=(13,2,7)).astype(np.float32)
+                             size=(23,2,7)).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):
@@ -168,7 +168,7 @@ def construct_model(lbann):
     # Construct model
     # ------------------------------------------
 
-    mini_batch_size = 11
+    mini_batch_size = num_samples() // 2
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
