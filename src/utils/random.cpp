@@ -101,14 +101,18 @@ fast_rng_gen& get_fast_io_generator() {
 
 bool save_rng_to_checkpoint(persist& p, lbann_comm* comm) {
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
-  if (comm->am_trainer_master()) {
+  if (comm == nullptr) {
     makedir(dirname.c_str());
+  } else {
+    if (comm->am_trainer_master()) {
+      makedir(dirname.c_str());
+    }
+    comm->trainer_barrier();
   }
-  comm->trainer_barrier();
 
   std::string rng_name;
 
-  if (comm->am_trainer_master()) {
+  if (comm == nullptr || comm->am_trainer_master()) {
     /// @todo - Note that the RNG with thread local data is not correct
     rng_name = dirname + "/rng_seq_generator";
     std::ofstream rng_seq(rng_name);
