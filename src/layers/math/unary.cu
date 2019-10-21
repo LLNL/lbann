@@ -41,6 +41,7 @@ namespace {
 // (\f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$).
 
 /** Logical not operator. */
+template <typename TensorDataType>
 struct logical_not_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     const auto& b = x != TensorDataType(0) && !isnan(x);
@@ -52,6 +53,7 @@ struct logical_not_op {
 };
 
 /** Absolute value operator. */
+template <typename TensorDataType>
 struct abs_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::abs(x);
@@ -65,6 +67,7 @@ struct abs_op {
 };
 
 /** Negative operator. */
+template <typename TensorDataType>
 struct negative_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return -x;
@@ -75,6 +78,7 @@ struct negative_op {
 };
 
 /** Sign operator. */
+template <typename TensorDataType>
 struct sign_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     constexpr TensorDataType zero = 0;
@@ -89,6 +93,7 @@ struct sign_op {
 };
 
 /** Round operator. */
+template <typename TensorDataType>
 struct round_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::round(x);
@@ -99,6 +104,7 @@ struct round_op {
 };
 
 /** Ceiling operator. */
+template <typename TensorDataType>
 struct ceil_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::ceil(x);
@@ -109,6 +115,7 @@ struct ceil_op {
 };
 
 /** Floor operator. */
+template <typename TensorDataType>
 struct floor_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::floor(x);
@@ -119,6 +126,7 @@ struct floor_op {
 };
 
 /** Reciprocal operator. */
+template <typename TensorDataType>
 struct reciprocal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return 1 / x;
@@ -131,6 +139,7 @@ struct reciprocal_op {
 };
 
 /** Square operator. */
+template <typename TensorDataType>
 struct square_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return x*x;
@@ -142,6 +151,7 @@ struct square_op {
 
 
 /** Square root operator. */
+template <typename TensorDataType>
 struct sqrt_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::sqrt(x);
@@ -152,6 +162,7 @@ struct sqrt_op {
 };
 
 /** Reciprocal square root operator. */
+template <typename TensorDataType>
 struct rsqrt_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::rsqrt(x);
@@ -166,6 +177,7 @@ struct rsqrt_op {
  *  If a standard reciprocal produces an infinity or NaN, zero is
  *  output instead.
  */
+template <typename TensorDataType>
 struct safe_reciprocal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     const auto& y = 1 / x;
@@ -180,6 +192,7 @@ struct safe_reciprocal_op {
 };
 
 /** Exponential operator. */
+template <typename TensorDataType>
 struct exp_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::exp(x);
@@ -190,6 +203,7 @@ struct exp_op {
 };
 
 /** Exponential minus one operator. */
+template <typename TensorDataType>
 struct expm1_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::expm1(x);
@@ -200,6 +214,7 @@ struct expm1_op {
 };
 
 /** Natural logarithm operator. */
+template <typename TensorDataType>
 struct log_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::log(x);
@@ -210,6 +225,7 @@ struct log_op {
 };
 
 /** Natural logarithm one plus operator. */
+template <typename TensorDataType>
 struct log1p_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::log1p(x);
@@ -220,6 +236,7 @@ struct log1p_op {
 };
 
 /** Cosine operator. */
+template <typename TensorDataType>
 struct cos_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::cos(x);
@@ -230,6 +247,7 @@ struct cos_op {
 };
 
 /** Sine operator. */
+template <typename TensorDataType>
 struct sin_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::sin(x);
@@ -240,6 +258,7 @@ struct sin_op {
 };
 
 /** Tangent operator. */
+template <typename TensorDataType>
 struct tan_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::tan(x);
@@ -251,6 +270,7 @@ struct tan_op {
 };
 
 /** Arccosine operator. */
+template <typename TensorDataType>
 struct acos_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::acos(x);
@@ -261,6 +281,7 @@ struct acos_op {
 };
 
 /** Arcsine operator. */
+template <typename TensorDataType>
 struct asin_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::asin(x);
@@ -271,6 +292,7 @@ struct asin_op {
 };
 
 /** Arctangent operator. */
+template <typename TensorDataType>
 struct atan_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::atan(x);
@@ -281,6 +303,7 @@ struct atan_op {
 };
 
 /** Hyperbolic cosine operator. */
+template <typename TensorDataType>
 struct cosh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::cosh(x);
@@ -291,6 +314,7 @@ struct cosh_op {
 };
 
 /** Hyperbolic sine operator. */
+template <typename TensorDataType>
 struct sinh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::sinh(x);
@@ -301,6 +325,7 @@ struct sinh_op {
 };
 
 /** Hyperbolic tangent operator. */
+template <typename TensorDataType>
 struct tanh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::tanh(x);
@@ -312,6 +337,7 @@ struct tanh_op {
 };
 
 /** Hyperbolic arccosine operator. */
+template <typename TensorDataType>
 struct acosh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::acosh(x);
@@ -322,6 +348,7 @@ struct acosh_op {
 };
 
 /** Hyperbolic arcsine operator. */
+template <typename TensorDataType>
 struct asinh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::asinh(x);
@@ -332,6 +359,7 @@ struct asinh_op {
 };
 
 /** Hyperbolic arctangent operator. */
+template <typename TensorDataType>
 struct atanh_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::atanh(x);
@@ -344,33 +372,37 @@ struct atanh_op {
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
-  ::fp_compute() {                                                      \
-    cuda::apply_entrywise_unary_operator<op>(get_prev_activations(),    \
-                                            this->get_activations());        \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
-  ::bp_compute() {                                                      \
-    cuda::apply_entrywise_binary_operator<op>(get_prev_activations(),   \
-                                             this->get_prev_error_signals(), \
-                                             this->get_error_signals());     \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
-  ::fp_compute() {                                                      \
-    cuda::apply_entrywise_unary_operator<op>(get_prev_activations(),    \
-                                            this->get_activations());        \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
-  ::bp_compute() {                                                      \
-    cuda::apply_entrywise_binary_operator<op>(get_prev_activations(),   \
-                                             this->get_prev_error_signals(), \
-                                             this->get_error_signals());     \
-  }                                                                     \
+#define INSTANTIATE(layer, op)                                                                   \
+  template <typename TensorDataType>                                                             \
+  void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
+    cuda::apply_entrywise_unary_operator<op<TensorDataType>>(l.get_prev_activations(),           \
+                                                             l.get_activations());               \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
+    cuda::apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(),          \
+                                                              l.get_prev_error_signals(),        \
+                                                              l.get_error_signals());            \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {  \
+    cuda::apply_entrywise_unary_operator<op<TensorDataType>>(l.get_prev_activations(),           \
+                                                             l.get_activations());               \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {  \
+    cuda::apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(),          \
+                                                              l.get_prev_error_signals(),        \
+                                                              l.get_error_signals());            \
+  }                                                                                              \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
+  void layer<TensorDataType, Layout, Device>::fp_compute() {                                     \
+    fp_compute_impl<TensorDataType>(*this);                                                      \
+  }                                                                                              \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
+  void layer<TensorDataType, Layout, Device>::bp_compute() {                                     \
+    bp_compute_impl<TensorDataType>(*this);                                                      \
+  }                                                                                              \
   UNARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
 
 INSTANTIATE(logical_not_layer, logical_not_op);
