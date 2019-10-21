@@ -32,6 +32,7 @@ namespace lbann {
 namespace {
 
 /** Local forward prop computation. */
+template <typename TensorDataType>
 void local_fp(TensorDataType min,
               TensorDataType max,
               const El::AbstractMatrix<TensorDataType>& input,
@@ -51,6 +52,7 @@ void local_fp(TensorDataType min,
 }
 
 /** Local backprop computation. */
+template <typename TensorDataType>
 void local_bp(TensorDataType min,
               TensorDataType max,
               const El::AbstractMatrix<TensorDataType>& input,
@@ -71,40 +73,45 @@ void local_bp(TensorDataType min,
 
 } // namespace
 
-template <>
-void clamp_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-       ::fp_compute() {
-  local_fp(m_min, m_max,
-          this->get_local_prev_activations(),
-          this->get_local_activations());
+template <typename TensorDataType>
+void fp_compute_impl(clamp_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_fp<TensorDataType>(l.m_min, l.m_max,
+                           l.get_local_prev_activations(),
+                           l.get_local_activations());
 }
-template <>
-void clamp_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  local_bp(m_min, m_max,
-          this->get_local_prev_activations(),
-          this->get_local_prev_error_signals(),
-          this->get_local_error_signals());
+template <typename TensorDataType>
+void bp_compute_impl(clamp_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_bp<TensorDataType>(l.m_min, l.m_max,
+                           l.get_local_prev_activations(),
+                           l.get_local_prev_error_signals(),
+                           l.get_local_error_signals());
 }
-template <>
-void clamp_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-       ::fp_compute() {
-  local_fp(m_min, m_max,
-          this->get_local_prev_activations(),
-          this->get_local_activations());
+template <typename TensorDataType>
+void fp_compute_impl(clamp_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_fp<TensorDataType>(l.m_min, l.m_max,
+                           l.get_local_prev_activations(),
+                           l.get_local_activations());
 }
-template <>
-void clamp_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  local_bp(m_min, m_max,
-          this->get_local_prev_activations(),
-          this->get_local_prev_error_signals(),
-          this->get_local_error_signals());
+template <typename TensorDataType>
+void bp_compute_impl(clamp_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_bp<TensorDataType>(l.m_min, l.m_max,
+                           l.get_local_prev_activations(),
+                           l.get_local_prev_error_signals(),
+                           l.get_local_error_signals());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void clamp_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void clamp_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
 }
 
 template class clamp_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class clamp_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann
