@@ -27,6 +27,7 @@
 #include <omp.h>
 #include "lbann/utils/random.hpp"
 #include "lbann/io/file_io.hpp"
+#include "lbann/utils/hash.hpp"
 #include <thread>
 
 namespace {
@@ -82,9 +83,8 @@ rng_gen& get_data_seq_generator() {
 
 rng_gen& get_io_generator() {
   if (!::io_generator_inited) {
-    std::hash<std::thread::id> h;
-    ::io_generator.seed((::io_generator_seed_base << 8) |
-                        h(std::this_thread::get_id()));
+    ::io_generator.seed(hash_combine(::io_generator_seed_base,
+                                     std::this_thread::get_id()));
     ::io_generator_inited = true;
   }
   return ::io_generator;
@@ -92,9 +92,8 @@ rng_gen& get_io_generator() {
 
 fast_rng_gen& get_fast_io_generator() {
   if (!::fast_io_generator_inited) {
-    std::hash<std::thread::id> h;
-    ::fast_io_generator.seed((::fast_io_generator_seed_base << 8) |
-                             h(std::this_thread::get_id()));
+    ::fast_io_generator.seed(hash_combine(::fast_io_generator_seed_base,
+                                          std::this_thread::get_id()));
     ::fast_io_generator_inited = true;
   }
   return ::fast_io_generator;
@@ -245,20 +244,23 @@ void init_random(int seed, lbann_comm *comm) {
 #ifdef _OPENMP
     #pragma omp parallel
     {
-      get_generator().seed((seed << 8) | omp_get_thread_num());
-      get_fast_generator().seed((seed << 8) | omp_get_thread_num());
+      get_generator().seed(hash_combine(seed, omp_get_thread_num()));
+      get_fast_generator().seed(hash_combine(seed, omp_get_thread_num()));
     }
 #else
     get_generator().seed(seed);
     get_fast_generator().seed(seed);
 #endif
+
 #ifdef LBANN_SET_EL_RNG
-    if (comm != nullptr) {
-      El::Generator().seed(seed ^ comm->get_rank_in_trainer());
-    } else {
-      El::Generator().seed(seed ^ El::mpi::Rank(El::mpi::COMM_WORLD));
-    }
+    // Set Elemental's RNG seed
+    auto elemental_seed = hash_combine(seed, 104729); // 10000th prime
+    elemental_seed = (comm == nullptr
+                      ? hash_combine(elemental_seed, El::mpi::Rank(El::mpi::COMM_WORLD))
+                      : hash_combine(elemental_seed, comm->get_rank_in_trainer()));
+    El::Generator().seed(elemental_seed);
 #endif
+
   } else {
     // Seed with a random value.
     std::random_device rd;
@@ -266,8 +268,8 @@ void init_random(int seed, lbann_comm *comm) {
 #ifdef _OPENMP
     #pragma omp parallel
     {
-      get_generator().seed((rand_val << 8) | omp_get_thread_num());
-      get_fast_generator().seed((rand_val << 8) | omp_get_thread_num());
+      get_generator().seed(hash_combine(rand_val, omp_get_thread_num()));
+      get_fast_generator().seed(hash_combine(rand_val, omp_get_thread_num()));
     }
 #else
     get_generator().seed(rand_val);

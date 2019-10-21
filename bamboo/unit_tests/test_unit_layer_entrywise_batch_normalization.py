@@ -115,7 +115,7 @@ def construct_model(lbann):
     metrics.append(lbann.Metric(z, name='model-parallel output'))
 
     # ------------------------------------------
-    # Gradient checkint
+    # Gradient checking
     # ------------------------------------------
 
     callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
