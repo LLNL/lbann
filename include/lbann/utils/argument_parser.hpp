@@ -43,6 +43,41 @@
 namespace lbann
 {
 
+/** @brief An environment variable
+ *
+ *  Values are acquired lazily. The only maintained state is the name.
+ */
+class environment_variable
+{
+public:
+  /** @brief Construct from a string. */
+  environment_variable(std::string const& var_name)
+    : name_{var_name}
+  {}
+
+  /** @brief Construct from a temporary string. */
+  environment_variable(std::string&& var_name)
+    : name_{std::move(var_name)}
+  {}
+
+  /** @brief Get the name of the environment variable */
+  std::string const& get_name() const noexcept
+  {
+    return name_;
+  }
+
+  std::string get_raw_value() const;
+
+  template <typename T>
+  T get_value() const
+  {
+    return T{};//ConvertTo<T>(get_raw_value());
+  }
+
+private:
+  std::string name_;
+};
+
 /** @class argument_parser
  *  @brief A decorator class over Clara
  */

@@ -35,6 +35,12 @@
 namespace lbann
 {
 
+std::string environment_variable::get_raw_value() const
+{
+  char *env = getenv(name_.c_str());
+  return std::string(env ? env : "");
+}
+
 argument_parser::argument_parser()
 {
   params_["print help"] = false;
