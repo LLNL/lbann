@@ -63,12 +63,12 @@ __global__ void reduce_max_kernel(size_t height,
 
   // Indices
   const size_t tid = threadIdx.x;
-  const size_t gidx = threadIdx.x + threadIdx.y * blockDim.x;
+  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t bidx = blockIdx.x;
   const size_t bidy = blockIdx.y;
-  const size_t nblocksx = blockDim.x;
-  const size_t nblocksy = blockDim.y;
   const size_t nthreadsx = blockDim.x * gridDim.x;
+  const size_t nblocksx = gridDim.x;
+  const size_t nblocksy = gridDim.y;
 
   for (size_t col = bidy; col < width; col += nblocksy) {
 
@@ -95,6 +95,9 @@ __global__ void reduce_max_kernel(size_t height,
  *  Block dimensions: bsize x 1 x 1
  *
  *  Grid dimension: (height / bsize) x width x 1
+ *
+ *  @param sums On input, array of zeros. On output, sum(x) for each
+ *              column.
  */
 template <size_t bsize>
 __global__ void reduce_sum_kernel(size_t height,
@@ -105,10 +108,10 @@ __global__ void reduce_sum_kernel(size_t height,
 
   // Indices
   const size_t tid = threadIdx.x;
-  const size_t gidx = threadIdx.x + threadIdx.y * blockDim.x;
+  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t bidy = blockIdx.y;
-  const size_t nblocksy = blockDim.y;
   const size_t nthreadsx = blockDim.x * gridDim.x;
+  const size_t nblocksy = gridDim.y;
 
   for (size_t col = bidy; col < width; col += nblocksy) {
 
@@ -133,6 +136,10 @@ __global__ void reduce_sum_kernel(size_t height,
  *  Block dimensions: bsize x 1 x 1
  *
  *  Grid dimension: (height / bsize) x width x 1
+ *
+ *  @param shifts   max(x) for each column
+ *  @param sums     On input, array of zeros. On output,
+ *                  sum(exp(x-shift)) for each column.
  */
 template <size_t bsize>
 __global__ void fp_sumexp_kernel(size_t height,
@@ -297,7 +304,7 @@ void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute
 
   // Find max value in each column
   cuda::thrust::vector<DataType> max_vals;
-  if (local_output.IsEmpty()) {
+  if (local_input.IsEmpty()) {
     max_vals.resize(local_width,
                     -std::numeric_limits<DataType>::infinity());
   }
@@ -329,7 +336,7 @@ void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute
 
   // Compute sum(exp(x-max_val)) for each column
   El::Zero(*m_workspace);
-  if (!local_output.IsEmpty()) {
+  if (!local_input.IsEmpty()) {
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
@@ -341,7 +348,7 @@ void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute
       max_vals.data().get(),
       local_workspace.Buffer());
   }
-  El::AllReduce(*m_workspace, m_workspace->RedundantComm());
+  get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
 
   // Compute output
   // Note: y = x - max_val - log(sum(exp(x-max_val)))
@@ -379,7 +386,7 @@ void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute
 
   // Compute sum of entries in gradient w.r.t. output
   El::Zero(local_workspace);
-  if (!local_output.IsEmpty()) {
+  if (!local_gradient_wrt_output.IsEmpty()) {
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
@@ -392,10 +399,10 @@ void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute
         local_gradient_wrt_output.LDim(),
         local_workspace.Buffer());
   }
-  El::AllReduce(*m_workspace, m_workspace->RedundantComm());
+  get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
 
   // Compute gradient w.r.t. input
-  if (!local_output.IsEmpty()) {
+  if (!local_gradient_wrt_input.IsEmpty()) {
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
@@ -407,7 +414,7 @@ void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute
       local_output.LDim(),
       local_gradient_wrt_output.LockedBuffer(),
       local_gradient_wrt_output.LDim(),
-      local_workspace.Buffer(),
+      local_workspace.LockedBuffer(),
       local_gradient_wrt_input.Buffer(),
       local_gradient_wrt_input.LDim());
   }

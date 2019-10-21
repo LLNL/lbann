@@ -72,12 +72,12 @@ __global__ void reduce_max_kernel(size_t height,
 
   // Indices
   const size_t tid = threadIdx.x;
-  const size_t gidx = threadIdx.x + threadIdx.y * blockDim.x;
+  const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t bidx = blockIdx.x;
   const size_t bidy = blockIdx.y;
-  const size_t nblocksx = blockDim.x;
-  const size_t nblocksy = blockDim.y;
   const size_t nthreadsx = blockDim.x * gridDim.x;
+  const size_t nblocksx = gridDim.x;
+  const size_t nblocksy = gridDim.y;
 
   for (size_t col = bidy; col < width; col += nblocksy) {
 
