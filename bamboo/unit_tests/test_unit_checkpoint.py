@@ -18,7 +18,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
     # No checkpointing, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_shared_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_shared_no_checkpoint_%s_error.txt' % (dir_name, compiler_name)
-    os.system('mkdir ckpt_lenet_shared')
+    os.system('rm -rf ckpt_lenet_shared && mkdir ckpt_lenet_shared')
     no_ckpt_dir = 'ckpt_lenet_shared/no_ckpt_{c}'.format(c=compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
@@ -83,7 +83,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
     # No checkpointing, printing weights to files.
     output_file_name = '%s/bamboo/unit_tests/output/checkpoint_lenet_distributed_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/checkpoint_lenet_distributed_no_checkpoint_%s_error.txt' % (dir_name, compiler_name)
-    os.system('mkdir ckpt_lenet_distributed')
+    os.system('rm -rf ckpt_lenet_distributed && mkdir ckpt_lenet_distributed')
     no_ckpt_dir = 'ckpt_lenet_distributed/no_ckpt_{c}'.format(c=compiler_name)
     command = tools.get_command(
         cluster=cluster, executable=exe, num_nodes=1, num_processes=2,
