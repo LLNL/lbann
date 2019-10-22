@@ -41,6 +41,7 @@ namespace {
 // (\f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$).
 
 /** Log sigmoid operator. */
+template <typename TensorDataType>
 struct log_sigmoid_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     if (x >= TensorDataType(0)) {
@@ -55,6 +56,7 @@ struct log_sigmoid_op {
 };
 
 /** ReLU operator. */
+template <typename TensorDataType>
 struct relu_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return cuda::max(x, TensorDataType(0));
@@ -65,6 +67,7 @@ struct relu_op {
 };
 
 /** SELU operator. */
+template <typename TensorDataType>
 struct selu_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return (x > TensorDataType(0) ?
@@ -82,6 +85,7 @@ private:
 };
 
 /** Sigmoid operator. */
+template <typename TensorDataType>
 struct sigmoid_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     constexpr TensorDataType one = 1;
@@ -105,6 +109,7 @@ struct sigmoid_op {
 };
 
 /** Softplus operator. */
+template <typename TensorDataType>
 struct softplus_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     if (x > TensorDataType(0)) {
@@ -119,6 +124,7 @@ struct softplus_op {
 };
 
 /** Softsign operator. */
+template <typename TensorDataType>
 struct softsign_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     return x / (TensorDataType(1) + cuda::abs(x));
@@ -132,33 +138,29 @@ struct softsign_op {
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
-  ::fp_compute() {                                                      \
-    cuda::apply_entrywise_unary_operator<op>(this->get_prev_activations(),    \
-                                            this->get_activations());        \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
-  ::bp_compute() {                                                      \
-    cuda::apply_entrywise_binary_operator<op>(this->get_prev_activations(),   \
-                                             this->get_prev_error_signals(), \
-                                             this->get_error_signals());     \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
-  ::fp_compute() {                                                      \
-    cuda::apply_entrywise_unary_operator<op>(this->get_prev_activations(),    \
-                                            this->get_activations());        \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
-  ::bp_compute() {                                                      \
-    cuda::apply_entrywise_binary_operator<op>(this->get_prev_activations(),   \
-                                             this->get_prev_error_signals(), \
-                                             this->get_error_signals());     \
-  }                                                                     \
+#define INSTANTIATE(layer, op)                                                                   \
+  template <typename TensorDataType>                                                             \
+  void fp_compute_inst(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
+    cuda::apply_entrywise_unary_operator<op<TensorDataType>>(l.get_prev_activations(),           \
+                                                             l.get_activations());               \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void bp_compute_inst(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
+    cuda::apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(),          \
+                                                              l.get_prev_error_signals(),        \
+                                                              l.get_error_signals());            \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {  \
+    cuda::apply_entrywise_unary_operator<op<TensorDataType>>(l.get_prev_activations(),           \
+                                                             l.get_activations());               \
+  }                                                                                              \
+  template <typename TensorDataType>                                                             \
+  void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {  \
+    cuda::apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(),          \
+                                                              l.get_prev_error_signals(),        \
+                                                              l.get_error_signals());            \
+  }                                                                                              \
   UNARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
 
 INSTANTIATE(log_sigmoid_layer, log_sigmoid_op);
