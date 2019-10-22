@@ -31,10 +31,8 @@ namespace lbann {
 
 namespace {
 
-// Useful constants
-constexpr TensorDataType zero = 0;
-
 /** Local forward prop computation. */
+template <typename TensorDataType>
 void local_fp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& input,
               El::AbstractMatrix<TensorDataType>& output) {
@@ -45,12 +43,13 @@ void local_fp(TensorDataType negative_slope,
     for (El::Int row = 0; row < height; ++row) {
       const auto& x = input(row, col);
       auto& y = output(row, col);
-      y = (x > zero) ? x : negative_slope * x;
+      y = (x > TensorDataType(0)) ? x : negative_slope * x;
     }
   }
 }
 
 /** Local backprop computation. */
+template <typename TensorDataType>
 void local_bp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& input,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
@@ -63,47 +62,52 @@ void local_bp(TensorDataType negative_slope,
       const auto& x = input(row, col);
       const auto& dy = gradient_wrt_output(row, col);
       auto& dx = gradient_wrt_input(row, col);
-      dx = (x > zero) ? dy : negative_slope * dy;
+      dx = (x > TensorDataType(0)) ? dy : negative_slope * dy;
     }
   }
 }
 
 } // namespace
 
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-       ::fp_compute() {
-  local_fp(m_negative_slope,
-          this->get_local_prev_activations(),
-          this->get_local_activations());
+template <typename TensorDataType>
+void fp_compute_impl(leaky_relu_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_fp<TensorDataType>(l.m_negative_slope,
+                           l.get_local_prev_activations(),
+                           l.get_local_activations());
 }
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  local_bp(m_negative_slope,
-          this->get_local_prev_activations(),
-          this->get_local_prev_error_signals(),
-          this->get_local_error_signals());
+template <typename TensorDataType>
+void bp_compute_impl(leaky_relu_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_bp<TensorDataType>(l.m_negative_slope,
+                           l.get_local_prev_activations(),
+                           l.get_local_prev_error_signals(),
+                           l.get_local_error_signals());
 }
-template <>
-void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-       ::fp_compute() {
-  local_fp(m_negative_slope,
-          this->get_local_prev_activations(),
-          this->get_local_activations());
+template <typename TensorDataType>
+void fp_compute_impl(leaky_relu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_fp<TensorDataType>(l.m_negative_slope,
+                           l.get_local_prev_activations(),
+                           l.get_local_activations());
 }
-template <>
-void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  local_bp(m_negative_slope,
-          this->get_local_prev_activations(),
-          this->get_local_prev_error_signals(),
-          this->get_local_error_signals());
+template <typename TensorDataType>
+void bp_compute_impl(leaky_relu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_bp<TensorDataType>(l.m_negative_slope,
+                           l.get_local_prev_activations(),
+                           l.get_local_prev_error_signals(),
+                           l.get_local_error_signals());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
 }
 
 template class leaky_relu_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class leaky_relu_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

@@ -32,6 +32,7 @@ namespace lbann {
 namespace {
 
 /** CUDA kernel for forward prop computation. */
+template <typename TensorDataType>
 __global__ void fp_kernel(TensorDataType negative_slope,
                           El::Int height,
                           El::Int width,
@@ -52,6 +53,7 @@ __global__ void fp_kernel(TensorDataType negative_slope,
 }
 
 /** CUDA kernel for backprop computation. */
+template <typename TensorDataType>
 __global__ void bp_kernel(TensorDataType negative_slope,
                           El::Int height,
                           El::Int width,
@@ -75,6 +77,7 @@ __global__ void bp_kernel(TensorDataType negative_slope,
 }
 
 /** Local forward prop computation. */
+template <typename TensorDataType>
 void local_fp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& input,
               El::AbstractMatrix<TensorDataType>& output) {
@@ -102,6 +105,7 @@ void local_fp(TensorDataType negative_slope,
 }
 
 /** Local backprop computation. */
+template <typename TensorDataType>
 void local_bp(TensorDataType negative_slope,
               const El::AbstractMatrix<TensorDataType>& input,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
@@ -132,40 +136,36 @@ void local_bp(TensorDataType negative_slope,
 
 } // namespace
 
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-       ::fp_compute() {
-  local_fp(m_negative_slope,
-          this->get_local_prev_activations(),
-          this->get_local_activations());
+template <typename TensorDataType>
+  void fp_compute_impl(leaky_relu_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  local_fp<TensorDataType>(l.m_negative_slope,
+                           l.get_local_prev_activations(),
+                           l.get_local_activations());
 }
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  local_bp(m_negative_slope,
-          this->get_local_prev_activations(),
-          this->get_local_prev_error_signals(),
-          this->get_local_error_signals());
+template <typename TensorDataType>
+  void bp_compute_impl(leaky_relu_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  local_bp<TensorDataType>(l.m_negative_slope,
+                           l.get_local_prev_activations(),
+                           l.get_local_prev_error_signals(),
+                           l.get_local_error_signals());
 }
-template <>
-void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-       ::fp_compute() {
-  local_fp(m_negative_slope,
-          this->get_local_prev_activations(),
-          this->get_local_activations());
+template <typename TensorDataType>
+  void fp_compute_impl(leaky_relu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  local_fp<TensorDataType>(l.m_negative_slope,
+                           l.get_local_prev_activations(),
+                           l.get_local_activations());
 }
-template <>
-void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  local_bp(m_negative_slope,
-          this->get_local_prev_activations(),
-          this->get_local_prev_error_signals(),
-          this->get_local_error_signals());
+template <typename TensorDataType>
+  void bp_compute_impl(leaky_relu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  local_bp<TensorDataType>(l.m_negative_slope,
+                           l.get_local_prev_activations(),
+                           l.get_local_prev_error_signals(),
+                           l.get_local_error_signals());
 }
 
 template class leaky_relu_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class leaky_relu_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
