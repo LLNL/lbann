@@ -106,6 +106,11 @@ public:
   void fp_compute() override;
   void bp_compute() override;
 
+  template <typename U>
+  friend void fp_compute_impl(log_softmax_layer<U, Layout, Device>& l);
+  template <typename U>
+  friend void bp_compute_impl(log_softmax_layer<U, Layout, Device>& l);
+
 private:
 
   /** Workspace for column-wise reductions. */
