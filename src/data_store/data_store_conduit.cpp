@@ -1382,9 +1382,13 @@ void data_store_conduit::setup_spill() {
   m_num_files_in_cur_spill_dir = m_max_files_per_directory;
   if (opts->has_string("data_store_spill")) {
     m_spill_dir_base = options::get()->get_string("data_store_spill");
+    if (m_spill_dir_base == "" || m_spill_dir_base == "1") {
+      LBANN_ERROR("--data_store_spill=1; you probably forgot to specify the spill directory; instead of the flag --data_store_spill you must use --data_store_spill=<string>");
+    }
   } else {
     m_spill_dir_base = options::get()->get_string("data_store_test_checkpoint");
   }
+  if (m_world_master) std::cout << "setup_spill; spilling to: " << m_spill_dir_base << std::endl;
 
   make_dir_if_it_doesnt_exist(m_spill_dir_base);
   m_comm->trainer_barrier();
