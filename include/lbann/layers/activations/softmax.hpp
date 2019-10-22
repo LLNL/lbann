@@ -114,6 +114,11 @@ public:
   void fp_compute() override;
   void bp_compute() override;
 
+  template <typename U>
+  friend void fp_compute_impl(softmax_layer<U, Layout, Device>& l);
+  template <typename U>
+  friend void bp_compute_impl(softmax_layer<U, Layout, Device>& l);
+
 private:
 
   /** Workspace for column-wise reductions. */
@@ -123,6 +128,14 @@ private:
   /** Tensor cuDNN descriptors. */
   cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
+
+// Minimum output value to avoid denormalized floats
+#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
+  const TensorDataType min_output = std::sqrt(std::numeric_limits<TensorDataType>::min());
+#else
+  const TensorDataType min_output = 0;
+#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
+
 
 };
 
