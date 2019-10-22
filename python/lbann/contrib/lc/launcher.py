@@ -118,8 +118,10 @@ def make_batch_script(script_file=None,
     if system == 'pascal':
         cores_per_socket = cores_per_node(system) // 2
         cores_per_proc = cores_per_socket // procs_per_node
-        environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_node
-        environment['OMP_NUM_THREADS'] = cores_per_proc - 1
+        if 'AL_PROGRESS_RANKS_PER_NUMA_NODE' not in environment:
+            environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_node
+        if 'OMP_NUM_THREADS' not in environment:
+            environment['OMP_NUM_THREADS'] = cores_per_proc - 1
         if scheduler == 'slurm':
             masks = [2**cores_per_proc - 1]
             while len(masks) < procs_per_node:
@@ -131,7 +133,8 @@ def make_batch_script(script_file=None,
     # Note: MPI_Init hangs when started with more than 35
     # processes. This bug is not present in MVAPICH2-2.2 but is
     # present in MVAPICH2-2.3rc2.
-    environment['MV2_USE_RDMA_CM'] = 0
+    if 'MV2_USE_RDMA_CM' not in environment:
+        environment['MV2_USE_RDMA_CM'] = 0
 
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen'):
@@ -144,16 +147,22 @@ def make_batch_script(script_file=None,
         cores_per_socket = 16
         procs_per_socket = (procs_per_node + 1) // 2
         cores_per_proc = cores_per_socket // procs_per_socket
-        environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_socket
-        environment['OMP_NUM_THREADS'] = cores_per_proc
+        if 'AL_PROGRESS_RANKS_PER_NUMA_NODE' not in environment:
+            environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_socket
+        if 'OMP_NUM_THREADS' not in environment:
+            environment['OMP_NUM_THREADS'] = cores_per_proc
         if scheduler == 'lsf':
             launcher_args.append('--bind packed:{}'.format(cores_per_proc))
 
         # Hack to enable process forking
-        # Note: OpenMPI and InfiniBand sometimes fail if an MPI
-        # process is forked. See
-        # https://www.open-mpi.org/faq/?category=openfabrics#ofa-fork.
-        environment['IBV_FORK_SAFE'] = 1
+        # Note: InfiniBand is known to experience hangs if an MPI
+        # process is forked (see
+        # https://www.open-mpi.org/faq/?category=openfabrics#ofa-fork).
+        # Setting IBV_FORK_SAFE seems to fix this issue, but it may
+        # hurt performance (see
+        # https://linux.die.net/man/3/ibv_fork_init).
+        if 'IBV_FORK_SAFE' not in environment:
+            environment['IBV_FORK_SAFE'] = 1
 
     return lbann.launcher.make_batch_script(script_file=script_file,
                                             work_dir=work_dir,
