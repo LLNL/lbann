@@ -31,16 +31,17 @@
 #include "lbann/utils/cudnn.hpp"
 
 // Threshold outputs to a minimum value.
+
 // If enabled, the minimum output value is sqrt(min), where min is the
 // minimum, normalized, positive value (~1e-19 for float and ~1e-154
-// for double). The gradients w.r.t. input will be inaccurate, on the
-// order of the minimum output value.
-#define LBANN_ENABLE_SOFTMAX_CUTOFF
+// for double). During backprop, gradients are computed as if
+// thresholding did not occur, so there will be a discrepancy for
+// values that are thresholded.
+#define LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 namespace lbann {
 
-/** @brief
- *
+/**
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
  */
 template <data_layout Layout, El::Device Device>

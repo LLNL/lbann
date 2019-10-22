@@ -19,7 +19,7 @@ import tools
 
 # Data
 np.random.seed(20190911)
-_num_samples = 31
+_num_samples = 35
 _sample_dims = (11,)
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
@@ -98,7 +98,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # Construct model
-    mini_batch_size = 17
+    mini_batch_size = num_samples() // 2
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
