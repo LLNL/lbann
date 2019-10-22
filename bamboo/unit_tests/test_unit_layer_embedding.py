@@ -18,15 +18,16 @@ import tools
 # the functions below to ingest data.
 
 # Data
-dictionary_size = 7
-embedding_size = 5
-np.random.seed(4321)
-embedding_array = np.random.normal(size=(dictionary_size,embedding_size))
+_num_samples = 41
+_num_embeddings = 7
 
 # Sample access functions
 def get_sample(index):
-    np.random.seed(1234+index)
-    return [np.random.randint(dictionary_size)]
+    np.random.seed(2019101500+index)
+    i = np.random.randint(_num_embeddings)
+    if index in (1,2,4,7,17,31):
+        i = 0
+    return [i]
 def num_samples():
     return 41
 def sample_dims():
@@ -57,49 +58,129 @@ def construct_model(lbann):
 
     """
 
-    # Construct weights for embeddings
-    embedding_values = ' '.join([str(i) for i in np.nditer(embedding_array)])
-    init = lbann.ValueInitializer(values=embedding_values)
-    w = lbann.Weights(optimizer=lbann.SGD(), initializer=init)
+    # Convenience function to convert list to a space-separated string
+    def str_list(it):
+        return ' '.join([str(i) for i in it])
 
-    # Layer graph
-    input = lbann.Input()
-    embedding = lbann.Embedding(input,
-                                weights=w,
-                                dictionary_size=dictionary_size,
-                                embedding_size=embedding_size,
-                                device='cpu')
-    l2_norm2 = lbann.L2Norm2(embedding)
-    layers = list(lbann.traverse_layer_graph(input))
-    metric = lbann.Metric(l2_norm2, name='L2 norm squared')
-    obj = lbann.ObjectiveFunction(l2_norm2)
+    # Convenience function to compute L2 norm squared with NumPy
+    def l2_norm2(x):
+        x = x.reshape(-1)
+        return np.inner(x, x)
 
-    # Compute expected value
-    metric_vals = []
+    # Input data
+    x = lbann.Identity(lbann.Input())
+    x_lbann = x
+
+    # Objects for LBANN model
+    obj = []
+    metrics = []
+    callbacks = []
+
+    # ------------------------------------------
+    # No padding index
+    # ------------------------------------------
+
+    # Embeddings
+    np.random.seed(20191015)
+    embedding_dim = 5
+    embeddings = np.random.normal(size=(_num_embeddings,embedding_dim))
+
+    # LBANN implementation
+    embedding_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(values=str_list(np.nditer(embeddings)))
+    )
+    x = x_lbann
+    y = lbann.Embedding(x,
+                        weights=embedding_weights,
+                        num_embeddings=_num_embeddings,
+                        embedding_dim=embedding_dim,
+                        device='cpu')
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='no padding index'))
+
+    # NumPy implementation
+    vals = []
     for i in range(num_samples()):
-        input = get_sample(i)
-        embedding = embedding_array[int(input[0]), :]
-        l2_norm2 = np.inner(embedding, embedding)
-        metric_vals.append(l2_norm2)
-    expected_metric_value = np.mean(metric_vals)
-    tol = 8 * expected_metric_value * np.finfo(np.float32).eps
+        x = get_sample(i)[0]
+        y = embeddings[x]
+        z = l2_norm2(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
 
-    # Initialize check metric callback
-    callbacks = [lbann.CallbackCheckMetric(metric='L2 norm squared',
-                                           lower_bound=expected_metric_value-tol,
-                                           upper_bound=expected_metric_value+tol,
-                                           error_on_failure=True,
-                                           execution_modes='test'),
-                 lbann.CallbackCheckGradients(error_on_failure=True)]
+    # ------------------------------------------
+    # Padding index 0
+    # ------------------------------------------
+
+    # Embeddings
+    np.random.seed(201910152)
+    embedding_dim = 3
+    padding_idx = 0
+    embeddings = np.random.normal(size=(_num_embeddings,embedding_dim))
+
+    # LBANN implementation
+    # Note: Embedding layer gradients are not exact if a padding index
+    # is set. Avoid gradient checking by not using an optimizer.
+    embedding_weights = lbann.Weights(
+        optimizer=None,
+        initializer=lbann.ValueInitializer(values=str_list(np.nditer(embeddings)))
+    )
+    x = x_lbann
+    y = lbann.Embedding(x,
+                        weights=embedding_weights,
+                        num_embeddings=_num_embeddings,
+                        embedding_dim=embedding_dim,
+                        padding_idx=padding_idx,
+                        device='cpu')
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='padding index = 0'))
+
+    # NumPy implementation
+    vals = []
+    for i in range(num_samples()):
+        x = get_sample(i)[0]
+        if x == padding_idx:
+            y = np.zeros(shape=embedding_dim, dtype=np.float32)
+        else:
+            y = embeddings[x]
+        z = l2_norm2(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # Gradient checking
+    # ------------------------------------------
+
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+
+    # ------------------------------------------
+    # Construct model
+    # ------------------------------------------
 
     # Construct model
     mini_batch_size = num_samples() // 2
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
-                       layers=layers,
+                       layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,
-                       metrics=[metric],
+                       metrics=metrics,
                        callbacks=callbacks)
 
 def construct_data_reader(lbann):

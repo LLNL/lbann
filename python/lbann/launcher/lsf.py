@@ -120,8 +120,14 @@ class LSFBatchScript(BatchScript):
             procs_per_node = self.procs_per_node
         args = [launcher]
         args.extend(make_iterable(launcher_args))
-        args.append('-n {}'.format(nodes))
-        args.append('--tasks_per_rs {}'.format(procs_per_node))
+        args.extend([
+            '--nrs {}'.format(nodes),
+            '--rs_per_host 1',
+            '--tasks_per_rs {}'.format(procs_per_node),
+            '--launch_distribution packed',
+            '--cpu_per_rs ALL_CPUS',
+            '--gpu_per_rs ALL_GPUS',
+        ])
         args.extend(make_iterable(command))
         self.add_command(args)
 
