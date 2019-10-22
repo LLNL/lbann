@@ -1036,7 +1036,11 @@ class generic_input_layer : public io_layer {
       active_buffer = 0;
     }
 
-    const int mb_size = get_current_mini_batch_size();
+    // Note that the mini-batch size of the data reader is not
+    // actually the one for the current mini-batch as the mini-batch
+    // index is already updated by fp_compute.
+    const int mb_size = static_cast<sgd_execution_context&>(
+        m_model->get_execution_context()).get_current_mini_batch_size();
     auto &input_view = m_input_views.at(active_buffer);
     auto &input_tensor = m_input_tensors.at(active_buffer);
 
