@@ -1,5 +1,4 @@
 import numpy as np
-from math import sqrt
 
 # Data paths
 data_dir = '/p/lustre2/brainusr/datasets/zinc/moses_zinc_train250K.npy'
@@ -114,7 +113,7 @@ def construct_model():
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer(),
                  lbann.CallbackStepLearningRate(step=10, amt=0.5),
-                 lbann.CallbackDumpWeights(basename="weights")]
+                 lbann.CallbackDumpWeights(basename="weights",epoch_interval=50)]
 
     # Construct model
     mini_batch_size = 64
@@ -167,7 +166,7 @@ if __name__ == '__main__':
         trainer, model, data_reader, opt,
         account='hpcdl',
         scheduler='slurm',
-        time_limit=1440,
+        time_limit=720,
         nodes=1,
         job_name='atom_char_rnn_250K')
     print(status)
