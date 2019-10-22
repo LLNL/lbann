@@ -1091,7 +1091,7 @@ class generic_input_layer : public io_layer {
       return;
     }
 
-    //assert_eq(mb_size * dc::get_number_of_io_partitions(), get_activations().Width());
+    assert_eq(mb_size * dc::get_number_of_io_partitions(), get_activations().Width());
     input_view.set_outermost_dimension(mb_size);
     input_tensor.set_outermost_dimension(mb_size);
 
