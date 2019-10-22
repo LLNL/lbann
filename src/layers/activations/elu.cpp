@@ -31,10 +31,8 @@ namespace lbann {
 
 namespace {
 
-// Useful constants
-constexpr TensorDataType zero = 0;
-
 /** Local forward prop computation. */
+template <typename TensorDataType>
 void local_fp(TensorDataType alpha,
               const El::AbstractMatrix<TensorDataType>& input,
               El::AbstractMatrix<TensorDataType>& output) {
@@ -45,12 +43,13 @@ void local_fp(TensorDataType alpha,
     for (El::Int row = 0; row < height; ++row) {
       const auto& x = input(row, col);
       auto& y = output(row, col);
-      y = (x > zero) ? x : alpha * std::expm1(x);
+      y = (x > TensorDataType(0)) ? x : alpha * std::expm1(x);
     }
   }
 }
 
 /** Local backprop computation. */
+template <typename TensorDataType>
 void local_bp(TensorDataType alpha,
               const El::AbstractMatrix<TensorDataType>& input,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
@@ -63,45 +62,50 @@ void local_bp(TensorDataType alpha,
       const auto& x = input(row, col);
       const auto& dy = gradient_wrt_output(row, col);
       auto& dx = gradient_wrt_input(row, col);
-      dx = (x > zero) ? dy : dy * alpha * std::exp(x);
+      dx = (x > TensorDataType(0)) ? dy : dy * alpha * std::exp(x);
     }
   }
 }
 
 } // namespace
 
-template <>
-void elu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-       ::fp_compute() {
-  local_fp(m_alpha,
-          this->get_local_prev_activations(),
-          this->get_local_activations());
+template <typename TensorDataType>
+void fp_compute_impl(elu_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_fp<TensorDataType>(l.m_alpha,
+                           l.get_local_prev_activations(),
+                           l.get_local_activations());
 }
-template <>
-void elu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  local_bp(m_alpha,
-          this->get_local_prev_activations(),
-          this->get_local_prev_error_signals(),
-          this->get_local_error_signals());
+template <typename TensorDataType>
+void bp_compute_impl(elu_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>&l ) {
+  local_bp<TensorDataType>(l.m_alpha,
+                           l.get_local_prev_activations(),
+                           l.get_local_prev_error_signals(),
+                           l.get_local_error_signals());
 }
-template <>
-void elu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-       ::fp_compute() {
-  local_fp(m_alpha,
-          this->get_local_prev_activations(),
-          this->get_local_activations());
+template <typename TensorDataType>
+void fp_compute_impl(elu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_fp<TensorDataType>(l.m_alpha,
+                           l.get_local_prev_activations(),
+                           l.get_local_activations());
 }
-template <>
-void elu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  local_bp(m_alpha,
-          this->get_local_prev_activations(),
-          this->get_local_prev_error_signals(),
-          this->get_local_error_signals());
+template <typename TensorDataType>
+void bp_compute_impl(elu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_bp<TensorDataType>(l.m_alpha,
+                           l.get_local_prev_activations(),
+                           l.get_local_prev_error_signals(),
+                           l.get_local_error_signals());
 }
 
-template class elu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class elu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void elu_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void elu_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
+template class elu_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class elu_layer<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

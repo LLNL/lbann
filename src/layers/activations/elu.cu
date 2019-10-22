@@ -32,6 +32,7 @@ namespace lbann {
 namespace {
 
 /** CUDA kernel for forward prop computation. */
+template <typename TensorDataType>
 __global__ void fp_kernel(TensorDataType alpha,
                           El::Int height,
                           El::Int width,
@@ -52,6 +53,7 @@ __global__ void fp_kernel(TensorDataType alpha,
 }
 
 /** CUDA kernel for backprop computation. */
+template <typename TensorDataType>
 __global__ void bp_kernel(TensorDataType alpha,
                           El::Int height,
                           El::Int width,
@@ -75,6 +77,7 @@ __global__ void bp_kernel(TensorDataType alpha,
 }
 
 /** Local forward prop computation. */
+template <typename TensorDataType>
 void local_fp(TensorDataType alpha,
               const El::AbstractMatrix<TensorDataType>& input,
               El::AbstractMatrix<TensorDataType>& output) {
@@ -93,7 +96,7 @@ void local_fp(TensorDataType alpha,
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    fp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+    fp_kernel<TensorDataType><<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
       alpha, height, width,
       input.LockedBuffer(), input.LDim(),
       output.Buffer(), output.LDim());
@@ -102,6 +105,7 @@ void local_fp(TensorDataType alpha,
 }
 
 /** Local backprop computation. */
+template <typename TensorDataType>
 void local_bp(TensorDataType alpha,
               const El::AbstractMatrix<TensorDataType>& input,
               const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
@@ -121,7 +125,7 @@ void local_bp(TensorDataType alpha,
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    bp_kernel<<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
+    bp_kernel<TensorDataType><<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
       alpha, height, width,
       input.LockedBuffer(), input.LDim(),
       gradient_wrt_output.LockedBuffer(), gradient_wrt_output.LDim(),
@@ -132,38 +136,34 @@ void local_bp(TensorDataType alpha,
 
 } // namespace
 
-template <>
-void elu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-       ::fp_compute() {
-  local_fp(m_alpha,
-          this->get_local_prev_activations(),
-          this->get_local_activations());
+template <typename TensorDataType>
+void fp_compute_impl(elu_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  local_fp<TensorDataType>(l.m_alpha,
+                           l.get_local_prev_activations(),
+                           l.get_local_activations());
 }
-template <>
-void elu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  local_bp(m_alpha,
-          this->get_local_prev_activations(),
-          this->get_local_prev_error_signals(),
-          this->get_local_error_signals());
+template <typename TensorDataType>
+void bp_compute_impl(elu_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  local_bp<TensorDataType>(l.m_alpha,
+                           l.get_local_prev_activations(),
+                           l.get_local_prev_error_signals(),
+                           l.get_local_error_signals());
 }
-template <>
-void elu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-       ::fp_compute() {
-  local_fp(m_alpha,
-          this->get_local_prev_activations(),
-          this->get_local_activations());
+template <typename TensorDataType>
+void fp_compute_impl(elu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  local_fp<TensorDataType>(l.m_alpha,
+                           l.get_local_prev_activations(),
+                           l.get_local_activations());
 }
-template <>
-void elu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  local_bp(m_alpha,
-          this->get_local_prev_activations(),
-          this->get_local_prev_error_signals(),
-          this->get_local_error_signals());
+template <typename TensorDataType>
+void bp_compute_impl(elu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  local_bp<TensorDataType>(l.m_alpha,
+                           l.get_local_prev_activations(),
+                           l.get_local_prev_error_signals(),
+                           l.get_local_error_signals());
 }
 
-template class elu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class elu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+template class elu_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class elu_layer<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
