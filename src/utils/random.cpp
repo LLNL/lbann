@@ -99,31 +99,37 @@ fast_rng_gen& get_fast_io_generator() {
   return ::fast_io_generator;
 }
 
-bool save_rng_to_checkpoint(persist& p, const lbann_comm* comm) {
+bool save_rng_to_checkpoint(persist& p, lbann_comm* comm) {
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
-  makedir(dirname.c_str());
+  std::string rank_in_trainer;
   std::string rng_name;
 
-  /// @todo - Note that the RNG with thread local data is not correct
-  rng_name = dirname + "/rng_seq_generator";
-  std::ofstream rng_seq(rng_name);
-  if(!rng_seq) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_seq << ::data_seq_generator;
-  rng_seq.close();
+  if (comm == nullptr) {
+    rank_in_trainer = std::to_string(El::mpi::Rank(El::mpi::COMM_WORLD));
+    makedir(dirname.c_str());
+  } else {
+    rank_in_trainer = std::to_string(comm->get_rank_in_trainer());
+    if (comm->am_trainer_master()) {
+      makedir(dirname.c_str());
+    }
+    comm->trainer_barrier();
+  }
+
+  if (comm == nullptr || comm->am_trainer_master()) {
+    /// @todo - Note that the RNG with thread local data is not correct
+    rng_name = dirname + "/rng_seq_generator";
+    std::ofstream rng_seq(rng_name);
+    if(!rng_seq) { LBANN_ERROR("Failed to open ", rng_name); }
+    rng_seq << ::data_seq_generator;
+    rng_seq.close();
 
 #ifdef LBANN_SET_EL_RNG
-  rng_name = dirname + "/EL_generator";
-  std::ofstream rng_EL(rng_name);
-  if(!rng_EL) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_EL << El::Generator();
-  rng_EL.close();
+    rng_name = dirname + "/EL_generator";
+    std::ofstream rng_EL(rng_name);
+    if(!rng_EL) { LBANN_ERROR("Failed to open ", rng_name); }
+    rng_EL << El::Generator();
+    rng_EL.close();
 #endif
-
-  std::string rank_in_world;
-  if (comm == nullptr) {
-    rank_in_world = std::to_string(El::mpi::Rank(El::mpi::COMM_WORLD));
-  } else {
-    rank_in_world = std::to_string(comm->get_rank_in_world());
   }
 
   /// @todo - Note that the RNG with thread local data is not correct
