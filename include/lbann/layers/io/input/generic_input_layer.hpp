@@ -1055,6 +1055,28 @@ class generic_input_layer : public io_layer {
     }
   }
 
+  int m_debug_dump_count = 0;
+  void debug_dump() {
+    // dump m_input_dev
+    if (m_debug_dump_count > 0) return;
+    ++m_debug_dump_count;
+
+    auto buf_size = m_input_dev.get_local_real_size();
+    InputType *host_buf;
+    CHECK_CUDA(cudaMallocHost(&host_buf, sizeof(InputType) * buf_size));
+    CHECK_CUDA(cudaMemcpyAsync(host_buf, m_input_dev.get_const_buffer(),
+                               sizeof(InputType) * buf_size, cudaMemcpyDeviceToHost,
+                               dc::get_stream()));
+    CHECK_CUDA(cudaStreamSynchronize(dc::get_stream()));
+    std::string path = "input_dump_" + std::to_string(dc::get_mpi_rank()) + ".txt";
+    std::ofstream dump_file(path);
+    for (size_t i = 0; i < buf_size; ++i) {
+      dump_file << host_buf[i] << "\n";
+    }
+    dump_file.close();
+    cudaFreeHost(host_buf);
+  }
+
   void fp_compute_distconv(int active_buffer) {
     if (!distconv_enabled()) return;
 
@@ -1159,6 +1181,8 @@ class generic_input_layer : public io_layer {
           cudaMemcpyHostToDevice, dc::get_stream()));
     }
     prof_region_end("copy-to-device", false);
+
+    debug_dump();
 
     {
       const auto norm_alpha_p = std::getenv("COSMOFLOW_NORMALIZE_ALPHA");
