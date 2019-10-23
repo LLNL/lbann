@@ -522,7 +522,9 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
         local_output.Buffer(), local_output.LDim());
   }
 #ifdef LBANN_HAS_DISTCONV
-  dump_reference_activations();
+  if (distconv_enabled()) {
+    dump_reference_activations();
+  }
 #endif // LBANN_HAS_DISTCONV
 }
 
@@ -657,7 +659,9 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
         local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
   }
 #ifdef LBANN_HAS_DISTCONV
-  dump_reference_error_signals();
+  if (distconv_enabled()) {
+    dump_reference_error_signals();
+  }
 #endif // LBANN_HAS_DISTCONV
 }
 
