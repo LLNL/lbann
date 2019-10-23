@@ -41,6 +41,9 @@
 #include <unistd.h>
 #include <unistd.h>
 #include <sys/statvfs.h>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/archives/binary.hpp>
+
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/xml.hpp>
@@ -255,16 +258,16 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::
   if (m_output) {
     (*m_output) << "set_preloaded_conduit_node: " << data_id << std::endl;
   }
-  m_mutex.lock();
-  conduit::Node n2 = node;
-  build_node_for_sending(n2, m_data[data_id]);
-  m_mutex.unlock();
+  { 
+    std::lock_guard<std::mutex> lock(m_mutex);
+    conduit::Node n2 = node;
+    build_node_for_sending(n2, m_data[data_id]);
+  }
   if (!m_node_sizes_vary) {
     error_check_compacted_node(m_data[data_id], data_id);
   } else {
-    m_mutex.lock();
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
-    m_mutex.unlock();
   }
 }
 
@@ -302,27 +305,22 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
     LBANN_ERROR("you called data_store_conduit::set_conduit_node, but you're running in local cache mode with preloading; something is broken; please contact Dave Hysom");
   }
 
-  m_mutex.lock();
-  if (already_have == false && m_data.find(data_id) != m_data.end()) {
-    m_mutex.unlock();
-    LBANN_ERROR("duplicate data_id: ", data_id, " in data_store_conduit::set_conduit_node; role: ", m_reader->get_role());
+  {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (already_have == false && m_data.find(data_id) != m_data.end()) {
+      LBANN_ERROR("duplicate data_id: ", data_id, " in data_store_conduit::set_conduit_node; role: ", m_reader->get_role());
+    }
   }
-  m_mutex.unlock();
 
   if (already_have && is_local_cache()) {
-    m_mutex.lock();
     if (m_data.find(data_id) == m_data.end()) {
-      m_mutex.unlock();
       LBANN_ERROR("you claim the passed node was obtained from this data_store, but the data_id (", data_id, ") doesn't exist in m_data");
     }
-    m_mutex.unlock();
     return;
   }
 
   if (is_local_cache()) {
-    m_mutex.lock();
     m_data[data_id] = node;
-    m_mutex.unlock();
   }
 
   else {
@@ -340,20 +338,22 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
       conduit::Node n2;
       build_node_for_sending(node, n2);
       error_check_compacted_node(n2, data_id);
-      m_mutex.lock();
-      m_sample_sizes[data_id] = n2.total_bytes_compact();
-      m_mutex.unlock();
+      {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_sample_sizes[data_id] = n2.total_bytes_compact();
+      }  
 
       spill_conduit_node(node, data_id);
       m_spilled_nodes[data_id] = m_cur_spill_dir_integer;
     }
 
     else {
-      m_mutex.lock();
-      build_node_for_sending(node, m_data[data_id]);
+      {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        build_node_for_sending(node, m_data[data_id]);
+        m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
+      }  
       error_check_compacted_node(m_data[data_id], data_id);
-      m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
-      m_mutex.unlock();
     }  
   }
 }
@@ -447,6 +447,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   }
 
   int num_send_req = build_indices_i_will_send(current_pos, mb_size);
+  if (m_world_master) std::cout << "XX m_spill: " << m_spill << std::endl;
   if (m_spill) {
     load_spilled_conduit_nodes();
   }
@@ -561,6 +562,10 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
     m_minibatch_data[data_id].set_external(n_msg["data"]);
   }
   m_rebuild_time += (get_time() - tm2);
+
+  if (m_spill) {
+    m_data.clear();
+  }
 }
 
 int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size) {
@@ -616,24 +621,6 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
     m_owner[(*m_shuffled_indices)[i]] = owning_rank;
   }
 }
-
-#if 0
-void data_store_conduit::build_owner_map(int mini_batch_size) {
-  if (m_world_master) std::cout << "starting data_store_conduit::build_owner_map for role: " << m_reader->get_role() << " with mini_batch_size: " << mini_batch_size << " num indices: " << m_shuffled_indices->size() << "\n";
-  if (mini_batch_size == 0) {
-    LBANN_ERROR("mini_batch_size == 0; can't build owner_map");
-  }
-  m_owner.clear();
-  m_owner_map_mb_size = mini_batch_size;
-  for (size_t i = 0; i < m_shuffled_indices->size(); i++) {
-    auto index = (*m_shuffled_indices)[i];
-    /// To compute the owner index first find its position inside of
-    /// the mini-batch (mod mini-batch size) and then find how it is
-    /// striped across the ranks in the trainer
-    m_owner[index] = (i % m_owner_map_mb_size) % m_np_in_trainer;
-  }
-}
-#endif
 
 const conduit::Node & data_store_conduit::get_random_node() const {
   size_t sz = m_data.size();
@@ -1372,6 +1359,8 @@ void data_store_conduit::make_dir_if_it_doesnt_exist(const std::string &dir_name
 }
 
 void data_store_conduit::setup_spill() {
+  m_spill = true;
+
   options *opts = options::get();
   // create director structure for spilling data
   if (! (opts->has_string("data_store_spill")
@@ -1553,6 +1542,7 @@ void data_store_conduit::spill_conduit_node(const conduit::Node &node, int data_
 }
 
 void data_store_conduit::load_spilled_conduit_nodes() {
+  if (m_world_master) std::cout << "XX starting loading spilled data; m_data.size(): " << m_data.size() << std::endl;
   std::unordered_set<int> indices_that_are_already_loaded;
   std::unordered_set<int> indices_to_be_loaded;
   for (const auto &t : m_indices_to_send) {
@@ -1584,6 +1574,8 @@ void data_store_conduit::load_spilled_conduit_nodes() {
     node.load(fn);
     build_node_for_sending(node, m_data[t]);
   }
+
+  if (m_world_master) std::cout << "XX LEAAVING loading spilled data; m_data.size(): " << m_data.size() << std::endl;
 }
 
 

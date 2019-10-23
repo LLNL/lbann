@@ -37,10 +37,6 @@
 #include <unordered_set>
 #include <mutex>
 
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/archives/binary.hpp>
-
-
 
 namespace lbann {
 
@@ -146,13 +142,10 @@ class data_store_conduit {
 
   void flush_debug_file(); 
 
-  /// write m_data to file; may also write other data structures
-  /// (e.g, src/data_store/data_store_conduit.cpp) to file
+  /** @brief Writes object's state to file */
   void write_checkpoint(std::string dir_name);
   
-  /// load m_data from local file; may also write other data structures
-  /// (e.g, src/data_store/data_store_conduit.cpp) to file
-  /// (reader may be nullptr for testing and development purposes)
+  /** @brief Loads object's state from file */
   void load_checkpoint(std::string dir_name, generic_data_reader *reader = nullptr);
 
 protected :
@@ -178,7 +171,7 @@ protected :
 
   /** @brief @brief Current directory for spilling (writing to file) conduit nodes 
    *
-   * m_cur_dir = m_spill_dir_base/<m_cur_spill_dir_integer>
+   * m_cur_spill_dir = m_spill_dir_base/<m_cur_spill_dir_integer>
    */
   std::string m_cur_spill_dir;
 

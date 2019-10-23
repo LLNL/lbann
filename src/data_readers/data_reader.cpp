@@ -703,7 +703,6 @@ void generic_data_reader::instantiate_data_store(const std::vector<int>& local_l
   if (m_shuffled_indices.size() == 0) {
     LBANN_ERROR("shuffled_indices.size() == 0");
   }
-  //m_data_store->set_preload();
 
   if (opts->get_bool("node_sizes_vary")) {
     m_data_store->set_node_sizes_vary();
