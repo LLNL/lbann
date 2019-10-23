@@ -18,6 +18,7 @@ rm -rf ${LBANN_DIR}/bamboo/integration_tests/__pycache__
 rm -f ${LBANN_DIR}/bamboo/integration_tests/*.tfevents.*
 rm -f ${LBANN_DIR}/bamboo/integration_tests/error/*
 rm -f ${LBANN_DIR}/bamboo/integration_tests/output/*
+rm -rf ${LBANN_DIR}/bamboo/integration_tests/experiments/*
 
 # Unit Tests
 rm -rf ${LBANN_DIR}/bamboo/unit_tests/ckpt*
