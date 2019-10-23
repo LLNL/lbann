@@ -40,10 +40,10 @@ if [ "${CLUSTER}" = 'lassen' ]; then
         timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 2 -W ${ALLOCATION_TIME_LIMIT} ./run.sh
     fi
 elif [ "${CLUSTER}" = 'ray' ]; then
+    ALLOCATION_TIME_LIMIT=240
     if [ ${WEEKLY} -ne 0 ]; then
-        echo "No ray testing in weekly."
+        timeout -k 5 24h bsub -Is -q pbatch -nnodes 4 -W ${ALLOCATION_TIME_LIMIT} ./run.sh
     else
-        ALLOCATION_TIME_LIMIT=240
         timeout -k 5 24h bsub -Is -q pbatch -nnodes 2 -W ${ALLOCATION_TIME_LIMIT} ./run.sh
     fi
 elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
