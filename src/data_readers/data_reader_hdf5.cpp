@@ -129,7 +129,7 @@ namespace lbann {
     auto file = m_file_paths[data_id];
     hid_t h_file = H5Fopen(file.c_str(), H5F_ACC_RDONLY, m_fapl);
 
-#if 1
+#if 0
     dc::MPIPrintStreamInfo() << "HDF5 file opened: "
                              << file;
 #endif
