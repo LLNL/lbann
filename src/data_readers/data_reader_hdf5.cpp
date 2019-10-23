@@ -173,27 +173,6 @@ namespace lbann {
     }
     H5Fclose(h_file);
 
-    //TODO do i need this?
-    // not if I pass a ref to X I dont think
-    //this should be equal to num_nuerons/LBANN_NUM_IO_PARTITIONS
-    //unsigned long int pixelcount = m_image_width*m_image_height*m_image_depth*m_image_num_channels;
-    // #ifdef LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
-    //    std::memcpy(dest,data, sizeof(short)*pixelcount);
-    // #else
-    //    LBANN_OMP_PARALLEL_FOR
-    //       for(int p = 0; p<pixelcount; p++) {
-    //TODO what is m_scaling_factor_int16
-    //           dest[p] = tmp[p] * m_scaling_factor_int16;
-    // mash this with above
-    //X.Set(p, mb_idx,*tmp++);
-    //       }
-    // #endif
-    //auto pixel_col = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx+1));
-    //std::vector<size_t> dims = {
-    //  1ull,
-    //  static_cast<size_t>(m_image_height),
-    //  static_cast<size_t>(m_image_width)};
-    //m_transform_pipeline.apply(pixel_col, dims);
     prof_region_end("fetch_datum", false);
     return true;
   }
