@@ -5,7 +5,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -61,15 +61,6 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
-    # Convenience function to compute L2 norm squared with NumPy
-    def l2_norm2(x):
-        x = x.reshape(-1)
-        return np.inner(x, x)
-
     # Input data
     # Note: Sum with weights layers so that gradient checking will
     # verify that error signals are correct.
@@ -81,7 +72,7 @@ def construct_model(lbann):
                                initializer=lbann.ConstantInitializer(value=0.0),
                                name='input1_weights')
     x_slice = lbann.Slice(lbann.Input(),
-                          slice_points=str_list([0, slice_size, 2*slice_size]))
+                          slice_points=tools.str_list([0, slice_size, 2*slice_size]))
     x0 = lbann.Sum([x_slice,
                     lbann.WeightsLayer(weights=x0_weights,
                                        dims=str(slice_size))])
@@ -114,8 +105,8 @@ def construct_model(lbann):
         x = get_sample(i)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = l2_norm2(x0-x1) / slice_size
-        z = l2_norm2(y)
+        y = tools.numpy_l2norm2(x0-x1) / slice_size
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -144,8 +135,8 @@ def construct_model(lbann):
         x = get_sample(i)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = l2_norm2(x0-x1) / slice_size
-        z = l2_norm2(y)
+        y = tools.numpy_l2norm2(x0-x1) / slice_size
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps

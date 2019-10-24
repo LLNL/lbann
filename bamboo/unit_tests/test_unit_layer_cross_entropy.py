@@ -5,7 +5,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -39,6 +39,26 @@ def sample_dims():
     return (2*_samples.shape[-1],)
 
 # ==============================================
+# NumPy cross entropy
+# ==============================================
+
+def numpy_cross_entropy(x, xhat):
+    """Cross entropy between two distributions, computed with NumPy
+
+    The computation is performed with 64-bit floats.
+
+    Args:
+        x: Estimated distribution
+        xhat: True distribution
+
+    """
+    if x.dtype is not np.float64:
+        x = x.astype(np.float64)
+    if xhat.dtype is not np.float64:
+        xhat = xhat.astype(np.float64)
+    return -np.inner(xhat, np.log(x))
+
+# ==============================================
 # Setup LBANN experiment
 # ==============================================
 
@@ -63,15 +83,6 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
-    # Convenience function to compute L2 norm squared with NumPy
-    def l2_norm2(x):
-        x = x.reshape(-1)
-        return np.inner(x, x)
-
     # Input data
     # Note: Sum with weights layers so that gradient checking will
     # verify that error signals are correct.
@@ -83,7 +94,7 @@ def construct_model(lbann):
                                initializer=lbann.ConstantInitializer(value=0.0),
                                name='input1_weights')
     x_slice = lbann.Slice(lbann.Input(),
-                          slice_points=str_list([0, slice_size, 2*slice_size]))
+                          slice_points=tools.str_list([0, slice_size, 2*slice_size]))
     x0 = lbann.Sum([x_slice,
                     lbann.WeightsLayer(weights=x0_weights,
                                        dims=str(slice_size))])
@@ -116,8 +127,8 @@ def construct_model(lbann):
         x = get_sample(i)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = -np.inner(x1, np.log(x0))
-        z = l2_norm2(y)
+        y = numpy_cross_entropy(x0, x1)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -146,8 +157,8 @@ def construct_model(lbann):
         x = get_sample(i)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = -np.inner(x1, np.log(x0))
-        z = l2_norm2(y)
+        y = numpy_cross_entropy(x0, x1)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps

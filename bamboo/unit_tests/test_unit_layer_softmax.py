@@ -5,7 +5,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -38,11 +38,12 @@ def sample_dims():
 def numpy_softmax(x):
     """NumPy implementation of softmax.
 
-    There is also an implementation in SciPy 1.2.0
-    (scipy.special.softmax).
+    The computation is performed with 64-bit floats. There is also an
+    implementation of softmax in SciPy 1.2.0 (scipy.special.softmax).
 
     """
-    x = x.astype(np.float64)
+    if x.dtype is not np.float64:
+        x = x.astype(np.float64)
     y = np.exp(x - np.max(x))
     return y / np.sum(y)
 
@@ -70,15 +71,6 @@ def construct_model(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
-    # Convenience function to compute L2 norm squared with NumPy
-    def l2_norm2(x):
-        x = x.reshape(-1).astype(np.float64)
-        return np.inner(x, x)
 
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
@@ -111,7 +103,7 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i)
         y = numpy_softmax(x)
-        z = l2_norm2(y)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -138,7 +130,7 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i)
         y = numpy_softmax(x)
-        z = l2_norm2(y)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps

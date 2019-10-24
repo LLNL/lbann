@@ -5,7 +5,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -59,23 +59,14 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
-    # Convenience function to compute L2 norm squared with NumPy
-    def l2_norm2(x):
-        x = x.reshape(-1)
-        return np.inner(x, x)
-
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
     x_weights = lbann.Weights(optimizer=lbann.SGD(),
                               initializer=lbann.ConstantInitializer(value=0.0))
     x0 = lbann.WeightsLayer(weights=x_weights,
-                            dims=str_list(_sample_dims))
-    x1 = lbann.Reshape(lbann.Input(), dims=str_list(_sample_dims))
+                            dims=tools.str_list(_sample_dims))
+    x1 = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
     x = lbann.Sum([x0, x1])
     x_lbann = x
 
@@ -89,8 +80,8 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    scale_values = str_list(np.nditer(_scale))
-    bias_values = str_list(np.nditer(_bias))
+    scale_values = tools.str_list(np.nditer(_scale))
+    bias_values = tools.str_list(np.nditer(_bias))
     scalebias_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(values='{} {}'.format(scale_values,
@@ -107,8 +98,8 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).reshape(_sample_dims)
-        y = _scale * x + _bias
-        z = l2_norm2(y)
+        y = _scale.astype(np.float64) * x.astype(np.float64) + _bias.astype(np.float64)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -124,8 +115,8 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    scale_values = str_list(np.nditer(_scale))
-    bias_values = str_list(np.nditer(_bias))
+    scale_values = tools.str_list(np.nditer(_scale))
+    bias_values = tools.str_list(np.nditer(_bias))
     scalebias_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(values='{} {}'.format(scale_values,
@@ -142,8 +133,8 @@ def construct_model(lbann):
     vals = []
     for i in range(num_samples()):
         x = get_sample(i).reshape(_sample_dims)
-        y = _scale * x + _bias
-        z = l2_norm2(y)
+        y = _scale.astype(np.float64) * x.astype(np.float64) + _bias.astype(np.float64)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
