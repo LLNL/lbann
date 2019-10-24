@@ -796,11 +796,6 @@ void data_reader_jag_conduit::load() {
   /// how sample lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
   load_list_of_samples(sample_list_file, true);
-  if(is_master()) {
-    if (!check_data) {
-      std::cout << "Skipping check data" << std::endl;
-    }
-  }
 
   /// Check the data that each rank loaded
   if (!m_is_data_loaded && !m_sample_list.empty()) {
@@ -830,11 +825,15 @@ void data_reader_jag_conduit::load() {
     m_sample_list.close_if_done_samples_file_handle(0);
   }
   if(is_master()) {
-    std::cout << "Done with data checking" << std::endl;
+    if (!check_data) {
+      std::cout << "Skip data checking" << std::endl;
+    } else {
+      std::cout << "Done with data checking" << std::endl;
+    }
   }
 
   /// Merge all of the sample lists
-  tm2 = get_time();
+  double tm2 = get_time();
   m_sample_list.all_gather_packed_lists(*m_comm);
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
     {
@@ -939,7 +938,8 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
   double tm2 = get_time();
 
   if (is_master()) {
-    std::cout << "Finished loading sample list; time: " << tm2 - tm1 << std::endl;
+    std::cout << "Finished loading sample list; time: "
+              << tm2 - tm1 << " (sec)" << std::endl;
   }
 }
 

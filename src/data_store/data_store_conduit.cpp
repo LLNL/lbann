@@ -954,6 +954,7 @@ void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::
   if (image_reader == nullptr) {
     LBANN_ERROR("data_reader_image *image_reader = dynamic_cast<data_reader_image*>(m_reader) failed");
   }
+  const auto& sample_list = image_reader->get_sample_list();
   std::vector<size_t> my_image_sizes;
 
   // this block fires if we're exchanging cache data at the end
@@ -967,7 +968,6 @@ void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::
   }
   
   else {
-    const auto& sample_list = image_reader->get_sample_list();
     // get sizes of files for which I'm responsible
     for (size_t h=m_rank_in_trainer; h<m_shuffled_indices->size(); h += m_np_in_trainer) {
       ++m_my_num_indices;
