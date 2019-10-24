@@ -38,11 +38,13 @@ namespace utils {
  *  the stream method because stream operators do not provide
  *  straight-forward error feedback.
  *
- *  \tparam T The type to cast to.
+ *  @tparam T The type to cast to.
  *
- *  \param str The input string.
+ *  @param str The input string.
  *
- *  \return The value of the input string as a T.
+ *  @return The value of the input string as a T.
+ *
+ *  @todo bool, chars, shorts, unsigned
  */
 template <typename T>
 T from_string(std::string const& str);

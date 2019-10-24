@@ -26,6 +26,7 @@
 
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/any.hpp"
+#include "lbann/utils/exception.hpp"
 
 #include <clara.hpp>
 
@@ -34,12 +35,8 @@
 
 namespace lbann
 {
-
-std::string environment_variable::get_raw_value() const
+namespace utils
 {
-  char *env = getenv(name_.c_str());
-  return std::string(env ? env : "");
-}
 
 argument_parser::argument_parser()
 {
@@ -64,8 +61,9 @@ void argument_parser::parse_no_finalize(int argc, char const* const argv[])
   auto parse_result = parser_.parse(clara::Args(argc, argv));
   if (!parse_result)
     throw parse_error(
-      std::string("Arguments could not be parsed.\n\nMessage: ")
-      + parse_result.errorMessage());
+      lbann::build_string(
+        "Arguments could not be parsed.\n\nMessage: ",
+        parse_result.errorMessage()));
 }
 
 void argument_parser::finalize() const
@@ -101,9 +99,11 @@ void argument_parser::print_help(std::ostream& out) const
   out << parser_ << std::endl;
 }
 
+}// namespace utils
 }// namespace lbann
 
-std::ostream& operator<<(std::ostream& os, lbann::argument_parser const& parser)
+std::ostream& operator<<(std::ostream& os,
+                         lbann::utils::argument_parser const& parser)
 {
   parser.print_help(os);
   return os;

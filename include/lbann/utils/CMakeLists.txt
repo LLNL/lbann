@@ -10,6 +10,7 @@ set_full_path(THIS_DIR_HEADERS
   description.hpp
   entrywise_operator.hpp
   enum_iterator.hpp
+  environment_variable.hpp
   eti_macros.hpp
   exception.hpp
   factory.hpp

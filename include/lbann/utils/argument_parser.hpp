@@ -28,6 +28,7 @@
 #define LBANN_UTILS_ARGUMENT_PARSER_HPP_INCLUDED
 
 #include "lbann/utils/any.hpp"
+#include "lbann/utils/environment_variable.hpp"
 
 #include <clara.hpp>
 
@@ -42,41 +43,8 @@
 
 namespace lbann
 {
-
-/** @brief An environment variable
- *
- *  Values are acquired lazily. The only maintained state is the name.
- */
-class environment_variable
+namespace utils
 {
-public:
-  /** @brief Construct from a string. */
-  environment_variable(std::string const& var_name)
-    : name_{var_name}
-  {}
-
-  /** @brief Construct from a temporary string. */
-  environment_variable(std::string&& var_name)
-    : name_{std::move(var_name)}
-  {}
-
-  /** @brief Get the name of the environment variable */
-  std::string const& get_name() const noexcept
-  {
-    return name_;
-  }
-
-  std::string get_raw_value() const;
-
-  template <typename T>
-  T get_value() const
-  {
-    return T{};//ConvertTo<T>(get_raw_value());
-  }
-
-private:
-  std::string name_;
-};
 
 /** @class argument_parser
  *  @brief A decorator class over Clara
@@ -190,6 +158,44 @@ public:
                   std::string const& description,
                   T default_value = T());
 
+  /** @brief Add an additional named option.
+   *
+   *  Currently, named options are all optional. This could be
+   *  expanded if needed.
+   *
+   *  @tparam T The type associated with the option. Deduced if a
+   *          default value is given. If the default value is not
+   *          given, the template parameter must be named explicitly
+   *          and the default value will be default-constructed.
+   *  @tparam AccessPolicy The access method for the environment
+   *          variable. (Deduced.)
+   *
+   *  @param[in] name The name to be used to refer to the argument.
+   *  @param[in] cli_flags The valid command line flags to identify
+   *             this option and its value. At least one must be
+   *             given.
+   *  @param[in] env The environment variable to prefer over the
+   *             default parameter value.
+   *  @param[in] description A brief description of the argument,
+   *             used for the help message.
+   *  @param[in] default_value The default value to be returned if
+   *             the option is not passed to the command line.
+   */
+  template <typename T, typename AccessPolicy>
+  void add_option(std::string const& name,
+                  std::initializer_list<std::string> cli_flags,
+                  EnvVariable<AccessPolicy> env,
+                  std::string const& description,
+                  T default_value = T())
+  {
+    if (env.exists())
+      return add_option(name, std::move(cli_flags), description,
+                        env.template value<T>());
+    else
+      return add_option(name, std::move(cli_flags), description,
+                        std::move(default_value));
+  }
+
   /** @brief Add an additional named option; overloaded for "char
    *         const*" parameters.
    *
@@ -209,7 +215,35 @@ public:
                   std::string const& description,
                   char const* default_value)
   {
-    add_option(name, cli_flags, description, std::string(default_value));
+    add_option(name, std::move(cli_flags), description,
+               std::string(default_value));
+  }
+
+  /** @brief Add an additional named option; overloaded for "char
+   *         const*" parameters.
+   *
+   *  The value will be stored as an `std::string`. Its value must
+   *  be extracted using `get<std::string>(name)`.
+   *
+   *  @param[in] name The name to be used to refer to the argument.
+   *  @param[in] cli_flags The valid command line flags to trigger
+   *             this flag to `true`. At least one must be given.
+   *  @param[in] env The environment variable to prefer over the
+   *             default parameter value.
+   *  @param[in] description A brief description of the argument,
+   *             used for the help message.
+   *  @param[in] default_value The default value to be returned if
+   *             the option is not passed to the command line.
+   */
+  template <typename AccessPolicy>
+  void add_option(std::string const& name,
+                  std::initializer_list<std::string> cli_flags,
+                  EnvVariable<AccessPolicy> env,
+                  std::string const& description,
+                  char const* default_value)
+  {
+    add_option(name, cli_flags, std::move(env),
+               description, std::string(default_value));
   }
 
   /** @brief Add an optional positional argument.
@@ -441,9 +475,10 @@ inline size_t argument_parser::add_required_argument(
   ret->operator() (description).required();
   return std::distance(parser_.m_args.begin(), ret);
 }
+}// namespace utils
 }// namespace lbann
 
 /** @brief Write the parser's help string to the given @c ostream */
-std::ostream& operator<<(std::ostream&, lbann::argument_parser const&);
+std::ostream& operator<<(std::ostream&, lbann::utils::argument_parser const&);
 
 #endif /* LBANN_UTILS_ARGUMENT_PARSER_HPP_INCLUDED */

@@ -5,6 +5,7 @@ set_full_path(THIS_DIR_SOURCES
   cublas.cpp
   cudnn.cpp
   description.cpp
+  environment_variable.cpp
   exception.cpp
   file_utils.cpp
   graph.cpp
