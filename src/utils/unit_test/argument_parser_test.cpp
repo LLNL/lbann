@@ -27,6 +27,10 @@
 
 #include "lbann/utils/argument_parser.hpp"
 
+#include "lbann/utils/environment_variable.hpp"
+
+#include "stubs/preset_env_accessor.hpp"
+
 SCENARIO ("Testing the argument parser", "[parser][utilities]")
 {
   GIVEN ("An argument parser")
@@ -189,6 +193,144 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
           REQUIRE_THROWS_AS(
             parser.finalize(),
             lbann::utils::argument_parser::missing_required_arguments);
+        }
+      }
+    }
+
+    WHEN ("A defined environment varible is added")
+    {
+      using namespace lbann::utils::stubs;
+      using ENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+
+      parser.add_option(
+        "apple", {"-a"}, ENV("APPLE"),
+        "Apple pie tastes good.", 1.23);
+
+      REQUIRE(parser.option_is_defined("apple"));
+
+      AND_WHEN("The option is not passed in the arguments")
+      {
+        int const argc = 1;
+        char const* argv[argc] = {"argument_parser_test.exe"};
+
+        THEN("The option has the value defined in the environment")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.template get<double>("apple") == 3.14);
+        }
+      }
+
+      AND_WHEN("The option is passed in the arguments")
+      {
+        int const argc = 3;
+        char const* argv[argc] = {"argument_parser_test.exe", "-a", "5.0"};
+        THEN("The option has the value defined in command line args")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.template get<double>("apple") == 5.0);
+        }
+      }
+    }
+
+    WHEN ("An undefined environment varible is added")
+    {
+      using namespace lbann::utils::stubs;
+      using ENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+
+      parser.add_option(
+        "platypus", {"-p"}, ENV("DOESNT_EXIST"),
+        "This variable won't exist.", 1.23);
+
+      REQUIRE(parser.option_is_defined("platypus"));
+
+      AND_WHEN("The option is not passed in the arguments")
+      {
+        int const argc = 1;
+        char const* argv[argc] = {"argument_parser_test.exe"};
+
+        THEN("The option has the default value")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.template get<double>("platypus") == 1.23);
+        }
+      }
+      AND_WHEN("The option is passed in the arguments")
+      {
+        int const argc = 3;
+        char const* argv[argc] = {"argument_parser_test.exe", "-p", "2.0"};
+        THEN("The option has the value defined in the command line args")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.template get<double>("platypus") == 2.0);
+        }
+      }
+    }
+
+    WHEN ("A defined string environment varible is added")
+    {
+      using namespace lbann::utils::stubs;
+      using ENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+
+      parser.add_option(
+        "pizza", {"-p"}, ENV("PIZZA"),
+        "Mmmm pizza.", "mushroom");
+
+      REQUIRE(parser.option_is_defined("pizza"));
+
+      AND_WHEN("The option is not passed in the arguments")
+      {
+        int const argc = 1;
+        char const* argv[argc] = {"argument_parser_test.exe"};
+
+        THEN("The option has the value defined in the environment")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.template get<std::string>("pizza") == "pepperoni");
+        }
+      }
+
+      AND_WHEN("The option is passed in the arguments")
+      {
+        int const argc = 3;
+        char const* argv[argc] = {"argument_parser_test.exe", "-p", "hawaiian"};
+        THEN("The option has the value defined in the command line args")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.template get<std::string>("pizza") == "hawaiian");
+        }
+      }
+    }
+
+    WHEN ("An undefined environment varible is added to a string option")
+    {
+      using namespace lbann::utils::stubs;
+      using ENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+
+      parser.add_option(
+        "platypus", {"-p"}, ENV("DOESNT_EXIST"),
+        "This variable won't exist.", "so cute");
+
+      REQUIRE(parser.option_is_defined("platypus"));
+
+      AND_WHEN("The option is not passed in the arguments")
+      {
+        int const argc = 1;
+        char const* argv[argc] = {"argument_parser_test.exe"};
+
+        THEN("The option has the default value")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.template get<std::string>("platypus") == "so cute");
+        }
+      }
+      AND_WHEN("The option is passed in the arguments")
+      {
+        int const argc = 3;
+        char const* argv[argc] = {"argument_parser_test.exe", "-p", "llama"};
+        THEN("The option has the value defined in the command line args")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.template get<std::string>("platypus") == "llama");
         }
       }
     }
