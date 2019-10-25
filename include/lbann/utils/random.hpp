@@ -247,7 +247,8 @@ void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.
 void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n,
                           DataType center = 0.0f, DataType radius = 1.0f);
 
-bool save_rng_to_checkpoint(persist& p, lbann_comm* comm);
+bool save_rng_to_checkpoint_shared(persist& p, lbann_comm* comm);
+bool save_rng_to_checkpoint_distributed(persist& p, lbann_comm* comm);
 bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm);
 
 template<typename DistType,typename DType=DataType>
