@@ -35,28 +35,21 @@ fi
 if [ "${CLUSTER}" = 'lassen' ]; then
     ALLOCATION_TIME_LIMIT=600
     if [ ${WEEKLY} -ne 0 ]; then
-        timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 16 -W ${ALLOCATION_TIME_LIMIT} ./run.sh --weekly
+        timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 4 -W ${ALLOCATION_TIME_LIMIT} ./run.sh --weekly
     else
         timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 2 -W ${ALLOCATION_TIME_LIMIT} ./run.sh
     fi
 elif [ "${CLUSTER}" = 'ray' ]; then
+    ALLOCATION_TIME_LIMIT=240
     if [ ${WEEKLY} -ne 0 ]; then
-        echo "No ray testing in weekly."
+        timeout -k 5 24h bsub -Is -q pbatch -nnodes 4 -W ${ALLOCATION_TIME_LIMIT} ./run.sh --weekly
     else
-        ALLOCATION_TIME_LIMIT=240
         timeout -k 5 24h bsub -Is -q pbatch -nnodes 2 -W ${ALLOCATION_TIME_LIMIT} ./run.sh
     fi
 elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
     ALLOCATION_TIME_LIMIT=960
     if [ ${WEEKLY} -ne 0 ]; then
-        timeout -k 5 24h salloc -N16 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh --weekly
-        if [ "${CLUSTER}" = 'catalyst' ]; then
-            cd integration_tests
-            python -m pytest -s test_integration_performance.py -k test_integration_performance_full_alexnet_clang6 --weekly --run --junitxml=../full_alexnet_clang6/results.xml
-            python -m pytest -s test_integration_performance.py -k test_integration_performance_full_alexnet_gcc7 --weekly --run --junitxml=../full_alexnet_gcc7/results.xml
-            # python -m pytest -s test_integration_performance.py -k test_integration_performance_full_alexnet_intel19 --weekly --run --junitxml=../full_alexnet_intel19/results.xml
-            cd ..
-        fi
+        timeout -k 5 24h salloc -N4 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh --weekly
     else
         ALLOCATION_TIME_LIMIT=90 # Start with 1.5 hrs; may adjust for CPU clusters
         if [[ $(mjstat -c | awk 'match($1, "pbatch") && NF < 7 { print $5 }') -ne "0" ]];
