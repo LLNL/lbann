@@ -21,7 +21,7 @@ import tools
 # Note: SELU is not differentiable at 0, so we make sure values
 # are away from 0.
 np.random.seed(2019102411)
-_num_samples = 7
+_num_samples = 20
 _sample_size = 5
 _samples = np.random.choice([-1.0, 1.0], size=(_num_samples,_sample_size))
 _samples += np.random.uniform(-0.5,0.5, size=_samples.shape)
