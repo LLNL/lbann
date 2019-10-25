@@ -33,7 +33,7 @@ namespace {
 
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
 /** Minimum output value to avoid denormalized floats */
-constexpr DataType threshold_val = std::sqrt(std::numeric_limits<DataType>::min());
+const DataType threshold_val = std::sqrt(std::numeric_limits<DataType>::min());
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 void fp(lbann_comm& comm,
