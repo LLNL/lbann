@@ -93,7 +93,7 @@ def construct_model(lbann):
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
         y = []
         for j in range(len(slice_points)-1):
             x_slice = x[slice_points[j]:slice_points[j+1],:,:]
@@ -127,7 +127,7 @@ def construct_model(lbann):
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
         y = []
         for j in range(len(slice_points)-1):
             x_slice = x[:,slice_points[j]:slice_points[j+1],:]
@@ -161,7 +161,7 @@ def construct_model(lbann):
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
         y = []
         for j in range(len(slice_points)-1):
             x_slice = x[:,:,slice_points[j]:slice_points[j+1]]

@@ -65,7 +65,7 @@ def construct_model(lbann):
     # Compute expected value with NumPy
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
+        x = get_sample(i).astype(np.float64)
         y = tools.numpy_l2norm2(x)
         vals.append(y)
     val = np.mean(vals)

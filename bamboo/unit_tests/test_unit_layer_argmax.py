@@ -80,7 +80,7 @@ def construct_model(lbann):
     # Get expected metric value from NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
         y = np.argmax(x)
         z = tools.numpy_l2norm2(y)
         vals.append(z)

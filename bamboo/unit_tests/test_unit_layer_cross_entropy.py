@@ -119,15 +119,15 @@ def construct_model(lbann):
     y = lbann.CrossEntropy([x0, x1], data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel output'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
+        x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = numpy_cross_entropy(x0, x1)
+        y = -np.inner(x1, np.log(x0))
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -149,15 +149,15 @@ def construct_model(lbann):
     y = lbann.CrossEntropy([x0, x1], data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel output'))
+    metrics.append(lbann.Metric(z, name='model-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
+        x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = numpy_cross_entropy(x0, x1)
+        y = -np.inner(x1, np.log(x0))
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)

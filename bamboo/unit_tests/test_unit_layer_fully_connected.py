@@ -81,14 +81,14 @@ def construct_model(lbann):
     bias = np.random.normal(size=(_output_size,1)).astype(np.float32)
 
     # With bias
-    x = _samples.transpose()
-    y = np.matmul(linearity.astype(np.float64), x.astype(np.float64)) + bias.astype(np.float64)
+    x = _samples.transpose().astype(np.float64)
+    y = np.matmul(linearity.astype(np.float64), x) + bias.astype(np.float64)
     z = tools.numpy_l2norm2(y) / _num_samples
     val_with_bias = z
 
     # Without bias
-    x = _samples.transpose()
-    y = np.matmul(linearity.astype(np.float64), x.astype(np.float64))
+    x = _samples.transpose().astype(np.float64)
+    y = np.matmul(linearity.astype(np.float64), x)
     z = tools.numpy_l2norm2(y) / _num_samples
     val_without_bias = z
 

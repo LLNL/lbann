@@ -92,13 +92,13 @@ def construct_model(lbann):
                                  data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel output'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
-        y = _scale.astype(np.float64) * x.astype(np.float64) + _bias.astype(np.float64)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
+        y = _scale.astype(np.float64) * x + _bias.astype(np.float64)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -127,13 +127,13 @@ def construct_model(lbann):
                                  data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel output'))
+    metrics.append(lbann.Metric(z, name='model-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
-        y = _scale.astype(np.float64) * x.astype(np.float64) + _bias.astype(np.float64)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
+        y = _scale.astype(np.float64) * x + _bias.astype(np.float64)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)

@@ -96,12 +96,12 @@ def construct_model(lbann):
     y = lbann.Softmax(x, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel output'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
+        x = get_sample(i).astype(np.float64)
         y = numpy_softmax(x)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
@@ -123,12 +123,12 @@ def construct_model(lbann):
     y = lbann.Softmax(x, data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel output'))
+    metrics.append(lbann.Metric(z, name='model-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
+        x = get_sample(i).astype(np.float64)
         y = numpy_softmax(x)
         z = tools.numpy_l2norm2(y)
         vals.append(z)

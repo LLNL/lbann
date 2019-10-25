@@ -92,7 +92,7 @@ def construct_model(lbann):
                                           data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel output'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout'))
 
     # ------------------------------------------
     # Model-parallel layout
@@ -108,7 +108,7 @@ def construct_model(lbann):
                                           data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel output'))
+    metrics.append(lbann.Metric(z, name='model-parallel layout'))
 
     # ------------------------------------------
     # Gradient checking

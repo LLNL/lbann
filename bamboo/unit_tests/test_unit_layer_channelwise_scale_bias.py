@@ -91,8 +91,8 @@ def construct_model(lbann):
     # Get expected metric value from NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
-        y = _scale.astype(np.float64) * x.astype(np.float64) + _bias.astype(np.float64)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
+        y = _scale.astype(np.float64) * x + _bias.astype(np.float64)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)

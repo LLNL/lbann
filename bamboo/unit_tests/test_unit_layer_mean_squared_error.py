@@ -18,15 +18,8 @@ import tools
 # the functions below to ingest data.
 
 # Data
-# Note: The error bounds for gradient checking assume that the fourth
-# derivative of the objective function is ~1. However, given our loss
-# function:
-#   L = ( -xhat * log(x) )^2
-#   L'''' = O( xhat^2 * log(x) / x^4 )
-# We have x >= 0.25 to make sure the fourth derivative does not get
-# too big and mess up the error bounds.
-np.random.seed(201910144)
-_samples = np.random.normal(size=(13,2,9)).astype(np.float32)
+np.random.seed(201910249)
+_samples = np.random.normal(size=(27,2,13)).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):
@@ -97,15 +90,15 @@ def construct_model(lbann):
     y = lbann.MeanSquaredError([x0, x1], data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel output'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
+        x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = tools.numpy_l2norm2(x0-x1) / slice_size
+        y = tools.numpy_l2norm2(x1-x0) / slice_size
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -127,15 +120,15 @@ def construct_model(lbann):
     y = lbann.MeanSquaredError([x0, x1], data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel output'))
+    metrics.append(lbann.Metric(z, name='model-parallel layout, unbiased'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
+        x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = tools.numpy_l2norm2(x0-x1) / slice_size
+        y = tools.numpy_l2norm2(x1-x0) / slice_size
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -207,7 +200,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-# Note: Create test name by removing ".py" from file name
-_test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name):
+for test in tools.create_tests(setup_experiment, __file__):
     globals()[test.__name__] = test
