@@ -17,7 +17,7 @@ import tools
 
 # Data
 np.random.seed(20190708)
-_num_samples = 23
+_num_samples = 29
 _sample_size = 7
 _samples = np.random.normal(size=(_num_samples,_sample_size))
 _samples = _samples.astype(np.float32)
@@ -78,7 +78,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # Construct model
-    mini_batch_size = 5
+    mini_batch_size = num_samples() // 4
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
@@ -127,7 +127,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-# Note: Create test name by removing ".py" from file name
-_test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name):
+for test in tools.create_tests(setup_experiment, __file__):
     globals()[test.__name__] = test

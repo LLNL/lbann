@@ -243,10 +243,14 @@ std::unique_ptr<Layer> construct_layer(
   // Learning layers
   if (proto_layer.has_embedding()) {
     const auto& params = proto_layer.embedding();
+    const size_t num_embeddings = params.num_embeddings();
+    const size_t embedding_dim = params.embedding_dim();
+    const El::Int padding_idx = (params.has_padding_idx() ?
+                                 params.padding_idx().value() : -1);
     if (Layout == data_layout::DATA_PARALLEL
         && Device == El::Device::CPU) {
       return lbann::make_unique<embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>>(
-               comm, params.dictionary_size(), params.embedding_size());
+        comm, num_embeddings, embedding_dim, padding_idx);
     } else {
       LBANN_ERROR("embedding layer is only supported with "
                   "data-parallel data layout and on CPU");

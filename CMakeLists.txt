@@ -539,6 +539,29 @@ endif ()
 
 target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
 
+# Fix the -g issue with Clang on OSX
+if (APPLE)
+  # Remove -g from the options
+  string(REPLACE  "-g" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  string(REPLACE  "-g" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+
+  # Get all the sources and add "-g" to all of them.
+  get_target_property(_LBANN_SRCS lbann SOURCES)
+  set_source_files_properties(${_LBANN_SRCS}
+    PROPERTIES COMPILE_OPTIONS "-g")
+
+  # Cleanup bad files
+  list(APPEND BAD_FILES
+    "${CMAKE_SOURCE_DIR}/src/layers/loss/cross_entropy.cpp")
+  foreach (bad_file IN LISTS BAD_FILES)
+    get_source_file_property(
+      _SRC_COMPILE_OPTS "${bad_file}" COMPILE_OPTIONS)
+    string(REPLACE "-g" "" _SRC_COMPILE_OPTS "${COMPILE_OPTIONS}")
+    set_source_files_properties(
+      "${bad_file}" PROPERTIES COMPILE_OPTIONS "${_SRC_COMPILE_OPTS}")
+  endforeach ()
+endif ()
+
 # Clean things up
 include(LBANNDebugUtilities)
 lbann_remove_default_include_paths_from_all_subtargets(lbann)

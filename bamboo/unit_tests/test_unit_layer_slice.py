@@ -196,7 +196,7 @@ def construct_model(lbann):
     # Construct model
     # --------------------------
 
-    mini_batch_size = 17
+    mini_batch_size = num_samples() // 2
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
@@ -246,7 +246,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-# Note: Create test name by removing ".py" from file name
-_test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name):
+for test in tools.create_tests(setup_experiment, __file__):
     globals()[test.__name__] = test
