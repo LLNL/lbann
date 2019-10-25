@@ -26,13 +26,13 @@ imagenet_fraction = 0.280994  # Train with 360K out of 1.28M samples
 
 # Top-5 classification accuracy (percent)
 expected_train_accuracy_range = (45, 50)
-expected_test_accuracy_range = (40, 50)
+expected_test_accuracy_range = (40, 55)
 
 # Average mini-batch time (in sec) for each LC system
 expected_mini_batch_times = {
     'pascal': 0.25,
     'lassen': 0.10,
-    'ray':    -1,
+    'ray':    0.15,
 }
 
 # ==============================================

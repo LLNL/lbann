@@ -24,7 +24,7 @@ mini_batch_size = 64
 num_nodes = 2
 
 # Classification accuracy (percent)
-expected_train_accuracy_range = (98.5, 99.5)
+expected_train_accuracy_range = (98.75, 99.25)
 expected_test_accuracy_range = (98, 99)
 
 # Average mini-batch time (in sec) for each LC system
@@ -32,8 +32,8 @@ expected_mini_batch_times = {
     'pascal':   0.0040,
     'catalyst': 0.0055,
     'lassen':   0.0020,
-    'ray':      -1,
-    'corona':   -1,
+    'ray':      0.0025,
+    'corona':   0.0075,
 }
 
 # ==============================================
