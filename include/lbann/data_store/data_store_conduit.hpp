@@ -32,6 +32,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/utils/exception.hpp"
 #include "conduit/conduit_node.hpp"
 #include <unordered_map>
 #include <unordered_set>
@@ -74,8 +75,8 @@ class data_store_conduit {
   //! convenience handle
   void set_shuffled_indices(const std::vector<int> *indices);
 
-  /// for use during development and debugging
-  size_t get_num_indices() const;
+  /** @brief Returns the number of samples summed over all ranks */
+  size_t get_num_global_indices() const;
 
   void setup(int mini_batch_size);
 
@@ -91,6 +92,7 @@ class data_store_conduit {
   void set_conduit_node(int data_id, conduit::Node &node, bool already_have = false);
 
   void set_preloaded_conduit_node(int data_id, const conduit::Node &node);
+  void spill_preloaded_conduit_node(int data_id, const conduit::Node &node);
 
   const conduit::Node & get_random_node() const;
 
@@ -132,7 +134,8 @@ class data_store_conduit {
   /// only used for debugging; pass --debug on cmd line to get
   /// each data store to print to a different file. This is made
   /// public so data readers can also print to the file
-  mutable std::ofstream *m_output = nullptr;
+  std::ofstream *m_debug = nullptr;
+  std::ofstream *m_profile = nullptr;
 
   /// for use during development and debugging
   int get_data_size() { return m_data.size(); }
@@ -140,7 +143,18 @@ class data_store_conduit {
   /// made public for debugging during development
   void copy_members(const data_store_conduit& rhs, const std::vector<int>& = std::vector<int>());
 
+  /** @brief Closes then reopens the debug logging file
+   *
+   * Debug logging is enabled on all ranks via the cmd line flag: --data_store_debug
+   */
   void flush_debug_file(); 
+
+
+  /** @brief Closes then reopens the profile logging file
+   *
+   * Profile logging is enabled on P_0 via the cmd line flag: --data_store_profile
+   */
+  void flush_profile_file(); 
 
   /** @brief Writes object's state to file */
   void write_checkpoint(std::string dir_name);
@@ -148,7 +162,11 @@ class data_store_conduit {
   /** @brief Loads object's state from file */
   void load_checkpoint(std::string dir_name, generic_data_reader *reader = nullptr);
 
-protected :
+private :
+
+  /** @brief The number of samples that this processor owns */
+  size_t m_my_num_indices = 0;
+
   /** @brief if true, then we are spilling (offloading) samples to disk */
   bool m_spill = false;
 
@@ -194,7 +212,11 @@ protected :
   size_t m_mem_seg_length = 0;
   std::string m_seg_name;
 
+  const std::string m_debug_filename_base = "debug";
   std::string m_debug_filename;
+
+  const std::string m_profile_filename_base = "data_store_profile";
+  std::string m_profile_filename;
 
   bool m_was_loaded_from_file = false;
   const std::string m_cereal_fn = "data_store_cereal";
@@ -250,7 +272,8 @@ protected :
   int  m_np_in_trainer;
 
   /// maps an index to the processor that owns the associated data
-  mutable std::unordered_map<int, int> m_owner;
+  mutable std::map<int, int> m_owner;
+  //mutable std::unordered_map<int, int> m_owner;
 
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
@@ -368,6 +391,50 @@ protected :
    * needed to reload from checkpoint
    */
   void save_state();
+
+  void open_informational_files();
+
+  //=========================================================================
+  // functions and templates for optional profiling and debug files follow
+  //=========================================================================
+
+  void PROFILE() { 
+    if (!m_profile) {
+      return;
+    }
+    (*m_profile) << std::endl; 
+    flush_profile_file();
+  }
+
+  template <typename T, typename... Types>
+  void PROFILE(T var1, Types... var2) {
+    if (!m_world_master) {
+      return;
+    }
+    if (!m_profile) {
+      return;
+    }
+    (*m_profile) << var1 << " ";
+    PROFILE(var2...) ;
+  }
+
+  void DEBUG() { 
+    if (!m_debug) {
+      return;
+    }
+    (*m_debug) << std::endl; 
+    flush_debug_file();
+  }
+
+  template <typename T, typename... Types>
+  void DEBUG(T var1, Types... var2) {
+    if (!m_debug) {
+      return;
+    }
+    (*m_debug) << var1 << " ";
+    DEBUG(var2...) ;
+  }
+
 };
 
 }  // namespace lbann
