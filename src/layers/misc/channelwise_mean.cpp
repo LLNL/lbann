@@ -29,18 +29,17 @@
 
 namespace lbann {
 
-template <>
-void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
+template <typename TensorDataType>
+void fp_compute_impl(channelwise_mean_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
 
   // Local matrices
-  const auto& local_input =this->get_local_prev_activations();
-  auto& local_output =this->get_local_activations();
+  const auto& local_input = l.get_local_prev_activations();
+  auto& local_output = l.get_local_activations();
 
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
-  const auto& input_dims =this->get_input_dims();
+  const auto& input_dims = l.get_input_dims();
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
                                                input_dims.end(),
@@ -61,18 +60,17 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
 
 }
 
-template <>
-void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(channelwise_mean_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
 
   // Local matrices
-  const auto& local_gradient_wrt_output =this->get_local_prev_error_signals();
-  auto& local_gradient_wrt_input =this->get_local_error_signals();
+  const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = l.get_local_error_signals();
 
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
-  const auto& input_dims =this->get_input_dims();
+  const auto& input_dims = l.get_input_dims();
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
                                                input_dims.end(),
@@ -93,7 +91,17 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
 
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 template class channelwise_mean_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann
