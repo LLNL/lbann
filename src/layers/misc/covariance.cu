@@ -38,7 +38,7 @@ namespace {
  *  where the first row corresponds to 'input0' and the second row to
  *  'input1'.
  */
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void mean_contribution_kernel(El::Int height,
                                          El::Int width,
                                          TensorDataType scale,
@@ -90,7 +90,7 @@ __global__ void mean_contribution_kernel(El::Int height,
 }
 
 /** Compute local contributions to covariances. */
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void covariance_contribution_kernel(El::Int height,
                                                El::Int width,
                                                TensorDataType scale,
@@ -140,6 +140,7 @@ __global__ void covariance_contribution_kernel(El::Int height,
 }
 
 /** Compute gradients w.r.t. inputs. */
+template <typename TensorDataType>
 __global__
 void covariance_backprop_kernel(El::Int height,
                                 El::Int width,
@@ -176,6 +177,7 @@ void covariance_backprop_kernel(El::Int height,
  *  We use a two-pass algorithm since it is more numerically stable
  *  than the naive single-pass algorithm.
  */
+template <typename TensorDataType>
 void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
             const El::AbstractDistMatrix<TensorDataType>& input1,
             El::AbstractDistMatrix<TensorDataType>& output,
@@ -206,7 +208,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     const auto& scale = TensorDataType(1) / height;
-    mean_contribution_kernel<block_size>
+    mean_contribution_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
         local_input0.LockedBuffer(), local_input0.LDim(),
@@ -226,7 +228,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     const auto& scale = TensorDataType(1) / (biased ? height : height - 1);
-    covariance_contribution_kernel<block_size>
+    covariance_contribution_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
         local_input0.LockedBuffer(), local_input0.LDim(),
@@ -242,6 +244,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
 /** GPU backprop implementation.
  *  Means have already been computed in forward prop.
  */
+template <typename TensorDataType>
 void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
             const El::AbstractDistMatrix<TensorDataType>& input1,
             const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
@@ -272,7 +275,7 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
   constexpr El::Int block_size = 256;
   El::Int grid_size = (local_height * local_width + block_size - 1) / block_size;
   if (grid_size > 0) {
-    covariance_backprop_kernel
+    covariance_backprop_kernel<TensorDataType>
       <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
         local_workspace.LockedBuffer(),
@@ -287,57 +290,53 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
 
 } // namespace
 
-template <>
-void covariance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(get_prev_activations(0),
-        this->get_prev_activations(1),
-        this->get_activations(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void fp_compute_impl(covariance_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  fp_gpu<TensorDataType>(l.get_prev_activations(0),
+                         l.get_prev_activations(1),
+                         l.get_activations(),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
-template <>
-void covariance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  bp_gpu(get_prev_activations(0),
-        this->get_prev_activations(1),
-        this->get_prev_error_signals(),
-        this->get_error_signals(0),
-        this->get_error_signals(1),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void bp_compute_impl(covariance_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  bp_gpu<TensorDataType>(l.get_prev_activations(0),
+                         l.get_prev_activations(1),
+                         l.get_prev_error_signals(),
+                         l.get_error_signals(0),
+                         l.get_error_signals(1),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
-template <>
-void covariance_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(get_prev_activations(0),
-        this->get_prev_activations(1),
-        this->get_activations(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void fp_compute_impl(covariance_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  fp_gpu<TensorDataType>(l.get_prev_activations(0),
+                         l.get_prev_activations(1),
+                         l.get_activations(),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
-template <>
-void covariance_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  bp_gpu(get_prev_activations(0),
-        this->get_prev_activations(1),
-        this->get_prev_error_signals(),
-        this->get_error_signals(0),
-        this->get_error_signals(1),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void bp_compute_impl(covariance_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  bp_gpu<TensorDataType>(l.get_prev_activations(0),
+                         l.get_prev_activations(1),
+                         l.get_prev_error_signals(),
+                         l.get_error_signals(0),
+                         l.get_error_signals(1),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
 template class covariance_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class covariance_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

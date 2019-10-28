@@ -91,11 +91,11 @@ protected:
     data_type_layer<TensorDataType>::setup_dims();
     this->set_output_dims({1});
     if (this->get_input_dims(0) != this->get_input_dims(1)) {
-      const auto& parents = get_parent_layers();
+      const auto& parents = this->get_parent_layers();
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has input tensors with different dimensions (";
-      for (int i = 0; i < get_num_parents(); ++i) {
+      for (int i = 0; i < this->get_num_parents(); ++i) {
         const auto& dims = this->get_input_dims(i);
         err << (i > 0 ? ", " : "")
             << "layer \"" << parents[i]->get_name() << "\" outputs ";
@@ -111,6 +111,11 @@ protected:
   void fp_compute() override;
   void bp_compute() override;
 
+  template <typename U>
+  friend void fp_compute_impl(covariance_layer<U, Layout, Device>& l);
+  template <typename U>
+  friend void bp_compute_impl(covariance_layer<U, Layout, Device>& l);
+
 private:
 
   /** Whether to use biased covariance estimator. */
@@ -125,14 +130,14 @@ private:
 
 #ifndef LBANN_COVARIANCE_LAYER_INSTANTIATE
 extern template class covariance_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class covariance_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class covariance_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class covariance_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_COVARIANCE_LAYER_INSTANTIATE
 
