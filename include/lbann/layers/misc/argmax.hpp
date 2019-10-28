@@ -59,9 +59,9 @@ protected:
     // Make sure input tensor is 1-D
     const auto input_dims = this->get_input_dims();
     if (input_dims.size() != 1) {
-      LBANN_ERROR(get_type()," layer \"",get_name(),"\" ",
+      LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
                   "expects a 1-D input tensor, ",
-                  "but parent layer \"",m_parent_layers[0]->get_name(),"\" ",
+                  "but parent layer \"",this->m_parent_layers[0]->get_name(),"\" ",
                   "outputs a ",input_dims.size(),"-D tensor");
     }
 
@@ -73,7 +73,7 @@ protected:
 
 #ifndef LBANN_ARGMAX_LAYER_INSTANTIATE
 extern template class argmax_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #endif // LBANN_ARGMAX_LAYER_INSTANTIATE
 
 } // namespace lbann
