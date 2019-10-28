@@ -38,22 +38,24 @@
 namespace lbann {
 
 /** @brief Interface with data reader. */
-template <typename T_io_buffer,
+template <typename TensorDataType,
+          typename T_io_buffer,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class input_layer : public generic_input_layer {
+class input_layer : public generic_input_layer<TensorDataType> {
+  static_assert(T_layout == data_layout::DATA_PARALLEL,
+                "input layer only supports DATA_PARALLEL data layout");
  public:
 
   /// @todo make the map and vector references
   input_layer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode,
     generic_data_reader *> data_readers, bool data_set_spans_models = true,
     data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION)
-    : generic_input_layer(comm, num_parallel_readers, data_readers, data_set_spans_models, target_mode) {
-    validate_data_layout();
+    : generic_input_layer<TensorDataType>(comm, num_parallel_readers, data_readers, data_set_spans_models, target_mode) {
     // Initialize two buffers
     initialize_io_buffer(comm, std::min(num_parallel_readers, data_type_layer<TensorDataType>::m_comm->get_procs_per_trainer()), data_readers);
     initialize_io_buffer(comm, std::min(num_parallel_readers, data_type_layer<TensorDataType>::m_comm->get_procs_per_trainer()), data_readers);
-    for (auto io_buffer : m_io_buffers) {
+    for (auto io_buffer : this->m_io_buffers) {
       io_buffer->fetch_data_fn = new fetch_data_functor(target_mode);
       io_buffer->update_data_reader_fn = new update_data_reader_functor();
     }
@@ -64,10 +66,8 @@ class input_layer : public generic_input_layer {
     return new input_layer(*this);
   }
 
-  inline void validate_data_layout();
-
   inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-    generic_input_layer::initialize_io_buffer<T_io_buffer>(comm, num_parallel_readers, data_readers);
+    generic_input_layer<TensorDataType>::template initialize_io_buffer<T_io_buffer>(comm, num_parallel_readers, data_readers);
   }
 
   std::string get_type() const override { return "input"; }
@@ -76,40 +76,12 @@ class input_layer : public generic_input_layer {
 
 };
 
-template<>
-inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::CPU>::validate_data_layout() {
-  std::stringstream err;
-  err << __FILE__ << " " << __LINE__ << " :: "
-      << "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout";
-  throw lbann_exception(err.str());
-}
-
-template<>
-inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>::validate_data_layout() {}
-
-#ifdef LBANN_HAS_GPU
-template<>
-inline void input_layer<partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>::validate_data_layout() {
-  std::stringstream err;
-  err << __FILE__ << " " << __LINE__ << " :: "
-      << "input_layer with partitioned_io_buffer does not supports MODEL_PARALLEL data layout";
-  throw lbann_exception(err.str());
-}
-
-template<>
-inline void input_layer<partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>::validate_data_layout() {}
-#endif // LBANN_HAS_GPU
-
 #ifndef LBANN_INPUT_LAYER_INSTANTIATE
 extern template class input_layer<
-  partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class input_layer<
-  partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, partitioned_io_buffer<float>, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class input_layer<
-  partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class input_layer<
-  partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, partitioned_io_buffer<float>, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_INPUT_LAYER_INSTANTIATE
 

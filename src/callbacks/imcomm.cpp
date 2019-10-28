@@ -44,11 +44,20 @@ imcomm::imcomm(imcomm::comm_type ct,
   m_default_ct(ct), m_summarizer(summarizer) {}
 
 imcomm::imcomm(imcomm::comm_type ct,
+<<<<<<< HEAD
                std::unordered_set<weights *> weights_list,
                const std::shared_ptr<lbann_summary>& summarizer) :
   imcomm(ct, summarizer) {
   for (weights *w : weights_list) {
     m_weights_params[w] = ct;
+=======
+    std::unordered_set<weights<DataType> *> weights_list,
+    const std::shared_ptr<lbann_summary>& summarizer) :
+  imcomm(ct, summarizer) {
+  for (weights<DataType> *w : weights_list) {
+    m_weights_params[w] = {};
+    m_weights_params[w].ct = ct;
+>>>>>>> Input layer. Using DataType as global define for weight class
   }
 }
 
@@ -57,7 +66,12 @@ void imcomm::set_weights_comm(weights *w, comm_type ct) {
 }
 
 void imcomm::setup(model *m) {
+<<<<<<< HEAD
   for (weights *w : m->get_weights()) {
+=======
+  for (weights<DataType> *w : m->get_weights()) {
+
+>>>>>>> Input layer. Using DataType as global define for weight class
     // Add weights if not already in list
     if (m_weights_params.find(w) == m_weights_params.end()) {
       m_weights_params[w] = (w->get_optimizer() != nullptr ?
@@ -78,8 +92,8 @@ void imcomm::on_train_begin(model *m) {
   if (comm->get_num_trainers() == 1) {
     return;  // No point with only one model.
   }
-  for (weights *w : m->get_weights()) {
-    auto values = std::unique_ptr<AbsDistMat>{w->get_values().Copy()};
+  for (weights<DataType> *w : m->get_weights()) {
+    auto values = std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>{w->get_values().Copy()};
     comm->intertrainer_broadcast_matrix(*values, 0);
     w->set_values(*values);
   }
@@ -92,16 +106,22 @@ void imcomm::on_backward_prop_end(model *m) {
       c.get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
-  for (weights *w : m->get_weights()) {
+  for (weights<DataType> *w : m->get_weights()) {
     EvalType start_time = get_time();
     auto const& ct = m_weights_params[w];
     if (ct == NONE) {
       continue;
     }
     optimizer *opt = w->get_optimizer();
+<<<<<<< HEAD
     auto gradient = std::unique_ptr<AbsDistMat>{opt->get_gradient().Copy()};
     auto& local_gradients = gradient->Matrix();
     switch (ct) {
+=======
+    auto gradient = std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>{opt->get_gradient().Copy()};
+    Mat* local_gradients = &(static_cast<CPUMat&>(gradient->Matrix()));
+    switch (params.ct) {
+>>>>>>> Input layer. Using DataType as global define for weight class
     case NORMAL:
       comm->intertrainer_sum_matrix(local_gradients);
       break;
@@ -126,7 +146,8 @@ void imcomm::do_summary(model *m, weights *w,
                               im_time, c.get_step());
   // Use the same approximation the comm layer does.
   const CPUMat& local_gradients =
-    static_cast<const CPUMat&>(w->get_optimizer()->get_gradient().LockedMatrix());
+    static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(
+      w->get_optimizer()->get_gradient().LockedMatrix());
   size_t bytes_sent =
     sizeof(DataType) * local_gradients.Height() * local_gradients.Width();
   size_t bytes_received =
@@ -162,7 +183,7 @@ build_imcomm_callback_from_pbuf(
   } else {
     LBANN_ERROR("invalid inter-model communication type (", type_str, ")");
   }
-  std::unordered_set<weights*> selected_weights; /// @todo Initialize weights
+  std::unordered_set<weights<DataType>*> selected_weights; /// @todo Initialize weights
   return make_unique<imcomm>(type, selected_weights, summarizer);
 }
 

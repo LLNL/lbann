@@ -31,12 +31,13 @@
 
 namespace lbann {
 
+template <typename TensorDataType>
 class data_buffer {
  public:
   /** Number of samples in the current mini-batch */
   int m_num_samples_fetched;
   /** Distributed matrix used to stage local data to layer output */
-  std::vector<std::unique_ptr<AbsDistMat>> m_input_buffers;
+  std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_input_buffers;
   std::atomic<bool> m_fetch_data_in_background;
   std::future<void> m_data_fetch_future;
   /// 1-D Matrix of which indices were fetched in this mini-batch
@@ -78,9 +79,10 @@ class data_buffer {
 /**
  * Parallel I/O routines for managing partitioned minibatches
  */
+template <typename TensorDataType>
 class partitioned_io_buffer : public generic_io_buffer {
  public:
-  typedef std::map<execution_mode, data_buffer *> data_buffer_map_t;
+  typedef std::map<execution_mode, data_buffer<TensorDataType> *> data_buffer_map_t;
  public:
   partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
   partitioned_io_buffer(const partitioned_io_buffer& other);
@@ -94,8 +96,8 @@ class partitioned_io_buffer : public generic_io_buffer {
   void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) override;
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
-  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
-  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) override;
+  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, El::AbstractDistMatrix<TensorDataType>& sample, El::AbstractDistMatrix<TensorDataType>& response) override;
+  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, El::AbstractDistMatrix<TensorDataType>& sample) override;
   bool update_data_set(generic_data_reader *data_reader, execution_mode mode) override;
   void set_fetch_data_in_background(bool flag, execution_mode mode) override;
   bool is_data_fetched_in_background(execution_mode mode) override;
@@ -109,9 +111,9 @@ class partitioned_io_buffer : public generic_io_buffer {
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const override;
   static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
 
-  data_buffer *get_data_buffer(const execution_mode mode) const {
-    data_buffer *data_buffer = nullptr;
-    data_buffer_map_t::const_iterator it = m_data_buffers.find(mode);
+  data_buffer<TensorDataType> *get_data_buffer(const execution_mode mode) const {
+    data_buffer<TensorDataType> *data_buffer = nullptr;
+    typename data_buffer_map_t::const_iterator it = m_data_buffers.find(mode);
     if (it != m_data_buffers.end()) data_buffer = it->second;
 
     switch(mode) {

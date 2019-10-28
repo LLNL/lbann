@@ -46,7 +46,8 @@
 namespace lbann {
 
 /** @todo Move functionality to input_layer. */
-class generic_input_layer : public io_layer {
+template <typename TensorDataType>
+class generic_input_layer : public io_layer<TensorDataType> {
  public:
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
@@ -57,7 +58,7 @@ class generic_input_layer : public io_layer {
               std::map<execution_mode, generic_data_reader *> data_readers,
               bool data_set_spans_models = true,
               data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
-    : io_layer(comm, data_set_spans_models, dr_mode),
+    : io_layer<TensorDataType>(comm, data_set_spans_models, dr_mode),
       m_io_buffers(),
       m_training_dataset(),
       m_testing_dataset(),
@@ -66,30 +67,30 @@ class generic_input_layer : public io_layer {
       m_data_set_processed(false) {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
-    m_expected_num_parent_layers = 0;
+    this->m_expected_num_parent_layers = 0;
     if(dr_mode == data_reader_target_mode::NA) {
-      m_expected_num_child_layers = 1;
+      this->m_expected_num_child_layers = 1;
     }else {
       // Input layers output a sample and target, which could be the
       // original value, categorical label, or regression value
-      m_expected_num_child_layers = 2;
+      this->m_expected_num_child_layers = 2;
     }
 
     if(m_data_readers[execution_mode::training] != nullptr) {
-      m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
+      this->m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
     }
 
     if(m_data_readers[execution_mode::validation] != nullptr) {
-      m_validation_dataset.total_samples() = m_data_readers[execution_mode::validation]->get_num_data();
+      this->m_validation_dataset.total_samples() = m_data_readers[execution_mode::validation]->get_num_data();
     }
 
     if(m_data_readers[execution_mode::testing] != nullptr) {
-      m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
+      this->m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
     }
 
-    m_active_buffer[execution_mode::training].store(-1);
-    m_active_buffer[execution_mode::validation].store(-1);
-    m_active_buffer[execution_mode::testing].store(-1);
+    this->m_active_buffer[execution_mode::training].store(-1);
+    this->m_active_buffer[execution_mode::validation].store(-1);
+    this->m_active_buffer[execution_mode::testing].store(-1);
   }
 
   ~generic_input_layer() override {
@@ -116,7 +117,7 @@ class generic_input_layer : public io_layer {
 
   // Input layers copy their datareaders.
   generic_input_layer(const generic_input_layer& other)
-    : io_layer(other),
+    : io_layer<TensorDataType>(other),
       m_io_buffers(other.m_io_buffers),
       m_training_dataset(other.m_training_dataset),
       m_testing_dataset(other.m_testing_dataset),
@@ -131,7 +132,7 @@ class generic_input_layer : public io_layer {
   }
 
   generic_input_layer& operator=(const generic_input_layer& other) {
-    io_layer::operator=(other);
+    io_layer<TensorDataType>::operator=(other);
     for (auto& io_buffer : m_io_buffers) {
       io_buffer = io_buffer->copy();
     }
@@ -152,34 +153,36 @@ class generic_input_layer : public io_layer {
   }
 
   template<typename T_io_buffer>
-  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
+  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
+    m_io_buffers.push_back(new T_io_buffer(comm, num_parallel_readers, data_readers, this->m_expected_num_child_layers));
+  }
 
   std::string get_type() const override { return "generic_input"; }
 
   description get_description() const override {
-    auto desc = io_layer::get_description();
+    auto desc = io_layer<TensorDataType>::get_description();
     desc.add("Buffer", m_io_buffers[0]->get_type());
     return desc;
   }
 
   void setup_dims() override {
-    io_layer::setup_dims();
-    for (int i = 0; i < get_num_children(); ++i) {
+    io_layer<TensorDataType>::setup_dims();
+    for (int i = 0; i < this->get_num_children(); ++i) {
       this->set_output_dims(get_data_dims(i), i);
     }
   }
 
   void setup_data() override {
-    io_layer::setup_data();
+    io_layer<TensorDataType>::setup_data();
 
     // Resize output to maximum mini-batch size
     const auto& max_mb_size = this->m_model->get_max_mini_batch_size();
-    for (int i = 0; i < get_num_children(); ++i) {
+    for (int i = 0; i < this->get_num_children(); ++i) {
       auto& output = this->get_activations(i);
       output.Resize(output.Height(), max_mb_size);
     }
 
-    if(io_layer::m_data_set_spans_models) {
+    if(io_layer<TensorDataType>::m_data_set_spans_models) {
       calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     } else {
       calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
@@ -187,7 +190,7 @@ class generic_input_layer : public io_layer {
 
     for (auto& io_buffer : m_io_buffers) {
       int linearized_target_size;
-      switch(m_data_reader_mode) {
+      switch(this->m_data_reader_mode) {
       case data_reader_target_mode::REGRESSION:
         linearized_target_size = get_linearized_response_size();
         break;
@@ -235,10 +238,10 @@ class generic_input_layer : public io_layer {
     }
 
     // Initialize matrices
-    io_layer::fp_setup_outputs(mini_batch_size);
+    io_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
 
     for (auto& io_buffer : m_io_buffers) {
-      for (int i = 0; i < get_num_children(); ++i) {
+      for (int i = 0; i < this->get_num_children(); ++i) {
         io_buffer->fp_setup_data(mini_batch_size, i);
       }
     }
@@ -296,19 +299,19 @@ class generic_input_layer : public io_layer {
         }
     }
 
-    if(dynamic_cast<partitioned_io_buffer*>(io_buffer) != nullptr) {
+    if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
       // Use the predetermined size of the mini-batch to set the current
       // batch size for the neural network
       num_samples_in_batch = get_current_mini_batch_size();
 
       update_num_samples_processed(num_samples_in_batch);
-      if(m_expected_num_child_layers == 1) {
+      if(this->m_expected_num_child_layers == 1) {
         io_buffer->distribute_from_local_matrix(get_data_reader(), mode, this->get_activations(0));
       }else {
         io_buffer->distribute_from_local_matrix(get_data_reader(), mode, this->get_activations(0), this->get_activations(1));
       }
     }else {
-          LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
+      LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
     }
 
     m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
@@ -325,7 +328,7 @@ class generic_input_layer : public io_layer {
 
   void setup_next_io_buffer(generic_io_buffer* io_buffer) {
     int mini_batch_size = get_current_mini_batch_size();
-    for (int i = 0; i < get_num_children(); ++i) {
+    for (int i = 0; i < this->get_num_children(); ++i) {
       io_buffer->fp_setup_data(mini_batch_size, i);
     }
   }
@@ -535,8 +538,8 @@ class generic_input_layer : public io_layer {
   /**
    * Return the dataset associated with the current execution mode.
    */
-  dataset& select_dataset() override { return get_dataset(m_model->get_execution_context().get_execution_mode()); }
-  const dataset& select_dataset() const override { return get_dataset(m_model->get_execution_context().get_execution_mode()); }
+  dataset& select_dataset() override { return get_dataset(this->m_model->get_execution_context().get_execution_mode()); }
+  const dataset& select_dataset() const override { return get_dataset(this->m_model->get_execution_context().get_execution_mode()); }
 
   /**
    * Return the first dataset with a valid (non-null) datareader.
@@ -595,7 +598,7 @@ class generic_input_layer : public io_layer {
       if(child_index == 0) {
         return dr->get_data_dims();
       }else if(child_index == 1) {
-        switch(m_data_reader_mode) {
+        switch(this->m_data_reader_mode) {
         case data_reader_target_mode::REGRESSION:
           return std::vector<int>(1, dr->get_num_responses());
         case data_reader_target_mode::RECONSTRUCTION:
@@ -649,7 +652,7 @@ class generic_input_layer : public io_layer {
    * Get the linearized size of the labels for the underlying data.
    */
   long get_linearized_label_size() const override {
-    if (is_for_regression()) {
+    if (this->is_for_regression()) {
       return static_cast<long>(1);
     }
     long linearized_label_size = -1;
@@ -678,7 +681,7 @@ class generic_input_layer : public io_layer {
   }
 
   long get_linearized_response_size() const override {
-    if (!is_for_regression()) {
+    if (!this->is_for_regression()) {
       return static_cast<long>(1);
     }
     long linearized_response_size = -1;
@@ -753,7 +756,7 @@ class generic_input_layer : public io_layer {
         (it->second)->save_to_checkpoint_shared(p, execution_mode::validation);
       }
 
-      if (get_comm()->am_trainer_master()) {
+      if (this->get_comm()->am_trainer_master()) {
         write_cereal_archive<const generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
       }
 
@@ -780,16 +783,16 @@ class generic_input_layer : public io_layer {
     }
 
     std::string buf;
-    if (get_comm()->am_trainer_master()) {
+    if (this->get_comm()->am_trainer_master()) {
       read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
       buf = create_cereal_archive_binary_string<generic_input_layer>(*this);
    }
 
     // TODO: this assumes homogeneous processors
     // broadcast state from rank 0
-    get_comm()->trainer_broadcast(0, buf);
+    this->get_comm()->trainer_broadcast(0, buf);
 
-    if (!get_comm()->am_trainer_master()) {
+    if (!this->get_comm()->am_trainer_master()) {
       unpack_cereal_archive_binary_string<generic_input_layer>(*this, buf);
     }
 
@@ -859,10 +862,6 @@ class generic_input_layer : public io_layer {
   bool m_data_set_processed;
   std::mutex dr_mutex;
 };
-
-template<typename T> inline void generic_input_layer::initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-  m_io_buffers.push_back(new T(comm, num_parallel_readers, data_readers, m_expected_num_child_layers));
-}
 
 }  // namespace lbann
 

@@ -68,7 +68,7 @@ class imcomm : public callback_base {
          const std::shared_ptr<lbann_summary>& summarizer = nullptr);
 
   /** Choose comm type ct for weights. */
-  void set_weights_comm(weights *w, comm_type ct);
+  void set_weights_comm(weights<DataType> *w, comm_type ct);
 
   /** Do initialization for this model. */
   void setup(model *m) override;
@@ -88,7 +88,7 @@ class imcomm : public callback_base {
   std::unordered_map<weights *, comm_type> m_weights_params;
 
   /** Summarize relevant statistics. */
-  void do_summary(model *m, weights *w, EvalType im_time);
+  void do_summary(model *m, weights<DataType> *w, EvalType im_time);
 
   /** @brief lbann_summary */
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;

@@ -43,7 +43,7 @@
 namespace lbann {
 
 /** @todo Move functionality to input_layer. */
-templete <typename TensorDataType>
+template <typename TensorDataType>
 class io_layer : public data_type_layer<TensorDataType> {
  protected:
   bool m_data_set_spans_models;
