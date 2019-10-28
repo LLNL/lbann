@@ -176,12 +176,7 @@ private :
   /** During spilling, the conduit file pathnames are written to this file */
   std::ofstream m_metadata;
 
-  /** @brief Base directory for spilling (offloading) conduit nodes 
-   *
-   * The base directory is specified by the user, either as an option
-   * or in the data_reader prototext file; we append
-   * "/conduit_<m_rank_in_world>" to the string.
-   */
+  /** @brief Base directory for spilling (offloading) conduit nodes */
   std::string m_spill_dir_base;
 
   /** @brief Used to form the directory path for spilling conduit nodes */
@@ -193,6 +188,11 @@ private :
    */
   std::string m_cur_spill_dir;
 
+  /** @brief The directory to use for testing checkpointing
+   *
+   * Testing is activated by passing the cmd flag: --data_store_test_checkpoint=<dir>
+   */
+  std::string m_test_dir;
 
   /** @brief Contains the number of conduit nodes that have been written to m_cur_dir
    *
@@ -201,7 +201,7 @@ private :
    */
   int m_num_files_in_cur_spill_dir;
 
-  /** @brief maps data_id to m_cur_spill_dir_int. */
+  /** @brief maps data_id to m_m_cur_spill_dir_integer. */
   std::unordered_map<int, int> m_spilled_nodes;
 
   /// used in set_conduit_node(...)
@@ -222,10 +222,38 @@ private :
   const std::string m_cereal_fn = "data_store_cereal";
 
   /// used in spill_to_file
+  /// (actually, conduit::Node.save() writes both a
+  ///  json file and a binary file, so double this number
   const int m_max_files_per_directory = 500;
 
-  double m_exchange_time = 0;
+  //===========================================================
+  // timers for profiling exchange_data
+  //===========================================================
+
+  // applicable to imagenet; NA for JAG
+  double m_exchange_sample_sizes_time = 0;
+
+  // time from beginning of exchange_data_by_sample to wait_all
+  double m_start_snd_rcv_time = 0;
+
+  // time for wait_all
+  double m_wait_all_time = 0;
+
+  // time to unpack nodes received from other ranks
   double m_rebuild_time = 0;
+
+  // total time for exchange_mini_batch_data
+  double m_exchange_time = 0; 
+
+  // sanity check: 
+  //   m_start_snd_rcv_time + m_wait_all_time + m_rebuild_time
+  // should be only slightly less than m_exchange_time;
+  // Note that, for imagenet, the first call to exchange_data_by_sample
+  // involves additional communication for exchanging sample sizes
+ 
+  //===========================================================
+  // END: timers for profiling exchange_data
+  //===========================================================
 
   int m_cur_epoch = 0;
 
@@ -256,30 +284,32 @@ private :
 
   generic_data_reader *m_reader;
 
-  lbann_comm *m_comm;
+  lbann_comm *m_comm = nullptr;
 
-  /// convenience handle
+  /// convenience handles
   bool m_world_master;
-
-  /// convenience handle
   bool m_trainer_master;
-
-  /// rank in the trainer; convenience handle
   int  m_rank_in_trainer;
-  int  m_rank_in_world;
-
-  /// number of procs in the trainer; convenience handle
+  int  m_rank_in_world = -1; // -1 for debugging 
   int  m_np_in_trainer;
 
-  /// maps an index to the processor that owns the associated data
+  /** @brief Maps an index to the processor that owns the associated data
+   *
+   * Must be mutable since rhs.m_owner may be modified in copy_members,
+   * in which rhs is const.
+   */ 
+  //TODO: make undoredered map; for development want map() for ordered printing
   mutable std::map<int, int> m_owner;
-  //mutable std::unordered_map<int, int> m_owner;
 
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
 
-  /// contains the Nodes that this processor owns;
-  /// maps data_id to conduit::Node
+  /** @brief Contains the conduit nodes that are "owned" by this rank
+   *
+   * Map data_id -> conduit::Node.
+   * Must be mutable since rhs.m_owner may be modified in copy_members,
+   * in which rhs is const.
+   */ 
   mutable std::unordered_map<int, conduit::Node> m_data;
 
   /// Contains the list of data IDs that will be received
@@ -364,16 +394,26 @@ private :
   /// for use in local cache mode
   void fillin_shared_images(const std::vector<char> &images, size_t offset);
 
+  /** @brief For testing during development
+   *
+   * At the beginning of the 2nd epoch, calls write_checkpoint(), 
+   * clears some variables, calls load_checkpoint then continues. 
+   * To activate this test use cmd flag: --data_store_test_checkpoint=
+   */ 
   void test_checkpoint(const std::string&);
 
-  /// called by test_checkpoint
+  /** @brief Called by test_checkpoint */
   void print_variables();
+
+  /** @brief Called by test_checkpoint */
+  void print_partial_owner_map(int n);
 
   std::string get_conduit_dir() const;
   std::string get_cereal_fn() const;
   std::string get_metadata_fn() const;
 
 
+  /** @brief Creates the directory if it does not already exist */
   void make_dir_if_it_doesnt_exist(const std::string &dir); 
 
   /** @brief Writes conduit node to file */
@@ -382,17 +422,31 @@ private :
   /** @brief Loads conduit nodes from file into m_data */
   void load_spilled_conduit_nodes();
 
-  /** @brief Creates directory structure, opens metadata file for output, etc */
-  void setup_spill();
+  /** @brief Creates directory structure, opens metadata file for output, etc
+   *
+   * This method is called for both --data_store_spill and 
+   * --data_store_test_checkpoint 
+   */
+  void setup_spill(const std::string &dir);
 
-  /** @brief Saves this objects state to file
+  /** @brief Saves this object's state to file
    *
    * Here, "state" is all data, except for conduit nodes, that is
    * needed to reload from checkpoint
    */
   void save_state();
 
+  /** @brief Optionally open debug and profiling files
+   *
+   * A debug file is opened for every <rank, data reader role> pair;
+   * files are opened if the cmd flag --data_store_debug is passed.
+   * A profiling file is opened only be <world_master, data reader role>
+   * pairs; files are opened if the cmd flag --data_store_profile is passed.
+   */ 
   void open_informational_files();
+
+  /** @brief Creates a directory for spilling conduit nodes */
+  void open_next_conduit_spill_directory();
 
   //=========================================================================
   // functions and templates for optional profiling and debug files follow
