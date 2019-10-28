@@ -35,6 +35,7 @@ namespace {
  *  We use a two-pass algorithm since it is more numerically stable
  *  than the naive single-pass algorithm.
  */
+template <typename TensorDataType>
 void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
             El::AbstractDistMatrix<TensorDataType>& output,
             El::AbstractDistMatrix<TensorDataType>& means,
@@ -88,6 +89,7 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
 /** CPU backprop implementation.
  *  Means have already been computed in forward prop.
  */
+template <typename TensorDataType>
 void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
             const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
             El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
@@ -126,51 +128,58 @@ void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
 
 } // namespace
 
-template <>
-void variance_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  fp_cpu(get_prev_activations(),
-        this->get_activations(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void fp_compute_impl(variance_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  fp_cpu<TensorDataType>(l.get_prev_activations(),
+                         l.get_activations(),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
-template <>
-void variance_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  bp_cpu(get_prev_activations(),
-        this->get_prev_error_signals(),
-        this->get_error_signals(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void bp_compute_impl(variance_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  bp_cpu<TensorDataType>(l.get_prev_activations(),
+                         l.get_prev_error_signals(),
+                         l.get_error_signals(),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
-template <>
-void variance_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  fp_cpu(get_prev_activations(),
-        this->get_activations(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void fp_compute_impl(variance_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  fp_cpu<TensorDataType>(l.get_prev_activations(),
+                         l.get_activations(),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
-template <>
-void variance_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  bp_cpu(get_prev_activations(),
-        this->get_prev_error_signals(),
-        this->get_error_signals(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void bp_compute_impl(variance_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  bp_cpu<TensorDataType>(l.get_prev_activations(),
+                         l.get_prev_error_signals(),
+                         l.get_error_signals(),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void variance_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void variance_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 
 template class variance_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class variance_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

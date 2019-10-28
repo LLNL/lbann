@@ -89,7 +89,7 @@ protected:
     this->set_output_dims({1});
     if (this->get_input_size() <= 1) {
       std::stringstream err;
-      const auto& parents = get_parent_layers();
+      const auto& parents = this->get_parent_layers();
       const auto& dims = this->get_input_dims();
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "expects an input tensor with at least two entries, "
@@ -105,6 +105,11 @@ protected:
   void fp_compute() override;
   void bp_compute() override;
 
+  template <typename U>
+  friend void fp_compute_impl(variance_layer<U, Layout, Device>& l);
+  template <typename U>
+  friend void bp_compute_impl(variance_layer<U, Layout, Device>& l);
+
 private:
 
   /** Whether to use biased variance estimator. */
@@ -119,14 +124,14 @@ private:
 
 #ifndef LBANN_VARIANCE_LAYER_INSTANTIATE
 extern template class variance_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class variance_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class variance_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class variance_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_VARIANCE_LAYER_INSTANTIATE
 
