@@ -1,23 +1,23 @@
-import collections
+import array
 import os
 import os.path
 import re
 import urllib.request
 
 import numpy as np
-import spacy
-import spacy.lang.en
+import transformers
 
 def strip_boilerplate(raw_file, stripped_file):
-    """Remove header and footer from Project Gutenberg text file
+    """Remove header and footer from Project Gutenberg text file.
 
     See:
 
     https://www.gutenberg.org/wiki/Gutenberg:Project_Gutenberg_Header_How-To
 
     Args:
-        raw_file (str): Text file downloaded from Project Gutenberg
-        stripped_file (str): Path where the stripped file will be saved
+        raw_file (str): Text file downloaded from Project Gutenberg.
+        stripped_file (str): Path where the stripped file will be
+            saved.
 
     """
     with open(raw_file, 'r') as in_file, \
@@ -35,80 +35,65 @@ def strip_boilerplate(raw_file, stripped_file):
                 started = True
 
 
-def tokenize(vocab_size,
-             text_data_file,
-             token_data_file,
-             remove_whitespace=True):
-    """Convert text file to sequence of token indices
+def tokenize(text_file,
+             encoded_file=None,
+             vocab_file=None,
+             ignore_whitespace=True):
+    """Convert text file to sequence of token indices.
 
-    Tokenization is performed with SpaCy and tokens are ordered based
-    on how often they occur in the text. If a token is not one of the
-    `vocab_size`-1 most common, then it is assigned index
-    `vocab_size`-1.
-
-    The token data is saved in an .npz file with two arrays: `data` is
-    a sequence of token indices and `vocab` is a list of token
-    strings.
+    Tokenization is performed with BERT tokenizer.
 
     Args:
-        vocab_size (int): Number of tokens in vocabulary
-        text_data_file (str): Text file
-        token_data_file (str): Path where the tokenized data will be
-            saved as an .npz file
-        remove_whitespace (bool): Whether to discard tokens that are
-            purely made of whitespace
+        text_file (str): Text file to be encoded.
+        encoded_file (str, optional): If provided, path where the
+           encoded data will be saved as an .npz file. The sequence of
+           token indices is saved as 'encoded_data' and the vocabulary
+           size is saved as 'vocab_size'.
+        vocab_file (str, optional): If provided, path where the
+            vocabulary will be saved as a text file.
+        ignore_whitespace (bool, optional): Whether to ignore text
+            lines that are purely made of whitespace (default: True).
 
     Returns:
-        numpy.array of int: Sequence of token indices
-        list of str: Tokens
+        array of int: Sequence of token indices.
+        int: Number of tokens in vocabulary.
 
     """
 
-    # Tokenize text file with SpaCy
-    nlp = spacy.lang.en.English()
-    text_data = []
-    token_counts = collections.Counter()
-    with open(text_data_file) as f:
+    # Get BERT tokenizer from Hugging Face
+    tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased')
+    vocab_size = tokenizer.vocab_size
+    if vocab_file:
+        tokenizer.save_vocabulary(vocab_file)
+
+    # Apply tokenizer to text file
+    encoded_data = array.array('l')
+    with open(text_file) as f:
         for line in f:
-            for _token in nlp(line):
-                token = str(_token)
-                if remove_whitespace and token.isspace():
-                    continue
-                text_data.append(token.lower())
-                token_counts[token] += 1
-
-    # Find the most common tokens
-    token_strings = []
-    token_indices = {}
-    for index, (token, _) in enumerate(token_counts.most_common(vocab_size-1)):
-        token_strings.append(token)
-        token_indices[token] = index
-    token_strings.append('<UNKNOWN>')
-
-    # Convert text to token indices
-    token_data = np.zeros(len(text_data), dtype=int)
-    for i, token in enumerate(text_data):
-        token_data[i] = token_indices.get(token, vocab_size-1)
-
-    # Save to file and return tokenized data
-    np.savez_compressed(token_data_file, data=token_data, vocab=token_strings)
-    return token_data, token_strings
+            if ignore_whitespace and line.isspace():
+                continue
+            encoded_data.extend(tokenizer.encode(line))
+    if encoded_file:
+        np.savez_compressed(encoded_file,
+                            encoded_data=encoded_data,
+                            vocab_size=vocab_size)
+    return encoded_data, vocab_size
 
 
 class GutenbergDataset():
-    """Tokenized text dataset from Project Gutenberg
+    """Tokenized text dataset from Project Gutenberg.
 
     Args:
         data_dir (str): Directory for downloading data and
-            intermediate
-        vocab_size (int): Number of tokens in vocabulary
-        data_url (str): URL to Project Gutenberg text file
+            intermediate.
+        data_url (str): URL to Project Gutenberg text file.
+
+    Attributes:
+        token_data (array of int): Sequence of token indices.
+        vocab_size (int): Number of tokens in vocabulary.
 
     """
-    def __init__(self,
-                 data_dir,
-                 vocab_size,
-                 data_url):
+    def __init__(self, data_dir, data_url):
 
         # Create data directory if needed
         if not os.path.isdir(data_dir):
@@ -121,8 +106,8 @@ class GutenbergDataset():
         token_data_file = os.path.join(data_dir, 'token_data.npz')
         if os.path.isfile(token_data_file):
             data = np.load(token_data_file)
-            token_data = data['data']
-            vocab = data['vocab']
+            token_data = data['encoded_data']
+            vocab_size = data['vocab_size']
         else:
             text_data_file = os.path.join(data_dir, 'text_data.txt')
             if not os.path.isfile(text_data_file):
@@ -131,10 +116,18 @@ class GutenbergDataset():
                     urllib.request.urlretrieve(data_url,
                                                filename=raw_file)
                 strip_boilerplate(raw_file, text_data_file)
-            token_data, vocab = tokenize(vocab_size,
-                                         text_data_file,
-                                         token_data_file)
+            vocab_file = os.path.join(data_dir, 'vocab.txt')
+            token_data, vocab_size = tokenize(text_data_file,
+                                              token_data_file,
+                                              vocab_file)
 
         # Class members
         self.token_data = token_data
-        self.vocab = vocab
+        self.vocab_size = vocab_size
+
+
+    def __iter__(self):
+        return self.token_data.__iter__()
+
+    def __getitem__(self, key):
+        return self.token_data.__getitem__(key)
