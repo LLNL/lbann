@@ -38,6 +38,7 @@ namespace {
  *
  *  Grid dimensions: (width / bsize) x 1 x 1
  */
+template <typename TensorDataType>
 __global__ void fp_kernel(size_t height,
                           size_t width,
                           const TensorDataType* __restrict__ indices,
@@ -57,13 +58,12 @@ __global__ void fp_kernel(size_t height,
 
 } // namespace <anon>
 
-template <>
-void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
+template <typename TensorDataType>
+void fp_compute_impl(one_hot_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(get_local_activations());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
+  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
 
   // Populate one-hot vectors
   El::Zero(local_output);
@@ -72,7 +72,7 @@ void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
     const size_t local_width = local_output.Width();
     constexpr size_t block_size = 64;
     const size_t grid_size = (local_width + block_size - 1) / block_size;
-    fp_kernel
+    fp_kernel<TensorDataType>
       <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
         local_height,
         local_width,
@@ -85,6 +85,6 @@ void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 }
 
 template class one_hot_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

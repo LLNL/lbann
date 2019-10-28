@@ -65,7 +65,7 @@ protected:
       for (size_t i = 0; i < input_dims.size(); ++i) {
         dim_ss << (i > 0 ? "x" : "") << input_dims[i];
       }
-      LBANN_ERROR(get_type()," layer \"",get_name(),"\" ",
+      LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
                   "received an input tensor with invalid dimensions ",
                   "(expected 1, got ",dim_ss.str(),")");
     }
@@ -78,10 +78,10 @@ protected:
 
 #ifndef LBANN_ONE_HOT_LAYER_INSTANTIATE
 extern template class one_hot_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class one_hot_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_ONE_HOT_LAYER_INSTANTIATE
 
