@@ -31,7 +31,7 @@ namespace lbann {
 
 namespace {
 
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void variance_contribution_kernel(El::Int height,
                                              El::Int width,
                                              TensorDataType scale,
@@ -76,6 +76,7 @@ __global__ void variance_contribution_kernel(El::Int height,
 
 }
 
+template <typename TensorDataType>
 __global__
 void variance_backprop_kernel(El::Int height,
                               El::Int width,
@@ -104,6 +105,7 @@ void variance_backprop_kernel(El::Int height,
  *  We use a two-pass algorithm since it is more numerically stable
  *  than the naive single-pass algorithm.
  */
+template <typename TensorDataType>
 void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
             El::AbstractDistMatrix<TensorDataType>& output,
             El::AbstractDistMatrix<TensorDataType>& means,
@@ -147,7 +149,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     const auto& scale = TensorDataType(1) / (biased ? height : height - 1);
-    variance_contribution_kernel<block_size>
+    variance_contribution_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -162,6 +164,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
 /** GPU backprop implementation.
  *  Means have already been computed in forward prop.
  */
+template <typename TensorDataType>
 void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
             const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
             El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
@@ -188,7 +191,7 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
   constexpr El::Int block_size = 256;
   El::Int grid_size = (local_height * local_width + block_size - 1) / block_size;
   if (grid_size > 0) {
-    variance_backprop_kernel
+    variance_backprop_kernel<TensorDataType>
       <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
         local_workspace.LockedBuffer(),
@@ -201,51 +204,47 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
 
 } // namespace
 
-template <>
-void variance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(get_prev_activations(),
-        this->get_activations(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void fp_compute_impl(variance_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  fp_gpu<TensorDataType>(l.get_prev_activations(),
+                         l.get_activations(),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
-template <>
-void variance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  bp_gpu(get_prev_activations(),
-        this->get_prev_error_signals(),
-        this->get_error_signals(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void bp_compute_impl(variance_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  bp_gpu<TensorDataType>(l.get_prev_activations(),
+                         l.get_prev_error_signals(),
+                         l.get_error_signals(),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
-template <>
-void variance_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(get_prev_activations(),
-        this->get_activations(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void fp_compute_impl(variance_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  fp_gpu<TensorDataType>(l.get_prev_activations(),
+                         l.get_activations(),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
-template <>
-void variance_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  bp_gpu(get_prev_activations(),
-        this->get_prev_error_signals(),
-        this->get_error_signals(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType>
+void bp_compute_impl(variance_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  bp_gpu<TensorDataType>(l.get_prev_activations(),
+                         l.get_prev_error_signals(),
+                         l.get_error_signals(),
+                         *l.m_means,
+                         *l.m_workspace,
+                         l.m_biased);
 }
 
 template class variance_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class variance_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

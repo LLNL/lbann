@@ -79,6 +79,7 @@ __global__ void mean_kernel(El::Int num_channels,
 
 }
 
+template <typename TensorDataType>
 __global__ void backprop_kernel(El::Int num_channels,
                                 El::Int channel_size,
                                 El::Int width,
@@ -170,7 +171,7 @@ void bp_compute_impl(channelwise_mean_layer<TensorDataType, data_layout::DATA_PA
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_width;
-    backprop_kernel
+    backprop_kernel<TensorDataType>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         num_channels, channel_size, local_width,
         local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
