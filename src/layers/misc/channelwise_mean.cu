@@ -31,7 +31,7 @@ namespace lbann {
 
 namespace {
 
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void mean_kernel(El::Int num_channels,
                             El::Int channel_size,
                             El::Int width,
@@ -111,18 +111,17 @@ __global__ void backprop_kernel(El::Int num_channels,
 
 } // namespace
 
-template <>
-void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
+template <typename TensorDataType>
+void fp_compute_impl(channelwise_mean_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
   // Local matrices
-  const auto& local_input =this->get_local_prev_activations();
-  auto& local_output =this->get_local_activations();
+  const auto& local_input = l.get_local_prev_activations();
+  auto& local_output = l.get_local_activations();
 
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
-  const auto& input_dims =this->get_input_dims();
+  const auto& input_dims = l.get_input_dims();
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
                                                input_dims.end(),
@@ -138,7 +137,7 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
     grid_dims.z = local_width;
-    mean_kernel<block_size>
+    mean_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         num_channels, channel_size, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -147,17 +146,16 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 
 }
 
-template <>
-void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(channelwise_mean_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
   // Local matrices
-  const auto& local_gradient_wrt_output =this->get_local_prev_error_signals();
-  auto& local_gradient_wrt_input =this->get_local_error_signals();
+  const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = l.get_local_error_signals();
 
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
-  const auto& input_dims =this->get_input_dims();
+  const auto& input_dims = l.get_input_dims();
   const El::Int num_channels = input_dims[0];
   const El::Int channel_size = std::accumulate(input_dims.begin() + 1,
                                                input_dims.end(),
@@ -182,6 +180,6 @@ void channelwise_mean_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 }
 
 template class channelwise_mean_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
