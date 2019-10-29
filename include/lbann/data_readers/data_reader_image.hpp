@@ -94,7 +94,7 @@ class image_data_reader : public generic_data_reader {
     return m_image_list.at(idx);
   }
 
-  void preload_data_store() override;
+  void do_preload_data_store() override;
 
  protected:
    void copy_members(const image_data_reader &rhs);

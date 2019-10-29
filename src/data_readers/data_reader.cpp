@@ -685,7 +685,7 @@ double generic_data_reader::get_use_percent() const {
   return m_use_percent;
 }
 
-void generic_data_reader::instantiate_data_store(const std::vector<int>& local_list_sizes) {
+void generic_data_reader::instantiate_data_store() {
   double tm1 = get_time();
   options *opts = options::get();
   if (! (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill"))) {
@@ -715,9 +715,21 @@ void generic_data_reader::instantiate_data_store(const std::vector<int>& local_l
   m_data_store->set_shuffled_indices(&m_shuffled_indices);
 
   if (opts->get_bool("preload_data_store") && !opts->get_bool("data_store_cache")) {
-    if (local_list_sizes.size() != 0) {
-      m_data_store->build_preloaded_owner_map(local_list_sizes);
+    std::vector<int> local_list_sizes;
+    int np = m_comm->get_procs_per_trainer();
+    int base_files_per_rank = m_shuffled_indices.size() / np;
+    int extra = m_shuffled_indices.size() - (base_files_per_rank*np);
+    if (extra > np) {
+      LBANN_ERROR("extra > np");
     }
+    local_list_sizes.resize(np, 0);
+    for (int j=0; j<np; j++) {
+      local_list_sizes[j] = base_files_per_rank;
+      if (j < extra) {
+        local_list_sizes[j] += 1;
+      }
+    }
+    m_data_store->build_preloaded_owner_map(local_list_sizes);
   }
 
   if (is_master()) {
@@ -736,7 +748,7 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
       std::cerr << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
     }
     double tm2 = get_time();
-    preload_data_store();
+    do_preload_data_store();
     m_data_store->set_is_preloaded();
     if(is_master()) {
      std::cout << "Preload complete; time: " << get_time() - tm2 << std::endl;
@@ -816,5 +828,11 @@ void generic_data_reader::set_role(std::string role) {
     }
   }
 }
+
+void generic_data_reader::preload_data_store() {
+  do_preload_data_store();
+  m_data_store->set_is_preloaded();
+}
+
 
 }  // namespace lbann
