@@ -53,20 +53,22 @@ class hdf5_reader : public generic_data_reader {
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+  void gather_responses(float *responses);
   /// Whether to fetch a label from the last column.
   bool m_has_labels = false;
   /// Whether to fetch a response from the last column.
   bool m_has_responses = true;
   int m_image_depth=0;
   int m_num_features;
-  int m_num_response_features = 4;
-  float m_all_responses[4];
+  static constexpr int m_num_response_features = 4;
+  float m_all_responses[m_num_response_features];
   DataType m_scaling_factor_int16 = 1.0;
   std::vector<std::string> m_file_paths;
   MPI_Comm m_comm;
   std::vector<int> m_data_dims;
   hid_t m_fapl;
   hid_t m_dxpl;
+  MPI_Comm m_response_gather_comm;
  private:
   static const std::string HDF5_KEY_DATA, HDF5_KEY_LABELS, HDF5_KEY_RESPONSES;
 };
