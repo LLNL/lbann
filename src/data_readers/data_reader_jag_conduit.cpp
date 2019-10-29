@@ -138,7 +138,7 @@ data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
   set_defaults();
 }
 
-void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
+void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_independent = rhs.m_independent;
   m_independent_groups = rhs.m_independent_groups;
   m_dependent = rhs.m_dependent;
@@ -185,11 +185,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
   m_list_per_model = rhs.m_list_per_model;
 
   if(rhs.m_data_store != nullptr) {
-    if(ds_sample_move_list.size() == 0) {
-      m_data_store = new data_store_conduit(rhs.get_data_store());
-    } else {
-      m_data_store = new data_store_conduit(rhs.get_data_store(), ds_sample_move_list);
-    }
+    m_data_store = new data_store_conduit(rhs.get_data_store());
     m_data_store->set_data_reader_ptr(this);
   }
 }
@@ -197,11 +193,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
   : generic_data_reader(rhs) {
   copy_members(rhs);
-}
-
-data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list)
-  : generic_data_reader(rhs) {
-  copy_members(rhs, ds_sample_move_list);
 }
 
 data_reader_jag_conduit& data_reader_jag_conduit::operator=(const data_reader_jag_conduit& rhs) {
