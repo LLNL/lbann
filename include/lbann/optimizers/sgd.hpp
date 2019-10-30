@@ -42,8 +42,8 @@ public:
   /** @name Life cycle functions */
   ///@{
 
-  sgd(DataType learning_rate,
-      DataType momentum = 0,
+  sgd(TensorDataType learning_rate,
+      TensorDataType momentum = 0,
       bool nesterov = false);
   sgd(const sgd& other);
   sgd& operator=(const sgd& other);
@@ -68,11 +68,11 @@ public:
   /** @brief Decay rate for gradient accumulation.
    *  @details A momentum of zero corresponds to vanilla SGD.
    */
-  DataType get_momentum() const noexcept { return m_momentum; }
+  TensorDataType get_momentum() const noexcept { return m_momentum; }
   /** @brief Decay rate for gradient accumulation.
    *  @details A momentum of zero corresponds to vanilla SGD.
    */
-  void set_momentum(DataType momentum) { m_momentum = momentum; }
+  void set_momentum(TensorDataType momentum) { m_momentum = momentum; }
 
   /** Whether Nesterov acceleration is applied. */
   bool using_nesterov() const noexcept { return m_nesterov; }
@@ -80,9 +80,9 @@ public:
   void set_nesterov(bool nesterov) { m_nesterov = nesterov; }
 
   /** Accumulated gradients for momentum optimizer. */
-  const AbsDistMat& get_velocity() const;
+  const El::AbstractDistMatrix<TensorDataType>& get_velocity() const;
   /** Accumulated gradients for momentum optimizer. */
-  AbsDistMat& get_velocity();
+  El::AbstractDistMatrix<TensorDataType>& get_velocity();
 
   ///@}
 
@@ -96,33 +96,33 @@ public:
 protected:
 
   /** Computation for an optimization step. */
-  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+  void step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) override;
 
 private:
 
   /** @brief Decay rate for gradient accumulation.
    *  @details A momentum of zero corresponds to vanilla SGD.
    */
-  DataType m_momentum;
+  TensorDataType m_momentum;
   /** Whether Nesterov acceleration is used. */
   bool m_nesterov;
   /** @brief Accumulated gradients.
    *  @details Not used for vanilla SGD.
    */
-  std::unique_ptr<AbsDistMat> m_velocity;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_velocity;
 
   /** CPU implementation of momentum or Nesterov step. */
-  void momentum_step_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void momentum_step_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
 #ifdef LBANN_HAS_CUDA
   /** GPU implementation of momentum or Nesterov step. */
-  void momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void momentum_step_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
 #endif // LBANN_HAS_CUDA
 
   /** @name Checkpointing */
   ///@{
 
   struct packing_header {
-    DataType momentum;
+    TensorDataType momentum;
   };
 
   bool pack_scalars(persist& p) {

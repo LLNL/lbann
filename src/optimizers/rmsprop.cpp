@@ -32,9 +32,9 @@
 
 namespace lbann {
 
-rmsprop::rmsprop(DataType learning_rate,
-                 DataType decay_rate,
-                 DataType eps)
+rmsprop::rmsprop(TensorDataType learning_rate,
+                 TensorDataType decay_rate,
+                 TensorDataType eps)
   : optimizer(learning_rate),
     m_decay_rate(decay_rate),
     m_eps(eps) {}
@@ -63,11 +63,11 @@ description rmsprop::get_description() const {
 void rmsprop::setup(weights* w) {
   optimizer::setup(w);
   const auto& gradient = this->get_gradient();
-  m_cache.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  m_cache.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   El::Zeros(*m_cache, gradient.Height(), gradient.Width());
 }
 
-void rmsprop::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
+void rmsprop::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
 #ifdef LBANN_HAS_CUDA
@@ -81,7 +81,7 @@ void rmsprop::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   }
 }
 
-void rmsprop::step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
+void rmsprop::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
@@ -101,7 +101,7 @@ void rmsprop::step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
       auto& x = values_buffer[row+col*values_ldim];
       const auto& g = gradient_buffer[row+col*gradient_ldim];
       auto& c = cache_buffer[row+col*cache_ldim];
-      c = m_decay_rate * c + (DataType(1) - m_decay_rate) * g * g;
+      c = m_decay_rate * c + (TensorDataType(1) - m_decay_rate) * g * g;
       x -= learning_rate * g / (std::sqrt(c) + m_eps);
     }
   }

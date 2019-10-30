@@ -32,8 +32,8 @@
 
 namespace lbann {
 
-sgd::sgd(DataType learning_rate,
-         DataType momentum,
+sgd::sgd(TensorDataType learning_rate,
+         TensorDataType momentum,
          bool nesterov)
   : optimizer(learning_rate),
     m_momentum(momentum),
@@ -61,27 +61,27 @@ description sgd::get_description() const {
   return desc;
 }
 
-const AbsDistMat& sgd::get_velocity() const {
+const El::AbstractDistMatrix<TensorDataType>& sgd::get_velocity() const {
   if (m_velocity == nullptr) {
     LBANN_ERROR(get_type() + " optimizer "
                 + "attempted to access velocity before it was setup");
   }
   return *m_velocity;
 }
-AbsDistMat& sgd::get_velocity() {
+El::AbstractDistMatrix<TensorDataType>& sgd::get_velocity() {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<AbsDistMat&>(static_cast<const sgd&>(*this).get_velocity());
+  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const sgd&>(*this).get_velocity());
 }
 
 void sgd::setup(weights* w) {
   optimizer::setup(w);
   const auto& gradient = this->get_gradient();
-  m_velocity.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  m_velocity.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   El::Zeros(*m_velocity, gradient.Height(), gradient.Width());
 }
 
-void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
-  if (m_momentum == DataType(0)) {
+void sgd::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+  if (m_momentum == TensorDataType(0)) {
     // Vanilla SGD
     El::Axpy(-this->get_learning_rate(), gradient, values);
   } else {
@@ -100,7 +100,7 @@ void sgd::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   }
 }
 
-void sgd::momentum_step_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
+void sgd::momentum_step_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
 
   // Get local matrix data
   const auto& learning_rate = this->get_learning_rate();

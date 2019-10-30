@@ -121,7 +121,7 @@ public:
    *                            gradient is accessed.
    */
   void add_to_gradient(const El::AbstractDistMatrix<TensorDataType>& gradient,
-                       DataType scale = DataType(1),
+                       TensorDataType scale = TensorDataType(1),
                        bool allreduce_needed = false);
   /** @brief Zero out the objective function gradient w.r.t. the weights. */
   void clear_gradient();

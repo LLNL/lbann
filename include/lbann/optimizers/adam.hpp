@@ -47,10 +47,10 @@ public:
   /** @name Life cycle functions */
   ///@{
 
-  adam(DataType learning_rate,
-       DataType beta1 = 0.9,
-       DataType beta2 = 0.99,
-       DataType eps = 1e-8);
+  adam(TensorDataType learning_rate,
+       TensorDataType beta1 = 0.9,
+       TensorDataType beta2 = 0.99,
+       TensorDataType eps = 1e-8);
   adam(const adam& other);
   adam& operator=(const adam& other);
   ~adam() = default;
@@ -72,43 +72,43 @@ public:
   ///@{
 
   /** Update factor for first moment estimate. */
-  DataType get_beta1() const noexcept { return m_beta1; }
+  TensorDataType get_beta1() const noexcept { return m_beta1; }
   /** Update factor for first moment estimate. */
-  void set_beta1(DataType beta1) { m_beta1 = beta1; }
+  void set_beta1(TensorDataType beta1) { m_beta1 = beta1; }
   /** Update factor for second moment estimate. */
-  DataType get_beta2() const noexcept { return m_beta2; }
+  TensorDataType get_beta2() const noexcept { return m_beta2; }
   /** Update factor for second moment estimate. */
-  void set_beta2(DataType beta2) { m_beta2 = beta2; }
+  void set_beta2(TensorDataType beta2) { m_beta2 = beta2; }
   /** Small factor to avoid division by zero. */
-  DataType get_eps() const noexcept { return m_eps; }
+  TensorDataType get_eps() const noexcept { return m_eps; }
   /** Small factor to avoid division by zero. */
-  void set_eps(DataType eps) { m_eps = eps; }
+  void set_eps(TensorDataType eps) { m_eps = eps; }
 
   /** First moment estimates. */
-  const AbsDistMat& get_moment1() const;
+  const El::AbstractDistMatrix<TensorDataType>& get_moment1() const;
   /** First moment estimates. */
-  AbsDistMat& get_moment1();
+  El::AbstractDistMatrix<TensorDataType>& get_moment1();
   /** Second moment estimates. */
-  const AbsDistMat& get_moment2() const;
+  const El::AbstractDistMatrix<TensorDataType>& get_moment2() const;
   /** Second moment estimates. */
-  AbsDistMat& get_moment2();
+  El::AbstractDistMatrix<TensorDataType>& get_moment2();
 
   /** beta1 ^ iteration.
    *  @todo This probably shouldn't be exposed.
    */
-  DataType get_current_beta1() const noexcept { return m_current_beta1; }
+  TensorDataType get_current_beta1() const noexcept { return m_current_beta1; }
   /** beta1 ^ iteration.
    *  @todo This probably shouldn't be exposed.
    */
-  void set_current_beta1(DataType current_beta1) { m_current_beta1 = current_beta1; }
+  void set_current_beta1(TensorDataType current_beta1) { m_current_beta1 = current_beta1; }
   /** beta2 ^ iteration.
    *  @todo This probably shouldn't be exposed.
    */
-  DataType get_current_beta2() const noexcept { return m_current_beta2; }
+  TensorDataType get_current_beta2() const noexcept { return m_current_beta2; }
   /** beta2 ^ iteration.
    *  @todo This probably shouldn't be exposed.
    */
-  void set_current_beta2(DataType current_beta2) { m_current_beta2 = current_beta2; }
+  void set_current_beta2(TensorDataType current_beta2) { m_current_beta2 = current_beta2; }
 
   ///@}
 
@@ -122,34 +122,34 @@ public:
 protected:
 
   /** Computation for an optimization step. */
-  void step_compute(AbsDistMat& values,
-                    const AbsDistMat& gradient) override;
+  void step_compute(El::AbstractDistMatrix<TensorDataType>& values,
+                    const El::AbstractDistMatrix<TensorDataType>& gradient) override;
 
 private:
 
   /** Update factor for first moment estimate. */
-  DataType m_beta1;
+  TensorDataType m_beta1;
   /** Update factor for second moment estimate. */
-  DataType m_beta2;
+  TensorDataType m_beta2;
   /** Small factor to avoid division by zero. */
-  DataType m_eps;
+  TensorDataType m_eps;
   /** beta1 ^ iteration. */
-  DataType m_current_beta1 = 1;
+  TensorDataType m_current_beta1 = 1;
   /** beta2 ^ iteration. */
-  DataType m_current_beta2 = 1;
+  TensorDataType m_current_beta2 = 1;
   /** First moment estimates. */
-  std::unique_ptr<AbsDistMat> m_moment1;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_moment1;
   /** Second moment estimates. */
-  std::unique_ptr<AbsDistMat> m_moment2;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_moment2;
 
   /** Hyperparameter exploration. */
   friend class callback::perturb_adam;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
 #ifdef LBANN_HAS_CUDA
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
 #endif // LBANN_HAS_CUDA
 
   /** @name Checkpointing */
@@ -157,11 +157,11 @@ private:
 
   /* struct used to serialize mode fields in file and MPI transfer */
   struct packing_header {
-    DataType beta1;
-    DataType beta2;
-    DataType eps;
-    DataType current_beta1;
-    DataType current_beta2;
+    TensorDataType beta1;
+    TensorDataType beta2;
+    TensorDataType eps;
+    TensorDataType current_beta1;
+    TensorDataType current_beta2;
   };
 
   bool pack_scalars(persist& p) {

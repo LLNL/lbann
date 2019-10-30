@@ -32,10 +32,10 @@
 
 namespace lbann {
 
-adam::adam(DataType learning_rate,
-           DataType beta1,
-           DataType beta2,
-           DataType eps)
+adam::adam(TensorDataType learning_rate,
+           TensorDataType beta1,
+           TensorDataType beta2,
+           TensorDataType eps)
   : optimizer(learning_rate),
     m_beta1(beta1), m_beta2(beta2), m_eps(eps) {}
 
@@ -71,39 +71,39 @@ description adam::get_description() const {
   return desc;
 }
 
-const AbsDistMat& adam::get_moment1() const {
+const El::AbstractDistMatrix<TensorDataType>& adam::get_moment1() const {
   if (m_moment1 == nullptr) {
     LBANN_ERROR(this->get_type() + " optimizer "
                 + "attempted to access moment1 before it was setup");
   }
   return *m_moment1;
 }
-AbsDistMat& adam::get_moment1() {
+El::AbstractDistMatrix<TensorDataType>& adam::get_moment1() {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<AbsDistMat&>(static_cast<const adam&>(*this).get_moment1());
+  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const adam&>(*this).get_moment1());
 }
-const AbsDistMat& adam::get_moment2() const {
+const El::AbstractDistMatrix<TensorDataType>& adam::get_moment2() const {
   if (m_moment2 == nullptr) {
     LBANN_ERROR(this->get_type() + " optimizer "
                 + "attempted to access moment2 before it was setup");
   }
   return *m_moment2;
 }
-AbsDistMat& adam::get_moment2() {
+El::AbstractDistMatrix<TensorDataType>& adam::get_moment2() {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<AbsDistMat&>(static_cast<const adam&>(*this).get_moment2());
+  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const adam&>(*this).get_moment2());
 }
 
 void adam::setup(weights* w) {
   optimizer::setup(w);
   const auto& gradient = this->get_gradient();
-  m_moment1.reset(AbsDistMat::Instantiate(gradient.DistData()));
-  m_moment2.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  m_moment1.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
+  m_moment2.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   El::Zeros(*m_moment1, gradient.Height(), gradient.Width());
   El::Zeros(*m_moment2, gradient.Height(), gradient.Width());
 }
 
-void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
+void adam::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
 #ifdef LBANN_HAS_CUDA
@@ -117,13 +117,13 @@ void adam::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   }
 }
 
-void adam::step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
-  constexpr DataType one = 1;
+void adam::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+  constexpr TensorDataType one = 1;
 
   // Precompute the bias correction and learning rate.
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
-  const DataType correction = this->get_learning_rate() *
+  const TensorDataType correction = this->get_learning_rate() *
                               (std::sqrt(one - m_current_beta2)
                                / (one - m_current_beta1));
 

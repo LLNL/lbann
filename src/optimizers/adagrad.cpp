@@ -32,7 +32,7 @@
 
 namespace lbann {
 
-adagrad::adagrad(DataType learning_rate, DataType eps)
+adagrad::adagrad(TensorDataType learning_rate, TensorDataType eps)
   : optimizer(learning_rate), m_eps(eps) {}
 
 adagrad::adagrad(const adagrad& other)
@@ -56,11 +56,11 @@ description adagrad::get_description() const {
 void adagrad::setup(weights* w) {
   optimizer::setup(w);
   const auto& gradient = this->get_gradient();
-  m_cache.reset(AbsDistMat::Instantiate(gradient.DistData()));
+  m_cache.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   El::Zeros(*m_cache, gradient.Height(), gradient.Width());
 }
 
-void adagrad::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
+void adagrad::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
 #ifdef LBANN_HAS_CUDA
@@ -74,7 +74,7 @@ void adagrad::step_compute(AbsDistMat& values, const AbsDistMat& gradient) {
   }
 }
 
-void adagrad::step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient) {
+void adagrad::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();

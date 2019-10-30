@@ -78,7 +78,7 @@ std::unique_ptr<Layer> construct_layer(
   const lbann_data::Layer& proto_layer);
 
 /** Construct weights specified with prototext. */
-std::unique_ptr<weights> construct_weights(
+std::unique_ptr<weights<DataType>> construct_weights(
   lbann_comm* comm,
   const lbann_data::Optimizer& proto_opt,
   const lbann_data::Weights& proto_weights);
@@ -96,11 +96,11 @@ std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
                                                     const lbann_data::Model& m);
 
 /** Construct an optimizer specified with prototext. */
-std::unique_ptr<optimizer> construct_optimizer(
+std::unique_ptr<optimizer<DataType>> construct_optimizer(
   const lbann_data::Optimizer& proto_opt);
 
 /** Construct an objective function specified with prototext. */
-std::unique_ptr<objective_function>
+std::unique_ptr<objective_function<DataType>>
 construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj);
 
 /** Construct a transform given a prototext. */

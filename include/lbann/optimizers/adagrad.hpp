@@ -42,7 +42,7 @@ namespace lbann {
 class adagrad : public optimizer {
 public:
 
-  adagrad(DataType learning_rate, DataType eps = 1e-8);
+  adagrad(TensorDataType learning_rate, TensorDataType eps = 1e-8);
   adagrad(const adagrad& other);
   adagrad& operator=(const adagrad& other);
   ~adagrad() override = default;
@@ -58,20 +58,20 @@ public:
 protected:
 
   /** Computation for an optimization step. */
-  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+  void step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) override;
 
 private:
 
   /** Small factor to avoid division by zero. */
-  DataType m_eps;
+  TensorDataType m_eps;
   /** AdaGrad cache. */
-  std::unique_ptr<AbsDistMat> m_cache;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_cache;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
 #ifdef LBANN_HAS_CUDNN
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
 #endif // LBANN_HAS_CUDNN
 
   // ===========================================

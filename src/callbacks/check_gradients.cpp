@@ -50,7 +50,7 @@ DataType compute_objective_function(model& m) {
 
   // Forward prop, skipping input layers
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer*>(l) == nullptr) {
+    if (dynamic_cast<generic_input_layer<DataType>*>(l) == nullptr) {
       l->forward_prop();
     }
   }
@@ -98,7 +98,7 @@ void check_gradients::do_check_gradients(model& m) const {
 
   // Load data in input layers
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer*>(l) != nullptr) {
+    if (dynamic_cast<generic_input_layer<DataType>*>(l) != nullptr) {
       l->forward_prop();
     }
   }
@@ -140,7 +140,7 @@ void check_gradients::do_check_gradients(model& m) const {
               << "  Expected gradient error  = " << expected_error << "\n";
   }
 
-  for (weights *w : m.get_weights()) {
+  for (weights<DataType> *w : m.get_weights()) {
     if (w->get_optimizer() == nullptr) {
       continue;
     }
@@ -229,7 +229,7 @@ void check_gradients::do_check_gradients(model& m) const {
   // Clean up
   /// @todo tym: I'm not sure if data readers are properly reset
   for (auto&& l : m.get_layers()) {
-    auto&& input = dynamic_cast<generic_input_layer*>(l);
+    auto&& input = dynamic_cast<generic_input_layer<DataType>*>(l);
     if (input != nullptr) {
       auto&& reader = input->get_data_reader(mode);
       reader->set_initial_position();

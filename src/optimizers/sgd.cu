@@ -32,13 +32,13 @@ namespace {
 
 __global__ void momentum_noncontiguous_kernel(size_t height,
                                               size_t width,
-                                              DataType learning_rate,
-                                              DataType momentum,
-                                              DataType * __restrict__ values,
+                                              TensorDataType learning_rate,
+                                              TensorDataType momentum,
+                                              TensorDataType * __restrict__ values,
                                               size_t values_ldim,
-                                              const DataType * __restrict__ gradient,
+                                              const TensorDataType * __restrict__ gradient,
                                               size_t gradient_ldim,
-                                              DataType * __restrict__ velocity,
+                                              TensorDataType * __restrict__ velocity,
                                               size_t velocity_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < height * width) {
@@ -53,11 +53,11 @@ __global__ void momentum_noncontiguous_kernel(size_t height,
 }
 
 __global__ void momentum_contiguous_kernel(size_t size,
-                                           DataType learning_rate,
-                                           DataType momentum,
-                                           DataType * __restrict__ values,
-                                           const DataType * __restrict__ gradient,
-                                           DataType * __restrict__ velocity) {
+                                           TensorDataType learning_rate,
+                                           TensorDataType momentum,
+                                           TensorDataType * __restrict__ values,
+                                           const TensorDataType * __restrict__ gradient,
+                                           TensorDataType * __restrict__ velocity) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < size) {
     const auto& g = gradient[gid];
@@ -70,13 +70,13 @@ __global__ void momentum_contiguous_kernel(size_t size,
 
 __global__ void nesterov_kernel(size_t height,
                                 size_t width,
-                                DataType learning_rate,
-                                DataType momentum,
-                                DataType * __restrict__ values,
+                                TensorDataType learning_rate,
+                                TensorDataType momentum,
+                                TensorDataType * __restrict__ values,
                                 size_t values_ldim,
-                                const DataType * __restrict__ gradient,
+                                const TensorDataType * __restrict__ gradient,
                                 size_t gradient_ldim,
-                                DataType * __restrict__ velocity,
+                                TensorDataType * __restrict__ velocity,
                                 size_t velocity_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = gridDim.x * blockDim.x;
@@ -93,7 +93,7 @@ __global__ void nesterov_kernel(size_t height,
 
 } // namespace
 
-void sgd::momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
+void sgd::momentum_step_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
 
   // Get matrix dimensions
   const size_t local_height = values.LocalHeight();

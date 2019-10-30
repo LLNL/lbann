@@ -60,7 +60,7 @@ void print_statistics::on_epoch_begin(model *m) {
     // Get first input layer in model
     generic_input_layer* input = nullptr;
     for (auto&& l : m->get_layers()) {
-      input = dynamic_cast<generic_input_layer*>(l);
+      input = dynamic_cast<generic_input_layer<DataType>*>(l);
       if (input != nullptr) { break; }
     }
     if (input == nullptr) { LBANN_ERROR("could not get input layer"); }

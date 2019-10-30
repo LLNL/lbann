@@ -89,9 +89,9 @@ class debug : public callback_base {
   void on_evaluate_forward_prop_end(model *m, Layer *l) override;
 
   /** @brief Print that a weights' optimization step is beginning. */
-  void on_optimize_begin(model *m, weights *w) override;
+  void on_optimize_begin(model *m, weights<DataType> *w) override;
   /** @brief Print that a weights' optimization step is ending. */
-  void on_optimize_end(model *m, weights *w) override;
+  void on_optimize_end(model *m, weights<DataType> *w) override;
 
  private:
 

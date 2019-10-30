@@ -53,7 +53,7 @@ std::string layer_string(const Layer& l) {
 }
 
 /** Get human-readable string describing weights and optimizer. */
-std::string weights_string(const weights& w) {
+std::string weights_string(const weights<DataType>& w) {
   std::stringstream msg;
   msg << "weights \"" << w.get_name() << "\" (";
   const auto* opt = w.get_optimizer();
@@ -150,14 +150,14 @@ void debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
 }
 
 // Status updates for optimization step
-void debug::on_optimize_begin(model *m, weights *w) {
+void debug::on_optimize_begin(model *m, weights<DataType> *w) {
   std::stringstream msg;
   msg << rank_string(*m->get_comm()) << ": " << weights_string(*w)
       << " is starting optimization step for " << batch_step_string(*m)
       << std::endl;
   std::cerr << msg.str();
 }
-void debug::on_optimize_end(model *m, weights *w) {
+void debug::on_optimize_end(model *m, weights<DataType> *w) {
   std::stringstream msg;
   msg << rank_string(*m->get_comm()) << ": " << weights_string(*w)
       << " is   ending optimization step for " << batch_step_string(*m)

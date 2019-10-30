@@ -32,13 +32,13 @@ namespace {
 
 __global__ void adagrad_kernel(size_t height,
                                size_t width,
-                               DataType learning_rate,
-                               DataType eps,
-                               DataType * __restrict__ values,
+                               TensorDataType learning_rate,
+                               TensorDataType eps,
+                               TensorDataType * __restrict__ values,
                                size_t values_ldim,
-                               const DataType * __restrict__ gradient,
+                               const TensorDataType * __restrict__ gradient,
                                size_t gradient_ldim,
-                               DataType * __restrict__ cache,
+                               TensorDataType * __restrict__ cache,
                                size_t cache_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = blockDim.x * gridDim.x;
@@ -55,7 +55,7 @@ __global__ void adagrad_kernel(size_t height,
 
 } // namespace
 
-void adagrad::step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
+void adagrad::step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
   const size_t local_size = local_height * local_width;

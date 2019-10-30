@@ -44,20 +44,11 @@ imcomm::imcomm(imcomm::comm_type ct,
   m_default_ct(ct), m_summarizer(summarizer) {}
 
 imcomm::imcomm(imcomm::comm_type ct,
-<<<<<<< HEAD
                std::unordered_set<weights *> weights_list,
                const std::shared_ptr<lbann_summary>& summarizer) :
   imcomm(ct, summarizer) {
   for (weights *w : weights_list) {
     m_weights_params[w] = ct;
-=======
-    std::unordered_set<weights<DataType> *> weights_list,
-    const std::shared_ptr<lbann_summary>& summarizer) :
-  imcomm(ct, summarizer) {
-  for (weights<DataType> *w : weights_list) {
-    m_weights_params[w] = {};
-    m_weights_params[w].ct = ct;
->>>>>>> Input layer. Using DataType as global define for weight class
   }
 }
 
@@ -66,12 +57,7 @@ void imcomm::set_weights_comm(weights *w, comm_type ct) {
 }
 
 void imcomm::setup(model *m) {
-<<<<<<< HEAD
   for (weights *w : m->get_weights()) {
-=======
-  for (weights<DataType> *w : m->get_weights()) {
-
->>>>>>> Input layer. Using DataType as global define for weight class
     // Add weights if not already in list
     if (m_weights_params.find(w) == m_weights_params.end()) {
       m_weights_params[w] = (w->get_optimizer() != nullptr ?
@@ -113,15 +99,9 @@ void imcomm::on_backward_prop_end(model *m) {
       continue;
     }
     optimizer *opt = w->get_optimizer();
-<<<<<<< HEAD
-    auto gradient = std::unique_ptr<AbsDistMat>{opt->get_gradient().Copy()};
+    auto gradient = std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>{opt->get_gradient().Copy()};
     auto& local_gradients = gradient->Matrix();
     switch (ct) {
-=======
-    auto gradient = std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>{opt->get_gradient().Copy()};
-    Mat* local_gradients = &(static_cast<CPUMat&>(gradient->Matrix()));
-    switch (params.ct) {
->>>>>>> Input layer. Using DataType as global define for weight class
     case NORMAL:
       comm->intertrainer_sum_matrix(local_gradients);
       break;

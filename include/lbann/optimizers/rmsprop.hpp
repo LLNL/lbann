@@ -40,9 +40,9 @@ namespace lbann {
 class rmsprop : public optimizer {
 public:
 
-  rmsprop(DataType learning_rate,
-          DataType decay_rate,
-          DataType eps = 1e-8);
+  rmsprop(TensorDataType learning_rate,
+          TensorDataType decay_rate,
+          TensorDataType eps = 1e-8);
   rmsprop(const rmsprop& other);
   rmsprop& operator=(const rmsprop& other);
   ~rmsprop() override = default;
@@ -58,23 +58,23 @@ public:
 protected:
 
   /** Computation for an optimization step. */
-  void step_compute(AbsDistMat& values,
-                    const AbsDistMat& gradient) override;
+  void step_compute(El::AbstractDistMatrix<TensorDataType>& values,
+                    const El::AbstractDistMatrix<TensorDataType>& gradient) override;
 
 private:
 
   /** Decay rate. */
-  DataType m_decay_rate;
+  TensorDataType m_decay_rate;
   /** Small factor to avoid division by zero. */
-  DataType m_eps;
+  TensorDataType m_eps;
   /** RMSprop cache. */
-  std::unique_ptr<AbsDistMat> m_cache;
+  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_cache;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
 #ifdef LBANN_HAS_CUDA
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
 #endif // LBANN_HAS_CUDA
 
   // ===========================================
@@ -82,7 +82,7 @@ private:
   // ===========================================
 
   struct packing_header {
-    DataType decay_rate;
+    TensorDataType decay_rate;
   };
 
   bool pack_scalars(persist& p) {
