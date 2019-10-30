@@ -39,7 +39,8 @@ namespace lbann {
  *  methods for online learning and stochastic optimization." Journal
  *  of Machine Learning Research 12, no. Jul (2011): 2121-2159.
  */
-class adagrad : public optimizer {
+template <typename TensorDataType>
+class adagrad : public optimizer<TensorDataType> {
 public:
 
   adagrad(TensorDataType learning_rate, TensorDataType eps = 1e-8);
@@ -53,7 +54,7 @@ public:
   /** Human-readable description. */
   description get_description() const override;
 
-  void setup(weights* w = nullptr) override;
+  void setup(weights<TensorDataType>* w = nullptr) override;
 
 protected:
 
@@ -85,7 +86,7 @@ private:
 
 };
 
-std::unique_ptr<optimizer>
+std::unique_ptr<optimizer<DataType>>
 build_adagrad_optimizer_from_pbuf(
   google::protobuf::Message const&);
 

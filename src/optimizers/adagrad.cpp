@@ -32,35 +32,42 @@
 
 namespace lbann {
 
-adagrad::adagrad(TensorDataType learning_rate, TensorDataType eps)
-  : optimizer(learning_rate), m_eps(eps) {}
+template <typename TensorDataType>
+adagrad<TensorDataType>::adagrad(TensorDataType learning_rate, TensorDataType eps)
+  : optimizer<TensorDataType>(learning_rate), m_eps(eps) {}
 
-adagrad::adagrad(const adagrad& other)
-  : optimizer(other),
+template <typename TensorDataType>
+adagrad<TensorDataType>::adagrad(const adagrad<TensorDataType>& other)
+  : optimizer<TensorDataType>(other),
     m_eps(other.m_eps),
     m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}
 
-adagrad& adagrad::operator=(const adagrad& other) {
-  optimizer::operator=(other);
+template <typename TensorDataType>
+adagrad<TensorDataType>& adagrad<TensorDataType>::operator=(const adagrad<TensorDataType>& other) {
+  optimizer<TensorDataType>::operator=(other);
   m_eps = other.m_eps;
   m_cache.reset(other.m_cache ? other.m_cache->Copy() : nullptr);
   return *this;
 }
 
-description adagrad::get_description() const {
-  auto desc = optimizer::get_description();
+template <typename TensorDataType>
+description adagrad<TensorDataType>::get_description() const {
+  auto desc = optimizer<TensorDataType>::get_description();
   desc.add("eps", m_eps);
   return desc;
 }
 
-void adagrad::setup(weights* w) {
-  optimizer::setup(w);
+template <typename TensorDataType>
+void adagrad<TensorDataType>::setup(weights<TensorDataType>* w) {
+  optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
   m_cache.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   El::Zeros(*m_cache, gradient.Height(), gradient.Width());
 }
 
-void adagrad::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+template <typename TensorDataType>
+void adagrad<TensorDataType>::step_compute(El::AbstractDistMatrix<TensorDataType>& values,
+                                           const El::AbstractDistMatrix<TensorDataType>& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
 #ifdef LBANN_HAS_CUDA
@@ -74,7 +81,9 @@ void adagrad::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const
   }
 }
 
-void adagrad::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+template <typename TensorDataType>
+void adagrad<TensorDataType>::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values,
+                                               const El::AbstractDistMatrix<TensorDataType>& gradient) {
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
@@ -87,7 +96,7 @@ void adagrad::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, c
   const size_t cache_ldim = m_cache->LDim();
 
   // Apply AdaGrad step
-  const auto& learning_rate = get_learning_rate();
+  const auto& learning_rate = this->get_learning_rate();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (size_t col = 0; col < local_width; ++col) {
     for (size_t row = 0; row < local_height; ++row) {
@@ -105,8 +114,9 @@ void adagrad::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, c
 // Checkpointing
 // =============================================
 
-bool adagrad::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer::save_to_checkpoint_shared(p, name_prefix);
+template <typename TensorDataType>
+bool adagrad<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer<TensorDataType>::save_to_checkpoint_shared(p, name_prefix);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -115,8 +125,9 @@ bool adagrad::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   return true;
 }
 
-bool adagrad::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer::load_from_checkpoint_shared(p, name_prefix);
+template <typename TensorDataType>
+bool adagrad<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer<TensorDataType>::load_from_checkpoint_shared(p, name_prefix);
   char l_name[512];
 
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -125,8 +136,9 @@ bool adagrad::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   return true;
 }
 
-bool adagrad::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer::save_to_checkpoint_distributed(p, name_prefix);
+template <typename TensorDataType>
+bool adagrad<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer<TensorDataType>::save_to_checkpoint_distributed(p, name_prefix);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -135,8 +147,9 @@ bool adagrad::save_to_checkpoint_distributed(persist& p, std::string name_prefix
   return true;
 }
 
-bool adagrad::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer::load_from_checkpoint_distributed(p, name_prefix);
+template <typename TensorDataType>
+bool adagrad<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer<TensorDataType>::load_from_checkpoint_distributed(p, name_prefix);
   char l_name[512];
 
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -145,12 +158,12 @@ bool adagrad::load_from_checkpoint_distributed(persist& p, std::string name_pref
   return true;
 }
 
-std::unique_ptr<optimizer>
+std::unique_ptr<optimizer<DataType>>
 build_adagrad_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::AdaGrad const&>(msg);
-  return make_unique<adagrad>(params.learn_rate(), params.eps());
+  return make_unique<adagrad<DataType>>(params.learn_rate(), params.eps());
 }
 
 } // namespace lbann
