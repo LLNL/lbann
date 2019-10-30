@@ -208,6 +208,96 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
       }
     }
 
+    WHEN ("A flag with env variable override is added")
+    {
+      using namespace lbann::utils::stubs;
+      using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+
+      auto verbose =
+        parser.add_flag("verbose", {"-v"},
+                        TestENV("VALUE_IS_TRUE"), "");
+
+      THEN("The flag registers as true.")
+      {
+        REQUIRE(parser.option_is_defined("verbose"));
+        REQUIRE(verbose);
+      }
+
+      AND_WHEN ("The flag is passed on the command line")
+      {
+        int const argc = 2;
+        char const* argv[]
+          = {"argument_parser_test.exe", "-v"};
+
+        THEN ("The verbose flag is registered")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.get<bool>("verbose"));
+          REQUIRE(verbose);
+        }
+      }
+    }
+
+    WHEN ("A flag with false-valued env variable override is added")
+    {
+      using namespace lbann::utils::stubs;
+      using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+
+      auto verbose =
+        parser.add_flag("verbose", {"-v"},
+                        TestENV("VALUE_IS_FALSE"), "");
+
+      THEN("The flag registers as false.")
+      {
+        REQUIRE(parser.option_is_defined("verbose"));
+        REQUIRE_FALSE(verbose);
+      }
+
+      AND_WHEN ("The flag is passed on the command line")
+      {
+        int const argc = 2;
+        char const* argv[]
+          = {"argument_parser_test.exe", "-v"};
+
+        THEN ("The verbose flag is registered")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.get<bool>("verbose"));
+          REQUIRE(verbose);
+        }
+      }
+    }
+
+    WHEN ("A flag with false-valued env variable override is added")
+    {
+      using namespace lbann::utils::stubs;
+      using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+
+      auto verbose =
+        parser.add_flag("verbose", {"-v"},
+                        TestENV("VALUE_IS_UNDEFINED"), "");
+
+      THEN("The flag registers as false.")
+      {
+        REQUIRE(parser.option_is_defined("verbose"));
+        REQUIRE_FALSE(verbose);
+      }
+
+      AND_WHEN ("The flag is passed on the command line")
+      {
+        int const argc = 2;
+        char const* argv[]
+          = {"argument_parser_test.exe", "-v"};
+
+        THEN ("The verbose flag is registered")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(parser.get<bool>("verbose"));
+          REQUIRE(verbose);
+        }
+      }
+    }
+
     WHEN ("A defined environment varible is added")
     {
       using namespace lbann::utils::stubs;

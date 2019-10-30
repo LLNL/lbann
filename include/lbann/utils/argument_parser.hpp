@@ -158,6 +158,19 @@ public:
            std::initializer_list<std::string> cli_flags,
            std::string const& description);
 
+  template <typename AccessPolicy>
+  readonly_reference<bool>
+  add_flag(std::string const& name,
+           std::initializer_list<std::string> cli_flags,
+           EnvVariable<AccessPolicy> env,
+           std::string const& description)
+  {
+    if (env.exists() && env.template value<bool>())
+      return add_flag_impl_(name, std::move(cli_flags), description, true);
+    else
+      return add_flag(name, std::move(cli_flags), description);
+  }
+
   /** @brief Add an additional named option.
    *
    *  Currently, named options are all optional. This could be
@@ -421,6 +434,15 @@ public:
   void print_help(std::ostream& stream) const;
 
   ///@}
+
+private:
+
+  /** @brief Implementation of add_flag */
+  readonly_reference<bool>
+  add_flag_impl_(std::string const& name,
+                 std::initializer_list<std::string> cli_flags,
+                 std::string const& description,
+                 bool default_value);
 
 private:
   /** @brief Dictionary of arguments to their values */

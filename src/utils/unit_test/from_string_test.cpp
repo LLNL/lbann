@@ -73,6 +73,28 @@ using lbann::utils::from_string;
 
 TEST_CASE("From string corner cases","[utilities][string]")
 {
+  SECTION("Boolean strings")
+  {
+    CHECK(from_string<bool>("true"));
+    CHECK(from_string<bool>("TRUE"));
+    CHECK(from_string<bool>("tRuE"));
+    CHECK(from_string<bool>("TrUe"));
+    CHECK(from_string<bool>("1"));
+    CHECK(from_string<bool>("431"));
+    CHECK(from_string<bool>("3.14"));
+
+    CHECK_FALSE(from_string<bool>("false"));
+    CHECK_FALSE(from_string<bool>("FALSE"));
+    CHECK_FALSE(from_string<bool>("FaLsE"));
+    CHECK_FALSE(from_string<bool>("0"));
+    CHECK_FALSE(from_string<bool>("0.0"));
+
+    // FIXME: This should be true:
+    //CHECK(from_string<bool>("0.2"));
+
+    CHECK_THROWS_AS(from_string<bool>("not a bool"), std::invalid_argument);
+  }
+
   SECTION("From lvalue string to string")
   {
     std::string input("I am a string");

@@ -78,13 +78,7 @@ auto argument_parser::add_flag(
   std::string const& description)
   -> readonly_reference<bool>
 {
-  params_[name] = false;
-  auto& param_ref = any_cast<bool&>(params_[name]);
-  clara::Opt option(param_ref);
-  for (auto const& f : cli_flags)
-    option[f];
-  parser_ |= option(description).optional();
-  return param_ref;
+  return add_flag_impl_(name, std::move(cli_flags), description, false);
 }
 
 std::string const& argument_parser::get_exe_name() const noexcept
@@ -100,6 +94,22 @@ bool argument_parser::help_requested() const
 void argument_parser::print_help(std::ostream& out) const
 {
   out << parser_ << std::endl;
+}
+
+auto argument_parser::add_flag_impl_(
+  std::string const& name,
+  std::initializer_list<std::string> cli_flags,
+  std::string const& description,
+  bool default_value)
+  -> readonly_reference<bool>
+{
+  params_[name] = default_value;
+  auto& param_ref = any_cast<bool&>(params_[name]);
+  clara::Opt option(param_ref);
+  for (auto const& f : cli_flags)
+    option[f];
+  parser_ |= option(description).optional();
+  return param_ref;
 }
 
 }// namespace utils

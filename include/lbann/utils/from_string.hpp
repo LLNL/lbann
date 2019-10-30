@@ -27,6 +27,7 @@
 #ifndef LBANN_UTILS_FROM_STRING_INCLUDED
 #define LBANN_UTILS_FROM_STRING_INCLUDED
 
+#include <algorithm>
 #include <string>
 
 namespace lbann {
@@ -44,7 +45,7 @@ namespace utils {
  *
  *  @return The value of the input string as a T.
  *
- *  @todo bool, chars, shorts, unsigned
+ *  @todo chars, shorts, unsigned. Bool needs some work.
  */
 template <typename T>
 T from_string(std::string const& str);
@@ -55,57 +56,75 @@ inline std::string from_string(std::string&& str)
 }
 
 template <>
-inline std::string from_string(std::string const& str)
+inline std::string from_string<std::string>(std::string const& str)
 {
   return str;
 }
 
 template <>
-inline int from_string(std::string const& str)
+inline int from_string<int>(std::string const& str)
 {
   return std::stoi(str);
 }
 
 template <>
-inline long from_string(std::string const& str)
+inline long from_string<long>(std::string const& str)
 {
   return std::stol(str);
 }
 
 template <>
-inline long long from_string(std::string const& str)
+inline long long from_string<long long>(std::string const& str)
 {
   return std::stoll(str);
 }
 
 template <>
-inline unsigned long from_string(std::string const& str)
+inline unsigned long from_string<unsigned long>(std::string const& str)
 {
   return std::stoul(str);
 }
 
 template <>
-inline unsigned long long from_string(std::string const& str)
+inline unsigned long long from_string<unsigned long long>(std::string const& str)
 {
   return std::stoull(str);
 }
 
 template <>
-inline float from_string(std::string const& str)
+inline float from_string<float>(std::string const& str)
 {
   return std::stof(str);
 }
 
 template <>
-inline double from_string(std::string const& str)
+inline double from_string<double>(std::string const& str)
 {
   return std::stod(str);
 }
 
 template <>
-inline long double from_string(std::string const& str)
+inline long double from_string<long double>(std::string const& str)
 {
   return std::stold(str);
+}
+
+template <>
+inline bool from_string<bool>(std::string const& str)
+{
+  auto upcase = [](std::string s) {
+                  std::transform(s.begin(), s.end(), s.begin(),
+                                 [](unsigned char c)
+                                 { return std::toupper(c); });
+                  return s;
+                };
+  auto upper = upcase(str);
+  if (upper == "TRUE")
+    return true;
+  else if (upper == "FALSE")
+    return false;
+  else
+    return from_string<int>(str);
 }
 
 }// namespace utils

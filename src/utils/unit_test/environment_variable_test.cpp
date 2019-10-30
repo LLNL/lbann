@@ -82,6 +82,75 @@ TEST_CASE("Environment variable wrapper", "[utilities][parser]")
     CHECK_THROWS_AS(pizza.value<int>() == 42, std::invalid_argument);
   }
 
+  SECTION("Boolean variables")
+  {
+    SECTION("Variable stored as the string \"true\"")
+    {
+      TestENV true_str_var("VALUE_IS_TRUE");
+
+      CHECK(true_str_var.exists());
+      CHECK(true_str_var.name() == "VALUE_IS_TRUE");
+      CHECK(true_str_var.raw_value() == "true");
+      CHECK(true_str_var.value<std::string>() == true_str_var.raw_value());
+
+      CHECK(true_str_var.value<bool>());
+
+      CHECK_THROWS_AS(true_str_var.value<float>() == 123.f,
+                      std::invalid_argument);
+      CHECK_THROWS_AS(true_str_var.value<double>() == 321.,
+                      std::invalid_argument);
+      CHECK_THROWS_AS(true_str_var.value<int>() == 42, std::invalid_argument);
+    }
+
+    SECTION("Variable stored as a \"1\"")
+    {
+      TestENV true_int_var("VALUE_IS_ONE");
+
+      CHECK(true_int_var.exists());
+      CHECK(true_int_var.name() == "VALUE_IS_ONE");
+      CHECK(true_int_var.raw_value() == "1");
+      CHECK(true_int_var.value<std::string>() == true_int_var.raw_value());
+      CHECK(true_int_var.value<bool>());
+    }
+
+    SECTION("Variable stored as the string \"false\"")
+    {
+      TestENV false_str_var("VALUE_IS_FALSE");
+
+      CHECK(false_str_var.exists());
+      CHECK(false_str_var.name() == "VALUE_IS_FALSE");
+      CHECK(false_str_var.raw_value() == "false");
+      CHECK(false_str_var.value<std::string>() == false_str_var.raw_value());
+
+      CHECK_FALSE(false_str_var.value<bool>());
+
+      CHECK_THROWS_AS(false_str_var.value<float>() == 123.f,
+                      std::invalid_argument);
+      CHECK_THROWS_AS(false_str_var.value<double>() == 321.,
+                      std::invalid_argument);
+      CHECK_THROWS_AS(false_str_var.value<int>() == 42, std::invalid_argument);
+    }
+
+    SECTION("Variable stored as a \"0\"")
+    {
+      TestENV false_int_var("VALUE_IS_ZERO");
+
+      CHECK(false_int_var.exists());
+      CHECK(false_int_var.name() == "VALUE_IS_ZERO");
+      CHECK(false_int_var.raw_value() == "0");
+      CHECK(false_int_var.value<std::string>() == false_int_var.raw_value());
+
+      CHECK_FALSE(false_int_var.value<bool>());
+    }
+
+    SECTION("Variable has a value not convertible to bool")
+    {
+      TestENV not_a_bool("PIZZA");
+      CHECK_THROWS_AS(not_a_bool.value<bool>(),
+                      std::invalid_argument);
+    }
+  }
+
   SECTION("A variable that doesn't exist")
   {
     TestENV bad("DOESNT_EXIST");
@@ -95,5 +164,6 @@ TEST_CASE("Environment variable wrapper", "[utilities][parser]")
     CHECK_THROWS_AS(bad.value<float>() == 123.f, std::invalid_argument);
     CHECK_THROWS_AS(bad.value<double>() == 321., std::invalid_argument);
     CHECK_THROWS_AS(bad.value<int>() == 42, std::invalid_argument);
+    CHECK_THROWS_AS(bad.value<bool>(), std::invalid_argument);
   }
 }

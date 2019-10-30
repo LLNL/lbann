@@ -60,7 +60,11 @@ inline void PresetEnvAccessor::populate_vars()
   vars_ = {
     {"APPLE", "3.14"}, // float
     {"ICE_CREAM_SCOOPS", "3"}, // int
-    {"PIZZA", "pepperoni"} // string
+    {"PIZZA", "pepperoni"}, // string
+    {"VALUE_IS_TRUE", "true"}, // true as string
+    {"VALUE_IS_ONE", "1"}, // true as int
+    {"VALUE_IS_FALSE", "false"}, // false as string
+    {"VALUE_IS_ZERO", "0"}, // false as int
   };
 }
 
