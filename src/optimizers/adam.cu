@@ -30,6 +30,7 @@ namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 __global__ void adam_noncontiguous_kernel(size_t height,
                                           size_t width,
                                           TensorDataType correction,
@@ -58,6 +59,7 @@ __global__ void adam_noncontiguous_kernel(size_t height,
   }
 }
 
+template <typename TensorDataType>
 __global__ void adam_contiguous_kernel(size_t size,
                                        TensorDataType correction,
                                        TensorDataType eps,
@@ -81,7 +83,9 @@ __global__ void adam_contiguous_kernel(size_t size,
 
 } // namespace
 
-void adam::step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+template <typename TensorDataType>
+void adam<TensorDataType>::step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values,
+                                            const El::AbstractDistMatrix<TensorDataType>& gradient) {
   constexpr TensorDataType one = 1;
 
   // Precompute the bias correction and learning rate.
@@ -103,12 +107,12 @@ void adam::step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values, cons
   auto&& stream = El::GPUManager::Stream();
   if (values.Contiguous() && gradient.Contiguous()
       && m_moment1->Contiguous() && m_moment2->Contiguous()) {
-    adam_contiguous_kernel<<<grid_size, block_size, 0, stream>>>(
+    adam_contiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       local_size, correction, m_eps, m_beta1, m_beta2,
       values.Buffer(), gradient.LockedBuffer(),
       m_moment1->Buffer(), m_moment2->Buffer());
   } else {
-    adam_noncontiguous_kernel<<<grid_size, block_size, 0, stream>>>(
+    adam_noncontiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       local_height, local_width, correction, m_eps, m_beta1, m_beta2,
       values.Buffer(), values.LDim(),
       gradient.LockedBuffer(), gradient.LDim(),
