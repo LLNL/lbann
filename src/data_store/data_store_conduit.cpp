@@ -70,14 +70,13 @@ data_store_conduit::data_store_conduit(
 
   options *opts = options::get();
 
-  std::string spill_dir;
-
   // error check for a single "spill" flag
   if (opts->has_string("data_store_test_checkpoint")
       && opts->has_string("data_store_spill")) {
     LBANN_ERROR("you passed both --data_store_test_checkpoint and --data_store_spill; please use one or the other or none, but not both");
   }
 
+  std::string spill_dir;
   // error check if running in checkpoint test mode
   if (opts->has_string("data_store_test_checkpoint")) {
     std::string c = opts->get_string("data_store_test_checkpoint");
@@ -120,6 +119,8 @@ data_store_conduit::data_store_conduit(
 
   if (m_is_local_cache) {
     PROFILE("data_store_conduit is running in local_cache mode");
+    //TODO: temporary hack; will fix when explicit loading is working
+    m_preload = true;
   } else {
     PROFILE("data_store_conduit is running in multi-message mode");
   }
@@ -222,6 +223,7 @@ void data_store_conduit::setup(int mini_batch_size) {
 
   m_owner_map_mb_size = mini_batch_size;
 
+  PROFILE("m_is_local_cache? ", m_is_local_cache, " m_preload? ", m_preload);
   if (m_is_local_cache && m_preload) {
     preload_local_cache();
   }
@@ -1658,5 +1660,10 @@ void data_store_conduit::print_partial_owner_map(int n) {
     if (j++ >= 10) break;
   }
 }
+
+void data_store_conduit::set_profile_msg(std::string s) {
+  PROFILE(s);
+}
+
 
 }  // namespace lbann

@@ -162,6 +162,9 @@ class data_store_conduit {
   /** @brief Loads object's state from file */
   void load_checkpoint(std::string dir_name, generic_data_reader *reader = nullptr);
 
+  /** @brief Add text to the profiling file, if it's opened */
+  void set_profile_msg(std::string);
+
 private :
 
   /** @brief The number of samples that this processor owns */

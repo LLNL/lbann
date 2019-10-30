@@ -732,33 +732,37 @@ void generic_data_reader::instantiate_data_store() {
     m_data_store->build_preloaded_owner_map(local_list_sizes);
   }
 
-  if (is_master()) {
-    std::cout << "generic_data_reader::instantiate_data_store time: : " << (get_time() - tm1) << std::endl;
-  }
+  std::stringstream s;
+  s << "generic_data_reader::instantiate_data_store time: : " << (get_time() - tm1);
+  m_data_store->set_profile_msg(s.str());
 }
 
 void generic_data_reader::setup_data_store(int mini_batch_size) {
   if (m_data_store == nullptr) {
     LBANN_ERROR("m_data_store == nullptr; you shouldn't be here");
   }
-  // optionally preload the data store
   options *opts = options::get();
-  if (opts->get_bool("preload_data_store") && !opts->get_bool("data_store_cache")) {
-    if(is_master()) {
-      std::cerr << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
-    }
+  bool local_cache = opts->get_bool("data_store_cache");
+  // optionally preload the data store
+  if (opts->get_bool("preload_data_store") && !local_cache) {
+    m_data_store->set_profile_msg("generic_data_reader::instantiate_data_store - Starting the preload");
     double tm2 = get_time();
     do_preload_data_store();
     m_data_store->set_is_preloaded();
-    if(is_master()) {
-     std::cout << "Preload complete; time: " << get_time() - tm2 << std::endl;
-    }
+    std::stringstream s;
+    s << "Preload complete; time: " << (get_time() - tm2);
+    m_data_store->set_profile_msg(s.str());
 
     size_t n = m_data_store->get_num_global_indices();
     if (n != m_shuffled_indices.size()) {
       LBANN_ERROR("num samples loaded: ", n, " != shuffled-indices.size(): ", m_shuffled_indices.size());
     }
+
+    if (local_cache) {
+      m_data_store->set_is_preloaded();
+    }
   }
+
   m_data_store->setup(mini_batch_size);
 }
 
