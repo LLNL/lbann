@@ -37,7 +37,8 @@ namespace lbann {
  *  See
  *  https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf.
  */
-class rmsprop : public optimizer {
+template <typename TensorDataType>
+class rmsprop : public optimizer<TensorDataType> {
 public:
 
   rmsprop(TensorDataType learning_rate,
@@ -53,7 +54,7 @@ public:
   /** Human-readable description. */
   description get_description() const override;
 
-  void setup(weights* w = nullptr) override;
+  void setup(weights<TensorDataType>* w = nullptr) override;
 
 protected:
 
@@ -111,7 +112,7 @@ private:
 
 };
 
-std::unique_ptr<optimizer>
+std::unique_ptr<optimizer<DataType>>
 build_rmsprop_optimizer_from_pbuf(
   google::protobuf::Message const&);
 

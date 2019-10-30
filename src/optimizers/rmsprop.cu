@@ -31,6 +31,7 @@ namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 __global__ void rmsprop_kernel(size_t height,
                                size_t width,
                                TensorDataType learning_rate,
@@ -57,7 +58,9 @@ __global__ void rmsprop_kernel(size_t height,
 
 } // namespace
 
-void rmsprop::step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+template <typename TensorDataType>
+void rmsprop<TensorDataType>::step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values,
+                                               const El::AbstractDistMatrix<TensorDataType>& gradient) {
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
   const size_t local_size = local_height * local_width;
@@ -65,7 +68,7 @@ void rmsprop::step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values, c
     constexpr size_t block_size = 256;
     const size_t grid_size = (local_size + block_size - 1) / block_size;
     auto&& stream = El::GPUManager::Stream();
-    rmsprop_kernel<<<grid_size, block_size, 0, stream>>>(
+    rmsprop_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       local_height, local_width,
       this->get_learning_rate(), m_decay_rate, m_eps,
       values.Buffer(), values.LDim(),

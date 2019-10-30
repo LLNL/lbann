@@ -32,42 +32,49 @@
 
 namespace lbann {
 
-rmsprop::rmsprop(TensorDataType learning_rate,
+template <typename TensorDataType>
+rmsprop<TensorDataType>::rmsprop(TensorDataType learning_rate,
                  TensorDataType decay_rate,
                  TensorDataType eps)
-  : optimizer(learning_rate),
+  : optimizer<TensorDataType>(learning_rate),
     m_decay_rate(decay_rate),
     m_eps(eps) {}
 
-rmsprop::rmsprop(const rmsprop& other) :
-  optimizer(other),
+template <typename TensorDataType>
+rmsprop<TensorDataType>::rmsprop(const rmsprop& other) :
+  optimizer<TensorDataType>(other),
   m_decay_rate(other.m_decay_rate),
   m_eps(other.m_eps),
   m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}
 
-rmsprop& rmsprop::operator=(const rmsprop& other) {
-  optimizer::operator=(other);
+template <typename TensorDataType>
+rmsprop<TensorDataType>& rmsprop<TensorDataType>::operator=(const rmsprop& other) {
+  optimizer<TensorDataType>::operator=(other);
   m_decay_rate = other.m_decay_rate;
   m_eps = other.m_eps;
   m_cache.reset(other.m_cache ? other.m_cache->Copy() : nullptr);
   return *this;
 }
 
-description rmsprop::get_description() const {
-  auto desc = optimizer::get_description();
+template <typename TensorDataType>
+description rmsprop<TensorDataType>::get_description() const {
+  auto desc = optimizer<TensorDataType>::get_description();
   desc.add("Decay rate", m_decay_rate);
   desc.add("eps", m_eps);
   return desc;
 }
 
-void rmsprop::setup(weights* w) {
-  optimizer::setup(w);
+template <typename TensorDataType>
+void rmsprop<TensorDataType>::setup(weights<TensorDataType>* w) {
+  optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
   m_cache.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   El::Zeros(*m_cache, gradient.Height(), gradient.Width());
 }
 
-void rmsprop::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+template <typename TensorDataType>
+void rmsprop<TensorDataType>::step_compute(El::AbstractDistMatrix<TensorDataType>& values,
+                                           const El::AbstractDistMatrix<TensorDataType>& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
 #ifdef LBANN_HAS_CUDA
@@ -81,7 +88,9 @@ void rmsprop::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const
   }
 }
 
-void rmsprop::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+template <typename TensorDataType>
+void rmsprop<TensorDataType>::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values,
+                                               const El::AbstractDistMatrix<TensorDataType>& gradient) {
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
@@ -94,7 +103,7 @@ void rmsprop::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, c
   const size_t cache_ldim = m_cache->LDim();
 
   // Apply RMSprop step
-  const auto& learning_rate = get_learning_rate();
+  const auto& learning_rate = this->get_learning_rate();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (size_t col = 0; col < local_width; ++col) {
     for (size_t row = 0; row < local_height; ++row) {
@@ -112,8 +121,9 @@ void rmsprop::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, c
 // Checkpointing
 // =============================================
 
-bool rmsprop::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer::save_to_checkpoint_shared(p, name_prefix);
+template <typename TensorDataType>
+bool rmsprop<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer<TensorDataType>::save_to_checkpoint_shared(p, name_prefix);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -122,8 +132,9 @@ bool rmsprop::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   return true;
 }
 
-bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer::load_from_checkpoint_shared(p, name_prefix);
+template <typename TensorDataType>
+bool rmsprop<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer<TensorDataType>::load_from_checkpoint_shared(p, name_prefix);
   char l_name[512];
 
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -132,8 +143,9 @@ bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   return true;
 }
 
- bool rmsprop::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-   optimizer::save_to_checkpoint_distributed(p, name_prefix);
+template <typename TensorDataType>
+bool rmsprop<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+   optimizer<TensorDataType>::save_to_checkpoint_distributed(p, name_prefix);
 
    char l_name[512];
    sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -142,8 +154,9 @@ bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
    return true;
  }
 
- bool rmsprop::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-   optimizer::load_from_checkpoint_distributed(p, name_prefix);
+template <typename TensorDataType>
+bool rmsprop<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+   optimizer<TensorDataType>::load_from_checkpoint_distributed(p, name_prefix);
    char l_name[512];
 
    sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -152,14 +165,14 @@ bool rmsprop::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
    return true;
  }
 
-std::unique_ptr<optimizer>
+std::unique_ptr<optimizer<DataType>>
 build_rmsprop_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::RMSprop const&>(msg);
-  return make_unique<rmsprop>(params.learn_rate(),
-                              params.decay_rate(),
-                              params.eps());
+  return make_unique<rmsprop<DataType>>(params.learn_rate(),
+                                        params.decay_rate(),
+                                        params.eps());
 }
 
 } // namespace lbann
