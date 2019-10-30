@@ -703,6 +703,7 @@ int data_store_conduit::get_index_owner(int idx) {
 }
 
 void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset) {
+//TODO: this is junky, and isn't called anywhere; rethink!
   if (comm->am_world_master()) {
     // note: we only estimate memory required by the data reader/store
 
@@ -1070,43 +1071,38 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
 }
 
 void data_store_conduit::preload_local_cache() {
+  PROFILE("starting data_store_conduit::preload_local_cache");
   std::unordered_map<int,size_t> file_sizes;
   std::vector<std::vector<int>> indices;
 
   double tm1 = get_time();
-  if (m_world_master) std::cerr << "calling get_image_sizes" << std::endl;
   get_image_sizes(file_sizes, indices);
-  if (m_world_master) std::cerr << "  get_image_sizes time: " << (get_time()-tm1) << std::endl;
+  PROFILE("  get_image_sizes time: ", (get_time()-tm1));
   tm1 = get_time();
   //indices[j] contains the indices (wrt m_reader->get_image_list())
   //that P_j will read from disk, and subsequently bcast to all others
   //
   //file_sizes maps an index to its file size
 
-  if (m_world_master) std::cerr << "calling allocate_shared_segment" << std::endl;
   allocate_shared_segment(file_sizes, indices);
-  if (m_world_master) std::cerr << "  allocate_shared_segment time: " << (get_time()-tm1) << std::endl;
+  PROFILE("  allocate_shared_segment time: ", (get_time()-tm1));
   tm1 = get_time();
 
-  if (m_world_master) std::cerr << "calling read_files" << std::endl;
   std::vector<char> work;
   read_files(work, file_sizes, indices[m_rank_in_trainer]);
-  if (m_world_master) std::cerr << "  read_files time: " << (get_time()- tm1) << std::endl;
+  PROFILE("  read_files time: ", (get_time()- tm1));
   tm1 = get_time();
 
-  if (m_world_master) std::cerr << "calling compute_image_offsets" << std::endl;
   compute_image_offsets(file_sizes, indices);
-  if (m_world_master) std::cerr << "  compute_image_offsets time: " << (get_time()-tm1) << std::endl;
+  PROFILE("  compute_image_offsets time: ", (get_time()-tm1));
   tm1 = get_time();
 
-  if (m_world_master) std::cerr << "calling exchange_images" << std::endl;
   exchange_images(work, file_sizes, indices);
-  if (m_world_master) std::cerr << "  exchange_images time: " << (get_time()-tm1) << std::endl;
+  PROFILE("  exchange_images time: ", (get_time()-tm1));
   tm1 = get_time();
 
-  if (m_world_master) std::cerr << "calling build_conduit_nodes" << std::endl;
   build_conduit_nodes(file_sizes);
-  if (m_world_master) std::cerr << "  build_conduit_nodes time: " << (get_time()-tm1) << std::endl;
+  PROFILE("  build_conduit_nodes time: ", (get_time()-tm1));
 }
 
 void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,size_t> &sizes, std::vector<int> &indices) {
@@ -1126,7 +1122,7 @@ void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<
 
   //read the images
   size_t offset = 0;
-  if (m_world_master) std::cerr << "  my num files: " << indices.size() << std::endl;
+  PROFILE("  my num files: ", indices.size());
   for (size_t j=0; j<indices.size(); ++j) {
     int idx = indices[j];
     size_t s = sizes[idx];
@@ -1136,7 +1132,6 @@ void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<
     in.close();
     offset += s;
   }
-  if (m_world_master) std::cerr << "  finished reading files\n";
 }
 
 void data_store_conduit::build_conduit_nodes(std::unordered_map<int,size_t> &sizes) {
@@ -1400,9 +1395,7 @@ void data_store_conduit::make_dir_if_it_doesnt_exist(const std::string &dir_name
   if (node_rank == 0) {
     bool exists = file::directory_exists(dir_name);
     if (!exists) {
-      if (m_world_master) {
-        std::cerr << "data_store_conduit; the directory '" << dir_name << "' doesn't exist; creating it\n";
-      }
+      PROFILE("data_store_conduit; the directory '", dir_name, "' doesn't exist; creating it");
       file::make_directory(dir_name);
     }
   }
