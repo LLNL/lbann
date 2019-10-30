@@ -508,6 +508,9 @@ inline size_t argument_parser::add_required_argument(
   return std::distance(parser_.m_args.begin(), ret);
 }
 }// namespace utils
+
+utils::argument_parser& global_argument_parser();
+
 }// namespace lbann
 
 /** @brief Write the parser's help string to the given @c ostream */

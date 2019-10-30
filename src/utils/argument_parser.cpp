@@ -103,6 +103,13 @@ void argument_parser::print_help(std::ostream& out) const
 }
 
 }// namespace utils
+
+utils::argument_parser& global_argument_parser()
+{
+  static utils::argument_parser args;
+  return args;
+}
+
 }// namespace lbann
 
 std::ostream& operator<<(std::ostream& os,
