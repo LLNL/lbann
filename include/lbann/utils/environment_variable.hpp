@@ -92,6 +92,9 @@ private:
   std::string name_;
 };
 
+/** @brief Convenience typedef */
+using ENV = EnvVariable<>;
+
 // Implementation
 
 template <typename AccessPolicy>

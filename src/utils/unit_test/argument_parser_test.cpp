@@ -200,10 +200,10 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
     WHEN ("A defined environment varible is added")
     {
       using namespace lbann::utils::stubs;
-      using ENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+      using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
       parser.add_option(
-        "apple", {"-a"}, ENV("APPLE"),
+        "apple", {"-a"}, TestENV("APPLE"),
         "Apple pie tastes good.", 1.23);
 
       REQUIRE(parser.option_is_defined("apple"));
@@ -235,10 +235,10 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
     WHEN ("An undefined environment varible is added")
     {
       using namespace lbann::utils::stubs;
-      using ENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+      using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
       parser.add_option(
-        "platypus", {"-p"}, ENV("DOESNT_EXIST"),
+        "platypus", {"-p"}, TestENV("DOESNT_EXIST"),
         "This variable won't exist.", 1.23);
 
       REQUIRE(parser.option_is_defined("platypus"));
@@ -269,10 +269,10 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
     WHEN ("A defined string environment varible is added")
     {
       using namespace lbann::utils::stubs;
-      using ENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+      using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
       parser.add_option(
-        "pizza", {"-p"}, ENV("PIZZA"),
+        "pizza", {"-p"}, TestENV("PIZZA"),
         "Mmmm pizza.", "mushroom");
 
       REQUIRE(parser.option_is_defined("pizza"));
@@ -304,10 +304,10 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
     WHEN ("An undefined environment varible is added to a string option")
     {
       using namespace lbann::utils::stubs;
-      using ENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
+      using TestENV = lbann::utils::EnvVariable<PresetEnvAccessor>;
 
       parser.add_option(
-        "platypus", {"-p"}, ENV("DOESNT_EXIST"),
+        "platypus", {"-p"}, TestENV("DOESNT_EXIST"),
         "This variable won't exist.", "so cute");
 
       REQUIRE(parser.option_is_defined("platypus"));

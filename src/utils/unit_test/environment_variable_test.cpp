@@ -32,13 +32,13 @@
 
 using namespace lbann::utils;
 
-TEST_CASE("Environment variable wrapper", "[utils][parser]")
+TEST_CASE("Environment variable wrapper", "[utilities][parser]")
 {
-  using ENV = EnvVariable<stubs::PresetEnvAccessor>;
+  using TestENV = EnvVariable<stubs::PresetEnvAccessor>;
 
   SECTION("A floating point variable")
   {
-    ENV apple("APPLE");
+    TestENV apple("APPLE");
 
     CHECK(apple.exists());
     CHECK(apple.name() == "APPLE");
@@ -57,7 +57,7 @@ TEST_CASE("Environment variable wrapper", "[utils][parser]")
 
   SECTION("An integer variable")
   {
-    ENV scoops("ICE_CREAM_SCOOPS");
+    TestENV scoops("ICE_CREAM_SCOOPS");
 
     CHECK(scoops.exists());
     CHECK(scoops.name() == "ICE_CREAM_SCOOPS");
@@ -71,7 +71,7 @@ TEST_CASE("Environment variable wrapper", "[utils][parser]")
 
   SECTION("A string variable")
   {
-    ENV pizza("PIZZA");
+    TestENV pizza("PIZZA");
     CHECK(pizza.exists());
     CHECK(pizza.name() == "PIZZA");
     CHECK(pizza.raw_value() == "pepperoni");
@@ -84,7 +84,7 @@ TEST_CASE("Environment variable wrapper", "[utils][parser]")
 
   SECTION("A variable that doesn't exist")
   {
-    ENV bad("DOESNT_EXIST");
+    TestENV bad("DOESNT_EXIST");
 
     CHECK_FALSE(bad.exists());
 
