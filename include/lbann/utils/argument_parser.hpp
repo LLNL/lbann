@@ -139,7 +139,7 @@ public:
   ///@{
 
   /** @brief Add a flag (i.e. a boolean parameter that is "true" if
-   *         given and "false" if not given.
+   *         given and "false" if not given).
    *
    *  The value of a flag defaults to `false`. If, for some strange
    *  reason, users should be forced to type the boolean value on
@@ -158,6 +158,24 @@ public:
            std::initializer_list<std::string> cli_flags,
            std::string const& description);
 
+  /** @brief Add a flag with environment variable override.
+   *
+   *  The value of a flag defaults to `false`. The flag may be set to
+   *  `true` by passing the flag on the command line. Alternatively,
+   *  it may be set to `true` if the environment variable `env` is
+   *  defined and has a value that converts to `true`.
+   *
+   *  @tparam AccessPolicy The access method for the environment
+   *          variable. (Deduced.)
+   *
+   *  @param[in] name The name to be used to refer to the argument.
+   *  @param[in] cli_flags The valid command line flags to trigger
+   *             this flag to `true`. At least one must be given.
+   *  @param[in] env The environment variable to prefer over the
+   *             default parameter value.
+   *  @param[in] description A brief description of the argument,
+   *             used for the help message.
+   */
   template <typename AccessPolicy>
   readonly_reference<bool>
   add_flag(std::string const& name,
