@@ -56,6 +56,30 @@ public:
   /** @name Public types */
   ///@{
 
+  /** @brief A proxy class representing the current value associated
+   *         with an option.
+   *
+   *  This class is best manipulated generically, through `auto`
+   *  variables.
+   *
+   *  @tparam T The type of the held object.
+   */
+  template <typename T>
+  class readonly_reference
+  {
+  public:
+    readonly_reference(T& val) noexcept : ref_(val) {}
+    T const& get() const noexcept { return ref_; }
+    operator T const& () const noexcept { return this->get(); }
+
+    template <typename S>
+    bool operator==(S const& y) const noexcept
+    { return this->get() == y; }
+
+  private:
+    T& ref_;
+  };// class readonly_reference<T>
+
   /** @class parse_error
    *  @brief std::exception subclass that is thrown if the parser
    *         can not parse the arguments.
@@ -129,9 +153,10 @@ public:
    *  @param[in] description A brief description of the argument,
    *             used for the help message.
    */
-  void add_flag(std::string const& name,
-                std::initializer_list<std::string> cli_flags,
-                std::string const& description);
+  readonly_reference<bool>
+  add_flag(std::string const& name,
+           std::initializer_list<std::string> cli_flags,
+           std::string const& description);
 
   /** @brief Add an additional named option.
    *
@@ -153,10 +178,11 @@ public:
    *             the option is not passed to the command line.
    */
   template <typename T>
-  void add_option(std::string const& name,
-                  std::initializer_list<std::string> cli_flags,
-                  std::string const& description,
-                  T default_value = T());
+  readonly_reference<T>
+  add_option(std::string const& name,
+             std::initializer_list<std::string> cli_flags,
+             std::string const& description,
+             T default_value = T());
 
   /** @brief Add an additional named option.
    *
@@ -182,11 +208,12 @@ public:
    *             the option is not passed to the command line.
    */
   template <typename T, typename AccessPolicy>
-  void add_option(std::string const& name,
-                  std::initializer_list<std::string> cli_flags,
-                  EnvVariable<AccessPolicy> env,
-                  std::string const& description,
-                  T default_value = T())
+  readonly_reference<T>
+  add_option(std::string const& name,
+             std::initializer_list<std::string> cli_flags,
+             EnvVariable<AccessPolicy> env,
+             std::string const& description,
+             T default_value = T())
   {
     if (env.exists())
       return add_option(name, std::move(cli_flags), description,
@@ -210,13 +237,14 @@ public:
    *  @param[in] default_value The default value to be returned if
    *             the option is not passed to the command line.
    */
-  void add_option(std::string const& name,
-                  std::initializer_list<std::string> cli_flags,
-                  std::string const& description,
-                  char const* default_value)
+  readonly_reference<std::string>
+  add_option(std::string const& name,
+             std::initializer_list<std::string> cli_flags,
+             std::string const& description,
+             char const* default_value)
   {
-    add_option(name, std::move(cli_flags), description,
-               std::string(default_value));
+    return add_option(name, std::move(cli_flags), description,
+                      std::string(default_value));
   }
 
   /** @brief Add an additional named option; overloaded for "char
@@ -236,14 +264,15 @@ public:
    *             the option is not passed to the command line.
    */
   template <typename AccessPolicy>
-  void add_option(std::string const& name,
+  readonly_reference<std::string>
+  add_option(std::string const& name,
                   std::initializer_list<std::string> cli_flags,
                   EnvVariable<AccessPolicy> env,
                   std::string const& description,
                   char const* default_value)
   {
-    add_option(name, cli_flags, std::move(env),
-               description, std::string(default_value));
+    return add_option(name, cli_flags, std::move(env),
+                      description, std::string(default_value));
   }
 
   /** @brief Add an optional positional argument.
@@ -418,17 +447,20 @@ inline T const& argument_parser::get(std::string const& option_name) const
 }
 
 template <typename T>
-inline void argument_parser::add_option(
+inline auto argument_parser::add_option(
   std::string const& name,
   std::initializer_list<std::string> cli_flags,
   std::string const& description,
   T default_value)
+  -> readonly_reference<T>
 {
   params_[name] = std::move(default_value);
-  clara::Opt option(utils::any_cast<T&>(params_[name]), name);
+  auto& param_ref = any_cast<T&>(params_[name]);
+  clara::Opt option(param_ref, name);
   for (auto const& f : cli_flags)
     option[f];
   parser_ |= option(description).optional();
+  return param_ref;
 }
 
 template <typename T>

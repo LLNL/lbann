@@ -72,16 +72,19 @@ void argument_parser::finalize() const
     throw missing_required_arguments(required_);
 }
 
-void argument_parser::add_flag(
+auto argument_parser::add_flag(
   std::string const& name,
   std::initializer_list<std::string> cli_flags,
   std::string const& description)
+  -> readonly_reference<bool>
 {
   params_[name] = false;
-  clara::Opt option(utils::any_cast<bool&>(params_[name]));
+  auto& param_ref = any_cast<bool&>(params_[name]);
+  clara::Opt option(param_ref);
   for (auto const& f : cli_flags)
     option[f];
   parser_ |= option(description).optional();
+  return param_ref;
 }
 
 std::string const& argument_parser::get_exe_name() const noexcept

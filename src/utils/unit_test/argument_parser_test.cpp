@@ -70,11 +70,13 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
     }
     WHEN ("A boolean flag is added")
     {
-      parser.add_flag(
-        "verbose", {"-v", "--verbose"}, "print verbosely");
+      auto verbose =
+        parser.add_flag(
+          "verbose", {"-v", "--verbose"}, "print verbosely");
       THEN ("The flag's option name is known")
       {
         REQUIRE(parser.option_is_defined("verbose"));
+        REQUIRE_FALSE(verbose);
       }
       AND_WHEN("The flag is passed")
       {
@@ -86,17 +88,20 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
         {
           REQUIRE_NOTHROW(parser.parse(argc, argv));
           REQUIRE(parser.get<bool>("verbose"));
+          REQUIRE(verbose);
         }
       }
     }
     WHEN ("An option is added")
     {
-      parser.add_option("number of threads", {"-t", "--num_threads"},
-                        "The number of threads to use in this test.", 1);
+      auto num_threads =
+        parser.add_option("number of threads", {"-t", "--num_threads"},
+                          "The number of threads to use in this test.", 1);
       THEN ("The option is registered with the parser.")
       {
         REQUIRE(parser.option_is_defined("number of threads"));
         REQUIRE(parser.template get<int>("number of threads") == 1);
+        REQUIRE(num_threads == 1);
       }
       AND_WHEN ("The short option is passed on the command line")
       {
@@ -107,6 +112,7 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
           REQUIRE_NOTHROW(parser.parse(argc, argv));
           REQUIRE(
             parser.template get<int>("number of threads") == 9);
+          REQUIRE(num_threads == 9);
         }
       }
       AND_WHEN ("The long option is passed on the command line")
@@ -119,14 +125,16 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
           REQUIRE_NOTHROW(parser.parse(argc, argv));
           REQUIRE(
             parser.template get<int>("number of threads") == 13);
+          REQUIRE(num_threads == 13);
         }
       }
     }
     WHEN ("A string-valued option is added")
     {
-      parser.add_option("my name", {"-n", "--name", "--my_name"},
-                        "The number of threads to use in this test.",
-                        "<unregistered name>");
+      auto name =
+        parser.add_option("my name", {"-n", "--name", "--my_name"},
+                          "The number of threads to use in this test.",
+                          "<unregistered name>");
       THEN ("The option is registered with the parser.")
       {
         REQUIRE(parser.option_is_defined("my name"));
@@ -144,6 +152,7 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
           REQUIRE(
             parser.template get<std::string>("my name")
             == "Banana Joe");
+          REQUIRE(name == "Banana Joe");
         }
       }
       AND_WHEN ("The first long option is passed on the command line")
@@ -157,6 +166,7 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
           REQUIRE(
             parser.template get<std::string>("my name")
             == "Plantain Pete");
+          REQUIRE(name == "Plantain Pete");
         }
       }
       AND_WHEN ("The second long option is passed on the command line")
@@ -171,6 +181,7 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
           REQUIRE(
             parser.template get<std::string>("my name")
             == "Jackfruit Jill");
+          REQUIRE(name == "Jackfruit Jill");
         }
       }
     }
