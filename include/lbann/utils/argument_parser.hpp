@@ -48,6 +48,33 @@ namespace utils
 
 /** @class argument_parser
  *  @brief A decorator class over Clara
+ *
+ *  The argument parser supports 3 types of command line parameters:
+ *
+ *  1. Flags. Flags default to "false" and toggle to "true" when they
+ *     are given on the command line. It is an error to provide a
+ *     value to a flag on the command line (e.g., "-flag 0").
+ *  2. Options. Options represent key-value pairs. They must take only
+ *     a single value (e.g. "-key value"). It is an error to omit a
+ *     value for a parameter of option type.
+ *  3. Arguments. Arguments (or "positional arguments") do not name a
+ *     key and are implicitly keyed by their index in the argument
+ *     list. A corollary to this is that required arguments must
+ *     appear before optional arguments. Arguments are keyed in the
+ *     order in which they are added.
+ *
+ *  To accomodate the presence of required arguments with the
+ *  maintenance-intensive practice of adding arguments willy-nilly
+ *  (because I don't believe a PR without said terrifying capability
+ *  would ever make it through), parsing of the arguments can be done
+ *  two ways: with or without finalization.
+ *
+ *  If there are no required arguments registered in the parser, these
+ *  should be equivalent. If there are required arguments, they must
+ *  all have been registered with the parser and seen in the arguments
+ *  given to the parse functions before finalization. Semantically,
+ *  the parser must be finalized before attempting to use any of the
+ *  arguments.
  */
 class argument_parser
 {
