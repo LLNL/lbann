@@ -32,15 +32,17 @@
 
 namespace lbann {
 
-adam::adam(TensorDataType learning_rate,
-           TensorDataType beta1,
-           TensorDataType beta2,
-           TensorDataType eps)
-  : optimizer(learning_rate),
+template <typename TensorDataType>
+adam<TensorDataType>::adam(TensorDataType learning_rate,
+                           TensorDataType beta1,
+                           TensorDataType beta2,
+                           TensorDataType eps)
+  : optimizer<TensorDataType>(learning_rate),
     m_beta1(beta1), m_beta2(beta2), m_eps(eps) {}
 
-adam::adam(const adam& other)
-  : optimizer(other),
+template <typename TensorDataType>
+adam<TensorDataType>::adam(const adam& other)
+  : optimizer<TensorDataType>(other),
     m_beta1(other.m_beta1),
     m_beta2(other.m_beta2),
     m_eps(other.m_eps),
@@ -49,8 +51,9 @@ adam::adam(const adam& other)
     m_moment1(other.m_moment1 ? other.m_moment1->Copy() : nullptr),
     m_moment2(other.m_moment2 ? other.m_moment2->Copy() : nullptr) {}
 
-adam& adam::operator=(const adam& other) {
-  optimizer::operator=(other);
+template <typename TensorDataType>
+adam<TensorDataType>& adam<TensorDataType>::operator=(const adam<TensorDataType>& other) {
+  optimizer<TensorDataType>::operator=(other);
   m_beta1 = other.m_beta1;
   m_beta2 = other.m_beta2;
   m_eps = other.m_eps;
@@ -63,39 +66,45 @@ adam& adam::operator=(const adam& other) {
   return *this;
 }
 
-description adam::get_description() const {
-  auto desc = optimizer::get_description();
+template <typename TensorDataType>
+description adam<TensorDataType>::get_description() const {
+  auto desc = optimizer<TensorDataType>::get_description();
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);
   desc.add("eps", m_eps);
   return desc;
 }
 
-const El::AbstractDistMatrix<TensorDataType>& adam::get_moment1() const {
+template <typename TensorDataType>
+const El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment1() const {
   if (m_moment1 == nullptr) {
     LBANN_ERROR(this->get_type() + " optimizer "
                 + "attempted to access moment1 before it was setup");
   }
   return *m_moment1;
 }
-El::AbstractDistMatrix<TensorDataType>& adam::get_moment1() {
+template <typename TensorDataType>
+El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment1() {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const adam&>(*this).get_moment1());
+  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const adam<TensorDataType>&>(*this).get_moment1());
 }
-const El::AbstractDistMatrix<TensorDataType>& adam::get_moment2() const {
+template <typename TensorDataType>
+const El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment2() const {
   if (m_moment2 == nullptr) {
     LBANN_ERROR(this->get_type() + " optimizer "
                 + "attempted to access moment2 before it was setup");
   }
   return *m_moment2;
 }
-El::AbstractDistMatrix<TensorDataType>& adam::get_moment2() {
+template <typename TensorDataType>
+El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment2() {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const adam&>(*this).get_moment2());
+  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const adam<TensorDataType>&>(*this).get_moment2());
 }
 
-void adam::setup(weights* w) {
-  optimizer::setup(w);
+template <typename TensorDataType>
+void adam<TensorDataType>::setup(weights<TensorDataType>* w) {
+  optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
   m_moment1.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   m_moment2.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
@@ -103,7 +112,9 @@ void adam::setup(weights* w) {
   El::Zeros(*m_moment2, gradient.Height(), gradient.Width());
 }
 
-void adam::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+template <typename TensorDataType>
+void adam<TensorDataType>::step_compute(El::AbstractDistMatrix<TensorDataType>& values,
+                                        const El::AbstractDistMatrix<TensorDataType>& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
 #ifdef LBANN_HAS_CUDA
@@ -117,7 +128,9 @@ void adam::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El
   }
 }
 
-void adam::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+template <typename TensorDataType>
+void adam<TensorDataType>::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values,
+                                            const El::AbstractDistMatrix<TensorDataType>& gradient) {
   constexpr TensorDataType one = 1;
 
   // Precompute the bias correction and learning rate.
@@ -179,10 +192,11 @@ void adam::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, cons
 // Checkpointing
 // =============================================
 
-bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer::save_to_checkpoint_shared(p, name_prefix);
+template <typename TensorDataType>
+bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer<TensorDataType>::save_to_checkpoint_shared(p, name_prefix);
 
-  if (get_comm().am_trainer_master()) {
+  if (this->get_comm().am_trainer_master()) {
     pack_scalars(p);
   }
 
@@ -196,14 +210,15 @@ bool adam::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   return true;
 }
 
-bool adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer::load_from_checkpoint_shared(p, name_prefix);
+template <typename TensorDataType>
+bool adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
+  optimizer<TensorDataType>::load_from_checkpoint_shared(p, name_prefix);
   struct packing_header header;
-  if (get_comm().am_trainer_master()) {
+  if (this->get_comm().am_trainer_master()) {
     unpack_scalars(p, &header);
   }
 
-  get_comm().trainer_broadcast(0, header);
+  this->get_comm().trainer_broadcast(0, header);
 
   unpack_header(header);
 
@@ -217,8 +232,9 @@ bool adam::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   return true;
 }
 
-bool adam::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer::save_to_checkpoint_distributed(p, name_prefix);
+template <typename TensorDataType>
+bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer<TensorDataType>::save_to_checkpoint_distributed(p, name_prefix);
 
   pack_scalars(p);
 
@@ -232,8 +248,9 @@ bool adam::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
   return true;
 }
 
-bool adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer::load_from_checkpoint_distributed(p, name_prefix);
+template <typename TensorDataType>
+bool adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
+  optimizer<TensorDataType>::load_from_checkpoint_distributed(p, name_prefix);
   struct packing_header header;
   unpack_scalars(p, &header);
 
@@ -247,15 +264,15 @@ bool adam::load_from_checkpoint_distributed(persist& p, std::string name_prefix)
   return true;
 }
 
-std::unique_ptr<optimizer>
+std::unique_ptr<optimizer<DataType>>
 build_adam_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::Adam const&>(msg);
-  return make_unique<adam>(params.learn_rate(),
-                           params.beta1(),
-                           params.beta2(),
-                           params.eps());
+  return make_unique<adam<DataType>>(params.learn_rate(),
+                                     params.beta1(),
+                                     params.beta2(),
+                                     params.eps());
 }
 
 } // namespace lbann

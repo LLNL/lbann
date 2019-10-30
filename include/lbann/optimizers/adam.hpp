@@ -41,7 +41,8 @@ class perturb_adam;
  *  Diederik P. Kingma and Jimmy Ba. "Adam: A method for stochastic
  *  optimization." arXiv preprint arXiv:1412.6980 (2014).
  */
-class adam : public optimizer {
+template <typename TensorDataType>
+class adam : public optimizer<TensorDataType> {
 public:
 
   /** @name Life cycle functions */
@@ -115,7 +116,7 @@ public:
   /** @name Setup */
   ///@{
 
-  void setup(weights* w = nullptr) override;
+  void setup(weights<TensorDataType>* w = nullptr) override;
 
   ///@}
 
@@ -207,7 +208,7 @@ private:
 
 };
 
-std::unique_ptr<optimizer>
+std::unique_ptr<optimizer<DataType>>
 build_adam_optimizer_from_pbuf(
   google::protobuf::Message const&);
 
