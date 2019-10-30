@@ -71,7 +71,7 @@ template <> long double NegativeAnswer() noexcept { return -6.54l; }
 
 using lbann::utils::from_string;
 
-TEST_CASE("From string corner cases","[utils][string][seq]")
+TEST_CASE("From string corner cases","[utilities][string]")
 {
   SECTION("From lvalue string to string")
   {
@@ -92,7 +92,7 @@ TEST_CASE("From string corner cases","[utils][string][seq]")
 }
 
 TEMPLATE_TEST_CASE("From string to floating point type",
-                   "[utils][string][seq]",
+                   "[utilities][string]",
                    float, double, long double)
 {
   REQUIRE_THROWS_AS(from_string<TestType>("pineapple"), std::invalid_argument);
@@ -101,7 +101,7 @@ TEMPLATE_TEST_CASE("From string to floating point type",
 }
 
 TEMPLATE_TEST_CASE("From string to signed integer type",
-                   "[utils][string][seq]",
+                   "[utilities][string]",
                    int, long, long long)
 {
   REQUIRE_THROWS_AS(from_string<TestType>("pineapple"), std::invalid_argument);
@@ -110,7 +110,7 @@ TEMPLATE_TEST_CASE("From string to signed integer type",
 }
 
 TEMPLATE_TEST_CASE("From string to unsigned integer type",
-                   "[utils][string][seq]",
+                   "[utilities][string]",
                    unsigned long, unsigned long long)
 {
   REQUIRE_THROWS_AS(from_string<TestType>("pineapple"), std::invalid_argument);
