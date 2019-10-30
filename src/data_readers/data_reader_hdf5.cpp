@@ -224,7 +224,7 @@ void hdf5_reader::gather_responses(float *responses) {
               m_response_gather_comm, &req[req_idx]);
     ++req_idx;
   }
-  
+
   if (req_idx > 0) {
     //dc::MPIPrintStreamInfo() << "Waiting for response gather completion";
     MPI_Waitall(req_idx, req, MPI_STATUS_IGNORE);
@@ -234,4 +234,4 @@ void hdf5_reader::gather_responses(float *responses) {
   std::memcpy(responses, recv_buf, sizeof(float) * m_num_response_features);
 }
 
-};
+}
