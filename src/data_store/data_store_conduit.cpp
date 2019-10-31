@@ -1646,6 +1646,11 @@ bool data_store_conduit::test_local_cache_imagenet(int n) {
   if (n < 0 || n > (int)m_shuffled_indices->size()) {
     n = m_shuffled_indices->size();
   }
+
+  image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
+  if (image_reader == nullptr) {
+    LBANN_ERROR("data_reader_image *image_reader = dynamic_cast<data_reader_image*>(m_reader) failed");
+  }
   const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
 
   for (int h=0; h<n; ++h) {
@@ -1654,7 +1659,6 @@ bool data_store_conduit::test_local_cache_imagenet(int n) {
     if (!in) {
       LBANN_ERROR("failed to open ", fn, " for reading; file_dir: ", m_reader->get_file_dir(), "  fn: ", image_list[h].first, "; role: ", m_reader->get_role());
     }
-
   }
   return true;
 }

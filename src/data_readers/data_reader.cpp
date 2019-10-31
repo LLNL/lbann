@@ -707,55 +707,11 @@ void generic_data_reader::instantiate_data_store() {
     m_data_store->set_node_sizes_vary();
   }
 
-  //a call to m_data_store->check_mem_capacity(...) should go here, but
-  //at the moment that depends on the sample_list class, which it shouldn't
-  //TODO: revisit
-
   m_data_store->set_shuffled_indices(&m_shuffled_indices);
-
-<<<<<<< HEAD
-  if (opts->get_bool("preload_data_store") && !opts->get_bool("data_store_cache")) {
-    std::vector<int> local_list_sizes;
-    int np = m_comm->get_procs_per_trainer();
-    int base_files_per_rank = m_shuffled_indices.size() / np;
-    int extra = m_shuffled_indices.size() - (base_files_per_rank*np);
-    if (extra > np) {
-      LBANN_ERROR("extra > np");
-    }
-    local_list_sizes.resize(np, 0);
-    for (int j=0; j<np; j++) {
-      local_list_sizes[j] = base_files_per_rank;
-      if (j < extra) {
-        local_list_sizes[j] += 1;
-      }
-    }
-    m_data_store->build_preloaded_owner_map(local_list_sizes);
-  }
 
   std::stringstream s;
   s << "generic_data_reader::instantiate_data_store time: : " << (get_time() - tm1);
   m_data_store->set_profile_msg(s.str());
-}
-
-void generic_data_reader::setup_data_store(int mini_batch_size) {
-  if (m_data_store == nullptr) {
-    LBANN_ERROR("m_data_store == nullptr; you shouldn't be here");
-  }
-  options *opts = options::get();
-  bool local_cache = opts->get_bool("data_store_cache");
-  // optionally preload the data store
-  if (opts->get_bool("preload_data_store") && !local_cache) {
-    m_data_store->set_profile_msg("generic_data_reader::instantiate_data_store - Starting the preload");
-    double tm2 = get_time();
-    do_preload_data_store();
-    m_data_store->set_is_preloaded();
-    std::stringstream s;
-    s << "Preload complete; time: " << (get_time() - tm2);
-    m_data_store->set_profile_msg(s.str());
-=======
-  if (is_master()) {
-    std::cout << "generic_data_reader::instantiate_data_store time: : " << (get_time() - tm1) << std::endl;
-  }
 }
 
 void generic_data_reader::setup_data_store(int mini_batch_size) {
