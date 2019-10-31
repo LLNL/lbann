@@ -30,6 +30,15 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 
+/** @brief A utility macro for easily adding default-constructed sub-class
+ *  builders.*/
+#define LBANN_ADD_DEFAULT_DATA_TYPE_CALLBACK_BUILDER(Class, FunctionName)      \
+  template <typename TensorDataType>                                           \
+  inline std::unique_ptr<callback_base> FunctionName(                          \
+    const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&) { \
+    return lbann::make_unique<Class<TensorDataType>>();                        \
+  }
+
 namespace lbann {
 
 /** @class data_type_callback

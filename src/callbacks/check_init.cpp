@@ -32,7 +32,8 @@
 namespace lbann {
 namespace callback {
 
-void check_init::on_train_begin(model *m) {
+template <typename TensorDataType>
+void check_init<TensorDataType>::on_train_begin(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // Skip after the first epoch.
   if (c.get_epoch() != 0) {
@@ -52,7 +53,7 @@ void check_init::on_train_begin(model *m) {
     }
     // Model 0 holds the master copy, it gathers the values from other models
     // and compares them.
-    const AbsMat& local_matrix = w->get_values().LockedMatrix();
+    const El::AbstractMatrix<TensorDataType>& local_matrix = w->get_values().LockedMatrix();
     CPUMat remote_matrix(local_matrix.Height(), local_matrix.Width());
     for (int model = 1; model < comm->get_num_trainers(); ++model) {
       comm->global_barrier();
@@ -73,14 +74,16 @@ void check_init::on_train_begin(model *m) {
   }
 }
 
-bool check_init::check_equal(const AbsMat& x, const AbsMat& y) const {
+template <typename TensorDataType>
+bool check_init<TensorDataType>::check_equal(const El::AbstractMatrix<TensorDataType>& x,
+                                             const El::AbstractMatrix<TensorDataType>& y) const {
   const El::Int height = x.Height();
   const El::Int width = x.Width();
   if (height != y.Height() || width != y.Width() || x.LDim() != y.LDim()) {
     return false;
   }
-  const DataType *x_buf = x.LockedBuffer();
-  const DataType *y_buf = y.LockedBuffer();
+  const TensorDataType *x_buf = x.LockedBuffer();
+  const TensorDataType *y_buf = y.LockedBuffer();
   for (El::Int i = 0; i < height * width; ++i) {
     if (x_buf[i] != y_buf[i]) {
       return false;

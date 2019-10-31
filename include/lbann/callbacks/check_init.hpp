@@ -29,7 +29,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_CHECK_INIT_HPP_INCLUDED
 
-#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/data_type_callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -37,9 +37,10 @@ namespace callback {
 /**
  * Verify that every model uses the same initialization.
  */
-class check_init : public callback_base {
+template <typename TensorDataType>
+class check_init : public data_type_callback<TensorDataType> {
  public:
-  check_init() : callback_base() {}
+  check_init() : data_type_callback<TensorDataType>() {}
   check_init(const check_init&) = default;
   check_init& operator=(
     const check_init&) = default;
@@ -51,11 +52,12 @@ class check_init : public callback_base {
   std::string name() const override { return "check init"; }
  private:
   /** Return true if x == y. */
-  bool check_equal(const AbsMat& x, const AbsMat& y) const;
+  bool check_equal(const El::AbstractMatrix<TensorDataType>& x,
+                   const El::AbstractMatrix<TensorDataType>& y) const;
 };
 
 // Builder function
-LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
+LBANN_ADD_DEFAULT_DATA_TYPE_CALLBACK_BUILDER(
   check_init, build_check_init_callback_from_pbuf)
 
 } // namespace callback
