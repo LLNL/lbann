@@ -218,19 +218,9 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
 }
 
 void data_store_conduit::setup(int mini_batch_size) {
-  double tm1 = get_time();
   PROFILE("starting setup()");
-
   m_owner_map_mb_size = mini_batch_size;
-
-  PROFILE("m_is_local_cache? ", m_is_local_cache, " m_preload? ", m_preload);
-  if (m_is_local_cache && m_preload) {
-    preload_local_cache();
-  }
   m_is_setup = true;
-
-  PROFILE("time for data_store_conduit setup: ", (get_time()-tm1),
-          " (will be insignificant unless running in local cache mode)");
 }
 
 void data_store_conduit::setup_data_store_buffers() {
@@ -916,6 +906,7 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,size_t> &file_si
     // get sizes of files for which I'm responsible
     std::vector<size_t> my_image_sizes;
     for (size_t h=m_rank_in_trainer; h<m_shuffled_indices->size(); h += m_np_in_trainer) {
+      ++m_my_num_indices;
       const std::string fn = m_reader->get_file_dir() + '/' + image_list[(*m_shuffled_indices)[h]].first;
       std::ifstream in(fn.c_str());
       if (!in) {
