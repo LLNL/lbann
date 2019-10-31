@@ -724,6 +724,7 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
   }
   // optionally preload the data store
   options *opts = options::get();
+ 
   if (opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
     if(is_master()) {
       std::cerr << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
