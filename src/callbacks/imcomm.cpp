@@ -73,26 +73,28 @@ void imcomm::setup(model *m) {
   }
 }
 
-void imcomm::on_train_begin(model *m) {
+template <typename TensorDataType>
+void imcomm<TensorDataType>::on_train_begin(model *m) {
   lbann_comm *comm = m->get_comm();
   if (comm->get_num_trainers() == 1) {
     return;  // No point with only one model.
   }
-  for (weights<DataType> *w : m->get_weights()) {
+  for (weights<TensorDataType> *w : m->get_weights()) {
     auto values = std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>{w->get_values().Copy()};
     comm->intertrainer_broadcast_matrix(*values, 0);
     w->set_values(*values);
   }
 }
 
-void imcomm::on_backward_prop_end(model *m) {
+template <typename TensorDataType>
+void imcomm<TensorDataType>::on_backward_prop_end(model *m) {
   const auto& c = m->get_execution_context();
   lbann_comm *comm = m->get_comm();
   if (comm->get_num_trainers() == 1 ||
       c.get_execution_mode() != execution_mode::training) {
     return;  // No point with only one model.
   }
-  for (weights<DataType> *w : m->get_weights()) {
+  for (weights<TensorDataType> *w : m->get_weights()) {
     EvalType start_time = get_time();
     auto const& ct = m_weights_params[w];
     if (ct == NONE) {
@@ -148,6 +150,7 @@ std::string get_comm_type_name(imcomm::comm_type m) {
   }
 }
 
+template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_imcomm_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
@@ -155,16 +158,16 @@ build_imcomm_callback_from_pbuf(
   using param_msg_type = lbann_data::Callback::CallbackImComm;
   const auto& params = dynamic_cast<const param_msg_type&>(proto_msg);
   const auto& type_str = params.intertrainer_comm_method();
-  imcomm::comm_type type = imcomm::comm_type::NONE;
+  typename imcomm<TensorDataType>::comm_type type = imcomm<TensorDataType>::comm_type::NONE;
   if (type_str == "none") {
-    type = imcomm::comm_type::NONE;
+    type = imcomm<DataType>::comm_type::NONE;
   } else if (type_str == "normal") {
-    type = imcomm::comm_type::NORMAL;
+    type = imcomm<DataType>::comm_type::NORMAL;
   } else {
     LBANN_ERROR("invalid inter-model communication type (", type_str, ")");
   }
-  std::unordered_set<weights<DataType>*> selected_weights; /// @todo Initialize weights
-  return make_unique<imcomm>(type, selected_weights, summarizer);
+  std::unordered_set<weights<TensorDataType>*> selected_weights; /// @todo Initialize weights
+  return make_unique<imcomm<TensorDataType>>(type, selected_weights, summarizer);
 }
 
 } // namespace callback
