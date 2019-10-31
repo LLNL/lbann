@@ -37,12 +37,6 @@ imagenet_reader::imagenet_reader(bool shuffle)
   set_defaults();
 }
 
-imagenet_reader::imagenet_reader(const imagenet_reader& rhs, const std::vector<int>& ds_sample_move_list, std::string role)
-  : image_data_reader(rhs, ds_sample_move_list, role) {}
-
-imagenet_reader::imagenet_reader(const imagenet_reader& rhs, const std::vector<int>& ds_sample_move_list)
-  : image_data_reader(rhs, ds_sample_move_list) {}
-
 imagenet_reader::~imagenet_reader() {}
 
 void imagenet_reader::set_defaults() {

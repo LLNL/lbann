@@ -35,10 +35,6 @@ namespace lbann {
 class imagenet_reader : public image_data_reader {
  public:
   imagenet_reader(bool shuffle = true);
-  imagenet_reader(const imagenet_reader&,
-                  const std::vector<int>& ds_sample_move_list);
-  imagenet_reader(const imagenet_reader&,
-                  const std::vector<int>& ds_sample_move_list, std::string role);
   imagenet_reader(const imagenet_reader&) = default;
   imagenet_reader& operator=(const imagenet_reader&) = default;
   ~imagenet_reader() override;

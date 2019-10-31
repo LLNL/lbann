@@ -48,19 +48,6 @@ image_data_reader::image_data_reader(const image_data_reader& rhs)
   copy_members(rhs);
 }
 
-image_data_reader::image_data_reader(const image_data_reader& rhs,const std::vector<int>& ds_sample_move_list, std::string role)
-  : generic_data_reader(rhs)
-{
-  set_role(role);
-  copy_members(rhs, ds_sample_move_list);
-}
-
-image_data_reader::image_data_reader(const image_data_reader& rhs,const std::vector<int>& ds_sample_move_list)
-  : generic_data_reader(rhs)
-{
-  copy_members(rhs, ds_sample_move_list);
-}
-
 image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
   generic_data_reader::operator=(rhs);
   m_image_dir = rhs.m_image_dir;
@@ -74,14 +61,10 @@ image_data_reader& image_data_reader::operator=(const image_data_reader& rhs) {
   return (*this);
 }
 
-void image_data_reader::copy_members(const image_data_reader &rhs, const std::vector<int>& ds_sample_move_list) {
+void image_data_reader::copy_members(const image_data_reader &rhs) {
 
   if(rhs.m_data_store != nullptr) {
-    if(ds_sample_move_list.size() == 0) {
-      m_data_store = new data_store_conduit(rhs.get_data_store());
-    } else {
-      m_data_store = new data_store_conduit(rhs.get_data_store(), ds_sample_move_list);
-    }
+    m_data_store = new data_store_conduit(rhs.get_data_store());
     m_data_store->set_data_reader_ptr(this);
   }
 
