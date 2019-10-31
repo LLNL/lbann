@@ -29,7 +29,7 @@
 
 #include <string>
 #include <vector>
-#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/data_type_callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -38,7 +38,8 @@ namespace callback {
  *  Image files are in the form
  *  "<prefix><tag>-<layer name>.<format>".
  */
-class save_images : public callback_base {
+template <typename TensorDataType>
+class save_images : public data_type_callback<TensorDataType> {
 public:
 
   /** Constructor.
@@ -47,8 +48,8 @@ public:
    *  @param image_prefix Prefix for image file names.
    */
   save_images(std::vector<std::string> layer_names,
-                             std::string image_format = "jpg",
-                             std::string image_prefix = "");
+              std::string image_format = "jpg",
+              std::string image_prefix = "");
   save_images(const save_images&) = default;
   save_images& operator=(
     const save_images&) = default;
@@ -73,6 +74,7 @@ private:
 };
 
 // Builder function
+template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_save_images_callback_from_pbuf(
   const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);

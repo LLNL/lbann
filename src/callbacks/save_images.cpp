@@ -38,6 +38,7 @@ namespace callback {
 
 namespace {
 
+template <typename TensorDataType>
 void save_image(std::string prefix,
                 std::string format,
                 const std::vector<Layer*>& layers,
@@ -52,8 +53,9 @@ void save_image(std::string prefix,
       continue;
     }
 
+    auto* dtl = dynamic_cast<data_type_layer<TensorDataType>*>(l);
     // Check that tensor dimensions are valid for images
-    const auto& dims = l->get_output_dims();
+    const auto& dims = dtl->get_output_dims();
     El::Int num_channels(0), height(0), width(0);
     if (dims.size() == 2) {
       num_channels = 1;
@@ -78,8 +80,8 @@ void save_image(std::string prefix,
     }
 
     // Get tensor data
-    const auto& raw_data = l->get_activations();
-    std::unique_ptr<AbsDistMat> raw_data_v(raw_data.Construct(raw_data.Grid(), raw_data.Root()));
+    const auto& raw_data = dtl->get_activations();
+    std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> raw_data_v(raw_data.Construct(raw_data.Grid(), raw_data.Root()));
     El::LockedView(*raw_data_v, raw_data, El::ALL, El::IR(0));
     CircMat<El::Device::CPU> circ_data(raw_data_v->Grid(), raw_data_v->Root());
     circ_data = *raw_data_v;
@@ -89,15 +91,15 @@ void save_image(std::string prefix,
       const auto& data = circ_data.LockedMatrix();
 
       // Data will be scaled to be in [0,256]
-      DataType lower = data(0, 0);
-      DataType upper = data(0, 0);
+      TensorDataType lower = data(0, 0);
+      TensorDataType upper = data(0, 0);
       for (El::Int i = 1; i < data.Height(); ++i) {
         lower = std::min(lower, data(i, 0));
         upper = std::max(upper, data(i, 0));
       }
       const auto& scale = ((upper > lower) ?
                            256 / (upper - lower) :
-                           DataType(1));
+                           TensorDataType(1));
 
       // Copy data into OpenCV matrix
       int type = -1;
@@ -131,10 +133,11 @@ void save_image(std::string prefix,
 
 } // namespace
 
-save_images::save_images(std::vector<std::string> layer_names,
-                                                       std::string image_format,
-                                                       std::string image_prefix)
-  : callback_base(),
+template <typename TensorDataType>
+save_images<TensorDataType>::save_images(std::vector<std::string> layer_names,
+                                         std::string image_format,
+                                         std::string image_prefix)
+  : data_type_callback<TensorDataType>(),
     m_layer_names(std::move(layer_names)),
     m_image_format(image_format.empty() ? "jpg" : image_format),
     m_image_prefix(std::move(image_prefix)) {
@@ -143,27 +146,30 @@ save_images::save_images(std::vector<std::string> layer_names,
 #endif // LBANN_HAS_OPENCV
 }
 
-void save_images::on_epoch_end(model *m) {
+template <typename TensorDataType>
+void save_images<TensorDataType>::on_epoch_end(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
-  save_image(m_image_prefix + "epoch" + std::to_string(c.get_epoch()),
-             m_image_format,
-             m->get_layers(),
-             m_layer_names);
+  save_image<TensorDataType>(m_image_prefix + "epoch" + std::to_string(c.get_epoch()),
+                             m_image_format,
+                             m->get_layers(),
+                             m_layer_names);
 }
 
-void save_images::on_test_end(model *m) {
-  save_image(m_image_prefix + "test",
-             m_image_format,
-             m->get_layers(),
-             m_layer_names);
+template <typename TensorDataType>
+void save_images<TensorDataType>::on_test_end(model *m) {
+  save_image<TensorDataType>(m_image_prefix + "test",
+                             m_image_format,
+                             m->get_layers(),
+                             m_layer_names);
 }
 
+template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_save_images_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSaveImages&>(proto_msg);
-  return make_unique<save_images>(
+  return make_unique<save_images<TensorDataType>>(
     parse_list<>(params.layers()),
     params.image_format(),
     params.image_prefix());
