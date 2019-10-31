@@ -108,29 +108,12 @@ void numpy_npz_conduit_reader::load() {
     LBANN_WARNING("when not preloading you must specify the number of labels in the prototext file if you are doing classification");
   }
 
-  std::vector<int> local_list_sizes;
-  if (opts->get_bool("preload_data_store")) {
-    int np = m_comm->get_procs_per_trainer();
-    int base_files_per_rank = m_filenames.size() / np;
-    int extra = m_filenames.size() - (base_files_per_rank*np);
-    if (extra > np) {
-      LBANN_ERROR("extra > np");
-    }
-    local_list_sizes.resize(np, 0);
-    for (int j=0; j<np; j++) {
-      local_list_sizes[j] = base_files_per_rank;
-      if (j < extra) {
-        local_list_sizes[j] += 1;
-      }
-    }
-  }
-
-  instantiate_data_store(local_list_sizes);
+  instantiate_data_store();
 
   select_subset_of_data();
 }
 
-void numpy_npz_conduit_reader::preload_data_store() {
+void numpy_npz_conduit_reader::do_preload_data_store() {
   double tm1 = get_time();
 
   if (is_master()) std::cout << "Starting numpy_npz_conduit_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
