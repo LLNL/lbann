@@ -1001,13 +1001,12 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
   size_t avail_mem = stat.f_bsize*stat.f_bavail;
   double percent = 100.0 * m_mem_seg_length / avail_mem;
   std::stringstream msg;
-  msg << "  size of required shared memory segment: " << m_mem_seg_length  << "\n"
-      << "  available mem: " << avail_mem << "\n"
-      << "  required size is " << percent << " percent of available\n";
-  if (m_world_master) {
-    std::cerr << "\nShared memory segment statistics:\n"
-              << msg.str() << "\n";
-  }
+  PROFILE(
+    "Shared Memeory segment statistics:\n",
+    "  size of required shared memory segment: ", m_mem_seg_length, "\n",
+    "  available mem: ", avail_mem, "\n",
+    "  required size is ", percent, " percent of available\n");
+
   if (m_mem_seg_length >= avail_mem) {
     LBANN_ERROR("insufficient available memory:\n", msg.str());
   }
@@ -1080,29 +1079,29 @@ void data_store_conduit::preload_local_cache() {
   double tm1 = get_time();
   get_image_sizes(file_sizes, indices);
   PROFILE("  get_image_sizes time: ", (get_time()-tm1));
-  tm1 = get_time();
   //indices[j] contains the indices (wrt m_reader->get_image_list())
   //that P_j will read from disk, and subsequently bcast to all others
   //
   //file_sizes maps an index to its file size
 
+  tm1 = get_time();
   allocate_shared_segment(file_sizes, indices);
   PROFILE("  allocate_shared_segment time: ", (get_time()-tm1));
-  tm1 = get_time();
 
+  tm1 = get_time();
   std::vector<char> work;
   read_files(work, file_sizes, indices[m_rank_in_trainer]);
   PROFILE("  read_files time: ", (get_time()- tm1));
-  tm1 = get_time();
 
+  tm1 = get_time();
   compute_image_offsets(file_sizes, indices);
   PROFILE("  compute_image_offsets time: ", (get_time()-tm1));
-  tm1 = get_time();
 
+  tm1 = get_time();
   exchange_images(work, file_sizes, indices);
   PROFILE("  exchange_images time: ", (get_time()-tm1));
-  tm1 = get_time();
 
+  tm1 = get_time();
   build_conduit_nodes(file_sizes);
   PROFILE("  build_conduit_nodes time: ", (get_time()-tm1));
 }
@@ -1664,6 +1663,24 @@ void data_store_conduit::print_partial_owner_map(int n) {
 void data_store_conduit::set_profile_msg(std::string s) {
   PROFILE(s);
 }
+
+bool data_store_conduit::test_local_cache_imagenet(int n) {
+  if (n < 0 || n > (int)m_shuffled_indices->size()) {
+    n = m_shuffled_indices->size();
+  }
+  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+
+  for (int h=0; h<n; ++h) {
+    const std::string fn = m_reader->get_file_dir() + '/' + image_list[(*m_shuffled_indices)[h]].first;
+    std::ifstream in(fn.c_str());
+    if (!in) {
+      LBANN_ERROR("failed to open ", fn, " for reading; file_dir: ", m_reader->get_file_dir(), "  fn: ", image_list[h].first, "; role: ", m_reader->get_role());
+    }
+
+  }
+  return true;
+}
+
 
 
 }  // namespace lbann

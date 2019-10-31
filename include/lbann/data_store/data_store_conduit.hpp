@@ -165,6 +165,17 @@ class data_store_conduit {
   /** @brief Add text to the profiling file, if it's opened */
   void set_profile_msg(std::string);
 
+  /** @brief Runs an internal test to ensure the locally cached conduit data is correct
+   *
+   * For use during development and testing. This test is activated via
+   * the cmd line flag: --data_store_test_cache. Output may be written to
+   * cout, and the profile and debug files (if they are opened)
+   * @param n is the maximum number of samples to test; set to -1 to test all
+   * @return true, if all samples read from file match those constructed from
+   *               the local shared memory segment (aka, cache)
+   */ 
+  bool test_local_cache_imagenet(int n);
+
 private :
 
   /** @brief The number of samples that this processor owns */
