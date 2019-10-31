@@ -27,7 +27,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_PERTURB_ADAM_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_PERTURB_ADAM_HPP_INCLUDED
 
-#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/data_type_callback.hpp"
 #include "lbann/optimizers/adam.hpp"
 
 #include <set>
@@ -46,7 +46,8 @@ namespace callback {
  *  @f$\log(\text{learning rate})@f$, @f$\log(1-\beta_1)@f$,
  *  @f$\log(1-\beta_2)@f$, and @f$\log\epsilon@f$.
  */
-class perturb_adam : public callback_base {
+template <typename TensorDataType>
+class perturb_adam : public data_type_callback<TensorDataType> {
 public:
 
   /** @param learning_rate_factor   Standard deviation of learning rate
@@ -68,14 +69,14 @@ public:
    *                        empty, all Adam optimizers in the model are
    *                        perturbed.
    */
-  perturb_adam(DataType learning_rate_factor,
-                              DataType beta1_factor,
-                              DataType beta2_factor,
-                              DataType eps_factor = 0,
-                              bool perturb_during_training = false,
-                              El::Int batch_interval = 1,
-                              std::set<std::string> weights_names
-                              = std::set<std::string>());
+  perturb_adam(TensorDataType learning_rate_factor,
+               TensorDataType beta1_factor,
+               TensorDataType beta2_factor,
+               TensorDataType eps_factor = 0,
+               bool perturb_during_training = false,
+               El::Int batch_interval = 1,
+               std::set<std::string> weights_names
+               = std::set<std::string>());
   perturb_adam* copy() const override { return new perturb_adam(*this); }
   std::string name() const override { return "perturb Adam"; }
 
@@ -88,22 +89,22 @@ private:
    *
    *  In log space.
    */
-  DataType m_learning_rate_factor;
+  TensorDataType m_learning_rate_factor;
   /** Standard deviation of @f$\beta_1@f$ perturbation.
    *
    *  In log space.
    */
-  DataType m_beta1_factor;
+  TensorDataType m_beta1_factor;
   /** Standard deviation of @f$\beta_2@f$ perturbation.
    *
    *  In log space.
    */
-  DataType m_beta2_factor;
+  TensorDataType m_beta2_factor;
   /** Standard deviation of @f$\epsilon@f$ perturbation.
    *
    *  In log space.
    */
-  DataType m_eps_factor;
+  TensorDataType m_eps_factor;
 
   /** Whether to periodically perturb during training.
    *
@@ -120,7 +121,7 @@ private:
   /** Perturb Adam optimizers in model. */
   void perturb(model& m) const;
   /** Perturb Adam optimizer hyperparameters. */
-  void perturb(lbann_comm& comm, adam& m) const;
+  void perturb(lbann_comm& comm, adam<TensorDataType>& m) const;
 
 };
 

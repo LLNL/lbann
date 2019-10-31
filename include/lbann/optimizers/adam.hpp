@@ -31,6 +31,7 @@
 
 namespace lbann {
 namespace callback {
+template <typename TensorDataType>
 class perturb_adam;
 } // namespace callback
 
@@ -144,7 +145,7 @@ private:
   std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_moment2;
 
   /** Hyperparameter exploration. */
-  friend class callback::perturb_adam;
+  friend class callback::perturb_adam<TensorDataType>;
 
   /** CPU implementation of optimization step. */
   void step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
