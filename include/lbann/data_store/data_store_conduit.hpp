@@ -110,9 +110,6 @@ class data_store_conduit {
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
 
-  /// Removed nodes corresponding from the indices vector from the data store
-  void purge_unused_samples(const std::vector<int>& indices);
-
   /// Recompact the nodes because they are not copied properly when instantiating
   /// using the copy constructor
   void compact_nodes();
@@ -486,6 +483,7 @@ private :
     }
     (*m_profile) << var1 << " ";
     PROFILE(var2...) ;
+    flush_profile_file();
   }
 
   void DEBUG() { 
@@ -503,6 +501,7 @@ private :
     }
     (*m_debug) << var1 << " ";
     DEBUG(var2...) ;
+    flush_debug_file();
   }
 
 };
