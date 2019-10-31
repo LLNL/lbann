@@ -32,7 +32,7 @@
 #include <vector>
 #include <unordered_set>
 #include <unordered_map>
-#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/data_type_callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -41,7 +41,8 @@ namespace callback {
  * Support inter-model communication after each mini-batch to synchronize
  * gradient updates.
  */
-class imcomm : public callback_base {
+template <typename TensorDataType>
+class imcomm : public data_type_callback<TensorDataType> {
  public:
   using callback_base::on_backward_prop_end;
 
@@ -68,7 +69,7 @@ class imcomm : public callback_base {
          const std::shared_ptr<lbann_summary>& summarizer = nullptr);
 
   /** Choose comm type ct for weights. */
-  void set_weights_comm(weights<DataType> *w, comm_type ct);
+  void set_weights_comm(weights<TensorDataType> *w, comm_type ct);
 
   /** Do initialization for this model. */
   void setup(model *m) override;
@@ -88,7 +89,7 @@ class imcomm : public callback_base {
   std::unordered_map<weights *, comm_type> m_weights_params;
 
   /** Summarize relevant statistics. */
-  void do_summary(model *m, weights<DataType> *w, EvalType im_time);
+  void do_summary(model *m, weights<TensorDataType> *w, EvalType im_time);
 
   /** @brief lbann_summary */
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;

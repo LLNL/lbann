@@ -27,7 +27,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_CHECK_GRADIENTS_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_CHECK_GRADIENTS_HPP_INCLUDED
 
-#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/data_type_callback.hpp"
 
 #include <google/protobuf/message.h>
 
@@ -43,7 +43,8 @@ namespace callback {
  *  derivative computed during backprop, the gradient check has
  *  failed.
  */
-class check_gradients : public callback_base {
+template <typename TensorDataType>
+class check_gradients : public data_type_callback<TensorDataType> {
 public:
 
   /**
@@ -60,7 +61,7 @@ public:
    *                            large gradient errors.
    */
   check_gradients(std::set<execution_mode> modes = {},
-                  DataType step_size = DataType(0),
+                  TensorDataType step_size = TensorDataType(0),
                   bool verbose = false,
                   bool error_on_failure = false);
   check_gradients* copy() const override {
@@ -76,7 +77,7 @@ private:
   /** Execution modes with gradient checks. */
   std::set<execution_mode> m_modes;
   /** Step size for numerical differentiation. */
-  DataType m_step_size;
+  TensorDataType m_step_size;
   /** Whether to print results for each parameter. */
   bool m_verbose;
   /** Whether to throw an exception for large gradient errors. */

@@ -66,8 +66,9 @@ DataType compute_objective_function(model& m) {
 
 } // namespace
 
-check_gradients::check_gradients(std::set<execution_mode> modes,
-                                 DataType step_size,
+template <typename TensorDataType>
+check_gradients<TensorDataType>::check_gradients(std::set<execution_mode> modes,
+                                 TensorDataType step_size,
                                  bool verbose,
                                  bool error_on_failure)
   : m_modes(std::move(modes)),
@@ -75,7 +76,8 @@ check_gradients::check_gradients(std::set<execution_mode> modes,
     m_verbose(verbose),
     m_error_on_failure(error_on_failure) {}
 
-void check_gradients::do_check_gradients(model& m) const {
+template <typename TensorDataType>
+void check_gradients<TensorDataType>::do_check_gradients(model& m) const {
 
   // Get objects from model
   const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
@@ -98,13 +100,13 @@ void check_gradients::do_check_gradients(model& m) const {
 
   // Load data in input layers
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(l) != nullptr) {
+    if (dynamic_cast<generic_input_layer<TensorDataType>*>(l) != nullptr) {
       l->forward_prop();
     }
   }
 
   // Compute objective function
-  const DataType objective = compute_objective_function(m);
+  const TensorDataType objective = compute_objective_function(m);
 
   // Choose finite difference step
   // Note: Consider a central difference scheme:
@@ -116,11 +118,11 @@ void check_gradients::do_check_gradients(model& m) const {
   // For simplicity, we assume f(chi) ~ f(x), and | f'''''(xi) | ~ 1.
   // If step size is not specified, then we choose h so that
   //   E_fl <= sqrt(epsilon)
-  const DataType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.9);
-  const DataType step_size = (m_step_size > DataType{0} ?
+  const TensorDataType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.9);
+  const TensorDataType step_size = (m_step_size > TensorDataType{0} ?
                               m_step_size :
                               std::fabs(objective) * std::sqrt(epsilon));
-  DataType expected_error = (epsilon * objective / step_size
+  TensorDataType expected_error = (epsilon * objective / step_size
                              + std::pow(step_size, 4) / 18);
   expected_error = std::pow(expected_error, 0.9);
 
@@ -140,7 +142,7 @@ void check_gradients::do_check_gradients(model& m) const {
               << "  Expected gradient error  = " << expected_error << "\n";
   }
 
-  for (weights<DataType> *w : m.get_weights()) {
+  for (weights<TensorDataType> *w : m.get_weights()) {
     if (w->get_optimizer() == nullptr) {
       continue;
     }
@@ -149,8 +151,8 @@ void check_gradients::do_check_gradients(model& m) const {
     }
 
     // Get weights matrix and gradient
-    const AbsDistMat& weights_matrix = w->get_values();
-    const AbsDistMat& gradient = w->get_optimizer()->get_gradient();
+    const El::AbstractDistMatrix<TensorDataType>& weights_matrix = w->get_values();
+    const El::AbstractDistMatrix<TensorDataType>& gradient = w->get_optimizer()->get_gradient();
 
     // Iterate through weights matrix entries
     for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
@@ -162,34 +164,34 @@ void check_gradients::do_check_gradients(model& m) const {
         const El::Int local_col = (weight_is_local ?
                                    weights_matrix.LocalCol(col) :
                                    0);
-        const DataType initial_weight = (weight_is_local ?
+        const TensorDataType initial_weight = (weight_is_local ?
                                          weights_matrix.GetLocal(local_row,
                                                                  local_col) :
-                                         DataType(0));
+                                         TensorDataType(0));
 
         // Compute objective function values
         // Note: matrix entry is reset after computing objective
         // function values
         w->set_value(initial_weight + 2 * step_size, row, col);
-        const DataType f_2h = compute_objective_function(m);
+        const TensorDataType f_2h = compute_objective_function(m);
         w->set_value(initial_weight + step_size, row, col);
-        const DataType f_h = compute_objective_function(m);
+        const TensorDataType f_h = compute_objective_function(m);
         w->set_value(initial_weight - step_size, row, col);
-        const DataType f_nh = compute_objective_function(m);
+        const TensorDataType f_nh = compute_objective_function(m);
         w->set_value(initial_weight - 2 * step_size, row, col);
-        const DataType f_n2h = compute_objective_function(m);
+        const TensorDataType f_n2h = compute_objective_function(m);
         w->set_value(initial_weight, row, col);
 
         // Compute relative error in gradient.
         // Note: only weight owner participates
         if (weight_is_local && weights_matrix.RedundantRank() == 0) {
-          const DataType analytical_gradient
+          const TensorDataType analytical_gradient
             = gradient.GetLocal(local_row, local_col);
-          const DataType numerical_gradient
+          const TensorDataType numerical_gradient
             = (- f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
-          const DataType error = std::fabs(analytical_gradient - numerical_gradient);
-          auto relative_error = DataType(0);
-          if (error != DataType(0)) {
+          const TensorDataType error = std::fabs(analytical_gradient - numerical_gradient);
+          auto relative_error = TensorDataType(0);
+          if (error != TensorDataType(0)) {
             relative_error = error / std::max(std::fabs(analytical_gradient),
                                               std::fabs(numerical_gradient));
           }
@@ -229,7 +231,7 @@ void check_gradients::do_check_gradients(model& m) const {
   // Clean up
   /// @todo tym: I'm not sure if data readers are properly reset
   for (auto&& l : m.get_layers()) {
-    auto&& input = dynamic_cast<generic_input_layer<DataType>*>(l);
+    auto&& input = dynamic_cast<generic_input_layer<TensorDataType>*>(l);
     if (input != nullptr) {
       auto&& reader = input->get_data_reader(mode);
       reader->set_initial_position();
@@ -250,10 +252,10 @@ build_check_gradients_callback_from_pbuf(
     dynamic_cast<const lbann_data::Callback::CallbackCheckGradients&>(proto_msg);
   const auto& modes =
     parse_set<execution_mode>(params.execution_modes());
-  return make_unique<check_gradients>(modes,
-                                      params.step_size(),
-                                      params.verbose(),
-                                      params.error_on_failure());
+  return make_unique<check_gradients<DataType>>(modes,
+                                                params.step_size(),
+                                                params.verbose(),
+                                                params.error_on_failure());
 }
 
 } // namespace callback
