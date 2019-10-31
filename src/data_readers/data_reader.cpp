@@ -749,7 +749,6 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
     }
     double tm2 = get_time();
     do_preload_data_store();
-    m_data_store->set_is_preloaded();
     if(is_master()) {
      std::cout << "Preload complete; time: " << get_time() - tm2 << std::endl;
     }
@@ -831,7 +830,11 @@ void generic_data_reader::set_role(std::string role) {
 
 void generic_data_reader::preload_data_store() {
   do_preload_data_store();
-  m_data_store->set_is_preloaded();
+  if (m_data_store->is_local_cache()) {
+    m_data_store->set_is_preloaded();
+  } else {
+    m_data_store->set_is_preloaded();
+  }  
 }
 
 
