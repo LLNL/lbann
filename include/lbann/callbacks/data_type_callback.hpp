@@ -42,6 +42,15 @@ public:
   data_type_callback(const data_type_callback&) = default;
   data_type_callback& operator=(
     const data_type_callback&) = default;
+
+  ///@}
+  /** @name Callback hooks */
+  ///@{
+
+  /** @brief Called when weights begins optimization. */
+  virtual void on_weight_optimize_begin(model *m, weights<TensorDataType> *w) {}
+  /** @brief Called when weights ends optimization. */
+  virtual void on_weight_optimize_end(model *m, weights<TensorDataType> *w) {}
 };
 
 }  // namespace lbann

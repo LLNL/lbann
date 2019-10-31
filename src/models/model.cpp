@@ -1207,7 +1207,8 @@ void model::do_model_optimize_end_cbs() {
 void model::do_weight_optimize_begin_cbs(weights *w) {
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
-      cb->on_optimize_begin(this, w);
+      const auto& dtcb = dynamic_cast<const data_type_callback<DataType>&>(cb);
+      dtcb->on_weight_optimize_begin(this, w);
     }
   }
 }
@@ -1215,7 +1216,8 @@ void model::do_weight_optimize_begin_cbs(weights *w) {
 void model::do_weight_optimize_end_cbs(weights *w) {
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
-      cb->on_optimize_end(this, w);
+      const auto& dtcb = dynamic_cast<const data_type_callback<DataType>&>(cb);
+      dtcb->on_weight_optimize_end(this, w);
     }
   }
 }
