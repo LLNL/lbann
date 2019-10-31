@@ -175,7 +175,7 @@ void check_nan::on_backward_prop_end(model *m, Layer *l) {
 
 void check_nan::on_backward_prop_end(model *m) {
   std::stringstream err;
-  for (weights *w : m->get_weights()) {
+  for (weights<DataType> *w : m->get_weights()) {
     auto* opt = w->get_optimizer();
     if (opt != nullptr) {
       El::Int row, col;

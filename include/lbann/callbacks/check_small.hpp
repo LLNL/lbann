@@ -29,7 +29,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_CHECK_SMALL_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_CHECK_SMALL_HPP_INCLUDED
 
-#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/data_type_callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -42,12 +42,13 @@ namespace callback {
  * smallest floating point value.
  * This will kill the rank if such values are discovered.
  */
-class check_small : public callback_base {
+template <typename TensorDataType>
+class check_small : public data_type_callback<TensorDataType> {
  public:
   using callback_base::on_forward_prop_end;
   using callback_base::on_backward_prop_end;
 
-  check_small() : callback_base() {}
+  check_small() : data_type_callback<TensorDataType>() {}
   check_small(const check_small&) = default;
   check_small& operator=(
     const check_small&) = default;
@@ -63,14 +64,14 @@ class check_small : public callback_base {
   std::string name() const override { return "check_small"; }
  private:
   /** Smallest allowable value. */
-  static const DataType m_threshold;
+  static const TensorDataType m_threshold;
   /** Return true if there are no problems with m. */
-  bool is_good(const AbsDistMat& m);
+  bool is_good(const El::AbstractDistMatrix<TensorDataType>& m);
 };
 
 // Builder function
 LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
-  check_small, build_check_small_callback_from_pbuf)
+  check_small<DataType>, build_check_small_callback_from_pbuf)
 
 } // namespace callback
 } // namespace lbann

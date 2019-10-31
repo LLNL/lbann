@@ -9,6 +9,7 @@ set_full_path(THIS_DIR_HEADERS
   check_small.hpp
   checkpoint.hpp
   confusion_matrix.hpp
+  data_type_callback.hpp
   debug.hpp
   debug_io.hpp
   dump_error_signals.hpp
