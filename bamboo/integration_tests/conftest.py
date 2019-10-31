@@ -13,30 +13,17 @@ def pytest_addoption(parser):
 
     parser.addoption('--cluster', action='store', default=cluster,
                      help='--cluster=<cluster> to specify the cluster being run on, for the purpose of determing which commands to use. Default the current cluster')
-    parser.addoption('--debug_build', action='store_true', default=False,
-                      help='--debug_build specifies that debug tests should be run, even without doing a --weekly build. Default False')
     parser.addoption('--dirname', action='store', default=default_dirname,
                      help='--dirname=<path_to_dir> to specify the top-level directory. Default directory of build_lbann_lc executable')
     parser.addoption('--exes', action='store', default=default_exes,
                      help='--exes={compiler_name: path}')
-    parser.addoption('--run', action='store_true', default=False,
-                     help='--run specifies that a test normally ignored should be run. Default False')
     parser.addoption('--weekly', action='store_true', default=False,
                      help='--weekly specifies that the test should ONLY be run weekly, not nightly. Default False')
-    # For local testing only
-    parser.addoption('--data-reader-percent', action='store', default=None,
-                     help='--data-reader-percent=<percent of dataset to be used>. Default None. Note that 1.0 is 100%.')
-    parser.addoption('--exe', action='store', help='--exe=<hand-picked executable>')
 
 
 @pytest.fixture
 def cluster(request):
     return request.config.getoption('--cluster')
-
-
-@pytest.fixture
-def debug_build(request):
-    return request.config.getoption('--debug_build')
 
 
 @pytest.fixture
@@ -50,20 +37,5 @@ def exes(request):
 
 
 @pytest.fixture
-def run(request):
-    return request.config.getoption('--run')
-
-
-@pytest.fixture
 def weekly(request):
     return request.config.getoption('--weekly')
-
-
-@pytest.fixture
-def data_reader_percent(request):
-    return request.config.getoption('--data-reader-percent')
-
-
-@pytest.fixture
-def exe(request):
-    return request.config.getoption('--exe')
