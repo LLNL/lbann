@@ -30,6 +30,7 @@ namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 __global__ void momentum_noncontiguous_kernel(size_t height,
                                               size_t width,
                                               TensorDataType learning_rate,
@@ -52,6 +53,7 @@ __global__ void momentum_noncontiguous_kernel(size_t height,
   }
 }
 
+template <typename TensorDataType>
 __global__ void momentum_contiguous_kernel(size_t size,
                                            TensorDataType learning_rate,
                                            TensorDataType momentum,
@@ -68,6 +70,7 @@ __global__ void momentum_contiguous_kernel(size_t size,
   }
 }
 
+template <typename TensorDataType>
 __global__ void nesterov_kernel(size_t height,
                                 size_t width,
                                 TensorDataType learning_rate,
@@ -93,7 +96,9 @@ __global__ void nesterov_kernel(size_t height,
 
 } // namespace
 
-void sgd::momentum_step_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+template <typename TensorDataType>
+void sgd<TensorDataType>::momentum_step_gpu(El::AbstractDistMatrix<TensorDataType>& values,
+                                            const El::AbstractDistMatrix<TensorDataType>& gradient) {
 
   // Get matrix dimensions
   const size_t local_height = values.LocalHeight();
@@ -106,7 +111,7 @@ void sgd::momentum_step_gpu(El::AbstractDistMatrix<TensorDataType>& values, cons
   const size_t grid_size = (local_size + block_size - 1) / block_size;
   auto&& stream = El::GPUManager::Stream();
   if (m_nesterov) {
-    nesterov_kernel<<<grid_size, block_size, 0, stream>>>(
+    nesterov_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       local_height, local_width,
       this->get_learning_rate(), m_momentum,
       values.Buffer(), values.LDim(),
@@ -115,11 +120,11 @@ void sgd::momentum_step_gpu(El::AbstractDistMatrix<TensorDataType>& values, cons
   } else {
     if (values.Contiguous() && gradient.Contiguous()
         && m_velocity->Contiguous()) {
-      momentum_contiguous_kernel<<<grid_size, block_size, 0, stream>>>(
+      momentum_contiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
         local_size, this->get_learning_rate(), m_momentum,
         values.Buffer(), gradient.LockedBuffer(), m_velocity->Buffer());
     } else {
-      momentum_noncontiguous_kernel<<<grid_size, block_size, 0, stream>>>(
+      momentum_noncontiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
         local_height, local_width,
         this->get_learning_rate(), m_momentum,
         values.Buffer(), values.LDim(),

@@ -35,7 +35,8 @@ namespace lbann {
  *  @details Supports momentum and Nesterov acceleration.
  *  @todo Dedicated optimizers for momentum or Nesterov SGD.
  */
-class sgd : public optimizer {
+template <typename TensorDataType>
+class sgd : public optimizer<TensorDataType> {
 
 public:
 
@@ -89,7 +90,7 @@ public:
   /** @name Setup */
   ///@{
 
-  void setup(weights* w = nullptr) override;
+  void setup(weights<TensorDataType>* w = nullptr) override;
 
   ///@}
 
@@ -153,7 +154,7 @@ private:
 
 };
 
-std::unique_ptr<optimizer>
+std::unique_ptr<optimizer<DataType>>
 build_sgd_optimizer_from_pbuf(
   google::protobuf::Message const&);
 
