@@ -38,7 +38,8 @@
 namespace lbann {
 namespace callback {
 
-void mixup::on_forward_prop_end(model *m, Layer *l) {
+template <typename TensorDataType>
+void mixup<TensorDataType>::on_forward_prop_end(model *m, Layer *l) {
   if (!m_layers.count(l->get_name())) {
     return;
   }
@@ -47,8 +48,9 @@ void mixup::on_forward_prop_end(model *m, Layer *l) {
     return;  // No mixup outside of training.
   }
 
-  auto& samples_orig = l->get_local_activations(0);
-  auto& labels_orig = l->get_local_activations(1);
+  auto* dtl = dynamic_cast<data_type_layer<TensorDataType>*>(l);
+  auto& samples_orig = dtl->get_local_activations(0);
+  auto& labels_orig = dtl->get_local_activations(1);
   if (samples_orig.GetDevice() != El::Device::CPU ||
       labels_orig.GetDevice() != El::Device::CPU) {
     LBANN_ERROR("Mixup requires CPU data.");
@@ -84,12 +86,12 @@ void mixup::on_forward_prop_end(model *m, Layer *l) {
     float lambda = dist(gen);
     lambda = std::max(lambda, 1.0f - lambda);
     const float lambda_sub = 1.0f - lambda;
-    const DataType* __restrict__ x1_buf = samples.LockedBuffer(0, i);
-    const DataType* __restrict__ x2_buf = samples.LockedBuffer(0, j);
-    DataType* __restrict__ x = samples_orig.Buffer(0, i);
-    const DataType* __restrict__ y1_buf = labels.LockedBuffer(0, i);
-    const DataType* __restrict__ y2_buf = labels.LockedBuffer(0, j);
-    DataType* __restrict__ y = labels_orig.Buffer(0, i);
+    const TensorDataType* __restrict__ x1_buf = samples.LockedBuffer(0, i);
+    const TensorDataType* __restrict__ x2_buf = samples.LockedBuffer(0, j);
+    TensorDataType* __restrict__ x = samples_orig.Buffer(0, i);
+    const TensorDataType* __restrict__ y1_buf = labels.LockedBuffer(0, i);
+    const TensorDataType* __restrict__ y2_buf = labels.LockedBuffer(0, j);
+    TensorDataType* __restrict__ y = labels_orig.Buffer(0, i);
     for (El::Int k = 0; k < samples_height; ++k) {
       x[k] = lambda*x1_buf[k] + lambda_sub*x2_buf[k];
     }
@@ -99,6 +101,7 @@ void mixup::on_forward_prop_end(model *m, Layer *l) {
   }
 }
 
+template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_mixup_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
@@ -107,7 +110,7 @@ build_mixup_callback_from_pbuf(
   const auto& layers_list = parse_list<std::string>(params.layers());
   std::unordered_set<std::string> layers(layers_list.begin(),
                                          layers_list.end());
-  return make_unique<mixup>(layers, params.alpha());
+  return make_unique<mixup<TensorDataType>>(layers, params.alpha());
 }
 
 } // namespace callback
