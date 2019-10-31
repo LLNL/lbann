@@ -80,8 +80,6 @@ class data_store_conduit {
 
   void setup(int mini_batch_size);
 
-  void preload_local_cache();
-
   void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
 
   /// returns the conduit node
@@ -123,7 +121,22 @@ class data_store_conduit {
   /// with the index
   int get_index_owner(int idx);
 
+  /** @brief Returns "true" is running in local cache mode
+   *
+   * In local cache mode, each node contains a complete copy
+   * of the data set. This is stored in a shared memory segment,
+   * but part of the set may be spilled to disk if memory is
+   * insufficient. Local cache mode is activated via the cmd line
+   * flag: --data_store_cache
+   */ 
   bool is_local_cache() const { return m_is_local_cache; }
+
+  /** @brief Read the data set into memory
+   *
+   * Each rank reads a portion of the data set, then
+   * bcasts to all other ranks.
+   */
+  void preload_local_cache();
 
   void exchange_mini_batch_data(size_t current_pos, size_t mb_size); 
 
@@ -405,13 +418,16 @@ private :
   /** @brief Called by test_checkpoint */
   void print_variables();
 
-  /** @brief Called by test_checkpoint */
+  /** @brief Called by test_checkpoint 
+   *
+   * For testing and development. Prints the first 'n' entries from 
+   * the owner map * (which maps sample_id -> owning rank) to std::cout
+   */
   void print_partial_owner_map(int n);
 
   std::string get_conduit_dir() const;
   std::string get_cereal_fn() const;
   std::string get_metadata_fn() const;
-
 
   /** @brief Creates the directory if it does not already exist */
   void make_dir_if_it_doesnt_exist(const std::string &dir); 
