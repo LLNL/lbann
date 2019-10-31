@@ -70,8 +70,8 @@ class check_small : public data_type_callback<TensorDataType> {
 };
 
 // Builder function
-LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
-  check_small<DataType>, build_check_small_callback_from_pbuf)
+LBANN_ADD_DEFAULT_DATA_TYPE_CALLBACK_BUILDER(
+  check_small, build_check_small_callback_from_pbuf)
 
 } // namespace callback
 } // namespace lbann

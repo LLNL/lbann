@@ -83,7 +83,7 @@ bool check_small<TensorDataType>::is_good(const El::AbstractDistMatrix<TensorDat
   const El::Int width = local_mat.Width();
   for (El::Int col = 0; col < width; ++col) {
     for (El::Int row = 0; row < height; ++row) {
-      const DataType val = std::abs(local_mat(row, col));
+      const TensorDataType val = std::abs(local_mat(row, col));
       if (val > 0 && val <= m_threshold) {
         std::cout << "Found small value " << val << " "
                   << "at (" << row << "," << col << ")!" << std::endl;
