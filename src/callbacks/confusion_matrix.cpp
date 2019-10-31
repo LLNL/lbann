@@ -41,16 +41,18 @@ namespace callback {
 // Constructors
 // ---------------------------------------------------------
 
-confusion_matrix::confusion_matrix(std::string prediction_layer,
-                                                                 std::string label_layer,
-                                                                 std::string prefix)
-  : callback_base(1),
+template <typename TensorDataType>
+confusion_matrix<TensorDataType>::confusion_matrix(std::string prediction_layer,
+                                   std::string label_layer,
+                                   std::string prefix)
+  : data_type_callback<TensorDataType>(1),
     m_prediction_layer(std::move(prediction_layer)),
     m_label_layer(std::move(label_layer)),
     m_prefix(std::move(prefix)) {}
 
-confusion_matrix::confusion_matrix(const confusion_matrix& other)
-  : callback_base(other),
+template <typename TensorDataType>
+confusion_matrix<TensorDataType>::confusion_matrix(const confusion_matrix<TensorDataType>& other)
+  : data_type_callback<TensorDataType>(other),
     m_prediction_layer(other.m_prediction_layer),
     m_label_layer(other.m_label_layer),
     m_prefix(other.m_prefix),
@@ -58,8 +60,9 @@ confusion_matrix::confusion_matrix(const confusion_matrix& other)
     m_predictions_v(other.m_predictions_v ? other.m_predictions_v->Copy() : nullptr),
     m_labels_v(other.m_labels_v ? other.m_labels_v->Copy() : nullptr) {}
 
-confusion_matrix& confusion_matrix::operator=(const confusion_matrix& other) {
-  callback_base::operator=(other);
+template <typename TensorDataType>
+confusion_matrix<TensorDataType>& confusion_matrix<TensorDataType>::operator=(const confusion_matrix<TensorDataType>& other) {
+  data_type_callback<TensorDataType>::operator=(other);
   m_prediction_layer = other.m_prediction_layer;
   m_label_layer = other.m_label_layer;
   m_prefix = other.m_prefix;
@@ -73,7 +76,8 @@ confusion_matrix& confusion_matrix::operator=(const confusion_matrix& other) {
 // Setup
 // ---------------------------------------------------------
 
-void confusion_matrix::setup(model* m) {
+template <typename TensorDataType>
+void confusion_matrix<TensorDataType>::setup(model* m) {
   callback_base::setup(m);
 
   // Initialize matrix views/copies
@@ -81,8 +85,8 @@ void confusion_matrix::setup(model* m) {
   const auto& labels = get_labels(*m);
   auto dist_data = predictions.DistData();
   dist_data.device = El::Device::CPU;
-  m_predictions_v.reset(AbsDistMat::Instantiate(dist_data));
-  m_labels_v.reset(AbsDistMat::Instantiate(dist_data));
+  m_predictions_v.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist_data));
+  m_labels_v.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist_data));
 
   // Check output dimensions of prediction and label layers
   if (predictions.Height() != labels.Height()) {
@@ -102,45 +106,51 @@ void confusion_matrix::setup(model* m) {
 // Matrix access functions
 // ---------------------------------------------------------
 
-const AbsDistMat& confusion_matrix::get_predictions(const model& m) const {
+template <typename TensorDataType>
+const El::AbstractDistMatrix<TensorDataType>& confusion_matrix<TensorDataType>::get_predictions(const model& m) const {
   for (const auto* l : m.get_layers()) {
     if (l->get_name() == m_prediction_layer) {
-      return l->get_activations();
+      auto* dtl = dynamic_cast<data_type_layer<TensorDataType>*>(l);
+      return dtl->get_activations();
     }
   }
   std::stringstream err;
   err << "callback \"" << name() << "\" could not find "
       << "prediction layer \"" << m_prediction_layer << "\"";
   LBANN_ERROR(err.str());
-  return m.get_layers()[0]->get_activations();
+  return dynamic_cast<data_type_layer<TensorDataType>*>(m.get_layers()[0])->get_activations();
 }
 
-const AbsDistMat& confusion_matrix::get_labels(const model& m) const {
+template <typename TensorDataType>
+const El::AbstractDistMatrix<TensorDataType>& confusion_matrix<TensorDataType>::get_labels(const model& m) const {
   for (const auto* l : m.get_layers()) {
     if (l->get_name() == m_label_layer) {
-      return l->get_activations();
+      auto* dtl = dynamic_cast<data_type_layer<TensorDataType>*>(l);
+      return dtl->get_activations();
     }
   }
   std::stringstream err;
   err << "callback \"" << name() << "\" could not find "
       << "label layer \"" << m_prediction_layer << "\"";
   LBANN_ERROR(err.str());
-  return m.get_layers()[0]->get_activations();
+  return dynamic_cast<data_type_layer<TensorDataType>*>(m.get_layers()[0])->get_activations();
 }
 
 // ---------------------------------------------------------
 // Count management functions
 // ---------------------------------------------------------
 
-void confusion_matrix::reset_counts(const model& m) {
+template <typename TensorDataType>
+void confusion_matrix<TensorDataType>::reset_counts(const model& m) {
   const auto& c = m.get_execution_context();
   auto& counts = m_counts[c.get_execution_mode()];
   const auto& num_classes = get_predictions(m).Height();
   counts.assign(num_classes * num_classes, 0);
 }
 
-void confusion_matrix::update_counts(const model& m) {
-  constexpr DataType zero = 0;
+template <typename TensorDataType>
+void confusion_matrix<TensorDataType>::update_counts(const model& m) {
+  constexpr TensorDataType zero = 0;
 
   // Get predictions
   const auto& predictions = get_predictions(m);
@@ -188,7 +198,8 @@ void confusion_matrix::update_counts(const model& m) {
 
 }
 
-void confusion_matrix::save_confusion_matrix(const model& m) {
+template <typename TensorDataType>
+void confusion_matrix<TensorDataType>::save_confusion_matrix(const model& m) {
   const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
 
   // Get counts
@@ -213,7 +224,7 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
   if (comm.am_trainer_master()) {
     const auto& num_classes = get_predictions(m).Height();
     const auto& total_count = std::accumulate(counts.begin(), counts.end(), 0);
-    const auto& scale = DataType(1) / total_count;
+    const auto& scale = TensorDataType(1) / total_count;
 
     // Construct output file name
     std::string mode_string;
@@ -244,14 +255,15 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
 
 }
 
+template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_confusion_matrix_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackConfusionMatrix&>(proto_msg);
-  return make_unique<confusion_matrix>(params.prediction(),
-                                                      params.label(),
-                                                      params.prefix());
+  return make_unique<confusion_matrix<TensorDataType>>(params.prediction(),
+                                                       params.label(),
+                                                       params.prefix());
 }
 
 } // namespace callback
