@@ -646,7 +646,9 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 
     # NCCL
     if [[ -z $NCCL_DIR ]]; then
-        NCCL_VER=${NCCL_VER:-2.4.8-1}
+        # Subsequent 2.4.X versions are known to have a performance
+        # regression. See the release notes.
+        NCCL_VER=${NCCL_VER:-2.4.2-1}
         NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_${NCCL_VER}+cuda${CUDA_TOOLKIT_VERSION}_${ARCH}
     fi
     if [[ ! -d $NCCL_DIR ]]; then
