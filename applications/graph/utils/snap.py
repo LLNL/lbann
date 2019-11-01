@@ -11,12 +11,13 @@ _root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 
 def download_graph(name='ego-Facebook',
-                   data_dir=None):
+                   graph_file=None):
     """Download graph edgelist file from Stanford SNAP website.
 
     Args:
         name (str): Name of graph.
-        data_dir (str, optional): Directory for downloading data.
+        graph_file (str, optional): File where uncompressed edge list
+            will be saved (default: in 'data' directory).
 
     Returns:
         str: Uncompressed edge list file.
@@ -28,23 +29,24 @@ def download_graph(name='ego-Facebook',
         'ego-Facebook': 'http://snap.stanford.edu/data/facebook_combined.txt.gz',
     }
 
-    # Make data directory if needed
-    if not data_dir:
-        data_dir = os.path.join(_root_dir, 'data', name)
+    # Paths
+    if not graph_file:
+        graph_file = os.path.join(_root_dir, 'data', name, 'graph.txt')
+    data_dir = os.path.dirname(graph_file)
     if not os.path.isdir(data_dir):
         os.makedirs(data_dir)
     data_dir = os.path.realpath(data_dir)
+    graph_file = os.path.realpath(graph_file)
+    compressed_file = graph_file + '.gz'
 
     # Download and uncompress graph file
-    gzip_file = os.path.join(data_dir, 'graph.txt.gz')
-    txt_file = os.path.join(data_dir, 'graph.txt')
     urllib.request.urlretrieve(download_urls[name],
-                               filename=gzip_file)
-    with gzip.open(gzip_file, 'rb') as in_file:
-        with open(txt_file, 'wb') as out_file:
+                               filename=compressed_file)
+    with gzip.open(compressed_file, 'rb') as in_file:
+        with open(graph_file, 'wb') as out_file:
             out_file.write(in_file.read())
 
-    return txt_file
+    return graph_file
 
 
 def node2vec_walk(graph_file,

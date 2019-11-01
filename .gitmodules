@@ -1,3 +1,4 @@
 [submodule "applications/graph/snap"]
 	path = applications/graph/snap
 	url = https://github.com/snap-stanford/snap
+        ignore = dirty
