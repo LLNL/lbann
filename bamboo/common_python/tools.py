@@ -1,7 +1,9 @@
+import collections.abc
 import math
 import os
 import re
 import sys
+import numpy as np
 import pytest
 
 
@@ -667,7 +669,7 @@ def create_tests(setup_func,
                  test_name_base=None,
                  nodes=1,
                  procs_per_node=None):
-    """Create functions that can interact with PyTest.
+    """Create functions that can interact with PyTest
 
     This function creates tests that involve running an LBANN
     experiment with the Python frontend. `setup_func` should be a
@@ -793,7 +795,7 @@ def create_python_data_reader(lbann,
                               num_samples_function_name,
                               sample_dims_function_name,
                               execution_mode):
-    """Create protobuf message for Python data reader.
+    """Create protobuf message for Python data reader
 
     A Python data reader gets data by importing a Python module and
     calling functions in its scope.
@@ -831,3 +833,33 @@ def create_python_data_reader(lbann,
     reader.python.sample_dims_function = sample_dims_function_name
 
     return reader
+
+
+def numpy_l2norm2(x):
+    """Square of L2 norm, computed with NumPy
+
+    The computation is performed with 64-bit floats.
+
+    """
+    if x.dtype is not np.float64:
+        x = x.astype(np.float64)
+    x = x.reshape(-1)
+    return np.inner(x, x)
+
+
+def make_iterable(obj):
+    """Convert to an iterable object
+
+    Simply returns `obj` if it is alredy iterable. Otherwise returns a
+    1-tuple containing `obj`.
+
+    """
+    if isinstance(obj, collections.abc.Iterable) and not isinstance(obj, str):
+        return obj
+    else:
+        return (obj,)
+
+
+def str_list(it):
+    """Convert an iterable object to a space-separated string"""
+    return ' '.join([str(i) for i in make_iterable(it)])

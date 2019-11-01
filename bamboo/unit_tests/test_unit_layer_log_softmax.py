@@ -5,7 +5,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -36,8 +36,13 @@ def sample_dims():
 # ==============================================
 
 def numpy_log_softmax(x):
-    """NumPy implementation of log-softmax."""
-    x = x.astype(np.float64)
+    """Log-softmax, computed with NumPy
+
+    The computation is performed with 64-bit floats.
+
+    """
+    if x.dtype is not np.float64:
+        x = x.astype(np.float64)
     x = x - np.max(x)
     return x - np.log(np.sum(np.exp(x)))
 
@@ -66,15 +71,6 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
-    # Convenience function to compute L2 norm squared with NumPy
-    def l2_norm2(x):
-        x = x.reshape(-1).astype(np.float64)
-        return np.inner(x, x)
-
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
@@ -99,14 +95,14 @@ def construct_model(lbann):
     y = lbann.LogSoftmax(x, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel output'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
+        x = get_sample(i).astype(np.float64)
         y = numpy_log_softmax(x)
-        z = l2_norm2(y)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -126,14 +122,14 @@ def construct_model(lbann):
     y = lbann.LogSoftmax(x, data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel output'))
+    metrics.append(lbann.Metric(z, name='model-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
+        x = get_sample(i).astype(np.float64)
         y = numpy_log_softmax(x)
-        z = l2_norm2(y)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
