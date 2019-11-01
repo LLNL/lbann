@@ -1,3 +1,9 @@
+"""Random walk dataset.
+
+This is intended to be imported by the Python data reader and used to
+obtain data samples.
+
+"""
 import os.path
 
 import numpy as np

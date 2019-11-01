@@ -1,10 +1,14 @@
+"""Utilities to interact with SNAP.
+
+SNAP is the Stanford Network Analysis Platform. See
+https://snap.stanford.edu.
+
+"""
 import os
 import os.path
 import urllib.request
 import gzip
 import subprocess
-
-import snap
 
 # Root directory for LBANN graph application
 _root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -12,7 +16,7 @@ _root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 def download_graph(name='ego-Facebook',
                    graph_file=None):
-    """Download graph edgelist file from Stanford SNAP website.
+    """Download graph edgelist file from SNAP website.
 
     Args:
         name (str): Name of graph.
@@ -24,7 +28,7 @@ def download_graph(name='ego-Facebook',
 
     """
 
-    # Graphs from Stanford SNAP
+    # Graphs from SNAP
     download_urls = {
         'ego-Facebook': 'http://snap.stanford.edu/data/facebook_combined.txt.gz',
     }
