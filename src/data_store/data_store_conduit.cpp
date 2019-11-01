@@ -57,7 +57,7 @@ data_store_conduit::data_store_conduit(
   m_reader(reader) {
   m_comm = m_reader->get_comm();
   if (m_comm == nullptr) {
-    LBANN_ERROR(" m_comm is nullptr");
+    LBANN_ERROR("m_comm is nullptr");
   }
 
   m_world_master = m_comm->am_world_master();
@@ -70,59 +70,30 @@ data_store_conduit::data_store_conduit(
 
   options *opts = options::get();
 
-  // error check for a single "spill" flag
   if (opts->has_string("data_store_test_checkpoint")
       && opts->has_string("data_store_spill")) {
     LBANN_ERROR("you passed both --data_store_test_checkpoint and --data_store_spill; please use one or the other or none, but not both");
-  }
-
-  std::string spill_dir;
-  // error check if running in checkpoint test mode
+  }  
   if (opts->has_string("data_store_test_checkpoint")) {
-    std::string c = opts->get_string("data_store_test_checkpoint");
-    if (c == "1") {
-      LBANN_ERROR("--data_store_test_checkpoint=1; you probably forgot to specify the spill directory; you must specify --data_store_test_checkpoint=<string>'");
-    } else {
-      if (c == "lassen") {
-        char * val = std::getenv("BBPATH");
-        if (val == NULL) {
-          LBANN_ERROR("std::getenv(\"BBPATH\") returned NULL; unable to use burst buffer");
-        }
-        std::string cc(val);
-        c = cc + "/data_store";
-      }
-      spill_dir = c;
-      m_test_dir = c;
-    }
-  }
-
-  // error check if running in spill mode
+    setup_checkpoint_test();
+  }  
   if (opts->has_string("data_store_spill")) {
-    const std::string c = opts->get_string("data_store_spill");
-    if (c == "1") {
-      LBANN_ERROR("--data_store_spill=1; you probably forgot to specify the spill directory; you must specify --data_store_spill=<string>'");
-    } else {
-      spill_dir = c;
-    }
-  } 
-
-  if (spill_dir != "") {
-    m_spill_dir_base = spill_dir;
+    setup_spill(opts->get_string("data_store_spill"));
   }
 
-  // error check: if running in local cache mode, must preload
-  // TODO: future work -- modify so preload is not necessary
-  m_is_local_cache = opts->get_bool("data_store_cache");
-  if (m_is_local_cache && !opts->get_bool("preload_data_store")) {
-    LBANN_ERROR("data_store_cache is currently only implemented for preload mode; this will change in the future. For now, pleas pass both flags: data_store_cache and --preload_data_store");
-  }
-
-  if (m_is_local_cache) {
+  set_is_local_cache(opts->get_bool("data_store_cache"));
+  set_is_preloading(opts->get_bool("preload_data_store"));
+  set_explicitly_loading(! is_preloading());
+  
+  if (is_local_cache()) {
     PROFILE("data_store_conduit is running in local_cache mode");
-    //TODO: temporary hack; will fix when explicit loading is working
-    m_preload = true;
   } else {
     PROFILE("data_store_conduit is running in multi-message mode");
+  }
+  if (is_explicitly_loading()) {
+    PROFILE("data_store_conduit is explicitly loading");
+  } else {
+    PROFILE("data_store_conduit is preloading");
   }
 }
 
@@ -144,6 +115,29 @@ data_store_conduit::~data_store_conduit() {
     }
   }
 }
+
+void data_store_conduit::setup_checkpoint_test() {
+  std::string c = options::get()->get_string("data_store_test_checkpoint");
+  if (c == "1") {
+    LBANN_ERROR("--data_store_test_checkpoint=1; you probably forgot to specify the spill directory; you must specify --data_store_test_checkpoint=<string>'");
+  } 
+  if (c == "lassen") {
+     c = get_lassen_spill_dir();
+  }
+  m_spill_dir_base = c;
+  m_test_dir = c;
+  m_run_checkpoint_test = true;
+}
+
+std::string data_store_conduit::get_lassen_spill_dir() {
+  char * val = std::getenv("BBPATH");
+  if (val == NULL) {
+    LBANN_ERROR("std::getenv(\"BBPATH\") returned NULL; unable to use burst buffer");
+  }
+  std::string cc(val);
+  return cc + "/data_store";
+}
+
 
 data_store_conduit::data_store_conduit(const data_store_conduit& rhs) {
   copy_members(rhs);
@@ -168,7 +162,8 @@ void data_store_conduit::set_data_reader_ptr(generic_data_reader *reader) {
 
 void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_is_setup = rhs.m_is_setup;
-  m_preload = rhs.m_preload;
+  m_preloading = rhs.m_preloading;
+  m_preloading_is_complete = rhs.m_preloading_is_complete;
   m_explicit_loading = rhs.m_explicit_loading;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
@@ -316,7 +311,7 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   //       locking this entire call with a single mutex
   ++m_my_num_indices;
 
-  if (m_is_local_cache && m_preload) {
+  if (is_local_cache() && is_preloading()) {
     LBANN_ERROR("you called data_store_conduit::set_conduit_node, but you're running in local cache mode with preloading; something is broken; please contact Dave Hysom");
   }
 
@@ -884,8 +879,47 @@ void data_store_conduit::exchange_sample_sizes() {
   m_have_sample_sizes = true;
 }
 
-void data_store_conduit::set_is_preloaded() {
-  m_preload = true;
+void data_store_conduit::set_is_preloading(bool flag) {
+  m_preloading = true;
+  check_mode();
+}
+
+void data_store_conduit::set_is_preloading()  {
+  set_is_preloading(true);
+}
+
+
+void data_store_conduit::check_mode() {
+  //TODO
+}
+
+void data_store_conduit::set_explicitly_loading() { set_explicitly_loading(true);
+}
+
+void data_store_conduit::set_explicitly_loading(bool flag) {
+  m_explicit_loading = true;
+  check_mode();
+}
+
+void data_store_conduit::set_preloading_is_complete() {
+  set_is_preloading(false);
+  m_preloading_is_complete = true;
+
+  m_preloading = false;
+  m_explicit_loading = false;
+
+  //TODO: exchange image sizes; other?
+}
+
+
+bool data_store_conduit::is_preloaded() const { 
+  if (m_preloading_is_complete && is_preloading()) {
+    LBANN_ERROR("m_preloading_is_complete() && is_preloading(); bug in code!");
+  }
+  if (m_preloading_is_complete) {
+    return true;
+  }
+  return false;
 }
 
 void data_store_conduit::get_image_sizes(std::unordered_map<int,size_t> &file_sizes, std::vector<std::vector<int>> &indices) {
@@ -1051,6 +1085,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
 
 void data_store_conduit::preload_local_cache() {
   PROFILE("starting data_store_conduit::preload_local_cache");
+
   std::unordered_map<int,size_t> file_sizes;
   std::vector<std::vector<int>> indices;
 
@@ -1082,6 +1117,10 @@ void data_store_conduit::preload_local_cache() {
   tm1 = get_time();
   build_conduit_nodes(file_sizes);
   PROFILE("  build_conduit_nodes time: ", (get_time()-tm1));
+
+  if (options::get()->get_bool("data_store_test_cache")) {
+    test_local_cache_imagenet(20);
+  }
 }
 
 void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,size_t> &sizes, std::vector<int> &indices) {
@@ -1211,16 +1250,12 @@ void data_store_conduit::exchange_owner_maps() {
           "my owner map size: ", m_owner.size());
 }
 
-void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
-  if (is_local_cache()) {
-    return;
-  }
-  double tm1 = get_time();
+void data_store_conduit::exchange_caches() {
+}
 
-  if (m_reader->at_new_epoch()) {
-    PROFILE("At new epoch; m_cur_epoch: ", m_cur_epoch);
-    if (m_cur_epoch > 0) {
-      PROFILE(
+void data_store_conduit::profile_timing() {
+  if (m_cur_epoch > 0) {
+    PROFILE(
         "\n",
         "Exchange Data Timing:\n",
         "  exchange_mini_batch_data: ", m_exchange_time, "\n",
@@ -1229,48 +1264,67 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
         "  wait alls:                ", m_wait_all_time, "\n",
         "  unpacking rcvd nodes:     ", m_rebuild_time, "\n\n");
 
-      if (options::get()->get_bool("data_store_min_max_timing")) {
-        std::vector<double> send;
-        static int count = 5;
-        send.reserve(count);
-        send.push_back(m_exchange_time);
-        send.push_back(m_exchange_sample_sizes_time);
-        send.push_back(m_start_snd_rcv_time);
-        send.push_back(m_wait_all_time);
-        send.push_back(m_rebuild_time);
-        if (m_trainer_master) {
-          std::vector<double> rcv_max(count);
-          std::vector<double> rcv_min(count);
-          m_comm->trainer_reduce<double>(send.data(), count, rcv_max.data(), El::mpi::MAX);
-          m_comm->trainer_reduce<double>(send.data(), count, rcv_min.data(), El::mpi::MIN);
-          PROFILE(
-            "Exchange Data MAX Timing:\n",
-            "  exchange_mini_batch_data: ", rcv_max[0], "\n",
-            "  exchange sample sizes:    ", rcv_max[1], "\n",
-            "  start sends and rcvs:     ", rcv_max[2], "\n",
-            "  wait alls:                ", rcv_max[3], "\n",
-            "  unpacking rcvd nodes:     ", rcv_max[4], "\n\n");
-          PROFILE(
-            "Exchange Data MIN Timing:\n",
-            "  exchange_mini_batch_data: ", rcv_min[0], "\n",
-            "  exchange sample sizes:    ", rcv_min[1], "\n",
-            "  start sends and rcvs:     ", rcv_min[2], "\n",
-            "  wait alls:                ", rcv_min[3], "\n",
-            "  unpacking rcvd nodes:     ", rcv_min[4], "\n\n");
-        } else {
-          m_comm->trainer_reduce<double>(send.data(), count, 0, El::mpi::MAX);
-          m_comm->trainer_reduce<double>(send.data(), count, 0, El::mpi::MIN);
-        }
+    if (options::get()->get_bool("data_store_min_max_timing")) {
+      std::vector<double> send;
+      static int count = 5;
+      send.reserve(count);
+      send.push_back(m_exchange_time);
+      send.push_back(m_exchange_sample_sizes_time);
+      send.push_back(m_start_snd_rcv_time);
+      send.push_back(m_wait_all_time);
+      send.push_back(m_rebuild_time);
+      if (m_trainer_master) {
+        std::vector<double> rcv_max(count);
+        std::vector<double> rcv_min(count);
+        m_comm->trainer_reduce<double>(send.data(), count, rcv_max.data(), El::mpi::MAX);
+        m_comm->trainer_reduce<double>(send.data(), count, rcv_min.data(), El::mpi::MIN);
+        PROFILE(
+          "Exchange Data MAX Timing:\n",
+          "  exchange_mini_batch_data: ", rcv_max[0], "\n",
+          "  exchange sample sizes:    ", rcv_max[1], "\n",
+          "  start sends and rcvs:     ", rcv_max[2], "\n",
+          "  wait alls:                ", rcv_max[3], "\n",
+          "  unpacking rcvd nodes:     ", rcv_max[4], "\n\n");
+        PROFILE(
+          "Exchange Data MIN Timing:\n",
+          "  exchange_mini_batch_data: ", rcv_min[0], "\n",
+          "  exchange sample sizes:    ", rcv_min[1], "\n",
+          "  start sends and rcvs:     ", rcv_min[2], "\n",
+          "  wait alls:                ", rcv_min[3], "\n",
+          "  unpacking rcvd nodes:     ", rcv_min[4], "\n\n");
+      } else {
+        m_comm->trainer_reduce<double>(send.data(), count, 0, El::mpi::MAX);
+        m_comm->trainer_reduce<double>(send.data(), count, 0, El::mpi::MIN);
       }
-
-      m_exchange_sample_sizes_time = 0.;
-      m_start_snd_rcv_time = 0.;
-      m_wait_all_time = 0.;
-      m_rebuild_time = 0.;
-      m_exchange_time = 0.;
     }
-    ++m_cur_epoch;
+
+    m_exchange_sample_sizes_time = 0.;
+    m_start_snd_rcv_time = 0.;
+    m_wait_all_time = 0.;
+    m_rebuild_time = 0.;
+    m_exchange_time = 0.;
   }
+}
+
+void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
+  if (m_reader->at_new_epoch()) {
+    ++m_cur_epoch;
+    PROFILE("At new epoch; m_cur_epoch: ", m_cur_epoch);
+    profile_timing();
+  }
+
+#if 0
+//TODO
+  if (is_local_cache()) {
+    if (m_epoch == 1 && is_explicitly_loading()) {
+      PROFILE("m_epoch == 1 && is_explicitly_loading(); calling exchange_caches()");
+      exchange_caches();
+    }
+    return;
+  }
+#endif
+  double tm1 = get_time();
+
 
   // when not running in preload mode, exchange owner maps after the 1st epoch
   if (m_reader->at_new_epoch() && !options::get()->get_bool("preload_data_store") && !is_local_cache() && m_cur_epoch == 1) {
@@ -1284,10 +1338,6 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
       save_state();
     }  
     */
-  }
-
-  if (m_test_dir != "" && m_reader->at_new_epoch() && !is_local_cache() && m_cur_epoch == 1) {
-    test_checkpoint(m_test_dir);
   }
 
   exchange_data_by_sample(current_pos, mb_size);
@@ -1333,7 +1383,7 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
   m_cur_epoch = -1;
 
   m_is_setup = false;
-  m_preload = false;
+  m_preloading = false;
   m_explicit_loading = true;
   m_owner_map_mb_size = 0;
   m_compacted_sample_size = 0;
@@ -1380,7 +1430,10 @@ void data_store_conduit::make_dir_if_it_doesnt_exist(const std::string &dir_name
   }
 }
 
-void data_store_conduit::setup_spill(const std::string &base_dir) {
+void data_store_conduit::setup_spill(std::string base_dir) {
+  if (base_dir == "lassen") {
+     base_dir = get_lassen_spill_dir();
+  }
   m_spill_dir_base = base_dir;
   m_spill = true;
   m_cur_spill_dir_integer = -1;
@@ -1438,9 +1491,11 @@ void data_store_conduit::save_state() {
 
   {
   cereal::XMLOutputArchive archive(os);
-    archive(CEREAL_NVP(m_cur_epoch), 
+    archive(CEREAL_NVP(m_my_num_indices),
+            CEREAL_NVP(m_cur_epoch), 
             CEREAL_NVP(m_is_setup),
-            CEREAL_NVP(m_preload), 
+            CEREAL_NVP(m_preloading), 
+            CEREAL_NVP(m_preloading_is_complete), 
             CEREAL_NVP(m_explicit_loading),
             CEREAL_NVP(m_owner_map_mb_size), 
             CEREAL_NVP(m_compacted_sample_size), 
@@ -1476,9 +1531,10 @@ void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_read
     LBANN_ERROR("failed to open ", m_cereal_fn, " for reading");
   }
   cereal::XMLInputArchive iarchive(in);
-  iarchive(m_cur_epoch, m_is_setup,
-           m_preload, m_explicit_loading,
-           m_owner_map_mb_size,
+  iarchive(CEREAL_NVP(m_my_num_indices),
+           m_cur_epoch, m_is_setup,
+           m_preloading, m_preloading_is_complete,
+           m_explicit_loading, m_owner_map_mb_size,
            m_compacted_sample_size, m_is_local_cache,
            m_node_sizes_vary, m_have_sample_sizes,
            m_owner, m_sample_sizes);
@@ -1531,7 +1587,7 @@ void data_store_conduit::print_variables() {
   }
   std::cerr << "m_cur_epoch: " << m_cur_epoch << std::endl
             << "m_is_setup: " << m_is_setup << std::endl
-            << "m_preload: " << m_preload << std::endl
+            << "m_preloading: " << m_preloading << std::endl
             << "m_explicit_loading: " << m_explicit_loading << std::endl
             << "m_owner_map_mb_size: " << m_owner_map_mb_size << std::endl
             << "m_compacted_sample_size: " << m_compacted_sample_size << std::endl
@@ -1643,6 +1699,11 @@ void data_store_conduit::set_profile_msg(std::string s) {
 }
 
 bool data_store_conduit::test_local_cache_imagenet(int n) {
+  if (!m_world_master) {
+    return true;
+  }
+  std::cerr<< "\nStarting data_store_conduit::test_local_cache_imagenet(" << n << std::endl;
+  PROFILE("\nStarting data_store_conduit::test_local_cache_imagenet(", n);
   if (n < 0 || n > (int)m_shuffled_indices->size()) {
     n = m_shuffled_indices->size();
   }
@@ -1651,15 +1712,34 @@ bool data_store_conduit::test_local_cache_imagenet(int n) {
   if (image_reader == nullptr) {
     LBANN_ERROR("data_reader_image *image_reader = dynamic_cast<data_reader_image*>(m_reader) failed");
   }
-  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
 
   for (int h=0; h<n; ++h) {
-    const std::string fn = m_reader->get_file_dir() + '/' + image_list[(*m_shuffled_indices)[h]].first;
-    std::ifstream in(fn.c_str());
-    if (!in) {
-      LBANN_ERROR("failed to open ", fn, " for reading; file_dir: ", m_reader->get_file_dir(), "  fn: ", image_list[h].first, "; role: ", m_reader->get_role());
+    const int index = random() % m_shuffled_indices->size();
+    PROFILE("  testing sample_id: ", index);
+    int data_id = (*m_shuffled_indices)[index];
+    std::cerr << "  testing index: " << index << " sample_id: "<< data_id << std::endl;
+
+    conduit::Node nd1;
+    image_reader->load_conduit_node_from_file(data_id, nd1);
+    char *buf1 = nd1[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
+    size_t size1 = nd1[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
+
+    const conduit::Node &nd2 = get_conduit_node(data_id);
+    const char *buf2 = nd2[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
+    size_t size2 = nd2[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
+
+    if (size1 != size2) {
+      LBANN_ERROR("buffer sizes mismatch for test #", h+1, " of ", n);
     }
+    for (size_t i=0; i<size1; i++) {
+      if (buf1[i] != buf2[i]) {
+        LBANN_ERROR("buffer mismatch for char #", h+1, " of ", size1);
+      }
+    }
+
   }
+  std::cerr<< "  All tests passed\n";
+  PROFILE("  All tests passed\n.");
   return true;
 }
 

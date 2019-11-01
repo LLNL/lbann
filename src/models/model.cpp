@@ -927,8 +927,8 @@ void model::make_data_store_preloaded(execution_mode mode) {
     if (input != nullptr) {
       auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
       if(data_store != nullptr && !data_store->is_preloaded()) {
-        input->get_data_reader(mode)->get_data_store_ptr()->set_is_preloaded();
-        input->get_data_reader(mode)->get_data_store_ptr()->set_explicit_loading(false);
+        input->get_data_reader(mode)->get_data_store_ptr()->set_preloading_is_complete();
+        input->get_data_reader(mode)->get_data_store_ptr()->set_explicitly_loading(false);
       }
     }
   }
@@ -943,7 +943,7 @@ void model::mark_data_store_explicitly_loading(execution_mode mode) {
     if (input != nullptr) {
       auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
       if(data_store != nullptr && !data_store->is_preloaded()) {
-        input->get_data_reader(mode)->get_data_store_ptr()->set_explicit_loading(true);
+        input->get_data_reader(mode)->get_data_store_ptr()->set_explicitly_loading(true);
       }
     }
   }

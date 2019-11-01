@@ -99,13 +99,59 @@ class data_store_conduit {
   /// returns an empty node
   conduit::Node & get_empty_node(int data_id);
 
-  void set_is_preloaded(); 
+  //=================================================================
+  // methods for setting and querying the data store's mode
+  //=================================================================
+  /** @brief Turn preloading on or off */ 
+  void set_is_preloading(bool flag);
 
-  bool is_preloaded() { return m_preload; }
+  /** @ brief Turn on preloading */
+  void set_is_preloading();
 
-  void set_explicit_loading(bool flag) { m_explicit_loading = flag; }
+  /** @brief Returns true if preloading is turned on */
+  bool is_preloading() const { return m_preloading; }
 
-  bool is_explicitly_loading() { return m_explicit_loading; }
+  /** @brief Marks the data_store as preloaded.
+   *
+   * This is called by the generic_data_reader when preloading
+   * has completed. Developers: if there's anything that needs
+   * to be done after preloading completes, and prior to the beginning
+   * of the first epoch, it should go here.
+   */
+  void set_preloading_is_complete(); 
+
+  bool is_preloaded() const;
+
+  /** @brief Turn on explicit loading 
+   */ 
+  void set_explicitly_loading();
+  void set_explicitly_loading(bool flag);
+
+  bool is_explicitly_loading() const { return m_explicit_loading; }
+
+  void set_is_local_cache(bool flag) { m_is_local_cache = flag; }
+
+  /** @brief Returns "true" is running in local cache mode
+   *
+   * In local cache mode, each node contains a complete copy
+   * of the data set. This is stored in a shared memory segment,
+   * but part of the set may be spilled to disk if memory is
+   * insufficient. Local cache mode is activated via the cmd line
+   * flag: --data_store_cache
+   */ 
+  bool is_local_cache() const { return m_is_local_cache; }
+   
+  //=================================================================
+  // END methods for setting and querying the data store's mode
+  //=================================================================
+
+  /** @brief All ranks exchange their cached data
+   *
+   * This is called at the beginning of the second epoch
+   * when running in local cache mode and explicitly loading;
+   * see exchange_mini_batch_data().
+   */
+  void exchange_caches();
 
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
@@ -118,15 +164,6 @@ class data_store_conduit {
   /// with the index
   int get_index_owner(int idx);
 
-  /** @brief Returns "true" is running in local cache mode
-   *
-   * In local cache mode, each node contains a complete copy
-   * of the data set. This is stored in a shared memory segment,
-   * but part of the set may be spilled to disk if memory is
-   * insufficient. Local cache mode is activated via the cmd line
-   * flag: --data_store_cache
-   */ 
-  bool is_local_cache() const { return m_is_local_cache; }
 
   /** @brief Read the data set into memory
    *
@@ -187,6 +224,8 @@ class data_store_conduit {
   bool test_local_cache_imagenet(int n);
 
 private :
+
+  bool m_run_checkpoint_test = false;
 
   /** @brief The number of samples that this processor owns */
   size_t m_my_num_indices = 0;
@@ -284,7 +323,9 @@ private :
   bool m_is_setup = false;
 
   /// set to true if data_store is preloaded
-  bool m_preload = false;
+  bool m_preloading_is_complete = false;
+
+  bool m_preloading = false;
 
   /// set to true if data_store is being explicitly loaded
   //VBE: please explain what this means!
@@ -317,24 +358,25 @@ private :
   int  m_rank_in_world = -1; // -1 for debugging 
   int  m_np_in_trainer;
 
-  /** @brief Maps an index to the processor that owns the associated data
-   *
-   * Must be mutable since rhs.m_owner may be modified in copy_members,
-   * in which rhs is const.
-   */ 
-  //TODO: make undoredered map; for development want map() for ordered printing
-  mutable std::map<int, int> m_owner;
+  /** @brief Maps an index to the processor that owns the associated data */ 
+  std::unordered_map<int, int> m_owner;
 
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
 
   /** @brief Contains the conduit nodes that are "owned" by this rank
    *
-   * Map data_id -> conduit::Node.
-   * Must be mutable since rhs.m_owner may be modified in copy_members,
-   * in which rhs is const.
+   * Maps data_id -> conduit::Node.
    */ 
-  mutable std::unordered_map<int, conduit::Node> m_data;
+  std::unordered_map<int, conduit::Node> m_data;
+
+  /** @brief Contains the conduit nodes that are "owned" by this rank
+   *
+   * This differs from m_data in that this holds temporarily,
+   * during the first epoch, if we're running in local cache mode
+   * and explicitly loading
+   */
+  std::unordered_map<int, conduit::Node> m_data_cache;
 
   /// Contains the list of data IDs that will be received
   std::vector<int> m_recv_data_ids;
@@ -454,7 +496,7 @@ private :
    * This method is called for both --data_store_spill and 
    * --data_store_test_checkpoint 
    */
-  void setup_spill(const std::string &dir);
+  void setup_spill(std::string dir);
 
   /** @brief Saves this object's state to file
    *
@@ -474,6 +516,20 @@ private :
 
   /** @brief Creates a directory for spilling conduit nodes */
   void open_next_conduit_spill_directory();
+
+  /** @brief Write timing data for data exchange to the profile file, if it's opened */
+  void profile_timing();
+
+  /** @brief Check that the data store's mode makes sense
+   *
+   * Example: preloading and explicit loading must not both
+   * be turned on at the same time.
+   */
+  void check_mode();
+
+  void setup_checkpoint_test();
+
+  std::string get_lassen_spill_dir();
 
   //=========================================================================
   // functions and templates for optional profiling and debug files follow
