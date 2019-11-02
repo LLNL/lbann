@@ -1,8 +1,6 @@
 import argparse
-import os.path
-import google.protobuf.text_format as txtf
 import lbann
-import data
+import data.mnist
 
 # ----------------------------------
 # Command-line arguments
@@ -86,8 +84,8 @@ model = lbann.Model(mini_batch_size,
 # Setup optimizer
 opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 
-# Load data reader from prototext
-data_reader = data.make_mnist_data_reader()
+# Setup data reader
+data_reader = data.mnist.make_data_reader()
 
 # Setup trainer
 trainer = lbann.Trainer()
