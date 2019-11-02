@@ -120,6 +120,7 @@ class data_store_conduit {
    */
   void set_preloading_is_complete(); 
 
+  /** @brief Returns true if all sample loading has been completed */
   bool is_preloaded() const;
 
   /** @brief Turn on explicit loading 
@@ -144,14 +145,6 @@ class data_store_conduit {
   //=================================================================
   // END methods for setting and querying the data store's mode
   //=================================================================
-
-  /** @brief All ranks exchange their cached data
-   *
-   * This is called at the beginning of the second epoch
-   * when running in local cache mode and explicitly loading;
-   * see exchange_mini_batch_data().
-   */
-  void exchange_caches();
 
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
@@ -325,6 +318,7 @@ private :
   /// set to true if data_store is preloaded
   bool m_preloading_is_complete = false;
 
+  /** @brief True, if we are in preload mode */
   bool m_preloading = false;
 
   /// set to true if data_store is being explicitly loaded
@@ -453,6 +447,11 @@ private :
 
   /// for use in local cache mode
   void build_conduit_nodes(std::unordered_map<int,size_t> &sizes);
+
+  /** @brief All ranks exchange their cached data */
+  void exchange_local_caches();
+
+  void exchange_images_local_cache(std::unordered_map<int,size_t> &image_sizes, std::vector<std::vector<int>> &indices); 
 
   /// for use in local cache mode
   void exchange_images(std::vector<char> &work, std::unordered_map<int,size_t> &image_sizes, std::vector<std::vector<int>> &indices); 

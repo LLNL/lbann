@@ -437,6 +437,8 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
     LBANN_ERROR("setup(mb_size) has not been called");
   }
 
+std::cerr << "STARTING exchange_data_by_sample" << std::endl;
+
   double tm5 = get_time();
 
   /// exchange sample sizes if they are non-uniform (imagenet);
@@ -880,7 +882,7 @@ void data_store_conduit::exchange_sample_sizes() {
 }
 
 void data_store_conduit::set_is_preloading(bool flag) {
-  m_preloading = true;
+  m_preloading = flag;
   check_mode();
 }
 
@@ -897,7 +899,7 @@ void data_store_conduit::set_explicitly_loading() { set_explicitly_loading(true)
 }
 
 void data_store_conduit::set_explicitly_loading(bool flag) {
-  m_explicit_loading = true;
+  m_explicit_loading = flag;
   check_mode();
 }
 
@@ -905,8 +907,12 @@ void data_store_conduit::set_preloading_is_complete() {
   set_is_preloading(false);
   m_preloading_is_complete = true;
 
-  m_preloading = false;
-  m_explicit_loading = false;
+  if (options::get()->get_bool("data_store_test_cache")) {
+    test_local_cache_imagenet(20);
+  }
+  if (m_run_checkpoint_test) {
+    test_checkpoint(m_spill_dir_base);
+  }
 
   //TODO: exchange image sizes; other?
 }
@@ -929,16 +935,27 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,size_t> &file_si
     //TODO dah - implement, if this becomes a bottleneck (but I don't think it will)
   }
 
-  else {
-    // get list of image file names
-    image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
-    if (image_reader == nullptr) {
-      LBANN_ERROR("data_reader_image *image_reader = dynamic_cast<data_reader_image*>(m_reader) failed");
-    }
-    const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+  // get list of image file names
+  image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
+  if (image_reader == nullptr) {
+    LBANN_ERROR("data_reader_image *image_reader = dynamic_cast<data_reader_image*>(m_reader) failed");
+  }
+  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+  std::vector<size_t> my_image_sizes;
 
+  // this block fires if we're exchanging cache data at the end
+  // of the first epoch, and the data store was not preloaded
+  if (is_explicitly_loading()) {
+std::cerr << "SHULDN'T be here 1"<<std::endl;
+    for (const auto &t : m_data) {
+      int data_id = t.first;
+      my_image_sizes.push_back(data_id);
+      my_image_sizes.push_back(t.second[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value());
+    }
+  }
+  
+  else {
     // get sizes of files for which I'm responsible
-    std::vector<size_t> my_image_sizes;
     for (size_t h=m_rank_in_trainer; h<m_shuffled_indices->size(); h += m_np_in_trainer) {
       ++m_my_num_indices;
       const std::string fn = m_reader->get_file_dir() + '/' + image_list[(*m_shuffled_indices)[h]].first;
@@ -951,34 +968,36 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,size_t> &file_si
       my_image_sizes.push_back(in.tellg());
       in.close();
     }
-    int my_count = my_image_sizes.size();
+  }
 
-    std::vector<int> counts(m_np_in_trainer);
-    m_comm->all_gather<int>(&my_count, 1, counts.data(), 1, m_comm->get_trainer_comm());
+  // exchange image sizes
+  int my_count = my_image_sizes.size();
 
-    //my_image_sizes[h*2] contains the image index
-    //my_image_sizes[h*2+1] contains the image sizee
+  std::vector<int> counts(m_np_in_trainer);
+  m_comm->all_gather<int>(&my_count, 1, counts.data(), 1, m_comm->get_trainer_comm());
 
-    //fill in displacement vector for gathering the actual image sizes
-    std::vector<int> disp(m_np_in_trainer + 1);
-    disp[0] = 0;
-    for (size_t h=0; h<counts.size(); ++h) {
-      disp[h+1] = disp[h] + counts[h];
-    }
+  //my_image_sizes[h*2] contains the image index
+  //my_image_sizes[h*2+1] contains the image sizee
 
-    std::vector<size_t> work(image_list.size()*2);
-    m_comm->trainer_all_gather<size_t>(my_image_sizes, work, counts, disp);
-    indices.resize(m_np_in_trainer);
-    for (int h=0; h<m_np_in_trainer; h++) {
-      indices[h].reserve(counts[h]);
-      size_t start = disp[h];
-      size_t end = disp[h+1];
-      for (size_t k=start; k<end; k+= 2) {
-        size_t idx = work[k];
-        size_t size = work[k+1];
-        indices[h].push_back(idx);
-        file_sizes[idx] = size;
-      }
+  //fill in displacement vector for gathering the actual image sizes
+  std::vector<int> disp(m_np_in_trainer + 1);
+  disp[0] = 0;
+  for (size_t h=0; h<counts.size(); ++h) {
+    disp[h+1] = disp[h] + counts[h];
+  }
+
+  std::vector<size_t> work(image_list.size()*2);
+  m_comm->trainer_all_gather<size_t>(my_image_sizes, work, counts, disp);
+  indices.resize(m_np_in_trainer);
+  for (int h=0; h<m_np_in_trainer; h++) {
+    indices[h].reserve(counts[h]);
+    size_t start = disp[h];
+    size_t end = disp[h+1];
+    for (size_t k=start; k<end; k+= 2) {
+      size_t idx = work[k];
+      size_t size = work[k+1];
+      indices[h].push_back(idx);
+      file_sizes[idx] = size;
     }
   }
 }
@@ -1014,7 +1033,7 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
   double percent = 100.0 * m_mem_seg_length / avail_mem;
   std::stringstream msg;
   PROFILE(
-    "Shared Memeory segment statistics:\n",
+    "\nShared Memeory segment statistics:\n",
     "  size of required shared memory segment: ", m_mem_seg_length, "\n",
     "  available mem: ", avail_mem, "\n",
     "  required size is ", percent, " percent of available\n");
@@ -1084,27 +1103,38 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
 }
 
 void data_store_conduit::preload_local_cache() {
-  PROFILE("starting data_store_conduit::preload_local_cache");
+  exchange_local_caches();
+}
 
+void data_store_conduit::exchange_local_caches() {
+  PROFILE("Starting exchange_local_caches");
+  PROFILE("  At new epoch; m_cur_epoch: ", m_cur_epoch);
+  PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
+  PROFILE("  is_preloading(): ", is_preloading());
+  PROFILE("  is_local_cache(): ", is_local_cache());
+  PROFILE("  is_preloaded: ", is_preloaded());
+
+  //file_sizes maps an index to its file size
   std::unordered_map<int,size_t> file_sizes;
+
+  // indices[j] will contain the indices 
+  // that P_j will read from disk, and subsequently bcast to all others
   std::vector<std::vector<int>> indices;
 
   double tm1 = get_time();
   get_image_sizes(file_sizes, indices);
   PROFILE("  get_image_sizes time: ", (get_time()-tm1));
-  //indices[j] contains the indices (wrt m_reader->get_image_list())
-  //that P_j will read from disk, and subsequently bcast to all others
-  //
-  //file_sizes maps an index to its file size
 
   tm1 = get_time();
   allocate_shared_segment(file_sizes, indices);
   PROFILE("  allocate_shared_segment time: ", (get_time()-tm1));
 
-  tm1 = get_time();
   std::vector<char> work;
-  read_files(work, file_sizes, indices[m_rank_in_trainer]);
-  PROFILE("  read_files time: ", (get_time()- tm1));
+  if (! is_explicitly_loading()) {
+    tm1 = get_time();
+    read_files(work, file_sizes, indices[m_rank_in_trainer]);
+    PROFILE("  read_files time: ", (get_time()- tm1));
+  }
 
   tm1 = get_time();
   compute_image_offsets(file_sizes, indices);
@@ -1118,9 +1148,8 @@ void data_store_conduit::preload_local_cache() {
   build_conduit_nodes(file_sizes);
   PROFILE("  build_conduit_nodes time: ", (get_time()-tm1));
 
-  if (options::get()->get_bool("data_store_test_cache")) {
-    test_local_cache_imagenet(20);
-  }
+  set_preloading_is_complete();
+  set_explicitly_loading(false);
 }
 
 void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,size_t> &sizes, std::vector<int> &indices) {
@@ -1131,8 +1160,6 @@ void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<
     n += sizes[indices[j]];
   }
   work.resize(n);
-
-  DEBUG("data_store_conduit::read_files; requested work size: ", n);
 
   //get the list of images from the data reader
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
@@ -1172,9 +1199,39 @@ void data_store_conduit::fillin_shared_images(const std::vector<char> &images, s
 }
 
 void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered_map<int,size_t> &image_sizes, std::vector<std::vector<int>> &indices) {
+
+  // Note: if explicitly loading we need to build the vector to be broadcast;
+  //       if preloading, this has already been built in read_files()
+  if (is_explicitly_loading()) {
+    if (work.size() != 0) {
+      LBANN_ERROR("work.size() != 0, but it should be");
+    }
+    size_t n = 0;
+    for (const auto &t : m_data) {
+      int data_id = t.first;
+      size_t sz = t.second[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
+      n += sz;
+    }
+    work.resize(n);
+
+    size_t offset2 = 0;
+    for (const auto &t : m_data) {
+      int data_id = t.first;
+      const conduit::Node &node = t.second;
+      const char *buf = node[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
+      size_t sz = node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
+      memcpy(work.data() +offset2, reinterpret_cast<const void*>(buf), sz);
+      offset2 += sz;
+      if (offset2 > work.size()) {
+        LBANN_ERROR("offset >= work.size(); offset: ", offset2, " work.size(): ", work.size(), " sz: ", sz);
+      }
+    }
+  }
+  m_comm->trainer_barrier();
+
   std::vector<char> work2;
-  int node_rank = m_comm->get_rank_in_node();
   size_t offset = 0;
+  int node_rank = m_comm->get_rank_in_node();
   for (int p=0; p<m_np_in_trainer; p++) {
     if (m_rank_in_trainer == p) {
       m_comm->trainer_broadcast<char>(p, work.data(), work.size());
@@ -1197,6 +1254,7 @@ void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered
       offset += image_sizes[indices[p][r]];
     }
   }
+if (m_world_master) std::cerr << "XX leaving exchange_images" << std::endl;
 
   m_comm->barrier(m_comm->get_node_comm());
 }
@@ -1248,9 +1306,6 @@ void data_store_conduit::exchange_owner_maps() {
   }
   PROFILE("leaving data_store_conduit::exchange_owner_maps\n",
           "my owner map size: ", m_owner.size());
-}
-
-void data_store_conduit::exchange_caches() {
 }
 
 void data_store_conduit::profile_timing() {
@@ -1309,22 +1364,25 @@ void data_store_conduit::profile_timing() {
 void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
   if (m_reader->at_new_epoch()) {
     ++m_cur_epoch;
-    PROFILE("At new epoch; m_cur_epoch: ", m_cur_epoch);
+    PROFILE("Starting exchange_mini_batch_data");
+    PROFILE("  At new epoch; m_cur_epoch: ", m_cur_epoch);
+    PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
+    PROFILE("  is_local_cache(): ", is_local_cache());
+    PROFILE("  is_preloaded: ", is_preloaded());
     profile_timing();
   }
 
-#if 0
-//TODO
-  if (is_local_cache()) {
-    if (m_epoch == 1 && is_explicitly_loading()) {
-      PROFILE("m_epoch == 1 && is_explicitly_loading(); calling exchange_caches()");
-      exchange_caches();
-    }
+
+  if (is_local_cache() && is_preloaded()) {
     return;
   }
-#endif
-  double tm1 = get_time();
 
+  if (m_reader->at_new_epoch() && is_local_cache() && is_explicitly_loading()) {
+    exchange_local_caches();
+    return;
+  }
+
+  double tm1 = get_time();
 
   // when not running in preload mode, exchange owner maps after the 1st epoch
   if (m_reader->at_new_epoch() && !options::get()->get_bool("preload_data_store") && !is_local_cache() && m_cur_epoch == 1) {
@@ -1702,7 +1760,7 @@ bool data_store_conduit::test_local_cache_imagenet(int n) {
   if (!m_world_master) {
     return true;
   }
-  std::cerr<< "\nStarting data_store_conduit::test_local_cache_imagenet(" << n << std::endl;
+  std::cerr<< "\nStarting data_store_conduit::test_local_cache_imagenet(" << n << ")" << std::endl;
   PROFILE("\nStarting data_store_conduit::test_local_cache_imagenet(", n);
   if (n < 0 || n > (int)m_shuffled_indices->size()) {
     n = m_shuffled_indices->size();
