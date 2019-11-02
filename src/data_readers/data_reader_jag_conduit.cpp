@@ -303,7 +303,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   if (!has_path(h, path)) {
     const std::string& file_name = m_sample_list.get_samples_filename(id);
     if (m_data_store != nullptr) {
-      if (! m_data_store->is_preloaded()) {
+      if (! m_data_store->is_fully_loaded()) {
         const conduit::Node obj = m_data_store->get_random_node();
         node = obj["data"];
         const std::vector<std::string>& child_names = node.child_names();

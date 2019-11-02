@@ -737,7 +737,7 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
 }
 
 bool generic_data_reader::data_store_active() const {
-  if (m_data_store != nullptr && m_data_store->is_preloaded()) {
+  if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return true;
   }
 
@@ -753,7 +753,7 @@ bool generic_data_reader::data_store_active() const {
 
 bool generic_data_reader::priming_data_store() const {
   const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
-  if (m_data_store != nullptr && m_data_store->is_preloaded()) {
+  if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }
 
@@ -828,9 +828,9 @@ void generic_data_reader::preload_data_store() {
     m_data_store->build_preloaded_owner_map(local_list_sizes);
     m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling do_preload_data_store()");
     do_preload_data_store();
+    m_data_store->set_loading_is_complete();
   }
 
-  m_data_store->set_preloading_is_complete();
 }
 
 

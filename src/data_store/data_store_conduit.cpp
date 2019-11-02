@@ -83,7 +83,7 @@ data_store_conduit::data_store_conduit(
 
   set_is_local_cache(opts->get_bool("data_store_cache"));
   set_is_preloading(opts->get_bool("preload_data_store"));
-  set_explicitly_loading(! is_preloading());
+  set_is_explicitly_loading(! is_preloading());
   
   if (is_local_cache()) {
     PROFILE("data_store_conduit is running in local_cache mode");
@@ -886,25 +886,19 @@ void data_store_conduit::set_is_preloading(bool flag) {
   check_mode();
 }
 
-void data_store_conduit::set_is_preloading()  {
-  set_is_preloading(true);
-}
-
-
 void data_store_conduit::check_mode() {
   //TODO
 }
 
-void data_store_conduit::set_explicitly_loading() { set_explicitly_loading(true);
-}
 
-void data_store_conduit::set_explicitly_loading(bool flag) {
+void data_store_conduit::set_is_explicitly_loading(bool flag) {
   m_explicit_loading = flag;
   check_mode();
 }
 
-void data_store_conduit::set_preloading_is_complete() {
+void data_store_conduit::set_loading_is_complete() {
   set_is_preloading(false);
+  set_is_explicitly_loading(false);
   m_preloading_is_complete = true;
 
   if (options::get()->get_bool("data_store_test_cache")) {
@@ -918,7 +912,7 @@ void data_store_conduit::set_preloading_is_complete() {
 }
 
 
-bool data_store_conduit::is_preloaded() const { 
+bool data_store_conduit::is_fully_loaded() const { 
   if (m_preloading_is_complete && is_preloading()) {
     LBANN_ERROR("m_preloading_is_complete() && is_preloading(); bug in code!");
   }
@@ -1112,7 +1106,7 @@ void data_store_conduit::exchange_local_caches() {
   PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
   PROFILE("  is_preloading(): ", is_preloading());
   PROFILE("  is_local_cache(): ", is_local_cache());
-  PROFILE("  is_preloaded: ", is_preloaded());
+  PROFILE("  is_fully_loaded: ", is_fully_loaded());
 
   //file_sizes maps an index to its file size
   std::unordered_map<int,size_t> file_sizes;
@@ -1148,8 +1142,7 @@ void data_store_conduit::exchange_local_caches() {
   build_conduit_nodes(file_sizes);
   PROFILE("  build_conduit_nodes time: ", (get_time()-tm1));
 
-  set_preloading_is_complete();
-  set_explicitly_loading(false);
+  set_loading_is_complete();
 }
 
 void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,size_t> &sizes, std::vector<int> &indices) {
@@ -1368,12 +1361,12 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
     PROFILE("  At new epoch; m_cur_epoch: ", m_cur_epoch);
     PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
     PROFILE("  is_local_cache(): ", is_local_cache());
-    PROFILE("  is_preloaded: ", is_preloaded());
+    PROFILE("  is_fully_loaded: ", is_fully_loaded());
     profile_timing();
   }
 
 
-  if (is_local_cache() && is_preloaded()) {
+  if (is_local_cache() && is_fully_loaded()) {
     return;
   }
 

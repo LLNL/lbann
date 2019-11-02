@@ -926,9 +926,9 @@ void model::make_data_store_preloaded(execution_mode mode) {
     auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
     if (input != nullptr) {
       auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
-      if(data_store != nullptr && !data_store->is_preloaded()) {
-        input->get_data_reader(mode)->get_data_store_ptr()->set_preloading_is_complete();
-        input->get_data_reader(mode)->get_data_store_ptr()->set_explicitly_loading(false);
+      if(data_store != nullptr && !data_store->is_fully_loaded()) {
+        input->get_data_reader(mode)->get_data_store_ptr()->set_loading_is_complete();
+        input->get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(false);
       }
     }
   }
@@ -942,8 +942,8 @@ void model::mark_data_store_explicitly_loading(execution_mode mode) {
     auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
     if (input != nullptr) {
       auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
-      if(data_store != nullptr && !data_store->is_preloaded()) {
-        input->get_data_reader(mode)->get_data_store_ptr()->set_explicitly_loading(true);
+      if(data_store != nullptr && !data_store->is_fully_loaded()) {
+        input->get_data_reader(mode)->get_data_store_ptr()->set_is_explicitly_loading(true);
       }
     }
   }

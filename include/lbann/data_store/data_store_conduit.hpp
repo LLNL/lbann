@@ -105,31 +105,47 @@ class data_store_conduit {
   /** @brief Turn preloading on or off */ 
   void set_is_preloading(bool flag);
 
-  /** @ brief Turn on preloading */
-  void set_is_preloading();
-
-  /** @brief Returns true if preloading is turned on */
+  /** @brief Returns true if preloading is turned on 
+   *
+   * See notes in: is_explicitly_loading()
+   */
   bool is_preloading() const { return m_preloading; }
 
-  /** @brief Marks the data_store as preloaded.
+  /** @brief Turn on explicit loading */ 
+  void set_is_explicitly_loading(bool flag);
+
+  /** @brief Returns true if explicitly loading is turned on 
    *
-   * This is called by the generic_data_reader when preloading
-   * has completed. Developers: if there's anything that needs
-   * to be done after preloading completes, and prior to the beginning
-   * of the first epoch, it should go here.
+   * 'explicitly loading' means that the data that will be owned
+   * by each rank is passed into the data store during the first epoch.
+   * This is in contrast to preloading, in which the data is passed into
+   * the data store prior to the first epoch. Explicit and preloading
+   * are exclusive: at most only one may be true, however, both will
+   * be set to false when all loading is complete.
    */
-  void set_preloading_is_complete(); 
-
-  /** @brief Returns true if all sample loading has been completed */
-  bool is_preloaded() const;
-
-  /** @brief Turn on explicit loading 
-   */ 
-  void set_explicitly_loading();
-  void set_explicitly_loading(bool flag);
-
   bool is_explicitly_loading() const { return m_explicit_loading; }
 
+  /** @brief Marks the data_store as fully loaded
+   *
+   * Fully loaded means that each rank has all the data that it
+   * is intended to own. When not running in local cache mode, this
+   * occurs (1) at the conclusion of preloading, prior to the beginning of 
+   * the first epoch, or (2) at the conclusion of the first epoch, if 
+   * explicitly loading. When running in local cache mode, this occurs 
+   * (1) at the conclusion of preload_local_cache(), which is called prior 
+   * to the first epoch, or (2) at the conclusion of exchange_local_caches(),
+   * at th conclusion of the first epoch, if explicitly loading.
+   */
+  void set_loading_is_complete(); 
+
+  /** @brief Returns true if all loading has been completed 
+   *
+   * See notes in: set_loading_is_complete()
+   */
+  bool is_fully_loaded() const;
+
+
+  /** @brief turns local cache mode on of off */
   void set_is_local_cache(bool flag) { m_is_local_cache = flag; }
 
   /** @brief Returns "true" is running in local cache mode
