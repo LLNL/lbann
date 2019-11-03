@@ -34,7 +34,7 @@ namespace {
 template <typename TensorDataType>
 void fp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
              El::Matrix<TensorDataType, El::Device::CPU>& local_output,
-             const weights<TensorDataType>& scale_bias) {
+             const data_type_weights<TensorDataType>& scale_bias) {
 
   // Local matrices
   const auto& local_scale_bias
@@ -64,7 +64,7 @@ template <typename TensorDataType>
 void bp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
              const El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_output,
              El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_input,
-             weights<TensorDataType>& scale_bias,
+             data_type_weights<TensorDataType>& scale_bias,
              El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias) {
 
   // Local matrices

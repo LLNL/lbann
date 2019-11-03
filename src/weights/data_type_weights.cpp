@@ -145,15 +145,15 @@ void data_type_weights<TensorDataType>::set_dims(std::vector<int> matrix_height_
 // -----------------------------------------------
 
 template <typename TensorDataType>
-weights_initializer* data_type_weights<TensorDataType>::get_initializer() {
+weights_initializer<TensorDataType>* data_type_weights<TensorDataType>::get_initializer() {
   return const_cast<weights_initializer*>(static_cast<const data_type_weights&>(*this).get_initializer());
 }
 template <typename TensorDataType>
-const weights_initializer* data_type_weights<TensorDataType>::get_initializer() const {
+const weights_initializer<TensorDataType>* data_type_weights<TensorDataType>::get_initializer() const {
   return m_initializer.get();
 }
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::set_initializer(std::unique_ptr<weights_initializer>&& init) {
+void data_type_weights<TensorDataType>::set_initializer(std::unique_ptr<weights_initializer<TensorDataType>>&& init) {
   m_initializer = std::move(init);
 }
 

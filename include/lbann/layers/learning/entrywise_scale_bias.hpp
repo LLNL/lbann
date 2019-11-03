@@ -94,10 +94,10 @@ public:
     // Construct default weights if needed
     // Note: Scale is initialized to 1 and bias to 0
     if (this->m_weights.empty()) {
-      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
       std::vector<DataType> vals(2*output_size, TensorDataType{0});
       std::fill(vals.begin(), vals.begin()+output_size, TensorDataType{1});
-      auto init = make_unique<value_initializer>(vals);
+      auto init = make_unique<value_initializer<TensorDataType>>(vals);
       std::unique_ptr<optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));

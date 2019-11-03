@@ -125,9 +125,9 @@ public:
    */
   const std::vector<Layer*> get_layers() const;
 
-  const std::vector<weights<TensorDataType>*> get_weights() const;
+  const std::vector<weights*> get_weights() const;
 
-  std::vector<weights<TensorDataType>*> get_weights();
+  std::vector<weights*> get_weights();
 
   /** @brief Get the list of callbacks for the model. */
   virtual std::vector<callback_base*>& get_callbacks() {
@@ -165,7 +165,7 @@ public:
   virtual void add_layer(std::unique_ptr<Layer> l);
 
   /** @brief Add weights to model. */
-  void add_weights(std::unique_ptr<weights<TensorDataType>> w);
+  void add_weights(std::unique_ptr<weights> w);
 
   /** @brief Register a new callback for the model. */
   void add_callback(callback_base *cb);
@@ -174,14 +174,14 @@ public:
   void add_metric(metric *m);
 
   /** @brief Replace the model's weights. */
-  void replace_weights(std::vector<weights<TensorDataType> *>& w);
+  void replace_weights(std::vector<weights *>& w);
 
   /** @brief Copy trained weights from input parameter w.
    *
    *  Only weight values are placed, pointers and layer structure are in place.
    *  Weights to be copied are of the same name
    */
-  void copy_trained_weights_from(std::vector<weights<TensorDataType> *>& w);
+  void copy_trained_weights_from(std::vector<weights *>& w);
 
   /** @brief Construct an instance of the default optimizer.
    *
@@ -276,7 +276,7 @@ protected:
    *  pointer is not changed.
    */
   virtual void remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
-                              const std::unordered_map<weights<TensorDataType>*,weights<TensorDataType>*>& weights_map);
+                              const std::unordered_map<weights*,weights*>& weights_map);
 
   /** @brief
    *
@@ -385,9 +385,9 @@ public:
   /** @brief Execute callbacks at end of model optimization. */
   virtual void do_model_optimize_end_cbs();
   /** @brief Execute callbacks at the start of weight optimization. */
-  virtual void do_weight_optimize_begin_cbs(weights<TensorDataType> *w);
+  virtual void do_weight_optimize_begin_cbs(weights *w);
   /** @brief Execute callbacks at the end of weight optimization. */
-  virtual void do_weight_optimize_end_cbs(weights<TensorDataType> *w);
+  virtual void do_weight_optimize_end_cbs(weights *w);
 
 private:
 
@@ -409,7 +409,7 @@ private:
   std::vector<std::unique_ptr<Layer>> m_layers;
 
   /** @brief Trainable parameters. */
-  std::vector<std::unique_ptr<weights<TensorDataType>>> m_weights;
+  std::vector<std::unique_ptr<weights>> m_weights;
 
   /** @details Maximum possible minibatch size supported by layers in
    *  this model.  Note that this is local to the particular model,

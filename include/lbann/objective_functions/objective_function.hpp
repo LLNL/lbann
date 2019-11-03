@@ -102,9 +102,9 @@ class objective_function {
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<Layer*> layers);
   /** Get list of pointers to weights. */
-  std::vector<weights<TensorDataType>*> get_weights_pointers() const;
+  std::vector<data_type_weights<TensorDataType>*> get_weights_pointers() const;
   /** Set list of pointers to weights. */
-  void set_weights_pointers(std::vector<weights<TensorDataType>*> w);
+  void set_weights_pointers(std::vector<data_type_weights<TensorDataType>*> w);
 
   /** Get the time spent evaluating the objective function. */
   EvalType get_evaluation_time() const { return m_evaluation_time; }

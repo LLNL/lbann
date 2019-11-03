@@ -95,7 +95,7 @@ void data_type_layer<TensorDataType>::replace_weights(data_type_layer<TensorData
     LBANN_ERROR("attempted to add null pointer as a replacement layer");
   }
 
-  const std::vector<weights<TensorDataType> *> other_layer_weights = other_layer->get_weights();
+  const std::vector<data_type_weights<TensorDataType> *> other_layer_weights = other_layer->get_weights();
   for (size_t i = 0; i < m_weights.size(); ++i) {
     m_weights[i]->set_values(other_layer_weights[i]->get_values());
   }

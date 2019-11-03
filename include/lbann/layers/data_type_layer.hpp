@@ -33,7 +33,7 @@ namespace lbann {
 
 // Forward declarations
 template <typename TensorDataType>
-class weights;
+class data_type_weights;
 
 using supported_layer_data_type = El::TypeList<float/*, double*/>;
 
@@ -66,11 +66,11 @@ public:
   // ===========================================================
 
   /** Get references to weights. */
-  inline std::vector<weights<TensorDataType>*>& get_weights() { return m_weights; }
+  inline std::vector<data_type_weights<TensorDataType>*>& get_weights() { return m_weights; }
   /** Get references to weights. (const) */
-  inline const std::vector<weights<TensorDataType>*>& get_weights() const { return m_weights; }
+  inline const std::vector<data_type_weights<TensorDataType>*>& get_weights() const { return m_weights; }
   /** Set list of pointers to weights. */
-  inline void set_weights(std::vector<weights<TensorDataType>*> w) { get_weights() = w; }
+  inline void set_weights(std::vector<data_type_weights<TensorDataType>*> w) { get_weights() = w; }
   /** Replace weights with another Layer's weights*/
   void replace_weights(data_type_layer<TensorDataType>* other_layer);
 
@@ -173,7 +173,7 @@ protected:
   // Protected class members
   // ===========================================================
   /** References to layer weights. */
-  std::vector<weights<TensorDataType>*> m_weights;
+  std::vector<data_type_weights<TensorDataType>*> m_weights;
 
   /** Avoid back prop if frozen */
   bool m_frozen;
