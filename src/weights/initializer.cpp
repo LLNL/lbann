@@ -37,25 +37,29 @@
 
 namespace lbann {
 
-description weights_initializer::get_description() const {
+template <typename TensorDataType>
+description weights_initializer<TensorDataType>::get_description() const {
   return description(get_type() + " weights initializer");
 }
 
-description constant_initializer::get_description() const {
-  auto desc = weights_initializer::get_description();
+template <typename TensorDataType>
+description constant_initializer<TensorDataType>::get_description() const {
+  auto desc = weights_initializer<TensorDataType>::get_description();
   desc.add("Value", m_value);
   return desc;
 }
 
-void constant_initializer::fill(AbsDistMat& matrix) {
-  if (m_value == DataType(0)) {
+template <typename TensorDataType>
+void constant_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataType>& matrix) {
+  if (m_value == TensorDataType(0)) {
     El::Zero(matrix);
   } else {
     El::Fill(matrix, m_value);
   }
 }
 
-void value_initializer::fill(AbsDistMat& matrix) {
+template <typename TensorDataType>
+void value_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataType>& matrix) {
 
   // Check that number of values matches weights matrix
   if (matrix.Height() * matrix.Width() != (El::Int) m_values.size()) {
@@ -97,27 +101,31 @@ void value_initializer::fill(AbsDistMat& matrix) {
 
 }
 
-description uniform_initializer::get_description() const {
-  auto desc = weights_initializer::get_description();
+template <typename TensorDataType>
+description uniform_initializer<TensorDataType>::get_description() const {
+  auto desc = weights_initializer<TensorDataType>::get_description();
   std::stringstream ss;
   ss << "[" << m_min << "," << m_max << ")";
   desc.add("Range", ss.str());
   return desc;
 }
 
-void uniform_initializer::fill(AbsDistMat& matrix) {
+template <typename TensorDataType>
+void uniform_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataType>& matrix) {
   uniform_fill(matrix, matrix.Height(), matrix.Width(),
                (m_max + m_min) / 2, (m_max - m_min) / 2);
 }
 
-description normal_initializer::get_description() const {
-  auto desc = weights_initializer::get_description();
+template <typename TensorDataType>
+description normal_initializer<TensorDataType>::get_description() const {
+  auto desc = weights_initializer<TensorDataType>::get_description();
   desc.add("Mean", m_mean);
   desc.add("Standard deviation", m_standard_deviation);
   return desc;
 }
 
-void normal_initializer::fill(AbsDistMat& matrix) {
+template <typename TensorDataType>
+void normal_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataType>& matrix) {
   gaussian_fill(matrix, matrix.Height(), matrix.Width(),
                 m_mean, m_standard_deviation);
 }
@@ -126,44 +134,54 @@ void normal_initializer::fill(AbsDistMat& matrix) {
 // Builder functions
 //
 
-std::unique_ptr<weights_initializer>
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer<TensorDataType>>
 build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ConstantInitializer const&>(msg);
-  return make_unique<constant_initializer>(params.value());
+  return make_unique<constant_initializer<TensorDataType>>(params.value());
 }
 
-std::unique_ptr<weights_initializer>
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer<TensorDataType>>
 build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
-  return make_unique<value_initializer>(parse_list<DataType>(params.values()));
+  return make_unique<value_initializer<TensorDataType>>(parse_list<TensorDataType>(params.values()));
 }
 
-std::unique_ptr<weights_initializer>
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer<TensorDataType>>
 build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::UniformInitializer const&>(msg);
   const auto& min = params.min();
   const auto& max = params.max();
   if (min != 0.0 || max != 0.0) {
-    return make_unique<uniform_initializer>(min, max);
+    return make_unique<uniform_initializer<TensorDataType>>(min, max);
   } else {
-    return make_unique<uniform_initializer>();
+    return make_unique<uniform_initializer<TensorDataType>>();
   }
 }
 
-std::unique_ptr<weights_initializer>
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer<TensorDataType>>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::NormalInitializer const&>(msg);
   const auto& mean = params.mean();
   const auto& standard_deviation = params.standard_deviation();
   if (mean != 0.0 || standard_deviation != 0.0) {
-    return make_unique<normal_initializer>(mean, standard_deviation);
+    return make_unique<normal_initializer<TensorDataType>>(mean, standard_deviation);
   } else {
-    return make_unique<normal_initializer>();
+    return make_unique<normal_initializer<TensorDataType>>();
   }
 }
+
+template class weights_initializer<float>;
+template class constant_initializer<float>;
+template class value_initializer<float>;
+template class uniform_initializer<float>;
+template class normal_initializer<float>;
 
 } // namespace lbann

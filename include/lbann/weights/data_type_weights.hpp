@@ -166,7 +166,7 @@ private:
   /** Weights initializer.
    *  Default is nullptr, which corresponds to zero initialization.
    */
-  std::unique_ptr<weights_initializer> m_initializer;
+  std::unique_ptr<weights_initializer<TensorDataType>> m_initializer;
   /** Weights optimizer.
    *  Default is nullptr, which corresponds to no optimizer.
    */
