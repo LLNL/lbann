@@ -35,7 +35,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/description.hpp"
-#include "lbann/weights/weights.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/cuda.hpp"
 #endif // LBANN_HAS_GPU
@@ -64,7 +64,7 @@ std::string to_string(optimizer_gradient_status status);
 
 // Forward declarations
 template <typename TensorDataType>
-class weights;
+class data_type_weights;
 class persist;
 
 /** @brief Abstract base class for gradient-based optimization algorithms.
@@ -96,11 +96,11 @@ public:
   virtual description get_description() const;
 
   /** @brief Weights being optimized. */
-  weights<TensorDataType>& get_weights();
+  data_type_weights<TensorDataType>& get_weights();
   /** @brief Weights being optimized. */
-  const weights<TensorDataType>& get_weights() const;
+  const data_type_weights<TensorDataType>& get_weights() const;
   /** @brief Weights being optimized. */
-  void set_weights(weights<TensorDataType>* w) { m_weights = w; }
+  void set_weights(data_type_weights<TensorDataType>* w) { m_weights = w; }
 
   /** @brief Objective function gradient w.r.t. the weights.
    *
@@ -173,7 +173,7 @@ public:
    *  @param w Weights being optimized. If null, no change is made to
    *  the weights.
    */
-  virtual void setup(weights<TensorDataType>* w = nullptr);
+  virtual void setup(data_type_weights<TensorDataType>* w = nullptr);
 
   /** @brief Optimization step. */
   void step();
@@ -209,7 +209,7 @@ private:
   lbann_comm* m_comm;
 
   /** @brief Weights being optimized. */
-  weights<TensorDataType>* m_weights = nullptr;
+  data_type_weights<TensorDataType>* m_weights = nullptr;
 
   /** @brief Objective function gradient w.r.t. weights. */
   std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient;

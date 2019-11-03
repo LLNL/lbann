@@ -89,13 +89,13 @@ description optimizer<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-weights<TensorDataType>& optimizer<TensorDataType>::get_weights() {
+data_type_weights<TensorDataType>& optimizer<TensorDataType>::get_weights() {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<weights<TensorDataType>&>(static_cast<const optimizer&>(*this).get_weights());
+  return const_cast<data_type_weights<TensorDataType>&>(static_cast<const optimizer&>(*this).get_weights());
 }
 
 template <typename TensorDataType>
-const weights<TensorDataType>& optimizer<TensorDataType>::get_weights() const {
+const data_type_weights<TensorDataType>& optimizer<TensorDataType>::get_weights() const {
   if (m_weights == nullptr) {
     LBANN_ERROR("attempted to access the weights being optimized "
                 "before they are set");
@@ -133,7 +133,7 @@ El::AbstractDistMatrix<TensorDataType>& optimizer<TensorDataType>::get_gradient(
 
 template <typename TensorDataType>
 void optimizer<TensorDataType>::add_to_gradient(const El::AbstractDistMatrix<TensorDataType>& gradient,
-                                DataType scale,
+                                TensorDataType scale,
                                 bool allreduce_needed) {
 
   // Check that matrices have been setup
@@ -275,7 +275,7 @@ void optimizer<TensorDataType>::remove_gradient_source(const void* source) {
 }
 
 template <typename TensorDataType>
-void optimizer<TensorDataType>::setup(weights<TensorDataType>* w) {
+void optimizer<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
   m_comm = &w->get_comm();
   clear_gradient();
 

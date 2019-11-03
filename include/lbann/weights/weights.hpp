@@ -29,8 +29,6 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/weights/initializer.hpp"
-#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/description.hpp"
 
@@ -43,10 +41,6 @@ class WeightsData;
 }
 
 namespace lbann {
-
-// Forward declaration
-template <typename TensorDataType>
-class optimizer;
 
 /** Neural network weights.
  *  Weights are tensors that act as trainable parameters for a neural
@@ -62,9 +56,7 @@ class optimizer;
  *  Note that LBANN weights are similar to Tensorflow variables and
  *  Caffe parameters.
  */
-template <typename TensorDataType>
 class weights {
-  friend class optimizer<TensorDataType>;
 private:
   weights();
   // -----------------------------------------------
@@ -77,6 +69,7 @@ public:
   weights(lbann_comm* comm);
   weights(const weights& other);
   weights& operator=(const weights& other);
+  virtual ~weights() = default;
 
   /** Set weights name.
    *  Each set of weights in a model should have a unique,
@@ -99,7 +92,7 @@ public:
   weights* copy() const { return new weights(*this); }
 
   /** Human-readable description. */
-  description get_description() const;
+  virtual description get_description() const;
 
   // -----------------------------------------------
   // Dimension accessors
@@ -140,38 +133,10 @@ public:
   /** Set weight tensor dimensions.
    *  See the 'get_dims' function for an explanation of the notation.
    */
-  void set_dims(std::vector<int> matrix_height_dims,
-                std::vector<int> matrix_width_dims = std::vector<int>());
+  virtual void set_dims(std::vector<int> matrix_height_dims,
+                        std::vector<int> matrix_width_dims = std::vector<int>());
   /** Set weight tensor dimensions as a 1D tensor. */
-  void set_dims(int size) { set_dims({size}, {}); }
-
-  // -----------------------------------------------
-  // Initializer accessors
-  // -----------------------------------------------
-  /** Get weights initializer. */
-  weights_initializer* get_initializer();
-  /** Get weights initializer (const). */
-  const weights_initializer* get_initializer() const;
-  /** Set weights initializer.
-   *  The contents of 'init' are moved to a class member.
-   */
-  void set_initializer(std::unique_ptr<weights_initializer>&& init);
-
-  // -----------------------------------------------
-  // Optimizer accessors
-  // -----------------------------------------------
-  /** Get weights optimizer.
-   *  Returns a null pointer if the weights are frozen.
-   */
-  optimizer<TensorDataType>* get_optimizer();
-  /** Get weights optimizer.
-   *  Returns a null pointer if the weights are frozen.
-   */
-  const optimizer<TensorDataType>* get_optimizer() const;
-  /** Set weights optimizer.
-   *  The contents of opt are moved to a class member.
-   */
-  void set_optimizer(std::unique_ptr<optimizer<TensorDataType>>&& opt);
+  virtual void set_dims(int size) { set_dims({size}, {}); }
 
   // -----------------------------------------------
   // Matrix distribution accessors
@@ -182,36 +147,7 @@ public:
   // -----------------------------------------------
   // Setup
   // -----------------------------------------------
-  void setup();
-
-  // -----------------------------------------------
-  // Weight matrix accessors
-  // -----------------------------------------------
-
-  /** Get the weight matrix. */
-  El::AbstractDistMatrix<TensorDataType>& get_values();
-  /** Get the weight matrix. */
-  const El::AbstractDistMatrix<TensorDataType>& get_values() const;
-  /** Set the weight matrix. */
-  void set_values(const El::AbstractDistMatrix<TensorDataType>& values);
-
-  /** Set a weight value. */
-  void set_value(DataType value, int index);
-  /** Set an entry in the weight tensor. */
-  void set_value(DataType value, std::vector<int> pos);
-  /** Set an entry in the weight matrix. */
-  void set_value(DataType value, int row, int col);
-
-  /** Reconcile weight values.
-   *  If weight values are duplicated across multiple processes, they
-   *  are set to the average across the processes.
-   */
-  void reconcile_values();
-  /** Asynchronously reconcile weight values.
-   *  If weight values are duplicated across multiple processes, they
-   *  are set to the average across the processes.
-   */
-  void reconcile_values(Al::request& req);
+  virtual void setup();
 
   // -----------------------------------------------
   // Freezing
@@ -226,14 +162,14 @@ public:
   // -----------------------------------------------
   // Checkpointing
   // -----------------------------------------------
-  bool save_to_checkpoint_shared(persist& p);
-  bool load_from_checkpoint_shared(persist& p);
-  bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list);
-  bool save_to_checkpoint_distributed(persist& p);
-  bool load_from_checkpoint_distributed(persist& p);
+  virtual bool save_to_checkpoint_shared(persist& p);
+  virtual bool load_from_checkpoint_shared(persist& p);
+  virtual bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list);
+  virtual bool save_to_checkpoint_distributed(persist& p);
+  virtual bool load_from_checkpoint_distributed(persist& p);
 
   /** Write weights to proto file */
-  void write_proto(lbann_data::WeightsData* proto) const;
+  virtual void write_proto(lbann_data::WeightsData* proto) const;
 
 private:
 
@@ -259,18 +195,6 @@ private:
 
   /** Whether weight optimization is disabled. */
   bool m_frozen;
-
-  /** Weight matrix. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_values;
-
-  /** Weights initializer.
-   *  Default is nullptr, which corresponds to zero initialization.
-   */
-  std::unique_ptr<weights_initializer> m_initializer;
-  /** Weights optimizer.
-   *  Default is nullptr, which corresponds to no optimizer.
-   */
-  std::unique_ptr<optimizer<TensorDataType>> m_optimizer;
 
 };
 
