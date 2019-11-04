@@ -64,8 +64,8 @@ message Model {
   repeated Callback callback = 20;
 
   int64 random_seed = 30;
-  // If true, models will have their model rank mixed into their random seed.
-  bool random_init_models_differently = 31;
+  // If false, trainers will have their trainer rank mixed into their random seed.
+  bool random_init_trainers_identically = 31;
 
   Summarizer summarizer = 32;
 }
