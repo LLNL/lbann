@@ -165,8 +165,7 @@ def make_batch_script(script_file=None,
             environment['IBV_FORK_SAFE'] = 1
 
         # Hacked bugfix for hcoll (1/23/19)
-        # Note: Fixes some infrequent hangs in MPI_Allreduce and
-        # coredumps in MPI_Init.
+        # Note: Fixes hangs in MPI_Bcast.
         if 'HCOLL_ENABLE_SHARP' not in environment:
             environment['HCOLL_ENABLE_SHARP'] = 0
         if 'OMPI_MCA_coll_hcoll_enable' not in environment:
