@@ -1,3 +1,4 @@
+"""Simple recurrent network on tokenized text data."""
 import argparse
 import os.path
 import sys

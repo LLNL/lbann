@@ -69,7 +69,7 @@ def tokenize(text_file,
 
     """
 
-    # Get BERT tokenizer from Hugging Face
+    # Get BERT tokenizer from Transformers
     import transformers
     tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased')
     vocab_size = tokenizer.vocab_size
