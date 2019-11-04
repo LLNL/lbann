@@ -1,7 +1,7 @@
 trainer {
+  random_init_trainers_identically: false
 }
 model {
-  random_init_trainers_identically: false
   serialize_io: true
   name: "wae_model"
   objective_function {
