@@ -5,7 +5,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -61,17 +61,8 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
-    # Convenience function to compute L2 norm squared with NumPy
-    def l2_norm2(x):
-        x = x.reshape(-1)
-        return np.inner(x, x)
-
     # LBANN implementation
-    x = lbann.Reshape(lbann.Input(), dims=str_list(_sample_dims))
+    x = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
     y = lbann.Argmin(x, device='cpu')
     z = lbann.L2Norm2(y)
 
@@ -84,9 +75,9 @@ def construct_model(lbann):
     # Get expected metric value from NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
         y = np.argmin(x)
-        z = l2_norm2(y)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
