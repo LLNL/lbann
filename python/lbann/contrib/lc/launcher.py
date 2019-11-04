@@ -129,7 +129,7 @@ def make_batch_script(script_file=None,
             mask_str = ','.join([hex(mask) for mask in masks])
             launcher_args.append('--cpu_bind=mask_cpu:{}'.format(mask_str))
 
-    # Hacked bugfix for MPI_Init in MVAPICH2-2.3
+    # Hacked bugfix for MPI_Init in MVAPICH2-2.3 (8/23/18)
     # Note: MPI_Init hangs when started with more than 35
     # processes. This bug is not present in MVAPICH2-2.2 but is
     # present in MVAPICH2-2.3rc2.
@@ -163,6 +163,18 @@ def make_batch_script(script_file=None,
         # https://linux.die.net/man/3/ibv_fork_init).
         if 'IBV_FORK_SAFE' not in environment:
             environment['IBV_FORK_SAFE'] = 1
+
+        # Hacked bugfix for hcoll (1/23/19)
+        # Note: Fixes some infrequent hangs in MPI_Allreduce and
+        # coredumps in MPI_Init.
+        if 'HCOLL_ENABLE_SHARP' not in environment:
+            environment['HCOLL_ENABLE_SHARP'] = 0
+        if 'OMPI_MCA_coll_hcoll_enable' not in environment:
+            environment['OMPI_MCA_coll_hcoll_enable'] = 0
+
+        # Hacked bugfix for Spectrum MPI PAMI (9/17/19)
+        if 'PAMI_MAX_NUM_CACHED_PAGES' not in environment:
+            environment['PAMI_MAX_NUM_CACHED_PAGES'] = 0
 
     return lbann.launcher.make_batch_script(script_file=script_file,
                                             work_dir=work_dir,
