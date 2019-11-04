@@ -1,11 +1,20 @@
+"""Helper functions for text data from Project Gutenberg."""
 import array
 import os
 import os.path
 import re
 import urllib.request
-
 import numpy as np
-import transformers
+
+
+def get_url(name):
+    """URL to Project Gutenberg text file."""
+    urls = {
+        'frankenstein': 'https://www.gutenberg.org/files/84/84-0.txt',
+        'shakespeare': 'https://www.gutenberg.org/files/100/100-0.txt',
+    }
+    return urls[name.lower()]
+
 
 def strip_boilerplate(raw_file, stripped_file):
     """Remove header and footer from Project Gutenberg text file.
@@ -39,7 +48,7 @@ def tokenize(text_file,
              encoded_file=None,
              vocab_file=None,
              ignore_whitespace=True):
-    """Convert text file to sequence of token indices.
+    """Convert text file to sequence of token IDs.
 
     Tokenization is performed with BERT tokenizer.
 
@@ -47,7 +56,7 @@ def tokenize(text_file,
         text_file (str): Text file to be encoded.
         encoded_file (str, optional): If provided, path where the
            encoded data will be saved as an .npz file. The sequence of
-           token indices is saved as 'encoded_data' and the vocabulary
+           token IDs is saved as 'encoded_data' and the vocabulary
            size is saved as 'vocab_size'.
         vocab_file (str, optional): If provided, path where the
             vocabulary will be saved as a text file.
@@ -55,12 +64,13 @@ def tokenize(text_file,
             lines that are purely made of whitespace (default: True).
 
     Returns:
-        array of int: Sequence of token indices.
+        array of int: Sequence of token IDs.
         int: Number of tokens in vocabulary.
 
     """
 
     # Get BERT tokenizer from Hugging Face
+    import transformers
     tokenizer = transformers.BertTokenizer.from_pretrained('bert-base-uncased')
     vocab_size = tokenizer.vocab_size
     if vocab_file:
@@ -80,8 +90,8 @@ def tokenize(text_file,
     return encoded_data, vocab_size
 
 
-class GutenbergDataset():
-    """Tokenized text dataset from Project Gutenberg.
+class GutenbergCorpus():
+    """Tokenized text from Project Gutenberg.
 
     Args:
         data_dir (str): Directory for downloading data and
@@ -89,7 +99,7 @@ class GutenbergDataset():
         data_url (str): URL to Project Gutenberg text file.
 
     Attributes:
-        token_data (array of int): Sequence of token indices.
+        token_data (array of int): Sequence of token IDs.
         vocab_size (int): Number of tokens in vocabulary.
 
     """
@@ -125,9 +135,12 @@ class GutenbergDataset():
         self.token_data = token_data
         self.vocab_size = vocab_size
 
-
     def __iter__(self):
+        """Iterator through token IDs."""
         return self.token_data.__iter__()
-
     def __getitem__(self, key):
+        """Get token ID."""
         return self.token_data.__getitem__(key)
+    def __len__(self):
+        """Get total number of tokens in corpus."""
+        return self.token_data.__len__()
