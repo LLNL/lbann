@@ -27,11 +27,10 @@
 #ifndef LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED
 
-#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
 
 namespace lbann {
 namespace callback {
-template <typename TensorDataType>
 class perturb_adam;
 } // namespace callback
 
@@ -43,7 +42,7 @@ class perturb_adam;
  *  optimization." arXiv preprint arXiv:1412.6980 (2014).
  */
 template <typename TensorDataType>
-class adam : public optimizer<TensorDataType> {
+class adam : public data_type_optimizer<TensorDataType> {
 public:
 
   /** @name Life cycle functions */
@@ -117,7 +116,7 @@ public:
   /** @name Setup */
   ///@{
 
-  void setup(weights<TensorDataType>* w = nullptr) override;
+  void setup(data_type_weights<TensorDataType>* w = nullptr) override;
 
   ///@}
 
@@ -145,7 +144,7 @@ private:
   std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_moment2;
 
   /** Hyperparameter exploration. */
-  friend class callback::perturb_adam<TensorDataType>;
+  friend class callback::perturb_adam;
 
   /** CPU implementation of optimization step. */
   void step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
@@ -209,7 +208,7 @@ private:
 
 };
 
-std::unique_ptr<optimizer<DataType>>
+std::unique_ptr<optimizer>
 build_adam_optimizer_from_pbuf(
   google::protobuf::Message const&);
 

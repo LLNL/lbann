@@ -41,15 +41,14 @@
 namespace lbann {
 namespace callback {
 
-template <typename TensorDataType>
-perturb_adam<TensorDataType>::perturb_adam(TensorDataType learning_rate_factor,
-                           TensorDataType beta1_factor,
-                           TensorDataType beta2_factor,
-                           TensorDataType eps_factor,
+perturb_adam::perturb_adam(DataType learning_rate_factor,
+                           DataType beta1_factor,
+                           DataType beta2_factor,
+                           DataType eps_factor,
                            bool perturb_during_training,
                            El::Int batch_interval,
                            std::set<std::string> weights_names)
-  : data_type_callback<TensorDataType>(batch_interval),
+  : callback_base(batch_interval),
     m_learning_rate_factor(learning_rate_factor),
     m_beta1_factor(beta1_factor),
     m_beta2_factor(beta2_factor),
@@ -57,34 +56,29 @@ perturb_adam<TensorDataType>::perturb_adam(TensorDataType learning_rate_factor,
     m_perturb_during_training(perturb_during_training),
     m_weights_names(std::move(weights_names)) {}
 
-template <typename TensorDataType>
-void perturb_adam<TensorDataType>::setup(model* m) {
+void perturb_adam::setup(model* m) {
   perturb(*m);
 }
 
-template <typename TensorDataType>
-void perturb_adam<TensorDataType>::on_batch_begin(model* m) {
+void perturb_adam::on_batch_begin(model* m) {
   const auto& c = m->get_execution_context();
   if (m_perturb_during_training && c.get_step() > 0) {
     perturb(*m);
   }
 }
 
-template <typename TensorDataType>
-void perturb_adam<TensorDataType>::perturb(model& m) const {
+void perturb_adam::perturb(model& m) const {
   auto* comm = m.get_comm();
   for (auto* w : m.get_weights()) {
     if (w == nullptr) {
-      std::stringstream err;
-      err << "callback \"" << name() << "\" "
-          << "got a weights pointer that is a null pointer";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("callback \"", name(), "\" "
+                  "got a weights pointer that is a null pointer");
     }
     if (m_weights_names.empty()
         || m_weights_names.count(w->get_name()) > 0) {
 
       // Check if weights has Adam optimizer
-      auto* opt = dynamic_cast<adam<TensorDataType>*>(w->get_optimizer());
+      auto* opt = dynamic_cast<adam<DataType>*>(w->get_optimizer());
       if (!m_weights_names.empty() && opt == nullptr) {
         auto* opt_ = w->get_optimizer();
         std::stringstream err;
@@ -108,24 +102,23 @@ void perturb_adam<TensorDataType>::perturb(model& m) const {
   }
 }
 
-template <typename TensorDataType>
-void perturb_adam<TensorDataType>::perturb(lbann_comm& comm, adam<TensorDataType>& opt) const {
+void perturb_adam::perturb(lbann_comm& comm, adam<DataType>& opt) const {
 
   // Perturb hyperparameters on master process
-  std::vector<TensorDataType> hyperparameters(4);
+  std::vector<DataType> hyperparameters(4);
   if (comm.am_trainer_master()) {
 
     // Useful constants
     // Note: half_epsilon is the difference between 1.0 and the next
     // smallest representable value.
-    constexpr TensorDataType zero = 0;
-    constexpr TensorDataType one = 1;
-    constexpr TensorDataType min_val = std::numeric_limits<TensorDataType>::min();
-    constexpr TensorDataType half_epsilon = std::numeric_limits<TensorDataType>::epsilon() / 2;
+    constexpr DataType zero = 0;
+    constexpr DataType one = 1;
+    constexpr DataType min_val = std::numeric_limits<DataType>::min();
+    constexpr DataType half_epsilon = std::numeric_limits<DataType>::epsilon() / 2;
 
     // RNG
     auto& gen = get_generator();
-    std::normal_distribution<TensorDataType> dist(zero, one);
+    std::normal_distribution<DataType> dist(zero, one);
 
     // Perturb log(learning_rate)
     auto learning_rate = opt.get_learning_rate();
@@ -183,7 +176,7 @@ build_perturb_adam_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPerturbAdam&>(proto_msg);
-  return make_unique<perturb_adam<DataType>>(
+  return make_unique<perturb_adam>(
     params.learning_rate_factor(),
     params.beta1_factor(),
     params.beta2_factor(),
