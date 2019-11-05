@@ -225,7 +225,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
       auto effective_mini_batch_size = mini_batch_size;
       for (auto&& cb : this->m_model->get_callbacks()) {
-        if (dynamic_cast<callback::imcomm<TensorDataType>*>(cb) != nullptr) {
+        if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
           effective_mini_batch_size = get_current_global_mini_batch_size();
           break;
         }

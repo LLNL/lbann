@@ -27,7 +27,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_CONFUSION_MATRIX_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_CONFUSION_MATRIX_HPP_INCLUDED
 
-#include "lbann/callbacks/data_type_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -38,8 +38,7 @@ namespace callback {
  *  with prediction i and label j. The prediction and label layers are
  *  assumed to output one-hot vectors for each mini-batch sample.
  */
-template <typename TensorDataType>
-class confusion_matrix : public data_type_callback<TensorDataType> {
+class confusion_matrix : public callback_base {
 public:
 
   confusion_matrix(std::string prediction_layer,
@@ -87,18 +86,18 @@ private:
    *  This is a CPU matrix. If the prediction layer keeps data on GPU,
    *  then this will be a matrix copy rather than a matrix view.
    */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_predictions_v;
+  std::unique_ptr<El::AbstractDistMatrix<DataType>> m_predictions_v;
   /** "View" into label matrix.
    *  This is a CPU matrix. If the label layer keeps data on GPU or in
    *  a different distribution than the prediction layer, then this
    *  will be a matrix copy rather than a matrix view.
    */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_labels_v;
+  std::unique_ptr<El::AbstractDistMatrix<DataType>> m_labels_v;
 
   /** Get prediction matrix. */
-  const El::AbstractDistMatrix<TensorDataType>& get_predictions(const model& m) const;
+  const El::AbstractDistMatrix<DataType>& get_predictions(const model& m) const;
   /** Get label matrix. */
-  const El::AbstractDistMatrix<TensorDataType>& get_labels(const model& m) const;
+  const El::AbstractDistMatrix<DataType>& get_labels(const model& m) const;
 
   /** Reset confusion matrix counts. */
   void reset_counts(const model& m);
@@ -113,7 +112,6 @@ private:
 };
 
 // Builder function
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_confusion_matrix_callback_from_pbuf(
   const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
