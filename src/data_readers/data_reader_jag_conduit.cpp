@@ -370,7 +370,11 @@ void data_reader_jag_conduit::read_partial_node(const data_reader_jag_conduit::f
   const std::string key2 = path + "/outputs/scalars";
 
   if (! has_path(h, key)) {
-    LBANN_ERROR("has_path failed for: ", key, ": num nodes successfully loaded by this rank: ", m_data_store->get_data_size());
+    if (m_data_store != nullptr) {
+      LBANN_ERROR("has_path failed for: ", key, "; num nodes successfully loaded by this rank: ", m_data_store->get_data_size());
+    } else {
+      LBANN_ERROR("has_path failed for: ", key, "; m_data_store is currently a nllptr");
+    }
   }
   conduit::relay::io::hdf5_read(h, key, work);
   n["inputs"] = work;
