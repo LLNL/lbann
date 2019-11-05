@@ -293,15 +293,17 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
   if (m_node_sizes_vary) {
     return;
   }
-  std::lock_guard<std::mutex> lock(m_mutex_2);
-  if (m_compacted_sample_size == 0) {
-    m_compacted_sample_size = nd.total_bytes_compact();
-    PROFILE("num bytes for nodes to be transmitted: ", nd.total_bytes_compact(), " per node");
-  } else if (m_compacted_sample_size != nd.total_bytes_compact() && !m_node_sizes_vary) {
-    LBANN_ERROR("Conduit node being added data_id: ", data_id,
-                " is not the same size as existing nodes in the data_store ",
-                m_compacted_sample_size, " != ", nd.total_bytes_compact(),
-                " role: ", m_reader->get_role());
+  {
+    std::lock_guard<std::mutex> lock(m_mutex_2);
+    if (m_compacted_sample_size == 0) {
+      m_compacted_sample_size = nd.total_bytes_compact();
+      PROFILE("num bytes for nodes to be transmitted: ", nd.total_bytes_compact(), " per node");
+    } else if (m_compacted_sample_size != nd.total_bytes_compact() && !m_node_sizes_vary) {
+      LBANN_ERROR("Conduit node being added data_id: ", data_id,
+                  " is not the same size as existing nodes in the data_store ",
+                  m_compacted_sample_size, " != ", nd.total_bytes_compact(),
+                  " role: ", m_reader->get_role());
+    }
   }
   if (!nd.is_contiguous()) {
     LBANN_ERROR("m_data[",  data_id, "] does not have a contiguous layout");
@@ -319,8 +321,9 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 //     since the threading from the data_reader will cause you grief
 void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool already_have) {
   std::lock_guard<std::mutex> lock(m_mutex);
-  // TODO: test whether having multiple mutexes below is better than
-  //       locking this entire call with a single mutex
+  // TODO: test whether having multiple mutexes below is better (faster) than
+  //       locking this entire call with a single mutex. For now I'm
+  //       playing it safe and locking the whole dang thing.
   ++m_my_num_indices;
 
   if (m_is_local_cache && m_preload) {
