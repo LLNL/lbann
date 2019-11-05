@@ -30,7 +30,7 @@
 #include <unordered_set>
 #include <string>
 
-#include "lbann/callbacks/data_type_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -55,8 +55,7 @@ namespace callback {
  *
  * The recommended default alpha (from the paper) is 0.4.
  */
-template <typename TensorDataType>
-class mixup : public data_type_callback<TensorDataType> {
+class mixup : public callback_base {
 public:
   /** Apply mixup to layers named in layers with mixup parameter alpha. */
   mixup(std::unordered_set<std::string> layers, float alpha) :
