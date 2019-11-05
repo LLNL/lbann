@@ -87,13 +87,12 @@ void dump_network(model *m) {
   const auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
   for (const auto* l : m->get_layers()) {
     const auto* dtl = dynamic_cast<const data_type_layer<DataType>*>(l);
-    std::stringstream ss;
-    ss << "model" << m->get_comm()->get_trainer_rank()
-       << "-rank" << m->get_comm()->get_rank_in_trainer()
-       << "-epoch" << c.get_epoch()
-       << "-step" << c.get_step()
-       << "-" << l->get_name() << "-";
-    const std::string prefix = ss.str();
+    const std::string prefix = build_string(
+      "model", m->get_comm()->get_trainer_rank(),
+      "-rank", m->get_comm()->get_rank_in_trainer(),
+      "-epoch", c.get_epoch(),
+      "-step", c.get_step(),
+      "-",  l->get_name(), "-");
     for (int i = 0; i < l->get_num_children(); ++i) {
       El::Write(dtl->get_local_activations(i),
                 prefix + "Activations" + std::to_string(i),
@@ -107,13 +106,12 @@ void dump_network(model *m) {
   }
   for (auto* w : m->get_weights()) {
     auto & real_w = dynamic_cast<data_type_weights<DataType>&>(*w);
-    std::stringstream ss;
-    ss << "model" << m->get_comm()->get_trainer_rank()
-       << "-rank" << m->get_comm()->get_rank_in_trainer()
-       << "-epoch" << c.get_epoch()
-       << "-step" << c.get_step()
-       << "-" << w->get_name() << "-";
-    const std::string prefix = ss.str();
+    const std::string prefix = build_string(
+      "model", m->get_comm()->get_trainer_rank(),
+      "-rank", m->get_comm()->get_rank_in_trainer(),
+      "-epoch", c.get_epoch(),
+      "-step", c.get_step(),
+      "-", w->get_name(), "-");
     El::Write(real_w.get_values().LockedMatrix(),
               prefix + "Weights",
               El::ASCII);
