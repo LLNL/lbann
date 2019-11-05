@@ -823,7 +823,7 @@ void data_reader_jag_conduit::load() {
   const std::string sample_list_file = data_dir + get_data_index_list();
 
   options *opts = options::get();
-  bool check_data = ! opts->get_bool("no_check_data");
+  bool check_data = opts->get_bool("check_data");
 
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
