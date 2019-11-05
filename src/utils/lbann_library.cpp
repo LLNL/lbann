@@ -183,7 +183,7 @@ std::unique_ptr<model> build_model_from_prototext(
   // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
   if (!pb_trainer->random_init_trainers_identically()) {
-    random_seed = random_seed + comm->get_trainer_rank();
+    hash_combine(random_seed, comm->get_trainer_rank());
     // Reseed here so that setup is done with this new seed.
     init_random(random_seed);
     init_data_seq_random(random_seed);
