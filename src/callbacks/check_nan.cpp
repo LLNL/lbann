@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/check_nan.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
@@ -37,7 +38,9 @@ namespace {
  *  position in row and col. mat is assumed to be a CPU matrix.
  */
 template <typename TensorDataType>
-bool has_nan(const El::AbstractDistMatrix<TensorDataType>& mat, El::Int& row, El::Int& col) {
+bool has_nan(
+  const El::AbstractDistMatrix<TensorDataType>& mat,
+  El::Int& row, El::Int& col) {
   row = -1;
   col = -1;
   const auto& local_mat = mat.LockedMatrix();
@@ -58,7 +61,9 @@ bool has_nan(const El::AbstractDistMatrix<TensorDataType>& mat, El::Int& row, El
  *  position in row and col. mat is assumed to be a CPU matrix.
  */
 template <typename TensorDataType>
-bool has_inf(const El::AbstractDistMatrix<TensorDataType>& mat, El::Int& row, El::Int& col) {
+bool has_inf(
+  const El::AbstractDistMatrix<TensorDataType>& mat,
+  El::Int& row, El::Int& col) {
   row = -1;
   col = -1;
   const auto& local_mat = mat.LockedMatrix();
@@ -79,9 +84,9 @@ bool has_inf(const El::AbstractDistMatrix<TensorDataType>& mat, El::Int& row, El
  *  necessarily have bad data, and the check is purely local.
  */
 void dump_network(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  const auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
   for (const auto* l : m->get_layers()) {
-    const auto* dtl = dynamic_cast<const data_type_layer<TensorDataType>*>(l);
+    const auto* dtl = dynamic_cast<const data_type_layer<DataType>*>(l);
     std::stringstream ss;
     ss << "model" << m->get_comm()->get_trainer_rank()
        << "-rank" << m->get_comm()->get_rank_in_trainer()
@@ -101,6 +106,7 @@ void dump_network(model *m) {
     }
   }
   for (auto* w : m->get_weights()) {
+    auto & real_w = dynamic_cast<data_type_weights<DataType>&>(*w);
     std::stringstream ss;
     ss << "model" << m->get_comm()->get_trainer_rank()
        << "-rank" << m->get_comm()->get_rank_in_trainer()
@@ -108,10 +114,10 @@ void dump_network(model *m) {
        << "-step" << c.get_step()
        << "-" << w->get_name() << "-";
     const std::string prefix = ss.str();
-    El::Write(w->get_values().LockedMatrix(),
+    El::Write(real_w.get_values().LockedMatrix(),
               prefix + "Weights",
               El::ASCII);
-    auto* opt = w->get_optimizer();
+    auto* opt = real_w.get_optimizer();
     if (opt != nullptr) {
       El::Write(opt->get_gradient().LockedMatrix(),
                 prefix + "Gradient",
@@ -122,109 +128,107 @@ void dump_network(model *m) {
 
 } // namespace
 
-template <typename TensorDataType>
-void check_nan<TensorDataType>::on_forward_prop_end(model *m, Layer *l) {
-  std::stringstream err;
+void check_nan::on_forward_prop_end(model *m, Layer *l) {
+  using proxy_type =
+    El::AbstractDistMatrixReadDeviceProxy<DataType, El::Device::CPU>;
+
+  if (!m || !l)
+    LBANN_ERROR("Model or layer pointer is null.");
+
   const auto& num_outputs = l->get_num_children();
   for (int i = 0; i < num_outputs; ++i) {
     El::Int row, col;
-    auto* dtl = dynamic_cast<data_type_layer<TensorDataType>*>(l);
-    El::AbstractDistMatrixReadDeviceProxy<TensorDataType, El::Device::CPU> mat_proxy(dtl->get_activations(i));
-    if (has_nan<TensorDataType>(mat_proxy.GetLocked(), row, col)) {
+    auto const& dtl = dynamic_cast<data_type_layer<DataType>&>(*l);
+    proxy_type mat_proxy(dtl.get_activations(i));
+    if (has_nan(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);
-      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
-          << "local entry (" << row << "," << col << ") is NaN "
-          << "in activations ";
-      if (num_outputs > 1) { err << i << " "; }
-      err << "of layer \"" << l->get_name() << "\"";
-      LBANN_ERROR(err.str());
+      std::string activation_id = (num_outputs>1 ? std::to_string(i) + " " : "");
+      LBANN_ERROR("rank ", m->get_comm()->get_rank_in_world(), ": "
+                  "local entry (", row, ",", col, ") is NaN "
+                  "in activations ", activation_id,
+                  "of layer \"", l->get_name(), "\"");
     }
-    if (has_inf<TensorDataType>(mat_proxy.GetLocked(), row, col)) {
+    if (has_inf(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);
-      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
-          << "local entry (" << row << "," << col << ") is inf "
-          << "in activations ";
-      if (num_outputs > 1) { err << i << " "; }
-      err << "of layer \"" << l->get_name() << "\"";
-      LBANN_ERROR(err.str());
+      std::string activation_id = (num_outputs>1 ? std::to_string(i) + " " : "");
+      LBANN_ERROR("rank ", m->get_comm()->get_rank_in_world(), ": "
+                  "local entry (", row, ",", col, ") is inf "
+                  "in activations ", activation_id,
+                  "of layer \"", l->get_name(), "\"");
     }
   }
 }
 
-template <typename TensorDataType>
-void check_nan<TensorDataType>::on_backward_prop_end(model *m, Layer *l) {
-  std::stringstream err;
+void check_nan::on_backward_prop_end(model *m, Layer *l) {
+  using proxy_type =
+    El::AbstractDistMatrixReadDeviceProxy<DataType, El::Device::CPU>;
   const auto& num_inputs = l->get_num_parents();
   for (int i = 0; i < num_inputs; ++i) {
     El::Int row, col;
-    auto* dtl = dynamic_cast<data_type_layer<TensorDataType>*>(l);
-    El::AbstractDistMatrixReadDeviceProxy<TensorDataType, El::Device::CPU> mat_proxy(dtl->get_error_signals(i));
-    if (has_nan<TensorDataType>(mat_proxy.GetLocked(), row, col)) {
+    auto const& dtl = dynamic_cast<data_type_layer<TensorDataType>&>(*l);
+    proxy_type mat_proxy(dtl.get_error_signals(i));
+    if (has_nan(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);
-      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
-          << "local entry (" << row << "," << col << ") is NaN "
-          << "in error signals ";
-      if (num_inputs > 1) { err << i << " "; }
-      err << "of layer \"" << l->get_name() << "\"";
-      LBANN_ERROR(err.str());
+      std::string signal_id = (num_inputs>1 ? std::to_string(i) + " " : "");
+      LBANN_ERROR("rank ", m->get_comm()->get_rank_in_world(), ": "
+                  "local entry (", row, ",", col, ") is NAN "
+                  "in error signals ", signal_id, " of layer \"",
+                  l->get_name(), "\"");
     }
-    if (has_inf<TensorDataType>(mat_proxy.GetLocked(), row, col)) {
+    if (has_inf(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);
-      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
-          << "local entry (" << row << "," << col << ") is inf "
-          << "in error signals ";
-      if (num_inputs > 1) { err << i << " "; }
-      err << "of layer \"" << l->get_name() << "\"";
-      LBANN_ERROR(err.str());
+      std::string signal_id = (num_inputs>1 ? std::to_string(i) + " " : "");
+      LBANN_ERROR("rank ", m->get_comm()->get_rank_in_world(), ": "
+                  "local entry (", row, ",", col, ") is inf "
+                  "in error signals ", signal_id, " of layer \"",
+                  l->get_name(), "\"");
     }
   }
 }
 
-template <typename TensorDataType>
-void check_nan<TensorDataType>::on_backward_prop_end(model *m) {
-  std::stringstream err;
-  for (weights<TensorDataType> *w : m->get_weights()) {
-    auto* opt = w->get_optimizer();
+void check_nan::on_backward_prop_end(model *m) {
+  using proxy_type =
+    El::AbstractDistMatrixReadDeviceProxy<DataType, El::Device::CPU>;
+  for (weights *w : m->get_weights()) {
+    auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
+    auto* opt = dtw.get_optimizer();
     if (opt != nullptr) {
       El::Int row, col;
-      El::AbstractDistMatrixReadDeviceProxy<TensorDataType, El::Device::CPU> mat_proxy(opt->get_gradient());
-      if (has_nan<TensorDataType>(mat_proxy.GetLocked(), row, col)) {
+      proxy_type mat_proxy(opt->get_gradient());
+      if (has_nan(mat_proxy.GetLocked(), row, col)) {
         dump_network(m);
-        err << "rank " << m->get_comm()->get_rank_in_world() << ": "
-            << "local entry (" << row << "," << col << ") is NaN "
-            << "in gradient w.r.t. weights \"" << w->get_name() << "\"";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR("rank ", m->get_comm()->get_rank_in_world(), ": "
+                    "local entry (", row, ",", col, ") is NaN "
+                    "in gradient w.r.t. weights \"", w->get_name(), "\"");
       }
-      if (has_inf<TensorDataType>(mat_proxy.GetLocked(), row, col)) {
+      if (has_inf(mat_proxy.GetLocked(), row, col)) {
         dump_network(m);
-        err << "rank " << m->get_comm()->get_rank_in_world() << ": "
-            << "local entry (" << row << "," << col << ") is inf "
-            << "in gradient w.r.t. weights \"" << w->get_name() << "\"";
-        LBANN_ERROR(err.str());
+        LBANN_ERROR("rank ", m->get_comm()->get_rank_in_world(), ": "
+                    "local entry (", row, ",", col, ") is inf "
+                    "in gradient w.r.t. weights \"", w->get_name(), "\"");
       }
     }
   }
 }
 
-template <typename TensorDataType>
-void check_nan<TensorDataType>::on_batch_end(model *m) {
-  std::stringstream err;
-  for (weights<TensorDataType> *w : m->get_weights()) {
+void check_nan::on_batch_end(model *m) {
+  using proxy_type =
+    El::AbstractDistMatrixReadDeviceProxy<DataType, El::Device::CPU>;
+  for (weights *w : m->get_weights()) {
+    auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
     El::Int row, col;
-    El::AbstractDistMatrixReadDeviceProxy<TensorDataType, El::Device::CPU> mat_proxy(w->get_values());
-    if (has_nan<TensorDataType>(mat_proxy.GetLocked(), row, col)) {
+    proxy_type mat_proxy(dtw.get_values());
+    if (has_nan(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);
-      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
-          << "local entry (" << row << "," << col << ") is NaN "
-          << "in weights \"" << w->get_name() << "\"";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("rank ", m->get_comm()->get_rank_in_world(), ": "
+                  "local entry (", row, ",", col, ") is NaN "
+                  "in weights \"", w->get_name(), "\"");
     }
-    if (has_inf<TensorDataType>(mat_proxy.GetLocked(), row, col)) {
+    if (has_inf(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);
-      err << "rank " << m->get_comm()->get_rank_in_world() << ": "
-          << "local entry (" << row << "," << col << ") is inf "
-          << "in weights \"" << w->get_name() << "\"";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("rank ", m->get_comm()->get_rank_in_world(), ": "
+                  "local entry (", row, ",", col, ") is inf "
+                  "in weights \"", w->get_name(), "\"");
     }
   }
 }

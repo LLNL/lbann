@@ -70,7 +70,7 @@ public:
   model(lbann_comm* comm,
         size_t mini_batch_size,
         objective_function<TensorDataType>* obj_fn,
-        optimizer<TensorDataType>* default_optimizer = nullptr);
+        optimizer* default_optimizer = nullptr);
   model(const model& other);
   model& operator=(const model& other);
   virtual ~model();
@@ -187,7 +187,7 @@ public:
    *
    *  If there is no default optimizer, a null pointer is returned.
    */
-  optimizer<TensorDataType>* create_optimizer() const;
+  optimizer* create_optimizer() const;
 
   /** Get the trainer's maximum mini-batch size. */
   inline size_t get_max_mini_batch_size() const {
@@ -422,7 +422,7 @@ private:
    *  is just used to create copies and is not actually used for
    *  optimization.
    */
-  optimizer<TensorDataType>* m_default_optimizer = nullptr;
+  optimizer* m_default_optimizer = nullptr;
 
   /** @brief Mathematical function to be minimized during training. */
   objective_function<TensorDataType>* m_objective_function;

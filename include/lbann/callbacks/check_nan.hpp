@@ -29,7 +29,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_CHECK_NAN_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_CHECK_NAN_HPP_INCLUDED
 
-#include "lbann/callbacks/data_type_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -38,13 +38,12 @@ namespace callback {
  * Check matrices for whether they include any NaNs or infs to help debugging.
  * This will kill the rank if such values are discovered.
  */
-template <typename TensorDataType>
-class check_nan : public data_type_callback<TensorDataType> {
+class check_nan : public callback_base {
  public:
   using callback_base::on_forward_prop_end;
   using callback_base::on_backward_prop_end;
 
-  check_nan() : data_type_callback<TensorDataType>() {}
+  check_nan() = default;
   check_nan(const check_nan&) = default;
   check_nan& operator=(
     const check_nan&) = default;
@@ -65,7 +64,7 @@ class check_nan : public data_type_callback<TensorDataType> {
 
 // Builder function
 LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
-  check_nan<DataType>, build_check_nan_callback_from_pbuf)
+  check_nan, build_check_nan_callback_from_pbuf)
 
 } // namespace callback
 } // namespace lbann

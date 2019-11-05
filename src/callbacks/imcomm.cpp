@@ -103,12 +103,13 @@ void imcomm::on_backward_prop_end(model *m) {
   for (weights *w : m->get_weights()) {
     auto& real_w = dynamic_cast<data_type_weights<DataType>&>(*w);
     EvalType start_time = get_time();
-    auto const& ct = m_weights_params[w];
-    if (ct == NONE) {
+    imcomm_params& params = m_weights_params[w];
+    if (params.ct == NONE || !w->has_optimizer()) {
       continue;
     }
     auto *opt = real_w.get_optimizer();
-    auto gradient = ToUniquePtr(opt->get_gradient().Copy());
+    auto& real_opt = dynamic_cast<data_type_optimizer<DataType>&>(*opt);
+    auto gradient = ToUniquePtr(real_opt.get_gradient().Copy());
     auto& local_gradients = gradient->Matrix();
     switch (params.ct) {
     case NORMAL:
@@ -117,15 +118,16 @@ void imcomm::on_backward_prop_end(model *m) {
     default:
       LBANN_ERROR("imcomm: unknown comm type");
     }
-    opt->clear_gradient();
-    opt->add_to_gradient(*gradient);
+    real_opt.clear_gradient();
+    real_opt.add_to_gradient(*gradient);
     EvalType im_time = get_time() - start_time;
     do_summary(*m, real_w, im_time);
   }
 }
 
-template <typename T>
-void imcomm::do_summary(model const& m, data_type_weights<T>& w,
+template <typename TensorDataType>
+void imcomm::do_summary(model const& m,
+                        data_type_weights<TensorDataType>& w,
                         EvalType im_time) {
   if (m_summarizer == nullptr) {
     return;
@@ -136,7 +138,7 @@ void imcomm::do_summary(model const& m, data_type_weights<T>& w,
                               im_time, c.get_step());
   // Use the same approximation the comm layer does.
   auto const& local_gradients =
-    static_cast<const El::Matrix<T, El::Device::CPU>&>(
+    static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(
       w.get_optimizer()->get_gradient().LockedMatrix());
   size_t bytes_sent =
     sizeof(DataType) * local_gradients.Height() * local_gradients.Width();

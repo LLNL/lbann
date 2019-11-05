@@ -104,11 +104,11 @@ public:
   /** Get weights optimizer.
    *  Returns a null pointer if the weights are frozen.
    */
-  optimizer* get_optimizer() override;
+  data_type_optimizer<TensorDataType>* get_optimizer() override;
   /** Get weights optimizer.
    *  Returns a null pointer if the weights are frozen.
    */
-  const optimizer* get_optimizer() const override;
+  const data_type_optimizer<TensorDataType>* get_optimizer() const override;
   /** Set weights optimizer.
    *  The contents of opt are moved to a class member.
    */
