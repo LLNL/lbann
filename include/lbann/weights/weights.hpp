@@ -89,10 +89,12 @@ public:
    *  instance and instantiates a copy. The caller is responsible for
    *  deallocating the instance.
    */
-  weights* copy() const { return new weights(*this); }
+  virtual weights* copy() const = 0;
 
   /** Human-readable description. */
   virtual description get_description() const;
+
+  virtual bool has_optimizer() const = 0;
 
   // -----------------------------------------------
   // Dimension accessors

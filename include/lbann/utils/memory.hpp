@@ -25,7 +25,7 @@ std::unique_ptr<T> make_unique(Ts&&... params)
 
 /** @brief Convert the raw pointer to a unique_ptr. */
 template <typename T>
-std::unique_ptr<T> to_unique(T* ptr)
+std::unique_ptr<T> ToUniquePtr(T* ptr)
 {
   return std::unique_ptr<T>(ptr);
 }

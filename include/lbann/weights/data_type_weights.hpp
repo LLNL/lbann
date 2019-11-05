@@ -70,10 +70,12 @@ public:
    *  instance and instantiates a copy. The caller is responsible for
    *  deallocating the instance.
    */
-  data_type_weights* copy() const { return new data_type_weights(*this); }
+  data_type_weights* copy() const override { return new data_type_weights(*this); }
 
   /** Human-readable description. */
   description get_description() const override;
+
+  bool has_optimizer() const override { return m_optimizer; }
 
   // -----------------------------------------------
   // Dimension accessors
