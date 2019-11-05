@@ -29,7 +29,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/optimizers/adam.hpp"
-#include "lbann/proto/factories.hpp"
+#include "lbann/proto/proto_common.hpp"
 
 #include <callbacks.pb.h>
 
@@ -47,7 +47,6 @@ namespace {
  *  Requires a scatter from the world master process. If there are an
  *  odd number of trainers, one of them is partnered with itself.
  */
-template <typename TensorDataType>
 El::Int get_partner_trainer(lbann_comm& comm,
                             const std::string& message_prefix) {
   if (comm.am_world_master()) { // Root process
@@ -106,8 +105,8 @@ template <typename TensorDataType>
 void exchange_models(lbann_comm& comm,
                      El::Int partner_trainer,
                      const std::set<std::string>& weights_names,
-                     const std::vector<weights<TensorDataType>*>& send_weights,
-                     std::vector<weights<TensorDataType>*>& recv_weights,
+                     const std::vector<data_type_weights<TensorDataType>*>& send_weights,
+                     std::vector<data_type_weights<TensorDataType>*>& recv_weights,
                      bool exchange_hyperparameters) {
 
   // Get partner process
@@ -216,7 +215,7 @@ void exchange_models(lbann_comm& comm,
                      El::Int partner_trainer,
                      model& m,
                      const std::set<std::string>& weights_names,
-                     const std::vector<weights<TensorDataType>*>& local_weights) {
+                     const std::vector<data_type_weights<TensorDataType>*>& local_weights) {
 
   // Checkpoint directories
   const auto& c = m.get_execution_context();
@@ -276,7 +275,6 @@ void exchange_models(lbann_comm& comm,
 
 }
 
-template <typename TensorDataType>
 void restore_local_model(lbann_comm& comm, model& m) {
 
   // Checkpoint directories
@@ -304,7 +302,6 @@ void restore_local_model(lbann_comm& comm, model& m) {
 } // namespace checkpoint_file
 
 /** Get mean metric value with validation set. */
-template <typename TensorDataType>
 EvalType evaluate(model& m, const std::string& metric_name) {
   auto& c = m.get_execution_context();
   // Make sure data readers finish asynchronous work
@@ -345,23 +342,21 @@ EvalType evaluate(model& m, const std::string& metric_name) {
 
 } // namespace <anon>
 
-template <typename TensorDataType>
-ltfb<TensorDataType>::ltfb(El::Int batch_interval,
+ltfb::ltfb(El::Int batch_interval,
            std::string metric_name,
            std::set<std::string> weights_names,
            bool low_score_wins,
            communication_algorithm comm_algo,
            bool exchange_hyperparameters)
-  : data_type_callback<TensorDataType>(batch_interval),
+  : callback_base(batch_interval),
     m_metric_name(std::move(metric_name)),
     m_weights_names(std::move(weights_names)),
     m_low_score_wins(low_score_wins),
     m_comm_algo(comm_algo),
     m_exchange_hyperparameters(exchange_hyperparameters) {}
 
-template <typename TensorDataType>
-ltfb<TensorDataType>::ltfb(const ltfb<TensorDataType>& other) :
-  data_type_callback<TensorDataType>(other),
+ltfb::ltfb(const ltfb& other) :
+  callback_base(other),
   m_metric_name(other.m_metric_name),
   m_weights_names(other.m_weights_names),
   m_low_score_wins(other.m_low_score_wins),
@@ -377,9 +372,8 @@ ltfb<TensorDataType>::ltfb(const ltfb<TensorDataType>& other) :
 
 }
 
-template <typename TensorDataType>
-ltfb<TensorDataType>& ltfb<TensorDataType>::operator=(const ltfb<TensorDataType>& other) {
-  data_type_callback<TensorDataType>::operator=(other);
+ltfb& ltfb::operator=(const ltfb& other) {
+  callback_base::operator=(other);
 
   // Shallow copies
   m_metric_name = other.m_metric_name;
@@ -398,8 +392,7 @@ ltfb<TensorDataType>& ltfb<TensorDataType>::operator=(const ltfb<TensorDataType>
   return *this;
 }
 
-template <typename TensorDataType>
-void ltfb<TensorDataType>::setup(model *m) {
+void ltfb::setup(model *m) {
 
   // Create workspace objects
   const auto& model_weights = m->get_weights();
@@ -411,15 +404,14 @@ void ltfb<TensorDataType>::setup(model *m) {
 
   // Make sure model does not have inter-trainer communication callback
   for (auto&& cb : m->get_callbacks()) {
-    if (dynamic_cast<imcomm<TensorDataType>*>(cb) != nullptr) {
+    if (dynamic_cast<imcomm*>(cb) != nullptr) {
       LBANN_ERROR("Detected both LTFB and imcomm callbacks. ");
     }
   }
 
 }
 
-template <typename TensorDataType>
-void ltfb<TensorDataType>::on_train_begin(model *m) {
+void ltfb::on_train_begin(model *m) {
   auto&& comm = *m->get_comm();
 
   if (comm.am_world_master()) {
@@ -434,8 +426,7 @@ void ltfb<TensorDataType>::on_train_begin(model *m) {
   }
 }
 
-template <typename TensorDataType>
-void ltfb<TensorDataType>::on_batch_begin(model *m) {
+void ltfb::on_batch_begin(model *m) {
   const auto& c = m->get_execution_context();
   auto&& comm = *m->get_comm();
 
@@ -455,21 +446,29 @@ void ltfb<TensorDataType>::on_batch_begin(model *m) {
 
   // Determine partner model for tournament
   const El::Int local_trainer = comm.get_trainer_rank();
-  const El::Int partner_trainer
-    = get_partner_trainer<TensorDataType>(comm, message_prefix);
+  const El::Int partner_trainer = get_partner_trainer(comm, message_prefix);
 
   // Evaluate local model
   if (comm.am_world_master()) {
     std::cout << message_prefix + "evaluating local model...\n";
   }
-  const auto local_score = evaluate<TensorDataType>(*m, m_metric_name);
+  const auto local_score = evaluate(*m, m_metric_name);
 
   // Store local model data
-  auto&& model_weights = m->get_weights();
-  std::vector<weights<TensorDataType>*> local_weights;
-  for (size_t i = 0; i < model_weights.size(); ++i) {
-    local_weights.push_back(m_workspace_weights[i].get());
-    *local_weights[i] = *model_weights[i];
+  auto&& model_weights_tmp = m->get_weights();
+  std::vector<data_type_weights<DataType>*> local_weights, model_weights;
+  local_weights.reserve(model_weights_tmp.size());
+  model_weights.reserve(model_weights_tmp.size());
+  for (size_t i = 0; i < model_weights_tmp.size(); ++i) {
+    auto* wsp = dynamic_cast<data_type_weights<DataType>*>(
+      m_workspace_weights[i].get());
+    auto* mlw = dynamic_cast<data_type_weights<DataType>*>(
+      model_weights_tmp[i]);
+    if (!wsp || !mlw)
+      LBANN_ERROR("Detected bad weights");
+    local_weights.push_back(wsp);
+    model_weights.push_back(mlw);
+    *local_weights.back() = *model_weights.back();
   }
 
   // Exchange model data with partner trainer
@@ -478,19 +477,19 @@ void ltfb<TensorDataType>::on_batch_begin(model *m) {
   }
   switch (m_comm_algo) {
   case communication_algorithm::sendrecv_weights:
-    sendrecv_weights::exchange_models<TensorDataType>(comm,
-                                                      partner_trainer,
-                                                      m_weights_names,
-                                                      local_weights,
-                                                      model_weights,
-                                                      m_exchange_hyperparameters);
+    sendrecv_weights::exchange_models(comm,
+                                      partner_trainer,
+                                      m_weights_names,
+                                      local_weights,
+                                      model_weights,
+                                      m_exchange_hyperparameters);
     break;
   case communication_algorithm::checkpoint_file:
-    checkpoint_file::exchange_models<TensorDataType>(comm,
-                                                     partner_trainer,
-                                                     *m,
-                                                     m_weights_names,
-                                                     local_weights);
+    checkpoint_file::exchange_models(comm,
+                                     partner_trainer,
+                                     *m,
+                                     m_weights_names,
+                                     local_weights);
     break;
   default:
     LBANN_ERROR("invalid LTFB communication algorithm");
@@ -515,7 +514,7 @@ void ltfb<TensorDataType>::on_batch_begin(model *m) {
       }
       break;
     case communication_algorithm::checkpoint_file:
-      checkpoint_file::restore_local_model<TensorDataType>(comm, *m);
+      checkpoint_file::restore_local_model(comm, *m);
       break;
     default:
       LBANN_ERROR("invalid LTFB communication algorithm");
@@ -537,9 +536,8 @@ void ltfb<TensorDataType>::on_batch_begin(model *m) {
 
 }
 
-template <typename TensorDataType>
-typename ltfb<TensorDataType>::communication_algorithm
-ltfb<TensorDataType>::string_to_comm_algo(const std::string& str) {
+typename ltfb::communication_algorithm
+ltfb::string_to_comm_algo(const std::string& str) {
   if (str.empty() || str == "sendrecv_weights") {
     return communication_algorithm::sendrecv_weights;
   }
@@ -553,19 +551,18 @@ ltfb<TensorDataType>::string_to_comm_algo(const std::string& str) {
 
 }
 
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_ltfb_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackLTFB&>(proto_msg);
-  return make_unique<ltfb<TensorDataType>>(
+  return make_unique<ltfb>(
     params.batch_interval(),
     params.metric(),
     parse_set<std::string>(params.weights()),
     params.low_score_wins(),
-    ltfb<TensorDataType>::string_to_comm_algo(params.communication_algorithm()),
+    ltfb::string_to_comm_algo(params.communication_algorithm()),
     params.exchange_hyperparameters());
 }
 

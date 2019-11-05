@@ -27,7 +27,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_LTFB_HPP_INCLUDED
 
-#include "lbann/callbacks/data_type_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 #include <memory>
 #include <set>
 #include <vector>
@@ -58,8 +58,7 @@ namespace callback {
  *  @todo Exchange optimizer state.
  *  @todo Support heterogeneous models.
  */
-template <typename TensorDataType>
-class ltfb : public data_type_callback<TensorDataType> {
+class ltfb : public callback_base {
 public:
 
   /** Inter-trainer communication scheme for LTFB.
@@ -165,7 +164,7 @@ private:
    *
    *  Used to temporarily store local weights during a tournament.
    */
-  std::vector<std::unique_ptr<weights<TensorDataType>>> m_workspace_weights;
+  std::vector<std::unique_ptr<weights>> m_workspace_weights;
 };
 
 // Builder function
