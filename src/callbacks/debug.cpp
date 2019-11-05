@@ -26,7 +26,7 @@
 
 #include "lbann/callbacks/debug.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/proto/factories.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
 
 #include "callbacks.pb.h"
@@ -54,7 +54,7 @@ std::string layer_string(const Layer& l) {
 
 /** Get human-readable string describing weights and optimizer. */
 template <typename TensorDataType>
-std::string weights_string(const weights<TensorDataType>& w) {
+std::string weights_string(const data_type_weights<TensorDataType>& w) {
   std::stringstream msg;
   msg << "weights \"" << w.get_name() << "\" (";
   const auto* opt = w.get_optimizer();
@@ -66,7 +66,8 @@ std::string weights_string(const weights<TensorDataType>& w) {
 
 /** Get human-readable string describing current batch step. */
 std::string batch_step_string(const model& m) {
-  const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+  const auto& c =
+    dynamic_cast<const sgd_execution_context&>(m.get_execution_context());
   std::stringstream msg;
   const auto& mode = c.get_execution_mode();
   msg << to_string(mode) << " batch " << c.get_step();
@@ -77,8 +78,7 @@ std::string batch_step_string(const model& m) {
 } // namespace
 
 // Status updates for batch beginnings/endings
-template <typename TensorDataType>
-void debug<TensorDataType>::on_batch_begin(model *m) {
+void debug::on_batch_begin(model *m) {
   const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
@@ -87,8 +87,7 @@ void debug<TensorDataType>::on_batch_begin(model *m) {
     std::cerr << msg.str();
   }
 }
-template <typename TensorDataType>
-void debug<TensorDataType>::on_batch_end(model *m) {
+void debug::on_batch_end(model *m) {
   const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
@@ -97,18 +96,15 @@ void debug<TensorDataType>::on_batch_end(model *m) {
     std::cerr << msg.str();
   }
 }
-template <typename TensorDataType>
-void debug<TensorDataType>::on_batch_evaluate_begin(model *m) {
+void debug::on_batch_evaluate_begin(model *m) {
   on_batch_begin(m);
 }
-template <typename TensorDataType>
-void debug<TensorDataType>::on_batch_evaluate_end(model *m) {
+void debug::on_batch_evaluate_end(model *m) {
   on_batch_end(m);
 }
 
 // Status updates for beginning/ending of layer forward/backward prop
-template <typename TensorDataType>
-void debug<TensorDataType>::on_forward_prop_begin(model *m, Layer *l) {
+void debug::on_forward_prop_begin(model *m, Layer *l) {
   const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
@@ -118,8 +114,7 @@ void debug<TensorDataType>::on_forward_prop_begin(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-template <typename TensorDataType>
-void debug<TensorDataType>::on_forward_prop_end(model *m, Layer *l) {
+void debug::on_forward_prop_end(model *m, Layer *l) {
   const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
@@ -129,8 +124,7 @@ void debug<TensorDataType>::on_forward_prop_end(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-template <typename TensorDataType>
-void debug<TensorDataType>::on_backward_prop_begin(model *m, Layer *l) {
+void debug::on_backward_prop_begin(model *m, Layer *l) {
   const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
@@ -140,8 +134,7 @@ void debug<TensorDataType>::on_backward_prop_begin(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-template <typename TensorDataType>
-void debug<TensorDataType>::on_backward_prop_end(model *m, Layer *l) {
+void debug::on_backward_prop_end(model *m, Layer *l) {
   const auto& c = m->get_execution_context();
   if(m_modes.empty() || m_modes.count(c.get_execution_mode()) > 0) {
     std::stringstream msg;
@@ -151,28 +144,26 @@ void debug<TensorDataType>::on_backward_prop_end(model *m, Layer *l) {
     std::cerr << msg.str();
   }
 }
-template <typename TensorDataType>
-void debug<TensorDataType>::on_evaluate_forward_prop_begin(model *m, Layer *l) {
+void debug::on_evaluate_forward_prop_begin(model *m, Layer *l) {
   on_forward_prop_begin(m, l);
 }
-template <typename TensorDataType>
-void debug<TensorDataType>::on_evaluate_forward_prop_end(model *m, Layer *l) {
+void debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
   on_backward_prop_end(m, l);
 }
 
 // Status updates for optimization step
-template <typename TensorDataType>
-void debug<TensorDataType>::on_weight_optimize_begin(model *m, weights<TensorDataType> *w) {
+void debug::on_optimize_begin(model *m, weights *w) {
+  auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
   std::stringstream msg;
-  msg << rank_string(*m->get_comm()) << ": " << weights_string<TensorDataType>(*w)
+  msg << rank_string(*m->get_comm()) << ": " << weights_string(dtw)
       << " is starting optimization step for " << batch_step_string(*m)
       << std::endl;
   std::cerr << msg.str();
 }
-template <typename TensorDataType>
-void debug<TensorDataType>::on_weight_optimize_end(model *m, weights<TensorDataType> *w) {
+void debug::on_optimize_end(model *m, weights *w) {
+  auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
   std::stringstream msg;
-  msg << rank_string(*m->get_comm()) << ": " << weights_string<TensorDataType>(*w)
+  msg << rank_string(*m->get_comm()) << ": " << weights_string(dtw)
       << " is   ending optimization step for " << batch_step_string(*m)
       << std::endl;
   std::cerr << msg.str();
@@ -185,7 +176,7 @@ build_debug_callback_from_pbuf(const google::protobuf::Message& proto_msg,
     dynamic_cast<const lbann_data::Callback::CallbackDebug&>(proto_msg);
   const auto& modes =
     parse_set<execution_mode>(params.phase());
-  return make_unique<debug<DataType>>(modes);
+  return make_unique<debug>(modes);
 }
 
 } // namespace callback

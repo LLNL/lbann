@@ -27,7 +27,7 @@
 #ifndef LBANN_CALLBACKS_CALLBACK_DEBUG_HPP_INCLUDED
 #define LBANN_CALLBACKS_CALLBACK_DEBUG_HPP_INCLUDED
 
-#include "lbann/callbacks/data_type_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -42,8 +42,7 @@ namespace callback {
  * if \<empty\> will print messages for all phases
  *
  */
-template <typename TensorDataType>
-class debug : public data_type_callback<TensorDataType> {
+class debug : public callback_base {
  public:
 
   /** @brief Constructor.
@@ -73,8 +72,6 @@ class debug : public data_type_callback<TensorDataType> {
   using callback_base::on_backward_prop_end;
   using callback_base::on_evaluate_forward_prop_begin;
   using callback_base::on_evaluate_forward_prop_end;
-  using data_type_callback<TensorDataType>::on_weight_optimize_begin;
-  using data_type_callback<TensorDataType>::on_weight_optimize_end;
 
   /** @brief Print that a layer's forward prop is beginning. */
   void on_forward_prop_begin(model *m, Layer *l) override;
@@ -90,9 +87,9 @@ class debug : public data_type_callback<TensorDataType> {
   void on_evaluate_forward_prop_end(model *m, Layer *l) override;
 
   /** @brief Print that a weights' optimization step is beginning. */
-  void on_weight_optimize_begin(model *m, weights<TensorDataType> *w) override;
+  void on_optimize_begin(model *m, weights *w) override;
   /** @brief Print that a weights' optimization step is ending. */
-  void on_weight_optimize_end(model *m, weights<TensorDataType> *w) override;
+  void on_optimize_end(model *m, weights *w) override;
 
  private:
 
