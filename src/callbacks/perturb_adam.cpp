@@ -81,20 +81,15 @@ void perturb_adam::perturb(model& m) const {
       auto* opt = dynamic_cast<adam<DataType>*>(w->get_optimizer());
       if (!m_weights_names.empty() && opt == nullptr) {
         auto* opt_ = w->get_optimizer();
-        std::stringstream err;
-        err << "callback \"" << name() << "\" "
-            << "expected weights \"" << w->get_name() << "\" "
-            << "to have an Adam optimizer, but found ";
-        if (opt_ == nullptr) {
-          err << "no optimizer";
-        } else {
-          err << opt_->get_type();
-        }
-        LBANN_ERROR(err.str());
+        LBANN_ERROR(
+          "callback \"", name(), "\" "
+          "expected weights \"", w->get_name(), "\" "
+          "to have an Adam optimizer, but found ",
+          (opt_ ? opt_->get_type() : "no optimizer"));
       }
 
       // Perturb Adam optimizer
-      if (opt != nullptr) {
+      if (opt) {
         perturb(*comm, *opt);
       }
 
