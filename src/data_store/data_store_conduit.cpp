@@ -266,7 +266,6 @@ void data_store_conduit::spill_preloaded_conduit_node(int data_id, const conduit
 
 void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::Node &node) {
   // note: at this point m_data[data_id] = node
-
   {
     std::lock_guard<std::mutex> lock(m_mutex);
     ++m_my_num_indices;
@@ -294,7 +293,7 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
   if (m_node_sizes_vary) {
     return;
   }
-  std::lock_guard<std::mutex> lock(m_mutex);
+  std::lock_guard<std::mutex> lock(m_mutex_2);
   if (m_compacted_sample_size == 0) {
     m_compacted_sample_size = nd.total_bytes_compact();
     PROFILE("num bytes for nodes to be transmitted: ", nd.total_bytes_compact(), " per node");
