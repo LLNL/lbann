@@ -31,52 +31,10 @@
 
 namespace lbann {
 namespace callback {
-
+namespace {
 template <typename TensorDataType>
-void check_init<TensorDataType>::on_train_begin(model *m) {
-  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
-  // Skip after the first epoch.
-  if (c.get_epoch() != 0) {
-    return;
-  }
-  lbann_comm *comm = m->get_comm();
-  if (comm->am_world_master()) {
-    std::cout << "Checking all model initial weights match..." << std::endl;
-  }
-  if (comm->get_num_trainers() == 1) {
-    return;
-  }
-
-  for (const auto w : m->get_weights()) {
-    if (comm->am_world_master()) {
-      std::cout << "Checking " << w->get_name() << std::endl;
-    }
-    // Model 0 holds the master copy, it gathers the values from other models
-    // and compares them.
-    const El::AbstractMatrix<TensorDataType>& local_matrix = w->get_values().LockedMatrix();
-    CPUMat remote_matrix(local_matrix.Height(), local_matrix.Width());
-    for (int model = 1; model < comm->get_num_trainers(); ++model) {
-      comm->global_barrier();
-      if (comm->get_trainer_rank() == 0) {
-        comm->recv(remote_matrix, model);
-        if (!check_equal(local_matrix, remote_matrix)) {
-          std::stringstream ss;
-          ss << "check_init: "
-             << "model " << model << " "
-             << "rank in model " << comm->get_rank_in_trainer() << " "
-             << "does not match model 0";
-          throw lbann_exception(ss.str());
-        }
-      } else if (comm->get_trainer_rank() == model) {
-        comm->send(local_matrix, 0);
-      }
-    }
-  }
-}
-
-template <typename TensorDataType>
-bool check_init<TensorDataType>::check_equal(const El::AbstractMatrix<TensorDataType>& x,
-                                             const El::AbstractMatrix<TensorDataType>& y) const {
+bool check_equal(const El::AbstractMatrix<TensorDataType>& x,
+                 const El::AbstractMatrix<TensorDataType>& y) {
   const El::Int height = x.Height();
   const El::Int width = x.Width();
   if (height != y.Height() || width != y.Width() || x.LDim() != y.LDim()) {
@@ -90,6 +48,47 @@ bool check_init<TensorDataType>::check_equal(const El::AbstractMatrix<TensorData
     }
   }
   return true;
+}
+}// namespace <anon>
+
+void check_init::on_train_begin(model *m) {
+  const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+  // Skip after the first epoch.
+  if (c.get_epoch() != 0) {
+    return;
+  }
+  lbann_comm *comm = m->get_comm();
+  if (comm->am_world_master()) {
+    std::cout << "Checking all model initial weights match..." << std::endl;
+  }
+  if (comm->get_num_trainers() == 1) {
+    return;
+  }
+
+  for (const auto* w : m->get_weights()) {
+    if (comm->am_world_master()) {
+      std::cout << "Checking " << w->get_name() << std::endl;
+    }
+    // Model 0 holds the master copy, it gathers the values from other models
+    // and compares them.
+    auto const& dtw = dynamic_cast<data_type_weights<DataType> const&>(*w);
+    const auto& local_matrix = dtw.get_values().LockedMatrix();
+    CPUMat remote_matrix(local_matrix.Height(), local_matrix.Width());
+    for (int model = 1; model < comm->get_num_trainers(); ++model) {
+      comm->global_barrier();
+      if (comm->get_trainer_rank() == 0) {
+        comm->recv(remote_matrix, model);
+        if (!check_equal(local_matrix, remote_matrix)) {
+          LBANN_ERROR("check_init: "
+                      "model ", model, " "
+                      "rank in model ", comm->get_rank_in_trainer(), " "
+                      "does not match model 0");
+        }
+      } else if (comm->get_trainer_rank() == model) {
+        comm->send(local_matrix, 0);
+      }
+    }
+  }
 }
 
 } // namespace callback
