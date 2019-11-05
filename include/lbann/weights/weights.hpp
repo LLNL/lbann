@@ -42,6 +42,9 @@ class WeightsData;
 
 namespace lbann {
 
+// Forward declaration
+class optimizer;
+
 /** Neural network weights.
  *  Weights are tensors that act as trainable parameters for a neural
  *  network. The values can be initialized with a weights initializer
@@ -145,6 +148,22 @@ public:
   // -----------------------------------------------
   El::DistData get_matrix_distribution() const;
   void set_matrix_distribution(El::DistData dist);
+
+  // -----------------------------------------------
+  // Optimizer accessors
+  // -----------------------------------------------
+  /** Get weights optimizer.
+   *  Returns a null pointer if the weights are frozen.
+   */
+  virtual optimizer* get_optimizer() = 0;
+  /** Get weights optimizer.
+   *  Returns a null pointer if the weights are frozen.
+   */
+  virtual const optimizer* get_optimizer() const = 0;
+  /** Set weights optimizer.
+   *  The contents of opt are moved to a class member.
+   */
+  virtual void set_optimizer(std::unique_ptr<optimizer>&& opt) = 0;
 
   // -----------------------------------------------
   // Setup

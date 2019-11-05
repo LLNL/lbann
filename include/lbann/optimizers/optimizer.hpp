@@ -35,7 +35,6 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/description.hpp"
-#include "lbann/weights/data_type_weights.hpp"
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/cuda.hpp"
 #endif // LBANN_HAS_GPU
@@ -63,8 +62,6 @@ enum class optimizer_gradient_status {
 std::string to_string(optimizer_gradient_status status);
 
 // Forward declarations
-template <typename TensorDataType>
-class data_type_weights;
 class persist;
 
 /** @brief Abstract base class for gradient-based optimization algorithms.
@@ -75,11 +72,10 @@ class persist;
  *  optimization step requires the objective function gradient
  *  w.r.t. the weights.
  */
-template <typename TensorDataType>
 class optimizer {
 public:
 
-  optimizer(TensorDataType learning_rate = 0);
+  optimizer();
   optimizer(const optimizer& other);
   optimizer& operator=(const optimizer& other);
   virtual ~optimizer() = default;
@@ -95,59 +91,8 @@ public:
   /** @brief Human-readable description. */
   virtual description get_description() const;
 
-  /** @brief Weights being optimized. */
-  data_type_weights<TensorDataType>& get_weights();
-  /** @brief Weights being optimized. */
-  const data_type_weights<TensorDataType>& get_weights() const;
-  /** @brief Weights being optimized. */
-  void set_weights(data_type_weights<TensorDataType>* w) { m_weights = w; }
-
-  /** @brief Objective function gradient w.r.t. the weights.
-   *
-   *  An allreduce may be launched and/or synchronized if needed.
-   */
-  El::AbstractDistMatrix<TensorDataType>& get_gradient();
-
-  /** @brief Add to the objective function gradient w.r.t. the weights.
-   *  @param gradient           Contribution to gradient.
-   *  @param scale              Scaling factor for gradient
-   *                            contribution.
-   *  @param allreduce_needed   Whether the gradient contribution
-   *                            requires an allreduce over its redundant
-   *                            communicator. If false, duplicated data
-   *                            (over the redundant communicator) is
-   *                            assumed to be identical. If true, an
-   *                            allreduce is performed lazily when the
-   *                            gradient is accessed.
-   */
-  void add_to_gradient(const El::AbstractDistMatrix<TensorDataType>& gradient,
-                       TensorDataType scale = TensorDataType(1),
-                       bool allreduce_needed = false);
   /** @brief Zero out the objective function gradient w.r.t. the weights. */
-  void clear_gradient();
-  /** @brief Get the gradient buffer.
-   *
-   *  This provides access to the underlying gradient buffer, which may be
-   *  directly summed into. This buffer should be considered ephemeral and not
-   *  stored. The caller must also ensure the buffer has an appropriate
-   *  distribution. buf_scale provides the caller with a scale factor that must
-   *  be applied to the gradient buffer before writing to it, and in_scale
-   *  provides a scaling factor that must be applied to the user's data.
-   *  Essentially, this enables computations of the form
-   *  gradient = buf_scale*gradient + in_scale*new_gradient
-   *  This is an expert-mode function and is intended to help eliminate copies
-   *  and facilitate kernel fusion.
-   *
-   *  @param buf_scale A scale factor provided to the caller to scale the
-   *  returned buffer by.
-   *  @param in_scale A scale factor provided to the caller to scale their
-   *  gradient contributions by.
-   *  @param allreduce_needed Whether this gradient contribution will need to
-   *  be allreduced.
-   */
-  El::AbstractDistMatrix<TensorDataType>& get_gradient_buffer(TensorDataType& buf_scale,
-                                  TensorDataType& in_scale,
-                                  bool allreduce_needed = false);
+  virtual void clear_gradient();
 
   /** @brief Objects that are expected to contribute to the gradient. */
   El::Int get_num_gradient_sources() const;
@@ -166,27 +111,15 @@ public:
    *  are no more gradient sources remaining, a non-blocking allreduce
    *  will be launched on the gradient, if needed.
    */
-  void remove_gradient_source(const void* source);
-
-  /** @brief Must be called before training.
-   *
-   *  @param w Weights being optimized. If null, no change is made to
-   *  the weights.
-   */
-  virtual void setup(data_type_weights<TensorDataType>* w = nullptr);
+  virtual void remove_gradient_source(const void* source);
 
   /** @brief Optimization step. */
-  void step();
+  virtual void step();
 
   /** @brief LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
   /** @brief LBANN communicator. */
   const lbann_comm& get_comm() const { return *m_comm; }
-
-  /** @brief Scaling factor for optimization step sizes. */
-  TensorDataType get_learning_rate() const;
-  /** @brief Scaling factor for optimization step sizes. */
-  void set_learning_rate(TensorDataType learning_rate);
 
   /** @brief Time spent in optimization step. */
   EvalType get_step_time() const { return m_step_time; }
@@ -195,32 +128,25 @@ public:
 
 protected:
 
-  /** @brief Computation for an optimization step.
-   *
-   *  @c values and @c gradient can be assumed to have the same
-   *  distribution.
-   */
-  virtual void step_compute(El::AbstractDistMatrix<TensorDataType>& values,
-                            const El::AbstractDistMatrix<TensorDataType>& gradient) = 0;
+  /** @brief Return the current gradient status */
+  optimizer_gradient_status get_gradient_status() const { return m_gradient_status; }
+
+  void set_gradient_status(const optimizer_gradient_status status) { m_gradient_status = status; }
+
+  std::unordered_set<const void*>& get_gradient_sources() { return m_gradient_sources; }
+
+  void set_comm(lbann_comm& comm) { m_comm = &comm; }
+
+  EvalType get_step_time() { return m_step_time; }
+
+  void set_step_time(EvalType time) { m_step_time = time; }
+
+  void inc_step_time(EvalType time) { m_step_time += time; }
 
 private:
 
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;
-
-  /** @brief Weights being optimized. */
-  data_type_weights<TensorDataType>* m_weights = nullptr;
-
-  /** @brief Objective function gradient w.r.t. weights. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient;
-
-  /** @brief Workspace matrix.
-   *
-   *  Helps ensure gradient contributions are in the right
-   *  distribution. Most of the time, this should just be a matrix
-   *  view.
-   */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient_v;
 
   /** @brief Sources of gradient contributions.
    *
@@ -237,38 +163,8 @@ private:
   /** @brief Status of values in objective function gradient. */
   optimizer_gradient_status m_gradient_status = optimizer_gradient_status::cleared;
 
-  /** @brief Communication request object for gradient allreduce.
-   *
-   *  Used to synchronize non-blocking allreduce.
-   */
-  Al::request m_gradient_allreduce_req;
-
-  /** @brief Scaling factor for optimization step sizes.
-   *
-   *  This is not used by the base optimizer class, but is currently
-   *  used by all derived optimizer classes. There are several cases
-   *  where it is convenient to expose this in the base class,
-   *  e.g. for variable learning rate schedules.
-   *  @todo Consider moving this to the derived classes.
-   */
-  TensorDataType m_learning_rate;
-
   /** @brief Time spent in optimization step. */
   EvalType m_step_time = 0;
-
-  /** @brief Launch non-blocking allreduce on the gradient, if needed.
-   *
-   *  Does nothing if an allreduce is not needed or has already been
-   *  started.
-   */
-  void start_gradient_allreduce();
-
-  /** @brief Synchronize non-blocking allreduce on the gradient, if needed.
-   *
-   *  Does nothing if an allreduce isn't needed. Throws an exception
-   *  if an allreduce is needed but hasn't been started.
-   */
-  void finish_gradient_allreduce();
 
 public:
 

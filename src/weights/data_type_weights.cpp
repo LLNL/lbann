@@ -75,8 +75,8 @@ data_type_weights<TensorDataType>::data_type_weights(const data_type_weights<Ten
   m_values.reset(other.m_values ? other.m_values->Copy() : nullptr);
   m_initializer.reset(other.m_initializer ?
                       other.m_initializer->copy() : nullptr);
-  m_optimizer.reset(other.m_optimizer ?
-                    other.m_optimizer->copy() : nullptr);
+  m_optimizer.reset(/*other.m_optimizer ?
+                      other.m_optimizer->copy() : */nullptr);
   if (m_optimizer != nullptr) {
     m_optimizer->set_weights(this);
   }
@@ -91,8 +91,8 @@ data_type_weights<TensorDataType>& data_type_weights<TensorDataType>::operator=(
   m_values.reset(other.m_values ? other.m_values->Copy() : nullptr);
   m_initializer.reset(other.m_initializer ?
                       other.m_initializer->copy() : nullptr);
-  m_optimizer.reset(other.m_optimizer ?
-                    other.m_optimizer->copy() : nullptr);
+  m_optimizer.reset(/*other.m_optimizer ?
+                      other.m_optimizer->copy() :*/ nullptr);
   if (m_optimizer != nullptr) {
     m_optimizer->set_weights(this);
   }
@@ -146,7 +146,7 @@ void data_type_weights<TensorDataType>::set_dims(std::vector<int> matrix_height_
 
 template <typename TensorDataType>
 weights_initializer<TensorDataType>* data_type_weights<TensorDataType>::get_initializer() {
-  return const_cast<weights_initializer*>(static_cast<const data_type_weights&>(*this).get_initializer());
+  return const_cast<weights_initializer<TensorDataType>*>(static_cast<const data_type_weights&>(*this).get_initializer());
 }
 template <typename TensorDataType>
 const weights_initializer<TensorDataType>* data_type_weights<TensorDataType>::get_initializer() const {
@@ -162,11 +162,11 @@ void data_type_weights<TensorDataType>::set_initializer(std::unique_ptr<weights_
 // -----------------------------------------------
 
 template <typename TensorDataType>
-optimizer<TensorDataType>* data_type_weights<TensorDataType>::get_optimizer() {
-  return const_cast<optimizer<TensorDataType>*>(static_cast<const data_type_weights&>(*this).get_optimizer());
+optimizer* data_type_weights<TensorDataType>::get_optimizer() {
+  return const_cast<optimizer*>(static_cast<const data_type_weights<TensorDataType>&>(*this).get_optimizer());
 }
 template <typename TensorDataType>
-const optimizer<TensorDataType>* data_type_weights<TensorDataType>::get_optimizer() const {
+const optimizer* data_type_weights<TensorDataType>::get_optimizer() const {
   if (is_frozen()) {
     return nullptr;
   } else {
@@ -174,8 +174,8 @@ const optimizer<TensorDataType>* data_type_weights<TensorDataType>::get_optimize
   }
 }
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::set_optimizer(std::unique_ptr<optimizer<TensorDataType>>&& opt) {
-  m_optimizer = std::move(opt);
+void data_type_weights<TensorDataType>::set_optimizer(std::unique_ptr<optimizer>&& opt) {
+  m_optimizer = std::move(reinterpret_cast<std::unique_ptr<data_type_optimizer<TensorDataType>>&&>(opt));
 }
 
 // -----------------------------------------------

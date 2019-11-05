@@ -29,7 +29,7 @@
 
 #include "lbann/weights/weights.hpp"
 #include "lbann/weights/initializer.hpp"
-#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
 
 namespace lbann_data {
 class WeightsData;
@@ -38,8 +38,8 @@ class WeightsData;
 namespace lbann {
 
 // Forward declaration
-template <typename TensorDataType>
-class optimizer;
+// template <typename TensorDataType>
+// class data_type_optimizer;
 
 /** Neural network weights.
  *  Weights are tensors that act as trainable parameters for a neural
@@ -57,7 +57,7 @@ class optimizer;
  */
 template <typename TensorDataType>
 class data_type_weights : public weights {
-  friend class optimizer<TensorDataType>;
+  friend class data_type_optimizer<TensorDataType>;
 
 public:
   data_type_weights(lbann_comm* comm);
@@ -75,7 +75,7 @@ public:
   /** Human-readable description. */
   description get_description() const override;
 
-  bool has_optimizer() const override { return m_optimizer; }
+  bool has_optimizer() const override { return m_optimizer != nullptr; }
 
   // -----------------------------------------------
   // Dimension accessors
@@ -104,15 +104,15 @@ public:
   /** Get weights optimizer.
    *  Returns a null pointer if the weights are frozen.
    */
-  optimizer<TensorDataType>* get_optimizer();
+  optimizer* get_optimizer() override;
   /** Get weights optimizer.
    *  Returns a null pointer if the weights are frozen.
    */
-  const optimizer<TensorDataType>* get_optimizer() const;
+  const optimizer* get_optimizer() const override;
   /** Set weights optimizer.
    *  The contents of opt are moved to a class member.
    */
-  void set_optimizer(std::unique_ptr<optimizer<TensorDataType>>&& opt);
+  void set_optimizer(std::unique_ptr<optimizer>&& opt) override;
 
   // -----------------------------------------------
   // Setup
@@ -172,7 +172,7 @@ private:
   /** Weights optimizer.
    *  Default is nullptr, which corresponds to no optimizer.
    */
-  std::unique_ptr<optimizer<TensorDataType>> m_optimizer;
+  std::unique_ptr<data_type_optimizer<TensorDataType>> m_optimizer;
 
 };
 
