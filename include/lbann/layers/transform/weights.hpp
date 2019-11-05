@@ -29,7 +29,6 @@
 
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -170,8 +169,6 @@ class weights_layer : public transform_layer {
   }
 
   void bp_compute() override {
-    constexpr DataType zero = 0;
-    constexpr DataType one = 1;
 
     // Get optimizer
     // Note: Nothing needs to be done if there is no optimizer
@@ -181,15 +178,12 @@ class weights_layer : public transform_layer {
     // Matrices
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
     m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
-    El::Fill(*m_workspace, one);
+    El::Fill(*m_workspace, DataType{1});
 
-    const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
-    // Compute gradient contribution and accumulate
-    const auto& scale = one / c.get_effective_mini_batch_size();
     El::Gemv(El::NORMAL,
-             scale, local_gradient_wrt_output, *m_workspace,
-             zero, m_gradient->Matrix());
-    opt->add_to_gradient(*m_gradient, one, true);
+             DataType{1}, local_gradient_wrt_output, *m_workspace,
+             DataType{0}, m_gradient->Matrix());
+    opt->add_to_gradient(*m_gradient, DataType{1}, true);
 
     // Clean up
     m_workspace->Empty();

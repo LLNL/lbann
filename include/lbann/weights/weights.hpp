@@ -33,6 +33,7 @@
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/description.hpp"
+#include "lbann/utils/memory.hpp"
 
 #include <memory>
 #include <string>
