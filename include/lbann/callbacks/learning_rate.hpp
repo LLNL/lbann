@@ -31,7 +31,7 @@
 
 #include <unordered_set>
 #include <unordered_map>
-#include "lbann/callbacks/data_type_callback.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
 namespace callback {
@@ -42,8 +42,7 @@ namespace callback {
  * Base class for learning rate schedules.
  * Child classes should implement the schedule method to make changes.
  */
-template <typename TensorDataType>
-class learning_rate : public data_type_callback<TensorDataType> {
+class learning_rate : public callback_base {
  public:
   learning_rate();
   learning_rate(const learning_rate&) = default;
@@ -76,11 +75,11 @@ class learning_rate : public data_type_callback<TensorDataType> {
    * learning rate for optimizer opt. The current global learning rate is *not*
    * updated automatically based on this method.
    */
-  virtual float optimizer_schedule(model *m, optimizer<TensorDataType> &opt) {
-    return opt.get_learning_rate();
+  virtual float optimizer_schedule(model *m, optimizer &opt) {
+    return dynamic_cast<data_type_optimizer<DataType>&>(opt).get_learning_rate();
   }
 
-  const std::unordered_set<weights<TensorDataType>*>& get_weights() const noexcept {
+  const std::unordered_set<weights*>& get_weights() const noexcept {
     return m_weights;
   }
 
@@ -105,14 +104,13 @@ class learning_rate : public data_type_callback<TensorDataType> {
   std::vector<std::string> m_weights_names;
 
   /** Weights to update. */
-  std::unordered_set<weights<TensorDataType> *> m_weights;
+  std::unordered_set<weights*> m_weights;
 };
 
 /**
  * Decrease the learning rate by a fixed proportion every X epochs.
  */
-template <typename TensorDataType>
-class step_learning_rate : public learning_rate<TensorDataType> {
+class step_learning_rate : public learning_rate {
  public:
   /** Decrease the learning rate by amt every step epochs. */
   step_learning_rate(size_t step, float amt);
@@ -136,7 +134,6 @@ class step_learning_rate : public learning_rate<TensorDataType> {
 };
 
 // Builder function
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_step_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
@@ -145,8 +142,7 @@ build_step_learning_rate_callback_from_pbuf(
  * Decrease the learning rate by a fixed proportion when validation error stops
  * improving.
  */
-template <typename TensorDataType>
-class adaptive_learning_rate : public learning_rate<TensorDataType> {
+class adaptive_learning_rate : public learning_rate {
  public:
   /**
    * Decrease the learning rate by amt if accuracy does not improve for patience
@@ -181,7 +177,6 @@ class adaptive_learning_rate : public learning_rate<TensorDataType> {
 };
 
 // Builder function
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
@@ -189,9 +184,7 @@ build_adaptive_learning_rate_callback_from_pbuf(
 /**
  * Decrease learning rate by a fixed amount at fixed times.
  */
-template <typename TensorDataType>
-class drop_fixed_learning_rate :
-    public learning_rate<TensorDataType> {
+class drop_fixed_learning_rate : public learning_rate {
  public:
   /**
    * Decrease the learning rate by amt when each epoch in drop_epochs is
@@ -223,7 +216,6 @@ class drop_fixed_learning_rate :
 };
 
 // Builder function
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_drop_fixed_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
@@ -235,9 +227,7 @@ build_drop_fixed_learning_rate_callback_from_pbuf(
  * learning rate.  This also *forces* its schedule and will stomp over
  * other changes.
  */
-template <typename TensorDataType>
-class linear_growth_learning_rate :
-    public learning_rate<TensorDataType> {
+class linear_growth_learning_rate : public learning_rate {
  public:
   /**
    * Linearly increase the learning rate to reach target after num_epochs.
@@ -273,7 +263,6 @@ class linear_growth_learning_rate :
 };
 
 // Builder function
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_linear_growth_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&,std::shared_ptr<lbann_summary> const&);
@@ -284,8 +273,7 @@ build_linear_growth_learning_rate_callback_from_pbuf(
  * base_lr is the initial learning rate, i_cur is the current iteration,
  * i_max is the maximum iteration, and p is a parameter.
  */
-template <typename TensorDataType>
-class poly_learning_rate : public learning_rate<TensorDataType> {
+class poly_learning_rate : public learning_rate {
  public:
   poly_learning_rate(double p, size_t n_epochs, size_t max_iter);
   poly_learning_rate(double p, size_t n_epochs, size_t max_iter, double endl_r,
@@ -301,7 +289,7 @@ class poly_learning_rate : public learning_rate<TensorDataType> {
   std::string name() const override { return "poly learning rate"; }
  protected:
   float global_schedule(model *m) override;
-  float optimizer_schedule(model *m, optimizer<TensorDataType> &opt) override;
+  float optimizer_schedule(model *m, optimizer &opt) override;
  private:
   /// The exponent to compute new learning rate in poly policy
   double m_p;
@@ -318,7 +306,6 @@ class poly_learning_rate : public learning_rate<TensorDataType> {
 };
 
 // Builder function
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_poly_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
@@ -330,8 +317,7 @@ build_poly_learning_rate_callback_from_pbuf(
  * See: You et al. "Scaling SGD Batch Size to 32K for ImageNet
  * Training", 2017.
  */
-template <typename TensorDataType>
-class optimizerwise_adaptive_learning_rate : public learning_rate<TensorDataType> {
+class optimizerwise_adaptive_learning_rate : public learning_rate {
  public:
   optimizerwise_adaptive_learning_rate(float scale);
   optimizerwise_adaptive_learning_rate(
@@ -344,13 +330,12 @@ class optimizerwise_adaptive_learning_rate : public learning_rate<TensorDataType
     return new optimizerwise_adaptive_learning_rate(*this); }
   std::string name() const override { return "optimizerwise adaptive learning rate"; }
  protected:
-  float optimizer_schedule(model *m, optimizer<TensorDataType> &opt) override;
+  float optimizer_schedule(model *m, optimizer &opt) override;
  private:
   float m_scale;
 };
 
 // Builder function
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message&,std::shared_ptr<lbann_summary> const&);

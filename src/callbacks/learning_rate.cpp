@@ -45,44 +45,39 @@
 namespace lbann {
 namespace callback {
 
-template <typename TensorDataType>
-float learning_rate<TensorDataType>::m_cur_global_lr = 0.0f;
+float learning_rate::m_cur_global_lr = 0.0f;
 
-template <typename TensorDataType>
-learning_rate<TensorDataType>::learning_rate() {}
+learning_rate::learning_rate() {}
 
-template <typename TensorDataType>
-learning_rate<TensorDataType>::learning_rate(
+learning_rate::learning_rate(
   std::vector<std::string> weights_names)
   : m_weights_names(std::move(weights_names)) {}
 
-template <typename TensorDataType>
-void learning_rate<TensorDataType>::setup(model *m) {
+void learning_rate::setup(model *m) {
 
   // Add all weights if list of weights is not initialized
-  std::vector<weights<TensorDataType> *> weights_list =
+  std::vector<weights*> weights_list =
     select_things_by_name(m->get_weights(), m_weights_names);
   if (weights_list.empty()) {
     weights_list = m->get_weights();
   }
 
   // Remove weights that are not being optimized
-  std::unordered_set<weights<TensorDataType>*>().swap(m_weights);
-  for (weights<TensorDataType> *w : weights_list) {
-    optimizer<TensorDataType> *opt = w->get_optimizer();
-    if (opt != nullptr) {
+  std::unordered_set<weights*>().swap(m_weights);
+  for (weights *w : weights_list) {
+    if (w->has_optimizer()) {
       m_weights.insert(w);
       // Initialize the global learning rate, exactly once.
       if (m_cur_global_lr == 0.0f) {
-        m_cur_global_lr = opt->get_learning_rate();
+        m_cur_global_lr =
+          dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer())->get_learning_rate();
       }
     }
   }
 
 }
 
-template <typename TensorDataType>
-void learning_rate<TensorDataType>::on_epoch_end(model *m) {
+void learning_rate::on_epoch_end(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   const float new_lr = global_schedule(m);
   const float old_global_lr = m_cur_global_lr;
@@ -93,8 +88,8 @@ void learning_rate<TensorDataType>::on_epoch_end(model *m) {
               << "changing global learning rate to " << new_lr
               << " at epoch " << c.get_epoch() << std::endl;
   }
-  for (weights<TensorDataType> *w : this->get_weights()) {
-    optimizer<TensorDataType> *opt = w->get_optimizer();
+  for (weights* w : this->get_weights()) {
+    auto *opt = dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer());
     const float old_lr = opt->get_learning_rate();
     if (old_lr != new_lr) {
       opt->set_learning_rate(new_lr);
@@ -102,10 +97,9 @@ void learning_rate<TensorDataType>::on_epoch_end(model *m) {
   }
 }
 
-template <typename TensorDataType>
-void learning_rate<TensorDataType>::on_backward_prop_end(model *m) {
-  for (weights<TensorDataType> *w : this->get_weights()) {
-    optimizer<TensorDataType>& opt = *w->get_optimizer();
+void learning_rate::on_backward_prop_end(model *m) {
+  for (weights *w : this->get_weights()) {
+    auto &opt = dynamic_cast<data_type_optimizer<DataType>&>(*w->get_optimizer());
     const float old_lr = opt.get_learning_rate();
     const float new_lr = optimizer_schedule(m, opt);
     if (old_lr != new_lr) {
@@ -114,41 +108,35 @@ void learning_rate<TensorDataType>::on_backward_prop_end(model *m) {
   }
 }
 
-template <typename TensorDataType>
-step_learning_rate<TensorDataType>::step_learning_rate(
+step_learning_rate::step_learning_rate(
   size_t step, float amt) :
-  learning_rate<TensorDataType>(), m_step(step), m_amt(amt) {}
+  learning_rate(), m_step(step), m_amt(amt) {}
 
-template <typename TensorDataType>
-step_learning_rate<TensorDataType>::step_learning_rate(
+step_learning_rate::step_learning_rate(
   size_t step, float amt, std::vector<std::string> weights_names) :
-  learning_rate<TensorDataType>(std::move(weights_names)),
+  learning_rate(std::move(weights_names)),
   m_step(step), m_amt(amt) {}
 
-template <typename TensorDataType>
-float step_learning_rate<TensorDataType>::global_schedule(model *m) {
+float step_learning_rate::global_schedule(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   if (c.get_epoch() % m_step == 0) {
-    return step_learning_rate<TensorDataType>::get_current_global_learning_rate() * m_amt;
+    return step_learning_rate::get_current_global_learning_rate() * m_amt;
   } else {
-    return step_learning_rate<TensorDataType>::get_current_global_learning_rate();
+    return step_learning_rate::get_current_global_learning_rate();
   }
 }
 
-template <typename TensorDataType>
-adaptive_learning_rate<TensorDataType>::adaptive_learning_rate(
+adaptive_learning_rate::adaptive_learning_rate(
   size_t patience, float amt) :
   adaptive_learning_rate(patience, amt,
                                         std::vector<std::string>()) {}
 
-template <typename TensorDataType>
-adaptive_learning_rate<TensorDataType>::adaptive_learning_rate(
+adaptive_learning_rate::adaptive_learning_rate(
   size_t patience, float amt, std::vector<std::string> weights_list) :
-  learning_rate<TensorDataType>(std::move(weights_list)),
+  learning_rate(std::move(weights_list)),
   m_patience(patience), m_amt(amt) {}
 
-template <typename TensorDataType>
-float adaptive_learning_rate<TensorDataType>::global_schedule(model *m) {
+float adaptive_learning_rate::global_schedule(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // Determine behavior the first time this is called in an epoch
   if (m_cur_epoch != c.get_epoch()) {
@@ -174,29 +162,26 @@ float adaptive_learning_rate<TensorDataType>::global_schedule(model *m) {
 
   // Adjust learning rate if needed
   if (m_adjust_learning_rate) {
-    return adaptive_learning_rate<TensorDataType>::get_current_global_learning_rate() * m_amt;
+    return adaptive_learning_rate::get_current_global_learning_rate() * m_amt;
   } else {
-    return adaptive_learning_rate<TensorDataType>::get_current_global_learning_rate();
+    return adaptive_learning_rate::get_current_global_learning_rate();
   }
 }
 
-template <typename TensorDataType>
-drop_fixed_learning_rate<TensorDataType>::drop_fixed_learning_rate(
+drop_fixed_learning_rate::drop_fixed_learning_rate(
   std::vector<size_t> drop_epochs, float amt) :
   drop_fixed_learning_rate(std::move(drop_epochs), amt,
                                           std::vector<std::string>()) {}
 
-template <typename TensorDataType>
-drop_fixed_learning_rate<TensorDataType>::drop_fixed_learning_rate(
+drop_fixed_learning_rate::drop_fixed_learning_rate(
   std::vector<size_t> drop_epochs, float amt, std::vector<std::string> weights_names) :
-  learning_rate<TensorDataType>(std::move(weights_names)),
+  learning_rate(std::move(weights_names)),
   m_amt(amt), m_drop_epochs(std::move(drop_epochs)) {
   // Sort in reverse order.
   std::sort(m_drop_epochs.rbegin(), m_drop_epochs.rend());
 }
 
-template <typename TensorDataType>
-float drop_fixed_learning_rate<TensorDataType>::global_schedule(model* m) {
+float drop_fixed_learning_rate::global_schedule(model* m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   // Delete last drop epoch if we have already passed it
   while (!m_drop_epochs.empty()
@@ -206,53 +191,48 @@ float drop_fixed_learning_rate<TensorDataType>::global_schedule(model* m) {
 
   // Adjust learning rate if at a drop epoch
   if (!m_drop_epochs.empty() && c.get_epoch() == m_drop_epochs.back()) {
-    return drop_fixed_learning_rate<TensorDataType>::get_current_global_learning_rate() * m_amt;
+    return drop_fixed_learning_rate::get_current_global_learning_rate() * m_amt;
   } else {
-    return drop_fixed_learning_rate<TensorDataType>::get_current_global_learning_rate();
+    return drop_fixed_learning_rate::get_current_global_learning_rate();
   }
 }
 
-template <typename TensorDataType>
-linear_growth_learning_rate<TensorDataType>::linear_growth_learning_rate(
+linear_growth_learning_rate::linear_growth_learning_rate(
   float target, size_t num_epochs) :
   linear_growth_learning_rate(target, num_epochs, 0,
                                              std::vector<std::string>()) {}
 
-template <typename TensorDataType>
-linear_growth_learning_rate<TensorDataType>::linear_growth_learning_rate(
+linear_growth_learning_rate::linear_growth_learning_rate(
   float target, size_t num_epochs, size_t delay) :
   linear_growth_learning_rate(target, num_epochs, delay,
                                              std::vector<std::string>()) {}
 
-template <typename TensorDataType>
-linear_growth_learning_rate<TensorDataType>::linear_growth_learning_rate(
+linear_growth_learning_rate::linear_growth_learning_rate(
   float target, size_t num_epochs, size_t delay,
   std::vector<std::string> weights_names) :
-  learning_rate<TensorDataType>(std::move(weights_names)),
+  learning_rate(std::move(weights_names)),
   m_target(target), m_inc(0),
   m_num_epochs(num_epochs), m_delay(delay) {}
 
-template <typename TensorDataType>
-void linear_growth_learning_rate<TensorDataType>::setup(model *m) {
-  learning_rate<TensorDataType>::setup(m);
+void linear_growth_learning_rate::setup(model *m) {
+  learning_rate::setup(m);
   // Compute the learning rate increase.
   if (!this->get_weights().empty()) {
     // Assumes all optimizers have the same initial learning rate.
-    m_base_lr = linear_growth_learning_rate<TensorDataType>::get_current_global_learning_rate();
+    m_base_lr = linear_growth_learning_rate::get_current_global_learning_rate();
     m_inc = (m_target - m_base_lr) / m_num_epochs;
   }
 }
 
-template <typename TensorDataType>
-float linear_growth_learning_rate<TensorDataType>::global_schedule(model *m) {
+float linear_growth_learning_rate::global_schedule(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   if (c.get_epoch() < m_delay) {
-    return linear_growth_learning_rate<TensorDataType>::get_current_global_learning_rate();
+    return linear_growth_learning_rate::get_current_global_learning_rate();
   } else if (c.get_epoch() <= m_num_epochs + m_delay) {
     int num_left = m_num_epochs + m_delay - c.get_epoch();
     return m_base_lr + m_inc*(m_num_epochs - num_left);
   } else {
-    return linear_growth_learning_rate<TensorDataType>::get_current_global_learning_rate();
+    return linear_growth_learning_rate::get_current_global_learning_rate();
   }
 }
 
@@ -262,18 +242,16 @@ float linear_growth_learning_rate<TensorDataType>::global_schedule(model *m) {
  * In case that max_iter is set to 0, it is calculated from the number of
  * epochs (n_epochs). n_epochs is not used otherwise.
  */
-template <typename TensorDataType>
-poly_learning_rate<TensorDataType>::poly_learning_rate(
+poly_learning_rate::poly_learning_rate(
   double p, size_t n_epochs, size_t max_iter)
-  : learning_rate<TensorDataType>(std::vector<std::string>()),
+  : learning_rate(std::vector<std::string>()),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
     m_end_lr(0.0f),
     m_lr(1.0f), m_last_epoch_lr(1.0f) {}
 
-template <typename TensorDataType>
-poly_learning_rate<TensorDataType>::poly_learning_rate(
+poly_learning_rate::poly_learning_rate(
   double p, size_t n_epochs, size_t max_iter, double end_lr,  std::vector<std::string> weights_names)
-  : learning_rate<TensorDataType>(std::move(weights_names)),
+  : learning_rate(std::move(weights_names)),
     m_p(p), m_num_epochs(n_epochs), m_max_iter(max_iter),
     m_end_lr(end_lr),
     m_lr(1.0f), m_last_epoch_lr(1.0f) {}
@@ -282,9 +260,8 @@ poly_learning_rate<TensorDataType>::poly_learning_rate(
  * Check if the maximum number of iterations is set. If not, compute it by the
  * number of epochs and the number of iterations per epoch.
  */
-template <typename TensorDataType>
-void poly_learning_rate<TensorDataType>::setup(model *m) {
-  learning_rate<TensorDataType>::setup(m);
+void poly_learning_rate::setup(model *m) {
+  learning_rate::setup(m);
   if (m_max_iter == 0ull) {
     m_max_iter = m_num_epochs * m->get_num_iterations_per_epoch(execution_mode::training);
   }
@@ -293,80 +270,73 @@ void poly_learning_rate<TensorDataType>::setup(model *m) {
 /**
  * Keep the record of the learning rate at the end of the current epoch.
  */
-template <typename TensorDataType>
-float poly_learning_rate<TensorDataType>::global_schedule(model *m) {
+float poly_learning_rate::global_schedule(model *m) {
   const float scale = m_lr / m_last_epoch_lr;
   m_last_epoch_lr = m_lr;
-  return (poly_learning_rate<TensorDataType>::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
+  return (poly_learning_rate::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
 }
 
 /**
  * Compute the learning rate for the next iteration.
  */
-template <typename TensorDataType>
-float poly_learning_rate<TensorDataType>::optimizer_schedule(model *m, optimizer<TensorDataType> &opt) {
+float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   const size_t cur_iter = c.get_step();
   if (m_max_iter > cur_iter) {
     m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
   }
   const float scale = m_lr / m_last_epoch_lr;
-  return (poly_learning_rate<TensorDataType>::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
+  return (poly_learning_rate::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
 }
 
-template <typename TensorDataType>
-optimizerwise_adaptive_learning_rate<TensorDataType>::
+optimizerwise_adaptive_learning_rate::
 optimizerwise_adaptive_learning_rate(
   float scale) :
   optimizerwise_adaptive_learning_rate(
     scale,
     std::vector<std::string>()) {}
 
-template <typename TensorDataType>
-optimizerwise_adaptive_learning_rate<TensorDataType>::
+optimizerwise_adaptive_learning_rate::
 optimizerwise_adaptive_learning_rate(
   float scale, std::vector<std::string> weights_names) :
-  learning_rate<TensorDataType>(std::move(weights_names)), m_scale(scale) {}
+  learning_rate(std::move(weights_names)), m_scale(scale) {}
 
-template <typename TensorDataType>
-float optimizerwise_adaptive_learning_rate<TensorDataType>::optimizer_schedule(
-  model *m, optimizer<TensorDataType> &opt) {
-  TensorDataType param_norm = El::Nrm2(opt.get_weights().get_values());
-  TensorDataType param_grad_norm = El::Nrm2(opt.get_gradient());
+float optimizerwise_adaptive_learning_rate::optimizer_schedule(
+  model *m, optimizer &opt) {
+  auto& dto = dynamic_cast<data_type_optimizer<DataType>&>(opt);
+  TensorDataType param_norm = El::Nrm2(dto.get_weights().get_values());
+  TensorDataType param_grad_norm = El::Nrm2(dto.get_gradient());
   if (param_norm > TensorDataType(0) && param_grad_norm > TensorDataType(0)) {
     // TODO: Should incorporate weight decay, etc. here.
-    return optimizerwise_adaptive_learning_rate<TensorDataType>::get_current_global_learning_rate()
+    return optimizerwise_adaptive_learning_rate::get_current_global_learning_rate()
       * m_scale * param_norm / param_grad_norm;
   } else {
-    return opt.get_learning_rate();
+    return dto.get_learning_rate();
   }
 }
 
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_step_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackStepLearningRate&>(proto_msg);
-  return make_unique<step_learning_rate<TensorDataType>>(
+  return make_unique<step_learning_rate>(
     params.step(),
     params.amt(),
     parse_list<std::string>(params.weights()));
 }
 
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackAdaptiveLearningRate&>(proto_msg);
-  return make_unique<adaptive_learning_rate<TensorDataType>>(
+  return make_unique<adaptive_learning_rate>(
     params.patience(),
     params.amt(),
     parse_list<std::string>(params.weights()));
 }
 
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_drop_fixed_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
@@ -376,18 +346,17 @@ build_drop_fixed_learning_rate_callback_from_pbuf(
   for (int i = 0; i < params.drop_epoch_size(); ++i) {
     drop_epochs.push_back(params.drop_epoch(i));
   }
-  return make_unique<drop_fixed_learning_rate<TensorDataType>>(
+  return make_unique<drop_fixed_learning_rate>(
     std::move(drop_epochs),
     params.amt(),
     parse_list<std::string>(params.weights()));
 }
 
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_linear_growth_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,const std::shared_ptr<lbann_summary>&) {
   using MsgType = lbann_data::Callback::CallbackLinearGrowthLearningRate;
-  using CallbackType = linear_growth_learning_rate<TensorDataType>;
+  using CallbackType = linear_growth_learning_rate;
   const auto& params =
     dynamic_cast<const MsgType&>(proto_msg);
   return make_unique<CallbackType>(params.target(),
@@ -396,24 +365,22 @@ build_linear_growth_learning_rate_callback_from_pbuf(
                                    parse_list<std::string>(params.weights()));
 }
 
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_optimizerwise_adaptive_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,const std::shared_ptr<lbann_summary>&) {
   using MsgType = lbann_data::Callback::CallbackOptimizerwiseAdaptiveLearningRate;
-  using CallbackType = optimizerwise_adaptive_learning_rate<TensorDataType>;
+  using CallbackType = optimizerwise_adaptive_learning_rate;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
   return make_unique<CallbackType>(params.scale(),
                                    parse_list<std::string>(params.weights()));
 }
 
-template <typename TensorDataType>
 std::unique_ptr<callback_base>
 build_poly_learning_rate_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackPolyLearningRate&>(proto_msg);
-  return make_unique<poly_learning_rate<TensorDataType>>(
+  return make_unique<poly_learning_rate>(
     params.power(),
     params.num_epochs(),
     params.max_iter(),

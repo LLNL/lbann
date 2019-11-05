@@ -136,8 +136,12 @@ public:
   virtual void on_backward_prop_end(model *m, Layer *l) {}
   /** @brief Called when a model begins optimization. */
   virtual void on_optimize_begin(model *m) {}
+  /** @brief Called when weights begins optimization. */
+  virtual void on_optimize_begin(model *m, weights *w) {}
   /** @brief Called when a model ends optimization. */
   virtual void on_optimize_end(model *m) {}
+  /** @brief Called when weights ends optimization. */
+  virtual void on_optimize_end(model *m, weights *w) {}
 
   /** @brief Called at the beginning of a (mini-)batch evaluation
    *         (validation / testing).
