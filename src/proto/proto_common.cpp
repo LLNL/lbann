@@ -229,8 +229,7 @@ void init_data_readers(
       } 
       const auto paths = glob(filedir +readme.data_file_pattern());
       reader_cosmo_hdf5->set_hdf5_paths(paths);
-      reader_cosmo_hdf5->set_scaling_factor_int16(readme.scaling_factor_int16());
-      reader = reader_cosmo_hdf5; 
+      reader = reader_cosmo_hdf5;
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;

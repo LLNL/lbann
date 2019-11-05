@@ -30,7 +30,6 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/omp_pragma.hpp"
 #include "lbann/utils/profiling.hpp"
-#include "lbann/utils/distconv.hpp"
 #include "lbann/models/model.hpp"
 #include <omp.h>
 #include <future>

@@ -33,7 +33,6 @@ class hdf5_reader : public generic_data_reader {
   //void set_input_params(int width, int height, int depth, int num_ch, int num_labels);
   void load() override;
   void set_hdf5_paths(const std::vector<std::string> hdf5_paths) {m_file_paths = hdf5_paths;}
-  void set_scaling_factor_int16(DataType s) {m_scaling_factor_int16 = s;}
 
   int get_num_responses() const override {
     return get_linearized_response_size();
@@ -62,7 +61,6 @@ class hdf5_reader : public generic_data_reader {
   int m_num_features;
   static constexpr int m_num_response_features = 4;
   float m_all_responses[m_num_response_features];
-  DataType m_scaling_factor_int16 = 1.0;
   std::vector<std::string> m_file_paths;
   MPI_Comm m_comm;
   std::vector<int> m_data_dims;

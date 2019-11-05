@@ -115,7 +115,6 @@ int lbann::partitioned_io_buffer::fetch_to_local_matrix(generic_data_reader *dat
   /// Check to make sure that the local matrix has space for data
   data_buffer *buf = get_data_buffer(mode);
   buf->m_num_samples_fetched = 0;
-
   if (m_comm->get_rank_in_trainer() < num_parallel_readers && (buf->m_input_buffers[0]->Height() != 0 && buf->m_input_buffers[0]->Width() != 0)) {
 #ifndef LBANN_IO_DISABLE_ZEROS
     prof_region_begin("fetch_to_local_matrix_zeros", prof_colors[3], false);
@@ -147,8 +146,10 @@ void lbann::partitioned_io_buffer::distribute_from_local_matrix(generic_data_rea
   Copy(*buf->m_input_buffers[0], sample);
   Copy(*buf->m_input_buffers[1], response);
 #ifdef LBANN_HAS_DISTCONV
-  response.Resize(response.Height(), response.Width() /
-                  dc::get_number_of_io_partitions());
+  if (dc::is_cosmoflow_parallel_io_enabled()) {
+    response.Resize(response.Height(), response.Width() /
+                    dc::get_number_of_io_partitions());
+  }
 #endif
   buf->m_num_samples_fetched = 0;
   prof_region_end("distribute_from_local_matrix", false);
@@ -267,17 +268,17 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_spanning_m
   }
 
 #ifdef LBANN_HAS_DISTCONV
-  // #trainers is assumed to be 1.
-  assert_eq(m_comm->get_num_trainers(), 1);
+  if (dc::is_cosmoflow_parallel_io_enabled()) {
+    // #trainers is assumed to be 1.
+    assert_eq(m_comm->get_num_trainers(), 1);
+  }
 #endif
 
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = m_comm->get_num_trainers() * max_mini_batch_size;
-#ifndef LBANN_HAS_DISTCONV
   int base_offset  = m_comm->get_rank_in_trainer();
-#else
-  int base_offset  = dc::get_input_rank(*m_comm) /
-      dc::get_number_of_io_partitions();
+#ifdef LBANN_HAS_DISTCONV
+  base_offset  = dc::get_input_rank(*m_comm) / dc::get_number_of_io_partitions();
 #endif
   int model_offset = m_comm->get_trainer_rank() * max_mini_batch_size;
 
@@ -387,11 +388,9 @@ void lbann::partitioned_io_buffer::calculate_num_iterations_per_epoch_single_mod
 
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = max_mini_batch_size;
-#ifndef LBANN_HAS_DISTCONV
   int base_offset  = m_comm->get_rank_in_trainer();
-#else
-  int base_offset  = dc::get_input_rank(*m_comm) /
-      dc::get_number_of_io_partitions();
+#ifdef LBANN_HAS_DISTCONV
+  base_offset  = dc::get_input_rank(*m_comm) / dc::get_number_of_io_partitions();
 #endif
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);

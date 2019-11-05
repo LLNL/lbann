@@ -234,4 +234,4 @@ void hdf5_reader::gather_responses(float *responses) {
   std::memcpy(responses, recv_buf, sizeof(float) * m_num_response_features);
 }
 
-}
+} // namespace lbann
