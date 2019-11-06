@@ -138,7 +138,7 @@ data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
   set_defaults();
 }
 
-void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
+void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_independent = rhs.m_independent;
   m_independent_groups = rhs.m_independent_groups;
   m_dependent = rhs.m_dependent;
@@ -185,11 +185,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
   m_list_per_model = rhs.m_list_per_model;
 
   if(rhs.m_data_store != nullptr) {
-    if(ds_sample_move_list.size() == 0) {
-      m_data_store = new data_store_conduit(rhs.get_data_store());
-    } else {
-      m_data_store = new data_store_conduit(rhs.get_data_store(), ds_sample_move_list);
-    }
+    m_data_store = new data_store_conduit(rhs.get_data_store());
     m_data_store->set_data_reader_ptr(this);
   }
 }
@@ -197,11 +193,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
   : generic_data_reader(rhs) {
   copy_members(rhs);
-}
-
-data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list)
-  : generic_data_reader(rhs) {
-  copy_members(rhs, ds_sample_move_list);
 }
 
 data_reader_jag_conduit& data_reader_jag_conduit::operator=(const data_reader_jag_conduit& rhs) {
@@ -899,29 +890,12 @@ void data_reader_jag_conduit::load() {
     std::cout << "Lists have been gathered" << std::endl;
   }
 
-  std::vector<int> local_list_sizes;
-  if (opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
-    int np = m_comm->get_procs_per_trainer();
-    int base_files_per_rank = m_shuffled_indices.size() / np;
-    int extra = m_shuffled_indices.size() - (base_files_per_rank*np);
-    if (extra > np) {
-      LBANN_ERROR("extra > np");
-    }
-    local_list_sizes.resize(np, 0);
-    for (int j=0; j<np; j++) {
-      local_list_sizes[j] = base_files_per_rank;
-      if (j < extra) {
-        local_list_sizes[j] += 1;
-      }
-    }
-  }
-  instantiate_data_store(local_list_sizes);
-
+  instantiate_data_store();
   select_subset_of_data();
 }
 
 
-void data_reader_jag_conduit::preload_data_store() {
+void data_reader_jag_conduit::do_preload_data_store() {
   conduit::Node work;
   const std::string key; // key = "" is intentional
 

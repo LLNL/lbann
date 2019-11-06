@@ -148,9 +148,6 @@ data_store_conduit::data_store_conduit(const data_store_conduit& rhs) {
   copy_members(rhs);
 }
 
-data_store_conduit::data_store_conduit(const data_store_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
-  copy_members(rhs, ds_sample_move_list);
-}
 
 data_store_conduit& data_store_conduit::operator=(const data_store_conduit& rhs) {
   // check for self-assignment
@@ -168,7 +165,7 @@ void data_store_conduit::set_data_reader_ptr(generic_data_reader *reader) {
   open_informational_files();
 }
 
-void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
+void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_is_setup = rhs.m_is_setup;
   m_preload = rhs.m_preload;
   m_explicit_loading = rhs.m_explicit_loading;
@@ -197,40 +194,6 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
   m_cur_spill_dir_integer = rhs.m_cur_spill_dir_integer;
   m_cur_spill_dir = rhs.m_cur_spill_dir;
   m_num_files_in_cur_spill_dir = rhs.m_num_files_in_cur_spill_dir;
-
-  /// This block needed when carving a validation set from the training set
-  m_my_num_indices = 0;
-  if(ds_sample_move_list.size() == 0) {
-    m_data = rhs.m_data;
-  } else {
-    /// Move indices on the list from the data and owner maps in the RHS data store to the new data store
-    for(auto&& i : ds_sample_move_list) {
-
-      if(rhs.m_data.find(i) != rhs.m_data.end()){
-        /// Repack the nodes because they don't seem to copy correctly
-        //
-        //dah - previously this code block only contained the line:
-        //  build_node_for_sending(rhs.m_data[i]["data"], m_data[i]);
-        //However, this resulted in errors in the schema; not sure why,
-        //as it used to work; some change in the conduit library?
-        conduit::Node n2;
-        const std::vector<std::string> &names = rhs.m_data[i]["data"].child_names();
-        const std::vector<std::string> &names2 = rhs.m_data[i]["data"][names[0]].child_names();
-        for (auto t : names2) {
-          n2[names[0]][t] = rhs.m_data[i]["data"][names[0]][t];
-        }
-        build_node_for_sending(n2, m_data[i]);
-        ++m_my_num_indices;
-      }
-      rhs.m_data.erase(i);
-
-      /// Removed migrated nodes from the original data store's owner list
-      if(rhs.m_owner.find(i) != rhs.m_owner.end()) {
-        m_owner[i] = rhs.m_owner[i];
-        rhs.m_owner.erase(i);
-      }
-    }
-  }
 
   /// Clear the pointer to the data reader, this cannot be copied
   m_reader = nullptr;
@@ -666,6 +629,7 @@ int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) 
 }
 
 void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes) {
+  PROFILE("starting data_store_conduit::build_preloaded_owner_map");
   m_owner.clear();
   int owning_rank = 0;
   size_t per_rank_list_range_start = 0;
@@ -703,20 +667,6 @@ conduit::Node & data_store_conduit::get_empty_node(int data_id) {
     LBANN_ERROR("we already have a node with data_id= ", data_id);
   }
   return m_data[data_id];
-}
-
-void data_store_conduit::purge_unused_samples(const std::vector<int>& indices) {
-  DEBUG(" starting purge_unused_samples; indices.size(): ", indices.size(), " data.size(): ", m_data.size());
-  /// Remove unused indices from the data and owner maps
-  for(auto&& i : indices) {
-    if(m_data.find(i) != m_data.end()){
-      m_data.erase(i);
-    }
-    if(m_owner.find(i) != m_owner.end()) {
-      m_owner.erase(i);
-    }
-  }
-  DEBUG("leaving  purge_unused_samples; indices.size(): ", indices.size(), " data.size(): ", m_data.size());
 }
 
 void data_store_conduit::compact_nodes() {
