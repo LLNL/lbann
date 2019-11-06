@@ -59,6 +59,11 @@ def sample_dims():
 def max_graph_node_id(graph_file=graph_file):
     """Largest node ID in graph.
 
+    Nodes should be numbered consecutively from 0 to
+    (num_graph_nodes-1). If there are any gaps in the IDs, then
+    unnecessary memory will be allocated. If any IDs are negative,
+    there may be mysterious errors.
+
     Args:
         graph_file (str): Uncompressed edge list file.
 
@@ -66,7 +71,7 @@ def max_graph_node_id(graph_file=graph_file):
         int: Largest node ID in graph.
 
     """
-    max_id = 0
+    max_id = -1
     with open(graph_file) as f:
         for line in f:
             line = line.split('#')[0]
@@ -74,4 +79,6 @@ def max_graph_node_id(graph_file=graph_file):
             if len(line) >= 2:
                 max_id = max(max_id, int(line[0]))
                 max_id = max(max_id, int(line[1]))
+    if max_id < 0:
+        raise RuntimeError('Graph has no non-negative node IDs')
     return max_id

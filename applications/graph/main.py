@@ -43,7 +43,7 @@ embeddings = lbann.Weights(initializer=lbann.NormalInitializer(mean=0,
 # ----------------------------------
 
 # Properties of graph and random walk
-num_graph_nodes = dataset.max_graph_node_id()
+num_graph_nodes = dataset.max_graph_node_id() + 1
 walk_length = dataset.sample_dims()[0]
 
 # Input is a sequence of graph node IDs
