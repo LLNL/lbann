@@ -56,7 +56,6 @@ void argument_parser::parse(int argc, char const* const argv[])
 
 void argument_parser::parse_no_finalize(int argc, char const* const argv[])
 {
-  clara::Args args(argc, argv);
 
   auto parse_result = parser_.parse(clara::Args(argc, argv));
   if (!parse_result)
