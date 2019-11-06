@@ -162,11 +162,12 @@ void data_type_weights<TensorDataType>::set_initializer(std::unique_ptr<weights_
 // -----------------------------------------------
 
 template <typename TensorDataType>
-optimizer* data_type_weights<TensorDataType>::get_optimizer() {
-  return const_cast<optimizer*>(static_cast<const data_type_weights<TensorDataType>&>(*this).get_optimizer());
+data_type_optimizer<TensorDataType>* data_type_weights<TensorDataType>::get_optimizer() {
+  return const_cast<data_type_optimizer<TensorDataType>*>(
+           static_cast<const data_type_weights<TensorDataType>&>(*this).get_optimizer());
 }
 template <typename TensorDataType>
-const optimizer* data_type_weights<TensorDataType>::get_optimizer() const {
+const data_type_optimizer<TensorDataType>* data_type_weights<TensorDataType>::get_optimizer() const {
   if (is_frozen()) {
     return nullptr;
   } else {
