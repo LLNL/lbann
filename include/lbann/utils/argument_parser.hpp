@@ -349,7 +349,7 @@ public:
    *          arguments are added after this argument.
    */
   template <typename T>
-  size_t add_argument(
+  readonly_reference<T> add_argument(
     std::string const& name,
     std::string const& description,
     T default_value = T());
@@ -367,7 +367,7 @@ public:
    *
    *  @return The index of the positional argument
    */
-  size_t add_argument(
+  readonly_reference<std::string> add_argument(
     std::string const& name,
     std::string const& description,
     char const* default_value)
@@ -389,7 +389,7 @@ public:
    *          arguments, so this will never change.
    */
   template <typename T>
-  size_t add_required_argument(
+  readonly_reference<T> add_required_argument(
     std::string const& name,
     std::string const& description);
 
@@ -531,26 +531,30 @@ inline auto argument_parser::add_option(
 }
 
 template <typename T>
-inline size_t argument_parser::add_argument(
+inline auto argument_parser::add_argument(
   std::string const& name,
   std::string const& description,
   T default_value)
+  -> readonly_reference<T>
 {
   params_[name] = std::move(default_value);
+  auto& param_ref = utils::any_cast<T&>(params_[name]);
   parser_ |= clara::Arg
-    (utils::any_cast<T&>(params_[name]), name)
+    (param_ref, name)
     (description).optional();
-  return parser_.m_args.size() - 1;
+  return param_ref;
 }
 
 template <typename T>
-inline size_t argument_parser::add_required_argument(
+inline auto argument_parser::add_required_argument(
   std::string const& name,
   std::string const& description)
+  -> readonly_reference<T>
 {
   // Add the reference to bind to
   params_[name] = T{};
-  auto& param_ref = params_[name];
+  auto& param_any = params_[name];
+  auto& param_ref = any_cast<T&>(param_any);
 
   required_.insert(name);
 
@@ -564,15 +568,14 @@ inline size_t argument_parser::add_required_argument(
     iter,
     [name,&param_ref,this](std::string const& value)
     {
-      auto result = clara::detail::convertInto(
-        value, utils::any_cast<T&>(param_ref));
+      auto result = clara::detail::convertInto(value, param_ref);
       if (result)
         required_.erase(name);
       return result;
     },
     name);
   ret->operator() (description).required();
-  return std::distance(parser_.m_args.begin(), ret);
+  return param_ref;
 }
 }// namespace utils
 

@@ -185,9 +185,11 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
         }
       }
     }
+
     WHEN ("A required argument is added")
     {
-      parser.add_required_argument<int>(
+      auto required_int =
+        parser.add_required_argument<int>(
         "required", "This argument is required.");
       THEN ("The option is recognized")
       {
@@ -204,6 +206,120 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
           REQUIRE_THROWS_AS(
             parser.finalize(),
             lbann::utils::argument_parser::missing_required_arguments);
+        }
+      }
+      AND_WHEN("The option is passed in the arguments")
+      {
+        int const argc = 2;
+        char const* argv[argc] = {"argument_parser_test.exe","13"};
+
+        THEN ("Parsing is successful and the value is updated.")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(required_int == 13);
+        }
+      }
+      AND_WHEN("Another is added option and passed in the arguments")
+      {
+        auto required_string =
+          parser.add_required_argument<std::string>(
+            "required string", "This argument is also required.");
+
+        int const argc = 3;
+        char const* argv[argc] = {"argument_parser_test.exe","13","bananas"};
+
+        THEN ("Parsing is successful and the values are updated.")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(required_int == 13);
+          REQUIRE(required_string == "bananas");
+        }
+      }
+    }
+
+    WHEN ("A required argument is added")
+    {
+      auto optional_int =
+        parser.add_argument(
+          "optional", "This argument is optional.", -1);
+      THEN ("The option is recognized")
+      {
+        REQUIRE(parser.option_is_defined("optional"));
+        REQUIRE(parser.template get<int>("optional") == -1);
+        REQUIRE(optional_int == -1);
+      }
+      AND_WHEN("The option is not passed in the arguments")
+      {
+        int const argc = 1;
+        char const* argv[argc] = {"argument_parser_test.exe"};
+
+        THEN ("Parsing succeeds with no update to the value.")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc,argv));
+          REQUIRE(parser.template get<int>("optional") == -1);
+          REQUIRE(optional_int == -1);
+        }
+      }
+      AND_WHEN("The option is passed in the arguments")
+      {
+        int const argc = 2;
+        char const* argv[argc] = {"argument_parser_test.exe","13"};
+
+        THEN ("Parsing is successful and the value is updated.")
+        {
+          REQUIRE_NOTHROW(parser.parse(argc,argv));
+          REQUIRE(parser.template get<int>("optional") == 13);
+          REQUIRE(optional_int == 13);
+        }
+      }
+      AND_WHEN("Another argument is added and passed in the arguments")
+      {
+        auto optional_string =
+          parser.add_argument(
+            "optional string", "This argument is also optional.",
+            "pickles");
+
+        int const argc = 3;
+        char const* argv[argc] = {"argument_parser_test.exe","42","bananas"};
+
+        THEN ("Parsing is successful and the values are updated.")
+        {
+          REQUIRE(optional_int == -1);
+          REQUIRE(optional_string == "pickles");
+          REQUIRE_NOTHROW(parser.parse(argc, argv));
+          REQUIRE(optional_int == 42);
+          REQUIRE(optional_string == "bananas");
+        }
+      }
+      AND_WHEN("A required argument is added and passed in the arguments")
+      {
+        auto required_string =
+          parser.add_required_argument<std::string>(
+            "required string", "This argument is required.");
+
+        AND_WHEN("The arguments are passed in the add order")
+        {
+          int const argc = 3;
+          char const* argv[argc] = {
+            "argument_parser_test.exe","42","bananas"};
+          THEN ("Parsing fails because required must come first")
+          {
+            REQUIRE_THROWS(parser.parse(argc,argv));
+            REQUIRE(required_string == "42");
+          }
+        }
+        AND_WHEN("The arguments are passed in the right order")
+        {
+          int const argc = 3;
+          char const* argv[argc] = {
+            "argument_parser_test.exe","bananas","42"};
+          THEN ("The arguments must be reversed")
+          {
+            REQUIRE(optional_int == -1);
+            REQUIRE_NOTHROW(parser.parse(argc, argv));
+            REQUIRE(optional_int == 42);
+            REQUIRE(required_string == "bananas");
+          }
         }
       }
     }
