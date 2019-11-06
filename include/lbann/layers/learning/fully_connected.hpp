@@ -57,7 +57,7 @@ public:
   fully_connected_layer(lbann_comm *comm,
                         int output_size,
                         bool transpose = false,
-                        weights<TensorDataType>* weight = nullptr,
+                        data_type_weights<TensorDataType>* weight = nullptr,
                         bool has_bias = true)
     : learning_layer<TensorDataType>(comm),
       m_bias_gradient(nullptr),
@@ -136,9 +136,10 @@ protected:
       this->m_weights.resize(1, nullptr);
     }
     if (this->m_weights[0] == nullptr) {
-      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
-      auto init = make_unique<he_initializer>(probability_distribution::gaussian);
-      std::unique_ptr<optimizer<TensorDataType>> opt(this->get_model()->create_optimizer());
+      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
+      std::unique_ptr<data_type_optimizer<TensorDataType>>
+        opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->get_model()->create_optimizer()));
       w->set_name(this->get_name() + "_linearity_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -149,7 +150,7 @@ protected:
 
     // Initialize variance scaling initialization
     auto* cast_initializer
-      = dynamic_cast<variance_scaling_initializer*>(linearity_weights.get_initializer());
+      = dynamic_cast<variance_scaling_initializer<TensorDataType>*>(linearity_weights.get_initializer());
     if (cast_initializer != nullptr) {
       cast_initializer->set_fan_in(this->get_input_size());
       cast_initializer->set_fan_out(this->get_output_size());
@@ -172,8 +173,9 @@ protected:
     // Set up bias if needed.
     if (m_bias_scaling_factor != TensorDataType(0)) {
       if (this->m_weights[1] == nullptr) {
-        auto w = make_unique<weights<TensorDataType>>(this->get_comm());
-        std::unique_ptr<optimizer<TensorDataType>> opt(this->get_model()->create_optimizer());
+        auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+        std::unique_ptr<data_type_optimizer<TensorDataType>>
+          opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->get_model()->create_optimizer()));
         w->set_name(this->get_name() + "_bias_weights");
         w->set_optimizer(std::move(opt));
         this->m_weights[1] = w.get();
@@ -243,14 +245,14 @@ private:
 
 #ifndef LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 extern template class fully_connected_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class fully_connected_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class fully_connected_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class fully_connected_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 
