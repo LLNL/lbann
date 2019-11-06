@@ -32,8 +32,9 @@
 
 namespace lbann {
 
-variance_scaling_initializer::variance_scaling_initializer(probability_distribution dist)
-  : weights_initializer(),
+template <typename TensorDataType>
+variance_scaling_initializer<TensorDataType>::variance_scaling_initializer(probability_distribution dist)
+  : weights_initializer<TensorDataType>(),
     m_prob_dist(dist),
     m_fan_in(0),
     m_fan_out(0) {
@@ -47,8 +48,9 @@ variance_scaling_initializer::variance_scaling_initializer(probability_distribut
   }
 }
 
-description variance_scaling_initializer::get_description() const {
-  auto desc = weights_initializer::get_description();
+template <typename TensorDataType>
+description variance_scaling_initializer<TensorDataType>::get_description() const {
+  auto desc = weights_initializer<TensorDataType>::get_description();
   std::string dist_str;
   switch (m_prob_dist) {
   case probability_distribution::gaussian:
@@ -64,7 +66,8 @@ description variance_scaling_initializer::get_description() const {
   return desc;
 }
 
-void variance_scaling_initializer::fill(AbsDistMat& matrix) {
+template <typename TensorDataType>
+void variance_scaling_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataType>& matrix) {
 
   // Check if fan-in and fan-out parameters are valid
   if (m_fan_in <= 0 || m_fan_out <= 0) {
@@ -98,16 +101,19 @@ void variance_scaling_initializer::fill(AbsDistMat& matrix) {
 
 }
 
-DataType glorot_initializer::get_variance(El::Int fan_in, El::Int fan_out) {
-  return DataType(2) / (fan_in + fan_out);
+template <typename TensorDataType>
+TensorDataType glorot_initializer<TensorDataType>::get_variance(El::Int fan_in, El::Int fan_out) {
+  return TensorDataType(2) / (fan_in + fan_out);
 }
 
-DataType he_initializer::get_variance(El::Int fan_in, El::Int fan_out) {
-  return DataType(2) / fan_in;
+template <typename TensorDataType>
+TensorDataType he_initializer<TensorDataType>::get_variance(El::Int fan_in, El::Int fan_out) {
+  return TensorDataType(2) / fan_in;
 }
 
-DataType lecun_initializer::get_variance(El::Int fan_in, El::Int fan_out) {
-  return DataType(1) / fan_in;
+template <typename TensorDataType>
+TensorDataType lecun_initializer<TensorDataType>::get_variance(El::Int fan_in, El::Int fan_out) {
+  return TensorDataType(1) / fan_in;
 }
 
 //
@@ -116,36 +122,39 @@ DataType lecun_initializer::get_variance(El::Int fan_in, El::Int fan_out) {
 
 // FIXME (trb 07/31/2019): This is kinda ugly, but its fine if there
 // are only 2 probability distributions
-std::unique_ptr<weights_initializer>
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer<TensorDataType>>
 build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::GlorotNormalInitializer const*>(&msg))
-    return make_unique<glorot_initializer>(probability_distribution::gaussian);
+    return make_unique<glorot_initializer<TensorDataType>>(probability_distribution::gaussian);
   else if (dynamic_cast<lbann_data::Initializer::GlorotUniformInitializer const*>(&msg))
-    return make_unique<glorot_initializer>(probability_distribution::uniform);
+    return make_unique<glorot_initializer<TensorDataType>>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_glorot_initializer_from_pbuf: Bad message.");
     return nullptr;
   }
 }
 
-std::unique_ptr<weights_initializer>
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer<TensorDataType>>
 build_he_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::HeNormalInitializer const*>(&msg))
-    return make_unique<he_initializer>(probability_distribution::gaussian);
+    return make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
   else if (dynamic_cast<lbann_data::Initializer::HeUniformInitializer const*>(&msg))
-    return make_unique<he_initializer>(probability_distribution::uniform);
+    return make_unique<he_initializer<TensorDataType>>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_he_initializer_from_pbuf: Bad message.");
     return nullptr;
   }
 }
 
-std::unique_ptr<weights_initializer>
+template <typename TensorDataType>
+std::unique_ptr<weights_initializer<TensorDataType>>
 build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::LeCunNormalInitializer const*>(&msg))
-    return make_unique<lecun_initializer>(probability_distribution::gaussian);
+    return make_unique<lecun_initializer<TensorDataType>>(probability_distribution::gaussian);
   else if (dynamic_cast<lbann_data::Initializer::LeCunUniformInitializer const*>(&msg))
-    return make_unique<lecun_initializer>(probability_distribution::uniform);
+    return make_unique<lecun_initializer<TensorDataType>>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_lecun_initializer_from_pbuf: Bad message.");
     return nullptr;
