@@ -52,7 +52,11 @@ const std::string hdf5_reader::HDF5_KEY_DATA = "full";
 const std::string hdf5_reader::HDF5_KEY_RESPONSES = "unitPar";
 
 hdf5_reader::hdf5_reader(const bool shuffle)
-    : generic_data_reader(shuffle) {}
+    : generic_data_reader(shuffle) {
+#ifndef LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
+  LBANN_ERROR("HDF5 reader requires LBANN_DISTCONV_COSMOFLOW_KEEP_INT16 to be defined. Use the --distconv-cosmoflow-int16 option of build_lbann_lc.sh");
+#endif
+}
 
 void hdf5_reader::read_hdf5(hsize_t h_data, hsize_t filespace, int rank, std::string key, hsize_t* dims, DataType * data_out) {
   // this is the splits, right now it is hard coded to split along the z axis
