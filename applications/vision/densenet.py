@@ -1,13 +1,8 @@
-#!/usr/bin/env python3
 import argparse
-import os.path
-import subprocess
-import google.protobuf.text_format as txtf
 import lbann
 import lbann.contrib.args
 import lbann.contrib.lc.launcher
-
-# TODO: Add trainer argument after PR #916 merges
+import data.imagenet
 
 LOG = True
 
@@ -15,50 +10,6 @@ LOG = True
 def log(string):
     if LOG:
         print(string)
-
-# Commands to run ##############################################################
-
-# Allocate notes on Pascal from ssh:
-# salloc --nodes=16 --partition=pbatch --time=180
-
-# From lbann/model_zoo/vision:
-# ./densenet.py
-# --disable-run (if experiment shouldn't be run)
-# --mini-batch-size 128 (if mini-batch-size should be something other than 256)
-# --nodes 16 (if more than one node is to be used; 16 is optimal)
-# --procs-per-node 2
-
-# To run the full 90 epochs from ssh:
-# ./densenet.py --nodes 16 --procs-per-node 2 > /usr/workspace/wsb/<username>/lbann/model_zoo/vision/output.txt
-# mini-batch-size default => 256, num-epochs => 90
-
-# To run 10 epoch test from ssh:
-# ./densenet.py --nodes 16 --procs-per-node 2 --mini-batch-size 256 --num-epochs 10 > /usr/workspace/wsb/<username>/lbann/model_zoo/vision/output.txt
-
-# To avoid needing to stay logged into ssh, create a script
-# densenet_batch_job.cmd such as:
-# #!/bin/bash
-# #SBATCH --nodes 8
-# #SBATCH --partition pbatch
-# #SBATCH --time 840
-#
-# module load gcc/7.1.0
-# ../../scripts/build_lbann_lc.sh --compiler gnu --reconfigure
-#
-# module load python/3.6.4
-# ./densenet.py --nodes 8 --procs-per-node 2 --mini-batch-size 256 --num-epochs 10 &> /usr/workspace/wsb/<username>/lbann/model_zoo/vision/output.txt
-
-# and from lbann/model_zoo/vision run:
-# sbatch densenet_batch_job.cmd
-
-# To generate visualization, from lbann run:
-# scripts/viz.py model_zoo/models/densenet/generated_densenet.prototext
-
-# Copy the output file, experiment directory, and visualization
-# from LC to your computer by running the following commands from your computer:
-# scp <username>@pascal.llnl.gov:/usr/workspace/wsb/<username>/lbann/model_zoo/vision/output.txt .
-# scp -r <username>@pascal.llnl.gov:/usr/workspace/wsb/<username>/lbann/model_zoo/vision/<date_time>_lbann_densenet/ .
-# scp <username>@pascal.llnl.gov:/usr/workspace/wsb/<username>/lbann/graph.pdf .
 
 
 # DenseNet #####################################################################
@@ -374,47 +325,24 @@ def get_args():
     parser = argparse.ArgumentParser(description=desc)
     lbann.contrib.args.add_scheduler_arguments(parser)
     parser.add_argument(
+        '--job-name', action='store', default='lbann_densenet', type=str,
+        help='scheduler job name (default: lbann_densenet)')
+    parser.add_argument(
         '--mini-batch-size', action='store', default=256, type=int,
         help='mini-batch size (default: 256)', metavar='NUM')
     parser.add_argument(
         '--num-epochs', action='store', default=90, type=int,
         help='number of epochs (default: 90)', metavar='NUM')
     parser.add_argument(
-        '--num-labels', action='store', default=1000, type=int,
-        help='number of data classes (default: 1000)', metavar='NUM')
+        '--num-classes', action='store', default=1000, type=int,
+        help='number of ImageNet classes (default: 1000)', metavar='NUM')
     lbann.contrib.args.add_optimizer_arguments(
         parser,
         default_optimizer='sgd',
         default_learning_rate=0.1
     )
-    lbann_dir = subprocess.check_output(
-        'git rev-parse --show-toplevel'.split()).strip()
-    # https://stackoverflow.com/questions/606191/convert-bytes-to-a-string
-    lbann_dir = lbann_dir.decode("utf-8")
-    data_reader_prototext = os.path.join(lbann_dir,
-                                         'model_zoo',
-                                         'data_readers',
-                                         'data_reader_imagenet.prototext')
     parser.add_argument(
-        '--data-reader', action='store',
-        default=data_reader_prototext, type=str,
-        help='data reader prototext file (default: ' + data_reader_prototext + ')',
-        metavar='FILE')
-    parser.add_argument(
-        '--imagenet-classes', action='store', type=int,
-        help='number of ImageNet-1K classes (availability of subsampled datasets may vary by system)',
-        metavar='NUM')
-    generated_prototext = os.path.join(lbann_dir,
-                                       'model_zoo',
-                                       'models',
-                                       'densenet',
-                                       'generated_densenet.prototext')
-    parser.add_argument(
-        '--prototext', action='store',
-        default=generated_prototext, type=str,
-        help='exported prototext file', metavar='FILE')
-    parser.add_argument(
-        '--disable-run', action='store_true',
+        '--setup_only', action='store_true',
         help='do not run experiment (e.g. if only the prototext is desired)')
     args = parser.parse_args()
     return args
@@ -473,11 +401,8 @@ def set_up_experiment(args,
                         metrics=metrics,
                         callbacks=callbacks)
 
-    # Load data reader from prototext
-    data_reader_proto = lbann.lbann_pb2.LbannPB()
-    with open(args.data_reader, 'r') as f:
-        txtf.Merge(f.read(), data_reader_proto)
-    data_reader_proto = data_reader_proto.data_reader
+    # Set up data reader
+    data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
     # Set up optimizer
     if args.optimizer == 'sgd':
@@ -493,53 +418,19 @@ def set_up_experiment(args,
     # Setup trainer
     trainer = lbann.Trainer()
 
-    # Save prototext to args.prototext
-    if args.prototext:
-        lbann.proto.save_prototext(args.prototext,
-                                   trainer=trainer,
-                                   model=model,
-                                   optimizer=optimizer,
-                                   data_reader=data_reader_proto)
-
-    return trainer, model, data_reader_proto, optimizer
+    return trainer, model, data_reader, optimizer
 
 
 def run_experiment(args,
                    trainer,
                    model,
-                   data_reader_proto,
+                   data_reader,
                    optimizer):
-    # Run experiment
-    if not args.disable_run:
-        from lbann.contrib.lc.paths import imagenet_dir, imagenet_labels
-        import lbann.contrib.lc.launcher
-        kwargs = {}
-        if args.nodes:
-            kwargs['nodes'] = args.nodes
-        if args.procs_per_node:
-            kwargs['procs_per_node'] = args.procs_per_node
-        if args.partition:
-            kwargs['partition'] = args.partition
-        if args.account:
-            kwargs['account'] = args.account
-        if args.time_limit:
-            kwargs['time_limit'] = args.time_limit
-        if args.imagenet_classes:
-            classes = args.imagenet_classes
-            kwargs['lbann_args'] = (
-                '--data_filedir_train={} --data_filename_train={} '
-                '--data_filedir_test={} --data_filename_test={}'
-                    .format(imagenet_dir(data_set='train', num_classes=classes),
-                            imagenet_labels(data_set='train',
-                                            num_classes=classes),
-                            imagenet_dir(data_set='val', num_classes=classes),
-                            imagenet_labels(data_set='val',
-                                            num_classes=classes)))
-        lbann.contrib.lc.launcher.run(trainer, model,
-                                      data_reader_proto,
-                                      optimizer,
-                                      job_name='lbann_densenet',
-                                      **kwargs)
+    # Note: Use `lbann.run` instead for non-LC systems.
+    kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
+    lbann.contrib.lc.launcher.run(trainer, model, data_reader, optimizer,
+                                  job_name=args.job_name,
+                                  **kwargs)
 
 
 # Main function ################################################################
@@ -547,23 +438,19 @@ def main():
     # ----------------------------------
     # Command-line arguments
     # ----------------------------------
-    args = get_args()
 
-    # Match this with number of GPUs per node
-    # On Lassen, this will be 4.
-    # On Pascal, this will be 2.
-    # If there are no GPUs, then match the number of processes per node.
-    statistics_group_size = 2
+    args = get_args()
 
     # ----------------------------------
     # Construct layer graph
     # ----------------------------------
+
     input_node = lbann.Input()
     # Start counting cumulative layers at 1.
     cumulative_layer_num = 1
     log('Input. cumulative_layer_num={n}'.format(n=cumulative_layer_num))
     (probs, labels) = construct_layer_graph(
-        statistics_group_size,
+        args.procs_per_node,
         121, cumulative_layer_num, input_node)
 
     # ----------------------------------
@@ -576,7 +463,6 @@ def main():
     # ----------------------------------
     # Run experiment
     # ----------------------------------
-    # Note: Use `lbann.run` instead for non-LC systems.
 
     run_experiment(args, trainer, model, data_reader_proto, optimizer)
 
