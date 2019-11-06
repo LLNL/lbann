@@ -864,13 +864,8 @@ void data_reader_jag_conduit::load() {
 
 void data_reader_jag_conduit::preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node) {
   const std::string path = sample_name + field_name;
-  if (!has_path(h, path)) {
-    LBANN_ERROR("!has_path(h, path) for path: ", path);
-  }
-  conduit::Node work;
-  read_node(h, path, work);
   const std::string key2 = '/' + LBANN_DATA_ID_STR(data_id) + field_name;
-  node[key2] = work;
+  read_node(h, path, node[key2]);
 }
 
 void data_reader_jag_conduit::do_preload_data_store() {
