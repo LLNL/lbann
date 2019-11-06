@@ -45,7 +45,7 @@ namespace lbann {
 
 /** @brief Computation kernels for convolution and deconvolution layers.
  */
-template <El::Device Device>
+template <typename TensorDataType, El::Device Device>
 class base_convolution_layer : public data_type_layer<TensorDataType> {
 
 protected:
@@ -247,17 +247,17 @@ public:
     // Check number of channels and channel groups
     const auto& input_dims = this->get_input_dims();
     if (m_output_channels < 1) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
           << "has an invalid number of output channels "
           << "(" << m_output_channels << ")";
       LBANN_ERROR(err.str());
     } else if (m_groups < 1) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
           << "has an invalid number of groups (" << m_groups << ")";
       LBANN_ERROR(err.str());
     } else if (input_dims[0] % m_groups != 0
                || m_output_channels % m_groups != 0) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
           << "has " << m_groups << " groups, which does not divide "
           << "the input channels (" << input_dims[0] << ") or "
           << "the output channels (" << m_output_channels << ")";
@@ -269,7 +269,7 @@ public:
     if (m_conv_dims.size() != num_spatial_dims
         || std::any_of(m_conv_dims.begin(), m_conv_dims.end(),
                        [](El::Int d) { return d < 1; })) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
           << "has invalid spatial dimensions for convolution kernel (";
       if (m_conv_dims.empty()) { err << "no dimensions"; }
       for (size_t i = 0; i < m_conv_dims.size(); ++i) {
@@ -278,7 +278,7 @@ public:
       err << ", expected " << num_spatial_dims << " spatial dimensions)";
       LBANN_ERROR(err.str());
     } else if (m_pads.size() != num_spatial_dims) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
           << "has invalid convolution pads ((";
       for (size_t i = 0; i < m_pads.size(); ++i) {
         err << (i > 0 ? "," : "") << m_pads[i];
@@ -288,7 +288,7 @@ public:
     } else if (m_strides.size() != num_spatial_dims
                || std::any_of(m_strides.begin(), m_strides.end(),
                               [](El::Int d) { return d < 1; })) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
           << "has invalid convolution strides ((";
       for (size_t i = 0; i < m_strides.size(); ++i) {
         err << (i > 0 ? "," : "") << m_strides[i];
@@ -298,7 +298,7 @@ public:
     } else if (m_dilations.size() != num_spatial_dims
                || std::any_of(m_dilations.begin(), m_dilations.end(),
                               [](El::Int d) { return d < 1; })) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
           << "has invalid convolution dilations ((";
       for (size_t i = 0; i < m_dilations.size(); ++i) {
         err << (i > 0 ? "," : "") << m_dilations[i];
@@ -311,12 +311,12 @@ public:
     if (Device == El::Device::CPU
         && std::any_of(m_dilations.begin(), m_dilations.end(),
                        [](El::Int d) { return d != 1; })) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
           << "has non-unit dilation, which is not yet supported on CPU";
       LBANN_ERROR(err.str());
     }
     if (Device == El::Device::CPU && m_groups != 1) {
-      err << get_type() << " layer \"" << this->get_name() << "\" "
+      err << this->get_type() << " layer \"" << this->get_name() << "\" "
           << "has " << m_groups << " groups, "
           << "but only one group is currently supported on CPU";
       LBANN_ERROR(err.str());
@@ -332,8 +332,8 @@ public:
 
     // Tensor dimensions
     const auto& input_dims = this->get_input_dims();
-    const auto& output_dims = get_output_dims();
-    const auto& kernel_dims = get_kernel_dims();
+    const auto& output_dims = this->get_output_dims();
+    const auto& kernel_dims = this->get_kernel_dims();
     const auto& kernel_size = std::accumulate(kernel_dims.begin(),
                                               kernel_dims.end(),
                                               1, std::multiplies<int>());
@@ -353,10 +353,11 @@ public:
       this->m_weights.resize(1, nullptr);
     }
     if (this->m_weights[0] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<he_initializer>(probability_distribution::gaussian);
-      std::unique_ptr<optimizer<TensorDataType>> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_kernel");
+      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
+      std::unique_ptr<data_type_optimizer<TensorDataType>>
+        opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
+      w->set_name(this->get_name() + "_kernel");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
       this->m_weights[0] = w.get();
@@ -366,7 +367,7 @@ public:
 
     // Initialize variance scaling initialization
     auto* cast_initializer
-      = dynamic_cast<variance_scaling_initializer*>(kernel_weights.get_initializer());
+      = dynamic_cast<variance_scaling_initializer<TensorDataType>*>(kernel_weights.get_initializer());
     if (cast_initializer != nullptr) {
       cast_initializer->set_fan_in(kernel_size / output_dims[0]);
       cast_initializer->set_fan_out(kernel_size / input_dims[0]);
@@ -382,9 +383,10 @@ public:
     // Set up bias if needed.
     if (m_bias_scaling_factor != TensorDataType(0)) {
       if (this->m_weights[1] == nullptr) {
-        auto w = make_unique<weights>(get_comm());
-        std::unique_ptr<optimizer<TensorDataType>> opt(m_model->create_optimizer());
-        w->set_name(get_name() + "_bias");
+        auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+        std::unique_ptr<data_type_optimizer<TensorDataType>>
+          opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
+        w->set_name(this->get_name() + "_bias");
         w->set_optimizer(std::move(opt));
         this->m_weights[1] = w.get();
         this->m_model->add_weights(std::move(w));
@@ -396,16 +398,16 @@ public:
 
     // Initialize freeze state
     for (auto&& w : this->m_weights) {
-      if (m_frozen) {
+      if (this->m_frozen) {
         w->freeze();
       } else {
         w->unfreeze();
       }
     }
     for (auto&& w : this->m_weights) {
-      if (w->is_frozen() != m_frozen) {
+      if (w->is_frozen() != this->m_frozen) {
         std::stringstream err;
-        err << (m_frozen ? "" : "un") << "frozen "
+        err << (this->m_frozen ? "" : "un") << "frozen "
             << "layer \"" << this->get_name() << "\" has "
             << (w->is_frozen() ? "" : "un") << "frozen "
             << "weights \"" << w->get_name() << "\"";
@@ -422,8 +424,8 @@ public:
     LBANN_ERROR("cuDNN not detected");
 #else
 
-    const auto& output_dims = get_output_dims();
-    const auto& kernel_dims = get_kernel_dims();
+    const auto& output_dims = this->get_output_dims();
+    const auto& kernel_dims = this->get_kernel_dims();
 
     // Set kernel descriptor
     CHECK_CUDNN(cudnnCreateFilterDescriptor(&m_kernel_cudnn_desc));
@@ -473,11 +475,11 @@ protected:
     // Matrices
     const auto& kernel = m_weights[0]->get_values();
     const auto& input = (during_forward_prop ?
-                         get_local_prev_activations() :
-                         get_local_prev_error_signals());
+                         this->get_local_prev_activations() :
+                         this->get_local_prev_error_signals());
     auto& output = (during_forward_prop ?
-                    get_local_activations() :
-                    get_local_error_signals());
+                    this->get_local_activations() :
+                    this->get_local_error_signals());
 
     // Do nothing if there is no local data
     if (input.Height() < 1 || input.Width() < 1
@@ -499,12 +501,12 @@ protected:
     cudnnTensorDescriptor_t input_desc, output_desc;
     if (during_forward_prop) {
       input_dims = this->get_input_dims();
-      output_dims = get_output_dims();
+      output_dims = this->get_output_dims();
       input_desc = m_tensors_cudnn_desc.get_prev_activations();
       output_desc = m_tensors_cudnn_desc.get_activations();
     }
     else {
-      input_dims = get_output_dims();
+      input_dims = this->get_output_dims();
       output_dims = this->get_input_dims();
       input_desc = m_tensors_cudnn_desc.get_prev_error_signals();
       output_desc = m_tensors_cudnn_desc.get_error_signals();
@@ -550,11 +552,11 @@ protected:
     // GPU data
     const auto& kernel = m_weights[0]->get_values();
     const auto& input = (during_forward_prop ?
-                         get_local_prev_activations() :
-                         get_local_prev_error_signals());
+                         this->get_local_prev_activations() :
+                         this->get_local_prev_error_signals());
     auto& output = (during_forward_prop ?
-                    get_local_activations() :
-                    get_local_error_signals());
+                    this->get_local_activations() :
+                    this->get_local_error_signals());
 
     // Do nothing if there is no local data
     if (input.Height() < 1 || input.Width() < 1
@@ -577,12 +579,12 @@ protected:
     cudnnTensorDescriptor_t input_desc, output_desc;
     if (during_forward_prop) {
       input_dims = this->get_input_dims();
-      output_dims = get_output_dims();
+      output_dims = this->get_output_dims();
       input_desc = m_tensors_cudnn_desc.get_prev_activations();
       output_desc = m_tensors_cudnn_desc.get_activations();
     }
     else {
-      input_dims = get_output_dims();
+      input_dims = this->get_output_dims();
       output_dims = this->get_input_dims();
       input_desc = m_tensors_cudnn_desc.get_prev_error_signals();
       output_desc = m_tensors_cudnn_desc.get_error_signals();
@@ -620,7 +622,7 @@ protected:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    auto& local_output = get_local_activations();
+    auto& local_output = this->get_local_activations();
     if (m_bias_scaling_factor != TensorDataType(0)
         && local_output.Height() > 0
         && local_output.Width() > 0) {
@@ -643,8 +645,8 @@ protected:
 #else
 
     // Matrices
-    const auto& local_input = get_local_prev_activations();
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    const auto& local_input = this->get_local_prev_activations();
+    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
 
     const bool has_local_data = (local_input.Height() > 0
                                  && local_input.Width() > 0
@@ -754,11 +756,11 @@ protected:
     // Local matrices
     const auto& local_kernel = this->m_weights[0]->get_values().LockedMatrix();
     const auto& local_input = (during_forward_prop ?
-                               get_local_prev_activations() :
-                               get_local_prev_error_signals());
+                               this->get_local_prev_activations() :
+                               this->get_local_prev_error_signals());
     auto& local_output = (during_forward_prop ?
-                          get_local_activations() :
-                          get_local_error_signals());
+                          this->get_local_activations() :
+                          this->get_local_error_signals());
 
     // Matrix parameters
     const int output_size = local_output.Height();
@@ -766,13 +768,13 @@ protected:
     std::vector<int> input_dims, output_dims;
     if (during_forward_prop) {
       input_dims = this->get_input_dims();
-      output_dims = get_output_dims();
+      output_dims = this->get_output_dims();
     }
     else {
-      input_dims = get_output_dims();
+      input_dims = this->get_output_dims();
       output_dims = this->get_input_dims();
     }
-    const auto& kernel_dims = get_kernel_dims();
+    const auto& kernel_dims = this->get_kernel_dims();
     const auto& kernel_size = std::accumulate(kernel_dims.begin(),
                                               kernel_dims.end(),
                                               1, std::multiplies<int>());
@@ -815,11 +817,11 @@ protected:
     // Local matrices
     const auto& local_kernel = this->m_weights[0]->get_values().LockedMatrix();
     const auto& local_input = (during_forward_prop ?
-                               get_local_prev_activations() :
-                               get_local_prev_error_signals());
+                               this->get_local_prev_activations() :
+                               this->get_local_prev_error_signals());
     DMat<Device>& local_output = (during_forward_prop ?
-                                  get_local_activations() :
-                                  get_local_error_signals());
+                                  this->get_local_activations() :
+                                  this->get_local_error_signals());
 
     // Matrix parameters
     const int input_size = local_input.Height();
@@ -827,13 +829,13 @@ protected:
     std::vector<int> input_dims, output_dims;
     if (during_forward_prop) {
       input_dims = this->get_input_dims();
-      output_dims = get_output_dims();
+      output_dims = this->get_output_dims();
     }
     else {
-      input_dims = get_output_dims();
+      input_dims = this->get_output_dims();
       output_dims = this->get_input_dims();
     }
-    const auto& kernel_dims = get_kernel_dims();
+    const auto& kernel_dims = this->get_kernel_dims();
     const auto& kernel_size = std::accumulate(kernel_dims.begin(),
                                               kernel_dims.end(),
                                               1, std::multiplies<int>());
@@ -877,14 +879,14 @@ protected:
     if (m_bias_scaling_factor == TensorDataType(0)) return;
 
     // Local matrices
-    const auto& local_bias = m_weights[1]->get_values().LockedMatrix();
-    auto& local_output = get_local_activations();
+    const auto& local_bias = this->m_weights[1]->get_values().LockedMatrix();
+    auto& local_output = this->get_local_activations();
 
     // Matrix parameters
     const El::Int local_width = local_output.Width();
-    const auto& output_dims = get_output_dims();
+    const auto& output_dims = this->get_output_dims();
     const El::Int num_output_channels = output_dims[0];
-    const El::Int num_per_output_channel = get_output_size() / num_output_channels;
+    const El::Int num_per_output_channel = this->get_output_size() / num_output_channels;
 
     // Apply bias to each output channel
     LBANN_OMP_PARALLEL_FOR
@@ -904,19 +906,19 @@ protected:
   void compute_gradients_im2col(bool using_transposed_convolution) {
 
     // Local matrices
-    const DMat<Device>& local_input = get_local_prev_activations();
-    const DMat<Device>& local_gradient_wrt_output = get_local_prev_error_signals();
+    const DMat<Device>& local_input = this->get_local_prev_activations();
+    const DMat<Device>& local_gradient_wrt_output = this->get_local_prev_error_signals();
     const bool has_local_data = (!local_input.IsEmpty()
                                  && !local_gradient_wrt_output.IsEmpty());
 
     // Get convolution parameters
     const El::Int local_width = local_input.Width();
     const auto& input_dims = this->get_input_dims();
-    const auto& output_dims = get_output_dims();
+    const auto& output_dims = this->get_output_dims();
     const int num_input_channels = input_dims[0];
     const int num_output_channels = output_dims[0];
-    const int num_per_output_channel = get_output_size() / num_output_channels;
-    const auto& kernel_dims = get_kernel_dims();
+    const int num_per_output_channel = this->get_output_size() / num_output_channels;
+    const auto& kernel_dims = this->get_kernel_dims();
     const auto& kernel_size = std::accumulate(kernel_dims.begin(),
                                               kernel_dims.end(),
                                               1, std::multiplies<int>());
@@ -925,7 +927,7 @@ protected:
     // Note: Sum is computed with Kahan summation
     if (m_bias_scaling_factor != TensorDataType(0)
         && this->m_weights[1]->get_optimizer() != nullptr) {
-      optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+      data_type_optimizer<TensorDataType>* bias_optimizer = this->m_weights[1]->get_optimizer();
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
@@ -955,7 +957,7 @@ protected:
     }
 
     // Stop early if kernel is not being optimized
-    optimizer* kernel_optimizer = this->m_weights[0]->get_optimizer();
+    data_type_optimizer<TensorDataType>* kernel_optimizer = this->m_weights[0]->get_optimizer();
     if (kernel_optimizer == nullptr) { return; }
 
     // Initialize matrices
@@ -966,8 +968,8 @@ protected:
                    num_input_channels :
                    num_output_channels);
     const int k = (using_transposed_convolution ?
-                   get_input_size() / num_input_channels :
-                   get_output_size() / num_output_channels);
+                   this->get_input_size() / num_input_channels :
+                   this->get_output_size() / num_output_channels);
     TensorDataType dst_scale = 0, gradient_scale = 0;
     auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
@@ -1213,9 +1215,9 @@ private:
 };
 
 #ifndef LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
-extern template class base_convolution_layer<El::Device::CPU>;
+extern template class base_convolution_layer<float, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-extern template class base_convolution_layer<El::Device::GPU>;
+extern template class base_convolution_layer<float, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
 

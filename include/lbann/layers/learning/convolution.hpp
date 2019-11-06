@@ -46,7 +46,7 @@ class imcomm;
 template <typename TensorDataType,
           data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class convolution_layer : public base_convolution_layer<Device> {
+class convolution_layer : public base_convolution_layer<TensorDataType, Device> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "convolution layer only supports DATA_PARALLEL");
 private:
@@ -83,7 +83,7 @@ public:
                     std::vector<int> dilations,
                     int groups,
                     bool has_bias = true)
-    : base_convolution_layer<Device>(
+    : base_convolution_layer<TensorDataType, Device>(
         comm,
         num_data_dims,
         num_output_channels,
@@ -106,7 +106,7 @@ public:
 protected:
 
   void setup_dims() override {
-    base_convolution_layer<Device>::setup_dims();
+    base_convolution_layer<TensorDataType, Device>::setup_dims();
 
     // Get tensor dimensions
     const auto& input_dims = this->get_input_dims();
@@ -141,21 +141,21 @@ protected:
 
   void fp_compute() override {
     if(this->using_gpus()) {
-      base_convolution_layer<Device>::apply_convolution_cudnn(true);
-      base_convolution_layer<Device>::apply_bias_cudnn();
+      base_convolution_layer<TensorDataType, Device>::apply_convolution_cudnn(true);
+      base_convolution_layer<TensorDataType, Device>::apply_bias_cudnn();
     } else {
-      base_convolution_layer<Device>::apply_convolution_im2col(true);
-      base_convolution_layer<Device>::apply_bias_cpu();
+      base_convolution_layer<TensorDataType, Device>::apply_convolution_im2col(true);
+      base_convolution_layer<TensorDataType, Device>::apply_bias_cpu();
     }
   }
 
   void bp_compute() override {
     if(this->using_gpus()) {
-      base_convolution_layer<Device>::compute_gradients_cudnn(false);
-      base_convolution_layer<Device>::apply_transposed_convolution_cudnn(false);
+      base_convolution_layer<TensorDataType, Device>::compute_gradients_cudnn(false);
+      base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_cudnn(false);
     } else {
-      base_convolution_layer<Device>::compute_gradients_im2col(false);
-      base_convolution_layer<Device>::apply_transposed_convolution_im2col(false);
+      base_convolution_layer<TensorDataType, Device>::compute_gradients_im2col(false);
+      base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_im2col(false);
     }
   }
 

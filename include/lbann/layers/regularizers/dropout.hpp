@@ -339,11 +339,11 @@ protected:
 };
 
 #ifndef LBANN_DROPOUT_LAYER_INSTANTIATE
-extern template class dropout<data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class dropout<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+extern template class dropout<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class dropout<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-extern template class dropout<data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class dropout<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+extern template class dropout<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class dropout<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_DROPOUT_LAYER_INSTANTIATE
 

@@ -27,6 +27,7 @@
 #include "lbann/callbacks/dump_outputs.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 #include <callbacks.pb.h>
 
@@ -152,7 +153,8 @@ void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
 
   // Save layer outputs on root process
   for (int i = 0; i < l.get_num_children(); ++i) {
-    const CircMat<El::Device::CPU> circ_data(l.get_activations(i));
+    const auto& dtl = dynamic_cast<const data_type_layer<DataType>&>(l);
+    const CircMat<El::Device::CPU> circ_data(dtl.get_activations(i));
     if (circ_data.CrossRank() == circ_data.Root()) {
       const auto& data = static_cast<const CPUMat&>(circ_data.LockedMatrix());
       const std::string file_name = (m_directory
@@ -168,11 +170,11 @@ void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
       } else if (m_file_format == "tsv") {
         save_text(file_name, "\t", data);
       } else if (m_file_format == "npy") {
-        save_npy(file_name, l.get_output_dims(i), data);
+        save_npy(file_name, dtl.get_output_dims(i), data);
       } else if (m_file_format == "npz") {
         save_npz(file_name,
                  l.get_name() + "_output" + std::to_string(i),
-                 l.get_output_dims(i),
+                 dtl.get_output_dims(i),
                  data);
       }
     }

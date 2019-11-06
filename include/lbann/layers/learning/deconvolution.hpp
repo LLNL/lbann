@@ -39,7 +39,7 @@ class imcomm;
 
 /** @brief Transpose of the convolution layer. */
 template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
-class deconvolution_layer : public base_convolution_layer<Device> {
+class deconvolution_layer : public base_convolution_layer<TensorDataType, Device> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "deconvolution layer only supports DATA_PARALLEL");
 private:
@@ -76,7 +76,7 @@ public:
                       std::vector<int> dilations,
                       int groups,
                       bool has_bias = true)
-    : base_convolution_layer<Device>(
+    : base_convolution_layer<TensorDataType, Device>(
         comm,
         num_data_dims,
         num_output_channels,
@@ -97,7 +97,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   void setup_dims() override {
-    base_convolution_layer<Device>::setup_dims();
+    base_convolution_layer<TensorDataType, Device>::setup_dims();
     std::stringstream err;
 
     // Get tensor dimensions
@@ -155,21 +155,21 @@ protected:
 
   void fp_compute() override {
     if(this->using_gpus()) {
-      base_convolution_layer<Device>::apply_transposed_convolution_cudnn(true);
-      base_convolution_layer<Device>::apply_bias_cudnn();
+      base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_cudnn(true);
+      base_convolution_layer<TensorDataType, Device>::apply_bias_cudnn();
     } else {
-      base_convolution_layer<Device>::apply_transposed_convolution_im2col(true);
-      base_convolution_layer<Device>::apply_bias_cpu();
+      base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_im2col(true);
+      base_convolution_layer<TensorDataType, Device>::apply_bias_cpu();
     }
   }
 
   void bp_compute() override {
     if(this->using_gpus()) {
-      base_convolution_layer<Device>::compute_gradients_cudnn(true);
-      base_convolution_layer<Device>::apply_convolution_cudnn(false);
+      base_convolution_layer<TensorDataType, Device>::compute_gradients_cudnn(true);
+      base_convolution_layer<TensorDataType, Device>::apply_convolution_cudnn(false);
     } else {
-      base_convolution_layer<Device>::compute_gradients_im2col(true);
-      base_convolution_layer<Device>::apply_convolution_im2col(false);
+      base_convolution_layer<TensorDataType, Device>::compute_gradients_im2col(true);
+      base_convolution_layer<TensorDataType, Device>::apply_convolution_im2col(false);
     }
   }
 
@@ -177,10 +177,10 @@ protected:
 
 #ifndef LBANN_DECONVOLUTION_LAYER_INSTANTIATE
 extern template class deconvolution_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class deconvolution_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_DECONVOLUTION_LAYER_INSTANTIATE
 
