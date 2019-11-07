@@ -52,6 +52,8 @@
 
 namespace lbann {
 
+std::string commify(size_t n);
+
 data_store_conduit::data_store_conduit(
   generic_data_reader *reader) :
   m_reader(reader) {
@@ -163,7 +165,7 @@ void data_store_conduit::set_data_reader_ptr(generic_data_reader *reader) {
 void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_is_setup = rhs.m_is_setup;
   m_preloading = rhs.m_preloading;
-  m_preloading_is_complete = rhs.m_preloading_is_complete;
+  m_loading_is_complete = rhs.m_loading_is_complete;
   m_explicit_loading = rhs.m_explicit_loading;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
@@ -253,11 +255,16 @@ void data_store_conduit::spill_preloaded_conduit_node(int data_id, const conduit
 
 void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::Node &node) {
   // note: at this point m_data[data_id] = node
-
   {
     std::lock_guard<std::mutex> lock(m_mutex);
     ++m_my_num_indices;
-  }  
+  }
+
+  if (is_local_cache()) {
+    m_data[data_id] = node; 
+    return;
+  }
+
 
   if (m_spill) {
     spill_preloaded_conduit_node(data_id, node);
@@ -373,7 +380,8 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
 
 //n.b. Do not put any PROFILE or DEBUG statements in this method,
 //     since the threading from the data_reader will cause you grief
-const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
+const conduit::Node & data_store_conduit::get_conduit_node(int data_id) {
+//const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
   if (is_local_cache()) {
     std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
     if (t3 == m_data.end()) {
@@ -883,46 +891,33 @@ void data_store_conduit::exchange_sample_sizes() {
 
 void data_store_conduit::set_is_preloading(bool flag) {
   m_preloading = flag;
-  check_mode();
 }
-
-void data_store_conduit::check_mode() {
-  //TODO
-}
-
 
 void data_store_conduit::set_is_explicitly_loading(bool flag) {
   m_explicit_loading = flag;
-  check_mode();
 }
 
 void data_store_conduit::set_loading_is_complete() {
   set_is_preloading(false);
   set_is_explicitly_loading(false);
-  m_preloading_is_complete = true;
+  m_loading_is_complete = true;
 
-  if (options::get()->get_bool("data_store_test_cache")) {
-    test_local_cache_imagenet(20);
-  }
   if (m_run_checkpoint_test) {
     test_checkpoint(m_spill_dir_base);
   }
-
-  //TODO: exchange image sizes; other?
 }
 
-
 bool data_store_conduit::is_fully_loaded() const { 
-  if (m_preloading_is_complete && is_preloading()) {
-    LBANN_ERROR("m_preloading_is_complete() && is_preloading(); bug in code!");
+  if (m_loading_is_complete && is_preloading()) {
+    LBANN_ERROR("m_loading_is_complete() && is_preloading(); bug in code!");
   }
-  if (m_preloading_is_complete) {
+  if (m_loading_is_complete) {
     return true;
   }
   return false;
 }
 
-void data_store_conduit::get_image_sizes(std::unordered_map<int,size_t> &file_sizes, std::vector<std::vector<int>> &indices) {
+void data_store_conduit::get_image_sizes(map_is_t &file_sizes, std::vector<std::vector<int>> &indices) {
   /// this block fires if image sizes have been precomputed
   if (options::get()->has_string("image_sizes_filename")) {
     LBANN_ERROR("not yet implemented");
@@ -940,7 +935,6 @@ void data_store_conduit::get_image_sizes(std::unordered_map<int,size_t> &file_si
   // this block fires if we're exchanging cache data at the end
   // of the first epoch, and the data store was not preloaded
   if (is_explicitly_loading()) {
-std::cerr << "SHULDN'T be here 1"<<std::endl;
     for (const auto &t : m_data) {
       int data_id = t.first;
       my_image_sizes.push_back(data_id);
@@ -996,7 +990,7 @@ std::cerr << "SHULDN'T be here 1"<<std::endl;
   }
 }
 
-void data_store_conduit::compute_image_offsets(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices) {
+void data_store_conduit::compute_image_offsets(map_is_t &sizes, std::vector<std::vector<int>> &indices) {
   size_t offset = 0;
   for (size_t p=0; p<indices.size(); p++) {
     for (auto idx : indices[p]) {
@@ -1005,13 +999,13 @@ void data_store_conduit::compute_image_offsets(std::unordered_map<int,size_t> &s
       }
       size_t sz = sizes[idx];
       m_image_offsets[idx] = offset;
+//XXPROFILE("QQ compute_image_offsets; id: ", idx, " is at offset ", offset);
       offset += sz;
     }
   }
 }
 
-
-void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices) {
+void data_store_conduit::allocate_shared_segment(map_is_t &sizes, std::vector<std::vector<int>> &indices) {
   off_t size = 0;
   for (auto &&t : sizes) {
     size += t.second;
@@ -1028,9 +1022,9 @@ void data_store_conduit::allocate_shared_segment(std::unordered_map<int,size_t> 
   std::stringstream msg;
   PROFILE(
     "\nShared Memeory segment statistics:\n",
-    "  size of required shared memory segment: ", m_mem_seg_length, "\n",
-    "  available mem: ", avail_mem, "\n",
-    "  required size is ", percent, " percent of available\n");
+    " size of required shared memory segment: ", commify(m_mem_seg_length), "\n",
+    " available mem: ", avail_mem, "\n",
+    " required size is ", percent, " percent of available");
 
   if (m_mem_seg_length >= avail_mem) {
     LBANN_ERROR("insufficient available memory:\n", msg.str());
@@ -1108,44 +1102,45 @@ void data_store_conduit::exchange_local_caches() {
   PROFILE("  is_local_cache(): ", is_local_cache());
   PROFILE("  is_fully_loaded: ", is_fully_loaded());
 
-  //file_sizes maps an index to its file size
-  std::unordered_map<int,size_t> file_sizes;
-
   // indices[j] will contain the indices 
   // that P_j will read from disk, and subsequently bcast to all others
   std::vector<std::vector<int>> indices;
 
   double tm1 = get_time();
-  get_image_sizes(file_sizes, indices);
+  get_image_sizes(m_sample_sizes, indices);
   PROFILE("  get_image_sizes time: ", (get_time()-tm1));
 
   tm1 = get_time();
-  allocate_shared_segment(file_sizes, indices);
+  allocate_shared_segment(m_sample_sizes, indices);
   PROFILE("  allocate_shared_segment time: ", (get_time()-tm1));
 
   std::vector<char> work;
   if (! is_explicitly_loading()) {
     tm1 = get_time();
-    read_files(work, file_sizes, indices[m_rank_in_trainer]);
+    read_files(work, m_sample_sizes, indices[m_rank_in_trainer]);
     PROFILE("  read_files time: ", (get_time()- tm1));
   }
 
   tm1 = get_time();
-  compute_image_offsets(file_sizes, indices);
+  compute_image_offsets(m_sample_sizes, indices);
   PROFILE("  compute_image_offsets time: ", (get_time()-tm1));
 
   tm1 = get_time();
-  exchange_images(work, file_sizes, indices);
+  exchange_images(work, m_sample_sizes, indices);
   PROFILE("  exchange_images time: ", (get_time()-tm1));
 
   tm1 = get_time();
-  build_conduit_nodes(file_sizes);
+  build_conduit_nodes(m_sample_sizes);
   PROFILE("  build_conduit_nodes time: ", (get_time()-tm1));
 
   set_loading_is_complete();
+
+  if (options::get()->get_bool("data_store_test_cache")) {
+    test_local_cache_imagenet(20);
+  }
 }
 
-void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<int,size_t> &sizes, std::vector<int> &indices) {
+void data_store_conduit::read_files(std::vector<char> &work, map_is_t &sizes, std::vector<int> &indices) {
 
   //reserve space for reading this proc's files into a contiguous memory space
   size_t n = 0;
@@ -1172,33 +1167,44 @@ void data_store_conduit::read_files(std::vector<char> &work, std::unordered_map<
   }
 }
 
-void data_store_conduit::build_conduit_nodes(std::unordered_map<int,size_t> &sizes) {
-  image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
-  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
-  for (size_t idx=0; idx<image_list.size(); idx++) {
-    int label = image_list[idx].second;
-    size_t offset = m_image_offsets[idx];
-    size_t sz = sizes[idx];
-    conduit::Node &node = m_data[idx];
-    node[LBANN_DATA_ID_STR(idx) + "/label"].set(label);
-    node[LBANN_DATA_ID_STR(idx) + "/buffer_size"] = sz;
+void data_store_conduit::build_conduit_nodes(map_is_t &sizes) {
+  //image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
+  //const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
+  //for (size_t idx=0; idx<image_list.size(); idx++) {
+  for (auto t : sizes) {
+    int data_id = t.first;
+    int label = 42; // image_list[idx].second;  //TODO FIXME
+    if (m_image_offsets.find(data_id) == m_image_offsets.end()) {
+      LBANN_ERROR("m_image_offsets.find(data_id) == m_image_offsets.end() for data_id: ", data_id);
+    }
+    size_t offset = m_image_offsets[data_id];
+    if (sizes.find(data_id) == sizes.end()) {
+      LBANN_ERROR("sizes.find(data_id) == sizes.end() for data_id: ", data_id);
+    }
+    size_t sz = sizes[data_id];
+    conduit::Node &node = m_data[data_id];
+    node[LBANN_DATA_ID_STR(data_id) + "/label"].set(label);
+    node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = sz;
     char *c = m_mem_seg + offset;
-    node[LBANN_DATA_ID_STR(idx) + "/buffer"].set_external_char_ptr(c, sz);
+    node[LBANN_DATA_ID_STR(data_id) + "/buffer"].set_external_char_ptr(c, sz);
   }
 }
 
-void data_store_conduit::fillin_shared_images(const std::vector<char> &images, size_t offset) {
-  memcpy(m_mem_seg+offset, reinterpret_cast<const void*>(images.data()), images.size());
+void data_store_conduit::fillin_shared_images(char* images, size_t size, size_t offset) {
+  PROFILE("  fillin_shared_images; size: ", commify(size), " offset: ", commify(offset));
+  memcpy(reinterpret_cast<void*>(m_mem_seg+offset), reinterpret_cast<const void*>(images), size);
 }
 
-void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered_map<int,size_t> &image_sizes, std::vector<std::vector<int>> &indices) {
+void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &image_sizes, std::vector<std::vector<int>> &indices) {
 
-  // Note: if explicitly loading we need to build the vector to be broadcast;
-  //       if preloading, this has already been built in read_files()
+  // If explicitly loading we need to build "work" (the vector to be broadcast);
+  // if preloading, this has already been built in read_files()
   if (is_explicitly_loading()) {
     if (work.size() != 0) {
       LBANN_ERROR("work.size() != 0, but it should be");
     }
+
+    // Compute the required buffer size
     size_t n = 0;
     for (const auto &t : m_data) {
       int data_id = t.first;
@@ -1206,49 +1212,72 @@ void data_store_conduit::exchange_images(std::vector<char> &work, std::unordered
       n += sz;
     }
     work.resize(n);
+    PROFILE("  size required for my work buffer: ", work.size());
 
+    // Copy the images into the work vector
     size_t offset2 = 0;
     for (const auto &t : m_data) {
       int data_id = t.first;
       const conduit::Node &node = t.second;
       const char *buf = node[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
       size_t sz = node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
-      memcpy(work.data() +offset2, reinterpret_cast<const void*>(buf), sz);
+      memcpy(work.data()+offset2, reinterpret_cast<const void*>(buf), sz);
       offset2 += sz;
       if (offset2 > work.size()) {
         LBANN_ERROR("offset >= work.size(); offset: ", offset2, " work.size(): ", work.size(), " sz: ", sz);
       }
     }
   }
-  m_comm->trainer_barrier();
 
+  int node_rank = m_comm->get_rank_in_node();
   std::vector<char> work2;
   size_t offset = 0;
-  int node_rank = m_comm->get_rank_in_node();
   for (int p=0; p<m_np_in_trainer; p++) {
-    if (m_rank_in_trainer == p) {
-      m_comm->trainer_broadcast<char>(p, work.data(), work.size());
-      if (node_rank == 0) {
-        fillin_shared_images(work, offset);
-      }
-    } else {
-      size_t sz = 0;
-      for (auto idx : indices[p]) {
-        sz += image_sizes[idx];
-      }
-      work2.resize(sz);
-      m_comm->trainer_broadcast<char>(p, work2.data(), sz);
-      if (node_rank == 0) {
-        fillin_shared_images(work2, offset);
-      }
+    // Count the number of bytes to be broadcast by P_p
+    size_t bytes = 0;
+    for (auto idx : indices[p]) {
+      bytes += image_sizes[idx];
+    }
+    PROFILE("  \nP_", p, " has ", commify(bytes), " bytes to bcast");
+
+    // Set up the rounds; due to MPI yuckiness, can bcast at most INT_MAX bytes
+    // in a single broadcast
+    std::vector<int> rounds;
+    int n = bytes/INT_MAX;
+    if (n < 0) {
+      LBANN_ERROR("(n < 0; that shouldn't be possible; please contact Dave Hysom");
+    }
+    for (int k=0; k<n; k++) {
+      rounds.push_back(INT_MAX);
+    }
+    int remainder = bytes - (n*INT_MAX);
+    rounds.push_back(remainder);
+    PROFILE("  rounds: ");
+    for (auto t : rounds) {
+      PROFILE("    ", t);
     }
 
-    for (size_t r=0; r<indices[p].size(); r++) {
-      offset += image_sizes[indices[p][r]];
+    // Broadcast the rounds of data
+    int work_vector_offset = 0;
+    for (size_t i=0; i<rounds.size(); i++) {
+      int sz = rounds[i];
+      PROFILE("  bcasting ", commify(sz), " bytes");
+      if (m_rank_in_trainer == p) {
+        m_comm->trainer_broadcast<char>(p, work.data()+work_vector_offset, sz);
+        if (node_rank == 0) {
+          fillin_shared_images(work.data()+work_vector_offset, sz, offset);
+        }
+      } else {
+        work2.resize(sz);
+        m_comm->trainer_broadcast<char>(p, work2.data(), sz);
+        if (node_rank == 0) {
+          fillin_shared_images(work2.data(), sz, offset);
+        }
+      }
+      work_vector_offset += sz;
+      offset += sz;
     }
   }
-if (m_world_master) std::cerr << "XX leaving exchange_images" << std::endl;
-
   m_comm->barrier(m_comm->get_node_comm());
 }
 
@@ -1355,6 +1384,10 @@ void data_store_conduit::profile_timing() {
 }
 
 void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
+  if (is_local_cache() && is_fully_loaded()) {
+    return;
+  }
+
   if (m_reader->at_new_epoch()) {
     ++m_cur_epoch;
     PROFILE("Starting exchange_mini_batch_data");
@@ -1362,12 +1395,9 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
     PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
     PROFILE("  is_local_cache(): ", is_local_cache());
     PROFILE("  is_fully_loaded: ", is_fully_loaded());
-    profile_timing();
-  }
-
-
-  if (is_local_cache() && is_fully_loaded()) {
-    return;
+    if (! is_local_cache()) {
+      profile_timing();
+    }  
   }
 
   if (m_reader->at_new_epoch() && is_local_cache() && is_explicitly_loading()) {
@@ -1546,7 +1576,7 @@ void data_store_conduit::save_state() {
             CEREAL_NVP(m_cur_epoch), 
             CEREAL_NVP(m_is_setup),
             CEREAL_NVP(m_preloading), 
-            CEREAL_NVP(m_preloading_is_complete), 
+            CEREAL_NVP(m_loading_is_complete), 
             CEREAL_NVP(m_explicit_loading),
             CEREAL_NVP(m_owner_map_mb_size), 
             CEREAL_NVP(m_compacted_sample_size), 
@@ -1584,7 +1614,7 @@ void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_read
   cereal::XMLInputArchive iarchive(in);
   iarchive(CEREAL_NVP(m_my_num_indices),
            m_cur_epoch, m_is_setup,
-           m_preloading, m_preloading_is_complete,
+           m_preloading, m_loading_is_complete,
            m_explicit_loading, m_owner_map_mb_size,
            m_compacted_sample_size, m_is_local_cache,
            m_node_sizes_vary, m_have_sample_sizes,
@@ -1694,7 +1724,7 @@ void data_store_conduit::load_spilled_conduit_nodes() {
 
   for (const auto &v : m_indices_to_send) {
     for (const auto &id : v) {
-      std::unordered_map<int, int>::const_iterator it = m_spilled_nodes.find(id);
+      map_ii_t::const_iterator it = m_spilled_nodes.find(id);
       if (it == m_spilled_nodes.end()) {
         LBANN_ERROR("it == m_spilled_nodes.end() for sample_id: ", id, "; m_spilled_nodes.size: ", m_spilled_nodes.size());
       }
@@ -1749,51 +1779,132 @@ void data_store_conduit::set_profile_msg(std::string s) {
   PROFILE(s);
 }
 
-bool data_store_conduit::test_local_cache_imagenet(int n) {
-  if (!m_world_master) {
-    return true;
-  }
-  std::cerr<< "\nStarting data_store_conduit::test_local_cache_imagenet(" << n << ")" << std::endl;
-  PROFILE("\nStarting data_store_conduit::test_local_cache_imagenet(", n);
-  if (n < 0 || n > (int)m_shuffled_indices->size()) {
-    n = m_shuffled_indices->size();
-  }
-
+void data_store_conduit::test_imagenet_node(int index, bool dereference) {
   image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
   if (image_reader == nullptr) {
     LBANN_ERROR("data_reader_image *image_reader = dynamic_cast<data_reader_image*>(m_reader) failed");
   }
 
+  int data_id = index;
+  if (dereference) {
+    data_id = (*m_shuffled_indices)[index];
+  }
+  if (m_image_offsets.find(data_id) == m_image_offsets.end()) {
+    LBANN_ERROR("m_image_offsets.find(data_id) == m_image_offsets.end()");
+  }
+
+  if (m_image_offsets.find(data_id) == m_image_offsets.end()) {
+    LBANN_ERROR("m_image_offsets.find(data_id) == m_image_offsets.end() for data_id: ", data_id);
+  }
+
+  if (m_sample_sizes.find(data_id) == m_sample_sizes.end()) {
+    LBANN_ERROR("failed to find data_id ", data_id, " in the image_sizes map");
+  }
+  size_t szz = m_sample_sizes[data_id];
+  PROFILE("test_imagenet_node() for data_id: ", commify(data_id), " at offset: ", commify(m_image_offsets[data_id]), " image size: ", commify(szz));
+  if (m_image_offsets[data_id] >= INT_MAX) {
+    PROFILE("    WARNING: offset is >= INT_MAX!");
+  }
+
+  std::cerr << "testing sample_id: "<< commify(data_id)<< " stored at offset: "<< commify(m_image_offsets[data_id]);
+  if (m_image_offsets[data_id] >= INT_MAX) {
+    std::cerr << "; (>= INT_MAX)\n";
+  } else {
+    std::cerr << std::endl;
+  }  
+  conduit::Node nd1;
+  image_reader->load_conduit_node_from_file(data_id, nd1);
+  char *buf1 = nd1[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
+  size_t size1 = nd1[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
+
+  const conduit::Node &nd2 = get_conduit_node(data_id);
+  const char *buf2 = nd2[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
+  size_t size2 = nd2[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
+
+  if (size1 != size2) {
+    PROFILE("buffer sizes mismatch: size of buffer read from file does not match buffer size from cache; from file: ", size1, " from cache: ", size2, " for data_id: ", data_id);
+
+
+
+    if (m_world_master) {
+      const conduit::Schema &s = nd2.schema();
+      s.print();
+      nd2.print();
+    }  
+
+
+
+    LBANN_ERROR("buffer sizes mismatch: size of buffer read from file does not match buffer size from cache; from file: ", size1, " from cache: ", size2, " for deta_id: ", data_id);
+  }
+  for (size_t i=0; i<size1; i++) {
+    if (buf1[i] != buf2[i]) {
+      PROFILE("buffer mismatch for char #", i+1, " of ", size1, "; image buffer read from file does not match buffer from conduit node");
+      LBANN_ERROR("buffer mismatch for char #", i+1, " of ", size1, "; image buffer read from file does not match buffer from conduit node");
+    }
+  }
+  PROFILE("    PASSED!");
+}
+
+
+bool data_store_conduit::test_local_cache_imagenet(int n) {
+  if (!m_world_master) {
+    return true;
+  }
+  PROFILE("\nStarting data_store_conduit::test_local_cache_imagenet(", n, ")");
+  if (n < 0 || n > (int)m_shuffled_indices->size()) {
+    n = m_shuffled_indices->size();
+  }
+
+  // edge cases: get images with smallest and largest offsets in the cache
+  size_t max_offset = 0;
+  size_t min_offset = 200000000;
+  size_t id_max = 0;
+  size_t id_min = 0;
+  for (auto t :  m_image_offsets) {
+    if (t.second > max_offset) {
+      id_max = t.first;
+      max_offset = t.second;
+    }
+    if (t.second < min_offset) {
+      id_min = t.first;
+      min_offset = t.second;
+    }
+  }
+
+  // test image with smallest offset
+  test_imagenet_node(id_min, false);
+
+  // test n randomly selected images
   for (int h=0; h<n; ++h) {
     const int index = random() % m_shuffled_indices->size();
-    PROFILE("  testing sample_id: ", index);
-    int data_id = (*m_shuffled_indices)[index];
-    std::cerr << "  testing index: " << index << " sample_id: "<< data_id << std::endl;
-
-    conduit::Node nd1;
-    image_reader->load_conduit_node_from_file(data_id, nd1);
-    char *buf1 = nd1[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
-    size_t size1 = nd1[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
-
-    const conduit::Node &nd2 = get_conduit_node(data_id);
-    const char *buf2 = nd2[LBANN_DATA_ID_STR(data_id) + "/buffer"].value();
-    size_t size2 = nd2[LBANN_DATA_ID_STR(data_id) + "/buffer_size"].value();
-
-    if (size1 != size2) {
-      LBANN_ERROR("buffer sizes mismatch for test #", h+1, " of ", n);
-    }
-    for (size_t i=0; i<size1; i++) {
-      if (buf1[i] != buf2[i]) {
-        LBANN_ERROR("buffer mismatch for char #", h+1, " of ", size1);
-      }
-    }
-
+    test_imagenet_node(index);
   }
-  std::cerr<< "  All tests passed\n";
+
+  // test image with largest offset
+  test_imagenet_node(id_max, false);
+
+  if (m_world_master) std::cerr<< "  All tests passed\n";
   PROFILE("  All tests passed\n.");
   return true;
 }
 
-
+std::string commify(size_t n) {
+  std::string s = std::to_string(n);
+  std::stringstream s2;
+  int c = 0;
+  for (int j = (int)s.size()-1; j>=0; j--) {
+    s2 << s[j];
+    ++c;
+    if (c == 3) {
+      if (j > 0) {
+        s2 << ",";
+        c = 0;
+      }
+    }
+  }
+  std::string r = s2.str();
+  std::reverse(r.begin(), r.end());
+  return r;
+}
 
 }  // namespace lbann
