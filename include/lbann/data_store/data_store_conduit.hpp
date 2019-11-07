@@ -89,7 +89,7 @@ class data_store_conduit {
   // TODO FIXME
   void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
 
-  /// returns the conduit node
+  /** @brief Returns the conduit Node associated with the data_id */
   const conduit::Node & get_conduit_node(int data_id);
   //const conduit::Node & get_conduit_node(int data_id) const;
 
@@ -98,6 +98,7 @@ class data_store_conduit {
   void set_conduit_node(int data_id, conduit::Node &node, bool already_have = false);
 
   void set_preloaded_conduit_node(int data_id, const conduit::Node &node);
+
   void spill_preloaded_conduit_node(int data_id, const conduit::Node &node);
 
   const conduit::Node & get_random_node() const;
@@ -110,17 +111,11 @@ class data_store_conduit {
   //=================================================================
   // methods for setting and querying the data store's mode
   //=================================================================
-  /** @brief Turn preloading on or off */ 
-  void set_is_preloading(bool flag);
-
   /** @brief Returns true if preloading is turned on 
    *
    * See notes in: is_explicitly_loading()
    */
   bool is_preloading() const { return m_preloading; }
-
-  /** @brief Turn on explicit loading */ 
-  void set_is_explicitly_loading(bool flag);
 
   /** @brief Returns true if explicitly loading is turned on 
    *
@@ -132,6 +127,28 @@ class data_store_conduit {
    * be set to false when all loading is complete.
    */
   bool is_explicitly_loading() const { return m_explicit_loading; }
+
+  /** @brief Returns true if all loading has been completed 
+   *
+   * See notes in: set_loading_is_complete()
+   */
+  bool is_fully_loaded() const;
+
+  /** @brief Returns "true" is running in local cache mode
+   *
+   * In local cache mode, each node contains a complete copy
+   * of the data set. This is stored in a shared memory segment,
+   * but part of the set may be spilled to disk if memory is
+   * insufficient. Local cache mode is activated via the cmd line
+   * flag: --data_store_cache
+   */ 
+  bool is_local_cache() const { return m_is_local_cache; }
+
+  /** @brief Turn preloading on or off */ 
+  void set_is_preloading(bool flag);
+
+  /** @brief Turn on explicit loading */ 
+  void set_is_explicitly_loading(bool flag);
 
   /** @brief Marks the data_store as fully loaded
    *
@@ -146,25 +163,12 @@ class data_store_conduit {
    */
   void set_loading_is_complete(); 
 
-  /** @brief Returns true if all loading has been completed 
-   *
-   * See notes in: set_loading_is_complete()
-   */
-  bool is_fully_loaded() const;
-
 
   /** @brief turns local cache mode on of off */
   void set_is_local_cache(bool flag) { m_is_local_cache = flag; }
 
-  /** @brief Returns "true" is running in local cache mode
-   *
-   * In local cache mode, each node contains a complete copy
-   * of the data set. This is stored in a shared memory segment,
-   * but part of the set may be spilled to disk if memory is
-   * insufficient. Local cache mode is activated via the cmd line
-   * flag: --data_store_cache
-   */ 
-  bool is_local_cache() const { return m_is_local_cache; }
+  /** @brief Check that explicit loading, preloading, and fully loaded flags are consistent */
+  void check_query_flags() const;
    
   //=================================================================
   // END methods for setting and querying the data store's mode

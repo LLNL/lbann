@@ -97,6 +97,8 @@ data_store_conduit::data_store_conduit(
   } else {
     PROFILE("data_store_conduit is preloading");
   }
+
+  check_query_flags();
 }
 
 data_store_conduit::~data_store_conduit() {
@@ -891,16 +893,22 @@ void data_store_conduit::exchange_sample_sizes() {
 
 void data_store_conduit::set_is_preloading(bool flag) {
   m_preloading = flag;
+  check_query_flags();
 }
 
 void data_store_conduit::set_is_explicitly_loading(bool flag) {
   m_explicit_loading = flag;
+  if (is_preloading() && is_explicitly_loading()) {
+    LBANN_ERROR("flags for both explicit and pre- loading are set; this is an error");
+  }
+  check_query_flags();
 }
 
 void data_store_conduit::set_loading_is_complete() {
+  m_loading_is_complete = true;
   set_is_preloading(false);
   set_is_explicitly_loading(false);
-  m_loading_is_complete = true;
+  check_query_flags();
 
   if (m_run_checkpoint_test) {
     test_checkpoint(m_spill_dir_base);
@@ -908,9 +916,7 @@ void data_store_conduit::set_loading_is_complete() {
 }
 
 bool data_store_conduit::is_fully_loaded() const { 
-  if (m_loading_is_complete && is_preloading()) {
-    LBANN_ERROR("m_loading_is_complete() && is_preloading(); bug in code!");
-  }
+  check_query_flags();
   if (m_loading_is_complete) {
     return true;
   }
@@ -1021,10 +1027,10 @@ void data_store_conduit::allocate_shared_segment(map_is_t &sizes, std::vector<st
   double percent = 100.0 * m_mem_seg_length / avail_mem;
   std::stringstream msg;
   PROFILE(
-    "\nShared Memeory segment statistics:\n",
-    " size of required shared memory segment: ", commify(m_mem_seg_length), "\n",
-    " available mem: ", avail_mem, "\n",
-    " required size is ", percent, " percent of available");
+    "  Shared Memory segment statistics:\n",
+    "   size of required shared memory segment: ", commify(m_mem_seg_length), "\n",
+    "   available mem: ", commify(avail_mem), "\n",
+    "   required size is ", percent, " percent of available");
 
   if (m_mem_seg_length >= avail_mem) {
     LBANN_ERROR("insufficient available memory:\n", msg.str());
@@ -1238,7 +1244,7 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
     for (auto idx : indices[p]) {
       bytes += image_sizes[idx];
     }
-    PROFILE("  \nP_", p, " has ", commify(bytes), " bytes to bcast");
+    //PROFILE("  \nP_", p, " has ", commify(bytes), " bytes to bcast");
 
     // Set up the rounds; due to MPI yuckiness, can bcast at most INT_MAX bytes
     // in a single broadcast
@@ -1252,16 +1258,19 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
     }
     int remainder = bytes - (n*INT_MAX);
     rounds.push_back(remainder);
+
+    /*
     PROFILE("  rounds: ");
     for (auto t : rounds) {
       PROFILE("    ", t);
     }
+    */
 
     // Broadcast the rounds of data
     int work_vector_offset = 0;
     for (size_t i=0; i<rounds.size(); i++) {
       int sz = rounds[i];
-      PROFILE("  bcasting ", commify(sz), " bytes");
+      //PROFILE("  bcasting ", commify(sz), " bytes");
       if (m_rank_in_trainer == p) {
         m_comm->trainer_broadcast<char>(p, work.data()+work_vector_offset, sz);
         if (node_rank == 0) {
@@ -1905,6 +1914,18 @@ std::string commify(size_t n) {
   std::string r = s2.str();
   std::reverse(r.begin(), r.end());
   return r;
+}
+
+void data_store_conduit::check_query_flags() const {
+  if (is_explicitly_loading() && is_preloading()) {
+    LBANN_ERROR("is_explicitly_loading() && is_preloading() are both true, but should not be");
+  }
+  if (is_fully_loaded() && is_explicitly_loading()) {
+    LBANN_ERROR("is_fully_loaded() && is_explicitly_loading() are both true, but should not be");
+  }
+  if (is_fully_loaded() && is_preloading()) {
+    LBANN_ERROR("is_fully_loaded() && is_preloading() are both true, but should not be");
+  }
 }
 
 }  // namespace lbann
