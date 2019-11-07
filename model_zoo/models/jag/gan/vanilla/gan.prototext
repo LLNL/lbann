@@ -1,7 +1,7 @@
 trainer {
+  random_init_trainers_identically: false
 }
 model {
-  random_init_models_differently: true
   objective_function {
     l2_weight_regularization {
       scale_factor: 0.0001
