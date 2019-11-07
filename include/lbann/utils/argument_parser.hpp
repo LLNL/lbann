@@ -47,34 +47,76 @@ namespace utils
 {
 
 /** @class argument_parser
- *  @brief A decorator class over Clara
+ *  @brief Basic argument parsing with automatic help messages.
+ *
+ *  @section arg_parser_params Supported parameter types
  *
  *  The argument parser supports 3 types of command line parameters:
+ *  flags, options, and arguments.
  *
- *  1. Flags. Flags default to "false" and toggle to "true" when they
- *     are given on the command line. It is an error to provide a
- *     value to a flag on the command line (e.g., "-flag 0").
- *  2. Options. Options represent key-value pairs. They must take only
- *     a single value (e.g. "-key value"). It is an error to omit a
- *     value for a parameter of option type.
- *  3. Arguments. Arguments (or "positional arguments") do not name a
- *     key and are implicitly keyed by their index in the argument
- *     list. A corollary to this is that required arguments must
- *     appear before optional arguments. Arguments are keyed in the
- *     order in which they are added.
+ *  @subsection arg_parser_flags Flags
+ *
+ *  Flags default to "false" and toggle to "true" when they are given
+ *  on the command line. It is an error to provide a value to a flag
+ *  on the command line (e.g., "-flag 0"). If a flag called "-v" is
+ *  tied to a variable called `verbose`, `verbose` will have default
+ *  value `false`. Passing "-v" on the command line, `a.out -v`, will
+ *  result in `verbose` having post-parse value `true`.
+ *
+ *  @subsection arg_parser_options Options
+ *
+ *  Options represent key-value pairs. They must take only a single
+ *  value (e.g. `a.out -key value`). It is an error to omit a value
+ *  for a parameter of option type (e.g., `a.out -key`). Options are
+ *  strongly typed to match their default values. The string passed on
+ *  the command line must be convertible to the type of the default
+ *  value provided by the developer programmatically.
+ *
+ *  @subsection arg_parser_arguments Arguments
+ *
+ *  Arguments (or "positional arguments") do not name a key on the
+ *  command line and are implicitly keyed by their index in the
+ *  argument list. A corollary to this is that required arguments must
+ *  appear before optional arguments. Arguments with each category
+ *  ("required" and "optional") are keyed in the order in which they
+ *  are added.
+ *
+ *  On command line, "optional" arguments are ordered after the
+ *  "required" arguments, in the order in which they are added. For
+ *  example, adding an (optional) argument called "A", then adding
+ *  a required argument called "B", then adding an (optioinal)
+ *  argument called "C" will require that these arguments be passed
+ *  as `a.out B A C`. Since "A" and "C" are optional, it is also
+ *  valid to pass `a.out B` or `a.out B A`. It is undefined
+ *  behavior to pass `a.out B C`.
+ *
+ *  Erroneously passing `a.out B C` might be accepted by the parser
+ *  if "A" and "C" have the same (or sufficiently compatible)
+ *  types, but the output will not be as unexpected (the variable
+ *  bound to "A" will have the value expected in "C", and the
+ *  variable bound to "C" will have its default value). If "A" and
+ *  "C" are not compatible types, an exception will be thrown. In
+ *  the first case, the parser cannot read your mind to know if you
+ *  passed things in the right order; it is the application
+ *  developer's responsibility to ensure that all arguments have
+ *  been added before the help message is printed, and it is the
+ *  user's responsibility to consult the help message for the
+ *  runtime ordering of arguments.
+ *
+ *  @section arg_parser_finalize Finalization
  *
  *  To accomodate the presence of required arguments with the
  *  maintenance-intensive practice of adding arguments willy-nilly
- *  (because I don't believe a PR without said terrifying capability
- *  would ever make it through), parsing of the arguments can be done
- *  two ways: with or without finalization.
+ *  (because I don't believe a PR without said terrifying
+ *  capability would ever make it through), parsing of the
+ *  arguments can be done two ways: with or without finalization.
  *
- *  If there are no required arguments registered in the parser, these
- *  should be equivalent. If there are required arguments, they must
- *  all have been registered with the parser and seen in the arguments
- *  given to the parse functions before finalization. Semantically,
- *  the parser must be finalized before attempting to use any of the
- *  arguments.
+ *  If there are no required arguments registered in the parser,
+ *  these should be equivalent. If there are required arguments,
+ *  they must all have been registered with the parser and seen in
+ *  the arguments given to the parse functions before
+ *  finalization. Semantically, the parser must be finalized before
+ *  attempting to use any of the required arguments.
  */
 class argument_parser
 {
@@ -179,6 +221,9 @@ public:
    *             this flag to `true`. At least one must be given.
    *  @param[in] description A brief description of the argument,
    *             used for the help message.
+   *
+   *  @return A read-only reference to the value pointed to by this
+   *          flag.
    */
   readonly_reference<bool>
   add_flag(std::string const& name,
@@ -202,6 +247,9 @@ public:
    *             default parameter value.
    *  @param[in] description A brief description of the argument,
    *             used for the help message.
+   *
+   *  @return A read-only reference to the value pointed to by this
+   *          flag.
    */
   template <typename AccessPolicy>
   readonly_reference<bool>
@@ -234,6 +282,9 @@ public:
    *             used for the help message.
    *  @param[in] default_value The default value to be returned if
    *             the option is not passed to the command line.
+   *
+   *  @return A read-only reference to the value pointed to by this
+   *          option.
    */
   template <typename T>
   readonly_reference<T>
@@ -264,6 +315,9 @@ public:
    *             used for the help message.
    *  @param[in] default_value The default value to be returned if
    *             the option is not passed to the command line.
+   *
+   *  @return A read-only reference to the value pointed to by this
+   *          option.
    */
   template <typename T, typename AccessPolicy>
   readonly_reference<T>
@@ -294,6 +348,9 @@ public:
    *             used for the help message.
    *  @param[in] default_value The default value to be returned if
    *             the option is not passed to the command line.
+   *
+   *  @return A read-only reference to the value pointed to by this
+   *          option.
    */
   readonly_reference<std::string>
   add_option(std::string const& name,
@@ -320,6 +377,9 @@ public:
    *             used for the help message.
    *  @param[in] default_value The default value to be returned if
    *             the option is not passed to the command line.
+   *
+   *  @return A read-only reference to the value pointed to by this
+   *          option.
    */
   template <typename AccessPolicy>
   readonly_reference<std::string>
@@ -335,6 +395,12 @@ public:
 
   /** @brief Add an optional positional argument.
    *
+   *  These are essentially defaulted positional arguments. They must
+   *  be given on the command line in the order in which they are
+   *  added to the parser. If the arguments have all been added by the
+   *  time the help message is produced, the help message will display
+   *  the correct ordering.
+   *
    *  @tparam T The type to which the argument maps.
    *
    *  @param[in] name The name to be used to refer to the argument.
@@ -343,10 +409,8 @@ public:
    *  @param[in] default_value The value to use for this argument if
    *             not detected in the formal argument list.
    *
-   *  @return The index of the positional argument at the time it is
-   *          added. Required arguments get ordered before optional
-   *          arguments, so this number might change if required
-   *          arguments are added after this argument.
+   *  @return A read-only reference to the value pointed to by this
+   *          argument.
    */
   template <typename T>
   readonly_reference<T> add_argument(
@@ -365,7 +429,8 @@ public:
    *  @param[in] default_value The value to use for this argument if
    *             not detected in the formal argument list.
    *
-   *  @return The index of the positional argument
+   *  @return A read-only reference to the value pointed to by this
+   *          argument.
    */
   readonly_reference<std::string> add_argument(
     std::string const& name,
@@ -384,9 +449,8 @@ public:
    *  @param[in] description A brief description of the argument,
    *             used for the help message.
    *
-   *  @return The index of the positional argument. Required
-   *          arguments will be ordered before non-required
-   *          arguments, so this will never change.
+   *  @return A read-only reference to the value pointed to by this
+   *          argument.
    */
   template <typename T>
   readonly_reference<T> add_required_argument(
