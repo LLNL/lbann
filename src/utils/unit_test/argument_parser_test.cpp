@@ -237,7 +237,7 @@ SCENARIO ("Testing the argument parser", "[parser][utilities]")
       }
     }
 
-    WHEN ("A required argument is added")
+    WHEN ("An optional argument is added")
     {
       auto optional_int =
         parser.add_argument(
