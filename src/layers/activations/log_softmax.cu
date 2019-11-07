@@ -292,7 +292,7 @@ template <typename TensorDataType>
 void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
 
   // Local matrices
-  const auto& local_input = l.get_local_prev_activations();
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
   auto& local_workspace = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.m_workspace->Matrix());
   const auto& local_height = local_input.Height();

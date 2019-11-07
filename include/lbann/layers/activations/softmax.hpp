@@ -130,11 +130,11 @@ private:
 #endif // LBANN_HAS_CUDNN
 
 // Minimum output value to avoid denormalized floats
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-  const TensorDataType min_output = std::sqrt(std::numeric_limits<TensorDataType>::min());
+#ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
+  const TensorDataType threshold_val = std::sqrt(std::numeric_limits<TensorDataType>::min());
 #else
-  const TensorDataType min_output = 0;
-#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
+  const TensorDataType threshold_val = 0;
+#endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 
 };

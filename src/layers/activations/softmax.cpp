@@ -31,17 +31,12 @@ namespace lbann {
 
 namespace {
 
-#ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-/** Minimum output value to avoid denormalized floats */
-const TensorDataType threshold_val = std::sqrt(std::numeric_limits<TensorDataType>::min());
-#endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
-
 template <typename TensorDataType>
 void fp(lbann_comm& comm,
         const El::AbstractDistMatrix<TensorDataType>& input,
         El::AbstractDistMatrix<TensorDataType>& output,
         El::AbstractDistMatrix<TensorDataType>& workspace,
-        TensorDataType min_output) {
+        TensorDataType threshold_val) {
 
   // Local matrices
   const auto& local_input = input.LockedMatrix();
@@ -101,7 +96,7 @@ void bp(lbann_comm& comm,
         const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
         El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
         El::AbstractDistMatrix<TensorDataType>& workspace,
-        TensorDataType min_output) {
+        TensorDataType threshold_val) {
 
   // Local matrices
   const auto& local_output = output.LockedMatrix();
@@ -146,7 +141,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
                      l.get_prev_activations(),
                      l.get_activations(),
                      *l.m_workspace,
-                     l.min_output);
+                     l.threshold_val);
 }
 template <typename TensorDataType>
 void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
@@ -155,7 +150,7 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
                      l.get_prev_error_signals(),
                      l.get_error_signals(),
                      *l.m_workspace,
-                     l.min_output);
+                     l.threshold_val);
 }
 template <typename TensorDataType>
 void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
@@ -163,7 +158,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
                      l.get_prev_activations(),
                      l.get_activations(),
                      *l.m_workspace,
-                     l.min_output);
+                     l.threshold_val);
 }
 template <typename TensorDataType>
 void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
@@ -172,7 +167,7 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
                      l.get_prev_error_signals(),
                      l.get_error_signals(),
                      *l.m_workspace,
-                     l.min_output);
+                     l.threshold_val);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
