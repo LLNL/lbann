@@ -71,11 +71,11 @@ public:
 
     // Check that input dimensions match
     if (this->get_input_dims(0) != this->get_input_dims(1)) {
-      const auto& parents = get_parent_layers();
+      const auto& parents = this->get_parent_layers();
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has input tensors with different dimensions (";
-      for (int i = 0; i < get_num_parents(); ++i) {
+      for (int i = 0; i < this->get_num_parents(); ++i) {
         const auto& dims = this->get_input_dims(i);
         err << (i > 0 ? ", " : "")
             << "layer \"" << parents[i]->get_name() << "\" outputs ";
@@ -94,7 +94,7 @@ public:
 
     // Initialize workspace
     const auto& prediction = this->get_prev_activations(0);
-    switch (get_data_layout()) {
+    switch (this->get_data_layout()) {
     case data_layout::DATA_PARALLEL:
       m_workspace.reset(new StarVCMat<Dev>(prediction.Grid(),
                                            prediction.Root()));
@@ -122,10 +122,8 @@ public:
 
     // Compute local contributions and accumulate
     /// @todo Consider reduce rather than allreduce
-    local_fp_compute(get_local_prev_activations(0),
-                     get_local_prev_activations(1),
-                     m_workspace->Matrix());
-    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
+    local_fp_compute();
+    this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
     El::Copy(*m_workspace, this->get_activations());
 
   }
@@ -135,29 +133,24 @@ public:
     // Initialize workspace
     const auto& prediction = this->get_prev_activations(0);
     m_workspace->AlignWith(prediction.DistData());
-    El::Copy(get_prev_error_signals(), *m_workspace);
+    El::Copy(this->get_prev_error_signals(), *m_workspace);
 
     // Compute local gradients
-    local_bp_compute(get_local_prev_activations(0),
-                     get_local_prev_activations(1),
-                     m_workspace->LockedMatrix(),
-                     get_local_error_signals(0),
-                     get_local_error_signals(1));
+    local_bp_compute();
 
   }
 
 private:
 
   /** Compute local contributions to cross entropy loss. */
-  static void local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
-                               const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                               El::AbstractMatrix<TensorDataType>& local_contribution);
+  void local_fp_compute();
   /** Compute local gradients. */
-  static void local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
-                               const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                               const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                               El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
-                               El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth);
+  void local_bp_compute();
+
+  template <typename U>
+  friend void local_fp_compute_impl(cross_entropy_layer<U, T_layout, Dev>& l);
+  template <typename U>
+  friend void local_bp_compute_impl(cross_entropy_layer<U, T_layout, Dev>& l);
 
   /** Workspace matrix. */
   std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;

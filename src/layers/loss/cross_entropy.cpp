@@ -32,6 +32,7 @@ namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
                   const El::AbstractMatrix<TensorDataType>& local_ground_truth,
                   El::AbstractMatrix<TensorDataType>& local_contribution) {
@@ -60,6 +61,7 @@ void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
 
 }
 
+template <typename TensorDataType>
 void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
                   const El::AbstractMatrix<TensorDataType>& local_ground_truth,
                   const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
@@ -89,53 +91,51 @@ void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
 
 } // namespace
 
-template <>
-void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
-                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                        El::AbstractMatrix<TensorDataType>& local_contribution) {
-  local_fp_cpu(local_prediction, local_ground_truth, local_contribution);
+template <typename TensorDataType>
+void local_fp_compute_impl(cross_entropy_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_fp_cpu(l.get_local_prev_activations(0),
+               l.get_local_prev_activations(1),
+               l.m_workspace->Matrix());
 }
 
-template <>
-void cross_entropy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
-                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
-  local_bp_cpu(local_prediction,
-               local_ground_truth,
-               local_gradient_wrt_output,
-               local_gradient_wrt_prediction,
-               local_gradient_wrt_ground_truth);
+template <typename TensorDataType>
+void local_bp_compute_impl(cross_entropy_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_bp_cpu(l.get_local_prev_activations(0),
+               l.get_local_prev_activations(1),
+               l.m_workspace->LockedMatrix(),
+               l.get_local_error_signals(0),
+               l.get_local_error_signals(1));
 }
 
-template <>
-void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
-                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                        El::AbstractMatrix<TensorDataType>& local_contribution) {
-  local_fp_cpu(local_prediction, local_ground_truth, local_contribution);
+template <typename TensorDataType>
+void local_fp_compute_impl(cross_entropy_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_fp_cpu(l.get_local_prev_activations(0),
+               l.get_local_prev_activations(1),
+               l.m_workspace->Matrix());
 }
 
-template <>
-void cross_entropy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_prediction,
-                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
-  local_bp_cpu(local_prediction,
-               local_ground_truth,
-               local_gradient_wrt_output,
-               local_gradient_wrt_prediction,
-               local_gradient_wrt_ground_truth);
+template <typename TensorDataType>
+void local_bp_compute_impl(cross_entropy_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_bp_cpu(l.get_local_prev_activations(0),
+               l.get_local_prev_activations(1),
+               l.m_workspace->LockedMatrix(),
+               l.get_local_error_signals(0),
+               l.get_local_error_signals(1));
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+  local_fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+  local_bp_compute_impl<TensorDataType>(*this);
 }
 
 template class cross_entropy_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class cross_entropy_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann
