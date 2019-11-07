@@ -1917,13 +1917,13 @@ std::string commify(size_t n) {
 }
 
 void data_store_conduit::check_query_flags() const {
-  if (is_explicitly_loading() && is_preloading()) {
+  if (m_explicit_loading && m_preloading) {
     LBANN_ERROR("is_explicitly_loading() && is_preloading() are both true, but should not be");
   }
-  if (is_fully_loaded() && is_explicitly_loading()) {
+  if (m_loading_is_complete && m_explicit_loading) {
     LBANN_ERROR("is_fully_loaded() && is_explicitly_loading() are both true, but should not be");
   }
-  if (is_fully_loaded() && is_preloading()) {
+  if (m_loading_is_complete && m_preloading) {
     LBANN_ERROR("is_fully_loaded() && is_preloading() are both true, but should not be");
   }
 }
