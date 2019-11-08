@@ -31,6 +31,7 @@ namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 void local_fp_cpu(El::Int height,
                   const El::AbstractMatrix<TensorDataType>& local_prediction,
                   const El::AbstractMatrix<TensorDataType>& local_ground_truth,
@@ -53,6 +54,7 @@ void local_fp_cpu(El::Int height,
 
 }
 
+template <typename TensorDataType>
 void local_bp_cpu(El::Int height,
                   const El::AbstractMatrix<TensorDataType>& local_prediction,
                   const El::AbstractMatrix<TensorDataType>& local_ground_truth,
@@ -91,61 +93,55 @@ void local_bp_cpu(El::Int height,
 
 } // namespace
 
-template <>
-void mean_absolute_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(El::Int height,
-                        const El::AbstractMatrix<TensorDataType>& local_prediction,
-                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                        El::AbstractMatrix<TensorDataType>& local_contribution) {
-  local_fp_cpu(height, local_prediction, local_ground_truth,
-               local_contribution);
+template <typename TensorDataType>
+void local_fp_compute_impl(mean_absolute_error_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_fp_cpu<TensorDataType>(l.get_input_size(),
+                               l.get_local_prev_activations(0),
+                               l.get_local_prev_activations(1),
+                               l.m_workspace->Matrix());
 }
 
-template <>
-void mean_absolute_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(El::Int height,
-                        const El::AbstractMatrix<TensorDataType>& local_prediction,
-                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
-  local_bp_cpu(height,
-               local_prediction,
-               local_ground_truth,
-               local_gradient_wrt_output,
-               local_gradient_wrt_prediction,
-               local_gradient_wrt_ground_truth);
+template <typename TensorDataType>
+void local_bp_compute_impl(mean_absolute_error_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_bp_cpu<TensorDataType>(l.get_input_size(),
+                               l.get_local_prev_activations(0),
+                               l.get_local_prev_activations(1),
+                               l.m_workspace->LockedMatrix(),
+                               l.get_local_error_signals(0),
+                               l.get_local_error_signals(1));
 }
 
-template <>
-void mean_absolute_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(El::Int height,
-                        const El::AbstractMatrix<TensorDataType>& local_prediction,
-                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                        El::AbstractMatrix<TensorDataType>& local_contribution) {
-  local_fp_cpu(height, local_prediction, local_ground_truth,
-               local_contribution);
+template <typename TensorDataType>
+void local_fp_compute_impl(mean_absolute_error_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_fp_cpu<TensorDataType>(l.get_input_size(),
+                               l.get_local_prev_activations(0),
+                               l.get_local_prev_activations(1),
+                               l.m_workspace->Matrix());
 }
 
-template <>
-void mean_absolute_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(El::Int height,
-                        const El::AbstractMatrix<TensorDataType>& local_prediction,
-                        const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
-  local_bp_cpu(height,
-               local_prediction,
-               local_ground_truth,
-               local_gradient_wrt_output,
-               local_gradient_wrt_prediction,
-               local_gradient_wrt_ground_truth);
+template <typename TensorDataType>
+void local_bp_compute_impl(mean_absolute_error_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_bp_cpu<TensorDataType>(l.get_input_size(),
+                               l.get_local_prev_activations(0),
+                               l.get_local_prev_activations(1),
+                               l.m_workspace->LockedMatrix(),
+                               l.get_local_error_signals(0),
+                               l.get_local_error_signals(1));
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void mean_absolute_error_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+  local_fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void mean_absolute_error_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+  local_bp_compute_impl<TensorDataType>(*this);
 }
 
 template class mean_absolute_error_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class mean_absolute_error_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

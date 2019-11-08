@@ -73,11 +73,11 @@ public:
 
     // Check that input dimensions match
     if (this->get_input_dims(0) != this->get_input_dims(1)) {
-      const auto& parents = get_parent_layers();
+      const auto& parents = this->get_parent_layers();
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has input tensors with different dimensions (";
-      for (int i = 0; i < get_num_parents(); ++i) {
+      for (int i = 0; i < this->get_num_parents(); ++i) {
         const auto& dims = this->get_input_dims(i);
         err << (i > 0 ? ", " : "")
             << "layer \"" << parents[i]->get_name() << "\" outputs ";
@@ -116,16 +116,13 @@ public:
 
     // Initialize workspace
     m_workspace->Empty();
-    m_workspace->AlignWith(get_prev_activations());
+    m_workspace->AlignWith(this->get_prev_activations());
     m_workspace->Resize(1, this->get_prev_activations().Width());
 
     // Compute local contributions and accumulate
     /// @todo Consider reduce rather than allreduce
-    local_fp_compute(this->get_input_size(),
-                     get_local_prev_activations(0),
-                     get_local_prev_activations(1),
-                     m_workspace->Matrix());
-    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
+    local_fp_compute();
+    this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
     El::Copy(*m_workspace, this->get_activations());
 
     // Clean up
@@ -137,16 +134,11 @@ public:
 
     // Initialize workspace
     m_workspace->Empty();
-    m_workspace->AlignWith(get_prev_activations());
-    El::Copy(get_prev_error_signals(), *m_workspace);
+    m_workspace->AlignWith(this->get_prev_activations());
+    El::Copy(this->get_prev_error_signals(), *m_workspace);
 
     // Compute local gradients
-    local_bp_compute(this->get_input_size(),
-                     get_local_prev_activations(0),
-                     get_local_prev_activations(1),
-                     m_workspace->LockedMatrix(),
-                     get_local_error_signals(0),
-                     get_local_error_signals(1));
+    local_bp_compute();
 
     // Clean up
     m_workspace->Empty();
@@ -156,17 +148,14 @@ public:
 private:
 
   /** Compute local contributions to mean absolute error loss. */
-  static void local_fp_compute(El::Int height,
-                               const El::AbstractMatrix<TensorDataType>& local_prediction,
-                               const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                               El::AbstractMatrix<TensorDataType>& local_contribution);
+  void local_fp_compute();
   /** Compute local gradients. */
-  static void local_bp_compute(El::Int height,
-                               const El::AbstractMatrix<TensorDataType>& local_prediction,
-                               const El::AbstractMatrix<TensorDataType>& local_ground_truth,
-                               const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                               El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
-                               El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth);
+  void local_bp_compute();
+
+  template <typename U>
+  friend void local_fp_compute_impl(mean_absolute_error_layer<U, T_layout, Dev>& l);
+  template <typename U>
+  friend void local_bp_compute_impl(mean_absolute_error_layer<U, T_layout, Dev>& l);
 
   /** Workspace matrix. */
   std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;
@@ -175,14 +164,14 @@ private:
 
 #ifndef LBANN_MEAN_ABSOLUTE_ERROR_LAYER_INSTANTIATE
 extern template class mean_absolute_error_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class mean_absolute_error_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class mean_absolute_error_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class mean_absolute_error_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_MEAN_ABSOLUTE_ERROR_LAYER_INSTANTIATE
 
