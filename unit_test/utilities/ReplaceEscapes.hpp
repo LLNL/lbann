@@ -11,18 +11,33 @@ namespace unit_test
 namespace utilities
 {
 
+//
+// NOTE TO C++ READERS: The following documentation will appear WRONG
+// to you, but it is not! DO NOT CHANGE THE PATTERN/REPLACEMENT TABLE!
+// There are many extra percent signs, but these are necessary for the
+// markdown to render the HTML correctly! For your benefit, the valid
+// sequences are:
+//
+// %% -- A literal percent sign
+// %h -- The hostname of the current process
+// %p -- The PID of the current process
+// %r -- the MPI rank of the current process, if available, or 0
+// %r -- the MPI size of the current job, if available, or 1
+// %env{NAME} -- The value of ${NAME} in the current environment
+//
+
 /** @brief Substitute basic escape sequences in a string.
  *
  *  The following patterns are supported:
  *
- *  Pattern        | Replacement
- *  -------------- | -----------
- *  %%             | A literal percent sign ("%")
- *  %h             | The hostname of the current process
- *  %p             | The PID of the current process
- *  %r             | The MPI rank of the current process, if available, or 0
- *  %s             | The MPI size of the current job, if available, or 1
- *  %env{\<NAME\>} | The value of ${NAME} in the current environment
+ *  Pattern         | Replacement
+ *  --------------- | -----------
+ *  %%              | A literal percent sign ("%")
+ *  %%h             | The hostname of the current process
+ *  %%p             | The PID of the current process
+ *  %%r             | The MPI rank of the current process, if available, or 0
+ *  %%s             | The MPI size of the current job, if available, or 1
+ *  %%env{\<NAME\>} | The value of ${NAME} in the current environment
  *
  *  The MPI runtime is queried if available for MPI information. After
  *  that, environment variables are checked for common libraries
@@ -31,11 +46,11 @@ namespace utilities
  *  sequential job is returned: the rank will be 0 and the size will
  *  be 1.
  *
- *  If the `%env{<NAME>}` substitution fails to find `NAME` in the
+ *  If the "%env{<NAME>}" substitution fails to find `NAME` in the
  *  current environment, the replacement will be the empty string.
  *
  *  The double-percent sequence is extracted first, so "%%r" will
- *  return "%r" and "%%%r" will return "%\<mpi-rank\>".
+ *  return "%r" and "%%%r" will return "%<mpi-rank>".
  *
  *  @param str The string to which substitutions should be applied.
  *  @param sys_info The source of system information. This is
