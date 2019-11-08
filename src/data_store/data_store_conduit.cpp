@@ -168,7 +168,7 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_is_setup = rhs.m_is_setup;
   m_preloading = rhs.m_preloading;
   m_loading_is_complete = rhs.m_loading_is_complete;
-  m_explicit_loading = rhs.m_explicit_loading;
+  m_explicitly_loading = rhs.m_explicitly_loading;
   m_owner_map_mb_size = rhs.m_owner_map_mb_size;
   m_compacted_sample_size = rhs.m_compacted_sample_size;
   m_is_local_cache = rhs.m_is_local_cache;
@@ -446,8 +446,6 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   if (! m_is_setup) {
     LBANN_ERROR("setup(mb_size) has not been called");
   }
-
-std::cerr << "STARTING exchange_data_by_sample" << std::endl;
 
   double tm5 = get_time();
 
@@ -893,18 +891,17 @@ void data_store_conduit::exchange_sample_sizes() {
 
 void data_store_conduit::set_is_preloading(bool flag) {
   m_preloading = flag;
-  check_query_flags();
 }
 
 void data_store_conduit::set_is_explicitly_loading(bool flag) {
-  m_explicit_loading = flag;
+  m_explicitly_loading = flag;
   if (is_preloading() && is_explicitly_loading()) {
     LBANN_ERROR("flags for both explicit and pre- loading are set; this is an error");
   }
-  check_query_flags();
 }
 
 void data_store_conduit::set_loading_is_complete() {
+  PROFILE("set_loading_is_complete()");
   m_loading_is_complete = true;
   set_is_preloading(false);
   set_is_explicitly_loading(false);
@@ -916,7 +913,6 @@ void data_store_conduit::set_loading_is_complete() {
 }
 
 bool data_store_conduit::is_fully_loaded() const { 
-  check_query_flags();
   if (m_loading_is_complete) {
     return true;
   }
@@ -1005,7 +1001,6 @@ void data_store_conduit::compute_image_offsets(map_is_t &sizes, std::vector<std:
       }
       size_t sz = sizes[idx];
       m_image_offsets[idx] = offset;
-//XXPROFILE("QQ compute_image_offsets; id: ", idx, " is at offset ", offset);
       offset += sz;
     }
   }
@@ -1417,7 +1412,7 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
   double tm1 = get_time();
 
   // when not running in preload mode, exchange owner maps after the 1st epoch
-  if (m_reader->at_new_epoch() && !options::get()->get_bool("preload_data_store") && !is_local_cache() && m_cur_epoch == 1) {
+  if (m_reader->at_new_epoch() && ! is_preloading() && !is_local_cache() && m_cur_epoch == 1) {
     PROFILE("calling exchange_owner_maps");
     exchange_owner_maps();
     /*
@@ -1442,7 +1437,7 @@ void data_store_conduit::flush_debug_file() {
   m_debug->open(m_debug_filename.c_str(), std::ios::app);
 }
 
-void data_store_conduit::flush_profile_file() {
+void data_store_conduit::flush_profile_file() const {
   if (!m_profile) {
     return;
   }
@@ -1474,7 +1469,7 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
 
   m_is_setup = false;
   m_preloading = false;
-  m_explicit_loading = true;
+  m_explicitly_loading = true;
   m_owner_map_mb_size = 0;
   m_compacted_sample_size = 0;
   m_node_sizes_vary = true;
@@ -1586,7 +1581,7 @@ void data_store_conduit::save_state() {
             CEREAL_NVP(m_is_setup),
             CEREAL_NVP(m_preloading), 
             CEREAL_NVP(m_loading_is_complete), 
-            CEREAL_NVP(m_explicit_loading),
+            CEREAL_NVP(m_explicitly_loading),
             CEREAL_NVP(m_owner_map_mb_size), 
             CEREAL_NVP(m_compacted_sample_size), 
             CEREAL_NVP(m_is_local_cache),
@@ -1624,7 +1619,7 @@ void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_read
   iarchive(CEREAL_NVP(m_my_num_indices),
            m_cur_epoch, m_is_setup,
            m_preloading, m_loading_is_complete,
-           m_explicit_loading, m_owner_map_mb_size,
+           m_explicitly_loading, m_owner_map_mb_size,
            m_compacted_sample_size, m_is_local_cache,
            m_node_sizes_vary, m_have_sample_sizes,
            m_owner, m_sample_sizes);
@@ -1678,7 +1673,7 @@ void data_store_conduit::print_variables() {
   std::cerr << "m_cur_epoch: " << m_cur_epoch << std::endl
             << "m_is_setup: " << m_is_setup << std::endl
             << "m_preloading: " << m_preloading << std::endl
-            << "m_explicit_loading: " << m_explicit_loading << std::endl
+            << "m_explicitly_loading: " << m_explicitly_loading << std::endl
             << "m_owner_map_mb_size: " << m_owner_map_mb_size << std::endl
             << "m_compacted_sample_size: " << m_compacted_sample_size << std::endl
             << "m_node_sizes_vary: " << m_node_sizes_vary << std::endl;
@@ -1917,10 +1912,10 @@ std::string commify(size_t n) {
 }
 
 void data_store_conduit::check_query_flags() const {
-  if (m_explicit_loading && m_preloading) {
+  if (m_explicitly_loading && m_preloading) {
     LBANN_ERROR("is_explicitly_loading() && is_preloading() are both true, but should not be");
   }
-  if (m_loading_is_complete && m_explicit_loading) {
+  if (m_loading_is_complete && m_explicitly_loading) {
     LBANN_ERROR("is_fully_loaded() && is_explicitly_loading() are both true, but should not be");
   }
   if (m_loading_is_complete && m_preloading) {

@@ -804,7 +804,7 @@ void generic_data_reader::set_role(std::string role) {
 }
 
 void generic_data_reader::preload_data_store() {
-  if (m_data_store->is_local_cache() && m_data_store->is_preloading()) {
+  if (m_data_store->is_local_cache()) {
     m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling m_data_store->preload_local_cache()");
     m_data_store->preload_local_cache();
   } 

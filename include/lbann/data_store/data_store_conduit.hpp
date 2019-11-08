@@ -126,7 +126,7 @@ class data_store_conduit {
    * are exclusive: at most only one may be true, however, both will
    * be set to false when all loading is complete.
    */
-  bool is_explicitly_loading() const { return m_explicit_loading; }
+  bool is_explicitly_loading() const { return m_explicitly_loading; }
 
   /** @brief Returns true if all loading has been completed 
    *
@@ -222,7 +222,7 @@ class data_store_conduit {
    *
    * Profile logging is enabled on P_0 via the cmd line flag: --data_store_profile
    */
-  void flush_profile_file(); 
+  void flush_profile_file() const; 
 
   /** @brief Writes object's state to file */
   void write_checkpoint(std::string dir_name);
@@ -353,7 +353,7 @@ private :
 
   /// set to true if data_store is being explicitly loaded
   //VBE: please explain what this means!
-  bool m_explicit_loading = false;
+  bool m_explicitly_loading = false;
 
   /// The size of the mini-batch that was used to calculate ownership
   /// of samples when building the owner map.  This size has to be
@@ -560,7 +560,7 @@ private :
   // functions and templates for optional profiling and debug files follow
   //=========================================================================
 
-  void PROFILE() { 
+  void PROFILE() const { 
     if (!m_profile) {
       return;
     }
@@ -569,7 +569,7 @@ private :
   }
 
   template <typename T, typename... Types>
-  void PROFILE(T var1, Types... var2) {
+  void PROFILE(T var1, Types... var2) const {
     if (!m_world_master) {
       return;
     }
