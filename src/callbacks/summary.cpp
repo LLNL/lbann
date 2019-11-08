@@ -27,6 +27,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/summary.hpp"
+#include "lbann/layers/data_type_layer.hpp"
+#include "lbann/weights/data_type_weights.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
 
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/profiling.hpp"
@@ -135,7 +138,8 @@ void summary::save_histograms(model *m) {
   for (const auto& layer : m->get_layers()) {
     const std::string prefix = layer->get_name() + "/";
     for (int i = 0; i < layer->get_num_children(); ++i) {
-      AbsDistMatReadProxy<El::Device::CPU> acts(layer->get_activations(i));
+      auto* dtl = dynamic_cast<data_type_layer<DataType>*>(layer);
+      AbsDistMatReadProxy<El::Device::CPU> acts(dtl->get_activations(i));
       m_summarizer->reduce_histogram(prefix + "activations" + std::to_string(i),
                                      acts.GetLocked(),
                                      c.get_step());
@@ -143,13 +147,15 @@ void summary::save_histograms(model *m) {
   }
   for (const auto& w : m->get_weights()) {
     const std::string prefix = w->get_name() + "/";
-    AbsDistMatReadProxy<El::Device::CPU> weights(w->get_values());
+    auto* dtw = dynamic_cast<data_type_weights<DataType>*>(w);
+    AbsDistMatReadProxy<El::Device::CPU> weights(dtw->get_values());
     m_summarizer->reduce_histogram(prefix + "weights",
                                    weights.GetLocked(),
                                    c.get_step());
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
-      AbsDistMatReadProxy<El::Device::CPU> gradients(opt->get_gradient());
+      auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
+      AbsDistMatReadProxy<El::Device::CPU> gradients(dt_opt->get_gradient());
       m_summarizer->reduce_histogram(prefix + "weights_gradient",
                                      gradients.GetLocked(),
                                      c.get_step());

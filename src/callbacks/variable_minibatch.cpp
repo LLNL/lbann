@@ -49,7 +49,7 @@ void variable_minibatch::on_train_begin(model *m) {
   if (c.get_epoch() != 0) { return; }
 
   // Get first input layer in model
-  generic_input_layer* input = nullptr;
+  generic_input_layer<DataType>* input = nullptr;
   for (auto&& l : m->get_layers()) {
     input = dynamic_cast<generic_input_layer<DataType>*>(l);
     if (input != nullptr) { break; }
@@ -74,7 +74,7 @@ void variable_minibatch::on_epoch_end(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
 
   // Get first input layer in model
-  generic_input_layer* input = nullptr;
+  generic_input_layer<DataType>* input = nullptr;
   for (auto&& l : m->get_layers()) {
     input = dynamic_cast<generic_input_layer<DataType>*>(l);
     if (input != nullptr) { break; }
@@ -137,7 +137,8 @@ void variable_minibatch::change_learning_rate(
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
-      opt->set_learning_rate(new_lr);
+      auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
+      dt_opt->set_learning_rate(new_lr);
     }
   }
 }
@@ -147,7 +148,8 @@ float variable_minibatch::get_current_learning_rate(
   for (weights *w : m->get_weights()) {
     optimizer *opt = w->get_optimizer();
     if (opt != nullptr) {
-      return opt->get_learning_rate();
+      auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
+      return dt_opt->get_learning_rate();
     }
   }
   return 0.0f;

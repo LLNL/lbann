@@ -47,7 +47,8 @@ void dump_gradients::on_backward_prop_end(model *m) {
            + "-step" + std::to_string(c.get_step())
            + "-" + w->get_name()
            + "-Gradient");
-      El::Write(opt->get_gradient(), file, El::ASCII);
+      auto* dt_opt = dynamic_cast<data_type_optimizer<DataType>*>(opt);
+      El::Write(dt_opt->get_gradient(), file, El::ASCII);
     }
   }
 }
