@@ -15,14 +15,14 @@ namespace utilities
  *
  *  The following patterns are supported:
  *
- *  Pattern      | Replacement
- *  ------------ | -----------
- *  %%           | A literal percent sign ("%")
- *  %h           | The hostname of the current process
- *  %p           | The PID of the current process
- *  %r           | The MPI rank of the current process, if available, or 0
- *  %s           | The MPI size of the current job, if available, or 1
- *  %env{<NAME>} | The value of ${NAME} in the current environment
+ *  Pattern        | Replacement
+ *  -------------- | -----------
+ *  %%             | A literal percent sign ("%")
+ *  %h             | The hostname of the current process
+ *  %p             | The PID of the current process
+ *  %r             | The MPI rank of the current process, if available, or 0
+ *  %s             | The MPI size of the current job, if available, or 1
+ *  %env{\<NAME\>} | The value of ${NAME} in the current environment
  *
  *  The MPI runtime is queried if available for MPI information. After
  *  that, environment variables are checked for common libraries
@@ -35,7 +35,7 @@ namespace utilities
  *  current environment, the replacement will be the empty string.
  *
  *  The double-percent sequence is extracted first, so "%%r" will
- *  return "%r" and "%%%r" will return "%<mpi-rank>".
+ *  return "%r" and "%%%r" will return "%\<mpi-rank\>".
  *
  *  @param str The string to which substitutions should be applied.
  *  @param sys_info The source of system information. This is
