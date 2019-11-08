@@ -35,6 +35,7 @@ namespace lbann {
 namespace {
 
 /** Sparse vector entry. */
+template <typename TensorDataType>
 struct entry {
 
   /** Vector entry value. */
@@ -51,13 +52,14 @@ struct entry {
    *  Entries are sorted by value in decreasing order, with ties
    *  broken in favor of entries with smaller indices.
    */
-  static bool compare(const entry& a, const entry& b) {
+  static bool compare(const entry<TensorDataType>& a, const entry<TensorDataType>& b) {
     return a.value > b.value || (a.value == b.value && a.index < b.index);
   }
 
 };
 
 /** CPU implementation of top-k categorical accuracy layer forward prop. */
+template <typename TensorDataType>
 void fp_cpu(lbann_comm& comm,
             El::Int k,
             const El::AbstractDistMatrix<TensorDataType>& predictions,
@@ -109,10 +111,10 @@ void fp_cpu(lbann_comm& comm,
                     El::mpi::MIN);
 
   // Find top-k entries in each column of local prediction matrix
-  std::vector<entry> top_entries(local_width * k);
+  std::vector<entry<TensorDataType>> top_entries(local_width * k);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    std::vector<entry> local_entries(std::max(local_height, k));
+    std::vector<entry<TensorDataType>> local_entries(std::max(local_height, k));
     for (El::Int row = 0; row < local_height; ++row) {
       local_entries[row].value = local_predictions(row, col);
       local_entries[row].index = predictions.GlobalRow(row);
@@ -121,25 +123,25 @@ void fp_cpu(lbann_comm& comm,
                            local_entries.end(),
                            &top_entries[col*k],
                            &top_entries[col*k] + k,
-                           entry::compare);
+                           entry<TensorDataType>::compare);
   }
 
   // Find top-k entries in each column of global prediction matrix
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data()),
-                  top_entries.size() * sizeof(entry),
+                  top_entries.size() * sizeof(entry<TensorDataType>),
                   col_comm_root,
                   col_comm, El::SyncInfo<El::Device::CPU>{});
     } else {
-      std::vector<entry> global_top_entries(col_comm_size * local_width * k);
+      std::vector<entry<TensorDataType>> global_top_entries(col_comm_size * local_width * k);
       comm.gather(reinterpret_cast<El::byte*>(top_entries.data()),
-                  top_entries.size() * sizeof(entry),
+                  top_entries.size() * sizeof(entry<TensorDataType>),
                   reinterpret_cast<El::byte*>(global_top_entries.data()),
                   col_comm, El::SyncInfo<El::Device::CPU>{});
       LBANN_OMP_PARALLEL_FOR
       for (El::Int col = 0; col < local_width; ++col) {
-        std::vector<entry> col_entries(col_comm_size * k);
+        std::vector<entry<TensorDataType>> col_entries(col_comm_size * k);
         for (El::Int rank = 0; rank < col_comm_size; ++rank) {
           const auto* start = &global_top_entries[rank*local_width*k+col*k];
           std::copy(start, start + k, &col_entries[rank*k]);
@@ -148,7 +150,7 @@ void fp_cpu(lbann_comm& comm,
                                col_entries.end(),
                                &top_entries[col*k],
                                &top_entries[col*k] + k,
-                               entry::compare);
+                               entry<TensorDataType>::compare);
       }
     }
 
@@ -174,28 +176,31 @@ void fp_cpu(lbann_comm& comm,
 
 } // namespace
 
-template <>
-void top_k_categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  fp_cpu(*get_comm(),
-         m_k,
-        this->get_prev_activations(0),
-        this->get_prev_activations(1),
-        this->get_activations());
+template <typename TensorDataType>
+void fp_compute_impl(top_k_categorical_accuracy_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  fp_cpu<TensorDataType>(*l.get_comm(),
+                         l.m_k,
+                         l.get_prev_activations(0),
+                         l.get_prev_activations(1),
+                         l.get_activations());
 }
-template <>
-void top_k_categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  fp_cpu(*get_comm(),
-         m_k,
-        this->get_prev_activations(0),
-        this->get_prev_activations(1),
-        this->get_activations());
+template <typename TensorDataType>
+void fp_compute_impl(top_k_categorical_accuracy_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  fp_cpu<TensorDataType>(*l.get_comm(),
+                         l.m_k,
+                         l.get_prev_activations(0),
+                         l.get_prev_activations(1),
+                         l.get_activations());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void top_k_categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
 }
 
 template class top_k_categorical_accuracy_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class top_k_categorical_accuracy_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

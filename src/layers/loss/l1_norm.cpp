@@ -92,7 +92,6 @@ void local_bp_compute_impl(l1_norm_layer<TensorDataType, data_layout::DATA_PARAL
                                l.get_local_error_signals());
 }
 
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void l1_norm_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
   local_fp_compute_impl<TensorDataType>(*this);
