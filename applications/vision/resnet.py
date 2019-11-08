@@ -1,25 +1,20 @@
-#!/usr/bin/env python3
 import argparse
-from os.path import abspath, dirname, join
-import google.protobuf.text_format as txtf
 import lbann
 import lbann.models
 import lbann.models.resnet
-import lbann.proto
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
-
-# Default data reader
-model_zoo_dir = dirname(dirname(abspath(__file__)))
-data_reader_prototext = join(model_zoo_dir,
-                             'data_readers',
-                             'data_reader_imagenet.prototext')
+import lbann.contrib.lc.launcher
+import data.imagenet
 
 # Command-line arguments
 desc = ('Construct and run ResNet on ImageNet-1K data. '
         'Running the experiment is only supported on LC systems.')
 parser = argparse.ArgumentParser(description=desc)
 lbann.contrib.args.add_scheduler_arguments(parser)
+parser.add_argument(
+    '--job-name', action='store', default='lbann_resnet', type=str,
+    help='scheduler job name (default: lbann_resnet)')
 parser.add_argument(
     '--resnet', action='store', default=50, type=int,
     choices=(18, 34, 50, 101, 152),
@@ -38,10 +33,6 @@ parser.add_argument(
     '--block-channels', action='store', default=None, type=str,
     help='Internal channels in each ResNet block (comma-separated list)')
 parser.add_argument(
-    '--bn-stats-aggregation', action='store', type=str,
-    help=('aggregation mode for batch normalization statistics '
-          '(default: "local") (DEPRECATED)'))
-parser.add_argument(
     '--bn-statistics-group-size', action='store', default=1, type=int,
     help=('Group size for aggregating batch normalization statistics '
           '(default: 1)'))
@@ -54,38 +45,20 @@ parser.add_argument(
     '--num-epochs', action='store', default=90, type=int,
     help='number of epochs (default: 90)', metavar='NUM')
 parser.add_argument(
-    '--num-labels', action='store', default=1000, type=int,
-    help='number of data classes (default: 1000)', metavar='NUM')
+    '--num-classes', action='store', default=1000, type=int,
+    help='number of ImageNet classes (default: 1000)', metavar='NUM')
 parser.add_argument(
     '--random-seed', action='store', default=0, type=int,
     help='random seed for LBANN RNGs', metavar='NUM')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 parser.add_argument(
-    '--data-reader', action='store',
-    default=data_reader_prototext, type=str,
-    help='data reader prototext file (default: ' + data_reader_prototext + ')',
-    metavar='FILE')
-parser.add_argument(
-    '--prototext', action='store', type=str,
-    help='exported prototext file (do not run experiment)', metavar='FILE')
+    '--setup_only', action='store_true',
+    help='setup LBANN experiment without running it')
 args = parser.parse_args()
 
 # Due to a data reader limitation, the actual model realization must be
 # hardcoded to 1000 labels for ImageNet.
 imagenet_labels = 1000
-
-# Handle old-style batchnorm aggregation.
-if args.bn_stats_aggregation is not None:
-    print('--bn-stats-aggregation is deprected, use --bn-statistics-group-size')
-    if args.bn_stats_aggregation == 'local':
-        args.bn_statistics_group_size = 1
-    elif args.bn_stats_aggregation == 'node_local':
-        raise RuntimeError('Cannot translate node_local stats aggregation')
-    elif args.bn_stats_aggregation == 'global':
-        args.bn_statistics_group_size = 0
-    else:
-        raise RuntimeError('Unknown stats aggregation '
-                           + args.bn_stats_aggregation)
 
 # Choose ResNet variant
 resnet_variant_dict = {18: lbann.models.ResNet18,
@@ -171,35 +144,15 @@ model = lbann.Model(args.mini_batch_size,
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)
 
-# Load data reader from prototext
-data_reader_proto = lbann.lbann_pb2.LbannPB()
-with open(args.data_reader, 'r') as f:
-  txtf.Merge(f.read(), data_reader_proto)
-data_reader_proto = data_reader_proto.data_reader
+# Setup data reader
+data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
 # Setup trainer
 trainer = lbann.Trainer()
 
-# Save prototext
-if args.prototext:
-    lbann.proto.save_prototext(args.prototext,
-                               trainer=trainer,
-                               model=model, optimizer=opt,
-                               data_reader=data_reader_proto)
-
 # Run experiment
-if not args.prototext:
-    from lbann.contrib.lc.paths import imagenet_dir, imagenet_labels
-    import lbann.contrib.lc.launcher
-    kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-    classes = args.num_labels
-    kwargs['lbann_args'] = (
-        '--data_filedir_train={} --data_filename_train={} '
-        '--data_filedir_test={} --data_filename_test={}'
-        .format(imagenet_dir(data_set='train', num_classes=classes),
-                imagenet_labels(data_set='train', num_classes=classes),
-                imagenet_dir(data_set='val', num_classes=classes),
-                imagenet_labels(data_set='val', num_classes=classes)))
-    lbann.contrib.lc.launcher.run(trainer, model, data_reader_proto, opt,
-                                  job_name='lbann_resnet',
-                                  **kwargs)
+kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
+lbann.contrib.lc.launcher.run(trainer, model, data_reader, opt,
+                              job_name=args.job_name,
+                              setup_only=args.setup_only,
+                              **kwargs)

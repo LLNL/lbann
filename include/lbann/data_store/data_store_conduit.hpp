@@ -216,6 +216,7 @@ private :
 
   /// used in set_conduit_node(...)
   std::mutex m_mutex;
+  std::mutex m_mutex_2;
 
   /// for use in local cache mode
   char *m_mem_seg = 0;

@@ -84,8 +84,8 @@ def construct_model():
     for i in range(sequence_length-1):
         emb_l = lbann.Embedding(
             idl[i],
-            dictionary_size=dictionary_size,
-            embedding_size=embedding_size,
+            num_embeddings=dictionary_size,
+            embedding_dim=embedding_size,
             name='emb_'+str(i),
             device='CPU',
             weights=emb_weights

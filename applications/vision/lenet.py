@@ -1,15 +1,12 @@
-#!/usr/bin/env python3
 import argparse
-import os.path
-import google.protobuf.text_format as txtf
 import lbann
+import data.mnist
 
 # ----------------------------------
 # Command-line arguments
 # ----------------------------------
 
-desc = ('Construct and run LeNet on MNIST data. '
-        'Running the experiment is only supported on LC systems.')
+desc = ('Train LeNet on MNIST data using LBANN.')
 parser = argparse.ArgumentParser(description=desc)
 parser.add_argument(
     '--partition', action='store', type=str,
@@ -87,15 +84,8 @@ model = lbann.Model(mini_batch_size,
 # Setup optimizer
 opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 
-# Load data reader from prototext
-model_zoo_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-data_reader_file = os.path.join(model_zoo_dir,
-                                'data_readers',
-                                'data_reader_mnist.prototext')
-data_reader_proto = lbann.lbann_pb2.LbannPB()
-with open(data_reader_file, 'r') as f:
-    txtf.Merge(f.read(), data_reader_proto)
-data_reader_proto = data_reader_proto.data_reader
+# Setup data reader
+data_reader = data.mnist.make_data_reader()
 
 # Setup trainer
 trainer = lbann.Trainer()
@@ -109,6 +99,4 @@ trainer = lbann.Trainer()
 kwargs = {}
 if args.partition: kwargs['partition'] = args.partition
 if args.account: kwargs['account'] = args.account
-lbann.run(trainer, model, data_reader_proto, opt,
-          job_name='lbann_lenet',
-          **kwargs)
+lbann.run(trainer, model, data_reader, opt, **kwargs)

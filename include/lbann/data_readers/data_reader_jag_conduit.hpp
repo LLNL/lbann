@@ -345,7 +345,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   bool has_path(const file_handle_t& h, const std::string& path) const;
   void read_node(const file_handle_t& h, const std::string& path, conduit::Node& n) const;
-  void read_partial_node(const file_handle_t& h, const std::string& path, conduit::Node& n) const;
 
   /// Allow const access to the conduit data structure
   static const conduit::Node& get_conduit_node(const conduit::Node& n_base, const std::string key);
@@ -464,6 +463,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   sample_list_t m_sample_list;
   bool m_list_per_trainer;
   bool m_list_per_model;
+
+  void preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node); 
 };
 
 /**

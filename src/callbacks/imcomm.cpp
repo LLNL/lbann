@@ -40,48 +40,36 @@ namespace lbann {
 namespace callback {
 
 imcomm::imcomm(imcomm::comm_type ct,
-    const std::shared_ptr<lbann_summary>& summarizer) :
+               const std::shared_ptr<lbann_summary>& summarizer) :
   m_default_ct(ct), m_summarizer(summarizer) {}
 
 imcomm::imcomm(imcomm::comm_type ct,
-    std::unordered_set<weights *> weights_list,
-    const std::shared_ptr<lbann_summary>& summarizer) :
+               std::unordered_set<weights *> weights_list,
+               const std::shared_ptr<lbann_summary>& summarizer) :
   imcomm(ct, summarizer) {
   for (weights *w : weights_list) {
-    m_weights_params[w] = {};
-    m_weights_params[w].ct = ct;
+    m_weights_params[w] = ct;
   }
 }
 
-void imcomm::set_weights_comm(weights *w,
-                                             comm_type ct) {
-  m_weights_params[w] = {};
-  m_weights_params[w].ct = ct;
+void imcomm::set_weights_comm(weights *w, comm_type ct) {
+  m_weights_params[w] = ct;
 }
 
 void imcomm::setup(model *m) {
   for (weights *w : m->get_weights()) {
-
     // Add weights if not already in list
     if (m_weights_params.find(w) == m_weights_params.end()) {
-      m_weights_params[w] = {};
-      m_weights_params[w].ct = (w->get_optimizer() != nullptr ?
-                                m_default_ct :
-                                NONE);
+      m_weights_params[w] = (w->get_optimizer() != nullptr ?
+                             m_default_ct :
+                             NONE);
     }
-
     // Setup imcomm parameters if needed
-    imcomm_params& params = m_weights_params[w];
-    if (params.ct != NONE) {
-      optimizer *opt = w->get_optimizer();
-      if (opt == nullptr) {
-        std::stringstream err;
-        err << "imcomm: trying to do inter-model gradient communication on "
-            << w->get_name() << ", which has no optimizer";
-        LBANN_ERROR(err.str());
-      }
+    if ((m_weights_params[w] != NONE) && ( w->get_optimizer() == nullptr)) {
+      LBANN_ERROR(
+        "imcomm: trying to do inter-model gradient communication on ",
+        w->get_name(),", which has no optimizer");
     }
-
   }
 }
 
@@ -106,16 +94,16 @@ void imcomm::on_backward_prop_end(model *m) {
   }
   for (weights *w : m->get_weights()) {
     EvalType start_time = get_time();
-    imcomm_params& params = m_weights_params[w];
-    if (params.ct == NONE) {
+    auto const& ct = m_weights_params[w];
+    if (ct == NONE) {
       continue;
     }
     optimizer *opt = w->get_optimizer();
     auto gradient = std::unique_ptr<AbsDistMat>{opt->get_gradient().Copy()};
-    Mat* local_gradients = &(static_cast<CPUMat&>(gradient->Matrix()));
-    switch (params.ct) {
+    auto& local_gradients = gradient->Matrix();
+    switch (ct) {
     case NORMAL:
-      comm->intertrainer_sum_matrix(*local_gradients);
+      comm->intertrainer_sum_matrix(local_gradients);
       break;
     default:
       LBANN_ERROR("imcomm: unknown comm type");
@@ -128,7 +116,7 @@ void imcomm::on_backward_prop_end(model *m) {
 }
 
 void imcomm::do_summary(model *m, weights *w,
-                                       EvalType im_time) {
+                        EvalType im_time) {
   if (m_summarizer == nullptr) {
     return;
   }
@@ -149,21 +137,22 @@ void imcomm::do_summary(model *m, weights *w,
                               bytes_received, c.get_step());
 }
 
-static std::vector<std::string> comm_type_names  = { "none", "normal" };
-
-/** returns a string representation of the weight_initialization */
+/* Returns a string representation of the weight_initialization */
 std::string get_comm_type_name(imcomm::comm_type m) {
-  if ((int)m < 0 or (int)m >= (int)comm_type_names.size()) {
-    LBANN_ERROR(" Invalid comm_type");
+  switch (m) {
+  case imcomm::NONE: return "none";
+  case imcomm::NORMAL: return "normal";
+  default:
+    LBANN_ERROR("Unknown value for comm_type");
   }
-  return comm_type_names[(int)m];
 }
 
 std::unique_ptr<callback_base>
 build_imcomm_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
   const std::shared_ptr<lbann_summary>& summarizer) {
-  const auto& params = dynamic_cast<const lbann_data::Callback::CallbackImComm&>(proto_msg);
+  using param_msg_type = lbann_data::Callback::CallbackImComm;
+  const auto& params = dynamic_cast<const param_msg_type&>(proto_msg);
   const auto& type_str = params.intertrainer_comm_method();
   imcomm::comm_type type = imcomm::comm_type::NONE;
   if (type_str == "none") {
@@ -171,9 +160,7 @@ build_imcomm_callback_from_pbuf(
   } else if (type_str == "normal") {
     type = imcomm::comm_type::NORMAL;
   } else {
-    std::ostringstream err;
-    err << "invalid inter-model communication type (" << type_str << ")";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("invalid inter-model communication type (", type_str, ")");
   }
   std::unordered_set<weights*> selected_weights; /// @todo Initialize weights
   return make_unique<imcomm>(type, selected_weights, summarizer);

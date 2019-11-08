@@ -210,9 +210,8 @@ Python frontend
 ------------------------------------------------
 
 LBANN provides a Python frontend with syntax reminiscent of `PyTorch
-<https://pytorch.org/>`_. See the `model zoo implementation of LeNet
-<https://github.com/LLNL/lbann/blob/develop/model_zoo/vision/lenet.py>`_
-for a simple example.
+<https://pytorch.org/>`_. See `a simple implementation of LeNet
+<https://github.com/LLNL/lbann/blob/develop/applications/vision/lenet.py>`_.
 
 Comments:
 
@@ -363,10 +362,10 @@ A simple example
     opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 
     # Load data reader from prototext
-    import google.protobuf.text_format as txtf
+    import google.protobuf.text_format
     data_reader_proto = lbann.lbann_pb2.LbannPB()
     with open('path/to/lbann/model_zoo/data_readers/data_reader_mnist.prototext', 'r') as f:
-        txtf.Merge(f.read(), data_reader_proto)
+        google.protobuf.text_format.Merge(f.read(), data_reader_proto)
     data_reader_proto = data_reader_proto.data_reader
 
     # ----------------------------------
