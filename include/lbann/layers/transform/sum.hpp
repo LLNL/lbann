@@ -66,13 +66,13 @@ protected:
 
     // Check that input dimensions match
     const auto& output_dims = this->get_output_dims();
-    for (int i = 0; i < get_num_parents(); ++i) {
+    for (int i = 0; i < this->get_num_parents(); ++i) {
       if (this->get_input_dims(i) != output_dims) {
         const auto& parents = get_parent_layers();
         std::stringstream err;
         err << get_type() << " layer \"" << this->get_name() << "\" "
             << "has input tensors with incompatible dimensions (";
-        for (int j = 0; j < get_num_parents(); ++j) {
+        for (int j = 0; j < this->get_num_parents(); ++j) {
           const auto& dims = this->get_input_dims(j);
           err << (j > 0 ? ", " : "")
               << "layer \"" << parents[j]->get_name() << "\" outputs ";
@@ -107,11 +107,11 @@ protected:
 };
 
 #ifndef LBANN_SUM_LAYER_INSTANTIATE
-extern template class sum_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class sum_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+extern template class sum_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class sum_layer<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-extern template class sum_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class sum_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+extern template class sum_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class sum_layer<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SUM_LAYER_INSTANTIATE
 

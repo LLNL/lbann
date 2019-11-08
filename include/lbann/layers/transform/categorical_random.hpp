@@ -66,7 +66,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
     // Input and output matrices
     const auto& input = this->get_prev_activations();
     const auto& local_input = input.LockedMatrix();
-    auto& local_output = get_local_activations();
+    auto& local_output = this->get_local_activations();
     const auto& width = input.Width();
     const auto& local_height = local_input.Height();
     const auto& local_width = local_input.Width();
@@ -114,7 +114,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
 
 #ifndef LBANN_CATEGORICAL_RANDOM_LAYER_INSTANTIATE
 extern template class categorical_random_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #endif // LBANN_CATEGORICAL_RANDOM_LAYER_INSTANTIATE
 
 } // namespace lbann

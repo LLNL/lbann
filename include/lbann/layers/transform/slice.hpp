@@ -216,13 +216,13 @@ protected:
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    const auto& num_outputs = get_num_children();
+    const auto& num_outputs = this->get_num_children();
     const auto& input_dims = this->get_input_dims();
 
     // Initialize gradient w.r.t. input tensor
     auto& gradient_wrt_input = this->get_error_signals();
     gradient_wrt_input.Empty(false);
-    gradient_wrt_input.AlignWith(get_prev_activations());
+    gradient_wrt_input.AlignWith(this->get_prev_activations());
     gradient_wrt_input.Resize(this->get_input_size(), mini_batch_size);
     if (m_slice_points[0] != 0
         || m_slice_points[num_outputs] != input_dims[m_slice_dim]) {
@@ -290,11 +290,11 @@ private:
 };
 
 #ifndef LBANN_SLICE_LAYER_INSTANTIATE
-extern template class slice_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class slice_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+extern template class slice_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class slice_layer<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-extern template class slice_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class slice_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+extern template class slice_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class slice_layer<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SLICE_LAYER_INSTANTIATE
 

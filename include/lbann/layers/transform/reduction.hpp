@@ -92,8 +92,8 @@ protected:
   void fp_compute() override {
 
     // Local matrices
-    const auto& local_input = get_local_prev_activations();
-    auto& local_output = get_local_activations();
+    const auto& local_input = this->get_local_prev_activations();
+    auto& local_output = this->get_local_activations();
     const El::Int input_size = local_input.Height();
 
     // Apply reduction
@@ -119,8 +119,8 @@ protected:
   void bp_compute() override {
 
     // Local matrices
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = get_local_error_signals();
+    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = this->get_local_error_signals();
     const El::Int input_size = local_gradient_wrt_input.Height();
 
     // Compute gradients w.r.t. inputs
@@ -147,10 +147,10 @@ protected:
 
 #ifndef LBANN_REDUCTION_LAYER_INSTANTIATE
 extern template class reduction_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class reduction_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_REDUCTION_LAYER_INSTANTIATE
 

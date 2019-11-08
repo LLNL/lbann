@@ -77,7 +77,7 @@ protected:
 
   void setup_pointers() override {
     transform_layer<TensorDataType>::setup_pointers();
-    if (get_num_parents() < 1) {
+    if (this->get_num_parents() < 1) {
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has no parents";
@@ -111,7 +111,7 @@ protected:
     m_concat_points.push_back(output_dims[m_concat_dim]);
 
     // Get concatenation points for remaining parent layers
-    for (int i = 1; i < get_num_parents(); ++i) {
+    for (int i = 1; i < this->get_num_parents(); ++i) {
       const auto& input_dims = this->get_input_dims(i);
       if (input_dims.size() != output_dims.size()
           || !std::equal(input_dims.begin(),
@@ -149,14 +149,14 @@ protected:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    const auto& num_inputs = get_num_parents();
+    const auto& num_inputs = this->get_num_parents();
     const auto& output_dims = this->get_output_dims();
 
     // Initialize output tensor
     auto& output = this->get_activations();
     output.Empty(false);
     if (num_inputs > 1) {
-      output.AlignWith(get_prev_activations());
+      output.AlignWith(this->get_prev_activations());
       output.Resize(this->get_output_size(), mini_batch_size);
     } else {
       El::LockedView(output, this->get_prev_activations());
@@ -209,7 +209,7 @@ protected:
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    const auto& num_inputs = get_num_parents();
+    const auto& num_inputs = this->get_num_parents();
     const auto& output_dims = this->get_output_dims();
 
     // Divide output tensor into unit slices along concat dimension
@@ -231,7 +231,7 @@ protected:
     const auto& gradient_wrt_output = this->get_prev_error_signals();
     for (int i = 0; i < num_inputs; ++i) {
       const auto& input_dims = this->get_input_dims(i);
-      const auto& input_size = get_input_size(i);
+      const auto& input_size = this->get_input_size(i);
       auto& gradient_wrt_input = this->get_error_signals(i);
 
       // Divide input tensor into unit slices
@@ -289,14 +289,14 @@ private:
 
 #ifndef LBANN_CONCATENATION_LAYER_INSTANTIATE
 extern template class concatenation_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class concatenation_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class concatenation_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class concatenation_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_CONCATENATION_LAYER_INSTANTIATE
 

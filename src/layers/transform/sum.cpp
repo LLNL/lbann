@@ -29,11 +29,11 @@
 
 namespace lbann {
 
-template class sum_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class sum_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+template class sum_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class sum_layer<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-template class sum_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class sum_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+template class sum_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class sum_layer<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
 }// namespace lbann

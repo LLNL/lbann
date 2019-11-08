@@ -124,7 +124,7 @@ class discrete_random_layer : public transform_layer<TensorDataType> {
 
 #ifndef LBANN_DISCRETE_RANDOM_LAYER_INSTANTIATE
 extern template class discrete_random_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #endif // LBANN_DISCRETE_RANDOM_LAYER_INSTANTIATE
 } // namespace lbann
 

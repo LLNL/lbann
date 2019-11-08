@@ -30,6 +30,6 @@
 namespace lbann {
 
 template class discrete_random_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 }// namespace lbann

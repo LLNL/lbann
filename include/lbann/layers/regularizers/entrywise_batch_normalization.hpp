@@ -118,16 +118,16 @@ protected:
     }
     this->get_weights().resize(2, nullptr);
     if (this->get_weights()[0] == nullptr) {
-      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
-      auto init = make_unique<constant_initializer>(TensorDataType{0});
+      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType{0});
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->get_weights()[0] = w.get();
       this->m_model->add_weights(std::move(w));
     }
     if (this->get_weights()[1] == nullptr) {
-      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
-      auto init = make_unique<constant_initializer>(TensorDataType{1});
+      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType{1});
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->get_weights()[1] = w.get();
