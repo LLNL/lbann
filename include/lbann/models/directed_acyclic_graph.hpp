@@ -39,7 +39,7 @@ public:
   directed_acyclic_graph_model(lbann_comm *comm,
                                El::Int max_mini_batch_size,
                                objective_function<DataType> *obj_fn,
-                               optimizer<DataType> *default_optimizer);
+                               optimizer *default_optimizer);
   directed_acyclic_graph_model(const directed_acyclic_graph_model& other) = default;
   directed_acyclic_graph_model& operator=(const directed_acyclic_graph_model& other) = default;
   ~directed_acyclic_graph_model() override = default;
