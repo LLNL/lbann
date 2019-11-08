@@ -61,7 +61,7 @@ void dump_weights::do_dump_weights(model *m, std::string s) {
          + epoch
          + "-" + w->get_name()
          + "-Weights");
-    const auto* dtw = dynamic_cast<const data_type_weight<DataType>*>(w);
+    const auto* dtw = dynamic_cast<const data_type_weights<DataType>*>(w);
     El::Write(dtw->get_values(), file, El::ASCII);
   }
 }
