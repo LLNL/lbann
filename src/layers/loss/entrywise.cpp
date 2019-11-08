@@ -32,10 +32,6 @@ namespace lbann {
 
 namespace {
 
-// Helpful constants
-constexpr TensorDataType zero = 0;
-constexpr TensorDataType one = 1;
-
 /** Apply a binary backprop operator to CPU data.
  *  The input and output data must be on CPU and must have the same
  *  dimensions. Given a binary function \f$ y = f(x_1,x_2) \f$, the
@@ -44,7 +40,7 @@ constexpr TensorDataType one = 1;
  *  \f$ dL/dx_2 \f$. The last two arguments should be overwritten when
  *  the BinaryBackPropOperator is called.
  */
-template <typename BinaryBackPropOperator>
+template <typename TensorDataType, typename BinaryBackPropOperator>
 void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1,
                                     const El::AbstractMatrix<TensorDataType>& x2,
                                     const El::AbstractMatrix<TensorDataType>& dy,
@@ -88,9 +84,12 @@ void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1
 // (\f$ \frac{dL}{dx_i} = \frac{dL}{dy} \frac{df}{dx_i}(x_1,x_2) \f$).
 
 /** Binary cross entropy operator. */
+template <typename TensorDataType>
 struct binary_cross_entropy_op {
+  static constexpr TensorDataType zero = 0;
+  static constexpr TensorDataType one = 1;
   inline TensorDataType operator()(const TensorDataType& x1,
-                             const TensorDataType& x2) const {
+                                   const TensorDataType& x2) const {
     TensorDataType y = zero;
     if (x2 > zero) { y += -x2 * std::log(x1); }
     if (x2 < one)  { y += -(one-x2) * std::log(one-x1); }
@@ -121,9 +120,12 @@ struct binary_cross_entropy_op {
  *  implementation is taken from
  *  https://www.tensorflow.org/api_docs/python/tf/nn/sigmoid_cross_entropy_with_logits.
  */
+template <typename TensorDataType>
 struct sigmoid_binary_cross_entropy_op {
+  static constexpr TensorDataType zero = 0;
+  static constexpr TensorDataType one = 1;
   inline TensorDataType operator()(const TensorDataType& x1,
-                             const TensorDataType& x2) const {
+                                   const TensorDataType& x2) const {
     const auto& z = std::max(zero, std::min(x2, one));
     if (x1 > zero) {
       return (one - z) * x1 + std::log1p(std::exp(-x1));
@@ -148,9 +150,12 @@ struct sigmoid_binary_cross_entropy_op {
 };
 
 /** Boolean accuracy operator. */
+template <typename TensorDataType>
 struct boolean_accuracy_op {
+  static constexpr TensorDataType zero = 0;
+  static constexpr TensorDataType one = 1;
   inline TensorDataType operator()(const TensorDataType& x1,
-                             const TensorDataType& x2) const {
+                                   const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
     const auto& b2 = x2 >= TensorDataType(0.5);
     return b1 == b2 ? one : zero;
@@ -166,9 +171,12 @@ struct boolean_accuracy_op {
 };
 
 /** Boolean false negative operator. */
+template <typename TensorDataType>
 struct boolean_false_negative_op {
+  static constexpr TensorDataType zero = 0;
+  static constexpr TensorDataType one = 1;
   inline TensorDataType operator()(const TensorDataType& x1,
-                             const TensorDataType& x2) const {
+                                   const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
     const auto& b2 = x2 >= TensorDataType(0.5);
     return (!b1 && b2) ? one : zero;
@@ -184,9 +192,12 @@ struct boolean_false_negative_op {
 };
 
 /** Boolean false positive operator. */
+template <typename TensorDataType>
 struct boolean_false_positive_op {
+  static constexpr TensorDataType zero = 0;
+  static constexpr TensorDataType one = 1;
   inline TensorDataType operator()(const TensorDataType& x1,
-                             const TensorDataType& x2) const {
+                                   const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
     const auto& b2 = x2 >= TensorDataType(0.5);
     return (b1 && !b2) ? one : zero;
@@ -205,38 +216,42 @@ struct boolean_false_positive_op {
 
 // Template instantiation
 #define INSTANTIATE(layer, op)                                          \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::CPU>              \
-         ::fp_compute() {                                               \
-    apply_entrywise_binary_operator<op>(this->get_prev_activations(0),        \
-                                       this->get_prev_activations(1),        \
-                                       this->get_activations());             \
+  template <typename TensorDataType>                                                           \
+  void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
+    apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(0), \
+                                                                        l.get_prev_activations(1), \
+                                                                        l.get_activations()); \
   }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::CPU>              \
-         ::bp_compute() {                                               \
-    apply_binary_backprop_operator<op>(get_local_prev_activations(0),   \
-                                      this->get_local_prev_activations(1),   \
-                                      this->get_local_prev_error_signals(),  \
-                                      this->get_local_error_signals(0),      \
-                                      this->get_local_error_signals(1));     \
+  template <typename TensorDataType>                                                           \
+  void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
+    apply_binary_backprop_operator<TensorDataType, op<TensorDataType>>(l.get_local_prev_activations(0), \
+                                                                       l.get_local_prev_activations(1), \
+                                                                       l.get_local_prev_error_signals(), \
+                                                                       l.get_local_error_signals(0), \
+                                                                       l.get_local_error_signals(1)); \
   }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::CPU>               \
-         ::fp_compute() {                                               \
-    apply_entrywise_binary_operator<op>(get_prev_activations(0),        \
-                                       this->get_prev_activations(1),        \
-                                       this->get_activations());             \
+  template <typename TensorDataType>                                                           \
+  void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) { \
+    apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(0), \
+                                                                        l.get_prev_activations(1), \
+                                                                        l.get_activations()); \
   }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::CPU>               \
-  ::bp_compute() {                                                      \
-    apply_binary_backprop_operator<op>(get_local_prev_activations(0),   \
-                                      this->get_local_prev_activations(1),   \
-                                      this->get_local_prev_error_signals(),  \
-                                      this->get_local_error_signals(0),      \
-                                      this->get_local_error_signals(1));     \
+  template <typename TensorDataType>                                                           \
+  void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) { \
+    apply_binary_backprop_operator<TensorDataType, op<TensorDataType>>(l.get_local_prev_activations(0), \
+                                                                       l.get_local_prev_activations(1), \
+                                                                       l.get_local_prev_error_signals(), \
+                                                                       l.get_local_error_signals(0), \
+                                                                       l.get_local_error_signals(1)); \
   }                                                                     \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                             \
+  void layer<TensorDataType, Layout, Device>::fp_compute() {                                            \
+    fp_compute_impl<TensorDataType>(*this);                                                             \
+  }                                                                                                     \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                             \
+  void layer<TensorDataType, Layout, Device>::bp_compute() {                                            \
+    bp_compute_impl<TensorDataType>(*this);                                                             \
+  }                                                                                                     \
   BINARY_ETI_INST_MACRO_DEV(layer, El::Device::CPU)
 
 INSTANTIATE(binary_cross_entropy_layer, binary_cross_entropy_op);

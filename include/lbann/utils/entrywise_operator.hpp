@@ -83,10 +83,10 @@ void apply_entrywise_unary_operator(const AbsMat& input,
  *  The input and output data must be on CPU and must have the same
  *  dimensions.
  */
-template <typename BinaryOperator>
-void apply_entrywise_binary_operator(const AbsMat& input1,
-                                     const AbsMat& input2,
-                                     AbsMat& output) {
+template <typename TensorDataType, typename BinaryOperator>
+void apply_entrywise_binary_operator(const El::AbstractMatrix<TensorDataType>& input1,
+                                     const El::AbstractMatrix<TensorDataType>& input2,
+                                     El::AbstractMatrix<TensorDataType>& output) {
 
   // Check that input and output are valid
   std::stringstream err;
@@ -159,10 +159,10 @@ void apply_entrywise_unary_operator(const AbsDistMat& input,
  *  The input and output data must be on GPU, have the same
  *  dimensions, and be aligned.
  */
-template <typename BinaryOperator>
-void apply_entrywise_binary_operator(const AbsDistMat& input1,
-                                     const AbsDistMat& input2,
-                                     AbsDistMat& output) {
+template <typename TensorDataType, typename BinaryOperator>
+void apply_entrywise_binary_operator(const El::AbstractDistMatrix<TensorDataType>& input1,
+                                     const El::AbstractDistMatrix<TensorDataType>& input2,
+                                     El::AbstractDistMatrix<TensorDataType>& output) {
   if (input1.Height() != input2.Height()
       || input1.Width() != input2.Width()
       || input1.Height() != output.Height()
@@ -178,9 +178,9 @@ void apply_entrywise_binary_operator(const AbsDistMat& input1,
              || input1.DistData() != output.DistData()) {
     LBANN_ERROR("input and output matrix distributions don't match");
   }
-  apply_entrywise_binary_operator<BinaryOperator>(input1.LockedMatrix(),
-                                                  input2.LockedMatrix(),
-                                                  output.Matrix());
+  apply_entrywise_binary_operator<TensorDataType, BinaryOperator>(input1.LockedMatrix(),
+                                                                  input2.LockedMatrix(),
+                                                                  output.Matrix());
 }
 
 } // namespace lbann
