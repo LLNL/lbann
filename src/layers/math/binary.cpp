@@ -447,9 +447,9 @@ struct logical_xor_op {
 #define INSTANTIATE(layer, op)                                                                          \
   template <typename TensorDataType>                                                                    \
   void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {        \
-    apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(0),                      \
-                                                        l.get_prev_activations(1),                      \
-                                                        l.get_activations());                           \
+    apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(0),      \
+                                                                        l.get_prev_activations(1),      \
+                                                                        l.get_activations());           \
   }                                                                                                     \
   template <typename TensorDataType>                                                                    \
   void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {        \
@@ -461,9 +461,9 @@ struct logical_xor_op {
   }                                                                                                     \
   template <typename TensorDataType>                                                                    \
   void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {         \
-    apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(0),                      \
-                                                        l.get_prev_activations(1),                      \
-                                                        l.get_activations());                           \
+    apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(0),      \
+                                                                        l.get_prev_activations(1),      \
+                                                                        l.get_activations());           \
   }                                                                                                     \
   template <typename TensorDataType>                                                                    \
   void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {         \

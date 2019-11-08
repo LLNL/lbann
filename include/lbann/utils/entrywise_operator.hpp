@@ -36,9 +36,9 @@ namespace lbann {
  *  The input and output data must be on CPU and must have the same
  *  dimensions.
  */
-template <typename UnaryOperator>
-void apply_entrywise_unary_operator(const AbsMat& input,
-                                    AbsMat& output) {
+template <typename TensorDataType, typename UnaryOperator>
+void apply_entrywise_unary_operator(const El::AbstractMatrix<TensorDataType>& input,
+                                    El::AbstractMatrix<TensorDataType>& output) {
 
   // Check that input and output are valid
   std::stringstream err;
@@ -137,9 +137,9 @@ void apply_entrywise_binary_operator(const El::AbstractMatrix<TensorDataType>& i
  *  The input and output data must be on CPU, have the same
  *  dimensions, and be aligned.
  */
-template <typename UnaryOperator>
-void apply_entrywise_unary_operator(const AbsDistMat& input,
-                                    AbsDistMat& output) {
+template <typename TensorDataType, typename UnaryOperator>
+void apply_entrywise_unary_operator(const El::AbstractDistMatrix<TensorDataType>& input,
+                                    El::AbstractDistMatrix<TensorDataType>& output) {
   std::stringstream err;
   if (input.Height() != output.Height()
       || input.Width() != output.Width()) {
@@ -151,8 +151,8 @@ void apply_entrywise_unary_operator(const AbsDistMat& input,
   } else if (input.DistData() != output.DistData()) {
     LBANN_ERROR("input and output matrix distributions don't match");
   }
-  apply_entrywise_unary_operator<UnaryOperator>(input.LockedMatrix(),
-                                                output.Matrix());
+  apply_entrywise_unary_operator<TensorDataType, UnaryOperator>(input.LockedMatrix(),
+                                                                output.Matrix());
 }
 
 /** Apply an entry-wise binary operator to GPU data.
