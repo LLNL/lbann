@@ -149,7 +149,7 @@ embedding_layer<Layout,Device>& embedding_layer<Layout,Device>::operator=(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-description embedding_layer<Layout,Device>::get_description() const {
+description embedding_layer<TensorDataType,Layout,Device>::get_description() const {
   auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Num embeddings", m_num_embeddings);
   desc.add("Embedding dim", m_embedding_dim);
@@ -159,7 +159,7 @@ description embedding_layer<Layout,Device>::get_description() const {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void embedding_layer<TensorDataType,Layout,Device>::setup_dims() {
-  data_type_layer::setup_dims();
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Make sure input dimensions are valid
   if (this->get_input_size() != 1) {
@@ -180,15 +180,15 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_dims() {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void embedding_layer<TensorDataType, Layout,Device>::setup_data() {
-  data_type_layer::setup_data();
+  data_type_layer<TensorDataType>::setup_data();
 
   // Construct default weights if needed
   // Note: Randomly drawn from normal distribution with mean 0 and
   // standard deviation 1.
   if (this->m_weights.empty()) {
-    auto w = make_unique<weights>(get_comm());
-    auto init = make_unique<normal_initializer>(0,1);
-    auto opt = std::unique_ptr<optimizer>(m_model->create_optimizer());
+    auto w = make_unique<weights>(this->get_comm());
+    auto init = make_unique<normal_initializer<TensorDataType>>(0,1);
+    auto opt = std::unique_ptr<optimizer>(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
@@ -203,8 +203,8 @@ void embedding_layer<TensorDataType, Layout,Device>::setup_data() {
   }
 
   // Initialize dictionary
-  auto& embeddings = *m_weights[0];
-  auto matrix_dist = get_prev_activations().DistData();
+  auto& embeddings = *this->m_weights[0];
+  auto matrix_dist = this->get_prev_activations().DistData();
   matrix_dist.colDist = El::STAR;
   matrix_dist.rowDist = El::STAR;
   embeddings.set_dims({static_cast<int>(m_embedding_dim)},

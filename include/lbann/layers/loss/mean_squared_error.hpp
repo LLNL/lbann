@@ -164,14 +164,14 @@ private:
 
 #ifndef LBANN_MEAN_SQUARED_ERROR_LAYER_INSTANTIATE
 extern template class mean_squared_error_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class mean_squared_error_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class mean_squared_error_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class mean_squared_error_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_MEAN_SQUARED_ERROR_LAYER_INSTANTIATE
 
