@@ -116,10 +116,10 @@ class weights_layer : public transform_layer<TensorDataType> {
 
     // Initialize default weights if none are provided
     if (this->m_weights.empty()) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType(0));
-      std::unique_ptr<optimizer<TensorDataType>> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_weights");
+      auto w = make_unique<weights>(this->get_comm());
+      auto init = make_unique<constant_initializer<DataType>>(DataType(0));
+      std::unique_ptr<data_type_optimizer<DataType>> opt(this->m_model->create_optimizer());
+      w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
       this->m_weights.push_back(w.get());
@@ -127,7 +127,7 @@ class weights_layer : public transform_layer<TensorDataType> {
     }
     if (this->m_weights.size() != 1) {
       LBANN_ERROR("attempted to setup ",
-                  get_type()," layer \"",get_name(),"\" ",
+                  this->get_type()," layer \"",this->get_name(),"\" ",
                   "with an invalid number of weights ",
                   "(expected at most 1, ",
                   "but found ",this->m_weights.size(),")");
@@ -136,17 +136,17 @@ class weights_layer : public transform_layer<TensorDataType> {
     // Setup weights and weights gradient
     m_gradient->AlignWith(this->get_activations());
     m_gradient->Resize(this->get_output_size(), 1);
-    m_weights[0]->set_dims(this->get_output_dims());
-    m_weights[0]->set_matrix_distribution(m_gradient->DistData());
+    this->m_weights[0]->set_dims(this->get_output_dims());
+    this->m_weights[0]->set_matrix_distribution(m_gradient->DistData());
 
     // Initialize freeze state
-    if (this->m_frozen) { m_weights[0]->freeze(); }
-    else                { m_weights[0]->unfreeze(); }
-    if (m_weights[0]->is_frozen() != this->m_frozen) {
-      LBANN_ERROR((m_frozen ? "" : "un"),"frozen ",
-                  "layer \"",get_name(),"\" has ",
-                  (m_weights[0]->is_frozen() ? "" : "un"),"frozen ",
-                  "weights \"",m_weights[0]->get_name(),"\"");
+    if (this->m_frozen) { this->m_weights[0]->freeze(); }
+    else                { this->m_weights[0]->unfreeze(); }
+    if (this->m_weights[0]->is_frozen() != this->m_frozen) {
+      LBANN_ERROR((this->m_frozen ? "" : "un"),"frozen ",
+                  "layer \"",this->get_name(),"\" has ",
+                  (this->m_weights[0]->is_frozen() ? "" : "un"),"frozen ",
+                  "weights \"",this->m_weights[0]->get_name(),"\"");
     }
 
   }
@@ -154,8 +154,8 @@ class weights_layer : public transform_layer<TensorDataType> {
   void fp_compute() override {
 
     // Matrices
-    const auto& local_weights = m_weights[0]->get_values().LockedMatrix();
-    auto& local_output = get_local_activations();
+    const auto& local_weights = this->m_weights[0]->get_values().LockedMatrix();
+    auto& local_output = this->get_local_activations();
     m_workspace->Resize(local_output.Width(), 1);
     El::Fill(*m_workspace, TensorDataType(1));
 
@@ -179,7 +179,7 @@ class weights_layer : public transform_layer<TensorDataType> {
     if (opt == nullptr) { return; }
 
     // Matrices
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
+    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
     m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
     El::Fill(*m_workspace, DataType{1});
 
@@ -204,14 +204,14 @@ class weights_layer : public transform_layer<TensorDataType> {
 
 #ifndef LBANN_WEIGHTS_LAYER_INSTANTIATE
 extern template class weights_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class weights_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class weights_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class weights_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_WEIGHTS_LAYER_INSTANTIATE
 

@@ -52,7 +52,7 @@ protected:
 
   void setup_pointers() override {
     transform_layer<TensorDataType>::setup_pointers();
-    if (get_num_parents() < 1) {
+    if (this->get_num_parents() < 1) {
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has no parent layers";
@@ -68,7 +68,7 @@ protected:
     const auto& output_dims = this->get_output_dims();
     for (int i = 0; i < this->get_num_parents(); ++i) {
       if (this->get_input_dims(i) != output_dims) {
-        const auto& parents = get_parent_layers();
+        const auto& parents = this->get_parent_layers();
         std::stringstream err;
         err << get_type() << " layer \"" << this->get_name() << "\" "
             << "has input tensors with incompatible dimensions (";
@@ -89,15 +89,15 @@ protected:
 
   void fp_compute() override {
     auto& output = this->get_activations();
-    El::Copy(get_prev_activations(0), output);
-    for (int i = 1; i < get_num_parents(); ++i) {
+    El::Copy(this->get_prev_activations(0), output);
+    for (int i = 1; i < this->get_num_parents(); ++i) {
       El::Axpy(DataType(1), this->get_prev_activations(i), output);
     }
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     const auto& gradient_wrt_output = this->get_prev_error_signals();
-    for (int i = 0; i < get_num_parents(); ++i) {
+    for (int i = 0; i < this->get_num_parents(); ++i) {
       El::LockedView(this->get_error_signals(i), gradient_wrt_output);
     }
   }

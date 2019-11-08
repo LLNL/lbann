@@ -48,7 +48,7 @@ hypergradient_adam<TensorDataType>::hypergradient_adam(TensorDataType init_learn
 
 template <typename TensorDataType>
 hypergradient_adam<TensorDataType>::hypergradient_adam(const hypergradient_adam& other)
-  : optimizer<TensorDataType>(other),
+  : data_type_optimizer<TensorDataType>(other),
     m_hyper_learning_rate(other.m_hyper_learning_rate),
     m_beta1(other.m_beta1),
     m_beta2(other.m_beta2),
@@ -62,7 +62,7 @@ hypergradient_adam<TensorDataType>::hypergradient_adam(const hypergradient_adam&
 
 template <typename TensorDataType>
 hypergradient_adam<TensorDataType>& hypergradient_adam<TensorDataType>::operator=(const hypergradient_adam<TensorDataType>& other) {
-  optimizer<TensorDataType>::operator=(other);
+  data_type_optimizer<TensorDataType>::operator=(other);
   m_hyper_learning_rate = other.m_hyper_learning_rate;
   m_beta1 = other.m_beta1;
   m_beta2 = other.m_beta2;
@@ -78,7 +78,7 @@ hypergradient_adam<TensorDataType>& hypergradient_adam<TensorDataType>::operator
 
 template <typename TensorDataType>
 description hypergradient_adam<TensorDataType>::get_description() const {
-  auto desc = optimizer<TensorDataType>::get_description();
+  auto desc = data_type_optimizer<TensorDataType>::get_description();
   desc.add("Hypergradient learning rate", m_hyper_learning_rate);
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);
@@ -87,8 +87,8 @@ description hypergradient_adam<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void hypergradient_adam<TensorDataType>::setup(weights<TensorDataType>* w) {
-  optimizer<TensorDataType>::setup(w);
+void hypergradient_adam<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
+  data_type_optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
   m_moment1.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   m_moment2.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
@@ -151,7 +151,7 @@ void hypergradient_adam<TensorDataType>::step_compute(El::AbstractDistMatrix<Ten
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::save_to_checkpoint_shared(p,name_prefix);
+  data_type_optimizer<TensorDataType>::save_to_checkpoint_shared(p,name_prefix);
   if (this->get_comm().am_trainer_master()) {
     pack_scalars(p);
   }
@@ -171,7 +171,7 @@ bool hypergradient_adam<TensorDataType>::save_to_checkpoint_shared(persist& p, s
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::load_from_checkpoint_shared(p,name_prefix);
+  data_type_optimizer<TensorDataType>::load_from_checkpoint_shared(p,name_prefix);
   struct packing_header header;
   if (this->get_comm().am_trainer_master()) {
     unpack_scalars(p, &header);
@@ -195,7 +195,7 @@ bool hypergradient_adam<TensorDataType>::load_from_checkpoint_shared(persist& p,
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::save_to_checkpoint_distributed(p,name_prefix);
+  data_type_optimizer<TensorDataType>::save_to_checkpoint_distributed(p,name_prefix);
   pack_scalars(p);
 
   char l_name[512];
@@ -213,7 +213,7 @@ bool hypergradient_adam<TensorDataType>::save_to_checkpoint_distributed(persist&
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::load_from_checkpoint_distributed(p,name_prefix);
+  data_type_optimizer<TensorDataType>::load_from_checkpoint_distributed(p,name_prefix);
   struct packing_header header;
   unpack_scalars(p, &header);
 
@@ -229,7 +229,7 @@ bool hypergradient_adam<TensorDataType>::load_from_checkpoint_distributed(persis
   return true;
 }
 
-std::unique_ptr<optimizer<DataType>>
+std::unique_ptr<data_type_optimizer<DataType>>
 build_hypergradient_adam_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =

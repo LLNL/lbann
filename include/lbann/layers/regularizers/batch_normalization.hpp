@@ -249,9 +249,9 @@ protected:
     }
     this->get_weights().resize(4, nullptr);
     if (this->get_weights()[0] == nullptr) {
-      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
-      auto init = make_unique<constant_initializer>(TensorDataType(1));
-      std::unique_ptr<optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
+      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
+      std::unique_ptr<data_type_optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
       w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -259,9 +259,9 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (this->get_weights()[1] == nullptr) {
-      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
-      auto init = make_unique<constant_initializer>(TensorDataType(0));
-      std::unique_ptr<optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
+      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
+      std::unique_ptr<data_type_optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
       w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -269,16 +269,16 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (this->get_weights()[2] == nullptr) {
-      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
-      auto init = make_unique<constant_initializer>(TensorDataType(0));
+      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->get_weights()[2] = w.get();
       this->m_model->add_weights(std::move(w));
     }
     if (this->get_weights()[3] == nullptr) {
-      auto w = make_unique<weights<TensorDataType>>(this->get_comm());
-      auto init = make_unique<constant_initializer>(TensorDataType(1));
+      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->get_weights()[3] = w.get();
@@ -340,10 +340,10 @@ protected:
 
 #ifndef LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 extern template class batch_normalization_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class batch_normalization_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 

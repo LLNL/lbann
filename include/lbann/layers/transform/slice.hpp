@@ -109,7 +109,7 @@ protected:
   void setup_dims() override {
     transform_layer<TensorDataType>::setup_dims();
     const auto& input_dims = this->get_input_dims();
-    const auto& num_outputs = get_num_children();
+    const auto& num_outputs = this->get_num_children();
 
     // Check that slice parameters are valid
     std::stringstream err;
@@ -123,7 +123,7 @@ protected:
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "requires more slice points than output tensors "
           << "(found " << m_slice_points.size() << " slice points "
-          << "and " << m_child_layers.size() << " output tensors)";
+          << "and " << this->m_child_layers.size() << " output tensors)";
       LBANN_ERROR(err.str());
     }
     if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
@@ -155,7 +155,7 @@ protected:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    const auto& num_outputs = get_num_children();
+    const auto& num_outputs = this->get_num_children();
     const auto& input_dims = this->get_input_dims();
 
     // Divide input tensor into unit slices along slice dimension
@@ -175,7 +175,7 @@ protected:
     const auto& input = this->get_prev_activations();
     for (int i = 0; i < num_outputs; ++i) {
       const auto& output_dims = this->get_output_dims(i);
-      const auto& output_size = get_output_size(i);
+      const auto& output_size = this->get_output_size(i);
       auto& output = this->get_activations(i);
       output.Empty(false);
 

@@ -40,7 +40,7 @@ namespace lbann {
  *  of Machine Learning Research 12, no. Jul (2011): 2121-2159.
  */
 template <typename TensorDataType>
-class adagrad : public optimizer<TensorDataType> {
+class adagrad : public data_type_optimizer<TensorDataType> {
 public:
 
   adagrad(TensorDataType learning_rate, TensorDataType eps = 1e-8);
@@ -54,7 +54,7 @@ public:
   /** Human-readable description. */
   description get_description() const override;
 
-  void setup(weights<TensorDataType>* w = nullptr) override;
+  void setup(data_type_weights<TensorDataType>* w = nullptr) override;
 
 protected:
 
@@ -86,7 +86,7 @@ private:
 
 };
 
-std::unique_ptr<optimizer<DataType>>
+std::unique_ptr<data_type_optimizer<DataType>>
 build_adagrad_optimizer_from_pbuf(
   google::protobuf::Message const&);
 

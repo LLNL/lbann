@@ -178,14 +178,14 @@ class selu_dropout : public regularizer_layer<TensorDataType> {
 
 #ifndef LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
 extern template class selu_dropout<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class selu_dropout<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class selu_dropout<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class selu_dropout<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
 

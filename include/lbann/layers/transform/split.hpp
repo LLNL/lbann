@@ -53,14 +53,14 @@ protected:
 
   void setup_dims() override {
     data_type_layer<TensorDataType>::setup_dims();
-    for (int i = 0; i < get_num_children(); ++i) {
+    for (int i = 0; i < this->get_num_children(); ++i) {
       this->set_output_dims(this->get_input_dims(), i);
     }
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
     const auto& input = this->get_prev_activations();
-    for (int i = 0; i < get_num_children(); ++i) {
+    for (int i = 0; i < this->get_num_children(); ++i) {
       El::LockedView(this->get_activations(i), input);
     }
   }
@@ -69,12 +69,12 @@ protected:
 
   void bp_compute() override {
     auto& gradient_wrt_input = this->get_error_signals();
-    if (get_num_children() > 0) {
-      El::Copy(get_prev_error_signals(0), gradient_wrt_input);
+    if (this->get_num_children() > 0) {
+      El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
     } else {
       El::Zero(gradient_wrt_input);
     }
-    for (int i = 1; i < get_num_children(); ++i) {
+    for (int i = 1; i < this->get_num_children(); ++i) {
       El::Axpy(DataType(1), this->get_prev_error_signals(i),
                gradient_wrt_input);
     }

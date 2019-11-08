@@ -146,10 +146,10 @@ class sort_layer : public transform_layer<TensorDataType> {
 
 #ifndef LBANN_SORT_LAYER_INSTANTIATE
 extern template class sort_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class sort_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SORT_LAYER_INSTANTIATE
 

@@ -70,12 +70,12 @@ protected:
                                                    output_dims.end(),
                                                    1,
                                                    std::multiplies<int>());
-      output_dims[unspecified_dim] = get_input_size() / specified_size;
+      output_dims[unspecified_dim] = this->get_input_size() / specified_size;
       this->set_output_dims(output_dims);
     }
 
     // Check that reshape is valid
-    if (this->get_input_size() != get_output_size()) {
+    if (this->get_input_size() != this->get_output_size()) {
       std::stringstream err;
       err << "input tensor dimensions (";
       for (size_t i = 0; i < input_dims.size(); ++i) {

@@ -84,14 +84,14 @@ class in_top_k_layer : public transform_layer<TensorDataType> {
 
 #ifndef LBANN_IN_TOP_K_LAYER_INSTANTIATE
 extern template class in_top_k_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class in_top_k_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class in_top_k_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class in_top_k_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_IN_TOP_K_LAYER_INSTANTIATE
 

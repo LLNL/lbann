@@ -34,17 +34,17 @@ namespace lbann {
 
 template <typename TensorDataType>
 adagrad<TensorDataType>::adagrad(TensorDataType learning_rate, TensorDataType eps)
-  : optimizer<TensorDataType>(learning_rate), m_eps(eps) {}
+  : data_type_optimizer<TensorDataType>(learning_rate), m_eps(eps) {}
 
 template <typename TensorDataType>
 adagrad<TensorDataType>::adagrad(const adagrad<TensorDataType>& other)
-  : optimizer<TensorDataType>(other),
+  : data_type_optimizer<TensorDataType>(other),
     m_eps(other.m_eps),
     m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}
 
 template <typename TensorDataType>
 adagrad<TensorDataType>& adagrad<TensorDataType>::operator=(const adagrad<TensorDataType>& other) {
-  optimizer<TensorDataType>::operator=(other);
+  data_type_optimizer<TensorDataType>::operator=(other);
   m_eps = other.m_eps;
   m_cache.reset(other.m_cache ? other.m_cache->Copy() : nullptr);
   return *this;
@@ -58,8 +58,8 @@ description adagrad<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void adagrad<TensorDataType>::setup(weights<TensorDataType>* w) {
-  optimizer<TensorDataType>::setup(w);
+void adagrad<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
+  data_type_optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
   m_cache.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   El::Zeros(*m_cache, gradient.Height(), gradient.Width());
@@ -116,7 +116,7 @@ void adagrad<TensorDataType>::step_compute_cpu(El::AbstractDistMatrix<TensorData
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::save_to_checkpoint_shared(p, name_prefix);
+  data_type_optimizer<TensorDataType>::save_to_checkpoint_shared(p, name_prefix);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -127,7 +127,7 @@ bool adagrad<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string 
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::load_from_checkpoint_shared(p, name_prefix);
+  data_type_optimizer<TensorDataType>::load_from_checkpoint_shared(p, name_prefix);
   char l_name[512];
 
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -138,7 +138,7 @@ bool adagrad<TensorDataType>::load_from_checkpoint_shared(persist& p, std::strin
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::save_to_checkpoint_distributed(p, name_prefix);
+  data_type_optimizer<TensorDataType>::save_to_checkpoint_distributed(p, name_prefix);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -149,7 +149,7 @@ bool adagrad<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::st
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::load_from_checkpoint_distributed(p, name_prefix);
+  data_type_optimizer<TensorDataType>::load_from_checkpoint_distributed(p, name_prefix);
   char l_name[512];
 
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -158,7 +158,7 @@ bool adagrad<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::
   return true;
 }
 
-std::unique_ptr<optimizer<DataType>>
+std::unique_ptr<data_type_optimizer<DataType>>
 build_adagrad_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =

@@ -40,7 +40,7 @@ namespace lbann {
  *  Descent", 2017.
  */
 template <typename TensorDataType>
-class hypergradient_adam : public optimizer<TensorDataType> {
+class hypergradient_adam : public data_type_optimizer<TensorDataType> {
 public:
 
   /** @brief Construct a Hypergradient Adam optimizer object
@@ -71,7 +71,7 @@ public:
   /** @brief Human-readable description. */
   description get_description() const override;
 
-  void setup(weights<TensorDataType>* w = nullptr) override;
+  void setup(data_type_weights<TensorDataType>* w = nullptr) override;
 
 protected:
 
@@ -161,7 +161,7 @@ private:
 
 };
 
-std::unique_ptr<optimizer<DataType>>
+std::unique_ptr<data_type_optimizer<DataType>>
 build_hypergradient_adam_optimizer_from_pbuf(
   google::protobuf::Message const&);
 

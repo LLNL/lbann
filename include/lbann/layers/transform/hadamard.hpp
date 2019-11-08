@@ -53,7 +53,7 @@ protected:
 
   void setup_pointers() override {
     transform_layer<TensorDataType>::setup_pointers();
-    if (get_num_parents() < 1) {
+    if (this->get_num_parents() < 1) {
       std::stringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has no parent layers";
@@ -67,13 +67,13 @@ protected:
 
     // Check that input dimensions match
     const auto& output_dims = this->get_output_dims();
-    for (int i = 0; i < get_num_parents(); ++i) {
+    for (int i = 0; i < this->get_num_parents(); ++i) {
       if (this->get_input_dims(i) != output_dims) {
-        const auto& parents = get_parent_layers();
+        const auto& parents = this->get_parent_layers();
         std::stringstream err;
         err << get_type() << " layer \"" << this->get_name() << "\" "
             << "has input tensors with incompatible dimensions (";
-        for (int j = 0; j < get_num_parents(); ++j) {
+        for (int j = 0; j < this->get_num_parents(); ++j) {
           const auto& dims = this->get_input_dims(j);
           err << (j > 0 ? ", " : "")
               << "layer \"" << parents[j]->get_name() << "\" outputs ";
@@ -90,21 +90,21 @@ protected:
 
   void fp_compute() override {
     auto& output = this->get_activations();
-    switch (get_num_parents()) {
+    switch (this->get_num_parents()) {
     case 0: El::Fill(output, TensorDataType(1)); break;
     case 1: El::LockedView(output, this->get_prev_activations()); break;
     default:
-      El::Hadamard(get_prev_activations(0),
+      El::Hadamard(this->get_prev_activations(0),
                    this->get_prev_activations(1),
                    output);
-      for (int i = 2; i < get_num_parents(); ++i) {
-        El::Hadamard(get_prev_activations(i), output, output);
+      for (int i = 2; i < this->get_num_parents(); ++i) {
+        El::Hadamard(this->get_prev_activations(i), output, output);
       }
     }
   }
 
   void bp_compute() override {
-    const int num_parents = get_num_parents();
+    const int num_parents = this->get_num_parents();
     const auto& gradient_wrt_output = this->get_prev_error_signals();
     switch (num_parents) {
     case 0: break;
@@ -117,7 +117,7 @@ protected:
         El::Copy(gradient_wrt_output, gradient_wrt_input);
         for (int j = 0; j < num_parents; ++j) {
           if (i != j) {
-            El::Hadamard(get_prev_activations(j),
+            El::Hadamard(this->get_prev_activations(j),
                          gradient_wrt_input,
                          gradient_wrt_input);
           }
@@ -130,14 +130,14 @@ protected:
 
 #ifndef LBANN_HADAMARD_LAYER_INSTANTIATE
 extern template class hadamard_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class hadamard_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class hadamard_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class hadamard_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_HADAMARD_LAYER_INSTANTIATE
 

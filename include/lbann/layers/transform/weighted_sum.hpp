@@ -71,16 +71,16 @@ protected:
   void setup_pointers() override {
     transform_layer<TensorDataType>::setup_pointers();
     std::stringstream err;
-    if (get_num_parents() < 1) {
+    if (this->get_num_parents() < 1) {
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has no parent layers";
       LBANN_ERROR(err.str());
     }
-    if ((int) m_scaling_factors.size() != get_num_parents()) {
+    if ((int) m_scaling_factors.size() != this->get_num_parents()) {
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has an invalid number of scaling factors "
           << "(found " << m_scaling_factors.size() << ", "
-          << "but there are " << get_num_parents() << " parent layers)";
+          << "but there are " << this->get_num_parents() << " parent layers)";
       LBANN_ERROR(err.str());
     }
   }
@@ -91,13 +91,13 @@ protected:
 
     // Check that input dimensions match
     const auto& output_dims = this->get_output_dims();
-    for (int i = 0; i < get_num_parents(); ++i) {
+    for (int i = 0; i < this->get_num_parents(); ++i) {
       if (this->get_input_dims(i) != output_dims) {
-        const auto& parents = get_parent_layers();
+        const auto& parents = this->get_parent_layers();
         std::stringstream err;
         err << get_type() << " layer \"" << this->get_name() << "\" "
             << "has input tensors with incompatible dimensions (";
-        for (int j = 0; j < get_num_parents(); ++j) {
+        for (int j = 0; j < this->get_num_parents(); ++j) {
           const auto& dims = this->get_input_dims(j);
           err << (j > 0 ? ", " : "")
               << "layer \"" << parents[j]->get_name() << "\" outputs ";
@@ -115,14 +115,14 @@ protected:
   void fp_compute() override {
     auto& output = this->get_activations();
     El::Zero(output);
-    for (int i = 0; i < get_num_parents(); ++i) {
+    for (int i = 0; i < this->get_num_parents(); ++i) {
       El::Axpy(m_scaling_factors[i], this->get_prev_activations(i), output);
     }
   }
 
   void bp_compute() override {
     const auto& gradient_wrt_output = this->get_prev_error_signals();
-    for (int i = 0; i < get_num_parents(); ++i) {
+    for (int i = 0; i < this->get_num_parents(); ++i) {
       auto& gradient_wrt_input = this->get_error_signals(i);
       El::Zero(gradient_wrt_input);
       El::Axpy(m_scaling_factors[i], gradient_wrt_output,
@@ -134,14 +134,14 @@ protected:
 
 #ifndef LBANN_WEIGHTED_SUM_LAYER_INSTANTIATE
 extern template class weighted_sum_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class weighted_sum_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class weighted_sum_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class weighted_sum_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_WEIGHTED_SUM_LAYER_INSTANTIATE
 
