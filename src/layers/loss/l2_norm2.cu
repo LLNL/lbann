@@ -31,7 +31,7 @@ namespace lbann {
 
 namespace {
 
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void fp_kernel(El::Int local_height,
                           El::Int local_width,
                           const TensorDataType* __restrict__ input,
@@ -72,6 +72,7 @@ __global__ void fp_kernel(El::Int local_height,
 
 }
 
+template <typename TensorDataType>
 void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::AbstractMatrix<TensorDataType>& local_contribution) {
   El::Zero(local_contribution);
   if (!local_input.IsEmpty()) {
@@ -83,7 +84,7 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::Abs
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    fp_kernel<block_size>
+    fp_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -91,7 +92,7 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::Abs
   }
 }
 
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void bp_kernel(El::Int local_height, El::Int local_width,
                           const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
@@ -111,6 +112,7 @@ __global__ void bp_kernel(El::Int local_height, El::Int local_width,
   }
 }
 
+template <typename TensorDataType>
 void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
                   const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
@@ -123,7 +125,7 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    bp_kernel<block_size>
+    bp_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -135,35 +137,27 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
 
 } // namespace
 
-template <>
-void l2_norm2_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        El::AbstractMatrix<TensorDataType>& local_contribution) {
-  local_fp_gpu(local_input, local_contribution);
+template <typename TensorDataType>
+void local_fp_compute_impl(l2_norm2_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  local_fp_gpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->Matrix());
 }
-template <>
-void l2_norm2_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
-  local_bp_gpu(local_input,
-               local_gradient_wrt_output,
-               local_gradient_wrt_input);
+template <typename TensorDataType>
+void local_bp_compute_impl(l2_norm2_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  local_bp_gpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->LockedMatrix(),
+                               l.get_local_error_signals());
 }
-template <>
-void l2_norm2_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        El::AbstractMatrix<TensorDataType>& local_contribution) {
-  local_fp_gpu(local_input, local_contribution);
+template <typename TensorDataType>
+void local_fp_compute_impl(l2_norm2_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  local_fp_gpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->Matrix());
 }
-template <>
-void l2_norm2_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
-  local_bp_gpu(local_input,
-               local_gradient_wrt_output,
-               local_gradient_wrt_input);
+template <typename TensorDataType>
+void local_bp_compute_impl(l2_norm2_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  local_bp_gpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->LockedMatrix(),
+                               l.get_local_error_signals());
 }
 
 template class l2_norm2_layer<
