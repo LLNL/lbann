@@ -46,7 +46,7 @@ void dump_weights::on_epoch_end(model *m) {
 
 void dump_weights::do_dump_weights(model *m, std::string s) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-  
+
   if(c.get_epoch() % m_epoch_interval != 0)  return;
 
   makedir(m_basename.c_str());
@@ -61,7 +61,8 @@ void dump_weights::do_dump_weights(model *m, std::string s) {
          + epoch
          + "-" + w->get_name()
          + "-Weights");
-    El::Write(w->get_values(), file, El::ASCII);
+    const auto* dtw = dynamic_cast<const data_type_weight<DataType>*>(w);
+    El::Write(dtw->get_values(), file, El::ASCII);
   }
 }
 

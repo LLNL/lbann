@@ -74,7 +74,7 @@ private:
   cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
-  friend class unpooling_layer<T_layout, Dev>;
+  friend class unpooling_layer<TensorDataType, T_layout, Dev>;
 
 public:
 
@@ -341,14 +341,14 @@ private:
     }
 
     // Local matrices
-    const auto& local_input = get_local_prev_activations();
-    auto& local_output = get_local_activations();
+    const auto& local_input = this->get_local_prev_activations();
+    auto& local_output = this->get_local_activations();
 
     // Pool parameters
     const int local_width = local_input.Width();
     const auto& input_dims = this->get_input_dims();
     const int num_channels = input_dims[0];
-    const int num_per_output_channel = get_output_size() / num_channels;
+    const int num_per_output_channel = this->get_output_size() / num_channels;
 
     // Initialize max pool indices if needed
     if(m_pool_mode == pool_mode::max) {
@@ -377,7 +377,7 @@ private:
       if(m_pool_mode == pool_mode::max) {
         // Apply max pooling
         TensorDataType *output_buffer = local_output.Buffer(0, sample);
-        int *indices_buffer = &m_max_pool_indices[sample * get_output_size()];
+        int *indices_buffer = &m_max_pool_indices[sample * this->get_output_size()];
         LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
@@ -428,14 +428,14 @@ private:
     }
 
     // Local matrices
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = get_local_error_signals();
+    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = this->get_local_error_signals();
 
     // Pool parameters
     const int local_width = local_gradient_wrt_output.Width();
     const auto& input_dims = this->get_input_dims();
     const int num_channels = input_dims[0];
-    const int num_per_input_channel = get_output_size() / num_channels;
+    const int num_per_input_channel = this->get_output_size() / num_channels;
 
     // Initialize matrices
     El::Matrix<TensorDataType, El::Device::CPU> im2col_mat(m_pool_size * num_channels, num_per_input_channel);
@@ -455,7 +455,7 @@ private:
         const TensorDataType *gradient_wrt_output_buffer
           = local_gradient_wrt_output.LockedBuffer(0, sample);
         const int *indices_buffer
-          = &m_max_pool_indices[sample * get_output_size()];
+          = &m_max_pool_indices[sample * this->get_output_size()];
         LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {

@@ -47,12 +47,12 @@ class unpooling_layer : public transform_layer<TensorDataType> {
  private:
 
   /** Corresponding pooling layer. */
-  pooling_layer<T_layout, Dev>* m_pooling_layer;
+  pooling_layer<TensorDataType, T_layout, Dev>* m_pooling_layer;
 
  public:
 
   unpooling_layer(lbann_comm *comm,
-                  pooling_layer<T_layout, Dev>* pool = nullptr)
+                  pooling_layer<TensorDataType, T_layout, Dev>* pool = nullptr)
     : transform_layer<TensorDataType>(comm),
       m_pooling_layer(pool) { }
 
@@ -101,7 +101,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
 
   }
 
-  void set_pooling_layer(pooling_layer<T_layout, Dev>* pool) {
+  void set_pooling_layer(pooling_layer<TensorDataType, T_layout, Dev>* pool) {
     m_pooling_layer = pool;
   }
 
@@ -112,7 +112,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
   }
 
   void set_layer_pointers(std::vector<Layer*> layers) override {
-    m_pooling_layer = dynamic_cast<pooling_layer<T_layout, Dev>*>(layers.back());
+    m_pooling_layer = dynamic_cast<pooling_layer<TensorDataType, T_layout, Dev>*>(layers.back());
     if (m_pooling_layer == nullptr) {
       std::stringstream err;
       err << __FILE__ << " " << __LINE__
@@ -147,14 +147,14 @@ class unpooling_layer : public transform_layer<TensorDataType> {
   void fp_compute_im2col() {
 
     // Get local matrices
-    const DMat<Dev>& prev_activations_local = get_local_prev_activations();
-    DMat<Dev>& activations_local = get_local_activations();
+    const DMat<Dev>& prev_activations_local = this->get_local_prev_activations();
+    DMat<Dev>& activations_local = this->get_local_activations();
 
     // Get parameters
     const int local_width = prev_activations_local.Width();
     const auto& output_dims = this->get_output_dims();
     const int num_channels = output_dims[0];
-    const int num_per_input_channel = get_input_size() / num_channels;
+    const int num_per_input_channel = this->get_input_size() / num_channels;
     const int pool_size = m_pooling_layer->m_pool_size;
 
     // Initialize im2col matrix
@@ -170,7 +170,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
       const TensorDataType *prev_activations_buffer
         = prev_activations_local.LockedBuffer(0, sample);
       const int *indices_buffer
-        = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
+        = &m_pooling_layer->m_max_pool_indices[sample * this->get_input_size()];
       LBANN_OMP_PARALLEL_FOR
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_input_channel; ++j) {
@@ -203,14 +203,14 @@ class unpooling_layer : public transform_layer<TensorDataType> {
   void bp_compute_im2col() {
 
     // Get local matrices
-    const DMat<Dev>& prev_error_signal_local = get_local_prev_error_signals();
-    DMat<Dev>& error_signal_local = get_local_error_signals();
+    const DMat<Dev>& prev_error_signal_local = this->get_local_prev_error_signals();
+    DMat<Dev>& error_signal_local = this->get_local_error_signals();
 
     // Get parameters
     const int local_width = prev_error_signal_local.Width();
     const auto& output_dims = this->get_output_dims();
     const int num_channels = output_dims[0];
-    const int num_per_output_channel = get_input_size() / num_channels;
+    const int num_per_output_channel = this->get_input_size() / num_channels;
     const int pool_size = m_pooling_layer->m_pool_size;
 
     // Initialize im2col matrix
@@ -234,7 +234,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
       // Propagate error signal based on pooling layer
       TensorDataType *output_buffer = error_signal_local.Buffer(0, sample);
       const int *indices_buffer
-        = &m_pooling_layer->m_max_pool_indices[sample * get_input_size()];
+        = &m_pooling_layer->m_max_pool_indices[sample * this->get_input_size()];
       LBANN_OMP_PARALLEL_FOR
       for(int channel = 0; channel < num_channels; ++channel) {
         for(int j = 0; j < num_per_output_channel; ++j) {
@@ -254,7 +254,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
 
 #ifndef LBANN_UNPOOLING_LAYER_INSTANTIATE
 extern template class unpooling_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #endif // LBANN_UNPOOLING_LAYER_INSTANTIATE
 
 }  // namespace lbann
