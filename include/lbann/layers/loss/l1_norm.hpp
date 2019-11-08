@@ -81,14 +81,13 @@ public:
 
     // Initialize workspace
     m_workspace->Empty();
-    m_workspace->AlignWith(get_prev_activations());
+    m_workspace->AlignWith(this->get_prev_activations());
     m_workspace->Resize(1, this->get_prev_activations().Width());
 
     // Compute local contributions and accumulate
     /// @todo Consider reduce rather than allreduce
-    local_fp_compute(get_local_prev_activations(),
-                     m_workspace->Matrix());
-    m_comm->allreduce(*m_workspace, m_workspace->RedundantComm());
+    local_fp_compute();
+    this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
     El::Copy(*m_workspace, this->get_activations());
 
     // Clean up
@@ -100,13 +99,11 @@ public:
 
     // Initialize workspace
     m_workspace->Empty();
-    m_workspace->AlignWith(get_prev_activations());
-    El::Copy(get_prev_error_signals(), *m_workspace);
+    m_workspace->AlignWith(this->get_prev_activations());
+    El::Copy(this->get_prev_error_signals(), *m_workspace);
 
     // Compute local gradients
-    local_bp_compute(get_local_prev_activations(),
-                     m_workspace->LockedMatrix(),
-                     get_local_error_signals());
+    local_bp_compute();
 
     // Clean up
     m_workspace->Empty();
@@ -116,12 +113,14 @@ public:
 private:
 
   /** Compute local contributions to L2 norm. */
-  static void local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                               El::AbstractMatrix<TensorDataType>& local_contribution);
+  void local_fp_compute();
   /** Compute local gradients. */
-  static void local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                               const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                               El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input);
+  void local_bp_compute();
+
+  template <typename U>
+  friend void local_fp_compute_impl(l1_norm_layer<U, T_layout, Dev>& l);
+  template <typename U>
+  friend void local_bp_compute_impl(l1_norm_layer<U, T_layout, Dev>& l);
 
   /** Workspace matrix. */
   std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;

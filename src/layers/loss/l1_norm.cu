@@ -31,7 +31,7 @@ namespace lbann {
 
 namespace {
 
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void fp_kernel(El::Int local_height,
                           El::Int local_width,
                           const TensorDataType* __restrict__ input,
@@ -72,6 +72,7 @@ __global__ void fp_kernel(El::Int local_height,
 
 }
 
+template <typename TensorDataType>
 void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::AbstractMatrix<TensorDataType>& local_contribution) {
   El::Zero(local_contribution);
   if (!local_input.IsEmpty()) {
@@ -91,7 +92,7 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::Abs
   }
 }
 
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void bp_kernel(El::Int local_height, El::Int local_width,
                           const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
@@ -118,6 +119,7 @@ __global__ void bp_kernel(El::Int local_height, El::Int local_width,
   }
 }
 
+template <typename TensorDataType>
 void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
                   const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
@@ -142,40 +144,32 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
 
 } // namespace
 
-template <>
-void l1_norm_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        El::AbstractMatrix<TensorDataType>& local_contribution) {
-  local_fp_gpu(local_input, local_contribution);
+template <typename TensorDataType>
+void local_fp_compute_impl(l1_norm_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  local_fp_gpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->Matrix());
 }
-template <>
-void l1_norm_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
-  local_bp_gpu(local_input,
-               local_gradient_wrt_output,
-               local_gradient_wrt_input);
+template <typename TensorDataType>
+void local_bp_compute_impl(l1_norm_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  local_bp_gpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->LockedMatrix(),
+                               l.get_local_error_signals());
 }
-template <>
-void l1_norm_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        El::AbstractMatrix<TensorDataType>& local_contribution) {
-  local_fp_gpu(local_input, local_contribution);
+template <typename TensorDataType>
+void local_fp_compute_impl(l1_norm_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  local_fp_gpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->Matrix());
 }
-template <>
-void l1_norm_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
-  local_bp_gpu(local_input,
-               local_gradient_wrt_output,
-               local_gradient_wrt_input);
+template <typename TensorDataType>
+void local_bp_compute_impl(l1_norm_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  local_bp_gpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->LockedMatrix(),
+                               l.get_local_error_signals());
 }
 
 template class l1_norm_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class l1_norm_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

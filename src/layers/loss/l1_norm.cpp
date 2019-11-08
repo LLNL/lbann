@@ -31,6 +31,7 @@ namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
                   El::AbstractMatrix<TensorDataType>& local_contribution) {
   LBANN_OMP_PARALLEL_FOR
@@ -44,6 +45,7 @@ void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
   }
 }
 
+template <typename TensorDataType>
 void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
                   const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
@@ -67,40 +69,43 @@ void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
 
 } // namespace
 
-template <>
-void l1_norm_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        El::AbstractMatrix<TensorDataType>& local_contribution) {
-  local_fp_cpu(local_input, local_contribution);
+template <typename TensorDataType>
+void local_fp_compute_impl(l1_norm_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_fp_cpu(l.get_local_prev_activations(),
+               l.m_workspace->Matrix());
 }
-template <>
-void l1_norm_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
-  local_bp_cpu(local_input,
-               local_gradient_wrt_output,
-               local_gradient_wrt_input);
+template <typename TensorDataType>
+void local_bp_compute_impl(l1_norm_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
+  local_bp_cpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->LockedMatrix(),
+                               l.get_local_error_signals());
 }
-template <>
-void l1_norm_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        El::AbstractMatrix<TensorDataType>& local_contribution) {
-  local_fp_cpu(local_input, local_contribution);
+template <typename TensorDataType>
+void local_fp_compute_impl(l1_norm_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_fp_cpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->Matrix());
 }
-template <>
-void l1_norm_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(const El::AbstractMatrix<TensorDataType>& local_input,
-                        const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
-  local_bp_cpu(local_input,
-               local_gradient_wrt_output,
-               local_gradient_wrt_input);
+template <typename TensorDataType>
+void local_bp_compute_impl(l1_norm_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  local_bp_cpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->LockedMatrix(),
+                               l.get_local_error_signals());
+}
+
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l1_norm_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+  local_fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l1_norm_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+  local_bp_compute_impl<TensorDataType>(*this);
 }
 
 template class l1_norm_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class l1_norm_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann
