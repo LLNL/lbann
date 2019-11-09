@@ -22,7 +22,7 @@ namespace utilities
 // %h -- The hostname of the current process
 // %p -- The PID of the current process
 // %r -- the MPI rank of the current process, if available, or 0
-// %r -- the MPI size of the current job, if available, or 1
+// %s -- the MPI size of the current job, if available, or 1
 // %env{NAME} -- The value of ${NAME} in the current environment
 //
 
