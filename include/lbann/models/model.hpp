@@ -69,7 +69,7 @@ public:
 
   model(lbann_comm* comm,
         size_t mini_batch_size,
-        objective_function<TensorDataType>* obj_fn,
+        objective_function* obj_fn,
         optimizer* default_optimizer = nullptr);
   model(const model& other);
   model& operator=(const model& other);
@@ -101,7 +101,7 @@ public:
   virtual description get_description() const;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function<TensorDataType>* get_objective_function() const {
+  objective_function* get_objective_function() const {
     return m_objective_function;
   }
 
@@ -425,7 +425,7 @@ private:
   optimizer* m_default_optimizer = nullptr;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function<TensorDataType>* m_objective_function;
+  objective_function* m_objective_function;
 
   /** @brief Numerical quantities to evaluate model performance.
    *  @details Does not affect training.

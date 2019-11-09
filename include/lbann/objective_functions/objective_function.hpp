@@ -33,7 +33,6 @@
 namespace lbann {
 
 /** Objective function class. */
-template <typename TensorDataType>
 class objective_function {
  public:
 
@@ -53,9 +52,9 @@ class objective_function {
    *  The objective function takes ownership of the objective function
    *  term and deallocates it during destruction.
    */
-  void add_term(objective_function_term<TensorDataType>* term) { m_terms.push_back(term); }
+  void add_term(objective_function_term* term) { m_terms.push_back(term); }
   /** Get list of objective function terms. */
-  std::vector<objective_function_term<TensorDataType>*> get_terms() { return m_terms; }
+  std::vector<objective_function_term*> get_terms() { return m_terms; }
 
   /** Setup objective function. */
   void setup(model& m);
@@ -102,9 +101,9 @@ class objective_function {
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<Layer*> layers);
   /** Get list of pointers to weights. */
-  std::vector<data_type_weights<TensorDataType>*> get_weights_pointers() const;
+  std::vector<weights*> get_weights_pointers() const;
   /** Set list of pointers to weights. */
-  void set_weights_pointers(std::vector<data_type_weights<TensorDataType>*> w);
+  void set_weights_pointers(std::vector<weights*> w);
 
   /** Get the time spent evaluating the objective function. */
   EvalType get_evaluation_time() const { return m_evaluation_time; }
@@ -119,7 +118,7 @@ class objective_function {
  private:
 
   /** List of objective function terms. */
-  std::vector<objective_function_term<TensorDataType>*> m_terms;
+  std::vector<objective_function_term*> m_terms;
 
   /** Objective funciton statistics. */
   std::map<execution_mode,metric_statistics> m_statistics;
