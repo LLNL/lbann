@@ -380,10 +380,7 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   }
 }
 
-//n.b. Do not put any PROFILE or DEBUG statements in this method,
-//     since the threading from the data_reader will cause you grief
-const conduit::Node & data_store_conduit::get_conduit_node(int data_id) {
-//const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
+const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
   if (is_local_cache()) {
     std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
     if (t3 == m_data.end()) {
@@ -1169,12 +1166,11 @@ void data_store_conduit::read_files(std::vector<char> &work, map_is_t &sizes, st
 }
 
 void data_store_conduit::build_conduit_nodes(map_is_t &sizes) {
-  //image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
-  //const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
-  //for (size_t idx=0; idx<image_list.size(); idx++) {
+  image_data_reader *image_reader = dynamic_cast<image_data_reader*>(m_reader);
+  const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
   for (auto t : sizes) {
     int data_id = t.first;
-    int label = 42; // image_list[idx].second;  //TODO FIXME
+    int label = image_list[data_id].second;  //TODO FIXME
     if (m_image_offsets.find(data_id) == m_image_offsets.end()) {
       LBANN_ERROR("m_image_offsets.find(data_id) == m_image_offsets.end() for data_id: ", data_id);
     }

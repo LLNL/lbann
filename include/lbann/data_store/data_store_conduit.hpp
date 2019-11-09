@@ -90,8 +90,7 @@ class data_store_conduit {
   void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
 
   /** @brief Returns the conduit Node associated with the data_id */
-  const conduit::Node & get_conduit_node(int data_id);
-  //const conduit::Node & get_conduit_node(int data_id) const;
+  const conduit::Node & get_conduit_node(int data_id) const;
 
   /// if 'already_have = true' then the passed 'node' was obtained by a call to
   /// get_empty_node(). In some operating modes this saves us from copying the node
@@ -351,8 +350,12 @@ private :
   /** @brief True, if we are in preload mode */
   bool m_preloading = false;
 
-  /// set to true if data_store is being explicitly loaded
-  //VBE: please explain what this means!
+  /** @brief True, if we are in explicit loading mode 
+   *
+   * There is some redundancy here: m_preloading and m_explicitly_loading
+   * can not both be true, but both may be false. When m_loading_is_complete
+   * is true, both m_preloading and m_preloading should be false.
+   */
   bool m_explicitly_loading = false;
 
   /// The size of the mini-batch that was used to calculate ownership
@@ -489,7 +492,6 @@ private :
 
 
   /// for use in local cache mode
-  //void fillin_shared_images(const std::vector<char> &images, size_t offset);
   void fillin_shared_images(char* images, size_t size, size_t offset);
 
   /** @brief For testing during development
