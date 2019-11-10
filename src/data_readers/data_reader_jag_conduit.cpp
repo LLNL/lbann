@@ -118,7 +118,7 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
   if (m_io_buffer_type == "partitioned") {
-    set_num_parallel_readers(partitioned_io_buffer::compute_max_num_parallel_readers(
+    set_num_parallel_readers(partitioned_io_buffer<DataType>::compute_max_num_parallel_readers(
                              0, get_mini_batch_size(),
                              get_num_parallel_readers(), get_comm()));
     set_sample_stride(get_num_parallel_readers());
@@ -813,18 +813,18 @@ void data_reader_jag_conduit::load() {
     }
     if (check_data) {
       check_scalar_keys();
-    }  
+    }
 
     if (m_input_keys.size() == 0u) {
       set_all_input_choices(); // use all by default if none is specified
     }
     if (check_data) {
       check_input_keys();
-    }  
+    }
 
     if (check_data) {
       check_image_data();
-    }  
+    }
 
     m_sample_list.close_if_done_samples_file_handle(0);
   }
@@ -1223,7 +1223,7 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
       if (data_store_active()) {
         LBANN_ERROR("Unable to find field ", conduit_obj,
                     " in conduit node: ", std::to_string(sample_id),
-                    ": num nodes successfully loaded by this rank: ", 
+                    ": num nodes successfully loaded by this rank: ",
                     m_data_store->get_data_size(), " num successful calls to get_image_data on this rank: ");
       }
       conduit::Node n_image;
