@@ -33,7 +33,7 @@ namespace lbann {
 namespace {
 
 // =========================================================
-// Operator objects for entry-wise unary layers
+}// Operator objects for entry-wise unary layers
 // =========================================================
 // Note: Unary operator corresponds to forward prop step
 // (\f$ y = f(x) \f$) and binary operator corresponds to
@@ -137,26 +137,30 @@ struct softsign_op {
 // Template instantiation
 #define INSTANTIATE(layer, op)                                                                   \
   template <typename TensorDataType>                                                             \
-  void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
-    apply_entrywise_unary_operator<op<TensorDataType>>(l.get_prev_activations(),                 \
-                                                       l.get_activations());                     \
+  void fp_compute_impl(layer<TensorDataType, lbann::data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
+    auto& dtl = dynamic_cast<data_type_layer<TensorDataType>&>(l);                               \
+    apply_entrywise_unary_operator<op<TensorDataType>>(dtl.get_prev_activations(),               \
+                                                       dtl.get_activations());                   \
   }                                                                                              \
   template <typename TensorDataType>                                                             \
-  void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
-    apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(),                \
-                                                        l.get_prev_error_signals(),              \
-                                                        l.get_error_signals());                  \
+  void bp_compute_impl(layer<TensorDataType, lbann::data_layout::MODEL_PARALLEL, El::Device::CPU>& l) { \
+    auto& dtl = dynamic_cast<data_type_layer<TensorDataType>&>(l);                               \
+    apply_entrywise_binary_operator<op<TensorDataType>>(dtl.get_prev_activations(),              \
+                                                        dtl.get_prev_error_signals(),            \
+                                                        dtl.get_error_signals());                \
   }                                                                                              \
   template <typename TensorDataType>                                                             \
-  void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {  \
-    apply_entrywise_unary_operator<op<TensorDataType>>(l.get_prev_activations(),                 \
-                                                       l.get_activations());                     \
+  void fp_compute_impl(layer<TensorDataType, lbann::data_layout::DATA_PARALLEL, El::Device::CPU>& l) {  \
+    auto& dtl = dynamic_cast<data_type_layer<TensorDataType>&>(l);                               \
+    apply_entrywise_unary_operator<op<TensorDataType>>(dtl.get_prev_activations(),               \
+                                                       drl.get_activations());                   \
   }                                                                                              \
   template <typename TensorDataType>                                                             \
-  void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {  \
-    apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(),                \
-                                                        l.get_prev_error_signals(),              \
-                                                        l.get_error_signals());                  \
+  void bp_compute_impl(layer<TensorDataType, lbann::data_layout::DATA_PARALLEL, El::Device::CPU>& l) {  \
+    auto& dtl = dynamic_cast<data_type_layer<TensorDataType>&>(l);                               \
+    apply_entrywise_binary_operator<op<TensorDataType>>(dtl.get_prev_activations(),              \
+                                                        dtl.get_prev_error_signals(),            \
+                                                        dtl.get_error_signals());                \
   }                                                                                              \
   template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
   void layer<TensorDataType, Layout, Device>::fp_compute() {                                     \
@@ -168,11 +172,11 @@ struct softsign_op {
   }                                                                                              \
   UNARY_ETI_INST_MACRO_DEV(layer, El::Device::CPU)
 
-INSTANTIATE(log_sigmoid_layer, log_sigmoid_op);
-INSTANTIATE(relu_layer, relu_op);
-INSTANTIATE(selu_layer, selu_op);
-INSTANTIATE(sigmoid_layer, sigmoid_op);
-INSTANTIATE(softplus_layer, softplus_op);
-INSTANTIATE(softsign_layer, softsign_op);
+INSTANTIATE(lbann::log_sigmoid_layer, log_sigmoid_op<float>);
+INSTANTIATE(lbann::relu_layer, relu_op<float>);
+INSTANTIATE(lbann::selu_layer, selu_op<float>);
+INSTANTIATE(lbann::sigmoid_layer, sigmoid_op<float>);
+INSTANTIATE(lbann::softplus_layer, softplus_op<float>);
+INSTANTIATE(lbann::softsign_layer, softsign_op<float>);
 
 } // namespace lbann
