@@ -238,11 +238,11 @@ void bp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
     // Zero fused buffer.
     El::Zero(*l.m_mean_and_var_gradient);
   }
-  optimizer<TensorDataType>* scale_optimizer = l.m_weights[0]->get_optimizer();
+  data_type_optimizer<TensorDataType>* scale_optimizer = l.m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
     scale_optimizer->add_to_gradient(*l.m_scale_gradient, TensorDataType{1}, true);
   }
-  optimizer<TensorDataType>* bias_optimizer = l.m_weights[1]->get_optimizer();
+  data_type_optimizer<TensorDataType>* bias_optimizer = l.m_weights[1]->get_optimizer();
   if (bias_optimizer != nullptr) {
     bias_optimizer->add_to_gradient(*l.m_bias_gradient, TensorDataType{1}, true);
   }

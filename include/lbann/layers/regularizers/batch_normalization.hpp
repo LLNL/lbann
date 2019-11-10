@@ -251,7 +251,7 @@ protected:
     if (this->get_weights()[0] == nullptr) {
       auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
-      std::unique_ptr<data_type_optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
+      std::unique_ptr<data_type_optimizer<TensorDataType>> opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -261,7 +261,7 @@ protected:
     if (this->get_weights()[1] == nullptr) {
       auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
-      std::unique_ptr<data_type_optimizer<TensorDataType>> opt(this->m_model->create_optimizer());
+      std::unique_ptr<data_type_optimizer<TensorDataType>> opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
