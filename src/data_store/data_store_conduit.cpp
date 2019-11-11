@@ -1170,7 +1170,7 @@ void data_store_conduit::build_conduit_nodes(map_is_t &sizes) {
   const std::vector<image_data_reader::sample_t> &image_list = image_reader->get_image_list();
   for (auto t : sizes) {
     int data_id = t.first;
-    int label = image_list[data_id].second;  //TODO FIXME
+    int label = image_list[data_id].second; 
     if (m_image_offsets.find(data_id) == m_image_offsets.end()) {
       LBANN_ERROR("m_image_offsets.find(data_id) == m_image_offsets.end() for data_id: ", data_id);
     }
