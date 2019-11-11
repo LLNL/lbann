@@ -27,8 +27,10 @@
 #ifndef LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
 
-#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
 #include <sys/stat.h>
+#include "lbann/io/persist.hpp"
+#include <optimizers.pb.h>
 
 namespace lbann {
 

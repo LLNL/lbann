@@ -38,7 +38,7 @@ hypergradient_adam<TensorDataType>::hypergradient_adam(TensorDataType init_learn
                                                        TensorDataType beta1,
                                                        TensorDataType beta2,
                                                        TensorDataType eps)
-  : optimizer<TensorDataType>(init_learning_rate),
+  : data_type_optimizer<TensorDataType>(init_learning_rate),
     m_hyper_learning_rate(hyper_learning_rate),
     m_beta1(beta1),
     m_beta2(beta2),

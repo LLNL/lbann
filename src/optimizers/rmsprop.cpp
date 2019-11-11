@@ -28,8 +28,6 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include <optimizers.pb.h>
-
 namespace lbann {
 
 template <typename TensorDataType>
@@ -65,7 +63,7 @@ description rmsprop<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void rmsprop<TensorDataType>::setup(weights<TensorDataType>* w) {
+void rmsprop<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
   data_type_optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
   m_cache.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
