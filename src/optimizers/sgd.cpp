@@ -28,28 +28,26 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include <optimizers.pb.h>
-
 namespace lbann {
 
 template <typename TensorDataType>
 sgd<TensorDataType>::sgd(TensorDataType learning_rate,
          TensorDataType momentum,
          bool nesterov)
-  : optimizer<TensorDataType>(learning_rate),
+  : data_type_optimizer<TensorDataType>(learning_rate),
     m_momentum(momentum),
     m_nesterov(nesterov) {}
 
 template <typename TensorDataType>
 sgd<TensorDataType>::sgd(const sgd& other)
-  : optimizer<TensorDataType>(other),
+  : data_type_optimizer<TensorDataType>(other),
     m_momentum(other.m_momentum),
     m_nesterov(other.m_nesterov),
     m_velocity(other.m_velocity ? other.m_velocity->Copy() : nullptr) {}
 
 template <typename TensorDataType>
 sgd<TensorDataType>& sgd<TensorDataType>::operator=(const sgd<TensorDataType>& other) {
-  optimizer<TensorDataType>::operator=(other);
+  data_type_optimizer<TensorDataType>::operator=(other);
   m_momentum = other.m_momentum;
   m_nesterov = other.m_nesterov;
   m_velocity.reset(other.m_velocity ?
@@ -59,7 +57,7 @@ sgd<TensorDataType>& sgd<TensorDataType>::operator=(const sgd<TensorDataType>& o
 
 template <typename TensorDataType>
 description sgd<TensorDataType>::get_description() const {
-  auto desc = optimizer<TensorDataType>::get_description();
+  auto desc = data_type_optimizer<TensorDataType>::get_description();
   desc.add("Momentum", m_momentum);
   desc.add("Nesterov acceleration", m_nesterov);
   return desc;
@@ -80,8 +78,8 @@ El::AbstractDistMatrix<TensorDataType>& sgd<TensorDataType>::get_velocity() {
 }
 
 template <typename TensorDataType>
-void sgd<TensorDataType>::setup(weights<TensorDataType>* w) {
-  optimizer<TensorDataType>::setup(w);
+void sgd<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
+  data_type_optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
   m_velocity.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   El::Zeros(*m_velocity, gradient.Height(), gradient.Width());
@@ -177,7 +175,7 @@ void sgd<TensorDataType>::momentum_step_cpu(El::AbstractDistMatrix<TensorDataTyp
 
 template <typename TensorDataType>
 bool sgd<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::save_to_checkpoint_shared(p, name_prefix);
+  data_type_optimizer<TensorDataType>::save_to_checkpoint_shared(p, name_prefix);
 
   if (this->get_comm().am_trainer_master()) {
     pack_scalars(p);
@@ -192,7 +190,7 @@ bool sgd<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name
 
 template <typename TensorDataType>
 bool sgd<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::load_from_checkpoint_shared(p, name_prefix);
+  data_type_optimizer<TensorDataType>::load_from_checkpoint_shared(p, name_prefix);
   struct packing_header header;
   if (this->get_comm().am_trainer_master()) {
     unpack_scalars(p, &header);
@@ -210,7 +208,7 @@ bool sgd<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string na
 
 template <typename TensorDataType>
 bool sgd<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::save_to_checkpoint_distributed(p, name_prefix);
+  data_type_optimizer<TensorDataType>::save_to_checkpoint_distributed(p, name_prefix);
 
   pack_scalars(p);
 
@@ -223,7 +221,7 @@ bool sgd<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string
 
 template <typename TensorDataType>
 bool sgd<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::load_from_checkpoint_distributed(p, name_prefix);
+  data_type_optimizer<TensorDataType>::load_from_checkpoint_distributed(p, name_prefix);
   struct packing_header header;
   unpack_scalars(p, &header);
 
@@ -234,7 +232,7 @@ bool sgd<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::stri
   return true;
 }
 
-std::unique_ptr<optimizer<DataType>>
+std::unique_ptr<data_type_optimizer<DataType>>
 build_sgd_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params = dynamic_cast<lbann_data::Optimizer::SGD const&>(msg);
