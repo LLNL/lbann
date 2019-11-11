@@ -139,7 +139,7 @@
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/data_readers/data_reader_python.hpp"
-
+#include "lbann/data_readers/data_reader_hdf5.hpp"
 /// Data stores
 #include "lbann/data_store/data_store_conduit.hpp"
 

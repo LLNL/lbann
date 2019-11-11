@@ -55,6 +55,8 @@ std::string opt_convolution_bwd_filter_algorithm("DEFAULT");
 std::string opt_synthetic_data_reader_randgen("MINSTD");
 int opt_num_pre_generated_synthetic_data = 0;
 bool opt_deterministic = false;
+int opt_num_io_partitions = 1;
+bool opt_cosmoflow_parallel_io = false;
 
 void set_options() {
   if (options_set) return;
@@ -101,6 +103,14 @@ void set_options() {
   if (env) {
     opt_deterministic = true;
   }
+  env = getenv("LBANN_DISTCONV_NUM_IO_PARTITIONS");
+  if (env) {
+    opt_num_io_partitions = std::atoi(env);
+  }
+  env = getenv("LBANN_DISTCONV_COSMOFLOW_PARALLEL_IO");
+  if (env) {
+    opt_cosmoflow_parallel_io = true;
+  }
   options_set = true;
 }
 
@@ -131,6 +141,12 @@ void print_options(std::ostream &os) {
        << std::endl;
     ss << "  deterministic: "
        << opt_deterministic
+       << std::endl;
+    ss << "  num_io_partitions: "
+       << opt_num_io_partitions
+       << std::endl;
+    ss << "  cosmoflow_parallel_io: "
+       << opt_cosmoflow_parallel_io
        << std::endl;
     os << ss.str();
   }
@@ -225,15 +241,15 @@ void delete_shuffler_buffers() {
 }
 } // namespace
 
-MPI_Comm get_strided_mpi_comm(MPI_Comm comm) {
+int get_strided_mpi_rank(MPI_Comm comm) {
   // Assumes comm is in the packed order of nodes, i.e., let PPN be
   // the number of processes per node, the local rank is rank % PPN,
   // and the node rank is rank / PPN.
   set_options();
   int stride = opt_rank_stride;
-  if (stride == 1) return comm;
   int rank;
   MPI_Comm_rank(comm, &rank);
+  if (stride == 1) return rank;
   int num_ranks;
   MPI_Comm_size(comm, &num_ranks);
   int num_local_ranks = get_number_of_local_ranks(comm);
@@ -241,6 +257,16 @@ MPI_Comm get_strided_mpi_comm(MPI_Comm comm) {
   assert0(num_ranks % num_local_ranks);
   assert0(num_ranks % stride);
   int new_rank = rank / stride + (rank % stride) * (num_ranks / stride);
+  return new_rank;
+}
+
+MPI_Comm get_strided_mpi_comm(MPI_Comm comm) {
+  set_options();
+  int stride = opt_rank_stride;
+  if (stride == 1) return comm;
+  int rank;
+  MPI_Comm_rank(comm, &rank);
+  int new_rank = get_strided_mpi_rank(comm);
   MPIPrintStreamInfo() << "Mapping rank " << rank << " to " << new_rank;
   MPI_Comm new_comm;
   MPI_Comm_split(comm, 0, new_rank, &new_comm);
@@ -339,6 +365,14 @@ bool is_deterministic() {
   return opt_deterministic;
 }
 
+int get_number_of_io_partitions() {
+  return opt_num_io_partitions;
+}
+
+bool is_cosmoflow_parallel_io_enabled() {
+  return opt_cosmoflow_parallel_io;
+}
+
 p2p::P2P &get_p2p() {
   return *p2p_instance;
 }
@@ -404,6 +438,22 @@ TensorShuffler *get_tensor_shuffler(const TensorDev &src,
   // Fall-back default
   MPIRootPrintStreamInfo() << "Using MPI-based shuffler";
   return new TensorShuffler(src, dst);
+}
+
+MPI_Comm get_input_comm(const lbann_comm &comm) {
+  if (!is_cosmoflow_parallel_io_enabled() || get_rank_stride() == 1) {
+    return comm.get_trainer_comm().GetMPIComm();
+  } else {
+    return get_mpi_comm();
+  }
+}
+
+int get_input_rank(const lbann_comm &comm) {
+  if (!is_cosmoflow_parallel_io_enabled() || get_rank_stride() == 1) {
+    return comm.get_rank_in_trainer();
+  } else {
+    return get_mpi_rank();
+  }
 }
 
 } // namespace dc

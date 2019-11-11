@@ -16,7 +16,8 @@
 spack:
   # add package specs to the `specs` list
   specs:
-  - conduit@master~doc~doxygen+hdf5~hdf5_compat+mpi+python+shared~silo
+  - hdf5+mpi~cxx~fortran
+  - conduit@master~doc~doxygen+mpi~hdf5_compat+mpi+python+shared~silo
   - cnpy@master build_type=RelWithDebInfo
   - opencv build_type=RelWithDebInfo ~calib3d+core~cuda~dnn~eigen+fast-math~features2d~flann~gtk+highgui+imgproc~ipp~ipp_iw~jasper~java+jpeg~lapack~ml~opencl~opencl_svm~openclamdblas~openclamdfft~openmp+png~powerpc~pthreads_pf~python~qt+shared~stitching~superres+tiff~ts~video~videoio~videostab~vsx~vtk+zlib
   - cereal

@@ -115,6 +115,7 @@ namespace util = ::distconv::util;
 
 using ::distconv::get_sample_dim;
 
+int get_strided_mpi_rank(MPI_Comm comm);
 MPI_Comm get_strided_mpi_comm(MPI_Comm comm);
 
 /** Initialize Distconv
@@ -184,6 +185,14 @@ int get_number_of_pre_generated_synthetic_data();
  */
 bool is_deterministic();
 
+/** Query the number of partitions in the depth dimension.
+ */
+int get_number_of_io_partitions();
+
+/** Query if Cosmoflow parallel I/O is enabled.
+ */
+bool is_cosmoflow_parallel_io_enabled();
+
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();
@@ -204,6 +213,12 @@ cudaStream_t get_stream();
 
 TensorShuffler *get_tensor_shuffler(const TensorDev &src,
                                     const TensorDev &dst);
+
+MPI_Comm get_input_comm(const lbann_comm &comm);
+/** Return the MPI rank when reading input dataset
+ */
+int get_input_rank(const lbann_comm &comm);
+
 } // namespace dc
 } // namespace lbann
 
