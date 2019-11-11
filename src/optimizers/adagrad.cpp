@@ -28,8 +28,6 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include <optimizers.pb.h>
-
 namespace lbann {
 
 template <typename TensorDataType>
@@ -52,7 +50,7 @@ adagrad<TensorDataType>& adagrad<TensorDataType>::operator=(const adagrad<Tensor
 
 template <typename TensorDataType>
 description adagrad<TensorDataType>::get_description() const {
-  auto desc = optimizer<TensorDataType>::get_description();
+  auto desc = data_type_optimizer<TensorDataType>::get_description();
   desc.add("eps", m_eps);
   return desc;
 }

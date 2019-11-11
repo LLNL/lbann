@@ -28,8 +28,6 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include <optimizers.pb.h>
-
 namespace lbann {
 
 template <typename TensorDataType>
@@ -37,12 +35,12 @@ adam<TensorDataType>::adam(TensorDataType learning_rate,
                            TensorDataType beta1,
                            TensorDataType beta2,
                            TensorDataType eps)
-  : optimizer<TensorDataType>(learning_rate),
+  : data_type_optimizer<TensorDataType>(learning_rate),
     m_beta1(beta1), m_beta2(beta2), m_eps(eps) {}
 
 template <typename TensorDataType>
 adam<TensorDataType>::adam(const adam& other)
-  : optimizer<TensorDataType>(other),
+  : data_type_optimizer<TensorDataType>(other),
     m_beta1(other.m_beta1),
     m_beta2(other.m_beta2),
     m_eps(other.m_eps),
@@ -53,7 +51,7 @@ adam<TensorDataType>::adam(const adam& other)
 
 template <typename TensorDataType>
 adam<TensorDataType>& adam<TensorDataType>::operator=(const adam<TensorDataType>& other) {
-  optimizer<TensorDataType>::operator=(other);
+  data_type_optimizer<TensorDataType>::operator=(other);
   m_beta1 = other.m_beta1;
   m_beta2 = other.m_beta2;
   m_eps = other.m_eps;
@@ -68,7 +66,7 @@ adam<TensorDataType>& adam<TensorDataType>::operator=(const adam<TensorDataType>
 
 template <typename TensorDataType>
 description adam<TensorDataType>::get_description() const {
-  auto desc = optimizer<TensorDataType>::get_description();
+  auto desc = data_type_optimizer<TensorDataType>::get_description();
   desc.add("beta1", m_beta1);
   desc.add("beta2", m_beta2);
   desc.add("eps", m_eps);
@@ -103,8 +101,8 @@ El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment2() {
 }
 
 template <typename TensorDataType>
-void adam<TensorDataType>::setup(weights<TensorDataType>* w) {
-  optimizer<TensorDataType>::setup(w);
+void adam<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
+  data_type_optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
   m_moment1.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
   m_moment2.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
@@ -194,7 +192,7 @@ void adam<TensorDataType>::step_compute_cpu(El::AbstractDistMatrix<TensorDataTyp
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::save_to_checkpoint_shared(p, name_prefix);
+  data_type_optimizer<TensorDataType>::save_to_checkpoint_shared(p, name_prefix);
 
   if (this->get_comm().am_trainer_master()) {
     pack_scalars(p);
@@ -212,7 +210,7 @@ bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string nam
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::load_from_checkpoint_shared(p, name_prefix);
+  data_type_optimizer<TensorDataType>::load_from_checkpoint_shared(p, name_prefix);
   struct packing_header header;
   if (this->get_comm().am_trainer_master()) {
     unpack_scalars(p, &header);
@@ -234,7 +232,7 @@ bool adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string n
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::save_to_checkpoint_distributed(p, name_prefix);
+  data_type_optimizer<TensorDataType>::save_to_checkpoint_distributed(p, name_prefix);
 
   pack_scalars(p);
 
@@ -250,7 +248,7 @@ bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::strin
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  optimizer<TensorDataType>::load_from_checkpoint_distributed(p, name_prefix);
+  data_type_optimizer<TensorDataType>::load_from_checkpoint_distributed(p, name_prefix);
   struct packing_header header;
   unpack_scalars(p, &header);
 
@@ -264,7 +262,7 @@ bool adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::str
   return true;
 }
 
-std::unique_ptr<optimizer<DataType>>
+std::unique_ptr<data_type_optimizer<DataType>>
 build_adam_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =

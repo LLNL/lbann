@@ -28,6 +28,8 @@
 #define LBANN_OPTIMIZERS_ADAM_HPP_INCLUDED
 
 #include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/io/persist.hpp"
+#include <optimizers.pb.h>
 
 namespace lbann {
 namespace callback {
@@ -208,7 +210,7 @@ private:
 
 };
 
-std::unique_ptr<optimizer>
+  std::unique_ptr<data_type_optimizer<DataType>>
 build_adam_optimizer_from_pbuf(
   google::protobuf::Message const&);
 
