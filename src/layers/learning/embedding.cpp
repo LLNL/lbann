@@ -54,7 +54,7 @@ void fp_compute_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,
   for (El::Int col = 0; col < local_width; ++ col) {
     El::View(output_v, local_output, El::ALL, El::IR(col));
     const El::Int ind = static_cast<El::Int>(std::floor(local_input(0, col)));
-    if (0 <= ind && ind < static_cast<El::Int>(m_num_embeddings)) {
+    if (0 <= ind && ind < static_cast<El::Int>(l.m_num_embeddings)) {
       El::LockedView(embedding_v, local_embeddings, El::ALL, El::IR(ind));
       El::Copy(embedding_v, output_v);
     } else {
@@ -87,8 +87,8 @@ void bp_compute_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,
   for (El::Int col = 0; col < local_width; ++ col) {
     const El::Int ind = static_cast<El::Int>(std::floor(local_input(0, col)));
     if (0 <= ind
-        && ind < static_cast<El::Int>(m_num_embeddings)
-        && ind != m_padding_idx) {
+        && ind < static_cast<El::Int>(l.m_num_embeddings)
+        && ind != l.m_padding_idx) {
       El::View(embedding_grad_v, local_embedding_grad, El::ALL, El::IR(ind));
       El::LockedView(output_grad_v, local_output_grad, El::ALL, El::IR(col));
       El::Axpy(DataType{1}, output_grad_v, embedding_grad_v);

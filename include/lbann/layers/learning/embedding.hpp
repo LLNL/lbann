@@ -186,7 +186,7 @@ void embedding_layer<TensorDataType, Layout,Device>::setup_data() {
   // Note: Randomly drawn from normal distribution with mean 0 and
   // standard deviation 1.
   if (this->m_weights.empty()) {
-    auto w = make_unique<weights>(this->get_comm());
+    auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
     auto init = make_unique<normal_initializer<TensorDataType>>(0,1);
     auto opt = std::unique_ptr<optimizer>(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
     w->set_name(this->get_name() + "_weights");

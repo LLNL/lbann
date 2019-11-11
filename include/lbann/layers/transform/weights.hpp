@@ -116,9 +116,9 @@ class weights_layer : public transform_layer<TensorDataType> {
 
     // Initialize default weights if none are provided
     if (this->m_weights.empty()) {
-      auto w = make_unique<weights>(this->get_comm());
+      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<constant_initializer<DataType>>(DataType(0));
-      std::unique_ptr<data_type_optimizer<DataType>> opt(this->m_model->create_optimizer());
+      std::unique_ptr<data_type_optimizer<DataType>> opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
