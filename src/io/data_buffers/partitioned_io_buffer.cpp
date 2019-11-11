@@ -29,19 +29,22 @@
 
 namespace lbann {
 
+template <typename TensorDataType>
 partitioned_io_buffer<TensorDataType>::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
   : generic_io_buffer(comm, num_parallel_readers, data_readers) {
-  m_data_buffers[execution_mode::training] = new data_buffer(comm, num_child_layers);
-  m_data_buffers[execution_mode::validation] = new data_buffer(comm, num_child_layers);
-  m_data_buffers[execution_mode::testing] = new data_buffer(comm, num_child_layers);
+  m_data_buffers[execution_mode::training] = new data_buffer<TensorDataType>(comm, num_child_layers);
+  m_data_buffers[execution_mode::validation] = new data_buffer<TensorDataType>(comm, num_child_layers);
+  m_data_buffers[execution_mode::testing] = new data_buffer<TensorDataType>(comm, num_child_layers);
 }
 
+template <typename TensorDataType>
 partitioned_io_buffer<TensorDataType>::~partitioned_io_buffer() {
   for (auto& buf : m_data_buffers) {
     delete buf.second;
   }
 }
 
+template <typename TensorDataType>
 partitioned_io_buffer<TensorDataType>::partitioned_io_buffer(const partitioned_io_buffer& other)
   : generic_io_buffer(other) {
   for (const auto& buf : other.m_data_buffers) {
@@ -49,11 +52,13 @@ partitioned_io_buffer<TensorDataType>::partitioned_io_buffer(const partitioned_i
   }
 }
 
-partitioned_io_buffer* partitioned_io_buffer<TensorDataType>::copy() const {
-  return new partitioned_io_buffer(*this);
+template <typename TensorDataType>
+partitioned_io_buffer<TensorDataType>* partitioned_io_buffer<TensorDataType>::copy() const {
+  return new partitioned_io_buffer<TensorDataType>(*this);
 }
 
-partitioned_io_buffer& partitioned_io_buffer<TensorDataType>::operator=(const partitioned_io_buffer& other) {
+template <typename TensorDataType>
+partitioned_io_buffer<TensorDataType>& partitioned_io_buffer<TensorDataType>::operator=(const partitioned_io_buffer& other) {
   generic_io_buffer::operator=(other);
   for (auto& buf : m_data_buffers) {
     if (buf.second) delete buf.second;
@@ -62,12 +67,14 @@ partitioned_io_buffer& partitioned_io_buffer<TensorDataType>::operator=(const pa
   return *this;
 }
 
+template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::fp_setup_data(El::Int cur_mini_batch_size, int idx) {
   for (auto& buf : m_data_buffers) {
     buf.second->m_input_buffers[idx]->Resize(buf.second->m_input_buffers[idx]->Height(), cur_mini_batch_size);
   }
 }
 
+template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) {
   El::Int local_mini_batch_size = max_mini_batch_size / m_comm->get_procs_per_trainer();
   El::Int partial_mini_batch_size = max_mini_batch_size % m_comm->get_procs_per_trainer();
@@ -75,7 +82,7 @@ void partitioned_io_buffer<TensorDataType>::setup_data(El::Int num_neurons, El::
     local_mini_batch_size++;
   }
   for (const auto& it : m_data_buffers) {
-    data_buffer *data_buffer = it.second;
+    data_buffer<TensorDataType> *data_buffer = it.second;
     int i = 0;
     for (const auto& buf : data_buffer->m_input_buffers) {
       if(i == 0) {
@@ -93,12 +100,13 @@ void partitioned_io_buffer<TensorDataType>::setup_data(El::Int num_neurons, El::
   }
 }
 
+template <typename TensorDataType>
 int partitioned_io_buffer<TensorDataType>::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
   int num_parallel_readers = data_reader->get_num_parallel_readers();
 
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
-  data_buffer *buf = get_data_buffer(mode);
+  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   buf->m_num_samples_fetched = 0;
   if (m_comm->get_rank_in_trainer() < num_parallel_readers && (buf->m_input_buffers[0]->Height() != 0 && buf->m_input_buffers[0]->Width() != 0)) {
     for(auto& m : buf->m_input_buffers) {
@@ -122,7 +130,7 @@ int partitioned_io_buffer<TensorDataType>::fetch_to_local_matrix(generic_data_re
 
 template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, El::AbstractDistMatrix<TensorDataType>& sample, El::AbstractDistMatrix<TensorDataType>& response) {
-  data_buffer *buf = get_data_buffer(mode);
+  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   Copy(*buf->m_input_buffers[0], sample);
   Copy(*buf->m_input_buffers[1], response);
   buf->m_num_samples_fetched = 0;
@@ -131,12 +139,13 @@ void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic
 
 template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, El::AbstractDistMatrix<TensorDataType>& sample) {
-  data_buffer *buf = get_data_buffer(mode);
+  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   Copy(*buf->m_input_buffers[0], sample);
   buf->m_num_samples_fetched = 0;
   return;
 }
 
+template <typename TensorDataType>
 bool partitioned_io_buffer<TensorDataType>::update_data_set(generic_data_reader *data_reader, execution_mode mode) {
   int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
@@ -150,43 +159,51 @@ bool partitioned_io_buffer<TensorDataType>::update_data_set(generic_data_reader 
   }
 }
 
+template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::set_fetch_data_in_background(bool flag, execution_mode mode) {
-  data_buffer *buf = get_data_buffer(mode);
+  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   buf->m_fetch_data_in_background = flag;
 }
 
+template <typename TensorDataType>
 bool partitioned_io_buffer<TensorDataType>::is_data_fetched_in_background(execution_mode mode) {
-  data_buffer *buf = get_data_buffer(mode);
+  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   return buf->m_fetch_data_in_background;
 }
 
 /**
  * Return the sample indices fetched in the current mini-batch.
  */
+template <typename TensorDataType>
 El::Matrix<El::Int>* partitioned_io_buffer<TensorDataType>::get_sample_indices_fetched_per_mb(execution_mode mode) {
-  data_buffer *buf = get_data_buffer(mode);
+  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   return &(buf->m_indices_fetched_per_mb);
 }
 
+template <typename TensorDataType>
 int partitioned_io_buffer<TensorDataType>::num_samples_ready(execution_mode mode) {
-  data_buffer *buf = get_data_buffer(mode);
+  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   return buf->m_num_samples_fetched;
 }
 
+template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::set_data_fetch_future(std::future<void> future, execution_mode mode) {
-  data_buffer *buf = get_data_buffer(mode);
+  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   buf->m_data_fetch_future = std::move(future);
 }
 
+template <typename TensorDataType>
 std::future<void> partitioned_io_buffer<TensorDataType>::get_data_fetch_future(execution_mode mode) {
-  data_buffer *buf = get_data_buffer(mode);
+  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   return std::move(buf->m_data_fetch_future);
 }
 
+template <typename TensorDataType>
 int partitioned_io_buffer<TensorDataType>::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
   return partitioned_io_buffer<TensorDataType>::compute_max_num_parallel_readers(data_set_size, mini_batch_size, requested_num_parallel_readers, m_comm);
 }
 
+template <typename TensorDataType>
 int partitioned_io_buffer<TensorDataType>::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm) {
   int num_parallel_readers = requested_num_parallel_readers;
 
@@ -218,6 +235,7 @@ int partitioned_io_buffer<TensorDataType>::compute_max_num_parallel_readers(long
   return num_parallel_readers;
 }
 
+template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {
   if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
@@ -323,6 +341,7 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
   return;
 }
 
+template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) {
   if(data_reader == nullptr) { return; }
   // If the data reader does not have any data bail out (e.g. unused validation reader)
