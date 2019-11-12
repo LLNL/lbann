@@ -37,7 +37,7 @@ namespace {
 template <El::Int block_size>
 __global__ void accumulate_contribution_kernel(El::Int height,
                                                El::Int width,
-                                               const DataType * __restrict__ vals,
+                                               const AccumulateDataType * __restrict__ vals,
                                                El::Int vals_ldim,
                                                DataType * __restrict__ contribution) {
 
@@ -58,7 +58,7 @@ __global__ void accumulate_contribution_kernel(El::Int height,
 
   // Shared memory reduction to get contribution for each block
   /// @todo unroll loops
-  __shared__ DataType shared_contribution[block_size];
+  __shared__ AccumulateDataType shared_contribution[block_size];
   shared_contribution[tid] = private_contribution;
   for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
     __syncthreads();
@@ -75,8 +75,8 @@ __global__ void accumulate_contribution_kernel(El::Int height,
 } // namespace
 
 template <>
-void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(const El::Matrix<TensorDataType, El::Device::GPU>& vals,
-                                                                        El::Matrix<TensorDataType, El::Device::GPU>& contribution) {
+void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(const El::Matrix<AccumulateDataType, El::Device::GPU>& vals,
+                                                                        El::Matrix<AccumulateDataType, El::Device::GPU>& contribution) {
   if (!vals.IsEmpty()) {
     const auto& size = vals.Height() * vals.Width();
     const El::Int block_size = 256;

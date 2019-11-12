@@ -40,6 +40,7 @@ namespace lbann {
  */
 class l2_weight_regularization : public objective_function_term {
 public:
+  using AccumulateDataType = float;
 
   /** @param scale_factor   The objective function term is
    *                        @f$ \text{scale\_factor} \times \sum L2(w_i) @f$
@@ -69,7 +70,7 @@ public:
 private:
 
   /** Contributions to evaluated value. */
-  std::map<El::Device, El::Matrix<TensorDataType, El::Device::CPU>> m_contributions;
+  std::map<El::Device, El::Matrix<AccumulateDataType, El::Device::CPU>> m_contributions;
 
   /** For non-blocking allreduces. */
   Al::request m_allreduce_req;
@@ -85,8 +86,8 @@ private:
    *                        accumulation variable.
    */
   template <El::Device Device>
-  static void accumulate_contribution(const DMat<Device>& vals,
-                                      DMat<Device>& contribution);
+  static void accumulate_contribution(const El::Matrix<AccumulateDataType, Device>& vals,
+                                      El::Matrix<AccumulateDataType, Device>& contribution);
 
 };
 

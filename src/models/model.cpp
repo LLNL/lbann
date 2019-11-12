@@ -114,7 +114,7 @@ model::model(const model& other) :
       LBANN_ERROR("model \"",other.get_name(),"\" ",
                   "has a null pointer in its list of weights");
     }
-    m_weights.emplace_back(make_unique<weights>(*other_weights));
+    m_weights.emplace_back(make_unique<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
     weights_map[other_weights.get()] = m_weights.back().get();
   }
 
@@ -174,7 +174,7 @@ model& model::operator=(const model& other) {
       LBANN_ERROR("model \"",other.get_name(),"\" ",
                   "has a null pointer in its list of weights");
     }
-    m_weights.emplace_back(make_unique<weights>(*other_weights));
+    m_weights.emplace_back(make_unique<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
     weights_map[other_weights.get()] = m_weights.back().get();
   }
 
@@ -343,7 +343,7 @@ const std::vector<weights*> model::get_weights() const {
 
 size_t model::get_num_iterations_per_epoch(execution_mode mode) const {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    const auto* input = dynamic_cast<const generic_input_layer*>(&get_layer(i));
+    const auto* input = dynamic_cast<const generic_input_layer<DataType>*>(&get_layer(i));
     if (input != nullptr) {
       return input->get_num_iterations_per_epoch(mode);
     }
@@ -459,7 +459,8 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
          #ifdef LBANN_DEBUG
          if(m_comm->am_world_master()) std::cout << " Replacing " << m_weights[j]->get_name() << " with " << new_weights[i]->get_name() << std::endl;
          #endif
-         m_weights[j]->set_values(new_weights[i]->get_values());
+         dynamic_cast<observer_ptr<data_type_weights<DataType>>>(m_weights[j].get())->set_values(
+           dynamic_cast<data_type_weights<DataType>*>(new_weights[i])->get_values());
        }
      }
    }
@@ -475,7 +476,7 @@ optimizer* model::create_optimizer() const {
 
 bool model::is_execution_mode_valid(execution_mode mode) const {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    const auto* input = dynamic_cast<const generic_input_layer*>(&get_layer(i));
+    const auto* input = dynamic_cast<const generic_input_layer<DataType>*>(&get_layer(i));
     if (input != nullptr && !input->is_execution_mode_valid(mode)) {
       return false;
     }
@@ -657,7 +658,7 @@ void model::setup_layer_execution_order() {
   // Find input layers
   std::vector<El::Int> input_layers, other_layers;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (dynamic_cast<generic_input_layer*>(&get_layer(i)) != nullptr) {
+    if (dynamic_cast<generic_input_layer<DataType>*>(&get_layer(i)) != nullptr) {
       input_layers.push_back(i);
     } else {
       other_layers.push_back(i);
@@ -714,10 +715,10 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
             << "which isn't in the model's list of layers";
         LBANN_ERROR(err.str());
       }
-      if (dynamic_cast<abstract_evaluation_layer*>(&l) == nullptr) {
+      if (dynamic_cast<abstract_evaluation_layer<DataType>*>(&l) == nullptr) {
 
         // Create evaluation layer
-        std::unique_ptr<Layer> eval(abstract_evaluation_layer::construct(
+        std::unique_ptr<Layer> eval(abstract_evaluation_layer<DataType>::construct(
                                       l.get_comm(),
                                       l.get_data_layout(),
                                       l.get_device_allocation()));
@@ -756,10 +757,10 @@ void model::add_evaluation_layers(std::unordered_set<Layer*>& layer_set,
             << "which is not in model \"" << get_name() << "\"";
         LBANN_ERROR(err.str());
       }
-      if (dynamic_cast<abstract_evaluation_layer*>(&l) == nullptr) {
+      if (dynamic_cast<abstract_evaluation_layer<DataType>*>(&l) == nullptr) {
 
         // Create evaluation layer
-        std::unique_ptr<Layer> eval(abstract_evaluation_layer::construct(
+        std::unique_ptr<Layer> eval(abstract_evaluation_layer<DataType>::construct(
                                       l.get_comm(),
                                       l.get_data_layout(),
                                       l.get_device_allocation()));
@@ -799,17 +800,17 @@ void model::add_dummy_layers(std::unordered_set<std::string>& layer_names) {
       using args_tuple = std::tuple<data_layout,El::Device>;
       args_tuple args(l.get_data_layout(), l.get_device_allocation());
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
-        dummy.reset(new dummy_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm));
+        dummy.reset(new dummy_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm));
       }
       if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
-        dummy.reset(new dummy_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm));
+        dummy.reset(new dummy_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm));
       }
 #ifdef LBANN_HAS_GPU
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
-        dummy.reset(new dummy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm));
+        dummy.reset(new dummy_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm));
       }
       if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
-        dummy.reset(new dummy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm));
+        dummy.reset(new dummy_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm));
       }
 #endif // LBANN_HAS_GPU
       if (dummy == nullptr) {
@@ -852,17 +853,17 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
       using args_tuple = std::tuple<data_layout,El::Device>;
       args_tuple args(l.get_data_layout(), l.get_device_allocation());
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::CPU)) {
-        split.reset(new split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm));
+        split.reset(new split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>(m_comm));
       }
       if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::CPU)) {
-        split.reset(new split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm));
+        split.reset(new split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>(m_comm));
       }
 #ifdef LBANN_HAS_GPU
       if (args == args_tuple(data_layout::DATA_PARALLEL, El::Device::GPU)) {
-        split.reset(new split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm));
+        split.reset(new split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>(m_comm));
       }
       if (args == args_tuple(data_layout::MODEL_PARALLEL, El::Device::GPU)) {
-        split.reset(new split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm));
+        split.reset(new split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>(m_comm));
       }
 #endif // LBANN_HAS_GPU
       if (split == nullptr) {
@@ -911,7 +912,7 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 
 void model::collect_background_data_fetch(execution_mode mode) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
+    auto *input = dynamic_cast<generic_input_layer<DataType>*>(&get_layer(i));
     if (input != nullptr) {
       input->collect_background_data_fetch(mode);
     }
@@ -923,7 +924,7 @@ void model::collect_background_data_fetch(execution_mode mode) {
 // for the current use of the tournament"
 void model::make_data_store_preloaded(execution_mode mode) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
+    auto *input = dynamic_cast<generic_input_layer<DataType>*>(&get_layer(i));
     if (input != nullptr) {
       auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
       if(data_store != nullptr && !data_store->is_fully_loaded()) {
@@ -939,7 +940,7 @@ void model::make_data_store_preloaded(execution_mode mode) {
 // for the current use of the tournament"
 void model::mark_data_store_explicitly_loading(execution_mode mode) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
+    auto *input = dynamic_cast<generic_input_layer<DataType>*>(&get_layer(i));
     if (input != nullptr) {
       auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
       if(data_store != nullptr && !data_store->is_fully_loaded()) {
@@ -1058,7 +1059,7 @@ void model::reconcile_weight_values() {
   std::vector<Al::request> reqs;
   reqs.reserve(m_weights.size());
   for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
-    auto& w = **rit;
+    auto& w = dynamic_cast<data_type_weights<DataType>&>(**rit);
     reqs.emplace_back();
     w.reconcile_values(reqs.back());
   }
@@ -1207,8 +1208,7 @@ void model::do_model_optimize_end_cbs() {
 void model::do_weight_optimize_begin_cbs(weights *w) {
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
-      const auto& dtcb = dynamic_cast<const data_type_callback<DataType>&>(cb);
-      dtcb->on_weight_optimize_begin(this, w);
+      cb->on_optimize_begin(this, w);
     }
   }
 }
@@ -1216,8 +1216,7 @@ void model::do_weight_optimize_begin_cbs(weights *w) {
 void model::do_weight_optimize_end_cbs(weights *w) {
   for (const auto& cb : m_callbacks) {
     if (get_execution_context().get_step() % cb->get_batch_interval() == 0) {
-      const auto& dtcb = dynamic_cast<const data_type_callback<DataType>&>(cb);
-      dtcb->on_weight_optimize_end(this, w);
+      cb->on_optimize_end(this, w);
     }
   }
 }

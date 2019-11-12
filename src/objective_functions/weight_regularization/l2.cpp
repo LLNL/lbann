@@ -33,8 +33,8 @@
 namespace lbann {
 
 template <>
-void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const El::Matrix<TensorDataType, El::Device::CPU>& vals,
-                                                                        El::Matrix<TensorDataType, El::Device::CPU>& contribution) {
+void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const El::Matrix<AccumulateDataType, El::Device::CPU>& vals,
+                                                                        El::Matrix<AccumulateDataType, El::Device::CPU>& contribution) {
   auto& sqsum = contribution(0, 0);
   if (vals.IsEmpty()) {
   } else if (vals.Contiguous()) {
@@ -76,7 +76,7 @@ void l2_weight_regularization::setup(model& m) {
 
   // Construct accumulation variables for each device
   for (auto* w : m_weights) {
-    const auto& device = w->get_values().GetLocalDevice();
+    const auto& device = dynamic_cast<data_type_weights<DataType>*>(w)->get_values().GetLocalDevice();
     if (m_contributions.count(device) == 0) {
 #ifdef LBANN_HAS_GPU
       m_contributions[device].SetMemoryMode(1); // Pinned memory
@@ -96,16 +96,16 @@ void l2_weight_regularization::start_evaluation() {
     auto& contribution = m_contributions[El::Device::CPU];
     contribution(0, 0) = DataType(0);
     for (El::Int i = 0; i < num_weights; ++i) {
-      const auto& vals = m_weights[i]->get_values();
+      const auto& vals = dynamic_cast<data_type_weights<DataType>*>(m_weights[i])->get_values();
       if (vals.GetLocalDevice() == El::Device::CPU
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
         accumulate_contribution<El::Device::CPU>(
-          static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(vals.LockedMatrix()),
+          static_cast<const El::Matrix<AccumulateDataType, El::Device::CPU>&>(vals.LockedMatrix()),
           contribution);
       }
     }
-    get_comm().nb_allreduce(static_cast<AbsMat&>(contribution),
+    get_comm().nb_allreduce(static_cast<El::AbstractMatrix<AccumulateDataType>&>(contribution),
                             get_comm().get_trainer_comm(),
                             m_allreduce_req);
   }
@@ -114,7 +114,7 @@ void l2_weight_regularization::start_evaluation() {
   // Compute contributions from GPU weights
   if (m_contributions.count(El::Device::GPU) > 0) {
     auto&& stream = El::GPUManager::Stream();
-    El::Matrix<TensorDataType, El::Device::GPU> contribution;
+    El::Matrix<AccumulateDataType, El::Device::GPU> contribution;
 #ifdef HYDROGEN_HAVE_CUB
     contribution.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
@@ -125,11 +125,11 @@ void l2_weight_regularization::start_evaluation() {
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
         accumulate_contribution<El::Device::GPU>(
-          static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(vals.LockedMatrix()),
+          static_cast<const El::Matrix<AccumulateDataType, El::Device::GPU>&>(vals.LockedMatrix()),
           contribution);
       }
     }
-    get_comm().allreduce(static_cast<AbsMat&>(contribution),
+    get_comm().allreduce(static_cast<El::AbstractMatrix<AccumulateDataType>&>(contribution),
                          get_comm().get_trainer_comm());
     CHECK_CUDA(cudaMemcpyAsync(m_contributions[El::Device::GPU].Buffer(),
                                contribution.LockedBuffer(),
@@ -161,9 +161,9 @@ EvalType l2_weight_regularization::finish_evaluation() {
 void l2_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
   for (auto&& w : m_weights) {
-    auto&& opt = w->get_optimizer();
+    auto&& opt = dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer());
     if (opt != nullptr) {
-      opt->add_to_gradient(w->get_values(), m_scale_factor);
+      opt->add_to_gradient(dynamic_cast<data_type_weights<DataType>*>(w)->get_values(), m_scale_factor);
     }
   }
 }
