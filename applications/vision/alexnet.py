@@ -33,15 +33,15 @@ args = parser.parse_args()
 imagenet_labels = 1000
 
 # Construct layer graph
-input = lbann.Input()
-images = lbann.Identity(input)
-labels = lbann.Identity(input)
+input_ = lbann.Input()
+images = lbann.Identity(input_)
+labels = lbann.Identity(input_)
 preds = lbann.models.AlexNet(imagenet_labels)(images)
 probs = lbann.Softmax(preds)
-cross_entropy = lbann.CrossEntropy([probs, labels])
-top1 = lbann.CategoricalAccuracy([probs, labels])
-top5 = lbann.TopKCategoricalAccuracy([probs, labels], k=5)
-layers = list(lbann.traverse_layer_graph(input))
+cross_entropy = lbann.CrossEntropy(probs, labels)
+top1 = lbann.CategoricalAccuracy(probs, labels)
+top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
+layers = list(lbann.traverse_layer_graph(input_))
 
 # Setup objective function
 weights = set()
