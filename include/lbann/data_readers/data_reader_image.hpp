@@ -96,6 +96,8 @@ class image_data_reader : public generic_data_reader {
 
   void do_preload_data_store() override;
 
+  void load_conduit_node_from_file(int data_id, conduit::Node &node);
+
  protected:
    void copy_members(const image_data_reader &rhs);
 
@@ -112,7 +114,6 @@ class image_data_reader : public generic_data_reader {
   int m_image_linearized_size; ///< linearized image size
   int m_num_labels; ///< number of labels
 
-  void load_conduit_node_from_file(int data_id, conduit::Node &node);
   bool  load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids);
 
 };
