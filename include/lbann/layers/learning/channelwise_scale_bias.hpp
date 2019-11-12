@@ -118,9 +118,9 @@ public:
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
-    this->get_weights()[0]->set_dims({static_cast<int>(num_channels)},
+    this->get_data_type_weights()[0]->set_dims({static_cast<int>(num_channels)},
                            {static_cast<int>(2)});
-    this->get_weights()[0]->set_matrix_distribution(dist);
+    this->get_data_type_weights()[0]->set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
     m_weights_gradient->AlignWith(dist);
