@@ -110,6 +110,12 @@ class data_store_conduit {
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
 
+  /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
+  void clear_owner_map() { m_owner.clear(); }
+
+  /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
+  void add_owner(int data_id, int owner) { m_owner[data_id] = owner; }
+
   /// Recompact the nodes because they are not copied properly when instantiating
   /// using the copy constructor
   void compact_nodes();
