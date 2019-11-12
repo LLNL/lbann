@@ -55,6 +55,7 @@
 #include "lbann/layers/loss/top_k_categorical_accuracy.hpp"
 #include "lbann/layers/math/binary.hpp"
 #include "lbann/layers/math/clamp.hpp"
+#include "lbann/layers/math/matmul.hpp"
 #include "lbann/layers/math/unary.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
 #include "lbann/layers/misc/covariance.hpp"
@@ -603,6 +604,14 @@ std::unique_ptr<Layer> construct_layer(
   if (proto_layer.has_clamp()) {
     const auto& params = proto_layer.clamp();
     return lbann::make_unique<clamp_layer<Layout, Device>>(comm, params.min(), params.max());
+  }
+  if (proto_layer.has_matmul()) {
+    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
+      return lbann::make_unique<matmul_layer<data_layout::DATA_PARALLEL,El::Device::CPU>>(comm);
+    } else {
+      LBANN_ERROR("matrix multiply layer is only supported with "
+                  "a data-parallel layout and CPU");
+    }
   }
 
   // Activation layers
