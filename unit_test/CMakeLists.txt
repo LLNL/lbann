@@ -9,6 +9,9 @@ target_link_libraries(seq-catch-tests
 
 catch_discover_tests(seq-catch-tests)
 
+# There's an example MPI test
+add_subdirectory(example)
+
 # Add the parallel test main() function
 add_executable(mpi-catch-tests
   MPICatchMain.cpp "${LBANN_MPI_CATCH2_TEST_FILES}")
