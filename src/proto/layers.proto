@@ -239,7 +239,12 @@ message Layer {
     double max = 2;
   }
 
-  /** Batched matrix multiplication. */
+  /** @brief Matrix multiplication.
+   *
+   *  Takes two 2D input tensors and outputs their matrix product.
+   *  Matrix products are computed independently for each mini-batch
+   *  sample, in a similar manner as NumPy's matmul function.
+   */
   message MatMul {}
 
   ///////////////////////

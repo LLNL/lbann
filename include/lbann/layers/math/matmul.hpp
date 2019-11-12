@@ -31,6 +31,15 @@
 
 namespace lbann {
 
+/** @brief Matrix multiplication.
+ *
+ *  Takes two 2D input tensors and outputs their matrix product.
+ *  Matrix products are computed independently for each mini-batch
+ *  sample, in a similar manner as NumPy's matmul function.
+ *
+ *  @todo Support >2 dimensions, transposes, matvecs, and dot products
+ *
+ */
 template <data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
 class matmul_layer : public Layer {
@@ -121,13 +130,11 @@ void matmul_layer<Layout,Device>::setup_dims() {
                 "(",print_inputs(),")");
   }
   if (input0_dims.size() != 2) {
-    /// @todo Support >2 dimensions, matvecs, and dot products
     LBANN_ERROR("input tensors in ",print_name()," are not 2D ",
                 "(",print_inputs(),")");
   }
 
   // Get dimensions for matrix multiply
-  /// @todo Support transposes, matvecs, and dot products
   const auto m = *(input0_dims.rbegin()+1);
   const auto n = *(input1_dims.rbegin());
   const auto k = *(input0_dims.rbegin());
@@ -138,10 +145,9 @@ void matmul_layer<Layout,Device>::setup_dims() {
   }
 
   // Set output dimensions
-  /// @todo Support transposes, matvecs, and dot products
   std::vector<int> output_dims(input0_dims);
   *(output_dims.rbegin()+1) = m;
-  output_dims.back() = n;
+  *(output_dims.rbegin()) = n;
   this->set_output_dims(output_dims);
 
 }

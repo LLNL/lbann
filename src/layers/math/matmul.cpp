@@ -51,7 +51,6 @@ void matmul_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::fp_compute() {
   // Compute matrix multiplication for each mini-batch sample
   // Note: Elemental matrices are in Fortran layout while LBANN
   // tensors are in C layout.
-  /// @todo Support >2 tensor dimensions, transposes, matvecs, dot products
   LBANN_OMP_PARALLEL_FOR
   for (El::Int i = 0; i < local_mini_batch_size; ++i) {
     CPUMat input0_v, input1_v, output_v;
@@ -86,7 +85,6 @@ void matmul_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::bp_compute() {
   // Compute gradients for each mini-batch sample
   // Note: Elemental matrices are in Fortran layout while LBANN
   // tensors are in C layout.
-  /// @todo Support >2 tensor dimensions, transposes, matvecs, dot products
   LBANN_OMP_PARALLEL_FOR
   for (El::Int i = 0; i < local_mini_batch_size; ++i) {
     CPUMat input0_v, input1_v, output_grad_v, input0_grad_v, input1_grad_v;
@@ -126,9 +124,8 @@ void matmul_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::fp_compute() {
   const El::Int k = *(input0_dims.rbegin());
 
   // Compute matrix multiplication for each mini-batch sample
-  // Note: BLAS expects matrices in Fortran layout while LBANN tensors
-  // are in C layout.
-  /// @todo Support >2 tensor dimensions, transposes, matvecs, dot products
+  // Note: cuBLAS expects matrices in Fortran layout while LBANN
+  // tensors are in C layout.
   auto&& handle = El::GPUManager::cuBLASHandle();
   cublas::gemm_strided_batched(
     handle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k,
@@ -165,9 +162,8 @@ void matmul_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::bp_compute() {
   const El::Int k = *(input0_dims.rbegin());
 
   // Compute gradients for each mini-batch sample
-  // Note: BLAS expects matrices in Fortran layout while LBANN tensors
-  // are in C layout.
-  /// @todo Support >2 tensor dimensions, transposes, matvecs, dot products
+  // Note: cuBLAS expects matrices in Fortran layout while LBANN
+  // tensors are in C layout.
   auto&& handle = El::GPUManager::cuBLASHandle();
   cublas::gemm_strided_batched(
     handle, CUBLAS_OP_T, CUBLAS_OP_N, k, m, n,
