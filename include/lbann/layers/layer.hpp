@@ -47,6 +47,7 @@ namespace lbann {
 
 // Forward declarations
 class model;
+class weights;
 namespace callback {
 class sync_layers;
 } // namespace callback
@@ -108,14 +109,14 @@ public:
    *  Apply a mathematical operation to input tensors to obtain output
    *  tensors.
    */
-  virtual void forward_prop();
+  virtual void forward_prop() {};
   /** Backward propagation step.
    *  Given the objective function gradients w.r.t. the output
    *  tensors, compute the gradients w.r.t. the input tensors and
    *  w.r.t. the weights. This is essentially an application of the
    *  chain rule.
    */
-  virtual void back_prop();
+  virtual void back_prop() {};
   /** Update step.
    *  Update the layer's internal members. Note that the optimization
    *  step for the weights happens elsewhere.
@@ -123,7 +124,7 @@ public:
   virtual bool update();
 
   virtual void summarize_stats(lbann_summary& summarizer, int step);
-  virtual void summarize_matrices(lbann_summary& summarizer, int step);
+  virtual void summarize_matrices(lbann_summary& summarizer, int step) = 0;
 
   /** Setup layer members.
    *  This calls the 'setup_pointers', 'setup_dims', 'setup_matrices',
@@ -246,9 +247,60 @@ public:
   /** Set list of pointers to other layers. */
   virtual void set_layer_pointers(std::vector<Layer*> layers);
 
+  // ===========================================================
+  // Weights access functions
+  // ===========================================================
+
+  /** Get references to weights. */
+  virtual std::vector<weights*>& get_weights() = 0;
+  /** Get references to weights. (const) */
+  virtual const std::vector<weights*>& get_weights() const = 0;
+  /** Set list of pointers to weights. */
+  virtual void set_weights(std::vector<weights*>& w) = 0;
+  /** Replace weights with another Layer's weights*/
+  virtual void replace_weights(Layer* other_layer) = 0;
+
+  // ===========================================================
+  // Tensor dimension access functions
+  // ===========================================================
+
+  /** Get input tensor dimensions. */
+  std::vector<int> get_input_dims(int input_index = 0) const;
+  /** Get input tensor size. */
+  int get_input_size(int input_index = 0) const;
+  /** Get output tensor dimensions. */
+  std::vector<int> get_output_dims(int output_index = 0) const;
+  /** Get output tensor size. */
+  int get_output_size(int output_index = 0) const;
+
+  /** Set output tensor dimensions. */
+  void set_output_dims(std::vector<int> dims, int output_index = 0);
+
 
   /** Get reference to LBANN communicator. */
   lbann_comm* get_comm() const { return m_comm; }
+
+  // ===========================================================
+  // Hint layer access functions
+  // ===========================================================
+
+  /** Set hint layer.
+   *  Properties of the hint layer are used during the setup
+   *  phase. For instance, the output tensor dimensions are set to
+   *  match the hint layer's first output tensor.
+   */
+  void set_hint_layer(const Layer* l) { m_hint_layer = l; }
+
+  /** Get hint layer. */
+  const Layer* get_hint_layer() const { return m_hint_layer; }
+
+  // ===========================================================
+  // Freeze management functions
+  // ===========================================================
+
+  void freeze();
+  void unfreeze();
+  bool is_frozen() const;
 
 protected:
 
@@ -261,11 +313,25 @@ protected:
    *  are assumed to be already initialized.
    */
   virtual void setup_pointers();
+  /** Setup tensor dimensions
+   *  Called by the 'setup' function. If there are any input tensors,
+   *  the base method sets all uninitialized output tensor dimensions
+   *  equal to the first input tensor dimensions.
+   */
+  virtual void setup_dims();
+  /** Setup distributed matrices.
+   *  Called by the 'setup' function. Each column of these distributed
+   *  matrices is interpreted as the flattened tensor for a mini-batch
+   *  sample. The matrices themselves are constructed by calling the
+   *  'construct_matrix' function. If any matrices have already been
+   *  setup, they are destroyed and reinstantiated.
+   */
+  virtual void setup_matrices(const El::Grid& grid) = 0;
   /** Setup layer data.
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
    */
-  virtual void setup_data();
+  virtual void setup_data() {};
   /** Setup GPU objects.
    *  Called by the 'setup' function if the layer is on GPUs.
    */
@@ -313,7 +379,7 @@ protected:
    *  tensors are populated with the computed values and the gradients
    *  w.r.t. the weights are sent to the appropriate optimizers.
    */
-  virtual void bp_compute();
+  virtual void bp_compute() {};
 
   // ===========================================================
   // Update step helper functions
@@ -348,6 +414,9 @@ protected:
   /** Reference to model managing this layer. */
   model *m_model = nullptr;
 
+  /** Avoid back prop if frozen */
+  bool m_frozen;
+
   /** Time spent in forward propagation. */
   EvalType m_fp_time;
   /** Time spent in the forward propagation computation. */
@@ -370,6 +439,20 @@ private:
   // ===========================================================
   // Private access functions
   // ===========================================================
+
+  // ===========================================================
+  // Private class members
+  // ===========================================================
+
+  /** Dimensions of output tensors. */
+  std::vector<std::vector<int>> m_output_dims_list;
+
+  /** Hint layer.
+   *  During setup, the output tensor dimensions are set to match the
+   *  first output tensor of the hint layer. Derived classes may do
+   *  more elaborate setup based on the hint layer.
+   */
+  const Layer* m_hint_layer = nullptr;
 
 };
 

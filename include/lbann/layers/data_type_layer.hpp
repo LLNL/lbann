@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -56,39 +56,46 @@ public:
   static_assert(is_supported_layer_data_type<TensorDataType>::value,
                 "Must use a supported type.");
 
-  data_type_layer(lbann_comm *comm) : Layer(comm), m_frozen(false) {}
+  data_type_layer(lbann_comm *comm) : Layer(comm) {}
   data_type_layer(const data_type_layer<TensorDataType>& other);
   data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
   virtual ~data_type_layer() = default;
+
+  /** Forward propagation step.
+   *  Apply a mathematical operation to input tensors to obtain output
+   *  tensors.
+   */
+  void forward_prop() override;
+  /** Backward propagation step.
+   *  Given the objective function gradients w.r.t. the output
+   *  tensors, compute the gradients w.r.t. the input tensors and
+   *  w.r.t. the weights. This is essentially an application of the
+   *  chain rule.
+   */
+  void back_prop() override;
+
+  void summarize_matrices(lbann_summary& summarizer, int step) override;
+
+  /** Check that the setup is reasonable. */
+  void check_setup() override;
 
   // ===========================================================
   // Weights access functions
   // ===========================================================
 
   /** Get references to weights. */
-  inline std::vector<data_type_weights<TensorDataType>*>& get_weights() { return m_weights; }
+  std::vector<weights*>& get_weights() override {
+    return reinterpret_cast<std::vector<weights*>&>(m_weights); }
+  //  std::vector<data_type_weights<TensorDataType>*>& get_weights() override { return m_weights; }
   /** Get references to weights. (const) */
-  inline const std::vector<data_type_weights<TensorDataType>*>& get_weights() const { return m_weights; }
+  const std::vector<weights*>& get_weights() const override {
+    return reinterpret_cast<const std::vector<weights*>&>(m_weights); }
+  //  const std::vector<data_type_weights<TensorDataType>*>& get_weights() const override { return m_weights; }
   /** Set list of pointers to weights. */
-  inline void set_weights(std::vector<data_type_weights<TensorDataType>*> w) { get_weights() = w; }
+  void set_weights(std::vector<weights*>& w) override { m_weights = reinterpret_cast<std::vector<data_type_weights<TensorDataType>*>&>(w); }
+  //  inline void set_weights(std::vector<data_type_weights<TensorDataType>*> w) { get_weights() = w; }
   /** Replace weights with another Layer's weights*/
-  void replace_weights(data_type_layer<TensorDataType>* other_layer);
-
-  // ===========================================================
-  // Tensor dimension access functions
-  // ===========================================================
-
-  /** Get input tensor dimensions. */
-  std::vector<int> get_input_dims(int input_index = 0) const;
-  /** Get input tensor size. */
-  int get_input_size(int input_index = 0) const;
-  /** Get output tensor dimensions. */
-  std::vector<int> get_output_dims(int output_index = 0) const;
-  /** Get output tensor size. */
-  int get_output_size(int output_index = 0) const;
-
-  /** Set output tensor dimensions. */
-  void set_output_dims(std::vector<int> dims, int output_index = 0);
+  void replace_weights(Layer* other_layer) override;
 
   // ===========================================================
   // Tensor access functions
@@ -119,39 +126,12 @@ public:
   /** Get local portion of error signal tensor. */
   const El::AbstractMatrix<TensorDataType>& get_local_error_signals(int parent_index = 0) const;
 
-  // ===========================================================
-  // Hint layer access functions
-  // ===========================================================
-
-  /** Set hint layer.
-   *  Properties of the hint layer are used during the setup
-   *  phase. For instance, the output tensor dimensions are set to
-   *  match the hint layer's first output tensor.
-   */
-  void set_hint_layer(const data_type_layer* l) { m_hint_layer = l; }
-
-  /** Get hint layer. */
-  const data_type_layer* get_hint_layer() const { return m_hint_layer; }
-
-  // ===========================================================
-  // Freeze management functions
-  // ===========================================================
-
-  void freeze();
-  void unfreeze();
-  bool is_frozen() const;
-
 protected:
 
   // ===========================================================
   // Setup helper functions
   // ===========================================================
-  /** Setup tensor dimensions
-   *  Called by the 'setup' function. If there are any input tensors,
-   *  the base method sets all uninitialized output tensor dimensions
-   *  equal to the first input tensor dimensions.
-   */
-  virtual void setup_dims();
+
   /** Setup distributed matrices.
    *  Called by the 'setup' function. Each column of these distributed
    *  matrices is interpreted as the flattened tensor for a mini-batch
@@ -159,7 +139,7 @@ protected:
    *  'construct_matrix' function. If any matrices have already been
    *  setup, they are destroyed and reinstantiated.
    */
-  virtual void setup_matrices(const El::Grid& grid);
+  void setup_matrices(const El::Grid& grid) override;
   /** Construct distributed matrix.
    *  Called by the 'setup_matrices' function. 'type' is one of the
    *  following: "input", "output", "gradient_wrt_output",
@@ -168,15 +148,69 @@ protected:
   virtual std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> construct_matrix(const El::Grid& grid,
                                                        std::string type,
                                                        El::Int index);
+  /** Setup layer data.
+   *  Called by the 'setup' function. Memory is allocated for
+   *  distributed matrices.
+   */
+  void setup_data() override;
+
+  // ===========================================================
+  // Forward prop step helper functions
+  // ===========================================================
+
+  /** Setup input tensors.
+   *  Called by the 'forward_prop' function. Each input tensor is
+   *  setup as a view or copy of the corresponding parent layer's
+   *  output tensor.
+   */
+  void fp_setup_inputs(El::Int mini_batch_size) override;
+  /** Setup output tensors.
+   *  Called by the 'forward_prop' function. Each output tensor is
+   *  resized to match the mini-batch size.
+   */
+  void fp_setup_outputs(El::Int mini_batch_size) override;
+
+  // ===========================================================
+  // Back prop step helper functions
+  // ===========================================================
+
+  /** Setup gradient w.r.t. output tensors.
+   *  Called by the 'back_prop' function. Each gradient w.r.t. output
+   *  tensor is setup as a view or copy of the corresponding child
+   *  layer's gradient w.r.t. input tensor.
+   */
+  void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) override;
+  /** Setup gradient w.r.t. input tensors.
+   *  Called by the 'back_prop' function. Each gradient w.r.t. input
+   *  tensor is resized to match the mini-batch size.
+   */
+  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
+  /** Compute objective funciton gradients.
+   *  Called by the 'back_prop' function. Given the input, output, and
+   *  gradient w.r.t. output tensors, the gradient w.r.t. input
+   *  tensors are populated with the computed values and the gradients
+   *  w.r.t. the weights are sent to the appropriate optimizers.
+   */
+  void bp_compute() override;
+
+  // ===========================================================
+  // Protected Weights access functions
+  // ===========================================================
+
+  /** Get references to weights. */
+  inline std::vector<data_type_weights<TensorDataType>*>& get_data_type_weights() { return m_weights; }
+  /** Get references to weights. (const) */
+  inline const std::vector<data_type_weights<TensorDataType>*>& get_data_type_weights() const { return m_weights; }
+  /** Set list of pointers to weights. */
+  inline void set_data_type_weights(std::vector<data_type_weights<TensorDataType>*> w) { m_weights = w; }
+  /** Replace weights with another Layer's weights*/
+  //void replace_weights(Layer* other_layer) override;
 
   // ===========================================================
   // Protected class members
   // ===========================================================
   /** References to layer weights. */
   std::vector<data_type_weights<TensorDataType>*> m_weights;
-
-  /** Avoid back prop if frozen */
-  bool m_frozen;
 
 private:
 
@@ -192,9 +226,6 @@ private:
   // ===========================================================
   // Private class members
   // ===========================================================
-
-  /** Dimensions of output tensors. */
-  std::vector<std::vector<int>> m_output_dims_list;
 
   /** Input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
@@ -213,16 +244,8 @@ private:
    */
   std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_gradient_wrt_inputs;
 
-  /** Hint layer.
-   *  During setup, the output tensor dimensions are set to match the
-   *  first output tensor of the hint layer. Derived classes may do
-   *  more elaborate setup based on the hint layer.
-   */
-  const data_type_layer* m_hint_layer = nullptr;
 };
 
 } // namespace lbann
-
-#include "data_type_layer_impl.hpp"
 
 #endif // LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED

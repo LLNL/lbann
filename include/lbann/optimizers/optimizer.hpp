@@ -137,8 +137,6 @@ protected:
 
   void set_comm(lbann_comm& comm) { m_comm = &comm; }
 
-  EvalType get_step_time() { return m_step_time; }
-
   void set_step_time(EvalType time) { m_step_time = time; }
 
   void inc_step_time(EvalType time) { m_step_time += time; }
