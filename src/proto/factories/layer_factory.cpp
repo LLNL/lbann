@@ -606,11 +606,11 @@ std::unique_ptr<Layer> construct_layer(
     return lbann::make_unique<clamp_layer<Layout, Device>>(comm, params.min(), params.max());
   }
   if (proto_layer.has_matmul()) {
-    if (Layout == data_layout::DATA_PARALLEL && Device == El::Device::CPU) {
-      return lbann::make_unique<matmul_layer<data_layout::DATA_PARALLEL,El::Device::CPU>>(comm);
+    if (Layout == data_layout::DATA_PARALLEL) {
+      return lbann::make_unique<matmul_layer<data_layout::DATA_PARALLEL,Device>>(comm);
     } else {
       LBANN_ERROR("matrix multiply layer is only supported with "
-                  "a data-parallel layout and CPU");
+                  "a data-parallel layout");
     }
   }
 

@@ -26,6 +26,9 @@
 
 #define LBANN_MATMUL_LAYER_INSTANTIATE
 #include "lbann/layers/math/matmul.hpp"
+#ifdef LBANN_HAS_GPU
+#include "lbann/utils/cublas.hpp"
+#endif // LBANN_HAS_GPU
 
 namespace lbann {
 
@@ -102,7 +105,94 @@ void matmul_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::bp_compute() {
 
 }
 
+#ifdef LBANN_HAS_GPU
+template <>
+void matmul_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::fp_compute() {
+
+  // Local data
+  const auto& local_input0 = dynamic_cast<const GPUMat&>(get_local_prev_activations(0));
+  const auto& local_input1 = dynamic_cast<const GPUMat&>(get_local_prev_activations(1));
+  auto& local_output = dynamic_cast<GPUMat&>(get_local_activations());
+  const auto& local_mini_batch_size = local_input0.Width();
+
+  // Return immediately if nothing needs to be done
+  if (local_mini_batch_size < 1) { return; }
+
+  // Matrix dimensions
+  const auto output_dims = this->get_output_dims();
+  const auto input0_dims = this->get_input_dims(0);
+  const El::Int m = *(output_dims.rbegin()+1);
+  const El::Int n = *(output_dims.rbegin());
+  const El::Int k = *(input0_dims.rbegin());
+
+  // Compute matrix multiplication for each mini-batch sample
+  // Note: BLAS expects matrices in Fortran layout while LBANN tensors
+  // are in C layout.
+  /// @todo Support >2 tensor dimensions, transposes, matvecs, dot products
+  auto&& handle = El::GPUManager::cuBLASHandle();
+  cublas::gemm_strided_batched(
+    handle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k,
+    DataType{1},
+    local_input1.LockedBuffer(), n, local_input1.LDim(),
+    local_input0.LockedBuffer(), k, local_input0.LDim(),
+    DataType{0},
+    local_output.Buffer(), n, local_output.LDim(),
+    local_mini_batch_size);
+
+}
+#endif // LBANN_HAS_GPU
+
+#ifdef LBANN_HAS_GPU
+template <>
+void matmul_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::bp_compute() {
+
+  // Local data
+  const auto& local_input0 = dynamic_cast<const GPUMat&>(get_local_prev_activations(0));
+  const auto& local_input1 = dynamic_cast<const GPUMat&>(get_local_prev_activations(1));
+  const auto& local_output_grad = dynamic_cast<const GPUMat&>(get_local_prev_error_signals());
+  auto& local_input0_grad = dynamic_cast<GPUMat&>(get_local_error_signals(0));
+  auto& local_input1_grad = dynamic_cast<GPUMat&>(get_local_error_signals(1));
+  const auto& local_mini_batch_size = local_input0.Width();
+
+  // Return immediately if nothing needs to be done
+  if (local_mini_batch_size < 1) { return; }
+
+  // Matrix dimensions
+  const auto output_dims = this->get_output_dims();
+  const auto input0_dims = this->get_input_dims(0);
+  const El::Int m = *(output_dims.rbegin()+1);
+  const El::Int n = *(output_dims.rbegin());
+  const El::Int k = *(input0_dims.rbegin());
+
+  // Compute gradients for each mini-batch sample
+  // Note: BLAS expects matrices in Fortran layout while LBANN tensors
+  // are in C layout.
+  /// @todo Support >2 tensor dimensions, transposes, matvecs, dot products
+  auto&& handle = El::GPUManager::cuBLASHandle();
+  cublas::gemm_strided_batched(
+    handle, CUBLAS_OP_T, CUBLAS_OP_N, k, m, n,
+    DataType{1},
+    local_input1.LockedBuffer(), n, local_input1.LDim(),
+    local_output_grad.LockedBuffer(), n, local_output_grad.LDim(),
+    DataType{0},
+    local_input0_grad.Buffer(), k, local_input0_grad.LDim(),
+    local_mini_batch_size);
+  cublas::gemm_strided_batched(
+    handle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m,
+    DataType{1},
+    local_output_grad.LockedBuffer(), n, local_output_grad.LDim(),
+    local_input0.LockedBuffer(), k, local_input0.LDim(),
+    DataType{0},
+    local_input1_grad.Buffer(), n, local_input1_grad.LDim(),
+    local_mini_batch_size);
+
+}
+#endif // LBANN_HAS_GPU
+
 // Explicit instantiation
 template class matmul_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+template class matmul_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
 
 } // namespace lbann

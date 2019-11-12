@@ -37,8 +37,6 @@ class matmul_layer : public Layer {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "matmul_layer only supports "
                 "data-parallel data layout");
-  static_assert(Device == El::Device::CPU,
-                "matmul_layer only supports CPU");
 
 public:
 
@@ -155,6 +153,10 @@ void matmul_layer<Layout,Device>::setup_dims() {
 #ifndef LBANN_MATMUL_LAYER_INSTANTIATE
 extern template class matmul_layer<
   data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class matmul_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
 #endif // LBANN_MATMUL_LAYER_INSTANTIATE
 
 } // namespace lbann

@@ -91,7 +91,7 @@ def construct_model(lbann):
     # LBANN implementation
     x0 = x0_lbann
     x1 = x1_lbann
-    y = lbann.MatMul([x0, x1], data_layout='data_parallel', device='cpu')
+    y = lbann.MatMul([x0, x1], data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
