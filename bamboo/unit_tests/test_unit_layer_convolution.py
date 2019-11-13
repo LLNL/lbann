@@ -137,10 +137,10 @@ def construct_model(lbann):
     x_weights = lbann.Weights(optimizer=lbann.SGD(),
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
-    x0 = lbann.WeightsLayer(weights=x_weights,
-                            dims=tools.str_list(_sample_dims))
-    x1 = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
-    x = lbann.Sum([x0, x1])
+    x = lbann.Sum(lbann.Reshape(lbann.Input(),
+                                dims=tools.str_list(_sample_dims)),
+                  lbann.WeightsLayer(weights=x_weights,
+                                     dims=tools.str_list(_sample_dims)))
     x_lbann = x
 
     # Objects for LBANN model
