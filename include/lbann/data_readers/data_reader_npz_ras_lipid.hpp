@@ -36,89 +36,67 @@
 
 namespace lbann {
   /**
-   * Data reader for data stored in numpy (.npz) files that are encapsulated .
+   * Data reader for data stored in numpy (.npz) files that are encapsulated
    * in conduit::Nodes
    */
 class ras_lipid_conduit_data_reader : public generic_data_reader {
 
- public:
+public:
   ras_lipid_conduit_data_reader(const bool shuffle);
-  // These need to be explicit because of some issue with the cnpy copy
-  // constructor/assignment operator not linking correctly otherwise.
-  // dah -- ??
   ras_lipid_conduit_data_reader(const ras_lipid_conduit_data_reader&);
   ras_lipid_conduit_data_reader& operator=(const ras_lipid_conduit_data_reader&);
   ~ras_lipid_conduit_data_reader() override {}
 
   ras_lipid_conduit_data_reader* copy() const override { return new ras_lipid_conduit_data_reader(*this); }
 
-  void copy_members(const ras_lipid_conduit_data_reader& rhs);
-
   std::string get_type() const override {
     return "ras_lipid_conduit_data_reader";
   }
 
-  /// Set whether to fetch labels.
-  //void set_has_labels(bool b) { m_has_labels = b; }
-  /// Set whether to fetch responses.
-  //void set_has_responses(bool b) { m_has_responses = b; }
-  /// Set a scaling factor for int16 data.
-
   void load() override;
 
-//  void set_num_labels(int n) { m_num_labels = n; }
-//  int get_num_labels() const override { return m_num_labels; }
-  //int get_num_responses() const override { return get_linearized_response_size(); }
-//  int get_linearized_data_size() const override { return m_num_features; }
- // int get_linearized_label_size() const override { return m_num_labels; }
-//  int get_linearized_response_size() const override { return m_num_response_features; }
- // const std::vector<int> get_data_dims() const override { return m_data_dims; }
+private:
 
-  private:
+  /** @brief List of input npz filenames */
+  std::vector<std::string> m_filenames;
 
-    std::vector<std::string> m_filenames;
+  /** @brief The global number of samples */
+  int m_num_samples = 0;
 
-    /// Number of samples.
-    int m_num_samples = 0;
-#if 0
-    /// Number of features in each sample.
-    int m_num_features = 0;
-    /// Number of label classes.
-    int m_num_labels = 0;
-    /// Number of features in each response.
-    int m_num_response_features = 0;
-    /// Whether to fetch a label from the last column.
-    bool m_has_labels = true;
-    /// Whether to fetch a response from the last column.
-    bool m_has_responses = true;
-#endif
+  /** @brief m_samples_per_file[j] contains the number of samples in the j-th file */
+  std::vector<size_t> m_samples_per_file;
 
-    //std::vector<int> m_data_dims;
+  /** @brief Maps a data_id to the file index (in m_filenames) that
+   * contains the sample, and the offset in that file's npy array */
+  std::unordered_map<int, std::pair<int, int>> m_data_id_map;
 
-    std::vector<size_t> m_samples_per_file;
+  /** @brief Maps a field name to the data's shape
+   *
+   * Example: "bbs" -> {184, 3}
+   */
+  std::unordered_map<std::string, std::vector<size_t>> m_datum_sizes;
 
-    /** @brief Maps a data_id to the file index (in m_filenames) that
-     * contains the sample, and the offset in that file's npy array */
-    std::unordered_map<int, std::pair<int, int>> m_data_id_map;
+  /** @brief Maps a field name to the number of bytes in the sample
+   *
+   * Example: "bbs" -> 184*3*word_size
+   */
+  std::unordered_map<std::string, size_t> m_datum_bytes;
 
-    std::unordered_map<std::string, std::vector<size_t>> m_datum_sizes;
-    std::unordered_map<std::string, size_t> m_datum_bytes;
+  //=====================================================================
+  // private methods follow
+  //=====================================================================
 
-    /** @brief We cache the cnpy::NpyArray objects to avoid making copies
-     * when we stuff them into conduit Nodes */
-    std::unordered_map<int, std::map<std::string, cnpy::NpyArray>> m_npz_cache;
+  /** @brief Contains common code for operator= and copy ctor */
+  void copy_members(const ras_lipid_conduit_data_reader& rhs);
 
-    //=====================================================================
-    // private methods follow
-    //=====================================================================
+  void do_preload_data_store() override;
 
-    void do_preload_data_store() override;
+  bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
+  bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
+  bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
-    bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
-    bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
-    bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
-
-    void fill_in_metadata();
+  /** @brief Populates in m_datum_sizes and m_datum_bytes */
+  void fill_in_metadata();
 };
 
 }  // namespace lbann

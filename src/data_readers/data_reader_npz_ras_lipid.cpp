@@ -62,22 +62,11 @@ void ras_lipid_conduit_data_reader::copy_members(const ras_lipid_conduit_data_re
       m_data_store = new data_store_conduit(rhs.get_data_store());
   }
   m_data_store->set_data_reader_ptr(this);
-#if 0
-  m_num_samples = rhs.m_num_samples;
-  m_num_features = rhs.m_num_features;
-  m_num_labels = rhs.m_num_labels;
-  m_num_response_features = rhs.m_num_response_features;
-  m_has_labels = rhs.m_has_labels;
-  m_has_responses = rhs.m_has_responses;
-  m_data_dims = rhs.m_data_dims;
-#endif
   m_filenames = rhs.m_filenames;
   m_samples_per_file = rhs.m_samples_per_file;
   m_data_id_map = rhs.m_data_id_map;
-
-  //dah - don't know if the following will work; think it should: from looking
-  //      at cnpy.h, there's no copy ctor, etc, but the defaults should be OK
-  m_npz_cache = rhs.m_npz_cache;
+  m_datum_sizes = rhs.m_datum_sizes;
+  m_datum_bytes = rhs.m_datum_bytes;
 }
 
 void ras_lipid_conduit_data_reader::load() {
