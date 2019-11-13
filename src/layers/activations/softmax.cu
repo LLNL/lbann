@@ -237,7 +237,7 @@ __global__ void bp_dot_product_kernel(size_t height,
  *
  *  @param dot_products dot(y,dy) for each matrix column
  */
-template <size_t bsize>
+template <typename TensorDataType, size_t bsize>
 __global__ void bp_kernel(size_t height,
                           size_t width,
                           const TensorDataType* __restrict__ output,

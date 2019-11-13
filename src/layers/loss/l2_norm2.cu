@@ -161,8 +161,8 @@ void local_bp_compute_impl(l2_norm2_layer<TensorDataType, data_layout::DATA_PARA
 }
 
 template class l2_norm2_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class l2_norm2_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
