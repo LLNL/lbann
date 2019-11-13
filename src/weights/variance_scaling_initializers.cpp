@@ -34,7 +34,7 @@ namespace lbann {
 
 template <typename TensorDataType>
 variance_scaling_initializer<TensorDataType>::variance_scaling_initializer(probability_distribution dist)
-  : weights_initializer<TensorDataType>(),
+  : data_type_weights_initializer<TensorDataType>(),
     m_prob_dist(dist),
     m_fan_in(0),
     m_fan_out(0) {
@@ -50,7 +50,7 @@ variance_scaling_initializer<TensorDataType>::variance_scaling_initializer(proba
 
 template <typename TensorDataType>
 description variance_scaling_initializer<TensorDataType>::get_description() const {
-  auto desc = weights_initializer<TensorDataType>::get_description();
+  auto desc = data_type_weights_initializer<TensorDataType>::get_description();
   std::string dist_str;
   switch (m_prob_dist) {
   case probability_distribution::gaussian:
@@ -123,7 +123,7 @@ TensorDataType lecun_initializer<TensorDataType>::get_variance(El::Int fan_in, E
 // FIXME (trb 07/31/2019): This is kinda ugly, but its fine if there
 // are only 2 probability distributions
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer<TensorDataType>>
+std::unique_ptr<weights_initializer>
 build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::GlorotNormalInitializer const*>(&msg))
     return make_unique<glorot_initializer<TensorDataType>>(probability_distribution::gaussian);
@@ -136,7 +136,7 @@ build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg) {
 }
 
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer<TensorDataType>>
+std::unique_ptr<weights_initializer>
 build_he_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::HeNormalInitializer const*>(&msg))
     return make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
@@ -149,7 +149,7 @@ build_he_initializer_from_pbuf(google::protobuf::Message const& msg) {
 }
 
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer<TensorDataType>>
+std::unique_ptr<weights_initializer>
 build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::LeCunNormalInitializer const*>(&msg))
     return make_unique<lecun_initializer<TensorDataType>>(probability_distribution::gaussian);

@@ -37,14 +37,13 @@
 
 namespace lbann {
 
-template <typename TensorDataType>
-description weights_initializer<TensorDataType>::get_description() const {
+description weights_initializer::get_description() const {
   return description(get_type() + " weights initializer");
 }
 
 template <typename TensorDataType>
 description constant_initializer<TensorDataType>::get_description() const {
-  auto desc = weights_initializer<TensorDataType>::get_description();
+  auto desc = data_type_weights_initializer<TensorDataType>::get_description();
   desc.add("Value", m_value);
   return desc;
 }
@@ -103,7 +102,7 @@ void value_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataTy
 
 template <typename TensorDataType>
 description uniform_initializer<TensorDataType>::get_description() const {
-  auto desc = weights_initializer<TensorDataType>::get_description();
+  auto desc = data_type_weights_initializer<TensorDataType>::get_description();
   std::stringstream ss;
   ss << "[" << m_min << "," << m_max << ")";
   desc.add("Range", ss.str());
@@ -118,7 +117,7 @@ void uniform_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorData
 
 template <typename TensorDataType>
 description normal_initializer<TensorDataType>::get_description() const {
-  auto desc = weights_initializer<TensorDataType>::get_description();
+  auto desc = data_type_weights_initializer<TensorDataType>::get_description();
   desc.add("Mean", m_mean);
   desc.add("Standard deviation", m_standard_deviation);
   return desc;
@@ -135,7 +134,7 @@ void normal_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataT
 //
 
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer<TensorDataType>>
+std::unique_ptr<weights_initializer>
 build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ConstantInitializer const&>(msg);
@@ -143,7 +142,7 @@ build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
 }
 
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer<TensorDataType>>
+std::unique_ptr<weights_initializer>
 build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
@@ -151,7 +150,7 @@ build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
 }
 
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer<TensorDataType>>
+std::unique_ptr<weights_initializer>
 build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::UniformInitializer const&>(msg);
@@ -165,7 +164,7 @@ build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
 }
 
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer<TensorDataType>>
+std::unique_ptr<weights_initializer>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::NormalInitializer const&>(msg);
@@ -178,7 +177,7 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   }
 }
 
-template class weights_initializer<float>;
+template class data_type_weights_initializer<float>;
 template class constant_initializer<float>;
 template class value_initializer<float>;
 template class uniform_initializer<float>;

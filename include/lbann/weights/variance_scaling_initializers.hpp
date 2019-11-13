@@ -43,7 +43,7 @@ namespace lbann {
  *  convolution and fully-connected layers.
  */
 template <typename TensorDataType>
-class variance_scaling_initializer : public weights_initializer<TensorDataType> {
+class variance_scaling_initializer : public data_type_weights_initializer<TensorDataType> {
 public:
   variance_scaling_initializer(probability_distribution dist);
   description get_description() const override;
@@ -114,13 +114,13 @@ protected:
 };
 
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer<TensorDataType>>
+std::unique_ptr<weights_initializer>
 build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg);
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer<TensorDataType>>
+std::unique_ptr<weights_initializer>
 build_he_initializer_from_pbuf(google::protobuf::Message const& msg);
 template <typename TensorDataType>
-std::unique_ptr<weights_initializer<TensorDataType>>
+std::unique_ptr<weights_initializer>
 build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg);
 
 } // namespace lbann

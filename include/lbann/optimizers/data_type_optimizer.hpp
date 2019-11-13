@@ -45,6 +45,12 @@ public:
   data_type_optimizer& operator=(const data_type_optimizer& other);
   virtual ~data_type_optimizer() = default;
 
+  /** @brief Create a copy of the class instance.
+   *
+   *  The caller is responsible for deallocating the returned object.
+   */
+  virtual data_type_optimizer* copy() const override = 0;
+
   /** @brief Human-readable description. */
   virtual description get_description() const override;
 

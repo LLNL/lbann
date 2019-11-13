@@ -90,13 +90,13 @@ public:
   // Initializer accessors
   // -----------------------------------------------
   /** Get weights initializer. */
-  weights_initializer<TensorDataType>* get_initializer();
+  data_type_weights_initializer<TensorDataType>* get_initializer();
   /** Get weights initializer (const). */
-  const weights_initializer<TensorDataType>* get_initializer() const;
+  const data_type_weights_initializer<TensorDataType>* get_initializer() const;
   /** Set weights initializer.
    *  The contents of 'init' are moved to a class member.
    */
-  void set_initializer(std::unique_ptr<weights_initializer<TensorDataType>>&& init);
+  void set_initializer(std::unique_ptr<data_type_weights_initializer<TensorDataType>>&& init);
 
   // -----------------------------------------------
   // Optimizer accessors
@@ -168,7 +168,7 @@ private:
   /** Weights initializer.
    *  Default is nullptr, which corresponds to zero initialization.
    */
-  std::unique_ptr<weights_initializer<TensorDataType>> m_initializer;
+  std::unique_ptr<data_type_weights_initializer<TensorDataType>> m_initializer;
   /** Weights optimizer.
    *  Default is nullptr, which corresponds to no optimizer.
    */
