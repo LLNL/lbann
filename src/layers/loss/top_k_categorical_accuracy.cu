@@ -246,7 +246,7 @@ void fp_gpu(lbann_comm& comm,
                           local_entries.begin(),
                           local_entries.end(),
                           local_entries_cols.begin(),
-                          entry_compare());
+                          entry_compare<TensorDataType>());
     ::thrust::stable_sort_by_key(alloc.system(),
                                  local_entries_cols.begin(),
                                  local_entries_cols.end(),
@@ -285,7 +285,7 @@ void fp_gpu(lbann_comm& comm,
                             global_top_entries.begin(),
                             global_top_entries.end(),
                             global_top_entries_cols.begin(),
-                            entry_compare());
+                            entry_compare<TensorDataType>());
       ::thrust::stable_sort_by_key(alloc.system(),
                                    global_top_entries_cols.begin(),
                                    global_top_entries_cols.end(),

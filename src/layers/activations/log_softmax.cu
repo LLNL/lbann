@@ -271,8 +271,8 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLE
   constexpr TensorDataType zero = 0;
   constexpr TensorDataType one = 1;
   const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
-  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals()>;
-                                                                                                           auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals());
+  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals());
+  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals());
   if (!local_output.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxBackward(cudnn::get_handle(),
                                      CUDNN_SOFTMAX_LOG,
@@ -336,7 +336,7 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
                      sync_info);
 
   // Compute sum(exp(x-max_val)) for each column
-  El::Zero(*m_workspace);
+  El::Zero(*l.m_workspace);
   if (!local_input.IsEmpty()) {
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
@@ -349,7 +349,7 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
       max_vals.data().get(),
       local_workspace.Buffer());
   }
-  get_comm()->allreduce(*l.m_workspace, l.m_workspace->RedundantComm());
+  l.get_comm()->allreduce(*l.m_workspace, l.m_workspace->RedundantComm());
 
   // Compute output
   // Note: y = x - max_val - log(sum(exp(x-max_val)))
@@ -400,7 +400,7 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
         local_gradient_wrt_output.LDim(),
         local_workspace.Buffer());
   }
-  get_comm()->allreduce(*l.m_workspace, l.m_workspace->RedundantComm());
+  l.get_comm()->allreduce(*l.m_workspace, l.m_workspace->RedundantComm());
 
   // Compute gradient w.r.t. input
   if (!local_gradient_wrt_input.IsEmpty()) {

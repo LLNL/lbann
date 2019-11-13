@@ -44,7 +44,7 @@
       buildable: True
       version: [1.2.11]
 
-  modules::
+  modules:
     enable::
       - tcl
       - lmod

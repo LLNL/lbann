@@ -473,7 +473,7 @@ protected:
     const TensorDataType one = TensorDataType(1);
 
     // Matrices
-    const auto& kernel = m_weights[0]->get_values();
+    const auto& kernel = this->m_weights[0]->get_values();
     const auto& input = (during_forward_prop ?
                          this->get_local_prev_activations() :
                          this->get_local_prev_error_signals());
@@ -550,7 +550,7 @@ protected:
     const TensorDataType one = TensorDataType(1);
 
     // GPU data
-    const auto& kernel = m_weights[0]->get_values();
+    const auto& kernel = this->m_weights[0]->get_values();
     const auto& input = (during_forward_prop ?
                          this->get_local_prev_activations() :
                          this->get_local_prev_error_signals());
@@ -627,7 +627,7 @@ protected:
         && local_output.Height() > 0
         && local_output.Width() > 0) {
       const TensorDataType one = 1;
-      const auto& bias = m_weights[1]->get_values();
+      const auto& bias = this->m_weights[1]->get_values();
       CHECK_CUDNN(cudnnAddTensor(cudnn::get_handle(),
                                  &m_bias_scaling_factor,
                                  m_bias_cudnn_desc,
@@ -655,8 +655,8 @@ protected:
 
     // Compute bias gradient
     if (m_bias_scaling_factor != TensorDataType(0)
-        && m_weights[1]->get_optimizer() != nullptr) {
-      optimizer* bias_optimizer = m_weights[1]->get_optimizer();
+        && this->m_weights[1]->get_optimizer() != nullptr) {
+      optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
@@ -675,7 +675,7 @@ protected:
     }
 
     // Compute kernel gradient
-    optimizer* kernel_optimizer = m_weights[0]->get_optimizer();
+    optimizer* kernel_optimizer = this->m_weights[0]->get_optimizer();
     if (kernel_optimizer != nullptr) {
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
