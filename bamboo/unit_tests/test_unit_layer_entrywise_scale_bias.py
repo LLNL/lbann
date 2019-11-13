@@ -63,11 +63,12 @@ def construct_model(lbann):
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
     x_weights = lbann.Weights(optimizer=lbann.SGD(),
-                              initializer=lbann.ConstantInitializer(value=0.0))
-    x0 = lbann.WeightsLayer(weights=x_weights,
-                            dims=tools.str_list(_sample_dims))
-    x1 = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
-    x = lbann.Sum([x0, x1])
+                              initializer=lbann.ConstantInitializer(value=0.0),
+                              name='input_weights')
+    x = lbann.Sum(lbann.Reshape(lbann.Input(),
+                                dims=tools.str_list(_sample_size)),
+                  lbann.WeightsLayer(weights=x_weights,
+                                     dims=tools.str_list(_sample_size)))
     x_lbann = x
 
     # Objects for LBANN model
