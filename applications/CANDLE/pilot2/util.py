@@ -63,7 +63,6 @@ def preprocess_data(dirspath,channels=None):
 
   states      = np.concatenate(states,axis=0)
   cons        = np.concatenate(cons,axis=0)
-  print(cons.shape)
 
   # print list of unique state labels and number of each
   (values, cnt) = np.unique(states, return_counts=True)
@@ -76,10 +75,8 @@ def preprocess_data(dirspath,channels=None):
   idx_2 = np.where(states == 2)
   idx_2 = idx_2[0][:min_cnt]
   ids = np.concatenate([idx_0, idx_1, idx_2], axis=0)
-  print(states.shape, cons.shape)
   states = states[ids]
   cons   = cons[ids]
-  print(states.shape, cons.shape)
 
 
   # normalize each concentration channel independently
