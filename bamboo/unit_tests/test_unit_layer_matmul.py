@@ -68,14 +68,14 @@ def construct_model(lbann):
                                name='input1_weights')
     x_slice = lbann.Slice(lbann.Input(),
                           slice_points=tools.str_list([0, _m*_k, _m*_k+_k*_n]))
-    x0 = lbann.Sum([lbann.Reshape(x_slice,
-                                  dims=tools.str_list([_m, _k])),
-                    lbann.WeightsLayer(weights=x0_weights,
-                                       dims=tools.str_list([_m, _k]))])
-    x1 = lbann.Sum([lbann.Reshape(x_slice,
-                                  dims=tools.str_list([_k, _n])),
-                    lbann.WeightsLayer(weights=x1_weights,
-                                       dims=tools.str_list([_k, _n]))])
+    x0 = lbann.Sum(lbann.Reshape(x_slice,
+                                 dims=tools.str_list([_m, _k])),
+                   lbann.WeightsLayer(weights=x0_weights,
+                                      dims=tools.str_list([_m, _k])))
+    x1 = lbann.Sum(lbann.Reshape(x_slice,
+                                 dims=tools.str_list([_k, _n])),
+                   lbann.WeightsLayer(weights=x1_weights,
+                                       dims=tools.str_list([_k, _n])))
     x0_lbann = x0
     x1_lbann = x1
 
@@ -85,16 +85,16 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # Data-parallel layout
+    # NN GEMM
     # ------------------------------------------
 
     # LBANN implementation
     x0 = x0_lbann
     x1 = x1_lbann
-    y = lbann.MatMul([x0, x1], data_layout='data_parallel')
+    y = lbann.MatMul(x0, x1, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout'))
+    metrics.append(lbann.Metric(z, name='NN GEMM'))
 
     # NumPy implementation
     vals = []
