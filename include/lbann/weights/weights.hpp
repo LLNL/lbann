@@ -43,6 +43,7 @@ class WeightsData;
 namespace lbann {
 
 // Forward declaration
+class weights_initializer;
 class optimizer;
 
 /** Neural network weights.
@@ -148,6 +149,18 @@ public:
   // -----------------------------------------------
   El::DistData get_matrix_distribution() const;
   void set_matrix_distribution(El::DistData dist);
+
+  // -----------------------------------------------
+  // Initializer accessors
+  // -----------------------------------------------
+  /** Get weights initializer. */
+  virtual weights_initializer* get_initializer() = 0;
+  /** Get weights initializer (const). */
+  virtual const weights_initializer* get_initializer() const = 0;
+  /** Set weights initializer.
+   *  The contents of 'init' are moved to a class member.
+   */
+  virtual void set_initializer(std::unique_ptr<weights_initializer>&& init) = 0;
 
   // -----------------------------------------------
   // Optimizer accessors

@@ -52,25 +52,25 @@ using factory_type = lbann::generic_factory<
 void register_default_builders(factory_type& factory)
 {
   factory.register_builder("ConstantInitializer",
-                           build_constant_initializer_from_pbuf);
+                           build_constant_initializer_from_pbuf<DataType>);
   factory.register_builder("ValueInitializer",
-                           build_value_initializer_from_pbuf);
+                           build_value_initializer_from_pbuf<DataType>);
   factory.register_builder("UniformInitializer",
-                           build_uniform_initializer_from_pbuf);
+                           build_uniform_initializer_from_pbuf<DataType>);
   factory.register_builder("NormalInitializer",
-                           build_normal_initializer_from_pbuf);
+                           build_normal_initializer_from_pbuf<DataType>);
   factory.register_builder("GlorotNormalInitializer",
-                           build_glorot_initializer_from_pbuf);
+                           build_glorot_initializer_from_pbuf<DataType>);
   factory.register_builder("GlorotUniformInitializer",
-                           build_glorot_initializer_from_pbuf);
+                           build_glorot_initializer_from_pbuf<DataType>);
   factory.register_builder("HeNormalInitializer",
-                           build_he_initializer_from_pbuf);
+                           build_he_initializer_from_pbuf<DataType>);
   factory.register_builder("HeUniformInitializer",
-                           build_he_initializer_from_pbuf);
+                           build_he_initializer_from_pbuf<DataType>);
   factory.register_builder("LeCunNormalInitializer",
-                           build_lecun_initializer_from_pbuf);
+                           build_lecun_initializer_from_pbuf<DataType>);
   factory.register_builder("LeCunUniformInitializer",
-                           build_lecun_initializer_from_pbuf);
+                           build_lecun_initializer_from_pbuf<DataType>);
 }
 
 // Manage a global factory
@@ -107,7 +107,7 @@ std::unique_ptr<weights> construct_weights(
   std::stringstream err;
 
   // Instantiate weights
-  auto w = make_unique<weights>(comm);
+  auto w = make_unique<data_type_weights<DataType>>(comm);
 
   // Set weights name if provided
   const auto& name = proto_weights.name();

@@ -153,8 +153,8 @@ const data_type_weights_initializer<TensorDataType>* data_type_weights<TensorDat
   return m_initializer.get();
 }
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::set_initializer(std::unique_ptr<data_type_weights_initializer<TensorDataType>>&& init) {
-  m_initializer = std::move(init);
+void data_type_weights<TensorDataType>::set_initializer(std::unique_ptr<weights_initializer>&& init) {
+  m_initializer = std::move(reinterpret_cast<std::unique_ptr<data_type_weights_initializer<TensorDataType>>&&>(init));
 }
 
 // -----------------------------------------------
