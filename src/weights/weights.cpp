@@ -197,9 +197,6 @@ void weights::setup_default_matrix_distribution() {
 
 void weights::setup() {
 
-  // Return immediately if weights have already been setup
-  if (m_values != nullptr) { return; }
-
   // Check that tensor dimensions are valid
   const auto& is_nonpositive = [] (int d) { return d <= 0; };
   if (std::any_of(m_matrix_height_dims.begin(),

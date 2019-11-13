@@ -185,6 +185,9 @@ void data_type_weights<TensorDataType>::set_optimizer(std::unique_ptr<optimizer>
 
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::setup() {
+  // Return immediately if weights have already been setup
+  if (m_values != nullptr) { return; }
+
   weights::setup();
 
   auto matrix_dist = get_matrix_distribution();
