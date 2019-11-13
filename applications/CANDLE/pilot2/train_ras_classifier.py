@@ -49,7 +49,7 @@ def construct_model():
     fc3 = fc(num_classes, name='fc3')
     # Layer graph
     input = lbann.Input(name='inp_tensor')
-    inp_slice = lbann.Slice(input, axis=0, slice_points="0 2366 2367",name='inp_slice')
+    inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0, dims-1, dims]),name='inp_slice')
     xdata = lbann.Identity(inp_slice)
     ylabel = lbann.Identity(inp_slice, name='gt_y')
     #NHWC to NCHW
@@ -61,6 +61,7 @@ def construct_model():
     pred = lbann.Softmax(fc3(x))
     gt_label  = lbann.OneHot(ylabel, size=num_classes)
     loss = lbann.CrossEntropy([pred,gt_label],name='loss')
+    acc = lbann.CategoricalAccuracy([pred, gt_label]) 
 
 
     layers = list(lbann.traverse_layer_graph(input))
@@ -81,6 +82,7 @@ def construct_model():
                        num_epochs,
                        weights=weights,
                        layers=layers,
+                       metrics=[lbann.Metric(acc, name='accuracy', unit='%')],
                        objective_function=obj,
                        callbacks=callbacks)
 
