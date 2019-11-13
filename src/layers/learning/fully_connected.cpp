@@ -26,7 +26,6 @@
 
 #define LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 #include "lbann/layers/learning/fully_connected.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -102,10 +101,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_com
 /** CPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
-
-  // Effective mini-batch size
-  const auto mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& linearity = m_weights[0]->get_values();
@@ -125,7 +120,7 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
                  m_bias_gradient->Matrix());
       bias_optimizer->add_to_gradient(
         *m_bias_gradient,
-        m_bias_scaling_factor / mini_batch_size,
+        m_bias_scaling_factor,
         true);
     }
   }
@@ -138,7 +133,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
     if (linearity.DistSize() == 1) {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
-      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
                  gradient_scale, local_input, local_gradient_wrt_output,
@@ -151,7 +145,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_com
     } else {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale);
-      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
                  gradient_scale, input, gradient_wrt_output,
@@ -211,10 +204,6 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_comp
 /** CPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
-
-  // Effective mini-batch size
-  const auto mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& local_linearity = m_weights[0]->get_values().LockedMatrix();
@@ -230,7 +219,7 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
                  m_bias_gradient->Matrix());
       bias_optimizer->add_to_gradient(
         *m_bias_gradient,
-        m_bias_scaling_factor / mini_batch_size,
+        m_bias_scaling_factor,
         true);
     }
   }
@@ -241,7 +230,6 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_comp
     DataType dst_scale = DataType(0), gradient_scale = DataType(0);
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
-    gradient_scale /= mini_batch_size;
     if (m_transpose) {
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                gradient_scale, local_input, local_gradient_wrt_output,
@@ -296,10 +284,6 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_comp
 /** GPU implementation of backward prop computation. */
 template <>
 void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
-
-  // Effective mini-batch size
-  const auto mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& local_linearity = m_weights[0]->get_values().LockedMatrix();
@@ -314,7 +298,6 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
       DataType dst_scale = DataType(0), gradient_scale = DataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
-      gradient_scale /= mini_batch_size;
       if (local_gradient_wrt_output.Height() < 1
           || local_gradient_wrt_output.Width() < 1) {
         El::Scale(dst_scale, bias_gradient);
@@ -338,7 +321,6 @@ void fully_connected_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_comp
     DataType dst_scale = DataType(0), gradient_scale = DataType(0);
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
-    gradient_scale /= mini_batch_size;
     if (m_transpose) {
       El::Gemm(El::NORMAL, El::TRANSPOSE,
                gradient_scale, local_input, local_gradient_wrt_output,
@@ -399,10 +381,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_com
 
 template <>
 void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
-
-  // Effective mini-batch size
-  const auto mini_batch_size = c.get_effective_mini_batch_size();
 
   // Matrices
   const auto& linearity = m_weights[0]->get_values();
@@ -422,7 +400,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
       DataType dst_scale = DataType(0), gradient_scale = DataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
-      gradient_scale /= mini_batch_size;
       if (local_gradient_wrt_output.Height() < 1
           || local_gradient_wrt_output.Width() < 1) {
         El::Scale(dst_scale, bias_gradient);
@@ -448,7 +425,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
     if (linearity.DistSize() == 1) {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
-      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
                  gradient_scale, local_input, local_gradient_wrt_output,
@@ -461,7 +437,6 @@ void fully_connected_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_com
     } else {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale);
-      gradient_scale /= mini_batch_size;
       if (m_transpose) {
         El::Gemm(El::NORMAL, El::TRANSPOSE,
                  gradient_scale, input, gradient_wrt_output,

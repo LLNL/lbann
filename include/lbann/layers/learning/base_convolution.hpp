@@ -27,7 +27,6 @@
 #ifndef LBANN_LAYERS_LEARNING_BASE_CONVOLUTION_HPP_INCLUDED
 #define LBANN_LAYERS_LEARNING_BASE_CONVOLUTION_HPP_INCLUDED
 
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
@@ -646,8 +645,6 @@ protected:
     const auto& local_input = get_local_prev_activations();
     const auto& local_gradient_wrt_output = get_local_prev_error_signals();
 
-    const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
-    const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
     const bool has_local_data = (local_input.Height() > 0
                                  && local_input.Width() > 0
                                  && local_gradient_wrt_output.Height() > 0
@@ -660,7 +657,6 @@ protected:
       DataType dst_scale = DataType(0), gradient_scale = DataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
-      gradient_scale /= effective_mini_batch_size;
       if (has_local_data) {
         CHECK_CUDNN(cudnnConvolutionBackwardBias(
                       cudnn::get_handle(),
@@ -681,7 +677,6 @@ protected:
       DataType dst_scale = DataType(0), gradient_scale = DataType(0);
       auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
-      gradient_scale /= effective_mini_batch_size;
       if (has_local_data) {
         // Initialize GPU workspace
         GPUMat workspace;
@@ -920,8 +915,6 @@ protected:
     const int num_input_channels = input_dims[0];
     const int num_output_channels = output_dims[0];
     const int num_per_output_channel = get_output_size() / num_output_channels;
-    const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
-    const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
     const auto& kernel_dims = get_kernel_dims();
     const auto& kernel_size = std::accumulate(kernel_dims.begin(),
                                               kernel_dims.end(),
@@ -935,7 +928,6 @@ protected:
       DataType dst_scale = DataType(0), gradient_scale = DataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
-      gradient_scale /= effective_mini_batch_size;
       if (has_local_data) {
         auto& local_bias_gradient = bias_gradient.Matrix();
         LBANN_OMP_PARALLEL_FOR
@@ -979,7 +971,6 @@ protected:
     auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
     El::Scale(dst_scale, kernel_gradient);
-    gradient_scale /= effective_mini_batch_size;
     DMat<Device> im2col_matrix(m, k);
     DMat<Device> kernel_gradient_matrix(m, n, kernel_gradient.Buffer(), m);
 
