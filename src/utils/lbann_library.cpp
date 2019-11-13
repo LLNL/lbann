@@ -182,16 +182,16 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
-  if (pb_model->random_init_models_differently()) {
-    random_seed = random_seed + comm->get_trainer_rank();
+  if (!pb_trainer->random_init_trainers_identically()) {
+    hash_combine(random_seed, comm->get_trainer_rank());
     // Reseed here so that setup is done with this new seed.
     init_random(random_seed);
     init_data_seq_random(random_seed);
   }
 #else
-  if (pb_model->random_init_models_differently()) {
+  if (!pb_trainer->random_init_trainers_identically()) {
     if (master) {
-      std::cout << "WARNING: Ignoring random_init_models_differently " <<
+      std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
         "due to sequential consistency" << std::endl;
     }
   }
@@ -276,7 +276,7 @@ std::unique_ptr<model> build_model_from_prototext(
   // Setup models
   ret_model->setup();
 
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }

@@ -5,7 +5,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -19,7 +19,7 @@ import tools
 
 # Data
 np.random.seed(20190911)
-_num_samples = 31
+_num_samples = 35
 _sample_dims = (11,)
 _sample_size = functools.reduce(operator.mul, _sample_dims)
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
@@ -61,17 +61,13 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
     # Convenience function to compute L2 norm squared with NumPy
     def l2_norm2(x):
         x = x.reshape(-1)
         return np.inner(x, x)
 
     # LBANN implementation
-    x = lbann.Reshape(lbann.Input(), dims=str_list(_sample_dims))
+    x = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
     y = lbann.Argmax(x, device='cpu')
     z = lbann.L2Norm2(y)
 
@@ -84,9 +80,9 @@ def construct_model(lbann):
     # Get expected metric value from NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
         y = np.argmax(x)
-        z = l2_norm2(y)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -98,7 +94,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # Construct model
-    mini_batch_size = 17
+    mini_batch_size = num_samples() // 2
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
@@ -148,7 +144,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-# Note: Create test name by removing ".py" from file name
-_test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name):
+for test in tools.create_tests(setup_experiment, __file__):
     globals()[test.__name__] = test

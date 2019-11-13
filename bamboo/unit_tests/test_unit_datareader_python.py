@@ -3,7 +3,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -17,7 +17,7 @@ import tools
 
 # Data
 np.random.seed(20190708)
-_num_samples = 23
+_num_samples = 29
 _sample_size = 7
 _samples = np.random.normal(size=(_num_samples,_sample_size))
 _samples = _samples.astype(np.float32)
@@ -57,17 +57,17 @@ def construct_model(lbann):
 
     # Layer graph
     x = lbann.Input()
-    obj = lbann.L2Norm2(x)
+    y = lbann.L2Norm2(x)
     layers = list(lbann.traverse_layer_graph(x))
-    metric = lbann.Metric(obj, name='obj')
+    metric = lbann.Metric(y, name='obj')
     callbacks = []
 
     # Compute expected value with NumPy
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
-        obj = np.inner(x, x)
-        vals.append(obj)
+        x = get_sample(i).astype(np.float64)
+        y = tools.numpy_l2norm2(x)
+        vals.append(y)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
@@ -78,7 +78,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # Construct model
-    mini_batch_size = 5
+    mini_batch_size = num_samples() // 4
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
@@ -127,7 +127,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-# Note: Create test name by removing ".py" from file name
-_test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name):
+for test in tools.create_tests(setup_experiment, __file__):
     globals()[test.__name__] = test

@@ -110,6 +110,40 @@ namespace cuda {
 template <typename T> __device__ __forceinline__
 T atomic_add(T* address, T val);
 
+/** @brief Sum over threads in CUDA block
+ *
+ *  Every thread in a CUDA block must enter this function. The sum is
+ *  returned on thread 0.
+ *
+ *  @tparam bdimx   x-dimension of CUDA block
+ *  @tparam bdimy   y-dimension of CUDA block
+ *  @tparam bdimz   z-dimension of CUDA block
+ *  @tparam T       Data type
+ *  @param  val     Contribution from thread
+ *  @returns On thread 0, the sum. Not meaningful on other threads.
+ */
+template <size_t bdimx, size_t bdimy, size_t bdimz, class T>
+__device__ __forceinline__
+T block_reduce(T val);
+
+/** @brief Reduction over threads in CUDA block
+ *
+ *  Every thread in a CUDA block must enter this function. The reduced
+ *  value is returned on thread 0.
+ *
+ *  @tparam bdimx   x-dimension of CUDA block
+ *  @tparam bdimy   y-dimension of CUDA block
+ *  @tparam bdimz   z-dimension of CUDA block
+ *  @tparam T       Data type
+ *  @tparam Op      Functor for reduction operation
+ *  @param  val     Contribution from each thread
+ *  @returns On thread 0, the reduced value. Not meaningful on other
+ *  threads.
+ */
+template <size_t bdimx, size_t bdimy, size_t bdimz, class T, class Op>
+__device__ __forceinline__
+T block_reduce(T val);
+
 // Unary math functions
 template <typename T> __device__ __forceinline__ T abs(const T& x);
 template <typename T> __device__ __forceinline__ T round(const T& x);

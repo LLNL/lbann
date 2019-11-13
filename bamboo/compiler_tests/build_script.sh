@@ -57,6 +57,7 @@ then
     export CUDNN_DIR=$(find ${BRAIN_DIR}/cudnn -maxdepth 2 -type d | grep "cuda-10.*_${ARCH}" | tail -n1)
 
     # Unit testing framework
+    export CLARA_DIR=${WORKSPACE_DIR}/stable_dependencies/clara
     export CATCH2_DIR=${WORKSPACE_DIR}/stable_dependencies/catch2
 
     # Add Ninja support

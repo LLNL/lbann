@@ -6,7 +6,7 @@ import sys
 import numpy as np
 import pytest
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -58,15 +58,6 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
-    # Convenience function to compute L2 norm squared with NumPy
-    def l2_norm2(x):
-        x = x.reshape(-1)
-        return np.inner(x, x)
-
     # LBANN objects
     obj = []
     metrics = []
@@ -80,8 +71,8 @@ def construct_model(lbann):
     w = lbann.Weights(optimizer=lbann.SGD(),
                       initializer=lbann.ConstantInitializer(value=0.0))
     x0 = lbann.WeightsLayer(weights=w,
-                            dims=str_list(_sample_dims))
-    x1 = lbann.Reshape(lbann.Input(), dims=str_list(_sample_dims))
+                            dims=tools.str_list(_sample_dims))
+    x1 = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
     x_lbann = lbann.Sum([x0, x1])
 
     # --------------------------
@@ -91,7 +82,7 @@ def construct_model(lbann):
     # LBANN implementation
     slice_points = (2, 3, 6, 7)
     x = x_lbann
-    x_slice = lbann.Slice(x, axis=0, slice_points=str_list(slice_points))
+    x_slice = lbann.Slice(x, axis=0, slice_points=tools.str_list(slice_points))
     y = []
     for _ in range(len(slice_points)-1):
         y.append(lbann.L2Norm2(x_slice))
@@ -102,11 +93,11 @@ def construct_model(lbann):
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
         y = []
         for j in range(len(slice_points)-1):
             x_slice = x[slice_points[j]:slice_points[j+1],:,:]
-            y.append(l2_norm2(x_slice))
+            y.append(tools.numpy_l2norm2(x_slice))
         z = sum(y)
         vals.append(z)
     val = np.mean(vals)
@@ -125,7 +116,7 @@ def construct_model(lbann):
     # LBANN implementation
     slice_points = (0, 2, 3, 4)
     x = x_lbann
-    x_slice = lbann.Slice(x, axis=1, slice_points=str_list(slice_points))
+    x_slice = lbann.Slice(x, axis=1, slice_points=tools.str_list(slice_points))
     y = []
     for _ in range(len(slice_points)-1):
         y.append(lbann.L2Norm2(x_slice))
@@ -136,11 +127,11 @@ def construct_model(lbann):
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
         y = []
         for j in range(len(slice_points)-1):
             x_slice = x[:,slice_points[j]:slice_points[j+1],:]
-            y.append(l2_norm2(x_slice))
+            y.append(tools.numpy_l2norm2(x_slice))
         z = sum(y)
         vals.append(z)
     val = np.mean(vals)
@@ -159,7 +150,7 @@ def construct_model(lbann):
     # LBANN implementation
     slice_points = (0, 1, 2, 3)
     x = x_lbann
-    x_slice = lbann.Slice(x, axis=2, slice_points=str_list(slice_points))
+    x_slice = lbann.Slice(x, axis=2, slice_points=tools.str_list(slice_points))
     y = []
     for _ in range(len(slice_points)-1):
         y.append(lbann.L2Norm2(x_slice))
@@ -170,11 +161,11 @@ def construct_model(lbann):
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i).reshape(_sample_dims)
+        x = get_sample(i).reshape(_sample_dims).astype(np.float64)
         y = []
         for j in range(len(slice_points)-1):
             x_slice = x[:,:,slice_points[j]:slice_points[j+1]]
-            y.append(l2_norm2(x_slice))
+            y.append(tools.numpy_l2norm2(x_slice))
         z = sum(y)
         vals.append(z)
     val = np.mean(vals)
@@ -196,7 +187,7 @@ def construct_model(lbann):
     # Construct model
     # --------------------------
 
-    mini_batch_size = 17
+    mini_batch_size = num_samples() // 2
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
@@ -246,7 +237,5 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-# Note: Create test name by removing ".py" from file name
-_test_name = os.path.splitext(os.path.basename(current_file))[0]
-for test in tools.create_tests(setup_experiment, _test_name):
+for test in tools.create_tests(setup_experiment, __file__):
     globals()[test.__name__] = test

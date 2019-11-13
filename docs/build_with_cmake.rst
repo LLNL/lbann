@@ -225,6 +225,28 @@ require additional CMake/environment flags to be set before properly
 resolving.
 
 ------------------------------
+Building JAG utilities
+------------------------------
+The JAG utility executables are not part of the `all` target. In order
+to use or install them, they must be built using the `jag-utils`
+target. In order to install them, this must be done before installing.
+
+.. code-block:: bash
+                
+    # Configure LBANN
+    cmake <see below... or above> /path/to/lbann
+
+    # Build main LBANN library and front-ends
+    cmake --build .
+
+    # If JAG utilities are required, build them
+    cmake --build . --target jag-utils
+
+    # Install all (built) targets
+    cmake --build . --target install
+
+
+------------------------------
 Example CMake invocation
 ------------------------------
 

@@ -89,7 +89,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   data_reader_jag_conduit(bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&);
-  data_reader_jag_conduit(const data_reader_jag_conduit&, const std::vector<int>& ds_sample_move_list);
   data_reader_jag_conduit& operator=(const data_reader_jag_conduit&);
   ~data_reader_jag_conduit() override;
   data_reader_jag_conduit* copy() const override { return new data_reader_jag_conduit(*this); }
@@ -255,10 +254,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// once the sample_list class and file formats are generalized and
   /// finalized, it should (may?) be possible to code a single
   /// preload_data_store method.
-  void preload_data_store() override;
+  void do_preload_data_store() override;
 
   virtual void set_defaults();
-  virtual void copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
+  virtual void copy_members(const data_reader_jag_conduit& rhs);
 
   /// add data type for independent variable
   void add_independent_variable_type(const variable_t independent);
@@ -346,7 +345,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   bool has_path(const file_handle_t& h, const std::string& path) const;
   void read_node(const file_handle_t& h, const std::string& path, conduit::Node& n) const;
-  void read_partial_node(const file_handle_t& h, const std::string& path, conduit::Node& n) const;
 
   /// Allow const access to the conduit data structure
   static const conduit::Node& get_conduit_node(const conduit::Node& n_base, const std::string key);
@@ -465,6 +463,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   sample_list_t m_sample_list;
   bool m_list_per_trainer;
   bool m_list_per_model;
+
+  void preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node); 
 };
 
 /**

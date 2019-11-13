@@ -37,11 +37,11 @@ void fp(lbann_comm& comm,
         AbsDistMat& workspace) {
 
   // Local matrices
-  const auto& local_input = input.LockedMatrix();
-  auto& local_output = output.Matrix();
-  auto& local_workspace = workspace.Matrix();
-  const auto& local_height = local_input.Height();
-  const auto& local_width = local_input.Width();
+  const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
+  auto& local_output = dynamic_cast<CPUMat&>(output.Matrix());
+  auto& local_workspace = dynamic_cast<CPUMat&>(workspace.Matrix());
+  const auto local_height = local_input.Height();
+  const auto local_width = local_input.Width();
 
   // Find column-wise maximum entries
   El::Fill(workspace, std::numeric_limits<DataType>::lowest());
@@ -59,7 +59,7 @@ void fp(lbann_comm& comm,
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto shift = local_workspace(0, col);
-    DataType sum = 0;
+    DataType sum{0};
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x = local_input(row, col);
       auto& y = local_output(row, col);
@@ -89,10 +89,10 @@ void bp(lbann_comm& comm,
         AbsDistMat& workspace) {
 
   // Local matrices
-  const auto& local_output = output.LockedMatrix();
-  const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
-  auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
-  auto& local_workspace = workspace.Matrix();
+  const auto& local_output = dynamic_cast<const CPUMat&>(output.LockedMatrix());
+  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMat&>(gradient_wrt_output.LockedMatrix());
+  auto& local_gradient_wrt_input = dynamic_cast<CPUMat&>(gradient_wrt_input.Matrix());
+  auto& local_workspace = dynamic_cast<CPUMat&>(workspace.Matrix());
   const auto& local_height = local_output.Height();
   const auto& local_width = local_output.Width();
 

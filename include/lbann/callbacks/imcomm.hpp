@@ -46,7 +46,7 @@ class imcomm : public callback_base {
   using callback_base::on_backward_prop_end;
 
   enum comm_type {
-    NONE,  /** Do no gradient updates. */
+    NONE=0,  /** Do no gradient updates. */
     NORMAL,  /** Simply sum gradient updates. */
   };
 
@@ -54,7 +54,7 @@ class imcomm : public callback_base {
    * Initialize with ct being used for all weights.
    */
   imcomm(comm_type ct = NORMAL,
-                        const std::shared_ptr<lbann_summary>& summarizer = nullptr);
+         const std::shared_ptr<lbann_summary>& summarizer = nullptr);
   imcomm(const imcomm&) = default;
   imcomm& operator=(const imcomm&) = default;
   imcomm* copy() const override {
@@ -65,7 +65,7 @@ class imcomm : public callback_base {
    * Implies no inter-model updates for other weights.
    */
   imcomm(comm_type ct, std::unordered_set<weights *> weights_list,
-                        const std::shared_ptr<lbann_summary>& summarizer = nullptr);
+         const std::shared_ptr<lbann_summary>& summarizer = nullptr);
 
   /** Choose comm type ct for weights. */
   void set_weights_comm(weights *w, comm_type ct);
@@ -80,15 +80,12 @@ class imcomm : public callback_base {
   std::string name() const override { return "imcomm"; }
 
  private:
-  /** Parameters for a given set of weights. */
-  struct imcomm_params {
-    /** Type of communication done. */
-    comm_type ct = NONE;
-  };
+
   /** Default communication type. */
   comm_type m_default_ct;
+
   /** Per-weights parameters. */
-  std::unordered_map<weights *, imcomm_params> m_weights_params;
+  std::unordered_map<weights *, comm_type> m_weights_params;
 
   /** Summarize relevant statistics. */
   void do_summary(model *m, weights *w, EvalType im_time);
@@ -97,8 +94,7 @@ class imcomm : public callback_base {
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;
 };
 
-
-/** returns a string representation of the weight_initialization */
+/** returns a string representation of the weight_initialization. */
 std::string get_comm_type_name(imcomm::comm_type m);
 
 // Builder function

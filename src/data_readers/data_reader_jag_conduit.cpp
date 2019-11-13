@@ -138,7 +138,7 @@ data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
   set_defaults();
 }
 
-void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
+void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_independent = rhs.m_independent;
   m_independent_groups = rhs.m_independent_groups;
   m_dependent = rhs.m_dependent;
@@ -185,11 +185,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
   m_list_per_model = rhs.m_list_per_model;
 
   if(rhs.m_data_store != nullptr) {
-    if(ds_sample_move_list.size() == 0) {
-      m_data_store = new data_store_conduit(rhs.get_data_store());
-    } else {
-      m_data_store = new data_store_conduit(rhs.get_data_store(), ds_sample_move_list);
-    }
+    m_data_store = new data_store_conduit(rhs.get_data_store());
     m_data_store->set_data_reader_ptr(this);
   }
 }
@@ -197,11 +193,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
   : generic_data_reader(rhs) {
   copy_members(rhs);
-}
-
-data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list)
-  : generic_data_reader(rhs) {
-  copy_members(rhs, ds_sample_move_list);
 }
 
 data_reader_jag_conduit& data_reader_jag_conduit::operator=(const data_reader_jag_conduit& rhs) {
@@ -298,7 +289,6 @@ const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::No
 }
 
 bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const {
-
   if (m_io_thread_pool != nullptr && m_using_random_node.count(m_io_thread_pool->get_local_thread_id())) {
     LBANN_ERROR("previously retrieved a random conduit node from data_store, so shouldn't be here");
   }
@@ -312,7 +302,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   if (!has_path(h, path)) {
     const std::string& file_name = m_sample_list.get_samples_filename(id);
     if (m_data_store != nullptr) {
-      if (! m_data_store->is_preloaded()) {
+      if (! m_data_store->is_fully_loaded()) {
         const conduit::Node obj = m_data_store->get_random_node();
         node = obj["data"];
         const std::vector<std::string>& child_names = node.child_names();
@@ -355,54 +345,9 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
     }
   }
 
-  if (options::get()->get_bool("old_method") || ! options::get()->get_bool("preload_data_store")) {
-    read_node(h, path, node);
-  } else {
-    read_partial_node(h, path, node);
-  }
-
+  read_node(h, path, node);
   return true;
 }
-
-#ifdef _USE_IO_HANDLE_
-void data_reader_jag_conduit::read_partial_node(const data_reader_jag_conduit::file_handle_t& h, const std::string& path, conduit::Node& n) const {
-  LBANN_ERROR("Not implemented; please contact Dave Hysom");
-}
-#else
-
-void data_reader_jag_conduit::read_partial_node(const data_reader_jag_conduit::file_handle_t& h, const std::string& path, conduit::Node& n) const {
-  conduit::Node work;
-  if (!has_path(h, path)) {
-    LBANN_ERROR("has_path failed for: ", path, ": num nodes successfully loaded by this rank: ", m_data_store->get_data_size());
-  }
-  const std::string key = path + "/inputs";
-  const std::string key2 = path + "/outputs/scalars";
-
-  if (! has_path(h, key)) {
-    LBANN_ERROR("has_path failed for: ", key, ": num nodes successfully loaded by this rank: ", m_data_store->get_data_size());
-  }
-  conduit::relay::io::hdf5_read(h, key, work);
-  n["inputs"] = work;
-  //n[key2] = work;
-
-  if (! has_path(h, key2)) {
-    LBANN_ERROR("has_path failed for: ", key2, ": num nodes successfully loaded by this rank: ", m_data_store->get_data_size());
-  }
-  conduit::relay::io::hdf5_read(h, key2, work);
-  n["/outputs/scalars"] = work;
-  //n[key] = work;
-
-  for (auto &&t : m_emi_image_keys) {
-    const std::string key3 = "/" + path + "/outputs/images/" + t;
-    if (! has_path(h, key3)) {
-      LBANN_ERROR("has_path failed for: ", key3, ": num nodes successfully loaded by this rank: ", m_data_store->get_data_size());
-    }
-    conduit::relay::io::hdf5_read(h, key3, work);
-    //n[key3] = work;
-    n["/outputs/images/" + t] = work;
-  }
-}
-#endif
 
 bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string& key) const {
   const sample_t& s = m_sample_list[i];
@@ -471,6 +416,10 @@ data_reader_jag_conduit::get_dependent_variable_type() const {
   return m_dependent;
 }
 
+/**
+ * Note: this method is called by init_image_data_reader in
+ *       src/proto/init_image_data_readers.cpp
+ */
 void data_reader_jag_conduit::set_image_dims(const int width, const int height, const int ch) {
   if ((width > 0) && (height > 0) && (ch > 0)) { // set and valid
     m_image_width = width;
@@ -482,6 +431,10 @@ void data_reader_jag_conduit::set_image_dims(const int width, const int height, 
   set_linearized_image_size();
 }
 
+/**
+ * Note: this method is called by init_image_data_reader in
+ *       src/proto/init_image_data_readers.cpp
+ */
 void data_reader_jag_conduit::set_image_choices(const std::vector<std::string> image_keys) {
   m_emi_image_keys = image_keys;
   // For example, in the data reader prototext file, have a line similar to the one below
@@ -532,6 +485,10 @@ bool data_reader_jag_conduit::filter(const std::set<std::string>& key_filter,
   return false;
 }
 
+/**
+ * Note: this method is called by init_image_data_reader in
+ *       src/proto/init_image_data_readers.cpp
+ */
 void data_reader_jag_conduit::set_scalar_choices(const std::vector<std::string>& keys) {
   m_scalar_keys = keys;
   check_scalar_keys();
@@ -561,6 +518,8 @@ const std::vector<std::string>& data_reader_jag_conduit::get_scalar_choices() co
 /**
  * To use no key, set 'Undefined' to the corresponding variable type,
  * or call this with an empty vector argument after loading data.
+ * Note: this method is called by init_image_data_reader in
+ *       src/proto/init_image_data_readers.cpp
  */
 void data_reader_jag_conduit::set_input_choices(const std::vector<std::string>& keys) {
   m_input_keys = keys;
@@ -828,7 +787,7 @@ void data_reader_jag_conduit::load() {
   const std::string sample_list_file = data_dir + get_data_index_list();
 
   options *opts = options::get();
-  bool check_data = ! opts->get_bool("no_check_data");
+  bool check_data = opts->get_bool("check_data");
 
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
@@ -836,7 +795,7 @@ void data_reader_jag_conduit::load() {
   double tm2 = get_time();
   load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
   if(is_master()) {
-      std::cout << "Finished loadingsample list; time: " << get_time() - tm2 << std::endl;
+      std::cout << "Finished loading sample list; time: " << get_time() - tm2 << std::endl;
     if (!check_data) {
       std::cout << "Skipping check data" << std::endl;
     }
@@ -899,30 +858,17 @@ void data_reader_jag_conduit::load() {
     std::cout << "Lists have been gathered" << std::endl;
   }
 
-  std::vector<int> local_list_sizes;
-  if (opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
-    int np = m_comm->get_procs_per_trainer();
-    int base_files_per_rank = m_shuffled_indices.size() / np;
-    int extra = m_shuffled_indices.size() - (base_files_per_rank*np);
-    if (extra > np) {
-      LBANN_ERROR("extra > np");
-    }
-    local_list_sizes.resize(np, 0);
-    for (int j=0; j<np; j++) {
-      local_list_sizes[j] = base_files_per_rank;
-      if (j < extra) {
-        local_list_sizes[j] += 1;
-      }
-    }
-  }
-  instantiate_data_store(local_list_sizes);
-
+  instantiate_data_store();
   select_subset_of_data();
 }
 
+void data_reader_jag_conduit::preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node) {
+  const std::string path = sample_name + field_name;
+  const std::string key2 = '/' + LBANN_DATA_ID_STR(data_id) + field_name;
+  read_node(h, path, node[key2]);
+}
 
-void data_reader_jag_conduit::preload_data_store() {
-  m_data_store->set_preload();
+void data_reader_jag_conduit::do_preload_data_store() {
   conduit::Node work;
   const std::string key; // key = "" is intentional
 
@@ -933,7 +879,7 @@ void data_reader_jag_conduit::preload_data_store() {
   double tm1 = get_time();
   if (get_comm()->am_world_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
-    LBANN_WARNING("starting preload for role: ", get_role(), "; --old_method=", opts->get_bool("old_method"));
+    LBANN_WARNING("starting preload for role: ", get_role());
   }
 
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
@@ -942,12 +888,19 @@ void data_reader_jag_conduit::preload_data_store() {
       continue;
     }
     try {
-      work.reset();
+      const sample_t& s = m_sample_list[index];
+      const std::string& sample_name = s.second;
+      sample_file_id_t id = s.first;
       m_sample_list.open_samples_file_handle(index, true);
-      load_conduit_node(index, key, work);
+      auto h = m_sample_list.get_samples_file_handle(id);
       conduit::Node & node = m_data_store->get_empty_node(index);
-      const std::string padded_idx = '/' + LBANN_DATA_ID_STR(index);
-      node[padded_idx] = work;
+
+      preload_helper(h, sample_name, m_output_scalar_prefix, index, node);
+      preload_helper(h, sample_name, m_input_prefix, index, node);
+      for (auto t : m_emi_image_keys) {
+        const std::string field_name = m_output_image_prefix + t;
+        preload_helper(h, sample_name, field_name, index, node);
+      }
       m_data_store->set_preloaded_conduit_node(index, node);
     } catch (conduit::Error const& e) {
       LBANN_ERROR(" :: trying to load the node " + std::to_string(index) + " with key " + key + " and got " + e.what());
@@ -961,7 +914,6 @@ void data_reader_jag_conduit::preload_data_store() {
     }
     m_sample_list.close_if_done_samples_file_handle(index);
   }
-
 
   if (get_comm()->am_world_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
