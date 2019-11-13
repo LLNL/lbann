@@ -66,6 +66,7 @@ void ras_lipid_conduit_data_reader::copy_members(const ras_lipid_conduit_data_re
   m_samples_per_file = rhs.m_samples_per_file;
   m_data_id_map = rhs.m_data_id_map;
   m_datum_sizes = rhs.m_datum_sizes;
+  m_word_sizes = rhs.m_word_sizes;
   m_datum_bytes = rhs.m_datum_bytes;
 }
 
@@ -213,30 +214,27 @@ void ras_lipid_conduit_data_reader::do_preload_data_store() {
 }
 
 bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
-#if 0
-  Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx+1));
-  conduit::Node node;
-  if (data_store_active()) {
-    const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
-    node.set_external(ds_node);
-  } else {
-    load_npz(m_filenames[data_id], data_id, node);
-    //note: if testing, and test set is touched more than once, the following
-    //      will throw an exception TODO: relook later
-    const auto& c = static_cast<const execution_context&>(m_model->get_execution_context());
-    if (priming_data_store() || c.get_execution_mode() == execution_mode::testing) {
-      m_data_store->set_conduit_node(data_id, node);
-    }
-  }
-  #endif
+  const conduit::Node& node = m_data_store->get_conduit_node(data_id);
+  const double *data = node[LBANN_DATA_ID_STR(data_id) + "/density_sig1"].value();
 
-/*
-  TODO
-  const char *char_data = node[LBANN_DATA_ID_STR(data_id) + "/data/data"].value();
-  char *char_data_2 = const_cast<char*>(char_data);
-  void *data = (void*)char_data_2;
-  std::memcpy(X_v.Buffer(), data, m_num_features * m_data_word_size);
-*/
+  //dah - I don't know if the following is correct - just cut-n-pasting
+  Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx+1));
+
+  std::memcpy(X_v.Buffer(), data, m_datum_bytes["/density_sig1"]);
+
+#if 0
+Notes from Adam:
+The keras model that I gave you only looks at the density_sig1 data as input data and it uses the states data as labels.  We¿ll want to also extract bbs to merge that with density_sig1 in various ways as input data in future models that we¿re putting together.
+
+ The probs field can be useful as an alternate label if building a regression model instead of a classification model.  I¿ve also been using the probs field as a filter on the training data to only consider those input data whose state probability exceeds some threshold.
+
+  So that works out to:
+
+   bb, density_sig1 - datum
+   states           - label
+   probs            - used as a filter to include/exclude certain samples
+
+#endif
 
   return true;
 }
@@ -266,6 +264,7 @@ void ras_lipid_conduit_data_reader::fill_in_metadata() {
     }
     b *= word_size;
     m_datum_bytes[name] = b;
+    m_word_sizes[name] = word_size;
   }
 }
 

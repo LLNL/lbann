@@ -76,6 +76,9 @@ private:
    */
   std::unordered_map<std::string, std::vector<size_t>> m_datum_sizes;
 
+  /** @brief Maps a field name to the word size */
+  std::unordered_map<std::string, size_t> m_word_sizes;
+
   /** @brief Maps a field name to the number of bytes in the sample
    *
    * Example: "bbs" -> 184*3*word_size
@@ -95,7 +98,7 @@ private:
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
-  /** @brief Populates in m_datum_sizes and m_datum_bytes */
+  /** @brief Populates in m_datum_sizes, m_datum_bytes, m_word_sizes */
   void fill_in_metadata();
 };
 
