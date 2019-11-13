@@ -85,6 +85,9 @@ def preprocess_data(dirspath,channels=None):
 
   cons      /= maxs
   labels      = states
+   
+  #transpose to NCHW
+  cons = cons.transpose(0,3,1,2)
 
   X = cons.reshape(cons.shape[0],-1)
   y = labels.reshape(-1,1)
