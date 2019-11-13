@@ -1,4 +1,4 @@
-set_full_path(_DIR_LBANN_CATCH2_TEST_FILES
+set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
   any_test.cpp
   argument_parser_test.cpp
   beta_distribution_test.cpp
@@ -15,5 +15,6 @@ set_full_path(_DIR_LBANN_CATCH2_TEST_FILES
   stubs/preset_env_accessor.cpp
   )
 
-set(LBANN_CATCH2_TEST_FILES
-  "${LBANN_CATCH2_TEST_FILES}" "${_DIR_LBANN_CATCH2_TEST_FILES}" PARENT_SCOPE)
+set(LBANN_SEQ_CATCH2_TEST_FILES
+  "${LBANN_SEQ_CATCH2_TEST_FILES}"
+  "${THIS_DIR_SEQ_CATCH2_TEST_FILES}" PARENT_SCOPE)
