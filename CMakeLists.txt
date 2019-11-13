@@ -229,13 +229,15 @@ endif ()
 if (LBANN_WITH_ALUMINUM)
   # Aluminum may have already been found by Hydrogen
   if (NOT Aluminum_FOUND)
-    find_package(Aluminum 0.2.0 NO_MODULE QUIET
+    message(WARNING
+      "Using Aluminum without Hydrogen support may not be well-supported.")
+    find_package(Aluminum 0.3.0 NO_MODULE QUIET
       HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
       $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
       PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
       NO_DEFAULT_PATH)
     if (NOT Aluminum_FOUND)
-      find_package(Aluminum 0.2.0 NO_MODULE QUIET)
+      find_package(Aluminum 0.3.0 NO_MODULE QUIET)
     endif ()
   endif ()
   set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
