@@ -9,7 +9,6 @@ samples = preprocess_data(data_dir)
 
 dims = len(samples[0])
 
-print("data shape ", samples.shape)
 
 num_classes = 3
 num_channels = 14
