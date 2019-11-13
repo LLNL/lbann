@@ -58,22 +58,22 @@ def construct_model(lbann):
 
     """
 
-    # LBANN objects
+    # Input data
+    # Note: Sum with a weights layer so that gradient checking will
+    # verify that error signals are correct.
+    x_weights = lbann.Weights(optimizer=lbann.SGD(),
+                              initializer=lbann.ConstantInitializer(value=0.0),
+                              name='input_weights')
+    x = lbann.Sum(lbann.Reshape(lbann.Input(),
+                                dims=tools.str_list(_sample_dims)),
+                  lbann.WeightsLayer(weights=x_weights,
+                                     dims=tools.str_list(_sample_dims)))
+    x_lbann = x
+
+    # Objects for LBANN model
     obj = []
     metrics = []
     callbacks = []
-
-    # --------------------------
-    # LBANN input data
-    # --------------------------
-    # Note: Sum with a weights layer so that gradient checking will
-    # verify that error signals are correct.
-    w = lbann.Weights(optimizer=lbann.SGD(),
-                      initializer=lbann.ConstantInitializer(value=0.0))
-    x0 = lbann.WeightsLayer(weights=w,
-                            dims=tools.str_list(_sample_dims))
-    x1 = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
-    x_lbann = lbann.Sum([x0, x1])
 
     # --------------------------
     # Slice along axis 0
