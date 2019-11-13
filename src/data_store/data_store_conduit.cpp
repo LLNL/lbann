@@ -174,7 +174,6 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_is_local_cache = rhs.m_is_local_cache;
   m_node_sizes_vary = rhs.m_node_sizes_vary;
   m_have_sample_sizes = rhs.m_have_sample_sizes;
-  //m_reader = rhs.m_reader;
   m_comm = rhs.m_comm;
   m_world_master = rhs.m_world_master;
   m_trainer_master = rhs.m_trainer_master;
@@ -333,6 +332,8 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   {
     //std::lock_guard<std::mutex> lock(m_mutex);
     if (already_have == false && m_data.find(data_id) != m_data.end()) {
+//XX
+PROFILE("m_data.size: ", m_data.size());
       LBANN_ERROR("duplicate data_id: ", data_id, " in data_store_conduit::set_conduit_node; role: ", m_reader->get_role());
     }
   }
@@ -665,6 +666,7 @@ const conduit::Node & data_store_conduit::get_random_node(const std::string &fie
 }
 
 conduit::Node & data_store_conduit::get_empty_node(int data_id) {
+  std::lock_guard<std::mutex> lock(m_mutex);
   if (m_data.find(data_id) != m_data.end()) {
     LBANN_ERROR("we already have a node with data_id= ", data_id);
   }

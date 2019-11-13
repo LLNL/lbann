@@ -55,7 +55,15 @@ public:
 
   void load() override;
 
+  int get_linearized_data_size() const override { return m_num_features; }
+  int get_linearized_label_size() const override { return m_num_labels; }
+  int get_linearized_response_size() const override { return m_num_response_features; }
+
+
 private:
+  int m_num_features = 10;
+  int m_num_labels = 3;
+  int m_num_response_features = 0;
 
   /** @brief List of input npz filenames */
   std::vector<std::string> m_filenames;

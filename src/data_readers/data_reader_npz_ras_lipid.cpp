@@ -72,7 +72,7 @@ void ras_lipid_conduit_data_reader::copy_members(const ras_lipid_conduit_data_re
 
 void ras_lipid_conduit_data_reader::load() {
   if(is_master()) {
-    std::cout << "starting load" << std::endl;
+    std::cout << "starting load for role: " << get_role() << std::endl;
   }
 
   options *opts = options::get();
@@ -85,6 +85,8 @@ void ras_lipid_conduit_data_reader::load() {
   //      pathname of an npz file. 
   std::string infile = get_data_filename();
   read_filelist(m_comm, infile, m_filenames);
+
+  fill_in_metadata();
 
   // P_0 counts the number of samples in each file, then bcasts to
   // others. Also check that all arrays in a file have the same leading
@@ -132,6 +134,11 @@ void ras_lipid_conduit_data_reader::load() {
 
   instantiate_data_store();
   select_subset_of_data();
+
+// The following are only for debugging during development:
+//  preload_data_store();
+//  m_data_store->setup(32);
+
 }
 
 void ras_lipid_conduit_data_reader::do_preload_data_store() {
@@ -155,7 +162,8 @@ void ras_lipid_conduit_data_reader::do_preload_data_store() {
   int np = m_comm->get_procs_per_trainer();
 
   // re-build the data store's owner map, and get the set of
-  // data_ids that this rank owns
+  // data_ids that this rank owns. This is a one-off, since the
+  // sample list isn't yet ready for this reader.
   m_data_store->clear_owner_map();
   std::unordered_map<int, std::vector<std::pair<int,int>>> my_samples;
   for (size_t j=0; j<m_filenames.size(); ++j) {
@@ -203,13 +211,13 @@ void ras_lipid_conduit_data_reader::do_preload_data_store() {
         conduit::uint8 *data = reinterpret_cast<conduit::uint8*>(a[name].data_holder->data());
         node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset*m_datum_bytes[name], m_datum_bytes[name]); 
       }
-      m_data_store->set_conduit_node(data_id, node);
+      m_data_store->set_preloaded_conduit_node(data_id, node);
     }
   }  
 
   double tm2 = get_time();
   if (is_master()) {
-    std::cout << "time to preload: " << tm2 - tm1 << " for role: " << get_role() << std::endl;
+    std::cout << "time to preload: " << tm2 - tm1 << " for role: " << get_role() << " num global indices: " << m_data_store->get_num_global_indices() << std::endl;
   }
 }
 
@@ -258,9 +266,13 @@ void ras_lipid_conduit_data_reader::fill_in_metadata() {
     size_t word_size = t.second.word_size;
     const std::vector<size_t> &shape = t.second.shape;
     size_t b = 1;
-    for (size_t x=1; x<shape.size(); x++) {
-      b *= shape[x];
-      m_datum_sizes[name].push_back(shape[x]);
+    if (shape.size() == 1) {
+      m_datum_sizes[name].push_back(1);
+    } else {
+      for (size_t x=1; x<shape.size(); x++) {
+        b *= shape[x];
+        m_datum_sizes[name].push_back(shape[x]);
+      }
     }
     b *= word_size;
     m_datum_bytes[name] = b;

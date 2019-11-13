@@ -85,8 +85,11 @@ class data_store_conduit {
   /// returns the conduit node
   const conduit::Node & get_conduit_node(int data_id) const;
 
-  /// if 'already_have = true' then the passed 'node' was obtained by a call to
-  /// get_empty_node(). In some operating modes this saves us from copying the node
+  /** @brief Set a conduit node in the data store
+   *
+   * if 'already_have = true' then the passed 'node' was obtained by a call to
+   * get_empty_node(); note, we do this to prevent copying the node
+   */
   void set_conduit_node(int data_id, conduit::Node &node, bool already_have = false);
 
   void set_preloaded_conduit_node(int data_id, const conduit::Node &node);
