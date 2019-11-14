@@ -183,4 +183,16 @@ template class value_initializer<float>;
 template class uniform_initializer<float>;
 template class normal_initializer<float>;
 
+template std::unique_ptr<weights_initializer>
+build_constant_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+
+template std::unique_ptr<weights_initializer>
+build_value_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+
+template std::unique_ptr<weights_initializer>
+build_uniform_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+
+template std::unique_ptr<weights_initializer>
+build_normal_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+
 } // namespace lbann
