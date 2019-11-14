@@ -221,36 +221,36 @@ private:
  *  The input and output data must be on GPU and must have the same
  *  dimensions.
  */
-template <typename UnaryOperator>
-void apply_entrywise_unary_operator(const AbsMat& input,
-                                    AbsMat& output);
+template <typename TensorDataType, typename UnaryOperator>
+void apply_entrywise_unary_operator(const El::AbstractMatrix<TensorDataType>& input,
+                                    El::AbstractMatrix<TensorDataType>& output);
 
 /** Apply an entry-wise binary operator to GPU data.
  *  The input and output data must be on GPU and must have the same
  *  dimensions.
  */
-template <typename BinaryOperator>
-void apply_entrywise_binary_operator(const AbsMat& input1,
-                                     const AbsMat& input2,
-                                     AbsMat& output);
+template <typename TensorDataType, typename BinaryOperator>
+void apply_entrywise_binary_operator(const El::AbstractMatrix<TensorDataType>& input1,
+                                     const El::AbstractMatrix<TensorDataType>& input2,
+                                     El::AbstractMatrix<TensorDataType>& output);
 
 
 /** Apply an entry-wise unary operator to GPU data.
  *  The input and output data must be on GPU, have the same
  *  dimensions, and be aligned.
  */
-template <typename UnaryOperator>
-void apply_entrywise_unary_operator(const AbsDistMat& input,
-                                    AbsDistMat& output);
+template <typename TensorDataType, typename UnaryOperator>
+void apply_entrywise_unary_operator(const El::AbstractDistMatrix<TensorDataType>& input,
+                                    El::AbstractDistMatrix<TensorDataType>& output);
 
 /** Apply an entry-wise binary operator to GPU data.
  *  The input and output data must be on GPU, have the same
  *  dimensions, and be aligned.
  */
-template <typename BinaryOperator>
-void apply_entrywise_binary_operator(const AbsDistMat& input1,
-                                     const AbsDistMat& input2,
-                                     AbsDistMat& output);
+template <typename TensorDataType, typename BinaryOperator>
+void apply_entrywise_binary_operator(const El::AbstractDistMatrix<TensorDataType>& input1,
+                                     const El::AbstractDistMatrix<TensorDataType>& input2,
+                                     El::AbstractDistMatrix<TensorDataType>& output);
 
 #endif // __CUDACC__
 

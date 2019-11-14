@@ -26,6 +26,7 @@
 
 #define LBANN_BINARY_LAYER_INSTANTIATE
 #include "lbann/layers/math/binary.hpp"
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
@@ -91,7 +92,7 @@ void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1
   // Launch CUDA kernel
   if (grid_dim > 0) {
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    binary_backprop_operator_kernel<BinaryBackPropOperator>
+    binary_backprop_operator_kernel<TensorDataType, BinaryBackPropOperator>
       <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
         height, width,
         x1.LockedBuffer(), x1.LDim(),
@@ -500,6 +501,14 @@ struct logical_xor_op {
                                        l.get_local_prev_error_signals(),                                 \
                                        l.get_local_error_signals(0),                                     \
                                        l.get_local_error_signals(1));                                    \
+  }                                                                                                      \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                              \
+  void layer<TensorDataType, Layout, Device>::fp_compute() {                                             \
+    fp_compute_impl<TensorDataType>(*this);                                                              \
+  }                                                                                                      \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                              \
+  void layer<TensorDataType, Layout, Device>::bp_compute() {                                             \
+    bp_compute_impl<TensorDataType>(*this);                                                              \
   }                                                                                                      \
   BINARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
 

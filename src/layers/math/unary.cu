@@ -395,6 +395,14 @@ struct atanh_op {
                                                               l.get_prev_error_signals(),               \
                                                               l.get_error_signals());                   \
   }                                                                                                     \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                             \
+  void layer<TensorDataType, Layout, Device>::fp_compute() {                                            \
+    fp_compute_impl<TensorDataType>(*this);                                                             \
+  }                                                                                                     \
+  template <typename TensorDataType, data_layout Layout, El::Device Device>                             \
+  void layer<TensorDataType, Layout, Device>::bp_compute() {                                            \
+    bp_compute_impl<TensorDataType>(*this);                                                             \
+  }                                                                                                     \
   UNARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
 
 INSTANTIATE(logical_not_layer, logical_not_op);
