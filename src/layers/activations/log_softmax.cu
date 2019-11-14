@@ -325,7 +325,7 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
       grid_dims.x = (prev_height + block_size - 1) / block_size;
       cuda::thrust::vector<DataType> prev_vals(std::move(max_vals));
       max_vals.resize(grid_dims.x * local_width);
-      reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
+      reduce_max_kernel<TensorDataType, block_size><<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
         prev_vals.data().get(), prev_height,
         max_vals.data().get());
@@ -420,6 +420,15 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
       local_gradient_wrt_input.LDim());
   }
 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void log_softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void log_softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
 }
 
 // Template instantiation

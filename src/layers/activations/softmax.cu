@@ -281,8 +281,8 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
                                     l.m_tensors_cudnn_desc.get_activations(),
                                     local_output.Buffer()));
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-    cuda::apply_entrywise_unary_operator<threshold_op<TensorDataType>>(local_output,
-                                                                       local_output);
+    cuda::apply_entrywise_unary_operator<TensorDataType, threshold_op<TensorDataType>>(local_output,
+                                                                                       local_output);
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
   }
 }
@@ -346,7 +346,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
       grid_dims.x = (prev_height + block_size - 1) / block_size;
       cuda::thrust::vector<DataType> prev_vals(std::move(max_vals));
       max_vals.resize(grid_dims.x * local_width);
-      reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
+      reduce_max_kernel<TensorDataType, block_size><<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
         prev_vals.data().get(), prev_height,
         max_vals.data().get());
@@ -442,6 +442,15 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
       local_gradient_wrt_input.LDim());
   }
 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
 }
 
 // Template instantiation

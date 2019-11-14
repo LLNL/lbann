@@ -163,6 +163,16 @@ void bp_compute_impl(elu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::
                            l.get_local_error_signals());
 }
 
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void elu_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void elu_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 template class elu_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class elu_layer<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 

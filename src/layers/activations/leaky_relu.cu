@@ -163,6 +163,15 @@ template <typename TensorDataType>
                            l.get_local_error_signals());
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 template class leaky_relu_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class leaky_relu_layer<
