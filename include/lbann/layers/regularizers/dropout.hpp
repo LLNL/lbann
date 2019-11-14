@@ -329,7 +329,7 @@ protected:
   /** Dropout cuDNN descriptor. */
   cudnnDropoutDescriptor_t m_dropout_cudnn_desc;
   /** Tensor cuDNN descriptors. */
-  cudnn::entrywise_layer_tensor_manager m_tensors_cudnn_desc;
+  cudnn::entrywise_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
   /** RNG state for cuDNN dropout. */
   El::Matrix<TensorDataType, El::Device::GPU> m_states;
   /** Work space for cuDNN dropout. */

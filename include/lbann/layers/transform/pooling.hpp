@@ -71,7 +71,7 @@ private:
   /** Pooling descriptor. */
   cudnnPoolingDescriptor_t m_pooling_cudnn_desc;
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
   friend class unpooling_layer<TensorDataType, T_layout, Dev>;

@@ -190,7 +190,7 @@ private:
   /** LRN cuDNN descriptor. */
   cudnnLRNDescriptor_t m_lrn_cudnn_desc;
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
   /// GPU implementation of forward propagation

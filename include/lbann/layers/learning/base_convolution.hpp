@@ -82,7 +82,7 @@ protected:
   /** Bias tensor cuDNN descriptor. */
   cudnnTensorDescriptor_t m_bias_cudnn_desc = nullptr;
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
   /** Forward algorithm cache (mini-batch size -> algo). */
   std::unordered_map<int, cudnnConvolutionFwdAlgo_t> m_fwd_cudnn_algos;
   /** Backward data algorithm cache (mini-batch size -> algo). */
@@ -656,7 +656,7 @@ protected:
     // Compute bias gradient
     if (m_bias_scaling_factor != TensorDataType(0)
         && this->m_weights[1]->get_optimizer() != nullptr) {
-      optimizer* bias_optimizer = this->m_weights[1]->get_optimizer();
+      data_type_optimizer<TensorDataType>* bias_optimizer = this->m_weights[1]->get_optimizer();
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
@@ -675,7 +675,7 @@ protected:
     }
 
     // Compute kernel gradient
-    optimizer* kernel_optimizer = this->m_weights[0]->get_optimizer();
+    data_type_optimizer<TensorDataType>* kernel_optimizer = this->m_weights[0]->get_optimizer();
     if (kernel_optimizer != nullptr) {
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(

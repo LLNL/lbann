@@ -31,6 +31,7 @@
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include <vector>
 
 #ifdef LBANN_HAS_CUDNN
@@ -128,6 +129,7 @@ void copy_activation_desc(const cudnnActivationDescriptor_t& src,
 ////////////////////////////////////////////////////////////
 
 /** Manager for a layer's cuDNN tensor descriptors. */
+template <typename TensorDataType>
 class layer_tensor_manager {
 public:
   layer_tensor_manager(const Layer* l = nullptr);
@@ -157,7 +159,7 @@ protected:
   void set_num_children(int num_children);
 
   /** Layer being managed. */
-  const Layer* m_layer;
+  const data_type_layer<TensorDataType>* m_layer;
   /** cuDNN tensor descriptors for layer inputs. */
   std::vector<cudnnTensorDescriptor_t> m_prev_activations;
   /** cuDNN tensor descriptors for layer outputs. */
@@ -170,7 +172,8 @@ protected:
 };
 
 /** Manager for a data-parallel layer's cuDNN tensor descriptors. */
-class data_parallel_layer_tensor_manager : public layer_tensor_manager {
+template <typename TensorDataType>
+class data_parallel_layer_tensor_manager : public layer_tensor_manager<TensorDataType> {
 public:
   data_parallel_layer_tensor_manager(const Layer* l = nullptr);
   data_parallel_layer_tensor_manager(
@@ -185,7 +188,8 @@ public:
 };
 
 /** Manager for an entry-wise layer's cuDNN tensor descriptors. */
-class entrywise_layer_tensor_manager : public layer_tensor_manager {
+template <typename TensorDataType>
+class entrywise_layer_tensor_manager : public layer_tensor_manager<TensorDataType> {
 public:
   entrywise_layer_tensor_manager(const Layer* l = nullptr);
   entrywise_layer_tensor_manager(

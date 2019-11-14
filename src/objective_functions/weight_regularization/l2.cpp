@@ -120,7 +120,7 @@ void l2_weight_regularization::start_evaluation() {
 #endif // HYDROGEN_HAVE_CUB
     El::Zeros(contribution, 1, 1);
     for (El::Int i = 0; i < num_weights; ++i) {
-      const auto& vals = m_weights[i]->get_values();
+      const auto& vals = dynamic_cast<data_type_weights<DataType>*>(m_weights[i])->get_values();
       if (vals.GetLocalDevice() == El::Device::GPU
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
