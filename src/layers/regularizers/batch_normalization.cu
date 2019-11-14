@@ -370,7 +370,7 @@ void fp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
     } else if (num_channels > 0) {
       const El::Int block_dim = 256;
       const El::Int grid_dim = (num_channels + block_dim - 1) / block_dim;
-      compute_statistics_kernel
+      compute_statistics_kernel<TensorDataType>
         <<<grid_dim, block_dim, 0, stream>>>(
           num_channels, num_per_sum, l.m_epsilon, l.m_decay,
           local_mean.Buffer(), local_var.Buffer(),
