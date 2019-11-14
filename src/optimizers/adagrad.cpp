@@ -164,4 +164,6 @@ build_adagrad_optimizer_from_pbuf(
   return make_unique<adagrad<DataType>>(params.learn_rate(), params.eps());
 }
 
+template class adagrad<float>;
+
 } // namespace lbann

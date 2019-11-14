@@ -241,4 +241,6 @@ build_sgd_optimizer_from_pbuf(
                                     params.nesterov());
 }
 
+template class sgd<float>;
+
 } // namespace lbann
