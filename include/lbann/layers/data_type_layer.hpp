@@ -28,12 +28,13 @@
 #define LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 namespace lbann {
 
 // Forward declarations
-template <typename TensorDataType>
-class data_type_weights;
+//template <typename TensorDataType>
+//class data_type_weights;
 
 using supported_layer_data_type = El::TypeList<float/*, double*/>;
 
@@ -52,6 +53,16 @@ template <typename T> using is_supported_layer_data_type = IsElement<T, supporte
 
 template <typename TensorDataType>
 class data_type_layer : public Layer {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
 public:
   static_assert(is_supported_layer_data_type<TensorDataType>::value,
                 "Must use a supported type.");
@@ -83,18 +94,28 @@ public:
   // Weights access functions
   // ===========================================================
 
-  /** Get references to weights. */
-  std::vector<weights*>& get_weights() override {
-    return reinterpret_cast<std::vector<weights*>&>(m_weights); }
-  //  std::vector<data_type_weights<TensorDataType>*>& get_weights() override { return m_weights; }
-  /** Get references to weights. (const) */
-  const std::vector<weights*>& get_weights() const override {
-    return reinterpret_cast<const std::vector<weights*>&>(m_weights); }
-  //  const std::vector<data_type_weights<TensorDataType>*>& get_weights() const override { return m_weights; }
-  /** Set list of pointers to weights. */
-  void set_weights(std::vector<weights*>& w) override { m_weights = reinterpret_cast<std::vector<data_type_weights<TensorDataType>*>&>(w); }
-  //  inline void set_weights(std::vector<data_type_weights<TensorDataType>*> w) { get_weights() = w; }
-  /** Replace weights with another Layer's weights*/
+  /** @brief Get references to weights. */
+  std::vector<weights*> get_weights() override {
+    return std::vector<weights*>(begin(m_weights), end(m_weights));
+  }
+
+  /** @brief Get references to weights. (const) */
+  std::vector<weights const*> get_weights() const override {
+    return std::vector<weights const*>(begin(m_weights), end(m_weights));
+  }
+
+  /** @brief Set list of pointers to weights. */
+  void set_weights(std::vector<weights*>& w) override {
+    m_weights.resize(w.size());
+    std::transform(begin(w), end(w), begin(m_weights),
+                   [](weights* wptr) {
+                     return (wptr
+                             ? &(dynamic_cast<WeightsType&>(*wptr))
+                             : nullptr);
+                   });
+  }
+
+  /** @brief Replace weights with another Layer's weights*/
   void replace_weights(Layer* other_layer) override;
 
   // ===========================================================
@@ -102,17 +123,17 @@ public:
   // ===========================================================
 
   /** Get activation tensor. */
-  El::AbstractDistMatrix<TensorDataType>& get_activations(int child_index = 0);
+  AbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
-  El::AbstractDistMatrix<TensorDataType>& get_error_signals(int parent_index = 0);
+  AbsDistMatrixType& get_error_signals(int parent_index = 0);
   /** Get previous activation tensor. */
-  const El::AbstractDistMatrix<TensorDataType>& get_prev_activations(int parent_index = 0) const;
+  const AbsDistMatrixType& get_prev_activations(int parent_index = 0) const;
   /** Get activation tensor. */
-  const El::AbstractDistMatrix<TensorDataType>& get_activations(int child_index = 0) const;
+  const AbsDistMatrixType& get_activations(int child_index = 0) const;
   /** Get previous error signal tensor. */
-  const El::AbstractDistMatrix<TensorDataType>& get_prev_error_signals(int child_index = 0) const;
+  const AbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
   /** Get error signal tensor. */
-  const El::AbstractDistMatrix<TensorDataType>& get_error_signals(int parent_index = 0) const;
+  const AbsDistMatrixType& get_error_signals(int parent_index = 0) const;
   /** Get local portion of activation tensor. */
   El::AbstractMatrix<TensorDataType>& get_local_activations(int child_index = 0);
   /** Get local portion of error signal tensor. */
@@ -145,7 +166,7 @@ protected:
    *  following: "input", "output", "gradient_wrt_output",
    *  "gradient_wrt_input".
    */
-  virtual std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> construct_matrix(const El::Grid& grid,
+  virtual std::unique_ptr<AbsDistMatrixType> construct_matrix(const El::Grid& grid,
                                                        std::string type,
                                                        El::Int index);
   /** Setup layer data.
@@ -198,51 +219,51 @@ protected:
   // ===========================================================
 
   /** Get references to weights. */
-  inline std::vector<data_type_weights<TensorDataType>*>& get_data_type_weights() { return m_weights; }
+  std::vector<WeightsType*>& get_data_type_weights() { return m_weights; }
   /** Get references to weights. (const) */
-  inline const std::vector<data_type_weights<TensorDataType>*>& get_data_type_weights() const { return m_weights; }
+  const std::vector<WeightsType*>& get_data_type_weights() const { return m_weights; }
   /** Set list of pointers to weights. */
-  inline void set_data_type_weights(std::vector<data_type_weights<TensorDataType>*> w) { m_weights = w; }
+  void set_data_type_weights(std::vector<WeightsType*> w) { m_weights = w; }
   /** Replace weights with another Layer's weights*/
   //void replace_weights(Layer* other_layer) override;
 
-  // ===========================================================
-  // Protected class members
-  // ===========================================================
-  /** References to layer weights. */
-  std::vector<data_type_weights<TensorDataType>*> m_weights;
+  void add_weights(WeightsType* w) { m_weights.push_back(w); }
+  size_t num_weights() const noexcept { return m_weights.size(); }
+  bool has_weights() const noexcept { return num_weights() > 0; }
 
 private:
-
   // ===========================================================
   // Private access functions
   // ===========================================================
 
   /** Get activation tensor corresponding to child layer. */
-  const El::AbstractDistMatrix<TensorDataType>& get_activations(const data_type_layer& child) const;
+  const AbsDistMatrixType& get_activations(const data_type_layer& child) const;
   /** Get error signal tensor corresponding to parent layer. */
-  const El::AbstractDistMatrix<TensorDataType>& get_error_signals(const data_type_layer& parent) const;
+  const AbsDistMatrixType& get_error_signals(const data_type_layer& parent) const;
 
   // ===========================================================
   // Private class members
   // ===========================================================
 
+  /** References to layer weights. */
+  std::vector<WeightsType*> m_weights;
+
   /** Input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_inputs;
+  std::vector<std::unique_ptr<AbsDistMatrixType>> m_inputs;
   /** Output tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_outputs;
+  std::vector<std::unique_ptr<AbsDistMatrixType>> m_outputs;
   /** Objective function gradients w.r.t. the output tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_gradient_wrt_outputs;
+  std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_outputs;
   /** Objective function gradients w.r.t. the input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
-  std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_gradient_wrt_inputs;
+  std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
 
 };
 

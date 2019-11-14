@@ -169,7 +169,7 @@ void assign_weights_to_layers(
   // Find weights assigned to each layer
   for (int i=0; i<proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
-    auto& layer_weights = layer_list[i]->get_weights();
+    auto layer_weights = layer_list[i]->get_weights();
     const bool is_frozen = layer_list[i]->is_frozen();
     for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
       auto&& w = names_to_weights[name];
@@ -186,6 +186,7 @@ void assign_weights_to_layers(
       }
       layer_weights.push_back(w);
     }
+    layer_list[i]->set_weights(layer_weights);
   }
 
 }

@@ -127,15 +127,15 @@ protected:
     learning_layer<TensorDataType>::setup_data();
 
     // Initialize default weights if none are provided
-    if (this->m_weights.size() > 2) {
+    if (this->num_weights() > 2) {
       LBANN_ERROR("attempted to setup ", this->get_name(), " with an invalid number of weights");
     }
     if (m_bias_scaling_factor != TensorDataType(0)) {
-      this->m_weights.resize(2, nullptr);
+      this->get_data_type_weights().resize(2, nullptr);
     } else {
-      this->m_weights.resize(1, nullptr);
+      this->get_data_type_weights().resize(1, nullptr);
     }
-    if (this->m_weights[0] == nullptr) {
+    if (this->get_data_type_weights()[0] == nullptr) {
       auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
       std::unique_ptr<data_type_optimizer<TensorDataType>>
@@ -143,10 +143,10 @@ protected:
       w->set_name(this->get_name() + "_linearity_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_weights[0] = w.get();
+      this->get_data_type_weights()[0] = w.get();
       this->m_model->add_weights(std::move(w));
     }
-    auto& linearity_weights = *this->m_weights[0];
+    auto& linearity_weights = *this->get_data_type_weights()[0];
 
     // Initialize variance scaling initialization
     auto* cast_initializer
@@ -172,16 +172,16 @@ protected:
 
     // Set up bias if needed.
     if (m_bias_scaling_factor != TensorDataType(0)) {
-      if (this->m_weights[1] == nullptr) {
+      if (this->get_data_type_weights()[1] == nullptr) {
         auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
         std::unique_ptr<data_type_optimizer<TensorDataType>>
           opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->get_model()->create_optimizer()));
         w->set_name(this->get_name() + "_bias_weights");
         w->set_optimizer(std::move(opt));
-        this->m_weights[1] = w.get();
+        this->get_data_type_weights()[1] = w.get();
         this->m_model->add_weights(std::move(w));
       }
-      auto& bias_weights = *this->m_weights[1];
+      auto& bias_weights = *this->get_data_type_weights()[1];
       // Setup bias weights
       auto bias_dist = this->get_activations().DistData();
       bias_dist.rowDist = El::STAR;
@@ -195,14 +195,14 @@ protected:
     }
 
     // Initialize freeze state
-    for (auto&& w : this->m_weights) {
+    for (auto&& w : this->get_data_type_weights()) {
       if (this->is_frozen()) {
         w->freeze();
       } else {
         w->unfreeze();
       }
     }
-    for (auto&& w : this->m_weights) {
+    for (auto&& w : this->get_data_type_weights()) {
       if (w->is_frozen() != this->is_frozen()) {
         LBANN_ERROR((this->is_frozen() ? "" : "un"), "frozen ",
                     "layer \"", this->get_name(), "\" has ",

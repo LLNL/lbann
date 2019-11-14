@@ -534,7 +534,7 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   if(!m_parent_layers.empty()) proto->set_bottom(m_parent_layers.front()->get_name());
   proto->set_top(get_name());
   //Add weights
-  for (weights *w : get_weights()) {
+  for (auto const& w : get_weights()) {
     auto weight_proto = proto->add_weights_data();
     w->write_proto(weight_proto);
   }

@@ -584,8 +584,8 @@ void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
                           l.get_prev_activations(),
                           l.get_activations(),
                           *l.m_batch_statistics,
-                          l.m_weights[0]->get_values(),
-                          l.m_weights[1]->get_values());
+                          l.get_data_type_weights()[0]->get_values(),
+                          l.get_data_type_weights()[1]->get_values());
 }
 template <typename TensorDataType>
 void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
@@ -597,8 +597,8 @@ void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
                           l.get_prev_activations(),
                           l.get_activations(),
                           *l.m_batch_statistics,
-                          l.m_weights[0]->get_values(),
-                          l.m_weights[1]->get_values());
+                          l.get_data_type_weights()[0]->get_values(),
+                          l.get_data_type_weights()[1]->get_values());
 }
 template <typename TensorDataType>
 void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
@@ -611,7 +611,7 @@ void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
                           l.get_error_signals(),
                           *l.m_batch_statistics,
                           *l.m_batch_statistics_gradient,
-                          l.m_weights[1]->get_values());
+                          l.get_data_type_weights()[1]->get_values());
 }
 template <typename TensorDataType>
 void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
@@ -624,7 +624,7 @@ void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
                           l.get_error_signals(),
                           *l.m_batch_statistics,
                           *l.m_batch_statistics_gradient,
-                          l.m_weights[1]->get_values());
+                          l.get_data_type_weights()[1]->get_values());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

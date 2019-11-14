@@ -252,9 +252,9 @@ public:
   // ===========================================================
 
   /** Get references to weights. */
-  virtual std::vector<weights*>& get_weights() = 0;
+  virtual std::vector<weights*> get_weights() = 0;
   /** Get references to weights. (const) */
-  virtual const std::vector<weights*>& get_weights() const = 0;
+  virtual std::vector<weights const*> get_weights() const = 0;
   /** Set list of pointers to weights. */
   virtual void set_weights(std::vector<weights*>& w) = 0;
   /** Replace weights with another Layer's weights*/

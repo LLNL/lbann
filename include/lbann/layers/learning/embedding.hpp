@@ -185,25 +185,25 @@ void embedding_layer<TensorDataType, Layout,Device>::setup_data() {
   // Construct default weights if needed
   // Note: Randomly drawn from normal distribution with mean 0 and
   // standard deviation 1.
-  if (this->m_weights.empty()) {
+  if (!this->has_weights()) {
     auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
     auto init = make_unique<normal_initializer<TensorDataType>>(0,1);
     auto opt = std::unique_ptr<optimizer>(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
-    this->m_weights.push_back(w.get());
+    this->add_weights(w.get());
     this->m_model->add_weights(std::move(w));
   }
-  if (this->m_weights.size() != 1) {
+  if (this->num_weights() != 1) {
     LBANN_ERROR("attempted to setup ",
                 this->get_type()," layer \"",this->get_name(),"\" ",
                 "with an invalid number of weights ",
-                "(expected 1, found ",this->m_weights.size(),")");
+                "(expected 1, found ",this->num_weights(),")");
   }
 
   // Initialize dictionary
-  auto& embeddings = *this->m_weights[0];
+  auto& embeddings = *this->get_data_type_weights()[0];
   auto matrix_dist = this->get_prev_activations().DistData();
   matrix_dist.colDist = El::STAR;
   matrix_dist.rowDist = El::STAR;

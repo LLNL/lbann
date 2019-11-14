@@ -94,7 +94,7 @@ public:
 
     // Construct default weights if needed
     // Note: Scale is initialized to 1 and bias to 0
-    if (this->m_weights.empty()) {
+    if (!this->has_weights()) {
       auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
       std::vector<DataType> vals(2*num_channels, TensorDataType{0});
       std::fill(vals.begin(), vals.begin()+num_channels, TensorDataType{1});
@@ -104,14 +104,14 @@ public:
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_weights.push_back(w.get());
+      this->add_weights(w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights.size() != 1) {
+    if (this->num_weights() != 1) {
       LBANN_ERROR("attempted to setup ",
                   this->get_type()," layer \"",this->get_name(),"\" ",
                   "with an invalid number of weights ",
-                  "(expected 1, found ",this->m_weights.size(),")");
+                  "(expected 1, found ",this->num_weights(),")");
     }
 
     // Setup weights

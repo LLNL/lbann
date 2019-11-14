@@ -339,20 +339,20 @@ public:
                                               1, std::multiplies<int>());
 
     // Initialize default weights if none are provided
-    if (this->m_weights.size() > 2) {
+    if (this->num_weights() > 2) {
       std::stringstream err;
       err << "attempted to setup layer \"" << this->get_name() << "\" "
           << "with an invalid number of weights "
           << "(expected at most 2, "
-          << "found " << this->m_weights.size() << ")";
+          << "found " << this->num_weights() << ")";
       LBANN_ERROR(err.str());
     }
     if (m_bias_scaling_factor != TensorDataType(0)) {
-      this->m_weights.resize(2, nullptr);
+      this->get_data_type_weights().resize(2, nullptr);
     } else {
-      this->m_weights.resize(1, nullptr);
+      this->get_data_type_weights().resize(1, nullptr);
     }
-    if (this->m_weights[0] == nullptr) {
+    if (this->get_data_type_weights()[0] == nullptr) {
       auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
       std::unique_ptr<data_type_optimizer<TensorDataType>>
@@ -360,10 +360,10 @@ public:
       w->set_name(this->get_name() + "_kernel");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_weights[0] = w.get();
+      this->get_data_type_weights()[0] = w.get();
       this->m_model->add_weights(std::move(w));
     }
-    auto& kernel_weights = *this->m_weights[0];
+    auto& kernel_weights = *this->get_data_type_weights()[0];
 
     // Initialize variance scaling initialization
     auto* cast_initializer
@@ -382,29 +382,29 @@ public:
 
     // Set up bias if needed.
     if (m_bias_scaling_factor != TensorDataType(0)) {
-      if (this->m_weights[1] == nullptr) {
+      if (this->get_data_type_weights()[1] == nullptr) {
         auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
         std::unique_ptr<data_type_optimizer<TensorDataType>>
           opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
         w->set_name(this->get_name() + "_bias");
         w->set_optimizer(std::move(opt));
-        this->m_weights[1] = w.get();
+        this->get_data_type_weights()[1] = w.get();
         this->m_model->add_weights(std::move(w));
       }
-      auto& bias_weights = *this->m_weights[1];
+      auto& bias_weights = *this->get_data_type_weights()[1];
       bias_weights.set_dims(output_dims[0]);
       bias_weights.set_matrix_distribution(dist);
     }
 
     // Initialize freeze state
-    for (auto&& w : this->m_weights) {
+    for (auto&& w : this->get_data_type_weights()) {
       if (this->m_frozen) {
         w->freeze();
       } else {
         w->unfreeze();
       }
     }
-    for (auto&& w : this->m_weights) {
+    for (auto&& w : this->get_data_type_weights()) {
       if (w->is_frozen() != this->m_frozen) {
         std::stringstream err;
         err << (this->m_frozen ? "" : "un") << "frozen "
@@ -473,7 +473,7 @@ protected:
     const TensorDataType one = TensorDataType(1);
 
     // Matrices
-    const auto& kernel = this->m_weights[0]->get_values();
+    const auto& kernel = this->get_data_type_weights()[0]->get_values();
     const auto& input = (during_forward_prop ?
                          this->get_local_prev_activations() :
                          this->get_local_prev_error_signals());
@@ -550,7 +550,7 @@ protected:
     const TensorDataType one = TensorDataType(1);
 
     // GPU data
-    const auto& kernel = this->m_weights[0]->get_values();
+    const auto& kernel = this->get_data_type_weights()[0]->get_values();
     const auto& input = (during_forward_prop ?
                          this->get_local_prev_activations() :
                          this->get_local_prev_error_signals());
@@ -627,7 +627,7 @@ protected:
         && local_output.Height() > 0
         && local_output.Width() > 0) {
       const TensorDataType one = 1;
-      const auto& bias = this->m_weights[1]->get_values();
+      const auto& bias = this->get_data_type_weights()[1]->get_values();
       CHECK_CUDNN(cudnnAddTensor(cudnn::get_handle(),
                                  &m_bias_scaling_factor,
                                  m_bias_cudnn_desc,
@@ -655,8 +655,8 @@ protected:
 
     // Compute bias gradient
     if (m_bias_scaling_factor != TensorDataType(0)
-        && this->m_weights[1]->get_optimizer() != nullptr) {
-      data_type_optimizer<TensorDataType>* bias_optimizer = this->m_weights[1]->get_optimizer();
+        && this->get_data_type_weights()[1]->get_optimizer() != nullptr) {
+      data_type_optimizer<TensorDataType>* bias_optimizer = this->get_data_type_weights()[1]->get_optimizer();
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
@@ -675,7 +675,7 @@ protected:
     }
 
     // Compute kernel gradient
-    data_type_optimizer<TensorDataType>* kernel_optimizer = this->m_weights[0]->get_optimizer();
+    data_type_optimizer<TensorDataType>* kernel_optimizer = this->get_data_type_weights()[0]->get_optimizer();
     if (kernel_optimizer != nullptr) {
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
@@ -754,7 +754,7 @@ protected:
   void apply_convolution_im2col(bool during_forward_prop) {
 
     // Local matrices
-    const auto& local_kernel = this->m_weights[0]->get_values().LockedMatrix();
+    const auto& local_kernel = this->get_data_type_weights()[0]->get_values().LockedMatrix();
     const auto& local_input = (during_forward_prop ?
                                this->get_local_prev_activations() :
                                this->get_local_prev_error_signals());
@@ -815,7 +815,7 @@ protected:
   void apply_transposed_convolution_im2col(bool during_forward_prop) {
 
     // Local matrices
-    const auto& local_kernel = this->m_weights[0]->get_values().LockedMatrix();
+    const auto& local_kernel = this->get_data_type_weights()[0]->get_values().LockedMatrix();
     const auto& local_input = (during_forward_prop ?
                                this->get_local_prev_activations() :
                                this->get_local_prev_error_signals());
@@ -879,7 +879,7 @@ protected:
     if (m_bias_scaling_factor == TensorDataType(0)) return;
 
     // Local matrices
-    const auto& local_bias = this->m_weights[1]->get_values().LockedMatrix();
+    const auto& local_bias = this->get_data_type_weights()[1]->get_values().LockedMatrix();
     auto& local_output = this->get_local_activations();
 
     // Matrix parameters
@@ -926,8 +926,8 @@ protected:
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
     if (m_bias_scaling_factor != TensorDataType(0)
-        && this->m_weights[1]->get_optimizer() != nullptr) {
-      data_type_optimizer<TensorDataType>* bias_optimizer = this->m_weights[1]->get_optimizer();
+        && this->get_data_type_weights()[1]->get_optimizer() != nullptr) {
+      data_type_optimizer<TensorDataType>* bias_optimizer = this->get_data_type_weights()[1]->get_optimizer();
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
@@ -957,7 +957,7 @@ protected:
     }
 
     // Stop early if kernel is not being optimized
-    data_type_optimizer<TensorDataType>* kernel_optimizer = this->m_weights[0]->get_optimizer();
+    data_type_optimizer<TensorDataType>* kernel_optimizer = this->get_data_type_weights()[0]->get_optimizer();
     if (kernel_optimizer == nullptr) { return; }
 
     // Initialize matrices
@@ -1196,8 +1196,8 @@ private:
 #ifdef HYDROGEN_HAVE_CUB
       kernel_gradient.SetMemoryMode(1);
 #endif
-      kernel_gradient.Resize(this->m_weights[0]->get_matrix_height(),
-                             this->m_weights[0]->get_matrix_width());
+      kernel_gradient.Resize(this->get_data_type_weights()[0]->get_matrix_height(),
+                             this->get_data_type_weights()[0]->get_matrix_width());
       m_bwd_filter_cudnn_algos[local_mini_batch_size] =
         cudnn::get_bwd_filter_algorithm(
           true, deterministic,

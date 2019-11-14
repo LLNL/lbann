@@ -262,7 +262,7 @@ void bp_compute_impl(channelwise_scale_bias_layer<TensorDataType, data_layout::D
   }
 
   // Update optimizer with gradient
-  auto* opt = l.m_weights[0]->get_optimizer();
+  auto* opt = l.get_data_type_weights()[0]->get_optimizer();
   if (opt != nullptr) {
     opt->add_to_gradient(*l.m_weights_gradient, TensorDataType{1}, true);
   }

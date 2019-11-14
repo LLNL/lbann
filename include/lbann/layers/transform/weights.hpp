@@ -115,38 +115,38 @@ class weights_layer : public transform_layer<TensorDataType> {
     transform_layer<TensorDataType>::setup_data();
 
     // Initialize default weights if none are provided
-    if (this->m_weights.empty()) {
+    if (!this->has_weights()) {
       auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
       auto init = make_unique<constant_initializer<DataType>>(DataType(0));
       std::unique_ptr<data_type_optimizer<DataType>> opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_weights.push_back(w.get());
+      this->add_weights(w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights.size() != 1) {
+    if (this->num_weights() != 1) {
       LBANN_ERROR("attempted to setup ",
                   this->get_type()," layer \"",this->get_name(),"\" ",
                   "with an invalid number of weights ",
                   "(expected at most 1, ",
-                  "but found ",this->m_weights.size(),")");
+                  "but found ",this->num_weights(),")");
     }
 
     // Setup weights and weights gradient
     m_gradient->AlignWith(this->get_activations());
     m_gradient->Resize(this->get_output_size(), 1);
-    this->m_weights[0]->set_dims(this->get_output_dims());
-    this->m_weights[0]->set_matrix_distribution(m_gradient->DistData());
+    this->get_data_type_weights()[0]->set_dims(this->get_output_dims());
+    this->get_data_type_weights()[0]->set_matrix_distribution(m_gradient->DistData());
 
     // Initialize freeze state
-    if (this->m_frozen) { this->m_weights[0]->freeze(); }
-    else                { this->m_weights[0]->unfreeze(); }
-    if (this->m_weights[0]->is_frozen() != this->m_frozen) {
+    if (this->m_frozen) { this->get_data_type_weights()[0]->freeze(); }
+    else                { this->get_data_type_weights()[0]->unfreeze(); }
+    if (this->get_data_type_weights()[0]->is_frozen() != this->m_frozen) {
       LBANN_ERROR((this->m_frozen ? "" : "un"),"frozen ",
                   "layer \"",this->get_name(),"\" has ",
-                  (this->m_weights[0]->is_frozen() ? "" : "un"),"frozen ",
-                  "weights \"",this->m_weights[0]->get_name(),"\"");
+                  (this->get_data_type_weights()[0]->is_frozen() ? "" : "un"),"frozen ",
+                  "weights \"",this->get_data_type_weights()[0]->get_name(),"\"");
     }
 
   }
@@ -154,7 +154,7 @@ class weights_layer : public transform_layer<TensorDataType> {
   void fp_compute() override {
 
     // Matrices
-    const auto& local_weights = this->m_weights[0]->get_values().LockedMatrix();
+    const auto& local_weights = this->get_data_type_weights()[0]->get_values().LockedMatrix();
     auto& local_output = this->get_local_activations();
     m_workspace->Resize(local_output.Width(), 1);
     El::Fill(*m_workspace, TensorDataType(1));
@@ -175,7 +175,7 @@ class weights_layer : public transform_layer<TensorDataType> {
 
     // Get optimizer
     // Note: Nothing needs to be done if there is no optimizer
-    auto* opt = this->m_weights[0]->get_optimizer();
+    auto* opt = this->get_data_type_weights()[0]->get_optimizer();
     if (opt == nullptr) { return; }
 
     // Matrices
