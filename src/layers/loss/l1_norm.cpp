@@ -71,8 +71,8 @@ void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
 
 template <typename TensorDataType>
 void local_fp_compute_impl(l1_norm_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  local_fp_cpu(l.get_local_prev_activations(),
-               l.m_workspace->Matrix());
+  local_fp_cpu<TensorDataType>(l.get_local_prev_activations(),
+                               l.m_workspace->Matrix());
 }
 template <typename TensorDataType>
 void local_bp_compute_impl(l1_norm_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {

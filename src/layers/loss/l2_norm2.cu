@@ -160,6 +160,16 @@ void local_bp_compute_impl(l2_norm2_layer<TensorDataType, data_layout::DATA_PARA
                                l.get_local_error_signals());
 }
 
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+  local_fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+  local_bp_compute_impl<TensorDataType>(*this);
+}
+
 template class l2_norm2_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class l2_norm2_layer<

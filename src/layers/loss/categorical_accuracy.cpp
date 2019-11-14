@@ -213,7 +213,6 @@ void fp_compute_impl(categorical_accuracy_layer<TensorDataType, data_layout::DAT
                          l.get_activations());
 }
 
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   fp_compute_impl<TensorDataType>(*this);

@@ -84,7 +84,7 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::Abs
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    fp_kernel<block_size>
+    fp_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -132,7 +132,7 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    bp_kernel<block_size>
+    bp_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -165,6 +165,16 @@ void local_bp_compute_impl(l1_norm_layer<TensorDataType, data_layout::DATA_PARAL
   local_bp_gpu<TensorDataType>(l.get_local_prev_activations(),
                                l.m_workspace->LockedMatrix(),
                                l.get_local_error_signals());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l1_norm_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+  local_fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l1_norm_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+  local_bp_compute_impl<TensorDataType>(*this);
 }
 
 template class l1_norm_layer<

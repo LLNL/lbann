@@ -195,6 +195,16 @@ void local_bp_compute_impl(cross_entropy_layer<TensorDataType, data_layout::DATA
                l.get_local_error_signals(1));
 }
 
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+  local_fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+  local_bp_compute_impl<TensorDataType>(*this);
+}
+
 template class cross_entropy_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class cross_entropy_layer<
