@@ -161,4 +161,8 @@ build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg) {
   }
 }
 
+template class glorot_initializer<float>;
+template class he_initializer<float>;
+template class lecun_initializer<float>;
+
 }  // namespace lbann
