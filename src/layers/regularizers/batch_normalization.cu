@@ -334,7 +334,7 @@ void fp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
       block_dims.x = block_size;
       grid_dims.x = (channel_size + block_size - 1) / block_size;
       grid_dims.y = num_channels;
-      channel_sums_kernel<block_size>
+      channel_sums_kernel<TensorDataType, block_size>
         <<<grid_dims, block_dims, 0, stream>>>(
           channel_size, local_width,
           local_input.LockedBuffer(), local_input.LDim(),
@@ -507,7 +507,7 @@ void bp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
-    backprop2_kernel<block_size>
+    backprop2_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, stream>>>(
         channel_size, local_width, num_per_sum,
         local_input.LockedBuffer(), local_input.LDim(),
