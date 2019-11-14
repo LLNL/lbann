@@ -394,7 +394,7 @@ void fp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
-    batch_normalization_kernel<block_size>
+    batch_normalization_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, stream>>>(
         channel_size, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -450,7 +450,7 @@ void bp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
     block_dims.x = block_size;
     grid_dims.x = (channel_size + block_size - 1) / block_size;
     grid_dims.y = num_channels;
-    backprop1_kernel<block_size>
+    backprop1_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, stream>>>(
         channel_size, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -518,6 +518,16 @@ void bp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
         local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
   }
 
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
 }
 
 template class batch_normalization_layer<

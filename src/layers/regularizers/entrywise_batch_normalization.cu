@@ -627,6 +627,16 @@ void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
                           l.m_weights[1]->get_values());
 }
 
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 template class entrywise_batch_normalization_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class entrywise_batch_normalization_layer<
