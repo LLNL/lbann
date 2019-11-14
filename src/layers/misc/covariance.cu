@@ -334,6 +334,16 @@ void bp_compute_impl(covariance_layer<TensorDataType, data_layout::MODEL_PARALLE
                          l.m_biased);
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void covariance_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void covariance_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 template class covariance_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class covariance_layer<

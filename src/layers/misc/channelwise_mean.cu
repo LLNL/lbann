@@ -180,6 +180,16 @@ void bp_compute_impl(channelwise_mean_layer<TensorDataType, data_layout::DATA_PA
 
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 template class channelwise_mean_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 

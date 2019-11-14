@@ -84,6 +84,11 @@ void fp_compute_impl(one_hot_layer<TensorDataType, data_layout::DATA_PARALLEL, E
 
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
 template class one_hot_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
