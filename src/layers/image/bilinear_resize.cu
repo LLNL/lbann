@@ -116,7 +116,7 @@ __global__ void fp_kernel(El::Int num_samples,
 
 
 template <typename TensorDataType>
-void fp_compute(bilinear_resize_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+void fp_compute_impl(bilinear_resize_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
   // Matrices
   const auto& local_input = l.get_local_prev_activations();
@@ -155,6 +155,11 @@ void fp_compute(bilinear_resize_layer<TensorDataType, data_layout::DATA_PARALLEL
         local_output.Buffer(), local_output.LDim());
   }
 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
 }
 
 template class bilinear_resize_layer<
