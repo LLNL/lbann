@@ -196,14 +196,14 @@ public:
   // -----------------------------------------------
   // Checkpointing
   // -----------------------------------------------
-  virtual bool save_to_checkpoint_shared(persist& p);
-  virtual bool load_from_checkpoint_shared(persist& p);
-  virtual bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list);
-  virtual bool save_to_checkpoint_distributed(persist& p);
-  virtual bool load_from_checkpoint_distributed(persist& p);
+  virtual bool save_to_checkpoint_shared(persist& p) = 0;
+  virtual bool load_from_checkpoint_shared(persist& p) = 0;
+  virtual bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) = 0;
+  virtual bool save_to_checkpoint_distributed(persist& p) = 0;
+  virtual bool load_from_checkpoint_distributed(persist& p) = 0;
 
   /** Write weights to proto file */
-  virtual void write_proto(lbann_data::WeightsData* proto) const;
+  virtual void write_proto(lbann_data::WeightsData* proto) const = 0;
 
 private:
 

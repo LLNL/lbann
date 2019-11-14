@@ -92,7 +92,7 @@ public:
   virtual description get_description() const;
 
   /** @brief Zero out the objective function gradient w.r.t. the weights. */
-  virtual void clear_gradient();
+  virtual void clear_gradient() = 0;
 
   /** @brief Objects that are expected to contribute to the gradient. */
   El::Int get_num_gradient_sources() const;
@@ -114,7 +114,7 @@ public:
   virtual void remove_gradient_source(const void* source);
 
   /** @brief Optimization step. */
-  virtual void step();
+  virtual void step() = 0;
 
   /** @brief LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
@@ -169,10 +169,10 @@ public:
   // ===========================================
   // Checkpointing
   // ===========================================
-  virtual bool save_to_checkpoint_shared(persist& p, std::string m_name);
-  virtual bool load_from_checkpoint_shared(persist& p, std::string m_name);
-  virtual bool save_to_checkpoint_distributed(persist& p, std::string m_name);
-  virtual bool load_from_checkpoint_distributed(persist& p, std::string m_name);
+  virtual bool save_to_checkpoint_shared(persist& p, std::string m_name) = 0;
+  virtual bool load_from_checkpoint_shared(persist& p, std::string m_name) = 0;
+  virtual bool save_to_checkpoint_distributed(persist& p, std::string m_name) = 0;
+  virtual bool load_from_checkpoint_distributed(persist& p, std::string m_name) = 0;
 
 };
 

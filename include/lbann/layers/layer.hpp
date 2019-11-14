@@ -346,12 +346,12 @@ protected:
    *  setup as a view or copy of the corresponding parent layer's
    *  output tensor.
    */
-  virtual void fp_setup_inputs(El::Int mini_batch_size);
+  virtual void fp_setup_inputs(El::Int mini_batch_size) = 0;
   /** Setup output tensors.
    *  Called by the 'forward_prop' function. Each output tensor is
    *  resized to match the mini-batch size.
    */
-  virtual void fp_setup_outputs(El::Int mini_batch_size);
+  virtual void fp_setup_outputs(El::Int mini_batch_size) = 0;
   /** Apply layer operation.
    *  Called by the 'forward_prop' function. Given the input tensors,
    *  the output tensors are populated with computed values.
@@ -367,12 +367,12 @@ protected:
    *  tensor is setup as a view or copy of the corresponding child
    *  layer's gradient w.r.t. input tensor.
    */
-  virtual void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size);
+  virtual void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) = 0;
   /** Setup gradient w.r.t. input tensors.
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
    */
-  virtual void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size);
+  virtual void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) = 0;
   /** Compute objective funciton gradients.
    *  Called by the 'back_prop' function. Given the input, output, and
    *  gradient w.r.t. output tensors, the gradient w.r.t. input
