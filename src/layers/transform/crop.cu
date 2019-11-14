@@ -232,6 +232,16 @@ void bp_compute_3d_impl(crop_layer<TensorDataType, data_layout::DATA_PARALLEL, E
 
 }
 
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d() {
+  fp_compute_3d_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d() {
+  bp_compute_3d_impl<TensorDataType>(*this);
+}
+
 template class crop_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

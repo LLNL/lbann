@@ -75,4 +75,7 @@ void adagrad<TensorDataType>::step_compute_gpu(El::AbstractDistMatrix<TensorData
   }
 }
 
+template void adagrad<float>::step_compute_gpu(El::AbstractDistMatrix<float>& values,
+                                               const El::AbstractDistMatrix<float>& gradient);
+
 } // namespace lbann
