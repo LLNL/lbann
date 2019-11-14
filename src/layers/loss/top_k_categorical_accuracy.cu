@@ -335,6 +335,11 @@ void fp_compute_impl(top_k_categorical_accuracy_layer<TensorDataType, data_layou
                          l.get_activations());
 }
 
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void top_k_categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
 template class top_k_categorical_accuracy_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class top_k_categorical_accuracy_layer<
