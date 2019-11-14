@@ -209,6 +209,16 @@ void bp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::MOD
                           *l.m_weights_gradient);
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 template class entrywise_scale_bias_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class entrywise_scale_bias_layer<

@@ -267,7 +267,16 @@ void bp_compute_impl(channelwise_scale_bias_layer<TensorDataType, data_layout::D
     opt->add_to_gradient(*l.m_weights_gradient, TensorDataType{1}, true);
   }
 
+}
 
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
 }
 
 template class channelwise_scale_bias_layer<
