@@ -97,6 +97,17 @@ void bp_compute_impl(sort_layer<TensorDataType, data_layout::DATA_PARALLEL, El::
 
 }
 
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 template class sort_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

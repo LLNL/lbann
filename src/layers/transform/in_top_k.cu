@@ -156,7 +156,9 @@ __global__ void indicate_matrix_entries(El::Int k,
 /** GPU implementation of in_top_k layer forward prop. */
 template <typename TensorDataType>
 void fp_gpu(lbann_comm& comm,
-            El::Int k, const El::AbstractDistMatrix<TensorDataType>& input, El::AbstractDistMatrix<TensorDataType>& output) {
+            El::Int k,
+            const El::AbstractDistMatrix<TensorDataType>& input,
+            El::AbstractDistMatrix<TensorDataType>& output) {
   if (input.Wrap() != El::ELEMENT || output.Wrap() != El::ELEMENT) {
     LBANN_ERROR("in_top_k layer GPU implementation assumes elemental "
                 "distributed matrices");
@@ -204,7 +206,7 @@ void fp_gpu(lbann_comm& comm,
       input.ColShift(), input.ColStride(),
       local_input.LockedBuffer(), local_input.LDim(),
       local_entries.data().get(), num_local_entries_per_col);
-    fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
+    fill_with_tensor_index<TensorDataType><<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries, local_width, num_local_entries_per_col,
       local_entries_cols.data().get());
     ::thrust::sort_by_key(alloc.system(),
@@ -239,7 +241,7 @@ void fp_gpu(lbann_comm& comm,
                     reinterpret_cast<El::byte*>(global_top_entries.data().get()),
                     top_entries.size() * sizeof(entry<TensorDataType>),
                     col_comm, El::SyncInfo<El::Device::GPU>{stream, event});
-    fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
+    fill_with_tensor_index<TensorDataType><<<grid_dim, block_dim, 0, stream>>>(
       num_entries, local_width, k, global_top_entries_cols.data().get());
     ::thrust::sort_by_key(alloc.system(),
                           global_top_entries.begin(),
@@ -279,12 +281,17 @@ void fp_gpu(lbann_comm& comm,
 } // namespace
 
 template <typename TensorDataType>
-  void fp_compute_impl(in_top_k_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+void fp_compute_impl(in_top_k_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
   fp_gpu<TensorDataType>(*l.get_comm(), l.m_k, l.get_prev_activations(), l.get_activations());
 }
 template <typename TensorDataType>
 void fp_compute_impl(in_top_k_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
   fp_gpu<TensorDataType>(*l.get_comm(), l.m_k, l.get_prev_activations(), l.get_activations());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void in_top_k_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
 }
 
 template class in_top_k_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;

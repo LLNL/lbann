@@ -193,13 +193,32 @@ void bp_compute_3d_impl(tessellate_layer<TensorDataType, data_layout::DATA_PARAL
             gradient_wrt_output, gradient_wrt_input);
 }
 template <typename TensorDataType>
-void bp_compute_3d(tessellate_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l,
-                   const std::vector<int>& input_dims,
-                   const std::vector<int>& output_dims,
-                   const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
-                   El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
+void bp_compute_3d_impl(tessellate_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l,
+                        const std::vector<int>& input_dims,
+                        const std::vector<int>& output_dims,
+                        const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                        El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
   bp_gpu_3d(input_dims, output_dims,
             gradient_wrt_output, gradient_wrt_input);
+}
+
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void tessellate_layer<TensorDataType, T_layout, Dev>
+     ::fp_compute_3d(const std::vector<int>& input_dims,
+                     const std::vector<int>& output_dims,
+                     const El::AbstractMatrix<TensorDataType>& input,
+                     El::AbstractDistMatrix<TensorDataType>& output) {
+  fp_compute_3d_impl<TensorDataType>(*this, input_dims, output_dims, input, output);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void tessellate_layer<TensorDataType, T_layout, Dev>
+     ::bp_compute_3d(const std::vector<int>& input_dims,
+                     const std::vector<int>& output_dims,
+                     const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                     El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
+  bp_compute_3d_impl<TensorDataType>(*this, input_dims, output_dims, gradient_wrt_output, gradient_wrt_input);
 }
 
 template class tessellate_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
