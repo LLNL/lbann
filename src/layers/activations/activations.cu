@@ -141,25 +141,25 @@ struct softsign_op {
 #define INSTANTIATE(layer, op)                                                                   \
   template <typename TensorDataType>                                                             \
   void fp_compute_inst(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
-    cuda::apply_entrywise_unary_operator<op<TensorDataType>>(l.get_prev_activations(),           \
-                                                             l.get_activations());               \
+    cuda::apply_entrywise_unary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(), \
+                                                                             l.get_activations()); \
   }                                                                                              \
   template <typename TensorDataType>                                                             \
   void bp_compute_inst(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
-    cuda::apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(),          \
-                                                              l.get_prev_error_signals(),        \
-                                                              l.get_error_signals());            \
+    cuda::apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(), \
+                                                                              l.get_prev_error_signals(), \
+                                                                              l.get_error_signals()); \
   }                                                                                              \
   template <typename TensorDataType>                                                             \
   void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {  \
-    cuda::apply_entrywise_unary_operator<op<TensorDataType>>(l.get_prev_activations(),           \
-                                                             l.get_activations());               \
+    cuda::apply_entrywise_unary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(), \
+                                                                             l.get_activations()); \
   }                                                                                              \
   template <typename TensorDataType>                                                             \
   void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {  \
-    cuda::apply_entrywise_binary_operator<op<TensorDataType>>(l.get_prev_activations(),          \
-                                                              l.get_prev_error_signals(),        \
-                                                              l.get_error_signals());            \
+    cuda::apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(), \
+                                                                              l.get_prev_error_signals(), \
+                                                                              l.get_error_signals()); \
   }                                                                                              \
   template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
   void layer<TensorDataType, Layout, Device>::fp_compute() {                                     \
