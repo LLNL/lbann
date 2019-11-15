@@ -170,8 +170,6 @@ class weights_layer : public transform_layer<TensorDataType> {
   }
 
   void bp_compute() override {
-    constexpr TensorDataType zero = 0;
-    constexpr TensorDataType one = 1;
 
     // Get optimizer
     // Note: Nothing needs to be done if there is no optimizer

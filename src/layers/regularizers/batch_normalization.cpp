@@ -157,7 +157,6 @@ void fp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
 
 template <typename TensorDataType>
 void bp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  constexpr TensorDataType one = 1;
   const bool is_training = l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
