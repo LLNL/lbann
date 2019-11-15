@@ -90,7 +90,7 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    y = lbann.EntrywiseLayerNormalization(x, data_layout='data_parallel')
+    y = lbann.LayerNorm(x, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -118,9 +118,7 @@ def construct_model(lbann):
     # LBANN implementation
     epsilon = 0.0123
     x = x_lbann
-    y = lbann.EntrywiseLayerNormalization(x,
-                                          data_layout='model_parallel',
-                                          epsilon=epsilon)
+    y = lbann.LayerNorm(x, data_layout='model_parallel', epsilon=epsilon)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel layout'))

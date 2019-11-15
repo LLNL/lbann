@@ -155,7 +155,7 @@ message Layer {
     Dropout dropout = 21;
     SeluDropout selu_dropout = 229;
     EntrywiseBatchNormalization entrywise_batch_normalization = 230;
-    EntrywiseLayerNormalization entrywise_layer_normalization = 231;
+    LayerNorm layer_norm = 231;
 
     // Activation layers
     Elu elu = 200;
@@ -331,7 +331,7 @@ message Layer {
     double keep_prob = 2;  //default: 0.5
   }
 
-  message EntrywiseLayerNormalization {
+  message LayerNorm {
     google.protobuf.DoubleValue epsilon = 1;
   }
 

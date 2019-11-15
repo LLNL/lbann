@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_LAYERS_REGULARIZERS_ENTRYWISE_LAYER_NORMALIZATION_HPP_INCLUDED
-#define LBANN_LAYERS_REGULARIZERS_ENTRYWISE_LAYER_NORMALIZATION_HPP_INCLUDED
+#ifndef LBANN_LAYERS_REGULARIZERS_LAYER_NORM_HPP_INCLUDED
+#define LBANN_LAYERS_REGULARIZERS_LAYER_NORM_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
 
@@ -34,14 +34,14 @@
 namespace lbann {
 
 template <data_layout Layout, El::Device Device>
-class entrywise_layer_normalization_layer : public Layer {
+class layer_norm_layer : public Layer {
 public:
 
-  entrywise_layer_normalization_layer(lbann_comm* comm, DataType epsilon=1e-5);
+  layer_norm_layer(lbann_comm* comm, DataType epsilon=1e-5);
 
-  entrywise_layer_normalization_layer(const entrywise_layer_normalization_layer& other);
-  entrywise_layer_normalization_layer& operator=(const entrywise_layer_normalization_layer& other);
-  entrywise_layer_normalization_layer* copy() const override;
+  layer_norm_layer(const layer_norm_layer& other);
+  layer_norm_layer& operator=(const layer_norm_layer& other);
+  layer_norm_layer* copy() const override;
 
   std::string get_type() const override;
   data_layout get_data_layout() const override;
@@ -81,15 +81,15 @@ private:
 // =========================================================
 
 template <data_layout Layout, El::Device Device>
-entrywise_layer_normalization_layer<Layout,Device>::entrywise_layer_normalization_layer(
+layer_norm_layer<Layout,Device>::layer_norm_layer(
   lbann_comm* comm,
   DataType epsilon)
   : Layer(comm), m_epsilon(epsilon)
 {}
 
 template <data_layout Layout, El::Device Device>
-entrywise_layer_normalization_layer<Layout,Device>::entrywise_layer_normalization_layer(
-  const entrywise_layer_normalization_layer<Layout,Device>& other)
+layer_norm_layer<Layout,Device>::layer_norm_layer(
+  const layer_norm_layer<Layout,Device>& other)
   : Layer(other),
     m_epsilon(other.m_epsilon),
     m_statistics(other.m_statistics
@@ -101,8 +101,8 @@ entrywise_layer_normalization_layer<Layout,Device>::entrywise_layer_normalizatio
 {}
 
 template <data_layout Layout, El::Device Device>
-entrywise_layer_normalization_layer<Layout,Device>& entrywise_layer_normalization_layer<Layout,Device>::operator=(
-  const entrywise_layer_normalization_layer<Layout,Device>& other) {
+layer_norm_layer<Layout,Device>& layer_norm_layer<Layout,Device>::operator=(
+  const layer_norm_layer<Layout,Device>& other) {
   Layer::operator=(other);
   m_epsilon = other.m_epsilon;
   m_statistics.reset(other.m_statistics
@@ -115,40 +115,40 @@ entrywise_layer_normalization_layer<Layout,Device>& entrywise_layer_normalizatio
 }
 
 template <data_layout Layout, El::Device Device>
-entrywise_layer_normalization_layer<Layout,Device>* entrywise_layer_normalization_layer<Layout,Device>::copy() const {
-  return new entrywise_layer_normalization_layer(*this);
+layer_norm_layer<Layout,Device>* layer_norm_layer<Layout,Device>::copy() const {
+  return new layer_norm_layer(*this);
 }
 
 template <data_layout Layout, El::Device Device>
-std::string entrywise_layer_normalization_layer<Layout,Device>::get_type() const {
-  return "entry-wise layer normalization";
+std::string layer_norm_layer<Layout,Device>::get_type() const {
+  return "layer norm";
 }
 
 template <data_layout Layout, El::Device Device>
-data_layout entrywise_layer_normalization_layer<Layout,Device>::get_data_layout() const {
+data_layout layer_norm_layer<Layout,Device>::get_data_layout() const {
   return Layout;
 }
 
 template <data_layout Layout, El::Device Device>
-El::Device entrywise_layer_normalization_layer<Layout,Device>::get_device_allocation() const {
+El::Device layer_norm_layer<Layout,Device>::get_device_allocation() const {
   return Device;
 }
 
 template <data_layout Layout, El::Device Device>
-description entrywise_layer_normalization_layer<Layout,Device>::get_description() const {
+description layer_norm_layer<Layout,Device>::get_description() const {
   auto desc = Layer::get_description();
   desc.add("Epsilon", m_epsilon);
   return desc;
 }
 
 template <data_layout Layout, El::Device Device>
-void entrywise_layer_normalization_layer<Layout,Device>::setup_dims() {
+void layer_norm_layer<Layout,Device>::setup_dims() {
   Layer::setup_dims();
   this->set_output_dims(this->get_input_dims());
 }
 
 template <data_layout Layout, El::Device Device>
-void entrywise_layer_normalization_layer<Layout,Device>::setup_matrices(const El::Grid& grid) {
+void layer_norm_layer<Layout,Device>::setup_matrices(const El::Grid& grid) {
   Layer::setup_matrices(grid);
   auto dist = get_prev_activations().DistData();
   dist.colDist = El::STAR;
@@ -157,7 +157,7 @@ void entrywise_layer_normalization_layer<Layout,Device>::setup_matrices(const El
 }
 
 template <data_layout Layout, El::Device Device>
-void entrywise_layer_normalization_layer<Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
+void layer_norm_layer<Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
   Layer::fp_setup_outputs(mini_batch_size);
   const auto& input = get_prev_activations();
   m_statistics->Empty(false);
@@ -166,7 +166,7 @@ void entrywise_layer_normalization_layer<Layout,Device>::fp_setup_outputs(El::In
 }
 
 template <data_layout Layout, El::Device Device>
-void entrywise_layer_normalization_layer<Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+void layer_norm_layer<Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
   Layer::bp_setup_gradient_wrt_inputs(mini_batch_size);
   const auto& input = get_prev_activations();
   m_statistics_gradient->Empty(false);
@@ -178,19 +178,19 @@ void entrywise_layer_normalization_layer<Layout,Device>::bp_setup_gradient_wrt_i
 // Explicit template instantiation
 // =========================================================
 
-#ifndef LBANN_ENTRYWISE_LAYER_NORMALIZATION_LAYER_INSTANTIATE
-extern template class entrywise_layer_normalization_layer<
+#ifndef LBANN_LAYER_NORM_LAYER_INSTANTIATE
+extern template class layer_norm_layer<
   data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class entrywise_layer_normalization_layer<
+extern template class layer_norm_layer<
   data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-extern template class entrywise_layer_normalization_layer<
+extern template class layer_norm_layer<
   data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class entrywise_layer_normalization_layer<
+extern template class layer_norm_layer<
   data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
-#endif // LBANN_ENTRYWISE_LAYER_NORMALIZATION_LAYER_INSTANTIATE
+#endif // LBANN_LAYER_NORM_LAYER_INSTANTIATE
 
 } // namespace lbann
 
-#endif // LBANN_LAYERS_REGULARIZERS_ENTRYWISE_LAYER_NORMALIZATION_HPP_INCLUDED
+#endif // LBANN_LAYERS_REGULARIZERS_LAYER_NORM_HPP_INCLUDED

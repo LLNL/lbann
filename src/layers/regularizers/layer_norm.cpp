@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_ENTRYWISE_LAYER_NORMALIZATION_LAYER_INSTANTIATE
-#include "lbann/layers/regularizers/entrywise_layer_normalization.hpp"
+#define LBANN_LAYER_NORM_LAYER_INSTANTIATE
+#include "lbann/layers/regularizers/layer_norm.hpp"
 
 namespace lbann {
 
@@ -182,7 +182,7 @@ void bp_impl(lbann_comm& comm,
 
 // Template instantiation
 template <>
-void entrywise_layer_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
+void layer_norm_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
   fp_impl(*get_comm(),
           m_epsilon,
           get_prev_activations(),
@@ -190,7 +190,7 @@ void entrywise_layer_normalization_layer<data_layout::DATA_PARALLEL, El::Device:
           *m_statistics);
 }
 template <>
-void entrywise_layer_normalization_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
+void layer_norm_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
   fp_impl(*get_comm(),
           m_epsilon,
           get_prev_activations(),
@@ -198,7 +198,7 @@ void entrywise_layer_normalization_layer<data_layout::MODEL_PARALLEL, El::Device
           *m_statistics);
 }
 template <>
-void entrywise_layer_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
+void layer_norm_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
   bp_impl(*get_comm(),
           m_epsilon,
           get_prev_activations(),
@@ -208,7 +208,7 @@ void entrywise_layer_normalization_layer<data_layout::DATA_PARALLEL, El::Device:
           *m_statistics_gradient);
 }
 template <>
-void entrywise_layer_normalization_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
+void layer_norm_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
   bp_impl(*get_comm(),
           m_epsilon,
           get_prev_activations(),
@@ -218,9 +218,9 @@ void entrywise_layer_normalization_layer<data_layout::MODEL_PARALLEL, El::Device
           *m_statistics_gradient);
 }
 
-template class entrywise_layer_normalization_layer<
+template class layer_norm_layer<
   data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class entrywise_layer_normalization_layer<
+template class layer_norm_layer<
   data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann
