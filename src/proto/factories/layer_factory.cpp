@@ -71,6 +71,7 @@
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
+#include "lbann/layers/regularizers/entrywise_layer_normalization.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/categorical_random.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
@@ -551,6 +552,19 @@ std::unique_ptr<Layer> construct_layer(
   if (proto_layer.has_entrywise_batch_normalization()) {
     const auto& params = proto_layer.entrywise_batch_normalization();
     return lbann::make_unique<entrywise_batch_normalization_layer<Layout, Device>>(comm, params.decay(), params.epsilon());
+  }
+  if (proto_layer.has_entrywise_layer_normalization()) {
+    if (Device == El::Device::CPU) {
+      const auto& params = proto_layer.entrywise_layer_normalization();
+      const double epsilon = (params.has_epsilon()
+                              ? params.epsilon().value()
+                              : 1e-5);
+      return lbann::make_unique<entrywise_layer_normalization_layer<Layout, Device>>(comm, epsilon);
+    }
+    else {
+      LBANN_ERROR("entry-wise layer normalization layer "
+                  "is only supported on CPU");
+    }
   }
 
   // Math layers

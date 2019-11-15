@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_HEADERS
   batch_normalization.hpp
   dropout.hpp
   entrywise_batch_normalization.hpp
+  entrywise_layer_normalization.hpp
   local_response_normalization.hpp
   regularizer.hpp
   selu_dropout.hpp
