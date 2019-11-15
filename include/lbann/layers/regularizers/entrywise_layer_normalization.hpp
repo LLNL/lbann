@@ -183,14 +183,12 @@ extern template class entrywise_layer_normalization_layer<
   data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class entrywise_layer_normalization_layer<
   data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#if 0
 #ifdef LBANN_HAS_GPU
 extern template class entrywise_layer_normalization_layer<
   data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class entrywise_layer_normalization_layer<
   data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
-#endif // 0
 #endif // LBANN_ENTRYWISE_LAYER_NORMALIZATION_LAYER_INSTANTIATE
 
 } // namespace lbann

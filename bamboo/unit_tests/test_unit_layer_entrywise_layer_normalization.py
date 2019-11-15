@@ -22,8 +22,6 @@ np.random.seed(20191114)
 _num_samples = 31
 _sample_size = 31
 _samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
-#_samples[5,:] = 0
-#_samples[20,:] = 1.23
 
 # Sample access functions
 def get_sample(index):
@@ -92,7 +90,7 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    y = lbann.EntrywiseLayerNormalization(x, data_layout='data_parallel', device='cpu')
+    y = lbann.EntrywiseLayerNormalization(x, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -122,7 +120,6 @@ def construct_model(lbann):
     x = x_lbann
     y = lbann.EntrywiseLayerNormalization(x,
                                           data_layout='model_parallel',
-                                          device='cpu',
                                           epsilon=epsilon)
     z = lbann.L2Norm2(y)
     obj.append(z)

@@ -554,17 +554,11 @@ std::unique_ptr<Layer> construct_layer(
     return lbann::make_unique<entrywise_batch_normalization_layer<Layout, Device>>(comm, params.decay(), params.epsilon());
   }
   if (proto_layer.has_entrywise_layer_normalization()) {
-    if (Device == El::Device::CPU) {
-      const auto& params = proto_layer.entrywise_layer_normalization();
-      const double epsilon = (params.has_epsilon()
-                              ? params.epsilon().value()
-                              : 1e-5);
-      return lbann::make_unique<entrywise_layer_normalization_layer<Layout, Device>>(comm, epsilon);
-    }
-    else {
-      LBANN_ERROR("entry-wise layer normalization layer "
-                  "is only supported on CPU");
-    }
+    const auto& params = proto_layer.entrywise_layer_normalization();
+    const double epsilon = (params.has_epsilon()
+                            ? params.epsilon().value()
+                            : 1e-5);
+    return lbann::make_unique<entrywise_layer_normalization_layer<Layout, Device>>(comm, epsilon);
   }
 
   // Math layers

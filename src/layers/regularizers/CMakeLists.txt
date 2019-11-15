@@ -13,6 +13,7 @@ if (LBANN_HAS_CUDA)
   set_full_path(THIS_DIR_CU_SOURCES
     batch_normalization.cu
     entrywise_batch_normalization.cu
+    entrywise_layer_normalization.cu
     )
 endif ()
 
