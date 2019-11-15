@@ -85,8 +85,7 @@ def construct_model(lbann):
     y = lbann.Embedding(x,
                         weights=embedding_weights,
                         num_embeddings=_num_embeddings,
-                        embedding_dim=embedding_dim,
-                        device='cpu')
+                        embedding_dim=embedding_dim)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='no padding index'))
@@ -129,8 +128,7 @@ def construct_model(lbann):
                         weights=embedding_weights,
                         num_embeddings=_num_embeddings,
                         embedding_dim=embedding_dim,
-                        padding_idx=padding_idx,
-                        device='cpu')
+                        padding_idx=padding_idx)
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='padding index = 0'))
