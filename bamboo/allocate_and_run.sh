@@ -46,7 +46,22 @@ elif [ "${CLUSTER}" = 'ray' ]; then
     else
         timeout -k 5 24h bsub -Is -q pbatch -nnodes 2 -W ${ALLOCATION_TIME_LIMIT} ./run.sh
     fi
-elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTER}" = 'pascal' ]; then
+elif [ "${CLUSTER}" = 'corona' ]; then
+    ALLOCATION_TIME_LIMIT=960
+    if [ ${WEEKLY} -ne 0 ]; then
+        timeout -k 5 24h salloc -N4 --partition=mi60 -t ${ALLOCATION_TIME_LIMIT} ./run.sh --weekly
+    else
+        ALLOCATION_TIME_LIMIT=90 # Start with 1.5 hrs; may adjust for CPU clusters
+        if [[ $(mjstat -c | awk 'match($1, "mi60") && NF < 7 { print $5 }') -ne "0" ]];
+        then
+            timeout -k 5 24h salloc -N2 --partition=mi60 -t ${ALLOCATION_TIME_LIMIT} ./run.sh
+        else
+            echo "Partition \"mi60\" on cluster \"${CLUSTER}\" appears to be down."
+            echo "Trying \"mi25\"."
+               timeout -k 5 24h salloc -N2 --partition=mi25 -t ${ALLOCATION_TIME_LIMIT} ./run.sh
+        fi
+    fi
+elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'pascal' ]; then
     ALLOCATION_TIME_LIMIT=960
     if [ ${WEEKLY} -ne 0 ]; then
         timeout -k 5 24h salloc -N4 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh --weekly
@@ -57,11 +72,6 @@ elif [ "${CLUSTER}" = 'catalyst' ] || [ "${CLUSTER}" = 'corona' ] || [ "${CLUSTE
             timeout -k 5 24h salloc -N2 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT} ./run.sh
         else
             echo "Partition \"pbatch\" on cluster \"${CLUSTER}\" appears to be down."
-            if [[ "${CLUSTER}" =~ ^corona$ ]];
-            then
-               echo "Trying \"pgpu\"."
-               timeout -k 5 24h salloc -N2 --partition=pgpu -t ${ALLOCATION_TIME_LIMIT} ./run.sh
-            fi
         fi
     fi
 else
