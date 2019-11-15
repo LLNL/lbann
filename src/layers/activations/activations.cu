@@ -140,12 +140,12 @@ struct softsign_op {
 // Template instantiation
 #define INSTANTIATE(layer, op)                                                                   \
   template <typename TensorDataType>                                                             \
-  void fp_compute_inst(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
+  void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
     cuda::apply_entrywise_unary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(), \
                                                                              l.get_activations()); \
   }                                                                                              \
   template <typename TensorDataType>                                                             \
-  void bp_compute_inst(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
+  void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
     cuda::apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(), \
                                                                               l.get_prev_error_signals(), \
                                                                               l.get_error_signals()); \

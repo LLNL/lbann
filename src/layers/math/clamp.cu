@@ -169,6 +169,16 @@ void bp_compute_impl(clamp_layer<TensorDataType, data_layout::MODEL_PARALLEL, El
                            l.get_local_error_signals());
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void clamp_layer<TensorDataType, Layout, Device>::fp_compute() {
+  return fp_compute_impl(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void clamp_layer<TensorDataType, Layout, Device>::bp_compute() {
+  return bp_compute_impl(*this);
+}
+
 template class clamp_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class clamp_layer<

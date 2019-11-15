@@ -98,7 +98,7 @@ __global__ void compute_statistics_kernel(
   TensorDataType * __restrict__ global_var,
   TensorDataType * __restrict__ global_running_mean,
   TensorDataType * __restrict__ global_running_var) {
-  constexpr TensorDataType one = 1;
+
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
   for (El::Int i = gid; i < num_sums; i += num_threads) {
@@ -297,7 +297,7 @@ __global__ void backprop2_kernel(
 
 template <typename TensorDataType>
 void fp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  constexpr TensorDataType one = 1;
+
   const bool is_training = l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
@@ -407,7 +407,7 @@ void fp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
 
 template <typename TensorDataType>
 void bp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  constexpr TensorDataType one = 1;
+
   const bool is_training = l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects

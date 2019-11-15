@@ -576,7 +576,7 @@ void bp_impl(lbann_comm& comm,
 // Template instantiation
 template <typename TensorDataType>
 void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  const auto mode = this->m_model->get_execution_context().get_execution_mode();
+  const auto mode = l.get_model()->get_execution_context().get_execution_mode();
   fp_impl<TensorDataType>(*l.get_comm(),
                           l.m_decay,
                           l.m_epsilon,
@@ -589,7 +589,7 @@ void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
 }
 template <typename TensorDataType>
 void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
-  const auto mode = this->m_model->get_execution_context().get_execution_mode();
+  const auto mode = l.get_model()->get_execution_context().get_execution_mode();
   fp_impl<TensorDataType>(*l.get_comm(),
                           l.m_decay,
                           l.m_epsilon,
@@ -602,7 +602,7 @@ void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
 }
 template <typename TensorDataType>
 void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  const auto mode = this->m_model->get_execution_context().get_execution_mode();
+  const auto mode = l.get_model()->get_execution_context().get_execution_mode();
   bp_impl<TensorDataType>(*l.get_comm(),
                           l.m_epsilon,
                           mode == execution_mode::training,
@@ -615,7 +615,7 @@ void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
 }
 template <typename TensorDataType>
 void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
-  const auto mode = this->m_model->get_execution_context().get_execution_mode();
+  const auto mode = l.get_model()->get_execution_context().get_execution_mode();
   bp_impl<TensorDataType>(*l.get_comm(),
                           l.m_epsilon,
                           mode == execution_mode::training,
