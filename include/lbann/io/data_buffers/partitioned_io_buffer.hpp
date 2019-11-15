@@ -33,11 +33,18 @@ namespace lbann {
 
 template <typename TensorDataType>
 class data_buffer {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
  public:
   /** Number of samples in the current mini-batch */
   int m_num_samples_fetched;
   /** Distributed matrix used to stage local data to layer output */
-  std::vector<std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>> m_input_buffers;
+  std::vector<std::unique_ptr<AbsDistMatrixType>> m_input_buffers;
   std::atomic<bool> m_fetch_data_in_background;
   std::future<void> m_data_fetch_future;
   /// 1-D Matrix of which indices were fetched in this mini-batch
@@ -81,6 +88,13 @@ class data_buffer {
  */
 template <typename TensorDataType>
 class partitioned_io_buffer : public generic_io_buffer {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
  public:
   typedef std::map<execution_mode, data_buffer<TensorDataType> *> data_buffer_map_t;
  public:
@@ -96,8 +110,8 @@ class partitioned_io_buffer : public generic_io_buffer {
   void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) override;
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
-  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, El::AbstractDistMatrix<TensorDataType>& sample, El::AbstractDistMatrix<TensorDataType>& response) override;
-  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, El::AbstractDistMatrix<TensorDataType>& sample) override;
+  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response) override;
+  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample) override;
   bool update_data_set(generic_data_reader *data_reader, execution_mode mode) override;
   void set_fetch_data_in_background(bool flag, execution_mode mode) override;
   bool is_data_fetched_in_background(execution_mode mode) override;

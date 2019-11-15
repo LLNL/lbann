@@ -60,6 +60,13 @@ class data_type_weights : public weights {
   friend class data_type_optimizer<TensorDataType>;
 
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
   data_type_weights(lbann_comm* comm);
   data_type_weights(const data_type_weights& other);
   data_type_weights& operator=(const data_type_weights& other);
@@ -124,11 +131,11 @@ public:
   // -----------------------------------------------
 
   /** Get the weight matrix. */
-  El::AbstractDistMatrix<TensorDataType>& get_values();
+  AbsDistMatrixType& get_values();
   /** Get the weight matrix. */
-  const El::AbstractDistMatrix<TensorDataType>& get_values() const;
+  const AbsDistMatrixType& get_values() const;
   /** Set the weight matrix. */
-  void set_values(const El::AbstractDistMatrix<TensorDataType>& values);
+  void set_values(const AbsDistMatrixType& values);
 
   /** Set a weight value. */
   void set_value(TensorDataType value, int index);
@@ -163,7 +170,7 @@ public:
 private:
 
   /** Weight matrix. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_values;
+  std::unique_ptr<AbsDistMatrixType> m_values;
 
   /** Weights initializer.
    *  Default is nullptr, which corresponds to zero initialization.

@@ -48,6 +48,16 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class entrywise_batch_normalization_layer : public data_type_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+public:
 
   entrywise_batch_normalization_layer(lbann_comm* comm,
                                       TensorDataType decay=0.9,
@@ -96,8 +106,8 @@ protected:
     data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    m_batch_statistics.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
-    m_batch_statistics_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
+    m_batch_statistics.reset(AbsDistMatrixType::Instantiate(dist));
+    m_batch_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
   }
 
   void setup_data() override {
@@ -118,7 +128,7 @@ protected:
     }
     this->get_weights().resize(2, nullptr);
     if (this->get_weights()[0] == nullptr) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType{0});
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
@@ -126,7 +136,7 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (this->get_weights()[1] == nullptr) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType{1});
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
@@ -215,12 +225,12 @@ private:
    *
    *  These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_batch_statistics;
+  std::unique_ptr<AbsDistMatrixType> m_batch_statistics;
   /** @brief Gradients w.r.t. current mini-batch statistics.
    *
    * These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_batch_statistics_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_batch_statistics_gradient;
 
 };
 

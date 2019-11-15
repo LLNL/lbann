@@ -59,6 +59,16 @@ class channelwise_scale_bias_layer : public data_type_layer<TensorDataType> {
                 "channelwise_mean_layer only supports "
                 "data-parallel data layout");
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+public:
 
   channelwise_scale_bias_layer(lbann_comm *comm)
     : data_type_layer<TensorDataType>(comm) {
@@ -95,7 +105,7 @@ public:
     // Construct default weights if needed
     // Note: Scale is initialized to 1 and bias to 0
     if (!this->has_weights()) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       std::vector<DataType> vals(2*num_channels, TensorDataType{0});
       std::fill(vals.begin(), vals.begin()+num_channels, TensorDataType{1});
       auto init = make_unique<value_initializer<TensorDataType>>(vals);
@@ -135,7 +145,7 @@ protected:
 private:
 
   /** Objective function gradient w.r.t. weights. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_weights_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_weights_gradient;
 
   template <typename U>
   friend void fp_compute_impl(channelwise_scale_bias_layer<U, Layout, Device>& l);

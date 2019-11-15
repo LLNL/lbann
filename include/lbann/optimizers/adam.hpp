@@ -46,6 +46,16 @@ class perturb_adam;
 template <typename TensorDataType>
 class adam : public data_type_optimizer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+public:
 
   /** @name Life cycle functions */
   ///@{
@@ -88,13 +98,13 @@ public:
   void set_eps(TensorDataType eps) { m_eps = eps; }
 
   /** First moment estimates. */
-  const El::AbstractDistMatrix<TensorDataType>& get_moment1() const;
+  const AbsDistMatrixType& get_moment1() const;
   /** First moment estimates. */
-  El::AbstractDistMatrix<TensorDataType>& get_moment1();
+  AbsDistMatrixType& get_moment1();
   /** Second moment estimates. */
-  const El::AbstractDistMatrix<TensorDataType>& get_moment2() const;
+  const AbsDistMatrixType& get_moment2() const;
   /** Second moment estimates. */
-  El::AbstractDistMatrix<TensorDataType>& get_moment2();
+  AbsDistMatrixType& get_moment2();
 
   /** beta1 ^ iteration.
    *  @todo This probably shouldn't be exposed.
@@ -118,15 +128,15 @@ public:
   /** @name Setup */
   ///@{
 
-  void setup(data_type_weights<TensorDataType>* w = nullptr) override;
+  void setup(WeightsType* w = nullptr) override;
 
   ///@}
 
 protected:
 
   /** Computation for an optimization step. */
-  void step_compute(El::AbstractDistMatrix<TensorDataType>& values,
-                    const El::AbstractDistMatrix<TensorDataType>& gradient) override;
+  void step_compute(AbsDistMatrixType& values,
+                    const AbsDistMatrixType& gradient) override;
 
 private:
 
@@ -141,18 +151,18 @@ private:
   /** beta2 ^ iteration. */
   TensorDataType m_current_beta2 = 1;
   /** First moment estimates. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_moment1;
+  std::unique_ptr<AbsDistMatrixType> m_moment1;
   /** Second moment estimates. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_moment2;
+  std::unique_ptr<AbsDistMatrixType> m_moment2;
 
   /** Hyperparameter exploration. */
   friend class callback::perturb_adam;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
+  void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #ifdef LBANN_HAS_CUDA
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
+  void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_CUDA
 
   /** @name Checkpointing */

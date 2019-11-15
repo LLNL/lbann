@@ -48,6 +48,13 @@ namespace lbann {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class dropout : public regularizer_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
   /** Keep units with probabiliy keep_prob. */
   dropout(lbann_comm *comm,
           EvalType keep_prob = EvalType(0.5))
@@ -141,7 +148,7 @@ protected:
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer<TensorDataType>::setup_matrices(grid);
-    m_mask = std::unique_ptr<El::AbstractDistMatrix<TensorDataType>>(this->get_activations().Copy());
+    m_mask = std::unique_ptr<AbsDistMatrixType>(this->get_activations().Copy());
   }
 
   void setup_gpu() override {
@@ -323,7 +330,7 @@ protected:
   /** Probability of keeping each unit. */
   EvalType m_keep_prob;
   /** Current dropout mask (a scaled Bernoulli random matrix). */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_mask;
+  std::unique_ptr<AbsDistMatrixType> m_mask;
 
 #ifdef LBANN_HAS_CUDNN
   /** Dropout cuDNN descriptor. */

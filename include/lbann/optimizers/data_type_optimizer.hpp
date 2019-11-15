@@ -40,6 +40,13 @@ class data_type_optimizer : public optimizer {
   friend class data_type_weights<TensorDataType>;
 
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
   data_type_optimizer(TensorDataType learning_rate = 0);
   data_type_optimizer(const data_type_optimizer& other);
   data_type_optimizer& operator=(const data_type_optimizer& other);
@@ -65,7 +72,7 @@ public:
    *
    *  An allreduce may be launched and/or synchronized if needed.
    */
-  El::AbstractDistMatrix<TensorDataType>& get_gradient();
+  AbsDistMatrixType& get_gradient();
 
   /** @brief Add to the objective function gradient w.r.t. the weights.
    *  @param gradient           Contribution to gradient.
@@ -79,7 +86,7 @@ public:
    *                            allreduce is performed lazily when the
    *                            gradient is accessed.
    */
-  void add_to_gradient(const El::AbstractDistMatrix<TensorDataType>& gradient,
+  void add_to_gradient(const AbsDistMatrixType& gradient,
                        TensorDataType scale = TensorDataType(1),
                        bool allreduce_needed = false);
   /** @brief Zero out the objective function gradient w.r.t. the weights. */
@@ -104,7 +111,7 @@ public:
    *  @param allreduce_needed Whether this gradient contribution will need to
    *  be allreduced.
    */
-  El::AbstractDistMatrix<TensorDataType>& get_gradient_buffer(TensorDataType& buf_scale,
+  AbsDistMatrixType& get_gradient_buffer(TensorDataType& buf_scale,
                                   TensorDataType& in_scale,
                                   bool allreduce_needed = false);
 
@@ -139,8 +146,8 @@ protected:
    *  @c values and @c gradient can be assumed to have the same
    *  distribution.
    */
-  virtual void step_compute(El::AbstractDistMatrix<TensorDataType>& values,
-                            const El::AbstractDistMatrix<TensorDataType>& gradient) = 0;
+  virtual void step_compute(AbsDistMatrixType& values,
+                            const AbsDistMatrixType& gradient) = 0;
 
 private:
 
@@ -148,7 +155,7 @@ private:
   data_type_weights<TensorDataType>* m_weights = nullptr;
 
   /** @brief Objective function gradient w.r.t. weights. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_gradient;
 
   /** @brief Workspace matrix.
    *
@@ -156,7 +163,7 @@ private:
    *  distribution. Most of the time, this should just be a matrix
    *  view.
    */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient_v;
+  std::unique_ptr<AbsDistMatrixType> m_gradient_v;
 
   /** @brief Communication request object for gradient allreduce.
    *

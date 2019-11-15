@@ -41,6 +41,16 @@ template <typename TensorDataType>
 class sgd : public data_type_optimizer<TensorDataType> {
 
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+public:
 
   /** @name Life cycle functions */
   ///@{
@@ -83,23 +93,23 @@ public:
   void set_nesterov(bool nesterov) { m_nesterov = nesterov; }
 
   /** Accumulated gradients for momentum optimizer. */
-  const El::AbstractDistMatrix<TensorDataType>& get_velocity() const;
+  const AbsDistMatrixType& get_velocity() const;
   /** Accumulated gradients for momentum optimizer. */
-  El::AbstractDistMatrix<TensorDataType>& get_velocity();
+  AbsDistMatrixType& get_velocity();
 
   ///@}
 
   /** @name Setup */
   ///@{
 
-  void setup(data_type_weights<TensorDataType>* w = nullptr) override;
+  void setup(WeightsType* w = nullptr) override;
 
   ///@}
 
 protected:
 
   /** Computation for an optimization step. */
-  void step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) override;
+  void step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) override;
 
 private:
 
@@ -112,13 +122,13 @@ private:
   /** @brief Accumulated gradients.
    *  @details Not used for vanilla SGD.
    */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_velocity;
+  std::unique_ptr<AbsDistMatrixType> m_velocity;
 
   /** CPU implementation of momentum or Nesterov step. */
-  void momentum_step_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
+  void momentum_step_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #ifdef LBANN_HAS_CUDA
   /** GPU implementation of momentum or Nesterov step. */
-  void momentum_step_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
+  void momentum_step_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_CUDA
 
   /** @name Checkpointing */

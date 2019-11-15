@@ -53,6 +53,16 @@ template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALL
           El::Device Device = El::Device::CPU>
 class entrywise_scale_bias_layer : public data_type_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+public:
 
   entrywise_scale_bias_layer(lbann_comm *comm)
     : data_type_layer<TensorDataType>(comm) {}
@@ -80,7 +90,7 @@ public:
     data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    m_weights_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
+    m_weights_gradient.reset(AbsDistMatrixType::Instantiate(dist));
   }
 
   void setup_data() override {
@@ -94,7 +104,7 @@ public:
     // Construct default weights if needed
     // Note: Scale is initialized to 1 and bias to 0
     if (!this->has_weights()) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       std::vector<TensorDataType> vals(2*output_size, TensorDataType{0});
       std::fill(vals.begin(), vals.begin()+output_size, TensorDataType{1});
       auto init = make_unique<value_initializer<TensorDataType>>(vals);
@@ -170,7 +180,7 @@ protected:
 private:
 
   /** Objective function gradient w.r.t. weights. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_weights_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_weights_gradient;
 
 
   template <typename U>

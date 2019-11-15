@@ -45,9 +45,16 @@ namespace lbann {
 template <typename TensorDataType>
 class variance_scaling_initializer : public data_type_weights_initializer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
   variance_scaling_initializer(probability_distribution dist);
   description get_description() const override;
-  void fill(El::AbstractDistMatrix<TensorDataType>& matrix) override;
+  void fill(AbsDistMatrixType& matrix) override;
 
   /** Set fan-in parameter. */
   void set_fan_in(El::Int fan_in) { m_fan_in = fan_in; }

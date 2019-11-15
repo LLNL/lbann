@@ -44,6 +44,16 @@ namespace lbann {
 template <typename TensorDataType>
 class hypergradient_adam : public data_type_optimizer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+public:
 
   /** @brief Construct a Hypergradient Adam optimizer object
    *
@@ -73,12 +83,12 @@ public:
   /** @brief Human-readable description. */
   description get_description() const override;
 
-  void setup(data_type_weights<TensorDataType>* w = nullptr) override;
+  void setup(WeightsType* w = nullptr) override;
 
 protected:
 
   /** @brief Computation for an optimization step. */
-  void step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) override;
+  void step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) override;
 
 private:
 
@@ -95,11 +105,11 @@ private:
   /** @brief beta2 ^ iteration. */
   TensorDataType m_current_beta2;
   /** @brief First moment estimates. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_moment1;
+  std::unique_ptr<AbsDistMatrixType> m_moment1;
   /** @brief Second moment estimates. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_moment2;
+  std::unique_ptr<AbsDistMatrixType> m_moment2;
   /** @brief Gradient estimate from the prior step (for hypergradient). */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_old_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_old_gradient;
 
   // ===========================================
   // Checkpointing

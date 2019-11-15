@@ -62,6 +62,16 @@ template <typename TensorDataType,
           El::Device Device = El::Device::CPU>
 class tessellate_layer : public data_type_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The local tensor type expected in this object. */
+  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
+
+public:
 
   tessellate_layer(lbann_comm *comm, std::vector<int> dims = {})
     : data_type_layer<TensorDataType>(comm) {
@@ -120,7 +130,7 @@ public:
     data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist_data = this->get_prev_activations().DistData();
     dist_data.colDist = El::STAR;
-    m_input_v.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist_data));
+    m_input_v.reset(AbsDistMatrixType::Instantiate(dist_data));
   }
 
 protected:
@@ -191,7 +201,7 @@ protected:
 private:
 
   /** View into input tensor. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_input_v;
+  std::unique_ptr<AbsDistMatrixType> m_input_v;
 
   /** Apply tessellation.
    *  Columns of 'input' should be intact mini-batch samples. If the
@@ -200,16 +210,16 @@ private:
    */
   void fp_compute_3d(const std::vector<int>& input_dims,
                      const std::vector<int>& output_dims,
-                     const El::AbstractMatrix<TensorDataType>& input,
-                     El::AbstractDistMatrix<TensorDataType>& output);
+                     const AbsMatrixType& input,
+                     AbsDistMatrixType& output);
   /** Compute local contribution to tessellation back prop
    *  The global gradient w.r.t. input can be obtained by performing
    *  an allreduce over the input matrix's column communicator.
    */
   void bp_compute_3d(const std::vector<int>& input_dims,
                      const std::vector<int>& output_dims,
-                     const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
-                     El::AbstractMatrix<TensorDataType>& gradient_wrt_input);
+                     const AbsDistMatrixType& gradient_wrt_output,
+                     AbsMatrixType& gradient_wrt_input);
 
 };
 

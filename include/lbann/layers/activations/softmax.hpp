@@ -47,6 +47,13 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class softmax_layer : public data_type_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
 
   softmax_layer(lbann_comm *comm)
     : data_type_layer<TensorDataType>(comm)
@@ -95,7 +102,7 @@ public:
     data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
-    m_workspace.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
+    m_workspace.reset(AbsDistMatrixType::Instantiate(dist));
 #ifdef HYDROGEN_HAVE_CUB
     if (m_workspace->GetLocalDevice() == El::Device::GPU) {
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
@@ -122,7 +129,7 @@ public:
 private:
 
   /** Workspace for column-wise reductions. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;
+  std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 #ifdef LBANN_HAS_CUDNN
   /** Tensor cuDNN descriptors. */

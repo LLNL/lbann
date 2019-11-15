@@ -40,6 +40,13 @@ namespace lbann {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class cross_entropy_layer : public data_type_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
 
   cross_entropy_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = 2;
@@ -153,7 +160,7 @@ private:
   friend void local_bp_compute_impl(cross_entropy_layer<U, T_layout, Dev>& l);
 
   /** Workspace matrix. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;
+  std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 };
 

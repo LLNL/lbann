@@ -47,6 +47,12 @@ namespace lbann {
  */
 template <typename TensorDataType, El::Device Device>
 class base_convolution_layer : public data_type_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
 
 protected:
 
@@ -353,7 +359,7 @@ public:
       this->get_data_type_weights().resize(1, nullptr);
     }
     if (this->get_data_type_weights()[0] == nullptr) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
       std::unique_ptr<data_type_optimizer<TensorDataType>>
         opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
@@ -383,7 +389,7 @@ public:
     // Set up bias if needed.
     if (m_bias_scaling_factor != TensorDataType(0)) {
       if (this->get_data_type_weights()[1] == nullptr) {
-        auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+        auto w = make_unique<WeightsType>(this->get_comm());
         std::unique_ptr<data_type_optimizer<TensorDataType>>
           opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
         w->set_name(this->get_name() + "_bias");

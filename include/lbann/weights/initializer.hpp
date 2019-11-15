@@ -55,6 +55,13 @@ public:
 template <typename TensorDataType>
 class data_type_weights_initializer : public weights_initializer {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
   data_type_weights_initializer() = default;
   virtual ~data_type_weights_initializer() = default;
   data_type_weights_initializer* copy() const override = 0;
@@ -63,13 +70,20 @@ public:
   std::string get_type() const override { return "data_type_weights"; }
 
   /** Initialize entries in a weights matrix. */
-  virtual void fill(El::AbstractDistMatrix<TensorDataType>& matrix) = 0;
+  virtual void fill(AbsDistMatrixType& matrix) = 0;
 
 };
 
 /** @brief Fill weights with a constant value. */
 template <typename TensorDataType>
 class constant_initializer : public data_type_weights_initializer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
 public:
   constant_initializer(TensorDataType value)
     : data_type_weights_initializer<TensorDataType>(), m_value(value) {}
@@ -78,7 +92,7 @@ public:
   }
   std::string get_type() const override { return "constant"; }
   description get_description() const override;
-  void fill(El::AbstractDistMatrix<TensorDataType>& matrix) override;
+  void fill(AbsDistMatrixType& matrix) override;
 
 private:
 
@@ -95,13 +109,20 @@ private:
 template <typename TensorDataType>
 class value_initializer : public data_type_weights_initializer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
   value_initializer(std::vector<TensorDataType> values)
     : data_type_weights_initializer<TensorDataType>(), m_values(std::move(values)) {}
   value_initializer* copy() const override {
     return new value_initializer(*this);
   }
   std::string get_type() const override { return "value"; }
-  void fill(El::AbstractDistMatrix<TensorDataType>& matrix) override;
+  void fill(AbsDistMatrixType& matrix) override;
 
 private:
 
@@ -113,6 +134,13 @@ private:
 /** @brief Draw weights values from a uniform random distribution. */
 template <typename TensorDataType>
 class uniform_initializer : public data_type_weights_initializer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
  public:
   uniform_initializer(TensorDataType min = TensorDataType(0),
                       TensorDataType max = TensorDataType(1))
@@ -122,7 +150,7 @@ class uniform_initializer : public data_type_weights_initializer<TensorDataType>
   }
   std::string get_type() const override{ return "uniform"; }
   description get_description() const override;
-  void fill(El::AbstractDistMatrix<TensorDataType>& matrix) override;
+  void fill(AbsDistMatrixType& matrix) override;
 
 private:
 
@@ -137,6 +165,13 @@ private:
 template <typename TensorDataType>
 class normal_initializer : public data_type_weights_initializer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
   normal_initializer(TensorDataType mean = TensorDataType(0),
                      TensorDataType standard_deviation = TensorDataType(1))
     : data_type_weights_initializer<TensorDataType>(),
@@ -147,7 +182,7 @@ public:
   }
   std::string get_type() const override { return "normal"; }
   description get_description() const override;
-  void fill(El::AbstractDistMatrix<TensorDataType>& matrix) override;
+  void fill(AbsDistMatrixType& matrix) override;
 
 private:
 

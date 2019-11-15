@@ -49,6 +49,13 @@ template <typename TensorDataType,
           El::Device Dev = El::Device::CPU>
 class slice_layer : public transform_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
 
   slice_layer(lbann_comm *comm,
               El::Int slice_dim,
@@ -283,9 +290,9 @@ private:
   std::vector<El::Int> m_slice_points;
 
   /** View into input tensor. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_input_v;
+  std::unique_ptr<AbsDistMatrixType> m_input_v;
   /** View into output tensor. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_output_v;
+  std::unique_ptr<AbsDistMatrixType> m_output_v;
 
 };
 

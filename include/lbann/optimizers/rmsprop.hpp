@@ -42,6 +42,16 @@ namespace lbann {
 template <typename TensorDataType>
 class rmsprop : public data_type_optimizer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+public:
 
   rmsprop(TensorDataType learning_rate,
           TensorDataType decay_rate,
@@ -56,13 +66,13 @@ public:
   /** Human-readable description. */
   description get_description() const override;
 
-  void setup(data_type_weights<TensorDataType>* w = nullptr) override;
+  void setup(WeightsType* w = nullptr) override;
 
 protected:
 
   /** Computation for an optimization step. */
-  void step_compute(El::AbstractDistMatrix<TensorDataType>& values,
-                    const El::AbstractDistMatrix<TensorDataType>& gradient) override;
+  void step_compute(AbsDistMatrixType& values,
+                    const AbsDistMatrixType& gradient) override;
 
 private:
 
@@ -71,13 +81,13 @@ private:
   /** Small factor to avoid division by zero. */
   TensorDataType m_eps;
   /** RMSprop cache. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_cache;
+  std::unique_ptr<AbsDistMatrixType> m_cache;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
+  void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #ifdef LBANN_HAS_CUDA
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient);
+  void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_CUDA
 
   // ===========================================

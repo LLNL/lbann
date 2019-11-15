@@ -60,6 +60,9 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  /** @brief The local tensor type expected in this object. */
+  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
+
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
@@ -135,17 +138,17 @@ public:
   /** Get error signal tensor. */
   const AbsDistMatrixType& get_error_signals(int parent_index = 0) const;
   /** Get local portion of activation tensor. */
-  El::AbstractMatrix<TensorDataType>& get_local_activations(int child_index = 0);
+  AbsMatrixType& get_local_activations(int child_index = 0);
   /** Get local portion of error signal tensor. */
-  El::AbstractMatrix<TensorDataType>& get_local_error_signals(int parent_index = 0);
+  AbsMatrixType& get_local_error_signals(int parent_index = 0);
   /** Get local portion of previous activation tensor. */
-  const El::AbstractMatrix<TensorDataType>& get_local_prev_activations(int parent_index = 0) const;
+  const AbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
   /** Get local portion of activation tensor. */
-  const El::AbstractMatrix<TensorDataType>& get_local_activations(int child_index = 0) const;
+  const AbsMatrixType& get_local_activations(int child_index = 0) const;
   /** Get local portion of previous error signal tensor. */
-  const El::AbstractMatrix<TensorDataType>& get_local_prev_error_signals(int child_index = 0) const;
+  const AbsMatrixType& get_local_prev_error_signals(int child_index = 0) const;
   /** Get local portion of error signal tensor. */
-  const El::AbstractMatrix<TensorDataType>& get_local_error_signals(int parent_index = 0) const;
+  const AbsMatrixType& get_local_error_signals(int parent_index = 0) const;
 
 protected:
 

@@ -47,6 +47,13 @@ class crop_layer : public transform_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "crop layer only supports DATA_PARALLEL");
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
 
   crop_layer(lbann_comm *comm,
              std::vector<int> dims)
@@ -87,7 +94,7 @@ public:
     m_output_v.reset(input.Construct(input.Grid(), input.Root()));
 
     /// @todo Setup the input tensor with this data distribution
-    m_crop_pos_v.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(*dist.grid,
+    m_crop_pos_v.reset(AbsDistMatrixType::Instantiate(*dist.grid,
                                                dist.root,
                                                El::STAR,
                                                dist.rowDist,
@@ -148,11 +155,11 @@ protected:
 
 private:
   /** View into input tensor. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_input_v;
+  std::unique_ptr<AbsDistMatrixType> m_input_v;
   /** View into output tensor. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_output_v;
+  std::unique_ptr<AbsDistMatrixType> m_output_v;
   /** View into crop positions. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_crop_pos_v;
+  std::unique_ptr<AbsDistMatrixType> m_crop_pos_v;
 
   /** Forward prop implementation for n-dimensional tensors. */
   void fp_compute_nd() {

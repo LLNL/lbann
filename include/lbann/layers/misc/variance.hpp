@@ -45,6 +45,13 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class variance_layer : public data_type_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
 
   variance_layer(lbann_comm *comm, bool biased)
     : data_type_layer<TensorDataType>(comm), m_biased(biased) {}
@@ -80,8 +87,8 @@ protected:
     data_type_layer<TensorDataType>::setup_matrices(grid);
     auto dist_data = this->get_prev_activations().DistData();
     dist_data.colDist = El::STAR;
-    m_means.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist_data));
-    m_workspace.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist_data));
+    m_means.reset(AbsDistMatrixType::Instantiate(dist_data));
+    m_workspace.reset(AbsDistMatrixType::Instantiate(dist_data));
   }
 
   void setup_dims() override {
@@ -116,9 +123,9 @@ private:
   bool m_biased;
 
   /** Means for each mini-batch sample.  */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_means;
+  std::unique_ptr<AbsDistMatrixType> m_means;
   /** Workspace. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;
+  std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 };
 

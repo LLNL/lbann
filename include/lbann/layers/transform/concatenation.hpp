@@ -39,6 +39,13 @@ template <typename TensorDataType,
           El::Device Dev = El::Device::CPU>
 class concatenation_layer : public transform_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
 
   concatenation_layer(lbann_comm *comm, El::Int concat_dim)
     : transform_layer<TensorDataType>(comm), m_concat_dim(concat_dim) {
@@ -281,9 +288,9 @@ private:
   std::vector<El::Int> m_concat_points;
 
   /** View into input tensor. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_input_v;
+  std::unique_ptr<AbsDistMatrixType> m_input_v;
   /** View into output tensor. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_output_v;
+  std::unique_ptr<AbsDistMatrixType> m_output_v;
 
 };
 

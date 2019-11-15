@@ -52,12 +52,22 @@ namespace lbann {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class fully_connected_layer : public learning_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+public:
 
   /** @todo Accept a vector for output_size */
   fully_connected_layer(lbann_comm *comm,
                         int output_size,
                         bool transpose = false,
-                        data_type_weights<TensorDataType>* weight = nullptr,
+                        WeightsType* weight = nullptr,
                         bool has_bias = true)
     : learning_layer<TensorDataType>(comm),
       m_bias_gradient(nullptr),
@@ -136,7 +146,7 @@ protected:
       this->get_data_type_weights().resize(1, nullptr);
     }
     if (this->get_data_type_weights()[0] == nullptr) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
       std::unique_ptr<data_type_optimizer<TensorDataType>>
         opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->get_model()->create_optimizer()));
@@ -173,7 +183,7 @@ protected:
     // Set up bias if needed.
     if (m_bias_scaling_factor != TensorDataType(0)) {
       if (this->get_data_type_weights()[1] == nullptr) {
-        auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+        auto w = make_unique<WeightsType>(this->get_comm());
         std::unique_ptr<data_type_optimizer<TensorDataType>>
           opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->get_model()->create_optimizer()));
         w->set_name(this->get_name() + "_bias_weights");
@@ -227,7 +237,7 @@ private:
    *  This is this layer's contribution to the objective function
    *  gradient w.r.t. the bias weights.
    */
-  El::AbstractDistMatrix<TensorDataType>* m_bias_gradient;
+  AbsDistMatrixType* m_bias_gradient;
 
   /** Whether the transpose of the linearity matrix is applied. */
   bool m_transpose;

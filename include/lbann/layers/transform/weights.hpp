@@ -41,6 +41,19 @@ template <typename TensorDataType,
           El::Device Dev = El::Device::CPU>
 class weights_layer : public transform_layer<TensorDataType> {
 
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The local tensor type expected in this object. */
+  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
  public:
   weights_layer(lbann_comm *comm, std::vector<El::Int> dims)
     : transform_layer<TensorDataType>(comm) {
@@ -93,7 +106,7 @@ class weights_layer : public transform_layer<TensorDataType> {
     // Initialize weights gradient
     auto dist = this->get_activations().DistData();
     dist.rowDist = El::STAR;
-    m_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
+    m_gradient.reset(AbsDistMatrixType::Instantiate(dist));
 
     // Initialize workspace
     switch (Dev) {
@@ -116,7 +129,7 @@ class weights_layer : public transform_layer<TensorDataType> {
 
     // Initialize default weights if none are provided
     if (!this->has_weights()) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<DataType>>(DataType(0));
       std::unique_ptr<data_type_optimizer<DataType>> opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_weights");
@@ -194,9 +207,9 @@ class weights_layer : public transform_layer<TensorDataType> {
  private:
 
   /** Weights gradient. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_gradient;
   /** Workspace. */
-  std::unique_ptr<El::AbstractMatrix<TensorDataType>> m_workspace;
+  std::unique_ptr<AbsMatrixType> m_workspace;
 
 };
 

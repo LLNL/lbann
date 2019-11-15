@@ -58,6 +58,16 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class batch_normalization_layer : public regularizer_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "batch normalization only supports DATA_PARALLEL");
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
 private:
 
   /** Decay rate for the running statistics. */
@@ -80,24 +90,24 @@ private:
    *
    * These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_mean_and_var;
+  std::unique_ptr<AbsDistMatrixType> m_mean_and_var;
   /** View of current mini-batch means. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_mean_v;
+  std::unique_ptr<AbsDistMatrixType> m_mean_v;
   /** View of current mini-batch standard deviations. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_var_v;
+  std::unique_ptr<AbsDistMatrixType> m_var_v;
   /** @brief Gradients w.r.t. means and standard deviations.
    *
    * These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_mean_and_var_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_mean_and_var_gradient;
   /** View of gradient w.r.t. means. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_mean_gradient_v;
+  std::unique_ptr<AbsDistMatrixType> m_mean_gradient_v;
   /** View of gradient w.r.t. standard deviations. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_var_gradient_v;
+  std::unique_ptr<AbsDistMatrixType> m_var_gradient_v;
   /** Gradient w.r.t. scaling terms. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_scale_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_scale_gradient;
   /** Gradient w.r.t. bias terms. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_bias_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_bias_gradient;
 
 public:
   /** @brief Set up batch normalization.
@@ -249,7 +259,7 @@ protected:
     }
     this->get_weights().resize(4, nullptr);
     if (this->get_weights()[0] == nullptr) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
       std::unique_ptr<data_type_optimizer<TensorDataType>> opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_scale");
@@ -259,7 +269,7 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (this->get_weights()[1] == nullptr) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
       std::unique_ptr<data_type_optimizer<TensorDataType>> opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_bias");
@@ -269,7 +279,7 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (this->get_weights()[2] == nullptr) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
@@ -277,7 +287,7 @@ protected:
       this->m_model->add_weights(std::move(w));
     }
     if (this->get_weights()[3] == nullptr) {
-      auto w = make_unique<data_type_weights<TensorDataType>>(this->get_comm());
+      auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));

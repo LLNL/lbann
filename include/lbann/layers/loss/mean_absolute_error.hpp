@@ -42,6 +42,13 @@ namespace lbann {
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class mean_absolute_error_layer : public data_type_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+public:
 
   mean_absolute_error_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = 2;
@@ -96,7 +103,7 @@ public:
 
     // Initialize workspace
     const auto& input_dist = this->get_prev_activations(0).DistData();
-    m_workspace.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(*input_dist.grid,
+    m_workspace.reset(AbsDistMatrixType::Instantiate(*input_dist.grid,
                                               input_dist.root,
                                               El::STAR,
                                               input_dist.rowDist,
@@ -158,7 +165,7 @@ private:
   friend void local_bp_compute_impl(mean_absolute_error_layer<U, T_layout, Dev>& l);
 
   /** Workspace matrix. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_workspace;
+  std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 };
 
