@@ -47,6 +47,16 @@ namespace lbann {
 
 class generic_data_reader;
 
+/** Create a hash function for hashing a std::pair type */
+struct size_t_pair_hash
+{
+  template <class T1, class T2>
+  std::size_t operator() (const std::pair<T1, T2> &pair) const
+  {
+    return std::hash<T1>()(pair.first) ^ std::hash<T2>()(pair.second);
+  }
+};
+
 class data_store_conduit {
 
  public:
@@ -101,7 +111,7 @@ class data_store_conduit {
 
   /// As of this writing, will be called if cmd line includes: --preload_data_store
   /// This may change in the future; TODO revisit
-  void set_preload(); 
+  void set_preload();
 
   bool is_preloaded() { return m_preload; }
 
@@ -125,7 +135,7 @@ class data_store_conduit {
 
   bool is_local_cache() const { return m_is_local_cache; }
 
-  void exchange_mini_batch_data(size_t current_pos, size_t mb_size); 
+  void exchange_mini_batch_data(size_t current_pos, size_t mb_size);
 
   void set_super_node_mode() {
     m_super_node = true;
@@ -146,7 +156,7 @@ class data_store_conduit {
   /// made public for debugging during development
   void copy_members(const data_store_conduit& rhs, const std::vector<int>& = std::vector<int>());
 
-  void flush_debug_file(); 
+  void flush_debug_file();
 
 protected :
 
@@ -197,12 +207,16 @@ protected :
 
   /// rank in the trainer; convenience handle
   int  m_rank_in_trainer;
+  int  m_partition_in_trainer;
+  int  m_offset_in_partition;
 
   /// number of procs in the trainer; convenience handle
   int  m_np_in_trainer;
+  int  m_num_partitions_in_trainer;
 
   /// maps an index to the processor that owns the associated data
-  mutable std::unordered_map<int, int> m_owner;
+  /// First value of index is the sample ID and second value is the partiton ID
+  mutable std::unordered_map<std::pair<size_t,size_t>, int, size_t_pair_hash> m_owner;
 
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
@@ -292,7 +306,7 @@ protected :
   void build_conduit_nodes(std::unordered_map<int,size_t> &sizes);
 
   /// for use in local cache mode
-  void exchange_images(std::vector<char> &work, std::unordered_map<int,size_t> &image_sizes, std::vector<std::vector<int>> &indices); 
+  void exchange_images(std::vector<char> &work, std::unordered_map<int,size_t> &image_sizes, std::vector<std::vector<int>> &indices);
 
   /// for use in local cache mode
   void fillin_shared_images(const std::vector<char> &images, size_t offset);

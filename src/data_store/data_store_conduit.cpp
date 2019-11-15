@@ -32,6 +32,7 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
+#include "lbann/utils/distconv.hpp"
 #include <unordered_set>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -52,10 +53,15 @@ data_store_conduit::data_store_conduit(
     LBANN_ERROR(" m_comm is nullptr");
   }
 
+  int num_io_parts = dc::get_number_of_io_partitions();
+
   m_world_master = m_comm->am_world_master();
   m_trainer_master = m_comm->am_trainer_master();
   m_rank_in_trainer = m_comm->get_rank_in_trainer();
+  m_partition_in_trainer = m_rank_in_trainer/num_io_parts; // needs a better name  which group you are in
+  m_offset_in_partition = m_rank_in_trainer%num_io_parts;
   m_np_in_trainer = m_comm->get_procs_per_trainer();
+  m_num_partitions_in_trainer = m_np_in_trainer/num_io_parts; // rename this m_num_io_groups_in_trainer
 
   options *opts = options::get();
   m_super_node = opts->get_bool("super_node");
@@ -120,8 +126,8 @@ data_store_conduit& data_store_conduit::operator=(const data_store_conduit& rhs)
   return (*this);
 }
 
-void data_store_conduit::set_data_reader_ptr(generic_data_reader *reader) { 
-  m_reader = reader; 
+void data_store_conduit::set_data_reader_ptr(generic_data_reader *reader) {
+  m_reader = reader;
   if (options::get()->get_bool("debug")) {
     std::stringstream ss;
     ss << "debug_" << m_reader->get_role() << "." << m_comm->get_rank_in_world();
@@ -190,9 +196,10 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs, const std::
       }
 
       /// Removed migrated nodes from the original data store's owner list
-      if(rhs.m_owner.find(i) != rhs.m_owner.end()) {
-        m_owner[i] = rhs.m_owner[i];
-        rhs.m_owner.erase(i);
+      auto key = std::make_pair(i, m_offset_in_partition);
+      if(rhs.m_owner.find(key) != rhs.m_owner.end()) {
+        m_owner[key] = rhs.m_owner[key];
+        rhs.m_owner.erase(key);
       }
     }
   }
@@ -463,7 +470,7 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
 
   #if 0
   else if (m_owner[data_id] != m_rank_in_trainer) {
-    LBANN_ERROR("set_conduit_node error for data id: ", data_id, " m_owner: ", 
+    LBANN_ERROR("set_conduit_node error for data id: ", data_id, " m_owner: ",
                  m_owner[data_id], " me: ", m_rank_in_trainer,
                  "; data reader role: ", m_reader->get_role());
   }
@@ -471,7 +478,11 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
 
   else if (! m_super_node) {
     m_mutex.lock();
-    m_owner[data_id] = m_rank_in_trainer;
+    if(m_output) {
+      (*m_output) << "set_conduit_node : rank_in_trainer=" << m_rank_in_trainer << " and partition_in_trainer=" << m_partition_in_trainer << " offset in partition=" << m_offset_in_partition << " with num_partitions=" << m_num_partitions_in_trainer << std::endl;
+    }
+    auto key = std::make_pair(data_id, m_offset_in_partition);
+    m_owner[key] = m_rank_in_trainer;
     build_node_for_sending(node, m_data[data_id]);
     error_check_compacted_node(m_data[data_id], data_id);
     m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
@@ -480,7 +491,8 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
 
   else {
     m_mutex.lock();
-    m_owner[data_id] = m_rank_in_trainer;
+    auto key = std::make_pair(data_id, m_offset_in_partition);
+    m_owner[key] = m_rank_in_trainer;
     m_data[data_id] = node;
     m_mutex.unlock();
   }
@@ -707,8 +719,10 @@ int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size) 
   int k = 0;
   for (int i=current_pos; i< current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
-    if ((i % m_owner_map_mb_size) % m_np_in_trainer == m_rank_in_trainer) {
-      int owner = m_owner[index];
+    int num_ranks_in_partition = dc::get_number_of_io_partitions();
+    if ((((i % m_owner_map_mb_size) % m_num_partitions_in_trainer) * num_ranks_in_partition + m_offset_in_partition) == m_rank_in_trainer) {
+      auto key = std::make_pair(index, m_offset_in_partition);
+      int owner = m_owner[key];
       m_indices_to_recv[owner].insert(index);
       k++;
     }
@@ -723,16 +737,19 @@ int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) 
   if (m_output) {
     (*m_output) << "build_indices_i_will_send; cur pos: " << current_pos << " mb_size: " << mb_size << " m_data.size: " << m_data.size() << "\n";
   }
+
   for (int i = current_pos; i < current_pos + mb_size; i++) {
     auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the (i%m_np)'th rank
     if (m_data.find(index) != m_data.end()) {
-      m_indices_to_send[(i % m_owner_map_mb_size) % m_np_in_trainer].insert(index);
+      int num_ranks_in_partition = dc::get_number_of_io_partitions();
+      m_indices_to_send[(((i % m_owner_map_mb_size) % m_num_partitions_in_trainer) * num_ranks_in_partition + m_offset_in_partition)].insert(index);
 
       // Sanity check
-      if (m_owner[index] != m_rank_in_trainer) {
+      auto key = std::make_pair(index, m_offset_in_partition);
+      if (m_owner[key] != m_rank_in_trainer) {
         std::stringstream s;
-        s << "error for i: "<<i<<" index: "<<index<< " m_owner: " << m_owner[index] << " me: " << m_rank_in_trainer;
+        s << "error for i: "<<i<<" index: "<<index<< " m_owner: " << m_owner[key] << " me: " << m_rank_in_trainer;
         LBANN_ERROR(s.str());
       }
       k++;
@@ -751,7 +768,8 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
       ++owning_rank;
       per_rank_list_range_start += per_rank_list_size;
     }
-    m_owner[(*m_shuffled_indices)[i]] = owning_rank;
+    auto key = std::make_pair((*m_shuffled_indices)[i], m_offset_in_partition);
+    m_owner[key] = owning_rank;
   }
 }
 
@@ -768,7 +786,8 @@ void data_store_conduit::build_owner_map(int mini_batch_size) {
     /// To compute the owner index first find its position inside of
     /// the mini-batch (mod mini-batch size) and then find how it is
     /// striped across the ranks in the trainer
-    m_owner[index] = (i % m_owner_map_mb_size) % m_np_in_trainer;
+    auto key = std::make_pair(index, m_offset_in_partition);
+    m_owner[key] = (i % m_owner_map_mb_size) % m_np_in_trainer;
   }
 }
 #endif
@@ -808,8 +827,9 @@ void data_store_conduit::purge_unused_samples(const std::vector<int>& indices) {
     if(m_data.find(i) != m_data.end()){
       m_data.erase(i);
     }
-    if(m_owner.find(i) != m_owner.end()) {
-      m_owner.erase(i);
+    auto key = std::make_pair(i, m_offset_in_partition);
+    if(m_owner.find(key) != m_owner.end()) {
+      m_owner.erase(key);
     }
   }
   if (m_output) {
@@ -834,14 +854,15 @@ void data_store_conduit::compact_nodes() {
 }
 
 int data_store_conduit::get_index_owner(int idx) {
-  if (m_owner.find(idx) == m_owner.end()) {
+  auto key = std::make_pair(idx, m_offset_in_partition);
+  if (m_owner.find(key) == m_owner.end()) {
     std::stringstream err;
     err << __FILE__ << " " << __LINE__ << " :: "
         << " idx: " << idx << " was not found in the m_owner map;"
         << " map size: " << m_owner.size();
     throw lbann_exception(err.str());
   }
-  return m_owner[idx];
+  return m_owner[key];
 }
 
 void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset) {
@@ -1347,37 +1368,60 @@ void data_store_conduit::exchange_owner_maps() {
     (*m_output) << "\nstarting data_store_conduit::exchange_owner_maps\n\n";
   }
   int my_count = m_owner.size();
+
   std::vector<int> all_counts(m_np_in_trainer);
   m_comm->all_gather(&my_count, 1, all_counts.data(), 1,  m_comm->get_trainer_comm());
 
-  std::vector<size_t> my_sizes(m_owner.size());
+  std::vector<std::pair<size_t,size_t>> nodes_i_own(m_owner.size());
   size_t j = 0;
   for (auto t : m_owner) {
-    my_sizes[j++] = t.first;
+    auto slab_id = std::make_pair(t.first.first, t.first.second);
+    nodes_i_own[j++] = slab_id;
+    if(m_output) {
+      (*m_output) << "I am building the size vector from the owner map for " << t.first.first << "." << t.first.second << " and " << t.second << std::endl;
+    }
   }
 
-  std::vector<size_t> other_sizes;
+  std::vector<std::pair<size_t,size_t>> other_ranks_nodes;
   for (int k=0; k<m_np_in_trainer; k++) {
-    other_sizes.resize(all_counts[k]);
+    other_ranks_nodes.resize(all_counts[k]);
     if (m_rank_in_trainer == k) {
-      m_comm->broadcast<size_t>(k, my_sizes.data(), all_counts[k],  m_comm->get_trainer_comm());
+      m_comm->broadcast<std::pair<size_t,size_t>>(k, nodes_i_own.data(), all_counts[k],  m_comm->get_trainer_comm());
+      if(m_output) {
+        int c = 0;
+        for(auto i : nodes_i_own) {
+          (*m_output) << "k=" << k <<  ": nodes_i_own[" << c << "]=" << i.first << "." << i.second << std::endl;
+          c++;
+        }
+      }
     } else {
-      m_comm->broadcast<size_t>(k, other_sizes.data(), all_counts[k],  m_comm->get_trainer_comm());
-      for (size_t i=0; i<other_sizes.size(); ++i) {
-        if (m_owner.find(other_sizes[i]) != m_owner.end()) {
+      m_comm->broadcast<std::pair<size_t,size_t>>(k, other_ranks_nodes.data(), all_counts[k],  m_comm->get_trainer_comm());
+      if(m_output) {
+        int c = 0;
+        for(auto i : other_ranks_nodes) {
+          (*m_output) << "k=" << k <<  ": other_ranks_nodes[" << c << "]=" << i.first << "." << i.second << std::endl;
+          c++;
+        }
+      }
+      for (size_t i=0; i<other_ranks_nodes.size(); ++i) {
+        auto key = other_ranks_nodes[i];
+        // Check to make sure that I don't own this
+        if (m_owner.find(key) != m_owner.end()) {
 
           if (m_output) {
-            (*m_output) << "data_store_conduit::exchange_owner_maps, duplicate data_id: " << other_sizes[i] << "; k= " << k << "\nm_owner:\n";
-            for (auto t : m_owner) (*m_output) << "data_id: " << t.first << " owner: " << t.second << std::endl;
-            (*m_output) << "\nother_sizes[k]: ";
-            for (auto t : other_sizes) (*m_output) << t << " ";
+            auto slab_id = other_ranks_nodes[i];
+            (*m_output) << "data_store_conduit::exchange_owner_maps, duplicate data_id: " << slab_id.first << "." << slab_id.second  << "; k= " << k << "\nm_owner:\n";
+            for (auto t : m_owner) (*m_output) << "data_id: " << t.first.first << " / " << t.first.second << " owner: " << t.second << std::endl;
+            (*m_output) << "\nother_ranks_nodes[k]: ";
+            for (auto t : other_ranks_nodes) (*m_output) << t.first << "." << t.second << " ";
             (*m_output) << std::endl;
             flush_debug_file();
           }
 
-          LBANN_ERROR("duplicate data_id: ", other_sizes[i], " role: ", m_reader->get_role(), "; m_owner[",other_sizes[i],"] = ", m_owner[other_sizes[i]]);
+          LBANN_ERROR("duplicate data_id: ", other_ranks_nodes[i].first, ".",
+                      other_ranks_nodes[i].second, " role: ", m_reader->get_role(), "; m_owner[",other_ranks_nodes[i].first, ".", other_ranks_nodes[i].second,"] = ", m_owner[key]);
         }
-        m_owner[other_sizes[i]] = k;
+        m_owner[key] = k;
       }
     }
   }
@@ -1390,9 +1434,9 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
   }
   if (m_reader->at_new_epoch()) {
     if (m_world_master && m_cur_epoch > 0) {
-      std::cout << "time for exchange_mini_batch_data calls: " 
+      std::cout << "time for exchange_mini_batch_data calls: "
                 << m_exchange_time << std::endl
-                << "time for constructing conduit Nodes: " << m_rebuild_time 
+                << "time for constructing conduit Nodes: " << m_rebuild_time
                 << std::endl;
       if (m_super_node) {
         std::cout << "time for constructing super_nodes: " << m_super_node_packaging_time;

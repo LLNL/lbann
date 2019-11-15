@@ -128,7 +128,9 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   /// to seeing if the local rank's position is valid.  Note that
   /// every rank will hold data that may be used in the last mini-batch
   if (data_store_active()) {
+    prof_region_begin("data_store_exchange_mini_batch", prof_colors[0], false);
     m_data_store->exchange_mini_batch_data(m_current_pos-m_base_offset-m_model_offset, loaded_batch_size);
+    prof_region_end("data_store_exchange_mini_batch", false);
   }
 
   if(!position_valid()) {
