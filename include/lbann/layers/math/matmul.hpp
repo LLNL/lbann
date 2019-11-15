@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_MATH_MATMUL_HPP_INCLUDED
 #define LBANN_LAYER_MATH_MATMUL_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -40,9 +40,10 @@ namespace lbann {
  *  @todo Support >2 dimensions, transposes, matvecs, and dot products
  *
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class matmul_layer : public Layer {
+class matmul_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "matmul_layer only supports "
                 "data-parallel data layout");
@@ -69,35 +70,35 @@ protected:
 // Implementation
 // =========================================================
 
-template <data_layout Layout, El::Device Device>
-matmul_layer<Layout,Device>::matmul_layer(lbann_comm *comm)
-  : Layer(comm) {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+matmul_layer<TensorDataType, Layout,Device>::matmul_layer(lbann_comm *comm)
+  : data_type_layer<TensorDataType>(comm) {
   this->m_expected_num_parent_layers = 2;
 }
 
-template <data_layout Layout, El::Device Device>
-matmul_layer<Layout,Device>* matmul_layer<Layout,Device>::copy() const {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+matmul_layer<TensorDataType, Layout,Device>* matmul_layer<TensorDataType,Layout,Device>::copy() const {
   return new matmul_layer(*this);
 }
 
-template <data_layout Layout, El::Device Device>
-std::string matmul_layer<Layout,Device>::get_type() const {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::string matmul_layer<TensorDataType,Layout,Device>::get_type() const {
   return "matrix multiply";
 }
 
-template <data_layout Layout, El::Device Device>
-data_layout matmul_layer<Layout,Device>::get_data_layout() const {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+data_layout matmul_layer<TensorDataType,Layout,Device>::get_data_layout() const {
   return Layout;
 }
 
-template <data_layout Layout, El::Device Device>
-El::Device matmul_layer<Layout,Device>::get_device_allocation() const {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+El::Device matmul_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
   return Device;
 }
 
-template <data_layout Layout, El::Device Device>
-void matmul_layer<Layout,Device>::setup_dims() {
-  Layer::setup_dims();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void matmul_layer<TensorDataType,Layout,Device>::setup_dims() {
+  data_type_layer<TensorDataType>::setup_dims();
 
   // Input dimensions
   const auto& input0_dims = this->get_input_dims(0);
@@ -158,10 +159,10 @@ void matmul_layer<Layout,Device>::setup_dims() {
 
 #ifndef LBANN_MATMUL_LAYER_INSTANTIATE
 extern template class matmul_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class matmul_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_MATMUL_LAYER_INSTANTIATE
 

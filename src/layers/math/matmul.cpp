@@ -32,18 +32,18 @@
 
 namespace lbann {
 
-template <>
-void matmul_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::fp_compute() {
+template <typename TensorDataType>
+void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
 
   // Local data
-  const auto& local_input0 = dynamic_cast<const CPUMat&>(get_local_prev_activations(0));
-  const auto& local_input1 = dynamic_cast<const CPUMat&>(get_local_prev_activations(1));
-  auto& local_output = dynamic_cast<CPUMat&>(get_local_activations());
+  const auto& local_input0 = dynamic_cast<const CPUMat&>(l.get_local_prev_activations(0));
+  const auto& local_input1 = dynamic_cast<const CPUMat&>(l.get_local_prev_activations(1));
+  auto& local_output = dynamic_cast<CPUMat&>(l.get_local_activations());
   const auto& local_mini_batch_size = local_input0.Width();
 
   // Matrix dimensions
-  const auto output_dims = this->get_output_dims();
-  const auto input0_dims = this->get_input_dims(0);
+  const auto output_dims = l.get_output_dims();
+  const auto input0_dims = l.get_input_dims(0);
   const El::Int m = *(output_dims.rbegin()+1);
   const El::Int n = *(output_dims.rbegin());
   const El::Int k = *(input0_dims.rbegin());
@@ -64,20 +64,20 @@ void matmul_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::fp_compute() {
 
 }
 
-template <>
-void matmul_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::bp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
 
   // Local data
-  const auto& local_input0 = dynamic_cast<const CPUMat&>(get_local_prev_activations(0));
-  const auto& local_input1 = dynamic_cast<const CPUMat&>(get_local_prev_activations(1));
-  const auto& local_output_grad = dynamic_cast<const CPUMat&>(get_local_prev_error_signals());
-  auto& local_input0_grad = dynamic_cast<CPUMat&>(get_local_error_signals(0));
-  auto& local_input1_grad = dynamic_cast<CPUMat&>(get_local_error_signals(1));
+  const auto& local_input0 = dynamic_cast<const CPUMat&>(l.get_local_prev_activations(0));
+  const auto& local_input1 = dynamic_cast<const CPUMat&>(l.get_local_prev_activations(1));
+  const auto& local_output_grad = dynamic_cast<const CPUMat&>(l.get_local_prev_error_signals());
+  auto& local_input0_grad = dynamic_cast<CPUMat&>(l.get_local_error_signals(0));
+  auto& local_input1_grad = dynamic_cast<CPUMat&>(l.get_local_error_signals(1));
   const auto& local_mini_batch_size = local_input0.Width();
 
   // Matrix dimensions
-  const auto output_dims = this->get_output_dims();
-  const auto input0_dims = this->get_input_dims(0);
+  const auto output_dims = l.get_output_dims();
+  const auto input0_dims = l.get_input_dims(0);
   const El::Int m = *(output_dims.rbegin()+1);
   const El::Int n = *(output_dims.rbegin());
   const El::Int k = *(input0_dims.rbegin());
@@ -104,21 +104,21 @@ void matmul_layer<data_layout::DATA_PARALLEL,El::Device::CPU>::bp_compute() {
 }
 
 #ifdef LBANN_HAS_GPU
-template <>
-void matmul_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::fp_compute() {
+template <typename TensorDataType>
+void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
 
   // Local data
-  const auto& local_input0 = dynamic_cast<const GPUMat&>(get_local_prev_activations(0));
-  const auto& local_input1 = dynamic_cast<const GPUMat&>(get_local_prev_activations(1));
-  auto& local_output = dynamic_cast<GPUMat&>(get_local_activations());
+  const auto& local_input0 = dynamic_cast<const GPUMat&>(l.get_local_prev_activations(0));
+  const auto& local_input1 = dynamic_cast<const GPUMat&>(l.get_local_prev_activations(1));
+  auto& local_output = dynamic_cast<GPUMat&>(l.get_local_activations());
   const auto& local_mini_batch_size = local_input0.Width();
 
   // Return immediately if nothing needs to be done
   if (local_mini_batch_size < 1) { return; }
 
   // Matrix dimensions
-  const auto output_dims = this->get_output_dims();
-  const auto input0_dims = this->get_input_dims(0);
+  const auto output_dims = l.get_output_dims();
+  const auto input0_dims = l.get_input_dims(0);
   const El::Int m = *(output_dims.rbegin()+1);
   const El::Int n = *(output_dims.rbegin());
   const El::Int k = *(input0_dims.rbegin());
@@ -140,23 +140,23 @@ void matmul_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::fp_compute() {
 #endif // LBANN_HAS_GPU
 
 #ifdef LBANN_HAS_GPU
-template <>
-void matmul_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::bp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
 
   // Local data
-  const auto& local_input0 = dynamic_cast<const GPUMat&>(get_local_prev_activations(0));
-  const auto& local_input1 = dynamic_cast<const GPUMat&>(get_local_prev_activations(1));
-  const auto& local_output_grad = dynamic_cast<const GPUMat&>(get_local_prev_error_signals());
-  auto& local_input0_grad = dynamic_cast<GPUMat&>(get_local_error_signals(0));
-  auto& local_input1_grad = dynamic_cast<GPUMat&>(get_local_error_signals(1));
+  const auto& local_input0 = dynamic_cast<const GPUMat&>(l.get_local_prev_activations(0));
+  const auto& local_input1 = dynamic_cast<const GPUMat&>(l.get_local_prev_activations(1));
+  const auto& local_output_grad = dynamic_cast<const GPUMat&>(l.get_local_prev_error_signals());
+  auto& local_input0_grad = dynamic_cast<GPUMat&>(l.get_local_error_signals(0));
+  auto& local_input1_grad = dynamic_cast<GPUMat&>(l.get_local_error_signals(1));
   const auto& local_mini_batch_size = local_input0.Width();
 
   // Return immediately if nothing needs to be done
   if (local_mini_batch_size < 1) { return; }
 
   // Matrix dimensions
-  const auto output_dims = this->get_output_dims();
-  const auto input0_dims = this->get_input_dims(0);
+  const auto output_dims = l.get_output_dims();
+  const auto input0_dims = l.get_input_dims(0);
   const El::Int m = *(output_dims.rbegin()+1);
   const El::Int n = *(output_dims.rbegin());
   const El::Int k = *(input0_dims.rbegin());
@@ -185,10 +185,19 @@ void matmul_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::bp_compute() {
 }
 #endif // LBANN_HAS_GPU
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void matmul_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void matmul_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 // Explicit instantiation
-template class matmul_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class matmul_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-template class matmul_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class matmul_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
 } // namespace lbann
