@@ -108,7 +108,7 @@ void data_type_layer<TensorDataType>::forward_prop() {
   m_fp_compute_time += get_time() - fp_compute_start;
 
   // Add this layer as a gradient source for weight optimizers
-  for (auto&& w : get_weights()) {
+  for (auto&& w : get_data_type_weights()) {
     optimizer* opt = w->get_optimizer();
     if (opt != nullptr) { opt->add_gradient_source(this); }
   }
@@ -142,7 +142,7 @@ void data_type_layer<TensorDataType>::back_prop() {
   m_bp_compute_time += get_time() - bp_compute_start;
 
   // Remove this layer as a gradient source for weight optimizers
-  for (auto&& w : get_weights()) {
+  for (auto&& w : get_data_type_weights()) {
     auto&& opt = w->get_optimizer();
     if (opt != nullptr) { opt->remove_gradient_source(this); }
   }

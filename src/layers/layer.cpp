@@ -155,7 +155,7 @@ description Layer::get_description() const {
   }
 
   // Weights
-  const auto& weights_list = get_weights();
+  const auto weights_list = get_weights();
   if (!weights_list.empty()) {
     ss.str(std::string{});
     ss.clear();
@@ -235,7 +235,7 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   reset_counters();
   // Combine the optimizer step time from all the weights.
   double step_time = 0.0;
-  for (weights *w : get_weights()) {
+  for (auto const& w : get_weights()) {
     optimizer *opt = w->get_optimizer();
     if (opt) {
       step_time += opt->get_step_time();
