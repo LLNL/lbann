@@ -119,35 +119,35 @@ protected:
     const auto output_size = this->get_output_size();
 
     // Initialize default weights if none are provided
-    if (this->get_weights().size() > 2) {
+    if (this->num_weights() > 2) {
       std::stringstream err;
       err << "attempted to setup layer \"" << this->get_name() << "\" "
           << "with an invalid number of weights "
-          << "(found " << this->get_weights().size() << ", expected 2)";
+          << "(found " << this->num_weights() << ", expected 2)";
       LBANN_ERROR(err.str());
     }
-    this->get_weights().resize(2, nullptr);
-    if (this->get_weights()[0] == nullptr) {
+    this->get_data_type_weights().resize(2, nullptr);
+    if (this->get_data_type_weights()[0] == nullptr) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType{0});
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
-      this->get_weights()[0] = w.get();
+      this->get_data_type_weights()[0] = w.get();
       this->m_model->add_weights(std::move(w));
     }
-    if (this->get_weights()[1] == nullptr) {
+    if (this->get_data_type_weights()[1] == nullptr) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType{1});
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
-      this->get_weights()[1] = w.get();
+      this->get_data_type_weights()[1] = w.get();
       this->m_model->add_weights(std::move(w));
     }
 
     // Setup weights
     auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    for (auto* w : this->get_weights()) {
+    for (auto* w : this->get_data_type_weights()) {
       w->set_dims(output_dims);
       w->set_matrix_distribution(dist);
     }
@@ -176,8 +176,8 @@ protected:
     /// @todo Realign tensors if misaligned
     bool aligned = true;
     try {
-      const auto& running_mean = get_weights()[0]->get_values();
-      const auto& running_var = get_weights()[1]->get_values();
+      const auto& running_mean = get_data_type_weights()[0]->get_values();
+      const auto& running_var = get_data_type_weights()[1]->get_values();
       aligned = (input.ColAlign() == running_mean.ColAlign()
                  && input.RowAlign() == running_mean.RowAlign()
                  && input.ColAlign() == running_var.ColAlign()

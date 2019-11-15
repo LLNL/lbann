@@ -87,8 +87,8 @@ void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1
 /** Binary cross entropy operator. */
 template <typename TensorDataType>
 struct binary_cross_entropy_op {
-  TensorDataType zero = NumericalTraits<TensorDataType>::zero;
-  TensorDataType one = NumericalTraits<TensorDataType>::one;
+  TensorDataType zero = NumericalTraits<TensorDataType>::zero();
+  TensorDataType one = NumericalTraits<TensorDataType>::one();
   inline TensorDataType operator()(const TensorDataType& x1,
                                    const TensorDataType& x2) const {
     TensorDataType y = zero;
@@ -123,11 +123,11 @@ struct binary_cross_entropy_op {
  */
 template <typename TensorDataType>
 struct sigmoid_binary_cross_entropy_op {
-  TensorDataType zero = NumericalTraits<TensorDataType>::zero;
-  TensorDataType one = NumericalTraits<TensorDataType>::one;
+  TensorDataType zero = NumericalTraits<TensorDataType>::zero();
+  TensorDataType one = NumericalTraits<TensorDataType>::one();
   inline TensorDataType operator()(const TensorDataType& x1,
                                    const TensorDataType& x2) const {
-    const auto& z = std::max(NumericalTraits<TensorDataType>::zero, std::min(x2, NumericalTraits<TensorDataType>::one));
+    const auto& z = std::max(NumericalTraits<TensorDataType>::zero(), std::min(x2, NumericalTraits<TensorDataType>::one()));
     if (x1 > zero) {
       return (one - z) * x1 + std::log1p(std::exp(-x1));
     } else {
@@ -153,8 +153,8 @@ struct sigmoid_binary_cross_entropy_op {
 /** Boolean accuracy operator. */
 template <typename TensorDataType>
 struct boolean_accuracy_op {
-  TensorDataType zero = NumericalTraits<TensorDataType>::zero;
-  TensorDataType one = NumericalTraits<TensorDataType>::one;
+  TensorDataType zero = NumericalTraits<TensorDataType>::zero();
+  TensorDataType one = NumericalTraits<TensorDataType>::one();
   inline TensorDataType operator()(const TensorDataType& x1,
                                    const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
@@ -174,8 +174,8 @@ struct boolean_accuracy_op {
 /** Boolean false negative operator. */
 template <typename TensorDataType>
 struct boolean_false_negative_op {
-  TensorDataType zero = NumericalTraits<TensorDataType>::zero;
-  TensorDataType one = NumericalTraits<TensorDataType>::one;
+  TensorDataType zero = NumericalTraits<TensorDataType>::zero();
+  TensorDataType one = NumericalTraits<TensorDataType>::one();
   inline TensorDataType operator()(const TensorDataType& x1,
                                    const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
@@ -195,8 +195,8 @@ struct boolean_false_negative_op {
 /** Boolean false positive operator. */
 template <typename TensorDataType>
 struct boolean_false_positive_op {
-  TensorDataType zero = NumericalTraits<TensorDataType>::zero;
-  TensorDataType one = NumericalTraits<TensorDataType>::one;
+  TensorDataType zero = NumericalTraits<TensorDataType>::zero();
+  TensorDataType one = NumericalTraits<TensorDataType>::one();
   inline TensorDataType operator()(const TensorDataType& x1,
                                    const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
