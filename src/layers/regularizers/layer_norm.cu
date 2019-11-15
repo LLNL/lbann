@@ -43,6 +43,14 @@ struct pair_sum {
   }
 };
 
+/** Accumulate sums and sums of squares for each data sample.
+ *
+ *  On input, sums and sqsums are filled with zeros.
+ *
+ *  Block dimensions: bsize x 1 x 1
+ *
+ *  Grid dimensions: (local_sample_size / bsize) x local_num_samples x 1
+ */
 template <size_t bdimx>
 __global__ void fp_sums_kernel(
   size_t local_num_samples,
@@ -86,6 +94,19 @@ __global__ void fp_sums_kernel(
 
 }
 
+/** Compute per-sample statistics.
+ *
+ *  mean = sum(x_i) / n
+ *
+ *  var = ( sum(x_i^2)/n - mean^2 ) * n/(n-1)
+ *
+ *  On input, means contains per-sample sums and vars contains
+ *  per-sample sums of squares.
+ *
+ *  Block dimensions: bsize x 1 x 1
+ *
+ *  Grid dimensions: (local_num_samples / bsize) x 1 x 1
+ */
 __global__ void fp_statistics_kernel(
   size_t sample_size,
   size_t local_num_samples,
@@ -108,6 +129,14 @@ __global__ void fp_statistics_kernel(
 
 }
 
+/** Compute outputs.
+ *
+ *  y_i = (x_i - mean) / sqrt(var + epsilon)
+ *
+ *  Block dimensions: bdimx x bdimy x 1
+ *
+ *  Grid dimensions: (local_sample_size / bdimx) x (local_num_samples / bdimy) x 1
+ */
 __global__ void fp_output_kernel(
   size_t local_num_samples,
   size_t local_sample_size,
@@ -209,6 +238,18 @@ void fp_impl(lbann_comm& comm,
 
 }
 
+/** Compute gradients w.r.t. per-sample statistics.
+ *
+ *  dL/dmean = - sum(dL/dy_i) / sqrt(var+epsilon)
+ *
+ *  dL/dvar = - sum(dL/dy_i * (x_i-mean)) * (var+epsilon)^(-3/2) / 2
+ *
+ *  On input, means_grad and vars_grad are filled with zeros.
+ *
+ *  Block dimensions: bsize x 1 x 1
+ *
+ *  Grid dimensions: (local_sample_size / bsize) x local_num_samples x 1
+ */
 template <size_t bdimx>
 __global__ void bp_statistics_grad_kernel(
   size_t local_num_samples,
@@ -265,6 +306,16 @@ __global__ void bp_statistics_grad_kernel(
 
 }
 
+/** Compute gradients w.r.t. input.
+ *
+ *  dL/dx_i = ( dL/dy_i / sqrt(var+epsilon)
+ *              + dL/dmean / n
+ *              + dL/dvar * (x_i - mean) * 2/(n-1) )
+ *
+ *  Block dimensions: bdimx x bdimy x 1
+ *
+ *  Grid dimensions: (local_sample_size / bdimx) x (local_num_samples / bdimy) x 1
+ */
 __global__ void bp_input_grad_kernel(
   size_t sample_size,
   size_t local_num_samples,

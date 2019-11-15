@@ -33,10 +33,27 @@
 
 namespace lbann {
 
+/** @brief
+ *
+ *  Each data sample is normalized to have zero mean and unit standard
+ *  deviation. See:
+ *
+ *  Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E. Hinton. "Layer
+ *  normalization." arXiv preprint arXiv:1607.06450 (2016).
+ *
+ *  Note that this layer does not apply an entry-wise scale and bias
+ *  like in the paper. Use the entry-wise scale/bias layer to
+ *  reproduce that functionality.
+ *
+ */
 template <data_layout Layout, El::Device Device>
 class layer_norm_layer : public Layer {
 public:
 
+  /**
+   *  @param comm       LBANN communicator
+   *  @param epsilon    Small number to avoid division by zero
+   */
   layer_norm_layer(lbann_comm* comm, DataType epsilon=1e-5);
 
   layer_norm_layer(const layer_norm_layer& other);
@@ -63,14 +80,14 @@ private:
   /** Small number to avoid division by zero. */
   DataType m_epsilon;
 
-  /** @brief Current mini-batch statistics.
+  /** @brief Per-sample statistics.
    *
-   *  These are fused for performance when doing non-local batchnorm.
+   *  The means and variances are fused for performance.
    */
   std::unique_ptr<AbsDistMat> m_statistics;
-  /** @brief Gradients w.r.t. current mini-batch statistics.
+  /** @brief Gradients w.r.t. per-sample statistics.
    *
-   * These are fused for performance when doing non-local batchnorm.
+   *  The means and variances are fused for performance.
    */
   std::unique_ptr<AbsDistMat> m_statistics_gradient;
 
