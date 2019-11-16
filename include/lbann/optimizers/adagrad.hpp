@@ -53,6 +53,8 @@ public:
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
+  ///@}
+
 public:
 
   adagrad(TensorDataType learning_rate, TensorDataType eps = 1e-8);

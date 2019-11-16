@@ -56,6 +56,8 @@ public:
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
+  ///@}
+
 public:
 
   /**

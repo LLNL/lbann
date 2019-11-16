@@ -171,6 +171,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
 public:
   normal_initializer(TensorDataType mean = TensorDataType(0),
                      TensorDataType standard_deviation = TensorDataType(1))

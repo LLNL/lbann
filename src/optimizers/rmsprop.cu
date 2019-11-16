@@ -59,8 +59,8 @@ __global__ void rmsprop_kernel(size_t height,
 } // namespace
 
 template <typename TensorDataType>
-void rmsprop<TensorDataType>::step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values,
-                                               const El::AbstractDistMatrix<TensorDataType>& gradient) {
+void rmsprop<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
+                                               const AbsDistMatrixType& gradient) {
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
   const size_t local_size = local_height * local_width;

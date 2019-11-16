@@ -71,6 +71,8 @@ public:
   /** @brief The local tensor type expected in this object. */
   using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
 
+  ///@}
+
 public:
 
   tessellate_layer(lbann_comm *comm, std::vector<int> dims = {})

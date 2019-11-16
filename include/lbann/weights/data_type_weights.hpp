@@ -66,6 +66,11 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  ///@}
+
 public:
   data_type_weights(lbann_comm* comm);
   data_type_weights(const data_type_weights& other);

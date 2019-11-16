@@ -74,7 +74,7 @@ description adam<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-const El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment1() const {
+auto adam<TensorDataType>::get_moment1() const -> const AbsDistMatrixType& {
   if (m_moment1 == nullptr) {
     LBANN_ERROR(this->get_type() + " optimizer "
                 + "attempted to access moment1 before it was setup");
@@ -82,12 +82,12 @@ const El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment1(
   return *m_moment1;
 }
 template <typename TensorDataType>
-El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment1() {
+auto adam<TensorDataType>::get_moment1() -> AbsDistMatrixType& {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
   return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const adam<TensorDataType>&>(*this).get_moment1());
 }
 template <typename TensorDataType>
-const El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment2() const {
+auto adam<TensorDataType>::get_moment2() const -> const AbsDistMatrixType& {
   if (m_moment2 == nullptr) {
     LBANN_ERROR(this->get_type() + " optimizer "
                 + "attempted to access moment2 before it was setup");
@@ -95,24 +95,24 @@ const El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment2(
   return *m_moment2;
 }
 template <typename TensorDataType>
-El::AbstractDistMatrix<TensorDataType>& adam<TensorDataType>::get_moment2() {
+auto adam<TensorDataType>::get_moment2() -> AbsDistMatrixType& {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const adam<TensorDataType>&>(*this).get_moment2());
+  return const_cast<AbsDistMatrixType&>(static_cast<const adam<TensorDataType>&>(*this).get_moment2());
 }
 
 template <typename TensorDataType>
-void adam<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
+void adam<TensorDataType>::setup(WeightsType* w) {
   data_type_optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
-  m_moment1.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
-  m_moment2.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
+  m_moment1.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
+  m_moment2.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   El::Zeros(*m_moment1, gradient.Height(), gradient.Width());
   El::Zeros(*m_moment2, gradient.Height(), gradient.Width());
 }
 
 template <typename TensorDataType>
-void adam<TensorDataType>::step_compute(El::AbstractDistMatrix<TensorDataType>& values,
-                                        const El::AbstractDistMatrix<TensorDataType>& gradient) {
+void adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
+                                        const AbsDistMatrixType& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
 #ifdef LBANN_HAS_CUDA
@@ -127,8 +127,8 @@ void adam<TensorDataType>::step_compute(El::AbstractDistMatrix<TensorDataType>& 
 }
 
 template <typename TensorDataType>
-void adam<TensorDataType>::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values,
-                                            const El::AbstractDistMatrix<TensorDataType>& gradient) {
+void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
+                                            const AbsDistMatrixType& gradient) {
   constexpr TensorDataType one = 1;
 
   // Precompute the bias correction and learning rate.

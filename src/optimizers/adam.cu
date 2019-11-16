@@ -84,8 +84,8 @@ __global__ void adam_contiguous_kernel(size_t size,
 } // namespace
 
 template <typename TensorDataType>
-void adam<TensorDataType>::step_compute_gpu(El::AbstractDistMatrix<TensorDataType>& values,
-                                            const El::AbstractDistMatrix<TensorDataType>& gradient) {
+void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
+                                            const AbsDistMatrixType& gradient) {
   constexpr TensorDataType one = 1;
 
   // Precompute the bias correction and learning rate.

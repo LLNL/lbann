@@ -49,7 +49,7 @@ description constant_initializer<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void constant_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataType>& matrix) {
+void constant_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   if (m_value == TensorDataType(0)) {
     El::Zero(matrix);
   } else {
@@ -58,7 +58,7 @@ void constant_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDat
 }
 
 template <typename TensorDataType>
-void value_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataType>& matrix) {
+void value_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 
   // Check that number of values matches weights matrix
   if (matrix.Height() * matrix.Width() != (El::Int) m_values.size()) {
@@ -110,7 +110,7 @@ description uniform_initializer<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void uniform_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataType>& matrix) {
+void uniform_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   uniform_fill(matrix, matrix.Height(), matrix.Width(),
                (m_max + m_min) / 2, (m_max - m_min) / 2);
 }
@@ -124,7 +124,7 @@ description normal_initializer<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void normal_initializer<TensorDataType>::fill(El::AbstractDistMatrix<TensorDataType>& matrix) {
+void normal_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   gaussian_fill(matrix, matrix.Height(), matrix.Width(),
                 m_mean, m_standard_deviation);
 }

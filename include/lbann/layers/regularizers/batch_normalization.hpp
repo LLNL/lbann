@@ -69,6 +69,7 @@ public:
   using WeightsType = data_type_weights<TensorDataType>;
 
   ///@}
+
 private:
 
   /** Decay rate for the running statistics. */

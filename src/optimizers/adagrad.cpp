@@ -56,16 +56,16 @@ description adagrad<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void adagrad<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
+void adagrad<TensorDataType>::setup(WeightsType* w) {
   data_type_optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
-  m_cache.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
+  m_cache.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   El::Zeros(*m_cache, gradient.Height(), gradient.Width());
 }
 
 template <typename TensorDataType>
-void adagrad<TensorDataType>::step_compute(El::AbstractDistMatrix<TensorDataType>& values,
-                                           const El::AbstractDistMatrix<TensorDataType>& gradient) {
+void adagrad<TensorDataType>::step_compute(AbsDistMatrixType& values,
+                                           const AbsDistMatrixType& gradient) {
   switch (values.GetLocalDevice()) {
   case El::Device::CPU: step_compute_cpu(values, gradient); break;
 #ifdef LBANN_HAS_CUDA
@@ -80,8 +80,8 @@ void adagrad<TensorDataType>::step_compute(El::AbstractDistMatrix<TensorDataType
 }
 
 template <typename TensorDataType>
-void adagrad<TensorDataType>::step_compute_cpu(El::AbstractDistMatrix<TensorDataType>& values,
-                                               const El::AbstractDistMatrix<TensorDataType>& gradient) {
+void adagrad<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
+                                               const AbsDistMatrixType& gradient) {
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();

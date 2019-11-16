@@ -49,6 +49,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
  public:
   /** Keep units with probabiliy keep_prob. */
   selu_dropout(lbann_comm *comm,

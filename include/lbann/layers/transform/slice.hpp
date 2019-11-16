@@ -55,6 +55,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
 public:
 
   slice_layer(lbann_comm *comm,

@@ -97,8 +97,8 @@ __global__ void nesterov_kernel(size_t height,
 } // namespace
 
 template <typename TensorDataType>
-void sgd<TensorDataType>::momentum_step_gpu(El::AbstractDistMatrix<TensorDataType>& values,
-                                            const El::AbstractDistMatrix<TensorDataType>& gradient) {
+void sgd<TensorDataType>::momentum_step_gpu(AbsDistMatrixType& values,
+                                            const AbsDistMatrixType& gradient) {
 
   // Get matrix dimensions
   const size_t local_height = values.LocalHeight();

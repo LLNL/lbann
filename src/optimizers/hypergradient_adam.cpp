@@ -87,20 +87,20 @@ description hypergradient_adam<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-void hypergradient_adam<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
+void hypergradient_adam<TensorDataType>::setup(WeightsType* w) {
   data_type_optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
-  m_moment1.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
-  m_moment2.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
-  m_old_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
+  m_moment1.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
+  m_moment2.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
+  m_old_gradient.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   El::Zeros(*m_moment1, gradient.Height(), gradient.Width());
   El::Zeros(*m_moment2, gradient.Height(), gradient.Width());
   El::Zeros(*m_old_gradient, gradient.Height(), gradient.Width());
 }
 
 template <typename TensorDataType>
-void hypergradient_adam<TensorDataType>::step_compute(El::AbstractDistMatrix<TensorDataType>& values,
-                                                      const El::AbstractDistMatrix<TensorDataType>& gradient) {
+void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
+                                                      const AbsDistMatrixType& gradient) {
   if (values.GetLocalDevice() != El::Device::CPU) {
     LBANN_ERROR("hypergradient Adam is only supported on CPU");
   }

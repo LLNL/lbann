@@ -44,6 +44,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
 public:
 
   l2_norm2_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}

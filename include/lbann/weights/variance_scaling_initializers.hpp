@@ -51,6 +51,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
 public:
   variance_scaling_initializer(probability_distribution dist);
   description get_description() const override;

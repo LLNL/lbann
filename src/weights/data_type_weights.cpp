@@ -68,7 +68,7 @@ data_type_weights<TensorDataType>::data_type_weights(lbann_comm* comm)
   : weights(comm) {}
 
 template <typename TensorDataType>
-data_type_weights<TensorDataType>::data_type_weights(const data_type_weights<TensorDataType>& other)
+data_type_weights<TensorDataType>::data_type_weights(const WeightsType& other)
   : weights(other) {
 
   // Deep copies
@@ -84,7 +84,7 @@ data_type_weights<TensorDataType>::data_type_weights(const data_type_weights<Ten
 }
 
 template <typename TensorDataType>
-data_type_weights<TensorDataType>& data_type_weights<TensorDataType>::operator=(const data_type_weights<TensorDataType>& other) {
+auto data_type_weights<TensorDataType>::operator=(const WeightsType& other) -> WeightsType& {
   weights::operator=(other);
 
   // Deep copies
@@ -164,7 +164,7 @@ void data_type_weights<TensorDataType>::set_initializer(std::unique_ptr<weights_
 template <typename TensorDataType>
 data_type_optimizer<TensorDataType>* data_type_weights<TensorDataType>::get_optimizer() {
   return const_cast<data_type_optimizer<TensorDataType>*>(
-           static_cast<const data_type_weights<TensorDataType>&>(*this).get_optimizer());
+           static_cast<const WeightsType&>(*this).get_optimizer());
 }
 template <typename TensorDataType>
 const data_type_optimizer<TensorDataType>* data_type_weights<TensorDataType>::get_optimizer() const {
@@ -192,7 +192,7 @@ void data_type_weights<TensorDataType>::setup() {
 
   auto matrix_dist = get_matrix_distribution();
   // Construct weights matrix
-  m_values.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(*matrix_dist.grid,
+  m_values.reset(AbsDistMatrixType::Instantiate(*matrix_dist.grid,
                                                                      matrix_dist.root,
                                                                      matrix_dist.colDist,
                                                                      matrix_dist.rowDist,
@@ -220,11 +220,11 @@ void data_type_weights<TensorDataType>::setup() {
 // -----------------------------------------------
 
 template <typename TensorDataType>
-El::AbstractDistMatrix<TensorDataType>& data_type_weights<TensorDataType>::get_values() {
-  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const data_type_weights&>(*this).get_values());
+auto data_type_weights<TensorDataType>::get_values() -> AbsDistMatrixType& {
+  return const_cast<AbsDistMatrixType&>(static_cast<const data_type_weights&>(*this).get_values());
 }
 template <typename TensorDataType>
-const El::AbstractDistMatrix<TensorDataType>& data_type_weights<TensorDataType>::get_values() const {
+auto data_type_weights<TensorDataType>::get_values() const -> const AbsDistMatrixType& {
   if (m_values == nullptr) {
     LBANN_ERROR("attempted to access values of "
                 "weights \"" + get_name() + "\" "
@@ -234,7 +234,7 @@ const El::AbstractDistMatrix<TensorDataType>& data_type_weights<TensorDataType>:
 }
 
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::set_values(const El::AbstractDistMatrix<TensorDataType>& values) {
+void data_type_weights<TensorDataType>::set_values(const AbsDistMatrixType& values) {
   El::Copy(values, get_values());
 }
 

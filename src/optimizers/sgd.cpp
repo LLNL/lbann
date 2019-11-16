@@ -64,7 +64,7 @@ description sgd<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-const El::AbstractDistMatrix<TensorDataType>& sgd<TensorDataType>::get_velocity() const {
+auto sgd<TensorDataType>::get_velocity() const -> const AbsDistMatrixType& {
   if (m_velocity == nullptr) {
     LBANN_ERROR(get_type() + " optimizer "
                 + "attempted to access velocity before it was setup");
@@ -72,21 +72,21 @@ const El::AbstractDistMatrix<TensorDataType>& sgd<TensorDataType>::get_velocity(
   return *m_velocity;
 }
 template <typename TensorDataType>
-El::AbstractDistMatrix<TensorDataType>& sgd<TensorDataType>::get_velocity() {
+auto sgd<TensorDataType>::get_velocity() -> AbsDistMatrixType& {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<El::AbstractDistMatrix<TensorDataType>&>(static_cast<const sgd&>(*this).get_velocity());
+  return const_cast<AbsDistMatrixType&>(static_cast<const sgd&>(*this).get_velocity());
 }
 
 template <typename TensorDataType>
-void sgd<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
+void sgd<TensorDataType>::setup(WeightsType* w) {
   data_type_optimizer<TensorDataType>::setup(w);
   const auto& gradient = this->get_gradient();
-  m_velocity.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(gradient.DistData()));
+  m_velocity.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   El::Zeros(*m_velocity, gradient.Height(), gradient.Width());
 }
 
 template <typename TensorDataType>
-void sgd<TensorDataType>::step_compute(El::AbstractDistMatrix<TensorDataType>& values, const El::AbstractDistMatrix<TensorDataType>& gradient) {
+void sgd<TensorDataType>::step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) {
   if (m_momentum == TensorDataType(0)) {
     // Vanilla SGD
     El::Axpy(-this->get_learning_rate(), gradient, values);
@@ -107,8 +107,8 @@ void sgd<TensorDataType>::step_compute(El::AbstractDistMatrix<TensorDataType>& v
 }
 
 template <typename TensorDataType>
-void sgd<TensorDataType>::momentum_step_cpu(El::AbstractDistMatrix<TensorDataType>& values,
-                                            const El::AbstractDistMatrix<TensorDataType>& gradient) {
+void sgd<TensorDataType>::momentum_step_cpu(AbsDistMatrixType& values,
+                                            const AbsDistMatrixType& gradient) {
 
   // Get local matrix data
   const auto& learning_rate = this->get_learning_rate();

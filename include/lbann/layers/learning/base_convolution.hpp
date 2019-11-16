@@ -54,6 +54,8 @@ public:
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
+  ///@}
+
 protected:
 
   int m_output_channels;

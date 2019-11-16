@@ -61,13 +61,13 @@ description data_type_optimizer<TensorDataType>::get_description() const {
 }
 
 template <typename TensorDataType>
-data_type_weights<TensorDataType>& data_type_optimizer<TensorDataType>::get_weights() {
+auto data_type_optimizer<TensorDataType>::get_weights() -> WeightsType& {
   // Item 3, p. 23 in "Effective C++", 3rd ed., by Scott Meyers
-  return const_cast<data_type_weights<TensorDataType>&>(static_cast<const data_type_optimizer&>(*this).get_weights());
+  return const_cast<WeightsType&>(static_cast<const data_type_optimizer&>(*this).get_weights());
 }
 
 template <typename TensorDataType>
-const data_type_weights<TensorDataType>& data_type_optimizer<TensorDataType>::get_weights() const {
+auto data_type_optimizer<TensorDataType>::get_weights() const -> const WeightsType& {
   if (m_weights == nullptr) {
     LBANN_ERROR("attempted to access the weights being optimized "
                 "before they are set");
@@ -76,7 +76,7 @@ const data_type_weights<TensorDataType>& data_type_optimizer<TensorDataType>::ge
 }
 
 template <typename TensorDataType>
-El::AbstractDistMatrix<TensorDataType>& data_type_optimizer<TensorDataType>::get_gradient() {
+auto data_type_optimizer<TensorDataType>::get_gradient() -> AbsDistMatrixType& {
 
   // Make sure gradient matrix has been setup
   if (m_gradient == nullptr) {
@@ -104,7 +104,7 @@ El::AbstractDistMatrix<TensorDataType>& data_type_optimizer<TensorDataType>::get
 }
 
 template <typename TensorDataType>
-void data_type_optimizer<TensorDataType>::add_to_gradient(const El::AbstractDistMatrix<TensorDataType>& gradient,
+void data_type_optimizer<TensorDataType>::add_to_gradient(const AbsDistMatrixType& gradient,
                                 TensorDataType scale,
                                 bool allreduce_needed) {
 
@@ -123,7 +123,7 @@ void data_type_optimizer<TensorDataType>::add_to_gradient(const El::AbstractDist
   if (m_gradient_v->DistData() == gradient.DistData()) {
     El::LockedView(*m_gradient_v, gradient);
   } else if (allreduce_needed) {
-    std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> temp(gradient.Copy());
+    std::unique_ptr<AbsDistMatrixType> temp(gradient.Copy());
     get_comm().allreduce(*temp, temp->RedundantComm());
     El::Copy(*temp, *m_gradient_v);
     allreduce_needed = false;
@@ -182,9 +182,9 @@ void data_type_optimizer<TensorDataType>::clear_gradient() {
 }
 
 template <typename TensorDataType>
-El::AbstractDistMatrix<TensorDataType>& data_type_optimizer<TensorDataType>::get_gradient_buffer(TensorDataType& buf_scale,
+auto data_type_optimizer<TensorDataType>::get_gradient_buffer(TensorDataType& buf_scale,
                                            TensorDataType& in_scale,
-                                           bool allreduce_needed) {
+                                           bool allreduce_needed) -> AbsDistMatrixType& {
   if (m_gradient == nullptr) {
     LBANN_ERROR("attempted to access gradient before it is set up");
   }
@@ -234,7 +234,7 @@ void data_type_optimizer<TensorDataType>::remove_gradient_source(const void* sou
 }
 
 template <typename TensorDataType>
-void data_type_optimizer<TensorDataType>::setup(data_type_weights<TensorDataType>* w) {
+void data_type_optimizer<TensorDataType>::setup(WeightsType* w) {
   set_comm(w->get_comm());
   clear_gradient();
 
@@ -247,11 +247,11 @@ void data_type_optimizer<TensorDataType>::setup(data_type_weights<TensorDataType
   // Initialize matrices
   const auto& height = m_weights->get_matrix_height();
   const auto& width = m_weights->get_matrix_width();
-  const El::AbstractDistMatrix<TensorDataType>& values = m_weights->get_values();
-  m_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(values.DistData()));
+  const AbsDistMatrixType& values = m_weights->get_values();
+  m_gradient.reset(AbsDistMatrixType::Instantiate(values.DistData()));
   m_gradient->AlignWith(values);
   m_gradient->Resize(height, width);
-  m_gradient_v.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(values.DistData()));
+  m_gradient_v.reset(AbsDistMatrixType::Instantiate(values.DistData()));
   m_gradient_v->AlignWith(values);
 #ifdef HYDROGEN_HAVE_CUB
   if (m_gradient_v->GetLocalDevice() == El::Device::GPU) {

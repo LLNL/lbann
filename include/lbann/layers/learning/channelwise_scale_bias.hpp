@@ -68,6 +68,8 @@ public:
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
+  ///@}
+
 public:
 
   channelwise_scale_bias_layer(lbann_comm *comm)

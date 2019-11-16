@@ -95,6 +95,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
  public:
   typedef std::map<execution_mode, data_buffer<TensorDataType> *> data_buffer_map_t;
  public:

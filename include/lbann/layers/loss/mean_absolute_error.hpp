@@ -48,6 +48,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
 public:
 
   mean_absolute_error_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {

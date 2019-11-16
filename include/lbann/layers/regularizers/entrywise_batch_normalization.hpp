@@ -57,6 +57,8 @@ public:
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
+  ///@}
+
 public:
 
   entrywise_batch_normalization_layer(lbann_comm* comm,

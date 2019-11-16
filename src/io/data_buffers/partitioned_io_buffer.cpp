@@ -129,7 +129,7 @@ int partitioned_io_buffer<TensorDataType>::fetch_to_local_matrix(generic_data_re
 }
 
 template <typename TensorDataType>
-void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, El::AbstractDistMatrix<TensorDataType>& sample, El::AbstractDistMatrix<TensorDataType>& response) {
+void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response) {
   data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   Copy(*buf->m_input_buffers[0], sample);
   Copy(*buf->m_input_buffers[1], response);
@@ -138,7 +138,7 @@ void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic
 }
 
 template <typename TensorDataType>
-void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, El::AbstractDistMatrix<TensorDataType>& sample) {
+void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample) {
   data_buffer<TensorDataType> *buf = get_data_buffer(mode);
   Copy(*buf->m_input_buffers[0], sample);
   buf->m_num_samples_fetched = 0;

@@ -154,7 +154,7 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void tessellate_layer<TensorDataType, T_layout, Dev>
      ::bp_compute_3d(const std::vector<int>& input_dims,
                      const std::vector<int>& output_dims,
-                     const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                     const AbsDistMatrixType& gradient_wrt_output,
                      El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
   bp_compute_3d_impl<TensorDataType>(*this, input_dims, output_dims, gradient_wrt_output, gradient_wrt_input);
 }

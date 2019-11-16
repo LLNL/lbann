@@ -46,6 +46,11 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  ///@}
+
 public:
   data_type_optimizer(TensorDataType learning_rate = 0);
   data_type_optimizer(const data_type_optimizer& other);

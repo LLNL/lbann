@@ -52,6 +52,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
 public:
 
   covariance_layer(lbann_comm *comm, bool biased)
