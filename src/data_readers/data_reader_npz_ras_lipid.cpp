@@ -208,7 +208,12 @@ size_t nn = 0;
         else { // rots, states, tilts, density_sig1, probs
           offset = sample_index*m_datum_num_words[name];
           conduit::float64 *data = reinterpret_cast<conduit::float64*>(a[name].data_holder->data());
-          node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
+          if (name == "states") {
+            int label = (data + offset)[0];
+            node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(label);
+          } else {
+            node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
+          }  
         }
       }
       m_data_store->set_preloaded_conduit_node(data_id, node);
@@ -256,7 +261,7 @@ std::map<double,int> m2;
 
 bool ras_lipid_conduit_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
-  double label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
+  int label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
   Y.Set(label, mb_idx, 1);
   return true;
 }
