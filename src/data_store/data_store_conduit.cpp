@@ -1229,6 +1229,7 @@ void data_store_conduit::exchange_owner_maps() {
 }
 
 void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
+
   if (is_local_cache()) {
     return;
   }
@@ -1329,13 +1330,6 @@ void data_store_conduit::flush_profile_file() {
 
 size_t data_store_conduit::get_num_global_indices() const {
   size_t n = m_comm->trainer_allreduce<size_t>(m_my_num_indices);
-  /*
-  if (m_trainer_master) {
-    n = m_comm->trainer_allreduce<size_t>(m_my_num_indices);
-  } else {
-    m_comm->trainer_reduce<size_t>(m_my_num_indices, 0);
-  }
-  */
   return n;
 }
 
