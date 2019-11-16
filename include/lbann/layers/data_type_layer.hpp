@@ -66,6 +66,8 @@ public:
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
+  ///@}
+
 public:
   static_assert(is_supported_layer_data_type<TensorDataType>::value,
                 "Must use a supported type.");
