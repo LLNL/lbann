@@ -97,16 +97,6 @@ public:
   // Weights access functions
   // ===========================================================
 
-  /** @brief Get references to weights. */
-  std::vector<weights*> get_weights() override {
-    return std::vector<weights*>(begin(m_weights), end(m_weights));
-  }
-
-  /** @brief Get references to weights. (const) */
-  std::vector<weights const*> get_weights() const override {
-    return std::vector<weights const*>(begin(m_weights), end(m_weights));
-  }
-
   /** @brief Set list of pointers to weights. */
   void set_weights(std::vector<weights*>& w) override {
     m_weights.resize(w.size());
@@ -238,6 +228,16 @@ private:
   // ===========================================================
   // Private access functions
   // ===========================================================
+
+  /** @brief Get references to weights. */
+  std::vector<weights*> get_weights() override {
+    return std::vector<weights*>(begin(m_weights), end(m_weights));
+  }
+
+  /** @brief Get references to weights. (const) */
+  std::vector<weights const*> get_weights() const override {
+    return std::vector<weights const*>(begin(m_weights), end(m_weights));
+  }
 
   /** Get activation tensor corresponding to child layer. */
   const AbsDistMatrixType& get_activations(const data_type_layer& child) const;

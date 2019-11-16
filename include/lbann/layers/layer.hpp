@@ -251,10 +251,6 @@ public:
   // Weights access functions
   // ===========================================================
 
-  /** Get references to weights. */
-  virtual std::vector<weights*> get_weights() = 0;
-  /** Get references to weights. (const) */
-  virtual std::vector<weights const*> get_weights() const = 0;
   /** Set list of pointers to weights. */
   virtual void set_weights(std::vector<weights*>& w) = 0;
   /** Replace weights with another Layer's weights*/
@@ -439,6 +435,10 @@ private:
   // ===========================================================
   // Private access functions
   // ===========================================================
+  /** Get references to weights. */
+  virtual std::vector<weights*> get_weights() = 0;
+  /** Get references to weights. (const) */
+  virtual std::vector<weights const*> get_weights() const = 0;
 
   // ===========================================================
   // Private class members
@@ -454,7 +454,18 @@ private:
    */
   const Layer* m_hint_layer = nullptr;
 
+private:
+  friend std::vector<const weights*> extract_weights(Layer const& l);
+  friend std::vector<weights*> extract_weights(Layer& l);
 };
+
+inline std::vector<weights*> extract_weights(Layer& l) {
+  return l.get_weights();
+}
+
+inline std::vector<const weights*> extract_weights(Layer const& l) {
+  return l.get_weights();
+}
 
 } // namespace lbann
 

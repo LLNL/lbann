@@ -553,7 +553,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     auto layer_pointers = l.get_layer_pointers();
-    auto weights_pointers = l.get_weights();
+    auto weights_pointers = extract_weights(l);
     for (auto& ptr : layer_pointers) {
       if (layer_map.count(ptr) > 0) {
         ptr = layer_map.at(ptr);
