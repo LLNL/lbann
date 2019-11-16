@@ -58,12 +58,15 @@ public:
   int get_linearized_data_size() const override { return m_num_features; }
   int get_linearized_label_size() const override { return m_num_labels; }
   int get_linearized_response_size() const override { return m_num_response_features; }
+  const std::vector<int> get_data_dims() const override { return m_data_dims; }
 
+  int get_num_labels() const override { return m_num_labels; }
 
 private:
-  int m_num_features = 10;
+  int m_num_features = 0;
   int m_num_labels = 3;
   int m_num_response_features = 0;
+  std::vector<int> m_data_dims;
 
   /** @brief List of input npz filenames */
   std::vector<std::string> m_filenames;
@@ -82,16 +85,19 @@ private:
    *
    * Example: "bbs" -> {184, 3}
    */
-  std::unordered_map<std::string, std::vector<size_t>> m_datum_sizes;
+  std::unordered_map<std::string, std::vector<size_t>> m_datum_shapes;
 
   /** @brief Maps a field name to the word size */
-  std::unordered_map<std::string, size_t> m_word_sizes;
+  std::unordered_map<std::string, size_t> m_datum_word_sizes;
 
-  /** @brief Maps a field name to the number of bytes in the sample
+  /** @brief Maps a field name to the number of bytes in the datum
    *
    * Example: "bbs" -> 184*3*word_size
    */
-  std::unordered_map<std::string, size_t> m_datum_bytes;
+  std::unordered_map<std::string, size_t> m_datum_num_bytes;
+
+  /** @brief Maps a field name to the number of words in the datum */
+  std::unordered_map<std::string, size_t> m_datum_num_words;
 
   //=====================================================================
   // private methods follow
@@ -106,8 +112,22 @@ private:
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
-  /** @brief Populates in m_datum_sizes, m_datum_bytes, m_word_sizes */
+  /** @brief Populates in m_datum_shapes, m_datum_num_bytes, m_datum_word_sizes */
   void fill_in_metadata();
+
+  /** @brief Collect the sample_ids that belong to this rank and
+   *         rebuild the data store's owner map
+   *
+   * my_samples maps a filename (index in m_filenames) to the pair:
+   * (data_id, local index of the sample wrt the samples in the file).
+   */
+  void get_my_indices(std::unordered_map<int, std::vector<std::pair<int,int>>> &my_samples);
+
+  /** @brief Re-build the data store's owner map
+   *
+   * This one-off, wouldn't need to do this if we were using sample lists.
+   */
+  void rebuild_data_store_owner_map();
 };
 
 }  // namespace lbann

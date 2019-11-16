@@ -1328,7 +1328,15 @@ void data_store_conduit::flush_profile_file() {
 }
 
 size_t data_store_conduit::get_num_global_indices() const {
-  return m_comm->trainer_allreduce<size_t>(m_my_num_indices);
+  size_t n = m_comm->trainer_allreduce<size_t>(m_my_num_indices);
+  /*
+  if (m_trainer_master) {
+    n = m_comm->trainer_allreduce<size_t>(m_my_num_indices);
+  } else {
+    m_comm->trainer_reduce<size_t>(m_my_num_indices, 0);
+  }
+  */
+  return n;
 }
 
 void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {

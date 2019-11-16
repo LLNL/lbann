@@ -732,14 +732,10 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
     double tm2 = get_time();
     preload_data_store();
     if(is_master()) {
-     std::cout << "Preload complete; time: " << get_time() - tm2 << std::endl;
-    }
-
-    size_t n = m_data_store->get_num_global_indices();
-    if (n != m_shuffled_indices.size()) {
-      LBANN_ERROR("num samples loaded: ", n, " != shuffled-indices.size(): ", m_shuffled_indices.size());
+      std::cerr << "generic_data_reader::time to preload: " << (get_time() - tm2) << std::endl;
     }
   }
+
   m_data_store->setup(mini_batch_size);
 }
 
@@ -833,6 +829,17 @@ void generic_data_reader::preload_data_store() {
 
   do_preload_data_store();
   m_data_store->set_is_preloaded();
+}
+
+void generic_data_reader::XX(std::string msg) {
+  int me = m_comm->get_rank_in_trainer();
+  int np = m_comm->get_procs_per_trainer();
+  for (int j=0; j<np; j++) {
+    if (me == j) {
+      std::cout << me << " :: " << msg << std::endl;
+    }
+    m_comm->trainer_barrier();
+  }
 }
 
 

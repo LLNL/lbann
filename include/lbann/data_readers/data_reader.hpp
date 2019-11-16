@@ -67,6 +67,9 @@ class model;
 class generic_data_reader {
  public:
 
+ void XX(std::string msg);
+
+
  #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
  #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; }
 
@@ -332,6 +335,7 @@ class generic_data_reader {
   }
   /// get the linearized size of what is identified by desc.
   virtual int get_linearized_size(const std::string& desc) const {
+std::cout << ">>>>>>> get_linearized_size\n";
     if (desc == "data") {
       return get_linearized_data_size();
     } else if (desc == "label") {
