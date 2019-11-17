@@ -79,7 +79,6 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed = -1);
  */
 void finalize(lbann_comm* comm = nullptr);
 
-  //using Tensor = El::BaseDistMatrix
 // Typedefs for Elemental matrices
 using AbsMat = El::AbstractMatrix<DataType>;
 using CPUMat = El::Matrix<DataType, El::Device::CPU>;
