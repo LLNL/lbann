@@ -220,15 +220,6 @@ size_t nn = 0;
       ++nn;
     }
   }  
-
-int me = m_comm->get_rank_in_trainer();
-int np = m_comm->get_procs_per_trainer();
-for (int j=0; j<np; j++) {
-  m_comm->trainer_barrier();
-  if (me == j) {
-    std::cout << "my num samples: " << nn << std::endl;
-  }
-}
 }
 
 bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
