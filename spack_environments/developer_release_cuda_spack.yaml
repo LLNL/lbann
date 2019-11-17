@@ -14,6 +14,7 @@
 ################################################################################
 
 spack:
+  concretization: together
   # add package specs to the `specs` list
   specs:
   - conduit
