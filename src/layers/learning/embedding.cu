@@ -148,7 +148,7 @@ void bp_compute_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,
 
   // Nothing to be done if embeddings are not being optimized
   if (l.get_data_type_weights()[0]->get_optimizer() == nullptr) { return; }
-  auto& opt = *l.get_data_type__weights()[0]->get_optimizer();
+  auto& opt = *l.get_data_type_weights()[0]->get_optimizer();
 
   // Local data
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
