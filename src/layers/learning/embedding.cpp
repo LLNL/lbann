@@ -31,12 +31,12 @@ namespace lbann {
 
 template <typename TensorDataType>
 void setup_matrices_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::CPU>&l, const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
   l.m_gradient_wrt_embeddings.reset(new El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>(grid));
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void embedding_layer<TensorDataType, T_layout, Dev>::setup_matrices() {
+void embedding_layer<TensorDataType, T_layout, Dev>::setup_matrices(const El::Grid& grid) {
+  data_type_layer<TensorDataType>::setup_matrices(grid);
   setup_matrices_impl<TensorDataType>(*this, grid);
 }
 
@@ -50,7 +50,7 @@ void fp_compute_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,
   const auto& local_width = local_input.Width();
 
   // Populate output matrix with columns of embedding matrix
-  El::Matrix<TensorDataType, El::Device::CPU>&> embedding_v, output_v;
+  El::Matrix<TensorDataType, El::Device::CPU> embedding_v, output_v;
   for (El::Int col = 0; col < local_width; ++ col) {
     El::View(output_v, local_output, El::ALL, El::IR(col));
     const El::Int ind = static_cast<El::Int>(std::floor(local_input(0, col)));

@@ -37,14 +37,15 @@ namespace {
  *
  *  Grid dimensions: (embedding_dim / bsize) x mini_batch_size x 1
  */
+template <typename TensorDataType>
 __global__ void fp_kernel(El::Int num_embeddings,
                           El::Int embedding_dim,
                           El::Int mini_batch_size,
-                          const DataType* __restrict__ indices,
+                          const TensorDataType* __restrict__ indices,
                           El::Int indices_stride,
-                          const DataType* __restrict__ embeddings,
+                          const TensorDataType* __restrict__ embeddings,
                           El::Int embeddings_ldim,
-                          DataType* __restrict__ output,
+                          TensorDataType* __restrict__ output,
                           El::Int output_ldim) {
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int gidy = threadIdx.y + blockIdx.y * blockDim.y;
@@ -58,7 +59,7 @@ __global__ void fp_kernel(El::Int num_embeddings,
         y = embeddings[i+ind*embeddings_ldim];
       }
       else {
-        y = DataType{0};
+        y = TensorDataType{0};
       }
     }
   }
@@ -70,15 +71,16 @@ __global__ void fp_kernel(El::Int num_embeddings,
  *
  *  Grid dimensions: (embedding_dim / bsize) x mini_batch_size x 1
  */
+template <typename TensorDataType>
 __global__ void bp_kernel(El::Int num_embeddings,
                           El::Int embedding_dim,
                           El::Int mini_batch_size,
                           El::Int padding_idx,
-                          const DataType* __restrict__ indices,
+                          const TensorDataType* __restrict__ indices,
                           El::Int indices_stride,
-                          const DataType* __restrict__ gradient_wrt_output,
+                          const TensorDataType* __restrict__ gradient_wrt_output,
                           El::Int gradient_wrt_output_ldim,
-                          DataType* __restrict__ gradient_wrt_embeddings,
+                          TensorDataType* __restrict__ gradient_wrt_embeddings,
                           El::Int gradient_wrt_embeddings_ldim) {
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int gidy = threadIdx.y + blockIdx.y * blockDim.y;
@@ -98,19 +100,24 @@ __global__ void bp_kernel(El::Int num_embeddings,
 
 } // namespace
 
-template <>
-void embedding_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::setup_matrices(const El::Grid& grid) {
-  Layer::setup_matrices(grid);
-  m_gradient_wrt_embeddings.reset(new StarMat<El::Device::GPU>(grid));
+template <typename TensorDataType>
+void setup_matrices_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::GPU>& l, const El::Grid& grid) {
+  l.m_gradient_wrt_embeddings.reset(new El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, El::Device::GPU>(grid));
 }
 
-template <>
-void embedding_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::fp_compute() {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void embedding_layer<TensorDataType, T_layout, Dev>::setup_matrices(const El::Grid& grid) {
+  data_type_layer<TensorDataType>::setup_matrices(grid);
+  setup_matrices_impl<TensorDataType>(*this, grid);
+}
+
+template <typename TensorDataType>
+void fp_compute_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
 
   // Local data
-  const auto& local_embeddings = dynamic_cast<const GPUMat&>(m_weights[0]->get_values().LockedMatrix());
-  const auto& local_input = dynamic_cast<const GPUMat&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<GPUMat&>(get_local_activations());
+  const auto& local_embeddings = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_data_type_weights()[0]->get_values().LockedMatrix());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
+  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
 
   // Launch CUDA kernel
   if (!local_input.IsEmpty()) {
@@ -119,7 +126,7 @@ void embedding_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::fp_compute() {
     block_dims.x = block_size;
     grid_dims.x = (local_output.Height() + block_size - 1) / block_size;
     grid_dims.y = local_output.Width();
-    fp_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    fp_kernel<TensorDataType><<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
       m_num_embeddings,
       m_embedding_dim,
       local_input.Width(),
@@ -133,20 +140,20 @@ void embedding_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::fp_compute() {
 
 }
 
-template <>
-void embedding_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::bp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
 
   // Embedding layer is not differentiable w.r.t. inputs
   El::Zero(get_error_signals());
 
   // Nothing to be done if embeddings are not being optimized
-  if (m_weights[0]->get_optimizer() == nullptr) { return; }
-  auto& opt = *m_weights[0]->get_optimizer();
+  if (get_data_type_weights()[0]->get_optimizer() == nullptr) { return; }
+  auto& opt = *get_data_type__weights()[0]->get_optimizer();
 
   // Local data
-  const auto& local_input = dynamic_cast<const GPUMat&>(get_local_prev_activations());
-  auto& local_embedding_grad = dynamic_cast<GPUMat&>(m_gradient_wrt_embeddings->Matrix());
-  const auto& local_output_grad = dynamic_cast<const GPUMat&>(get_local_prev_error_signals());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
+  auto& local_embedding_grad = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.m_gradient_wrt_embeddings->Matrix());
+  const auto& local_output_grad = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals());
 
   // Launch CUDA kernel
   El::Zero(local_embedding_grad);
@@ -156,7 +163,7 @@ void embedding_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::bp_compute() {
     block_dims.x = block_size;
     grid_dims.x = (local_output_grad.Height() + block_size - 1) / block_size;
     grid_dims.y = local_output_grad.Width();
-    bp_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    bp_kernel<TensorDataType><<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
       m_num_embeddings,
       m_embedding_dim,
       local_input.Width(),
@@ -168,11 +175,21 @@ void embedding_layer<data_layout::DATA_PARALLEL,El::Device::GPU>::bp_compute() {
       local_embedding_grad.Buffer(),
       local_embedding_grad.LDim());
   }
-  opt.add_to_gradient(*m_gradient_wrt_embeddings, DataType{1}, true);
+  opt.add_to_gradient(*l.m_gradient_wrt_embeddings, TensorDataType{1}, true);
 
 }
 
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void embedding_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_compute_impl<TensorDataType>(*this);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+  bp_compute_impl<TensorDataType>(*this);
+}
+
 // Explicit instantiation
-template class embedding_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class embedding_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

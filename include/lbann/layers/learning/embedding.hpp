@@ -53,6 +53,9 @@ public:
   /** @name Public Types */
   ///@{
 
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
@@ -110,8 +113,10 @@ private:
   El::Int m_padding_idx;
 
   /** Gradient w.r.t. embedding weights. */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_gradient_wrt_embeddings;
+  std::unique_ptr<AbsDistMatrixType> m_gradient_wrt_embeddings;
 
+  template <typename U>
+  friend void setup_matrices_impl(embedding_layer<U, Layout, Device>&l, const El::Grid& grid);
   template <typename U>
   friend void fp_compute_impl(embedding_layer<U, Layout, Device>& l);
   template <typename U>
@@ -122,8 +127,8 @@ private:
 // Implementation
 // =========================================================
 
-template <data_layout Layout, El::Device Device>
-embedding_layer<Layout,Device>::embedding_layer(
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+embedding_layer<TensorDataType, Layout,Device>::embedding_layer(
   lbann_comm* comm,
   size_t num_embeddings,
   size_t embedding_dim,
@@ -133,9 +138,9 @@ embedding_layer<Layout,Device>::embedding_layer(
     m_embedding_dim{embedding_dim},
     m_padding_idx{padding_idx} {}
 
-template <data_layout Layout, El::Device Device>
-embedding_layer<Layout,Device>::embedding_layer(
-  const embedding_layer<Layout,Device>& other)
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+embedding_layer<TensorDataType, Layout,Device>::embedding_layer(
+ const embedding_layer<TensorDataType,Layout,Device>& other)
   : data_type_layer<TensorDataType>(other),
     m_num_embeddings{other.m_num_embeddings},
     m_embedding_dim{other.m_embedding_dim},
@@ -144,9 +149,9 @@ embedding_layer<Layout,Device>::embedding_layer(
                               ? other.m_gradient_wrt_embeddings->Copy()
                               : nullptr) {}
 
-template <data_layout Layout, El::Device Device>
-embedding_layer<Layout,Device>& embedding_layer<Layout,Device>::operator=(
-  const embedding_layer<Layout,Device>& other) {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+embedding_layer<TensorDataType, Layout,Device>& embedding_layer<TensorDataType, Layout,Device>::operator=(
+  const embedding_layer<TensorDataType,Layout,Device>& other) {
   data_type_layer<TensorDataType>::operator=(other);
   m_num_embeddings = other.m_num_embeddings;
   m_embedding_dim = other.m_embedding_dim;
