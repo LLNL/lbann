@@ -127,8 +127,8 @@ void fp_compute_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,
     grid_dims.x = (local_output.Height() + block_size - 1) / block_size;
     grid_dims.y = local_output.Width();
     fp_kernel<TensorDataType><<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
-      m_num_embeddings,
-      m_embedding_dim,
+      l.m_num_embeddings,
+      l.m_embedding_dim,
       local_input.Width(),
       local_input.LockedBuffer(),
       local_input.LDim(),
@@ -144,7 +144,7 @@ template <typename TensorDataType>
 void bp_compute_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
 
   // Embedding layer is not differentiable w.r.t. inputs
-  El::Zero(get_error_signals());
+  El::Zero(l.get_error_signals());
 
   // Nothing to be done if embeddings are not being optimized
   if (get_data_type_weights()[0]->get_optimizer() == nullptr) { return; }
@@ -164,10 +164,10 @@ void bp_compute_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,
     grid_dims.x = (local_output_grad.Height() + block_size - 1) / block_size;
     grid_dims.y = local_output_grad.Width();
     bp_kernel<TensorDataType><<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
-      m_num_embeddings,
-      m_embedding_dim,
+      l.m_num_embeddings,
+      l.m_embedding_dim,
       local_input.Width(),
-      m_padding_idx,
+      l.m_padding_idx,
       local_input.LockedBuffer(),
       local_input.LDim(),
       local_output_grad.LockedBuffer(),
