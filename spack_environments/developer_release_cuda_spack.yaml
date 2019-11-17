@@ -17,6 +17,8 @@ spack:
   concretization: together
   # add package specs to the `specs` list
   specs:
+  - catch2
+  - clara
   - conduit
   - cnpy
   - opencv
