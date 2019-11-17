@@ -147,7 +147,7 @@ void bp_compute_impl(embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,
   El::Zero(l.get_error_signals());
 
   // Nothing to be done if embeddings are not being optimized
-  if (get_data_type_weights()[0]->get_optimizer() == nullptr) { return; }
+  if (l.get_data_type_weights()[0]->get_optimizer() == nullptr) { return; }
   auto& opt = *get_data_type__weights()[0]->get_optimizer();
 
   // Local data
