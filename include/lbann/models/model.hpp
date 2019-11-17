@@ -57,11 +57,10 @@ class lbann_callback;
 class training_algorithm;
 class callback_base;
 
-using TensorDataType = float;
-
 /** @brief Abstract base class for neural network models. */
 class model {
 public:
+  using TensorDataType = DataType;
 
   // ===========================================
   // Life cycle functions

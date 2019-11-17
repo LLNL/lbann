@@ -92,15 +92,15 @@ void save_image(std::string prefix,
       const auto& data = circ_data.LockedMatrix();
 
       // Data will be scaled to be in [0,256]
-      TensorDataType lower = data(0, 0);
-      TensorDataType upper = data(0, 0);
+      DataType lower = data(0, 0);
+      DataType upper = data(0, 0);
       for (El::Int i = 1; i < data.Height(); ++i) {
         lower = std::min(lower, data(i, 0));
         upper = std::max(upper, data(i, 0));
       }
       const auto& scale = ((upper > lower) ?
                            256 / (upper - lower) :
-                           TensorDataType(1));
+                           DataType(1));
 
       // Copy data into OpenCV matrix
       int type = -1;

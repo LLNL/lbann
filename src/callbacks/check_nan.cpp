@@ -163,7 +163,7 @@ void check_nan::on_backward_prop_end(model *m, Layer *l) {
   const auto& num_inputs = l->get_num_parents();
   for (int i = 0; i < num_inputs; ++i) {
     El::Int row, col;
-    auto const& dtl = dynamic_cast<data_type_layer<TensorDataType>&>(*l);
+    auto const& dtl = dynamic_cast<data_type_layer<DataType>&>(*l);
     proxy_type mat_proxy(dtl.get_error_signals(i));
     if (has_nan(mat_proxy.GetLocked(), row, col)) {
       dump_network(m);

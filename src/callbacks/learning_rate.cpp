@@ -304,9 +304,9 @@ optimizerwise_adaptive_learning_rate(
 float optimizerwise_adaptive_learning_rate::optimizer_schedule(
   model *m, optimizer &opt) {
   auto& dto = dynamic_cast<data_type_optimizer<DataType>&>(opt);
-  TensorDataType param_norm = El::Nrm2(dto.get_weights().get_values());
-  TensorDataType param_grad_norm = El::Nrm2(dto.get_gradient());
-  if (param_norm > TensorDataType(0) && param_grad_norm > TensorDataType(0)) {
+  DataType param_norm = El::Nrm2(dto.get_weights().get_values());
+  DataType param_grad_norm = El::Nrm2(dto.get_gradient());
+  if (param_norm > DataType(0) && param_grad_norm > DataType(0)) {
     // TODO: Should incorporate weight decay, etc. here.
     return optimizerwise_adaptive_learning_rate::get_current_global_learning_rate()
       * m_scale * param_norm / param_grad_norm;
