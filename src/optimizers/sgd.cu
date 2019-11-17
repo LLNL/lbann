@@ -135,7 +135,7 @@ void sgd<TensorDataType>::momentum_step_gpu(AbsDistMatrixType& values,
 
 }
 
-template void sgd<float>::momentum_step_gpu(El::AbstractDistMatrix<float>& values,
-                                            const El::AbstractDistMatrix<float>& gradient);
+template void sgd<DataType>::momentum_step_gpu(El::AbstractDistMatrix<DataType>& values,
+                                            const El::AbstractDistMatrix<DataType>& gradient);
 
 } // namespace lbann

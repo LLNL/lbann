@@ -49,6 +49,6 @@ void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d() {
   bp_compute_3d_impl<TensorDataType>(*this);
 }
 
-template class crop_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class crop_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

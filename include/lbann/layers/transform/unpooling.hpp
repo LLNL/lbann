@@ -254,7 +254,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
 
 #ifndef LBANN_UNPOOLING_LAYER_INSTANTIATE
 extern template class unpooling_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #endif // LBANN_UNPOOLING_LAYER_INSTANTIATE
 
 }  // namespace lbann

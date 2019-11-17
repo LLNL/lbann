@@ -103,8 +103,8 @@ void l1_norm_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
 }
 
 template class l1_norm_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class l1_norm_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

@@ -30,14 +30,14 @@
 namespace lbann {
 
 template class stop_gradient_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class stop_gradient_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 template class stop_gradient_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class stop_gradient_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
 }// namespace lbann

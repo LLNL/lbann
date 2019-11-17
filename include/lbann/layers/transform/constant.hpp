@@ -76,14 +76,14 @@ private:
 
 #ifndef LBANN_CONSTANT_LAYER_INSTANTIATE
 extern template class constant_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class constant_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class constant_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class constant_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_CONSTANT_LAYER_INSTANTIATE
 

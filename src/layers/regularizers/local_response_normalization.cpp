@@ -30,10 +30,10 @@
 namespace lbann {
 
 template class local_response_normalization_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 template class local_response_normalization_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
 }// namespace lbann

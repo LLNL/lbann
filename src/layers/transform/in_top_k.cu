@@ -294,7 +294,7 @@ void in_top_k_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   fp_compute_impl<TensorDataType>(*this);
 }
 
-template class in_top_k_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class in_top_k_layer<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+template class in_top_k_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class in_top_k_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

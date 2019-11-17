@@ -272,6 +272,10 @@ private:
 
 };
 
+#ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
+extern template class data_type_layer<DataType>;
+#endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
+
 } // namespace lbann
 
 #endif // LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED

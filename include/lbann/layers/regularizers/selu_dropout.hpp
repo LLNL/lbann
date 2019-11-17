@@ -54,7 +54,7 @@ public:
  public:
   /** Keep units with probabiliy keep_prob. */
   selu_dropout(lbann_comm *comm,
-               float keep_prob=0.95f,
+               TensorDataType keep_prob = TensorDataType(0.95f),
                TensorDataType alpha = TensorDataType(1.6732632423543772848170429916717),
                TensorDataType scale = TensorDataType(1.0507009873554804934193349852946)) :
     regularizer_layer<TensorDataType>(comm),
@@ -180,21 +180,21 @@ public:
   /** Affine additive parameter to keep mean/variance at desired value. */
   TensorDataType m_b;
   /** Probability of keeping each unit. */
-  float m_keep_prob;
+  TensorDataType m_keep_prob;
   /** Current dropout mask (a scaled Bernoulli random matrix). */
   AbsDistMatrixType *m_mask;
 };
 
 #ifndef LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
 extern template class selu_dropout<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class selu_dropout<
-  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class selu_dropout<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class selu_dropout<
-  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
 

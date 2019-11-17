@@ -111,10 +111,10 @@ private:
 
 #ifndef LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
 extern template class bilinear_resize_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class bilinear_resize_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
 

@@ -76,14 +76,14 @@ private:
 
 #ifndef LBANN_MINI_BATCH_SIZE_LAYER_INSTANTIATE
 extern template class mini_batch_size_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class mini_batch_size_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class mini_batch_size_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class mini_batch_size_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_MINI_BATCH_SIZE_LAYER_INSTANTIATE
 

@@ -78,10 +78,10 @@ protected:
 
 #ifndef LBANN_ONE_HOT_LAYER_INSTANTIATE
 extern template class one_hot_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class one_hot_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_ONE_HOT_LAYER_INSTANTIATE
 

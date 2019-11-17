@@ -35,8 +35,8 @@ namespace lbann {
 
 #ifndef LBANN_ACTIVATIONS_LAYER_INSTANTIATE
 #define UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, DEVICE)                           \
-  extern template class LAYER_NAME<float, data_layout::DATA_PARALLEL, DEVICE>; \
-  extern template class LAYER_NAME<float, data_layout::MODEL_PARALLEL, DEVICE>
+  extern template class LAYER_NAME<DataType, data_layout::DATA_PARALLEL, DEVICE>; \
+  extern template class LAYER_NAME<DataType, data_layout::MODEL_PARALLEL, DEVICE>
 #else
 #define UNARY_ETI_DECL_MACRO_DEV(...)
 #endif // LBANN_UNARY_LAYER_INSTANTIATE

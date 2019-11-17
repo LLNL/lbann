@@ -177,22 +177,22 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   }
 }
 
-template class data_type_weights_initializer<float>;
-template class constant_initializer<float>;
-template class value_initializer<float>;
-template class uniform_initializer<float>;
-template class normal_initializer<float>;
+template class data_type_weights_initializer<DataType>;
+template class constant_initializer<DataType>;
+template class value_initializer<DataType>;
+template class uniform_initializer<DataType>;
+template class normal_initializer<DataType>;
 
 template std::unique_ptr<weights_initializer>
-build_constant_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+build_constant_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
 
 template std::unique_ptr<weights_initializer>
-build_value_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+build_value_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
 
 template std::unique_ptr<weights_initializer>
-build_uniform_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+build_uniform_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
 
 template std::unique_ptr<weights_initializer>
-build_normal_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+build_normal_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
 
 } // namespace lbann

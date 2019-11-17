@@ -78,10 +78,12 @@ class input_layer : public generic_input_layer<TensorDataType> {
 
 #ifndef LBANN_INPUT_LAYER_INSTANTIATE
 extern template class input_layer<
-  float, partitioned_io_buffer<float>, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, partitioned_io_buffer<DataType>,
+  data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class input_layer<
-  float, partitioned_io_buffer<float>, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, partitioned_io_buffer<DataType>,
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_INPUT_LAYER_INSTANTIATE
 

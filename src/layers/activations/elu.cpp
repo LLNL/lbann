@@ -105,7 +105,7 @@ void elu_layer<TensorDataType, Layout, Device>::bp_compute() {
   bp_compute_impl<TensorDataType>(*this);
 }
 
-template class elu_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class elu_layer<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+template class elu_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class elu_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

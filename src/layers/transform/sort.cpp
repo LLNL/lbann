@@ -95,6 +95,6 @@ void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   bp_compute_impl<TensorDataType>(*this);
 }
 
-template class sort_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class sort_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

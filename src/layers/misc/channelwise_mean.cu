@@ -191,6 +191,6 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 template class channelwise_mean_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

@@ -1223,9 +1223,9 @@ private:
 };
 
 #ifndef LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
-extern template class base_convolution_layer<float, El::Device::CPU>;
+extern template class base_convolution_layer<DataType, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-extern template class base_convolution_layer<float, El::Device::GPU>;
+extern template class base_convolution_layer<DataType, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
 

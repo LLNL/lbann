@@ -159,7 +159,7 @@ void tessellate_layer<TensorDataType, T_layout, Dev>
   bp_compute_3d_impl<TensorDataType>(*this, input_dims, output_dims, gradient_wrt_output, gradient_wrt_input);
 }
 
-template class tessellate_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class tessellate_layer<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+template class tessellate_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class tessellate_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

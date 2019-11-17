@@ -341,8 +341,8 @@ void top_k_categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute
 }
 
 template class top_k_categorical_accuracy_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class top_k_categorical_accuracy_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

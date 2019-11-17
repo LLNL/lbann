@@ -180,8 +180,8 @@ void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 template class softmax_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class softmax_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

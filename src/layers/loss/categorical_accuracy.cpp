@@ -219,8 +219,8 @@ void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 }
 
 template class categorical_accuracy_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class categorical_accuracy_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

@@ -29,6 +29,6 @@
 
 namespace lbann {
 
-template class unpooling_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 }// namespace lbann

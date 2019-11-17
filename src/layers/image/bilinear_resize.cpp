@@ -117,6 +117,6 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
 }
 
 template class bilinear_resize_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

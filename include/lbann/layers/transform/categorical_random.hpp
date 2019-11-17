@@ -114,7 +114,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
 
 #ifndef LBANN_CATEGORICAL_RANDOM_LAYER_INSTANTIATE
 extern template class categorical_random_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #endif // LBANN_CATEGORICAL_RANDOM_LAYER_INSTANTIATE
 
 } // namespace lbann

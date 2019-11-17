@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_DATA_TYPE_LAYER_INSTANTIATE
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
@@ -632,6 +633,6 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(El::Int mini_
   }
 }
 
-template class data_type_layer<float>;
+template class data_type_layer<DataType>;
 
 } // namespace lbann

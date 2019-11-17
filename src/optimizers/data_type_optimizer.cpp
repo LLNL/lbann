@@ -349,6 +349,6 @@ bool data_type_optimizer<TensorDataType>::load_from_checkpoint_distributed(persi
   return true;
 }
 
-template class data_type_optimizer<float>;
+template class data_type_optimizer<DataType>;
 
 } // namespace lbann

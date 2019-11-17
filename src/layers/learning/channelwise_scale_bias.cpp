@@ -140,7 +140,7 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 }
 
 template class channelwise_scale_bias_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 //template class channelwise_scale_bias_layer<
 //  double, data_layout::DATA_PARALLEL, El::Device::CPU>;
 

@@ -77,7 +77,7 @@ void rmsprop<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
   }
 }
 
-template void rmsprop<float>::step_compute_gpu(El::AbstractDistMatrix<float>& values,
-                                               const El::AbstractDistMatrix<float>& gradient);
+template void rmsprop<DataType>::step_compute_gpu(El::AbstractDistMatrix<DataType>& values,
+                                               const El::AbstractDistMatrix<DataType>& gradient);
 
 } // namespace lbann

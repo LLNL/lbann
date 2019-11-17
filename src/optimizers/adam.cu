@@ -122,7 +122,7 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
 
 }
 
-template void adam<float>::step_compute_gpu(El::AbstractDistMatrix<float>& values,
-                                            const El::AbstractDistMatrix<float>& gradient);
+template void adam<DataType>::step_compute_gpu(El::AbstractDistMatrix<DataType>& values,
+                                            const El::AbstractDistMatrix<DataType>& gradient);
 
 } // namespace lbann

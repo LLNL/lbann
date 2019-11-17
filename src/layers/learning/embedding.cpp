@@ -109,7 +109,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 }
 
 // Explicit instantiation
-template class embedding_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class embedding_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 //template class embedding_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

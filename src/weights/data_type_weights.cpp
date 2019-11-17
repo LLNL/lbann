@@ -461,6 +461,6 @@ bool data_type_weights<TensorDataType>::load_from_checkpoint_distributed(lbann::
   return true;
 }
 
-template class data_type_weights<float>;
+template class data_type_weights<DataType>;
 
 }  // namespace lbann

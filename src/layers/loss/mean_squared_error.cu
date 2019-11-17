@@ -211,8 +211,8 @@ void mean_squared_error_layer<TensorDataType, T_layout, Dev>::local_bp_compute()
 }
 
 template class mean_squared_error_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class mean_squared_error_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

@@ -173,8 +173,8 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 template class leaky_relu_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class leaky_relu_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

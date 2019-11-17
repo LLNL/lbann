@@ -273,6 +273,6 @@ build_adam_optimizer_from_pbuf(
                                      params.eps());
 }
 
-template class adam<float>;
+template class adam<DataType>;
 
 } // namespace lbann

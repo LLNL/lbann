@@ -253,8 +253,8 @@ void variance_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 template class variance_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class variance_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

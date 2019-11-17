@@ -134,8 +134,8 @@ void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
 }
 
 template class cross_entropy_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class cross_entropy_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

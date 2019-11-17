@@ -239,13 +239,13 @@ abstract_evaluation_layer<TensorDataType>::construct(lbann_comm *comm,
 
 }
 
-template class abstract_evaluation_layer<float>;
+template class abstract_evaluation_layer<DataType>;
 
-template class evaluation_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class evaluation_layer<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+template class evaluation_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class evaluation_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-template class evaluation_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class evaluation_layer<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+template class evaluation_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class evaluation_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
 } // namespace lbann

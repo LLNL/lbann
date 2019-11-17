@@ -444,8 +444,8 @@ void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_comp
 }
 
 template class entrywise_batch_normalization_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class entrywise_batch_normalization_layer<
-  float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

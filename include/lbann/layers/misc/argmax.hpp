@@ -73,7 +73,7 @@ protected:
 
 #ifndef LBANN_ARGMAX_LAYER_INSTANTIATE
 extern template class argmax_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #endif // LBANN_ARGMAX_LAYER_INSTANTIATE
 
 } // namespace lbann

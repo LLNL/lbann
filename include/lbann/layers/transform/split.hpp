@@ -83,11 +83,11 @@ protected:
 };
 
 #ifndef LBANN_SPLIT_LAYER_INSTANTIATE
-extern template class split_layer<float, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class split_layer<float, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+extern template class split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-extern template class split_layer<float, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class split_layer<float, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+extern template class split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SPLIT_LAYER_INSTANTIATE
 

@@ -305,6 +305,6 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 }
 
 template class batch_normalization_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

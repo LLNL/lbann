@@ -73,7 +73,7 @@ protected:
 
 #ifndef LBANN_ARGMIN_LAYER_INSTANTIATE
 extern template class argmin_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #endif // LBANN_ARGMIN_LAYER_INSTANTIATE
 } // namespace lbann
 

@@ -57,6 +57,6 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
 }
 
 template class one_hot_layer<
-  float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

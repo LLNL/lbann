@@ -161,17 +161,17 @@ build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg) {
   }
 }
 
-template class glorot_initializer<float>;
-template class he_initializer<float>;
-template class lecun_initializer<float>;
+template class glorot_initializer<DataType>;
+template class he_initializer<DataType>;
+template class lecun_initializer<DataType>;
 
 template std::unique_ptr<weights_initializer>
-build_glorot_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+build_glorot_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
 
 template std::unique_ptr<weights_initializer>
-build_he_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+build_he_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
 
 template std::unique_ptr<weights_initializer>
-build_lecun_initializer_from_pbuf<float>(google::protobuf::Message const& msg);
+build_lecun_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
 
 }  // namespace lbann
