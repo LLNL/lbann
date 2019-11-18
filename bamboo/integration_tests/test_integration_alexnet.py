@@ -70,8 +70,8 @@ def construct_model(lbann):
     labels = lbann.Identity(input_)
     x = lbann.models.AlexNet(1000)(images)
     probs = lbann.Softmax(x)
-    cross_entropy = lbann.CrossEntropy([probs, labels])
-    top5 = lbann.TopKCategoricalAccuracy([probs, labels], k=5)
+    cross_entropy = lbann.CrossEntropy(probs, labels)
+    top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
     layers = list(lbann.traverse_layer_graph(x))
 
     # Setup objective function

@@ -52,6 +52,13 @@ class data_store_conduit {
 
  public:
 
+  // need to quickly change from unordered_map to map for debugging
+  using map_ii_t = std::unordered_map<int,int>;
+  using map_is_t = std::unordered_map<int,size_t>;
+
+  // not currently used; will be in the future
+  using map_ss_t = std::unordered_map<size_t,size_t>;
+
   //! ctor
   data_store_conduit(generic_data_reader *reader);
 
@@ -69,7 +76,6 @@ class data_store_conduit {
   //! dtor
   ~data_store_conduit();
 
-  /// required when the copy ctor is used to construct a validation set
   void set_data_reader_ptr(generic_data_reader *reader);
 
   //! convenience handle
@@ -80,9 +86,10 @@ class data_store_conduit {
 
   void setup(int mini_batch_size);
 
+  // TODO FIXME
   void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
 
-  /// returns the conduit node
+  /** @brief Returns the conduit Node associated with the data_id */
   const conduit::Node & get_conduit_node(int data_id) const;
 
   /** @brief Set a conduit node in the data store
@@ -93,6 +100,7 @@ class data_store_conduit {
   void set_conduit_node(int data_id, conduit::Node &node, bool already_have = false);
 
   void set_preloaded_conduit_node(int data_id, const conduit::Node &node);
+
   void spill_preloaded_conduit_node(int data_id, const conduit::Node &node);
 
   const conduit::Node & get_random_node() const;
@@ -102,13 +110,71 @@ class data_store_conduit {
   /// returns an empty node
   conduit::Node & get_empty_node(int data_id);
 
-  void set_is_preloaded(); 
+  //=================================================================
+  // methods for setting and querying the data store's mode
+  //=================================================================
+  /** @brief Returns true if preloading is turned on 
+   *
+   * See notes in: is_explicitly_loading()
+   */
+  bool is_preloading() const { return m_preloading; }
 
-  bool is_preloaded() { return m_preload; }
+  /** @brief Returns true if explicitly loading is turned on 
+   *
+   * 'explicitly loading' means that the data that will be owned
+   * by each rank is passed into the data store during the first epoch.
+   * This is in contrast to preloading, in which the data is passed into
+   * the data store prior to the first epoch. Explicit and preloading
+   * are exclusive: at most only one may be true, however, both will
+   * be set to false when all loading is complete.
+   */
+  bool is_explicitly_loading() const { return m_explicitly_loading; }
 
-  void set_explicit_loading(bool flag) { m_explicit_loading = flag; }
+  /** @brief Returns true if all loading has been completed 
+   *
+   * See notes in: set_loading_is_complete()
+   */
+  bool is_fully_loaded() const;
 
-  bool is_explicitly_loading() { return m_explicit_loading; }
+  /** @brief Returns "true" is running in local cache mode
+   *
+   * In local cache mode, each node contains a complete copy
+   * of the data set. This is stored in a shared memory segment,
+   * but part of the set may be spilled to disk if memory is
+   * insufficient. Local cache mode is activated via the cmd line
+   * flag: --data_store_cache
+   */ 
+  bool is_local_cache() const { return m_is_local_cache; }
+
+  /** @brief Turn preloading on or off */ 
+  void set_is_preloading(bool flag);
+
+  /** @brief Turn on explicit loading */ 
+  void set_is_explicitly_loading(bool flag);
+
+  /** @brief Marks the data_store as fully loaded
+   *
+   * Fully loaded means that each rank has all the data that it
+   * is intended to own. When not running in local cache mode, this
+   * occurs (1) at the conclusion of preloading, prior to the beginning of 
+   * the first epoch, or (2) at the conclusion of the first epoch, if 
+   * explicitly loading. When running in local cache mode, this occurs 
+   * (1) at the conclusion of preload_local_cache(), which is called prior 
+   * to the first epoch, or (2) at the conclusion of exchange_local_caches(),
+   * at th conclusion of the first epoch, if explicitly loading.
+   */
+  void set_loading_is_complete(); 
+
+
+  /** @brief turns local cache mode on of off */
+  void set_is_local_cache(bool flag) { m_is_local_cache = flag; }
+
+  /** @brief Check that explicit loading, preloading, and fully loaded flags are consistent */
+  void check_query_flags() const;
+   
+  //=================================================================
+  // END methods for setting and querying the data store's mode
+  //=================================================================
 
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
@@ -127,15 +193,6 @@ class data_store_conduit {
   /// with the index
   int get_index_owner(int idx);
 
-  /** @brief Returns "true" is running in local cache mode
-   *
-   * In local cache mode, each node contains a complete copy
-   * of the data set. This is stored in a shared memory segment,
-   * but part of the set may be spilled to disk if memory is
-   * insufficient. Local cache mode is activated via the cmd line
-   * flag: --data_store_cache
-   */ 
-  bool is_local_cache() const { return m_is_local_cache; }
 
   /** @brief Read the data set into memory
    *
@@ -173,7 +230,7 @@ class data_store_conduit {
    *
    * Profile logging is enabled on P_0 via the cmd line flag: --data_store_profile
    */
-  void flush_profile_file(); 
+  void flush_profile_file() const; 
 
   /** @brief Writes object's state to file */
   void write_checkpoint(std::string dir_name);
@@ -181,7 +238,25 @@ class data_store_conduit {
   /** @brief Loads object's state from file */
   void load_checkpoint(std::string dir_name, generic_data_reader *reader = nullptr);
 
+  /** @brief Add text to the profiling file, if it's opened */
+  void set_profile_msg(std::string);
+
+  /** @brief Runs an internal test to ensure the locally cached conduit data is correct
+   *
+   * For use during development and testing. This test is activated via
+   * the cmd line flag: --data_store_test_cache. Output may be written to
+   * cout, and the profile and debug files (if they are opened)
+   * @param n is the maximum number of samples to test; set to -1 to test all
+   * @return true, if all samples read from file match those constructed from
+   *               the local shared memory segment (aka, cache)
+   */ 
+  bool test_local_cache_imagenet(int n);
+
+  void test_imagenet_node(int sample_id, bool dereference = true);
+
 private :
+
+  bool m_run_checkpoint_test = false;
 
   /** @brief The number of samples that this processor owns */
   size_t m_my_num_indices = 0;
@@ -221,7 +296,7 @@ private :
   int m_num_files_in_cur_spill_dir;
 
   /** @brief maps data_id to m_m_cur_spill_dir_integer. */
-  std::unordered_map<int, int> m_spilled_nodes;
+  map_ii_t m_spilled_nodes;
 
   /// used in set_conduit_node(...)
   std::mutex m_mutex;
@@ -280,11 +355,18 @@ private :
   bool m_is_setup = false;
 
   /// set to true if data_store is preloaded
-  bool m_preload = false;
+  bool m_loading_is_complete = false;
 
-  /// set to true if data_store is being explicitly loaded
-  //VBE: please explain what this means!
-  bool m_explicit_loading = false;
+  /** @brief True, if we are in preload mode */
+  bool m_preloading = false;
+
+  /** @brief True, if we are in explicit loading mode 
+   *
+   * There is some redundancy here: m_preloading and m_explicitly_loading
+   * can not both be true, but both may be false. When m_loading_is_complete
+   * is true, both m_preloading and m_preloading should be false.
+   */
+  bool m_explicitly_loading = false;
 
   /// The size of the mini-batch that was used to calculate ownership
   /// of samples when building the owner map.  This size has to be
@@ -313,28 +395,29 @@ private :
   int  m_rank_in_world = -1; // -1 for debugging 
   int  m_np_in_trainer;
 
-  /** @brief Maps an index to the processor that owns the associated data
-   *
-   * Must be mutable since rhs.m_owner may be modified in copy_members,
-   * in which rhs is const.
-   */ 
-  //TODO: make undoredered map; for development want map() for ordered printing
-  mutable std::map<int, int> m_owner;
+  /** @brief Maps an index to the processor that owns the associated data */ 
+  map_ii_t m_owner;
 
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
 
   /** @brief Contains the conduit nodes that are "owned" by this rank
    *
-   * Map data_id -> conduit::Node.
-   * Must be mutable since rhs.m_owner may be modified in copy_members,
-   * in which rhs is const.
+   * Maps data_id -> conduit::Node.
    */ 
-  mutable std::unordered_map<int, conduit::Node> m_data;
+  std::unordered_map<int, conduit::Node> m_data;
+
+  /** @brief Contains the conduit nodes that are "owned" by this rank
+   *
+   * This differs from m_data in that this holds temporarily,
+   * during the first epoch, if we're running in local cache mode
+   * and explicitly loading
+   */
+  std::unordered_map<int, conduit::Node> m_data_cache;
 
   /// Contains the list of data IDs that will be received
   std::vector<int> m_recv_data_ids;
-  std::unordered_map<int, int> m_recv_sample_sizes;
+  map_ii_t m_recv_sample_sizes;
 
   /// This vector contains Nodes that this processor needs for
   /// the current minibatch; this is filled in by exchange_data()
@@ -349,8 +432,15 @@ private :
   std::vector<size_t> m_outgoing_msg_sizes;
   std::vector<size_t> m_incoming_msg_sizes;
 
-  /// for use when conduit Nodes have non-uniform size, e.g, imagenet
-  std::unordered_map<int, size_t> m_sample_sizes;
+  /** @brief Maps a data_id to its image size 
+   *
+   * Used when conduit Nodes have non-uniform size, e.g, imagenet;
+   * see: set_node_sizes_vary()
+   */ 
+  map_is_t m_sample_sizes;
+
+  /** @brief Maps a data_id to the image location in a shared memory segment */
+  map_is_t m_image_offsets;
 
   /// maps processor id -> set of indices (whose associated samples)
   /// this proc needs to send. (formerly called "proc_to_indices);
@@ -360,10 +450,6 @@ private :
   /// maps processor id -> set of indices (whose associated samples)
   /// this proc needs to recv from others. (formerly called "needed")
   std::vector<std::unordered_set<int>> m_indices_to_recv;
-
-  /// offset at which the raw image will be stored in a shared memory segment;
-  /// for use in local cache mode; maps data_id to offset
-  std::unordered_map<int,size_t> m_image_offsets;
 
   //=========================================================================
   // methods follow 
@@ -392,27 +478,31 @@ private :
 
   void error_check_compacted_node(const conduit::Node &nd, int data_id);
 
+  /** @brief All ranks exchange their cached data */
+  void exchange_local_caches();
+
   /// Currently only used for imagenet. On return, 'sizes' maps a sample_id to image size, and indices[p] contains the sample_ids that P_p owns
   /// for use in local cache mode
-  void get_image_sizes(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices);
+  void get_image_sizes(map_is_t &sizes, std::vector<std::vector<int>> &indices);
+
+  /// for use in local cache mode
+  void allocate_shared_segment(map_is_t &sizes, std::vector<std::vector<int>> &indices);
+
+  /// for use in local cache mode
+  void read_files(std::vector<char> &work, map_is_t &sizes, std::vector<int> &indices);
 
   /// fills in m_image_offsets for use in local cache mode
-  void compute_image_offsets(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices);
+  void compute_image_offsets(map_is_t &image_sizes, std::vector<std::vector<int>> &indices);
 
   /// for use in local cache mode
-  void allocate_shared_segment(std::unordered_map<int,size_t> &sizes, std::vector<std::vector<int>> &indices);
+  void exchange_images(std::vector<char> &work, map_is_t &image_sizes, std::vector<std::vector<int>> &indices); 
 
   /// for use in local cache mode
-  void read_files(std::vector<char> &work, std::unordered_map<int,size_t> &sizes, std::vector<int> &indices);
+  void build_conduit_nodes(map_is_t &sizes);
+
 
   /// for use in local cache mode
-  void build_conduit_nodes(std::unordered_map<int,size_t> &sizes);
-
-  /// for use in local cache mode
-  void exchange_images(std::vector<char> &work, std::unordered_map<int,size_t> &image_sizes, std::vector<std::vector<int>> &indices); 
-
-  /// for use in local cache mode
-  void fillin_shared_images(const std::vector<char> &images, size_t offset);
+  void fillin_shared_images(char* images, size_t size, size_t offset);
 
   /** @brief For testing during development
    *
@@ -450,7 +540,7 @@ private :
    * This method is called for both --data_store_spill and 
    * --data_store_test_checkpoint 
    */
-  void setup_spill(const std::string &dir);
+  void setup_spill(std::string dir);
 
   /** @brief Saves this object's state to file
    *
@@ -471,11 +561,18 @@ private :
   /** @brief Creates a directory for spilling conduit nodes */
   void open_next_conduit_spill_directory();
 
+  /** @brief Write timing data for data exchange to the profile file, if it's opened */
+  void profile_timing();
+
+  void setup_checkpoint_test();
+
+  std::string get_lassen_spill_dir();
+
   //=========================================================================
   // functions and templates for optional profiling and debug files follow
   //=========================================================================
 
-  void PROFILE() { 
+  void PROFILE() const { 
     if (!m_profile) {
       return;
     }
@@ -484,7 +581,7 @@ private :
   }
 
   template <typename T, typename... Types>
-  void PROFILE(T var1, Types... var2) {
+  void PROFILE(T var1, Types... var2) const {
     if (!m_world_master) {
       return;
     }

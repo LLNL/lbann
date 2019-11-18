@@ -43,23 +43,25 @@ struct cuBLAS_Caller;
 template <>
 struct cuBLAS_Caller<float> {
   WRAP_CUBLAS(cublasSaxpy, axpy)
-  WRAP_CUBLAS(cublasSdot , dot )
+  WRAP_CUBLAS(cublasSdot, dot)
   WRAP_CUBLAS(cublasSnrm2, nrm2)
   WRAP_CUBLAS(cublasSscal, scal)
   WRAP_CUBLAS(cublasSgemv, gemv)
   WRAP_CUBLAS(cublasSgemm, gemm)
   WRAP_CUBLAS(cublasSgeam, geam)
+  WRAP_CUBLAS(cublasSgemmStridedBatched, gemm_strided_batched)
 };
 
 template <>
 struct cuBLAS_Caller<double> {
   WRAP_CUBLAS(cublasDaxpy, axpy)
-  WRAP_CUBLAS(cublasDdot , dot )
+  WRAP_CUBLAS(cublasDdot, dot)
   WRAP_CUBLAS(cublasDnrm2, nrm2)
   WRAP_CUBLAS(cublasDscal, scal)
   WRAP_CUBLAS(cublasDgemv, gemv)
   WRAP_CUBLAS(cublasDgemm, gemm)
   WRAP_CUBLAS(cublasDgeam, geam)
+  WRAP_CUBLAS(cublasDgemmStridedBatched, gemm_strided_batched)
 };
 
 } // namespace
@@ -176,6 +178,24 @@ void geam(cublasHandle_t const& handle,
           DataType * C, int ldc) {
   cuBLAS_Caller<DataType>{}.geam(handle, transa, transb, m, n,
                                  &alpha, A, lda, &beta, B, ldb, C, ldc);
+}
+
+void gemm_strided_batched(cublasHandle_t const& handle,
+                          cublasOperation_t transa, cublasOperation_t transb,
+                          int m, int n, int k,
+                          DataType alpha,
+                          DataType const * A, int lda,
+                          long long int strideA,
+                          DataType const * B, int ldb,
+                          long long int strideB,
+                          DataType beta,
+                          DataType * C, int ldc,
+                          long long int strideC,
+                          int batchCount) {
+  cuBLAS_Caller<DataType>{}.gemm_strided_batched(
+    handle, transa, transb, m, n, k,
+    &alpha, A, lda, strideA, B, ldb, strideB,
+    &beta, C, ldc, strideC, batchCount);
 }
 
 } // namespace cublas
