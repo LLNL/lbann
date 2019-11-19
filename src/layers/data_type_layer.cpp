@@ -42,16 +42,16 @@ data_type_layer<TensorDataType>::data_type_layer(const data_type_layer<TensorDat
   m_gradient_wrt_outputs.reserve(other.m_gradient_wrt_outputs.size());
   m_gradient_wrt_inputs.reserve(other.m_gradient_wrt_inputs.size());
   for (const auto& ptr : other.m_inputs) {
-    m_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+    m_inputs.emplace_back(ptr ? ptr->Copy() : nullptr);
   }
   for (const auto& ptr : other.m_outputs) {
-    m_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+    m_outputs.emplace_back(ptr ? ptr->Copy() : nullptr);
   }
   for (const auto& ptr : other.m_gradient_wrt_outputs) {
-    m_gradient_wrt_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+    m_gradient_wrt_outputs.emplace_back(ptr ? ptr->Copy() : nullptr);
   }
   for (const auto& ptr : other.m_gradient_wrt_inputs) {
-    m_gradient_wrt_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+    m_gradient_wrt_inputs.emplace_back(ptr ? ptr->Copy() : nullptr);
   }
 
 }
@@ -73,16 +73,16 @@ data_type_layer<TensorDataType>& data_type_layer<TensorDataType>::operator=(cons
   m_gradient_wrt_outputs.reserve(other.m_gradient_wrt_outputs.size());
   m_gradient_wrt_inputs.reserve(other.m_gradient_wrt_inputs.size());
   for (const auto& ptr : other.m_inputs) {
-    m_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+    m_inputs.emplace_back(ptr ? ptr->Copy() : nullptr);
   }
   for (const auto& ptr : other.m_outputs) {
-    m_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+    m_outputs.emplace_back(ptr ? ptr->Copy() : nullptr);
   }
   for (const auto& ptr : other.m_gradient_wrt_outputs) {
-    m_gradient_wrt_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
+    m_gradient_wrt_outputs.emplace_back(ptr ? ptr->Copy() : nullptr);
   }
   for (const auto& ptr : other.m_gradient_wrt_inputs) {
-    m_gradient_wrt_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
+    m_gradient_wrt_inputs.emplace_back(ptr ? ptr->Copy() : nullptr);
   }
 
   return *this;
