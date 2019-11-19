@@ -2,8 +2,8 @@
 import abc
 from lbann import model_pb2
 from lbann.util import make_iterable
-import lbann.layer
-import lbann.objective_function
+import lbann.core.layer
+import lbann.core.objective_function
 
 class Model:
     """Neural network model."""
@@ -19,7 +19,7 @@ class Model:
         self.random_seed = random_seed
         self.summary_dir = summary_dir
         # Get connected layers
-        self.layers = list(lbann.layer.traverse_layer_graph(layers))
+        self.layers = list(lbann.core.layer.traverse_layer_graph(layers))
 
         # Get weights associated with layers
         self.weights = set(make_iterable(weights))
@@ -27,7 +27,7 @@ class Model:
             self.weights.update(l.weights)
 
         # Construct objective function if needed
-        obj_type = lbann.objective_function.ObjectiveFunction
+        obj_type = lbann.core.objective_function.ObjectiveFunction
         if isinstance(objective_function, obj_type):
             self.objective_function = objective_function
         elif objective_function is None:

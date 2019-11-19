@@ -25,12 +25,5 @@ def lbann_exe():
     return _lbann_exe if _lbann_exe else 'lbann'
 
 # Import core functionality into lbann namespace
-from lbann.callback import *
-from lbann.layer import *
-from lbann.metric import *
-from lbann.trainer import *
-from lbann.model import *
-from lbann.objective_function import *
-from lbann.optimizer import *
-from lbann.weights import *
+from lbann.core import *
 from lbann.launcher import run
