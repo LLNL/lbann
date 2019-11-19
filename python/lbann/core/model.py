@@ -1,5 +1,4 @@
 """Neural network model."""
-import abc
 from lbann import model_pb2
 from lbann.util import make_iterable
 import lbann.core.layer

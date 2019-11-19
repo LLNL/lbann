@@ -1,7 +1,7 @@
 """Trainable model parameters."""
 import abc
 from lbann import weights_pb2
-import lbann.util.class_generator
+import lbann.core.util
 
 class Initializer(abc.ABC):
     """Initialization scheme for `Weights`."""
@@ -10,7 +10,7 @@ class Initializer(abc.ABC):
         return weights_pb2.Initializer()
 
 # Generate Initializer sub-classes from weights.proto.
-classes = lbann.util.class_generator.generate_classes_from_protobuf_message(
+classes = lbann.core.util.generate_classes_from_protobuf_message(
     weights_pb2.Initializer,
     base_class = Initializer,
     base_has_export_proto = True)
@@ -18,7 +18,7 @@ for c in classes:
     globals()[c.__name__] = c
 
 class Weights:
-    """Trainable model parameters."""
+    """Trainable parameters for neural network."""
 
     global_count = 0  # Static counter, used for default names
 

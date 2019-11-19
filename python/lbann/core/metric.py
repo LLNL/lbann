@@ -1,5 +1,4 @@
 """Neural network tensor operations."""
-import abc
 from lbann import metrics_pb2
 
 class Metric:
