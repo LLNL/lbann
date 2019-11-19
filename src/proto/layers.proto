@@ -155,6 +155,7 @@ message Layer {
     Dropout dropout = 21;
     SeluDropout selu_dropout = 229;
     EntrywiseBatchNormalization entrywise_batch_normalization = 230;
+    LayerNorm layer_norm = 231;
 
     // Activation layers
     Elu elu = 200;
@@ -328,6 +329,25 @@ message Layer {
 
   message Dropout {
     double keep_prob = 2;  //default: 0.5
+  }
+
+  /** @brief
+   *
+   *  Each data sample is normalized to have zero mean and unit
+   *  standard deviation. See:
+   *
+   *  Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E. Hinton. "Layer
+   *  normalization." arXiv preprint arXiv:1607.06450 (2016).
+   *
+   *  Note that this layer does not apply an entry-wise scale and bias
+   *  like in the paper. Use the entry-wise scale/bias layer to
+   *  reproduce that functionality.
+   */
+  message LayerNorm {
+    /** @brief Small number to avoid division by zero.
+     *  @details Default is 1e-5.
+     */
+    google.protobuf.DoubleValue epsilon = 1;
   }
 
   //////////////////
