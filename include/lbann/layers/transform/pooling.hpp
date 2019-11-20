@@ -423,6 +423,7 @@ private:
 
   /// Pooling forward propagation with im2col
   void bp_compute_im2col() {
+    using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
     if(m_pool_mode != pool_mode::max && m_pool_mode != pool_mode::average) {
       LBANN_ERROR("CPU pooling layer only supports max and average pooling");
     }
@@ -438,8 +439,8 @@ private:
     const int num_per_input_channel = this->get_output_size() / num_channels;
 
     // Initialize matrices
-    El::Matrix<TensorDataType, El::Device::CPU> im2col_mat(m_pool_size * num_channels, num_per_input_channel);
-    El::Matrix<TensorDataType, El::Device::CPU> gradient_wrt_input_col;
+    CPUMatType im2col_mat(m_pool_size * num_channels, num_per_input_channel);
+    CPUMatType gradient_wrt_input_col;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {

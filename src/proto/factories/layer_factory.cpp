@@ -564,7 +564,7 @@ std::unique_ptr<Layer> construct_layer(
     const double epsilon = (params.has_epsilon()
                             ? params.epsilon().value()
                             : 1e-5);
-    return lbann::make_unique<layer_norm_layer<Layout, Device>>(comm, epsilon);
+    return lbann::make_unique<layer_norm_layer<TensorDataType, Layout, Device>>(comm, epsilon);
   }
 
   // Math layers

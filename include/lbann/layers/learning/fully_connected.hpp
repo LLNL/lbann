@@ -143,11 +143,11 @@ protected:
       LBANN_ERROR("attempted to setup ", this->get_name(), " with an invalid number of weights");
     }
     if (m_bias_scaling_factor != TensorDataType(0)) {
-      this->get_data_type_weights().resize(2, nullptr);
+      this->set_num_data_type_weights(2);
     } else {
-      this->get_data_type_weights().resize(1, nullptr);
+      this->set_num_data_type_weights(1);
     }
-    if (this->get_data_type_weights()[0] == nullptr) {
+    if (!this->has_data_type_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
       std::unique_ptr<data_type_optimizer<TensorDataType>>
@@ -155,10 +155,10 @@ protected:
       w->set_name(this->get_name() + "_linearity_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->get_data_type_weights()[0] = w.get();
+      this->set_data_type_weights(0, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    auto& linearity_weights = *this->get_data_type_weights()[0];
+    auto& linearity_weights = this->get_data_type_weights(0);
 
     // Initialize variance scaling initialization
     auto* cast_initializer
@@ -184,16 +184,16 @@ protected:
 
     // Set up bias if needed.
     if (m_bias_scaling_factor != TensorDataType(0)) {
-      if (this->get_data_type_weights()[1] == nullptr) {
+      if (!this->has_data_type_weights(1)) {
         auto w = make_unique<WeightsType>(this->get_comm());
         std::unique_ptr<data_type_optimizer<TensorDataType>>
           opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->get_model()->create_optimizer()));
         w->set_name(this->get_name() + "_bias_weights");
         w->set_optimizer(std::move(opt));
-        this->get_data_type_weights()[1] = w.get();
+        this->set_data_type_weights(1, w.get());
         this->m_model->add_weights(std::move(w));
       }
-      auto& bias_weights = *this->get_data_type_weights()[1];
+      auto& bias_weights = this->get_data_type_weights(1);
       // Setup bias weights
       auto bias_dist = this->get_activations().DistData();
       bias_dist.rowDist = El::STAR;

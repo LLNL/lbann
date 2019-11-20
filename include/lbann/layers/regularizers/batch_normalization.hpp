@@ -259,41 +259,41 @@ protected:
           << "with an invalid number of weights";
       LBANN_ERROR(err.str());
     }
-    this->get_data_type_weights().resize(4, nullptr);
-    if (this->get_data_type_weights()[0] == nullptr) {
+    this->set_num_data_type_weights(4);
+    if (!this->has_data_type_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
       std::unique_ptr<data_type_optimizer<TensorDataType>> opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->get_data_type_weights()[0] = w.get();
+      this->set_data_type_weights(0, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (this->get_data_type_weights()[1] == nullptr) {
+    if (!this->has_data_type_weights(1)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
       std::unique_ptr<data_type_optimizer<TensorDataType>> opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->get_data_type_weights()[1] = w.get();
+      this->set_data_type_weights(1, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (this->get_data_type_weights()[2] == nullptr) {
+    if (!this->has_data_type_weights(2)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
-      this->get_data_type_weights()[2] = w.get();
+      this->set_data_type_weights(2, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (this->get_data_type_weights()[3] == nullptr) {
+    if (!this->has_data_type_weights(3)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
-      this->get_data_type_weights()[3] = w.get();
+      this->set_data_type_weights(3, w.get());
       this->m_model->add_weights(std::move(w));
     }
 

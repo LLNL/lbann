@@ -48,14 +48,15 @@ void compute_batch_statistics(lbann_comm& comm,
                               El::AbstractDistMatrix<TensorDataType>& batch_statistics,
                               El::AbstractDistMatrix<TensorDataType>& running_mean,
                               El::AbstractDistMatrix<TensorDataType>& running_var) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
-  auto& local_batch_statistics = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(batch_statistics.Matrix());
+  const auto& local_input = dynamic_cast<const CPUMatType&>(input.LockedMatrix());
+  auto& local_batch_statistics = dynamic_cast<CPUMatType&>(batch_statistics.Matrix());
   auto local_batch_mean = El::View(local_batch_statistics, El::ALL, El::IR(0));
   auto local_batch_var = El::View(local_batch_statistics, El::ALL, El::IR(1));
-  auto& local_running_mean = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(running_mean.Matrix());
-  auto& local_running_var = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(running_var.Matrix());
+  auto& local_running_mean = dynamic_cast<CPUMatType&>(running_mean.Matrix());
+  auto& local_running_var = dynamic_cast<CPUMatType&>(running_var.Matrix());
 
   // Dimensions
   const El::Int local_height = local_input.Height();
@@ -151,10 +152,11 @@ void fp_impl(lbann_comm& comm,
              El::AbstractDistMatrix<TensorDataType>& batch_statistics,
              El::AbstractDistMatrix<TensorDataType>& running_mean,
              El::AbstractDistMatrix<TensorDataType>& running_var) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
-  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(output.Matrix());
+  const auto& local_input = dynamic_cast<const CPUMatType&>(input.LockedMatrix());
+  auto& local_output = dynamic_cast<CPUMatType&>(output.Matrix());
 
   // Batchnorm has different behavior for training and inference
   if (is_training) {
@@ -167,7 +169,7 @@ void fp_impl(lbann_comm& comm,
                                              running_mean,
                                              running_var);
     const auto& local_batch_statistics
-      = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(batch_statistics.LockedMatrix());
+      = dynamic_cast<const CPUMatType&>(batch_statistics.LockedMatrix());
     const auto local_batch_mean = El::LockedView(local_batch_statistics,
                                                  El::ALL, El::IR(0));
     const auto local_batch_var = El::LockedView(local_batch_statistics,
@@ -182,8 +184,8 @@ void fp_impl(lbann_comm& comm,
   else {
 
     // For inference, normalize with running statistics
-    const auto& local_running_mean = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(running_mean.LockedMatrix());
-    const auto& local_running_var = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(running_var.LockedMatrix());
+    const auto& local_running_mean = dynamic_cast<const CPUMatType&>(running_mean.LockedMatrix());
+    const auto& local_running_var = dynamic_cast<const CPUMatType&>(running_var.LockedMatrix());
     apply_batchnorm<TensorDataType>(epsilon,
                                     local_input,
                                     local_output,
@@ -207,15 +209,16 @@ void bp_training_impl(lbann_comm& comm,
                       El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
                       const El::AbstractDistMatrix<TensorDataType>& statistics,
                       El::AbstractDistMatrix<TensorDataType>& gradient_wrt_statistics) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
-  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_output.LockedMatrix());
-  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_input.Matrix());
-  const auto& local_statistics = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(statistics.LockedMatrix());
+  const auto& local_input = dynamic_cast<const CPUMatType&>(input.LockedMatrix());
+  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMatType&>(gradient_wrt_output.LockedMatrix());
+  auto& local_gradient_wrt_input = dynamic_cast<CPUMatType&>(gradient_wrt_input.Matrix());
+  const auto& local_statistics = dynamic_cast<const CPUMatType&>(statistics.LockedMatrix());
   const auto local_mean = El::LockedView(local_statistics, El::ALL, El::IR(0));
   const auto local_var = El::LockedView(local_statistics, El::ALL, El::IR(1));
-  auto& local_gradient_wrt_statistics = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_statistics.Matrix());
+  auto& local_gradient_wrt_statistics = dynamic_cast<CPUMatType&>(gradient_wrt_statistics.Matrix());
   auto local_gradient_wrt_mean = El::View(local_gradient_wrt_statistics, El::ALL, El::IR(0));
   auto local_gradient_wrt_var = El::View(local_gradient_wrt_statistics, El::ALL, El::IR(1));
 
@@ -315,11 +318,12 @@ void bp_inference_impl(DataType epsilon,
                        const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
                        El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
                        const El::AbstractDistMatrix<TensorDataType>& running_var) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_output.LockedMatrix());
-  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_input.Matrix());
-  const auto& local_running_var = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(running_var.LockedMatrix());
+  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMatType&>(gradient_wrt_output.LockedMatrix());
+  auto& local_gradient_wrt_input = dynamic_cast<CPUMatType&>(gradient_wrt_input.Matrix());
+  const auto& local_running_var = dynamic_cast<const CPUMatType&>(running_var.LockedMatrix());
 
   // Compute gradient w.r.t. input
   //   dL/dx_i = dL/dy_i / sqrt(var+epsilon)
@@ -390,8 +394,8 @@ void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
           l.get_prev_activations(),
           l.get_activations(),
           *l.m_batch_statistics,
-          l.get_data_type_weights()[0]->get_values(),
-          l.get_data_type_weights()[1]->get_values());
+          l.get_data_type_weights(0).get_values(),
+          l.get_data_type_weights(1).get_values());
 }
 template <typename TensorDataType>
 void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
@@ -403,8 +407,8 @@ void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
           l.get_prev_activations(),
           l.get_activations(),
           *l.m_batch_statistics,
-          l.get_data_type_weights()[0]->get_values(),
-          l.get_data_type_weights()[1]->get_values());
+          l.get_data_type_weights(0).get_values(),
+          l.get_data_type_weights(1).get_values());
 }
 template <typename TensorDataType>
 void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
@@ -417,7 +421,7 @@ void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
           l.get_error_signals(),
           *l.m_batch_statistics,
           *l.m_batch_statistics_gradient,
-          l.get_data_type_weights()[1]->get_values());
+          l.get_data_type_weights(1).get_values());
 }
 template <typename TensorDataType>
 void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
@@ -430,7 +434,7 @@ void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_la
           l.get_error_signals(),
           *l.m_batch_statistics,
           *l.m_batch_statistics_gradient,
-          l.get_data_type_weights()[1]->get_values());
+          l.get_data_type_weights(1).get_values());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

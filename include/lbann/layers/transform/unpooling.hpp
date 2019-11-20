@@ -184,7 +184,8 @@ class unpooling_layer : public transform_layer<TensorDataType> {
       }
 
       // Convert im2col matrix to output matrix
-      DMat<Dev> output_mat = El::View(activations_local, El::ALL, El::IR(sample));
+      DMat<Dev> output_mat =
+        El::View(activations_local, El::ALL, El::IR(sample));
       col2im(im2col_mat,
              output_mat,
              num_channels,
@@ -193,10 +194,10 @@ class unpooling_layer : public transform_layer<TensorDataType> {
              m_pooling_layer->m_pads.data(),
              m_pooling_layer->m_pool_dims.data(),
              m_pooling_layer->m_strides.data(),
-             static_cast<const TensorDataType&(*)(const TensorDataType&,const TensorDataType&)>(&std::max<DataType>));
-
+             [](TensorDataType const& a, TensorDataType const& b) {
+               return std::max(a, b);
+             });
     }
-
   }
 
   /// Unpooling backward propagation with im2col

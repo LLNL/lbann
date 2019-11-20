@@ -51,6 +51,14 @@ public:
   /** @brief The local tensor type expected in this object. */
   using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
 
+  /** @brief The device-specific local tensor type. */
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+
+#ifdef LBANN_HAS_GPU
+  /** @brief The GPU device-specific local tensor type. */
+  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
+#endif
+
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
@@ -70,9 +78,9 @@ public:
       m_gradient(other.m_gradient ? other.m_gradient->Copy() : nullptr) {
     if (other.m_workspace) {
       switch (other.m_workspace->GetDevice()) {
-      case El::Device::CPU: m_workspace.reset(new El::Matrix<TensorDataType, El::Device::CPU>()); break;
+      case El::Device::CPU: m_workspace.reset(new CPUMatType); break;
 #ifdef LBANN_HAS_GPU
-      case El::Device::GPU: m_workspace.reset(new El::Matrix<TensorDataType, El::Device::GPU>()); break;
+      case El::Device::GPU: m_workspace.reset(new GPUMatType); break;
 #endif // LBANN_HAS_GPU
       default: LBANN_ERROR("unknown device type");
       }
@@ -85,9 +93,9 @@ public:
     m_workspace.reset();
     if (other.m_workspace) {
       switch (other.m_workspace->GetDevice()) {
-      case El::Device::CPU: m_workspace.reset(new El::Matrix<TensorDataType, El::Device::CPU>()); break;
+      case El::Device::CPU: m_workspace.reset(new CPUMatType); break;
 #ifdef LBANN_HAS_GPU
-      case El::Device::GPU: m_workspace.reset(new El::Matrix<TensorDataType, El::Device::GPU>()); break;
+      case El::Device::GPU: m_workspace.reset(new GPUMatType); break;
 #endif // LBANN_HAS_GPU
       default: LBANN_ERROR("unknown device type");
       }
@@ -112,10 +120,10 @@ public:
 
     // Initialize workspace
     switch (Dev) {
-    case El::Device::CPU: m_workspace.reset(new El::Matrix<TensorDataType, El::Device::CPU>()); break;
+    case El::Device::CPU: m_workspace.reset(new CPUMatType); break;
 #ifdef LBANN_HAS_GPU
     case El::Device::GPU:
-      m_workspace.reset(new El::Matrix<TensorDataType, El::Device::GPU>());
+      m_workspace.reset(new GPUMatType);
 #ifdef HYDROGEN_HAVE_CUB
       m_workspace->SetMemoryMode(1); // Use CUB GPU memory pool if possible
 #endif // HYDROGEN_HAVE_CUB
@@ -151,17 +159,17 @@ public:
     // Setup weights and weights gradient
     m_gradient->AlignWith(this->get_activations());
     m_gradient->Resize(this->get_output_size(), 1);
-    this->get_data_type_weights()[0]->set_dims(this->get_output_dims());
-    this->get_data_type_weights()[0]->set_matrix_distribution(m_gradient->DistData());
+    this->get_data_type_weights(0).set_dims(this->get_output_dims());
+    this->get_data_type_weights(0).set_matrix_distribution(m_gradient->DistData());
 
     // Initialize freeze state
-    if (this->m_frozen) { this->get_data_type_weights()[0]->freeze(); }
-    else                { this->get_data_type_weights()[0]->unfreeze(); }
-    if (this->get_data_type_weights()[0]->is_frozen() != this->m_frozen) {
+    if (this->m_frozen) { this->get_data_type_weights(0).freeze(); }
+    else                { this->get_data_type_weights(0).unfreeze(); }
+    if (this->get_data_type_weights(0).is_frozen() != this->m_frozen) {
       LBANN_ERROR((this->m_frozen ? "" : "un"),"frozen ",
                   "layer \"",this->get_name(),"\" has ",
-                  (this->get_data_type_weights()[0]->is_frozen() ? "" : "un"),"frozen ",
-                  "weights \"",this->get_data_type_weights()[0]->get_name(),"\"");
+                  (this->get_data_type_weights(0).is_frozen() ? "" : "un"),"frozen ",
+                  "weights \"",this->get_data_type_weights(0).get_name(),"\"");
     }
 
   }
@@ -169,7 +177,7 @@ public:
   void fp_compute() override {
 
     // Matrices
-    const auto& local_weights = this->get_data_type_weights()[0]->get_values().LockedMatrix();
+    const auto& local_weights = this->get_data_type_weights(0).get_values().LockedMatrix();
     auto& local_output = this->get_local_activations();
     m_workspace->Resize(local_output.Width(), 1);
     El::Fill(*m_workspace, TensorDataType(1));
@@ -188,7 +196,7 @@ public:
 
     // Get optimizer
     // Note: Nothing needs to be done if there is no optimizer
-    auto* opt = this->get_data_type_weights()[0]->get_optimizer();
+    auto* opt = this->get_data_type_weights(0).get_optimizer();
     if (opt == nullptr) { return; }
 
     // Matrices

@@ -216,7 +216,30 @@ protected:
   /** Get references to weights. */
   std::vector<WeightsType*>& get_data_type_weights() { return m_weights; }
   /** Get references to weights. (const) */
-  const std::vector<WeightsType*>& get_data_type_weights() const { return m_weights; }
+  const std::vector<WeightsType*>& get_data_type_weights() const {
+    return m_weights;
+  }
+
+  /** @brief Get a specific weights object */
+  WeightsType& get_data_type_weights(size_t idx) {
+    return *(m_weights.at(idx));
+  }
+  WeightsType const& get_data_type_weights(size_t idx) const {
+    return *(m_weights.at(idx));
+  }
+
+  bool has_data_type_weights(size_t idx) const noexcept {
+    return (idx < m_weights.size() && m_weights[idx] != nullptr);
+  }
+
+  void set_num_data_type_weights(size_t num_weights) {
+    m_weights.resize(num_weights, nullptr);
+  }
+
+  void set_data_type_weights(size_t idx, WeightsType* w) {
+    m_weights.at(idx) = w;
+  }
+
   /** Set list of pointers to weights. */
   void set_data_type_weights(std::vector<WeightsType*> w) { m_weights = w; }
   /** Replace weights with another Layer's weights*/

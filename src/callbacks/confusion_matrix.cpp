@@ -42,13 +42,21 @@ namespace callback {
 // Constructors
 // ---------------------------------------------------------
 
-confusion_matrix::confusion_matrix(std::string prediction_layer,
-                                   std::string label_layer,
-                                   std::string prefix)
+confusion_matrix::confusion_matrix(std::string&& prediction_layer,
+                                   std::string&& label_layer,
+                                   std::string&& prefix)
   : callback_base(1),
     m_prediction_layer(std::move(prediction_layer)),
     m_label_layer(std::move(label_layer)),
     m_prefix(std::move(prefix)) {}
+
+confusion_matrix::confusion_matrix(std::string const& prediction_layer,
+                                   std::string const& label_layer,
+                                   std::string const& prefix)
+  : callback_base(1),
+    m_prediction_layer(prediction_layer),
+    m_label_layer(label_layer),
+    m_prefix(prefix) {}
 
 confusion_matrix::confusion_matrix(const confusion_matrix& other)
   : callback_base(other),
@@ -82,8 +90,8 @@ void confusion_matrix::setup(model* m) {
   const auto& labels = get_labels(*m);
   auto dist_data = predictions.DistData();
   dist_data.device = El::Device::CPU;
-  m_predictions_v.reset(El::AbstractDistMatrix<DataType>::Instantiate(dist_data));
-  m_labels_v.reset(El::AbstractDistMatrix<DataType>::Instantiate(dist_data));
+  m_predictions_v.reset(AbsDistMatType::Instantiate(dist_data));
+  m_labels_v.reset(AbsDistMatType::Instantiate(dist_data));
 
   // Check output dimensions of prediction and label layers
   if (predictions.Height() != labels.Height()) {
@@ -101,8 +109,8 @@ void confusion_matrix::setup(model* m) {
 // Matrix access functions
 // ---------------------------------------------------------
 
-const El::AbstractDistMatrix<DataType>&
-confusion_matrix::get_predictions(const model& m) const {
+auto confusion_matrix::get_predictions(const model& m) const
+  -> const AbsDistMatType& {
   for (const auto* l : m.get_layers()) {
     if (l->get_name() == m_prediction_layer) {
       auto const& dtl = dynamic_cast<data_type_layer<DataType> const&>(*l);
@@ -113,8 +121,8 @@ confusion_matrix::get_predictions(const model& m) const {
               "prediction layer \"", m_prediction_layer, "\"");
 }
 
-const El::AbstractDistMatrix<DataType>&
-confusion_matrix::get_labels(const model& m) const {
+auto confusion_matrix::get_labels(const model& m) const
+  -> const AbsDistMatType& {
   for (const auto* l : m.get_layers()) {
     if (l->get_name() == m_label_layer) {
       auto const& dtl = dynamic_cast<data_type_layer<DataType> const&>(*l);

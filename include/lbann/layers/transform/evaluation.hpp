@@ -35,6 +35,9 @@ namespace lbann {
 template <typename TensorDataType>
 class abstract_evaluation_layer : public transform_layer<TensorDataType> {
 public:
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+
+public:
 
   /** Get scaling factor. */
   EvalType get_scale() const { return m_scale; }
@@ -64,7 +67,7 @@ private:
   /** Evaluated value.
    *  The value may be stored in pinned memory.
    */
-  El::Matrix<TensorDataType, El::Device::CPU> m_value;
+  CPUMatType m_value;
   /** Non-blocking allreduce request. */
   Al::request m_allreduce_req;
 #ifdef LBANN_HAS_GPU

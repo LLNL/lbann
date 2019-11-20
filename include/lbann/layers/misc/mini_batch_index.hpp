@@ -60,6 +60,7 @@ protected:
   }
 
   void fp_compute() override {
+    using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
     // Get output matrix
     auto& output = this->get_activations();
@@ -67,7 +68,7 @@ protected:
     const auto& local_width = local_output.Width();
 
     // Create temporary matrix if output matrix is not on CPU
-    El::Matrix<TensorDataType, El::Device::CPU> local_output_v;
+    CPUMatType local_output_v;
     if (local_output.GetDevice() == El::Device::CPU) {
       El::View(local_output_v, local_output);
     } else {

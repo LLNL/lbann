@@ -35,10 +35,11 @@ template <typename TensorDataType>
 void fp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
              El::Matrix<TensorDataType, El::Device::CPU>& local_output,
              const data_type_weights<TensorDataType>& scale_bias) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
   const auto& local_scale_bias
-    = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(scale_bias.get_values().LockedMatrix());
+    = dynamic_cast<const CPUMatType&>(scale_bias.get_values().LockedMatrix());
   const auto local_scale = El::LockedView(local_scale_bias,
                                           El::ALL, El::IR(0));
   const auto local_bias = El::LockedView(local_scale_bias,
@@ -61,17 +62,19 @@ void fp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
 }
 
 template <typename TensorDataType>
-void bp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
-             const El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_output,
-             El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_input,
-             data_type_weights<TensorDataType>& scale_bias,
-             El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias) {
+void bp_impl(
+  const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
+  const El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_output,
+  El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_input,
+  data_type_weights<TensorDataType>& scale_bias,
+  El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
   const auto& local_scale_bias
-    = dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(scale_bias.get_values().LockedMatrix());
+    = dynamic_cast<const CPUMatType&>(scale_bias.get_values().LockedMatrix());
   auto& local_gradient_wrt_scale_bias
-    = dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_scale_bias.Matrix());
+    = dynamic_cast<CPUMatType&>(gradient_wrt_scale_bias.Matrix());
   const auto local_scale = El::LockedView(local_scale_bias,
                                           El::ALL, El::IR(0));
   auto local_gradient_wrt_scale = El::View(local_gradient_wrt_scale_bias,
@@ -124,30 +127,34 @@ void bp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
 // Template instantiation
 template <typename TensorDataType>
 void fp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
-  fp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_activations()),
-                          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_activations()),
-                          *l.get_data_type_weights()[0]);
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+  fp_impl<TensorDataType>(dynamic_cast<const CPUMatType&>(l.get_local_prev_activations()),
+                          dynamic_cast<CPUMatType&>(l.get_local_activations()),
+                          l.get_data_type_weights(0));
 }
 template <typename TensorDataType>
 void fp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::MODEL_PARALLEL,El::Device::CPU>& l) {
-  fp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_activations()),
-                          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_activations()),
-                          *l.get_data_type_weights()[0]);
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+  fp_impl<TensorDataType>(dynamic_cast<const CPUMatType&>(l.get_local_prev_activations()),
+                          dynamic_cast<CPUMatType&>(l.get_local_activations()),
+                          l.get_data_type_weights(0));
 }
 template <typename TensorDataType>
 void bp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
-  bp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_activations()),
-                          dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_error_signals()),
-                          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_error_signals()),
-                          *l.get_data_type_weights()[0],
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+  bp_impl<TensorDataType>(dynamic_cast<const CPUMatType&>(l.get_local_prev_activations()),
+                          dynamic_cast<const CPUMatType&>(l.get_local_prev_error_signals()),
+                          dynamic_cast<CPUMatType&>(l.get_local_error_signals()),
+                          l.get_data_type_weights(0),
                           *l.m_weights_gradient);
 }
 template <typename TensorDataType>
 void bp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::MODEL_PARALLEL,El::Device::CPU>& l) {
-  bp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_activations()),
-                          dynamic_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_prev_error_signals()),
-                          dynamic_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(l.get_local_error_signals()),
-                          *l.get_data_type_weights()[0],
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+  bp_impl<TensorDataType>(dynamic_cast<const CPUMatType&>(l.get_local_prev_activations()),
+                          dynamic_cast<const CPUMatType&>(l.get_local_prev_error_signals()),
+                          dynamic_cast<CPUMatType&>(l.get_local_error_signals()),
+                          l.get_data_type_weights(0),
                           *l.m_weights_gradient);
 }
 

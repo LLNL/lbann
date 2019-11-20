@@ -41,11 +41,12 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
             El::AbstractDistMatrix<TensorDataType>& means,
             El::AbstractDistMatrix<TensorDataType>& workspace,
             bool biased) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
-  auto& local_means = static_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(means.Matrix());
-  auto& local_workspace = static_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(workspace.Matrix());
+  const auto& local_input = static_cast<const CPUMatType&>(input.LockedMatrix());
+  auto& local_means = static_cast<CPUMatType&>(means.Matrix());
+  auto& local_workspace = static_cast<CPUMatType&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input.Height();
@@ -96,12 +97,13 @@ void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
             const El::AbstractDistMatrix<TensorDataType>& means,
             El::AbstractDistMatrix<TensorDataType>& workspace,
             bool biased) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(input.LockedMatrix());
-  auto& local_gradient_wrt_input = static_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(gradient_wrt_input.Matrix());
-  const auto& local_means = static_cast<const El::Matrix<TensorDataType, El::Device::CPU>&>(means.LockedMatrix());
-  auto& local_workspace = static_cast<El::Matrix<TensorDataType, El::Device::CPU>&>(workspace.Matrix());
+  const auto& local_input = static_cast<const CPUMatType&>(input.LockedMatrix());
+  auto& local_gradient_wrt_input = static_cast<CPUMatType&>(gradient_wrt_input.Matrix());
+  const auto& local_means = static_cast<const CPUMatType&>(means.LockedMatrix());
+  auto& local_workspace = static_cast<CPUMatType&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input.Height();

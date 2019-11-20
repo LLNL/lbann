@@ -40,10 +40,15 @@ namespace callback {
  */
 class confusion_matrix : public callback_base {
 public:
+  using AbsDistMatType = El::AbstractDistMatrix<DataType>;
+public:
 
-  confusion_matrix(std::string prediction_layer,
-                   std::string label_layer,
-                   std::string prefix);
+  confusion_matrix(std::string&& prediction_layer,
+                   std::string&& label_layer,
+                   std::string&& prefix);
+  confusion_matrix(std::string const& prediction_layer,
+                   std::string const& label_layer,
+                   std::string const& prefix);
   confusion_matrix(const confusion_matrix&);
   confusion_matrix& operator=(const confusion_matrix&);
   confusion_matrix* copy() const override {
@@ -86,18 +91,18 @@ private:
    *  This is a CPU matrix. If the prediction layer keeps data on GPU,
    *  then this will be a matrix copy rather than a matrix view.
    */
-  std::unique_ptr<El::AbstractDistMatrix<DataType>> m_predictions_v;
+  std::unique_ptr<AbsDistMatType> m_predictions_v;
   /** "View" into label matrix.
    *  This is a CPU matrix. If the label layer keeps data on GPU or in
    *  a different distribution than the prediction layer, then this
    *  will be a matrix copy rather than a matrix view.
    */
-  std::unique_ptr<El::AbstractDistMatrix<DataType>> m_labels_v;
+  std::unique_ptr<AbsDistMatType> m_labels_v;
 
   /** Get prediction matrix. */
-  const El::AbstractDistMatrix<DataType>& get_predictions(const model& m) const;
+  const AbsDistMatType& get_predictions(const model& m) const;
   /** Get label matrix. */
-  const El::AbstractDistMatrix<DataType>& get_labels(const model& m) const;
+  const AbsDistMatType& get_labels(const model& m) const;
 
   /** Reset confusion matrix counts. */
   void reset_counts(const model& m);

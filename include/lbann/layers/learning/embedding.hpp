@@ -217,7 +217,7 @@ void embedding_layer<TensorDataType, Layout,Device>::setup_data() {
   }
 
   // Initialize dictionary
-  auto& embeddings = *this->get_data_type_weights()[0];
+  auto& embeddings = this->get_data_type_weights(0);
   auto matrix_dist = this->get_prev_activations().DistData();
   matrix_dist.colDist = El::STAR;
   matrix_dist.rowDist = El::STAR;

@@ -53,8 +53,8 @@ void fp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
     // Local matrices
     auto& local_mean = l.m_mean_v->Matrix();
     auto& local_var = l.m_var_v->Matrix();
-    auto& local_running_mean = l.get_data_type_weights()[2]->get_values().Matrix();
-    auto& local_running_var = l.get_data_type_weights()[3]->get_values().Matrix();
+    auto& local_running_mean = l.get_data_type_weights(2).get_values().Matrix();
+    auto& local_running_var = l.get_data_type_weights(3).get_values().Matrix();
 
     // Compute sums and sums of squares
     LBANN_OMP_PARALLEL_FOR
@@ -119,14 +119,14 @@ void fp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
   }
 
   // Get matrices
-  const auto& local_scale = l.get_data_type_weights()[0]->get_values().LockedMatrix();
-  const auto& local_bias = l.get_data_type_weights()[1]->get_values().LockedMatrix();
+  const auto& local_scale = l.get_data_type_weights(0).get_values().LockedMatrix();
+  const auto& local_bias = l.get_data_type_weights(1).get_values().LockedMatrix();
   const auto& local_mean = (is_training ?
                             l.m_mean_v->LockedMatrix() :
-                            l.get_data_type_weights()[2]->get_values().LockedMatrix());
+                            l.get_data_type_weights(2).get_values().LockedMatrix());
   const auto& local_var = (is_training ?
                            l.m_var_v->LockedMatrix() :
-                           l.get_data_type_weights()[3]->get_values().LockedMatrix());
+                           l.get_data_type_weights(3).get_values().LockedMatrix());
 
   // Iterate through channels
   LBANN_OMP_PARALLEL_FOR
@@ -160,13 +160,13 @@ void bp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
   const bool is_training = l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
-  const auto& local_scale = l.get_data_type_weights()[0]->get_values().LockedMatrix();
+  const auto& local_scale = l.get_data_type_weights(0).get_values().LockedMatrix();
   const auto& local_mean = (is_training ?
                             l.m_mean_v->LockedMatrix() :
-                            l.get_data_type_weights()[2]->get_values().LockedMatrix());
+                            l.get_data_type_weights(2).get_values().LockedMatrix());
   const auto& local_var = (is_training ?
                            l.m_var_v->LockedMatrix() :
-                           l.get_data_type_weights()[3]->get_values().LockedMatrix());
+                           l.get_data_type_weights(3).get_values().LockedMatrix());
   const auto& input = l.get_prev_activations();
   const auto& local_input = input.LockedMatrix();
   const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
@@ -237,11 +237,11 @@ void bp_compute_impl(batch_normalization_layer<TensorDataType, data_layout::DATA
     // Zero fused buffer.
     El::Zero(*l.m_mean_and_var_gradient);
   }
-  data_type_optimizer<TensorDataType>* scale_optimizer = l.get_data_type_weights()[0]->get_optimizer();
+  data_type_optimizer<TensorDataType>* scale_optimizer = l.get_data_type_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
     scale_optimizer->add_to_gradient(*l.m_scale_gradient, TensorDataType{1}, true);
   }
-  data_type_optimizer<TensorDataType>* bias_optimizer = l.get_data_type_weights()[1]->get_optimizer();
+  data_type_optimizer<TensorDataType>* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
     bias_optimizer->add_to_gradient(*l.m_bias_gradient, TensorDataType{1}, true);
   }
