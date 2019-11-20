@@ -98,7 +98,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
-    data_type_optimizer<TensorDataType>* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+    auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
     if (bias_optimizer != nullptr) {
       El::RowSum(local_gradient_wrt_output,
                  l.m_bias_gradient->Matrix());
@@ -111,7 +111,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Compute gradient w.r.t. linearity if needed
   // Note: Perform GEMMs independently if possible
-  data_type_optimizer<TensorDataType>* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
+  auto* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
     DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(1);
     if (linearity.DistSize() == 1) {
@@ -197,7 +197,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
-    data_type_optimizer<TensorDataType>* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+    auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
     if (bias_optimizer != nullptr) {
       El::RowSum(local_gradient_wrt_output,
                  l.m_bias_gradient->Matrix());
@@ -209,7 +209,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   }
 
   // Compute gradient w.r.t. linearity if needed
-  data_type_optimizer<TensorDataType>* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
+  auto* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
     DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
@@ -277,7 +277,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
-    data_type_optimizer<TensorDataType>* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+    auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
     if (bias_optimizer != nullptr) {
       DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
@@ -300,7 +300,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   }
 
   // Compute gradient w.r.t. linearity if needed
-  data_type_optimizer<TensorDataType>* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
+  auto* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
     TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
@@ -379,7 +379,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   // Compute gradient w.r.t. bias if needed
   // Note: local GEMV is sufficient, no need for global row sum
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
-    data_type_optimizer<TensorDataType>* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+    auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
     if (bias_optimizer != nullptr) {
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
@@ -403,7 +403,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Compute gradient w.r.t. linearity if needed
   // Note: Perform GEMMs independently if possible
-  data_type_optimizer<TensorDataType>* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
+  auto* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
     TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
     if (linearity.DistSize() == 1) {

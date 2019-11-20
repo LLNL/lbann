@@ -59,6 +59,9 @@ public:
   using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
 #endif
 
+  /** @brief The concrete optimizer type used by this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
@@ -141,7 +144,8 @@ public:
     if (!this->has_weights()) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<DataType>>(DataType(0));
-      std::unique_ptr<data_type_optimizer<DataType>> opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
+      auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
+                                 this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));

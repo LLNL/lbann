@@ -42,6 +42,10 @@ class l2_weight_regularization : public objective_function_term {
 public:
   using AccumulateDataType = float;
 
+  using OptimizerType = data_type_optimizer<DataType>;
+
+  using WeightsType = data_type_weights<DataType>;
+
   /** @param scale_factor   The objective function term is
    *                        @f$ \text{scale\_factor} \times \sum L2(w_i) @f$
    */

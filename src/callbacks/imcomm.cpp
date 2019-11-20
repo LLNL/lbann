@@ -87,7 +87,7 @@ void imcomm::on_train_begin(model *m) {
   }
   for (weights *w : m->get_weights()) {
     auto& real_w = dynamic_cast<data_type_weights<DataType>&>(*w);
-    auto values = unique_ptr(real_w.get_values().Copy());
+    auto values = to_unique_ptr(real_w.get_values().Copy());
     comm->intertrainer_broadcast_matrix(*values, 0);
     real_w.set_values(*values);
   }
@@ -109,7 +109,7 @@ void imcomm::on_backward_prop_end(model *m) {
     }
     auto *opt = real_w.get_optimizer();
     auto& real_opt = dynamic_cast<data_type_optimizer<DataType>&>(*opt);
-    auto gradient = unique_ptr(real_opt.get_gradient().Copy());
+    auto gradient = to_unique_ptr(real_opt.get_gradient().Copy());
     auto& local_gradients = gradient->Matrix();
     switch (params.ct) {
     case NORMAL:

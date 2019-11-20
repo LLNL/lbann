@@ -49,7 +49,8 @@ namespace lbann {
  *  column correspond to scale terms and the second column to bias
  *  terms.
  */
-template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
 class entrywise_scale_bias_layer : public data_type_layer<TensorDataType> {
 public:
@@ -61,6 +62,9 @@ public:
 
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
+
+  /** @brief The concrete optimizer type used by this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
 
   ///@}
 
@@ -110,8 +114,8 @@ public:
       std::vector<TensorDataType> vals(2*output_size, TensorDataType{0});
       std::fill(vals.begin(), vals.begin()+output_size, TensorDataType{1});
       auto init = make_unique<value_initializer<TensorDataType>>(vals);
-      std::unique_ptr<data_type_optimizer<TensorDataType>>
-        opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
+      auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
+                                 this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));

@@ -47,6 +47,9 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  /** @brief The optimizer base type of this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
@@ -168,7 +171,7 @@ private:
 
 };
 
-std::unique_ptr<data_type_optimizer<DataType>>
+std::unique_ptr<optimizer>
 build_sgd_optimizer_from_pbuf(
   google::protobuf::Message const&);
 

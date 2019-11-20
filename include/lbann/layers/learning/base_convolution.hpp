@@ -54,6 +54,9 @@ public:
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
+  /** @brief The concrete optimizer type used by this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
   ///@}
 
 protected:
@@ -363,8 +366,8 @@ public:
     if (!this->has_data_type_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
-      std::unique_ptr<data_type_optimizer<TensorDataType>>
-        opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
+      auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
+                                 this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_kernel");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -392,8 +395,8 @@ public:
     if (m_bias_scaling_factor != TensorDataType(0)) {
       if (!this->has_data_type_weights(1)) {
         auto w = make_unique<WeightsType>(this->get_comm());
-        std::unique_ptr<data_type_optimizer<TensorDataType>>
-          opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
+        auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
+                                   this->m_model->create_optimizer()));
         w->set_name(this->get_name() + "_bias");
         w->set_optimizer(std::move(opt));
         this->set_data_type_weights(1, w.get());
@@ -664,7 +667,7 @@ protected:
     // Compute bias gradient
     if (m_bias_scaling_factor != TensorDataType(0)
         && this->get_data_type_weights(1).get_optimizer() != nullptr) {
-      data_type_optimizer<TensorDataType>* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
+      OptimizerType* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
@@ -683,7 +686,7 @@ protected:
     }
 
     // Compute kernel gradient
-    data_type_optimizer<TensorDataType>* kernel_optimizer = this->get_data_type_weights(0).get_optimizer();
+    OptimizerType* kernel_optimizer = this->get_data_type_weights(0).get_optimizer();
     if (kernel_optimizer != nullptr) {
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
@@ -935,7 +938,7 @@ protected:
     // Note: Sum is computed with Kahan summation
     if (m_bias_scaling_factor != TensorDataType(0)
         && this->get_data_type_weights(1).get_optimizer() != nullptr) {
-      data_type_optimizer<TensorDataType>* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
+      OptimizerType* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
       TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
@@ -965,7 +968,7 @@ protected:
     }
 
     // Stop early if kernel is not being optimized
-    data_type_optimizer<TensorDataType>* kernel_optimizer = this->get_data_type_weights(0).get_optimizer();
+    OptimizerType* kernel_optimizer = this->get_data_type_weights(0).get_optimizer();
     if (kernel_optimizer == nullptr) { return; }
 
     // Initialize matrices

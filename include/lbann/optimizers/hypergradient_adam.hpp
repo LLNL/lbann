@@ -53,6 +53,9 @@ public:
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
+  /** @brief The base optimizer type for this class. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
   ///@}
 
 public:
@@ -175,7 +178,7 @@ private:
 
 };
 
-std::unique_ptr<data_type_optimizer<DataType>>
+std::unique_ptr<optimizer>
 build_hypergradient_adam_optimizer_from_pbuf(
   google::protobuf::Message const&);
 

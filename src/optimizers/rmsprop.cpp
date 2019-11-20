@@ -34,20 +34,20 @@ template <typename TensorDataType>
 rmsprop<TensorDataType>::rmsprop(TensorDataType learning_rate,
                  TensorDataType decay_rate,
                  TensorDataType eps)
-  : data_type_optimizer<TensorDataType>(learning_rate),
+  : OptimizerType(learning_rate),
     m_decay_rate(decay_rate),
     m_eps(eps) {}
 
 template <typename TensorDataType>
 rmsprop<TensorDataType>::rmsprop(const rmsprop& other) :
-  data_type_optimizer<TensorDataType>(other),
+  OptimizerType(other),
   m_decay_rate(other.m_decay_rate),
   m_eps(other.m_eps),
   m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}
 
 template <typename TensorDataType>
 rmsprop<TensorDataType>& rmsprop<TensorDataType>::operator=(const rmsprop& other) {
-  data_type_optimizer<TensorDataType>::operator=(other);
+  OptimizerType::operator=(other);
   m_decay_rate = other.m_decay_rate;
   m_eps = other.m_eps;
   m_cache.reset(other.m_cache ? other.m_cache->Copy() : nullptr);
@@ -56,7 +56,7 @@ rmsprop<TensorDataType>& rmsprop<TensorDataType>::operator=(const rmsprop& other
 
 template <typename TensorDataType>
 description rmsprop<TensorDataType>::get_description() const {
-  auto desc = data_type_optimizer<TensorDataType>::get_description();
+  auto desc = OptimizerType::get_description();
   desc.add("Decay rate", m_decay_rate);
   desc.add("eps", m_eps);
   return desc;
@@ -64,7 +64,7 @@ description rmsprop<TensorDataType>::get_description() const {
 
 template <typename TensorDataType>
 void rmsprop<TensorDataType>::setup(WeightsType* w) {
-  data_type_optimizer<TensorDataType>::setup(w);
+  OptimizerType::setup(w);
   const auto& gradient = this->get_gradient();
   m_cache.reset(AbsDistMatrixType::Instantiate(gradient.DistData()));
   El::Zeros(*m_cache, gradient.Height(), gradient.Width());
@@ -121,7 +121,7 @@ void rmsprop<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
 
 template <typename TensorDataType>
 bool rmsprop<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  data_type_optimizer<TensorDataType>::save_to_checkpoint_shared(p, name_prefix);
+  OptimizerType::save_to_checkpoint_shared(p, name_prefix);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -132,7 +132,7 @@ bool rmsprop<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string 
 
 template <typename TensorDataType>
 bool rmsprop<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  data_type_optimizer<TensorDataType>::load_from_checkpoint_shared(p, name_prefix);
+  OptimizerType::load_from_checkpoint_shared(p, name_prefix);
   char l_name[512];
 
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -143,7 +143,7 @@ bool rmsprop<TensorDataType>::load_from_checkpoint_shared(persist& p, std::strin
 
 template <typename TensorDataType>
 bool rmsprop<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  data_type_optimizer<TensorDataType>::save_to_checkpoint_distributed(p, name_prefix);
+  OptimizerType::save_to_checkpoint_distributed(p, name_prefix);
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -154,7 +154,7 @@ bool rmsprop<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::st
 
 template <typename TensorDataType>
 bool rmsprop<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  data_type_optimizer<TensorDataType>::load_from_checkpoint_distributed(p, name_prefix);
+  OptimizerType::load_from_checkpoint_distributed(p, name_prefix);
   char l_name[512];
 
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());

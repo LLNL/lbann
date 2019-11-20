@@ -68,6 +68,9 @@ public:
   /** @brief The concrete weights type used by this object. */
   using WeightsType = data_type_weights<TensorDataType>;
 
+  /** @brief The concrete optimizer type used by this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
   ///@}
 
 public:
@@ -111,8 +114,8 @@ public:
       std::vector<DataType> vals(2*num_channels, TensorDataType{0});
       std::fill(vals.begin(), vals.begin()+num_channels, TensorDataType{1});
       auto init = make_unique<value_initializer<TensorDataType>>(vals);
-      std::unique_ptr<data_type_optimizer<TensorDataType>>
-        opt(dynamic_cast<data_type_optimizer<TensorDataType>*>(this->m_model->create_optimizer()));
+      auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
+                                 this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
