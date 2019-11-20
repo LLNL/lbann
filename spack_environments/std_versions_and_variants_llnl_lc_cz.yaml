@@ -36,7 +36,7 @@
 
     python::
       buildable: True
-      variants: +shared
+      variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
       version: [3.7.2]
 
     py-cython::

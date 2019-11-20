@@ -1,18 +1,21 @@
   packages:
     all:
       providers:
-        mpi: [openmpi@4.0 arch=darwin-highsierra-broadwell]
+        mpi: [openmpi@4.0 arch=darwin-highsierra-skylake]
         blas: [veclibfort]
         lapack: [veclibfort]
       buildable: true
       version: []
       paths: {}
       modules: {}
-      compiler: [clang@9.0.0 arch=darwin-highsierra-broadwell]
+      compiler: [clang@9.0.0 arch=darwin-highsierra-skylake]
 
     cmake::
+      buildable: True
       variants: ~openssl ~ncurses
-      version: [3.14.0]
+      version: [3.15.4]
+      paths:
+        cmake@3.15.4 arch=darwin-highsierra-skylake: /usr/local/
 
     hwloc::
       buildable: True
@@ -20,13 +23,14 @@
 
     opencv::
       buildable: true
+      variants: build_type=RelWithDebInfo ~calib3d+core~cuda~dnn~eigen+fast-math~features2d~flann~gtk+highgui+imgproc~ipp~ipp_iw~jasper~java+jpeg~lapack~ml~opencl~opencl_svm~openclamdblas~openclamdfft~openmp+png~powerpc~pthreads_pf~python~qt+shared~stitching~superres+tiff~ts~video~videoio~videostab~vsx~vtk+zlib
       version: [4.1.0]
 
     openmpi:
       buildable: False
       version: [4.0]
       paths:
-        openmpi@4.0 arch=darwin-highsierra-broadwell: /usr/local/
+        openmpi@4.0 arch=darwin-highsierra-skylake: /usr/local/
 
   compilers:
   - compiler:
