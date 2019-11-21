@@ -1287,6 +1287,9 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
 }
 
 void data_store_conduit::exchange_owner_maps() {
+  if (!m_exchange_owner_maps) {
+    return;
+  }
   PROFILE("starting exchange_owner_maps;",
           "my owner map size: ", m_owner.size());
   DEBUG("starting exchange_owner_maps;",
@@ -1925,4 +1928,8 @@ void data_store_conduit::check_query_flags() const {
   }
 }
 
+void data_store_conduit::clear_owner_map() { 
+    m_exchange_owner_maps = false;
+    m_owner.clear(); 
+  }
 }  // namespace lbann

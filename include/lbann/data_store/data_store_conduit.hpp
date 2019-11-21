@@ -180,7 +180,7 @@ class data_store_conduit {
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
 
   /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
-  void clear_owner_map() { m_owner.clear(); }
+  void clear_owner_map();
 
   /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
   void add_owner(int data_id, int owner) { m_owner[data_id] = owner; }
@@ -255,6 +255,8 @@ class data_store_conduit {
   void test_imagenet_node(int sample_id, bool dereference = true);
 
 private :
+
+  bool m_exchange_owner_maps = true;
 
   bool m_run_checkpoint_test = false;
 

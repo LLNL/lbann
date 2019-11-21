@@ -93,39 +93,26 @@ void ras_lipid_conduit_data_reader::load() {
 
   fill_in_metadata();
 
-  // P_0 counts the number of samples in each file, then bcasts to
-  // others. Also check that all arrays in a file have the same leading
-  // dimension; this probably isn't necessary, but let's not take chances
-  //TODO: make this distributed; for now, just make it work
-  m_samples_per_file.resize(m_filenames.size());
-  if (m_comm->get_rank_in_trainer() == 0) {
-    size_t j = 0;
-    for (const auto &fn : m_filenames) {
-      std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(fn);
-      size_t n = 0;
-      for (const auto &t2 : a) {
-        size_t n2 = t2.second.shape[0];
-        if (n == 0) {
-          n = n2;
-        } else {
-          if (n2 != n) {
-            LBANN_ERROR("n2 != n; ", n2, n);
-          }
-        }
-      }
-      m_samples_per_file[j++] = n;
-    }
+  if (opts->has_string("pilot2_read_file_sizes")) {
+    read_file_sizes();
+  } else {
+    get_samples_per_file();
+  }  
+  if (opts->has_string("pilot2_save_file_sizes")) {
+    write_file_sizes();
   }
-  m_comm->trainer_broadcast<size_t>(0, m_samples_per_file.data(), m_samples_per_file.size());
 
   //Note: we really need the sample list here, but to get this working
   //I'm doing something clunky ...
+  //XX
+  /*
   int data_id = 0;
   for (size_t j=0; j<m_samples_per_file.size(); j++) {
     for (size_t h=0; h<m_samples_per_file[j]; h++) {
       m_data_id_map[data_id++] = std::make_pair(j,h);
     }
   }
+  */
 
   // compute number of global samples, then setup the shuffled indices
   m_num_samples = 0;
@@ -263,11 +250,6 @@ bool ras_lipid_conduit_data_reader::fetch_response(Mat& Y, int data_id, int mb_i
 }
 
 void ras_lipid_conduit_data_reader::fill_in_metadata() {
-  if (is_master()) {
-    std::cout << "\nStarting ras_lipid_conduit_data_reader::fill_in_metadata\n";
-  }
-
-
   std::map<std::string, cnpy::NpyArray> aa = cnpy::npz_load(m_filenames[0]);
   for (const auto &t : aa) {
     const std::string &name = t.first;
@@ -285,19 +267,6 @@ void ras_lipid_conduit_data_reader::fill_in_metadata() {
     m_datum_num_words[name] = num_words;
     m_datum_word_sizes[name] = word_size;
     m_datum_num_bytes[name] = num_words*word_size;
-
-    // feedback; this can go away eventually
-    #if 0
-    if (is_master()) {
-      std::cout << "\nSample statistics. Values below are per sample, except for \"frames,\" \nwhich is the number of samples in the file:\n  " << m_filenames[0] << std::endl;
-
-      std::cout << "  " <<  name << "; word_size: " << word_size << "; num_words: " << num_words << "; num_bytes: " << num_words*word_size << "; num_vals: " << t.second.num_vals << "; shape ";
-      for (auto t42 : m_datum_shapes[name]) {
-        std::cout << t42 << " ";
-      }
-      std::cout << std::endl << std::endl;
-    }
-    #endif
 
   }
 
@@ -321,7 +290,7 @@ void ras_lipid_conduit_data_reader::get_my_indices(std::unordered_map<int, std::
   for (size_t j=0; j<m_filenames.size(); ++j) {
 int x = 0;
     int file_owner = j % np;
-    for (size_t h=0; h<m_samples_per_file[j]; h++) {
+    for (int h=0; h<m_samples_per_file[j]; h++) {
       if (indices.find(data_id) != indices.end()) {
         if (file_owner == my_rank) {
           my_samples[j].push_back(std::make_pair(data_id, h));
@@ -339,12 +308,97 @@ void ras_lipid_conduit_data_reader::rebuild_data_store_owner_map() {
   size_t data_id = 0;
   for (size_t j=0; j<m_filenames.size(); ++j) {
     int file_owner = j % np;
-    for (size_t h=0; h<m_samples_per_file[j]; h++) {
+    for (int h=0; h<m_samples_per_file[j]; h++) {
       m_data_store->add_owner(data_id, file_owner);
       ++data_id;
     }
   }
 }
 
+void ras_lipid_conduit_data_reader::get_samples_per_file() {
+  int me = m_comm->get_rank_in_trainer();
+  int np = m_comm->get_procs_per_trainer();
+  std::vector<int> work;
+  int x = 0;
+  for (size_t j=me; j<m_filenames.size(); j+=np) {
+    ++x;
+    if (is_master() && x % 10 == 0) std::cout << "files processed: " << x << "(" << x*np<< ")\n";
+    std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(m_filenames[j]);
+    size_t n = 0;
+    for (const auto &t2 : a) {
+      size_t n2 = t2.second.shape[0];
+      if (n == 0) {
+        n = n2;
+      } else {
+        if (n2 != n) {
+          LBANN_ERROR("n2 != n; ", n2, n);
+        }
+      }
+    }
+    work.push_back(j);
+    work.push_back(n);
+  }
+
+  std::vector<int> num_files(np, 0);
+  for (size_t j=0; j<m_filenames.size(); ++j) {
+    int owner = j % np;
+    num_files[owner] += 1;
+  }
+
+  m_samples_per_file.resize(m_filenames.size());
+  std::vector<int> work_2;
+  std::vector<int> *work_ptr;
+  for (int j=0; j<np; j++) {
+    if (me == j) {
+      work_ptr = &work;
+    } else {
+      work_2.resize(num_files[j]*2);
+      work_ptr = &work_2;
+    }
+    m_comm->trainer_broadcast<int>(j, work_ptr->data(), work_ptr->size());
+    for (size_t h=0; h<work_ptr->size(); h+= 2) {
+      m_samples_per_file[(*work_ptr)[h]] = (*work_ptr)[h+1];
+    }
+  }
+}
+
+void ras_lipid_conduit_data_reader::write_file_sizes() {
+  if (! is_master()) {
+    return;
+  }
+  std::string fn = options::get()->get_string("pilot2_save_file_sizes");
+  std::ofstream out(fn.c_str());
+  if (!out) {
+    LBANN_ERROR("failed to open ", fn, " for writing");
+  }
+  for (size_t j=0; j<m_samples_per_file.size(); j++) {
+    out << m_filenames[j] << " " << m_samples_per_file[j] << std::endl;
+  }
+  out.close();
+}
+
+void ras_lipid_conduit_data_reader::read_file_sizes() {
+if (is_master()) std::cout << "starting ras_lipid_conduit_data_reader::read_file_sizes\n";
+  std::string fn = options::get()->get_string("pilot2_read_file_sizes");
+  std::ifstream in(fn.c_str());
+  if (!in) {
+    LBANN_ERROR("failed to open ", fn, " for reading");
+  }
+  std::unordered_map<std::string, int> mp;
+  std::string filename;
+  int num_samples;
+  while (in >> filename >> num_samples) {
+    mp[filename] = num_samples;
+  }
+  in.close();
+
+  m_samples_per_file.resize(m_filenames.size());
+  for (size_t h=0; h<m_filenames.size(); h++) {
+    if (mp.find(m_filenames[h]) == mp.end()) {
+      LBANN_ERROR("failed to find filename '", m_filenames[h], "' in the map");
+    }
+    m_samples_per_file[h] = mp[m_filenames[h]];
+  }
+}
 
 }  // namespace lbann

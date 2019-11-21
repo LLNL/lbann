@@ -75,7 +75,7 @@ private:
   int m_num_samples = 0;
 
   /** @brief m_samples_per_file[j] contains the number of samples in the j-th file */
-  std::vector<size_t> m_samples_per_file;
+  std::vector<int> m_samples_per_file;
 
   /** @brief Maps a data_id to the file index (in m_filenames) that
    * contains the sample, and the offset in that file's npy array */
@@ -128,6 +128,21 @@ private:
    * This one-off, wouldn't need to do this if we were using sample lists.
    */
   void rebuild_data_store_owner_map();
+
+  /** @brief Fills in m_samples_per_file */
+  void get_samples_per_file();
+
+  /** @brief Write file sizes to disk
+   *
+   * Each line of the output file contains: filename num_samples
+   */
+  void write_file_sizes();
+
+  /** @brief Read file that contains: filename num_samples
+   *
+   * see: write_file_sizes()
+   */
+  void read_file_sizes();
 };
 
 }  // namespace lbann
