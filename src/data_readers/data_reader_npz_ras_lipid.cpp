@@ -96,7 +96,9 @@ void ras_lipid_conduit_data_reader::load() {
   if (opts->has_string("pilot2_read_file_sizes")) {
     read_file_sizes();
   } else {
+    double tm3 = get_time();
     get_samples_per_file();
+    if (is_master()) std::cout << "time to compute samples_per_file: " << get_time() - tm3 << std::endl;
   }  
   if (opts->has_string("pilot2_save_file_sizes")) {
     write_file_sizes();
@@ -322,7 +324,6 @@ void ras_lipid_conduit_data_reader::get_samples_per_file() {
   int x = 0;
   for (size_t j=me; j<m_filenames.size(); j+=np) {
     ++x;
-    if (is_master() && x % 10 == 0) std::cout << "files processed: " << x << "(" << x*np<< ")\n";
     std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(m_filenames[j]);
     size_t n = 0;
     for (const auto &t2 : a) {
