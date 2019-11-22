@@ -28,6 +28,9 @@ parser.add_argument(
 parser.add_argument(
     '--latent-dim', action='store', default=128, type=int,
     help='latent space dimensions (default: 128)', metavar='NUM')
+parser.add_argument(
+    '--experiment-dir', action='store', default=None, type=str,
+    help='directory for experiment artifacts', metavar='DIR')
 args = parser.parse_args()
 
 # ----------------------------------
@@ -47,33 +50,29 @@ num_graph_nodes = dataset.max_graph_node_id() + 1
 walk_length = dataset.sample_dims()[0]
 
 # Input is a sequence of graph node IDs
-input_ = lbann.Identity(lbann.Input(), device='cpu')
+input_ = lbann.Identity(lbann.Input())
 input_slice = lbann.Slice(input_,
-                          slice_points=str_list(range(walk_length+1)),
-                          device='cpu')
+                          slice_points=str_list(range(walk_length+1)))
 walk = []
 for _ in range(walk_length):
-    walk.append(lbann.Identity(input_slice, device='cpu'))
+    walk.append(lbann.Identity(input_slice))
 
 # Skip-gram architecture
 latent = lbann.Embedding(walk[0],
                          weights=embeddings,
                          num_embeddings=num_graph_nodes,
-                         embedding_dim=args.latent_dim,
-                         device='cpu')
+                         embedding_dim=args.latent_dim)
 pred = lbann.FullyConnected(latent,
                             weights=embeddings,
                             num_neurons=num_graph_nodes,
                             has_bias=False,
-                            transpose=True,
-                            device='cpu')
-pred = lbann.Softmax(pred, device='cpu')
+                            transpose=True)
+pred = lbann.Softmax(pred)
 
 # Objective function
-ground_truth = lbann.Sum([lbann.OneHot(node, size=num_graph_nodes, device='cpu')
-                          for node in walk[1:]],
-                         device='cpu')
-obj = lbann.CrossEntropy([pred, ground_truth], device='cpu')
+ground_truth = lbann.Sum([lbann.OneHot(node, size=num_graph_nodes)
+                          for node in walk[1:]])
+obj = lbann.CrossEntropy([pred, ground_truth])
 
 # ----------------------------------
 # Create data reader
@@ -96,16 +95,23 @@ _reader.python.sample_dims_function = 'sample_dims'
 
 # Create LBANN objects
 trainer = lbann.Trainer()
+callbacks = [
+    lbann.CallbackPrint(),
+    lbann.CallbackTimer(),
+    lbann.CallbackDumpWeights(basename='embeddings',
+                              epoch_interval=args.num_epochs),
+]
 model = lbann.Model(args.mini_batch_size,
                     args.num_epochs,
                     layers=lbann.traverse_layer_graph(input_),
                     objective_function=obj,
-                    callbacks=[lbann.CallbackPrint(),
-                               lbann.CallbackTimer()])
+                    callbacks=callbacks)
 opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 
 # Run LBANN
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.lc.launcher.run(trainer, model, reader, opt,
                               job_name=args.job_name,
+                              experiment_dir=args.experiment_dir,
+                              overwrite_script=True,
                               **kwargs)

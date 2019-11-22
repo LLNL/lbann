@@ -5,12 +5,16 @@ obtain data samples.
 
 """
 import os.path
-
 import numpy as np
 import utils.snap
+root_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Options
-graph_name = 'ego-Facebook'
+graph_name = 'blog'
+graph_file = os.path.join(
+    root_dir, 'largescale_node2vec', 'evaluation', 'dataset',
+    'blog', 'edges_0based'
+)
 walk_length = 80
 walk_context_length = 10
 walks_per_node = 4
@@ -20,9 +24,7 @@ directed = False
 weighted = False
 
 # Download graph and perform random walk, if needed
-root_dir = os.path.dirname(os.path.realpath(__file__))
 data_dir = os.path.join(root_dir, 'data', graph_name)
-graph_file = os.path.join(data_dir, 'graph.txt')
 walk_file = os.path.join(data_dir, 'walk.txt')
 if not os.path.isfile(graph_file):
     utils.snap.download_graph(graph_name, graph_file)
