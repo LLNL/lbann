@@ -78,8 +78,6 @@ class in_top_k_layer : public transform_layer<TensorDataType> {
   /** Parameter for top-k search. */
   const El::Int m_k;
 
-  template <typename U>
-  friend void fp_compute_impl(in_top_k_layer<U, T_layout, Dev>& l);
 };
 
 #ifndef LBANN_IN_TOP_K_LAYER_INSTANTIATE

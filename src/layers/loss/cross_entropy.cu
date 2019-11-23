@@ -33,7 +33,7 @@ namespace lbann {
 
 namespace {
 
-  template <typename TensorDataType, int block_size>
+template <int block_size, typename TensorDataType>
 __global__ void fp_kernel(int height, int width,
                           const TensorDataType* __restrict__ prediction,
                           int prediction_ldim,
@@ -92,7 +92,7 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
     grid_dims.x = (height + block_size - 1) / block_size;
     grid_dims.y = width;
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    fp_kernel<TensorDataType, block_size>
+    fp_kernel<block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         height, width,
         local_prediction.LockedBuffer(), local_prediction.LDim(),
@@ -101,7 +101,7 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
   }
 }
 
-template <typename TensorDataType, int block_size>
+template <int block_size, typename TensorDataType>
 __global__ void bp_kernel(int height, int width,
                           const TensorDataType* __restrict__ prediction,
                           int prediction_ldim,
@@ -148,7 +148,7 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
     grid_dims.x = (height + block_size - 1) / block_size;
     grid_dims.y = width;
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    bp_kernel<TensorDataType, block_size>
+    bp_kernel<block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         height, width,
         local_prediction.LockedBuffer(), local_prediction.LDim(),
@@ -163,46 +163,20 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_prediction,
 
 } // namespace
 
-template <typename TensorDataType>
-void local_fp_compute_impl(cross_entropy_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
-  local_fp_gpu(l.get_local_prev_activations(0),
-               l.get_local_prev_activations(1),
-               l.m_workspace->Matrix());
-}
-
-template <typename TensorDataType>
-void local_bp_compute_impl(cross_entropy_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
-  local_bp_gpu(l.get_local_prev_activations(0),
-               l.get_local_prev_activations(1),
-               l.m_workspace->LockedMatrix(),
-               l.get_local_error_signals(0),
-               l.get_local_error_signals(1));
-}
-
-template <typename TensorDataType>
-void local_fp_compute_impl(cross_entropy_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  local_fp_gpu(l.get_local_prev_activations(0),
-               l.get_local_prev_activations(1),
-               l.m_workspace->Matrix());
-}
-
-template <typename TensorDataType>
-void local_bp_compute_impl(cross_entropy_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  local_bp_gpu(l.get_local_prev_activations(0),
-               l.get_local_prev_activations(1),
-               l.m_workspace->LockedMatrix(),
-               l.get_local_error_signals(0),
-               l.get_local_error_signals(1));
-}
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
-  local_fp_compute_impl<TensorDataType>(*this);
+  local_fp_gpu(this->get_local_prev_activations(0),
+               this->get_local_prev_activations(1),
+               this->m_workspace->Matrix());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
-  local_bp_compute_impl<TensorDataType>(*this);
+  local_bp_gpu(this->get_local_prev_activations(0),
+               this->get_local_prev_activations(1),
+               this->m_workspace->LockedMatrix(),
+               this->get_local_error_signals(0),
+               this->get_local_error_signals(1));
 }
 
 template class cross_entropy_layer<

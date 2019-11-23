@@ -29,24 +29,14 @@
 
 namespace lbann {
 
-template <typename TensorDataType>
-void fp_compute_3d_impl(crop_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  l.fp_compute_nd();
-}
-
-template <typename TensorDataType>
-void bp_compute_3d_impl(crop_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  l.bp_compute_nd();
-}
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d() {
-  fp_compute_3d_impl<TensorDataType>(*this);
+  this->fp_compute_nd();
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d() {
-  bp_compute_3d_impl<TensorDataType>(*this);
+  this->bp_compute_nd();
 }
 
 template class crop_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;

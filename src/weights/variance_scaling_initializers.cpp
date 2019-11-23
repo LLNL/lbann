@@ -122,39 +122,36 @@ TensorDataType lecun_initializer<TensorDataType>::get_variance(El::Int fan_in, E
 
 // FIXME (trb 07/31/2019): This is kinda ugly, but its fine if there
 // are only 2 probability distributions
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::GlorotNormalInitializer const*>(&msg))
-    return make_unique<glorot_initializer<TensorDataType>>(probability_distribution::gaussian);
+    return make_unique<glorot_initializer<DataType>>(probability_distribution::gaussian);
   else if (dynamic_cast<lbann_data::Initializer::GlorotUniformInitializer const*>(&msg))
-    return make_unique<glorot_initializer<TensorDataType>>(probability_distribution::uniform);
+    return make_unique<glorot_initializer<DataType>>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_glorot_initializer_from_pbuf: Bad message.");
     return nullptr;
   }
 }
 
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_he_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::HeNormalInitializer const*>(&msg))
-    return make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
+    return make_unique<he_initializer<DataType>>(probability_distribution::gaussian);
   else if (dynamic_cast<lbann_data::Initializer::HeUniformInitializer const*>(&msg))
-    return make_unique<he_initializer<TensorDataType>>(probability_distribution::uniform);
+    return make_unique<he_initializer<DataType>>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_he_initializer_from_pbuf: Bad message.");
     return nullptr;
   }
 }
 
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg) {
   if (dynamic_cast<lbann_data::Initializer::LeCunNormalInitializer const*>(&msg))
-    return make_unique<lecun_initializer<TensorDataType>>(probability_distribution::gaussian);
+    return make_unique<lecun_initializer<DataType>>(probability_distribution::gaussian);
   else if (dynamic_cast<lbann_data::Initializer::LeCunUniformInitializer const*>(&msg))
-    return make_unique<lecun_initializer<TensorDataType>>(probability_distribution::uniform);
+    return make_unique<lecun_initializer<DataType>>(probability_distribution::uniform);
   else {
     LBANN_ERROR("build_lecun_initializer_from_pbuf: Bad message.");
     return nullptr;
@@ -164,14 +161,5 @@ build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg) {
 template class glorot_initializer<DataType>;
 template class he_initializer<DataType>;
 template class lecun_initializer<DataType>;
-
-template std::unique_ptr<weights_initializer>
-build_glorot_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
-
-template std::unique_ptr<weights_initializer>
-build_he_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
-
-template std::unique_ptr<weights_initializer>
-build_lecun_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
 
 }  // namespace lbann

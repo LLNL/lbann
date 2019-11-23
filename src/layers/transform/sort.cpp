@@ -29,13 +29,13 @@
 
 namespace lbann {
 
-template <typename TensorDataType>
-void fp_compute_impl(sort_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
   // Local matrices
-  const auto& local_input = l.get_local_prev_activations();
-  auto& local_output = l.get_local_activations();
-  auto& local_indices = *l.m_indices;
+  const auto& local_input = this->get_local_prev_activations();
+  auto& local_output = this->get_local_activations();
+  auto& local_indices = *this->m_indices;
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
 
@@ -46,7 +46,7 @@ void fp_compute_impl(sort_layer<TensorDataType, data_layout::DATA_PARALLEL, El::
     for (El::Int row = 0; row < local_height; ++row) {
       sorted_list.emplace(local_input(row, col), row);
     }
-    if (l.m_descending) {
+    if (this->m_descending) {
       auto&& it = sorted_list.rbegin();
       for (El::Int row = 0; row < local_height; ++row, ++it) {
         local_output(row, col) = it->first;
@@ -63,13 +63,13 @@ void fp_compute_impl(sort_layer<TensorDataType, data_layout::DATA_PARALLEL, El::
 
 }
 
-template <typename TensorDataType>
-void bp_compute_impl(sort_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 
   // Local matrices
-  const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
-  auto& local_gradient_wrt_input = l.get_local_error_signals();
-  const auto& local_indices = *l.m_indices;
+  const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = this->get_local_error_signals();
+  const auto& local_indices = *this->m_indices;
   const auto& local_height = local_gradient_wrt_input.Height();
   const auto& local_width = local_gradient_wrt_input.Width();
 
@@ -83,16 +83,6 @@ void bp_compute_impl(sort_layer<TensorDataType, data_layout::DATA_PARALLEL, El::
     }
   }
 
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
-  bp_compute_impl<TensorDataType>(*this);
 }
 
 template class sort_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;

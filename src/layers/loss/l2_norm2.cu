@@ -31,7 +31,7 @@ namespace lbann {
 
 namespace {
 
-template <typename TensorDataType, El::Int block_size>
+template <El::Int block_size, typename TensorDataType>
 __global__ void fp_kernel(El::Int local_height,
                           El::Int local_width,
                           const TensorDataType* __restrict__ input,
@@ -73,7 +73,8 @@ __global__ void fp_kernel(El::Int local_height,
 }
 
 template <typename TensorDataType>
-void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::AbstractMatrix<TensorDataType>& local_contribution) {
+void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
+                  El::AbstractMatrix<TensorDataType>& local_contribution) {
   El::Zero(local_contribution);
   if (!local_input.IsEmpty()) {
     const auto& local_height = local_input.Height();
@@ -84,7 +85,7 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::Abs
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    fp_kernel<TensorDataType, block_size>
+    fp_kernel<block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -92,7 +93,7 @@ void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input, El::Abs
   }
 }
 
-template <typename TensorDataType, El::Int block_size>
+template <El::Int block_size, typename TensorDataType>
 __global__ void bp_kernel(El::Int local_height, El::Int local_width,
                           const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
@@ -125,7 +126,7 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    bp_kernel<TensorDataType, block_size>
+    bp_kernel<block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -137,37 +138,17 @@ void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
 
 } // namespace
 
-template <typename TensorDataType>
-void local_fp_compute_impl(l2_norm2_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
-  local_fp_gpu<TensorDataType>(l.get_local_prev_activations(),
-                               l.m_workspace->Matrix());
-}
-template <typename TensorDataType>
-void local_bp_compute_impl(l2_norm2_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
-  local_bp_gpu<TensorDataType>(l.get_local_prev_activations(),
-                               l.m_workspace->LockedMatrix(),
-                               l.get_local_error_signals());
-}
-template <typename TensorDataType>
-void local_fp_compute_impl(l2_norm2_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  local_fp_gpu<TensorDataType>(l.get_local_prev_activations(),
-                               l.m_workspace->Matrix());
-}
-template <typename TensorDataType>
-void local_bp_compute_impl(l2_norm2_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  local_bp_gpu<TensorDataType>(l.get_local_prev_activations(),
-                               l.m_workspace->LockedMatrix(),
-                               l.get_local_error_signals());
-}
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
-  local_fp_compute_impl<TensorDataType>(*this);
+  local_fp_gpu(this->get_local_prev_activations(),
+               this->m_workspace->Matrix());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
-  local_bp_compute_impl<TensorDataType>(*this);
+  local_bp_gpu(this->get_local_prev_activations(),
+               this->m_workspace->LockedMatrix(),
+               this->get_local_error_signals());
 }
 
 template class l2_norm2_layer<

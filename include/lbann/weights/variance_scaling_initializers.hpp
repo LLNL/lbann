@@ -122,13 +122,10 @@ protected:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
 
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg);
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_he_initializer_from_pbuf(google::protobuf::Message const& msg);
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg);
 

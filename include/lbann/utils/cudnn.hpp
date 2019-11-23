@@ -132,15 +132,17 @@ void copy_activation_desc(const cudnnActivationDescriptor_t& src,
 template <typename TensorDataType>
 class layer_tensor_manager {
 public:
-  layer_tensor_manager(const data_type_layer<TensorDataType>* l = nullptr);
+  using LayerType = data_type_layer<TensorDataType>;
+public:
+  layer_tensor_manager(const LayerType* l = nullptr);
   layer_tensor_manager(const layer_tensor_manager& other);
   layer_tensor_manager& operator=(const layer_tensor_manager& other);
   virtual ~layer_tensor_manager();
 
   /** Get the layer being managed. */
-  const data_type_layer<TensorDataType>* get_layer() const { return m_layer; }
+  const LayerType* get_layer() const { return m_layer; }
   /** Set the layer being managed. */
-  void set_layer(const data_type_layer<TensorDataType>* l);
+  void set_layer(const LayerType* l);
 
   /** Get cuDNN tensor descriptor for layer input. */
   virtual cudnnTensorDescriptor_t& get_prev_activations(int parent_index = 0) = 0;
@@ -159,7 +161,7 @@ protected:
   void set_num_children(int num_children);
 
   /** Layer being managed. */
-  const data_type_layer<TensorDataType>* m_layer;
+  const LayerType* m_layer;
   /** cuDNN tensor descriptors for layer inputs. */
   std::vector<cudnnTensorDescriptor_t> m_prev_activations;
   /** cuDNN tensor descriptors for layer outputs. */
@@ -175,7 +177,9 @@ protected:
 template <typename TensorDataType>
 class data_parallel_layer_tensor_manager : public layer_tensor_manager<TensorDataType> {
 public:
-  data_parallel_layer_tensor_manager(const data_type_layer<TensorDataType>* l = nullptr);
+  using LayerType = data_type_layer<TensorDataType>;
+public:
+  data_parallel_layer_tensor_manager(const LayerType* l = nullptr);
   data_parallel_layer_tensor_manager(
     const data_parallel_layer_tensor_manager& other) = default;
   data_parallel_layer_tensor_manager&
@@ -191,7 +195,9 @@ public:
 template <typename TensorDataType>
 class entrywise_layer_tensor_manager : public layer_tensor_manager<TensorDataType> {
 public:
-  entrywise_layer_tensor_manager(const data_type_layer<TensorDataType>* l = nullptr);
+  using LayerType = data_type_layer<TensorDataType>;
+public:
+  entrywise_layer_tensor_manager(const LayerType* l = nullptr);
   entrywise_layer_tensor_manager(
     const entrywise_layer_tensor_manager& other) = default;
   entrywise_layer_tensor_manager&

@@ -188,11 +188,6 @@ private:
   /** Objective function gradient w.r.t. weights. */
   std::unique_ptr<AbsDistMatrixType> m_weights_gradient;
 
-
-  template <typename U>
-  friend void fp_compute_impl(entrywise_scale_bias_layer<U, Layout, Device>& l);
-  template <typename U>
-  friend void bp_compute_impl(entrywise_scale_bias_layer<U, Layout, Device>& l);
 };
 
 #ifndef LBANN_ENTRYWISE_SCALE_BIAS_LAYER_INSTANTIATE

@@ -29,7 +29,6 @@
 
 #include "lbann/base.hpp"
 #include "lbann/layers/layer.hpp"
-#include "lbann/weights/data_type_weights.hpp"
 #include "lbann/weights/weights.hpp"
 
 namespace lbann {

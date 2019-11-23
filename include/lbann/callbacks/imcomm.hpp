@@ -35,6 +35,10 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+
+template <typename T>
+class data_type_weights;
+
 namespace callback {
 
 /**

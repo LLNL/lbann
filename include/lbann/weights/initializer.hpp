@@ -195,16 +195,15 @@ private:
 
 };
 
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_constant_initializer_from_pbuf(google::protobuf::Message const& msg);
-template <typename TensorDataType>
+
 std::unique_ptr<weights_initializer>
 build_value_initializer_from_pbuf(google::protobuf::Message const& msg);
-template <typename TensorDataType>
+
 std::unique_ptr<weights_initializer>
 build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg);
-template <typename TensorDataType>
+
 std::unique_ptr<weights_initializer>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg);
 

@@ -189,13 +189,17 @@ template <typename TensorDataType>
 void abstract_evaluation_layer<TensorDataType>::fp_compute() {
   switch (this->get_device_allocation()) {
   case El::Device::CPU:
-    fp_cpu<TensorDataType>(*this->get_comm(), this->get_prev_activations(), m_value(0, 0),
-                           m_allreduce_req);
+    fp_cpu(*this->get_comm(),
+           this->get_prev_activations(),
+           m_value(0, 0),
+           m_allreduce_req);
     break;
 #ifdef LBANN_HAS_GPU
   case El::Device::GPU:
-    fp_gpu<TensorDataType>(*this->get_comm(), this->get_prev_activations(), m_value(0, 0),
-                           m_copy_event);
+    fp_gpu(*this->get_comm(),
+           this->get_prev_activations(),
+           m_value(0, 0),
+           m_copy_event);
     break;
 #endif // LBANN_HAS_GPU
   default: LBANN_ERROR("invalid device");

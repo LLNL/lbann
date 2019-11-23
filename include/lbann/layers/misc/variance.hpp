@@ -114,11 +114,6 @@ protected:
   void fp_compute() override;
   void bp_compute() override;
 
-  template <typename U>
-  friend void fp_compute_impl(variance_layer<U, Layout, Device>& l);
-  template <typename U>
-  friend void bp_compute_impl(variance_layer<U, Layout, Device>& l);
-
 private:
 
   /** Whether to use biased variance estimator. */

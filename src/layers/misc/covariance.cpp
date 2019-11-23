@@ -144,58 +144,26 @@ void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input0,
 
 } // namespace
 
-template <typename TensorDataType>
-void fp_compute_impl(covariance_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  fp_cpu<TensorDataType>(l.get_prev_activations(0),
-                         l.get_prev_activations(1),
-                         l.get_activations(),
-                         *l.m_means,
-                         *l.m_workspace,
-                         l.m_biased);
-}
-
-template <typename TensorDataType>
-void bp_compute_impl(covariance_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  bp_cpu<TensorDataType>(l.get_prev_activations(0),
-                         l.get_prev_activations(1),
-                         l.get_prev_error_signals(),
-                         l.get_error_signals(0),
-                         l.get_error_signals(1),
-                         *l.m_means,
-                         *l.m_workspace,
-                         l.m_biased);
-}
-
-template <typename TensorDataType>
-void fp_compute_impl(covariance_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  fp_cpu<TensorDataType>(l.get_prev_activations(0),
-                         l.get_prev_activations(1),
-                         l.get_activations(),
-                         *l.m_means,
-                         *l.m_workspace,
-                         l.m_biased);
-}
-
-template <typename TensorDataType>
-void bp_compute_impl(covariance_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  bp_cpu<TensorDataType>(l.get_prev_activations(0),
-                         l.get_prev_activations(1),
-                         l.get_prev_error_signals(),
-                         l.get_error_signals(0),
-                         l.get_error_signals(1),
-                         *l.m_means,
-                         *l.m_workspace,
-                         l.m_biased);
-}
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void covariance_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
+  fp_cpu(this->get_prev_activations(0),
+         this->get_prev_activations(1),
+         this->get_activations(),
+         *this->m_means,
+         *this->m_workspace,
+         this->m_biased);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void covariance_layer<TensorDataType, Layout, Device>::bp_compute() {
-  bp_compute_impl<TensorDataType>(*this);
+  bp_cpu(this->get_prev_activations(0),
+         this->get_prev_activations(1),
+         this->get_prev_error_signals(),
+         this->get_error_signals(0),
+         this->get_error_signals(1),
+         *this->m_means,
+         *this->m_workspace,
+         this->m_biased);
 }
 
 template class covariance_layer<

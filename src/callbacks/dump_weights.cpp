@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include <callbacks.pb.h>
 

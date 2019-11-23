@@ -134,7 +134,7 @@ public:
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
     this->get_data_type_weights(0).set_dims({static_cast<int>(num_channels)},
-                           {static_cast<int>(2)});
+                           {2});
     this->get_data_type_weights(0).set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
@@ -152,10 +152,6 @@ private:
   /** Objective function gradient w.r.t. weights. */
   std::unique_ptr<AbsDistMatrixType> m_weights_gradient;
 
-  template <typename U>
-  friend void fp_compute_impl(channelwise_scale_bias_layer<U, Layout, Device>& l);
-  template <typename U>
-  friend void bp_compute_impl(channelwise_scale_bias_layer<U, Layout, Device>& l);
 };
 
 #ifndef LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE

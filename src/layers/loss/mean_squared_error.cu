@@ -31,7 +31,7 @@ namespace lbann {
 
 namespace {
 
-template <typename TensorDataType, int block_size>
+template <int block_size, typename TensorDataType>
 __global__ void fp_kernel(int global_height,
                           int local_height, int local_width,
                           const TensorDataType* __restrict__ prediction,
@@ -91,7 +91,7 @@ void local_fp_gpu(El::Int height,
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    fp_kernel<TensorDataType, block_size>
+    fp_kernel<block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         height, local_height, local_width,
         local_prediction.LockedBuffer(), local_prediction.LDim(),
@@ -100,7 +100,7 @@ void local_fp_gpu(El::Int height,
   }
 }
 
-template <typename TensorDataType, int block_size>
+template <int block_size, typename TensorDataType>
 __global__ void bp_kernel(int global_height,
                           int local_height, int local_width,
                           const TensorDataType* __restrict__ prediction,
@@ -149,7 +149,7 @@ void local_bp_gpu(El::Int height,
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    bp_kernel<TensorDataType, block_size>
+    bp_kernel<block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         height, local_height, local_width,
         local_prediction.LockedBuffer(), local_prediction.LDim(),
@@ -164,50 +164,22 @@ void local_bp_gpu(El::Int height,
 
 } // namespace
 
-template <typename TensorDataType>
-void local_fp_compute_impl(mean_squared_error_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
-  local_fp_gpu<TensorDataType>(l.get_input_size(),
-                               l.get_local_prev_activations(0),
-                               l.get_local_prev_activations(1),
-                               l.m_workspace->Matrix());
-}
-
-template <typename TensorDataType>
-void local_bp_compute_impl(mean_squared_error_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
-  local_bp_gpu<TensorDataType>(l.get_input_size(),
-                               l.get_local_prev_activations(0),
-                               l.get_local_prev_activations(1),
-                               l.m_workspace->LockedMatrix(),
-                               l.get_local_error_signals(0),
-                               l.get_local_error_signals(1));
-}
-
-template <typename TensorDataType>
-void local_fp_compute_impl(mean_squared_error_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  local_fp_gpu<TensorDataType>(l.get_input_size(),
-                               l.get_local_prev_activations(0),
-                               l.get_local_prev_activations(1),
-                               l.m_workspace->Matrix());
-}
-
-template <typename TensorDataType>
-void local_bp_compute_impl(mean_squared_error_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  local_bp_gpu<TensorDataType>(l.get_input_size(),
-                               l.get_local_prev_activations(0),
-                               l.get_local_prev_activations(1),
-                               l.m_workspace->LockedMatrix(),
-                               l.get_local_error_signals(0),
-                               l.get_local_error_signals(1));
-}
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void mean_squared_error_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
-  local_fp_compute_impl<TensorDataType>(*this);
+  local_fp_gpu(this->get_input_size(),
+               this->get_local_prev_activations(0),
+               this->get_local_prev_activations(1),
+               this->m_workspace->Matrix());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void mean_squared_error_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
-  local_bp_compute_impl<TensorDataType>(*this);
+  local_bp_gpu(this->get_input_size(),
+               this->get_local_prev_activations(0),
+               this->get_local_prev_activations(1),
+               this->m_workspace->LockedMatrix(),
+               this->get_local_error_signals(0),
+               this->get_local_error_signals(1));
 }
 
 template class mean_squared_error_layer<

@@ -143,18 +143,12 @@ void fp_cpu(lbann_comm& comm,
 
 } // namespace
 
-template <typename TensorDataType>
-void fp_compute_impl(in_top_k_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  fp_cpu<TensorDataType>(*l.get_comm(), l.m_k, l.get_prev_activations(), l.get_activations());
-}
-template <typename TensorDataType>
-void fp_compute_impl(in_top_k_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  fp_cpu<TensorDataType>(*l.get_comm(), l.m_k, l.get_prev_activations(), l.get_activations());
-}
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void in_top_k_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
+  fp_cpu(*this->get_comm(),
+         this->m_k,
+         this->get_prev_activations(),
+         this->get_activations());
 }
 
 template class in_top_k_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;

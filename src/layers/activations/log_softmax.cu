@@ -54,7 +54,7 @@ struct max_op {
  *  @param values       (height x width) matrix
  *  @param max_values   (nblocksx x width) matrix
  */
-template <typename TensorDataType, size_t bsize>
+template <size_t bsize, typename TensorDataType>
 __global__ void reduce_max_kernel(size_t height,
                                   size_t width,
                                   const TensorDataType* __restrict__ values,
@@ -98,7 +98,7 @@ __global__ void reduce_max_kernel(size_t height,
  *  @param sums On input, array of zeros. On output, sum(x) for each
  *              column.
  */
-template <typename TensorDataType, size_t bsize>
+template <size_t bsize, typename TensorDataType>
 __global__ void reduce_sum_kernel(size_t height,
                                   size_t width,
                                   const TensorDataType* __restrict__ values,
@@ -140,7 +140,7 @@ __global__ void reduce_sum_kernel(size_t height,
  *  @param sums     On input, array of zeros. On output,
  *                  sum(exp(x-shift)) for each column.
  */
-template <typename TensorDataType, size_t bsize>
+template <size_t bsize, typename TensorDataType>
 __global__ void fp_sumexp_kernel(size_t height,
                                  size_t width,
                                  const TensorDataType* __restrict__ input,
@@ -268,11 +268,12 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLE
 
 template <typename TensorDataType>
 void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
   constexpr TensorDataType zero = 0;
   constexpr TensorDataType one = 1;
-  const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
-  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals());
-  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals());
+  const auto& local_output = dynamic_cast<const GPUMatType&>(l.get_local_activations());
+  const auto& local_gradient_wrt_output = dynamic_cast<const GPUMatType&>(l.get_local_prev_error_signals());
+  auto& local_gradient_wrt_input = dynamic_cast<GPUMatType&>(l.get_local_error_signals());
   if (!local_output.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxBackward(cudnn::get_handle(),
                                      CUDNN_SOFTMAX_LOG,
@@ -290,11 +291,12 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLE
 
 template <typename TensorDataType>
 void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
-  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
-  auto& local_workspace = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.m_workspace->Matrix());
+  const auto& local_input = dynamic_cast<const GPUMatType&>(l.get_local_prev_activations());
+  auto& local_output = dynamic_cast<GPUMatType&>(l.get_local_activations());
+  auto& local_workspace = dynamic_cast<GPUMatType&>(l.m_workspace->Matrix());
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
 
@@ -316,7 +318,7 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
     max_vals.resize(grid_dims.x * local_width);
-    reduce_max_kernel<TensorDataType, block_size><<<grid_dims, block_dims, 0, stream>>>(
+    reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_input.LockedBuffer(), local_input.LDim(),
       max_vals.data().get());
@@ -325,7 +327,7 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
       grid_dims.x = (prev_height + block_size - 1) / block_size;
       cuda::thrust::vector<DataType> prev_vals(std::move(max_vals));
       max_vals.resize(grid_dims.x * local_width);
-      reduce_max_kernel<TensorDataType, block_size><<<grid_dims, block_dims, 0, stream>>>(
+      reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
         prev_vals.data().get(), prev_height,
         max_vals.data().get());
@@ -343,7 +345,7 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    fp_sumexp_kernel<TensorDataType, block_size><<<grid_dims, block_dims, 0, stream>>>(
+    fp_sumexp_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_input.LockedBuffer(), local_input.LDim(),
       max_vals.data().get(),
@@ -359,7 +361,7 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    fp_output_kernel<TensorDataType><<<grid_dims, block_dims, 0, stream>>>(
+    fp_output_kernel<<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_input.LockedBuffer(), local_input.LDim(),
       local_output.Buffer(), local_output.LDim(),
@@ -371,12 +373,12 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
 
 template <typename TensorDataType>
 void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
-
+  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
   // Local matrices
-  const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
-  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals());
-  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals());
-  auto& local_workspace = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.m_workspace->Matrix());
+  const auto& local_output = dynamic_cast<const GPUMatType&>(l.get_local_activations());
+  const auto& local_gradient_wrt_output = dynamic_cast<const GPUMatType&>(l.get_local_prev_error_signals());
+  auto& local_gradient_wrt_input = dynamic_cast<GPUMatType&>(l.get_local_error_signals());
+  auto& local_workspace = dynamic_cast<GPUMatType&>(l.m_workspace->Matrix());
   const auto& local_height = local_output.Height();
   const auto& local_width = local_output.Width();
 
@@ -393,7 +395,7 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    reduce_sum_kernel<TensorDataType, block_size>
+    reduce_sum_kernel<block_size>
       <<<grid_dims, block_dims, 0, stream>>>(
         local_height, local_width,
         local_gradient_wrt_output.LockedBuffer(),
@@ -409,7 +411,7 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    bp_kernel<TensorDataType><<<grid_dims, block_dims, 0, stream>>>(
+    bp_kernel<<<grid_dims, block_dims, 0, stream>>>(
       local_height, local_width,
       local_output.LockedBuffer(),
       local_output.LDim(),
@@ -424,11 +426,11 @@ void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void log_softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
+  fp_compute_impl(*this);
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void log_softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
-  bp_compute_impl<TensorDataType>(*this);
+  bp_compute_impl(*this);
 }
 
 // Template instantiation

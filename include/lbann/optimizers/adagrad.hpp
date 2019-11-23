@@ -103,7 +103,7 @@ private:
 
 };
 
-std::unique_ptr<data_type_optimizer<DataType>>
+std::unique_ptr<optimizer>
 build_adagrad_optimizer_from_pbuf(
   google::protobuf::Message const&);
 

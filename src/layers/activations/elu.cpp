@@ -69,40 +69,19 @@ void local_bp(TensorDataType alpha,
 
 } // namespace
 
-template <typename TensorDataType>
-void fp_compute_impl(elu_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  local_fp<TensorDataType>(l.m_alpha,
-                           l.get_local_prev_activations(),
-                           l.get_local_activations());
-}
-template <typename TensorDataType>
-void bp_compute_impl(elu_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>&l ) {
-  local_bp<TensorDataType>(l.m_alpha,
-                           l.get_local_prev_activations(),
-                           l.get_local_prev_error_signals(),
-                           l.get_local_error_signals());
-}
-template <typename TensorDataType>
-void fp_compute_impl(elu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  local_fp<TensorDataType>(l.m_alpha,
-                           l.get_local_prev_activations(),
-                           l.get_local_activations());
-}
-template <typename TensorDataType>
-void bp_compute_impl(elu_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  local_bp<TensorDataType>(l.m_alpha,
-                           l.get_local_prev_activations(),
-                           l.get_local_prev_error_signals(),
-                           l.get_local_error_signals());
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void elu_layer<TensorDataType, Layout, Device>::fp_compute() {
+  local_fp(this->m_alpha,
+           this->get_local_prev_activations(),
+           this->get_local_activations());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void elu_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
-}
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 void elu_layer<TensorDataType, Layout, Device>::bp_compute() {
-  bp_compute_impl<TensorDataType>(*this);
+  local_bp(this->m_alpha,
+           this->get_local_prev_activations(),
+           this->get_local_prev_error_signals(),
+           this->get_local_error_signals());
 }
 
 template class elu_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;

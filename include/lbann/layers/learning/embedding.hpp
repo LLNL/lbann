@@ -118,12 +118,6 @@ private:
   /** Gradient w.r.t. embedding weights. */
   std::unique_ptr<AbsDistMatrixType> m_gradient_wrt_embeddings;
 
-  template <typename U>
-  friend void setup_matrices_impl(embedding_layer<U, Layout, Device>&l, const El::Grid& grid);
-  template <typename U>
-  friend void fp_compute_impl(embedding_layer<U, Layout, Device>& l);
-  template <typename U>
-  friend void bp_compute_impl(embedding_layer<U, Layout, Device>& l);
 };
 
 // =========================================================

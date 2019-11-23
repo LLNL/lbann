@@ -29,15 +29,14 @@
 
 namespace lbann {
 
-template <typename TensorDataType>
-void fp_compute_impl(channelwise_scale_bias_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
-
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMatType&>(l.get_local_prev_activations());
-  auto& local_output = dynamic_cast<CPUMatType&>(l.get_local_activations());
-  const auto& local_weights = dynamic_cast<const CPUMatType&>(l.get_data_type_weights(0).get_values().LockedMatrix());
+  const auto& local_input = dynamic_cast<const CPUMatType&>(this->get_local_prev_activations());
+  auto& local_output = dynamic_cast<CPUMatType&>(this->get_local_activations());
+  const auto& local_weights = dynamic_cast<const CPUMatType&>(this->get_data_type_weights(0).get_values().LockedMatrix());
   const auto local_scale = El::LockedView(local_weights,
                                           El::ALL, El::IR(0));
   const auto local_bias = El::LockedView(local_weights,
@@ -46,7 +45,7 @@ void fp_compute_impl(channelwise_scale_bias_layer<TensorDataType, data_layout::D
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
-  const auto dims = l.get_output_dims();
+  const auto dims = this->get_output_dims();
   const El::Int num_channels = dims[0];
   const El::Int channel_size = std::accumulate(dims.begin() + 1,
                                                dims.end(),
@@ -73,16 +72,16 @@ void fp_compute_impl(channelwise_scale_bias_layer<TensorDataType, data_layout::D
 
 }
 
-template <typename TensorDataType>
-void bp_compute_impl(channelwise_scale_bias_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMatType&>(l.get_local_prev_activations());
-  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMatType&>(l.get_local_prev_error_signals());
-  auto& local_gradient_wrt_input = dynamic_cast<CPUMatType&>(l.get_local_error_signals());
-  const auto& local_weights = dynamic_cast<const CPUMatType&>(l.get_data_type_weights(0).get_values().LockedMatrix());
-  auto& local_gradient_wrt_weights = dynamic_cast<CPUMatType&>(l.m_weights_gradient->Matrix());
+  const auto& local_input = dynamic_cast<const CPUMatType&>(this->get_local_prev_activations());
+  const auto& local_gradient_wrt_output = dynamic_cast<const CPUMatType&>(this->get_local_prev_error_signals());
+  auto& local_gradient_wrt_input = dynamic_cast<CPUMatType&>(this->get_local_error_signals());
+  const auto& local_weights = dynamic_cast<const CPUMatType&>(this->get_data_type_weights(0).get_values().LockedMatrix());
+  auto& local_gradient_wrt_weights = dynamic_cast<CPUMatType&>(this->m_weights_gradient->Matrix());
   const auto local_scale = El::LockedView(local_weights,
                                           El::ALL, El::IR(0));
   auto local_gradient_wrt_scale = El::View(local_gradient_wrt_weights,
@@ -93,7 +92,7 @@ void bp_compute_impl(channelwise_scale_bias_layer<TensorDataType, data_layout::D
   // Dimensions
   // Note: channel_size is the number of input entries per channel and
   // local_width is the number of local mini-batch samples.
-  const auto dims = l.get_output_dims();
+  const auto dims = this->get_output_dims();
   const El::Int num_channels = dims[0];
   const El::Int channel_size = std::accumulate(dims.begin() + 1,
                                                dims.end(),
@@ -125,26 +124,14 @@ void bp_compute_impl(channelwise_scale_bias_layer<TensorDataType, data_layout::D
   }
 
   // Update optimizer with gradient
-  auto* opt = l.get_data_type_weights(0).get_optimizer();
+  auto* opt = this->get_data_type_weights(0).get_optimizer();
   if (opt != nullptr) {
-    opt->add_to_gradient(*l.m_weights_gradient, TensorDataType{1}, true);
+    opt->add_to_gradient(*this->m_weights_gradient, TensorDataType{1}, true);
   }
 
 }
 
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
-  bp_compute_impl<TensorDataType>(*this);
-}
-
 template class channelwise_scale_bias_layer<
   DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-//template class channelwise_scale_bias_layer<
-//  double, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

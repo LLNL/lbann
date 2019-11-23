@@ -119,8 +119,7 @@ void fp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
     block_dims.y = block_size_y;
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    fp_kernel
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+    fp_kernel<<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width,
         local_input.LockedBuffer(), local_input.LDim(),
         local_output.Buffer(), local_output.LDim(),
@@ -137,11 +136,13 @@ void bp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
              data_type_weights<TensorDataType>& scale_bias,
              El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias) {
 
+  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
+
   // Local matrices
   const auto& local_scale_bias
-    = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(scale_bias.get_values().LockedMatrix());
+    = dynamic_cast<const GPUMatType&>(scale_bias.get_values().LockedMatrix());
   auto& local_gradient_wrt_scale_bias
-    = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_scale_bias.Matrix());
+    = dynamic_cast<GPUMatType&>(gradient_wrt_scale_bias.Matrix());
   const auto local_scale = El::LockedView(local_scale_bias,
                                           El::ALL, El::IR(0));
   auto local_gradient_wrt_scale = El::View(local_gradient_wrt_scale_bias,
@@ -158,15 +159,14 @@ void bp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
-    bp_kernel
-      <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
-        local_height, local_width,
-        local_input.LockedBuffer(), local_input.LDim(),
-        local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
-        local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim(),
-        local_scale.LockedBuffer(),
-        local_gradient_wrt_scale.Buffer(),
-        local_gradient_wrt_bias.Buffer());
+    bp_kernel <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
+      local_height, local_width,
+      local_input.LockedBuffer(), local_input.LDim(),
+      local_gradient_wrt_output.LockedBuffer(), local_gradient_wrt_output.LDim(),
+      local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim(),
+      local_scale.LockedBuffer(),
+      local_gradient_wrt_scale.Buffer(),
+      local_gradient_wrt_bias.Buffer());
   }
 
   // Update optimizer with gradient
@@ -180,43 +180,23 @@ void bp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
 } // namespace
 
 // Template instantiation
-template <typename TensorDataType>
-void fp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
-  fp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations()),
-                          dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations()),
-                          l.get_data_type_weights(0));
-}
-template <typename TensorDataType>
-void fp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::MODEL_PARALLEL,El::Device::GPU>& l) {
-  fp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations()),
-                          dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations()),
-                          l.get_data_type_weights(0));
-}
-template <typename TensorDataType>
-void bp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::DATA_PARALLEL,El::Device::GPU>& l) {
-  bp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations()),
-                          dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals()),
-                          dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals()),
-                          l.get_data_type_weights(0),
-                          *l.m_weights_gradient);
-}
-template <typename TensorDataType>
-void bp_compute_impl(entrywise_scale_bias_layer<TensorDataType, data_layout::MODEL_PARALLEL,El::Device::GPU>& l) {
-  bp_impl<TensorDataType>(dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations()),
-                          dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals()),
-                          dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals()),
-                          l.get_data_type_weights(0),
-                          *l.m_weights_gradient);
-}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
+  using LocalMatType = El::Matrix<TensorDataType, Device>;
+  fp_impl(dynamic_cast<const LocalMatType&>(this->get_local_prev_activations()),
+          dynamic_cast<LocalMatType&>(this->get_local_activations()),
+          this->get_data_type_weights(0));
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
-  bp_compute_impl<TensorDataType>(*this);
+  using LocalMatType = El::Matrix<TensorDataType, Device>;
+  bp_impl(dynamic_cast<const LocalMatType&>(this->get_local_prev_activations()),
+          dynamic_cast<const LocalMatType&>(this->get_local_prev_error_signals()),
+          dynamic_cast<LocalMatType&>(this->get_local_error_signals()),
+          this->get_data_type_weights(0),
+          *this->m_weights_gradient);
 }
 
 template class entrywise_scale_bias_layer<

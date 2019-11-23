@@ -349,10 +349,6 @@ protected:
   void fp_compute() override;
   void bp_compute() override;
 
-  template <typename U>
-  friend void fp_compute_impl(batch_normalization_layer<U, T_layout, Dev>& l);
-  template <typename U>
-  friend void bp_compute_impl(batch_normalization_layer<U, T_layout, Dev>& l);
 };
 
 #ifndef LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE

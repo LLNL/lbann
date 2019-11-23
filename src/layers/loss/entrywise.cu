@@ -33,7 +33,8 @@ namespace lbann {
 namespace {
 
 /** CUDA kernel to apply an binary backprop operator. */
-template <typename TensorDataType, typename BinaryBackPropOperator>
+template <template <typename> class BinaryBackPropOperator,
+          typename TensorDataType>
 __global__
 void binary_backprop_operator_kernel(El::Int height, El::Int width,
                                      const TensorDataType* __restrict__ x1,
@@ -49,7 +50,7 @@ void binary_backprop_operator_kernel(El::Int height, El::Int width,
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
   const El::Int num_threads = blockDim.x * gridDim.x;
-  BinaryBackPropOperator op;
+  BinaryBackPropOperator<TensorDataType> op;
   for (El::Int pos = gid; pos < size; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
@@ -69,12 +70,13 @@ void binary_backprop_operator_kernel(El::Int height, El::Int width,
  *  \f$ dL/dx_2 \f$. The last two arguments should be overwritten when
  *  the BinaryBackPropOperator is called.
  */
-template <typename TensorDataType, typename BinaryBackPropOperator>
-void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1,
-                                    const El::AbstractMatrix<TensorDataType>& x2,
-                                    const El::AbstractMatrix<TensorDataType>& dy,
-                                    El::AbstractMatrix<TensorDataType>& dx1,
-                                    El::AbstractMatrix<TensorDataType>& dx2) {
+template <template <typename> class Op, typename TensorDataType>
+void apply_binary_backprop_operator(
+  const El::AbstractMatrix<TensorDataType>& x1,
+  const El::AbstractMatrix<TensorDataType>& x2,
+  const El::AbstractMatrix<TensorDataType>& dy,
+  El::AbstractMatrix<TensorDataType>& dx1,
+  El::AbstractMatrix<TensorDataType>& dx2) {
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -91,7 +93,7 @@ void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1
   // Launch CUDA kernel
   if (grid_dim > 0) {
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    binary_backprop_operator_kernel<TensorDataType, BinaryBackPropOperator>
+    binary_backprop_operator_kernel<Op>
       <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
         height, width,
         x1.LockedBuffer(), x1.LDim(),
@@ -241,43 +243,23 @@ struct boolean_false_positive_op {
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                                                   \
-  template <typename TensorDataType>                                                             \
-  void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
-    cuda::apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(0), \
-                                                              l.get_prev_activations(1),         \
-                                                              l.get_activations());              \
-  }                                                                                              \
-  template <typename TensorDataType>                                                             \
-  void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) { \
-    apply_binary_backprop_operator<TensorDataType, op<TensorDataType>>(l.get_local_prev_activations(0), \
-                                                       l.get_local_prev_activations(1),          \
-                                                       l.get_local_prev_error_signals(),         \
-                                                       l.get_local_error_signals(0),             \
-                                                       l.get_local_error_signals(1));            \
-  }                                                                                              \
-  template <typename TensorDataType>                                                             \
-  void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {  \
-    cuda::apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(0), \
-                                                              l.get_prev_activations(1),         \
-                                                              l.get_activations());              \
-  }                                                                                              \
-  template <typename TensorDataType>                                                             \
-  void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {  \
-    apply_binary_backprop_operator<TensorDataType, op<TensorDataType>>(l.get_local_prev_activations(0), \
-                                                       l.get_local_prev_activations(1),          \
-                                                       l.get_local_prev_error_signals(),         \
-                                                       l.get_local_error_signals(0),             \
-                                                       l.get_local_error_signals(1));            \
-  }                                                                                              \
-  template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
-  void layer<TensorDataType, Layout, Device>::fp_compute() {                                     \
-    fp_compute_impl<TensorDataType>(*this);                                                      \
-  }                                                                                              \
-  template <typename TensorDataType, data_layout Layout, El::Device Device>                      \
-  void layer<TensorDataType, Layout, Device>::bp_compute() {                                     \
-    bp_compute_impl<TensorDataType>(*this);                                                      \
-  }                                                                                              \
+#define INSTANTIATE(layer, op)                                          \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  void layer<TensorDataType, Layout, Device>::fp_compute() {            \
+    cuda::apply_entrywise_binary_operator<op>(                          \
+      this->get_prev_activations(0),                                    \
+      this->get_prev_activations(1),                                    \
+      this->get_activations());                                         \
+  }                                                                     \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  void layer<TensorDataType, Layout, Device>::bp_compute() {            \
+    apply_binary_backprop_operator<op>(                                 \
+      this->get_local_prev_activations(0),                              \
+      this->get_local_prev_activations(1),                              \
+      this->get_local_prev_error_signals(),                             \
+      this->get_local_error_signals(0),                                 \
+      this->get_local_error_signals(1));                                \
+  }                                                                     \
   BINARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
 
 INSTANTIATE(binary_cross_entropy_layer, binary_cross_entropy_op);

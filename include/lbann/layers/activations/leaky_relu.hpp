@@ -70,11 +70,6 @@ protected:
   void fp_compute() override;
   void bp_compute() override;
 
-  template <typename U>
-  friend void fp_compute_impl(leaky_relu_layer<U, Layout, Device>& l);
-  template <typename U>
-  friend void bp_compute_impl(leaky_relu_layer<U, Layout, Device>& l);
-
 private:
   /** Function slope in negative region. */
   TensorDataType m_negative_slope;

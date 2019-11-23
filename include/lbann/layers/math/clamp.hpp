@@ -80,11 +80,6 @@ private:
   /** Maximum output. */
   TensorDataType m_max;
 
-  template <typename U>
-  friend void fp_compute_impl(clamp_layer<U, Layout, Device>& l);
-  template <typename U>
-  friend void bp_compute_impl(clamp_layer<U, Layout, Device>& l);
-
 };
 
 #ifndef LBANN_CLAMP_LAYER_INSTANTIATE

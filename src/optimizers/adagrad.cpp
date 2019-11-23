@@ -156,7 +156,7 @@ bool adagrad<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::
   return true;
 }
 
-std::unique_ptr<data_type_optimizer<DataType>>
+std::unique_ptr<optimizer>
 build_adagrad_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =

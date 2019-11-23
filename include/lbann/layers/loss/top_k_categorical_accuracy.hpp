@@ -94,9 +94,6 @@ protected:
 
 private:
 
-  template <typename U>
-  friend void fp_compute_impl(top_k_categorical_accuracy_layer<U, T_layout, Dev>& l);
-
   /** Parameter for top-k search. */
   const El::Int m_k;
 

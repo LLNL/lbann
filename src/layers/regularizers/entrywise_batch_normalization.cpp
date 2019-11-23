@@ -384,67 +384,32 @@ void bp_impl(lbann_comm& comm,
 } // namespace
 
 // Template instantiation
-template <typename TensorDataType>
-void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  const auto mode = l.m_model->get_execution_context().get_execution_mode();
-  fp_impl(*l.get_comm(),
-          l.m_decay,
-          l.m_epsilon,
-          mode == execution_mode::training,
-          l.get_prev_activations(),
-          l.get_activations(),
-          *l.m_batch_statistics,
-          l.get_data_type_weights(0).get_values(),
-          l.get_data_type_weights(1).get_values());
-}
-template <typename TensorDataType>
-void fp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  const auto mode = l.m_model->get_execution_context().get_execution_mode();
-  fp_impl(*l.get_comm(),
-          l.m_decay,
-          l.m_epsilon,
-          mode == execution_mode::training,
-          l.get_prev_activations(),
-          l.get_activations(),
-          *l.m_batch_statistics,
-          l.get_data_type_weights(0).get_values(),
-          l.get_data_type_weights(1).get_values());
-}
-template <typename TensorDataType>
-void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  const auto mode = l.m_model->get_execution_context().get_execution_mode();
-  bp_impl(*l.get_comm(),
-          l.m_epsilon,
-          mode == execution_mode::training,
-          l.get_prev_activations(),
-          l.get_prev_error_signals(),
-          l.get_error_signals(),
-          *l.m_batch_statistics,
-          *l.m_batch_statistics_gradient,
-          l.get_data_type_weights(1).get_values());
-}
-template <typename TensorDataType>
-void bp_compute_impl(entrywise_batch_normalization_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  const auto mode = l.m_model->get_execution_context().get_execution_mode();
-  bp_impl(*l.get_comm(),
-          l.m_epsilon,
-          mode == execution_mode::training,
-          l.get_prev_activations(),
-          l.get_prev_error_signals(),
-          l.get_error_signals(),
-          *l.m_batch_statistics,
-          *l.m_batch_statistics_gradient,
-          l.get_data_type_weights(1).get_values());
-}
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
+  const auto mode = this->m_model->get_execution_context().get_execution_mode();
+  fp_impl(*this->get_comm(),
+          this->m_decay,
+          this->m_epsilon,
+          mode == execution_mode::training,
+          this->get_prev_activations(),
+          this->get_activations(),
+          *this->m_batch_statistics,
+          this->get_data_type_weights(0).get_values(),
+          this->get_data_type_weights(1).get_values());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
-  bp_compute_impl<TensorDataType>(*this);
+  const auto mode = this->m_model->get_execution_context().get_execution_mode();
+  bp_impl(*this->get_comm(),
+          this->m_epsilon,
+          mode == execution_mode::training,
+          this->get_prev_activations(),
+          this->get_prev_error_signals(),
+          this->get_error_signals(),
+          *this->m_batch_statistics,
+          *this->m_batch_statistics_gradient,
+          this->get_data_type_weights(1).get_values());
 }
 
 template class entrywise_batch_normalization_layer<

@@ -27,7 +27,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/learning_rate.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include "callback_helpers.hpp"
 
@@ -106,6 +108,10 @@ void learning_rate::on_backward_prop_end(model *m) {
       opt.set_learning_rate(new_lr);
     }
   }
+}
+
+float learning_rate::optimizer_schedule(model *m, optimizer &opt) {
+  return dynamic_cast<data_type_optimizer<DataType>&>(opt).get_learning_rate();
 }
 
 step_learning_rate::step_learning_rate(

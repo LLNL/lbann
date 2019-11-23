@@ -29,19 +29,19 @@
 
 namespace lbann {
 
-template <typename TensorDataType>
-void fp_compute_impl(bilinear_resize_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
 
   // Useful constants
   constexpr DataType half = 0.5;
   constexpr DataType one = 1;
 
   // Matrices
-  const auto& local_input = l.get_local_prev_activations();
-  auto& local_output = l.get_local_activations();
+  const auto& local_input = this->get_local_prev_activations();
+  auto& local_output = this->get_local_activations();
 
   // Dimensions
-  const auto& input_dims = l.get_input_dims();
+  const auto& input_dims = this->get_input_dims();
   const auto& num_dims = input_dims.size();
   const auto& num_samples = local_input.Width();
   const El::Int num_channels = std::accumulate(input_dims.begin(),
@@ -52,13 +52,13 @@ void fp_compute_impl(bilinear_resize_layer<TensorDataType, data_layout::DATA_PAR
   const El::Int input_width = input_dims[num_dims-1];
 
   // Perform bilinear interpolation for each output pixel
-  const auto& x_stride = static_cast<DataType>(input_width) / l.m_width;
-  const auto& y_stride = static_cast<DataType>(input_height) / l.m_height;
+  const auto& x_stride = static_cast<DataType>(input_width) / this->m_width;
+  const auto& y_stride = static_cast<DataType>(input_height) / this->m_height;
   LBANN_OMP_PARALLEL_FOR_COLLAPSE4
   for (El::Int sample = 0; sample < num_samples; ++sample) {
     for (El::Int channel = 0; channel < num_channels; ++channel) {
-      for (El::Int output_row = 0; output_row < l.m_height; ++output_row) {
-        for (El::Int output_col = 0; output_col < l.m_width; ++output_col) {
+      for (El::Int output_row = 0; output_row < this->m_height; ++output_row) {
+        for (El::Int output_col = 0; output_col < this->m_width; ++output_col) {
 
           // Interpolation point
           const auto& x = (output_col + half) * x_stride;
@@ -93,8 +93,8 @@ void fp_compute_impl(bilinear_resize_layer<TensorDataType, data_layout::DATA_PAR
                                             + input_row1 * input_width
                                             + input_col1,
                                             sample);
-          auto& result = local_output(channel * l.m_height * l.m_width
-                                      + output_row * l.m_width
+          auto& result = local_output(channel * this->m_height * this->m_width
+                                      + output_row * this->m_width
                                       + output_col,
                                       sample);
 
@@ -109,11 +109,6 @@ void fp_compute_impl(bilinear_resize_layer<TensorDataType, data_layout::DATA_PAR
     }
   }
 
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
 }
 
 template class bilinear_resize_layer<

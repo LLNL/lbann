@@ -161,11 +161,6 @@ private:
   /** Compute local gradients. */
   void local_bp_compute();
 
-  template <typename U>
-  friend void local_fp_compute_impl(mean_absolute_error_layer<U, T_layout, Dev>& l);
-  template <typename U>
-  friend void local_bp_compute_impl(mean_absolute_error_layer<U, T_layout, Dev>& l);
-
   /** Workspace matrix. */
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 

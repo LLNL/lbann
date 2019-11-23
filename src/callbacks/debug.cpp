@@ -28,6 +28,7 @@
 #include "lbann/comm.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include "callbacks.pb.h"
 

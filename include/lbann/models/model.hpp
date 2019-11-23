@@ -60,7 +60,6 @@ class callback_base;
 /** @brief Abstract base class for neural network models. */
 class model {
 public:
-  using TensorDataType = DataType;
 
   // ===========================================
   // Life cycle functions

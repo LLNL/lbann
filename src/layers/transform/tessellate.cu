@@ -116,33 +116,36 @@ __global__ void bp_gpu_3d_kernel(
 
 }
 
-template <typename TensorDataType>
-void fp_gpu_3d(const std::vector<int>& input_dims,
-               const std::vector<int>& output_dims,
-               const El::AbstractMatrix<TensorDataType>& input,
-               El::AbstractDistMatrix<TensorDataType>& output) {
+}// namespace <anon>
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void tessellate_layer<TensorDataType, T_layout, Dev>
+::fp_compute_3d(const std::vector<int>& input_dims,
+                const std::vector<int>& output_dims,
+                const El::AbstractMatrix<TensorDataType>& input,
+                El::AbstractDistMatrix<TensorDataType>& output) {
   auto& local_output = output.Matrix();
   if (!local_output.IsEmpty()) {
     const auto& local_height = local_output.Height();
     const auto& local_width = local_output.Width();
     const auto& block_size = 256;
     const auto& grid_size = (local_height * local_width + block_size - 1) / block_size;
-    fp_gpu_3d_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
-        input_dims[0], input_dims[1], input_dims[2],
-        output_dims[0], output_dims[1], output_dims[2],
-        local_height, local_width,
-        input.LockedBuffer(), input.LDim(),
-        local_output.Buffer(), local_output.LDim(),
-        output.ColShift(), output.ColStride());
+    fp_gpu_3d_kernel<<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
+      input_dims[0], input_dims[1], input_dims[2],
+      output_dims[0], output_dims[1], output_dims[2],
+      local_height, local_width,
+      input.LockedBuffer(), input.LDim(),
+      local_output.Buffer(), local_output.LDim(),
+      output.ColShift(), output.ColStride());
   }
 }
 
-template <typename TensorDataType>
-void bp_gpu_3d(const std::vector<int>& input_dims,
-               const std::vector<int>& output_dims,
-               const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
-               El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void tessellate_layer<TensorDataType, T_layout, Dev>
+::bp_compute_3d(const std::vector<int>& input_dims,
+                const std::vector<int>& output_dims,
+                const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   El::Zero(gradient_wrt_input);
   if (!local_gradient_wrt_output.IsEmpty()) {
@@ -150,75 +153,17 @@ void bp_gpu_3d(const std::vector<int>& input_dims,
     const auto& local_width = local_gradient_wrt_output.Width();
     const auto& block_size = 256;
     const auto& grid_size = (local_height * local_width + block_size - 1) / block_size;
-    bp_gpu_3d_kernel<TensorDataType>
-      <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
-        input_dims[0], input_dims[1], input_dims[2],
-        output_dims[0], output_dims[1], output_dims[2],
-        local_height, local_width,
-        local_gradient_wrt_output.LockedBuffer(),
-        local_gradient_wrt_output.LDim(),
-        gradient_wrt_output.ColShift(),
-        gradient_wrt_output.ColStride(),
-        gradient_wrt_input.Buffer(),
-        gradient_wrt_input.LDim());
+    bp_gpu_3d_kernel<<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
+      input_dims[0], input_dims[1], input_dims[2],
+      output_dims[0], output_dims[1], output_dims[2],
+      local_height, local_width,
+      local_gradient_wrt_output.LockedBuffer(),
+      local_gradient_wrt_output.LDim(),
+      gradient_wrt_output.ColShift(),
+      gradient_wrt_output.ColStride(),
+      gradient_wrt_input.Buffer(),
+      gradient_wrt_input.LDim());
   }
-}
-
-} // namespace
-
-template <typename TensorDataType>
-void fp_compute_3d_impl(tessellate_layer<TensorDataType,data_layout::DATA_PARALLEL, El::Device::GPU>& l,
-                        const std::vector<int>& input_dims,
-                        const std::vector<int>& output_dims,
-                        const El::AbstractMatrix<TensorDataType>& input,
-                        El::AbstractDistMatrix<TensorDataType>& output) {
-  fp_gpu_3d(input_dims, output_dims, input, output);
-}
-template <typename TensorDataType>
-void fp_compute_3d_impl(tessellate_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l,
-                        const std::vector<int>& input_dims,
-                        const std::vector<int>& output_dims,
-                        const El::AbstractMatrix<TensorDataType>& input,
-                        El::AbstractDistMatrix<TensorDataType>& output) {
-  fp_gpu_3d(input_dims, output_dims, input, output);
-}
-
-template <typename TensorDataType>
-void bp_compute_3d_impl(tessellate_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l,
-                        const std::vector<int>& input_dims,
-                        const std::vector<int>& output_dims,
-                        const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
-  bp_gpu_3d(input_dims, output_dims,
-            gradient_wrt_output, gradient_wrt_input);
-}
-template <typename TensorDataType>
-void bp_compute_3d_impl(tessellate_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l,
-                        const std::vector<int>& input_dims,
-                        const std::vector<int>& output_dims,
-                        const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
-                        El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
-  bp_gpu_3d(input_dims, output_dims,
-            gradient_wrt_output, gradient_wrt_input);
-}
-
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void tessellate_layer<TensorDataType, T_layout, Dev>
-     ::fp_compute_3d(const std::vector<int>& input_dims,
-                     const std::vector<int>& output_dims,
-                     const El::AbstractMatrix<TensorDataType>& input,
-                     El::AbstractDistMatrix<TensorDataType>& output) {
-  fp_compute_3d_impl<TensorDataType>(*this, input_dims, output_dims, input, output);
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void tessellate_layer<TensorDataType, T_layout, Dev>
-     ::bp_compute_3d(const std::vector<int>& input_dims,
-                     const std::vector<int>& output_dims,
-                     const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
-                     El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
-  bp_compute_3d_impl<TensorDataType>(*this, input_dims, output_dims, gradient_wrt_output, gradient_wrt_input);
 }
 
 template class tessellate_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;

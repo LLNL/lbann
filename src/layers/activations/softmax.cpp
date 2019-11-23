@@ -135,48 +135,23 @@ void bp(lbann_comm& comm,
 
 } // namespace
 
-template <typename TensorDataType>
-void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  fp<TensorDataType>(*l.get_comm(),
-                     l.get_prev_activations(),
-                     l.get_activations(),
-                     *l.m_workspace,
-                     l.threshold_val);
-}
-template <typename TensorDataType>
-void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  bp<TensorDataType>(*l.get_comm(),
-                     l.get_activations(),
-                     l.get_prev_error_signals(),
-                     l.get_error_signals(),
-                     *l.m_workspace,
-                     l.threshold_val);
-}
-template <typename TensorDataType>
-void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  fp<TensorDataType>(*l.get_comm(),
-                     l.get_prev_activations(),
-                     l.get_activations(),
-                     *l.m_workspace,
-                     l.threshold_val);
-}
-template <typename TensorDataType>
-void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  bp<TensorDataType>(*l.get_comm(),
-                     l.get_activations(),
-                     l.get_prev_error_signals(),
-                     l.get_error_signals(),
-                     *l.m_workspace,
-                     l.threshold_val);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp(*this->get_comm(),
+     this->get_prev_activations(),
+     this->get_activations(),
+     *this->m_workspace,
+     this->threshold_val);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
-}
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
-  bp_compute_impl<TensorDataType>(*this);
+  bp(*this->get_comm(),
+     this->get_activations(),
+     this->get_prev_error_signals(),
+     this->get_error_signals(),
+     *this->m_workspace,
+     this->threshold_val);
 }
 
 template class softmax_layer<

@@ -133,23 +133,20 @@ void normal_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 // Builder functions
 //
 
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ConstantInitializer const&>(msg);
-  return make_unique<constant_initializer<TensorDataType>>(params.value());
+  return make_unique<constant_initializer<DataType>>(params.value());
 }
 
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
-  return make_unique<value_initializer<TensorDataType>>(parse_list<TensorDataType>(params.values()));
+  return make_unique<value_initializer<DataType>>(parse_list<DataType>(params.values()));
 }
 
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
@@ -157,13 +154,12 @@ build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& min = params.min();
   const auto& max = params.max();
   if (min != 0.0 || max != 0.0) {
-    return make_unique<uniform_initializer<TensorDataType>>(min, max);
+    return make_unique<uniform_initializer<DataType>>(min, max);
   } else {
-    return make_unique<uniform_initializer<TensorDataType>>();
+    return make_unique<uniform_initializer<DataType>>();
   }
 }
 
-template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
@@ -171,9 +167,9 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& mean = params.mean();
   const auto& standard_deviation = params.standard_deviation();
   if (mean != 0.0 || standard_deviation != 0.0) {
-    return make_unique<normal_initializer<TensorDataType>>(mean, standard_deviation);
+    return make_unique<normal_initializer<DataType>>(mean, standard_deviation);
   } else {
-    return make_unique<normal_initializer<TensorDataType>>();
+    return make_unique<normal_initializer<DataType>>();
   }
 }
 
@@ -182,17 +178,5 @@ template class constant_initializer<DataType>;
 template class value_initializer<DataType>;
 template class uniform_initializer<DataType>;
 template class normal_initializer<DataType>;
-
-template std::unique_ptr<weights_initializer>
-build_constant_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
-
-template std::unique_ptr<weights_initializer>
-build_value_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
-
-template std::unique_ptr<weights_initializer>
-build_uniform_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
-
-template std::unique_ptr<weights_initializer>
-build_normal_initializer_from_pbuf<DataType>(google::protobuf::Message const& msg);
 
 } // namespace lbann

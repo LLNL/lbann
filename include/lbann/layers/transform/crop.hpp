@@ -336,10 +336,6 @@ private:
    */
   void bp_compute_3d();
 
-  template <typename U>
-  friend void fp_compute_3d_impl(crop_layer<U, T_layout, Dev>& l);
-  template <typename U>
-  friend void bp_compute_3d_impl(crop_layer<U, T_layout, Dev>& l);
 };
 
 #ifndef LBANN_CROP_LAYER_INSTANTIATE

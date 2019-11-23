@@ -30,6 +30,7 @@
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include <callbacks.pb.h>
 

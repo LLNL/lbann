@@ -29,12 +29,14 @@
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/cublas.hpp"
 #endif // LBANN_HAS_GPU
+#include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 namespace lbann {
 
 template <>
-void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const El::Matrix<AccumulateDataType, El::Device::CPU>& vals,
-                                                                        El::Matrix<AccumulateDataType, El::Device::CPU>& contribution) {
+void l2_weight_regularization::accumulate_contribution<El::Device::CPU>(const CPUMatType& vals,
+                                                                        CPUMatType& contribution) {
   auto& sqsum = contribution(0, 0);
   if (vals.IsEmpty()) {
   } else if (vals.Contiguous()) {
@@ -101,7 +103,7 @@ void l2_weight_regularization::start_evaluation() {
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
         accumulate_contribution<El::Device::CPU>(
-          static_cast<const El::Matrix<AccumulateDataType, El::Device::CPU>&>(vals.LockedMatrix()),
+          static_cast<const CPUMatType&>(vals.LockedMatrix()),
           contribution);
       }
     }
@@ -114,7 +116,7 @@ void l2_weight_regularization::start_evaluation() {
   // Compute contributions from GPU weights
   if (m_contributions.count(El::Device::GPU) > 0) {
     auto&& stream = El::GPUManager::Stream();
-    El::Matrix<AccumulateDataType, El::Device::GPU> contribution;
+    DMatType<El::Device::GPU> contribution;
 #ifdef HYDROGEN_HAVE_CUB
     contribution.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
@@ -125,7 +127,7 @@ void l2_weight_regularization::start_evaluation() {
           && vals.Participating()
           && vals.RedundantRank() == i % vals.RedundantSize()) {
         accumulate_contribution<El::Device::GPU>(
-          static_cast<const El::Matrix<AccumulateDataType, El::Device::GPU>&>(vals.LockedMatrix()),
+          static_cast<const DMatType<El::Device::GPU>&>(vals.LockedMatrix()),
           contribution);
       }
     }

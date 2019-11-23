@@ -40,12 +40,14 @@ namespace {
  *  \f$ dL/dx_2 \f$. The last two arguments should be overwritten when
  *  the BinaryBackPropOperator is called.
  */
-template <typename TensorDataType, typename BinaryBackPropOperator>
-void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1,
-                                    const El::AbstractMatrix<TensorDataType>& x2,
-                                    const El::AbstractMatrix<TensorDataType>& dy,
-                                    El::AbstractMatrix<TensorDataType>& dx1,
-                                    El::AbstractMatrix<TensorDataType>& dx2) {
+template <template <typename> class Op, typename TensorDataType>
+void apply_binary_backprop_operator(
+  const El::AbstractMatrix<TensorDataType>& x1,
+  const El::AbstractMatrix<TensorDataType>& x2,
+  const El::AbstractMatrix<TensorDataType>& dy,
+  El::AbstractMatrix<TensorDataType>& dx1,
+  El::AbstractMatrix<TensorDataType>& dx2) {
+  using BinaryBackPropOperator = Op<TensorDataType>;
   if (x1.Contiguous() && x2.Contiguous() && dy.Contiguous()
       && dx1.Contiguous() && dx2.Contiguous()) {
     const auto* x1_buffer = x1.LockedBuffer();
@@ -444,43 +446,23 @@ struct logical_xor_op {
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                                                          \
-  template <typename TensorDataType>                                                                    \
-  void fp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {        \
-    apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(0),      \
-                                                                        l.get_prev_activations(1),      \
-                                                                        l.get_activations());           \
-  }                                                                                                     \
-  template <typename TensorDataType>                                                                    \
-  void bp_compute_impl(layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {        \
-    apply_binary_backprop_operator<TensorDataType, op<TensorDataType>>(l.get_local_prev_activations(0), \
-                                                       l.get_local_prev_activations(1),                 \
-                                                       l.get_local_prev_error_signals(),                \
-                                                       l.get_local_error_signals(0),                    \
-                                                       l.get_local_error_signals(1));                   \
-  }                                                                                                     \
-  template <typename TensorDataType>                                                                    \
-  void fp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {         \
-    apply_entrywise_binary_operator<TensorDataType, op<TensorDataType>>(l.get_prev_activations(0),      \
-                                                                        l.get_prev_activations(1),      \
-                                                                        l.get_activations());           \
-  }                                                                                                     \
-  template <typename TensorDataType>                                                                    \
-  void bp_compute_impl(layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {         \
-    apply_binary_backprop_operator<TensorDataType, op<TensorDataType>>(l.get_local_prev_activations(0), \
-                                                       l.get_local_prev_activations(1),                 \
-                                                       l.get_local_prev_error_signals(),                \
-                                                       l.get_local_error_signals(0),                    \
-                                                       l.get_local_error_signals(1));                   \
-  }                                                                                                     \
-  template <typename TensorDataType, data_layout Layout, El::Device Device>                             \
-  void layer<TensorDataType, Layout, Device>::fp_compute() {                                            \
-    fp_compute_impl<TensorDataType>(*this);                                                             \
-  }                                                                                                     \
-  template <typename TensorDataType, data_layout Layout, El::Device Device>                             \
-  void layer<TensorDataType, Layout, Device>::bp_compute() {                                            \
-    bp_compute_impl<TensorDataType>(*this);                                                             \
-  }                                                                                                     \
+#define INSTANTIATE(layer, op)                                          \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  void layer<TensorDataType, Layout, Device>::fp_compute() {            \
+    apply_entrywise_binary_operator<op>(                                \
+      this->get_prev_activations(0),                                    \
+      this->get_prev_activations(1),                                    \
+      this->get_activations());                                         \
+  }                                                                     \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  void layer<TensorDataType, Layout, Device>::bp_compute() {            \
+    apply_binary_backprop_operator<op>(                                 \
+      this->get_local_prev_activations(0),                              \
+      this->get_local_prev_activations(1),                              \
+      this->get_local_prev_error_signals(),                             \
+      this->get_local_error_signals(0),                                 \
+      this->get_local_error_signals(1));                                \
+  }                                                                     \
   BINARY_ETI_INST_MACRO_DEV(layer, El::Device::CPU)
 
 INSTANTIATE(add_layer, add_op);

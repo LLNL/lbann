@@ -318,26 +318,13 @@ void fp_gpu(lbann_comm& comm,
 
 } // namespace
 
-template <typename TensorDataType>
-void fp_compute_impl(top_k_categorical_accuracy_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
-  fp_gpu<TensorDataType>(*l.get_comm(),
-                         l.m_k,
-                         l.get_prev_activations(0),
-                         l.get_prev_activations(1),
-                         l.get_activations());
-}
-template <typename TensorDataType>
-void fp_compute_impl(top_k_categorical_accuracy_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  fp_gpu<TensorDataType>(*l.get_comm(),
-                         l.m_k,
-                         l.get_prev_activations(0),
-                         l.get_prev_activations(1),
-                         l.get_activations());
-}
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void top_k_categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
+  fp_gpu(*this->get_comm(),
+         this->m_k,
+         this->get_prev_activations(0),
+         this->get_prev_activations(1),
+         this->get_activations());
 }
 
 template class top_k_categorical_accuracy_layer<

@@ -75,9 +75,7 @@ class learning_rate : public callback_base {
    * learning rate for optimizer opt. The current global learning rate is *not*
    * updated automatically based on this method.
    */
-  virtual float optimizer_schedule(model *m, optimizer &opt) {
-    return dynamic_cast<data_type_optimizer<DataType>&>(opt).get_learning_rate();
-  }
+  virtual float optimizer_schedule(model *m, optimizer &opt);
 
   const std::unordered_set<weights*>& get_weights() const noexcept {
     return m_weights;

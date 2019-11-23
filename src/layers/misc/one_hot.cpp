@@ -29,13 +29,14 @@
 
 namespace lbann {
 
-template <typename TensorDataType>
-void fp_compute_impl(one_hot_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMatType&>(l.get_local_prev_activations());
-  auto& local_output = dynamic_cast<CPUMatType&>(l.get_local_activations());
+  const auto& local_input =
+    dynamic_cast<const CPUMatType&>(this->get_local_prev_activations());
+  auto& local_output = dynamic_cast<CPUMatType&>(this->get_local_activations());
   const El::Int local_height = local_output.Height();
   const El::Int local_width = local_output.Width();
 
@@ -50,11 +51,6 @@ void fp_compute_impl(one_hot_layer<TensorDataType, data_layout::DATA_PARALLEL, E
     }
   }
 
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
 }
 
 template class one_hot_layer<

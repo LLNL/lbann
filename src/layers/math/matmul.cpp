@@ -187,11 +187,11 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void matmul_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
+  fp_compute_impl(*this);
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void matmul_layer<TensorDataType, Layout, Device>::bp_compute() {
-  bp_compute_impl<TensorDataType>(*this);
+  bp_compute_impl(*this);
 }
 
 // Explicit instantiation

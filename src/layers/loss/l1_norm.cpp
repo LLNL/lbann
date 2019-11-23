@@ -69,37 +69,17 @@ void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
 
 } // namespace
 
-template <typename TensorDataType>
-void local_fp_compute_impl(l1_norm_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  local_fp_cpu<TensorDataType>(l.get_local_prev_activations(),
-                               l.m_workspace->Matrix());
-}
-template <typename TensorDataType>
-void local_bp_compute_impl(l1_norm_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
-  local_bp_cpu<TensorDataType>(l.get_local_prev_activations(),
-                               l.m_workspace->LockedMatrix(),
-                               l.get_local_error_signals());
-}
-template <typename TensorDataType>
-void local_fp_compute_impl(l1_norm_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  local_fp_cpu<TensorDataType>(l.get_local_prev_activations(),
-                               l.m_workspace->Matrix());
-}
-template <typename TensorDataType>
-void local_bp_compute_impl(l1_norm_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
-  local_bp_cpu<TensorDataType>(l.get_local_prev_activations(),
-                               l.m_workspace->LockedMatrix(),
-                               l.get_local_error_signals());
-}
-
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void l1_norm_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
-  local_fp_compute_impl<TensorDataType>(*this);
+  local_fp_cpu(this->get_local_prev_activations(),
+               this->m_workspace->Matrix());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void l1_norm_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
-  local_bp_compute_impl<TensorDataType>(*this);
+  local_bp_cpu(this->get_local_prev_activations(),
+               this->m_workspace->LockedMatrix(),
+               this->get_local_error_signals());
 }
 
 template class l1_norm_layer<

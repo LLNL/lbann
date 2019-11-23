@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/check_init.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 namespace lbann {
 namespace callback {

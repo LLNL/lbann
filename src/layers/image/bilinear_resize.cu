@@ -32,7 +32,7 @@ namespace lbann {
 
 namespace {
 
-template <typename TensorDataType, int block_size>
+template <int block_size, typename TensorDataType>
 __global__ void fp_kernel(El::Int num_samples,
                           El::Int num_channels,
                           El::Int input_height,
@@ -115,15 +115,15 @@ __global__ void fp_kernel(El::Int num_samples,
 }
 
 
-template <typename TensorDataType>
-void fp_compute_impl(bilinear_resize_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
 
   // Matrices
-  const auto& local_input = l.get_local_prev_activations();
-  auto& local_output = l.get_local_activations();
+  const auto& local_input = this->get_local_prev_activations();
+  auto& local_output = this->get_local_activations();
 
   // Dimensions
-  const auto& input_dims = l.get_input_dims();
+  const auto& input_dims = this->get_input_dims();
   const auto& num_dims = input_dims.size();
   const auto& num_samples = local_input.Width();
   const El::Int num_channels = std::accumulate(input_dims.begin(),
@@ -146,20 +146,15 @@ void fp_compute_impl(bilinear_resize_layer<TensorDataType, data_layout::DATA_PAR
 
   // Launch CUDA kernel
   if (grid_dim > 0) {
-    fp_kernel<TensorDataType, block_dim>
+    fp_kernel<block_dim>
       <<<grid_dim, block_dim, 0, El::GPUManager::Stream()>>>(
         num_samples, num_channels,
         input_height, input_width,
         local_input.LockedBuffer(), local_input.LDim(),
-        l.m_height, l.m_width,
+        this->m_height, this->m_width,
         local_output.Buffer(), local_output.LDim());
   }
 
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
-  fp_compute_impl<TensorDataType>(*this);
 }
 
 template class bilinear_resize_layer<
