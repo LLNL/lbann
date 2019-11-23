@@ -335,7 +335,6 @@ class generic_data_reader {
   }
   /// get the linearized size of what is identified by desc.
   virtual int get_linearized_size(const std::string& desc) const {
-std::cout << ">>>>>>> get_linearized_size\n";
     if (desc == "data") {
       return get_linearized_data_size();
     } else if (desc == "label") {
