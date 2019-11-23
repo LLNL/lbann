@@ -29,6 +29,9 @@
 #ifndef LBANN_DATA_READER_NPZ_RAS_LIPID_HPP
 #define LBANN_DATA_READER_NPZ_RAS_LIPID_HPP
 
+#include "conduit/conduit.hpp"
+#include "lbann/utils/options.hpp"
+//#include "lbann/data_readers/sample_list_file_ptr.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "conduit/conduit.hpp"
 #include <cnpy.h>
@@ -42,6 +45,9 @@ namespace lbann {
 class ras_lipid_conduit_data_reader : public generic_data_reader {
 
 public:
+  //using sample_name_t = std::string;
+  //using sample_list_t = sample_list_file_ptr<sample_name_t>;
+
   ras_lipid_conduit_data_reader(const bool shuffle);
   ras_lipid_conduit_data_reader(const ras_lipid_conduit_data_reader&);
   ras_lipid_conduit_data_reader& operator=(const ras_lipid_conduit_data_reader&);
@@ -55,18 +61,21 @@ public:
 
   void load() override;
 
+  void set_num_labels(int n) { m_num_labels = n; }
+
   int get_linearized_data_size() const override { return m_num_features; }
   int get_linearized_label_size() const override { return m_num_labels; }
   int get_linearized_response_size() const override { return m_num_response_features; }
-  const std::vector<int> get_data_dims() const override { return m_data_dims; }
-
+  const std::vector<int> get_data_dims() const override {  return m_data_dims; }
   int get_num_labels() const override { return m_num_labels; }
 
 private:
   int m_num_features = 0;
-  int m_num_labels = 3;
+  int m_num_labels = 0;
   int m_num_response_features = 0;
   std::vector<int> m_data_dims;
+
+//  sample_list_t m_sample_list;
 
   /** @brief List of input npz filenames */
   std::vector<std::string> m_filenames;

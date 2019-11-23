@@ -180,7 +180,9 @@ void init_data_readers(
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
     } else if (name == "ras_lipid") {
-      reader = new ras_lipid_conduit_data_reader(shuffle);
+      auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
+      ras_lipid->set_num_labels(readme.num_labels());
+      reader = ras_lipid;
     } else if (name == "csv") {
       auto* reader_csv = new csv_reader(shuffle);
       reader_csv->set_label_col(readme.label_col());
@@ -460,7 +462,9 @@ void init_data_readers(
           leading_reader_jag_conduit[role] = reader_jag_conduit;
         }
       } else if (name == "ras_lipid") {
-        reader_validation = new ras_lipid_conduit_data_reader(shuffle);
+        auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
+        ras_lipid->set_num_labels(readme.num_labels());
+        reader_validation = ras_lipid;
         (*(ras_lipid_conduit_data_reader *)reader_validation) = (*(ras_lipid_conduit_data_reader *)reader);
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);

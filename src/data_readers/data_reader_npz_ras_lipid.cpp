@@ -169,6 +169,7 @@ data types, from python+numpy:
   // and set it in the data_store
   //bool print_stats = true;
 size_t nn = 0;
+  std::vector<size_t> dist(3, 0);
   for (const auto &t : my_samples) {
     std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(m_filenames[t.first]);
     for (const auto &t4 : t.second) {
@@ -199,6 +200,10 @@ size_t nn = 0;
           conduit::float64 *data = reinterpret_cast<conduit::float64*>(a[name].data_holder->data());
           if (name == "states") {
             int label = (data + offset)[0];
+            if (label < 0 || label > 2) {
+              LBANN_ERROR("bad label; should be 0, 1, or 2 but it's: ", label);
+            }
+            dist[label] += 1;
             node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(label);
           } else {
             node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
@@ -209,6 +214,17 @@ size_t nn = 0;
       ++nn;
     }
   }  
+
+  if (is_master()) {
+    std::vector<size_t> r(3);
+    m_comm->trainer_reduce(dist.data(), 3, r.data());
+    std::cout << "label distribution:\n";
+    for (size_t h=0; h<3; h++) {
+      std::cout << "  " << h << " " << r[h] << std::endl;
+    }
+  } else {
+    m_comm->trainer_reduce(dist.data(), 3, 0);
+  }
 }
 
 bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
@@ -269,15 +285,16 @@ void ras_lipid_conduit_data_reader::fill_in_metadata() {
     m_datum_num_words[name] = num_words;
     m_datum_word_sizes[name] = word_size;
     m_datum_num_bytes[name] = num_words*word_size;
-
   }
 
   //TODO: this should be more generic, will need to change depending on what we fetch
   if (m_datum_shapes.find("density_sig1") == m_datum_shapes.end()) {
     LBANN_ERROR("m_datum_shapes.find(\"density_sig1\") = m_datum_shapes.end()");
   }
+  m_num_features = 1;
   for (auto t : m_datum_shapes["density_sig1"]) {
     m_data_dims.push_back(t);
+    m_num_features *= t;
   }
 }
 
