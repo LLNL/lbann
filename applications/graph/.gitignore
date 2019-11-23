@@ -1,4 +1,2 @@
-experiment
-run.sh
-*.log
-*.emb
+experiments
+run_scripts

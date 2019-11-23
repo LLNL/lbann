@@ -17,9 +17,9 @@ graph_file = os.path.join(
 )
 walk_length = 80
 walk_context_length = 10
-walks_per_node = 4
-return_param = 1.0
-inout_param = 1.0
+walks_per_node = 10
+return_param = 0.25
+inout_param = 0.25
 directed = False
 weighted = False
 

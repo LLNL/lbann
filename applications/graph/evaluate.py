@@ -1,3 +1,9 @@
+"""Helper script to evaluate quality of node embeddings.
+
+Converts the embedding weights computed by LBANN into a format that
+can be read by Keita's evaluation script.
+
+"""
 import argparse
 import os.path
 import sys

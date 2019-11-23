@@ -1,3 +1,4 @@
+"""Learn embedding weights with LBANN."""
 import argparse
 import os.path
 
@@ -23,8 +24,8 @@ parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
 parser.add_argument(
-    '--num-epochs', action='store', default=20, type=int,
-    help='number of epochs (default: 20)', metavar='NUM')
+    '--num-epochs', action='store', default=1, type=int,
+    help='number of epochs (default: 1)', metavar='NUM')
 parser.add_argument(
     '--latent-dim', action='store', default=128, type=int,
     help='latent space dimensions (default: 128)', metavar='NUM')
@@ -106,7 +107,7 @@ model = lbann.Model(args.mini_batch_size,
                     layers=lbann.traverse_layer_graph(input_),
                     objective_function=obj,
                     callbacks=callbacks)
-opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
+opt = lbann.SGD(learn_rate=0.025, momentum=0.9)
 
 # Run LBANN
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
