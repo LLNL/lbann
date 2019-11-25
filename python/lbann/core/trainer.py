@@ -1,10 +1,9 @@
 """LBANN Trainer."""
-import abc
 from lbann import trainer_pb2
 from lbann.util import make_iterable
 
 class Trainer:
-    """LBANN Trainer."""
+    """Manages the training of a neural network model."""
 
     def __init__(self,
                  name=None,

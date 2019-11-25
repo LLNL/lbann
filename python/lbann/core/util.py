@@ -1,4 +1,9 @@
-"""Utility functions to generate classes from Protobuf messages."""
+"""Utility functions for core LBANN functionality.
+
+This submodule mostly contains helper functions to generate classes
+from Protobuf messages.
+
+"""
 import google.protobuf.descriptor
 import google.protobuf.wrappers_pb2
 from lbann import lbann_pb2, callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2

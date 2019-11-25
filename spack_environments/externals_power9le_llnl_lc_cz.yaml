@@ -28,8 +28,8 @@
       buildable: true
       version: [7.4.2. 7.5.1, 7.5.1-10.1-power9le, 7.6.3-10.1-power9le]
       paths:
-        cudnn@7.5.1 arch=linux-rhel7-power9le: /usr/workspace/wsb/brain/cudnn/cudnn-7.5.1/cuda-10.1_power9le/
-        cudnn@7.4.2 arch=linux-rhel7-power9le: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-9.2_power9le
+        cudnn@7.5.1 arch=linux-rhel7-power9le: /usr/workspace/wsb/brain/cudnn/cudnn-7.5.1/cuda-10.1_ppc64le/
+        cudnn@7.4.2 arch=linux-rhel7-power9le: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-9.2_ppc64le/
 
     hwloc::
       buildable: False

@@ -1,8 +1,8 @@
 """Neural network tensor operations."""
 import abc
-import lbann
+from lbann import layers_pb2
 from lbann.util import make_iterable
-import lbann.util.class_generator
+import lbann.core.util
 
 class Layer(abc.ABC):
     """Neural network tensor operation.
@@ -51,7 +51,7 @@ class Layer(abc.ABC):
 
     def export_proto(self):
         """Construct and return a protobuf message."""
-        proto = lbann.layers_pb2.Layer()
+        proto = layers_pb2.Layer()
         proto.parents = ' '.join([l.name for l in self.parents])
         proto.children = ' '.join([l.name for l in self.children])
         proto.weights = ' '.join([w.name for w in self.weights])
@@ -91,8 +91,8 @@ class Layer(abc.ABC):
 # Generate Layer sub-classes from lbann.proto
 # Note: The list of skip fields must be updated if any new fields are
 # added to the Layer message in lbann.proto
-classes = lbann.util.class_generator.generate_classes_from_protobuf_message(
-    lbann.layers_pb2.Layer,
+classes = lbann.core.util.generate_classes_from_protobuf_message(
+    layers_pb2.Layer,
     skip_fields = set([
         'name', 'parents', 'children', 'data_layout', 'device_allocation',
         'weights', 'num_neurons_from_data_reader', 'freeze', 'hint_layer',
