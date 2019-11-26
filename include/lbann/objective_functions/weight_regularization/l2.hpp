@@ -43,7 +43,7 @@ template <typename> class data_type_weights;
  */
 class l2_weight_regularization : public objective_function_term {
 public:
-  using AccumulateDataType = float;
+  using AccumulateDataType = DataType;
 
   using OptimizerType = data_type_optimizer<DataType>;
 

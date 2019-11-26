@@ -389,6 +389,6 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
   return;
 }
 
-template class partitioned_io_buffer<float>;
+template class partitioned_io_buffer<DataType>;
 
 } // namespace lbann

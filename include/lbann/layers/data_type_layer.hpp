@@ -36,7 +36,7 @@ namespace lbann {
 //template <typename TensorDataType>
 //class data_type_weights;
 
-using supported_layer_data_type = El::TypeList<float/*, double*/>;
+using supported_layer_data_type = El::TypeList<DataType, float/*, double*/>;
 
 template <typename T, typename List> struct IsElement;
 
