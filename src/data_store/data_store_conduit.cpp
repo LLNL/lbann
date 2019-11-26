@@ -33,6 +33,7 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/commify.hpp"
 #include <unordered_set>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -51,8 +52,6 @@
 #include <cstdlib>
 
 namespace lbann {
-
-std::string commify(size_t n);
 
 data_store_conduit::data_store_conduit(
   generic_data_reader *reader) :
@@ -1025,8 +1024,8 @@ void data_store_conduit::allocate_shared_segment(map_is_t &sizes, std::vector<st
   std::stringstream msg;
   PROFILE(
     "  Shared Memory segment statistics:\n",
-    "   size of required shared memory segment: ", commify(m_mem_seg_length), "\n",
-    "   available mem: ", commify(avail_mem), "\n",
+    "   size of required shared memory segment: ", utils::commify(m_mem_seg_length), "\n",
+    "   available mem: ", utils::commify(avail_mem), "\n",
     "   required size is ", percent, " percent of available");
 
   if (m_mem_seg_length >= avail_mem) {
@@ -1193,7 +1192,7 @@ void data_store_conduit::build_conduit_nodes(map_is_t &sizes) {
 }
 
 void data_store_conduit::fillin_shared_images(char* images, size_t size, size_t offset) {
-  PROFILE("  fillin_shared_images; size: ", commify(size), " offset: ", commify(offset));
+  PROFILE("  fillin_shared_images; size: ", utils::commify(size), " offset: ", utils::commify(offset));
   memcpy(reinterpret_cast<void*>(m_mem_seg+offset), reinterpret_cast<const void*>(images), size);
 }
 
@@ -1240,7 +1239,7 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
     for (auto idx : indices[p]) {
       bytes += image_sizes[idx];
     }
-    //PROFILE("  \nP_", p, " has ", commify(bytes), " bytes to bcast");
+    //PROFILE("  \nP_", p, " has ", utils::commify(bytes), " bytes to bcast");
 
     // Set up the rounds; due to MPI yuckiness, can bcast at most INT_MAX bytes
     // in a single broadcast
@@ -1266,7 +1265,7 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
     int work_vector_offset = 0;
     for (size_t i=0; i<rounds.size(); i++) {
       int sz = rounds[i];
-      //PROFILE("  bcasting ", commify(sz), " bytes");
+      //PROFILE("  bcasting ", utils::commify(sz), " bytes");
       if (m_rank_in_trainer == p) {
         m_comm->trainer_broadcast<char>(p, work.data()+work_vector_offset, sz);
         if (node_rank == 0) {
@@ -1339,6 +1338,9 @@ void data_store_conduit::exchange_owner_maps() {
 }
 
 void data_store_conduit::profile_timing() {
+  if (m_exchange_time == 0) {
+    return;
+  }
   if (m_cur_epoch > 0) {
     PROFILE(
         "\n",
@@ -1396,21 +1398,20 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
     return;
   }
 
+  if (m_reader->at_new_epoch() && is_local_cache() && is_explicitly_loading()) {
+    exchange_local_caches();
+    return;
+  }
+
   if (m_reader->at_new_epoch()) {
     ++m_cur_epoch;
-    PROFILE("Starting exchange_mini_batch_data");
-    PROFILE("  At new epoch; m_cur_epoch: ", m_cur_epoch);
+    PROFILE("Exchange_mini_batch_data; m_cur_epoch: ", m_cur_epoch);
     PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
     PROFILE("  is_local_cache(): ", is_local_cache());
     PROFILE("  is_fully_loaded: ", is_fully_loaded());
     if (! is_local_cache()) {
       profile_timing();
     }  
-  }
-
-  if (m_reader->at_new_epoch() && is_local_cache() && is_explicitly_loading()) {
-    exchange_local_caches();
-    return;
   }
 
   double tm1 = get_time();
@@ -1431,6 +1432,7 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
 
   exchange_data_by_sample(current_pos, mb_size);
   m_exchange_time += (get_time() - tm1);
+
 }
 
 void data_store_conduit::flush_debug_file() {
@@ -1810,12 +1812,12 @@ void data_store_conduit::test_imagenet_node(int index, bool dereference) {
     LBANN_ERROR("failed to find data_id ", data_id, " in the image_sizes map");
   }
   size_t szz = m_sample_sizes[data_id];
-  PROFILE("test_imagenet_node() for data_id: ", commify(data_id), " at offset: ", commify(m_image_offsets[data_id]), " image size: ", commify(szz));
+  PROFILE("test_imagenet_node() for data_id: ", utils::commify(data_id), " at offset: ", utils::commify(m_image_offsets[data_id]), " image size: ", utils::commify(szz));
   if (m_image_offsets[data_id] >= INT_MAX) {
     PROFILE("    WARNING: offset is >= INT_MAX!");
   }
 
-  std::cerr << "testing sample_id: "<< commify(data_id)<< " stored at offset: "<< commify(m_image_offsets[data_id]);
+  std::cerr << "testing sample_id: "<< utils::commify(data_id)<< " stored at offset: "<< utils::commify(m_image_offsets[data_id]);
   if (m_image_offsets[data_id] >= INT_MAX) {
     std::cerr << "; (>= INT_MAX)\n";
   } else {
@@ -1895,25 +1897,6 @@ bool data_store_conduit::test_local_cache_imagenet(int n) {
   if (m_world_master) std::cerr<< "  All tests passed\n";
   PROFILE("  All tests passed\n.");
   return true;
-}
-
-std::string commify(size_t n) {
-  std::string s = std::to_string(n);
-  std::stringstream s2;
-  int c = 0;
-  for (int j = (int)s.size()-1; j>=0; j--) {
-    s2 << s[j];
-    ++c;
-    if (c == 3) {
-      if (j > 0) {
-        s2 << ",";
-        c = 0;
-      }
-    }
-  }
-  std::string r = s2.str();
-  std::reverse(r.begin(), r.end());
-  return r;
 }
 
 void data_store_conduit::check_query_flags() const {
