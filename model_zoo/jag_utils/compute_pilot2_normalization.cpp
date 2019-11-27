@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
 
     if (argc == 1) {
       if (master) {
-        std::cout << "usage: " << argv[0] << " --filelist=<string> --output_fn=<string>" << std::endl;
+        std::cerr << "usage: " << argv[0] << " --filelist=<string> --output_fn=<string>" << std::endl;
       }
       return EXIT_FAILURE;
     }
@@ -77,8 +77,12 @@ int main(int argc, char *argv[]) {
 
     size_t total_samples = 0;
     std::vector<double> v(14, 0.);
+    std::vector<double> v_min(14, std::numeric_limits<double>::max());
     size_t n = 0;
     for (size_t j=rank; j<filenames.size(); j+=np) {
+      if (master) {
+        std::cerr << "loading: " << filenames[j] << std::endl;
+      }
       std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filenames[j]);
       // get number of samples in the files
       for (const auto &t : a) {
@@ -95,13 +99,14 @@ int main(int argc, char *argv[]) {
       for (size_t i=0; i<n_elts; i++) {
         double vv = data[i];
         if (vv > v[s]) v[s] = vv;
+        if (vv < v_min[s]) v_min[s] = vv;
         ++s;
         if (s == 14) {
           s = 0;
         }
       }
       if (master) {
-        std::cout << "approx " << utils::commify(total_samples*np) << " samples processed" << std::endl;
+        std::cerr << "approx " << utils::commify(total_samples*np) << " samples processed" << std::endl;
       }
     }
     // ==================== finished processing all files ========================
@@ -117,13 +122,18 @@ int main(int argc, char *argv[]) {
     }
 
     if (master) {
-      std::cout << "\nactual num samples processed: " << utils::commify(n3) << std::endl;
-      std::cout << "channel normalization values: ";
+      std::cerr << "\nactual num samples processed: " << utils::commify(n3) << std::endl;
+      std::cerr << "channel normalization values: ";
       for (auto t : f) {
-        std::cout << t << " ";
+        std::cerr << t << " ";
       }
-      std::cout << std::endl;
+      std::cerr << std::endl;
       std::ofstream out(output_fn.c_str());
+      for (size_t i=0; i<v.size(); i++) {
+        out << "      " << v[i] << " " << v_min[i] << "\n";
+      }
+      /*
+       * TODO: perhaps put this in prototext, similar to data_reder_jag_conduit
       out << "data_set_metadata_pilot2 {\n"
           << "  pilot2_normalization {\n"
           << "    channel_normalization_params: [\n";
@@ -133,6 +143,7 @@ int main(int argc, char *argv[]) {
       out << "    ]\n"
           << "  }\n"
           << "}\n";
+      */
       out.close();
     }
 

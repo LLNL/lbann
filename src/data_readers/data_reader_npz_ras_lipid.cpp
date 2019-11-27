@@ -32,6 +32,7 @@
 #include "lbann/utils/jag_utils.hpp"  // read_filelist(..) TODO should be move to file_utils
 #include "lbann/utils/timer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
 
 namespace lbann {
@@ -90,6 +91,10 @@ void ras_lipid_conduit_data_reader::load() {
   //      pathname of an npz file. 
   std::string infile = get_data_filename();
   read_filelist(m_comm, infile, m_filenames);
+
+  if (!opts->has_string("normalization")) {
+    LBANN_ERROR("you must include --normalization=<string>");
+  }
 
   fill_in_metadata();
 
@@ -165,10 +170,28 @@ data types, from python+numpy:
   std::unordered_map<int, std::vector<std::pair<int,int>>> my_samples;
   get_my_indices(my_samples);
 
+  std::string fn = options::get()->get_string("normalization");
+  std::ifstream in(fn.c_str());
+  if (!in) {
+    LBANN_ERROR("failed to open ", fn, " for reading");
+  }
+  std::vector<double> min;
+  std::vector<double> max_min;
+  min.reserve(14);
+  max_min.reserve(14);
+  double v_max, v_min;
+  while (in >> v_max >> v_min) { 
+    min.push_back(v_min);
+    max_min.push_back(v_max - v_min);
+  }
+  in.close();
+  if (min.size() != 14) {
+    LBANN_ERROR("normalization.size() = ", min.size(), "; should be 14");
+  }
+
   // construct a conduit::Node for each sample that this rank owns,
   // and set it in the data_store
-  //bool print_stats = true;
-size_t nn = 0;
+  size_t nn = 0;
   std::vector<size_t> dist(3, 0);
   for (const auto &t : my_samples) {
     std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(m_filenames[t.first]);
@@ -205,6 +228,13 @@ size_t nn = 0;
             }
             dist[label] += 1;
             node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(label);
+          } else if (name == "density_sig1") {
+            int s = 0;
+            for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
+              data[j] = (data[j] - min[s]) / max_min[s];
+              ++s;
+            }
+            node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
           } else {
             node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
           }  
@@ -212,15 +242,27 @@ size_t nn = 0;
       }
       m_data_store->set_preloaded_conduit_node(data_id, node);
       ++nn;
+      if (is_master() && nn % 1000 == 0) {
+        int np = m_comm->get_procs_per_trainer();
+        std::cout << "estimated number of samples loaded: " << utils::commify(nn/1000*np) << "K" << std::endl;
+      }  
     }
   }  
 
   if (is_master()) {
     std::vector<size_t> r(3);
     m_comm->trainer_reduce(dist.data(), 3, r.data());
-    std::cout << "label distribution:\n";
+    std::cout << "\nLabel distribution:\n";
     for (size_t h=0; h<3; h++) {
       std::cout << "  " << h << " " << r[h] << std::endl;
+    }
+    std::cout << "Data Shapes:\n";
+    for (auto t : m_datum_shapes) {
+      std::cout << "  " << t.first << " ";
+      for (auto t2 : t.second) {
+        std::cout << t2 << " ";
+      }
+      std::cout << std::endl << std::endl;
     }
   } else {
     m_comm->trainer_reduce(dist.data(), 3, 0);
@@ -396,7 +438,6 @@ void ras_lipid_conduit_data_reader::write_file_sizes() {
 }
 
 void ras_lipid_conduit_data_reader::read_file_sizes() {
-if (is_master()) std::cout << "starting ras_lipid_conduit_data_reader::read_file_sizes\n";
   std::string fn = options::get()->get_string("pilot2_read_file_sizes");
   std::ifstream in(fn.c_str());
   if (!in) {

@@ -352,7 +352,7 @@ private :
   // END: timers for profiling exchange_data
   //===========================================================
 
-  int m_cur_epoch = 0;
+  int m_cur_epoch = -1;
 
   bool m_is_setup = false;
 
