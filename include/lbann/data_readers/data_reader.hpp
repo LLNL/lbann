@@ -67,9 +67,6 @@ class model;
 class generic_data_reader {
  public:
 
- void XX(std::string msg);
-
-
  #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
  #define JAG_NOOP_INT if (m_jag_partitioned) { return 0; }
 

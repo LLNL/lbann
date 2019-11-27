@@ -832,16 +832,4 @@ void generic_data_reader::preload_data_store() {
 
 }
 
-void generic_data_reader::XX(std::string msg) {
-  int me = m_comm->get_rank_in_trainer();
-  int np = m_comm->get_procs_per_trainer();
-  for (int j=0; j<np; j++) {
-    if (me == j) {
-      std::cout << me << " :: " << msg << std::endl;
-    }
-    m_comm->trainer_barrier();
-  }
-}
-
-
 }  // namespace lbann
