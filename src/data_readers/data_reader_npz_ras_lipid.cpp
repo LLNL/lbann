@@ -256,14 +256,15 @@ data types, from python+numpy:
     for (size_t h=0; h<3; h++) {
       std::cout << "  " << h << " " << r[h] << std::endl;
     }
-    std::cout << "Data Shapes:\n";
+    std::cout << "\nData Shapes:\n";
     for (auto t : m_datum_shapes) {
       std::cout << "  " << t.first << " ";
       for (auto t2 : t.second) {
         std::cout << t2 << " ";
       }
-      std::cout << std::endl << std::endl;
+      std::cout << std::endl;
     }
+    std::cout << std::endl;
   } else {
     m_comm->trainer_reduce(dist.data(), 3, 0);
   }
