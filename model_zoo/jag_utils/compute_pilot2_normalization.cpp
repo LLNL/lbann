@@ -75,51 +75,50 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> filenames;
     read_filelist(comm.get(), input_fn, filenames);
 
-    size_t approx = 0;
-    size_t exact = 0;
+    size_t total_samples = 0;
     std::vector<double> v(14, 0.);
-    double num_samples = 0;
+    size_t n = 0;
     for (size_t j=rank; j<filenames.size(); j+=np) {
       std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filenames[j]);
+      // get number of samples in the files
       for (const auto &t : a) {
         const std::vector<size_t> &shape = t.second.shape;
-        num_samples = shape[0];
-        approx += num_samples;
-      }  
+        n = shape[0];
+        total_samples += n;
+        break;
+      }
 
-      size_t n = static_cast<size_t>(num_samples);
-      size_t offset = 0;
-      for (double r=0; r<n; r++) {
-        double *data = reinterpret_cast<double*>(a["density_sig1"].data_holder->data());
-        offset += 13*13*14;
-        double (&b)[13][13][14] = *reinterpret_cast<double (*)[13][13][14]>(data);
-        double max = 0.;
-        for (int channel = 0; channel < 14; ++channel) {
-          for (size_t k=0; k<13; k++) {
-            for (size_t i=0; i<13; i++) {
-              double m = b[k][i][channel];
-              max = m > max ? m : max;
-            }
-          }
-          v[channel] = max;
+      size_t n_elts = a["density_sig1"].num_vals;
+      double *data = reinterpret_cast<double*>(a["density_sig1"].data_holder->data());
+
+      int s = 0;
+      for (size_t i=0; i<n_elts; i++) {
+        double vv = data[i];
+        if (vv > v[s]) v[s] = vv;
+        ++s;
+        if (s == 14) {
+          s = 0;
         }
-        data += offset;
-        ++exact;
       }
       if (master) {
-        std::cout << "approx " << utils::commify(approx*np) << " samples processed" << std::endl;
+        std::cout << "approx " << utils::commify(total_samples*np) << " samples processed" << std::endl;
       }
     }
+    // ==================== finished processing all files ========================
 
     std::vector<double> f(14, 0.);
+    size_t n3 = 0;
     if (rank == 0) {
+      n3 = comm->trainer_reduce(total_samples);
       comm->trainer_reduce(v.data(), v.size(), f.data(), El::mpi::MAX);
     } else {
-      comm->trainer_reduce(exact, 0);
+      comm->trainer_reduce(total_samples, 0);
       comm->trainer_reduce(v.data(), v.size(), 0, El::mpi::MAX);
     }
 
     if (master) {
+      std::cout << "\nactual num samples processed: " << utils::commify(n3) << std::endl;
+      std::cout << "channel normalization values: ";
       for (auto t : f) {
         std::cout << t << " ";
       }
