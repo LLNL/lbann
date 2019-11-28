@@ -92,10 +92,6 @@ void ras_lipid_conduit_data_reader::load() {
   std::string infile = get_data_filename();
   read_filelist(m_comm, infile, m_filenames);
 
-  if (!opts->has_string("normalization")) {
-    LBANN_ERROR("you must include --normalization=<string>");
-  }
-
   fill_in_metadata();
 
   if (opts->has_string("pilot2_read_file_sizes")) {
@@ -170,23 +166,34 @@ data types, from python+numpy:
   std::unordered_map<int, std::vector<std::pair<int,int>>> my_samples;
   get_my_indices(my_samples);
 
-  std::string fn = options::get()->get_string("normalization");
-  std::ifstream in(fn.c_str());
-  if (!in) {
-    LBANN_ERROR("failed to open ", fn, " for reading");
-  }
   std::vector<double> min;
   std::vector<double> max_min;
-  min.reserve(14);
-  max_min.reserve(14);
-  double v_max, v_min;
-  while (in >> v_max >> v_min) { 
-    min.push_back(v_min);
-    max_min.push_back(v_max - v_min);
-  }
-  in.close();
-  if (min.size() != 14) {
-    LBANN_ERROR("normalization.size() = ", min.size(), "; should be 14");
+  bool normalizing = false;
+  if (options::get()->has_string("normalization")) {
+    if (is_master()) {
+      std::cout << "Normalizaing data!" << std::endl;
+    }  
+    normalizing = true;
+    std::string fn = options::get()->get_string("normalization");
+    std::ifstream in(fn.c_str());
+    if (!in) {
+    LBANN_ERROR("failed to open ", fn, " for reading");
+    }
+    min.reserve(14);
+    max_min.reserve(14);
+    double v_max, v_min;
+    while (in >> v_max >> v_min) { 
+      min.push_back(v_min);
+      max_min.push_back(v_max - v_min);
+    }
+    in.close();
+    if (min.size() != 14) {
+      LBANN_ERROR("normalization.size() = ", min.size(), "; should be 14");
+    }
+  } else {
+    if (is_master()) {
+      std::cout << "NOT Normalizing data!" << std::endl;
+    }
   }
 
   // construct a conduit::Node for each sample that this rank owns,
@@ -221,6 +228,7 @@ data types, from python+numpy:
         else { // rots, states, tilts, density_sig1, probs
           offset = sample_index*m_datum_num_words[name];
           conduit::float64 *data = reinterpret_cast<conduit::float64*>(a[name].data_holder->data());
+
           if (name == "states") {
             int label = (data + offset)[0];
             if (label < 0 || label > 2) {
@@ -228,19 +236,30 @@ data types, from python+numpy:
             }
             dist[label] += 1;
             node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(label);
+
           } else if (name == "density_sig1") {
             int s = 0;
-            for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
-              data[j] = (data[j] - min[s]) / max_min[s];
-              ++s;
-            }
+            if (normalizing) {
+              for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
+                data[j] = (data[j] - min[s]) / max_min[s];
+                ++s;
+                if (s == 14) {
+                  s = 0;
+                }
+              }
+            } 
             node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
+          
+          // rots, tilts, probs
           } else {
             node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
           }  
         }
       }
+
       m_data_store->set_preloaded_conduit_node(data_id, node);
+
+      //user feedback
       ++nn;
       if (is_master() && nn % 1000 == 0) {
         int np = m_comm->get_procs_per_trainer();
@@ -271,7 +290,6 @@ data types, from python+numpy:
 }
 
 bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
-  //TODO: compute normalization (scaling factor)
   const conduit::Node& node = m_data_store->get_conduit_node(data_id);
   double scaling_factor = 1.0;
   const double *data = node[LBANN_DATA_ID_STR(data_id) + "/density_sig1"].value();
