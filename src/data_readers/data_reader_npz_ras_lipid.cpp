@@ -134,7 +134,7 @@ void ras_lipid_conduit_data_reader::load() {
 }
 
 void ras_lipid_conduit_data_reader::do_preload_data_store() {
-  if (is_master()) std::cout << "Starting ras_lipid_conduit_data_reader::do_preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
+  if (is_master()) std::cout << "Starting ras_lipid_conduit_data_reader::do_preload_data_store; num indices: " << utils::commify(m_shuffled_indices.size()) << std::endl;
 
 #if 0
 ==========================================================================
@@ -166,25 +166,48 @@ data types, from python+numpy:
   std::unordered_map<int, std::vector<std::pair<int,int>>> my_samples;
   get_my_indices(my_samples);
 
+  std::ofstream out;
+  if (is_master() && options::get()->has_string("pilot2_profile")) {
+    out.open(options::get()->get_string("pilot2_profile").c_str());
+    if (!out) {
+      LBANN_ERROR("failed to open ", options::get()->get_string("pilot2_profile"), " for writing");
+    }
+  }
+
   std::vector<double> min;
   std::vector<double> max_min;
-  bool normalizing = false;
+  std::vector<double> mean;
+  std::vector<double> std_dev;
+  bool min_max = false;
+  bool z_score = false;
   if (options::get()->has_string("normalization")) {
+    min_max = true;
+    z_score = options::get()->get_bool("z_score");
     if (is_master()) {
-      std::cout << "Normalizaing data!" << std::endl;
-    }  
-    normalizing = true;
+      if (z_score) {
+        std::cout << "Normalizaing data using z-score" << std::endl;
+      } else {
+        std::cout << "Normalizaing data using min-max" << std::endl;
+      }
+    }
+
     std::string fn = options::get()->get_string("normalization");
     std::ifstream in(fn.c_str());
     if (!in) {
-    LBANN_ERROR("failed to open ", fn, " for reading");
+      LBANN_ERROR("failed to open ", fn, " for reading");
     }
+    std::string line;
+    getline(in, line);
     min.reserve(14);
     max_min.reserve(14);
-    double v_max, v_min;
-    while (in >> v_max >> v_min) { 
+    mean.reserve(14);
+    std_dev.reserve(14);
+    double v_max, v_min, v_mean, v_std_dev;
+    while (in >> v_max >> v_min >> v_mean >> v_std_dev) { 
       min.push_back(v_min);
       max_min.push_back(v_max - v_min);
+      mean.push_back(v_mean);
+      std_dev.push_back(v_std_dev);
     }
     in.close();
     if (min.size() != 14) {
@@ -239,7 +262,15 @@ data types, from python+numpy:
 
           } else if (name == "density_sig1") {
             int s = 0;
-            if (normalizing) {
+            if (z_score) {
+              for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
+                data[j] = (data[j] - mean[s]) / std_dev[s];
+                ++s;
+                if (s == 14) {
+                  s = 0;
+                }
+              }
+            } else if (min_max) {
               for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
                 data[j] = (data[j] - min[s]) / max_min[s];
                 ++s;
@@ -247,8 +278,14 @@ data types, from python+numpy:
                   s = 0;
                 }
               }
-            } 
+            }
             node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
+
+            if (out) {
+              for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
+                out << data[j] << std::endl;
+              }
+            }
           
           // rots, tilts, probs
           } else {
@@ -266,8 +303,13 @@ data types, from python+numpy:
         std::cout << "estimated number of samples loaded: " << utils::commify(nn/1000*np) << "K" << std::endl;
       }  
     }
-  }  
+  }
 
+  if (out) {
+    out.close();
+  }
+
+  //user feedback
   if (is_master()) {
     std::vector<size_t> r(3);
     m_comm->trainer_reduce(dist.data(), 3, r.data());
