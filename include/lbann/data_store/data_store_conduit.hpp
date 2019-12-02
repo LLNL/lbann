@@ -256,7 +256,7 @@ class data_store_conduit {
 
 private :
 
-  bool m_exchange_owner_maps = true;
+  bool m_owner_maps_were_exchanged = true;
 
   bool m_run_checkpoint_test = false;
 
@@ -351,8 +351,6 @@ private :
   //===========================================================
   // END: timers for profiling exchange_data
   //===========================================================
-
-  int m_cur_epoch = -1;
 
   bool m_is_setup = false;
 

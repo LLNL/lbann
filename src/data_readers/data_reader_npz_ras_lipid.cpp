@@ -166,6 +166,8 @@ data types, from python+numpy:
   std::unordered_map<int, std::vector<std::pair<int,int>>> my_samples;
   get_my_indices(my_samples);
 
+  bool verbose = options::get()->get_bool("verbose");
+
   std::ofstream out;
   if (is_master() && options::get()->has_string("pilot2_profile")) {
     out.open(options::get()->get_string("pilot2_profile").c_str());
@@ -185,9 +187,9 @@ data types, from python+numpy:
     z_score = options::get()->get_bool("z_score");
     if (is_master()) {
       if (z_score) {
-        std::cout << "Normalizaing data using z-score" << std::endl;
+        std::cout << "Normalizing data using z-score" << std::endl;
       } else {
-        std::cout << "Normalizaing data using min-max" << std::endl;
+        std::cout << "Normalizing data using min-max" << std::endl;
       }
     }
 
@@ -198,8 +200,8 @@ data types, from python+numpy:
     }
     std::string line;
     getline(in, line);
-    min.reserve(14);
     max_min.reserve(14);
+    min.reserve(14);
     mean.reserve(14);
     std_dev.reserve(14);
     double v_max, v_min, v_mean, v_std_dev;
@@ -264,7 +266,7 @@ data types, from python+numpy:
             int s = 0;
             if (z_score) {
               for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
-                data[j] = (data[j] - mean[s]) / std_dev[s];
+                data[j]= (data[j] - mean[s]) / std_dev[s];
                 ++s;
                 if (s == 14) {
                   s = 0;
@@ -298,7 +300,7 @@ data types, from python+numpy:
 
       //user feedback
       ++nn;
-      if (is_master() && nn % 1000 == 0) {
+      if (verbose && is_master() && nn % 1000 == 0) {
         int np = m_comm->get_procs_per_trainer();
         std::cout << "estimated number of samples loaded: " << utils::commify(nn/1000*np) << "K" << std::endl;
       }  

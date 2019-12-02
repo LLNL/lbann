@@ -1098,7 +1098,6 @@ void data_store_conduit::preload_local_cache() {
 
 void data_store_conduit::exchange_local_caches() {
   PROFILE("Starting exchange_local_caches");
-  PROFILE("  At new epoch; m_cur_epoch: ", m_cur_epoch);
   PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
   PROFILE("  is_preloading(): ", is_preloading());
   PROFILE("  is_local_cache(): ", is_local_cache());
@@ -1286,7 +1285,7 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
 }
 
 void data_store_conduit::exchange_owner_maps() {
-  if (!m_exchange_owner_maps) {
+  if (!m_owner_maps_were_exchanged) {
     return;
   }
   PROFILE("starting exchange_owner_maps;",
@@ -1335,13 +1334,14 @@ void data_store_conduit::exchange_owner_maps() {
   }
   PROFILE("leaving data_store_conduit::exchange_owner_maps\n",
           "my owner map size: ", m_owner.size());
+  m_owner_maps_were_exchanged = true;
 }
 
 void data_store_conduit::profile_timing() {
   if (m_exchange_time == 0) {
     return;
   }
-  if (m_cur_epoch > 0) {
+  if (m_exchange_time > 0.) {
     PROFILE(
         "\n",
         "Exchange Data Timing:\n",
@@ -1404,8 +1404,7 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
   }
 
   if (m_reader->at_new_epoch()) {
-    ++m_cur_epoch;
-    PROFILE("Exchange_mini_batch_data; m_cur_epoch: ", m_cur_epoch);
+    PROFILE("Exchange_mini_batch_data\n");
     PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
     PROFILE("  is_local_cache(): ", is_local_cache());
     PROFILE("  is_fully_loaded: ", is_fully_loaded());
@@ -1417,9 +1416,10 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
   double tm1 = get_time();
 
   // when not running in preload mode, exchange owner maps after the 1st epoch
-  if (m_reader->at_new_epoch() && ! is_preloading() && !is_local_cache() && m_cur_epoch == 1) {
+  if (m_reader->at_new_epoch() && ! is_preloading() && !is_local_cache()) {
     PROFILE("calling exchange_owner_maps");
     exchange_owner_maps();
+    m_owner_maps_were_exchanged = true;
     /*
      * TODO
     if (m_spill) {
@@ -1472,7 +1472,6 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
   m_owner.clear();
   m_sample_sizes.clear();
   m_data.clear();
-  m_cur_epoch = -1;
 
   m_is_setup = false;
   m_preloading = false;
@@ -1584,7 +1583,7 @@ void data_store_conduit::save_state() {
   {
   cereal::XMLOutputArchive archive(os);
     archive(CEREAL_NVP(m_my_num_indices),
-            CEREAL_NVP(m_cur_epoch), 
+            CEREAL_NVP(m_owner_maps_were_exchanged), 
             CEREAL_NVP(m_is_setup),
             CEREAL_NVP(m_preloading), 
             CEREAL_NVP(m_loading_is_complete), 
@@ -1624,7 +1623,7 @@ void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_read
   }
   cereal::XMLInputArchive iarchive(in);
   iarchive(CEREAL_NVP(m_my_num_indices),
-           m_cur_epoch, m_is_setup,
+           m_owner_maps_were_exchanged, m_is_setup,
            m_preloading, m_loading_is_complete,
            m_explicitly_loading, m_owner_map_mb_size,
            m_compacted_sample_size, m_is_local_cache,
@@ -1677,8 +1676,7 @@ void data_store_conduit::print_variables() {
   if (!m_world_master) {
     return;
   }
-  std::cerr << "m_cur_epoch: " << m_cur_epoch << std::endl
-            << "m_is_setup: " << m_is_setup << std::endl
+  std::cerr << "m_is_setup: " << m_is_setup << std::endl
             << "m_preloading: " << m_preloading << std::endl
             << "m_explicitly_loading: " << m_explicitly_loading << std::endl
             << "m_owner_map_mb_size: " << m_owner_map_mb_size << std::endl
@@ -1912,7 +1910,7 @@ void data_store_conduit::check_query_flags() const {
 }
 
 void data_store_conduit::clear_owner_map() { 
-    m_exchange_owner_maps = false;
+    m_owner_maps_were_exchanged = false;
     m_owner.clear(); 
   }
 }  // namespace lbann
