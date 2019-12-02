@@ -256,7 +256,7 @@ class data_store_conduit {
 
 private :
 
-  bool m_owner_maps_were_exchanged = true;
+  bool m_owner_maps_were_exchanged = false;
 
   bool m_run_checkpoint_test = false;
 
