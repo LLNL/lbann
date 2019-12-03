@@ -38,9 +38,10 @@ args = parser.parse_args()
 # Embedding weights
 # ----------------------------------
 
-embeddings = lbann.Weights(initializer=lbann.NormalInitializer(mean=0,
-                                                               standard_deviation=1),
-                           name='embeddings')
+embeddings = lbann.Weights(
+    initializer=lbann.NormalInitializer(mean=0, standard_deviation=1),
+    name='embeddings',
+)
 
 # ----------------------------------
 # Construct layer graph
@@ -64,37 +65,37 @@ for _ in range(num_negative_samples):
     negative_samples.append(lbann.Identity(input_slice))
 
 # Embedding vectors, including negative sampling
-source_embedding = lbann.Embedding(walk[0],
+walk_embeddings = [lbann.Embedding(node,
                                    weights=embeddings,
                                    num_embeddings=num_graph_nodes,
                                    embedding_dim=args.latent_dim)
-source_embedding = lbann.Reshape(source_embedding,
-                                 dims=f'{args.latent_dim} 1')
-positive_embeddings = [lbann.Embedding(node,
-                                       weights=embeddings,
-                                       num_embeddings=num_graph_nodes,
-                                       embedding_dim=args.latent_dim)
-                       for node in walk[1:]]
-positive_embeddings = [lbann.Reshape(e, dims=f'1 {args.latent_dim}')
-                       for e in positive_embeddings]
+                   for node in walk]
 negative_embeddings = [lbann.Embedding(node,
                                        weights=embeddings,
                                        num_embeddings=num_graph_nodes,
                                        embedding_dim=args.latent_dim)
                        for node in negative_samples]
+
+# Skip-Gram with negative sampling
+walk_start_embedding = lbann.Reshape(walk_embeddings[0],
+                                     dims=f'1 {args.latent_dim}')
+walk_context_embeddings = [lbann.Reshape(e, dims=f'{args.latent_dim} 1')
+                           for e in walk_embeddings[1:]]
 negative_embeddings = [lbann.Reshape(e, dims=f'1 {args.latent_dim}')
                        for e in negative_embeddings]
-target_embeddings = lbann.Concatenation(positive_embeddings + negative_embeddings)
-
-# Skip-Gram arhitecture
-preds = lbann.MatMul(target_embeddings, source_embedding)
-preds = lbann.Softmax(lbann.Reshape(preds, dims='-1'))
-labels = \
-    lbann.Concatenation(
-        lbann.Constant(value=1, num_neurons=f'{walk_length-1}'),
-        lbann.Constant(value=0, num_neurons=f'{num_negative_samples}')
-    )
-obj = lbann.CrossEntropy([preds, labels])
+left_embeddings = lbann.Concatenation([walk_start_embedding] + negative_embeddings)
+right_embeddings = lbann.Concatenation(walk_context_embeddings, axis=1)
+preds = lbann.MatMul(left_embeddings, right_embeddings)
+preds = lbann.LogSigmoid(preds)
+preds = lbann.Slice(preds,
+                    axis=0,
+                    slice_points=f'0 1 {1+num_negative_samples}')
+preds_positive = lbann.Reduction(preds, mode='sum')
+preds_negative = lbann.Reduction(preds, mode='sum')
+obj = [
+    lbann.LayerTerm(preds_positive, scale=1),
+    lbann.LayerTerm(preds_negative, scale=-1),
+]
 
 # ----------------------------------
 # Create data reader
