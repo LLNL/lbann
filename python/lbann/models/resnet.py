@@ -14,7 +14,7 @@ class ConvBNRelu(lbann.modules.Module):
 
     def __init__(self, out_channels, kernel_size, stride, padding,
                  bn_zero_init, bn_statistics_group_size,
-                 relu, name):
+                 relu, name, transpose=False):
         """Initialize ConvBNRelu module.
 
         Args:
@@ -29,18 +29,22 @@ class ConvBNRelu(lbann.modules.Module):
                 batch normalization statistics.
             relu (bool): Apply ReLU activation.
             name (str): Module name.
+            transpose (bool): If true call deconvolution (or convolution
+                         transpose)
 
         """
         super().__init__()
         self.name = name
         self.instance = 0
+        self.transpose = transpose
 
         # Initialize convolution
         self.conv = lbann.modules.Convolution2dModule(
             out_channels, kernel_size,
             stride=stride, padding=padding,
             bias=False,
-            name=self.name + '_conv')
+            name=self.name + '_conv',
+            transpose=self.transpose)
 
         # Initialize batch normalization
         bn_scale_init = 0.0 if bn_zero_init else 1.0
