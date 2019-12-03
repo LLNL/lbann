@@ -215,7 +215,7 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
 }
 
 void data_store_conduit::setup(int mini_batch_size) {
-  PROFILE("starting setup()");
+  PROFILE("starting setup(); m_owner.size(): ", m_owner.size());
   m_owner_map_mb_size = mini_batch_size;
   m_is_setup = true;
 }
@@ -315,6 +315,10 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 //n.b. Do not put any PROFILE or DEBUG statements in this method,
 //     since the threading from the data_reader will cause you grief
 void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool already_have) {
+
+DEBUG("starting set_conduit_node; m_data.size: ", m_data.size(), " data_id: ", data_id, " already_have: ", already_have);
+
+
   std::lock_guard<std::mutex> lock(m_mutex);
   // TODO: test whether having multiple mutexes below is better (faster) than
   //       locking this entire call with a single mutex. For now I'm
@@ -328,8 +332,7 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   {
     //std::lock_guard<std::mutex> lock(m_mutex);
     if (already_have == false && m_data.find(data_id) != m_data.end()) {
-//XX
-PROFILE("m_data.size: ", m_data.size());
+      DEBUG("m_data.size: ", m_data.size(), " ERROR: duplicate data_id: ", data_id);
       LBANN_ERROR("duplicate data_id: ", data_id, " in data_store_conduit::set_conduit_node; role: ", m_reader->get_role());
     }
   }
@@ -638,6 +641,7 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
     }
     m_owner[(*m_shuffled_indices)[i]] = owning_rank;
   }
+  m_owner_maps_were_exchanged = true;
 }
 
 const conduit::Node & data_store_conduit::get_random_node() const {
@@ -1285,12 +1289,6 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
 }
 
 void data_store_conduit::exchange_owner_maps() {
-  if (m_owner_maps_were_exchanged) {
-    return;
-  }
-  if (m_owner.size() == 0) {
-    LBANN_ERROR("m_owner.size() == 0; please contact Dave Hysom");
-  }
   PROFILE("starting exchange_owner_maps;",
           "my owner map size: ", m_owner.size());
   DEBUG("starting exchange_owner_maps;",
@@ -1338,6 +1336,7 @@ void data_store_conduit::exchange_owner_maps() {
   PROFILE("leaving data_store_conduit::exchange_owner_maps\n",
           "my owner map size: ", m_owner.size());
   m_owner_maps_were_exchanged = true;
+  set_loading_is_complete();
 }
 
 void data_store_conduit::profile_timing() {
@@ -1407,7 +1406,7 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
   }
 
   if (m_reader->at_new_epoch()) {
-    PROFILE("Exchange_mini_batch_data\n");
+    PROFILE("\nExchange_mini_batch_data");
     PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
     PROFILE("  is_local_cache(): ", is_local_cache());
     PROFILE("  is_fully_loaded: ", is_fully_loaded());
@@ -1421,7 +1420,9 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
   // when not running in preload mode, exchange owner maps after the 1st epoch
   if (m_reader->at_new_epoch() && ! is_preloading() && !is_local_cache()) {
     PROFILE("calling exchange_owner_maps");
-    exchange_owner_maps();
+    if (!m_owner_maps_were_exchanged) {
+      exchange_owner_maps();
+    }  
     m_owner_maps_were_exchanged = true;
     /*
      * TODO
@@ -1435,7 +1436,6 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
 
   exchange_data_by_sample(current_pos, mb_size);
   m_exchange_time += (get_time() - tm1);
-
 }
 
 void data_store_conduit::flush_debug_file() {
