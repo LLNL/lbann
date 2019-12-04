@@ -60,6 +60,10 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  /** @brief The proxy tensor type expected in this object. */
+  template <El::Device D>
+  using AbsDistMatReadProxyType = El::AbstractDistMatrixReadDeviceProxy<TensorDataType, D>;
+
   /** @brief The local tensor type expected in this object. */
   using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
 

@@ -113,7 +113,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   // Note: Perform GEMMs independently if possible
   auto* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
-    DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(1);
+    TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(1);
     if (linearity.DistSize() == 1) {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
@@ -211,7 +211,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   // Compute gradient w.r.t. linearity if needed
   auto* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
-    DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
+    TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
     if (l.m_transpose) {
@@ -279,7 +279,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
     auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
     if (bias_optimizer != nullptr) {
-      DataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
+      TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
       if (local_gradient_wrt_output.Height() < 1

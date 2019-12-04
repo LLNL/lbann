@@ -162,7 +162,7 @@ void data_type_layer<TensorDataType>::summarize_matrices(lbann_summary& summariz
   // Summarize activation matrices
   const int num_children = get_num_children();
   for (int i = 0; i < num_children; ++i) {
-    AbsDistMatReadProxy<El::Device::CPU> acts(*m_outputs[i]);
+    AbsDistMatReadProxyType<El::Device::CPU> acts(*m_outputs[i]);
     std::string prefix = m_name + "/activations";
     if (num_children > 1) { prefix += std::to_string(i); }
     summarizer.reduce_mean(prefix + "/mean", acts.GetLocked(), step);
@@ -175,7 +175,7 @@ void data_type_layer<TensorDataType>::summarize_matrices(lbann_summary& summariz
   // Summarize error signal matrices
   const int num_parents = get_num_parents();
   for (int i = 0; i < num_parents; ++i) {
-    AbsDistMatReadProxy<El::Device::CPU> error_signals(*m_gradient_wrt_inputs[i]);
+    AbsDistMatReadProxyType<El::Device::CPU> error_signals(*m_gradient_wrt_inputs[i]);
     std::string prefix = m_name + "/error_signals";
     if (num_parents > 1) { prefix += std::to_string(i); }
     summarizer.reduce_mean(prefix + "/mean", error_signals.GetLocked(), step);
@@ -633,8 +633,8 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(El::Int mini_
   }
 }
 
-#define PROTO(T)                            \
-  template class data_type_layer<DataType>;
+#define PROTO(T)                     \
+  template class data_type_layer<T>;
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
