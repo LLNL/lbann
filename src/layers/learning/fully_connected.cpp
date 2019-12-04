@@ -461,20 +461,13 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   bp_compute_impl<TensorDataType>(*this);
 }
 
-template class fully_connected_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-// template class fully_connected_layer<double, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class fully_connected_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-// template class fully_connected_layer<double, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO_DEVICE(T, Device) \
+  template class fully_connected_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  template class fully_connected_layer<T, data_layout::MODEL_PARALLEL, Device>;
 
-#ifdef LBANN_HAS_GPU
-template class fully_connected_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-// template class fully_connected_layer<double, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class fully_connected_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-// template class fully_connected_layer<double, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+
 
 } // namespace lbann
