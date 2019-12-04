@@ -31,10 +31,11 @@ namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 void fp(lbann_comm& comm,
-        const AbsDistMat& input,
-        AbsDistMat& output,
-        AbsDistMat& workspace) {
+        const El::AbstractDistMatrix<TensorDataType>& input,
+        El::AbstractDistMatrix<TensorDataType>& output,
+        El::AbstractDistMatrix<TensorDataType>& workspace) {
 
   // Local matrices
   const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
@@ -44,7 +45,7 @@ void fp(lbann_comm& comm,
   const auto local_width = local_input.Width();
 
   // Find column-wise maximum entries
-  El::Fill(workspace, std::numeric_limits<DataType>::lowest());
+  El::Fill(workspace, std::numeric_limits<TensorDataType>::lowest());
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     auto& max_entry = local_workspace(0, col);
@@ -59,7 +60,7 @@ void fp(lbann_comm& comm,
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto shift = local_workspace(0, col);
-    DataType sum{0};
+    TensorDataType sum{0};
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x = local_input(row, col);
       auto& y = local_output(row, col);
@@ -73,7 +74,7 @@ void fp(lbann_comm& comm,
   // Compute output by subtracting LogSumExp
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    const DataType log_sum_exp = std::log(local_workspace(0, col));
+    const TensorDataType log_sum_exp = std::log(local_workspace(0, col));
     for (El::Int row = 0; row < local_height; ++row) {
       auto& y = local_output(row, col);
       y -= log_sum_exp;
@@ -82,11 +83,12 @@ void fp(lbann_comm& comm,
 
 }
 
+template <typename TensorDataType>
 void bp(lbann_comm& comm,
-        const AbsDistMat& output,
-        const AbsDistMat& gradient_wrt_output,
-        AbsDistMat& gradient_wrt_input,
-        AbsDistMat& workspace) {
+        const El::AbstractDistMatrix<TensorDataType>& output,
+        const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+        El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+        El::AbstractDistMatrix<TensorDataType>& workspace) {
 
   // Local matrices
   const auto& local_output = dynamic_cast<const CPUMat&>(output.LockedMatrix());
@@ -124,40 +126,25 @@ void bp(lbann_comm& comm,
 
 } // namespace
 
-template <>
-void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  fp(*get_comm(),
-     get_prev_activations(),
-     get_activations(),
-     *m_workspace);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void log_softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp(*this->get_comm(),
+     this->get_prev_activations(),
+     this->get_activations(),
+     *this->m_workspace);
 }
-template <>
-void log_softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  bp(*get_comm(),
-     get_activations(),
-     get_prev_error_signals(),
-     get_error_signals(),
-     *m_workspace);
-}
-template <>
-void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  fp(*get_comm(),
-     get_prev_activations(),
-     get_activations(),
-     *m_workspace);
-}
-template <>
-void log_softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  bp(*get_comm(),
-     get_activations(),
-     get_prev_error_signals(),
-     get_error_signals(),
-     *m_workspace);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void log_softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp(*this->get_comm(),
+     this->get_activations(),
+     this->get_prev_error_signals(),
+     this->get_error_signals(),
+     *this->m_workspace);
 }
 
 template class log_softmax_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class log_softmax_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

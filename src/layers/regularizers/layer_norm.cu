@@ -51,15 +51,15 @@ struct pair_sum {
  *
  *  Grid dimensions: (local_sample_size / bsize) x local_num_samples x 1
  */
-template <size_t bdimx>
+template <size_t bdimx, typename TensorDataType>
 __global__ void fp_sums_kernel(
   size_t local_num_samples,
   size_t local_sample_size,
-  const DataType* __restrict__ vals,
+  const TensorDataType* __restrict__ vals,
   size_t vals_ldim,
-  DataType* sums,
+  TensorDataType* sums,
   size_t sums_stride,
-  DataType* sqsums,
+  TensorDataType* sqsums,
   size_t sqsums_stride) {
 
   // Indices and dimensions
@@ -74,7 +74,7 @@ __global__ void fp_sums_kernel(
   for (size_t i = gidy; i < local_num_samples; i += nthreadsy) {
 
     // Accumulate sums and perform block-wide reduction
-    using pair_t = thrust::pair<DataType,DataType>;
+    using pair_t = thrust::pair<TensorDataType,TensorDataType>;
     using pair_sum_t = pair_sum<pair_t>;
     pair_t sum_sqsum(0,0);
     for (size_t j = gidx; j < local_sample_size; j += nthreadsx) {
@@ -107,12 +107,13 @@ __global__ void fp_sums_kernel(
  *
  *  Grid dimensions: (local_num_samples / bsize) x 1 x 1
  */
+template <typename TensorDataType>
 __global__ void fp_statistics_kernel(
   size_t sample_size,
   size_t local_num_samples,
-  DataType* means,
+  TensorDataType* means,
   size_t means_stride,
-  DataType* vars,
+  TensorDataType* vars,
   size_t vars_stride) {
 
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -124,7 +125,7 @@ __global__ void fp_statistics_kernel(
     const auto& sqmean = sqsum / sample_size;
     const auto& var = (sqmean - mean*mean) * sample_size / (sample_size-1);
     means[i*means_stride] = mean;
-    vars[i*vars_stride] = cuda::max(var, DataType{0});
+    vars[i*vars_stride] = cuda::max(var, TensorDataType{0});
   }
 
 }
@@ -137,17 +138,18 @@ __global__ void fp_statistics_kernel(
  *
  *  Grid dimensions: (local_sample_size / bdimx) x (local_num_samples / bdimy) x 1
  */
+template <typename TensorDataType>
 __global__ void fp_output_kernel(
   size_t local_num_samples,
   size_t local_sample_size,
-  DataType epsilon,
-  const DataType* __restrict__ input,
+  TensorDataType epsilon,
+  const TensorDataType* __restrict__ input,
   size_t input_ldim,
-  DataType* __restrict__ output,
+  TensorDataType* __restrict__ output,
   size_t output_ldim,
-  const DataType* means,
+  const TensorDataType* means,
   size_t means_stride,
-  const DataType* vars,
+  const TensorDataType* vars,
   size_t vars_stride) {
 
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -168,16 +170,18 @@ __global__ void fp_output_kernel(
 }
 
 /** @brief Forward prop */
+template <typename TensorDataType>
 void fp_impl(lbann_comm& comm,
-             DataType epsilon,
-             const AbsDistMat& input,
-             AbsDistMat& output,
-             AbsDistMat& statistics) {
+             TensorDataType epsilon,
+             const El::AbstractDistMatrix<TensorDataType>& input,
+             El::AbstractDistMatrix<TensorDataType>& output,
+             El::AbstractDistMatrix<TensorDataType>& statistics) {
+  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const GPUMat&>(input.LockedMatrix());
-  auto& local_output = dynamic_cast<GPUMat&>(output.Matrix());
-  auto& local_statistics = dynamic_cast<GPUMat&>(statistics.Matrix());
+  const auto& local_input = dynamic_cast<const GPUMatType&>(input.LockedMatrix());
+  auto& local_output = dynamic_cast<GPUMatType&>(output.Matrix());
+  auto& local_statistics = dynamic_cast<GPUMatType&>(statistics.Matrix());
   auto local_means = El::LockedView(local_statistics, El::IR(0), El::ALL);
   auto local_vars = El::LockedView(local_statistics, El::IR(1), El::ALL);
 
@@ -208,7 +212,7 @@ void fp_impl(lbann_comm& comm,
   // Compute statistics from sums
   if (sample_size <= 1) {
     // local_means already has correct values
-    El::Fill(local_vars, DataType{1});
+    El::Fill(local_vars, TensorDataType{1});
   }
   else if (!local_statistics.IsEmpty()) {
     constexpr size_t block_size = 256;
@@ -250,22 +254,22 @@ void fp_impl(lbann_comm& comm,
  *
  *  Grid dimensions: (local_sample_size / bsize) x local_num_samples x 1
  */
-template <size_t bdimx>
+template <size_t bdimx, typename TensorDataType>
 __global__ void bp_statistics_grad_kernel(
   size_t local_num_samples,
   size_t local_sample_size,
-  DataType epsilon,
-  const DataType* __restrict__ input,
+  TensorDataType epsilon,
+  const TensorDataType* __restrict__ input,
   size_t input_ldim,
-  const DataType* __restrict__ output_grad,
+  const TensorDataType* __restrict__ output_grad,
   size_t output_grad_ldim,
-  const DataType* means,
+  const TensorDataType* means,
   size_t means_stride,
-  const DataType* vars,
+  const TensorDataType* vars,
   size_t vars_stride,
-  DataType* means_grad,
+  TensorDataType* means_grad,
   size_t means_grad_stride,
-  DataType* vars_grad,
+  TensorDataType* vars_grad,
   size_t vars_grad_stride) {
 
   // Indices and dimensions
@@ -280,7 +284,7 @@ __global__ void bp_statistics_grad_kernel(
   for (size_t i = gidy; i < local_num_samples; i += nthreadsy) {
 
     // Accumulate sums and perform block-wide reduction
-    using pair_t = thrust::pair<DataType,DataType>;
+    using pair_t = thrust::pair<TensorDataType,TensorDataType>;
     using pair_sum_t = pair_sum<pair_t>;
     pair_t sums(0,0);
     const auto& mean = means[i*means_stride];
@@ -296,8 +300,8 @@ __global__ void bp_statistics_grad_kernel(
     if (tid == 0) {
       const auto& var = vars[i*vars_stride];
       const auto& inv_stdev = cuda::rsqrt(var + epsilon);
-      const DataType dmean = -sums.first * inv_stdev;
-      const DataType dvar = -sums.second * inv_stdev*inv_stdev*inv_stdev / 2;
+      const TensorDataType dmean = -sums.first * inv_stdev;
+      const TensorDataType dvar = -sums.second * inv_stdev*inv_stdev*inv_stdev / 2;
       cuda::atomic_add(&means_grad[i*means_grad_stride], dmean);
       cuda::atomic_add(&vars_grad[i*vars_grad_stride], dvar);
     }
@@ -316,24 +320,25 @@ __global__ void bp_statistics_grad_kernel(
  *
  *  Grid dimensions: (local_sample_size / bdimx) x (local_num_samples / bdimy) x 1
  */
+template <typename TensorDataType>
 __global__ void bp_input_grad_kernel(
   size_t sample_size,
   size_t local_num_samples,
   size_t local_sample_size,
-  DataType epsilon,
-  const DataType* __restrict__ input,
+  TensorDataType epsilon,
+  const TensorDataType* __restrict__ input,
   size_t input_ldim,
-  const DataType* __restrict__ output_grad,
+  const TensorDataType* __restrict__ output_grad,
   size_t output_grad_ldim,
-  DataType* __restrict__ input_grad,
+  TensorDataType* __restrict__ input_grad,
   size_t input_grad_ldim,
-  const DataType* __restrict__ means,
+  const TensorDataType* __restrict__ means,
   size_t means_stride,
-  const DataType* __restrict__ vars,
+  const TensorDataType* __restrict__ vars,
   size_t vars_stride,
-  const DataType* means_grad,
+  const TensorDataType* means_grad,
   size_t means_grad_stride,
-  const DataType* vars_grad,
+  const TensorDataType* vars_grad,
   size_t vars_grad_stride) {
 
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -359,22 +364,24 @@ __global__ void bp_input_grad_kernel(
 }
 
 /** @brief Backprop */
+template <typename TensorDataType>
 void bp_impl(lbann_comm& comm,
-             DataType epsilon,
-             const AbsDistMat& input,
-             const AbsDistMat& output_grad,
-             AbsDistMat& input_grad,
-             const AbsDistMat& statistics,
-             AbsDistMat& statistics_grad) {
+             TensorDataType epsilon,
+             const El::AbstractDistMatrix<TensorDataType>& input,
+             const El::AbstractDistMatrix<TensorDataType>& output_grad,
+             El::AbstractDistMatrix<TensorDataType>& input_grad,
+             const El::AbstractDistMatrix<TensorDataType>& statistics,
+             El::AbstractDistMatrix<TensorDataType>& statistics_grad) {
+  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const GPUMat&>(input.LockedMatrix());
-  const auto& local_output_grad = dynamic_cast<const GPUMat&>(output_grad.LockedMatrix());
-  auto& local_input_grad = dynamic_cast<GPUMat&>(input_grad.Matrix());
-  const auto& local_statistics = dynamic_cast<const GPUMat&>(statistics.LockedMatrix());
+  const auto& local_input = dynamic_cast<const GPUMatType&>(input.LockedMatrix());
+  const auto& local_output_grad = dynamic_cast<const GPUMatType&>(output_grad.LockedMatrix());
+  auto& local_input_grad = dynamic_cast<GPUMatType&>(input_grad.Matrix());
+  const auto& local_statistics = dynamic_cast<const GPUMatType&>(statistics.LockedMatrix());
   const auto local_means = El::LockedView(local_statistics, El::IR(0), El::ALL);
   const auto local_vars = El::LockedView(local_statistics, El::IR(1), El::ALL);
-  auto& local_statistics_grad = dynamic_cast<GPUMat&>(statistics_grad.Matrix());
+  auto& local_statistics_grad = dynamic_cast<GPUMatType&>(statistics_grad.Matrix());
   auto local_means_grad = El::View(local_statistics_grad, El::IR(0), El::ALL);
   auto local_vars_grad = El::View(local_statistics_grad, El::IR(1), El::ALL);
 
@@ -436,46 +443,29 @@ void bp_impl(lbann_comm& comm,
 } // namespace <anon>
 
 // Template instantiation
-template <>
-void layer_norm_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp_impl(*get_comm(),
-          m_epsilon,
-          get_prev_activations(),
-          get_activations(),
-          *m_statistics);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_impl(*this->get_comm(),
+          this->m_epsilon,
+          this->get_prev_activations(),
+          this->get_activations(),
+          *this->m_statistics);
 }
-template <>
-void layer_norm_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  fp_impl(*get_comm(),
-          m_epsilon,
-          get_prev_activations(),
-          get_activations(),
-          *m_statistics);
-}
-template <>
-void layer_norm_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp_impl(*get_comm(),
-          m_epsilon,
-          get_prev_activations(),
-          get_prev_error_signals(),
-          get_error_signals(),
-          *m_statistics,
-          *m_statistics_gradient);
-}
-template <>
-void layer_norm_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  bp_impl(*get_comm(),
-          m_epsilon,
-          get_prev_activations(),
-          get_prev_error_signals(),
-          get_error_signals(),
-          *m_statistics,
-          *m_statistics_gradient);
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_impl(*this->get_comm(),
+          this->m_epsilon,
+          this->get_prev_activations(),
+          this->get_prev_error_signals(),
+          this->get_error_signals(),
+          *this->m_statistics,
+          *this->m_statistics_gradient);
 }
 
 template class layer_norm_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class layer_norm_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

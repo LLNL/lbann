@@ -109,14 +109,14 @@ public:
    *  Apply a mathematical operation to input tensors to obtain output
    *  tensors.
    */
-  virtual void forward_prop();
+  virtual void forward_prop() {};
   /** Backward propagation step.
    *  Given the objective function gradients w.r.t. the output
    *  tensors, compute the gradients w.r.t. the input tensors and
    *  w.r.t. the weights. This is essentially an application of the
    *  chain rule.
    */
-  virtual void back_prop();
+  virtual void back_prop() {};
   /** Update step.
    *  Update the layer's internal members. Note that the optimization
    *  step for the weights happens elsewhere.
@@ -124,7 +124,7 @@ public:
   virtual bool update();
 
   virtual void summarize_stats(lbann_summary& summarizer, int step);
-  virtual void summarize_matrices(lbann_summary& summarizer, int step);
+  virtual void summarize_matrices(lbann_summary& summarizer, int step) = 0;
 
   /** Setup layer members.
    *  This calls the 'setup_pointers', 'setup_dims', 'setup_matrices',
@@ -203,6 +203,11 @@ public:
   /** Get child layers. (const) */
   inline const std::vector<const Layer*>& get_child_layers() const { return m_child_layers; }
 
+  inline int find_layer_index(const Layer* l) const {
+    return (std::find(m_child_layers.begin(),
+                      m_child_layers.end(),
+                      l) - m_child_layers.begin()); }
+
   /** Get number of parent layers. */
   inline int get_num_parents() const { return get_parent_layers().size(); }
   /** Get number of child layers. */
@@ -246,14 +251,10 @@ public:
   // Weights access functions
   // ===========================================================
 
-  /** Get references to weights. */
-  inline std::vector<weights*>& get_weights() { return m_weights; }
-  /** Get references to weights. (const) */
-  inline const std::vector<weights*>& get_weights() const { return m_weights; }
   /** Set list of pointers to weights. */
-  inline void set_weights(std::vector<weights*> w) { get_weights() = w; }
+  virtual void set_weights(std::vector<weights*>& w) = 0;
   /** Replace weights with another Layer's weights*/
-  void replace_weights(Layer* other_layer);
+  virtual void replace_weights(Layer* other_layer) = 0;
 
   // ===========================================================
   // Tensor dimension access functions
@@ -271,34 +272,6 @@ public:
   /** Set output tensor dimensions. */
   void set_output_dims(std::vector<int> dims, int output_index = 0);
 
-  // ===========================================================
-  // Tensor access functions
-  // ===========================================================
-
-  /** Get activation tensor. */
-  AbsDistMat& get_activations(int child_index = 0);
-  /** Get error signal tensor. */
-  AbsDistMat& get_error_signals(int parent_index = 0);
-  /** Get previous activation tensor. */
-  const AbsDistMat& get_prev_activations(int parent_index = 0) const;
-  /** Get activation tensor. */
-  const AbsDistMat& get_activations(int child_index = 0) const;
-  /** Get previous error signal tensor. */
-  const AbsDistMat& get_prev_error_signals(int child_index = 0) const;
-  /** Get error signal tensor. */
-  const AbsDistMat& get_error_signals(int parent_index = 0) const;
-  /** Get local portion of activation tensor. */
-  AbsMat& get_local_activations(int child_index = 0);
-  /** Get local portion of error signal tensor. */
-  AbsMat& get_local_error_signals(int parent_index = 0);
-  /** Get local portion of previous activation tensor. */
-  const AbsMat& get_local_prev_activations(int parent_index = 0) const;
-  /** Get local portion of activation tensor. */
-  const AbsMat& get_local_activations(int child_index = 0) const;
-  /** Get local portion of previous error signal tensor. */
-  const AbsMat& get_local_prev_error_signals(int child_index = 0) const;
-  /** Get local portion of error signal tensor. */
-  const AbsMat& get_local_error_signals(int parent_index = 0) const;
 
   /** Get reference to LBANN communicator. */
   lbann_comm* get_comm() const { return m_comm; }
@@ -349,20 +322,12 @@ protected:
    *  'construct_matrix' function. If any matrices have already been
    *  setup, they are destroyed and reinstantiated.
    */
-  virtual void setup_matrices(const El::Grid& grid);
-  /** Construct distributed matrix.
-   *  Called by the 'setup_matrices' function. 'type' is one of the
-   *  following: "input", "output", "gradient_wrt_output",
-   *  "gradient_wrt_input".
-   */
-  virtual std::unique_ptr<AbsDistMat> construct_matrix(const El::Grid& grid,
-                                                       std::string type,
-                                                       El::Int index);
+  virtual void setup_matrices(const El::Grid& grid) = 0;
   /** Setup layer data.
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
    */
-  virtual void setup_data();
+  virtual void setup_data() {};
   /** Setup GPU objects.
    *  Called by the 'setup' function if the layer is on GPUs.
    */
@@ -377,12 +342,12 @@ protected:
    *  setup as a view or copy of the corresponding parent layer's
    *  output tensor.
    */
-  virtual void fp_setup_inputs(El::Int mini_batch_size);
+  virtual void fp_setup_inputs(El::Int mini_batch_size) = 0;
   /** Setup output tensors.
    *  Called by the 'forward_prop' function. Each output tensor is
    *  resized to match the mini-batch size.
    */
-  virtual void fp_setup_outputs(El::Int mini_batch_size);
+  virtual void fp_setup_outputs(El::Int mini_batch_size) = 0;
   /** Apply layer operation.
    *  Called by the 'forward_prop' function. Given the input tensors,
    *  the output tensors are populated with computed values.
@@ -398,19 +363,19 @@ protected:
    *  tensor is setup as a view or copy of the corresponding child
    *  layer's gradient w.r.t. input tensor.
    */
-  virtual void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size);
+  virtual void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) = 0;
   /** Setup gradient w.r.t. input tensors.
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
    */
-  virtual void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size);
+  virtual void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) = 0;
   /** Compute objective funciton gradients.
    *  Called by the 'back_prop' function. Given the input, output, and
    *  gradient w.r.t. output tensors, the gradient w.r.t. input
    *  tensors are populated with the computed values and the gradients
    *  w.r.t. the weights are sent to the appropriate optimizers.
    */
-  virtual void bp_compute();
+  virtual void bp_compute() {};
 
   // ===========================================================
   // Update step helper functions
@@ -427,9 +392,6 @@ protected:
 
   /** Reference to LBANN communicator. */
   lbann_comm *m_comm;
-
-  /** References to layer weights. */
-  std::vector<weights*> m_weights;
 
   /** References to parent layers. */
   std::vector<const Layer*> m_parent_layers;
@@ -473,11 +435,10 @@ private:
   // ===========================================================
   // Private access functions
   // ===========================================================
-
-  /** Get activation tensor corresponding to child layer. */
-  const AbsDistMat& get_activations(const Layer& child) const;
-  /** Get error signal tensor corresponding to parent layer. */
-  const AbsDistMat& get_error_signals(const Layer& parent) const;
+  /** Get references to weights. */
+  virtual std::vector<weights*> get_weights() = 0;
+  /** Get references to weights. (const) */
+  virtual std::vector<weights const*> get_weights() const = 0;
 
   // ===========================================================
   // Private class members
@@ -486,23 +447,6 @@ private:
   /** Dimensions of output tensors. */
   std::vector<std::vector<int>> m_output_dims_list;
 
-  /** Input tensors.
-   *  Each matrix column corresponds to a flattened mini-batch sample.
-   */
-  std::vector<std::unique_ptr<AbsDistMat>> m_inputs;
-  /** Output tensors.
-   *  Each matrix column corresponds to a flattened mini-batch sample.
-   */
-  std::vector<std::unique_ptr<AbsDistMat>> m_outputs;
-  /** Objective function gradients w.r.t. the output tensors.
-   *  Each matrix column corresponds to a flattened mini-batch sample.
-   */
-  std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_outputs;
-  /** Objective function gradients w.r.t. the input tensors.
-   *  Each matrix column corresponds to a flattened mini-batch sample.
-   */
-  std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
-
   /** Hint layer.
    *  During setup, the output tensor dimensions are set to match the
    *  first output tensor of the hint layer. Derived classes may do
@@ -510,7 +454,18 @@ private:
    */
   const Layer* m_hint_layer = nullptr;
 
+private:
+  friend std::vector<const weights*> extract_weights(Layer const& l);
+  friend std::vector<weights*> extract_weights(Layer& l);
 };
+
+inline std::vector<weights*> extract_weights(Layer& l) {
+  return l.get_weights();
+}
+
+inline std::vector<const weights*> extract_weights(Layer const& l) {
+  return l.get_weights();
+}
 
 } // namespace lbann
 

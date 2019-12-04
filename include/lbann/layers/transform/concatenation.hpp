@@ -34,18 +34,28 @@
 namespace lbann {
 
 /** @brief Concatenate tensors along specified dimension. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class concatenation_layer : public transform_layer {
+class concatenation_layer : public transform_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
 public:
 
   concatenation_layer(lbann_comm *comm, El::Int concat_dim)
-    : transform_layer(comm), m_concat_dim(concat_dim) {
+    : transform_layer<TensorDataType>(comm), m_concat_dim(concat_dim) {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
   concatenation_layer(const concatenation_layer& other)
-    : transform_layer(other),
+    : transform_layer<TensorDataType>(other),
       m_concat_dim(other.m_concat_dim),
       m_concat_points(other.m_concat_points) {
     m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
@@ -53,7 +63,7 @@ public:
   }
 
   concatenation_layer& operator=(const concatenation_layer& other) {
-    transform_layer::operator=(other);
+    transform_layer<TensorDataType>::operator=(other);
     m_concat_dim = other.m_concat_dim;
     m_concat_points = other.m_concat_points;
     m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
@@ -67,7 +77,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("Concatenation dimension", m_concat_dim);
     return desc;
   }
@@ -75,31 +85,31 @@ public:
 protected:
 
   void setup_pointers() override {
-    transform_layer::setup_pointers();
-    if (get_num_parents() < 1) {
+    transform_layer<TensorDataType>::setup_pointers();
+    if (this->get_num_parents() < 1) {
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has no parents";
       LBANN_ERROR(err.str());
     }
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    transform_layer::setup_matrices(grid);
-    const auto& input = get_prev_activations();
+    transform_layer<TensorDataType>::setup_matrices(grid);
+    const auto& input = this->get_prev_activations();
     m_input_v.reset(input.Construct(input.Grid(), input.Root()));
     m_output_v.reset(input.Construct(input.Grid(), input.Root()));
   }
 
   void setup_dims() override {
-    transform_layer::setup_dims();
+    transform_layer<TensorDataType>::setup_dims();
 
     // Get concatenation points for first parent layer
-    auto output_dims = get_input_dims(0);
+    auto output_dims = this->get_input_dims(0);
     if (m_concat_dim < 0
         || m_concat_dim >= (El::Int) output_dims.size()) {
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has " << output_dims.size() << " dimensions, "
           << "but attempted to concatenate along "
           << "dimension " << m_concat_dim;
@@ -110,8 +120,8 @@ protected:
     m_concat_points.push_back(output_dims[m_concat_dim]);
 
     // Get concatenation points for remaining parent layers
-    for (int i = 1; i < get_num_parents(); ++i) {
-      const auto& input_dims = get_input_dims(i);
+    for (int i = 1; i < this->get_num_parents(); ++i) {
+      const auto& input_dims = this->get_input_dims(i);
       if (input_dims.size() != output_dims.size()
           || !std::equal(input_dims.begin(),
                          input_dims.begin() + m_concat_dim,
@@ -120,7 +130,7 @@ protected:
                          input_dims.end(),
                          output_dims.begin() + m_concat_dim + 1)) {
         std::stringstream err;
-        err << get_type() << " layer \"" << get_name() << "\" "
+        err << get_type() << " layer \"" << this->get_name() << "\" "
             << "expects input tensors with dimensions ";
         for (size_t j = 0; j < output_dims.size(); ++j) {
           err << (j > 0 ? " x " : "");
@@ -131,7 +141,7 @@ protected:
           }
         }
         err << ", but parent layer "
-            << "\"" << m_parent_layers[i]->get_name() << "\" "
+            << "\"" << this->get_parent_layers()[i]->get_name() << "\" "
             << "outputs with dimensions ";
         for (size_t j = 0; j < input_dims.size(); ++j) {
           err << (j > 0 ? " x " : "") << input_dims[j];
@@ -143,22 +153,22 @@ protected:
     }
 
     // Update output dimensions
-    set_output_dims(output_dims);
+    this->set_output_dims(output_dims);
 
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    const auto& num_inputs = get_num_parents();
-    const auto& output_dims = get_output_dims();
+    const auto& num_inputs = this->get_num_parents();
+    const auto& output_dims = this->get_output_dims();
 
     // Initialize output tensor
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     output.Empty(false);
     if (num_inputs > 1) {
-      output.AlignWith(get_prev_activations());
-      output.Resize(get_output_size(), mini_batch_size);
+      output.AlignWith(this->get_prev_activations());
+      output.Resize(this->get_output_size(), mini_batch_size);
     } else {
-      El::LockedView(output, get_prev_activations());
+      El::LockedView(output, this->get_prev_activations());
       return;
     }
 
@@ -179,8 +189,8 @@ protected:
 
     // Populate slices of output tensor with input tensors
     for (int i = 0; i < num_inputs; ++i) {
-      const auto& input_dims = get_input_dims(i);
-      auto& input = get_prev_activations(i);
+      const auto& input_dims = this->get_input_dims(i);
+      auto& input = this->get_prev_activations(i);
 
       // Divide input tensor into unit slices
       const auto& input_num_unit_slices = input_dims[m_concat_dim];
@@ -208,8 +218,8 @@ protected:
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    const auto& num_inputs = get_num_parents();
-    const auto& output_dims = get_output_dims();
+    const auto& num_inputs = this->get_num_parents();
+    const auto& output_dims = this->get_output_dims();
 
     // Divide output tensor into unit slices along concat dimension
     // Note: Each unit slice is divided into contiguous "unit blocks"
@@ -227,11 +237,11 @@ protected:
                                        * unit_block_size);
 
     // Populate gradient w.r.t. input tensors
-    const auto& gradient_wrt_output = get_prev_error_signals();
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
     for (int i = 0; i < num_inputs; ++i) {
-      const auto& input_dims = get_input_dims(i);
-      const auto& input_size = get_input_size(i);
-      auto& gradient_wrt_input = get_error_signals(i);
+      const auto& input_dims = this->get_input_dims(i);
+      const auto& input_size = this->get_input_size(i);
+      auto& gradient_wrt_input = this->get_error_signals(i);
 
       // Divide input tensor into unit slices
       const auto& input_num_unit_slices = input_dims[m_concat_dim];
@@ -280,22 +290,22 @@ private:
   std::vector<El::Int> m_concat_points;
 
   /** View into input tensor. */
-  std::unique_ptr<AbsDistMat> m_input_v;
+  std::unique_ptr<AbsDistMatrixType> m_input_v;
   /** View into output tensor. */
-  std::unique_ptr<AbsDistMat> m_output_v;
+  std::unique_ptr<AbsDistMatrixType> m_output_v;
 
 };
 
 #ifndef LBANN_CONCATENATION_LAYER_INSTANTIATE
 extern template class concatenation_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class concatenation_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class concatenation_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class concatenation_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_CONCATENATION_LAYER_INSTANTIATE
 

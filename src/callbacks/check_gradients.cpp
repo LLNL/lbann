@@ -50,7 +50,7 @@ DataType compute_objective_function(model& m) {
 
   // Forward prop, skipping input layers
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer*>(l) == nullptr) {
+    if (dynamic_cast<generic_input_layer<DataType>*>(l) == nullptr) {
       l->forward_prop();
     }
   }
@@ -98,7 +98,7 @@ void check_gradients::do_check_gradients(model& m) const {
 
   // Load data in input layers
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer*>(l) != nullptr) {
+    if (dynamic_cast<generic_input_layer<DataType>*>(l) != nullptr) {
       l->forward_prop();
     }
   }
@@ -141,16 +141,18 @@ void check_gradients::do_check_gradients(model& m) const {
   }
 
   for (weights *w : m.get_weights()) {
-    if (w->get_optimizer() == nullptr) {
+    if (!w->has_optimizer()) {
       continue;
     }
     if (comm.am_world_master()) {
       std::cout << "Checking " << w->get_name() << std::endl;
     }
 
+    auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
+
     // Get weights matrix and gradient
-    const AbsDistMat& weights_matrix = w->get_values();
-    const AbsDistMat& gradient = w->get_optimizer()->get_gradient();
+    const El::AbstractDistMatrix<DataType>& weights_matrix = dtw.get_values();
+    const El::AbstractDistMatrix<DataType>& gradient = dtw.get_optimizer()->get_gradient();
 
     // Iterate through weights matrix entries
     for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
@@ -170,15 +172,15 @@ void check_gradients::do_check_gradients(model& m) const {
         // Compute objective function values
         // Note: matrix entry is reset after computing objective
         // function values
-        w->set_value(initial_weight + 2 * step_size, row, col);
+        dtw.set_value(initial_weight + 2 * step_size, row, col);
         const DataType f_2h = compute_objective_function(m);
-        w->set_value(initial_weight + step_size, row, col);
+        dtw.set_value(initial_weight + step_size, row, col);
         const DataType f_h = compute_objective_function(m);
-        w->set_value(initial_weight - step_size, row, col);
+        dtw.set_value(initial_weight - step_size, row, col);
         const DataType f_nh = compute_objective_function(m);
-        w->set_value(initial_weight - 2 * step_size, row, col);
+        dtw.set_value(initial_weight - 2 * step_size, row, col);
         const DataType f_n2h = compute_objective_function(m);
-        w->set_value(initial_weight, row, col);
+        dtw.set_value(initial_weight, row, col);
 
         // Compute relative error in gradient.
         // Note: only weight owner participates
@@ -196,7 +198,7 @@ void check_gradients::do_check_gradients(model& m) const {
 
           // Print warning if relative error is large
           if (error > expected_error || std::isnan(error) || std::isinf(error)) {
-            std::cout << "  GRADIENT ERROR: " << w->get_name() << ", "
+            std::cout << "  GRADIENT ERROR: " << dtw.get_name() << ", "
                       << "entry (" << row << "," << col << ")" << std::endl;
             std::cout << "    Weight              = " << initial_weight << std::endl
                       << "    Analytical gradient = " << analytical_gradient << std::endl
@@ -208,7 +210,7 @@ void check_gradients::do_check_gradients(model& m) const {
                           "analytical and numerical gradients");
             }
           } else if (m_verbose) {
-            std::cout << "  " << w->get_name() << ", "
+            std::cout << "  " << dtw.get_name() << ", "
                       << "entry (" << row << "," << col << ")" << std::endl;
             std::cout << "    Weight              = " << initial_weight << std::endl
                       << "    Analytical gradient = " << analytical_gradient << std::endl
@@ -229,7 +231,7 @@ void check_gradients::do_check_gradients(model& m) const {
   // Clean up
   /// @todo tym: I'm not sure if data readers are properly reset
   for (auto&& l : m.get_layers()) {
-    auto&& input = dynamic_cast<generic_input_layer*>(l);
+    auto&& input = dynamic_cast<generic_input_layer<DataType>*>(l);
     if (input != nullptr) {
       auto&& reader = input->get_data_reader(mode);
       reader->set_initial_position();

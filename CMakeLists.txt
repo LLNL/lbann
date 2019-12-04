@@ -552,10 +552,8 @@ if (APPLE)
   set_source_files_properties(${_LBANN_SRCS}
     PROPERTIES COMPILE_OPTIONS "-g")
 
-  # Cleanup bad files
-  list(APPEND BAD_FILES
-    "${CMAKE_SOURCE_DIR}/src/layers/loss/cross_entropy.cpp")
-  foreach (bad_file IN LISTS BAD_FILES)
+  # Cleanup source files
+  foreach (bad_file IN LISTS _LBANN_SRCS)
     get_source_file_property(
       _SRC_COMPILE_OPTS "${bad_file}" COMPILE_OPTIONS)
     string(REPLACE "-g" "" _SRC_COMPILE_OPTS "${COMPILE_OPTIONS}")

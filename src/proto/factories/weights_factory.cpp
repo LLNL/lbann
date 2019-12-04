@@ -26,6 +26,7 @@
 
 #include "lbann/proto/factories.hpp"
 
+#include "lbann/weights/data_type_weights.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
 
@@ -107,7 +108,7 @@ std::unique_ptr<weights> construct_weights(
   std::stringstream err;
 
   // Instantiate weights
-  auto w = make_unique<weights>(comm);
+  auto w = make_unique<data_type_weights<DataType>>(comm);
 
   // Set weights name if provided
   const auto& name = proto_weights.name();

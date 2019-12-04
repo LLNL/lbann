@@ -28,9 +28,29 @@
 
 #include "lbann/callbacks/check_init.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 namespace lbann {
 namespace callback {
+namespace {
+template <typename TensorDataType>
+bool check_equal(const El::AbstractMatrix<TensorDataType>& x,
+                 const El::AbstractMatrix<TensorDataType>& y) {
+  const El::Int height = x.Height();
+  const El::Int width = x.Width();
+  if (height != y.Height() || width != y.Width() || x.LDim() != y.LDim()) {
+    return false;
+  }
+  const TensorDataType *x_buf = x.LockedBuffer();
+  const TensorDataType *y_buf = y.LockedBuffer();
+  for (El::Int i = 0; i < height * width; ++i) {
+    if (x_buf[i] != y_buf[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+}// namespace <anon>
 
 void check_init::on_train_begin(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
@@ -46,47 +66,30 @@ void check_init::on_train_begin(model *m) {
     return;
   }
 
-  for (const auto w : m->get_weights()) {
+  for (const auto* w : m->get_weights()) {
     if (comm->am_world_master()) {
       std::cout << "Checking " << w->get_name() << std::endl;
     }
     // Model 0 holds the master copy, it gathers the values from other models
     // and compares them.
-    const AbsMat& local_matrix = w->get_values().LockedMatrix();
+    auto const& dtw = dynamic_cast<data_type_weights<DataType> const&>(*w);
+    const auto& local_matrix = dtw.get_values().LockedMatrix();
     CPUMat remote_matrix(local_matrix.Height(), local_matrix.Width());
     for (int model = 1; model < comm->get_num_trainers(); ++model) {
       comm->global_barrier();
       if (comm->get_trainer_rank() == 0) {
         comm->recv(remote_matrix, model);
         if (!check_equal(local_matrix, remote_matrix)) {
-          std::stringstream ss;
-          ss << "check_init: "
-             << "model " << model << " "
-             << "rank in model " << comm->get_rank_in_trainer() << " "
-             << "does not match model 0";
-          throw lbann_exception(ss.str());
+          LBANN_ERROR("check_init: "
+                      "model ", model, " "
+                      "rank in model ", comm->get_rank_in_trainer(), " "
+                      "does not match model 0");
         }
       } else if (comm->get_trainer_rank() == model) {
         comm->send(local_matrix, 0);
       }
     }
   }
-}
-
-bool check_init::check_equal(const AbsMat& x, const AbsMat& y) const {
-  const El::Int height = x.Height();
-  const El::Int width = x.Width();
-  if (height != y.Height() || width != y.Width() || x.LDim() != y.LDim()) {
-    return false;
-  }
-  const DataType *x_buf = x.LockedBuffer();
-  const DataType *y_buf = y.LockedBuffer();
-  for (El::Int i = 0; i < height * width; ++i) {
-    if (x_buf[i] != y_buf[i]) {
-      return false;
-    }
-  }
-  return true;
 }
 
 } // namespace callback

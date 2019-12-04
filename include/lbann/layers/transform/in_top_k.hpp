@@ -38,13 +38,14 @@ namespace lbann {
  *  one and the rest to zero. Ties are broken in favor of entries with
  *  smaller indices.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class in_top_k_layer : public transform_layer {
+class in_top_k_layer : public transform_layer<TensorDataType> {
  public:
 
   in_top_k_layer(lbann_comm *comm, El::Int k)
-    : transform_layer(comm), m_k(k) {
+    : transform_layer<TensorDataType>(comm), m_k(k) {
     if (m_k < 0) {
       std::stringstream err;
       err << "invalid parameter for top-k search (k=" << m_k << ")";
@@ -58,7 +59,7 @@ class in_top_k_layer : public transform_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("k", m_k);
     return desc;
   }
@@ -66,8 +67,8 @@ class in_top_k_layer : public transform_layer {
  protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
+    data_type_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
 
   void fp_compute() override;
@@ -81,14 +82,14 @@ class in_top_k_layer : public transform_layer {
 
 #ifndef LBANN_IN_TOP_K_LAYER_INSTANTIATE
 extern template class in_top_k_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class in_top_k_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class in_top_k_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class in_top_k_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_IN_TOP_K_LAYER_INSTANTIATE
 

@@ -38,7 +38,7 @@ namespace lbann {
 namespace callback {
 
 void sync_layers::on_forward_prop_end(model *m, Layer *l) {
-  if (m_only_input && dynamic_cast<generic_input_layer*>(l) == nullptr) {
+  if (m_only_input && dynamic_cast<generic_input_layer<DataType>*>(l) == nullptr) {
     return;  // Skip non-input layers.
   }
   double start = get_time();

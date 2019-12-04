@@ -44,22 +44,32 @@ namespace lbann {
  *    \cdots\times D_n @f$
  *  tensor.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class slice_layer : public transform_layer {
+class slice_layer : public transform_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
 public:
 
   slice_layer(lbann_comm *comm,
               El::Int slice_dim,
               std::vector<El::Int> slice_points)
-    : transform_layer(comm),
+    : transform_layer<TensorDataType>(comm),
       m_slice_dim(slice_dim),
       m_slice_points(slice_points) {
     this->m_expected_num_child_layers = -1; // No limit on children
   }
 
   slice_layer(const slice_layer& other)
-    : transform_layer(other),
+    : transform_layer<TensorDataType>(other),
       m_slice_dim(other.m_slice_dim),
       m_slice_points(other.m_slice_points) {
     m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
@@ -67,7 +77,7 @@ public:
   }
 
   slice_layer& operator=(const slice_layer& other) {
-    transform_layer::operator=(other);
+    transform_layer<TensorDataType>::operator=(other);
     m_slice_dim = other.m_slice_dim;
     m_slice_points = other.m_slice_points;
     m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
@@ -86,7 +96,7 @@ public:
   std::vector<El::Int> get_slice_points() const { return m_slice_points; }
 
   description get_description() const override {
-    auto desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("Slice dimension", m_slice_dim);
     std::stringstream ss;
     for (size_t i = 0; i < m_slice_points.size(); ++i) {
@@ -99,40 +109,40 @@ public:
 protected:
 
   void setup_matrices(const El::Grid& grid) override {
-    transform_layer::setup_matrices(grid);
-    const auto& input = get_prev_activations();
+    transform_layer<TensorDataType>::setup_matrices(grid);
+    const auto& input = this->get_prev_activations();
     m_input_v.reset(input.Construct(input.Grid(), input.Root()));
     m_output_v.reset(input.Construct(input.Grid(), input.Root()));
   }
 
   void setup_dims() override {
-    transform_layer::setup_dims();
-    const auto& input_dims = get_input_dims();
-    const auto& num_outputs = get_num_children();
+    transform_layer<TensorDataType>::setup_dims();
+    const auto& input_dims = this->get_input_dims();
+    const auto& num_outputs = this->get_num_children();
 
     // Check that slice parameters are valid
     std::stringstream err;
     if (m_slice_dim < 0 || m_slice_dim >= (El::Int) input_dims.size()) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has " << input_dims.size() << " dimensions, "
           << "but attempted to slice along dimension " << m_slice_dim;
       LBANN_ERROR(err.str());
     }
     if ((int) m_slice_points.size() <= num_outputs) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "requires more slice points than output tensors "
           << "(found " << m_slice_points.size() << " slice points "
-          << "and " << m_child_layers.size() << " output tensors)";
+          << "and " << this->m_child_layers.size() << " output tensors)";
       LBANN_ERROR(err.str());
     }
     if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has unsorted slice points";
       LBANN_ERROR(err.str());
     }
     if (m_slice_points.front() < 0
         || m_slice_points.back() > input_dims[m_slice_dim]) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "expects slice points in the range "
           << "[0, " << input_dims[m_slice_dim] << "], "
           << "but found an invalid slice point ";
@@ -148,14 +158,14 @@ protected:
     auto output_dims = input_dims;
     for (int i = 0; i < num_outputs; ++i) {
       output_dims[m_slice_dim] = m_slice_points[i+1] - m_slice_points[i];
-      set_output_dims(output_dims, i);
+      this->set_output_dims(output_dims, i);
     }
 
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    const auto& num_outputs = get_num_children();
-    const auto& input_dims = get_input_dims();
+    const auto& num_outputs = this->get_num_children();
+    const auto& input_dims = this->get_input_dims();
 
     // Divide input tensor into unit slices along slice dimension
     // Note: Each unit slice is divided into contiguous "unit blocks"
@@ -171,11 +181,11 @@ protected:
                                       * unit_block_size);
 
     // Populate output tensors with slices of input tensor
-    const auto& input = get_prev_activations();
+    const auto& input = this->get_prev_activations();
     for (int i = 0; i < num_outputs; ++i) {
-      const auto& output_dims = get_output_dims(i);
-      const auto& output_size = get_output_size(i);
-      auto& output = get_activations(i);
+      const auto& output_dims = this->get_output_dims(i);
+      const auto& output_size = this->get_output_size(i);
+      auto& output = this->get_activations(i);
       output.Empty(false);
 
       // Divide output tensor into unit slices
@@ -215,14 +225,14 @@ protected:
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    const auto& num_outputs = get_num_children();
-    const auto& input_dims = get_input_dims();
+    const auto& num_outputs = this->get_num_children();
+    const auto& input_dims = this->get_input_dims();
 
     // Initialize gradient w.r.t. input tensor
-    auto& gradient_wrt_input = get_error_signals();
+    auto& gradient_wrt_input = this->get_error_signals();
     gradient_wrt_input.Empty(false);
-    gradient_wrt_input.AlignWith(get_prev_activations());
-    gradient_wrt_input.Resize(get_input_size(), mini_batch_size);
+    gradient_wrt_input.AlignWith(this->get_prev_activations());
+    gradient_wrt_input.Resize(this->get_input_size(), mini_batch_size);
     if (m_slice_points[0] != 0
         || m_slice_points[num_outputs] != input_dims[m_slice_dim]) {
       El::Zero(gradient_wrt_input);
@@ -243,8 +253,8 @@ protected:
 
     // Populate slices of gradient w.r.t. input tensor
     for (int i = 0; i < num_outputs; ++i) {
-      const auto& output_dims = get_output_dims(i);
-      const auto& gradient_wrt_output = get_prev_error_signals(i);
+      const auto& output_dims = this->get_output_dims(i);
+      const auto& gradient_wrt_output = this->get_prev_error_signals(i);
 
       // Divide output tensor into unit slices
       const auto& output_num_unit_slices = output_dims[m_slice_dim];
@@ -282,18 +292,18 @@ private:
   std::vector<El::Int> m_slice_points;
 
   /** View into input tensor. */
-  std::unique_ptr<AbsDistMat> m_input_v;
+  std::unique_ptr<AbsDistMatrixType> m_input_v;
   /** View into output tensor. */
-  std::unique_ptr<AbsDistMat> m_output_v;
+  std::unique_ptr<AbsDistMatrixType> m_output_v;
 
 };
 
 #ifndef LBANN_SLICE_LAYER_INSTANTIATE
-extern template class slice_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class slice_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+extern template class slice_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class slice_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-extern template class slice_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class slice_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+extern template class slice_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class slice_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SLICE_LAYER_INSTANTIATE
 
