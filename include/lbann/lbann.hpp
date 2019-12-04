@@ -117,6 +117,7 @@
 #include "lbann/layers/misc/one_hot.hpp"
 
 /// Data readers
+#include "lbann/data_readers/data_reader_npz_ras_lipid.hpp"
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
