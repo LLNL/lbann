@@ -78,7 +78,7 @@
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
-#include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/layers/transform/concatenate.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/hadamard.hpp"

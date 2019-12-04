@@ -28,7 +28,6 @@
 #define LBANN_LAYERS_TRANSFORM_CONCATENATE_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
@@ -90,7 +89,7 @@ private:
 // =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-concatenate_layer<TensorDataType, Layout,Device>::concatenate_layer(
+concatenate_layer<TensorDataType,Layout,Device>::concatenate_layer(
   lbann_comm *comm,
   El::Int concat_dim)
   : data_type_layer<TensorDataType>(comm),
@@ -99,7 +98,7 @@ concatenate_layer<TensorDataType, Layout,Device>::concatenate_layer(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-concatenate_layer<TensorDataType, Layout,Device>::concatenate_layer(
+concatenate_layer<TensorDataType,Layout,Device>::concatenate_layer(
   const concatenate_layer& other)
   : data_type_layer<TensorDataType>(other),
     m_concat_dim(other.m_concat_dim),
@@ -109,7 +108,7 @@ concatenate_layer<TensorDataType, Layout,Device>::concatenate_layer(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-concatenate_layer<TensorDataType, Layout,Device>& concatenate_layer<TensorDataType, Layout,Device>::operator=(
+concatenate_layer<TensorDataType,Layout,Device>& concatenate_layer<TensorDataType,Layout,Device>::operator=(
   const concatenate_layer& other) {
   data_type_layer<TensorDataType>::operator=(other);
   m_concat_dim = other.m_concat_dim;
@@ -120,14 +119,14 @@ concatenate_layer<TensorDataType, Layout,Device>& concatenate_layer<TensorDataTy
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-description concatenate_layer<TensorDataType, Layout,Device>::get_description() const {
+description concatenate_layer<TensorDataType,Layout,Device>::get_description() const {
   auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Concatenate dimension", m_concat_dim);
   return desc;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType, Layout,Device>::setup_pointers() {
+void concatenate_layer<TensorDataType,Layout,Device>::setup_pointers() {
   data_type_layer<TensorDataType>::setup_pointers();
   if (this->get_num_parents() < 1) {
     LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
@@ -136,7 +135,7 @@ void concatenate_layer<TensorDataType, Layout,Device>::setup_pointers() {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType, Layout,Device>::setup_matrices(const El::Grid& grid) {
+void concatenate_layer<TensorDataType,Layout,Device>::setup_matrices(const El::Grid& grid) {
   data_type_layer<TensorDataType>::setup_matrices(grid);
   const auto& input = this->get_prev_activations();
   m_input_v.reset(input.Construct(input.Grid(), input.Root()));
@@ -144,7 +143,7 @@ void concatenate_layer<TensorDataType, Layout,Device>::setup_matrices(const El::
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType, Layout,Device>::setup_dims() {
+void concatenate_layer<TensorDataType,Layout,Device>::setup_dims() {
   data_type_layer<TensorDataType>::setup_dims();
 
   // Get concatenate points for first parent layer
@@ -199,7 +198,7 @@ void concatenate_layer<TensorDataType, Layout,Device>::setup_dims() {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType, Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
+void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
   const auto& num_inputs = this->get_num_parents();
   const auto& output_dims = this->get_output_dims();
 
@@ -260,7 +259,7 @@ void concatenate_layer<TensorDataType, Layout,Device>::fp_setup_outputs(El::Int 
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType, Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+void concatenate_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
   const auto& num_inputs = this->get_num_parents();
   const auto& output_dims = this->get_output_dims();
 
