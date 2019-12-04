@@ -2,7 +2,7 @@
 set_full_path(THIS_DIR_SOURCES
   bernoulli.cpp
   categorical_random.cpp
-  concatenation.cpp
+  concatenate.cpp
   constant.cpp
   crop.cpp
   discrete_random.cpp

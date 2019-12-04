@@ -74,7 +74,7 @@
 #include "lbann/layers/regularizers/layer_norm.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/categorical_random.hpp"
-#include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/layers/transform/concatenate.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/crop.hpp"
 #include "lbann/layers/transform/discrete_random.hpp"
@@ -306,7 +306,7 @@ std::unique_ptr<Layer> construct_layer(
   }
   if (proto_layer.has_concatenation()) {
     const auto& axis = proto_layer.concatenation().axis();
-    return lbann::make_unique<concatenation_layer<TensorDataType, Layout, Device>>(comm, axis);
+    return lbann::make_unique<concatenate_layer<TensorDataType, Layout, Device>>(comm, axis);
   }
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
