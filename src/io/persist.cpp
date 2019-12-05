@@ -64,7 +64,8 @@ struct layer_header {
 /** \brief Given an open file descriptor, file name, and a matrix, write the matrix
  *         to the file descriptor, return the number of bytes written */
 
-bool lbann::persist::write_rank_distmat(persist_type type, const char *name, const AbsDistMat& M) {
+template <typename TensorDataType>
+bool lbann::persist::write_rank_distmat(persist_type type, const char *name, const El::AbstractDistMatrix<TensorDataType>& M) {
   // TODO: store in network order
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -130,7 +131,8 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
 
 /** \brief Given an open file descriptor, file name, and a matrix, read the matrix
  *         from the file descriptor, return the number of bytes read */
-bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsDistMat& M) {
+template <typename TensorDataType>
+bool lbann::persist::read_rank_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType>& M) {
   // read in the header
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -292,7 +294,8 @@ void lbann::persist::close_restart() {
   }
 }
 
-bool lbann::persist::write_distmat(persist_type type, const char *name, AbsDistMat *M) {
+template <typename TensorDataType>
+bool lbann::persist::write_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M) {
   // define full path to file to store matrix
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -312,7 +315,8 @@ bool lbann::persist::write_distmat(persist_type type, const char *name, AbsDistM
   return true;
 }
 
-bool lbann::persist::read_distmat(persist_type type, const char *name, AbsDistMat *M) {
+template <typename TensorDataType>
+bool lbann::persist::read_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M) {
   // define full path to file to store matrix
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {

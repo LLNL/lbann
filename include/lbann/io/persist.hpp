@@ -147,11 +147,15 @@ class persist {
     }
   }
 
-  bool write_rank_distmat(persist_type type, const char *name, const AbsDistMat& M);
-  bool read_rank_distmat(persist_type type, const char *name, AbsDistMat& M);
+  template <typename TensorDataType>
+  bool write_rank_distmat(persist_type type, const char *name, const El::AbstractDistMatrix<TensorDataType>& M);
+  template <typename TensorDataType>
+  bool read_rank_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType>& M);
 
-  bool write_distmat(persist_type type, const char *name, AbsDistMat *M);
-  bool read_distmat (persist_type type, const char *name, AbsDistMat *M);
+  template <typename TensorDataType>
+  bool write_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M);
+  template <typename TensorDataType>
+  bool read_distmat (persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M);
 
   bool write_bytes(persist_type type, const char *name, const void *buf, size_t size);
   bool read_bytes(persist_type type, const char *name, void *buf, size_t size);

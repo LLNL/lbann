@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_DATA_TYPE_WEIGHTS_INSTANTIATE
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
@@ -386,7 +387,8 @@ void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* pro
   proto->set_width(get_matrix_width());
 
   // Write weight values to prototext on world master process
-  CircMat<El::Device::CPU> values = *m_values; /// @todo What if weights are on GPU?
+  El::DistMatrix<TensorDataType, El::CIRC, El::CIRC, El::ELEMENT, El::Device::CPU>
+    values = *m_values; /// @todo What if weights are on GPU?
   values.SetRoot(0); /// @todo What if world master is not process 0?
   if (get_comm().am_world_master()) {
     const auto& local_values = values.LockedMatrix();
@@ -474,6 +476,10 @@ bool data_type_weights<TensorDataType>::load_from_checkpoint_distributed(lbann::
   return true;
 }
 
-template class data_type_weights<DataType>;
+#define PROTO(T)                     \
+  template class data_type_weights<T>;
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann

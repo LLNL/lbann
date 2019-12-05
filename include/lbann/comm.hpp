@@ -702,18 +702,21 @@ class lbann_comm {
     bytes_received += count * sizeof(T) * (size_c - 1);
   }
   /** Matrix allreduce. */
-  void allreduce(AbsMat& m,
+  template <typename TensorDataType>
+  void allreduce(El::AbstractMatrix<TensorDataType>& m,
                  const El::mpi::Comm& c,
                  El::mpi::Op op = El::mpi::SUM);
   /** Matrix allreduce. */
-  void allreduce(AbsDistMat& m,
+  template <typename TensorDataType>
+  void allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                  const El::mpi::Comm& c,
                  El::mpi::Op op = El::mpi::SUM);
   /** Non-blocking matrix allreduce.
    *  If LBANN has not been built with Aluminum, then this calls a
    *  blocking matrix allreduce.
    */
-  void nb_allreduce(AbsMat& m,
+  template <typename TensorDataType>
+  void nb_allreduce(El::AbstractMatrix<TensorDataType>& m,
                     const El::mpi::Comm& c,
                     Al::request& req,
                     El::mpi::Op op = El::mpi::SUM);
@@ -721,7 +724,8 @@ class lbann_comm {
    *  If LBANN has not been built with Aluminum, then this calls a
    *  blocking matrix allreduce.
    */
-  void nb_allreduce(AbsDistMat& m,
+  template <typename TensorDataType>
+  void nb_allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                     const El::mpi::Comm& c,
                     Al::request& req,
                     El::mpi::Op op = El::mpi::SUM);

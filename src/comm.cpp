@@ -134,7 +134,8 @@ void lbann_comm::intertrainer_sum_matrix(AbsDistMat& mat) {
   allreduce(mat, intertrainer_comm, El::mpi::SUM);
 }
 
-void lbann_comm::allreduce(AbsMat& m,
+template <typename TensorDataType>
+void lbann_comm::allreduce(El::AbstractMatrix<TensorDataType>& m,
                            const El::mpi::Comm& c,
                            El::mpi::Op op) {
   if (El::mpi::Size(c) == 1 || m.Height() < 1 || m.Width() < 1) {
@@ -214,13 +215,15 @@ void lbann_comm::allreduce(AbsMat& m,
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
 }
 
-void lbann_comm::allreduce(AbsDistMat& m,
+template <typename TensorDataType>
+void lbann_comm::allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                            const El::mpi::Comm& c,
                            El::mpi::Op op) {
   allreduce(m.Matrix(), c, op);
 }
 
-void lbann_comm::nb_allreduce(AbsMat& m,
+template <typename TensorDataType>
+void lbann_comm::nb_allreduce(El::AbstractMatrix<TensorDataType>& m,
                               const El::mpi::Comm& c,
                               Al::request& req,
                               El::mpi::Op op) {
@@ -305,7 +308,8 @@ void lbann_comm::nb_allreduce(AbsMat& m,
 #endif // LBANN_HAS_ALUMINUM
 }
 
-void lbann_comm::nb_allreduce(AbsDistMat& m,
+template <typename TensorDataType>
+void lbann_comm::nb_allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                               const El::mpi::Comm& c,
                               Al::request& req,
                               El::mpi::Op op) {
