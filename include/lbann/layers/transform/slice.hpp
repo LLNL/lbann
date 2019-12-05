@@ -65,10 +65,10 @@ public:
   slice_layer(const slice_layer& other);
   slice_layer& operator=(const slice_layer& other);
 
-  slice_layer* copy() const override { return new slice_layer(*this); }
-  std::string get_type() const override { return "slice"; }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
+  slice_layer* copy() const override;
+  std::string get_type() const override;
+  data_layout get_data_layout() const override;
+  El::Device get_device_allocation() const override;
 
   description get_description() const override;
 
@@ -84,8 +84,8 @@ protected:
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
-  void fp_compute() override {}
-  void bp_compute() override {}
+  void fp_compute() override;
+  void bp_compute() override;
 
 private:
 
@@ -135,6 +135,26 @@ slice_layer<TensorDataType,Layout,Device>& slice_layer<TensorDataType,Layout,Dev
   m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
   m_output_v.reset(other.m_output_v ? other.m_output_v->Copy() : nullptr);
   return *this;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+slice_layer<TensorDataType, Layout,Device>* slice_layer<TensorDataType,Layout,Device>::copy() const {
+  return new slice_layer(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::string slice_layer<TensorDataType,Layout,Device>::get_type() const {
+  return "slice";
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+data_layout slice_layer<TensorDataType,Layout,Device>::get_data_layout() const {
+  return Layout;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+El::Device slice_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
+  return Device;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -321,6 +341,14 @@ void slice_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El:
 
   }
 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void slice_layer<TensorDataType,Layout,Device>::fp_compute() {
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void slice_layer<TensorDataType,Layout,Device>::bp_compute() {
 }
 
 #ifndef LBANN_SLICE_LAYER_INSTANTIATE

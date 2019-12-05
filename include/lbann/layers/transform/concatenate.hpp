@@ -52,10 +52,10 @@ public:
   concatenate_layer(const concatenate_layer& other);
   concatenate_layer& operator=(const concatenate_layer& other);
 
-  concatenate_layer* copy() const override { return new concatenate_layer(*this); }
-  std::string get_type() const override { return "concatenate"; }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
+  concatenate_layer* copy() const override;
+  std::string get_type() const override;
+  data_layout get_data_layout() const override;
+  El::Device get_device_allocation() const override;
 
   description get_description() const override;
 
@@ -67,8 +67,8 @@ protected:
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
-  void fp_compute() override {}
-  void bp_compute() override {}
+  void fp_compute() override;
+  void bp_compute() override;
 
 private:
 
@@ -116,6 +116,26 @@ concatenate_layer<TensorDataType,Layout,Device>& concatenate_layer<TensorDataTyp
   m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
   m_output_v.reset(other.m_output_v ? other.m_output_v->Copy() : nullptr);
   return *this;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+concatenate_layer<TensorDataType, Layout,Device>* concatenate_layer<TensorDataType,Layout,Device>::copy() const {
+  return new concatenate_layer(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::string concatenate_layer<TensorDataType,Layout,Device>::get_type() const {
+  return "concatenate";
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+data_layout concatenate_layer<TensorDataType,Layout,Device>::get_data_layout() const {
+  return Layout;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+El::Device concatenate_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
+  return Device;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -319,6 +339,14 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inpu
 
   }
 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
 }
 
 #ifndef LBANN_CONCATENATE_LAYER_INSTANTIATE
