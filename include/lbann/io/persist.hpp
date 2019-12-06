@@ -299,6 +299,29 @@ void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
   load_from_shared_cereal_archive<C>(obj, p, pt, comm, suffix);
 }
 
+  //#include "lbann/io/persist_impl.hpp"
+
+  //extern template bool persist::write_rank_distmat<float>(persist_type type, const char *name, const El::AbstractDistMatrix<float>& M);
+
+#ifndef LBANN_PERSIST_INSTANTIATE
+#define PROTO(T)                                                            \
+  extern template bool persist::write_rank_distmat<T>(                      \
+  persist_type type, const char *name, const El::AbstractDistMatrix<T>& M); \
+  extern template bool persist::read_rank_distmat<T>(                       \
+  persist_type type, const char *name, El::AbstractDistMatrix<T>& M);       \
+  extern template bool persist::write_distmat<T>(                           \
+  persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
+  extern template bool persist::read_distmat<T>(                            \
+  persist_type type, const char *name, El::AbstractDistMatrix<T> *M);
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_PERSIST_INSTANTIATE
+
 } // namespace lbann
 
 #endif // LBANN_PERSIST_H

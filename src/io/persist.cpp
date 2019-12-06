@@ -33,6 +33,7 @@
 
 #include "lbann/utils/exception.hpp"
 #include "lbann/io/file_io.hpp"
+#define LBANN_PERSIST_INSTANTIATE
 #include "lbann/io/persist.hpp"
 
 #include <sys/types.h>
@@ -558,3 +559,17 @@ bool lbann::read_string(int fd, const char *name, char *buf, size_t size) {
   }
   return true;
 }
+
+#define PROTO(T)                     \
+  template bool lbann::persist::write_rank_distmat<T>(                        \
+    persist_type type, const char *name, const El::AbstractDistMatrix<T>& M); \
+  template bool lbann::persist::read_rank_distmat<T>(                         \
+    persist_type type, const char *name, El::AbstractDistMatrix<T>& M);       \
+  template bool lbann::persist::write_distmat<T>(                             \
+    persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
+  template bool lbann::persist::read_distmat<T>(                              \
+    persist_type type, const char *name, El::AbstractDistMatrix<T> *M);
+
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"

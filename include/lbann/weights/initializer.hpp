@@ -207,6 +207,22 @@ build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg);
 std::unique_ptr<weights_initializer>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg);
 
+#ifndef LBANN_INITIALIZER_INSTANTIATE
+#define PROTO(T)                                          \
+  extern template class data_type_weights_initializer<T>; \
+  extern template class constant_initializer<T>;          \
+  extern template class value_initializer<T>;             \
+  extern template class uniform_initializer<T>;           \
+  extern template class normal_initializer<T>;
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_INITIALIZER_INSTANTIATE
+
 } // namespace lbann
 
 #endif // LBANN_WEIGHTS_INITIALIZER_HPP
