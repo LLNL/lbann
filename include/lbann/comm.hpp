@@ -1128,6 +1128,25 @@ void lbann_comm::broadcast<std::string>(const int root, std::string& str, const 
  */
 int get_rank_in_world();
 
+#ifndef LBANN_COMM_INSTANTIATE
+#define PROTO(T)                                                                                            \
+  extern template void lbann_comm::allreduce<T>(                                                            \
+    El::AbstractMatrix<T>& m, const El::mpi::Comm& c, El::mpi::Op op = El::mpi::SUM);                       \
+  extern template void lbann_comm::allreduce<T>(                                                            \
+    El::AbstractDistMatrix<T>& m, const El::mpi::Comm& c, El::mpi::Op op = El::mpi::SUM);                   \
+  extern template void lbann_comm::nb_allreduce<T>(                                                         \
+    El::AbstractMatrix<T>& m, const El::mpi::Comm& c, Al::request& req, El::mpi::Op op = El::mpi::SUM);     \
+  extern template void lbann_comm::nb_allreduce<T>(                                                         \
+    El::AbstractDistMatrix<T>& m, const El::mpi::Comm& c, Al::request& req, El::mpi::Op op = El::mpi::SUM);
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_COMM_INSTANTIATE
+
 } // namespace lbann
 
 #endif  // LBANN_COMM_HPP_INCLUDED
