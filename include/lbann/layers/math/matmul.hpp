@@ -37,7 +37,7 @@ namespace lbann {
  *  Matrix products are computed independently for each mini-batch
  *  sample, in a similar manner as NumPy's matmul function.
  *
- *  @todo Support >2 dimensions, transposes, matvecs, and dot products
+ *  @todo Support >2 dimensions, matvecs, and dot products
  *
  */
 template <typename TensorDataType,

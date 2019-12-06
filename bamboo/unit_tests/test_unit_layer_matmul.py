@@ -87,7 +87,7 @@ def construct_model(lbann):
     # LBANN implementation
     x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_m, _k]))
     x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_k, _n]))
-    y = lbann.MatMul(x0, x1, data_layout='data_parallel', device='cpu')
+    y = lbann.MatMul(x0, x1, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='NN GEMM'))
@@ -117,7 +117,7 @@ def construct_model(lbann):
     # LBANN implementation
     x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_k, _m]))
     x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_k, _n]))
-    y = lbann.MatMul(x0, x1, transpose_a=True, data_layout='data_parallel', device='cpu')
+    y = lbann.MatMul(x0, x1, transpose_a=True, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='TN GEMM'))
@@ -147,7 +147,7 @@ def construct_model(lbann):
     # LBANN implementation
     x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_m, _k]))
     x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_n, _k]))
-    y = lbann.MatMul(x0, x1, transpose_b=True, data_layout='data_parallel', device='cpu')
+    y = lbann.MatMul(x0, x1, transpose_b=True, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='NT GEMM'))
@@ -178,7 +178,7 @@ def construct_model(lbann):
     x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_k, _m]))
     x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_n, _k]))
     y = lbann.MatMul(x0, x1, transpose_a=True, transpose_b=True,
-                     data_layout='data_parallel', device='cpu')
+                     data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='TT GEMM'))

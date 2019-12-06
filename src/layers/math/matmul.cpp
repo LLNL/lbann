@@ -84,7 +84,7 @@ void bp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& local_input0 = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(0));
   const auto& local_input1 = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(1));
-  const auto& local_output_grad = dynamic_cast<const LocalMat&>(l.get_local_prev_error_signals(0));
+  const auto& local_output_grad = dynamic_cast<const LocalMat&>(l.get_local_prev_error_signals());
   auto& local_input0_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals(0));
   auto& local_input1_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals(1));
   const auto& local_mini_batch_size = local_input0.Width();
@@ -151,32 +151,41 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
                      bool transpose_input1) {
 
   // Local data
-  const auto& local_input0 = dynamic_cast<const GPUMat&>(l.get_local_prev_activations(0));
-  const auto& local_input1 = dynamic_cast<const GPUMat&>(l.get_local_prev_activations(1));
-  auto& local_output = dynamic_cast<GPUMat&>(l.get_local_activations());
+  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
+  const auto& local_input0 = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(0));
+  const auto& local_input1 = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(1));
+  auto& local_output = dynamic_cast<LocalMat&>(l.get_local_activations());
   const auto& local_mini_batch_size = local_input0.Width();
 
   // Return immediately if nothing needs to be done
   if (local_mini_batch_size < 1) { return; }
 
   // Matrix dimensions
-  const auto output_dims = l.get_output_dims();
   const auto input0_dims = l.get_input_dims(0);
-  const El::Int m = *(output_dims.rbegin()+1);
-  const El::Int n = *(output_dims.rbegin());
-  const El::Int k = *(input0_dims.rbegin());
+  const auto input1_dims = l.get_input_dims(1);
+  const auto output_dims = l.get_output_dims();
+  const El::Int input0_height = *(input0_dims.rbegin()+1);
+  const El::Int input0_width = *(input0_dims.rbegin());
+  const El::Int input1_width = *(input1_dims.rbegin());
+  const El::Int output_height = *(output_dims.rbegin()+1);
+  const El::Int output_width = *(output_dims.rbegin());
 
   // Compute matrix multiplication for each mini-batch sample
   // Note: cuBLAS expects matrices in Fortran layout while LBANN
   // tensors are in C layout.
   auto&& handle = El::GPUManager::cuBLASHandle();
   cublas::gemm_strided_batched(
-    handle, CUBLAS_OP_N, CUBLAS_OP_N, n, m, k,
+    handle,
+    transpose_input1 ? CUBLAS_OP_T : CUBLAS_OP_N,
+    transpose_input0 ? CUBLAS_OP_T : CUBLAS_OP_N,
+    output_width,
+    output_height,
+    transpose_input0 ? input0_height : input0_width,
     DataType{1},
-    local_input1.LockedBuffer(), n, local_input1.LDim(),
-    local_input0.LockedBuffer(), k, local_input0.LDim(),
+    local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
+    local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
     DataType{0},
-    local_output.Buffer(), n, local_output.LDim(),
+    local_output.Buffer(), output_width, local_output.LDim(),
     local_mini_batch_size);
 
 }
@@ -189,43 +198,84 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
                      bool transpose_input1) {
 
   // Local data
-  const auto& local_input0 = dynamic_cast<const GPUMat&>(l.get_local_prev_activations(0));
-  const auto& local_input1 = dynamic_cast<const GPUMat&>(l.get_local_prev_activations(1));
-  const auto& local_output_grad = dynamic_cast<const GPUMat&>(l.get_local_prev_error_signals());
-  auto& local_input0_grad = dynamic_cast<GPUMat&>(l.get_local_error_signals(0));
-  auto& local_input1_grad = dynamic_cast<GPUMat&>(l.get_local_error_signals(1));
+  using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
+  const auto& local_input0 = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(0));
+  const auto& local_input1 = dynamic_cast<const LocalMat&>(l.get_local_prev_activations(1));
+  const auto& local_output_grad = dynamic_cast<const LocalMat&>(l.get_local_prev_error_signals());
+  auto& local_input0_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals(0));
+  auto& local_input1_grad = dynamic_cast<LocalMat&>(l.get_local_error_signals(1));
   const auto& local_mini_batch_size = local_input0.Width();
 
   // Return immediately if nothing needs to be done
   if (local_mini_batch_size < 1) { return; }
 
   // Matrix dimensions
-  const auto output_dims = l.get_output_dims();
   const auto input0_dims = l.get_input_dims(0);
-  const El::Int m = *(output_dims.rbegin()+1);
-  const El::Int n = *(output_dims.rbegin());
-  const El::Int k = *(input0_dims.rbegin());
+  const auto input1_dims = l.get_input_dims(1);
+  const auto output_dims = l.get_output_dims();
+  const El::Int input0_height = *(input0_dims.rbegin()+1);
+  const El::Int input0_width = *(input0_dims.rbegin());
+  const El::Int input1_height = *(input1_dims.rbegin()+1);
+  const El::Int input1_width = *(input1_dims.rbegin());
+  const El::Int output_height = *(output_dims.rbegin()+1);
+  const El::Int output_width = *(output_dims.rbegin());
 
   // Compute gradients for each mini-batch sample
   // Note: cuBLAS expects matrices in Fortran layout while LBANN
   // tensors are in C layout.
   auto&& handle = El::GPUManager::cuBLASHandle();
-  cublas::gemm_strided_batched(
-    handle, CUBLAS_OP_T, CUBLAS_OP_N, k, m, n,
-    DataType{1},
-    local_input1.LockedBuffer(), n, local_input1.LDim(),
-    local_output_grad.LockedBuffer(), n, local_output_grad.LDim(),
-    DataType{0},
-    local_input0_grad.Buffer(), k, local_input0_grad.LDim(),
-    local_mini_batch_size);
-  cublas::gemm_strided_batched(
-    handle, CUBLAS_OP_N, CUBLAS_OP_T, n, k, m,
-    DataType{1},
-    local_output_grad.LockedBuffer(), n, local_output_grad.LDim(),
-    local_input0.LockedBuffer(), k, local_input0.LDim(),
-    DataType{0},
-    local_input1_grad.Buffer(), n, local_input1_grad.LDim(),
-    local_mini_batch_size);
+  if (transpose_input0) {
+    cublas::gemm_strided_batched(
+      handle,
+      CUBLAS_OP_T,
+      transpose_input1 ? CUBLAS_OP_T : CUBLAS_OP_N,
+      input0_width, input0_height, output_width,
+      DataType{1},
+      local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
+      local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
+      DataType{0},
+      local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim(),
+      local_mini_batch_size);
+  }
+  else {
+    cublas::gemm_strided_batched(
+      handle,
+      transpose_input1 ? CUBLAS_OP_N : CUBLAS_OP_T,
+      CUBLAS_OP_N,
+      input0_width, input0_height, output_width,
+      DataType{1},
+      local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
+      local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
+      DataType{0},
+      local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim(),
+      local_mini_batch_size);
+  }
+  if (transpose_input1) {
+    cublas::gemm_strided_batched(
+      handle,
+      transpose_input0 ? CUBLAS_OP_T : CUBLAS_OP_N,
+      CUBLAS_OP_T,
+      input1_width, input1_height, output_height,
+      DataType{1},
+      local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
+      local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
+      DataType{0},
+      local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim(),
+      local_mini_batch_size);
+  }
+  else {
+    cublas::gemm_strided_batched(
+      handle,
+      CUBLAS_OP_N,
+      transpose_input0 ? CUBLAS_OP_N : CUBLAS_OP_T,
+      input1_width, input1_height, output_height,
+      DataType{1},
+      local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
+      local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
+      DataType{0},
+      local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim(),
+      local_mini_batch_size);
+  }
 
 }
 #endif // LBANN_HAS_GPU
