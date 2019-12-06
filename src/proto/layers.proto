@@ -246,7 +246,12 @@ message Layer {
    *  Matrix products are computed independently for each mini-batch
    *  sample, in a similar manner as NumPy's matmul function.
    */
-  message MatMul {}
+  message MatMul {
+    /** Transpose matrices from first input tensor. */
+    bool transpose_a = 1;
+    /** Transpose matrices from second input tensor. */
+    bool transpose_b = 2;
+  }
 
   ///////////////////////
   // Activation layers //

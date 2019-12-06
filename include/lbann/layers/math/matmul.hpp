@@ -50,19 +50,31 @@ class matmul_layer : public data_type_layer<TensorDataType> {
 
 public:
 
-  matmul_layer(lbann_comm *comm);
+  matmul_layer(lbann_comm *comm,
+               bool transpose_a = false,
+               bool transpose_b = false);
   matmul_layer(const matmul_layer& other) = default;
   matmul_layer& operator=(const matmul_layer& other) = default;
   matmul_layer* copy() const override;
+
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+
+  description get_description() const override;
 
 protected:
 
   void setup_dims() override;
   void fp_compute() override;
   void bp_compute() override;
+
+private:
+
+  /** Whether to transpose matrices from the first input tensor. */
+  bool m_transpose_a;
+  /** Whether to transpose matrices from the second input tensor. */
+  bool m_transpose_b;
 
 };
 
@@ -71,8 +83,10 @@ protected:
 // =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-matmul_layer<TensorDataType, Layout,Device>::matmul_layer(lbann_comm *comm)
-  : data_type_layer<TensorDataType>(comm) {
+matmul_layer<TensorDataType, Layout,Device>::matmul_layer(lbann_comm *comm, bool transpose_a, bool transpose_b)
+  : data_type_layer<TensorDataType>(comm),
+    m_transpose_a{transpose_a},
+    m_transpose_b{transpose_b} {
   this->m_expected_num_parent_layers = 2;
 }
 
@@ -94,6 +108,14 @@ data_layout matmul_layer<TensorDataType,Layout,Device>::get_data_layout() const 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 El::Device matmul_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
   return Device;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+description matmul_layer<TensorDataType,Layout,Device>::get_description() const {
+  auto desc = data_type_layer<TensorDataType>::get_description();
+  desc.add("Transpose A", m_transpose_a);
+  desc.add("Transpose B", m_transpose_b);
+  return desc;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -135,20 +157,24 @@ void matmul_layer<TensorDataType,Layout,Device>::setup_dims() {
                 "(",print_inputs(),")");
   }
 
-  // Get dimensions for matrix multiply
-  const auto m = *(input0_dims.rbegin()+1);
-  const auto n = *(input1_dims.rbegin());
-  const auto k = *(input0_dims.rbegin());
-  if (*(input1_dims.rbegin()+1) != k || m < 1 || n < 1 || k < 1) {
+  // Get matrix dimensions
+  const auto input0_height = *(input0_dims.rbegin()+1);
+  const auto input0_width = *(input0_dims.rbegin());
+  const auto input1_height = *(input1_dims.rbegin()+1);
+  const auto input1_width = *(input1_dims.rbegin());
+  if ((m_transpose_a ? input0_height : input0_width)
+      != (m_transpose_b ? input1_width : input1_height)) {
     LBANN_ERROR("input tensors in ",print_name()," ",
-                "are not compatible with matrix multiplication ",
+                "are not compatible with ",
+                (m_transpose_a ? "T" : "N"), (m_transpose_b ? "T" : "N"),
+                " matrix multiplication ",
                 "(",print_inputs(),")");
   }
 
   // Set output dimensions
   std::vector<int> output_dims(input0_dims);
-  *(output_dims.rbegin()+1) = m;
-  *(output_dims.rbegin()) = n;
+  *(output_dims.rbegin()+1) = (m_transpose_a ? input0_width : input0_height);
+  *(output_dims.rbegin()) = (m_transpose_b ? input1_height : input1_width);
   this->set_output_dims(output_dims);
 
 }
