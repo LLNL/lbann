@@ -419,12 +419,14 @@ bool lbann::persist::read_double(persist_type type, const char *name, double *va
   return read_bytes(type, name, val, sizeof(double));
 }
 
-bool lbann::persist::write_datatype(persist_type type, const char *name, DataType val) {
-  return write_bytes(type, name, &val, sizeof(DataType));
+template <typename TensorDataType>
+bool lbann::persist::write_datatype(persist_type type, const char *name, TensorDataType val) {
+  return write_bytes(type, name, &val, sizeof(TensorDataType));
 }
 
-bool lbann::persist::read_datatype(persist_type type, const char *name, DataType *val) {
-  return read_bytes(type, name, val, sizeof(DataType));
+template <typename TensorDataType>
+bool lbann::persist::read_datatype(persist_type type, const char *name, TensorDataType *val) {
+  return read_bytes(type, name, val, sizeof(TensorDataType));
 }
 
 bool lbann::persist::write_string(persist_type type, const char *name, const char *val, int str_length) {
@@ -447,17 +449,25 @@ std::string lbann::persist::get_filename(persist_type type) const {
  * Functions to read/write values to files
  ****************************************************/
 
-bool lbann::write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) {
+template <typename TensorDataType>
+bool lbann::write_distmat(int fd,
+                          const char *name,
+                          El::DistMatrix<TensorDataType, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,
+                          uint64_t *bytes) {
   El::Write(*M, name, El::BINARY, "");
   //Write_MPI(M, name, BINARY, "");
 
-  uint64_t bytes_written = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes_written = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(TensorDataType);
   *bytes += bytes_written;
 
   return true;
 }
 
-bool lbann::read_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) {
+template <typename TensorDataType>
+bool lbann::read_distmat(int fd,
+                         const char *name,
+                         El::DistMatrix<TensorDataType, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,
+                         uint64_t *bytes) {
   // check whether file exists
   int exists = lbann::exists(name);
   if (! exists) {
@@ -468,7 +478,7 @@ bool lbann::read_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) 
   El::Read(*M, name, El::BINARY, true);
   //Read_MPI(M, name, BINARY, 1);
 
-  uint64_t bytes_read = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes_read = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(TensorDataType);
   *bytes += bytes_read;
 
   return true;
@@ -568,8 +578,17 @@ bool lbann::read_string(int fd, const char *name, char *buf, size_t size) {
   template bool lbann::persist::write_distmat<T>(                             \
     persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
   template bool lbann::persist::read_distmat<T>(                              \
-    persist_type type, const char *name, El::AbstractDistMatrix<T> *M);
-
+    persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
+  template bool lbann::persist::write_datatype<T>(                            \
+    persist_type type, const char *name, T val);                              \
+  template bool lbann::persist::read_datatype<T>(                             \
+    persist_type type, const char *name, T *val);                             \
+  template bool lbann::write_distmat<T>( int fd, const char *name,            \
+    El::DistMatrix<T, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,       \
+    uint64_t *bytes);                                                         \
+  template bool lbann::read_distmat<T>(int fd, const char *name,              \
+    El::DistMatrix<T, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,       \
+    uint64_t *bytes);
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

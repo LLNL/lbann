@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/timer.hpp"
@@ -349,6 +350,10 @@ bool data_type_optimizer<TensorDataType>::load_from_checkpoint_distributed(persi
   return true;
 }
 
-template class data_type_optimizer<DataType>;
+#define PROTO(T)                         \
+  template class data_type_optimizer<T>;
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -30,7 +30,7 @@ namespace lbann {
 
 #ifdef LBANN_HAS_TBINF
 
-inline lbann_summary::lbann_summary(std::string logdir, lbann_comm *comm)
+lbann_summary::lbann_summary(std::string logdir, lbann_comm *comm)
   : m_comm(comm) {
   if (m_comm->am_world_master()) {
     m_sw = new TBinf::SummaryWriter(logdir);
@@ -40,7 +40,7 @@ inline lbann_summary::lbann_summary(std::string logdir, lbann_comm *comm)
   m_histogram_buckets = TBinf::SummaryWriter::get_default_histogram_buckets();
 }
 
-inline lbann_summary::~lbann_summary() {
+lbann_summary::~lbann_summary() {
   flush();
   if (m_sw != nullptr) {
     delete m_sw;
