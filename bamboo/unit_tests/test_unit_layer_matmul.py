@@ -68,14 +68,10 @@ def construct_model(lbann):
                                name='input1_weights')
     x_slice = lbann.Slice(lbann.Input(),
                           slice_points=tools.str_list([0, _m*_k, _m*_k+_k*_n]))
-    x0 = lbann.Sum(lbann.Reshape(x_slice,
-                                 dims=tools.str_list([_m, _k])),
-                   lbann.WeightsLayer(weights=x0_weights,
-                                      dims=tools.str_list([_m, _k])))
-    x1 = lbann.Sum(lbann.Reshape(x_slice,
-                                 dims=tools.str_list([_k, _n])),
-                   lbann.WeightsLayer(weights=x1_weights,
-                                       dims=tools.str_list([_k, _n])))
+    x0 = lbann.Sum(x_slice,
+                   lbann.WeightsLayer(weights=x0_weights, dims=str(_m*_k)))
+    x1 = lbann.Sum(x_slice,
+                   lbann.WeightsLayer(weights=x1_weights, dims=str(_k*_n)))
     x0_lbann = x0
     x1_lbann = x1
 
@@ -89,8 +85,8 @@ def construct_model(lbann):
     # ------------------------------------------
 
     # LBANN implementation
-    x0 = x0_lbann
-    x1 = x1_lbann
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_m, _k]))
+    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_k, _n]))
     y = lbann.MatMul(x0, x1, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -103,6 +99,97 @@ def construct_model(lbann):
         x0 = x[:_m*_k].reshape([_m,_k])
         x1 = x[_m*_k:].reshape([_k,_n])
         y = np.matmul(x0, x1)
+        z = tools.numpy_l2norm2(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # TN GEMM
+    # ------------------------------------------
+
+    # LBANN implementation
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_k, _m]))
+    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_k, _n]))
+    y = lbann.MatMul(x0, x1, transpose_a=True, data_layout='data_parallel')
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='TN GEMM'))
+
+    # NumPy implementation
+    vals = []
+    for i in range(num_samples()):
+        x = get_sample(i).astype(np.float64)
+        x0 = x[:_m*_k].reshape([_k,_m])
+        x1 = x[_m*_k:].reshape([_k,_n])
+        y = np.matmul(x0.transpose(), x1)
+        z = tools.numpy_l2norm2(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # NT GEMM
+    # ------------------------------------------
+
+    # LBANN implementation
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_m, _k]))
+    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_n, _k]))
+    y = lbann.MatMul(x0, x1, transpose_b=True, data_layout='data_parallel')
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='NT GEMM'))
+
+    # NumPy implementation
+    vals = []
+    for i in range(num_samples()):
+        x = get_sample(i).astype(np.float64)
+        x0 = x[:_m*_k].reshape([_m,_k])
+        x1 = x[_m*_k:].reshape([_n,_k])
+        y = np.matmul(x0, x1.transpose())
+        z = tools.numpy_l2norm2(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # TT GEMM
+    # ------------------------------------------
+
+    # LBANN implementation
+    x0 = lbann.Reshape(x0_lbann, dims=tools.str_list([_k, _m]))
+    x1 = lbann.Reshape(x1_lbann, dims=tools.str_list([_n, _k]))
+    y = lbann.MatMul(x0, x1, transpose_a=True, transpose_b=True,
+                     data_layout='data_parallel')
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='TT GEMM'))
+
+    # NumPy implementation
+    vals = []
+    for i in range(num_samples()):
+        x = get_sample(i).astype(np.float64)
+        x0 = x[:_m*_k].reshape([_k,_m])
+        x1 = x[_m*_k:].reshape([_n,_k])
+        y = np.matmul(x0.transpose(), x1.transpose())
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
