@@ -210,8 +210,8 @@ void init_io_random(int seed = -1);
  * the same entries when mat spans any number of processes.
  */
 template <typename TensorDataType>
-void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, TensorDataType mean = 0.0f,
-                   TensorDataType stddev = 1.0f);
+void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, TensorDataType mean = 0.0,
+                   TensorDataType stddev = 1.0);
 /**
  * Make mat into an m x n matrix where each entry is an indepenent Bernoulli
  * random variable with parameter p.
@@ -225,8 +225,8 @@ void bernoulli_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::
  * This makes the same guarantees as gaussian_fill.
  */
 template <typename TensorDataType>
-void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, TensorDataType center = 0.0f,
-                  TensorDataType radius = 1.0f);
+void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, TensorDataType center = 0.0,
+                  TensorDataType radius = 1.0);
 
 /**
  * Make mat into an m x n matrix where each entry is independently drawn from
@@ -236,7 +236,7 @@ void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::In
  */
 template <typename TensorDataType>
 void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
-                           TensorDataType mean = 0.0f, TensorDataType stddev = 1.0f);
+                           TensorDataType mean = 0.0, TensorDataType stddev = 1.0);
 /**
  * Make mat into an m x n matrix where each entry is an independent Bernoulli
  * random variable with parameter p.
@@ -251,7 +251,7 @@ void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int
  */
 template <typename TensorDataType>
 void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
-                          TensorDataType center = 0.0f, TensorDataType radius = 1.0f);
+                          TensorDataType center = 0.0, TensorDataType radius = 1.0);
 
 bool save_rng_to_checkpoint_shared(persist& p, lbann_comm* comm);
 bool save_rng_to_checkpoint_distributed(persist& p, lbann_comm* comm);
