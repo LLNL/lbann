@@ -71,9 +71,11 @@ protected:
 
 private:
 
-  /** Whether to transpose matrices from the first input tensor. */
+  /** If true, matrices from the first input tensor are transposed
+   *  before multiplication. */
   bool m_transpose_a;
-  /** Whether to transpose matrices from the second input tensor. */
+  /** If true, matrices from the second input tensor are transposed
+   *  before multiplication. */
   bool m_transpose_b;
 
 };

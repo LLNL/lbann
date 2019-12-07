@@ -247,9 +247,13 @@ message Layer {
    *  sample, in a similar manner as NumPy's matmul function.
    */
   message MatMul {
-    /** Transpose matrices from first input tensor. */
+    /** If true, matrices from the first input tensor are transposed
+     *  before multiplication.
+     */
     bool transpose_a = 1;
-    /** Transpose matrices from second input tensor. */
+    /** If true, matrices from the second input tensor are transposed
+     *  before multiplication.
+     */
     bool transpose_b = 2;
   }
 
