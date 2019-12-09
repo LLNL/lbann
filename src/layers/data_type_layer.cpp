@@ -634,7 +634,7 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(El::Int mini_
 }
 
 #define PROTO(T)                     \
-  template class data_type_layer<T>;
+  template class data_type_layer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

@@ -180,7 +180,7 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   template class constant_initializer<T>;          \
   template class value_initializer<T>;             \
   template class uniform_initializer<T>;           \
-  template class normal_initializer<T>;
+  template class normal_initializer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

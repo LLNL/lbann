@@ -351,7 +351,7 @@ bool data_type_optimizer<TensorDataType>::load_from_checkpoint_distributed(persi
 }
 
 #define PROTO(T)                         \
-  template class data_type_optimizer<T>;
+  template class data_type_optimizer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

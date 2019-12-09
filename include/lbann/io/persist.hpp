@@ -324,7 +324,7 @@ void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
   extern template bool write_distmat<T>(                                    \
     int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);            \
   extern template bool read_distmat<T>(                                     \
-    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);
+    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

@@ -580,7 +580,7 @@ bool lbann::read_string(int fd, const char *name, char *buf, size_t size) {
   template bool lbann::write_distmat<T>(                                      \
     int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);              \
   template bool lbann::read_distmat<T>(                                       \
-    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);
+    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

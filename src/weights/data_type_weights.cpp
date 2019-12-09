@@ -476,7 +476,7 @@ bool data_type_weights<TensorDataType>::load_from_checkpoint_distributed(lbann::
 }
 
 #define PROTO(T)                     \
-  template class data_type_weights<T>;
+  template class data_type_weights<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

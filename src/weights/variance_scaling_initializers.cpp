@@ -163,7 +163,7 @@ build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg) {
 #define PROTO(T)                        \
   template class glorot_initializer<T>; \
   template class he_initializer<T>;     \
-  template class lecun_initializer<T>;
+  template class lecun_initializer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

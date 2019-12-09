@@ -133,7 +133,7 @@ build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg);
 #define PROTO(T)                               \
   extern template class glorot_initializer<T>; \
   extern template class he_initializer<T>;     \
-  extern template class lecun_initializer<T>;
+  extern template class lecun_initializer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

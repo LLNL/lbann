@@ -262,7 +262,7 @@ private:
 
 #define PROTO_DEVICE(T, Device) \
   extern template class fully_connected_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class fully_connected_layer<T, data_layout::MODEL_PARALLEL, Device>;
+  extern template class fully_connected_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

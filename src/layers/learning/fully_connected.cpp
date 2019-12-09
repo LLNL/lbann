@@ -463,7 +463,7 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 
 #define PROTO_DEVICE(T, Device) \
   template class fully_connected_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class fully_connected_layer<T, data_layout::MODEL_PARALLEL, Device>;
+  template class fully_connected_layer<T, data_layout::MODEL_PARALLEL, Device>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

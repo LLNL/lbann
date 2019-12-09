@@ -213,7 +213,7 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg);
   extern template class constant_initializer<T>;          \
   extern template class value_initializer<T>;             \
   extern template class uniform_initializer<T>;           \
-  extern template class normal_initializer<T>;
+  extern template class normal_initializer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
