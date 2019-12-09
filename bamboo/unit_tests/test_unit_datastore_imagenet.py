@@ -182,7 +182,7 @@ datastore_tests = tools.create_tests(
     setup_experiment,
     __file__,
     nodes=num_nodes,
-    lbann_args=['--preload_data_store']
+    lbann_args=['--use_data_store']
 )
 for i in range(len(datastore_tests)):
     _test_func = create_test_func(baseline_tests[i], datastore_tests[i])
