@@ -450,10 +450,7 @@ std::string lbann::persist::get_filename(persist_type type) const {
  ****************************************************/
 
 template <typename TensorDataType>
-bool lbann::write_distmat(int fd,
-                          const char *name,
-                          El::DistMatrix<TensorDataType, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,
-                          uint64_t *bytes) {
+bool lbann::write_distmat(int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes) {
   El::Write(*M, name, El::BINARY, "");
   //Write_MPI(M, name, BINARY, "");
 
@@ -464,10 +461,7 @@ bool lbann::write_distmat(int fd,
 }
 
 template <typename TensorDataType>
-bool lbann::read_distmat(int fd,
-                         const char *name,
-                         El::DistMatrix<TensorDataType, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,
-                         uint64_t *bytes) {
+bool lbann::read_distmat(int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes) {
   // check whether file exists
   int exists = lbann::exists(name);
   if (! exists) {
@@ -583,12 +577,10 @@ bool lbann::read_string(int fd, const char *name, char *buf, size_t size) {
     persist_type type, const char *name, T val);                              \
   template bool lbann::persist::read_datatype<T>(                             \
     persist_type type, const char *name, T *val);                             \
-  template bool lbann::write_distmat<T>( int fd, const char *name,            \
-    El::DistMatrix<T, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,       \
-    uint64_t *bytes);                                                         \
-  template bool lbann::read_distmat<T>(int fd, const char *name,              \
-    El::DistMatrix<T, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,       \
-    uint64_t *bytes);
+  template bool lbann::write_distmat<T>(                                      \
+    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);              \
+  template bool lbann::read_distmat<T>(                                       \
+    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

@@ -189,15 +189,9 @@ class persist {
 };
 
 template <typename TensorDataType>
-bool write_distmat(int fd,
-                   const char *name,
-                   El::DistMatrix<TensorDataType, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,
-                   uint64_t *bytes);
+bool write_distmat(int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes);
 template <typename TensorDataType>
-bool read_distmat (int fd,
-                   const char *name,
-                   El::DistMatrix<TensorDataType, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,
-                   uint64_t *bytes);
+bool read_distmat (int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes);
 
 bool write_bytes(int fd, const char *name, const void *buf, size_t size);
 bool read_bytes(int fd, const char *name, void *buf, size_t size);
@@ -327,12 +321,10 @@ void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
     persist_type type, const char *name, T val);                            \
   extern template bool persist::read_datatype<T>(                           \
     persist_type type, const char *name, T *val);                           \
-  extern template bool write_distmat<T>( int fd, const char *name,          \
-    El::DistMatrix<T, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,     \
-    uint64_t *bytes);                                                       \
-  extern template bool read_distmat<T>(int fd, const char *name,            \
-    El::DistMatrix<T, El::MC, El::MR, El::ELEMENT, El::Device::CPU> *M,     \
-    uint64_t *bytes);
+  extern template bool write_distmat<T>(                                    \
+    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);            \
+  extern template bool read_distmat<T>(                                     \
+    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

@@ -362,7 +362,7 @@ void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::In
 template <typename TensorDataType>
 void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
                            TensorDataType mean, TensorDataType stddev) {
-  El::DistMatrix<TensorDataType, El::CIRC, El::CIRC, El::ELEMENT, El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  CircMatDT<TensorDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
@@ -378,7 +378,7 @@ void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int 
 
 template <typename TensorDataType>
 void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p) {
-  El::DistMatrix<TensorDataType, El::CIRC, El::CIRC, El::ELEMENT, El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  CircMatDT<TensorDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
@@ -395,7 +395,7 @@ void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int
 template <typename TensorDataType>
 void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
                           TensorDataType center, TensorDataType radius) {
-  El::DistMatrix<TensorDataType, El::CIRC, El::CIRC, El::ELEMENT, El::Device::CPU> vals(m, n, mat.Grid(), 0);
+  CircMatDT<TensorDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
     auto& gen = get_generator();

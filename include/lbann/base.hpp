@@ -99,8 +99,12 @@ using ElMat      = El::ElementalMatrix<DataType>;
 using BlockMat   = El::BlockMatrix<DataType>;
 template <El::Device D>
 using MCMRMat    = El::DistMatrix<DataType, El::MC  , El::MR  , El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using MCMRMatDT  = El::DistMatrix<TensorDataType, El::MC  , El::MR  , El::ELEMENT, D>;
 template <El::Device D>
 using CircMat    = El::DistMatrix<DataType, El::CIRC, El::CIRC, El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using CircMatDT  = El::DistMatrix<TensorDataType, El::CIRC, El::CIRC, El::ELEMENT, D>;
 template <El::Device D>
 using StarMat    = El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, D>;
 template <El::Device D>
@@ -114,6 +118,8 @@ using MRStarMat  = El::DistMatrix<DataType, El::MR  , El::STAR, El::ELEMENT, D>;
 template <El::Device D>
 using StarMRMat  = El::DistMatrix<DataType, El::STAR, El::MR  , El::ELEMENT, D>;
 using DistMat = MCMRMat<El::Device::CPU>;
+template <typename TensorDataType>
+using DistMatDT = MCMRMatDT<TensorDataType, El::Device::CPU>;
 using Mat = El::Matrix<DataType, El::Device::CPU>; // Temporarily define as CPUMat
 
 // Datatype for model evaluation
