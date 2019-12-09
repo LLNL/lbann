@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_ONE_HOT_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_ONE_HOT_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -39,14 +39,14 @@ namespace lbann {
  *  otherwise. If the input is outside @f$[0,\text{size})@f$, then the
  *  output is all zeros.
  */
-template <data_layout Layout, El::Device Device>
-class one_hot_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class one_hot_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "one-hot layer only supports data-parallel layout");
 public:
 
-  one_hot_layer(lbann_comm* comm, size_t size) : Layer(comm) {
-    set_output_dims({static_cast<int>(size)});
+  one_hot_layer(lbann_comm* comm, size_t size) : data_type_layer<TensorDataType>(comm) {
+    this->set_output_dims({static_cast<int>(size)});
   }
   one_hot_layer* copy() const override { return new one_hot_layer(*this); }
   std::string get_type() const override { return "one-hot"; }
@@ -56,16 +56,16 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
+    data_type_layer<TensorDataType>::setup_dims();
 
     // Make sure input tensor is scalar
-    if (get_input_size() != 1) {
-      const auto input_dims = get_input_dims();
+    if (this->get_input_size() != 1) {
+      const auto input_dims = this->get_input_dims();
       std::ostringstream dim_ss;
       for (size_t i = 0; i < input_dims.size(); ++i) {
         dim_ss << (i > 0 ? "x" : "") << input_dims[i];
       }
-      LBANN_ERROR(get_type()," layer \"",get_name(),"\" ",
+      LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
                   "received an input tensor with invalid dimensions ",
                   "(expected 1, got ",dim_ss.str(),")");
     }
@@ -78,10 +78,10 @@ protected:
 
 #ifndef LBANN_ONE_HOT_LAYER_INSTANTIATE
 extern template class one_hot_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class one_hot_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_ONE_HOT_LAYER_INSTANTIATE
 

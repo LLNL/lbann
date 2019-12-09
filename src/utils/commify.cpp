@@ -24,20 +24,33 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_CONCATENATION_LAYER_INSTANTIATE
-#include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/utils/commify.hpp"
+#include <sstream>
+#include <algorithm>
 
-namespace lbann {
+namespace lbann
+{
+namespace utils
+{
 
-template class concatenation_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class concatenation_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class concatenation_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class concatenation_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+std::string commify(size_t n) {
+  std::string s = std::to_string(n);
+  std::stringstream s2;
+  int c = 0;
+  for (int j = (int)s.size()-1; j>=0; j--) {
+    s2 << s[j];
+    ++c;
+    if (c == 3) {
+      if (j > 0) {
+        s2 << ",";
+        c = 0;
+      }
+    }
+  }
+  std::string r = s2.str();
+  std::reverse(r.begin(), r.end());
+  return r;
+}
 
+}// namespace utils
 }// namespace lbann

@@ -98,12 +98,12 @@ void setup_unpooling_pointers(lbann_comm* comm,
   std::stringstream err;
   for (int i=0; i<proto_model.layer_size(); ++i) {
     {
-      unpooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>* unpool
-        = dynamic_cast<unpooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>*>(layers[i]);
+      unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>* unpool
+        = dynamic_cast<unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>*>(layers[i]);
       if (unpool != nullptr) {
         const auto& pool_name = proto_model.layer(i).unpooling().pooling_layer();
-        pooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>* pool
-          = dynamic_cast<pooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>*>(names_to_layers[pool_name]);
+        pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>* pool
+          = dynamic_cast<pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>*>(names_to_layers[pool_name]);
         if (pool == nullptr) {
           err << "could not find pooling layer " << pool_name << " "
               << "to pair with unpooling layer " << unpool->get_name();
@@ -114,12 +114,12 @@ void setup_unpooling_pointers(lbann_comm* comm,
     }
 #if defined(LBANN_HAS_GPU) && defined(LBANN_UNPOOLING_LAYER_SUPPORTS_GPU)
     {
-      unpooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>* unpool
-        = dynamic_cast<unpooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>*>(layers[i]);
+      unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>* unpool
+        = dynamic_cast<unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(layers[i]);
       if (unpool != nullptr) {
         const auto& pool_name = proto_model.layer(i).unpooling().pooling_layer();
-        pooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>* pool
-          = dynamic_cast<pooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>*>(names_to_layers[pool_name]);
+        pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>* pool
+          = dynamic_cast<pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(names_to_layers[pool_name]);
         if (pool == nullptr) {
           err << "could not find pooling layer " << pool_name << " "
               << "to pair with unpooling layer " << unpool->get_name();
@@ -191,21 +191,21 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
 
     // Construct layer
     std::unique_ptr<Layer> l;
-#define TEMPLATE_INSTANTIATION(T_layout, T_device)                      \
+#define TEMPLATE_INSTANTIATION(TensorDataType, T_layout, T_device)      \
     do {                                                                \
-      if (layout == T_layout && device == T_device) {        \
-        l = construct_layer<T_layout, T_device>(                        \
+      if (layout == T_layout && device == T_device) {                   \
+        l = construct_layer<TensorDataType, T_layout, T_device>(        \
               comm,                                                     \
               data_readers,                                             \
               num_parallel_readers,                                     \
               proto_layer);                                             \
       }                                                                 \
     } while (0)
-    TEMPLATE_INSTANTIATION(data_layout::DATA_PARALLEL, El::Device::CPU);
-    TEMPLATE_INSTANTIATION(data_layout::MODEL_PARALLEL, El::Device::CPU);
+    TEMPLATE_INSTANTIATION(DataType, data_layout::DATA_PARALLEL, El::Device::CPU);
+    TEMPLATE_INSTANTIATION(DataType, data_layout::MODEL_PARALLEL, El::Device::CPU);
 #ifdef LBANN_HAS_GPU
-    TEMPLATE_INSTANTIATION(data_layout::DATA_PARALLEL, El::Device::GPU);
-    TEMPLATE_INSTANTIATION(data_layout::MODEL_PARALLEL, El::Device::GPU);
+    TEMPLATE_INSTANTIATION(DataType, data_layout::DATA_PARALLEL, El::Device::GPU);
+    TEMPLATE_INSTANTIATION(DataType, data_layout::MODEL_PARALLEL, El::Device::GPU);
 #endif // LBANN_HAS_GPU
 #undef TEMPLATE_INSTANTIATION
 

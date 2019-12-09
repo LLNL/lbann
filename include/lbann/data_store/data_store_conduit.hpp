@@ -92,8 +92,11 @@ class data_store_conduit {
   /** @brief Returns the conduit Node associated with the data_id */
   const conduit::Node & get_conduit_node(int data_id) const;
 
-  /// if 'already_have = true' then the passed 'node' was obtained by a call to
-  /// get_empty_node(). In some operating modes this saves us from copying the node
+  /** @brief Set a conduit node in the data store
+   *
+   * if 'already_have = true' then the passed 'node' was obtained by a call to
+   * get_empty_node(); note, we do this to prevent copying the node
+   */
   void set_conduit_node(int data_id, conduit::Node &node, bool already_have = false);
 
   void set_preloaded_conduit_node(int data_id, const conduit::Node &node);
@@ -176,6 +179,12 @@ class data_store_conduit {
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
 
+  /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
+  void clear_owner_map();
+
+  /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
+  void add_owner(int data_id, int owner) { m_owner[data_id] = owner; }
+
   /// Recompact the nodes because they are not copied properly when instantiating
   /// using the copy constructor
   void compact_nodes();
@@ -246,6 +255,8 @@ class data_store_conduit {
   void test_imagenet_node(int sample_id, bool dereference = true);
 
 private :
+
+  bool m_owner_maps_were_exchanged = false;
 
   bool m_run_checkpoint_test = false;
 
@@ -340,8 +351,6 @@ private :
   //===========================================================
   // END: timers for profiling exchange_data
   //===========================================================
-
-  int m_cur_epoch = 0;
 
   bool m_is_setup = false;
 

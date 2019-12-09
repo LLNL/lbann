@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_REGULARIZERS_LAYER_NORM_HPP_INCLUDED
 #define LBANN_LAYERS_REGULARIZERS_LAYER_NORM_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 #include <memory>
 
@@ -46,15 +46,15 @@ namespace lbann {
  *  reproduce that functionality.
  *
  */
-template <data_layout Layout, El::Device Device>
-class layer_norm_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class layer_norm_layer : public data_type_layer<TensorDataType> {
 public:
 
   /**
    *  @param comm       LBANN communicator
    *  @param epsilon    Small number to avoid division by zero
    */
-  layer_norm_layer(lbann_comm* comm, DataType epsilon=1e-5);
+  layer_norm_layer(lbann_comm* comm, TensorDataType epsilon=1e-5);
 
   layer_norm_layer(const layer_norm_layer& other);
   layer_norm_layer& operator=(const layer_norm_layer& other);
@@ -77,19 +77,21 @@ protected:
 
 private:
 
+  using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
+
   /** Small number to avoid division by zero. */
-  DataType m_epsilon;
+  TensorDataType m_epsilon;
 
   /** @brief Per-sample statistics.
    *
    *  The means and variances are fused for performance.
    */
-  std::unique_ptr<AbsDistMat> m_statistics;
+  std::unique_ptr<AbsDistMatType> m_statistics;
   /** @brief Gradients w.r.t. per-sample statistics.
    *
    *  The means and variances are fused for performance.
    */
-  std::unique_ptr<AbsDistMat> m_statistics_gradient;
+  std::unique_ptr<AbsDistMatType> m_statistics_gradient;
 
 };
 
@@ -97,17 +99,17 @@ private:
 // Implementation
 // =========================================================
 
-template <data_layout Layout, El::Device Device>
-layer_norm_layer<Layout,Device>::layer_norm_layer(
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+layer_norm_layer<TensorDataType,Layout,Device>::layer_norm_layer(
   lbann_comm* comm,
-  DataType epsilon)
-  : Layer(comm), m_epsilon(epsilon)
+  TensorDataType epsilon)
+  : data_type_layer<TensorDataType>(comm), m_epsilon(epsilon)
 {}
 
-template <data_layout Layout, El::Device Device>
-layer_norm_layer<Layout,Device>::layer_norm_layer(
-  const layer_norm_layer<Layout,Device>& other)
-  : Layer(other),
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+layer_norm_layer<TensorDataType,Layout,Device>::layer_norm_layer(
+  const layer_norm_layer<TensorDataType,Layout,Device>& other)
+  : data_type_layer<TensorDataType>(other),
     m_epsilon(other.m_epsilon),
     m_statistics(other.m_statistics
                  ? other.m_statistics->Copy()
@@ -117,10 +119,10 @@ layer_norm_layer<Layout,Device>::layer_norm_layer(
                           : nullptr)
 {}
 
-template <data_layout Layout, El::Device Device>
-layer_norm_layer<Layout,Device>& layer_norm_layer<Layout,Device>::operator=(
-  const layer_norm_layer<Layout,Device>& other) {
-  Layer::operator=(other);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+layer_norm_layer<TensorDataType,Layout,Device>& layer_norm_layer<TensorDataType,Layout,Device>::operator=(
+  const layer_norm_layer<TensorDataType,Layout,Device>& other) {
+  data_type_layer<TensorDataType>::operator=(other);
   m_epsilon = other.m_epsilon;
   m_statistics.reset(other.m_statistics
                      ? other.m_statistics->Copy()
@@ -131,61 +133,61 @@ layer_norm_layer<Layout,Device>& layer_norm_layer<Layout,Device>::operator=(
   return *this;
 }
 
-template <data_layout Layout, El::Device Device>
-layer_norm_layer<Layout,Device>* layer_norm_layer<Layout,Device>::copy() const {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+layer_norm_layer<TensorDataType,Layout,Device>* layer_norm_layer<TensorDataType,Layout,Device>::copy() const {
   return new layer_norm_layer(*this);
 }
 
-template <data_layout Layout, El::Device Device>
-std::string layer_norm_layer<Layout,Device>::get_type() const {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::string layer_norm_layer<TensorDataType,Layout,Device>::get_type() const {
   return "layer norm";
 }
 
-template <data_layout Layout, El::Device Device>
-data_layout layer_norm_layer<Layout,Device>::get_data_layout() const {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+data_layout layer_norm_layer<TensorDataType,Layout,Device>::get_data_layout() const {
   return Layout;
 }
 
-template <data_layout Layout, El::Device Device>
-El::Device layer_norm_layer<Layout,Device>::get_device_allocation() const {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+El::Device layer_norm_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
   return Device;
 }
 
-template <data_layout Layout, El::Device Device>
-description layer_norm_layer<Layout,Device>::get_description() const {
-  auto desc = Layer::get_description();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+description layer_norm_layer<TensorDataType,Layout,Device>::get_description() const {
+  auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Epsilon", m_epsilon);
   return desc;
 }
 
-template <data_layout Layout, El::Device Device>
-void layer_norm_layer<Layout,Device>::setup_dims() {
-  Layer::setup_dims();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_layer<TensorDataType,Layout,Device>::setup_dims() {
+  data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims(this->get_input_dims());
 }
 
-template <data_layout Layout, El::Device Device>
-void layer_norm_layer<Layout,Device>::setup_matrices(const El::Grid& grid) {
-  Layer::setup_matrices(grid);
-  auto dist = get_prev_activations().DistData();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_layer<TensorDataType,Layout,Device>::setup_matrices(const El::Grid& grid) {
+  data_type_layer<TensorDataType>::setup_matrices(grid);
+  auto dist = this->get_prev_activations().DistData();
   dist.colDist = El::STAR;
   m_statistics.reset(AbsDistMat::Instantiate(dist));
   m_statistics_gradient.reset(AbsDistMat::Instantiate(dist));
 }
 
-template <data_layout Layout, El::Device Device>
-void layer_norm_layer<Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
-  Layer::fp_setup_outputs(mini_batch_size);
-  const auto& input = get_prev_activations();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
+  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+  const auto& input = this->get_prev_activations();
   m_statistics->Empty(false);
   m_statistics->AlignWith(input);
   m_statistics->Resize(2, input.Width());
 }
 
-template <data_layout Layout, El::Device Device>
-void layer_norm_layer<Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
-  Layer::bp_setup_gradient_wrt_inputs(mini_batch_size);
-  const auto& input = get_prev_activations();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+  data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
+  const auto& input = this->get_prev_activations();
   m_statistics_gradient->Empty(false);
   m_statistics_gradient->AlignWith(input);
   m_statistics_gradient->Resize(2, input.Width());
@@ -197,14 +199,14 @@ void layer_norm_layer<Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_
 
 #ifndef LBANN_LAYER_NORM_LAYER_INSTANTIATE
 extern template class layer_norm_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class layer_norm_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class layer_norm_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class layer_norm_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_LAYER_NORM_LAYER_INSTANTIATE
 

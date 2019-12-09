@@ -126,7 +126,7 @@ class ConvolutionModule(Module):
     def __init__(self, num_dims,
                  out_channels, kernel_size,
                  stride=1, padding=0, dilation=1, groups=1, bias=True,
-                 weights=[], activation=None, name=None):
+                 weights=[], activation=None, name=None, transpose=False):
         """Initialize convolution module.
 
         Args:
@@ -146,6 +146,8 @@ class ConvolutionModule(Module):
                 will be initialized with He normal initialization and
                 the bias with zeros.
             name (str): Default name is in the form 'convmodule<index>'.
+            transpose (bool): If true call deconvolution (or convolution
+                         transpose)
 
         """
         super().__init__()
@@ -163,6 +165,7 @@ class ConvolutionModule(Module):
         self.name = (name
                      if name
                      else 'convmodule{0}'.format(ConvolutionModule.global_count))
+        self.transpose = transpose
 
         # Initialize weights
         # Note: If weights are not provided, kernel weights are
@@ -195,7 +198,21 @@ class ConvolutionModule(Module):
     def forward(self, x):
         self.instance += 1
         name = '{0}_instance{1}'.format(self.name, self.instance)
-        y = lbann.Convolution(x,
+        if(self.transpose):
+          y = lbann.Deconvolution(x,
+                              weights=self.weights,
+                              name=(name+'_deconv' if self.activation else name),
+                              num_dims=self.num_dims,
+                              num_output_channels=self.out_channels,
+                              has_vectors=False,
+                              conv_dims_i=self.kernel_size,
+                              conv_pads_i=self.padding,
+                              conv_strides_i=self.stride,
+                              conv_dilations_i=self.dilation,
+                              num_groups=self.groups,
+                              has_bias=self.bias)
+        else:
+          y = lbann.Convolution(x,
                               weights=self.weights,
                               name=(name+'_conv' if self.activation else name),
                               num_dims=self.num_dims,

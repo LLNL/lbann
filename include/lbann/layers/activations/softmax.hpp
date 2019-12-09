@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 #define LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/cudnn.hpp"
 
 // Threshold outputs to a minimum value.
@@ -44,19 +44,28 @@ namespace lbann {
 /**
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
  */
-template <data_layout Layout, El::Device Device>
-class softmax_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class softmax_layer : public data_type_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
 public:
 
   softmax_layer(lbann_comm *comm)
-    : Layer(comm)
+    : data_type_layer<TensorDataType>(comm)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
   {}
 
   softmax_layer(const softmax_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
@@ -69,7 +78,7 @@ public:
   }
 
   softmax_layer& operator=(const softmax_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() : nullptr);
 #ifdef LBANN_HAS_CUDNN
@@ -87,15 +96,15 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
+    data_type_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
-    auto dist = get_prev_activations().DistData();
+    data_type_layer<TensorDataType>::setup_matrices(grid);
+    auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
-    m_workspace.reset(AbsDistMat::Instantiate(dist));
+    m_workspace.reset(AbsDistMatrixType::Instantiate(dist));
 #ifdef HYDROGEN_HAVE_CUB
     if (m_workspace->GetLocalDevice() == El::Device::GPU) {
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
@@ -104,8 +113,8 @@ public:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    Layer::fp_setup_outputs(mini_batch_size);
-    const auto& dist_data = get_prev_activations().DistData();
+    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+    const auto& dist_data = this->get_prev_activations().DistData();
     m_workspace->Empty(false);
     m_workspace->AlignWith(dist_data);
     m_workspace->Resize(1, mini_batch_size);
@@ -114,28 +123,41 @@ public:
   void fp_compute() override;
   void bp_compute() override;
 
+  template <typename U>
+  friend void fp_compute_impl(softmax_layer<U, Layout, Device>& l);
+  template <typename U>
+  friend void bp_compute_impl(softmax_layer<U, Layout, Device>& l);
+
 private:
 
   /** Workspace for column-wise reductions. */
-  std::unique_ptr<AbsDistMat> m_workspace;
+  std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 #ifdef LBANN_HAS_CUDNN
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
+
+// Minimum output value to avoid denormalized floats
+#ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
+  const TensorDataType threshold_val = std::sqrt(std::numeric_limits<TensorDataType>::min());
+#else
+  const TensorDataType threshold_val = 0;
+#endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
+
 
 };
 
 #ifndef LBANN_SOFTMAX_LAYER_INSTANTIATE
 extern template class softmax_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class softmax_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class softmax_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class softmax_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SOFTMAX_LAYER_INSTANTIATE
 
