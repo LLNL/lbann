@@ -97,29 +97,43 @@ template <El::Device D>
 using AbsDistMatReadProxy = El::AbstractDistMatrixReadDeviceProxy<DataType, D>;
 using ElMat      = El::ElementalMatrix<DataType>;
 using BlockMat   = El::BlockMatrix<DataType>;
-template <El::Device D>
-using MCMRMat    = El::DistMatrix<DataType, El::MC  , El::MR  , El::ELEMENT, D>;
+
 template <typename TensorDataType, El::Device D>
-using MCMRMatDT  = El::DistMatrix<TensorDataType, El::MC  , El::MR  , El::ELEMENT, D>;
-template <El::Device D>
-using CircMat    = El::DistMatrix<DataType, El::CIRC, El::CIRC, El::ELEMENT, D>;
+using MCMRMatDT   = El::DistMatrix<TensorDataType, El::MC  , El::MR  , El::ELEMENT, D>;
 template <typename TensorDataType, El::Device D>
-using CircMatDT  = El::DistMatrix<TensorDataType, El::CIRC, El::CIRC, El::ELEMENT, D>;
-template <El::Device D>
-using StarMat    = El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, D>;
-template <El::Device D>
-using StarVCMat  = El::DistMatrix<DataType, El::STAR, El::VC  , El::ELEMENT, D>;
-template <El::Device D>
-using VCStarMat  = El::DistMatrix<DataType, El::VC  , El::STAR, El::ELEMENT, D>; /// ColSumStarVCMat
-template <El::Device D>
-using MCStarMat  = El::DistMatrix<DataType, El::MC  , El::STAR, El::ELEMENT, D>; /// RowSumMat
-template <El::Device D>
-using MRStarMat  = El::DistMatrix<DataType, El::MR  , El::STAR, El::ELEMENT, D>; /// ColSumMat
-template <El::Device D>
-using StarMRMat  = El::DistMatrix<DataType, El::STAR, El::MR  , El::ELEMENT, D>;
-using DistMat = MCMRMat<El::Device::CPU>;
+using CircMatDT   = El::DistMatrix<TensorDataType, El::CIRC, El::CIRC, El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using StarMatDT   = El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using StarVCMatDT = El::DistMatrix<TensorDataType, El::STAR, El::VC  , El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using VCStarMatDT = El::DistMatrix<TensorDataType, El::VC  , El::STAR, El::ELEMENT, D>; /// ColSumStarVCMat
+template <typename TensorDataType, El::Device D>
+using MCStarMatDT = El::DistMatrix<TensorDataType, El::MC  , El::STAR, El::ELEMENT, D>; /// RowSumMat
+template <typename TensorDataType, El::Device D>
+using MRStarMatDT = El::DistMatrix<TensorDataType, El::MR  , El::STAR, El::ELEMENT, D>; /// ColSumMat
+template <typename TensorDataType, El::Device D>
+using StarMRMatDT = El::DistMatrix<TensorDataType, El::STAR, El::MR  , El::ELEMENT, D>;
 template <typename TensorDataType>
-using DistMatDT = MCMRMatDT<TensorDataType, El::Device::CPU>;
+using DistMatDT   = MCMRMatDT<TensorDataType, El::Device::CPU>;
+
+template <El::Device D>
+using MCMRMat    = MCMRMatDT<DataType, D>;
+template <El::Device D>
+using CircMat    = CircMatDT<DataType, D>;
+template <El::Device D>
+using StarMat    = StarMatDT<DataType, D>;
+template <El::Device D>
+using StarVCMat  = StarVCMatDT<DataType, D>;
+template <El::Device D>
+using VCStarMat  = VCStarMatDT<DataType, D>; /// ColSumStarVCMat
+template <El::Device D>
+using MCStarMat  = MCStarMatDT<DataType, D>; /// RowSumMat
+template <El::Device D>
+using MRStarMat  = MRStarMatDT<DataType, D>; /// ColSumMat
+template <El::Device D>
+using StarMRMat  = StarMRMatDT<DataType, D>;
+using DistMat = MCMRMat<El::Device::CPU>;
 using Mat = El::Matrix<DataType, El::Device::CPU>; // Temporarily define as CPUMat
 
 // Datatype for model evaluation
