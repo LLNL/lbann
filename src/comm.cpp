@@ -555,15 +555,15 @@ int get_rank_in_world() {
   return rank;
 }
 
-#define PROTO(T)                                                                                           \
-  template void lbann_comm::allreduce<T>(                                                                  \
-    El::AbstractMatrix<T>& m, const El::mpi::Comm& c, El::mpi::Op op = El::mpi::SUM);                      \
-  template void lbann_comm::allreduce<T>(                                                                  \
-    El::AbstractDistMatrix<T>& m, const El::mpi::Comm& c, El::mpi::Op op = El::mpi::SUM);                  \
-  template void lbann_comm::nb_allreduce<T>(                                                               \
-    El::AbstractMatrix<T>& m, const El::mpi::Comm& c, Al::request& req, El::mpi::Op op = El::mpi::SUM);    \
-  template void lbann_comm::nb_allreduce<T>(                                                               \
-    El::AbstractDistMatrix<T>& m, const El::mpi::Comm& c, Al::request& req, El::mpi::Op op = El::mpi::SUM);
+#define PROTO(T)                                                                            \
+  template void lbann_comm::allreduce<T>(                                                   \
+    El::AbstractMatrix<T>& m, const El::mpi::Comm& c, El::mpi::Op op);                      \
+  template void lbann_comm::allreduce<T>(                                                   \
+    El::AbstractDistMatrix<T>& m, const El::mpi::Comm& c, El::mpi::Op op);                  \
+  template void lbann_comm::nb_allreduce<T>(                                                \
+    El::AbstractMatrix<T>& m, const El::mpi::Comm& c, Al::request& req, El::mpi::Op op);    \
+  template void lbann_comm::nb_allreduce<T>(                                                \
+    El::AbstractDistMatrix<T>& m, const El::mpi::Comm& c, Al::request& req, El::mpi::Op op);
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
