@@ -387,8 +387,7 @@ void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* pro
   proto->set_width(get_matrix_width());
 
   // Write weight values to prototext on world master process
-  El::DistMatrix<TensorDataType, El::CIRC, El::CIRC, El::ELEMENT, El::Device::CPU>
-    values = *m_values; /// @todo What if weights are on GPU?
+  CircMatDT<TensorDataType, El::Device::CPU> values = *m_values; /// @todo What if weights are on GPU?
   values.SetRoot(0); /// @todo What if world master is not process 0?
   if (get_comm().am_world_master()) {
     const auto& local_values = values.LockedMatrix();
