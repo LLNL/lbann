@@ -183,6 +183,12 @@ void init_data_readers(
       auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
       ras_lipid->set_num_labels(readme.num_labels());
       reader = ras_lipid;
+    } else if (name == "pilot2_conduit") {
+      auto *pilot2_conduit_reader = new pilot2_conduit_data_reader(shuffle);
+      pilot2_conduit_reader->set_num_labels(readme.num_labels());
+      pilot2_conduit_reader->set_data_index_list(readme.index_list());
+      pilot2_conduit_reader->set_file_dir( readme.data_filedir() );
+      reader = pilot2_conduit_reader;
     } else if (name == "csv") {
       auto* reader_csv = new csv_reader(shuffle);
       reader_csv->set_label_col(readme.label_col());

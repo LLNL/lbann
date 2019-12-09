@@ -22,6 +22,7 @@ set_full_path(THIS_DIR_SOURCES
   offline_patches_npz.cpp
   data_reader_numpy_npz_conduit.cpp
   data_reader_npz_ras_lipid.cpp
+  pilot2_conduit_data_reader.cpp
   )
 
 # Propagate the files up the tree
