@@ -152,7 +152,7 @@ inline void lbann_summary::reduce_histogram(const std::string tag,
     local_sum_sqsum(mat.LockedMatrix(), sum, sqsum);
   }
   // Compute local buckets.
-  std::vector<double> buckets(m_histogram_buckets.size(), 0.0);
+  std::vector<double> buckets(m_histogram_buckets.size()+1, 0.0);
   const auto height = mat.LocalHeight();
   const auto width = mat.LocalWidth();
   const auto ldim = mat.LDim();
@@ -160,15 +160,23 @@ inline void lbann_summary::reduce_histogram(const std::string tag,
   for (auto row = 0; row < height; ++row) {
     for (auto col = 0; col < width; ++col) {
       // Note: This could be optimized; upper_bound takes O(logn) time.
-      int bucket = std::upper_bound(
-                     m_histogram_buckets.begin(), m_histogram_buckets.end(),
-                     mat_buf[row + col * ldim]) - m_histogram_buckets.begin();
+      auto bucket = std::distance(
+        m_histogram_buckets.begin(),
+        std::upper_bound(
+          m_histogram_buckets.begin(), m_histogram_buckets.end(),
+          mat_buf[row + col * ldim]));
+#ifdef LBANN_DEBUG
+      buckets.at(bucket) += 1.0;
+#else
       buckets[bucket] += 1.0;
+#endif // LBANN_DEBUG
     }
   }
   // Add to list of pending histograms.
   m_pending_histograms.emplace_back(
-    tag, step, buckets, mat_local_min, mat_local_max, mat.Height() * mat.Width(),
+    tag, step, std::move(buckets),
+    mat_local_min, mat_local_max,
+    mat.Height() * mat.Width(),
     sum, sqsum);
   // TODO: Support histograms on multiple models.
 }
