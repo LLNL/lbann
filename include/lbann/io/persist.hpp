@@ -303,10 +303,6 @@ void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
   load_from_shared_cereal_archive<C>(obj, p, pt, comm, suffix);
 }
 
-  //#include "lbann/io/persist_impl.hpp"
-
-  //extern template bool persist::write_rank_distmat<float>(persist_type type, const char *name, const El::AbstractDistMatrix<float>& M);
-
 #ifndef LBANN_PERSIST_INSTANTIATE
 #define PROTO(T)                                                            \
   extern template bool persist::write_rank_distmat<T>(                      \
