@@ -183,6 +183,12 @@ void init_data_readers(
       auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
       ras_lipid->set_num_labels(readme.num_labels());
       reader = ras_lipid;
+    } else if (name == "candle_pilot2_ras_membranes") {
+      auto *pilot2_conduit_reader = new pilot2_conduit_data_reader(shuffle);
+      pilot2_conduit_reader->set_num_labels(readme.num_labels());
+      pilot2_conduit_reader->set_data_index_list(readme.index_list());
+      pilot2_conduit_reader->set_file_dir( readme.data_filedir() );
+      reader = pilot2_conduit_reader;
     } else if (name == "pilot2_conduit") {
       auto *pilot2_conduit_reader = new pilot2_conduit_data_reader(shuffle);
       pilot2_conduit_reader->set_num_labels(readme.num_labels());
@@ -472,6 +478,11 @@ void init_data_readers(
         ras_lipid->set_num_labels(readme.num_labels());
         reader_validation = ras_lipid;
         (*(ras_lipid_conduit_data_reader *)reader_validation) = (*(ras_lipid_conduit_data_reader *)reader);
+      } else if (name == "candle_pilot2_ras_membranes") {
+        auto *ras_lipid = new pilot2_conduit_data_reader(shuffle);
+        ras_lipid->set_num_labels(readme.num_labels());
+        reader_validation = ras_lipid;
+        (*(pilot2_conduit_data_reader *)reader_validation) = (*(pilot2_conduit_data_reader *)reader);
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
