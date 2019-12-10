@@ -257,6 +257,15 @@ public:
   virtual void replace_weights(Layer* other_layer) = 0;
 
   // ===========================================================
+  // Tensor access functions
+  // ===========================================================
+
+  /** Get activation tensor corresponding to child layer. */
+  virtual const BaseDistMat& get_activations(const Layer& child) const = 0;
+  /** Get error signal tensor corresponding to parent layer. */
+  virtual const BaseDistMat& get_error_signals(const Layer& parent) const = 0;
+
+  // ===========================================================
   // Tensor dimension access functions
   // ===========================================================
 
