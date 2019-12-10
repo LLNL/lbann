@@ -34,3 +34,4 @@
 #endif // LBANN_HAS_GPU
 
 #include "lbann/macros/instantiate.hpp"
+#undef PROTO
