@@ -743,32 +743,23 @@ std::unique_ptr<Layer> construct_layer(
 }
 
 // Template instantiation
-template std::unique_ptr<Layer> construct_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>(
-  lbann_comm* comm,
-  const std::map<execution_mode, generic_data_reader*>& data_readers,
-  int num_parallel_readers,
-  const lbann_data::Layer& proto_layer
-);
-template std::unique_ptr<Layer> construct_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>(
-  lbann_comm* comm,
-  const std::map<execution_mode, generic_data_reader*>& data_readers,
-  int num_parallel_readers,
-  const lbann_data::Layer& proto_layer
-);
-#ifdef LBANN_HAS_GPU
-template std::unique_ptr<Layer> construct_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>(
-  lbann_comm* comm,
-  const std::map<execution_mode, generic_data_reader*>& data_readers,
-  int num_parallel_readers,
-  const lbann_data::Layer& proto_layer
-);
-template std::unique_ptr<Layer> construct_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>(
-  lbann_comm* comm,
-  const std::map<execution_mode, generic_data_reader*>& data_readers,
-  int num_parallel_readers,
-  const lbann_data::Layer& proto_layer
-);
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  template std::unique_ptr<Layer> construct_layer<T, data_layout::DATA_PARALLEL, Device>(  \
+    lbann_comm* comm,                                                                      \
+    const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
+    int num_parallel_readers,                                                              \
+    const lbann_data::Layer& proto_layer                                                   \
+  );                                                                                       \
+  template std::unique_ptr<Layer> construct_layer<T, data_layout::MODEL_PARALLEL, Device>( \
+    lbann_comm* comm,                                                                      \
+    const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
+    int num_parallel_readers,                                                              \
+    const lbann_data::Layer& proto_layer                                                   \
+  )
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
 
 /// Obtain the slice points from the data reader
 std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_generic,
