@@ -24,20 +24,20 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_CONCATENATION_LAYER_INSTANTIATE
-#include "lbann/layers/transform/concatenation.hpp"
+#define LBANN_CONCATENATE_LAYER_INSTANTIATE
+#include "lbann/layers/transform/concatenate.hpp"
 
 namespace lbann {
 
-template class concatenation_layer<
+template class concatenate_layer<
   DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class concatenation_layer<
+template class concatenate_layer<
   DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-template class concatenation_layer<
+template class concatenate_layer<
   DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class concatenation_layer<
+template class concatenate_layer<
   DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
-}// namespace lbann
+} // namespace lbann

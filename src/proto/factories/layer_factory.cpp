@@ -74,7 +74,7 @@
 #include "lbann/layers/regularizers/layer_norm.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/categorical_random.hpp"
-#include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/layers/transform/concatenate.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/crop.hpp"
 #include "lbann/layers/transform/discrete_random.hpp"
@@ -306,7 +306,7 @@ std::unique_ptr<Layer> construct_layer(
   }
   if (proto_layer.has_concatenation()) {
     const auto& axis = proto_layer.concatenation().axis();
-    return lbann::make_unique<concatenation_layer<TensorDataType, Layout, Device>>(comm, axis);
+    return lbann::make_unique<concatenate_layer<TensorDataType, Layout, Device>>(comm, axis);
   }
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
@@ -621,7 +621,11 @@ std::unique_ptr<Layer> construct_layer(
   }
   if (proto_layer.has_matmul()) {
     if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,Device>>(comm);
+      const auto& params = proto_layer.matmul();
+      return lbann::make_unique<matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,Device>>(
+               comm,
+               params.transpose_a(),
+               params.transpose_b());
     } else {
       LBANN_ERROR("matrix multiply layer is only supported with "
                   "a data-parallel layout");
