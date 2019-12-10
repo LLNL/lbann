@@ -43,7 +43,7 @@ template <typename TensorDataType>
 __global__ void fp_kernel(size_t num_channels,
                           size_t channel_size,
                           size_t width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           size_t input_ldim,
                           TensorDataType* __restrict__ output,
                           size_t output_ldim,

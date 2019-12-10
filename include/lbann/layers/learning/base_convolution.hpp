@@ -806,7 +806,7 @@ protected:
 
       // Construct im2col matrix from current input column
       El::LockedView(input_col, local_input, El::ALL, El::IR(col));
-      im2col(input_col,
+      im2col<TensorDataType>(input_col,
              im2col_matrix,
              input_dims[0],
              input_dims.size() - 1,
@@ -874,7 +874,7 @@ protected:
       // Perform col2im to accumulate contributions from each kernel
       // position
       El::View(output_col, local_output, El::ALL, El::IR(col));
-      col2im(im2col_matrix,
+      col2im<TensorDataType>(im2col_matrix,
              output_col,
              output_dims[0],
              output_dims.size() - 1,
@@ -997,14 +997,14 @@ protected:
         const DMatDT<Device> input_col(k, n, local_input.LockedBuffer(0,col), k);
         const DMatDT<Device> gradient_wrt_output_col =
           El::LockedView(local_gradient_wrt_output, El::ALL, El::IR(col));
-        im2col(gradient_wrt_output_col,
-               im2col_matrix,
-               num_output_channels,
-               output_dims.size() - 1,
-               &output_dims[1],
-               m_pads.data(),
-               &kernel_dims[2],
-               m_strides.data());
+        im2col<TensorDataType>(gradient_wrt_output_col,
+                               im2col_matrix,
+                               num_output_channels,
+                               output_dims.size() - 1,
+                               &output_dims[1],
+                               m_pads.data(),
+                               &kernel_dims[2],
+                               m_strides.data());
         El::Gemm(El::NORMAL, El::NORMAL,
                  gradient_scale, im2col_matrix, input_col,
                  TensorDataType(1), kernel_gradient_matrix);
@@ -1013,7 +1013,7 @@ protected:
         const DMatDT<Device> input_col
           = El::LockedView(local_input, El::ALL, El::IR(col));
         const DMatDT<Device> gradient_wrt_output_col(k, n, local_gradient_wrt_output.LockedBuffer(0,col), k);
-        im2col(input_col,
+        im2col<TensorDataType>(input_col,
                im2col_matrix,
                num_input_channels,
                input_dims.size() - 1,
@@ -1231,7 +1231,7 @@ private:
 #ifndef LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device) \
-  extern template class base_convolution_layer<DataType, Device>;
+  extern template class base_convolution_layer<DataType, Device>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

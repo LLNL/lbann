@@ -186,7 +186,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
       // Convert im2col matrix to output matrix
       DMat<Dev> output_mat =
         El::View(activations_local, El::ALL, El::IR(sample));
-      col2im(im2col_mat,
+      col2im<TensorDataType>(im2col_mat,
              output_mat,
              num_channels,
              output_dims.size() - 1,
@@ -223,7 +223,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
       // Construct im2col matrix from input
       const DMat<Dev>& input_mat = El::LockedView(prev_error_signal_local,
                                                   El::ALL, El::IR(sample));
-      im2col(input_mat,
+      im2col<TensorDataType>(input_mat,
              im2col_mat,
              num_channels,
              output_dims.size() - 1,
