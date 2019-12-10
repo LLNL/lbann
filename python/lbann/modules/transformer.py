@@ -90,10 +90,16 @@ class MultiheadAttention(Module):
             y = lbann.WeightedSum(y, scaling_factors=str(scale))
 
             # Row-wise softmax
+            # Note: cuDNN's softmax implementation requires that y and
+            # dy have the same stride. However, the error signal
+            # emitted by the concatenation layer are not fully-packed.
+            # To get around this problem, we insert a dummy layer
+            # after softmax to ensure error signals are fully-packed.
             y = lbann.Slice(
                 y, axis=0, slice_points=str_list(range(num_queries+1)),
             )
             y = [lbann.Softmax(y) for _ in range(num_queries)]
+            y = [lbann.Relu(yi) for yi in y] # Dummy computation to avoid cuDNN error
             y = lbann.Concatenation(y)
 
             # Attention output
