@@ -100,7 +100,7 @@ public:
 
   void setup_matrices(const El::Grid& grid) override {
     data_type_layer<TensorDataType>::setup_matrices(grid);
-    m_weights_gradient.reset(new StarMat<Device>(grid));
+    m_weights_gradient.reset(new StarMatDT<TensorDataType, Device>(grid));
   }
 
   void setup_data() override {
@@ -111,7 +111,7 @@ public:
     // Note: Scale is initialized to 1 and bias to 0
     if (!this->has_weights()) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      std::vector<DataType> vals(2*num_channels, TensorDataType{0});
+      std::vector<TensorDataType> vals(2*num_channels, TensorDataType{0});
       std::fill(vals.begin(), vals.begin()+num_channels, TensorDataType{1});
       auto init = make_unique<value_initializer<TensorDataType>>(vals);
       auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
@@ -155,13 +155,19 @@ private:
 };
 
 #ifndef LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
-extern template class channelwise_scale_bias_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class channelwise_scale_bias_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device) \
+  extern template class channelwise_scale_bias_layer<T, data_layout::DATA_PARALLEL, Device>;
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+
 #endif // LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
+
 
 } // namespace lbann
 
