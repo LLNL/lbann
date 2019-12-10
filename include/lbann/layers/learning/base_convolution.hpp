@@ -57,6 +57,9 @@ public:
   /** @brief The concrete optimizer type used by this object. */
   using OptimizerType = data_type_optimizer<TensorDataType>;
 
+  template <El::Device D>
+  using DMatDT = El::Matrix<TensorDataType, D>;
+
   ///@}
 
 protected:
@@ -794,9 +797,9 @@ protected:
     const int m = output_size / output_dims[0];
     const int n = output_dims[0];
     const int k = kernel_size / output_dims[0];
-    DMat<Device> input_col, output_col;
-    DMat<Device> im2col_matrix(k, m);
-    const DMat<Device> kernel_matrix(k, n, local_kernel.LockedBuffer(), k);
+    DMatDT<Device> input_col, output_col;
+    DMatDT<Device> im2col_matrix(k, m);
+    const DMatDT<Device> kernel_matrix(k, n, local_kernel.LockedBuffer(), k);
 
     // Iterate through input columns
     for (El::Int col = 0; col < local_width; ++col) {
@@ -830,7 +833,7 @@ protected:
     const auto& local_input = (during_forward_prop ?
                                this->get_local_prev_activations() :
                                this->get_local_prev_error_signals());
-    DMat<Device>& local_output = (during_forward_prop ?
+    DMatDT<Device>& local_output = (during_forward_prop ?
                                   this->get_local_activations() :
                                   this->get_local_error_signals());
 
@@ -855,9 +858,9 @@ protected:
     const int m = kernel_size / input_dims[0];
     const int n = input_size / input_dims[0];
     const int k = input_dims[0];
-    DMat<Device> input_col, output_col;
-    DMat<Device> im2col_matrix(m, n);
-    const DMat<Device> kernel_matrix(m, k, local_kernel.LockedBuffer(), m);
+    DMatDT<Device> input_col, output_col;
+    DMatDT<Device> im2col_matrix(m, n);
+    const DMatDT<Device> kernel_matrix(m, k, local_kernel.LockedBuffer(), m);
 
     // Iterate through input columns
     for (El::Int col = 0; col < local_width; ++col) {
@@ -917,8 +920,8 @@ protected:
   void compute_gradients_im2col(bool using_transposed_convolution) {
 
     // Local matrices
-    const DMat<Device>& local_input = this->get_local_prev_activations();
-    const DMat<Device>& local_gradient_wrt_output = this->get_local_prev_error_signals();
+    const DMatDT<Device>& local_input = this->get_local_prev_activations();
+    const DMatDT<Device>& local_gradient_wrt_output = this->get_local_prev_error_signals();
     const bool has_local_data = (!local_input.IsEmpty()
                                  && !local_gradient_wrt_output.IsEmpty());
 
@@ -985,14 +988,14 @@ protected:
     auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
     El::Scale(dst_scale, kernel_gradient);
-    DMat<Device> im2col_matrix(m, k);
-    DMat<Device> kernel_gradient_matrix(m, n, kernel_gradient.Buffer(), m);
+    DMatDT<Device> im2col_matrix(m, k);
+    DMatDT<Device> kernel_gradient_matrix(m, n, kernel_gradient.Buffer(), m);
 
     // Compute kernel gradient contributions from each data sample
     for (El::Int col = 0; col < local_width; ++col) {
       if (using_transposed_convolution) {
-        const DMat<Device> input_col(k, n, local_input.LockedBuffer(0,col), k);
-        const DMat<Device> gradient_wrt_output_col =
+        const DMatDT<Device> input_col(k, n, local_input.LockedBuffer(0,col), k);
+        const DMatDT<Device> gradient_wrt_output_col =
           El::LockedView(local_gradient_wrt_output, El::ALL, El::IR(col));
         im2col(gradient_wrt_output_col,
                im2col_matrix,
@@ -1007,9 +1010,9 @@ protected:
                  TensorDataType(1), kernel_gradient_matrix);
       }
       else {
-        const DMat<Device> input_col
+        const DMatDT<Device> input_col
           = El::LockedView(local_input, El::ALL, El::IR(col));
-        const DMat<Device> gradient_wrt_output_col(k, n, local_gradient_wrt_output.LockedBuffer(0,col), k);
+        const DMatDT<Device> gradient_wrt_output_col(k, n, local_gradient_wrt_output.LockedBuffer(0,col), k);
         im2col(input_col,
                im2col_matrix,
                num_input_channels,
@@ -1226,10 +1229,17 @@ private:
 };
 
 #ifndef LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
-extern template class base_convolution_layer<DataType, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class base_convolution_layer<DataType, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device) \
+  extern template class base_convolution_layer<DataType, Device>;
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+
 #endif // LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
 
 } // namespace lbann

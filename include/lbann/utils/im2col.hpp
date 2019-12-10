@@ -46,8 +46,9 @@ namespace lbann {
  *  @param window_dims      Dimensions of window.
  *  @param window_strides   Window shift strides.
  */
-void im2col(const CPUMat& im,
-            CPUMat& col,
+template <typename TensorDataType>
+void im2col(const CPUMatDT<TensorDataType>& im,
+            CPUMatDT<TensorDataType>& col,
             int num_channels,
             int im_num_dims,
             const int * im_dims,
@@ -163,5 +164,24 @@ void col2im_2d(const DataType *__restrict__ input_buffer,
                int offset_stride_x,
                int offset_stride_y);
 
-} // end namespace
+
+#ifndef LBANN_UTILS_IM2COL_INSTANTIATE
+#define PROTO(T)                                        \
+  extern template void im2col<T>(const CPUMatDT<T>& im, \
+    CPUMatDT<T>& col,                                   \
+    const int num_channels,                             \
+    const int im_num_dims,                              \
+    const int * im_dims,                                \
+    const int * im_pads,                                \
+    const int * window_dims,                            \
+    const int * window_strides);
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#endif // LBANN_UTILS_IM2COL_INSTANTIATE
+
+} // namespace lbann
+
 #endif // LBANN_UTILS_IM2COL_HPP

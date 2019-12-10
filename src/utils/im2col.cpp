@@ -24,13 +24,15 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_UTILS_IM2COL_INSTANTIATE
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
-void im2col(const CPUMat& im,
-            CPUMat& col,
+template <typename TensorDataType>
+void im2col(const CPUMatDT<TensorDataType>& im,
+            CPUMatDT<TensorDataType>& col,
             const int num_channels,
             const int im_num_dims,
             const int * im_dims,
@@ -41,8 +43,8 @@ void im2col(const CPUMat& im,
   // Input and output parameters
   const int col_height = col.Height();
   const int col_width = col.Width();
-  const DataType *__restrict__ im_buffer = im.LockedBuffer();
-  DataType *__restrict__ col_buffer = col.Buffer();
+  const TensorDataType *__restrict__ im_buffer = im.LockedBuffer();
+  TensorDataType *__restrict__ col_buffer = col.Buffer();
 
   // im2col parameters
   std::vector<int> offset_start(im_num_dims);
@@ -145,7 +147,7 @@ void im2col(const CPUMat& im,
 
       // Copy im matrix entry to col matrix if valid
       col_buffer[col_index] = (im_pos_valid ?
-                               im_buffer[im_index] : DataType(0));
+                               im_buffer[im_index] : TensorDataType(0));
 
     }
   }
@@ -518,5 +520,18 @@ void col2im_2d(const DataType *__restrict__ input_buffer,
   }
 
 }
+
+#define PROTO(T)                                 \
+  template void im2col<T>(const CPUMatDT<T>& im, \
+    CPUMatDT<T>& col,                            \
+    const int num_channels,                      \
+    const int im_num_dims,                       \
+    const int * im_dims,                         \
+    const int * im_pads,                         \
+    const int * window_dims,                     \
+    const int * window_strides);
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann
