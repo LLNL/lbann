@@ -310,12 +310,12 @@ private:
    */
   std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
 
-#ifdef LBANN_HAS_GPU
+#ifdef LBANN_HAS_CUDA
   template <typename U>
   friend class cudnn::data_parallel_layer_tensor_manager;
   template <typename U>
   friend class cudnn::entrywise_layer_tensor_manager;
-#endif // LBANN_HAS_GPU
+#endif // LBANN_HAS_CUDA
 };
 
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
