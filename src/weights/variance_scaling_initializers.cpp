@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_VARIANCE_SCALING_INITIALIZER_INSTANTIATE
 #include "lbann/weights/variance_scaling_initializers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
@@ -85,11 +86,11 @@ void variance_scaling_initializer<TensorDataType>::fill(El::AbstractDistMatrix<T
   switch (m_prob_dist) {
   case probability_distribution::gaussian:
     gaussian_fill(matrix, matrix.Height(), matrix.Width(),
-                  DataType(0), std::sqrt(variance));
+                  TensorDataType(0), std::sqrt(variance));
     break;
   case probability_distribution::uniform:
     uniform_fill(matrix, matrix.Height(), matrix.Width(),
-                 DataType(0), std::sqrt(3*variance));
+                 TensorDataType(0), std::sqrt(3*variance));
     break;
   default:
     std::stringstream err;
@@ -158,8 +159,13 @@ build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg) {
   }
 }
 
-template class glorot_initializer<DataType>;
-template class he_initializer<DataType>;
-template class lecun_initializer<DataType>;
+
+#define PROTO(T)                        \
+  template class glorot_initializer<T>; \
+  template class he_initializer<T>;     \
+  template class lecun_initializer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann

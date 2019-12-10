@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_INITIALIZER_INSTANTIATE
 #include "lbann/weights/initializer.hpp"
 
 #include "lbann/proto/proto_common.hpp"
@@ -173,10 +174,15 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   }
 }
 
-template class data_type_weights_initializer<DataType>;
-template class constant_initializer<DataType>;
-template class value_initializer<DataType>;
-template class uniform_initializer<DataType>;
-template class normal_initializer<DataType>;
+
+#define PROTO(T)                                   \
+  template class data_type_weights_initializer<T>; \
+  template class constant_initializer<T>;          \
+  template class value_initializer<T>;             \
+  template class uniform_initializer<T>;           \
+  template class normal_initializer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

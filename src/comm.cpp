@@ -26,6 +26,7 @@
 // lbann_comm .hpp .cpp - LBANN communication utilities
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_COMM_INSTANTIATE
 #include "lbann/comm.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/exception.hpp"
@@ -134,7 +135,8 @@ void lbann_comm::intertrainer_sum_matrix(AbsDistMat& mat) {
   allreduce(mat, intertrainer_comm, El::mpi::SUM);
 }
 
-void lbann_comm::allreduce(AbsMat& m,
+template <typename TensorDataType>
+void lbann_comm::allreduce(El::AbstractMatrix<TensorDataType>& m,
                            const El::mpi::Comm& c,
                            El::mpi::Op op) {
   if (El::mpi::Size(c) == 1 || m.Height() < 1 || m.Width() < 1) {
@@ -192,7 +194,7 @@ void lbann_comm::allreduce(AbsMat& m,
       mpi_op_to_al_op(op),
       c.template GetComm<::Al::NCCLBackend>(
           SyncInfoFromMatrix(
-              static_cast<El::Matrix<DataType,El::Device::GPU>&>(m))));
+              static_cast<El::Matrix<TensorDataType,El::Device::GPU>&>(m))));
   }
 #endif // AL_HAS_NCCL
 #ifdef AL_HAS_MPI_CUDA
@@ -204,7 +206,7 @@ void lbann_comm::allreduce(AbsMat& m,
       mpi_op_to_al_op(op),
       c.template GetComm<::Al::MPICUDABackend>(
           SyncInfoFromMatrix(
-              static_cast<El::Matrix<DataType,El::Device::GPU>&>(m))),
+              static_cast<El::Matrix<TensorDataType,El::Device::GPU>&>(m))),
       ::Al::MPICUDAAllreduceAlgorithm::host_transfer);
   }
 #endif  // AL_HAS_MPI_CUDA
@@ -214,13 +216,15 @@ void lbann_comm::allreduce(AbsMat& m,
   bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
 }
 
-void lbann_comm::allreduce(AbsDistMat& m,
+template <typename TensorDataType>
+void lbann_comm::allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                            const El::mpi::Comm& c,
                            El::mpi::Op op) {
   allreduce(m.Matrix(), c, op);
 }
 
-void lbann_comm::nb_allreduce(AbsMat& m,
+template <typename TensorDataType>
+void lbann_comm::nb_allreduce(El::AbstractMatrix<TensorDataType>& m,
                               const El::mpi::Comm& c,
                               Al::request& req,
                               El::mpi::Op op) {
@@ -281,7 +285,7 @@ void lbann_comm::nb_allreduce(AbsMat& m,
       mpi_op_to_al_op(op),
       c.template GetComm<::Al::NCCLBackend>(
           SyncInfoFromMatrix(
-              static_cast<El::Matrix<DataType,El::Device::GPU>&>(m))),
+              static_cast<El::Matrix<TensorDataType,El::Device::GPU>&>(m))),
       req.nccl_req);
   }
 #endif // AL_HAS_NCCL
@@ -294,18 +298,19 @@ void lbann_comm::nb_allreduce(AbsMat& m,
       mpi_op_to_al_op(op),
       c.template GetComm<::Al::MPICUDABackend>(
           SyncInfoFromMatrix(
-              static_cast<El::Matrix<DataType,El::Device::GPU>&>(m))),
+              static_cast<El::Matrix<TensorDataType,El::Device::GPU>&>(m))),
       req.mpicuda_req,
       ::Al::MPICUDAAllreduceAlgorithm::host_transfer);
   }
 #endif  // AL_HAS_MPI_CUDA
-  bytes_received += sizeof(DataType) * local_size * (El::mpi::Size(c) - 1);
+  bytes_received += sizeof(TensorDataType) * local_size * (El::mpi::Size(c) - 1);
 #else
   allreduce(m, c, op);
 #endif // LBANN_HAS_ALUMINUM
 }
 
-void lbann_comm::nb_allreduce(AbsDistMat& m,
+template <typename TensorDataType>
+void lbann_comm::nb_allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                               const El::mpi::Comm& c,
                               Al::request& req,
                               El::mpi::Op op) {
@@ -549,5 +554,18 @@ int get_rank_in_world() {
   }
   return rank;
 }
+
+#define PROTO(T)                                                                            \
+  template void lbann_comm::allreduce<T>(                                                   \
+    El::AbstractMatrix<T>& m, const El::mpi::Comm& c, El::mpi::Op op);                      \
+  template void lbann_comm::allreduce<T>(                                                   \
+    El::AbstractDistMatrix<T>& m, const El::mpi::Comm& c, El::mpi::Op op);                  \
+  template void lbann_comm::nb_allreduce<T>(                                                \
+    El::AbstractMatrix<T>& m, const El::mpi::Comm& c, Al::request& req, El::mpi::Op op);    \
+  template void lbann_comm::nb_allreduce<T>(                                                \
+    El::AbstractDistMatrix<T>& m, const El::mpi::Comm& c, Al::request& req, El::mpi::Op op)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann
