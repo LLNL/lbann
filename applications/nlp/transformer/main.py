@@ -1,20 +1,9 @@
-"""Basic transformer model for text data.
-
-See:
-
-Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion
-Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. "Attention
-is all you need." In Advances in Neural Information Processing
-Systems, pp. 5998-6008. 2017.
-
-"""
 import argparse
 import math
 import os.path
 import sys
 
 import lbann
-import lbann.modules
 import lbann.contrib.lc.launcher
 import lbann.contrib.args
 from lbann.util import str_list
@@ -24,6 +13,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 import dataset
+import model
 
 # ----------------------------------
 # Options
@@ -45,8 +35,8 @@ parser.add_argument(
     '--num-attention-heads', action='store', default=8, type=int,
     help='number of parallel attention layers (default: 8)', metavar='NUM')
 parser.add_argument(
-    '--latent-dim', action='store', default=512, type=int,
-    help='latent space dimensions (default: 512)', metavar='NUM')
+    '--embed-dim', action='store', default=512, type=int,
+    help='embedding space dimensions (default: 512)', metavar='NUM')
 args = parser.parse_args()
 
 # ----------------------------------
@@ -76,22 +66,23 @@ for token in tokens:
     embedding = lbann.Embedding(
         token,
         num_embeddings=vocab_size,
-        embedding_dim=args.latent_dim,
+        embedding_dim=args.embed_dim,
         weights=embedding_weights,
     )
     embedding = lbann.WeightedSum(
         embedding,
-        scaling_factors=str(math.sqrt(args.latent_dim)),
+        scaling_factors=str(math.sqrt(args.embed_dim)),
     )
     embeddings.append(embedding)
 
-# Apply multi-head attention
-# TODO: Properly construct encoder and decoder
-attention = lbann.modules.MultiheadAttention(
-    args.latent_dim,
-    args.num_attention_heads,
+# Apply transformer model
+model = model.Transformer(
+    hidden_size=args.embed_dim,
+    num_heads=args.num_attention_heads,
 )
-seq = attention(embeddings[:-1], embeddings[:-1], embeddings[:-1])
+source = embeddings[:-1]
+target = embeddings[1:]
+result = model(source, target)
 
 # Predict next token in sequence
 pred_fc = lbann.modules.FullyConnectedModule(
@@ -99,17 +90,17 @@ pred_fc = lbann.modules.FullyConnectedModule(
     transpose=True,
     activation=lbann.Softmax,
 )
-preds = [pred_fc(x) for x in seq]
+preds = [pred_fc(x) for x in result]
 
 # Cross entropy loss
 loss = []
+acc = []
 for i in range(sequence_length-1):
-    loss.append(
-        lbann.CrossEntropy(
-            preds[i],
-            lbann.OneHot(tokens[i+1], size=vocab_size),
-        )
-    )
+    pred = preds[i]
+    label = lbann.OneHot(tokens[i+1], size=vocab_size)
+    loss.append(lbann.CrossEntropy(pred, label))
+    acc.append(lbann.TopKCategoricalAccuracy(pred, label, k=10))
+acc = lbann.Reduction(lbann.Concatenation(acc), mode='average')
 
 # ----------------------------------
 # Create data reader
@@ -132,12 +123,15 @@ _reader.python.sample_dims_function = 'sample_dims'
 
 # Create LBANN objects
 trainer = lbann.Trainer()
+metrics = [lbann.Metric(acc, name='top-10 accuracy', unit='%')]
+callbacks = [lbann.CallbackPrint(),
+             lbann.CallbackTimer()]
 model = lbann.Model(args.mini_batch_size,
                     args.num_epochs,
                     layers=lbann.traverse_layer_graph(input_),
                     objective_function=loss,
-                    callbacks=[lbann.CallbackPrint(),
-                               lbann.CallbackTimer()])
+                    metrics=metrics,
+                    callbacks=callbacks)
 opt = lbann.SGD(learn_rate=0.01, momentum=0.9) # TODO: Adam with LR schedule
 
 # Run LBANN

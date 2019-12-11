@@ -68,6 +68,7 @@ class MultiheadAttention(Module):
         return [lbann.Concatenation(ps) for ps in proj_array]
 
     def forward(self, queries, keys, values):
+        self.instance += 1
 
         # Apply FC layers to input sequences
         num_queries = len(queries)
