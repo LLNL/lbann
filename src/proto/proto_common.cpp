@@ -479,10 +479,11 @@ void init_data_readers(
         reader_validation = ras_lipid;
         (*(ras_lipid_conduit_data_reader *)reader_validation) = (*(ras_lipid_conduit_data_reader *)reader);
       } else if (name == "candle_pilot2_ras_membranes") {
-        auto *ras_lipid = new pilot2_conduit_data_reader(shuffle);
-        ras_lipid->set_num_labels(readme.num_labels());
-        reader_validation = ras_lipid;
-        (*(pilot2_conduit_data_reader *)reader_validation) = (*(pilot2_conduit_data_reader *)reader);
+        reader_validation = new pilot2_conduit_data_reader(*dynamic_cast<const pilot2_conduit_data_reader*>(reader));
+        auto pilot2_reader = dynamic_cast<pilot2_conduit_data_reader*>(reader_validation);
+        //pilot2_reader->set_leading_reader(pilot2_reader);
+        const std::string role = "validate";
+        pilot2_reader->set_role(role);
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);

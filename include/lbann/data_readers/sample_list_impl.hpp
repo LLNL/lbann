@@ -412,9 +412,6 @@ inline void sample_list<sample_name_t>
   for (auto t : packed_sizes) {
     g += t;
   }
-  if (!me) {
-    std::cout << "global archive size: " << g << std::endl;
-  }
 
   for (int p=0; p<np; p++) {
     gathered_archive[p].resize(packed_sizes[p]);
