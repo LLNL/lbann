@@ -78,6 +78,10 @@ private:
    *  before multiplication. */
   bool m_transpose_b;
 
+  template <typename U>
+  friend void fp_compute_impl(matmul_layer<U, Layout, Device>&, bool, bool);
+  template <typename U>
+  friend void bp_compute_impl(matmul_layer<U, Layout, Device>&, bool, bool);
 };
 
 // =========================================================

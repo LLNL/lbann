@@ -285,7 +285,7 @@ auto data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) 
 
 // Accessing matrices corresponding to parent/child layer
 template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_activations(const data_type_layer<TensorDataType>& child) const -> const AbsDistMatrixType& {
+auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const -> const BaseDistMat& {
   const int child_index = (std::find(m_child_layers.begin(),
                                      m_child_layers.end(),
                                      &child)
@@ -301,7 +301,7 @@ auto data_type_layer<TensorDataType>::get_activations(const data_type_layer<Tens
   return get_activations(child_index);
 }
 template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_error_signals(const data_type_layer<TensorDataType>& parent) const -> const AbsDistMatrixType& {
+auto data_type_layer<TensorDataType>::get_error_signals(const Layer& parent) const -> const BaseDistMat& {
   const int parent_index = (std::find(m_parent_layers.begin(),
                                       m_parent_layers.end(),
                                       &parent)
@@ -505,20 +505,19 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
   // Determine distributed matrix alignment
-  const auto& alignment_dist
-    = dynamic_cast<const data_type_layer<TensorDataType>*>(m_parent_layers.front())->get_activations(*this).DistData();
+  const auto& alignment_dist = m_parent_layers.front()->get_activations(*this).DistData();
 
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
 
     // Initialize input tensor
-    const auto& parent = dynamic_cast<const data_type_layer<TensorDataType>&>(*m_parent_layers[i]);
+    const auto& parent = *m_parent_layers[i];
     const auto& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
     input.Empty(false);
     input.AlignWith(alignment_dist);
     if (parent_output.DistData() == input.DistData()) {
-      El::LockedView(input, parent_output);
+      El::LockedView(input, dynamic_cast<const AbsDistMatrixType&>(parent_output));
     } else {
       bool async_copy = false;
 #if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
@@ -579,14 +578,14 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_outputs(El::Int mini
   for (int i = 0; i < get_num_children(); ++i) {
 
     // Initialize gradient w.r.t. output tensor
-    const auto& child = dynamic_cast<const data_type_layer<TensorDataType>&>(*m_child_layers[i]);
+    const auto& child = *m_child_layers[i];
     const auto& child_gradient_wrt_input = child.get_error_signals(*this);
     auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
     gradient_wrt_output.Empty(false);
     gradient_wrt_output.AlignWith(get_activations(i));
     if (child_gradient_wrt_input.DistData()
         == gradient_wrt_output.DistData()) {
-      El::LockedView(gradient_wrt_output, child_gradient_wrt_input);
+      El::LockedView(gradient_wrt_output, dynamic_cast<const AbsDistMatrixType&>(child_gradient_wrt_input));
     } else {
       bool async_copy = false;
 #if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
