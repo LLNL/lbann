@@ -136,7 +136,7 @@
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/data_readers/data_reader_python.hpp"
-#include "lbann/data_readers/pilot2_conduit_data_reader.hpp"
+#include "lbann/data_readers/data_reader_candle_pilot2_ras_membranes.hpp"
 
 /// Data stores
 #include "lbann/data_store/data_store_conduit.hpp"

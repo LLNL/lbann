@@ -25,7 +25,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/data_readers/pilot2_conduit_data_reader.hpp"
+#include "lbann/data_readers/data_reader_candle_pilot2_ras_membranes.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_node.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
@@ -39,14 +39,14 @@
 
 namespace lbann {
 
-pilot2_conduit_data_reader::pilot2_conduit_data_reader(const bool shuffle)
+candle_pilot2_ras_membranes_reader::candle_pilot2_ras_membranes_reader(const bool shuffle)
   : generic_data_reader(shuffle) {}
 
-pilot2_conduit_data_reader::pilot2_conduit_data_reader(const pilot2_conduit_data_reader& rhs)  : generic_data_reader(rhs) {
+candle_pilot2_ras_membranes_reader::candle_pilot2_ras_membranes_reader(const candle_pilot2_ras_membranes_reader& rhs)  : generic_data_reader(rhs) {
   copy_members(rhs);
 }
 
-pilot2_conduit_data_reader& pilot2_conduit_data_reader::operator=(const pilot2_conduit_data_reader& rhs) {
+candle_pilot2_ras_membranes_reader& candle_pilot2_ras_membranes_reader::operator=(const candle_pilot2_ras_membranes_reader& rhs) {
   // check for self-assignment
   if (this == &rhs) {
     return (*this);
@@ -57,9 +57,9 @@ pilot2_conduit_data_reader& pilot2_conduit_data_reader::operator=(const pilot2_c
 }
 
 
-void pilot2_conduit_data_reader::copy_members(const pilot2_conduit_data_reader &rhs) {
+void candle_pilot2_ras_membranes_reader::copy_members(const candle_pilot2_ras_membranes_reader &rhs) {
   if (is_master()) {
-    std::cout << "Starting pilot2_conduit_data_reader::copy_members\n";
+    std::cout << "Starting candle_pilot2_ras_membranes_reader::copy_members\n";
   }
   if(rhs.m_data_store != nullptr) {
       m_data_store = new data_store_conduit(rhs.get_data_store());
@@ -79,11 +79,11 @@ void pilot2_conduit_data_reader::copy_members(const pilot2_conduit_data_reader &
   //m_list_per_model = rhs.m_list_per_model;
 }
 
-void pilot2_conduit_data_reader::load() {
+void candle_pilot2_ras_membranes_reader::load() {
   options *opts = options::get();
 
   if (! opts->get_bool("preload_data_store")) {
-    LBANN_ERROR("pilot2_conduit_data_reader requires data_store; please pass --preload_data_store on the cmd line");
+    LBANN_ERROR("candle_pilot2_ras_membranes_reader requires data_store; please pass --preload_data_store on the cmd line");
   }
 
   if(is_master()) {
@@ -144,8 +144,8 @@ void pilot2_conduit_data_reader::load() {
   select_subset_of_data();
 }
 
-void pilot2_conduit_data_reader::do_preload_data_store() {
-  if (is_master()) std::cout << "Starting pilot2_conduit_data_reader::do_preload_data_store; num indices: " << utils::commify(m_shuffled_indices.size()) << " role: " << get_role() << std::endl;
+void candle_pilot2_ras_membranes_reader::do_preload_data_store() {
+  if (is_master()) std::cout << "Starting candle_pilot2_ras_membranes_reader::do_preload_data_store; num indices: " << utils::commify(m_shuffled_indices.size()) << " role: " << get_role() << std::endl;
 
 #if 0
 ==========================================================================
@@ -198,7 +198,7 @@ data types, from python+numpy:
   }
 }
 
-bool pilot2_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
+bool candle_pilot2_ras_membranes_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   conduit::Node node;
   if (data_store_active()) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
@@ -233,19 +233,19 @@ The keras model that I gave you only looks at the density_sig1 data as input dat
   return true;
 }
 
-bool pilot2_conduit_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
+bool candle_pilot2_ras_membranes_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
   double label = node[LBANN_DATA_ID_STR(data_id) + "/states/data"].value();
   Y.Set(label, mb_idx, 1);
   return true;
 }
 
-bool pilot2_conduit_data_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
-  LBANN_ERROR("pilot2_conduit_data_reader: do not have responses");
+bool candle_pilot2_ras_membranes_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
+  LBANN_ERROR("candle_pilot2_ras_membranes_reader: do not have responses");
   return true;
 }
 
-void pilot2_conduit_data_reader::fill_in_metadata() {
+void candle_pilot2_ras_membranes_reader::fill_in_metadata() {
   int index = 0;
   const sample_t& s = m_sample_list[index];
   sample_file_id_t id = s.first;
@@ -283,12 +283,12 @@ void pilot2_conduit_data_reader::fill_in_metadata() {
 
 
 #ifdef _USE_IO_HANDLE_
-bool pilot2_conduit_data_reader::has_path(const data_reader_jag_conduit::file_handle_t& h,
+bool candle_pilot2_ras_membranes_reader::has_path(const data_reader_jag_conduit::file_handle_t& h,
                                        const std::string& path) const {
   return m_sample_list.is_file_handle_valid(h) && h->has_path(path);
 }
 
-void pilot2_conduit_data_reader::read_node(const data_reader_jag_conduit::file_handle_t& h,
+void candle_pilot2_ras_membranes_reader::read_node(const data_reader_jag_conduit::file_handle_t& h,
                                         const std::string& path,
                                         conduit::Node& n) const {
   if (!h) {
@@ -297,17 +297,17 @@ void pilot2_conduit_data_reader::read_node(const data_reader_jag_conduit::file_h
   h->read(path, n);
 }
 #else
-bool pilot2_conduit_data_reader::has_path(const hid_t& h, const std::string& path) const {
+bool candle_pilot2_ras_membranes_reader::has_path(const hid_t& h, const std::string& path) const {
   return (m_sample_list.is_file_handle_valid(h) &&
           conduit::relay::io::hdf5_has_path(h, path));
 }
 
-void pilot2_conduit_data_reader::read_node(const hid_t& h, const std::string& path, conduit::Node& n) const {
+void candle_pilot2_ras_membranes_reader::read_node(const hid_t& h, const std::string& path, conduit::Node& n) const {
   conduit::relay::io::hdf5_read(h, path, n);
 }
 #endif //#ifdef _USE_IO_HANDLE_
 
-void pilot2_conduit_data_reader::read_normalization_data() {
+void candle_pilot2_ras_membranes_reader::read_normalization_data() {
   options *opts = options::get();
   if (! opts->has_string("normalization")) {
     m_normalize = normalization_type::none;
@@ -352,7 +352,7 @@ void pilot2_conduit_data_reader::read_normalization_data() {
   }
 }
 
-void pilot2_conduit_data_reader::load_conduit_node(const size_t data_id, conduit::Node &node, bool pre_open_fd) {
+void candle_pilot2_ras_membranes_reader::load_conduit_node(const size_t data_id, conduit::Node &node, bool pre_open_fd) {
   const sample_t& s = m_sample_list[data_id];
   const std::string& sample_name = s.second;
   sample_file_id_t id = s.first;
@@ -361,7 +361,7 @@ void pilot2_conduit_data_reader::load_conduit_node(const size_t data_id, conduit
   read_node(h, sample_name, node['/' + LBANN_DATA_ID_STR(data_id)]);
 }
 
-void pilot2_conduit_data_reader::normalize(conduit::Node &node) {
+void candle_pilot2_ras_membranes_reader::normalize(conduit::Node &node) {
   if (m_normalize == normalization_type::none) {
     return;
   }

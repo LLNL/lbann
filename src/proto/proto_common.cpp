@@ -184,13 +184,13 @@ void init_data_readers(
       ras_lipid->set_num_labels(readme.num_labels());
       reader = ras_lipid;
     } else if (name == "candle_pilot2_ras_membranes") {
-      auto *pilot2_conduit_reader = new pilot2_conduit_data_reader(shuffle);
+      auto *pilot2_conduit_reader = new candle_pilot2_ras_membranes_reader(shuffle);
       pilot2_conduit_reader->set_num_labels(readme.num_labels());
       pilot2_conduit_reader->set_data_index_list(readme.index_list());
       pilot2_conduit_reader->set_file_dir( readme.data_filedir() );
       reader = pilot2_conduit_reader;
     } else if (name == "pilot2_conduit") {
-      auto *pilot2_conduit_reader = new pilot2_conduit_data_reader(shuffle);
+      auto *pilot2_conduit_reader = new candle_pilot2_ras_membranes_reader(shuffle);
       pilot2_conduit_reader->set_num_labels(readme.num_labels());
       pilot2_conduit_reader->set_data_index_list(readme.index_list());
       pilot2_conduit_reader->set_file_dir( readme.data_filedir() );
@@ -479,8 +479,8 @@ void init_data_readers(
         reader_validation = ras_lipid;
         (*(ras_lipid_conduit_data_reader *)reader_validation) = (*(ras_lipid_conduit_data_reader *)reader);
       } else if (name == "candle_pilot2_ras_membranes") {
-        reader_validation = new pilot2_conduit_data_reader(*dynamic_cast<const pilot2_conduit_data_reader*>(reader));
-        auto pilot2_reader = dynamic_cast<pilot2_conduit_data_reader*>(reader_validation);
+        reader_validation = new candle_pilot2_ras_membranes_reader(*dynamic_cast<const candle_pilot2_ras_membranes_reader*>(reader));
+        auto pilot2_reader = dynamic_cast<candle_pilot2_ras_membranes_reader*>(reader_validation);
         //pilot2_reader->set_leading_reader(pilot2_reader);
         const std::string role = "validate";
         pilot2_reader->set_role(role);

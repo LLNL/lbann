@@ -45,7 +45,7 @@ namespace lbann {
   /**
    * Data reader for npz data that has previously been converted to conduit
    */
-class pilot2_conduit_data_reader : public generic_data_reader {
+class candle_pilot2_ras_membranes_reader : public generic_data_reader {
 
 public:
 
@@ -60,15 +60,15 @@ public:
   using sample_file_id_t = sample_list_t::sample_file_id_t;
   using sample_t = std::pair<sample_file_id_t, sample_name_t>;
 
-  pilot2_conduit_data_reader(const bool shuffle);
-  pilot2_conduit_data_reader(const pilot2_conduit_data_reader&);
-  pilot2_conduit_data_reader& operator=(const pilot2_conduit_data_reader&);
-  ~pilot2_conduit_data_reader() override {}
+  candle_pilot2_ras_membranes_reader(const bool shuffle);
+  candle_pilot2_ras_membranes_reader(const candle_pilot2_ras_membranes_reader&);
+  candle_pilot2_ras_membranes_reader& operator=(const candle_pilot2_ras_membranes_reader&);
+  ~candle_pilot2_ras_membranes_reader() override {}
 
-  pilot2_conduit_data_reader* copy() const override { return new pilot2_conduit_data_reader(*this); }
+  candle_pilot2_ras_membranes_reader* copy() const override { return new candle_pilot2_ras_membranes_reader(*this); }
 
   std::string get_type() const override {
-    return "pilot2_conduit_data_reader";
+    return "candle_pilot2_ras_membranes_reader";
   }
 
   void load() override;
@@ -87,7 +87,7 @@ private:
    * The leading data reader among the local readers, which actually does the
    * file IO and data shuffling.
    */
-   pilot2_conduit_data_reader* m_leading_reader = nullptr;
+   candle_pilot2_ras_membranes_reader* m_leading_reader = nullptr;
 
   int m_num_features = 0;
   int m_num_labels = 0;
@@ -142,7 +142,7 @@ private:
   void read_node(const file_handle_t& h, const std::string& path, conduit::Node& n) const;
 
   /** @brief Contains common code for operator= and copy ctor */
-  void copy_members(const pilot2_conduit_data_reader& rhs);
+  void copy_members(const candle_pilot2_ras_membranes_reader& rhs);
 
   void do_preload_data_store() override;
 
