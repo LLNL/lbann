@@ -32,11 +32,12 @@ namespace lbann {
 
 // Note: This unit will also instantiate the base_convolution_layer class.
 
-template class base_convolution_layer<DataType, El::Device::CPU>;
-template class convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class base_convolution_layer<DataType, El::Device::GPU>;
-template class convolution_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device)                                            \
+  template class base_convolution_layer<T, Device>;                        \
+  template class convolution_layer<T, data_layout::DATA_PARALLEL, Device>;
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

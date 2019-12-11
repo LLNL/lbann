@@ -98,6 +98,9 @@ using AbsDistMatReadProxy = El::AbstractDistMatrixReadDeviceProxy<DataType, D>;
 using ElMat      = El::ElementalMatrix<DataType>;
 using BlockMat   = El::BlockMatrix<DataType>;
 
+template <typename TensorDataType>
+using CPUMatDT = El::Matrix<TensorDataType, El::Device::CPU>;
+
 template <typename TensorDataType, El::Device D>
 using MCMRMatDT   = El::DistMatrix<TensorDataType, El::MC  , El::MR  , El::ELEMENT, D>;
 template <typename TensorDataType, El::Device D>

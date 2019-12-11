@@ -178,6 +178,10 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 }
 
 // Explicit instantiation
-template class embedding_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                     \
+  template class embedding_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
