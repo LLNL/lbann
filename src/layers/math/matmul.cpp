@@ -69,8 +69,8 @@ void fp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
                     local_output.Buffer(0,i), output_width);
     El::Gemm(transpose_input1 ? El::TRANSPOSE : El::NORMAL,
              transpose_input0 ? El::TRANSPOSE : El::NORMAL,
-             DataType{1}, input1_v, input0_v,
-             DataType{0}, output_v);
+             TensorDataType{1}, input1_v, input0_v,
+             TensorDataType{0}, output_v);
   }
 
 }
@@ -119,26 +119,26 @@ void bp_compute_impl(matmul_layer<TensorDataType,data_layout::DATA_PARALLEL,El::
     if (transpose_input0) {
       El::Gemm(El::TRANSPOSE,
                transpose_input1 ? El::TRANSPOSE : El::NORMAL,
-               DataType{1}, output_grad_v, input1_v,
-               DataType{0}, input0_grad_v);
+               TensorDataType{1}, output_grad_v, input1_v,
+               TensorDataType{0}, input0_grad_v);
     }
     else {
       El::Gemm(transpose_input1 ? El::NORMAL : El::TRANSPOSE,
                El::NORMAL,
-               DataType{1}, input1_v, output_grad_v,
-               DataType{0}, input0_grad_v);
+               TensorDataType{1}, input1_v, output_grad_v,
+               TensorDataType{0}, input0_grad_v);
     }
     if (transpose_input1) {
       El::Gemm(transpose_input0 ? El::TRANSPOSE : El::NORMAL,
                El::TRANSPOSE,
-               DataType{1}, input0_v, output_grad_v,
-               DataType{0}, input1_grad_v);
+               TensorDataType{1}, input0_v, output_grad_v,
+               TensorDataType{0}, input1_grad_v);
     }
     else {
       El::Gemm(El::NORMAL,
                transpose_input0 ? El::NORMAL : El::TRANSPOSE,
-               DataType{1}, output_grad_v, input0_v,
-               DataType{0}, input1_grad_v);
+               TensorDataType{1}, output_grad_v, input0_v,
+               TensorDataType{0}, input1_grad_v);
     }
   }
 
@@ -181,10 +181,10 @@ void fp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
     output_width,
     output_height,
     transpose_input0 ? input0_height : input0_width,
-    DataType{1},
+    TensorDataType{1},
     local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
     local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
-    DataType{0},
+    TensorDataType{0},
     local_output.Buffer(), output_width, local_output.LDim(),
     local_mini_batch_size);
 
@@ -230,10 +230,10 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
       CUBLAS_OP_T,
       transpose_input1 ? CUBLAS_OP_T : CUBLAS_OP_N,
       input0_width, input0_height, output_width,
-      DataType{1},
+      TensorDataType{1},
       local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
       local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
-      DataType{0},
+      TensorDataType{0},
       local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim(),
       local_mini_batch_size);
   }
@@ -243,10 +243,10 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
       transpose_input1 ? CUBLAS_OP_N : CUBLAS_OP_T,
       CUBLAS_OP_N,
       input0_width, input0_height, output_width,
-      DataType{1},
+      TensorDataType{1},
       local_input1.LockedBuffer(), input1_width, local_input1.LDim(),
       local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
-      DataType{0},
+      TensorDataType{0},
       local_input0_grad.Buffer(), input0_width, local_input0_grad.LDim(),
       local_mini_batch_size);
   }
@@ -256,10 +256,10 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
       transpose_input0 ? CUBLAS_OP_T : CUBLAS_OP_N,
       CUBLAS_OP_T,
       input1_width, input1_height, output_height,
-      DataType{1},
+      TensorDataType{1},
       local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
       local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
-      DataType{0},
+      TensorDataType{0},
       local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim(),
       local_mini_batch_size);
   }
@@ -269,10 +269,10 @@ void bp_compute_impl(matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,El:
       CUBLAS_OP_N,
       transpose_input0 ? CUBLAS_OP_N : CUBLAS_OP_T,
       input1_width, input1_height, output_height,
-      DataType{1},
+      TensorDataType{1},
       local_output_grad.LockedBuffer(), output_width, local_output_grad.LDim(),
       local_input0.LockedBuffer(), input0_width, local_input0.LDim(),
-      DataType{0},
+      TensorDataType{0},
       local_input1_grad.Buffer(), input1_width, local_input1_grad.LDim(),
       local_mini_batch_size);
   }
@@ -290,9 +290,11 @@ void matmul_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 // Explicit instantiation
-template class matmul_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class matmul_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  template class matmul_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann
