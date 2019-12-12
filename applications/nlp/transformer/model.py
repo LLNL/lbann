@@ -8,7 +8,7 @@ is all you need." In Advances in Neural Information Processing
 Systems, pp. 5998-6008. 2017.
 
 """
-
+import math
 import numpy as np
 
 import lbann
@@ -211,15 +211,18 @@ class Transformer(lbann.modules.Module):
         filter_size=2048,
         name=None,
     ):
-
         Transformer.global_count += 1
         self.instance = 0
         self.name = (name
                      if name
                      else f'transformer{Transformer.global_count}')
+        self.hidden_size = hidden_size
 
-        self.subsequent_masks = {}
+        # Caches for helper functions
+        self.subsequent_mask_cache = {}
+        self.positional_encoding_cache = {}
 
+        # Encoder and decoder stacks
         self.encoder = [
             TransformerEncoderLayer(
                 embed_dim=hidden_size,
@@ -239,32 +242,74 @@ class Transformer(lbann.modules.Module):
             for i in range(num_decoder_layers)
         ]
 
+    def positional_encoding(self, pos):
+
+        # Construct positional encoding if not in cache
+        if pos not in self.positional_encoding_cache:
+            vals = []
+            for i in range((self.hidden_size+1) // 2):
+                x = pos / 10000**(2*i/self.hidden_size)
+                vals.append(math.sin(x))
+                vals.append(math.cos(x))
+            weights = lbann.Weights(
+                initializer=lbann.ValueInitializer(values=str_list(vals[:self.hidden_size])),
+                optimizer=None,
+                name=f'{self.name}_positional{pos}_weights',
+            )
+            self.positional_encoding_cache[pos] = lbann.WeightsLayer(
+                dims=str(self.hidden_size),
+                weights=weights,
+                name=f'{self.name}_positional{pos}',
+            )
+
+        # Return cached positional encoding
+        return self.positional_encoding_cache[pos]
+
     def subsequent_mask(self, size):
-        if size not in self.subsequent_masks:
+
+        # Construct mask if not in cache
+        if size not in self.subsequent_mask_cache:
             vals = np.triu(np.full((size,size), -1e9), k=1)
             weights = lbann.Weights(
                 initializer=lbann.ValueInitializer(values=str_list(np.nditer(vals))),
                 optimizer=None,
                 name=f'{self.name}_mask{size}_weights',
             )
-            self.subsequent_masks[size] = lbann.WeightsLayer(
+            self.subsequent_mask_cache[size] = lbann.WeightsLayer(
                 dims=str_list([size, size]),
                 weights=weights,
+                name=f'{self.name}_mask{size}',
             )
-        return self.subsequent_masks[size]
+
+        # Return cached mask
+        return self.subsequent_mask_cache[size]
 
     def forward(self, source, target):
         self.instance += 1
 
+        # Add positional encoding
+        source = source.copy()
+        target = target.copy()
+        for pos in range(len(source)):
+            source[pos] = lbann.Add(
+                source[pos],
+                self.positional_encoding(pos),
+                name=f'{self.name}_instance{self.instance}_positional_source{pos}',
+            )
+        for pos in range(len(target)):
+            target[pos] = lbann.Add(
+                target[pos],
+                self.positional_encoding(pos),
+                name=f'{self.name}_instance{self.instance}_positional_target{pos}',
+            )
+
         # Encoder stack
-        # TODO: Positional encoding
         x = source
         for encoder_layer in self.encoder:
             x = encoder_layer(x)
         memory = x
 
         # Decoder stack
-        # TODO: Positional encoding
         x = target
         for decoder_layer in self.decoder:
             x = decoder_layer(
