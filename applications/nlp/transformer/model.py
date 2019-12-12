@@ -8,8 +8,12 @@ is all you need." In Advances in Neural Information Processing
 Systems, pp. 5998-6008. 2017.
 
 """
+
+import numpy as np
+
 import lbann
 import lbann.modules
+from lbann.util import str_list
 
 class TransformerEncoderLayer(lbann.modules.Module):
     """Building block for encoder in transformer model.
@@ -50,12 +54,12 @@ class TransformerEncoderLayer(lbann.modules.Module):
             name=f'{self.name}_fc2',
         )
 
-    def forward(self, x):
+    def forward(self, x, mask=None):
         self.instance += 1
         sequence_length = len(x)
 
         # Self-attention with residual connection
-        y = self.attention(x, x, x)
+        y = self.attention(x, x, x, mask=mask)
         z = []
         for i in range(sequence_length):
             xi = x[i]
@@ -87,10 +91,11 @@ class TransformerEncoderLayer(lbann.modules.Module):
         return z
 
 class TransformerDecoderLayer(lbann.modules.Module):
-    """Building block for encoder in transformer model.
+    """Building block for decoder in transformer model.
 
-    Comprised of multi-head attention and a fully-connected
-    feedforward network, each with a residual connection.
+    Comprised of two multi-head attention modules and a
+    fully-connected feedforward network, each with a residual
+    connection.
 
     """
 
@@ -131,12 +136,12 @@ class TransformerDecoderLayer(lbann.modules.Module):
             name=f'{self.name}_fc2',
         )
 
-    def forward(self, x, memory):
+    def forward(self, x, memory, src_mask=None, tgt_mask=None):
         self.instance += 1
         sequence_length = len(x)
 
         # Self-attention with residual connection
-        y = self.attention1(x, x, x)
+        y = self.attention1(x, x, x, mask=tgt_mask)
         z = []
         for i in range(sequence_length):
             xi = x[i]
@@ -152,7 +157,7 @@ class TransformerDecoderLayer(lbann.modules.Module):
         x = z
 
         # Attention on encoder output with residual connection
-        y = self.attention2(x, memory, memory)
+        y = self.attention2(x, memory, memory, mask=src_mask)
         z = []
         for i in range(sequence_length):
             xi = x[i]
@@ -213,6 +218,8 @@ class Transformer(lbann.modules.Module):
                      if name
                      else f'transformer{Transformer.global_count}')
 
+        self.subsequent_masks = {}
+
         self.encoder = [
             TransformerEncoderLayer(
                 embed_dim=hidden_size,
@@ -232,6 +239,20 @@ class Transformer(lbann.modules.Module):
             for i in range(num_decoder_layers)
         ]
 
+    def subsequent_mask(self, size):
+        if size not in self.subsequent_masks:
+            vals = np.triu(np.full((size,size), -1e9), k=1)
+            weights = lbann.Weights(
+                initializer=lbann.ValueInitializer(values=str_list(np.nditer(vals))),
+                optimizer=None,
+                name=f'{self.name}_mask{size}_weights',
+            )
+            self.subsequent_masks[size] = lbann.WeightsLayer(
+                dims=str_list([size, size]),
+                weights=weights,
+            )
+        return self.subsequent_masks[size]
+
     def forward(self, source, target):
         self.instance += 1
 
@@ -246,6 +267,10 @@ class Transformer(lbann.modules.Module):
         # TODO: Positional encoding
         x = target
         for decoder_layer in self.decoder:
-            x = decoder_layer(x, memory)
+            x = decoder_layer(
+                x,
+                memory,
+                tgt_mask=self.subsequent_mask(len(target)),
+            )
 
         return x

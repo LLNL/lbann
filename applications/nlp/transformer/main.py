@@ -80,9 +80,7 @@ model = model.Transformer(
     hidden_size=args.embed_dim,
     num_heads=args.num_attention_heads,
 )
-source = embeddings[:-1]
-target = embeddings[1:]
-result = model(source, target)
+result = model(embeddings, embeddings[:-1])
 
 # Predict next token in sequence
 pred_fc = lbann.modules.FullyConnectedModule(

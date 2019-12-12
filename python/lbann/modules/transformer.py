@@ -67,7 +67,7 @@ class MultiheadAttention(Module):
                                                      dims='1 -1')
         return [lbann.Concatenation(ps) for ps in proj_array]
 
-    def forward(self, queries, keys, values):
+    def forward(self, queries, keys, values, mask=None):
         self.instance += 1
 
         # Apply FC layers to input sequences
@@ -89,6 +89,10 @@ class MultiheadAttention(Module):
             y = lbann.MatMul(q, k, transpose_b=True)
             scale = 1 / math.sqrt(self.head_dim)
             y = lbann.WeightedSum(y, scaling_factors=str(scale))
+
+            # Apply additive mask if provided
+            if mask:
+                y = lbann.Add(y, mask)
 
             # Row-wise softmax
             # Note: cuDNN's softmax implementation requires that y and
