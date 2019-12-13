@@ -87,6 +87,8 @@ message Reader {
   //------------- start of only for sample lists ------------------
   bool sample_list_per_trainer = 400;
   bool sample_list_per_model   = 401;
+  // For testing and validation, keep the loaded sample order same as that in the file
+  bool sample_list_keep_order  = 402;
   //------------- end of only for sample lists ------------------
 
   PythonDataReader python = 501;

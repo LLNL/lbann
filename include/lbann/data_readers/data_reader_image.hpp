@@ -106,9 +106,11 @@ class image_data_reader : public generic_data_reader {
   void set_linearized_image_size();
 
   /// Rely on pre-determined list of samples.
-  void load_list_of_samples(const std::string filename, bool load_interleave = false);
+  void load_list_of_samples(const std::string filename);
   /// Load the sample list from a serialized archive from another rank
   void load_list_of_samples_from_archive(const std::string& sample_list_archive);
+  /// Load the labels for samples
+  void load_labels();
 
   std::string m_image_dir; ///< where images are stored
   int m_image_width; ///< image width
