@@ -172,7 +172,7 @@ void image_data_reader::load() {
     std::cout << "Sample lists have been gathered" << std::endl;
   }
 
-  const std::string imageListFile = get_data_filename();
+  const std::string imageListFile = m_sample_list.get_label_filename();
 
   // load labels
   m_labels.clear();

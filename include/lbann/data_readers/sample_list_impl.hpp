@@ -76,9 +76,60 @@ template<> inline std::string to_sample_name_t<std::string>(const std::string& s
 //------------------------
 
 inline sample_list_header::sample_list_header()
-  : m_is_exclusive(false), m_included_sample_count(0u),
-    m_excluded_sample_count(0u), m_num_files(0u),
-    m_file_dir("") {
+  : m_is_multi_sample(false), m_is_exclusive(false),
+    m_included_sample_count(0u), m_excluded_sample_count(0u), m_num_files(0u),
+    m_file_dir(""), m_sample_list_filename(""), m_label_filename("") {
+}
+
+inline void sample_list_header::set_sample_list_type(const std::string& line1) {
+  std::stringstream header1(line1);
+  std::string sample_list_type;
+  header1 >> sample_list_type;
+
+  std::for_each(sample_list_type.begin(), sample_list_type.end(),
+                [](char& c){ c = std::toupper(c); });
+
+  m_is_multi_sample = false;
+  m_is_exclusive = false;
+
+  if (sample_list_type == single_sample) {
+  } else if (sample_list_type == multi_sample_inclusion) {
+    m_is_multi_sample = true;
+    m_is_exclusive = false;
+  } else if (sample_list_type == multi_sample_exclusion) {
+    m_is_multi_sample = true;
+    m_is_exclusive = true;
+  } else {
+    LBANN_ERROR("Unknown sample list type: ", sample_list_type);
+  }
+}
+
+inline void sample_list_header::set_sample_count(const std::string& line2) {
+  std::stringstream header2(line2);
+  if (m_is_multi_sample) {
+    header2 >> m_included_sample_count;
+    header2 >> m_excluded_sample_count;
+  }
+  header2 >> m_num_files;
+
+  if (!m_is_multi_sample) {
+    m_included_sample_count = m_num_files;
+    m_excluded_sample_count = 0ul;
+  }
+}
+
+inline void sample_list_header::set_data_file_dir(const std::string& line3) {
+  std::stringstream header3(line3);
+  header3 >> m_file_dir;
+}
+
+inline void sample_list_header::set_label_filename(const std::string& line4) {
+  std::stringstream header4(line4);
+  header4 >> m_label_filename;
+}
+
+inline bool sample_list_header::is_multi_sample() const {
+  return m_is_multi_sample;
 }
 
 inline bool sample_list_header::is_exclusive() const {
@@ -93,12 +144,16 @@ inline size_t sample_list_header::get_num_files() const {
   return m_num_files;
 }
 
+inline const std::string& sample_list_header::get_file_dir() const {
+  return m_file_dir;
+}
+
 inline const std::string& sample_list_header::get_sample_list_filename() const {
   return m_sample_list_filename;
 }
 
-inline const std::string& sample_list_header::get_file_dir() const {
-  return m_file_dir;
+inline const std::string& sample_list_header::get_label_filename() const {
+  return m_label_filename;
 }
 
 //------------------
@@ -239,32 +294,17 @@ inline sample_list_header sample_list<sample_name_t>
   hdr.m_sample_list_filename = filename;
 
   std::string line1 = read_header_line(istrm, filename, "the exclusiveness\n");
-  std::stringstream header1(line1);
-
   std::string line2 = read_header_line(istrm, filename, "the number of samples and the number of files\n");
-  std::stringstream header2(line2);
-
   std::string line3 = read_header_line(istrm, filename, "the data file directory\n");
-  std::stringstream header3(line3);
 
-  std::string sample_list_type;
-  header1 >> sample_list_type;
-  std::for_each(sample_list_type.begin(), sample_list_type.end(), [](char& c){ c = std::toupper(c); });
+  hdr.set_sample_list_type(line1);
+  hdr.set_sample_count(line2);
+  hdr.set_data_file_dir(line3);
 
-  const std::string type_exclusive = sample_exclusion_list;
-  size_t found = sample_list_type.find(type_exclusive);
-
-  if (found != std::string::npos) {
-    hdr.m_is_exclusive = true;
-  } else {
-    hdr.m_is_exclusive = false;
+  if (!hdr.is_multi_sample()) {
+    std::string line4 = read_header_line(istrm, filename, "the path to label/response file\n");
+    hdr.set_label_filename(line4);
   }
-
-  header2 >> hdr.m_included_sample_count;
-  header2 >> hdr.m_excluded_sample_count;
-  header2 >> hdr.m_num_files;
-
-  header3 >> hdr.m_file_dir;
 
   if (hdr.get_file_dir().empty() || !check_if_dir_exists(hdr.get_file_dir())) {
     LBANN_ERROR(std::string{} + "file " + filename
@@ -531,7 +571,7 @@ inline void sample_list<sample_name_t>
   // as well as the number of files, which are the same in this caes
   // The next line contains the root data file directory
 
-  sstr += (m_header.is_exclusive()? sample_exclusion_list + "\n" : sample_inclusion_list + "\n");
+  sstr += (m_header.is_exclusive()? multi_sample_exclusion + "\n" : multi_sample_inclusion + "\n");
   size_t total, included, excluded;
   get_num_samples(total, included, excluded);
   /// TODO: clarify the comment below
@@ -629,6 +669,12 @@ template <typename sample_name_t>
 inline   const std::string& sample_list<sample_name_t>
 ::get_samples_dirname() const {
   return m_header.get_file_dir();
+}
+
+template <typename sample_name_t>
+inline   const std::string& sample_list<sample_name_t>
+::get_label_filename() const {
+  return m_header.get_label_filename();
 }
 
 template <typename sample_name_t>
