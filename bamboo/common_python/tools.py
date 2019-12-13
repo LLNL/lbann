@@ -722,21 +722,14 @@ def create_tests(setup_func,
         test_name = '{}_{}'.format(test_name_base, compiler_name)
 
         # Load LBANN Python frontend
-        build_names = {
-            'clang6': 'clang.Release.{}.llnl.gov'.format(cluster),
-            'clang6_debug': 'clang.Debug.{}.llnl.gov'.format(cluster),
-            'gcc7': 'gnu.Release.{}.llnl.gov'.format(cluster),
-            'gcc7_debug': 'gnu.Debug.{}.llnl.gov'.format(cluster),
-            'intel19': 'intel.Release.{}.llnl.gov'.format(cluster),
-            'intel19_debug': 'intel.Debug.{}.llnl.gov'.format(cluster),
-        }
-        python_frontend_path = os.path.join(dir_name,
-                                            'build',
-                                            build_names[compiler_name],
-                                            'install',
-                                            'lib',
-                                            'python3.7',
-                                            'site-packages')
+        exe = os.path.realpath(executables[compiler_name])
+        install_dir = os.path.dirname(os.path.dirname(exe))
+        python_frontend_path = os.path.join(
+            install_dir,
+            'lib',
+            f'python{sys.version_info[0]}.{sys.version_info[1]}',
+            'site-packages',
+        )
         sys.path.append(python_frontend_path)
         import lbann
         import lbann.contrib.lc.launcher
@@ -772,17 +765,26 @@ def create_tests(setup_func,
         }
 
     # Specific test functions for different build configurations
+    def test_func_exe(cluster, exe, dirname):
+        if exe is None:
+            e = f'{test_name_base}_exe: Non-local testing'
+            print('Skip - ' + e)
+            pytest.skip(e)
+        exes = {'exe': exe}
+        return test_func(cluster, exes, dirname, 'exe')
     def test_func_clang6(cluster, exes, dirname):
         return test_func(cluster, exes, dirname, 'clang6')
     def test_func_gcc7(cluster, exes, dirname):
         return test_func(cluster, exes, dirname, 'gcc7')
     def test_func_intel19(cluster, exes, dirname):
         return test_func(cluster, exes, dirname, 'intel19')
-    test_func_clang6.__name__ = '{}_clang6'.format(test_name_base)
-    test_func_gcc7.__name__ = '{}_gcc7'.format(test_name_base)
-    test_func_intel19.__name__ = '{}_intel19'.format(test_name_base)
+    test_func_exe.__name__ = f'{test_name_base}_exe'
+    test_func_clang6.__name__ = f'{test_name_base}_clang6'
+    test_func_gcc7.__name__ = f'{test_name_base}_gcc7'
+    test_func_intel19.__name__ = f'{test_name_base}_intel19'
 
     return (
+        test_func_exe,
         test_func_gcc7,
         test_func_clang6,
         test_func_intel19,
