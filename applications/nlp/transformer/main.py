@@ -37,6 +37,9 @@ parser.add_argument(
 parser.add_argument(
     '--embed-dim', action='store', default=512, type=int,
     help='embedding space dimensions (default: 512)', metavar='NUM')
+parser.add_argument(
+    '--label-smoothing', action='store', default=0.1, type=float,
+    help='label smoothing (default: 0.1)', metavar='VAL')
 args = parser.parse_args()
 
 # ----------------------------------
@@ -79,6 +82,7 @@ for token in tokens:
 model = model.Transformer(
     hidden_size=args.embed_dim,
     num_heads=args.num_attention_heads,
+    dropout=0,  # TODO: Restore dropout
 )
 result = model(embeddings, embeddings[:-1])
 
@@ -91,11 +95,19 @@ pred_fc = lbann.modules.FullyConnectedModule(
 preds = [pred_fc(x) for x in result]
 
 # Cross entropy loss
+# Note: Apply label smoothing
 loss = []
 acc = []
+uniform_label = lbann.Constant(value=1/vocab_size, num_neurons=str(vocab_size))
 for i in range(sequence_length-1):
     pred = preds[i]
     label = lbann.OneHot(tokens[i+1], size=vocab_size)
+    if args.label_smoothing > 0:
+        label = lbann.WeightedSum(
+            label,
+            uniform_label,
+            scaling_factors=str_list([1-args.label_smoothing, args.label_smoothing]),
+        )
     loss.append(lbann.CrossEntropy(pred, label))
     acc.append(lbann.TopKCategoricalAccuracy(pred, label, k=10))
 acc = lbann.Reduction(lbann.Concatenation(acc), mode='average')
@@ -130,7 +142,7 @@ model = lbann.Model(args.mini_batch_size,
                     objective_function=loss,
                     metrics=metrics,
                     callbacks=callbacks)
-opt = lbann.SGD(learn_rate=0.01, momentum=0.9) # TODO: Adam with LR schedule
+opt = lbann.Adam(learn_rate=0.0004, beta1=0.9, beta2=0.98, eps=1e-9) # TODO: LR schedule
 
 # Run LBANN
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
