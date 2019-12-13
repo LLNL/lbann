@@ -27,6 +27,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
+#include "lbann/macros/misc.hpp"
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/activations/activations.hpp"
@@ -115,11 +116,8 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr,
 std::string get_layer_datatype_from_pbuf(const lbann_data::Layer& proto_layer) {
   // Get parameters from prototext
   auto datatype_str = proto_layer.datatype();
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
   if(datatype_str.empty()) {
-    //    auto foo(TOSTRING(DataType));
-    datatype_str = "float";
+    datatype_str = TypeName<DataType>();
   }
   return datatype_str;
 }
@@ -179,7 +177,6 @@ std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
     TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \
     TEMPLATE_INSTANTIATION(T, data_layout::MODEL_PARALLEL, Device)
 
-#define LBANN_INSTANTIATE_FLOAT_ONLY
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"

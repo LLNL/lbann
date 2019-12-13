@@ -35,6 +35,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/macros/misc.hpp"
 #include <string>
 #include <vector>
 
@@ -110,9 +111,7 @@ public:
   /** Get a string representing the layer datatype
    */
   virtual std::string get_datatype() const {
-#define STRINGIFY(x) #x
-#define TOSTRING(x) STRINGIFY(x)
-    return TOSTRING(DataType);
+    return TypeName<DataType>();
   };
 
   /** Human-readable description. */
