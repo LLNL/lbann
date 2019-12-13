@@ -118,8 +118,8 @@ std::string get_layer_datatype_from_pbuf(const lbann_data::Layer& proto_layer) {
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
   if(datatype_str.empty()) {
-    auto foo(TOSTRING(DataType));
-    datatype_str = foo;
+    //    auto foo(TOSTRING(DataType));
+    datatype_str = "float";
   }
   return datatype_str;
 }
@@ -203,7 +203,7 @@ using factory_type = lbann::generic_factory<
 
 void register_default_builders(factory_type& factory)
 {
-  factory.register_builder("fully_connected",
+  factory.register_builder("FullyConnected",
                            build_fully_connected_layer_from_pbuf);
 }
 
@@ -907,6 +907,14 @@ std::unique_ptr<Layer> construct_layer(
   auto const& factory = get_layer_factory();// Register FC and CONV layers here
   auto const& msg =
     helpers::get_oneof_message(proto_layer, "layer_type");
+  if(msg.GetDescriptor()->name() == "FullyConnected") {
+    return factory.create_object(msg.GetDescriptor()->name(), comm, proto_layer, GPUs_disabled);
+  }else {
+    return construct_layer_legacy<TensorDataType, Layout, Device>(
+      comm, data_readers, num_parallel_readers, proto_layer);
+  }
+#if 0  // Don't use this yet because it throws "errors" that are
+       // in fact expected
   try {
     return factory.create_object(msg.GetDescriptor()->name(), comm, proto_layer, GPUs_disabled);
   }
@@ -914,6 +922,7 @@ std::unique_ptr<Layer> construct_layer(
     return construct_layer_legacy<TensorDataType, Layout, Device>(
       comm, data_readers, num_parallel_readers, proto_layer);
   }
+#endif
 }
 
 } // namespace proto
