@@ -727,7 +727,7 @@ def create_tests(setup_func,
         python_frontend_path = os.path.join(
             install_dir,
             'lib',
-            f'python{sys.version_info[0]}.{sys.version_info[1]}',
+            'python3.7',    # TODO: Generalize
             'site-packages',
         )
         sys.path.append(python_frontend_path)
