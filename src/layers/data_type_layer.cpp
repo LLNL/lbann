@@ -286,6 +286,9 @@ auto data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) 
 // Accessing matrices corresponding to parent/child layer
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const -> const BaseDistMat& {
+  if(m_child_layers.empty()) {
+    LBANN_ERROR("This layer has no children");
+  }
   const int child_index = std::distance(m_child_layers.begin(),
                                         std::find(m_child_layers.begin(),
                                                   m_child_layers.end(),
