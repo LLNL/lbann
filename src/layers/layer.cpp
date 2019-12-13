@@ -105,7 +105,7 @@ description Layer::get_description() const {
 
   // Construct description object
   std::stringstream ss;
-  ss << get_name() << " (" << get_type() << ")";
+  ss << get_name() << " (" << get_type() << "<" << get_datatype() << ">" << ")";
   description desc(ss.str());
 
   // Input dimensions

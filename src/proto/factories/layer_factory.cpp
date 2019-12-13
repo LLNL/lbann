@@ -25,6 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
+#include "lbann/proto/helpers.hpp"
+#include "lbann/utils/factory.hpp"
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/activations/activations.hpp"
@@ -110,8 +112,121 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr,
                                                   const std::string& var_category,
                                                   bool& is_supported);
 
+std::string get_layer_datatype_from_pbuf(const lbann_data::Layer& proto_layer) {
+  // Get parameters from prototext
+  auto datatype_str = proto_layer.datatype();
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+  if(datatype_str.empty()) {
+    auto foo(TOSTRING(DataType));
+    datatype_str = foo;
+  }
+  return datatype_str;
+}
+
+data_layout get_layer_data_layout_from_pbuf(const lbann_data::Layer& proto_layer) {
+  // Get parameters from prototext
+  const auto& layout_str = proto_layer.data_layout();
+  data_layout layout = data_layout::invalid;
+  if (layout_str.empty())             { layout = data_layout::DATA_PARALLEL; }
+  if (layout_str == "data_parallel")  { layout = data_layout::DATA_PARALLEL; }
+  if (layout_str == "model_parallel") { layout = data_layout::MODEL_PARALLEL; }
+  return layout;
+}
+
+El::Device get_layer_device_from_pbuf(const lbann_data::Layer& proto_layer,
+                                      bool GPUs_disabled) {
+  // Get parameters from prototext
+  El::Device device = El::Device::CPU;
+#ifdef LBANN_HAS_GPU
+  const auto& device_str = proto_layer.device_allocation();
+  if (!GPUs_disabled) {
+    if (device_str == "gpu" || device_str.empty()) {
+      device = El::Device::GPU;
+    }
+    if (device_str == "cpu") { device = El::Device::CPU; }
+    if (proto_layer.has_input()) {
+      // Input layers must be on CPU
+      device = El::Device::CPU;
+    }
+  }
+#endif // LBANN_HAS_GPU
+  return device;
+}
+
+std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
+  lbann_comm* comm,
+  const lbann_data::Layer& proto_layer,
+  bool GPUs_disabled) {
+  auto datatype = get_layer_datatype_from_pbuf(proto_layer);
+  auto layout = get_layer_data_layout_from_pbuf(proto_layer);
+  auto device = get_layer_device_from_pbuf(proto_layer, GPUs_disabled);
+  const auto& params = proto_layer.fully_connected();
+    std::unique_ptr<Layer> l;
+#define TEMPLATE_INSTANTIATION(T_datatype, T_layout, T_device)                         \
+    do {                                                                               \
+      if (datatype == #T_datatype && layout == T_layout && device == T_device) {       \
+        l = lbann::make_unique<fully_connected_layer<T_datatype, T_layout, T_device>>( \
+          comm,                                                                        \
+          params.num_neurons(),                                                        \
+          params.transpose(),                                                          \
+          nullptr,                                                                     \
+          params.has_bias());                                                          \
+      }                                                                                \
+    } while (0)
+
+#define PROTO_DEVICE(T, Device) \
+    TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \
+    TEMPLATE_INSTANTIATION(T, data_layout::MODEL_PARALLEL, Device)
+
+#define LBANN_INSTANTIATE_FLOAT_ONLY
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+
+#undef TEMPLATE_INSTANTIATION
+#undef PROTO_DEVICE
+    return l;
+}
+
+namespace {
+// Define the factory type.
+using factory_type = lbann::generic_factory<
+  lbann::Layer,
+  std::string,
+  generate_builder_type<lbann::Layer,
+                        lbann_comm*,
+                        const lbann_data::Layer&,
+                        //                        google::protobuf::Message const&,
+                        bool>,
+  default_key_error_policy>;
+
+void register_default_builders(factory_type& factory)
+{
+  factory.register_builder("fully_connected",
+                           build_fully_connected_layer_from_pbuf);
+}
+
+// Manage a global factory
+struct factory_manager
+{
+    factory_type factory_;
+
+    factory_manager() {
+        register_default_builders(factory_);
+    }
+};
+
+factory_manager factory_mgr_;
+factory_type const& get_layer_factory() noexcept
+{
+  return factory_mgr_.factory_;
+}
+
+} // namespace
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> construct_layer(
+std::unique_ptr<Layer> construct_layer_legacy(
   lbann_comm* comm,
   const std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
@@ -157,13 +272,7 @@ std::unique_ptr<Layer> construct_layer(
 
   // Fully connected layer
   if (proto_layer.has_fully_connected()) {
-    const auto& params = proto_layer.fully_connected();
-    return lbann::make_unique<fully_connected_layer<TensorDataType, Layout, Device>>(
-             comm,
-             params.num_neurons(),
-             params.transpose(),
-             nullptr,
-             params.has_bias());
+    LBANN_ERROR("Should have encountered the new layer factory");
   }
 
   // Convolution and deconvolution layer
@@ -748,12 +857,14 @@ std::unique_ptr<Layer> construct_layer(
     lbann_comm* comm,                                                                      \
     const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
     int num_parallel_readers,                                                              \
+    bool GPUs_disabled,                                                                    \
     const lbann_data::Layer& proto_layer                                                   \
   );                                                                                       \
   template std::unique_ptr<Layer> construct_layer<T, data_layout::MODEL_PARALLEL, Device>( \
     lbann_comm* comm,                                                                      \
     const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
     int num_parallel_readers,                                                              \
+    bool GPUs_disabled,                                                                    \
     const lbann_data::Layer& proto_layer                                                   \
   )
 
@@ -783,6 +894,26 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_
     }
   }
   return slice_points;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> construct_layer(
+  lbann_comm* comm,
+  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  int num_parallel_readers,
+  bool GPUs_disabled,
+  const lbann_data::Layer& proto_layer) {
+
+  auto const& factory = get_layer_factory();// Register FC and CONV layers here
+  auto const& msg =
+    helpers::get_oneof_message(proto_layer, "layer_type");
+  try {
+    return factory.create_object(msg.GetDescriptor()->name(), comm, proto_layer, GPUs_disabled);
+  }
+  catch (lbann::exception const&) {
+    return construct_layer_legacy<TensorDataType, Layout, Device>(
+      comm, data_readers, num_parallel_readers, proto_layer);
+  }
 }
 
 } // namespace proto

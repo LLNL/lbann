@@ -189,6 +189,8 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
     }
 #endif // LBANN_HAS_GPU
 
+    const auto model_disable_gpus = proto_model.disable_cuda();
+
     // Construct layer
     std::unique_ptr<Layer> l;
 #define TEMPLATE_INSTANTIATION(TensorDataType, T_layout, T_device)      \
@@ -198,6 +200,7 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
               comm,                                                     \
               data_readers,                                             \
               num_parallel_readers,                                     \
+              model_disable_gpus,                                       \
               proto_layer);                                             \
       }                                                                 \
     } while (0)

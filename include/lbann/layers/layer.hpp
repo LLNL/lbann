@@ -38,6 +38,12 @@
 #include <string>
 #include <vector>
 
+/** @brief A utility macro for easily defining default-constructed sub-class
+ *  builders.*/
+#define LBANN_DEFINE_LAYER_BUILDER(Class, FunctionName)   \
+  extern std::unique_ptr<Layer> FunctionName(lbann_comm*, \
+    const google::protobuf::Message&, bool)
+
 // Forward-declare protobuf classes
 namespace lbann_data {
 class Layer;
@@ -101,6 +107,13 @@ public:
    *  human-readable, name.
    */
   inline void set_name(const std::string name) { m_name = name; }
+  /** Get a string representing the layer datatype
+   */
+  virtual std::string get_datatype() const {
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+    return TOSTRING(DataType);
+  };
 
   /** Human-readable description. */
   virtual description get_description() const;
