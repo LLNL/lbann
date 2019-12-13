@@ -627,6 +627,14 @@ std::string generic_data_reader::get_data_sample_list() const {
   return m_data_sample_list;
 }
 
+void generic_data_reader::keep_sample_order(bool same_order) {
+  // The sample_list::keep_sample_order() should be called using this
+  // flag. By doing so, it will add additional step to re-shuffle the
+  // sample order to restore it to the original before the loading
+  // with interleaving accesses by multiple ranks in a trainer.
+  m_keep_sample_order = same_order;
+}
+
 void generic_data_reader::set_data_filename(std::string s) {
   m_data_fn = s;
 }

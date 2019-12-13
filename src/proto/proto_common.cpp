@@ -102,6 +102,7 @@ void init_data_readers(
     } else if ((name == "imagenet")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
       reader->set_data_sample_list(readme.sample_list());
+      reader->keep_sample_order(readme.sample_list_keep_order());
       set_transform_pipeline = false;
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
@@ -113,6 +114,7 @@ void init_data_readers(
       reader->set_data_sample_list(readme.sample_list());
       reader_jag_conduit->set_list_per_trainer(readme.sample_list_per_trainer());
       reader_jag_conduit->set_list_per_model(readme.sample_list_per_model());
+      reader_jag_conduit->keep_sample_order(readme.sample_list_keep_order());
 
       /// Allow the prototext to control if the data readers is
       /// shareable for each phase training, validation, or testing

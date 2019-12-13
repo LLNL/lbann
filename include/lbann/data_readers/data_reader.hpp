@@ -102,6 +102,7 @@ class generic_data_reader {
     m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
+    m_keep_sample_order(false),
     m_trainer(nullptr),
     m_issue_warning(true)
   {}
@@ -173,6 +174,12 @@ class generic_data_reader {
    * Returns the complete sample list for your data set.
    */
   std::string get_data_sample_list() const;
+
+  /**
+   * To facilictate the testing, maintain the order of loaded samples
+   * in the sample list as it is in the list file.
+   */
+  void keep_sample_order(bool same_order = false);
 
   /**
    * Set the filename for your data (images, etc).
@@ -850,6 +857,10 @@ private:
   /// special handling for 1B jag; each reader
   /// owns a unique subset of the data
   bool m_jag_partitioned;
+
+  /** Whether to keep the order of loaded samples same as it is in the
+   *  file to make testing and validation easier */
+  bool m_keep_sample_order;
 
   /// called by fetch_data a single time if m_jag_partitioned = true;
   /// this sets various member variables (num_iterations, m_reset_mini_batch_index,

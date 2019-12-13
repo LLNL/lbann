@@ -149,13 +149,8 @@ void image_data_reader::load() {
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = get_data_sample_list();
 
-  load_list_of_samples(sample_list_file, true);
-  if(is_master()) {
-    std::cout << "Finished sample list, check data" << std::endl;
-  }
+  load_list_of_samples(sample_list_file);
 
-  /// Merge all of the sample lists
-  m_sample_list.all_gather_packed_lists(*m_comm);
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
     {
       const std::string msg = " writing sample list " + sample_list_file;
@@ -168,27 +163,7 @@ void image_data_reader::load() {
     m_sample_list.write(s.str());
   }
 
-  if(is_master()) {
-    std::cout << "Sample lists have been gathered" << std::endl;
-  }
-
-  const std::string imageListFile = m_sample_list.get_label_filename();
-
-  // load labels
-  m_labels.clear();
-  FILE *fplist = fopen(imageListFile.c_str(), "rt");
-  if (!fplist) {
-    LBANN_ERROR("failed to open: " + imageListFile + " for reading");
-  }
-  while (!feof(fplist)) {
-    char imagepath[512] = {'\0'};
-    label_t imagelabel;
-    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
-      break;
-    }
-    m_labels.insert(std::make_pair(sample_name_t(imagepath), imagelabel));
-  }
-  fclose(fplist);
+  load_labels();
 
   // reset indices
   m_shuffled_indices.clear();
@@ -316,10 +291,10 @@ void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &
   node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
 }
 
-void image_data_reader::load_list_of_samples(const std::string sample_list_file, bool load_interleave) {
+void image_data_reader::load_list_of_samples(const std::string sample_list_file) {
   // load the sample list
   double tm1 = get_time();
-  if (load_interleave) {
+  if (m_keep_sample_order) {
     m_sample_list.keep_sample_order(true);
     m_sample_list.load(sample_list_file, *m_comm);
   } else {
@@ -329,6 +304,14 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file,
 
   if (is_master()) {
     std::cout << "Time to load sample list: " << tm2 - tm1 << std::endl;
+  }
+
+  /// Merge all of the sample lists
+  m_sample_list.all_gather_packed_lists(*m_comm);
+
+  double tm3 = get_time();
+  if(is_master()) {
+    std::cout << "Time to gather sample list: " << tm3 - tm2 << std::endl;
   }
 }
 
@@ -345,6 +328,26 @@ void image_data_reader::load_list_of_samples_from_archive(const std::string& sam
   if (is_master()) {
     std::cout << "Time to load sample list from archive: " << tm2 - tm1 << std::endl;
   }
+}
+
+void image_data_reader::load_labels() {
+  const std::string imageListFile = m_sample_list.get_label_filename();
+
+  // load labels
+  m_labels.clear();
+  FILE *fplist = fopen(imageListFile.c_str(), "rt");
+  if (!fplist) {
+    LBANN_ERROR("failed to open: " + imageListFile + " for reading");
+  }
+  while (!feof(fplist)) {
+    char imagepath[512] = {'\0'};
+    label_t imagelabel;
+    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
+      break;
+    }
+    m_labels.insert(std::make_pair(sample_name_t(imagepath), imagelabel));
+  }
+  fclose(fplist);
 }
 
 }  // namespace lbann
