@@ -286,10 +286,10 @@ auto data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) 
 // Accessing matrices corresponding to parent/child layer
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const -> const BaseDistMat& {
-  const int child_index = (std::find(m_child_layers.begin(),
-                                     m_child_layers.end(),
-                                     &child)
-                           - m_child_layers.begin());
+  const int child_index = std::distance(m_child_layers.begin(),
+                                        std::find(m_child_layers.begin(),
+                                                  m_child_layers.end(),
+                                                  &child));
   if (child_index >= get_num_children()) {
     std::stringstream err;
     err << "attempted to get activation tensor of "
@@ -302,10 +302,10 @@ auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const 
 }
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_error_signals(const Layer& parent) const -> const BaseDistMat& {
-  const int parent_index = (std::find(m_parent_layers.begin(),
-                                      m_parent_layers.end(),
-                                      &parent)
-                           - m_parent_layers.begin());
+  const int parent_index = std::distance(m_parent_layers.begin(),
+                                         std::find(m_parent_layers.begin(),
+                                                   m_parent_layers.end(),
+                                                   &parent));
   if (parent_index >= get_num_parents()) {
     std::stringstream err;
     err << "attempted to get error signal tensor of "
