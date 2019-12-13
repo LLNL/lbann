@@ -18,6 +18,7 @@ class Layer(abc.ABC):
             'layer<index>').
         device (str, optional): Device to use, e.g. CPU or GPU.
         data_layout (str, optional): Data distribution scheme.
+        datatype (str, optional): Data type used for activations and weights.
         hint_layer (Layer, optional): Hint for output dimensions.
 
     """
@@ -32,6 +33,7 @@ class Layer(abc.ABC):
                  name=None,
                  device=None,
                  data_layout=None,
+                 datatype=None,
                  hint_layer=None):
         Layer.global_count += 1
         self.parents = []
@@ -40,6 +42,7 @@ class Layer(abc.ABC):
         self.name = name if name else 'layer{0}'.format(Layer.global_count)
         self.device = device
         self.data_layout = data_layout
+        self.datatype = datatype
         self.hint_layer = hint_layer
 
         # Initialize parents, children, and weights
@@ -60,6 +63,8 @@ class Layer(abc.ABC):
             proto.device_allocation = self.device
         if self.data_layout:
             proto.data_layout = self.data_layout
+        if self.datatype:
+            proto.datatype = self.datatype
         if self.hint_layer:
             proto.hint_layer = self.hint_layer.name
         return proto
@@ -94,13 +99,13 @@ class Layer(abc.ABC):
 classes = lbann.core.util.generate_classes_from_protobuf_message(
     layers_pb2.Layer,
     skip_fields = set([
-        'name', 'parents', 'children', 'data_layout', 'device_allocation',
+        'name', 'parents', 'children', 'data_layout', 'device_allocation', 'datatype',
         'weights', 'num_neurons_from_data_reader', 'freeze', 'hint_layer',
         'weights_data', 'top', 'bottom', 'type', 'motif_layer']),
     base_class = Layer,
     base_kwargs = set([
         'parents', 'children', 'weights',
-        'name', 'device', 'data_layout', 'hint_layer']),
+        'name', 'device', 'data_layout', 'datatype', 'hint_layer']),
     base_has_export_proto = True)
 for c in classes:
     globals()[c.__name__] = c
