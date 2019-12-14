@@ -88,7 +88,7 @@ public:
   /** Get a string representing the layer datatype
    */
   std::string get_datatype() const override {
-    return TypeName<DataType>();
+    return TypeName<TensorDataType>();
   };
 
   /** Forward propagation step.
