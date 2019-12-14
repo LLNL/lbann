@@ -194,9 +194,8 @@ using factory_type = lbann::generic_factory<
   generate_builder_type<lbann::Layer,
                         lbann_comm*,
                         const lbann_data::Layer&,
-                        //                        google::protobuf::Message const&,
                         bool>,
-  default_key_error_policy>;
+  nullptr_key_error_policy>;
 
 void register_default_builders(factory_type& factory)
 {
@@ -904,22 +903,14 @@ std::unique_ptr<Layer> construct_layer(
   auto const& factory = get_layer_factory();// Register FC and CONV layers here
   auto const& msg =
     helpers::get_oneof_message(proto_layer, "layer_type");
-  if(msg.GetDescriptor()->name() == "FullyConnected") {
-    return factory.create_object(msg.GetDescriptor()->name(), comm, proto_layer, GPUs_disabled);
-  }else {
-    return construct_layer_legacy<TensorDataType, Layout, Device>(
+
+  std::unique_ptr<Layer> l = factory.create_object(
+    msg.GetDescriptor()->name(), comm, proto_layer, GPUs_disabled);
+  if(!l) {
+    l = construct_layer_legacy<TensorDataType, Layout, Device>(
       comm, data_readers, num_parallel_readers, proto_layer);
   }
-#if 0  // Don't use this yet because it throws "errors" that are
-       // in fact expected
-  try {
-    return factory.create_object(msg.GetDescriptor()->name(), comm, proto_layer, GPUs_disabled);
-  }
-  catch (lbann::exception const&) {
-    return construct_layer_legacy<TensorDataType, Layout, Device>(
-      comm, data_readers, num_parallel_readers, proto_layer);
-  }
-#endif
+  return l;
 }
 
 } // namespace proto
