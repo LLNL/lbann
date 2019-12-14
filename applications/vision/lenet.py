@@ -54,7 +54,7 @@ x = lbann.Pooling(x,
                   pool_dims_i = 2,
                   pool_strides_i = 2,
                   pool_mode = "max")
-x = lbann.FullyConnected(x, num_neurons = 120, has_bias = True, datatype = "double")
+x = lbann.FullyConnected(x, num_neurons = 120, has_bias = True)
 x = lbann.Relu(x)
 x = lbann.FullyConnected(x, num_neurons = 84, has_bias = True)
 x = lbann.Relu(x)
