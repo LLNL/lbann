@@ -5,6 +5,7 @@
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_handle.hpp"
+#include <utility>
 
 namespace lbann {
 
@@ -57,10 +58,35 @@ inline void sample_list_conduit_io_handle<sample_name_t>
   }
 }
 
+template <typename IOHandle>
+struct has_is_open {
+  template <typename IOH>
+  static constexpr
+  decltype(std::declval<IOH>().is_open(), bool())
+  test_is_open(int) {
+    return true;
+  }
+
+  template <typename IOH>
+  static constexpr bool test_is_open(...) {
+    return false;
+  }
+
+  static constexpr bool value = test_is_open<IOHandle>(int());
+};
+
 template <typename sample_name_t>
 inline bool sample_list_conduit_io_handle<sample_name_t>
 ::is_file_handle_valid(const sample_list_conduit_io_handle<sample_name_t>::file_handle_t& h) const {
-  return ((h != nullptr) && (h->is_open()));
+#if defined(__cpp_if_constexpr) // c++17
+  // In case that 'if constexpr' is enabled,
+  // check to see if is_open() method exists.
+  constexpr bool is_open_supported = has_is_open<decltype(*h)>::value;
+  if constexpr (is_open_supported) {
+    return ((h != nullptr) && (h->is_open()));
+  }
+#endif
+  return (h != nullptr);
 }
 
 template <typename sample_name_t>

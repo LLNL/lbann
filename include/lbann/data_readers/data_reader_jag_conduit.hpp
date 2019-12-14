@@ -38,7 +38,7 @@
 #include <map>
 #include <memory>
 
-//#define _USE_IO_HANDLE_
+#define _USE_IO_HANDLE_
 #ifdef _USE_IO_HANDLE_
 #include "lbann/data_readers/sample_list_conduit_io_handle.hpp"
 #else
@@ -464,7 +464,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool m_list_per_trainer;
   bool m_list_per_model;
 
-  void preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node); 
+  void preload_helper(const file_handle_t& h,
+    const std::string &sample_name,
+    const std::string &field_name,
+    int data_id, conduit::Node &node);
 };
 
 /**
