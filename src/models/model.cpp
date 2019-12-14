@@ -1059,7 +1059,7 @@ void model::reconcile_weight_values() {
   std::vector<Al::request> reqs;
   reqs.reserve(m_weights.size());
   for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
-    auto& w = dynamic_cast<data_type_weights<DataType>&>(**rit);
+    auto& w = **rit;
     reqs.emplace_back();
     w.reconcile_values(reqs.back());
   }
