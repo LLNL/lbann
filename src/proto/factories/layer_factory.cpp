@@ -160,17 +160,16 @@ std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
   auto layout = get_layer_data_layout_from_pbuf(proto_layer);
   auto device = get_layer_device_from_pbuf(proto_layer, GPUs_disabled);
   const auto& params = proto_layer.fully_connected();
-    std::unique_ptr<Layer> l;
-#define TEMPLATE_INSTANTIATION(T_datatype, T_layout, T_device)                         \
-    do {                                                                               \
-      if (datatype == #T_datatype && layout == T_layout && device == T_device) {       \
-        l = lbann::make_unique<fully_connected_layer<T_datatype, T_layout, T_device>>( \
-          comm,                                                                        \
-          params.num_neurons(),                                                        \
-          params.transpose(),                                                          \
-          nullptr,                                                                     \
-          params.has_bias());                                                          \
-      }                                                                                \
+#define TEMPLATE_INSTANTIATION(T_datatype, T_layout, T_device)                            \
+    do {                                                                                  \
+      if (datatype == #T_datatype && layout == T_layout && device == T_device) {          \
+        return lbann::make_unique<fully_connected_layer<T_datatype, T_layout, T_device>>( \
+          comm,                                                                           \
+          params.num_neurons(),                                                           \
+          params.transpose(),                                                             \
+          nullptr,                                                                        \
+          params.has_bias());                                                             \
+      }                                                                                   \
     } while (0)
 
 #define PROTO_DEVICE(T, Device) \
@@ -183,7 +182,88 @@ std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
 
 #undef TEMPLATE_INSTANTIATION
 #undef PROTO_DEVICE
-    return l;
+  // Throw exception if layer has not been constructed
+  LBANN_ERROR("could not construct layer ", proto_layer.name());
+  return nullptr;
+}
+
+std::unique_ptr<Layer> build_convolution_layer_from_pbuf(
+  lbann_comm* comm,
+  const lbann_data::Layer& proto_layer,
+  bool GPUs_disabled) {
+
+  auto datatype = get_layer_datatype_from_pbuf(proto_layer);
+  auto layout = get_layer_data_layout_from_pbuf(proto_layer);
+  auto device = get_layer_device_from_pbuf(proto_layer, GPUs_disabled);
+
+  const auto& params = proto_layer.convolution();
+  const auto& num_output_channels = params.num_output_channels();
+  const auto& bias = params.has_bias();
+  int num_groups = params.num_groups();
+  if (num_groups == 0) {
+    num_groups = 1;
+  }
+  if (layout != data_layout::DATA_PARALLEL) {
+    LBANN_ERROR("convolution layer is only supported with "
+                "a data-parallel layout");
+  }
+  if (params.has_vectors()) {
+    const auto& dims = parse_list<int>(params.conv_dims());
+    const auto& pads = parse_list<int>(params.conv_pads());
+    const auto& strides = parse_list<int>(params.conv_strides());
+    std::vector<int> dilations = parse_list<int>(params.conv_dilations());
+    if (dilations.empty()) {
+      dilations.resize(dims.size(), 1);
+    }
+#define TEMPLATE_INSTANTIATION(T_datatype, T_layout, T_device)                         \
+    do {                                                                               \
+      if (datatype == #T_datatype && layout == T_layout && device == T_device) {       \
+        return lbann::make_unique<convolution_layer<T_datatype, T_layout, T_device>>(  \
+          comm, dims.size(), num_output_channels,                                      \
+          dims, pads, strides, dilations, num_groups, bias);                           \
+      }                                                                                \
+    } while (0)
+
+#define PROTO_DEVICE(T, Device) \
+    TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+
+#undef TEMPLATE_INSTANTIATION
+#undef PROTO_DEVICE
+  } else {
+    const auto& num_dims = params.num_dims();
+    const auto& dim = params.conv_dims_i();
+    const auto& pad = params.conv_pads_i();
+    const auto& stride = params.conv_strides_i();
+    int dilation = params.conv_dilations_i();
+    if (dilation == 0) {
+      dilation = 1;
+    }
+#define TEMPLATE_INSTANTIATION(T_datatype, T_layout, T_device)                         \
+    do {                                                                               \
+      if (datatype == #T_datatype && layout == T_layout && device == T_device) {       \
+        return lbann::make_unique<convolution_layer<T_datatype, T_layout, T_device>>(  \
+          comm, num_dims, num_output_channels,                                         \
+          dim, pad, stride, dilation, num_groups, bias);                               \
+      }                                                                                \
+    } while (0)
+
+#define PROTO_DEVICE(T, Device) \
+    TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+
+#undef TEMPLATE_INSTANTIATION
+#undef PROTO_DEVICE
+  }
+  // Throw exception if layer has not been constructed
+  LBANN_ERROR("could not construct layer ", proto_layer.name());
+  return nullptr;
 }
 
 namespace {
@@ -201,6 +281,8 @@ void register_default_builders(factory_type& factory)
 {
   factory.register_builder("FullyConnected",
                            build_fully_connected_layer_from_pbuf);
+  factory.register_builder("Convolution",
+                           build_convolution_layer_from_pbuf);
 }
 
 // Manage a global factory
@@ -273,41 +355,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
 
   // Convolution and deconvolution layer
   if (proto_layer.has_convolution()) {
-    const auto& params = proto_layer.convolution();
-    const auto& num_output_channels = params.num_output_channels();
-    const auto& bias = params.has_bias();
-    int num_groups = params.num_groups();
-    if (num_groups == 0) {
-      num_groups = 1;
-    }
-    if (Layout != data_layout::DATA_PARALLEL) {
-      LBANN_ERROR("convolution layer is only supported with "
-                  "a data-parallel layout");
-    }
-    if (params.has_vectors()) {
-      const auto& dims = parse_list<int>(params.conv_dims());
-      const auto& pads = parse_list<int>(params.conv_pads());
-      const auto& strides = parse_list<int>(params.conv_strides());
-      std::vector<int> dilations = parse_list<int>(params.conv_dilations());
-      if (dilations.empty()) {
-        dilations.resize(dims.size(), 1);
-      }
-      return lbann::make_unique<convolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-               comm, dims.size(), num_output_channels,
-               dims, pads, strides, dilations, num_groups, bias);
-    } else {
-      const auto& num_dims = params.num_dims();
-      const auto& dim = params.conv_dims_i();
-      const auto& pad = params.conv_pads_i();
-      const auto& stride = params.conv_strides_i();
-      int dilation = params.conv_dilations_i();
-      if (dilation == 0) {
-        dilation = 1;
-      }
-      return lbann::make_unique<convolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-               comm, num_dims, num_output_channels,
-               dim, pad, stride, dilation, num_groups, bias);
-    }
+    LBANN_ERROR("Should have encountered the new layer factory");
   }
   if (proto_layer.has_deconvolution()) {
     const auto& params = proto_layer.deconvolution();
