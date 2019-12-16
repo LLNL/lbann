@@ -294,6 +294,10 @@ void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &
 void image_data_reader::load_list_of_samples(const std::string sample_list_file) {
   // load the sample list
   double tm1 = get_time();
+  if (! get_file_dir().empty()) {
+    m_sample_list.override_samples_dirname(get_file_dir());
+  }
+
   if (m_keep_sample_order) {
     m_sample_list.keep_sample_order(true);
     m_sample_list.load(sample_list_file, *m_comm);
@@ -308,6 +312,7 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
 
   /// Merge all of the sample lists
   m_sample_list.all_gather_packed_lists(*m_comm);
+  set_file_dir(m_sample_list.get_samples_dirname());
 
   double tm3 = get_time();
   if(is_master()) {

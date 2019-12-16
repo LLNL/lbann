@@ -32,6 +32,8 @@ struct sample_list_header {
   /// Number of excluded samples
   size_t m_excluded_sample_count;
   size_t m_num_files;
+  /// whether file_dir is overriden, and not to be read from a file header
+  bool m_is_file_dir_overriden;
   std::string m_file_dir;
   std::string m_sample_list_filename;
   std::string m_label_filename;
@@ -40,6 +42,7 @@ struct sample_list_header {
 
   void set_sample_list_type(const std::string& line1);
   void set_sample_count(const std::string& line2);
+  void override_file_dir(const std::string& fdir);
   void set_data_file_dir(const std::string& line3);
   void set_label_filename(const std::string& line4);
 
@@ -122,6 +125,7 @@ class sample_list {
 
   virtual const std::string& get_samples_filename(sample_file_id_t id) const;
 
+  void override_samples_dirname(const std::string& fdir);
   const std::string& get_samples_dirname() const;
   const std::string& get_label_filename() const;
 

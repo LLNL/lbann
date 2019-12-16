@@ -78,6 +78,7 @@ template<> inline std::string to_sample_name_t<std::string>(const std::string& s
 inline sample_list_header::sample_list_header()
   : m_is_multi_sample(false), m_is_exclusive(false),
     m_included_sample_count(0u), m_excluded_sample_count(0u), m_num_files(0u),
+    m_is_file_dir_overriden(false),
     m_file_dir(""), m_sample_list_filename(""), m_label_filename("") {
 }
 
@@ -118,7 +119,15 @@ inline void sample_list_header::set_sample_count(const std::string& line2) {
   }
 }
 
+inline void sample_list_header::override_file_dir(const std::string& fdir) {
+  m_is_file_dir_overriden = true;
+  m_file_dir = fdir;
+}
+
 inline void sample_list_header::set_data_file_dir(const std::string& line3) {
+  if (m_is_file_dir_overriden) {
+    return;
+  }
   std::stringstream header3(line3);
   header3 >> m_file_dir;
 }
@@ -296,15 +305,12 @@ inline sample_list_header sample_list<sample_name_t>
   std::string line1 = read_header_line(istrm, filename, "the exclusiveness\n");
   std::string line2 = read_header_line(istrm, filename, "the number of samples and the number of files\n");
   std::string line3 = read_header_line(istrm, filename, "the data file directory\n");
+  std::string line4 = read_header_line(istrm, filename, "the path to label/response file\n");
 
   hdr.set_sample_list_type(line1);
   hdr.set_sample_count(line2);
   hdr.set_data_file_dir(line3);
-
-  if (!hdr.is_multi_sample()) {
-    std::string line4 = read_header_line(istrm, filename, "the path to label/response file\n");
-    hdr.set_label_filename(line4);
-  }
+  hdr.set_label_filename(line4);
 
   if (hdr.get_file_dir().empty() || !check_if_dir_exists(hdr.get_file_dir())) {
     LBANN_ERROR(std::string{} + "file " + filename
@@ -472,7 +478,7 @@ inline void sample_list<sample_name_t>
     gathered_archive[p].resize(packed_sizes[p]);
     if (me == p) {
       gathered_archive[p] = archive;
-    } 
+    }
     int sz = packed_sizes[p];
     char *data = const_cast<char*>(gathered_archive[p].data());
     comm.trainer_broadcast<char>(p, data, sz);
@@ -666,13 +672,19 @@ inline const std::string& sample_list<sample_name_t>
 }
 
 template <typename sample_name_t>
-inline   const std::string& sample_list<sample_name_t>
+inline void sample_list<sample_name_t>
+::override_samples_dirname(const std::string& fdir) {
+  m_header.override_file_dir(fdir);
+}
+
+template <typename sample_name_t>
+inline const std::string& sample_list<sample_name_t>
 ::get_samples_dirname() const {
   return m_header.get_file_dir();
 }
 
 template <typename sample_name_t>
-inline   const std::string& sample_list<sample_name_t>
+inline const std::string& sample_list<sample_name_t>
 ::get_label_filename() const {
   return m_header.get_label_filename();
 }
