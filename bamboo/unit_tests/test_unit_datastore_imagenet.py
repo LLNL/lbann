@@ -1,6 +1,7 @@
 import os.path
 import re
 import sys
+import math
 import numpy as np
 import pytest
 
