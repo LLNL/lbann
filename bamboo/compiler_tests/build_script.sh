@@ -119,6 +119,7 @@ then
         -DCEREAL_DIR=${DEPENDENCY_DIR} \
         -DCNPY_DIR=${DEPENDENCY_DIR} \
         -DCATCH2_DIR=${WORKSPACE_DIR}/stable_dependencies/catch2 \
+        -DHALF_DIR=${WORKSPACE_DIR}/stable_dependencies/half \
         -DHDF5_DIR=${DEPENDENCY_DIR} \
         -DCONDUIT_DIR=${DEPENDENCY_DIR} \
         -DCUB_DIR=${DEPENDENCY_DIR} \

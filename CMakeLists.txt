@@ -177,15 +177,18 @@ set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
 # The imported target is just called "cereal". Super.
 
 # Setup the linear algebra library
-find_package(Hydrogen 1.3.1 NO_MODULE QUIET
+find_package(Hydrogen 1.3.2 NO_MODULE QUIET
   HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
   PATH_SUFFIXES lib/cmake/hydrogen
   NO_DEFAULT_PATH)
 if (NOT Hydrogen_FOUND)
-  find_package(Hydrogen 1.3.1 NO_MODULE QUIET REQUIRED)
+  find_package(Hydrogen 1.3.2 NO_MODULE QUIET REQUIRED)
 endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
+
+# Inherit half-precision stuff from Hydrogen
+set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only
 
 # Not the ideal fix, but should be fine for now.
 if (Aluminum_FOUND)
@@ -211,6 +214,11 @@ set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 # CUDA-ness of LBANN is 1:1 with Hydrogen. Iff Hydrogen has CUDA, LBANN gets CUDA.
 set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
 set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
+
+# Only used if have GPU and have CPU half.
+if (LBANN_HAS_CUDA AND LBANN_HAS_HALF)
+  set(LBANN_HAS_GPU_FP16 ${HYDROGEN_GPU_USE_FP16})
+endif ()
 
 if (LBANN_HAS_CUDA)
   enable_language(CUDA)
