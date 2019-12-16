@@ -105,7 +105,7 @@ description Layer::get_description() const {
 
   // Construct description object
   std::stringstream ss;
-  ss << get_name() << " (" << get_type() << "<" << get_datatype_name() << ">" << ")";
+  ss << get_name() << " (" << get_type() << ")";
   description desc(ss.str());
 
   // Input dimensions
@@ -199,6 +199,9 @@ description Layer::get_description() const {
   }
   desc.add("Device", ss.str());
 
+  // DataType
+  desc.add("Data type", get_datatype_name());
+
   // Freeze state
   if (is_frozen()) {
     desc.add("Frozen");
@@ -272,10 +275,6 @@ std::vector<int> Layer::get_input_dims(int input_index) const {
 
   // Get dimensions of corresponding output tensor in parent layer
   const auto num_parent_outputs = parent.get_num_children();
-  // const int parent_output_index = (std::find(parent.m_child_layers.begin(),
-  //                                            parent.m_child_layers.end(),
-  //                                            this)
-  //                                  - parent.m_child_layers.begin());
   const int parent_output_index = parent.find_child_layer_index(this);
   if (parent_output_index >= num_parent_outputs) {
     std::stringstream err;
