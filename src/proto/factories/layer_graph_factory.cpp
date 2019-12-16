@@ -189,6 +189,8 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
     }
 #endif // LBANN_HAS_GPU
 
+    const auto model_disable_gpus = proto_model.disable_cuda();
+
     // Construct layer
     std::unique_ptr<Layer> l;
 #define TEMPLATE_INSTANTIATION(TensorDataType, T_layout, T_device)      \
@@ -198,15 +200,20 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
               comm,                                                     \
               data_readers,                                             \
               num_parallel_readers,                                     \
+              model_disable_gpus,                                       \
               proto_layer);                                             \
       }                                                                 \
     } while (0)
-    TEMPLATE_INSTANTIATION(DataType, data_layout::DATA_PARALLEL, El::Device::CPU);
-    TEMPLATE_INSTANTIATION(DataType, data_layout::MODEL_PARALLEL, El::Device::CPU);
-#ifdef LBANN_HAS_GPU
-    TEMPLATE_INSTANTIATION(DataType, data_layout::DATA_PARALLEL, El::Device::GPU);
-    TEMPLATE_INSTANTIATION(DataType, data_layout::MODEL_PARALLEL, El::Device::GPU);
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device) \
+    TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \
+    TEMPLATE_INSTANTIATION(T, data_layout::MODEL_PARALLEL, Device)
+
+#define LBANN_INSTANTIATE_FLOAT_ONLY
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+
 #undef TEMPLATE_INSTANTIATION
 
     // Check that layer has been constructed

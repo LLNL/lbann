@@ -85,6 +85,12 @@ public:
   data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
   virtual ~data_type_layer() = default;
 
+  /** Get a string representing the layer datatype
+   */
+  std::string get_datatype_name() const override {
+    return TypeName<TensorDataType>();
+  };
+
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
    *  tensors.

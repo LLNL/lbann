@@ -157,12 +157,12 @@ public:
    *  If weight values are duplicated across multiple processes, they
    *  are set to the average across the processes.
    */
-  void reconcile_values();
+  void reconcile_values() override;
   /** Asynchronously reconcile weight values.
    *  If weight values are duplicated across multiple processes, they
    *  are set to the average across the processes.
    */
-  void reconcile_values(Al::request& req);
+  void reconcile_values(Al::request& req) override;
 
   // -----------------------------------------------
   // Checkpointing

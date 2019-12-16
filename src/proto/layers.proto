@@ -36,6 +36,7 @@ message Layer {
   string children = 152;
   string data_layout = 52;
   string device_allocation = 55;
+  string datatype = 57;
   string weights = 54;
   bool num_neurons_from_data_reader = 53;
   bool freeze = 5;

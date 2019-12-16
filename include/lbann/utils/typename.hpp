@@ -24,17 +24,22 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-PROTO(float);
-#ifndef LBANN_INSTANTIATE_FLOAT_ONLY
-PROTO(double);
-#endif // LBANN_INSTANTIATE_FLOAT_ONLY
+#ifndef LBANN_UTILS_TYPENAME_HPP_INCLUDED
+#define LBANN_UTILS_TYPENAME_HPP_INCLUDED
 
-// #if 0 // Don't allow HALF yet
-// #ifdef LBANN_INSTANTIATE_CPU_HALF
-// PROTO(cpu_half_type);
-// #endif
+namespace lbann {
 
-// #ifdef LBANN_INSTANTIATE_GPU_HALF
-// PROTO(gpu_half_type);
-// #endif
-// #endif // Don't allow HALF yet
+template <typename T>
+std::string TypeName();
+
+#define ADD_TYPENAME_INST(Type)                                     \
+  template <> inline std::string TypeName<Type>() { return #Type; }
+
+ADD_TYPENAME_INST(float)
+ADD_TYPENAME_INST(double)
+ADD_TYPENAME_INST(std::complex<float>)
+ADD_TYPENAME_INST(std::complex<double>)
+
+} // namespace lbann
+
+#endif // LBANN_UTILS_TYPENAME_HPP_INCLUDED
