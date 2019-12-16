@@ -35,7 +35,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/macros/misc.hpp"
+#include "lbann/utils/typename.hpp"
 #include <string>
 #include <vector>
 
@@ -110,7 +110,7 @@ public:
   inline void set_name(const std::string name) { m_name = name; }
   /** Get a string representing the layer datatype
    */
-  virtual std::string get_datatype() const {
+  virtual std::string get_datatype_name() const {
     return TypeName<DataType>();
   };
 
@@ -215,10 +215,17 @@ public:
   /** Get child layers. (const) */
   inline const std::vector<const Layer*>& get_child_layers() const { return m_child_layers; }
 
-  inline int find_layer_index(const Layer* l) const {
+  inline int find_child_layer_index(const Layer* l) const {
     return std::distance(m_child_layers.begin(),
                          std::find(m_child_layers.begin(),
                                    m_child_layers.end(),
+                                   l));
+  }
+
+  inline int find_parent_layer_index(const Layer* l) const {
+    return std::distance(m_parent_layers.begin(),
+                         std::find(m_parent_layers.begin(),
+                                   m_parent_layers.end(),
                                    l));
   }
 

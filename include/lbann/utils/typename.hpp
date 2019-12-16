@@ -24,8 +24,8 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_MACROS_MISC_HPP_INCLUDED
-#define LBANN_MACROS_MISC_HPP_INCLUDED
+#ifndef LBANN_UTILS_TYPENAME_HPP_INCLUDED
+#define LBANN_UTILS_TYPENAME_HPP_INCLUDED
 
 namespace lbann {
 
@@ -42,4 +42,4 @@ ADD_TYPENAME_INST(std::complex<double>)
 
 } // namespace lbann
 
-#endif // LBANN_MACROS_MISC_HPP_INCLUDED
+#endif // LBANN_UTILS_TYPENAME_HPP_INCLUDED

@@ -2,7 +2,6 @@
 set_full_path(THIS_DIR_HEADERS
   instantiate.hpp
   instantiate_device.hpp
-  misc.hpp
   )
 
 # Propagate the files up the tree

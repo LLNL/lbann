@@ -87,7 +87,7 @@ public:
 
   /** Get a string representing the layer datatype
    */
-  std::string get_datatype() const override {
+  std::string get_datatype_name() const override {
     return TypeName<TensorDataType>();
   };
 

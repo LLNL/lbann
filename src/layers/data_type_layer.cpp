@@ -289,10 +289,7 @@ auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const 
   if(m_child_layers.empty()) {
     LBANN_ERROR("This layer has no children");
   }
-  const int child_index = std::distance(m_child_layers.begin(),
-                                        std::find(m_child_layers.begin(),
-                                                  m_child_layers.end(),
-                                                  &child));
+  const int child_index = find_child_layer_index(&child);
   if (child_index >= get_num_children()) {
     std::stringstream err;
     err << "attempted to get activation tensor of "
@@ -305,10 +302,7 @@ auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const 
 }
 template <typename TensorDataType>
 auto data_type_layer<TensorDataType>::get_error_signals(const Layer& parent) const -> const BaseDistMat& {
-  const int parent_index = std::distance(m_parent_layers.begin(),
-                                         std::find(m_parent_layers.begin(),
-                                                   m_parent_layers.end(),
-                                                   &parent));
+  const int parent_index = find_parent_layer_index(&parent);
   if (parent_index >= get_num_parents()) {
     std::stringstream err;
     err << "attempted to get error signal tensor of "

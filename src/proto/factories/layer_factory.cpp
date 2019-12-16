@@ -27,7 +27,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
 #include "lbann/utils/factory.hpp"
-#include "lbann/macros/misc.hpp"
+#include "lbann/utils/typename.hpp"
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/layers/activations/activations.hpp"

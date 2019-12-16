@@ -105,7 +105,7 @@ description Layer::get_description() const {
 
   // Construct description object
   std::stringstream ss;
-  ss << get_name() << " (" << get_type() << "<" << get_datatype() << ">" << ")";
+  ss << get_name() << " (" << get_type() << "<" << get_datatype_name() << ">" << ")";
   description desc(ss.str());
 
   // Input dimensions
@@ -276,7 +276,7 @@ std::vector<int> Layer::get_input_dims(int input_index) const {
   //                                            parent.m_child_layers.end(),
   //                                            this)
   //                                  - parent.m_child_layers.begin());
-  const int parent_output_index = parent.find_layer_index(this);
+  const int parent_output_index = parent.find_child_layer_index(this);
   if (parent_output_index >= num_parent_outputs) {
     std::stringstream err;
     err << "layer \"" << parent.get_name() << "\" is a parent of "
