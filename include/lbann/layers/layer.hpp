@@ -42,7 +42,7 @@
 /** @brief A utility macro for easily defining default-constructed sub-class
  *  builders.*/
 #define LBANN_DEFINE_LAYER_BUILDER(Class, FunctionName)   \
-  extern std::unique_ptr<Layer> FunctionName(lbann_comm*, \
+  std::unique_ptr<Layer> FunctionName(lbann_comm*, \
     const google::protobuf::Message&, bool)
 
 // Forward-declare protobuf classes
