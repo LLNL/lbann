@@ -160,11 +160,16 @@ def create_test_func(baseline_test_func, datastore_test_func):
                     datastore_metrics.append(float(match.group(1)))
 
         # Check if metrics are same in baseline and data store experiments
+        # Note: "Print statistics" callback will print up to 6 digits
+        # of metric values.
         assert len(baseline_metrics) == len(datastore_metrics), \
             'baseline and data store experiments did not run for same number of epochs'
         for i in range(len(datastore_metrics)):
-            tol = 8 * baseline_metrics[i] * np.finfo(np.float32).eps
-            assert abs(baseline_metrics[i] - datastore_metrics[i]) < tol, \
+            x = baseline_metrics[i]
+            xhat = datastore_metrics[i]
+            eps = np.finfo(np.float32).eps
+            ceillogx = int(math.ceil(math.log10(x)))
+            assert abs(x-xhat) < max(8*eps*x, 1.5*10**(ceillogx-6)), \
                 'found large discrepancy in metrics for baseline and data store experiments'
 
     # Return test function from factory function
