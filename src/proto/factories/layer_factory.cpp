@@ -125,31 +125,29 @@ std::string get_layer_datatype_from_pbuf(const lbann_data::Layer& proto_layer) {
 data_layout get_layer_data_layout_from_pbuf(const lbann_data::Layer& proto_layer) {
   // Get parameters from prototext
   const auto& layout_str = proto_layer.data_layout();
-  data_layout layout = data_layout::invalid;
-  if (layout_str.empty())             { layout = data_layout::DATA_PARALLEL; }
-  if (layout_str == "data_parallel")  { layout = data_layout::DATA_PARALLEL; }
-  if (layout_str == "model_parallel") { layout = data_layout::MODEL_PARALLEL; }
-  return layout;
+  if (layout_str.empty())             { return data_layout::DATA_PARALLEL; }
+  if (layout_str == "data_parallel")  { return data_layout::DATA_PARALLEL; }
+  if (layout_str == "model_parallel") { return data_layout::MODEL_PARALLEL; }
+  return data_layout::invalid;
 }
 
 El::Device get_layer_device_from_pbuf(const lbann_data::Layer& proto_layer,
                                       bool GPUs_disabled) {
   // Get parameters from prototext
-  El::Device device = El::Device::CPU;
 #ifdef LBANN_HAS_GPU
   const auto& device_str = proto_layer.device_allocation();
   if (!GPUs_disabled) {
     if (device_str == "gpu" || device_str.empty()) {
-      device = El::Device::GPU;
+      return El::Device::GPU;
     }
-    if (device_str == "cpu") { device = El::Device::CPU; }
+    if (device_str == "cpu") { return El::Device::CPU; }
     if (proto_layer.has_input()) {
       // Input layers must be on CPU
-      device = El::Device::CPU;
+      return El::Device::CPU;
     }
   }
 #endif // LBANN_HAS_GPU
-  return device;
+  return El::Device::CPU;
 }
 
 std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
