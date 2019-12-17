@@ -458,7 +458,6 @@ endif (LBANN_WITH_CONDUIT)
 
 if (LBANN_WITH_DISTCONV)
   message(STATUS "DISTCONV requested")
-  find_package(P2P)
   find_package(DISTCONV)
   set(LBANN_HAS_DISTCONV ${DISTCONV_FOUND})
   if (NOT LBANN_HAS_DISTCONV)
@@ -469,15 +468,21 @@ if (LBANN_WITH_DISTCONV)
       "Alternatively, build with LBANN_WITH_DISTCONV=OFF.")
     set(LBANN_WITH_DISTCONV OFF)
   endif(NOT LBANN_HAS_DISTCONV)
-  if (NOT P2P_FOUND)
-    message(FATAL_ERROR
-      "Requested LBANN_WITH_DISTCONV but its required package, P2P, not found. "
-      "Distconv is now disabled. "
-      "Try specifying P2P_DIR as the root of a P2P install. "
-      "Alternatively, build with LBANN_WITH_DISTCONV=OFF.")
-    set(LBANN_WITH_DISTCONV OFF)
-  endif(NOT P2P_FOUND)
 endif (LBANN_WITH_DISTCONV)
+
+if (LBANN_WITH_P2P)
+  message(STATUS "P2P requested")
+  find_package(P2P)
+  set(LBANN_HAS_P2P ${P2P_FOUND})
+  if (NOT LBANN_HAS_P2P)
+    message(WARNING
+      "Requested LBANN_WITH_P2P but P2P not found. "
+      "P2P is now disabled. "
+      "Try specifying P2P_DIR as the root of a P2P install. "
+      "Alternatively, build with LBANN_WITH_P2P=OFF.")
+    set(LBANN_WITH_P2P OFF)
+  endif ()
+endif ()
 
 if (LBANN_WITH_UNIT_TESTING)
   find_package(Catch2 2.0.0 CONFIG QUIET
@@ -559,6 +564,9 @@ endif ()
 
 if (LBANN_HAS_DISTCONV)
   target_link_libraries(lbann PUBLIC DISTCONV::DISTCONV)
+endif ()
+
+if (LBANN_HAS_P2P)
   target_link_libraries(lbann PUBLIC P2P::P2P)
 endif ()
 

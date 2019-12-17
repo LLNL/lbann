@@ -50,6 +50,7 @@
 
 /* Defined if LBANN has Distconv */
 #cmakedefine LBANN_HAS_DISTCONV
+#cmakedefine LBANN_HAS_P2P
 
 #ifdef LBANN_HAS_DISTCONV
 #cmakedefine LBANN_DISTCONV_NUM_DIMS @LBANN_DISTCONV_NUM_DIMS@
