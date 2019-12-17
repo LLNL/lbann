@@ -82,6 +82,10 @@ private:
   /** View into output tensor. */
   std::unique_ptr<AbsDistMatrixType> m_output_v;
 
+  template <typename U>
+  friend void fp_compute_impl(concatenate_layer<U,Layout,Device>&, size_t);
+  template <typename U>
+  friend void bp_compute_impl(concatenate_layer<U,Layout,Device>&, size_t);
 };
 
 // =========================================================
@@ -212,6 +216,15 @@ void concatenate_layer<TensorDataType,Layout,Device>::setup_dims() {
     m_concat_points.push_back(output_dims[m_concat_dim]);
   }
 
+  // Model-parallel implementation only supports flat data
+  if (Layout == data_layout::MODEL_PARALLEL
+      && std::accumulate(&output_dims[0], &output_dims[m_concat_dim], 1, std::multiplies<int>()) > 1) {
+    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+                "attempted to concatenate along dimension ",m_concat_dim,", ",
+                "but model-parallel concatenate layer "
+                "only supports flat data");
+  }
+
   // Update output dimensions
   this->set_output_dims(output_dims);
 
@@ -219,63 +232,16 @@ void concatenate_layer<TensorDataType,Layout,Device>::setup_dims() {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
-  const auto& num_inputs = this->get_num_parents();
-  const auto& output_dims = this->get_output_dims();
-
-  // Initialize output tensor
+  const auto& input0 = this->get_prev_activations(0);
   auto& output = this->get_activations();
   output.Empty(false);
-  if (num_inputs > 1) {
-    output.AlignWith(this->get_prev_activations());
-    output.Resize(this->get_output_size(), mini_batch_size);
-  } else {
-    El::LockedView(output, this->get_prev_activations());
-    return;
+  if (this->get_num_parents() == 1) {
+    El::LockedView(output, input0);
   }
-
-  // Divide output tensor into unit slices along concat dimension
-  // Note: Each unit slice is divided into contiguous "unit blocks"
-  const auto& output_num_unit_slices = output_dims[m_concat_dim];
-  const auto& blocks_per_slice
-    = (m_concat_dim > 0 ?
-       std::accumulate(&output_dims[0], &output_dims[m_concat_dim],
-                       1, std::multiplies<int>()) :
-       1);
-  const auto& unit_block_size
-    = std::accumulate(output_dims.begin() + m_concat_dim + 1,
-                      output_dims.end(),
-                      1, std::multiplies<int>());
-  const auto& output_block_stride = (output_num_unit_slices
-                                     * unit_block_size);
-
-  // Populate slices of output tensor with input tensors
-  for (int i = 0; i < num_inputs; ++i) {
-    const auto& input_dims = this->get_input_dims(i);
-    auto& input = this->get_prev_activations(i);
-
-    // Divide input tensor into unit slices
-    const auto& input_num_unit_slices = input_dims[m_concat_dim];
-
-    // Merge unit slices
-    const auto& block_size = input_num_unit_slices * unit_block_size;
-    const auto& output_block_offset = m_concat_points[i] * unit_block_size;
-
-    // Populate output tensor one block at a time
-    for (int block = 0; block < blocks_per_slice; ++block) {
-      const auto& input_offset = block * block_size;
-      const auto& output_offset = (output_block_offset
-                                   + block * output_block_stride);
-      El::LockedView(*m_input_v, input,
-                     El::IR(input_offset, input_offset + block_size),
-                     El::ALL);
-      El::View(*m_output_v, output,
-               El::IR(output_offset, output_offset + block_size),
-               El::ALL);
-      El::Copy(*m_input_v, *m_output_v);
-    }
-
+  else {
+    output.AlignWith(input0);
+    output.Resize(this->get_output_size(), input0.Width());
   }
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -339,10 +305,6 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inpu
 
   }
 
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
