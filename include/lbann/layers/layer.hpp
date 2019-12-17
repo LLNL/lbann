@@ -35,8 +35,15 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/typename.hpp"
 #include <string>
 #include <vector>
+
+/** @brief A utility macro for easily defining default-constructed sub-class
+ *  builders.*/
+#define LBANN_DEFINE_LAYER_BUILDER(Class, FunctionName)   \
+  std::unique_ptr<Layer> FunctionName(lbann_comm*, \
+    const google::protobuf::Message&, bool)
 
 // Forward-declare protobuf classes
 namespace lbann_data {
@@ -101,6 +108,11 @@ public:
    *  human-readable, name.
    */
   inline void set_name(const std::string name) { m_name = name; }
+  /** Get a string representing the layer datatype
+   */
+  virtual std::string get_datatype_name() const {
+    return TypeName<DataType>();
+  };
 
   /** Human-readable description. */
   virtual description get_description() const;
@@ -203,10 +215,19 @@ public:
   /** Get child layers. (const) */
   inline const std::vector<const Layer*>& get_child_layers() const { return m_child_layers; }
 
-  inline int find_layer_index(const Layer* l) const {
-    return (std::find(m_child_layers.begin(),
-                      m_child_layers.end(),
-                      l) - m_child_layers.begin()); }
+  inline int find_child_layer_index(const Layer* l) const {
+    return std::distance(m_child_layers.begin(),
+                         std::find(m_child_layers.begin(),
+                                   m_child_layers.end(),
+                                   l));
+  }
+
+  inline int find_parent_layer_index(const Layer* l) const {
+    return std::distance(m_parent_layers.begin(),
+                         std::find(m_parent_layers.begin(),
+                                   m_parent_layers.end(),
+                                   l));
+  }
 
   /** Get number of parent layers. */
   inline int get_num_parents() const { return get_parent_layers().size(); }
