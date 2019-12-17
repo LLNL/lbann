@@ -862,7 +862,11 @@ void data_reader_jag_conduit::load() {
   select_subset_of_data();
 }
 
-void data_reader_jag_conduit::preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node) {
+void data_reader_jag_conduit::preload_helper(
+  const data_reader_jag_conduit::file_handle_t& h,
+  const std::string &sample_name,
+  const std::string &field_name,
+  int data_id, conduit::Node &node) {
   const std::string path = sample_name + field_name;
   const std::string key2 = '/' + LBANN_DATA_ID_STR(data_id) + field_name;
   read_node(h, path, node[key2]);
