@@ -1,0 +1,6 @@
+CONDUIT_HDF5_EXCLUSION
+1651 0 3
+/p/gpfs1/brainusr/datasets/ras_lipid
+/9/0/pfpatch_000001384524_sig1.bin 520 0
+/12/2/pfpatch_000001752165_sig1.bin 586 0
+/8/3/pfpatch_000001304417_sig1.bin 535 0

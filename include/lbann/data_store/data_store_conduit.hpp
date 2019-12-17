@@ -87,7 +87,7 @@ class data_store_conduit {
   void setup(int mini_batch_size);
 
   // TODO FIXME
-  void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
+//  void check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset);
 
   /** @brief Returns the conduit Node associated with the data_id */
   const conduit::Node & get_conduit_node(int data_id) const;

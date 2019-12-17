@@ -1,6 +1,11 @@
 # Add a target to control building all the utilities
 add_custom_target(jag-utils)
 
+add_executable(sample_list_reproducer
+  EXCLUDE_FROM_ALL sample_list_reproducer.cpp)
+target_link_libraries(sample_list_reproducer lbann)
+add_dependencies(jag-utils sample_list_reproducer)
+
 add_executable(compute_pilot2_normalization
   EXCLUDE_FROM_ALL compute_pilot2_normalization.cpp)
 target_link_libraries(compute_pilot2_normalization lbann)
@@ -98,7 +103,7 @@ add_dependencies(jag-utils convert_npz_to_conduit)
 
 # Install the binaries
 install(
-  TARGETS select_samples build_sample_id_mapping build_index compute_pilot2_normalization convert_npz_to_conduit
+  TARGETS select_samples build_sample_id_mapping build_index compute_pilot2_normalization convert_npz_to_conduit sample_list_reproducer
   OPTIONAL
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

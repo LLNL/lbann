@@ -691,6 +691,7 @@ int data_store_conduit::get_index_owner(int idx) {
   return m_owner[idx];
 }
 
+#if o
 void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string sample_list_file, size_t stride, size_t offset) {
 //TODO: this is junky, and isn't called anywhere; rethink!
   if (comm->am_world_master()) {
@@ -838,6 +839,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
 
   comm->trainer_barrier();
 }
+#endif
 
 bool data_store_conduit::has_conduit_node(int data_id) const {
   std::unordered_map<int, conduit::Node>::const_iterator t = m_data.find(data_id);
