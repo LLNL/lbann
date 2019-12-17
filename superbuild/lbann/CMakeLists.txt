@@ -120,7 +120,7 @@ endif ()
 
 # Distconv
 if (TARGET P2P)
-  option(LBANN_WITH_P2P "Whether to use P2P in LBANN" ON)
+  option(LBANN_WITH_P2P "Whether to use P2P in LBANN" OFF)
   if (LBANN_WITH_P2P)
     set(LBANN_SB_FWD_LBANN_P2P_DIR "${P2P_DIR}"
       CACHE STRING "The path to P2P for LBANN.")
