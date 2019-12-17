@@ -169,12 +169,14 @@ LBANN_DEFINE_LAYER_BUILDER(convolution);
 #define PROTO_DEVICE(T, Device) \
   extern template class convolution_layer<T, data_layout::DATA_PARALLEL, Device>;
 
+#define LBANN_INSTANTIATE_CPU_HALF_BVE
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #undef LBANN_INSTANTIATE_CPU_HALF
 #undef LBANN_INSTANTIATE_GPU_HALF
+#undef LBANN_INSTANTIATE_CPU_HALF_BVE
 
 #endif // LBANN_CONVOLUTION_LAYER_INSTANTIATE
 

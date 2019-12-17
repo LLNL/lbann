@@ -640,7 +640,7 @@ protected:
     if (m_bias_scaling_factor != TensorDataType(0)
         && local_output.Height() > 0
         && local_output.Width() > 0) {
-      const TensorDataType one = 1;
+      const TensorDataType one = TensorDataType(1);
       const auto& bias = this->get_data_type_weights(1).get_values();
       CHECK_CUDNN(cudnnAddTensor(cudnn::get_handle(),
                                  &m_bias_scaling_factor,
@@ -951,8 +951,8 @@ protected:
         for (int channel = 0; channel < num_output_channels; ++channel) {
           const El::Int row_start = channel * num_per_output_channel;
           const El::Int row_end = (channel+1) * num_per_output_channel;
-          TensorDataType sum = 0;
-          TensorDataType correction = 0;
+          TensorDataType sum = TensorDataType(0);
+          TensorDataType correction = TensorDataType(0);
           for (El::Int col = 0; col < local_width; ++col) {
             for (El::Int row = row_start; row < row_end; ++row) {
               TensorDataType term = local_gradient_wrt_output(row, col);
@@ -984,7 +984,7 @@ protected:
     const int k = (using_transposed_convolution ?
                    this->get_input_size() / num_input_channels :
                    this->get_output_size() / num_output_channels);
-    TensorDataType dst_scale = 0, gradient_scale = 0;
+    TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
     auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
     El::Scale(dst_scale, kernel_gradient);
@@ -1233,12 +1233,14 @@ private:
 #define PROTO_DEVICE(T, Device) \
   extern template class base_convolution_layer<DataType, Device>
 
+#define LBANN_INSTANTIATE_CPU_HALF_BVE
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
 #undef LBANN_INSTANTIATE_CPU_HALF
 #undef LBANN_INSTANTIATE_GPU_HALF
+#undef LBANN_INSTANTIATE_CPU_HALF_BVE
 
 #endif // LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
 

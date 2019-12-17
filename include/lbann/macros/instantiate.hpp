@@ -29,12 +29,14 @@ PROTO(float);
 PROTO(double);
 #endif // LBANN_INSTANTIATE_FLOAT_ONLY
 
-// #if 0 // Don't allow HALF yet
-// #ifdef LBANN_INSTANTIATE_CPU_HALF
-// PROTO(cpu_half_type);
-// #endif
+#ifdef LBANN_INSTANTIATE_CPU_HALF_BVE
+#ifdef LBANN_INSTANTIATE_CPU_HALF
+PROTO(cpu_fp16);
+#endif
+#endif
 
-// #ifdef LBANN_INSTANTIATE_GPU_HALF
-// PROTO(gpu_half_type);
-// #endif
-// #endif // Don't allow HALF yet
+#ifdef LBANN_INSTANTIATE_GPU_HALF_BVE
+#ifdef LBANN_INSTANTIATE_GPU_HALF
+PROTO(gpu_half_type);
+#endif
+#endif

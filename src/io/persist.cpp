@@ -31,10 +31,10 @@
 #include <cstring>
 #include <cstdio>
 
-#include "lbann/utils/exception.hpp"
-#include "lbann/io/file_io.hpp"
 #define LBANN_PERSIST_INSTANTIATE
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/io/file_io.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>

@@ -40,7 +40,7 @@ template <typename U>
 class entrywise_layer_tensor_manager;
 }
 
-using supported_layer_data_type = El::TypeList<float, double>;
+using supported_layer_data_type = El::TypeList<fp16, cpu_fp16, float, double>;
 
 template <typename T, typename List> struct IsElement;
 
@@ -328,12 +328,18 @@ private:
 #define PROTO(T)                           \
   extern template class data_type_layer<T>
 
+#define LBANN_INSTANTIATE_CPU_HALF_BVE
+
+
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #undef LBANN_INSTANTIATE_CPU_HALF
 #undef LBANN_INSTANTIATE_GPU_HALF
+
+#undef LBANN_INSTANTIATE_CPU_HALF_BVE
+
 #endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
 
 } // namespace lbann
