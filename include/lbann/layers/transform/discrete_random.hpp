@@ -123,8 +123,14 @@ class discrete_random_layer : public transform_layer<TensorDataType> {
 };
 
 #ifndef LBANN_DISCRETE_RANDOM_LAYER_INSTANTIATE
-extern template class discrete_random_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                           \
+  extern template class discrete_random_layer< \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
 #endif // LBANN_DISCRETE_RANDOM_LAYER_INSTANTIATE
 } // namespace lbann
 

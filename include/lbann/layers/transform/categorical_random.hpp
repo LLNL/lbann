@@ -74,7 +74,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
     // Initialize output and random numbers
     const auto& mode = this->m_model->get_execution_context().get_execution_mode();
     El::Zero(local_output);
-    StarVCMat<El::Device::CPU> rand_mat(input.Grid(), input.Root());
+    StarVCMatDT<TensorDataType, El::Device::CPU> rand_mat(input.Grid(), input.Root());
     if (mode == execution_mode::training) {
       uniform_fill(rand_mat, 1, width, TensorDataType(0.5), TensorDataType(0.5));
     }
@@ -113,8 +113,15 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
 };
 
 #ifndef LBANN_CATEGORICAL_RANDOM_LAYER_INSTANTIATE
-extern template class categorical_random_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+
+#define PROTO(T)                           \
+  extern template class categorical_random_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+
 #endif // LBANN_CATEGORICAL_RANDOM_LAYER_INSTANTIATE
 
 } // namespace lbann
