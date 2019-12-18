@@ -199,10 +199,10 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
 }
 
 // Explicit instantiation
-#define PROTO(T)                                    \
-  template class concatenate_layer<                 \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class concatenate_layer<                 \
+#define PROTO(T)                                        \
+  template class concatenate_layer<                     \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;    \
+  template class concatenate_layer<                     \
     T, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 #define LBANN_INSTANTIATE_CPU_HALF

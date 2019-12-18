@@ -82,6 +82,9 @@ private:
   /** View into output tensor. */
   std::unique_ptr<AbsDistMatrixType> m_output_v;
 
+  /** Workspace buffer for asynchronous GPU memory transfers. */
+  std::vector<unsigned char> m_workspace;
+
   template <typename U>
   friend void fp_compute_impl(concatenate_layer<U,Layout,Device>&, size_t);
   template <typename U>
