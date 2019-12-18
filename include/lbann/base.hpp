@@ -147,9 +147,15 @@ using EvalType = double;
 /// Distributed matrix format
 enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid};
 
+/// @todo This should move to hydrogen
+std::string to_string(El::Device const& d);
+El::Device device_from_string(std::string const& str);
+
 /// Data layout that is optimized for different modes of parallelism
 enum class data_layout {MODEL_PARALLEL, DATA_PARALLEL, invalid};
 matrix_format data_layout_to_matrix_format(data_layout layout);
+std::string to_string(data_layout const& dl);
+data_layout data_layout_from_string(std::string const& str);
 
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
