@@ -206,12 +206,12 @@ public:
     // Matrices
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
     m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
-    El::Fill(*m_workspace, DataType{1});
+    El::Fill(*m_workspace, TensorDataType{1});
 
     El::Gemv(El::NORMAL,
-             DataType{1}, local_gradient_wrt_output, *m_workspace,
-             DataType{0}, m_gradient->Matrix());
-    opt->add_to_gradient(*m_gradient, DataType{1}, true);
+             TensorDataType{1}, local_gradient_wrt_output, *m_workspace,
+             TensorDataType{0}, m_gradient->Matrix());
+    opt->add_to_gradient(*m_gradient, TensorDataType{1}, true);
 
     // Clean up
     m_workspace->Empty();
