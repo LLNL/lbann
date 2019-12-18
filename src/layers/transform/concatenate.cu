@@ -26,22 +26,13 @@
 
 #define LBANN_CONCATENATE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/concatenate.hpp"
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
 namespace {
 
-/** @brief Array with fixed type and size. */
-template <typename T, size_t N>
-struct array {
-  T vals[N];
-  inline __host__ __device__ T& operator[](size_t i) {
-    return vals[i];
-  }
-  inline __host__ __device__ const T& operator[](size_t i) const {
-    return vals[i];
-  }
-};
+using dim4 = cuda::array<size_t, 4>;
 
 /**
  *  Block dimensions: bsize x 1 x 1
@@ -52,10 +43,10 @@ template <typename T>
 __global__ void concat4d_kernel(
   size_t num_inputs,
   const T* __restrict__ * __restrict__ input_buffer_list,
-  const array<size_t,4>* __restrict__ input_dims_list,
-  const array<size_t,4>* __restrict__ input_strides_list,
+  const dim4* __restrict__ input_dims_list,
+  const dim4* __restrict__ input_strides_list,
   T* __restrict__ output_buffer,
-  array<size_t,4> output_strides,
+  dim4 output_strides,
   const size_t* __restrict__ output_offset_list) {
 
   // Indices
@@ -77,7 +68,7 @@ __global__ void concat4d_kernel(
     for (size_t i=gidx; i<input_size; i+=nthreadsx) {
 
       // Get position in input tensor
-      array<size_t,4> pos;
+      dim4 pos;
       size_t pos_flat = i;
       #pragma unroll
       for (int d=3; d>=0; --d) {
@@ -143,7 +134,7 @@ void fp_compute_impl(
   // Get dimensions and strides for each input tensor
   const size_t num_inputs = l.get_num_parents();
   std::vector<const TensorDataType*> input_buffer_list;
-  std::vector<array<size_t,4>> input_dims_list, input_strides_list;
+  std::vector<dim4> input_dims_list, input_strides_list;
   size_t max_input_size = 0;
   for (size_t i=0; i<num_inputs; ++i) {
     const auto& input = l.get_prev_activations(i);
@@ -174,7 +165,7 @@ void fp_compute_impl(
   }
 
   // Get strides for output tensor
-  array<size_t,4> output_strides;
+  dim4 output_strides;
   auto& output = l.get_activations();
   {
     const auto& output_dims = l.get_output_dims();
@@ -211,19 +202,19 @@ void fp_compute_impl(
   // Pack tensor data into a CPU buffer
   l.m_workspace.resize(
     sizeof(TensorDataType*) * input_buffer_list.size()
-    + sizeof(array<size_t,4>) * input_dims_list.size()
-    + sizeof(array<size_t,4>) * input_strides_list.size()
+    + sizeof(dim4) * input_dims_list.size()
+    + sizeof(dim4) * input_strides_list.size()
     + sizeof(size_t) * output_offset_list.size());
   size_t pos = 0;
   std::memcpy(&l.m_workspace[pos], input_buffer_list.data(),
               sizeof(TensorDataType*) * input_buffer_list.size());
   pos += sizeof(TensorDataType*) * input_buffer_list.size();
   std::memcpy(&l.m_workspace[pos], input_dims_list.data(),
-              sizeof(array<size_t,4>) * input_dims_list.size());
-  pos += sizeof(array<size_t,4>) * input_dims_list.size();
+              sizeof(dim4) * input_dims_list.size());
+  pos += sizeof(dim4) * input_dims_list.size();
   std::memcpy(&l.m_workspace[pos], input_strides_list.data(),
-              sizeof(array<size_t,4>) * input_strides_list.size());
-  pos += sizeof(array<size_t,4>) * input_strides_list.size();
+              sizeof(dim4) * input_strides_list.size());
+  pos += sizeof(dim4) * input_strides_list.size();
   std::memcpy(&l.m_workspace[pos], output_offset_list.data(),
               sizeof(size_t) * output_offset_list.size());
   pos += sizeof(size_t) * output_offset_list.size();
@@ -242,11 +233,11 @@ void fp_compute_impl(
     = reinterpret_cast<const TensorDataType**>(device_workspace_ptr+pos);
   pos += sizeof(TensorDataType*) * input_buffer_list.size();
   const auto& device_input_dims_list
-    = reinterpret_cast<const array<size_t,4>*>(device_workspace_ptr+pos);
-  pos += sizeof(array<size_t,4>) * input_dims_list.size();
+    = reinterpret_cast<const dim4*>(device_workspace_ptr+pos);
+  pos += sizeof(dim4) * input_dims_list.size();
   const auto& device_input_strides_list
-    = reinterpret_cast<const array<size_t,4>*>(device_workspace_ptr+pos);
-  pos += sizeof(array<size_t,4>) * input_strides_list.size();
+    = reinterpret_cast<const dim4*>(device_workspace_ptr+pos);
+  pos += sizeof(dim4) * input_strides_list.size();
   const auto& device_output_offset_list
     = reinterpret_cast<const size_t*>(device_workspace_ptr+pos);
   pos += sizeof(size_t) * output_offset_list.size();
