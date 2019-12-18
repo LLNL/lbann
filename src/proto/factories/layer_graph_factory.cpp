@@ -200,6 +200,8 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
                 ? El::Device::GPU
                 : device_from_string(device_str));
     }
+#else
+    (void) model_disable_gpus;
 #endif // LBANN_HAS_GPU
 
     auto proto_datatype = proto_layer.datatype();
