@@ -930,6 +930,9 @@ void data_reader_jag_conduit::do_preload_data_store() {
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {
   // load the sample list
   double tm1 = get_time();
+#ifdef _USE_IO_HANDLE_
+  m_sample_list.setup("hdf5", "/");
+#endif
   m_sample_list.load(sample_list_file, stride, offset);
   double tm2 = get_time();
 

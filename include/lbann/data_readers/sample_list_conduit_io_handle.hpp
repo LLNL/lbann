@@ -6,6 +6,8 @@
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_handle.hpp"
 #include <utility>
+#include <locale>
+#include <algorithm>
 
 namespace lbann {
 
@@ -24,18 +26,26 @@ class sample_list_conduit_io_handle : public sample_list_open_files<sample_name_
   ~sample_list_conduit_io_handle() override;
 
   bool is_file_handle_valid(const file_handle_t& h) const override;
+  void setup(const std::string& protocol, const std::string& root_path);
 
  protected:
   void obtain_sample_names(file_handle_t& h, std::vector<std::string>& sample_names) const override;
   file_handle_t open_file_handle_for_read(const std::string& path) override;
   void close_file_handle(file_handle_t& h) override;
   void clear_file_handle(file_handle_t& h) override;
+
+  /// conduit io_handle protocol (e.g, hdf5, bin, json)
+  std::string m_protocol;
+  /// root path in case of the path-based protocol (hdf5)
+  std::string m_root_path;
 };
 
 
 template <typename sample_name_t>
 inline sample_list_conduit_io_handle<sample_name_t>::sample_list_conduit_io_handle()
-: sample_list_open_files<sample_name_t, file_handle_t>() {}
+: sample_list_open_files<sample_name_t, file_handle_t>(),
+  m_protocol(""), m_root_path("")
+{}
 
 template <typename sample_name_t>
 inline sample_list_conduit_io_handle<sample_name_t>::~sample_list_conduit_io_handle() {
@@ -51,10 +61,24 @@ inline sample_list_conduit_io_handle<sample_name_t>::~sample_list_conduit_io_han
 
 template <typename sample_name_t>
 inline void sample_list_conduit_io_handle<sample_name_t>
+::setup(const std::string& protocol, const std::string& root_path) {
+  m_protocol = protocol;
+  std::transform(m_protocol.begin(), m_protocol.end(), m_protocol.begin(),
+                 [](unsigned char c){ return std::tolower(c); });
+
+  m_root_path = root_path;
+}
+
+template <typename sample_name_t>
+inline void sample_list_conduit_io_handle<sample_name_t>
 ::obtain_sample_names(sample_list_conduit_io_handle<sample_name_t>::file_handle_t& h, std::vector<std::string>& sample_names) const {
   sample_names.clear();
   if (h != nullptr) {
-    h->list_child_names("/", sample_names);
+    if (m_root_path.empty()) {
+      h->list_child_names(sample_names);
+    } else {
+      h->list_child_names(m_root_path, sample_names);
+    }
   }
 }
 
@@ -93,7 +117,11 @@ template <typename sample_name_t>
 inline typename sample_list_conduit_io_handle<sample_name_t>::file_handle_t sample_list_conduit_io_handle<sample_name_t>
 ::open_file_handle_for_read(const std::string& file_path) {
   file_handle_t h = new conduit::relay::io::IOHandle;
-  h->open(file_path, "hdf5");
+  if (m_protocol == "bin") {
+    h->open(file_path);
+  } else {
+    h->open(file_path, m_protocol);
+  }
   return h;
 }
 
