@@ -118,7 +118,7 @@ def construct_model(lbann):
     y = lbann.MeanSquaredError(x0, x1, data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel layout, unbiased'))
+    metrics.append(lbann.Metric(z, name='model-parallel layout'))
 
     # NumPy implementation
     vals = []
