@@ -161,11 +161,8 @@ protected:
 
 };
 
-template <typename TensorDataType,
-          data_layout Layout = data_layout::DATA_PARALLEL,
-          El::Device Device = El::Device::CPU>
-std::unique_ptr<Layer> build_convolution_layer_from_pbuf(
-  lbann_comm*, lbann_data::Layer const&);
+// Builder function
+LBANN_DEFINE_LAYER_BUILDER(convolution);
 
 #ifndef LBANN_CONVOLUTION_LAYER_INSTANTIATE
 

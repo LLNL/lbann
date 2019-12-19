@@ -262,9 +262,7 @@ private:
 };
 
 // Builder function
-template <typename TensorDataType, data_layout layout, El::Device device>
-std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& layer_msg);
+LBANN_DEFINE_LAYER_BUILDER(fully_connected);
 
 #ifndef LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 
