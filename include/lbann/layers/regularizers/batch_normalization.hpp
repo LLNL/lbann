@@ -204,14 +204,14 @@ protected:
 
   void setup_matrices(const El::Grid& grid) override {
     regularizer_layer<TensorDataType>::setup_matrices(grid);
-    m_mean_and_var.reset(new StarMat<Dev>(grid));
-    m_mean_v.reset(new StarMat<Dev>(grid));
-    m_var_v.reset(new StarMat<Dev>(grid));
-    m_mean_and_var_gradient.reset(new StarMat<Dev>(grid));
-    m_mean_gradient_v.reset(new StarMat<Dev>(grid));
-    m_var_gradient_v.reset(new StarMat<Dev>(grid));
-    m_scale_gradient.reset(new StarMat<Dev>(grid));
-    m_bias_gradient.reset(new StarMat<Dev>(grid));
+    m_mean_and_var.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_mean_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_var_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_mean_and_var_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_mean_gradient_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_var_gradient_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_scale_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_bias_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
   }
 
   void setup_dims() override {
@@ -352,12 +352,15 @@ protected:
 };
 
 #ifndef LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
-extern template class batch_normalization_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class batch_normalization_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class batch_normalization_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 
 } // namespace lbann

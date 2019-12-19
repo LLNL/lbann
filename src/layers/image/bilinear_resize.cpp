@@ -111,7 +111,10 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 }
 
-template class bilinear_resize_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class bilinear_resize_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>;
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
