@@ -38,19 +38,10 @@ template <typename TensorDataType,
           El::Device Device = El::Device::CPU>
 class concatenate_layer : public data_type_layer<TensorDataType> {
 public:
-  /** @name Public Types */
-  ///@{
 
-  /** @brief The tensor type expected in this object. */
-  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
-
-  ///@}
-
-public:
-
-  concatenate_layer(lbann_comm *comm, El::Int concat_dim);
-  concatenate_layer(const concatenate_layer& other);
-  concatenate_layer& operator=(const concatenate_layer& other);
+  concatenate_layer(lbann_comm *comm, size_t concat_dim);
+  concatenate_layer(const concatenate_layer& other) = default;
+  concatenate_layer& operator=(const concatenate_layer& other) = default;
 
   concatenate_layer* copy() const override;
   std::string get_type() const override;
@@ -62,7 +53,6 @@ public:
 protected:
 
   void setup_pointers() override;
-  void setup_matrices(const El::Grid& grid) override;
   void setup_dims() override;
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
@@ -72,18 +62,23 @@ protected:
 
 private:
 
-  /** Tensor dimension to concatenate. */
-  El::Int m_concat_dim;
-  /** Concatenate points for each child layer. */
-  std::vector<El::Int> m_concat_points;
+  /** @brief Tensor dimension to concatenate along. */
+  size_t m_concat_dim;
 
-  /** View into input tensor. */
-  std::unique_ptr<AbsDistMatrixType> m_input_v;
-  /** View into output tensor. */
-  std::unique_ptr<AbsDistMatrixType> m_output_v;
-
-  /** Workspace buffer for asynchronous GPU memory transfers. */
+#ifdef LBANN_HAS_GPU
+  /** @brief Workspace buffer.
+   *
+   *  Parameters for CUDA kernels are copied into this buffer and
+   *  asynchronously transferred to GPU.
+   */
   std::vector<unsigned char> m_workspace;
+  /** @brief CUDA event for workspace buffer.
+   *
+   *  Makes sure asynchronous GPU memory transfers are completed
+   *  before modifying workspace buffer.
+   */
+  cuda::event_wrapper m_workspace_event;
+#endif // LBANN_HAS_GPU
 
   template <typename U>
   friend void fp_compute_impl(concatenate_layer<U,Layout,Device>&, size_t);
@@ -101,31 +96,10 @@ private:
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 concatenate_layer<TensorDataType,Layout,Device>::concatenate_layer(
   lbann_comm *comm,
-  El::Int concat_dim)
+  size_t concat_dim)
   : data_type_layer<TensorDataType>(comm),
-    m_concat_dim(concat_dim) {
+    m_concat_dim{concat_dim} {
   this->m_expected_num_parent_layers = -1; // No limit on parents
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-concatenate_layer<TensorDataType,Layout,Device>::concatenate_layer(
-  const concatenate_layer& other)
-  : data_type_layer<TensorDataType>(other),
-    m_concat_dim(other.m_concat_dim),
-    m_concat_points(other.m_concat_points) {
-  m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
-  m_output_v.reset(other.m_output_v ? other.m_output_v->Copy() : nullptr);
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-concatenate_layer<TensorDataType,Layout,Device>& concatenate_layer<TensorDataType,Layout,Device>::operator=(
-  const concatenate_layer& other) {
-  data_type_layer<TensorDataType>::operator=(other);
-  m_concat_dim = other.m_concat_dim;
-  m_concat_points = other.m_concat_points;
-  m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
-  m_output_v.reset(other.m_output_v ? other.m_output_v->Copy() : nullptr);
-  return *this;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -151,7 +125,7 @@ El::Device concatenate_layer<TensorDataType,Layout,Device>::get_device_allocatio
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 description concatenate_layer<TensorDataType,Layout,Device>::get_description() const {
   auto desc = data_type_layer<TensorDataType>::get_description();
-  desc.add("Concatenate dimension", m_concat_dim);
+  desc.add("Concatenation dimension", m_concat_dim);
   return desc;
 }
 
@@ -165,33 +139,28 @@ void concatenate_layer<TensorDataType,Layout,Device>::setup_pointers() {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType,Layout,Device>::setup_matrices(const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
-  const auto& input = this->get_prev_activations();
-  m_input_v.reset(input.Construct(input.Grid(), input.Root()));
-  m_output_v.reset(input.Construct(input.Grid(), input.Root()));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::setup_dims() {
   data_type_layer<TensorDataType>::setup_dims();
 
-  // Get concatenate points for first parent layer
+  // Dimensions of first input tensor
   auto output_dims = this->get_input_dims(0);
-  if (m_concat_dim < 0
-      || m_concat_dim >= (El::Int) output_dims.size()) {
-    LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
-                "has ",output_dims.size()," dimensions, ",
-                "but attempted to concatenate along ",
-                "dimension ",m_concat_dim);
+  if (m_concat_dim >= output_dims.size()) {
+    std::ostringstream err;
+    err << get_type() << " layer \"" << this->get_name() << "\" "
+        << "is concatenating along dimension " << m_concat_dim << ", "
+        << "but it has a " << output_dims.size() << "-D input tensor "
+        << "(parent layer \"" << this->get_parent_layers()[0]->get_name() << "\" "
+        << "outputs with dimensions ";
+    for (size_t d=0; d<output_dims.size(); ++d) {
+      err << (d>0 ? " x " : "") << output_dims[d];
+    }
+    err << ")";
+    LBANN_ERROR(err.str());
   }
-  m_concat_points.clear();
-  m_concat_points.push_back(0);
-  m_concat_points.push_back(output_dims[m_concat_dim]);
 
-  // Get concatenation points for remaining parent layers
-  for (int i = 1; i < this->get_num_parents(); ++i) {
-    const auto& input_dims = this->get_input_dims(i);
+  // Dimensions of remaining input tensors
+  for (int j=1; j<this->get_num_parents(); ++j) {
+    const auto& input_dims = this->get_input_dims(j);
     if (input_dims.size() != output_dims.size()
         || !std::equal(input_dims.begin(),
                        input_dims.begin() + m_concat_dim,
@@ -199,27 +168,23 @@ void concatenate_layer<TensorDataType,Layout,Device>::setup_dims() {
         || !std::equal(input_dims.begin() + m_concat_dim + 1,
                        input_dims.end(),
                        output_dims.begin() + m_concat_dim + 1)) {
-      std::stringstream err;
+      std::ostringstream err;
       err << get_type() << " layer \"" << this->get_name() << "\" "
           << "expects input tensors with dimensions ";
-      for (size_t j = 0; j < output_dims.size(); ++j) {
-        err << (j > 0 ? " x " : "");
-        if ((int) j == m_concat_dim) {
-          err << "X";
-        } else {
-          err << output_dims[j];
-        }
+      for (size_t d=0; d<output_dims.size(); ++d) {
+        err << (d>0 ? " x " : "");
+        if (d == m_concat_dim) { err << "X"; }
+        else { err << output_dims[d]; }
       }
       err << ", but parent layer "
-          << "\"" << this->get_parent_layers()[i]->get_name() << "\" "
+          << "\"" << this->get_parent_layers()[j]->get_name() << "\" "
           << "outputs with dimensions ";
-      for (size_t j = 0; j < input_dims.size(); ++j) {
-        err << (j > 0 ? " x " : "") << input_dims[j];
+      for (size_t d=0; d < input_dims.size(); ++d) {
+        err << (d>0 ? " x " : "") << input_dims[d];
       }
       LBANN_ERROR(err.str());
     }
     output_dims[m_concat_dim] += input_dims[m_concat_dim];
-    m_concat_points.push_back(output_dims[m_concat_dim]);
   }
 
   // Model-parallel implementation only supports flat data

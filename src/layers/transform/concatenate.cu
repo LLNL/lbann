@@ -264,6 +264,7 @@ void fp_compute_impl(
   }
 
   // Pack tensor data into a CPU buffer
+  l.m_workspace_event.synchronize();
   l.m_workspace.resize(
     sizeof(TensorDataType*) * input_buffer_list.size()
     + sizeof(dim4) * input_dims_list.size()
@@ -292,6 +293,7 @@ void fp_compute_impl(
                   l.m_workspace.size(),
                   cudaMemcpyHostToDevice,
                   stream);
+  l.m_workspace_event.record(stream);
   pos = 0;
   auto&& device_input_buffer_list
     = reinterpret_cast<const TensorDataType**>(device_workspace_ptr+pos);
@@ -404,6 +406,7 @@ void bp_compute_impl(
   }
 
   // Pack tensor data into a CPU buffer
+  l.m_workspace_event.synchronize();
   l.m_workspace.resize(
     sizeof(size_t) * output_grad_offset_list.size()
     + sizeof(TensorDataType*) * input_grad_buffer_list.size()
@@ -432,6 +435,7 @@ void bp_compute_impl(
                   l.m_workspace.size(),
                   cudaMemcpyHostToDevice,
                   stream);
+  l.m_workspace_event.record(stream);
   pos = 0;
   auto&& device_output_grad_offset_list
     = reinterpret_cast<const size_t*>(device_workspace_ptr+pos);
