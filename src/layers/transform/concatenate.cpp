@@ -322,7 +322,7 @@ void bp_compute_impl(
   template class concatenate_layer<                     \
     T, data_layout::DATA_PARALLEL, El::Device::CPU>;    \
   template class concatenate_layer<                     \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

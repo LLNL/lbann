@@ -243,13 +243,22 @@ abstract_evaluation_layer<TensorDataType>::construct(lbann_comm *comm,
 
 }
 
-template class abstract_evaluation_layer<DataType>;
+#define PROTO(T)                              \
+  template class abstract_evaluation_layer<T>
 
-template class evaluation_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class evaluation_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class evaluation_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class evaluation_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+
+#define PROTO_DEVICE(T, Device)                                           \
+  template class evaluation_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

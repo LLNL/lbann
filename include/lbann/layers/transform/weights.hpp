@@ -206,12 +206,12 @@ public:
     // Matrices
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
     m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
-    El::Fill(*m_workspace, DataType{1});
+    El::Fill(*m_workspace, TensorDataType{1});
 
     El::Gemv(El::NORMAL,
-             DataType{1}, local_gradient_wrt_output, *m_workspace,
-             DataType{0}, m_gradient->Matrix());
-    opt->add_to_gradient(*m_gradient, DataType{1}, true);
+             TensorDataType{1}, local_gradient_wrt_output, *m_workspace,
+             TensorDataType{0}, m_gradient->Matrix());
+    opt->add_to_gradient(*m_gradient, TensorDataType{1}, true);
 
     // Clean up
     m_workspace->Empty();
@@ -228,16 +228,16 @@ public:
 };
 
 #ifndef LBANN_WEIGHTS_LAYER_INSTANTIATE
-extern template class weights_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class weights_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class weights_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class weights_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class weights_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class weights_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_WEIGHTS_LAYER_INSTANTIATE
 
 } // namespace lbann

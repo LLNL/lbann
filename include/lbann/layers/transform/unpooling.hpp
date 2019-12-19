@@ -146,9 +146,11 @@ class unpooling_layer : public transform_layer<TensorDataType> {
   /// Unpooling forward propagation with im2col
   void fp_compute_im2col() {
 
+    using DMatDT = El::Matrix<TensorDataType, Dev>;
+
     // Get local matrices
-    const DMat<Dev>& prev_activations_local = this->get_local_prev_activations();
-    DMat<Dev>& activations_local = this->get_local_activations();
+    const DMatDT& prev_activations_local = this->get_local_prev_activations();
+    DMatDT& activations_local = this->get_local_activations();
 
     // Get parameters
     const int local_width = prev_activations_local.Width();
@@ -158,7 +160,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
     const int pool_size = m_pooling_layer->m_pool_size;
 
     // Initialize im2col matrix
-    DMat<Dev> im2col_mat(pool_size * num_channels, num_per_input_channel);
+    DMatDT im2col_mat(pool_size * num_channels, num_per_input_channel);
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
@@ -184,7 +186,7 @@ class unpooling_layer : public transform_layer<TensorDataType> {
       }
 
       // Convert im2col matrix to output matrix
-      DMat<Dev> output_mat =
+      DMatDT output_mat =
         El::View(activations_local, El::ALL, El::IR(sample));
       col2im<TensorDataType>(im2col_mat,
              output_mat,
@@ -203,9 +205,11 @@ class unpooling_layer : public transform_layer<TensorDataType> {
   /// Unpooling backward propagation with im2col
   void bp_compute_im2col() {
 
+    using DMatDT = El::Matrix<TensorDataType, Dev>;
+
     // Get local matrices
-    const DMat<Dev>& prev_error_signal_local = this->get_local_prev_error_signals();
-    DMat<Dev>& error_signal_local = this->get_local_error_signals();
+    const DMatDT& prev_error_signal_local = this->get_local_prev_error_signals();
+    DMatDT& error_signal_local = this->get_local_error_signals();
 
     // Get parameters
     const int local_width = prev_error_signal_local.Width();
@@ -215,14 +219,14 @@ class unpooling_layer : public transform_layer<TensorDataType> {
     const int pool_size = m_pooling_layer->m_pool_size;
 
     // Initialize im2col matrix
-    DMat<Dev> im2col_mat(pool_size * num_channels, num_per_output_channel);
+    DMatDT im2col_mat(pool_size * num_channels, num_per_output_channel);
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
 
       // Construct im2col matrix from input
-      const DMat<Dev>& input_mat = El::LockedView(prev_error_signal_local,
-                                                  El::ALL, El::IR(sample));
+      const DMatDT& input_mat = El::LockedView(prev_error_signal_local,
+                                               El::ALL, El::IR(sample));
       im2col<TensorDataType>(input_mat,
              im2col_mat,
              num_channels,
@@ -254,8 +258,13 @@ class unpooling_layer : public transform_layer<TensorDataType> {
 };
 
 #ifndef LBANN_UNPOOLING_LAYER_INSTANTIATE
-extern template class unpooling_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                           \
+  extern template class unpooling_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
 #endif // LBANN_UNPOOLING_LAYER_INSTANTIATE
 
 }  // namespace lbann
