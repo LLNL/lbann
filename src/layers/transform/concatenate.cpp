@@ -198,10 +198,8 @@ void fp_compute_impl(
     rstrides.push_back(input.LDim());
 
     // Pad tensor dimensions to 4D
-    while (rdims.size() < 4) {
-      rdims.push_back(1);
-      rstrides.push_back(rstrides.back());
-    }
+    rdims.resize(4, 1);
+    rstrides.resize(4, rstrides.back());
 
     input_buffer_list.push_back(input.LockedBuffer());
     input_dims_list.push_back({rdims[3], rdims[2], rdims[1], rdims[0]});
@@ -226,10 +224,8 @@ void fp_compute_impl(
     rstrides.push_back(output.LDim());
 
     // Pad tensor dimensions to 4D
-    while (rdims.size() < 4) {
-      rdims.push_back(1);
-      rstrides.push_back(rstrides.back());
-    }
+    rdims.resize(4, 1);
+    rstrides.resize(4, rstrides.back());
 
     output_strides = {rstrides[3], rstrides[2], rstrides[1], rstrides[0]};
   }
@@ -278,10 +274,8 @@ void bp_compute_impl(
     rstrides.push_back(input_grad.LDim());
 
     // Pad tensor dimensions to 4D
-    while (rdims.size() < 4) {
-      rdims.push_back(1);
-      rstrides.push_back(rstrides.back());
-    }
+    rdims.resize(4, 1);
+    rstrides.resize(4, rstrides.back());
 
     input_grad_buffer_list.push_back(input_grad.Buffer());
     input_grad_dims_list.push_back({rdims[3], rdims[2], rdims[1], rdims[0]});
@@ -306,10 +300,8 @@ void bp_compute_impl(
     rstrides.push_back(output_grad.LDim());
 
     // Pad tensor dimensions to 4D
-    while (rdims.size() < 4) {
-      rdims.push_back(1);
-      rstrides.push_back(rstrides.back());
-    }
+    rdims.resize(4, 1);
+    rstrides.resize(4, rstrides.back());
 
     output_grad_strides = {rstrides[3], rstrides[2], rstrides[1], rstrides[0]};
   }
