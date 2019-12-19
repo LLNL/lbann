@@ -18,7 +18,7 @@ class Layer(abc.ABC):
             'layer<index>').
         device (str, optional): Device to use, e.g. CPU or GPU.
         data_layout (str, optional): Data distribution scheme.
-        datatype (str, optional): Data type used for activations and weights.
+        datatype (enum, optional): Data type used for activations and weights.
         hint_layer (Layer, optional): Hint for output dimensions.
 
     """

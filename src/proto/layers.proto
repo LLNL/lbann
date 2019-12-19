@@ -30,12 +30,12 @@ package lbann_data;
 
 import "google/protobuf/wrappers.proto";
 
-message Layer {
-  enum DataType {
-    FLOAT = 0;
-    DOUBLE = 1;
-  }
+enum DataType {
+  FLOAT = 0;
+  DOUBLE = 1;
+}
 
+message Layer {
   string name = 50;
   string parents = 151;
   string children = 152;

@@ -47,13 +47,13 @@ struct TypeToProtoDataType;
 template <>
 struct TypeToProtoDataType<float>
 {
-  static constexpr auto value = lbann_data::Layer::FLOAT;
+  static constexpr auto value = lbann_data::FLOAT;
 };
 
 template <>
 struct TypeToProtoDataType<double>
 {
-  static constexpr auto value = lbann_data::Layer::DOUBLE;
+  static constexpr auto value = lbann_data::DOUBLE;
 };
 
 /** Setup parent/child relationships between layers. */
