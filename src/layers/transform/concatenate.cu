@@ -261,20 +261,6 @@ void fp_compute_impl(
 
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
-
-  // Just make a view if there is one input
-  if (this->get_num_parents() == 1) {
-    El::LockedView(this->get_activations(), this->get_prev_activations(0));
-    return;
-  }
-
-  // Perform concatenation
-  fp_compute_impl(*this, m_concat_dim);
-
-}
-
 // Explicit instantiation
 #define PROTO(T)                                        \
   template class concatenate_layer<                     \

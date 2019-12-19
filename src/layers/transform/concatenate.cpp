@@ -31,15 +31,17 @@ namespace lbann {
 
 namespace {
 
+using dim4 = std::array<size_t, 4>;
+
 /** @brief Concatenate 4D tensors. */
 template <typename T>
 void concat4d(
   size_t concat_dim,
   const std::vector<const T*>& input_buffer_list,
-  const std::vector<std::array<size_t,4>>& input_dims_list,
-  const std::vector<std::array<size_t,4>>& input_strides_list,
+  const std::vector<dim4>& input_dims_list,
+  const std::vector<dim4>& input_strides_list,
   T* output_buffer,
-  const std::array<size_t,4>& output_strides) {
+  const dim4& output_strides) {
 
   // Compute offset corresponding to each input tensor
   std::vector<size_t> output_offset_list;
@@ -82,6 +84,57 @@ void concat4d(
 
 }
 
+/** @brief Slice 4D tensors. */
+template <typename T>
+void slice4d(
+  size_t slice_dim,
+  const T* input_buffer,
+  const dim4& input_strides,
+  const std::vector<T*>& output_buffer_list,
+  const std::vector<dim4>& output_dims_list,
+  const std::vector<dim4>& output_strides_list) {
+
+  // Compute offset corresponding to each output tensor
+  std::vector<size_t> input_offset_list;
+  input_offset_list.push_back(0);
+  for (const auto& output_dims : output_dims_list) {
+    auto offset = input_offset_list.back();
+    offset += output_dims[slice_dim] * input_strides[slice_dim];
+    input_offset_list.push_back(offset);
+  }
+
+  // Iterate through output tensors
+  for (size_t j=0; j<output_buffer_list.size(); ++j) {
+    auto&& output_buffer = output_buffer_list[j];
+    const auto& output_dims = output_dims_list[j];
+    const auto& output_strides = output_strides_list[j];
+    const auto& input_offset = input_offset_list[j];
+
+    // Copy output tensor to corresponding position in input tensor
+    LBANN_OMP_PARALLEL_FOR_COLLAPSE4
+    for (size_t i0=0; i0<output_dims[0]; ++i0) {
+      for (size_t i1=0; i1<output_dims[1]; ++i1) {
+        for (size_t i2=0; i2<output_dims[2]; ++i2) {
+          for (size_t i3=0; i3<output_dims[3]; ++i3) {
+            auto& x = input_buffer[input_offset
+                                   + i0 * input_strides[0]
+                                   + i1 * input_strides[1]
+                                   + i2 * input_strides[2]
+                                   + i3 * input_strides[3]];
+            auto& y = output_buffer[i0 * output_strides[0]
+                                    + i1 * output_strides[1]
+                                    + i2 * output_strides[2]
+                                    + i3 * output_strides[3]];
+            y = x;
+          }
+        }
+      }
+    }
+
+  }
+
+}
+
 } // namespace <anon>
 
 template <typename TensorDataType>
@@ -95,14 +148,22 @@ void fp_compute_impl(
   std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> output_v(
     output.Construct(output.Grid(), output.Root()));
   size_t offset = 0;
-  for (size_t i=0; i<static_cast<size_t>(l.get_num_parents()); ++i) {
-    const auto& input = l.get_prev_activations(i);
+  for (size_t j=0; j<static_cast<size_t>(l.get_num_parents()); ++j) {
+    const auto& input = l.get_prev_activations(j);
     El::View(*output_v, output,
              El::IR(offset, offset+input.Height()), El::ALL);
     El::Copy(input, *output_v);
     offset += input.Height();
   }
 
+}
+
+template <typename TensorDataType>
+void bp_compute_impl(
+  concatenate_layer<TensorDataType,data_layout::MODEL_PARALLEL,El::Device::CPU>& l,
+  size_t concat_dim) {
+  // Tensor views have already been setup in
+  // bp_setup_gradient_wrt_inputs
 }
 
 template <typename TensorDataType>
@@ -121,10 +182,10 @@ void fp_compute_impl(
 
   // Get dimensions and strides for each input tensor
   std::vector<const TensorDataType*> input_buffer_list;
-  std::vector<std::array<size_t,4>> input_dims_list, input_strides_list;
-  for (size_t i=0; i<static_cast<size_t>(l.get_num_parents()); ++i) {
-    const auto& input = l.get_prev_activations(i);
-    const auto& input_dims = l.get_input_dims(i);
+  std::vector<dim4> input_dims_list, input_strides_list;
+  for (size_t j=0; j<static_cast<size_t>(l.get_num_parents()); ++j) {
+    const auto& input = l.get_prev_activations(j);
+    const auto& input_dims = l.get_input_dims(j);
 
     // Construct dimensions and strides in reverse order
     // Note: Assume each mini-batch sample is fully packed.
@@ -149,7 +210,7 @@ void fp_compute_impl(
   }
 
   // Get strides for output tensor
-  std::array<size_t,4> output_strides;
+  dim4 output_strides;
   auto& output = l.get_activations();
   {
     const auto& output_dims = l.get_output_dims();
@@ -173,7 +234,7 @@ void fp_compute_impl(
     output_strides = {rstrides[3], rstrides[2], rstrides[1], rstrides[0]};
   }
 
-  // Perform concatenation on 4D tensors
+  // Concatenate 4D tensors
   concat4d<TensorDataType>(
     concat_dim + (4-num_dims),
     input_buffer_list,
@@ -184,17 +245,83 @@ void fp_compute_impl(
 
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(
+  concatenate_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::CPU>& l,
+  size_t concat_dim) {
 
-  // Just make a view if there is one input
-  if (this->get_num_parents() == 1) {
-    El::LockedView(this->get_activations(), this->get_prev_activations(0));
-    return;
+  // Check that number of dimensions is valid
+  /// @todo Support tensors with arbitrary number of dimensions
+  const size_t num_dims = l.get_output_dims().size();
+  if (num_dims > 3) {
+    LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
+                "is operating on ",num_dims,"-D tensors, ",
+                "but only 3-D tensors are currently supported");
   }
 
-  // Perform concatenation
-  fp_compute_impl(*this, m_concat_dim);
+  // Get dimensions and strides for each input gradient tensor
+  std::vector<TensorDataType*> input_grad_buffer_list;
+  std::vector<dim4> input_grad_dims_list, input_grad_strides_list;
+  const size_t num_inputs = l.get_num_parents();
+  for (size_t j=0; j<num_inputs; ++j) {
+    auto& input_grad = l.get_error_signals(j);
+    const auto& input_grad_dims = l.get_input_dims(j);
+
+    // Construct dimensions and strides in reverse order
+    // Note: Assume each mini-batch sample is fully packed.
+    std::vector<size_t> rdims(input_grad_dims.rbegin(), input_grad_dims.rend());
+    std::vector<size_t> rstrides(input_grad_dims.size(), 1);
+    for (size_t d=1; d<input_grad_dims.size(); ++d) {
+      rstrides[d] = rdims[d-1] * rstrides[d-1];
+    }
+    rdims.push_back(input_grad.LocalWidth());
+    rstrides.push_back(input_grad.LDim());
+
+    // Pad tensor dimensions to 4D
+    while (rdims.size() < 4) {
+      rdims.push_back(1);
+      rstrides.push_back(rstrides.back());
+    }
+
+    input_grad_buffer_list.push_back(input_grad.Buffer());
+    input_grad_dims_list.push_back({rdims[3], rdims[2], rdims[1], rdims[0]});
+    input_grad_strides_list.push_back(
+      {rstrides[3], rstrides[2], rstrides[1], rstrides[0]});
+  }
+
+  // Get strides for output gradient tensor
+  const auto& output_grad = l.get_prev_error_signals();
+  dim4 output_grad_strides;
+  {
+    const auto& output_grad_dims = l.get_output_dims();
+
+    // Construct dimensions and strides in reverse order
+    // Note: Assume each mini-batch sample is fully packed.
+    std::vector<size_t> rdims(output_grad_dims.rbegin(), output_grad_dims.rend());
+    std::vector<size_t> rstrides(output_grad_dims.size(), 1);
+    for (size_t d=1; d<output_grad_dims.size(); ++d) {
+      rstrides[d] = rdims[d-1] * rstrides[d-1];
+    }
+    rdims.push_back(output_grad.LocalWidth());
+    rstrides.push_back(output_grad.LDim());
+
+    // Pad tensor dimensions to 4D
+    while (rdims.size() < 4) {
+      rdims.push_back(1);
+      rstrides.push_back(rstrides.back());
+    }
+
+    output_grad_strides = {rstrides[3], rstrides[2], rstrides[1], rstrides[0]};
+  }
+
+  // Slice 4D tensor
+  slice4d<TensorDataType>(
+    concat_dim + (4-num_dims),
+    output_grad.LockedBuffer(),
+    output_grad_strides,
+    input_grad_buffer_list,
+    input_grad_dims_list,
+    input_grad_strides_list);
 
 }
 

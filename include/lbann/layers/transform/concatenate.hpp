@@ -87,8 +87,11 @@ private:
 
   template <typename U>
   friend void fp_compute_impl(concatenate_layer<U,Layout,Device>&, size_t);
+  template <typename U, El::Device D>
+  friend void bp_setup_gradient_wrt_inputs_impl(concatenate_layer<U,Layout,D>&);
   template <typename U>
   friend void bp_compute_impl(concatenate_layer<U,Layout,Device>&, size_t);
+
 };
 
 // =========================================================
@@ -248,70 +251,74 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int m
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
-  const auto& num_inputs = this->get_num_parents();
-  const auto& output_dims = this->get_output_dims();
+void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
 
-  // Divide output tensor into unit slices along concat dimension
-  // Note: Each unit slice is divided into contiguous "unit blocks"
-  const auto& output_num_unit_slices = output_dims[m_concat_dim];
-  const auto& blocks_per_slice
-    = (m_concat_dim > 0 ?
-       std::accumulate(&output_dims[0], &output_dims[m_concat_dim],
-                       1, std::multiplies<int>()) :
-       1);
-  const auto& unit_block_size
-    = std::accumulate(output_dims.begin() + m_concat_dim + 1,
-                      output_dims.end(),
-                      1, std::multiplies<int>());
-  const auto& output_block_stride = (output_num_unit_slices
-                                     * unit_block_size);
+  // Just make a view if there is one input
+  if (this->get_num_parents() == 1) {
+    El::LockedView(this->get_activations(), this->get_prev_activations(0));
+    return;
+  }
 
-  // Populate gradient w.r.t. input tensors
-  const auto& gradient_wrt_output = this->get_prev_error_signals();
-  for (int i = 0; i < num_inputs; ++i) {
-    const auto& input_dims = this->get_input_dims(i);
-    const auto& input_size = this->get_input_size(i);
-    auto& gradient_wrt_input = this->get_error_signals(i);
+  // Perform concatenation
+  fp_compute_impl(*this, m_concat_dim);
 
-    // Divide input tensor into unit slices
-    const auto& input_num_unit_slices = input_dims[m_concat_dim];
+}
 
-    // Merge unit slices and get first contiguous output block
-    const auto& block_size = input_num_unit_slices * unit_block_size;
-    const auto& output_block_offset = m_concat_points[i] * unit_block_size;
-    El::LockedView(*m_output_v, gradient_wrt_output,
-                   El::IR(output_block_offset,
-                          output_block_offset + block_size),
-                   El::ALL);
+template <typename TensorDataType, El::Device Device>
+void bp_setup_gradient_wrt_inputs_impl(
+  concatenate_layer<TensorDataType,data_layout::MODEL_PARALLEL,Device>& l) {
 
-    // Populate gradient w.r.t. input tensor one block at a time
-    // Note: If there is only one block, the tensor can be a view
-    if (blocks_per_slice > 1) {
-      gradient_wrt_input.AlignWith(*m_output_v);
-      gradient_wrt_input.Resize(input_size, mini_batch_size);
-      for (int block = 0; block < blocks_per_slice; ++block) {
-        const auto& input_offset = block * block_size;
-        const auto& output_offset = (output_block_offset
-                                     + block * output_block_stride);
-        El::LockedView(*m_output_v, gradient_wrt_output,
-                       El::IR(output_offset, output_offset + block_size),
-                       El::ALL);
-        El::View(*m_input_v, gradient_wrt_input,
-                 El::IR(input_offset, input_offset + block_size),
-                 El::ALL);
-        El::Copy(*m_output_v, *m_input_v);
-      }
-    } else {
-      El::LockedView(gradient_wrt_input, *m_output_v);
+  // Slice Elemental matrices
+  // Note: Assume each mini-batch sample is flat.
+  const size_t num_inputs = l.get_num_parents();
+  const auto& output_grad = l.get_prev_error_signals();
+  size_t offset = 0;
+  for (size_t j=0; j<num_inputs; ++j) {
+    auto& input_grad = l.get_error_signals(j);
+    const auto& input_size = l.get_input_size(j);
+    El::LockedView(input_grad, output_grad,
+                   El::IR(offset, offset+input_size), El::ALL);
+    offset += input_size;
+  }
+
+}
+
+template <typename TensorDataType, El::Device Device>
+void bp_setup_gradient_wrt_inputs_impl(
+  concatenate_layer<TensorDataType,data_layout::DATA_PARALLEL,Device>& l) {
+
+  const size_t num_inputs = l.get_num_parents();
+  const auto& output_grad = l.get_prev_error_signals();
+  if (num_inputs == 1) {
+    El::LockedView(l.get_error_signals(0), output_grad);
+  }
+  else {
+    for (size_t j=0; j<num_inputs; ++j) {
+      auto& input_grad = l.get_error_signals(j);
+      input_grad.AlignWith(output_grad);
+      input_grad.Resize(l.get_input_size(j), output_grad.Width());
     }
-
   }
 
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
+void concatenate_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
+  bp_setup_gradient_wrt_inputs_impl(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
+
+  // Just make a view if there is one input
+  if (this->get_num_parents() == 1) {
+    El::LockedView(this->get_error_signals(0), this->get_prev_error_signals());
+    return;
+  }
+
+  // Perform slice
+  bp_compute_impl(*this, m_concat_dim);
+
 }
 
 #ifndef LBANN_CONCATENATE_LAYER_INSTANTIATE
