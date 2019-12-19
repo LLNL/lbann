@@ -158,6 +158,7 @@ private:
     factory_.register_builder("Convolution",
                               build_convolution_layer_from_pbuf<T,L,D>);
 
+    // Math layers
     LBANN_REGISTER_DEFAULT_BUILDER(LogicalNot, logical_not);
     LBANN_REGISTER_DEFAULT_BUILDER(Abs, abs);
     LBANN_REGISTER_DEFAULT_BUILDER(Negative, negative);
@@ -205,8 +206,17 @@ private:
     LBANN_REGISTER_DEFAULT_BUILDER(LogicalAnd, logical_and);
     LBANN_REGISTER_DEFAULT_BUILDER(LogicalOr, logical_or);
     LBANN_REGISTER_DEFAULT_BUILDER(LogicalXor, logical_xor);
-    LBANN_REGISTER_DEFAULT_BUILDER(Identity, identity);
 
+    // Transform layers
+    LBANN_REGISTER_DEFAULT_BUILDER(Dummy, dummy);
+    LBANN_REGISTER_DEFAULT_BUILDER(Evaluation, evaluation);
+    LBANN_REGISTER_DEFAULT_BUILDER(Hadamard, hadamard);
+    LBANN_REGISTER_DEFAULT_BUILDER(Sum, sum);
+    LBANN_REGISTER_DEFAULT_BUILDER(Split, split);
+    LBANN_REGISTER_DEFAULT_BUILDER(StopGradient, stop_gradient);
+
+    // Activations
+    LBANN_REGISTER_DEFAULT_BUILDER(Identity, identity);
   }
 
   // Just to be clear/safe.
@@ -272,7 +282,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
                                                 target_mode);
       }
       else {
-        LBANN_ERROR("Input layers are only valide with "
+        LBANN_ERROR("Input layers are only valid with "
                     "TensorDataType == DataType and Layout == DATA_PARALLEL");
       }
     } else {
@@ -280,15 +290,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     }
   }
 
-  // Fully connected layer
-  if (proto_layer.has_fully_connected()) {
-    LBANN_ERROR("Should have encountered the new layer factory");
-  }
-
-  // Convolution and deconvolution layer
-  if (proto_layer.has_convolution()) {
-    LBANN_ERROR("Should have encountered the new layer factory");
-  }
   if (proto_layer.has_deconvolution()) {
     const auto& params = proto_layer.deconvolution();
     const auto& bias = params.has_bias();
@@ -378,16 +379,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
     }
     return lbann::make_unique<reshape_layer<TensorDataType, Layout, Device>>(comm, dims);
   }
-  if (proto_layer.has_sum()) {
-    return lbann::make_unique<sum_layer<TensorDataType, Layout, Device>>(comm);
-  }
   if (proto_layer.has_weighted_sum()) {
     const auto& params = proto_layer.weighted_sum();
     const auto& scaling_factors = parse_list<DataType>(params.scaling_factors());
     return lbann::make_unique<weighted_sum_layer<TensorDataType, Layout, Device>>(comm, scaling_factors);
-  }
-  if (proto_layer.has_split()) {
-    return lbann::make_unique<split_layer<TensorDataType, Layout, Device>>(comm);
   }
   if (proto_layer.has_concatenation()) {
     const auto& axis = proto_layer.concatenation().axis();
@@ -420,9 +415,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     }
     return lbann::make_unique<slice_layer<TensorDataType, Layout, Device>>(
              comm, params.axis(), slice_points);
-  }
-  if (proto_layer.has_hadamard()) {
-    return lbann::make_unique<hadamard_layer<TensorDataType, Layout, Device>>(comm);
   }
   if (proto_layer.has_constant()) {
     const auto& params = proto_layer.constant();
@@ -504,9 +496,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
                   "a data-parallel layout");
     }
   }
-  if (proto_layer.has_evaluation()) {
-    return lbann::make_unique<evaluation_layer<TensorDataType, Layout, Device>>(comm);
-  }
   if (proto_layer.has_crop()) {
     const auto& params = proto_layer.crop();
     const auto& dims = parse_list<int>(params.dims());
@@ -536,12 +525,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     } else {
       LBANN_ERROR("discrete random layer is only supported on CPU");
     }
-  }
-  if (proto_layer.has_dummy()) {
-    return lbann::make_unique<dummy_layer<TensorDataType, Layout, Device>>(comm);
-  }
-  if (proto_layer.has_stop_gradient()) {
-    return lbann::make_unique<stop_gradient_layer<TensorDataType, Layout, Device>>(comm);
   }
   if (proto_layer.has_in_top_k()) {
     const auto& params = proto_layer.in_top_k();
