@@ -85,6 +85,10 @@ void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 
 }
 
-template class sort_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class sort_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
