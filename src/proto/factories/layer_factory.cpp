@@ -141,13 +141,76 @@ public:
 
 private:
 
+  // This macro simplifies the process of adding default builders
+#define LBANN_REGISTER_DEFAULT_BUILDER(KEY, LAYER_NAME)                 \
+    factory_.register_builder(                                          \
+      #KEY,                                                             \
+      [](lbann_comm* comm,                                              \
+         lbann_data::Layer const&){                                     \
+        return lbann::make_unique<LAYER_NAME##_layer<T,L,D>>(comm);     \
+      })
+
   // Builder registration happens here
   void register_default_builders() {
+
     factory_.register_builder("FullyConnected",
-                             build_fully_connected_layer_from_pbuf<T,L,D>);
+                              build_fully_connected_layer_from_pbuf<T,L,D>);
     factory_.register_builder("Convolution",
-                             build_convolution_layer_from_pbuf<T,L,D>);
+                              build_convolution_layer_from_pbuf<T,L,D>);
+
+    LBANN_REGISTER_DEFAULT_BUILDER(LogicalNot, logical_not);
+    LBANN_REGISTER_DEFAULT_BUILDER(Abs, abs);
+    LBANN_REGISTER_DEFAULT_BUILDER(Negative, negative);
+    LBANN_REGISTER_DEFAULT_BUILDER(Sign, sign);
+    LBANN_REGISTER_DEFAULT_BUILDER(Round, round);
+    LBANN_REGISTER_DEFAULT_BUILDER(Ceil, ceil);
+    LBANN_REGISTER_DEFAULT_BUILDER(Floor, floor);
+    LBANN_REGISTER_DEFAULT_BUILDER(Reciprocal, reciprocal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Square, square);
+    LBANN_REGISTER_DEFAULT_BUILDER(Sqrt, sqrt);
+    LBANN_REGISTER_DEFAULT_BUILDER(Rsqrt, rsqrt);
+    LBANN_REGISTER_DEFAULT_BUILDER(SafeReciprocal, safe_reciprocal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Exp, exp);
+    LBANN_REGISTER_DEFAULT_BUILDER(Expm1, expm1);
+    LBANN_REGISTER_DEFAULT_BUILDER(Log, log);
+    LBANN_REGISTER_DEFAULT_BUILDER(Log1p, log1p);
+    LBANN_REGISTER_DEFAULT_BUILDER(Cos, cos);
+    LBANN_REGISTER_DEFAULT_BUILDER(Sin, sin);
+    LBANN_REGISTER_DEFAULT_BUILDER(Tan, tan);
+    LBANN_REGISTER_DEFAULT_BUILDER(Acos, acos);
+    LBANN_REGISTER_DEFAULT_BUILDER(Asin, asin);
+    LBANN_REGISTER_DEFAULT_BUILDER(Atan, atan);
+    LBANN_REGISTER_DEFAULT_BUILDER(Cosh, cosh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Sinh, sinh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Tanh, tanh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Acosh, acosh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Asinh, asinh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Atanh, atanh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Add, add);
+    LBANN_REGISTER_DEFAULT_BUILDER(Subtract, subtract);
+    LBANN_REGISTER_DEFAULT_BUILDER(Multiply, multiply);
+    LBANN_REGISTER_DEFAULT_BUILDER(Divide, divide);
+    LBANN_REGISTER_DEFAULT_BUILDER(Mod, mod);
+    LBANN_REGISTER_DEFAULT_BUILDER(Pow, pow);
+    LBANN_REGISTER_DEFAULT_BUILDER(SafeDivide, safe_divide);
+    LBANN_REGISTER_DEFAULT_BUILDER(SquaredDifference, squared_difference);
+    LBANN_REGISTER_DEFAULT_BUILDER(Max, max);
+    LBANN_REGISTER_DEFAULT_BUILDER(Min, min);
+    LBANN_REGISTER_DEFAULT_BUILDER(Equal, equal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Not_Equal, not_equal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Less, less);
+    LBANN_REGISTER_DEFAULT_BUILDER(LessEqual, less_equal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Greater, greater);
+    LBANN_REGISTER_DEFAULT_BUILDER(GreaterEqual, greater_equal);
+    LBANN_REGISTER_DEFAULT_BUILDER(LogicalAnd, logical_and);
+    LBANN_REGISTER_DEFAULT_BUILDER(LogicalOr, logical_or);
+    LBANN_REGISTER_DEFAULT_BUILDER(LogicalXor, logical_xor);
+    LBANN_REGISTER_DEFAULT_BUILDER(Identity, identity);
+
   }
+
+  // Just to be clear/safe.
+#undef LBANN_REGISTER_DEFAULT_BUILDER
 
 private:
   factory_type factory_;
@@ -589,54 +652,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     return lbann::make_unique<layer_norm_layer<TensorDataType, Layout, Device>>(comm, epsilon);
   }
 
-  // Math layers
-  CONSTRUCT_LAYER(logical_not);
-  CONSTRUCT_LAYER(abs);
-  CONSTRUCT_LAYER(negative);
-  CONSTRUCT_LAYER(sign);
-  CONSTRUCT_LAYER(round);
-  CONSTRUCT_LAYER(ceil);
-  CONSTRUCT_LAYER(floor);
-  CONSTRUCT_LAYER(reciprocal);
-  CONSTRUCT_LAYER(square);
-  CONSTRUCT_LAYER(sqrt);
-  CONSTRUCT_LAYER(rsqrt);
-  CONSTRUCT_LAYER(safe_reciprocal);
-  CONSTRUCT_LAYER(exp);
-  CONSTRUCT_LAYER(expm1);
-  CONSTRUCT_LAYER(log);
-  CONSTRUCT_LAYER(log1p);
-  CONSTRUCT_LAYER(cos);
-  CONSTRUCT_LAYER(sin);
-  CONSTRUCT_LAYER(tan);
-  CONSTRUCT_LAYER(acos);
-  CONSTRUCT_LAYER(asin);
-  CONSTRUCT_LAYER(atan);
-  CONSTRUCT_LAYER(cosh);
-  CONSTRUCT_LAYER(sinh);
-  CONSTRUCT_LAYER(tanh);
-  CONSTRUCT_LAYER(acosh);
-  CONSTRUCT_LAYER(asinh);
-  CONSTRUCT_LAYER(atanh);
-  CONSTRUCT_LAYER(add);
-  CONSTRUCT_LAYER(subtract);
-  CONSTRUCT_LAYER(multiply);
-  CONSTRUCT_LAYER(divide);
-  CONSTRUCT_LAYER(mod);
-  CONSTRUCT_LAYER(pow);
-  CONSTRUCT_LAYER(safe_divide);
-  CONSTRUCT_LAYER(squared_difference);
-  CONSTRUCT_LAYER(max);
-  CONSTRUCT_LAYER(min);
-  CONSTRUCT_LAYER(equal);
-  CONSTRUCT_LAYER(not_equal);
-  CONSTRUCT_LAYER(less);
-  CONSTRUCT_LAYER(less_equal);
-  CONSTRUCT_LAYER(greater);
-  CONSTRUCT_LAYER(greater_equal);
-  CONSTRUCT_LAYER(logical_and);
-  CONSTRUCT_LAYER(logical_or);
-  CONSTRUCT_LAYER(logical_xor);
   if (proto_layer.has_clamp()) {
     const auto& params = proto_layer.clamp();
     return lbann::make_unique<clamp_layer<TensorDataType, Layout, Device>>(comm, params.min(), params.max());
@@ -664,7 +679,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
       return lbann::make_unique<elu_layer<TensorDataType, Layout, Device>>(comm);
     }
   }
-  CONSTRUCT_LAYER(identity);
   if (proto_layer.has_leaky_relu()) {
     const auto& params = proto_layer.leaky_relu();
     const auto& negative_slope = params.negative_slope();
