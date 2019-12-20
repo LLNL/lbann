@@ -32,6 +32,7 @@ if (LBANN_HAS_CUDA)
     crop.cu
     in_top_k.cu
     sort.cu
+    slice.cu
     tessellate.cu
     )
 endif ()

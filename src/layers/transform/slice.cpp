@@ -185,7 +185,7 @@ void fp_compute_impl(
                 "but only 3-D tensors are currently supported");
   }
 
-  // Get dimensions and strides for each output gradient tensor
+  // Get dimensions and strides for each output tensor
   std::vector<TensorDataType*> output_buffer_list;
   std::vector<dim4> output_dims_list, output_strides_list;
   const size_t num_outputs = l.get_num_children();

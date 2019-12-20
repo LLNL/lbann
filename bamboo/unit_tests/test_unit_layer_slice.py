@@ -86,7 +86,7 @@ def construct_model(lbann):
     y = []
     for _ in range(len(slice_points)-1):
         y.append(lbann.L2Norm2(x_slice))
-    z = lbann.Sum(y)
+    z = lbann.Add(y[0], y[2])
     obj.append(z)
     metrics.append(lbann.Metric(z, name='axis0'))
 
@@ -98,7 +98,7 @@ def construct_model(lbann):
         for j in range(len(slice_points)-1):
             x_slice = x[slice_points[j]:slice_points[j+1],:,:]
             y.append(tools.numpy_l2norm2(x_slice))
-        z = sum(y)
+        z = y[0] + y[2]
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -120,7 +120,7 @@ def construct_model(lbann):
     y = []
     for _ in range(len(slice_points)-1):
         y.append(lbann.L2Norm2(x_slice))
-    z = lbann.Sum(y)
+    z = lbann.Add(y[0], y[2])
     obj.append(z)
     metrics.append(lbann.Metric(z, name='axis1'))
 
@@ -132,7 +132,7 @@ def construct_model(lbann):
         for j in range(len(slice_points)-1):
             x_slice = x[:,slice_points[j]:slice_points[j+1],:]
             y.append(tools.numpy_l2norm2(x_slice))
-        z = sum(y)
+        z = y[0] + y[2]
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -154,7 +154,7 @@ def construct_model(lbann):
     y = []
     for _ in range(len(slice_points)-1):
         y.append(lbann.L2Norm2(x_slice))
-    z = lbann.Sum(y)
+    z = lbann.Add(y[0], y[2])
     obj.append(z)
     metrics.append(lbann.Metric(z, name='axis2'))
 
@@ -166,7 +166,7 @@ def construct_model(lbann):
         for j in range(len(slice_points)-1):
             x_slice = x[:,:,slice_points[j]:slice_points[j+1]]
             y.append(tools.numpy_l2norm2(x_slice))
-        z = sum(y)
+        z = y[0] + y[2]
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -182,13 +182,14 @@ def construct_model(lbann):
     # --------------------------
 
     # LBANN implementation
-    slice_points = (31, 54, 55, 57, 67)
+    slice_points = (31, 54, 56, 57)
     x = lbann.Reshape(x_lbann, dims=tools.str_list([105]))
-    x_slice = lbann.Slice(x, slice_points=tools.str_list(slice_points))
+    x_slice = lbann.Slice(x, slice_points=tools.str_list(slice_points),
+                          data_layout='model_parallel')
     y = []
     for _ in range(len(slice_points)-1):
         y.append(lbann.L2Norm2(x_slice))
-    z = lbann.Sum(y)
+    z = lbann.Add(y[0], y[2])
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel'))
 
@@ -200,7 +201,7 @@ def construct_model(lbann):
         for j in range(len(slice_points)-1):
             x_slice = x[slice_points[j]:slice_points[j+1]]
             y.append(tools.numpy_l2norm2(x_slice))
-        z = sum(y)
+        z = y[0] + y[2]
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps

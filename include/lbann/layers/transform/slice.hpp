@@ -99,6 +99,21 @@ private:
   /** View into output tensor. */
   std::unique_ptr<AbsDistMatrixType> m_output_v;
 
+#ifdef LBANN_HAS_GPU
+  /** @brief Workspace buffer.
+   *
+   *  Parameters for CUDA kernels are copied into this buffer and
+   *  asynchronously transferred to GPU.
+   */
+  std::vector<unsigned char> m_workspace;
+  /** @brief CUDA event for workspace buffer.
+   *
+   *  Makes sure asynchronous GPU memory transfers are completed
+   *  before modifying workspace buffer.
+   */
+  cuda::event_wrapper m_workspace_event;
+#endif // LBANN_HAS_GPU
+
   template <typename U, El::Device D>
   friend void fp_setup_outputs_impl(slice_layer<U,Layout,D>&);
   template <typename U>
