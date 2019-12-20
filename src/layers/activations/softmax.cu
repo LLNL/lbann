@@ -138,7 +138,7 @@ __global__ void fp_exp_kernel(size_t height,
     }
 
     // Compute sum for each block
-    const DataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
+    const TensorDataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
     if (tid == 0) {
       cuda::atomic_add(&sums[col], block_sum);
     }
@@ -178,7 +178,7 @@ __global__ void fp_output_kernel(size_t height,
       auto& y = output[row+col*output_ldim];
       y /= denom;
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-      y = cuda::max(y, cuda::sqrt(cuda::min<DataType>()));
+      y = cuda::max(y, cuda::sqrt(cuda::min<TensorDataType>()));
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
     }
   }
@@ -218,7 +218,7 @@ __global__ void bp_dot_product_kernel(
     }
 
     // Compute dot product contribution for each block
-    const DataType block_dot_product
+    const TensorDataType block_dot_product
       = cuda::block_reduce<bsize,1,1>(thread_dot_product);
     if (tid == 0) {
       cuda::atomic_add(&dot_products[col], block_dot_product);
@@ -345,7 +345,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
     while (grid_dims.x > 1) {
       const size_t prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<DataType> prev_vals(std::move(max_vals));
+      cuda::thrust::vector<TensorDataType> prev_vals(std::move(max_vals));
       max_vals.resize(grid_dims.x * local_width);
       reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
@@ -455,9 +455,11 @@ void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 // Template instantiation
-template class softmax_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class softmax_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class softmax_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class softmax_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
