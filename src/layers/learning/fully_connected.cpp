@@ -26,6 +26,7 @@
 
 #define LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 #include "lbann/layers/learning/fully_connected.hpp"
+#include "layers.pb.h"
 
 namespace lbann {
 
@@ -461,9 +462,28 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   bp_compute_impl<TensorDataType>(*this);
 }
 
+template <typename TensorDataType, data_layout layout, El::Device device>
+std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const& layer_msg)
+{
+  const auto& params = layer_msg.fully_connected();
+  return lbann::make_unique<fully_connected_layer<TensorDataType, layout, device>>(
+    comm,
+    params.num_neurons(),
+    params.transpose(),
+    nullptr,
+    params.has_bias());
+}
+
 #define PROTO_DEVICE(T, Device) \
   template class fully_connected_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class fully_connected_layer<T, data_layout::MODEL_PARALLEL, Device>
+  template class fully_connected_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  template std::unique_ptr<Layer>                                       \
+  build_fully_connected_layer_from_pbuf<T, data_layout::DATA_PARALLEL, Device>( \
+    lbann_comm*, lbann_data::Layer const&);                             \
+  template std::unique_ptr<Layer>                                       \
+  build_fully_connected_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, Device>( \
+    lbann_comm*, lbann_data::Layer const&)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

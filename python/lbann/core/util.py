@@ -89,6 +89,26 @@ def _generate_class(message_descriptor,
     message_name = message_descriptor.name
     field_descriptors = message_descriptor.fields_by_name
     field_names = field_descriptors.keys()
+    enums = message_descriptor.enum_types_by_name
+        # Handle "enum" type data.
+    all_enums = {}
+    for enum_name, enum_desc in enums.items():
+        enum_val_to_num = {}
+        enum_val_descs = enum_desc.values_by_name
+        for val_name, val_desc in enum_val_descs.items():
+            enum_val_to_num[val_name] = val_desc.number
+        all_enums[enum_name] = type(enum_name, (), enum_val_to_num)
+    # Note (trb 12/18/19): This is *NOT* meant to be a rigorous enum
+    # implementation (see the 'enum' module for such a thing). The
+    # goal is to simply expose "enum-like" semantics to the Python
+    # front-end:
+    #
+    #   x = ClassName.EnumName.ENUM_VALUE
+    #
+    # Note that the value held by "x" after this will be "int". Based
+    # on my testing, Protobuf message classes are happy enough to take
+    # their enum-valued field values as "int", so this is not a
+    # problem.
 
     # Make sure fields in generated and base classes are distinct
     for arg in base_kwargs:
@@ -179,11 +199,13 @@ def _generate_class(message_descriptor,
         doc = 'Fields: none\n'
 
     # Create new class
-    return type(message_name, (base_class,),
-                {'__init__': __init__,
-                 '__doc__': doc,
-                 'export_proto': export_proto,
-                 'get_field_names': get_field_names})
+    class_dictionary = {'__init__': __init__,
+                        '__doc__': doc,
+                        'export_proto': export_proto,
+                        'get_field_names': get_field_names}
+    class_dictionary.update(all_enums)
+
+    return type(message_name, (base_class,), class_dictionary)
 
 def generate_classes_from_protobuf_message(message,
                                            skip_fields = set(),
