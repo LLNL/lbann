@@ -243,6 +243,8 @@ abstract_evaluation_layer<TensorDataType>::construct(lbann_comm *comm,
 
 }
 
+LBANN_LAYER_DEFAULT_BUILDER(evaluation)
+
 #define PROTO(T)                              \
   template class abstract_evaluation_layer<T>
 
@@ -255,7 +257,8 @@ abstract_evaluation_layer<TensorDataType>::construct(lbann_comm *comm,
 
 #define PROTO_DEVICE(T, Device)                                           \
   template class evaluation_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>
+  template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(evaluation, T, Device)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

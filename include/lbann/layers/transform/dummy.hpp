@@ -52,6 +52,8 @@ protected:
   void fp_compute() override {}
 };
 
+LBANN_DEFINE_LAYER_BUILDER(dummy);
+
 #ifndef LBANN_DUMMY_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class dummy_layer<T, data_layout::DATA_PARALLEL, Device>; \

@@ -157,11 +157,9 @@ private:
   void register_default_builders() {
 
     // Learning layers
-    factory_.register_builder("Convolution",
-                              build_convolution_layer_from_pbuf<T,L,D>);
-    factory_.register_builder("FullyConnected",
-                              build_fully_connected_layer_from_pbuf<T,L,D>);
+    LBANN_REGISTER_BUILDER(Convolution, convolution);
     LBANN_REGISTER_DEFAULT_BUILDER(EntrywiseScaleBias, entrywise_scale_bias);
+    LBANN_REGISTER_BUILDER(FullyConnected, fully_connected);
 
     // Math layers
     LBANN_REGISTER_DEFAULT_BUILDER(Abs, abs);
@@ -216,12 +214,15 @@ private:
     LBANN_REGISTER_BUILDER(Bernoulli, bernoulli);
     LBANN_REGISTER_BUILDER(CategoricalRandom, categorical_random);
     LBANN_REGISTER_BUILDER(Concatenation, concatenate);
-    LBANN_REGISTER_DEFAULT_BUILDER(Dummy, dummy);
-    LBANN_REGISTER_DEFAULT_BUILDER(Evaluation, evaluation);
+    LBANN_REGISTER_BUILDER(Constant, constant);
+    LBANN_REGISTER_BUILDER(Crop, crop);
+    LBANN_REGISTER_BUILDER(Dummy, dummy);
+    LBANN_REGISTER_BUILDER(Evaluation, evaluation);
     LBANN_REGISTER_DEFAULT_BUILDER(Hadamard, hadamard);
     LBANN_REGISTER_DEFAULT_BUILDER(Split, split);
     LBANN_REGISTER_DEFAULT_BUILDER(StopGradient, stop_gradient);
     LBANN_REGISTER_DEFAULT_BUILDER(Sum, sum);
+    LBANN_REGISTER_BUILDER(WeightsLayer, weights);
 
     // Activations
     LBANN_REGISTER_DEFAULT_BUILDER(Identity, identity);
@@ -438,11 +439,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     return lbann::make_unique<slice_layer<TensorDataType, Layout, Device>>(
              comm, params.axis(), slice_points);
   }
-  if (proto_layer.has_constant()) {
-    const auto& params = proto_layer.constant();
-    const auto& dims = parse_list<int>(params.num_neurons());
-    return lbann::make_unique<constant_layer<TensorDataType, Layout, Device>>(comm, params.value(), dims);
-  }
   if (proto_layer.has_gaussian()) {
     const auto& params = proto_layer.gaussian();
     const auto& dims = parse_list<int>(params.neuron_dims());
@@ -520,16 +516,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
                   "a data-parallel layout");
     }
   }
-  if (proto_layer.has_crop()) {
-    const auto& params = proto_layer.crop();
-    const auto& dims = parse_list<int>(params.dims());
-    if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<crop_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm, dims);
-    } else {
-      LBANN_ERROR("crop layer is only supported with "
-                  "a data-parallel layout");
-    }
-  }
   if (proto_layer.has_discrete_random()) {
     const auto& params = proto_layer.discrete_random();
     const auto& values = parse_list<DataType>(params.values());
@@ -554,11 +540,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
       LBANN_ERROR("sort layer is only supported with "
                   "a data-parallel layout");
     }
-  }
-  if (proto_layer.has_weights_layer()) {
-    const auto& params = proto_layer.weights_layer();
-    const auto& dims = parse_list<El::Int>(params.dims());
-    return lbann::make_unique<weights_layer<TensorDataType, Layout, Device>>(comm, dims);
   }
   if (proto_layer.has_tessellate()) {
     const auto& params = proto_layer.tessellate();

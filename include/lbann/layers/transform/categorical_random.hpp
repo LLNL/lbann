@@ -88,7 +88,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
       if (mode == execution_mode::training) {
         // Choose first output with CDF above random number in (0,1)
         const auto& rand = rand_mat.GetLocal(0, col);
-        TensorDataType cdf = TensorDataType(0);
+        TensorDataType cdf = El::TypeTraits<TensorDataType>::Zero();
         for (El::Int row = 0; row < local_height; ++row) {
           cdf += local_input(row, col);
           if (rand < cdf) {
@@ -104,7 +104,7 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
       }
 
       // Output a one-hot vector
-      local_output(index, col) = TensorDataType(1);
+      local_output(index, col) = El::TypeTraits<TensorDataType>::One();
 
     }
 

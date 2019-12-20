@@ -53,6 +53,19 @@ struct Builder<T, data_layout::DATA_PARALLEL, El::Device::CPU>
     return lbann::make_unique<LayerType>(comm);
   }
 };
+
+#ifdef LBANN_HAS_GPU_FP16
+template <>
+struct Builder<El::gpu_half_type, data_layout::DATA_PARALLEL, El::Device::CPU>
+{
+  static std::unique_ptr<Layer> Build(lbann_comm*)
+  {
+    LBANN_ERROR("Attempted to instantiate layer \"categorical_random\" with "
+                "TensorDataType=gpu_half_type. This layer is does not support "
+                "this type.");
+  }
+};
+#endif // LBANN_HAS_GPU_FP16
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -80,4 +93,7 @@ std::unique_ptr<Layer> build_categorical_random_layer_from_pbuf(
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
+#ifdef LBANN_HAS_GPU_FP16
+BUILDER_PROTO(El::gpu_half_type);
+#endif // LBANN_HAS_GPU_FP16
 }// namespace lbann
