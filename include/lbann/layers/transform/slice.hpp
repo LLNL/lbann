@@ -49,21 +49,12 @@ template <typename TensorDataType,
           El::Device Device = El::Device::CPU>
 class slice_layer : public data_type_layer<TensorDataType> {
 public:
-  /** @name Public Types */
-  ///@{
-
-  /** @brief The tensor type expected in this object. */
-  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
-
-  ///@}
-
-public:
 
   slice_layer(lbann_comm *comm,
-              El::Int slice_dim,
-              std::vector<El::Int> slice_points);
-  slice_layer(const slice_layer& other);
-  slice_layer& operator=(const slice_layer& other);
+              size_t slice_dim,
+              std::vector<size_t> slice_points);
+  slice_layer(const slice_layer& other) = default;
+  slice_layer& operator=(const slice_layer& other) = default;
 
   slice_layer* copy() const override;
   std::string get_type() const override;
@@ -72,14 +63,8 @@ public:
 
   description get_description() const override;
 
-  /** Get slice points. */
-  std::vector<El::Int>& get_slice_points() { return m_slice_points; }
-  /** Get slice points (const). */
-  std::vector<El::Int> get_slice_points() const { return m_slice_points; }
-
 protected:
 
-  void setup_matrices(const El::Grid& grid) override;
   void setup_dims() override;
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
@@ -90,14 +75,9 @@ protected:
 private:
 
   /** Tensor dimension to slice. */
-  El::Int m_slice_dim;
+  size_t m_slice_dim;
   /** Slice points for each child layer. */
-  std::vector<El::Int> m_slice_points;
-
-  /** View into input tensor. */
-  std::unique_ptr<AbsDistMatrixType> m_input_v;
-  /** View into output tensor. */
-  std::unique_ptr<AbsDistMatrixType> m_output_v;
+  std::vector<size_t> m_slice_points;
 
 #ifdef LBANN_HAS_GPU
   /** @brief Workspace buffer.
@@ -130,37 +110,16 @@ private:
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 slice_layer<TensorDataType,Layout,Device>::slice_layer(
   lbann_comm *comm,
-  El::Int slice_dim,
-  std::vector<El::Int> slice_points)
+  size_t slice_dim,
+  std::vector<size_t> slice_points)
   : data_type_layer<TensorDataType>(comm),
-  m_slice_dim(slice_dim),
-  m_slice_points(slice_points) {
+    m_slice_dim{slice_dim},
+    m_slice_points(std::move(slice_points)) {
   this->m_expected_num_child_layers = -1; // No limit on children
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-slice_layer<TensorDataType,Layout,Device>::slice_layer(
-  const slice_layer& other)
-  : data_type_layer<TensorDataType>(other),
-    m_slice_dim(other.m_slice_dim),
-    m_slice_points(other.m_slice_points) {
-  m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
-  m_output_v.reset(other.m_output_v ? other.m_output_v->Copy() : nullptr);
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-slice_layer<TensorDataType,Layout,Device>& slice_layer<TensorDataType,Layout,Device>::operator=(
-  const slice_layer& other) {
-  data_type_layer<TensorDataType>::operator=(other);
-  m_slice_dim = other.m_slice_dim;
-  m_slice_points = other.m_slice_points;
-  m_input_v.reset(other.m_input_v ? other.m_input_v->Copy() : nullptr);
-  m_output_v.reset(other.m_output_v ? other.m_output_v->Copy() : nullptr);
-  return *this;
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-slice_layer<TensorDataType, Layout,Device>* slice_layer<TensorDataType,Layout,Device>::copy() const {
+slice_layer<TensorDataType,Layout,Device>* slice_layer<TensorDataType,Layout,Device>::copy() const {
   return new slice_layer(*this);
 }
 
@@ -183,7 +142,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 description slice_layer<TensorDataType,Layout,Device>::get_description() const {
   auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Slice dimension", m_slice_dim);
-  std::stringstream ss;
+  std::ostringstream ss;
   for (size_t i = 0; i < m_slice_points.size(); ++i) {
     ss << (i > 0 ? ", " : "") << m_slice_points[i];
   }
@@ -192,48 +151,39 @@ description slice_layer<TensorDataType,Layout,Device>::get_description() const {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::setup_matrices(const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
-  const auto& input = this->get_prev_activations();
-  m_input_v.reset(input.Construct(input.Grid(), input.Root()));
-  m_output_v.reset(input.Construct(input.Grid(), input.Root()));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::setup_dims() {
   data_type_layer<TensorDataType>::setup_dims();
-  const auto& input_dims = this->get_input_dims();
-  const auto& num_outputs = this->get_num_children();
 
   // Check that slice parameters are valid
-  if (m_slice_dim < 0 || m_slice_dim >= (El::Int) input_dims.size()) {
-    LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
-                "has ",input_dims.size()," dimensions, ",
-                "but attempted to slice along dimension ",m_slice_dim);
+  const auto& input_dims = this->get_input_dims();
+  const size_t num_outputs = this->get_num_children();
+  if (m_slice_dim >= input_dims.size()) {
+    std::ostringstream err;
+    err << this->get_type() << " layer \"" << this->get_name() << "\" "
+        << "is slicing along dimension " << m_slice_dim << ", "
+        << "but it has a " << input_dims.size() << "-D input tensor "
+        << "(parent layer \"" << this->get_parent_layers()[0]->get_name() << "\" "
+        << "outputs with dimensions ";
+    for (size_t d=0; d<input_dims.size(); ++d) {
+      err << (d>0 ? " x " : "") << input_dims[d];
+    }
+    err << ")";
+    LBANN_ERROR(err.str());
   }
-  if ((int) m_slice_points.size() <= num_outputs) {
-    LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
-                "requires more slice points than output tensors ",
-                "(found ",m_slice_points.size()," slice points ",
-                "and ",this->m_child_layers.size()," output tensors)");
+  if (m_slice_points.size() <= num_outputs) {
+    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+                "has ",num_outputs," children, "
+                "but only ",m_slice_points.size()," slice points");
   }
   if (!std::is_sorted(m_slice_points.begin(), m_slice_points.end())) {
-    LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
+    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
                 "has unsorted slice points");
   }
-  if (m_slice_points.front() < 0
-      || m_slice_points.back() > input_dims[m_slice_dim]) {
-    std::stringstream err;
-    err << get_type() << " layer \"" << this->get_name() << "\" "
-        << "expects slice points in the range "
-        << "[0, " << input_dims[m_slice_dim] << "], "
-        << "but found an invalid slice point ";
-    if (m_slice_points.front() < 0) {
-      err << "(" << m_slice_points.front() << ")";
-    } else {
-      err << "(" << m_slice_points.back() << ")";
-    }
-    LBANN_ERROR(err.str());
+  if (m_slice_points.back() > static_cast<size_t>(input_dims[m_slice_dim])) {
+    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+                "has a slice point of ",m_slice_points.back(),", ",
+                "which is outside the expected range "
+                "[0",input_dims[m_slice_dim],"]");
   }
 
   // Model-parallel implementation only supports flat data
@@ -245,7 +195,7 @@ void slice_layer<TensorDataType,Layout,Device>::setup_dims() {
 
   // Set output tensor dimensions
   auto output_dims = input_dims;
-  for (int i = 0; i < num_outputs; ++i) {
+  for (size_t i = 0; i < num_outputs; ++i) {
     output_dims[m_slice_dim] = m_slice_points[i+1] - m_slice_points[i];
     this->set_output_dims(output_dims, i);
   }

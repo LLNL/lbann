@@ -461,7 +461,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
   }
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
-    std::vector<El::Int> slice_points;
+    std::vector<size_t> slice_points;
     bool is_supported = false;
     std::string slice_point_method_name;
 
@@ -469,10 +469,11 @@ std::unique_ptr<Layer> construct_layer_legacy(
       slice_point_method_name = "'get_slice_points_from_reader'";
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
       const std::string& var = params.get_slice_points_from_reader();
-      slice_points = get_slice_points_from_reader(dr_generic, var, is_supported);
+      const auto& _slice_points = get_slice_points_from_reader(dr_generic, var, is_supported);
+      std::copy(_slice_points.begin(), _slice_points.end(), slice_points.begin());
     } else {
       slice_point_method_name = "'slice_points'";
-      slice_points = parse_list<El::Int>(params.slice_points());
+      slice_points = parse_list<size_t>(params.slice_points());
       is_supported = true;
     }
     if (slice_points.size() < 2u) {
