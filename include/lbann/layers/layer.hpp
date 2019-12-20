@@ -46,6 +46,15 @@
   std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf( \
     lbann_comm*, lbann_data::Layer const&)
 
+/** @brief A utility macro for easily adding ETI for layer builders */
+#define LBANN_LAYER_BUILDER_ETI(LAYER_NAME, T, Device)                  \
+  template std::unique_ptr<Layer>                                       \
+  build_##LAYER_NAME##_layer_from_pbuf<T,::lbann::data_layout::DATA_PARALLEL,Device>( \
+    lbann_comm*, lbann_data::Layer const&);                             \
+  template std::unique_ptr<Layer>                                       \
+  build_##LAYER_NAME##_layer_from_pbuf<T,::lbann::data_layout::MODEL_PARALLEL,Device>( \
+    lbann_comm*, lbann_data::Layer const&)
+
 // Forward-declare protobuf classes
 namespace lbann_data {
 class Layer;

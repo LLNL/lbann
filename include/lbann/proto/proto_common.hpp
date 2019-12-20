@@ -29,6 +29,15 @@
 
 #include "lbann/data_readers/data_reader.hpp"
 
+#define LBANN_ASSERT_MSG_HAS_FIELD(MSG, FIELD)                          \
+  do {                                                                  \
+    if (!MSG.has_##FIELD()) {                                           \
+      LBANN_ERROR("No field \"" #FIELD "\" in the given message:\n{\n", \
+                  MSG.DebugString(), "\n}\n");                          \
+    }                                                                   \
+  }                                                                     \
+  while(false)
+
 // Forward declaration of protobuf classes
 namespace lbann_data {
 class LbannPB;

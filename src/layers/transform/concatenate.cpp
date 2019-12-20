@@ -27,6 +27,9 @@
 #define LBANN_CONCATENATE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/concatenate.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <layers.pb.h>
+
 namespace lbann {
 
 namespace {
@@ -315,6 +318,16 @@ void bp_compute_impl(
     input_grad_dims_list,
     input_grad_strides_list);
 
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_concatenate_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+{
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, concatenation);
+  using LayerType = concatenate_layer<TensorDataType, Layout, Device>;
+  const auto& axis = proto_layer.concatenation().axis();
+  return lbann::make_unique<LayerType>(comm, axis);
 }
 
 // Explicit instantiation

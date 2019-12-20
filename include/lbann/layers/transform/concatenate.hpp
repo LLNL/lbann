@@ -286,6 +286,8 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
 
 }
 
+LBANN_DEFINE_LAYER_BUILDER(concatenate);
+
 #ifndef LBANN_CONCATENATE_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device)             \
