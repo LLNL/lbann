@@ -118,6 +118,8 @@ private:
   friend void fp_setup_outputs_impl(slice_layer<U,Layout,D>&);
   template <typename U>
   friend void fp_compute_impl(slice_layer<U,Layout,Device>&);
+  template <typename U>
+  friend void bp_compute_impl(slice_layer<U,Layout,Device>&);
 
 };
 
@@ -282,7 +284,7 @@ void fp_setup_outputs_impl(
     for (size_t j=0; j<num_outputs; ++j) {
       auto& output = l.get_activations(j);
       output.AlignWith(input);
-      El::Zeros(output, l.get_output_size(j), input.Width());
+      output.Resize(l.get_output_size(j), input.Width());
     }
   }
 
@@ -300,64 +302,31 @@ void slice_layer<TensorDataType,Layout,Device>::fp_compute() {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
-  const auto& num_outputs = this->get_num_children();
-  const auto& input_dims = this->get_input_dims();
-
-  // Initialize gradient w.r.t. input tensor
-  auto& gradient_wrt_input = this->get_error_signals();
-  gradient_wrt_input.Empty(false);
-  gradient_wrt_input.AlignWith(this->get_prev_activations());
-  gradient_wrt_input.Resize(this->get_input_size(), mini_batch_size);
-  if (m_slice_points[0] != 0
-      || m_slice_points[num_outputs] != input_dims[m_slice_dim]) {
-    El::Zero(gradient_wrt_input);
+  const auto& output0_grad = this->get_prev_error_signals(0);
+  auto& input_grad = this->get_error_signals();
+  input_grad.Empty(false);
+  if (this->get_num_children() == 1) {
+    El::LockedView(input_grad, output0_grad);
   }
-
-  // Divide input tensor into unit slices along slice dimension
-  // Note: Each unit slice is divided into contiguous "unit blocks"
-  const auto& input_num_unit_slices = input_dims[m_slice_dim];
-  const auto& blocks_per_slice
-    = std::accumulate(&input_dims[0], &input_dims[m_slice_dim],
-                      1, std::multiplies<int>());
-  const auto& unit_block_size
-    = std::accumulate(input_dims.begin() + m_slice_dim + 1,
-                      input_dims.end(),
-                      1, std::multiplies<int>());
-  const auto& input_block_stride = (input_num_unit_slices
-                                    * unit_block_size);
-
-  // Populate slices of gradient w.r.t. input tensor
-  for (int i = 0; i < num_outputs; ++i) {
-    const auto& output_dims = this->get_output_dims(i);
-    const auto& gradient_wrt_output = this->get_prev_error_signals(i);
-
-    // Divide output tensor into unit slices
-    const auto& output_num_unit_slices = output_dims[m_slice_dim];
-
-    // Merge unit slices
-    const auto& block_size = output_num_unit_slices * unit_block_size;
-    const auto& input_block_offset = m_slice_points[i] * unit_block_size;
-
-    // Populate gradient w.r.t. input tensor one block at a time
-    for (int block = 0; block < blocks_per_slice; ++block) {
-      const auto& input_offset = (input_block_offset
-                                  + block * input_block_stride);
-      const auto& output_offset = block * block_size;
-      El::LockedView(*m_output_v, gradient_wrt_output,
-                     El::IR(output_offset, output_offset + block_size),
-                     El::ALL);
-      El::View(*m_input_v, gradient_wrt_input,
-               El::IR(input_offset, input_offset + block_size),
-               El::ALL);
-      El::Copy(*m_output_v, *m_input_v);
-    }
-
+  else {
+    input_grad.AlignWith(output0_grad);
+    El::Zeros(input_grad, this->get_input_size(), output0_grad.Width());
   }
-
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::bp_compute() {
+
+  // Just make a view if there is one input
+  if (this->get_num_children() == 1) {
+    // Tensor views have already been setup in
+    // bp_setup_gradient_wrt_inputs
+    return;
+  }
+
+  // Perform concatenation
+  bp_compute_impl(*this);
+
 }
 
 #ifndef LBANN_SLICE_LAYER_INSTANTIATE

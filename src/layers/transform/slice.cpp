@@ -143,7 +143,6 @@ void fp_compute_impl(
   // Tensor views have already been setup in fp_setup_outputs
 }
 
-#if 0 /// @todo Restore
 template <typename TensorDataType>
 void bp_compute_impl(
   slice_layer<TensorDataType,data_layout::MODEL_PARALLEL,El::Device::CPU>& l) {
@@ -153,7 +152,7 @@ void bp_compute_impl(
   auto& input_grad = l.get_error_signals();
   std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> input_grad_v(
     input_grad.Construct(input_grad.Grid(), input_grad.Root()));
-  size_t offset = 0;
+  size_t offset = l.m_slice_points.front();
   for (size_t j=0; j<static_cast<size_t>(l.get_num_children()); ++j) {
     const auto& output_grad = l.get_prev_error_signals(j);
     El::View(*input_grad_v, input_grad,
@@ -163,7 +162,6 @@ void bp_compute_impl(
   }
 
 }
-#endif // 0
 
 template <typename TensorDataType>
 void fp_compute_impl(
@@ -236,11 +234,8 @@ void fp_compute_impl(
   }
 
   // Slice 4D tensor
-  size_t input_offset = std::accumulate(input_dims.begin(),
-                                        input_dims.end(),
-                                        1, std::multiplies<int>());
-  input_offset /= input_dims[l.m_slice_dim];
-  input_offset *= l.m_slice_points.front();
+  const size_t slice_dim_stride = input_strides[l.m_slice_dim+(4-num_dims)];
+  const size_t input_offset = l.m_slice_points.front() * slice_dim_stride;
   slice4d<TensorDataType>(
     l.m_slice_dim + (4-num_dims),
     input.LockedBuffer() + input_offset,
@@ -251,26 +246,51 @@ void fp_compute_impl(
 
 }
 
-#if 0 /// @todo Restore
 template <typename TensorDataType>
 void bp_compute_impl(
   slice_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
 
   // Check that number of dimensions is valid
   /// @todo Support tensors with arbitrary number of dimensions
-  const size_t num_dims = l.get_output_dims().size();
+  const auto& input_dims = l.get_input_dims();
+  const size_t num_dims = input_dims.size();
   if (num_dims > 3) {
     LBANN_ERROR(l.get_type()," layer \"",l.get_name(),"\" ",
                 "is operating on ",num_dims,"-D tensors, ",
                 "but only 3-D tensors are currently supported");
   }
 
-  // Get dimensions and strides for each input tensor
-  std::vector<const TensorDataType*> input_buffer_list;
-  std::vector<dim4> input_dims_list, input_strides_list;
-  for (size_t j=0; j<static_cast<size_t>(l.get_num_parents()); ++j) {
-    const auto& input = l.get_prev_activations(j);
-    const auto& input_dims = l.get_input_dims(j);
+  // Get dimensions and strides for each output tensor
+  std::vector<const TensorDataType*> output_grad_buffer_list;
+  std::vector<dim4> output_grad_dims_list, output_grad_strides_list;
+  for (size_t j=0; j<static_cast<size_t>(l.get_num_children()); ++j) {
+    const auto& output_grad = l.get_prev_error_signals(j);
+    const auto& output_grad_dims = l.get_output_dims(j);
+
+    // Construct dimensions and strides in reverse order
+    // Note: Assume each mini-batch sample is fully packed.
+    std::vector<size_t> rdims(output_grad_dims.rbegin(), output_grad_dims.rend());
+    std::vector<size_t> rstrides(output_grad_dims.size(), 1);
+    for (size_t d=1; d<output_grad_dims.size(); ++d) {
+      rstrides[d] = rdims[d-1] * rstrides[d-1];
+    }
+    rdims.push_back(output_grad.LocalWidth());
+    rstrides.push_back(output_grad.LDim());
+
+    // Pad tensor dimensions to 4D
+    rdims.resize(4, 1);
+    rstrides.resize(4, rstrides.back());
+
+    output_grad_buffer_list.push_back(output_grad.LockedBuffer());
+    output_grad_dims_list.push_back({rdims[3], rdims[2], rdims[1], rdims[0]});
+    output_grad_strides_list.push_back(
+      {rstrides[3], rstrides[2], rstrides[1], rstrides[0]});
+  }
+
+  // Get strides for input tensor
+  dim4 input_grad_strides;
+  auto& input_grad = l.get_error_signals();
+  {
 
     // Construct dimensions and strides in reverse order
     // Note: Assume each mini-batch sample is fully packed.
@@ -279,53 +299,28 @@ void bp_compute_impl(
     for (size_t d=1; d<input_dims.size(); ++d) {
       rstrides[d] = rdims[d-1] * rstrides[d-1];
     }
-    rdims.push_back(input.LocalWidth());
-    rstrides.push_back(input.LDim());
+    rdims.push_back(input_grad.LocalWidth());
+    rstrides.push_back(input_grad.LDim());
 
     // Pad tensor dimensions to 4D
     rdims.resize(4, 1);
     rstrides.resize(4, rstrides.back());
 
-    input_buffer_list.push_back(input.LockedBuffer());
-    input_dims_list.push_back({rdims[3], rdims[2], rdims[1], rdims[0]});
-    input_strides_list.push_back(
-      {rstrides[3], rstrides[2], rstrides[1], rstrides[0]});
-  }
-
-  // Get strides for output tensor
-  dim4 output_strides;
-  auto& output = l.get_activations();
-  {
-    const auto& output_dims = l.get_output_dims();
-
-    // Construct dimensions and strides in reverse order
-    // Note: Assume each mini-batch sample is fully packed.
-    std::vector<size_t> rdims(output_dims.rbegin(), output_dims.rend());
-    std::vector<size_t> rstrides(output_dims.size(), 1);
-    for (size_t d=1; d<output_dims.size(); ++d) {
-      rstrides[d] = rdims[d-1] * rstrides[d-1];
-    }
-    rdims.push_back(output.LocalWidth());
-    rstrides.push_back(output.LDim());
-
-    // Pad tensor dimensions to 4D
-    rdims.resize(4, 1);
-    rstrides.resize(4, rstrides.back());
-
-    output_strides = {rstrides[3], rstrides[2], rstrides[1], rstrides[0]};
+    input_grad_strides = {rstrides[3], rstrides[2], rstrides[1], rstrides[0]};
   }
 
   // Concatenate 4D tensors
+  const size_t slice_dim_stride = input_grad_strides[l.m_slice_dim+(4-num_dims)];
+  const size_t input_grad_offset = l.m_slice_points.front() * slice_dim_stride;
   concat4d<TensorDataType>(
     l.m_slice_dim + (4-num_dims),
-    input_buffer_list,
-    input_dims_list,
-    input_strides_list,
-    output.Buffer(),
-    output_strides);
+    output_grad_buffer_list,
+    output_grad_dims_list,
+    output_grad_strides_list,
+    input_grad.Buffer() + input_grad_offset,
+    input_grad_strides);
 
 }
-#endif // 0
 
 // Explicit instantiation
 #define PROTO(T)                                        \
