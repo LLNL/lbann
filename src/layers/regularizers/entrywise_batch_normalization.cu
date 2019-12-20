@@ -602,9 +602,13 @@ void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_comp
           this->get_data_type_weights(1).get_values());
 }
 
-template class entrywise_batch_normalization_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class entrywise_batch_normalization_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class entrywise_batch_normalization_layer< \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>;  \
+  template class entrywise_batch_normalization_layer< \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
