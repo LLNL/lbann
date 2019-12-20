@@ -233,14 +233,11 @@ abstract_evaluation_layer<TensorDataType>::construct(lbann_comm *comm,
 #undef EVAL_LAYER_CONSTRUCT
 
   // Could not construct evaluation layer
-  std::stringstream err;
-  err << "attempted to construct evaluation layer "
-      << "with invalid parameters "
-      << "(data layout type " << static_cast<int>(layout) << ", "
-      << "device type " << static_cast<int>(device) << ")";
-  LBANN_ERROR(err.str());
+  LBANN_ERROR("Attempted to construct evaluation layer "
+              "with invalid parameters "
+              "(data layout type: ", to_string(layout), ", device type: ",
+              to_string(device), ")");
   return nullptr;
-
 }
 
 LBANN_LAYER_DEFAULT_BUILDER(evaluation)
