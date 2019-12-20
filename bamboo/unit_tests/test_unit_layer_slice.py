@@ -178,6 +178,40 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # --------------------------
+    # Model-parallel
+    # --------------------------
+
+    # LBANN implementation
+    slice_points = (31, 54, 55, 57, 67)
+    x = lbann.Reshape(x_lbann, dims=tools.str_list([105]))
+    x_slice = lbann.Slice(x, slice_points=tools.str_list(slice_points))
+    y = []
+    for _ in range(len(slice_points)-1):
+        y.append(lbann.L2Norm2(x_slice))
+    z = lbann.Sum(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='model-parallel'))
+
+    # NumPy implementation
+    vals = []
+    for i in range(num_samples()):
+        x = get_sample(i).reshape(-1).astype(np.float64)
+        y = []
+        for j in range(len(slice_points)-1):
+            x_slice = x[slice_points[j]:slice_points[j+1]]
+            y.append(tools.numpy_l2norm2(x_slice))
+        z = sum(y)
+        vals.append(z)
+    val = np.mean(vals)
+    tol = 8 * val * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val-tol,
+        upper_bound=val+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # --------------------------
     # Gradient checking
     # --------------------------
 

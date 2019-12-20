@@ -99,6 +99,11 @@ private:
   /** View into output tensor. */
   std::unique_ptr<AbsDistMatrixType> m_output_v;
 
+  template <typename U, El::Device D>
+  friend void fp_setup_outputs_impl(slice_layer<U,Layout,D>&);
+  template <typename U>
+  friend void fp_compute_impl(slice_layer<U,Layout,Device>&);
+
 };
 
 // =========================================================
@@ -214,6 +219,13 @@ void slice_layer<TensorDataType,Layout,Device>::setup_dims() {
     LBANN_ERROR(err.str());
   }
 
+  // Model-parallel implementation only supports flat data
+  if (Layout == data_layout::MODEL_PARALLEL && input_dims.size() != 1) {
+    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+                "attempted to slice along dimension ",m_slice_dim,", ",
+                "but model-parallel slice layer only supports flat data");
+  }
+
   // Set output tensor dimensions
   auto output_dims = input_dims;
   for (int i = 0; i < num_outputs; ++i) {
@@ -223,66 +235,52 @@ void slice_layer<TensorDataType,Layout,Device>::setup_dims() {
 
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
-  const auto& num_outputs = this->get_num_children();
-  const auto& input_dims = this->get_input_dims();
+template <typename TensorDataType, El::Device Device>
+void fp_setup_outputs_impl(
+  slice_layer<TensorDataType,data_layout::MODEL_PARALLEL,Device>& l) {
 
-  // Divide input tensor into unit slices along slice dimension
-  // Note: Each unit slice is divided into contiguous "unit blocks"
-  const auto& input_num_unit_slices = input_dims[m_slice_dim];
-  const auto& blocks_per_slice
-    = std::accumulate(&input_dims[0], &input_dims[m_slice_dim],
-                      1, std::multiplies<int>());
-  const auto& unit_block_size
-    = std::accumulate(input_dims.begin() + m_slice_dim + 1,
-                      input_dims.end(),
-                      1, std::multiplies<int>());
-  const auto& input_block_stride = (input_num_unit_slices
-                                    * unit_block_size);
-
-  // Populate output tensors with slices of input tensor
-  const auto& input = this->get_prev_activations();
-  for (int i = 0; i < num_outputs; ++i) {
-    const auto& output_dims = this->get_output_dims(i);
-    const auto& output_size = this->get_output_size(i);
-    auto& output = this->get_activations(i);
-    output.Empty(false);
-
-    // Divide output tensor into unit slices
-    const auto& output_num_unit_slices = output_dims[m_slice_dim];
-
-    // Merge unit slices and get first contiguous input block
-    const auto& block_size = output_num_unit_slices * unit_block_size;
-    const auto& input_block_offset = m_slice_points[i] * unit_block_size;
-    El::LockedView(*m_input_v, input,
-                   El::IR(input_block_offset,
-                          input_block_offset + block_size),
-                   El::ALL);
-
-    // Populate output tensor one block at a time
-    // Note: If there is only one block, output can be a view
-    if (blocks_per_slice > 1) {
-      output.AlignWith(*m_input_v);
-      output.Resize(output_size, mini_batch_size);
-      for (int block = 0; block < blocks_per_slice; ++block) {
-        const auto& input_offset = (input_block_offset
-                                    + block * input_block_stride);
-        const auto& output_offset = block * block_size;
-        El::LockedView(*m_input_v, input,
-                       El::IR(input_offset, input_offset + block_size),
-                       El::ALL);
-        El::View(*m_output_v, output,
-                 El::IR(output_offset, output_offset + block_size),
-                 El::ALL);
-        El::Copy(*m_input_v, *m_output_v);
-      }
-    } else {
-      El::LockedView(output, *m_input_v);
-    }
-
+  // Slice Elemental matrices
+  // Note: Assume each mini-batch sample is flat.
+  const size_t num_outputs = l.get_num_children();
+  const auto& input = l.get_prev_activations();
+  size_t offset = l.m_slice_points.front();
+  for (size_t j=0; j<num_outputs; ++j) {
+    auto& output = l.get_activations(j);
+    const auto& output_size = l.get_output_size(j);
+    El::LockedView(output, input,
+                   El::IR(offset, offset+output_size), El::ALL);
+    offset += output_size;
   }
 
+}
+
+template <typename TensorDataType, El::Device Device>
+void fp_setup_outputs_impl(
+  slice_layer<TensorDataType,data_layout::DATA_PARALLEL,Device>& l) {
+
+  const size_t num_outputs = l.get_num_children();
+  const auto& input = l.get_prev_activations();
+  if (num_outputs == 1) {
+    El::LockedView(l.get_activations(0), input);
+  }
+  else {
+    for (size_t j=0; j<num_outputs; ++j) {
+      auto& output = l.get_activations(j);
+      output.AlignWith(input);
+      El::Zeros(output, l.get_output_size(j), input.Width());
+    }
+  }
+
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void slice_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
+  fp_setup_outputs_impl(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void slice_layer<TensorDataType,Layout,Device>::fp_compute() {
+  fp_compute_impl(*this);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -344,17 +342,15 @@ void slice_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El:
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::fp_compute() {
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::bp_compute() {
 }
 
 #ifndef LBANN_SLICE_LAYER_INSTANTIATE
-#define PROTO_DEVICE(T, Device) \
-  extern template class slice_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  extern template class slice_layer<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO_DEVICE(T, Device)             \
+  extern template class slice_layer<        \
+    T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class slice_layer<        \
+    T, data_layout::MODEL_PARALLEL, Device>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
