@@ -106,6 +106,8 @@ protected:
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(sum);
+
 #ifndef LBANN_SUM_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class sum_layer<T, data_layout::DATA_PARALLEL, Device>; \

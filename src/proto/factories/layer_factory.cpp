@@ -220,10 +220,11 @@ private:
     LBANN_REGISTER_BUILDER(Crop, crop);
     LBANN_REGISTER_BUILDER(Dummy, dummy);
     LBANN_REGISTER_BUILDER(Evaluation, evaluation);
-    LBANN_REGISTER_DEFAULT_BUILDER(Hadamard, hadamard);
-    LBANN_REGISTER_DEFAULT_BUILDER(Split, split);
-    LBANN_REGISTER_DEFAULT_BUILDER(StopGradient, stop_gradient);
-    LBANN_REGISTER_DEFAULT_BUILDER(Sum, sum);
+    LBANN_REGISTER_BUILDER(Hadamard, hadamard);
+    LBANN_REGISTER_BUILDER(Split, split);
+    LBANN_REGISTER_BUILDER(StopGradient, stop_gradient);
+    LBANN_REGISTER_BUILDER(Sum, sum);
+    LBANN_REGISTER_BUILDER(WeightedSum, weighted_sum);
     LBANN_REGISTER_BUILDER(WeightsLayer, weights);
 
     // Activations
@@ -371,6 +372,9 @@ std::unique_ptr<Layer> construct_layer_legacy(
   }
 
   // Transform layers
+  // Currently this cannot be suitably removed from this function
+  // because it relies on "num_parallel_readers" and "data_readers"
+  // arguments.
   if (proto_layer.has_reshape()) {
     const auto& params = proto_layer.reshape();
     std::vector<int> dims = parse_list<int>(params.dims());
@@ -387,11 +391,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
     }
     return lbann::make_unique<reshape_layer<TensorDataType, Layout, Device>>(comm, dims);
   }
-  if (proto_layer.has_weighted_sum()) {
-    const auto& params = proto_layer.weighted_sum();
-    const auto& scaling_factors = parse_list<DataType>(params.scaling_factors());
-    return lbann::make_unique<weighted_sum_layer<TensorDataType, Layout, Device>>(comm, scaling_factors);
-  }
+
+  // Currently this cannot be suitably removed from this function
+  // because it relies on "num_parallel_readers" and "data_readers"
+  // arguments.
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
     std::vector<size_t> slice_points;
@@ -435,14 +438,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
                                              params.stdev());
     }
   }
-#if 0
-  if (proto_layer.has_bernoulli()) {
-    const auto& params = proto_layer.bernoulli();
-    const auto& dims = parse_list<int>(params.neuron_dims());
-    return lbann::make_unique<bernoulli_layer<TensorDataType, Layout, Device>>(
-             comm, dims, params.prob());
-  }
-#endif
   if (proto_layer.has_uniform()) {
     const auto& params = proto_layer.uniform();
     const auto& dims = parse_list<int>(params.neuron_dims());
