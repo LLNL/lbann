@@ -74,7 +74,7 @@ void fp(lbann_comm& comm,
   // Compute output by subtracting LogSumExp
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    const TensorDataType log_sum_exp = std::log(local_workspace(0, col));
+    const TensorDataType log_sum_exp = std::log(local_workspace(El::TypeTraits<TensorDataType>::Zero(), col));
     for (El::Int row = 0; row < local_height; ++row) {
       auto& y = local_output(row, col);
       y -= log_sum_exp;

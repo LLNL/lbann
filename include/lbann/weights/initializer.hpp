@@ -174,8 +174,8 @@ public:
   ///@}
 
 public:
-  normal_initializer(TensorDataType mean = TensorDataType(0),
-                     TensorDataType standard_deviation = TensorDataType(1))
+  normal_initializer(TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
+                     TensorDataType standard_deviation = El::TypeTraits<TensorDataType>::One())
     : data_type_weights_initializer<TensorDataType>(),
       m_mean(mean),
       m_standard_deviation(standard_deviation) {}

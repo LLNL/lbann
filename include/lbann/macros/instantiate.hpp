@@ -25,14 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 PROTO(float);
-#ifndef LBANN_INSTANTIATE_FLOAT_ONLY
 PROTO(double);
-#endif // LBANN_INSTANTIATE_FLOAT_ONLY
 
-#ifdef LBANN_INSTANTIATE_CPU_HALF_BVE
 #ifdef LBANN_INSTANTIATE_CPU_HALF
 PROTO(cpu_fp16);
-#endif
 #endif
 
 #ifdef LBANN_INSTANTIATE_GPU_HALF_BVE

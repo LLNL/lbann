@@ -65,8 +65,8 @@ void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& input,
             TensorDataType& value,
             cuda::event_wrapper& copy_event) {
-  constexpr TensorDataType zero = 0;
-  constexpr TensorDataType one = 1;
+  constexpr TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+  constexpr TensorDataType one = El::TypeTraits<TensorDataType>::One();
 
   // Local matrix
   const auto& local_input = input.LockedMatrix();

@@ -31,8 +31,8 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  constexpr TensorDataType zero = 0;
-  constexpr TensorDataType one = 1;
+  constexpr TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+  constexpr TensorDataType one = El::TypeTraits<TensorDataType>::One();
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
@@ -193,10 +193,10 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     const auto& scale = local_scale(channel, 0);
     const TensorDataType inv_stdev = 1 / std::sqrt(var + this->m_epsilon);
     const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
-    TensorDataType dmean = 0;
-    TensorDataType dvar = 0;
-    TensorDataType dscale = 0;
-    TensorDataType dbias = 0;
+    TensorDataType dmean = El::TypeTraits<TensorDataType>::Zero();
+    TensorDataType dvar = El::TypeTraits<TensorDataType>::Zero();
+    TensorDataType dscale = El::TypeTraits<TensorDataType>::Zero();
+    TensorDataType dbias = El::TypeTraits<TensorDataType>::Zero();
 
     // Compute gradient contributions from local entries
     const auto& row_start = channel * channel_size;

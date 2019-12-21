@@ -197,7 +197,7 @@ protected:
     }
 
     // Construct mask matrix
-    const TensorDataType scale = 1 / m_keep_prob;
+    const TensorDataType scale = static_cast<TensorDataType>(1 / m_keep_prob);
     const auto& height = input.Height();
     const auto& width = input.Width();
     m_mask->Resize(height, width);
