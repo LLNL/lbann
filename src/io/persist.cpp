@@ -564,23 +564,27 @@ bool lbann::read_string(int fd, const char *name, char *buf, size_t size) {
   return true;
 }
 
+namespace lbann {
+
 #define PROTO(T)                     \
-  template bool lbann::persist::write_rank_distmat<T>(                        \
+  template bool persist::write_rank_distmat<T>(                        \
     persist_type type, const char *name, const El::AbstractDistMatrix<T>& M); \
-  template bool lbann::persist::read_rank_distmat<T>(                         \
+  template bool persist::read_rank_distmat<T>(                         \
     persist_type type, const char *name, El::AbstractDistMatrix<T>& M);       \
-  template bool lbann::persist::write_distmat<T>(                             \
+  template bool persist::write_distmat<T>(                             \
     persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
-  template bool lbann::persist::read_distmat<T>(                              \
+  template bool persist::read_distmat<T>(                              \
     persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
-  template bool lbann::persist::write_datatype<T>(                            \
+  template bool persist::write_datatype<T>(                            \
     persist_type type, const char *name, T val);                              \
-  template bool lbann::persist::read_datatype<T>(                             \
+  template bool persist::read_datatype<T>(                             \
     persist_type type, const char *name, T *val);                             \
-  template bool lbann::write_distmat<T>(                                      \
+  template bool write_distmat<T>(                                      \
     int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);              \
-  template bool lbann::read_distmat<T>(                                       \
+  template bool read_distmat<T>(                                       \
     int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
+
+} // namespace lbann
