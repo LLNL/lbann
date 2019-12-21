@@ -32,15 +32,7 @@ namespace lbann {
 
 namespace {
 
-/// @todo Replace with cuda::array when PR #1382 merges
-template <typename T, size_t N>
-struct array {
-  T vals[N];
-  __host__ __device__ __forceinline__ T& operator[](size_t i) { return vals[i]; }
-  __host__ __device__ __forceinline__ const T& operator[](size_t i) const { return vals[i]; };
-};
-using dim4 = array<size_t, 4>;
-// using dim4 = cuda::array<size_t, 4>;
+using dim4 = cuda::array<size_t, 4>;
 
 /**
  *  Block dimensions: bsize x 1 x 1
