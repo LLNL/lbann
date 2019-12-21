@@ -246,6 +246,8 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data() {
 
 }
 
+LBANN_DEFINE_LAYER_BUILDER(embedding);
+
 #ifndef LBANN_EMBEDDING_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device) \

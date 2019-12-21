@@ -158,7 +158,9 @@ private:
 
     // Learning layers
     LBANN_REGISTER_BUILDER(Convolution, convolution);
-    LBANN_REGISTER_DEFAULT_BUILDER(EntrywiseScaleBias, entrywise_scale_bias);
+    LBANN_REGISTER_BUILDER(ChannelwiseScaleBias, channelwise_scale_bias);
+    LBANN_REGISTER_BUILDER(Embedding, embedding);
+    LBANN_REGISTER_BUILDER(EntrywiseScaleBias, entrywise_scale_bias);
     LBANN_REGISTER_BUILDER(FullyConnected, fully_connected);
 
     // Math layers
@@ -279,6 +281,9 @@ std::unique_ptr<Layer> construct_layer_legacy(
   std::stringstream err;
 
   // Input layers
+  // Currently this cannot be suitably removed from this function
+  // because it relies on "num_parallel_readers" and "data_readers"
+  // arguments.
   if (proto_layer.has_input()) {
     const auto& params = proto_layer.input();
     const auto& io_buffer = params.io_buffer();
@@ -317,6 +322,9 @@ std::unique_ptr<Layer> construct_layer_legacy(
     }
   }
 
+  // Currently this cannot be suitably removed from this function
+  // because it relies on "num_parallel_readers" and "data_readers"
+  // arguments.
   if (proto_layer.has_deconvolution()) {
     const auto& params = proto_layer.deconvolution();
     const auto& bias = params.has_bias();
@@ -359,30 +367,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
                comm, num_dims, num_output_channels,
                dim, pad, stride, dilation, num_groups, bias);
-    }
-  }
-
-  // Learning layers
-  if (proto_layer.has_embedding()) {
-    const auto& params = proto_layer.embedding();
-    const size_t num_embeddings = params.num_embeddings();
-    const size_t embedding_dim = params.embedding_dim();
-    const El::Int padding_idx = (params.has_padding_idx() ?
-                                 params.padding_idx().value() : -1);
-    if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<embedding_layer<TensorDataType, data_layout::DATA_PARALLEL,Device>>(
-        comm, num_embeddings, embedding_dim, padding_idx);
-    } else {
-      LBANN_ERROR("embedding layer is only supported with "
-                  "data-parallel data layout");
-    }
-  }
-  if (proto_layer.has_channelwise_scale_bias()) {
-    if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<channelwise_scale_bias_layer<TensorDataType, data_layout::DATA_PARALLEL,Device>>(comm);
-    } else {
-      LBANN_ERROR("channel-wise scale/bias layer is only supported "
-                  "with data-parallel data layout");
     }
   }
 

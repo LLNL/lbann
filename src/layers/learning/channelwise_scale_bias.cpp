@@ -131,12 +131,53 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 
 }
 
+namespace
+{
+template <typename T, data_layout L, El::Device D>
+struct Builder
+{
+  static std::unique_ptr<Layer> Build(...)
+  {
+    LBANN_ERROR("Attempted to instantiate layer \"channelwise_scale_bias\""
+                "with Layout=", to_string(L), ".\nThis layer is only "
+                "supported with DATA_PARALLEL data layout.");
+    return nullptr;
+  }
+};
+
+template <typename TensorDataType, El::Device Device>
+struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>
+{
+  template <typename... Args>
+  static std::unique_ptr<Layer> Build(Args&&... args)
+  {
+    using LayerType = channelwise_scale_bias_layer<TensorDataType,
+                                                   data_layout::DATA_PARALLEL,
+                                                   Device>;
+    return make_unique<LayerType>(std::forward<Args>(args)...);
+  }
+};
+} // namespace <anon>
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_channelwise_scale_bias_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const&)
+{
+  using BuilderType = Builder<TensorDataType, Layout, Device>;
+  return BuilderType::Build(comm);
+}
+
 #define PROTO(T)                                      \
   template class channelwise_scale_bias_layer<        \
     T, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
+#undef PROTO
 
+#define PROTO_DEVICE(T, Device) \
+  LBANN_LAYER_BUILDER_ETI(channelwise_scale_bias, T, Device)
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

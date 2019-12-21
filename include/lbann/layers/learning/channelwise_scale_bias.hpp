@@ -154,6 +154,8 @@ private:
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(channelwise_scale_bias);
+
 #ifndef LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device) \

@@ -41,7 +41,7 @@ struct Builder
     LBANN_ERROR("Attempted to instantiate layer \"crop\" with "
                 "Layout=", to_string(L), ".\nThis layer is only "
                 "supported with DATA_PARALLEL data layout.");
-
+    return nullptr;
   }
 };
 
