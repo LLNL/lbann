@@ -52,8 +52,8 @@ public:
 
   uniform_layer(lbann_comm *comm,
                 std::vector<int> dims,
-                TensorDataType min = TensorDataType(0),
-                TensorDataType max = TensorDataType(1))
+                TensorDataType min = El::TypeTraits<TensorDataType>::Zero(),
+                TensorDataType max = El::TypeTraits<TensorDataType>::One())
     : transform_layer<TensorDataType>(comm), m_min(min), m_max(max) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;

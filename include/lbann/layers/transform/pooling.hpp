@@ -287,8 +287,8 @@ private:
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const TensorDataType zero = TensorDataType(0);
-      const TensorDataType one = TensorDataType(1);
+      const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+      const TensorDataType one = El::TypeTraits<TensorDataType>::One();
       CHECK_CUDNN(cudnnPoolingForward(cudnn::get_handle(),
                                       m_pooling_cudnn_desc,
                                       &one,
@@ -313,8 +313,8 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
 
       // Useful constants
-      const TensorDataType one = TensorDataType(1);
-      const TensorDataType zero = TensorDataType(0);
+      const TensorDataType one = El::TypeTraits<TensorDataType>::One();
+      const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
 
       // Perform backprop on GPU
       CHECK_CUDNN(cudnnPoolingBackward(cudnn::get_handle(),
@@ -406,7 +406,7 @@ private:
           for(int j = 0; j < num_per_output_channel; ++j) {
             const TensorDataType *im2col_buffer
               = im2col_mat.LockedBuffer(channel*m_pool_size, j);
-            TensorDataType output_entry = 0;
+            TensorDataType output_entry = El::TypeTraits<TensorDataType>::Zero();
             for(int i = 0; i < m_pool_size; ++i) {
               output_entry += im2col_buffer[i];
             }

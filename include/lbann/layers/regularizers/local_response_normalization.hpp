@@ -201,8 +201,8 @@ private:
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const TensorDataType zero = TensorDataType(0);
-      const TensorDataType one = TensorDataType(1);
+      const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+      const TensorDataType one = El::TypeTraits<TensorDataType>::One();
       CHECK_CUDNN(cudnnLRNCrossChannelForward(cudnn::get_handle(),
                                               m_lrn_cudnn_desc,
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
@@ -226,8 +226,8 @@ private:
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
     auto& local_gradient_wrt_input = this->get_local_error_signals();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const TensorDataType zero = TensorDataType(0);
-      const TensorDataType one = TensorDataType(1);
+      const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+      const TensorDataType one = El::TypeTraits<TensorDataType>::One();
       CHECK_CUDNN(cudnnLRNCrossChannelBackward(cudnn::get_handle(),
                                                m_lrn_cudnn_desc,
                                                CUDNN_LRN_CROSS_CHANNEL_DIM1,
@@ -292,7 +292,7 @@ private:
           const int window_end = std::min(channel + m_window_width / 2, num_channels - 1);
 
           // Compute sum of squares in workspace
-          std::fill(workspace, workspace + block_size, TensorDataType(0));
+          std::fill(workspace, workspace + block_size, El::TypeTraits<TensorDataType>::Zero());
           for (int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for (int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;
@@ -385,7 +385,7 @@ private:
           const int window_end = std::min(channel + m_window_width / 2, num_channels - 1);
 
           // Compute sum of squares in workspace
-          std::fill(workspace, workspace + block_size, TensorDataType(0));
+          std::fill(workspace, workspace + block_size, El::TypeTraits<TensorDataType>::Zero());
           for (int window_pos = window_start; window_pos <= window_end; ++window_pos) {
             for (int block_pos = 0; block_pos < block_size; ++block_pos) {
               const int index = block_start + block_pos + window_pos * num_per_channel;

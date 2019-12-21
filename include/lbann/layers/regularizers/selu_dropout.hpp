@@ -69,9 +69,9 @@ public:
     // Compute alpha' and the affine transform.
     m_alpha_prime = -scale*alpha;
     m_a = keep_prob +
-      m_alpha_prime*m_alpha_prime*keep_prob*(TensorDataType(1) - keep_prob);
-    m_a = TensorDataType(1) / std::sqrt(m_a);
-    m_b = -m_a * m_alpha_prime*(TensorDataType(1) - keep_prob);
+      m_alpha_prime*m_alpha_prime*keep_prob*(El::TypeTraits<TensorDataType>::One() - keep_prob);
+    m_a = El::TypeTraits<TensorDataType>::One() / std::sqrt(m_a);
+    m_b = -m_a * m_alpha_prime*(El::TypeTraits<TensorDataType>::One() - keep_prob);
   }
 
   selu_dropout(const selu_dropout& other) :

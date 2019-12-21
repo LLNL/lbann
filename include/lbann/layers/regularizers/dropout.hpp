@@ -210,7 +210,7 @@ protected:
                      ([this,scale](const TensorDataType& z)->DataType {
                        auto& gen = get_fast_generator();
                        std::bernoulli_distribution dist(m_keep_prob);
-                       return dist(gen) ? scale : TensorDataType(0);
+                       return dist(gen) ? scale : El::TypeTraits<TensorDataType>::Zero();
                      }));
 #endif // LBANN_DETERMINISTIC
 

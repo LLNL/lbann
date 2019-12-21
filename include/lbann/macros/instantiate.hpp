@@ -31,8 +31,6 @@ PROTO(double);
 PROTO(cpu_fp16);
 #endif
 
-#ifdef LBANN_INSTANTIATE_GPU_HALF_BVE
 #ifdef LBANN_INSTANTIATE_GPU_HALF
-PROTO(gpu_half_type);
-#endif
+PROTO(fp16);
 #endif

@@ -91,7 +91,7 @@ protected:
   void fp_compute() override {
     auto& output = this->get_activations();
     switch (this->get_num_parents()) {
-    case 0: El::Fill(output, TensorDataType(1)); break;
+    case 0: El::Fill(output, El::TypeTraits<TensorDataType>::One()); break;
     case 1: El::LockedView(output, this->get_prev_activations()); break;
     default:
       El::Hadamard(this->get_prev_activations(0),

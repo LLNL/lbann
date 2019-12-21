@@ -140,9 +140,9 @@ private:
 
 // Minimum output value to avoid denormalized floats
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-  const TensorDataType threshold_val = std::sqrt(std::numeric_limits<TensorDataType>::min());
+  const TensorDataType threshold_val = static_cast<TensorDataType>(std::sqrt(std::numeric_limits<TensorDataType>::min()));
 #else
-  const TensorDataType threshold_val = 0;
+  const TensorDataType threshold_val = El::TypeTraits<TensorDataType>::Zero();
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 

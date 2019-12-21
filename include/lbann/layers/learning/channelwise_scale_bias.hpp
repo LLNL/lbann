@@ -111,8 +111,8 @@ public:
     // Note: Scale is initialized to 1 and bias to 0
     if (!this->has_weights()) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      std::vector<TensorDataType> vals(2*num_channels, TensorDataType{0});
-      std::fill(vals.begin(), vals.begin()+num_channels, TensorDataType{1});
+      std::vector<TensorDataType> vals(2*num_channels, El::TypeTraits<TensorDataType>::Zero());
+      std::fill(vals.begin(), vals.begin()+num_channels, El::TypeTraits<TensorDataType>::One());
       auto init = make_unique<value_initializer<TensorDataType>>(vals);
       auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
                                  this->m_model->create_optimizer()));

@@ -85,7 +85,7 @@ public:
     this->set_output_dims({output_size});
 
     // Initialize bias
-    m_bias_scaling_factor = has_bias ? TensorDataType(1) : TensorDataType(0);
+    m_bias_scaling_factor = has_bias ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
 
   }
 
@@ -131,7 +131,7 @@ public:
 
   description get_description() const override {
     auto desc = learning_layer<TensorDataType>::get_description();
-    const auto& bias_str = (m_bias_scaling_factor == TensorDataType(0) ?
+    const auto& bias_str = (m_bias_scaling_factor == El::TypeTraits<TensorDataType>::Zero() ?
                             "disabled" : "enabled");
     desc.add("Bias", bias_str);
     return desc;
@@ -148,7 +148,7 @@ protected:
     if (this->num_weights() > 2) {
       LBANN_ERROR("attempted to setup ", this->get_name(), " with an invalid number of weights");
     }
-    if (m_bias_scaling_factor != TensorDataType(0)) {
+    if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
       this->set_num_data_type_weights(2);
     } else {
       this->set_num_data_type_weights(1);
@@ -189,7 +189,7 @@ protected:
     linearity_weights.set_matrix_distribution(linearity_dist);
 
     // Set up bias if needed.
-    if (m_bias_scaling_factor != TensorDataType(0)) {
+    if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
       if (!this->has_data_type_weights(1)) {
         auto w = make_unique<WeightsType>(this->get_comm());
         auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(

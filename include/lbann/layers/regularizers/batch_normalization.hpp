@@ -265,7 +265,7 @@ protected:
     this->set_num_data_type_weights(4);
     if (!this->has_data_type_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
                                  this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_scale");
@@ -276,7 +276,7 @@ protected:
     }
     if (!this->has_data_type_weights(1)) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
                                  this->m_model->create_optimizer()));
       w->set_name(this->get_name() + "_bias");
@@ -287,7 +287,7 @@ protected:
     }
     if (!this->has_data_type_weights(2)) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->set_data_type_weights(2, w.get());
@@ -295,7 +295,7 @@ protected:
     }
     if (!this->has_data_type_weights(3)) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->set_data_type_weights(3, w.get());

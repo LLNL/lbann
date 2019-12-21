@@ -184,12 +184,12 @@ public:
     const auto& local_weights = this->get_data_type_weights(0).get_values().LockedMatrix();
     auto& local_output = this->get_local_activations();
     m_workspace->Resize(local_output.Width(), 1);
-    El::Fill(*m_workspace, TensorDataType(1));
+    El::Fill(*m_workspace, El::TypeTraits<TensorDataType>::One());
 
     // Duplicate weights across matrix columns
     El::Gemm(El::NORMAL, El::TRANSPOSE,
-             TensorDataType(1), local_weights, *m_workspace,
-             TensorDataType(0), local_output);
+             El::TypeTraits<TensorDataType>::One(), local_weights, *m_workspace,
+             El::TypeTraits<TensorDataType>::Zero(), local_output);
 
     // Clean up
     m_workspace->Empty();
@@ -206,12 +206,12 @@ public:
     // Matrices
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
     m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
-    El::Fill(*m_workspace, TensorDataType{1});
+    El::Fill(*m_workspace, El::TypeTraits<TensorDataType>::One());
 
     El::Gemv(El::NORMAL,
-             TensorDataType{1}, local_gradient_wrt_output, *m_workspace,
-             TensorDataType{0}, m_gradient->Matrix());
-    opt->add_to_gradient(*m_gradient, TensorDataType{1}, true);
+             El::TypeTraits<TensorDataType>::One(), local_gradient_wrt_output, *m_workspace,
+             El::TypeTraits<TensorDataType>::Zero(), m_gradient->Matrix());
+    opt->add_to_gradient(*m_gradient, El::TypeTraits<TensorDataType>::One(), true);
 
     // Clean up
     m_workspace->Empty();

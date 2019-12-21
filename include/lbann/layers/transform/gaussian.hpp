@@ -51,8 +51,8 @@ private:
 public:
   gaussian_layer(lbann_comm *comm,
                  const std::vector<int>& dims,
-                 TensorDataType mean = TensorDataType(0),
-                 TensorDataType stdev = TensorDataType(1))
+                 TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
+                 TensorDataType stdev = El::TypeTraits<TensorDataType>::One())
     : transform_layer<TensorDataType>(comm), m_mean(mean), m_stdev(stdev) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
