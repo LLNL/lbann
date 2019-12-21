@@ -29,11 +29,11 @@
 
 namespace lbann {
 
-template class input_layer<
-  DataType, partitioned_io_buffer<DataType>, data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class input_layer<
-  DataType, partitioned_io_buffer<DataType>, data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  template class input_layer<T, partitioned_io_buffer<T>, data_layout::DATA_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann
