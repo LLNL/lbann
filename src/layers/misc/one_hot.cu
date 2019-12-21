@@ -49,9 +49,9 @@ __global__ void fp_kernel(size_t height,
   const size_t nthreads = blockDim.x * gridDim.x;
   for (size_t col = gid; col < width; col += nthreads) {
     const auto& ind = indices[col*indices_stride];
-    if (TensorDataType{0} <= ind && ind < TensorDataType(height)) {
+    if (El::TypeTraits<TensorDataType>::Zero() <= ind && ind < TensorDataType(height)) {
       const size_t row = static_cast<size_t>(ind);
-      output[row+col*output_ldim] = TensorDataType{1};
+      output[row+col*output_ldim] = El::TypeTraits<TensorDataType>::One();
     }
   }
 }

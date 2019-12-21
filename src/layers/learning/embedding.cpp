@@ -92,7 +92,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
       El::Axpy(DataType{1}, output_grad_v, embedding_grad_v);
     }
   }
-  opt.add_to_gradient(*this->m_gradient_wrt_embeddings, TensorDataType{1}, true);
+  opt.add_to_gradient(*this->m_gradient_wrt_embeddings, El::TypeTraits<TensorDataType>::One(), true);
 
 }
 

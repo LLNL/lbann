@@ -44,14 +44,14 @@ namespace {
 template <typename TensorDataType>
 struct log_sigmoid_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    if (x >= TensorDataType(0)) {
+    if (x >= El::TypeTraits<TensorDataType>::Zero()) {
       return -std::log1p(std::exp(-x));
     } else {
       return x - std::log1p(std::exp(x));
     }
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1) + std::exp(x));
+    return dy / (El::TypeTraits<TensorDataType>::One() + std::exp(x));
   }
 };
 
@@ -59,10 +59,10 @@ struct log_sigmoid_op {
 template <typename TensorDataType>
 struct relu_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::max(x, TensorDataType(0));
+    return std::max(x, El::TypeTraits<TensorDataType>::Zero());
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return x > TensorDataType(0) ? dy : TensorDataType(0);
+    return x > El::TypeTraits<TensorDataType>::Zero() ? dy : El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -70,12 +70,12 @@ struct relu_op {
 template <typename TensorDataType>
 struct selu_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return (x > TensorDataType(0) ?
+    return (x > El::TypeTraits<TensorDataType>::Zero() ?
             scale * x :
             scale * alpha * std::expm1(x));
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return (x > TensorDataType(0) ?
+    return (x > El::TypeTraits<TensorDataType>::Zero() ?
             dy * scale :
             dy * scale * alpha * std::exp(x));
   }
@@ -89,19 +89,19 @@ template <typename TensorDataType>
 struct sigmoid_op {
   TensorDataType eps = std::numeric_limits<TensorDataType>::epsilon();
   inline TensorDataType operator()(const TensorDataType& x) const {
-    const auto& y = 1 / (TensorDataType(1) + std::exp(-x));
+    const auto& y = 1 / (El::TypeTraits<TensorDataType>::One() + std::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
     if (y <= eps)            { return eps; }
-    else if (y >= TensorDataType(1) - eps) { return TensorDataType(1) - eps; }
+    else if (y >= El::TypeTraits<TensorDataType>::One() - eps) { return El::TypeTraits<TensorDataType>::One() - eps; }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
     return y;
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& y = 1 / (TensorDataType(1) + std::exp(-x));
+    const auto& y = 1 / (El::TypeTraits<TensorDataType>::One() + std::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    if (y <= eps || y >= TensorDataType(1) - eps) { return TensorDataType(0); }
+    if (y <= eps || y >= El::TypeTraits<TensorDataType>::One() - eps) { return El::TypeTraits<TensorDataType>::Zero(); }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    return dy * y * (TensorDataType(1) - y);
+    return dy * y * (El::TypeTraits<TensorDataType>::One() - y);
   }
 };
 
@@ -109,14 +109,14 @@ struct sigmoid_op {
 template <typename TensorDataType>
 struct softplus_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    if (x > TensorDataType(0)) {
+    if (x > El::TypeTraits<TensorDataType>::Zero()) {
       return std::log1p(std::exp(-x)) + x;
     } else {
       return std::log1p(std::exp(x));
     }
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1) + std::exp(-x));
+    return dy / (El::TypeTraits<TensorDataType>::One() + std::exp(-x));
   }
 };
 
@@ -124,10 +124,10 @@ struct softplus_op {
 template <typename TensorDataType>
 struct softsign_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return x / (TensorDataType(1) + std::fabs(x));
+    return x / (El::TypeTraits<TensorDataType>::One() + std::fabs(x));
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& denom = TensorDataType(1) + std::fabs(x);
+    const auto& denom = El::TypeTraits<TensorDataType>::One() + std::fabs(x);
     return dy / (denom * denom);
   }
 };

@@ -50,7 +50,7 @@ __global__ void fp_kernel(int global_height,
   for (int col = bidy; col < local_width; col += gridDim.y) {
 
     // Compute contributions for each thread
-    TensorDataType private_contribution = TensorDataType(0);
+    TensorDataType private_contribution = El::TypeTraits<TensorDataType>::Zero();
     for (int row = gidx; row < local_height; row += nthreadsx) {
       const auto& x = prediction[row + col * prediction_ldim];
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
@@ -133,8 +133,8 @@ __global__ void bp_kernel(int global_height,
         dx = -dy / global_height;
         dxhat = dy / global_height;
       } else {
-        dx = TensorDataType(0);
-        dxhat = TensorDataType(0);
+        dx = El::TypeTraits<TensorDataType>::Zero();
+        dxhat = El::TypeTraits<TensorDataType>::Zero();
       }
     }
   }

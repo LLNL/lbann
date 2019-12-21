@@ -114,8 +114,8 @@ __global__ void compute_statistics_kernel(
     // Compute running statistics
     auto& running_mean = global_running_mean[gid];
     auto& running_var = global_running_var[gid];
-    running_mean = decay * running_mean + (TensorDataType{1} - decay) * mean;
-    running_var = decay * running_var + (TensorDataType{1} - decay) * var;
+    running_mean = decay * running_mean + (El::TypeTraits<TensorDataType>::One() - decay) * mean;
+    running_var = decay * running_var + (El::TypeTraits<TensorDataType>::One() - decay) * var;
 
   }
 
@@ -366,7 +366,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
     // Compute minibatch statistics
     if (num_per_sum <= 1) {
-      El::Fill(local_var, TensorDataType{1});
+      El::Fill(local_var, El::TypeTraits<TensorDataType>::One());
     } else if (num_channels > 0) {
       const El::Int block_dim = 256;
       const El::Int grid_dim = (num_channels + block_dim - 1) / block_dim;
@@ -479,11 +479,11 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   }
   auto* scale_optimizer = this->get_data_type_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(*this->m_scale_gradient, TensorDataType{1}, true);
+    scale_optimizer->add_to_gradient(*this->m_scale_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
   auto* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(*this->m_bias_gradient, TensorDataType{1}, true);
+    bias_optimizer->add_to_gradient(*this->m_bias_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
 
   // Compute error signal

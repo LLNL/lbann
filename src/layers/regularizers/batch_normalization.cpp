@@ -106,7 +106,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
         const auto& mean = local_mean(channel, 0) / num_per_sum;
         const auto& sqmean = local_var(channel, 0) / num_per_sum;
         auto var = num_per_sum * (sqmean - mean * mean) / (num_per_sum - 1);
-        var = std::max(var, this->m_epsilon);
+        var = static_cast<TensorDataType>(std::max(var, this->m_epsilon));
         local_mean(channel, 0) = mean;
         local_var(channel, 0) = var;
         auto& running_mean = local_running_mean(channel, 0);
@@ -239,11 +239,11 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   }
   auto* scale_optimizer = this->get_data_type_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(*this->m_scale_gradient, TensorDataType{1}, true);
+    scale_optimizer->add_to_gradient(*this->m_scale_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
   auto* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(*this->m_bias_gradient, TensorDataType{1}, true);
+    bias_optimizer->add_to_gradient(*this->m_bias_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
 
   // Compute error signal

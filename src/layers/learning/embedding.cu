@@ -59,7 +59,7 @@ __global__ void fp_kernel(El::Int num_embeddings,
         y = embeddings[i+ind*embeddings_ldim];
       }
       else {
-        y = TensorDataType{0};
+        y = El::TypeTraits<TensorDataType>::Zero();
       }
     }
   }
@@ -173,7 +173,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
       local_embedding_grad.Buffer(),
       local_embedding_grad.LDim());
   }
-  opt.add_to_gradient(*this->m_gradient_wrt_embeddings, TensorDataType{1}, true);
+  opt.add_to_gradient(*this->m_gradient_wrt_embeddings, El::TypeTraits<TensorDataType>::One(), true);
 
 }
 

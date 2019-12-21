@@ -51,10 +51,10 @@ __global__ void fp_kernel(int height, int width,
   for (int col = bidy; col < width; col += gridDim.y) {
 
     // Compute contributions for each thread
-    TensorDataType private_contribution = TensorDataType(0);
+    TensorDataType private_contribution = El::TypeTraits<TensorDataType>::Zero();
     for (int row = gidx; row < height; row += nthreadsx) {
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
-      if (xhat > TensorDataType(0)) {
+      if (xhat > El::TypeTraits<TensorDataType>::Zero()) {
         const auto& x = prediction[row + col * prediction_ldim];
         private_contribution += - xhat * log(x);
       }
@@ -126,7 +126,7 @@ __global__ void bp_kernel(int height, int width,
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
       auto& dx = gradient_wrt_prediction[row + col * gradient_wrt_prediction_ldim];
       auto& dxhat = gradient_wrt_ground_truth[row + col * gradient_wrt_ground_truth_ldim];
-      dx = (xhat > TensorDataType(0)) ? - dy * xhat / x : TensorDataType(0);
+      dx = (xhat > El::TypeTraits<TensorDataType>::Zero()) ? - dy * xhat / x : El::TypeTraits<TensorDataType>::Zero();
       dxhat = - dy * std::log(x);
     }
   }

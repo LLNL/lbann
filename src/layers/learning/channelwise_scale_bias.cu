@@ -267,7 +267,7 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   // Update optimizer with gradient
   auto* opt = this->get_data_type_weights(0).get_optimizer();
   if (opt != nullptr) {
-    opt->add_to_gradient(*this->m_weights_gradient, TensorDataType{1}, true);
+    opt->add_to_gradient(*this->m_weights_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
 
 }

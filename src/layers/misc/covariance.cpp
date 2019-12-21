@@ -124,7 +124,7 @@ void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input0,
   El::Copy(gradient_wrt_output, workspace);
 
   // Compute gradients w.r.t. input
-  const TensorDataType scale = TensorDataType(1) / (biased? height : height - 1);
+  const TensorDataType scale = El::TypeTraits<TensorDataType>::One() / (biased? height : height - 1);
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {

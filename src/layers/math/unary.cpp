@@ -44,11 +44,11 @@ namespace {
 template <typename TensorDataType>
 struct logical_not_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    const auto& b = x != TensorDataType(0) && !std::isnan(x);
-    return !b ? TensorDataType(1) : TensorDataType(0);
+    const auto& b = x != El::TypeTraits<TensorDataType>::Zero() && !std::isnan(x);
+    return !b ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -56,12 +56,12 @@ struct logical_not_op {
 template <typename TensorDataType>
 struct abs_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return x >= TensorDataType(0) ? x : -x;
+    return x >= El::TypeTraits<TensorDataType>::Zero() ? x : -x;
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    if      (x > TensorDataType(0)) { return dy;   }
-    else if (x < TensorDataType(0)) { return -dy;  }
-    else               { return TensorDataType(0); }
+    if      (x > El::TypeTraits<TensorDataType>::Zero()) { return dy;   }
+    else if (x < El::TypeTraits<TensorDataType>::Zero()) { return -dy;  }
+    else               { return El::TypeTraits<TensorDataType>::Zero(); }
   }
 };
 
@@ -80,12 +80,12 @@ struct negative_op {
 template <typename TensorDataType>
 struct sign_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    if      (x > TensorDataType(0)) { return TensorDataType(1);  }
-    else if (x < TensorDataType(0)) { return -TensorDataType(1); }
-    else               { return TensorDataType(0); }
+    if      (x > El::TypeTraits<TensorDataType>::Zero()) { return El::TypeTraits<TensorDataType>::One();  }
+    else if (x < El::TypeTraits<TensorDataType>::Zero()) { return -El::TypeTraits<TensorDataType>::One(); }
+    else               { return El::TypeTraits<TensorDataType>::Zero(); }
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -96,7 +96,7 @@ struct round_op {
     return std::round(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -107,7 +107,7 @@ struct ceil_op {
     return std::ceil(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -118,12 +118,12 @@ struct floor_op {
     return std::floor(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
 /** Reciprocal operator.
- *  If a standard reciprocal produces an infinity or NaN, TensorDataType(0) is
+ *  If a standard reciprocal produces an infinity or NaN, El::TypeTraits<TensorDataType>::Zero() is
  *  output instead.
  */
 template <typename TensorDataType>
@@ -132,7 +132,7 @@ struct reciprocal_op {
     return 1 / x;
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    if (dy == TensorDataType(0)) { return TensorDataType(0); }
+    if (dy == El::TypeTraits<TensorDataType>::Zero()) { return El::TypeTraits<TensorDataType>::Zero(); }
     else            { return - dy / (x*x); }
   }
 };
@@ -178,16 +178,16 @@ struct safe_reciprocal_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
     const auto& y = 1 / x;
     if (std::isfinite(y)) { return y; }
-    else                  { return TensorDataType(0); }
+    else                  { return El::TypeTraits<TensorDataType>::Zero(); }
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const auto& y = 1 / x;
     if (std::isfinite(y)) { return - dy * y*y; }
-    else                  { return TensorDataType(0); }
+    else                  { return El::TypeTraits<TensorDataType>::Zero(); }
   }
 };
 
-/** ExpTensorDataType(1)ntial operator. */
+/** ExpEl::TypeTraits<TensorDataType>::One()ntial operator. */
 template <typename TensorDataType>
 struct exp_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
@@ -198,7 +198,7 @@ struct exp_op {
   }
 };
 
-/** ExpTensorDataType(1)ntial minus TensorDataType(1) operator. */
+/** ExpEl::TypeTraits<TensorDataType>::One()ntial minus El::TypeTraits<TensorDataType>::One() operator. */
 template <typename TensorDataType>
 struct expm1_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
@@ -220,14 +220,14 @@ struct log_op {
   }
 };
 
-/** Natural logarithm TensorDataType(1) plus operator. */
+/** Natural logarithm El::TypeTraits<TensorDataType>::One() plus operator. */
 template <typename TensorDataType>
 struct log1p_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
     return std::log1p(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (x + TensorDataType(1));
+    return dy / (x + El::TypeTraits<TensorDataType>::One());
   }
 };
 
@@ -272,7 +272,7 @@ struct acos_op {
     return std::acos(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / std::sqrt(TensorDataType(1) - x*x);
+    return -dy / std::sqrt(El::TypeTraits<TensorDataType>::One() - x*x);
   }
 };
 
@@ -283,7 +283,7 @@ struct asin_op {
     return std::asin(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / std::sqrt(TensorDataType(1) - x*x);
+    return dy / std::sqrt(El::TypeTraits<TensorDataType>::One() - x*x);
   }
 };
 
@@ -294,7 +294,7 @@ struct atan_op {
     return std::atan(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1) + x*x);
+    return dy / (El::TypeTraits<TensorDataType>::One() + x*x);
   }
 };
 
@@ -339,7 +339,7 @@ struct acosh_op {
     return std::acosh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / (std::sqrt(x - TensorDataType(1)) * std::sqrt(x + TensorDataType(1)));
+    return -dy / (std::sqrt(x - El::TypeTraits<TensorDataType>::One()) * std::sqrt(x + El::TypeTraits<TensorDataType>::One()));
   }
 };
 
@@ -350,7 +350,7 @@ struct asinh_op {
     return std::asinh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / std::sqrt(TensorDataType(1) + x*x);
+    return dy / std::sqrt(El::TypeTraits<TensorDataType>::One() + x*x);
   }
 };
 
@@ -361,7 +361,7 @@ struct atanh_op {
     return std::atanh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1) - x*x);
+    return dy / (El::TypeTraits<TensorDataType>::One() - x*x);
   }
 };
 

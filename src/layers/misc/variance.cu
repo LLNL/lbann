@@ -132,10 +132,10 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
   ones.SetMemoryMode(1); // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
   ones.Resize(local_height, 1);
-  El::Fill(ones, TensorDataType(1));
+  El::Fill(ones, El::TypeTraits<TensorDataType>::One());
   El::Gemv(El::TRANSPOSE,
-           TensorDataType(1) / height, local_input, ones,
-           TensorDataType(0), local_means);
+           El::TypeTraits<TensorDataType>::One() / height, local_input, ones,
+           El::TypeTraits<TensorDataType>::Zero(), local_means);
   El::AllReduce(means, means.RedundantComm());
 
   // Compute column-wise variance
@@ -148,7 +148,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    const auto& scale = TensorDataType(1) / (biased ? height : height - 1);
+    const auto& scale = El::TypeTraits<TensorDataType>::One() / (biased ? height : height - 1);
     variance_contribution_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,

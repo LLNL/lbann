@@ -71,7 +71,7 @@ void fp_impl(lbann_comm& comm,
   //   var = ( sum(x_i^2)/n - mean^2 ) * n/(n-1)
   if (sample_size <= 1) {
     // local_means already has correct values
-    El::Fill(local_vars, TensorDataType{1});
+    El::Fill(local_vars, El::TypeTraits<TensorDataType>::One());
   }
   else {
     LBANN_OMP_PARALLEL_FOR
@@ -82,7 +82,7 @@ void fp_impl(lbann_comm& comm,
       const auto& sqmean = sqsum / sample_size;
       const auto& var = (sqmean - mean*mean) * sample_size / (sample_size-1);
       local_means(0,i) = mean;
-      local_vars(0,i) = std::max(var, TensorDataType{0});
+      local_vars(0,i) = std::max(var, El::TypeTraits<TensorDataType>::Zero());
     }
   }
 

@@ -125,7 +125,7 @@ __global__ void fp_statistics_kernel(
     const auto& sqmean = sqsum / sample_size;
     const auto& var = (sqmean - mean*mean) * sample_size / (sample_size-1);
     means[i*means_stride] = mean;
-    vars[i*vars_stride] = cuda::max(var, TensorDataType{0});
+    vars[i*vars_stride] = cuda::max(var, El::TypeTraits<TensorDataType>::Zero());
   }
 
 }
@@ -212,7 +212,7 @@ void fp_impl(lbann_comm& comm,
   // Compute statistics from sums
   if (sample_size <= 1) {
     // local_means already has correct values
-    El::Fill(local_vars, TensorDataType{1});
+    El::Fill(local_vars, El::TypeTraits<TensorDataType>::One());
   }
   else if (!local_statistics.IsEmpty()) {
     constexpr size_t block_size = 256;

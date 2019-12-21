@@ -145,7 +145,7 @@ void compute_batch_statistics(lbann_comm& comm,
   // Compute mini-batch statistics from sums
   if (statistics_count <= 1) {
     // local_mean already has correct values
-    El::Fill(local_batch_var, TensorDataType{1});
+    El::Fill(local_batch_var, El::TypeTraits<TensorDataType>::One());
   } else {
     if (local_height > 0) {
       constexpr size_t block_size = 256;

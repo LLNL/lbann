@@ -50,7 +50,7 @@ __global__ void fp_kernel(int global_height,
   for (int col = bidy; col < local_width; col += gridDim.y) {
 
     // Compute contributions for each thread
-    TensorDataType private_contribution = TensorDataType(0);
+    TensorDataType private_contribution = El::TypeTraits<TensorDataType>::Zero();
     for (int row = gidx; row < local_height; row += nthreadsx) {
       const auto& err = (prediction[row + col * prediction_ldim]
                          - ground_truth[row + col * ground_truth_ldim]);

@@ -212,7 +212,7 @@ struct pow_op {
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
 
-    dx1 = dy * x2 * cuda::pow(x1, x2 - TensorDataType(1));
+    dx1 = dy * x2 * cuda::pow(x1, x2 - El::TypeTraits<TensorDataType>::One());
     dx2 = dy * cuda::log(x1) * cuda::pow(x1, x2);
   }
 };
@@ -227,7 +227,7 @@ struct safe_divide_op {
                                         const TensorDataType& x2) const {
     const auto& y = x1 / x2;
     if (isfinite(y)) { return y; }
-    else             { return TensorDataType(0); }
+    else             { return El::TypeTraits<TensorDataType>::Zero(); }
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
@@ -239,8 +239,8 @@ struct safe_divide_op {
       dx1 = dy / x2;
       dx2 = -dy * x1 / (x2*x2);
     } else {
-      dx1 = TensorDataType(0);
-      dx2 = TensorDataType(0);
+      dx1 = El::TypeTraits<TensorDataType>::Zero();
+      dx2 = El::TypeTraits<TensorDataType>::Zero();
     }
   }
 };
@@ -277,9 +277,9 @@ struct max_op {
                                     TensorDataType& dx2) const {
     if (x1 > x2) {
       dx1 = dy;
-      dx2 = TensorDataType(0);
+      dx2 = El::TypeTraits<TensorDataType>::Zero();
     } else if (x2 > x1) {
-      dx1 = TensorDataType(0);
+      dx1 = El::TypeTraits<TensorDataType>::Zero();
       dx2 = dy;
     } else {
       dx1 = dy / 2;
@@ -302,9 +302,9 @@ struct min_op {
                                     TensorDataType& dx2) const {
     if (x1 < x2) {
       dx1 = dy;
-      dx2 = TensorDataType(0);
+      dx2 = El::TypeTraits<TensorDataType>::Zero();
     } else if (x2 < x1) {
-      dx1 = TensorDataType(0);
+      dx1 = El::TypeTraits<TensorDataType>::Zero();
       dx2 = dy;
     } else {
       dx1 = dy / 2;
@@ -318,15 +318,15 @@ template <typename TensorDataType>
 struct equal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    return x1 == x2 ? TensorDataType(1) : TensorDataType(0);
+    return x1 == x2 ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -335,15 +335,15 @@ template <typename TensorDataType>
 struct not_equal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    return x1 == x2 ? TensorDataType(0) : TensorDataType(1);
+    return x1 == x2 ? El::TypeTraits<TensorDataType>::Zero() : El::TypeTraits<TensorDataType>::One();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -352,15 +352,15 @@ template <typename TensorDataType>
 struct less_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    return x1 < x2 ? TensorDataType(1) : TensorDataType(0);
+    return x1 < x2 ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -369,15 +369,15 @@ template <typename TensorDataType>
 struct less_equal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    return x1 <= x2 ? TensorDataType(1) : TensorDataType(0);
+    return x1 <= x2 ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -386,15 +386,15 @@ template <typename TensorDataType>
 struct greater_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    return x1 > x2 ? TensorDataType(1) : TensorDataType(0);
+    return x1 > x2 ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -403,15 +403,15 @@ template <typename TensorDataType>
 struct greater_equal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    return x1 >= x2 ? TensorDataType(1) : TensorDataType(0);
+    return x1 >= x2 ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -420,17 +420,17 @@ template <typename TensorDataType>
 struct logical_and_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    const auto& b1 = x1 != TensorDataType(0) && !isnan(x1);
-    const auto& b2 = x2 != TensorDataType(0) && !isnan(x2);
-    return (b1 && b2) ? TensorDataType(1) : TensorDataType(0);
+    const auto& b1 = x1 != El::TypeTraits<TensorDataType>::Zero() && !isnan(x1);
+    const auto& b2 = x2 != El::TypeTraits<TensorDataType>::Zero() && !isnan(x2);
+    return (b1 && b2) ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -439,17 +439,17 @@ template <typename TensorDataType>
 struct logical_or_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    const auto& b1 = x1 != TensorDataType(0) && !isnan(x1);
-    const auto& b2 = x2 != TensorDataType(0) && !isnan(x2);
-    return (b1 || b2) ? TensorDataType(1) : TensorDataType(0);
+    const auto& b1 = x1 != El::TypeTraits<TensorDataType>::Zero() && !isnan(x1);
+    const auto& b2 = x2 != El::TypeTraits<TensorDataType>::Zero() && !isnan(x2);
+    return (b1 || b2) ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -458,17 +458,17 @@ template <typename TensorDataType>
 struct logical_xor_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    const auto& b1 = x1 != TensorDataType(0) && !isnan(x1);
-    const auto& b2 = x2 != TensorDataType(0) && !isnan(x2);
-    return (b1 || b2) && !(b1 && b2) ? TensorDataType(1) : TensorDataType(0);
+    const auto& b1 = x1 != El::TypeTraits<TensorDataType>::Zero() && !isnan(x1);
+    const auto& b2 = x2 != El::TypeTraits<TensorDataType>::Zero() && !isnan(x2);
+    return (b1 || b2) && !(b1 && b2) ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 

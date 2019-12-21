@@ -190,15 +190,15 @@ struct boolean_accuracy_op {
                                         const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
     const auto& b2 = x2 >= TensorDataType(0.5);
-    return b1 == b2 ? TensorDataType(1) : TensorDataType(0);
+    return b1 == b2 ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -209,15 +209,15 @@ struct boolean_false_negative_op {
                                         const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
     const auto& b2 = x2 >= TensorDataType(0.5);
-    return (!b1 && b2) ? TensorDataType(1) : TensorDataType(0);
+    return (!b1 && b2) ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -228,15 +228,15 @@ struct boolean_false_positive_op {
                                         const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
     const auto& b2 = x2 >= TensorDataType(0.5);
-    return (b1 && !b2) ? TensorDataType(1) : TensorDataType(0);
+    return (b1 && !b2) ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = El::TypeTraits<TensorDataType>::Zero();
+    dx2 = El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
