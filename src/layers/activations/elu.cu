@@ -150,7 +150,11 @@ void elu_layer<TensorDataType, Layout, Device>::bp_compute() {
            this->get_local_error_signals());
 }
 
-template class elu_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class elu_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class elu_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class elu_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

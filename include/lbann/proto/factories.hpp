@@ -75,7 +75,6 @@ std::unique_ptr<Layer> construct_layer(
   lbann_comm* comm,
   const std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
-  bool GPUs_disabled,
   const lbann_data::Layer& proto_layer);
 
 /** Construct weights specified with prototext. */

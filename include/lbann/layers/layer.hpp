@@ -41,9 +41,10 @@
 
 /** @brief A utility macro for easily defining default-constructed sub-class
  *  builders.*/
-#define LBANN_DEFINE_LAYER_BUILDER(Class, FunctionName)   \
-  std::unique_ptr<Layer> FunctionName(lbann_comm*, \
-    const google::protobuf::Message&, bool)
+#define LBANN_DEFINE_LAYER_BUILDER(LAYER_NAME)                          \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf( \
+    lbann_comm*, lbann_data::Layer const&)
 
 // Forward-declare protobuf classes
 namespace lbann_data {
@@ -162,12 +163,6 @@ public:
    *  should override this function to return its template parameter.
    */
   virtual El::Device get_device_allocation() const = 0;
-  /** Get a human-readable description of the data_layout */
-  std::string get_data_layout_string(data_layout d) const;
-  /** Get a human-readable description of the device allocation */
-  std::string get_device_allocation_string(El::Device dev) const;
-  /** Get a short human-readable description of the device allocation */
-  std::string get_device_allocation_string_short(El::Device dev) const;
 
   /** Reset layer stat counters. */
   virtual void reset_counters();

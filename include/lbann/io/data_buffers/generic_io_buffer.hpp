@@ -36,11 +36,12 @@
 
 namespace lbann
 {
+template <typename TensorDataType>
 class fetch_data_functor {
  public:
   fetch_data_functor (data_reader_target_mode target_mode) :
     _target_mode(target_mode) {}
-  int operator() (CPUMat& samples, CPUMat& responses, El::Matrix<El::Int>& indices_fetched, generic_data_reader* data_reader) const {
+  int operator() (CPUMatDT<TensorDataType>& samples, CPUMatDT<TensorDataType>& responses, El::Matrix<El::Int>& indices_fetched, generic_data_reader* data_reader) const {
     int num_samples_fetched = data_reader->fetch_data(samples, indices_fetched);
     int num_responses_fetched;
     switch(_target_mode) {
@@ -64,7 +65,7 @@ class fetch_data_functor {
     }
     return num_samples_fetched;
   }
-  int operator() (CPUMat& samples, El::Matrix<El::Int>& indices_fetched, generic_data_reader* data_reader) const {
+  int operator() (CPUMatDT<TensorDataType>& samples, El::Matrix<El::Int>& indices_fetched, generic_data_reader* data_reader) const {
     int num_samples_fetched = data_reader->fetch_data(samples, indices_fetched);
     switch(_target_mode) {
     case data_reader_target_mode::NA:
@@ -89,7 +90,20 @@ class update_data_reader_functor {
   }
 };
 
+template <typename TensorDataType>
 class generic_io_buffer {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The local tensor type expected for IO in this object. */
+  using IODataType = DataType;
+
+  ///@}
+
 public:
   generic_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers);
   generic_io_buffer(
@@ -112,8 +126,8 @@ public:
   virtual void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) = 0;
 
   virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) = 0;
-  virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) {}
-  virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) {}
+  virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response) {}
+  virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample) {}
   virtual bool update_data_set(generic_data_reader *data_reader, execution_mode mode) = 0;
   virtual void set_fetch_data_in_background(bool flag, execution_mode mode) = 0;
   virtual bool is_data_fetched_in_background(execution_mode mode) = 0;
@@ -130,9 +144,24 @@ public:
   // protected:
  public:
   lbann_comm *m_comm;
-  const fetch_data_functor *fetch_data_fn;
+  const fetch_data_functor<IODataType> *fetch_data_fn;
   const update_data_reader_functor *update_data_reader_fn;
 };
-}
+
+#ifndef LBANN_GENERIC_IO_BUFFER_INSTANTIATE
+
+#define PROTO(T)                           \
+  extern template class generic_io_buffer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+
+#endif // LBANN_GENERIC_IO_BUFFER_INSTANTIATE
+
+} // namespace lbann
 
 #endif // LBANN_GENERIC_IO_BUFFER_HPP_INCLUDED

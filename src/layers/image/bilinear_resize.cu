@@ -41,7 +41,7 @@ __global__ void fp_kernel(El::Int num_samples,
                           El::Int input_ldim,
                           El::Int output_height,
                           El::Int output_width,
-                          DataType* __restrict__ output,
+                          TensorDataType* __restrict__ output,
                           El::Int output_ldim) {
 
   // Useful constants
@@ -51,8 +51,8 @@ __global__ void fp_kernel(El::Int num_samples,
   const El::Int num_threads = blockDim.x * gridDim.x;
 
   // Stride between interpolation points
-  const auto& x_stride = static_cast<DataType>(input_width) / output_width;
-  const auto& y_stride = static_cast<DataType>(input_height) / output_height;
+  const auto& x_stride = static_cast<TensorDataType>(input_width) / output_width;
+  const auto& y_stride = static_cast<TensorDataType>(input_height) / output_height;
 
   const auto& size = (num_samples * num_channels
                       * output_height * output_width);
@@ -157,7 +157,10 @@ void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 }
 
-template class bilinear_resize_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class bilinear_resize_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

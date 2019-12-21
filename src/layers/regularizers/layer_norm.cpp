@@ -71,7 +71,7 @@ void fp_impl(lbann_comm& comm,
   //   var = ( sum(x_i^2)/n - mean^2 ) * n/(n-1)
   if (sample_size <= 1) {
     // local_means already has correct values
-    El::Fill(local_vars, DataType{1});
+    El::Fill(local_vars, TensorDataType{1});
   }
   else {
     LBANN_OMP_PARALLEL_FOR
@@ -82,7 +82,7 @@ void fp_impl(lbann_comm& comm,
       const auto& sqmean = sqsum / sample_size;
       const auto& var = (sqmean - mean*mean) * sample_size / (sample_size-1);
       local_means(0,i) = mean;
-      local_vars(0,i) = std::max(var, DataType{0});
+      local_vars(0,i) = std::max(var, TensorDataType{0});
     }
   }
 
@@ -91,7 +91,7 @@ void fp_impl(lbann_comm& comm,
   for (El::Int i = 0; i < local_num_samples; ++i) {
     const auto& mean = local_means(0,i);
     const auto& var = local_vars(0,i);
-    const DataType inv_stdev = 1 / std::sqrt(var + epsilon);
+    const TensorDataType inv_stdev = 1 / std::sqrt(var + epsilon);
     for (El::Int j = 0; j < local_sample_size; ++j) {
       const auto& x = local_input(j,i);
       auto& y = local_output(j,i);
@@ -143,7 +143,7 @@ void bp_impl(lbann_comm& comm,
   for (El::Int i = 0; i < local_num_samples; ++i) {
     const auto& mean = local_means(0,i);
     const auto& var = local_vars(0,i);
-    const DataType inv_stdev = 1 / std::sqrt(var + epsilon);
+    const TensorDataType inv_stdev = 1 / std::sqrt(var + epsilon);
     auto& dmean = local_means_grad(0,i);
     auto& dvar = local_vars_grad(0,i);
     for (El::Int j = 0; j < local_sample_size; ++j) {
@@ -167,7 +167,7 @@ void bp_impl(lbann_comm& comm,
   for (El::Int i = 0; i < local_num_samples; ++i) {
     const auto& mean = local_means(0,i);
     const auto& var = local_vars(0,i);
-    const DataType inv_stdev = 1 / std::sqrt(var + epsilon);
+    const TensorDataType inv_stdev = 1 / std::sqrt(var + epsilon);
     const auto& dmean = local_means_grad(0,i);
     const auto& dvar = local_vars_grad(0,i);
     for (El::Int j = 0; j < local_sample_size; ++j) {
@@ -205,9 +205,13 @@ void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute() {
           *this->m_statistics_gradient);
 }
 
-template class layer_norm_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class layer_norm_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                     \
+  template class layer_norm_layer<                   \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class layer_norm_layer<                   \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
