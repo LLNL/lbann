@@ -268,13 +268,13 @@ __global__ void bp_kernel(size_t height,
 template <typename TensorDataType>
 void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
-  cudnnSoftmaxMode_t softmax_mode;
+  cudnnSoftmaxMode_t cudnn_softmax_mode;
   switch(l.m_mode) {
     case softmax_mode::INSTANCE:
-      softmax_mode = CUDNN_SOFTMAX_MODE_INSTANCE;
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_INSTANCE;
       break;
     case softmax_mode::CHANNEL:
-      softmax_mode = CUDNN_SOFTMAX_MODE_CHANNEL;
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_CHANNEL;
       break;
     default:
       LBANN_ERROR("Unsupported softmax mode");
@@ -287,7 +287,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   if (!local_input.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxForward(cudnn::get_handle(),
                                     CUDNN_SOFTMAX_ACCURATE,
-                                    softmax_mode,
+                                    cudnn_softmax_mode,
                                     &one,
                                     l.m_tensors_cudnn_desc.get_prev_activations(),
                                     local_input.LockedBuffer(),
@@ -304,13 +304,13 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
 template <typename TensorDataType>
 void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
-  cudnnSoftmaxMode_t softmax_mode;
+  cudnnSoftmaxMode_t cudnn_softmax_mode;
   switch(l.m_mode) {
     case softmax_mode::INSTANCE:
-      softmax_mode = CUDNN_SOFTMAX_MODE_INSTANCE;
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_INSTANCE;
       break;
     case softmax_mode::CHANNEL:
-      softmax_mode = CUDNN_SOFTMAX_MODE_CHANNEL;
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_CHANNEL;
       break;
     default:
       LBANN_ERROR("Unsupported softmax mode");
@@ -324,7 +324,7 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   if (!local_output.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxBackward(cudnn::get_handle(),
                                      CUDNN_SOFTMAX_ACCURATE,
-                                     softmax_mode,
+                                     cudnn_softmax_mode,
                                      &one,
                                      l.m_tensors_cudnn_desc.get_activations(),
                                      local_output.LockedBuffer(),
