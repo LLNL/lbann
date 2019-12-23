@@ -629,7 +629,14 @@ std::unique_ptr<Layer> construct_layer(
   CONSTRUCT_LAYER(relu);
   CONSTRUCT_LAYER(selu);
   CONSTRUCT_LAYER(sigmoid);
-  CONSTRUCT_LAYER(softmax);
+  if (proto_layer.has_softmax()) {
+    const auto& params = proto_layer.softmax();
+    const auto& mode_str = params.softmax_mode();
+    softmax_mode mode = softmax_mode::INVALID;
+    if(mode_str == "instance" || mode_str.empty()) { mode = softmax_mode::INSTANCE; }
+    if(mode_str == "channel") { mode = softmax_mode::CHANNEL; }
+    return lbann::make_unique<softmax_layer<TensorDataType, Layout, Device>>(comm, mode);
+  }
   CONSTRUCT_LAYER(softplus);
   CONSTRUCT_LAYER(softsign);
 
