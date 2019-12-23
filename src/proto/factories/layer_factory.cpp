@@ -635,7 +635,7 @@ std::unique_ptr<Layer> construct_layer(
     softmax_mode mode = softmax_mode::INVALID;
     if(mode_str == "instance" || mode_str.empty()) { mode = softmax_mode::INSTANCE; }
     if(mode_str == "channel") { mode = softmax_mode::CHANNEL; }
-    return lbann::make_unique<softmax_layer<TensorDataType, Layout, Device>>(comm, mode);
+    return lbann::make_unique<softmax_layer<Layout, Device>>(comm, mode);
   }
   CONSTRUCT_LAYER(softplus);
   CONSTRUCT_LAYER(softsign);
