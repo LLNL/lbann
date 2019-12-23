@@ -41,6 +41,21 @@ namespace proto {
 
 namespace {
 
+template <typename T>
+struct TypeToProtoDataType;
+
+template <>
+struct TypeToProtoDataType<float>
+{
+  static constexpr auto value = lbann_data::FLOAT;
+};
+
+template <>
+struct TypeToProtoDataType<double>
+{
+  static constexpr auto value = lbann_data::DOUBLE;
+};
+
 /** Setup parent/child relationships between layers. */
 void setup_parents_and_children(
        lbann_comm* comm,
@@ -168,45 +183,52 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
     }
 
     // Get parameters from prototext
+    const auto model_disable_gpus = proto_model.disable_cuda();
+
     const auto& layout_str = proto_layer.data_layout();
-    data_layout layout = data_layout::invalid;
-    if (layout_str.empty())             { layout = data_layout::DATA_PARALLEL; }
-    if (layout_str == "data_parallel")  { layout = data_layout::DATA_PARALLEL; }
-    if (layout_str == "model_parallel") { layout = data_layout::MODEL_PARALLEL; }
+    data_layout layout = (layout_str.empty()
+                          ? data_layout::DATA_PARALLEL
+                          : data_layout_from_string(layout_str));
+
     const auto& num_parallel_readers = proto_trainer.num_parallel_readers();
     El::Device device = El::Device::CPU;
 #ifdef LBANN_HAS_GPU
-    const auto& device_str = proto_layer.device_allocation();
-    if (!proto_model.disable_cuda()) {
-      if (device_str == "gpu" || device_str.empty()) {
-        device = El::Device::GPU;
-      }
-      if (device_str == "cpu") { device = El::Device::CPU; }
-      if (proto_layer.has_input()) {
-        // Input layers must be on CPU
-        device = El::Device::CPU;
-      }
+    // Input layers must be on CPU
+    if (!proto_layer.has_input() && !model_disable_gpus) {
+      const auto& device_str = proto_layer.device_allocation();
+      device = (device_str.empty()
+                ? El::Device::GPU
+                : device_from_string(device_str));
     }
+#else
+    (void) model_disable_gpus;
 #endif // LBANN_HAS_GPU
+
+    auto proto_datatype = proto_layer.datatype();
 
     // Construct layer
     std::unique_ptr<Layer> l;
 #define TEMPLATE_INSTANTIATION(TensorDataType, T_layout, T_device)      \
     do {                                                                \
-      if (layout == T_layout && device == T_device) {                   \
+      if (proto_datatype == TypeToProtoDataType<TensorDataType>::value  \
+          && layout == T_layout                                         \
+          && device == T_device) {                                      \
         l = construct_layer<TensorDataType, T_layout, T_device>(        \
-              comm,                                                     \
-              data_readers,                                             \
-              num_parallel_readers,                                     \
-              proto_layer);                                             \
+          comm,                                                         \
+          data_readers,                                                 \
+          num_parallel_readers,                                         \
+          proto_layer);                                                 \
       }                                                                 \
     } while (0)
-    TEMPLATE_INSTANTIATION(DataType, data_layout::DATA_PARALLEL, El::Device::CPU);
-    TEMPLATE_INSTANTIATION(DataType, data_layout::MODEL_PARALLEL, El::Device::CPU);
-#ifdef LBANN_HAS_GPU
-    TEMPLATE_INSTANTIATION(DataType, data_layout::DATA_PARALLEL, El::Device::GPU);
-    TEMPLATE_INSTANTIATION(DataType, data_layout::MODEL_PARALLEL, El::Device::GPU);
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device) \
+    TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \
+    TEMPLATE_INSTANTIATION(T, data_layout::MODEL_PARALLEL, Device)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+
 #undef TEMPLATE_INSTANTIATION
 
     // Check that layer has been constructed

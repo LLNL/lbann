@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 PROTO(float);
+#ifndef LBANN_INSTANTIATE_FLOAT_ONLY
 PROTO(double);
+#endif // LBANN_INSTANTIATE_FLOAT_ONLY
 
 // #if 0 // Don't allow HALF yet
 // #ifdef LBANN_INSTANTIATE_CPU_HALF

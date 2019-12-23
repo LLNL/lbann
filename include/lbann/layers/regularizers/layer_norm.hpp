@@ -49,6 +49,15 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class layer_norm_layer : public data_type_layer<TensorDataType> {
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
+public:
 
   /**
    *  @param comm       LBANN communicator
@@ -171,8 +180,8 @@ void layer_norm_layer<TensorDataType,Layout,Device>::setup_matrices(const El::Gr
   data_type_layer<TensorDataType>::setup_matrices(grid);
   auto dist = this->get_prev_activations().DistData();
   dist.colDist = El::STAR;
-  m_statistics.reset(AbsDistMat::Instantiate(dist));
-  m_statistics_gradient.reset(AbsDistMat::Instantiate(dist));
+  m_statistics.reset(AbsDistMatrixType::Instantiate(dist));
+  m_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -198,16 +207,18 @@ void layer_norm_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_input
 // =========================================================
 
 #ifndef LBANN_LAYER_NORM_LAYER_INSTANTIATE
-extern template class layer_norm_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class layer_norm_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class layer_norm_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class layer_norm_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class layer_norm_layer<   \
+    T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class layer_norm_layer<   \
+    T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_LAYER_NORM_LAYER_INSTANTIATE
 
 } // namespace lbann

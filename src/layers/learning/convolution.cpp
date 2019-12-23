@@ -28,13 +28,88 @@
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+
+#include <layers.pb.h>
+
 namespace lbann {
+namespace {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+struct ConvLayerBuilder
+{
+  static std::unique_ptr<Layer> Build(
+    lbann_comm* comm, lbann_data::Layer const& proto_layer){
+
+    const auto& params = proto_layer.convolution();
+    const auto& num_output_channels = params.num_output_channels();
+    const auto& bias = params.has_bias();
+    int num_groups = params.num_groups();
+    if (num_groups == 0) {
+      num_groups = 1;
+    }
+
+    if (params.has_vectors()) {
+      const auto& dims = parse_list<int>(params.conv_dims());
+      const auto& pads = parse_list<int>(params.conv_pads());
+      const auto& strides = parse_list<int>(params.conv_strides());
+      std::vector<int> dilations = parse_list<int>(params.conv_dilations());
+      if (dilations.empty()) {
+        dilations.resize(dims.size(), 1);
+      }
+
+      return lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
+        comm, dims.size(), num_output_channels,
+        dims, pads, strides, dilations, num_groups, bias);
+    }
+    else {
+      const auto& num_dims = params.num_dims();
+      const auto& dim = params.conv_dims_i();
+      const auto& pad = params.conv_pads_i();
+      const auto& stride = params.conv_strides_i();
+      int dilation = params.conv_dilations_i();
+      if (dilation == 0) {
+        dilation = 1;
+      }
+      return lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
+        comm, num_dims, num_output_channels,
+        dim, pad, stride, dilation, num_groups, bias);
+    }
+  }
+};
+
+template <typename TensorDataType, El::Device Device>
+struct ConvLayerBuilder<TensorDataType, data_layout::MODEL_PARALLEL, Device>
+{
+  static std::unique_ptr<Layer> Build(
+    lbann_comm* comm, lbann_data::Layer const& proto_layer){
+    LBANN_ERROR("convolution layer is only supported with "
+                "a data-parallel layout");
+  }
+};
+
+}// namespace <anon>
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_convolution_layer_from_pbuf(
+  lbann_comm* comm,
+  const lbann_data::Layer& proto_layer) {
+  using Builder = ConvLayerBuilder<TensorDataType, Layout, Device>;
+  return Builder::Build(comm, proto_layer);
+}
 
 // Note: This unit will also instantiate the base_convolution_layer class.
 
 #define PROTO_DEVICE(T, Device)                                            \
   template class base_convolution_layer<T, Device>;                        \
-  template class convolution_layer<T, data_layout::DATA_PARALLEL, Device>;
+  template class convolution_layer<T, data_layout::DATA_PARALLEL, Device>; \
+    template std::unique_ptr<Layer>                                       \
+  build_convolution_layer_from_pbuf<T, data_layout::DATA_PARALLEL, Device>( \
+    lbann_comm*, lbann_data::Layer const&);                             \
+  template std::unique_ptr<Layer>                                       \
+  build_convolution_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, Device>( \
+    lbann_comm*, lbann_data::Layer const&)
+
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

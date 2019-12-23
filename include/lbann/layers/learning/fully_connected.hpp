@@ -31,6 +31,9 @@
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
+
+#include <layers.pb.h>
+
 #include <string>
 #include <sstream>
 
@@ -257,6 +260,9 @@ private:
   template <typename U>
   friend void bp_compute_impl(fully_connected_layer<U, T_layout, Dev>& l);
 };
+
+// Builder function
+LBANN_DEFINE_LAYER_BUILDER(fully_connected);
 
 #ifndef LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 

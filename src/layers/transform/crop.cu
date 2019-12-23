@@ -232,6 +232,10 @@ void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d() {
 
 }
 
-template class crop_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class crop_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

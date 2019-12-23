@@ -199,6 +199,9 @@ description Layer::get_description() const {
   }
   desc.add("Device", ss.str());
 
+  // DataType
+  desc.add("Data type", get_datatype_name());
+
   // Freeze state
   if (is_frozen()) {
     desc.add("Frozen");
@@ -272,11 +275,7 @@ std::vector<int> Layer::get_input_dims(int input_index) const {
 
   // Get dimensions of corresponding output tensor in parent layer
   const auto num_parent_outputs = parent.get_num_children();
-  // const int parent_output_index = (std::find(parent.m_child_layers.begin(),
-  //                                            parent.m_child_layers.end(),
-  //                                            this)
-  //                                  - parent.m_child_layers.begin());
-  const int parent_output_index = parent.find_layer_index(this);
+  const int parent_output_index = parent.find_child_layer_index(this);
   if (parent_output_index >= num_parent_outputs) {
     std::stringstream err;
     err << "layer \"" << parent.get_name() << "\" is a parent of "
@@ -537,43 +536,6 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   for (auto const& w : get_weights()) {
     auto weight_proto = proto->add_weights_data();
     w->write_proto(weight_proto);
-  }
-}
-
-std::string Layer::get_data_layout_string(data_layout d) const {
-  switch(d) {
-  case data_layout::DATA_PARALLEL:
-    return "data_parallel";
-  case data_layout::MODEL_PARALLEL:
-    return "model_parallel";
-  default:
-    LBANN_ERROR("invalid data layout");
-  }
-}
-
-std::string Layer::get_device_allocation_string(El::Device dev) const {
-  switch(dev) {
-  case El::Device::CPU:
-    return "cpu";
-#ifdef LBANN_HAS_GPU
-  case El::Device::GPU:
-    return "gpu";
-#endif // LBANN_HAS_GPU
-  default:
-    LBANN_ERROR("invalid device allocation");
-  }
-}
-
-std::string Layer::get_device_allocation_string_short(El::Device dev) const {
-  switch(dev) {
-  case El::Device::CPU:
-    return "C";
-#ifdef LBANN_HAS_GPU
-  case El::Device::GPU:
-    return "G";
-#endif // LBANN_HAS_GPU
-  default:
-    LBANN_ERROR("invalid device allocation");
   }
 }
 
