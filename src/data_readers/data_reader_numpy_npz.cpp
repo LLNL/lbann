@@ -203,7 +203,7 @@ namespace lbann {
     Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx + 1));
     if(m_responses.word_size == 2) {
       // Convert int16 to DataType.
-      const short *data = m_data.data<short>() + data_id * m_num_response_features;
+      const short *data = m_responses.data<short>() + data_id * m_num_response_features;
       DataType *dest = Y_v.Buffer();
       // OPTIMIZE
       LBANN_OMP_PARALLEL_FOR
