@@ -288,7 +288,9 @@ message Layer {
   /**
    *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
    */
-  message Softmax {}
+  message Softmax {
+    string softmax_mode = 1; // default: "instance"; should be "instance" or "channel"
+  }
 
   message Softplus {}
   message Softsign {}
