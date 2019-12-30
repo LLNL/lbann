@@ -32,7 +32,7 @@ namespace lbann {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void embedding_layer<TensorDataType,Layout,Device>::setup_matrices(const El::Grid& grid) {
   data_type_layer<TensorDataType>::setup_matrices(grid);
-  this->m_gradient_wrt_embeddings.reset(new El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>(grid));
+  this->m_embeddings_grad.reset(new El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>(grid));
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -79,7 +79,7 @@ void embedding_layer<TensorDataType, Layout, Device>::bp_compute() {
 
   // Local data
   const auto& local_input = dynamic_cast<const MatType&>(this->get_local_prev_activations());
-  auto& local_embedding_grad = dynamic_cast<MatType&>(this->m_gradient_wrt_embeddings->Matrix());
+  auto& local_embedding_grad = dynamic_cast<MatType&>(this->m_embeddings_grad->Matrix());
   const auto& local_output_grad = dynamic_cast<const MatType&>(this->get_local_prev_error_signals());
   const size_t input_size = this->get_input_size();
   const size_t local_mini_batch_size = local_input.Width();
@@ -102,7 +102,7 @@ void embedding_layer<TensorDataType, Layout, Device>::bp_compute() {
       }
     }
   }
-  opt.add_to_gradient(*this->m_gradient_wrt_embeddings, one, true);
+  opt.add_to_gradient(*this->m_embeddings_grad, one, true);
 
 }
 

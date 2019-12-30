@@ -35,10 +35,12 @@ namespace lbann {
 
 /** @brief Lookup table to vectors of fixed size.
  *
- *  Takes a scalar input, interprets it as an index, and outputs the
- *  corresponding vector. The number of embedding vectors and the size
- *  of vectors are fixed. If the index is out-of-range, then the
- *  output is a vector of zeros.
+ *  Each input value is interpreted as an index and the corresponding
+ *  embedding vector is output. Thus, given an input vector of length
+ *  @f$ \text{sequence\_length} @f$, the output is a
+ *  @f$ \text{sequence\_length} \times \text{embedding\_dim} @f$ tensor.
+ *  If an index is out-of-range, then corresponding output is a vector
+ *  of zeros.
  *
  *  The embedding vectors are stored in an
  *  @f$ \text{embedding\_dim} \times \text{num\_embeddings} @f$
@@ -113,7 +115,7 @@ private:
   El::Int m_padding_idx;
 
   /** Gradient w.r.t. embedding weights. */
-  std::unique_ptr<AbsDistMatrixType> m_gradient_wrt_embeddings;
+  std::unique_ptr<AbsDistMatrixType> m_embeddings_grad;
 
 };
 
@@ -139,9 +141,9 @@ embedding_layer<TensorDataType,Layout,Device>::embedding_layer(
     m_num_embeddings{other.m_num_embeddings},
     m_embedding_dim{other.m_embedding_dim},
     m_padding_idx{other.m_padding_idx},
-    m_gradient_wrt_embeddings(other.m_gradient_wrt_embeddings
-                              ? other.m_gradient_wrt_embeddings->Copy()
-                              : nullptr) {}
+    m_embeddings_grad(other.m_embeddings_grad
+                      ? other.m_embeddings_grad->Copy()
+                      : nullptr) {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 embedding_layer<TensorDataType,Layout,Device>& embedding_layer<TensorDataType,Layout,Device>::operator=(
@@ -150,9 +152,9 @@ embedding_layer<TensorDataType,Layout,Device>& embedding_layer<TensorDataType,La
   m_num_embeddings = other.m_num_embeddings;
   m_embedding_dim = other.m_embedding_dim;
   m_padding_idx = other.m_padding_idx;
-  m_gradient_wrt_embeddings.reset(other.m_gradient_wrt_embeddings
-                                  ? other.m_gradient_wrt_embeddings->Copy()
-                                  : nullptr);
+  m_embeddings_grad.reset(other.m_embeddings_grad
+                          ? other.m_embeddings_grad->Copy()
+                          : nullptr);
   return *this;
 }
 
@@ -240,7 +242,7 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data() {
   }
 
   // Initialize gradient w.r.t. embeddings
-  m_gradient_wrt_embeddings->Resize(m_embedding_dim, m_num_embeddings);
+  m_embeddings_grad->Resize(m_embedding_dim, m_num_embeddings);
 
 }
 
