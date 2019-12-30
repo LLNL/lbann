@@ -43,8 +43,8 @@ void embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
   const auto& local_embeddings = dynamic_cast<const MatType&>(this->get_data_type_weights(0).get_values().LockedMatrix());
   const auto& local_input = dynamic_cast<const MatType&>(this->get_local_prev_activations());
   auto& local_output = dynamic_cast<MatType&>(this->get_local_activations());
-  const size_t local_mini_batch_size = local_input.Width();
   const size_t input_size = this->get_input_size();
+  const size_t local_mini_batch_size = local_input.Width();
 
   // Populate output matrix with values from embedding matrix
   MatType embedding_v, output_v;
@@ -81,8 +81,8 @@ void embedding_layer<TensorDataType, Layout, Device>::bp_compute() {
   const auto& local_input = dynamic_cast<const MatType&>(this->get_local_prev_activations());
   auto& local_embedding_grad = dynamic_cast<MatType&>(this->m_gradient_wrt_embeddings->Matrix());
   const auto& local_output_grad = dynamic_cast<const MatType&>(this->get_local_prev_error_signals());
-  const size_t local_mini_batch_size = local_input.Width();
   const size_t input_size = this->get_input_size();
+  const size_t local_mini_batch_size = local_input.Width();
 
   // Update gradient w.r.t. embeddings
   // Note: Don't update gradient for padding index
