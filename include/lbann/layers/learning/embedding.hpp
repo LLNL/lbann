@@ -84,13 +84,10 @@ public:
   embedding_layer& operator=(const embedding_layer& other);
   ~embedding_layer() = default;
 
-  embedding_layer* copy() const override {
-    return new embedding_layer(*this);
-  }
-
-  std::string get_type() const override { return "embedding"; }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
+  embedding_layer* copy() const override;
+  std::string get_type() const override;
+  data_layout get_data_layout() const override;
+  El::Device get_device_allocation() const override;
 
   description get_description() const override;
 
@@ -125,7 +122,7 @@ private:
 // =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-embedding_layer<TensorDataType, Layout,Device>::embedding_layer(
+embedding_layer<TensorDataType,Layout,Device>::embedding_layer(
   lbann_comm* comm,
   size_t num_embeddings,
   size_t embedding_dim,
@@ -136,7 +133,7 @@ embedding_layer<TensorDataType, Layout,Device>::embedding_layer(
     m_padding_idx{padding_idx} {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-embedding_layer<TensorDataType, Layout,Device>::embedding_layer(
+embedding_layer<TensorDataType,Layout,Device>::embedding_layer(
  const embedding_layer<TensorDataType,Layout,Device>& other)
   : data_type_layer<TensorDataType>(other),
     m_num_embeddings{other.m_num_embeddings},
@@ -147,7 +144,7 @@ embedding_layer<TensorDataType, Layout,Device>::embedding_layer(
                               : nullptr) {}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-embedding_layer<TensorDataType, Layout,Device>& embedding_layer<TensorDataType, Layout,Device>::operator=(
+embedding_layer<TensorDataType,Layout,Device>& embedding_layer<TensorDataType,Layout,Device>::operator=(
   const embedding_layer<TensorDataType,Layout,Device>& other) {
   data_type_layer<TensorDataType>::operator=(other);
   m_num_embeddings = other.m_num_embeddings;
@@ -157,6 +154,26 @@ embedding_layer<TensorDataType, Layout,Device>& embedding_layer<TensorDataType, 
                                   ? other.m_gradient_wrt_embeddings->Copy()
                                   : nullptr);
   return *this;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+embedding_layer<TensorDataType,Layout,Device>* embedding_layer<TensorDataType,Layout,Device>::copy() const {
+  return new embedding_layer(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::string embedding_layer<TensorDataType,Layout,Device>::get_type() const {
+  return "embedding";
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+data_layout embedding_layer<TensorDataType,Layout,Device>::get_data_layout() const {
+  return Layout;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+El::Device embedding_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
+  return Device;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -171,26 +188,13 @@ description embedding_layer<TensorDataType,Layout,Device>::get_description() con
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void embedding_layer<TensorDataType,Layout,Device>::setup_dims() {
   data_type_layer<TensorDataType>::setup_dims();
-
-  // Make sure input dimensions are valid
-  if (this->get_input_size() != 1) {
-    const auto& dims = this->get_input_dims();
-    std::ostringstream dims_ss;
-    for (size_t i = 0; i < dims.size(); ++i) {
-      dims_ss << (i > 0 ? "x" : "") << dims[i];
-    }
-    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-                "recieved an input tensor with invalid dimensions "
-                "(expected 1, got ",dims_ss.str(),")");
-  }
-
-  // Output is size of embedding vector
-  this->set_output_dims({static_cast<int>(m_embedding_dim)});
-
+  auto dims = this->get_input_dims();
+  dims.push_back(static_cast<int>(m_embedding_dim));
+  this->set_output_dims(dims);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void embedding_layer<TensorDataType, Layout,Device>::setup_data() {
+void embedding_layer<TensorDataType,Layout,Device>::setup_data() {
   data_type_layer<TensorDataType>::setup_data();
 
   // Construct default weights if needed
