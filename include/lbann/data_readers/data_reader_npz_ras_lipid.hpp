@@ -31,7 +31,6 @@
 
 #include "conduit/conduit.hpp"
 #include "lbann/utils/options.hpp"
-//#include "lbann/data_readers/sample_list_file_ptr.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "conduit/conduit.hpp"
 #include <cnpy.h>
@@ -152,6 +151,8 @@ private:
    * see: write_file_sizes()
    */
   void read_file_sizes();
+
+  void read_normalization_data(std::vector<double> &min, std::vector<double> &max_min, std::vector<double> &mean, std::vector<double> &std_dev, bool &use_min_max, bool &use_z_score);
 };
 
 }  // namespace lbann

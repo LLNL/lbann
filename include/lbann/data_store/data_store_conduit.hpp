@@ -259,6 +259,11 @@ class data_store_conduit {
 
 private :
 
+  // if not null, 'm_other' points from a train to a validation
+  // data store; this permits communication which is needed in
+  // special cases (e.g, see: data_reader_npz_ras_lipid.cpp)
+  data_store_conduit *m_other = nullptr;
+
   bool m_owner_maps_were_exchanged = false;
 
   bool m_run_checkpoint_test = false;

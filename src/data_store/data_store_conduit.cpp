@@ -164,6 +164,7 @@ void data_store_conduit::set_data_reader_ptr(generic_data_reader *reader) {
 }
 
 void data_store_conduit::copy_members(const data_store_conduit& rhs) {
+  m_other = rhs.m_other;
   m_is_setup = rhs.m_is_setup;
   m_preloading = rhs.m_preloading;
   m_loading_is_complete = rhs.m_loading_is_complete;
