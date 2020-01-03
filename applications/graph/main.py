@@ -69,17 +69,17 @@ input_embeddings = lbann.Embedding(
 input_embeddings_slice = lbann.Slice(
     input_embeddings,
     axis=0,
-    slice_points=f'0 1 {input_size}'
+    slice_points=f'0 {num_negative_samples+1} {input_size}'
 )
-right_embeddings = lbann.Identity(input_embeddings_slice)
 left_embeddings = lbann.Identity(input_embeddings_slice)
+right_embeddings = lbann.Identity(input_embeddings_slice)
 preds = lbann.MatMul(left_embeddings, right_embeddings, transpose_b=True)
 preds = lbann.LogSigmoid(preds)
 preds = lbann.Slice(preds,
                     axis=0,
-                    slice_points=f'0 {walk_length-1} {input_size-1}')
-preds_positive = lbann.Reduction(preds, mode='average')
+                    slice_points=f'0 {num_negative_samples} {num_negative_samples+1}')
 preds_negative = lbann.Reduction(preds, mode='average')
+preds_positive = lbann.Reduction(preds, mode='average')
 obj = [
     lbann.LayerTerm(preds_positive, scale=-1),
     lbann.LayerTerm(preds_negative, scale=1),
