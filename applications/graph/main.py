@@ -30,6 +30,9 @@ parser.add_argument(
     '--latent-dim', action='store', default=128, type=int,
     help='latent space dimensions (default: 128)', metavar='NUM')
 parser.add_argument(
+    '--learning-rate', action='store', default=-1, type=float,
+    help='learning rate (default: 0.025*mbsize)', metavar='VAL')
+parser.add_argument(
     '--experiment-dir', action='store', default=None, type=str,
     help='directory for experiment artifacts', metavar='DIR')
 args = parser.parse_args()
@@ -51,50 +54,35 @@ embeddings = lbann.Weights(
 num_graph_nodes = dataset.max_graph_node_id() + 1
 walk_length = dataset.walk_context_length
 num_negative_samples = dataset.num_negative_samples
-
-# Input is a sequence of graph node IDs
 input_size = dataset.sample_dims()[0]
-input_ = lbann.Identity(lbann.Input())
-input_slice = lbann.Slice(input_,
-                          slice_points=str_list(range(input_size+1)))
-walk = []
-negative_samples = []
-for _ in range(walk_length):
-    walk.append(lbann.Identity(input_slice))
-for _ in range(num_negative_samples):
-    negative_samples.append(lbann.Identity(input_slice))
 
 # Embedding vectors, including negative sampling
-walk_embeddings = [lbann.Embedding(node,
-                                   weights=embeddings,
-                                   num_embeddings=num_graph_nodes,
-                                   embedding_dim=args.latent_dim)
-                   for node in walk]
-negative_embeddings = [lbann.Embedding(node,
-                                       weights=embeddings,
-                                       num_embeddings=num_graph_nodes,
-                                       embedding_dim=args.latent_dim)
-                       for node in negative_samples]
+# Note: Input is sequence of graph node IDs
+input_embeddings = lbann.Embedding(
+    lbann.Input(),
+    weights=embeddings,
+    num_embeddings=num_graph_nodes,
+    embedding_dim=args.latent_dim,
+)
 
 # Skip-Gram with negative sampling
-walk_start_embedding = lbann.Reshape(walk_embeddings[0],
-                                     dims=f'1 {args.latent_dim}')
-walk_context_embeddings = [lbann.Reshape(e, dims=f'{args.latent_dim} 1')
-                           for e in walk_embeddings[1:]]
-negative_embeddings = [lbann.Reshape(e, dims=f'1 {args.latent_dim}')
-                       for e in negative_embeddings]
-left_embeddings = lbann.Concatenation([walk_start_embedding] + negative_embeddings)
-right_embeddings = lbann.Concatenation(walk_context_embeddings, axis=1)
-preds = lbann.MatMul(left_embeddings, right_embeddings)
+input_embeddings_slice = lbann.Slice(
+    input_embeddings,
+    axis=0,
+    slice_points=f'0 1 {input_size}'
+)
+right_embeddings = lbann.Identity(input_embeddings_slice)
+left_embeddings = lbann.Identity(input_embeddings_slice)
+preds = lbann.MatMul(left_embeddings, right_embeddings, transpose_b=True)
 preds = lbann.LogSigmoid(preds)
 preds = lbann.Slice(preds,
                     axis=0,
-                    slice_points=f'0 1 {1+num_negative_samples}')
-preds_positive = lbann.Reduction(preds, mode='sum')
-preds_negative = lbann.Reduction(preds, mode='sum')
+                    slice_points=f'0 {walk_length-1} {input_size-1}')
+preds_positive = lbann.Reduction(preds, mode='average')
+preds_negative = lbann.Reduction(preds, mode='average')
 obj = [
-    lbann.LayerTerm(preds_positive, scale=1),
-    lbann.LayerTerm(preds_negative, scale=-1),
+    lbann.LayerTerm(preds_positive, scale=-1),
+    lbann.LayerTerm(preds_negative, scale=1),
 ]
 
 # ----------------------------------
@@ -116,6 +104,12 @@ _reader.python.sample_dims_function = 'sample_dims'
 # Run LBANN
 # ----------------------------------
 
+# Set learning rate
+# Note: Learning rate in original word2vec is 0.025
+learning_rate = args.learning_rate
+if learning_rate < 0:
+    learning_rate = 0.025 * args.mini_batch_size
+
 # Create LBANN objects
 trainer = lbann.Trainer()
 callbacks = [
@@ -123,13 +117,14 @@ callbacks = [
     lbann.CallbackTimer(),
     lbann.CallbackDumpWeights(basename='embeddings',
                               epoch_interval=args.num_epochs),
+    lbann.CallbackPrintModelDescription(),
 ]
 model = lbann.Model(args.mini_batch_size,
                     args.num_epochs,
-                    layers=lbann.traverse_layer_graph(input_),
+                    layers=lbann.traverse_layer_graph(input_embeddings),
                     objective_function=obj,
                     callbacks=callbacks)
-opt = lbann.SGD(learn_rate=0.025, momentum=0.9)
+opt = lbann.SGD(learn_rate=learning_rate)
 
 # Run LBANN
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
