@@ -58,6 +58,24 @@ void fp_cpu(lbann_comm& comm,
   comm.nb_allreduce(&value, 1, input.DistComm(), req);
 }
 
+#ifdef LBANN_HAS_HALF
+void fp_cpu(lbann_comm& comm,
+            const El::AbstractDistMatrix<cpu_fp16>& input,
+            cpu_fp16& value,
+            Al::request& req) {
+    LBANN_ERROR("This function is not supported in FP16 on CPUs");
+}
+#endif // LBANN_HAS_HALF
+
+#ifdef LBANN_HAS_GPU_FP16
+void fp_cpu(lbann_comm& comm,
+            const El::AbstractDistMatrix<fp16>& input,
+            fp16& value,
+            Al::request& req) {
+    LBANN_ERROR("This function is not supported in FP16 on CPUs");
+}
+#endif // LBANN_HAS_GPU_HALF
+
 #ifdef LBANN_HAS_GPU
 /** GPU implementation of evaluation layer forward prop. */
 template <typename TensorDataType>
