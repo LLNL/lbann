@@ -10,15 +10,4 @@ data_reader {
     disable_responses: true 
     disable_labels: true
   }
-  reader {
-    name: "numpy"
-    role: "test"
-    shuffle: false 
-    data_filename: "/p/lustre2/brainusr/datasets/jag/jag10K1vw_val.npy"
-    validation_percent: 0
-    #absolute_sample_count: 500
-    percent_of_data_to_use: 1.0
-    disable_responses: true 
-    disable_labels: true
-  }
 }

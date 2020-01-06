@@ -1,8 +1,8 @@
-## Surrogate models for Inertial Confinement Fussion
+## Surrogate Models for Inertial Confinement Fussion
 
 Scripts in this directory are surrogate deep learning models bridging simulation and experimental datasets from inertial confinement fusion (high energy physics) application. Please see [link](https://github.com/rushilanirudh/macc) for more details on model architectures and dataset description. Also, see LBANN documentations on how to install, build and run LBANN code. 
 
-### How to train (Wasserstein autoencoder WAE)
+### How to Train (Wasserstein autoencoder WAE)
 ```bash
 run python3 train_jag_wae.py
 ```
@@ -78,13 +78,13 @@ model0 (instance 0) validation run time : 0.315543s
 ```
 
 ### Visual Outputs 
-#####Ground Truth Images
+##### Ground Truth Images
  
 ![alt text](lbann_gt_img.png)
 
-#####Predicted Images
+##### Predicted Images
 ![alt text](lbann_pred_img.png)
 
-#####Ground Truth and Predicted Scalars
+##### Ground Truth and Predicted Scalars
 ![alt text](lbann_gt_pred_sca.png)
 
