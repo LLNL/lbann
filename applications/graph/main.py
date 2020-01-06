@@ -74,15 +74,20 @@ input_embeddings_slice = lbann.Slice(
 left_embeddings = lbann.Identity(input_embeddings_slice)
 right_embeddings = lbann.Identity(input_embeddings_slice)
 preds = lbann.MatMul(left_embeddings, right_embeddings, transpose_b=True)
-preds = lbann.LogSigmoid(preds)
-preds = lbann.Slice(preds,
-                    axis=0,
-                    slice_points=f'0 {num_negative_samples} {num_negative_samples+1}')
-preds_negative = lbann.Reduction(preds, mode='average')
-preds_positive = lbann.Reduction(preds, mode='average')
+preds_slice = lbann.Slice(
+    preds,
+    axis=0,
+    slice_points=f'0 {num_negative_samples} {num_negative_samples+1}')
+preds_negative = lbann.Identity(preds_slice)
+preds_positive = lbann.Identity(preds_slice)
+obj_positive = lbann.LogSigmoid(preds_positive)
+obj_positive = lbann.Reduction(obj_positive, mode='average')
+obj_negative = lbann.WeightedSum(preds_negative, scaling_factors='-1')
+obj_negative = lbann.LogSigmoid(obj_negative)
+obj_negative = lbann.Reduction(obj_negative, mode='average')
 obj = [
-    lbann.LayerTerm(preds_positive, scale=-1),
-    lbann.LayerTerm(preds_negative, scale=1),
+    lbann.LayerTerm(obj_positive, scale=-1),
+    lbann.LayerTerm(obj_negative, scale=-1),
 ]
 
 # ----------------------------------
@@ -104,11 +109,12 @@ _reader.python.sample_dims_function = 'sample_dims'
 # Run LBANN
 # ----------------------------------
 
-# Set learning rate
+# Create optimizer
 # Note: Learning rate in original word2vec is 0.025
 learning_rate = args.learning_rate
 if learning_rate < 0:
     learning_rate = 0.025 * args.mini_batch_size
+opt = lbann.SGD(learn_rate=learning_rate)
 
 # Create LBANN objects
 trainer = lbann.Trainer()
@@ -117,14 +123,12 @@ callbacks = [
     lbann.CallbackTimer(),
     lbann.CallbackDumpWeights(basename='embeddings',
                               epoch_interval=args.num_epochs),
-    lbann.CallbackPrintModelDescription(),
 ]
 model = lbann.Model(args.mini_batch_size,
                     args.num_epochs,
                     layers=lbann.traverse_layer_graph(input_embeddings),
                     objective_function=obj,
                     callbacks=callbacks)
-opt = lbann.SGD(learn_rate=learning_rate)
 
 # Run LBANN
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)

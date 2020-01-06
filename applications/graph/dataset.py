@@ -95,7 +95,7 @@ def get_sample(index):
                                        np.random.rand(num_negative_samples))
 
     # Return concatenated arrays
-    return np.concatenate((walk_context, negative_samples))
+    return np.concatenate((negative_samples, walk_context))
 
 def num_samples():
     """Number of samples in dataset."""
