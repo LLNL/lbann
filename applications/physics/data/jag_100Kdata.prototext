@@ -1,0 +1,24 @@
+data_reader {
+  reader {
+    name: "numpy"
+    role: "train"
+    shuffle: true
+    data_filename: "/p/lustre2/brainusr/datasets/jag/jag100K1vw_train.npy"
+    data_filename: "/usr/workspace/wsa/jacobs32/git.samadejacobs.lbann/model_zoo/jag_uq/jaguq_train_100K.npy"
+    validation_percent: 0.1
+    percent_of_data_to_use: 1.0
+    disable_responses: true 
+    disable_labels: true
+  }
+  reader {
+    name: "numpy"
+    role: "test"
+    shuffle: false 
+    data_filename: "/p/lustre2/brainusr/datasets/jag/jag10K1vw_val.npy"
+    validation_percent: 0
+    #absolute_sample_count: 500
+    percent_of_data_to_use: 1.0
+    disable_responses: true 
+    disable_labels: true
+  }
+}
