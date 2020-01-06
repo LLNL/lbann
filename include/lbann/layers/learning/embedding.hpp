@@ -198,7 +198,8 @@ void embedding_layer<TensorDataType, Layout,Device>::setup_data() {
   // standard deviation 1.
   if (!this->has_weights()) {
     auto w = make_unique<WeightsType>(this->get_comm());
-    auto init = make_unique<normal_initializer<TensorDataType>>(0,1);
+    auto init = make_unique<normal_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero(),
+                                                                El::TypeTraits<TensorDataType>::One());
     auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
                                this->m_model->create_optimizer()));
     w->set_name(this->get_name() + "_weights");
