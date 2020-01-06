@@ -207,7 +207,7 @@ protected:
 #else
     El::EntrywiseMap(*m_mask,
                      (std::function<TensorDataType(const TensorDataType&)>)
-                     ([this,scale](const TensorDataType& z)->DataType {
+                     ([this,scale](const TensorDataType& z)->TensorDataType {
                        auto& gen = get_fast_generator();
                        std::bernoulli_distribution dist(m_keep_prob);
                        return dist(gen) ? scale : El::TypeTraits<TensorDataType>::Zero();

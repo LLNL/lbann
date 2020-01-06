@@ -124,7 +124,9 @@ public:
       m_strides(std::move(strides)),
       m_dilations(std::move(dilations)),
       m_groups(groups),
-      m_bias_scaling_factor(has_bias ? 1 : 0)
+      m_bias_scaling_factor(has_bias ?
+                            El::TypeTraits<TensorDataType>::One() :
+                            El::TypeTraits<TensorDataType>::Zero())
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
