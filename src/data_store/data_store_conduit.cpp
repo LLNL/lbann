@@ -317,7 +317,7 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 //     since the threading from the data_reader will cause you grief
 void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool already_have) {
 
-DEBUG("starting set_conduit_node; m_data.size: ", m_data.size(), " data_id: ", data_id, " already_have: ", already_have);
+// XX DEBUG("starting set_conduit_node; m_data.size: ", m_data.size(), " data_id: ", data_id, " already_have: ", already_have);
 
 
   std::lock_guard<std::mutex> lock(m_mutex);
@@ -642,6 +642,7 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
     }
     m_owner[(*m_shuffled_indices)[i]] = owning_rank;
   }
+PROFILE("build_preloaded_owner_map; m_owner_maps_were_exchanged = true");
   m_owner_maps_were_exchanged = true;
 }
 
@@ -1294,12 +1295,6 @@ void data_store_conduit::exchange_owner_maps() {
           "my owner map size: ", m_owner.size());
   DEBUG("starting exchange_owner_maps;",
         "size: ", m_owner.size());
-  if (m_reader->get_role() == "validate" && m_debug) {
-    (*m_debug) << "\nmy owner map:\n";
-    for (auto t : m_owner) {
-      (*m_debug) << "  " << t.first << " is owned by " << t.second << std::endl;
-    }
-  }
 
   int my_count = m_my_num_indices;
   std::vector<int> all_counts(m_np_in_trainer);
@@ -1333,11 +1328,19 @@ void data_store_conduit::exchange_owner_maps() {
         m_owner[others[i]] = k;
       }
     }
+
+std::cerr << m_comm->get_rank_in_node() << "  FINISHED bcast from: " << k << std::endl;
+
+
   }
   PROFILE("leaving data_store_conduit::exchange_owner_maps\n",
           "my owner map size: ", m_owner.size());
   m_owner_maps_were_exchanged = true;
+PROFILE("exchange_owner_maps; m_owner_maps_were_exchanged = true");
   set_loading_is_complete();
+
+  PROFILE("LEAVING exchange_owner_maps;",
+          "my owner map size: ", m_owner.size());
 }
 
 void data_store_conduit::profile_timing() {
@@ -1423,8 +1426,13 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
     PROFILE("calling exchange_owner_maps");
     if (!m_owner_maps_were_exchanged) {
       exchange_owner_maps();
+    } 
+
+    else {  
+      PROFILE("  owner_maps were already exchanged; returning");
     }  
     m_owner_maps_were_exchanged = true;
+PROFILE("exchange_mini_batch_data; m_owner_maps_were_exchanged = true");
     /*
      * TODO
     if (m_spill) {
@@ -1915,6 +1923,7 @@ void data_store_conduit::check_query_flags() const {
 
 void data_store_conduit::clear_owner_map() { 
     m_owner_maps_were_exchanged = false;
+PROFILE("clear_owner_map; m_owner_maps_were_exchanged = false");
     m_owner.clear(); 
   }
 }  // namespace lbann

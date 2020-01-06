@@ -654,12 +654,6 @@ class generic_data_reader {
 
  protected:
 
-   /** Number of global indices 
-    *
-    * The number of indices in the train+validation sets
-    */
-   size_t m_num_global_indices = 0;
-
   // For use with conduit when samples are corrupt.
   mutable std::unordered_set<int> m_using_random_node;
 

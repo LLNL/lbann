@@ -69,6 +69,19 @@ public:
   int get_num_labels() const override { return m_num_labels; }
 
 private:
+
+  /** Number of global indices */
+  size_t m_num_global_indices = 0;
+  /** The number of indices for the train set */
+  size_t m_train_indices;
+  /** The number of indices for the validation set */
+  size_t m_validate_indices;
+
+  std::vector<int> m_multi_samples_per_file;
+
+  /** the number of sequential samples that are combined into a multi-sample */
+  int m_seq_len = 1;
+
   int m_num_features = 0;
   int m_num_labels = 0;
   int m_num_response_features = 0;
@@ -79,11 +92,9 @@ private:
   /** @brief List of input npz filenames */
   std::vector<std::string> m_filenames;
 
-  /** @brief The global number of samples */
-  int m_num_samples = 0;
-
   /** @brief m_samples_per_file[j] contains the number of samples in the j-th file */
   std::vector<int> m_samples_per_file;
+  std::unordered_map<int, int> m_first_multi_id_per_file;
 
   /** @brief Maps a data_id to the file index (in m_filenames) that
    * contains the sample, and the offset in that file's npy array */
@@ -107,6 +118,13 @@ private:
   /** @brief Maps a field name to the number of words in the datum */
   std::unordered_map<std::string, size_t> m_datum_num_words;
 
+  std::vector<double> m_min;
+  std::vector<double> m_max_min;
+  std::vector<double> m_mean;
+  std::vector<double> m_std_dev;
+  bool m_use_min_max;
+  bool m_use_z_score;
+
   //=====================================================================
   // private methods follow
   //=====================================================================
@@ -129,7 +147,8 @@ private:
    * my_samples maps a filename (index in m_filenames) to the pair:
    * (data_id, local index of the sample wrt the samples in the file).
    */
-  void get_my_indices(std::unordered_map<int, std::vector<std::pair<int,int>>> &my_samples);
+  void get_my_indices(std::map<int, std::vector<std::pair<int,int>>> &my_samples);
+  // XX void get_my_indices(std::unordered_map<int, std::vector<std::pair<int,int>>> &my_samples);
 
   /** @brief Re-build the data store's owner map
    *
@@ -152,7 +171,12 @@ private:
    */
   void read_file_sizes();
 
-  void read_normalization_data(std::vector<double> &min, std::vector<double> &max_min, std::vector<double> &mean, std::vector<double> &std_dev, bool &use_min_max, bool &use_z_score);
+  void read_normalization_data();
+
+  /** Print some statistics to cout */
+  void print_shapes_etc();
+
+  void load_the_next_sample(conduit::Node &node, int data_id, int sample_index, std::map<std::string, cnpy::NpyArray> &data);
 };
 
 }  // namespace lbann

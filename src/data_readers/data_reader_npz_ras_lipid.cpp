@@ -82,51 +82,73 @@ void ras_lipid_conduit_data_reader::load() {
   }
 
   options *opts = options::get();
+  opts->set_option("preload_data_store", 1);
 
-  if (! opts->get_bool("preload_data_store")) {
-    LBANN_ERROR("ras_lipid_conduit_data_reader requires data_store; please pass either --preload_data_store on the cmd line");
+  // Error check settings for validation percent, etc
+  size_t count = get_absolute_sample_count();
+  //TODO ???
+  if (count) {
+    LBANN_ERROR("You cannot use absolute sample count with this data reader");
+  }
+  double use_percent = get_use_percent();
+  if (use_percent != 1) {
+    LBANN_ERROR("use_percent for < 1.0 is not yet implemented; please contact Dave Hysom");
+  }
+  if (m_validation_percent) {
+    LBANN_ERROR("validation percent is not yet implemented; please contact Dave Hysom");
   }
 
-  //dah - for now, I assume the input file contains, on each line, the complete
-  //      pathname of an npz file. 
+  // The input file should contain, on each line, the complete
+  // pathname of an npz file. 
   std::string infile = get_data_filename();
   read_filelist(m_comm, infile, m_filenames);
 
-  fill_in_metadata();
-
+  // Read or compute the number of samples per file (this is the number
+  // of samples before we sequentially-concatenate them)
   if (opts->has_string("pilot2_read_file_sizes")) {
     read_file_sizes();
   } else {
     double tm3 = get_time();
     get_samples_per_file();
     if (is_master()) std::cout << "time to compute samples_per_file: " << get_time() - tm3 << std::endl;
-  }  
+  }
+  // Optionally save the samples-per-file info to file
   if (opts->has_string("pilot2_save_file_sizes")) {
     write_file_sizes();
   }
 
-  // for the case where we want a sample (in fetch_datum) to be a sequence
-  // of samples. we need to adjust the number of samples in the files
-  int seq_len = 0;
+  // Get the number of samples that will be combined into a multi-sample
+  m_seq_len = 1;
   if (opts->has_int("seq_len")) {
-    seq_len = opts->get_int("seq_len") - 1;
-  }
-  for (size_t j=0; j<m_samples_per_file.size(); j++) {
-    m_samples_per_file[j] -= seq_len;
-  }
-  
-  // compute number of global samples, then setup the shuffled indices
-  m_num_samples = 0;
-  for (auto t : m_samples_per_file) {
-    m_num_samples += t;
+    m_seq_len = opts->get_int("seq_len");
   }
 
+  // Get the number of global multi-samples, and the number of
+  // multi-samples in each file
+  m_multi_samples_per_file.reserve(m_filenames.size());
+  m_num_global_indices = 0;
+  for (const auto &t : m_samples_per_file) {
+    int n = t / m_seq_len; // this is the number of multi-samples
+    m_multi_samples_per_file.push_back(n);
+    m_num_global_indices += n;
+  }
+  m_train_indices = m_num_global_indices;
+  m_validate_indices = 0; //TODO
+
+  fill_in_metadata();
+
+  // Compute the data_id of the first sample in each file
+  m_first_multi_id_per_file[0] = 0;
+  for (size_t j=1; j<m_samples_per_file.size()+1; j++) {
+    m_first_multi_id_per_file[j] = (m_first_multi_id_per_file[j-1] + m_multi_samples_per_file[j-1]);
+  }
+
+  // user feedback
+  print_shapes_etc();
+
   m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_num_samples);
-  m_num_global_indices = m_num_samples;
+  m_shuffled_indices.resize(m_num_global_indices);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-  resize_shuffled_indices();
-  m_num_samples = m_shuffled_indices.size();
 
   instantiate_data_store();
   select_subset_of_data();
@@ -154,140 +176,81 @@ data types, from python+numpy:
 
 ==========================================================================
 #endif
-  int np = m_comm->get_procs_per_trainer();
-
-  // two hacks follow. I call them hack, because they wouldn't be needed
-  // if we were using sample lists. 
-
-  // hack: re-build the data store's owner map
-  rebuild_data_store_owner_map();
-
-  // get the data_ids that this rank owns;
-  // maps m_filenames index -> (data_id, index in the file)
-  std::unordered_map<int, std::vector<std::pair<int,int>>> my_samples;
-  get_my_indices(my_samples);
 
   // get normalization data
-  std::vector<double> min;
-  std::vector<double> max_min;
-  std::vector<double> mean;
-  std::vector<double> std_dev;
-  bool use_min_max;
-  bool use_z_score;
-  read_normalization_data(min, max_min, mean, std_dev, use_min_max, use_z_score);
+  read_normalization_data();
 
-  std::map<int, conduit::Node*> my_nodes;
+  // get the data_ids that this rank owns;
+  // my_samples maps m_filenames index -> (data_id, index in the file).
+  // Note: these are data_ids before we combine them into multi-samles
+  std::map<int, std::vector<std::pair<int,int>>> my_samples;
+  get_my_indices(my_samples);
 
-  // construct a conduit::Node for each sample that this rank owns,
-  // and set it in the data_store
-  size_t nn = 0;
-  std::vector<size_t> dist(3, 0);
+  // Variables relating to user feedback; otherwise NA
   bool verbose = options::get()->get_bool("verbose");
+  int np = m_comm->get_procs_per_trainer();
+  size_t nn = 0; 
+
+  std::vector<conduit::Node> work(m_seq_len);
+
+  // Loop over the files owned by this processer
   for (const auto &t : my_samples) {
-    std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(m_filenames[t.first]);
+
+    // Load the next data file
+    int file_id = t.first;
+    std::map<std::string, cnpy::NpyArray> data = cnpy::npz_load(m_filenames[file_id]);
+    int multi_data_id = m_first_multi_id_per_file[t.first];
+
+    // loop over the samples in the data file
+    int count = 0; // counter for number of samples in a multi-node
+    int count_cumulative = 0; // counter for total number of samples in this file
     for (const auto &t4 : t.second) {
       int data_id = t4.first;
       int sample_index = t4.second;
-      conduit::Node &node = m_data_store->get_empty_node(data_id);
 
-      size_t offset;
-      for (const auto &t5 : m_datum_shapes) {
-        const std::string &name = t5.first;
-        // this could be done better ... read the choices of fields
-        // to use from file, as is done in data_reader_jag_conduit?
-
-        if (name == "frames") {
-          conduit::int64 *data = reinterpret_cast<conduit::int64*>(a[name].data_holder->data());
-          offset = sample_index*m_datum_num_words["frames"];
-          node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
-        } 
-
-        else if (name == "bbs") {
-          conduit::float32 *data = reinterpret_cast<conduit::float32*>(a[name].data_holder->data());
-          offset = sample_index*m_datum_num_words["bbs"];
-          node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
-        } 
-
-        else { // rots, states, tilts, density_sig1, probs
-          offset = sample_index*m_datum_num_words[name];
-          conduit::float64 *data = reinterpret_cast<conduit::float64*>(a[name].data_holder->data());
-
-          if (name == "states") {
-            int label = (data + offset)[0];
-            if (label < 0 || label > 2) {
-              LBANN_ERROR("bad label; should be 0, 1, or 2 but it's: ", label);
-            }
-            dist[label] += 1;
-            node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(label);
-
-          } else if (name == "density_sig1") {
-            int s = 0;
-            if (use_z_score) {
-              for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
-                data[j]= (data[j] - mean[s]) / std_dev[s];
-                ++s;
-                if (s == 14) {
-                  s = 0;
-                }
-              }
-            } else if (use_min_max) {
-              for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
-                data[j] = (data[j] - min[s]) / max_min[s];
-                ++s;
-                if (s == 14) {
-                  s = 0;
-                }
-              }
-            }
-            node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
-
-          // rots, tilts, probs
-          } else {
-            node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
-          }  
-        }
-      }
-
-//TODO
-//      m_data_store->set_preloaded_conduit_node(data_id, node);
-      my_nodes[data_id] = &node;
+      load_the_next_sample(work[count], data_id, sample_index, data);
+      ++count;
+      ++count_cumulative;
 
       //user feedback
       ++nn;
       if (verbose && is_master() && nn % 1000 == 0) {
-        std::cout << "estimated number of samples loaded: " << utils::commify(nn/1000*np) << "K" << std::endl;
+        std::cout << "estimated number of samples processed: " 
+                  << utils::commify(nn/1000*np) << "K" << std::endl;
       }  
-    }
-  }
 
-for (auto t : my_nodes) {
-  m_data_store->set_preloaded_conduit_node(t.first, *t.second);
-}
-//XX
-//m_comm->global_barrier();
-//exit(0);
-
-
-  //user feedback
-  if (is_master() && get_role() == "train") {
-    std::vector<size_t> r(3);
-    m_comm->trainer_reduce(dist.data(), 3, r.data());
-    std::cout << "\nLabel distribution:\n";
-    for (size_t h=0; h<3; h++) {
-      std::cout << "  " << h << " " << r[h] << std::endl;
-    }
-    std::cout << "\nData Shapes:\n";
-    for (auto t : m_datum_shapes) {
-      std::cout << "  " << t.first << " ";
-      for (auto t2 : t.second) {
-        std::cout << t2 << " ";
+      // Construct the multi-node (if seq_len > 1) and put the node 
+      // in the data store
+      if (count == m_seq_len) {
+        if (m_seq_len == 1) {
+          m_data_store->set_conduit_node(multi_data_id, work[0]);
+        } else {
+          //TODO: combine the Nodes in work, and put in the data_store
+        }
+        count = 0;
+        for (auto &t5 : work) {
+          t5.reset();
+        }
+        ++multi_data_id;
       }
-      std::cout << std::endl;
+
+      if (count / m_seq_len == m_multi_samples_per_file[t.first]) {
+        break;
+      }
+
     }
-    std::cout << std::endl;
-  } else {
-    m_comm->trainer_reduce(dist.data(), 3, 0);
   }
+
+  //TODO: relook
+  //m_data_store->exchange_owner_maps();
+  std::unordered_map<int, int> owners;
+  for (size_t j=0; j<m_multi_samples_per_file.size(); j++) {
+    int owning_rank = j % np;
+    for (int h=m_first_multi_id_per_file[j]; h<m_first_multi_id_per_file[j]+m_multi_samples_per_file[j]; h++) {
+      owners[h] = owning_rank;
+    }
+  }
+  m_data_store->set_preloaded_owner_map(owners);
 }
 
 bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
@@ -335,10 +298,11 @@ void ras_lipid_conduit_data_reader::fill_in_metadata() {
     const std::string &name = t.first;
     size_t word_size = t.second.word_size;
     const std::vector<size_t> &shape = t.second.shape;
-    size_t num_words = 1;
+    size_t num_words = m_seq_len;
     if (shape.size() == 1) {
-      m_datum_shapes[name].push_back(1);
+      m_datum_shapes[name].push_back(1*m_seq_len);
     } else {
+      m_datum_shapes[name].push_back(m_seq_len);
       for (size_t x=1; x<shape.size(); x++) {
         num_words *= shape[x];
         m_datum_shapes[name].push_back(shape[x]);
@@ -360,7 +324,7 @@ void ras_lipid_conduit_data_reader::fill_in_metadata() {
   }
 }
 
-void ras_lipid_conduit_data_reader::get_my_indices(std::unordered_map<int, std::vector<std::pair<int,int>>> &my_samples) {
+void ras_lipid_conduit_data_reader::get_my_indices(std::map<int, std::vector<std::pair<int,int>>> &my_samples) {
   int my_rank = m_comm->get_rank_in_trainer();
   int np = m_comm->get_procs_per_trainer();
   size_t data_id = 0;
@@ -373,26 +337,6 @@ void ras_lipid_conduit_data_reader::get_my_indices(std::unordered_map<int, std::
       ++data_id;
     }
   }
-#if 0
-  std::unordered_set<size_t> indices;
-  for (const auto &t : m_shuffled_indices) {
-    indices.insert(t);
-  }
-  int my_rank = m_comm->get_rank_in_trainer();
-  int np = m_comm->get_procs_per_trainer();
-  size_t data_id = 0;
-  for (size_t j=0; j<m_filenames.size(); ++j) {
-    int file_owner = j % np;
-    for (int h=0; h<m_samples_per_file[j]; h++) {
-      if (indices.find(data_id) != indices.end()) {
-        if (file_owner == my_rank) {
-          my_samples[j].push_back(std::make_pair(data_id, h));
-        }
-      }
-      ++data_id;
-    }
-  }
-#endif
 }
 
 void ras_lipid_conduit_data_reader::rebuild_data_store_owner_map() {
@@ -493,14 +437,14 @@ void ras_lipid_conduit_data_reader::read_file_sizes() {
   }
 }
 
-void ras_lipid_conduit_data_reader::read_normalization_data(std::vector<double> &min, std::vector<double> &max_min, std::vector<double> &mean, std::vector<double> &std_dev, bool &use_min_max, bool &use_z_score) {
-  use_min_max = false;
-  use_z_score = false;
+void ras_lipid_conduit_data_reader::read_normalization_data() {
+  m_use_min_max = false;
+  m_use_z_score = false;
   if (options::get()->has_string("normalization")) {
-    use_min_max = true;
-    use_z_score = options::get()->get_bool("z_score");
+   m_use_min_max = true;
+    m_use_z_score = options::get()->get_bool("z_score");
     if (is_master()) {
-      if (use_z_score) {
+      if (m_use_z_score) {
         std::cout << "Normalizing data using z-score" << std::endl;
       } else {
         std::cout << "Normalizing data using min-max" << std::endl;
@@ -514,20 +458,20 @@ void ras_lipid_conduit_data_reader::read_normalization_data(std::vector<double> 
     }
     std::string line;
     getline(in, line);
-    max_min.reserve(14);
-    min.reserve(14);
-    mean.reserve(14);
-    std_dev.reserve(14);
+    m_max_min.reserve(14);
+    m_min.reserve(14);
+    m_mean.reserve(14);
+    m_std_dev.reserve(14);
     double v_max, v_min, v_mean, v_std_dev;
     while (in >> v_max >> v_min >> v_mean >> v_std_dev) { 
-      min.push_back(v_min);
-      max_min.push_back(v_max - v_min);
-      mean.push_back(v_mean);
-      std_dev.push_back(v_std_dev);
+      m_min.push_back(v_min);
+      m_max_min.push_back(v_max - v_min);
+      m_mean.push_back(v_mean);
+      m_std_dev.push_back(v_std_dev);
     }
     in.close();
-    if (min.size() != 14) {
-      LBANN_ERROR("normalization.size() = ", min.size(), "; should be 14");
+    if (m_min.size() != 14) {
+      LBANN_ERROR("normalization.size() = ", m_min.size(), "; should be 14");
     }
   } else {
     if (is_master()) {
@@ -535,5 +479,96 @@ void ras_lipid_conduit_data_reader::read_normalization_data(std::vector<double> 
     }
   }
 }
+
+void ras_lipid_conduit_data_reader::print_shapes_etc() {
+  //user feedback
+  if (!is_master()) {
+    return;
+  }
+  
+  std::cout << "\n======================================================\n";
+  std::cout << "Role: " << get_role() << std::endl; 
+  std::cout << "Sequence Length: " << m_seq_len << std::endl;
+  std::cout << "Num samples: " << m_train_indices << std::endl;
+  std::cout << "\nData Shapes:\n";
+  for (auto t : m_datum_shapes) {
+    std::cout << "  " << t.first << " ";
+    for (auto t2 : t.second) {
+      std::cout << t2 << " ";
+    }
+    std::cout << std::endl;
+  }
+  std::cout << "\nlinearized data size: " << get_linearized_data_size() << "\n"
+            << "linearized label size: " << get_linearized_label_size() << "\n"
+            << "num labels: " << get_num_labels() << "\n"
+            << "data dims: ";
+  for (auto t : m_data_dims) std::cout << t << " ";
+  std::cout << std::endl;
+  std::cout << "======================================================\n\n";
+  
+  /*
+    TODO: label distribution
+    std::vector<size_t> r(3);
+    m_comm->trainer_reduce(dist.data(), 3, r.data());
+    std::cout << "\nLabel distribution:\n";
+    for (size_t h=0; h<3; h++) {
+      std::cout << "  " << h << " " << r[h] << std::endl;
+    }
+  else {
+    m_comm->trainer_reduce(dist.data(), 3, 0);
+  }
+    */
+} 
+
+void ras_lipid_conduit_data_reader::load_the_next_sample(conduit::Node &node, int data_id, int sample_index, std::map<std::string, cnpy::NpyArray> &a) {
+  size_t offset;
+  for (const auto &t5 : m_datum_shapes) {
+    const std::string &name = t5.first;
+    if (name == "bbs") {
+      conduit::float32 *data = reinterpret_cast<conduit::float32*>(a[name].data_holder->data());
+      offset = sample_index*m_datum_num_words["bbs"];
+      node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
+    } 
+
+    else { // rots, states, tilts, density_sig1, probs
+      offset = sample_index*m_datum_num_words[name];
+      conduit::float64 *data = reinterpret_cast<conduit::float64*>(a[name].data_holder->data());
+
+      if (name == "states") {
+        int label = (data + offset)[0];
+        if (label < 0 || label > 2) {
+          LBANN_ERROR("bad label; should be 0, 1, or 2 but it's: ", label);
+        }
+        node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(label);
+
+      } else if (name == "density_sig1") {
+        int s = 0;
+        if (m_use_z_score) {
+          for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
+            data[j]= (data[j] - m_mean[s]) / m_std_dev[s];
+            ++s;
+            if (s == 14) {
+              s = 0;
+            }
+          }
+        } else if (m_use_min_max) {
+          for (size_t j=offset; j<offset+m_datum_num_words[name]; j++) {
+            data[j] = (data[j] - m_min[s]) / m_max_min[s];
+            ++s;
+            if (s == 14) {
+              s = 0;
+            }
+          }
+        }
+        node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
+
+      // rots, tilts, probs
+      } else {
+        node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(data + offset, m_datum_num_words[name]);
+      }  
+    }
+  }
+}
+
 
 }  // namespace lbann
