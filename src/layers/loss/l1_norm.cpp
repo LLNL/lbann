@@ -49,7 +49,7 @@ template <typename TensorDataType>
 void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
                   const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
-  constexpr TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+  const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_input.Width(); ++col) {
     for (El::Int row = 0; row < local_input.Height(); ++row) {

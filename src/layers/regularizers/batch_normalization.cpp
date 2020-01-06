@@ -31,8 +31,8 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  constexpr TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
-  constexpr TensorDataType one = El::TypeTraits<TensorDataType>::One();
+  const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+  const TensorDataType one = El::TypeTraits<TensorDataType>::One();
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
