@@ -243,8 +243,12 @@ def get_command(cluster,
                     num_processes = 16
                 option_num_processes = ' -n {n}'.format(n=num_processes)
                 option_resources_per_host = ' -r 1'
-                option_tasks_per_resource = ' -a 4'
-            else:
+                option_tasks_per_resource = ' -a %d' % (num_processes/num_nodes)
+                if (num_processes%num_nodes) is not 0:
+                    raise Exception('num_processes %s, is not divisible by num_nodes %d'
+                                    % (num_processes, num_nodes))
+
+                else:
                 # -np => Run this many copies of the program on the given nodes.
                 option_num_processes = ' -np %d' % num_processes
                 if (num_nodes is not None) and (num_nodes != 0):
