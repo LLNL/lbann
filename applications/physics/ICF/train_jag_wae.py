@@ -62,7 +62,7 @@ def construct_model():
           l.weights[idx].optimizer = lbann.NoOptimizer()
       weights.update(l.weights)
     l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
-    #@todo, add lam = 0.01 to d_adv_bce
+    d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
     obj = lbann.ObjectiveFunction([d1_real_bce,d1_fake_bce,d_adv_bce,img_loss,rec_error,l2_reg])
     # Initialize check metric callback
     metrics = [lbann.Metric(img_loss, name='recon_error')]
