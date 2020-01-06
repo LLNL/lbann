@@ -212,7 +212,7 @@ void col2im_impl(const CPUMatDT<TensorDataType>& col,
     const int channel = im_index_remainder;
 
     // Initialize im matrix entry
-    TensorDataType im_entry = 0;
+    TensorDataType im_entry = El::TypeTraits<TensorDataType>::Zero();
     bool im_entry_initialized = false;
     bool offsets_finished = false;
 
@@ -505,7 +505,7 @@ void col2im_2d(const TensorDataType *__restrict__ input_buffer,
         const int output_index = (output_pos_x
                                   + output_pos_y * output_dim_x
                                   + channel * output_dim_x * output_dim_y);
-        TensorDataType output_entry = 0;
+        TensorDataType output_entry = El::TypeTraits<TensorDataType>::Zero();
 
         // Get window offsets containing output entry
         const int offset_x_lower = (output_pos_x - offset_start_x - window_dim_x + offset_stride_x) / offset_stride_x;

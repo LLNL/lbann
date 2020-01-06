@@ -113,7 +113,8 @@ description uniform_initializer<TensorDataType>::get_description() const {
 template <typename TensorDataType>
 void uniform_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   uniform_fill(matrix, matrix.Height(), matrix.Width(),
-               (m_max + m_min) / 2, (m_max - m_min) / 2);
+               El::To<TensorDataType>((m_max + m_min) / 2),
+               El::To<TensorDataType>((m_max - m_min) / 2));
 }
 
 template <typename TensorDataType>
