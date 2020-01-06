@@ -32,18 +32,19 @@
 namespace lbann {
 
 /** @brief Sort tensor entries. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class sort_layer : public transform_layer {
+class sort_layer : public transform_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "sort layer only supports DATA_PARALLEL");
  public:
 
   sort_layer(lbann_comm *comm, bool descending = false)
-    : transform_layer(comm), m_descending(descending) {
+    : transform_layer<TensorDataType>(comm), m_descending(descending) {
   }
   sort_layer(const sort_layer& other)
-    : transform_layer(other),
+    : transform_layer<TensorDataType>(other),
       m_descending(other.m_descending) {
     if (other.m_indices) {
       switch (other.m_indices->GetDevice()) {
@@ -61,7 +62,7 @@ class sort_layer : public transform_layer {
     }
   }
   sort_layer& operator=(const sort_layer& other) {
-    transform_layer::operator=(other);
+    transform_layer<TensorDataType>::operator=(other);
     m_descending = other.m_descending;
     if (!other.m_indices) {
       m_indices.reset(nullptr);
@@ -88,7 +89,7 @@ class sort_layer : public transform_layer {
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("Descending", m_descending);
     return desc;
   }
@@ -96,13 +97,13 @@ class sort_layer : public transform_layer {
  protected:
 
   void setup_dims() override {
-    transform_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    transform_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    transform_layer::setup_matrices(grid);
-    const auto& dist = get_activations().DistData();
+    transform_layer<TensorDataType>::setup_matrices(grid);
+    const auto& dist = this->get_activations().DistData();
     switch (dist.device) {
     case El::Device::CPU:
       m_indices.reset(new El::Matrix<El::Int, El::Device::CPU>());
@@ -118,8 +119,8 @@ class sort_layer : public transform_layer {
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    transform_layer::fp_setup_outputs(mini_batch_size);
-    const auto& output = get_activations();
+    transform_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+    const auto& output = this->get_activations();
     m_indices->Resize(output.LocalHeight(), output.LocalWidth());
   }
 
@@ -140,12 +141,15 @@ class sort_layer : public transform_layer {
 };
 
 #ifndef LBANN_SORT_LAYER_INSTANTIATE
-extern template class sort_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class sort_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class sort_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_SORT_LAYER_INSTANTIATE
 
 } // namespace lbann

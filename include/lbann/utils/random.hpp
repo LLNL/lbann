@@ -209,21 +209,24 @@ void init_io_random(int seed = -1);
  * not change as the grid it is distributed over changes; that is, it will have
  * the same entries when mat spans any number of processes.
  */
-void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean = 0.0f,
-                   DataType stddev = 1.0f);
+template <typename TensorDataType>
+void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, TensorDataType mean = 0.0,
+                   TensorDataType stddev = 1.0);
 /**
  * Make mat into an m x n matrix where each entry is an indepenent Bernoulli
  * random variable with parameter p.
  * This makes the same guarantees as gaussian_fill.
  */
-void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.5);
+template <typename TensorDataType>
+void bernoulli_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p = 0.5);
 /**
  * Make mat into an m x n matrix where each entry is independently uniformly
  * sampled from a ball with the given center and radius.
  * This makes the same guarantees as gaussian_fill.
  */
-void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center = 0.0f,
-                  DataType radius = 1.0f);
+template <typename TensorDataType>
+void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, TensorDataType center = 0.0,
+                  TensorDataType radius = 1.0);
 
 /**
  * Make mat into an m x n matrix where each entry is independently drawn from
@@ -231,21 +234,24 @@ void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center = 0.0f,
  * This always ensures that the entries of the matrix do not change as the grid
  * it is distributed over changes.
  */
-void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n,
-                           DataType mean = 0.0f, DataType stddev = 1.0f);
+template <typename TensorDataType>
+void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                           TensorDataType mean = 0.0, TensorDataType stddev = 1.0);
 /**
  * Make mat into an m x n matrix where each entry is an independent Bernoulli
  * random variable with parameter p.
  * This makes the same guarantees as gaussian_fill_procdet.
  */
-void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p = 0.5);
+template <typename TensorDataType>
+void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p = 0.5);
 /**
  * Make mat into an m x n matrix where each entry is independently uniformly
  * sampled from a ball with the given center and radius.
  * This makes the same guarantees as gaussian_fill_procdet.
  */
-void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n,
-                          DataType center = 0.0f, DataType radius = 1.0f);
+template <typename TensorDataType>
+void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                          TensorDataType center = 0.0, TensorDataType radius = 1.0);
 
 bool save_rng_to_checkpoint_shared(persist& p, lbann_comm* comm);
 bool save_rng_to_checkpoint_distributed(persist& p, lbann_comm* comm);
@@ -287,6 +293,22 @@ void rng_bernoulli(const float p, DistMat *m) {
   }
 }
 
+#ifndef LBANN_RANDOM_INSTANTIATE
+#define PROTO(T)                                                                                                         \
+  extern template void gaussian_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev);         \
+  extern template void bernoulli_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);                \
+  extern template void uniform_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius);        \
+  extern template void gaussian_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev); \
+  extern template void bernoulli_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);        \
+  extern template void uniform_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_RANDOM_INSTANTIATE
 
 }// end namespace
 #endif // LBANN_UTILS_RNG_HPP

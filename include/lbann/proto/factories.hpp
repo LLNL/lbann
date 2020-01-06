@@ -70,7 +70,7 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
   const lbann_data::Model& proto_model);
 
 /** Construct a layer specified with prototext. */
-template <data_layout layout, El::Device Dev>
+template <typename TensorDataType, data_layout layout, El::Device Dev>
 std::unique_ptr<Layer> construct_layer(
   lbann_comm* comm,
   const std::map<execution_mode, generic_data_reader*>& data_readers,

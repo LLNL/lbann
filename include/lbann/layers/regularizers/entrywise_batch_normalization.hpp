@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_REGULARIZERS_ENTRYWISE_BATCH_NORMALIZATION_HPP_INCLUDED
 #define LBANN_LAYERS_REGULARIZERS_ENTRYWISE_BATCH_NORMALIZATION_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -45,17 +45,29 @@ namespace lbann {
  *  Shift." In International Conference on Machine Learning,
  *  pp. 448-456. 2015.
  */
-template <data_layout Layout, El::Device Device>
-class entrywise_batch_normalization_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class entrywise_batch_normalization_layer : public data_type_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  ///@}
+
 public:
 
   entrywise_batch_normalization_layer(lbann_comm* comm,
-                                      DataType decay=0.9,
-                                      DataType epsilon=1e-5)
-    : Layer(comm), m_decay(decay), m_epsilon(epsilon) {}
+                                      TensorDataType decay=0.9,
+                                      TensorDataType epsilon=1e-5)
+    : data_type_layer<TensorDataType>(comm), m_decay(decay), m_epsilon(epsilon) {}
 
   entrywise_batch_normalization_layer(const entrywise_batch_normalization_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
       m_batch_statistics(other.m_batch_statistics ?
@@ -66,7 +78,7 @@ public:
                                   nullptr) {}
 
   entrywise_batch_normalization_layer& operator=(const entrywise_batch_normalization_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;
     m_batch_statistics.reset(other.m_batch_statistics ?
@@ -84,7 +96,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description() const override {
-    auto desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Decay", m_decay);
     desc.add("Epsilon", m_epsilon);
     return desc;
@@ -93,51 +105,51 @@ public:
 protected:
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
-    auto dist = get_prev_activations().DistData();
+    data_type_layer<TensorDataType>::setup_matrices(grid);
+    auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    m_batch_statistics.reset(AbsDistMat::Instantiate(dist));
-    m_batch_statistics_gradient.reset(AbsDistMat::Instantiate(dist));
+    m_batch_statistics.reset(AbsDistMatrixType::Instantiate(dist));
+    m_batch_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
   }
 
   void setup_data() override {
-    Layer::setup_data();
+    data_type_layer<TensorDataType>::setup_data();
 
     // Initialize output dimensions
-    set_output_dims(get_input_dims());
-    const auto output_dims = get_output_dims();
-    const auto output_size = get_output_size();
+    this->set_output_dims(this->get_input_dims());
+    const auto output_dims = this->get_output_dims();
+    const auto output_size = this->get_output_size();
 
     // Initialize default weights if none are provided
-    if (this->m_weights.size() > 2) {
+    if (this->num_weights() > 2) {
       std::stringstream err;
-      err << "attempted to setup layer \"" << m_name << "\" "
+      err << "attempted to setup layer \"" << this->get_name() << "\" "
           << "with an invalid number of weights "
-          << "(found " << this->m_weights.size() << ", expected 2)";
+          << "(found " << this->num_weights() << ", expected 2)";
       LBANN_ERROR(err.str());
     }
-    this->m_weights.resize(2, nullptr);
-    if (this->m_weights[0] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType{0});
-      w->set_name(get_name() + "_running_mean");
+    this->set_num_data_type_weights(2);
+    if (!this->has_data_type_weights(0)) {
+      auto w = make_unique<WeightsType>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType{0});
+      w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
-      this->m_weights[0] = w.get();
+      this->set_data_type_weights(0, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights[1] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType{1});
-      w->set_name(get_name() + "_running_variance");
+    if (!this->has_data_type_weights(1)) {
+      auto w = make_unique<WeightsType>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType{1});
+      w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
-      this->m_weights[1] = w.get();
+      this->set_data_type_weights(1, w.get());
       this->m_model->add_weights(std::move(w));
     }
 
     // Setup weights
-    auto dist = get_prev_activations().DistData();
+    auto dist = this->get_prev_activations().DistData();
     dist.rowDist = El::STAR;
-    for (auto* w : this->m_weights) {
+    for (auto* w : this->get_data_type_weights()) {
       w->set_dims(output_dims);
       w->set_matrix_distribution(dist);
     }
@@ -151,9 +163,9 @@ protected:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    Layer::fp_setup_outputs(mini_batch_size);
-    const auto& input = get_prev_activations();
-    const auto input_size = get_input_size();
+    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+    const auto& input = this->get_prev_activations();
+    const auto input_size = this->get_input_size();
 
     // Make sure batch statistics tensor is aligned with input tensor
     m_batch_statistics->Empty(false);
@@ -166,8 +178,8 @@ protected:
     /// @todo Realign tensors if misaligned
     bool aligned = true;
     try {
-      const auto& running_mean = m_weights[0]->get_values();
-      const auto& running_var = m_weights[1]->get_values();
+      const auto& running_mean = get_data_type_weights(0).get_values();
+      const auto& running_var = get_data_type_weights(1).get_values();
       aligned = (input.ColAlign() == running_mean.ColAlign()
                  && input.RowAlign() == running_mean.RowAlign()
                  && input.ColAlign() == running_var.ColAlign()
@@ -190,10 +202,10 @@ protected:
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    Layer::bp_setup_gradient_wrt_inputs(mini_batch_size);
+    data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
     m_batch_statistics_gradient->Empty(false);
-    m_batch_statistics_gradient->AlignWith(get_prev_activations());
-    m_batch_statistics_gradient->Resize(get_input_size(), 2);
+    m_batch_statistics_gradient->AlignWith(this->get_prev_activations());
+    m_batch_statistics_gradient->Resize(this->get_input_size(), 2);
   }
 
   void fp_compute() override;
@@ -202,34 +214,36 @@ protected:
 private:
 
   /** Decay rate for the running statistics. */
-  DataType m_decay;
+  TensorDataType m_decay;
   /** Small number to avoid division by zero. */
-  DataType m_epsilon;
+  TensorDataType m_epsilon;
 
   /** @brief Current mini-batch statistics.
    *
    *  These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<AbsDistMat> m_batch_statistics;
+  std::unique_ptr<AbsDistMatrixType> m_batch_statistics;
   /** @brief Gradients w.r.t. current mini-batch statistics.
    *
    * These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<AbsDistMat> m_batch_statistics_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_batch_statistics_gradient;
 
 };
 
 #ifndef LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
-extern template class entrywise_batch_normalization_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class entrywise_batch_normalization_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class entrywise_batch_normalization_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class entrywise_batch_normalization_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class entrywise_batch_normalization_layer< \
+    T, data_layout::DATA_PARALLEL, Device>;                  \
+  extern template class entrywise_batch_normalization_layer< \
+    T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 
 } // namespace lbann

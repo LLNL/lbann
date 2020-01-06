@@ -43,7 +43,7 @@ class check_nan : public callback_base {
   using callback_base::on_forward_prop_end;
   using callback_base::on_backward_prop_end;
 
-  check_nan() : callback_base() {}
+  check_nan() = default;
   check_nan(const check_nan&) = default;
   check_nan& operator=(
     const check_nan&) = default;

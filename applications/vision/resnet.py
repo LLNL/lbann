@@ -51,9 +51,6 @@ parser.add_argument(
     '--random-seed', action='store', default=0, type=int,
     help='random seed for LBANN RNGs', metavar='NUM')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
-parser.add_argument(
-    '--setup_only', action='store_true',
-    help='setup LBANN experiment without running it')
 args = parser.parse_args()
 
 # Due to a data reader limitation, the actual model realization must be
@@ -154,5 +151,4 @@ trainer = lbann.Trainer()
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.lc.launcher.run(trainer, model, data_reader, opt,
                               job_name=args.job_name,
-                              setup_only=args.setup_only,
                               **kwargs)

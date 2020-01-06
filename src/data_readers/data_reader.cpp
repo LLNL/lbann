@@ -726,7 +726,6 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
     std::stringstream s;
     s << "Preload complete; time: " << get_time() - tm2;
     m_data_store->set_profile_msg(s.str());
-
     size_t n = m_data_store->get_num_global_indices();
     if (n != m_shuffled_indices.size()) {
       LBANN_ERROR("num samples loaded: ", n, " != shuffled-indices.size(): ", m_shuffled_indices.size());
@@ -832,6 +831,5 @@ void generic_data_reader::preload_data_store() {
   }
 
 }
-
 
 }  // namespace lbann

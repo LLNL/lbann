@@ -32,8 +32,10 @@ set_full_path(THIS_DIR_HEADERS
   random.hpp
   statistics.hpp
   summary.hpp
+  summary_impl.hpp
   timer.hpp
   type_erased_matrix.hpp
+  typename.hpp
   )
 
 # Add the subdirectories

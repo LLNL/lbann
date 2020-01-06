@@ -33,6 +33,7 @@
 
 #include "lbann/utils/exception.hpp"
 #include "lbann/io/file_io.hpp"
+#define LBANN_PERSIST_INSTANTIATE
 #include "lbann/io/persist.hpp"
 
 #include <sys/types.h>
@@ -64,7 +65,8 @@ struct layer_header {
 /** \brief Given an open file descriptor, file name, and a matrix, write the matrix
  *         to the file descriptor, return the number of bytes written */
 
-bool lbann::persist::write_rank_distmat(persist_type type, const char *name, const AbsDistMat& M) {
+template <typename TensorDataType>
+bool lbann::persist::write_rank_distmat(persist_type type, const char *name, const El::AbstractDistMatrix<TensorDataType>& M) {
   // TODO: store in network order
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -130,7 +132,8 @@ bool lbann::persist::write_rank_distmat(persist_type type, const char *name, con
 
 /** \brief Given an open file descriptor, file name, and a matrix, read the matrix
  *         from the file descriptor, return the number of bytes read */
-bool lbann::persist::read_rank_distmat(persist_type type, const char *name, AbsDistMat& M) {
+template <typename TensorDataType>
+bool lbann::persist::read_rank_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType>& M) {
   // read in the header
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -292,7 +295,8 @@ void lbann::persist::close_restart() {
   }
 }
 
-bool lbann::persist::write_distmat(persist_type type, const char *name, AbsDistMat *M) {
+template <typename TensorDataType>
+bool lbann::persist::write_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M) {
   // define full path to file to store matrix
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -312,7 +316,8 @@ bool lbann::persist::write_distmat(persist_type type, const char *name, AbsDistM
   return true;
 }
 
-bool lbann::persist::read_distmat(persist_type type, const char *name, AbsDistMat *M) {
+template <typename TensorDataType>
+bool lbann::persist::read_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M) {
   // define full path to file to store matrix
   std::string filename = m_checkpoint_dir;
   if (type == persist_type::train) {
@@ -414,12 +419,14 @@ bool lbann::persist::read_double(persist_type type, const char *name, double *va
   return read_bytes(type, name, val, sizeof(double));
 }
 
-bool lbann::persist::write_datatype(persist_type type, const char *name, DataType val) {
-  return write_bytes(type, name, &val, sizeof(DataType));
+template <typename TensorDataType>
+bool lbann::persist::write_datatype(persist_type type, const char *name, TensorDataType val) {
+  return write_bytes(type, name, &val, sizeof(TensorDataType));
 }
 
-bool lbann::persist::read_datatype(persist_type type, const char *name, DataType *val) {
-  return read_bytes(type, name, val, sizeof(DataType));
+template <typename TensorDataType>
+bool lbann::persist::read_datatype(persist_type type, const char *name, TensorDataType *val) {
+  return read_bytes(type, name, val, sizeof(TensorDataType));
 }
 
 bool lbann::persist::write_string(persist_type type, const char *name, const char *val, int str_length) {
@@ -442,17 +449,19 @@ std::string lbann::persist::get_filename(persist_type type) const {
  * Functions to read/write values to files
  ****************************************************/
 
-bool lbann::write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) {
+template <typename TensorDataType>
+bool lbann::write_distmat(int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes) {
   El::Write(*M, name, El::BINARY, "");
   //Write_MPI(M, name, BINARY, "");
 
-  uint64_t bytes_written = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes_written = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(TensorDataType);
   *bytes += bytes_written;
 
   return true;
 }
 
-bool lbann::read_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) {
+template <typename TensorDataType>
+bool lbann::read_distmat(int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes) {
   // check whether file exists
   int exists = lbann::exists(name);
   if (! exists) {
@@ -463,7 +472,7 @@ bool lbann::read_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes) 
   El::Read(*M, name, El::BINARY, true);
   //Read_MPI(M, name, BINARY, 1);
 
-  uint64_t bytes_read = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(DataType);
+  uint64_t bytes_read = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(TensorDataType);
   *bytes += bytes_read;
 
   return true;
@@ -554,3 +563,24 @@ bool lbann::read_string(int fd, const char *name, char *buf, size_t size) {
   }
   return true;
 }
+
+#define PROTO(T)                     \
+  template bool lbann::persist::write_rank_distmat<T>(                        \
+    persist_type type, const char *name, const El::AbstractDistMatrix<T>& M); \
+  template bool lbann::persist::read_rank_distmat<T>(                         \
+    persist_type type, const char *name, El::AbstractDistMatrix<T>& M);       \
+  template bool lbann::persist::write_distmat<T>(                             \
+    persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
+  template bool lbann::persist::read_distmat<T>(                              \
+    persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
+  template bool lbann::persist::write_datatype<T>(                            \
+    persist_type type, const char *name, T val);                              \
+  template bool lbann::persist::read_datatype<T>(                             \
+    persist_type type, const char *name, T *val);                             \
+  template bool lbann::write_distmat<T>(                                      \
+    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);              \
+  template bool lbann::read_distmat<T>(                                       \
+    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"

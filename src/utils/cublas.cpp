@@ -96,107 +96,137 @@ const std::string get_error_string(cublasStatus_t status) {
   }
 }
 
+template <typename TensorDataType>
 void axpy(cublasHandle_t const& handle,
           int n,
-          DataType alpha,
-          DataType const* x, int incx,
-          DataType * y, int incy) {
-  cuBLAS_Caller<DataType>{}.axpy(handle, n, &alpha, x, incx, y, incy);
+          TensorDataType alpha,
+          TensorDataType const* x, int incx,
+          TensorDataType * y, int incy) {
+  cuBLAS_Caller<TensorDataType>{}.axpy(handle, n, &alpha, x, incx, y, incy);
 }
 
+template <typename TensorDataType>
 void dot(cublasHandle_t const& handle,
          int n,
-         DataType const* x, int incx,
-         DataType const* y, int incy,
-         DataType * result) {
-  cuBLAS_Caller<DataType>{}.dot(handle, n, x, incx, y, incy, result);
+         TensorDataType const* x, int incx,
+         TensorDataType const* y, int incy,
+         TensorDataType * result) {
+  cuBLAS_Caller<TensorDataType>{}.dot(handle, n, x, incx, y, incy, result);
 }
 
-DataType dot(cublasHandle_t const& handle,
+template <typename TensorDataType>
+TensorDataType dot(cublasHandle_t const& handle,
              int n,
-             DataType const* x, int incx,
-             DataType const* y, int incy) {
-  DataType result;
+             TensorDataType const* x, int incx,
+             TensorDataType const* y, int incy) {
+  TensorDataType result;
   dot(handle, n, x, incx, y, incy, &result);
   return result;
 }
 
+template <typename TensorDataType>
 void nrm2(cublasHandle_t const& handle,
           int n,
-          DataType const* x, int incx,
-          DataType * result) {
-  cuBLAS_Caller<DataType>{}.nrm2(handle, n, x, incx, result);
+          TensorDataType const* x, int incx,
+          TensorDataType * result) {
+  cuBLAS_Caller<TensorDataType>{}.nrm2(handle, n, x, incx, result);
 }
 
-DataType nrm2(cublasHandle_t const& handle,
+template <typename TensorDataType>
+TensorDataType nrm2(cublasHandle_t const& handle,
               int n,
-              DataType const* x, int incx) {
-  DataType result;
+              TensorDataType const* x, int incx) {
+  TensorDataType result;
   nrm2(handle, n, x, incx, &result);
   return result;
 
 }
 
+template <typename TensorDataType>
 void scal(cublasHandle_t const& handle,
           int n,
-          DataType alpha,
-          DataType * x, int incx) {
-  cuBLAS_Caller<DataType>{}.scal(handle, n, &alpha, x, incx);
+          TensorDataType alpha,
+          TensorDataType * x, int incx) {
+  cuBLAS_Caller<TensorDataType>{}.scal(handle, n, &alpha, x, incx);
 }
 
+template <typename TensorDataType>
 void gemv(cublasHandle_t const& handle,
           cublasOperation_t trans,
           int m, int n,
-          DataType alpha,
-          DataType const * A, int lda,
-          DataType const * x, int incx,
-          DataType beta,
-          DataType * y, int incy) {
-  cuBLAS_Caller<DataType>{}.gemv(handle, trans, m, n,
+          TensorDataType alpha,
+          TensorDataType const * A, int lda,
+          TensorDataType const * x, int incx,
+          TensorDataType beta,
+          TensorDataType * y, int incy) {
+  cuBLAS_Caller<TensorDataType>{}.gemv(handle, trans, m, n,
                                  &alpha, A, lda, x, incx, &beta, y, incy);
 }
 
+template <typename TensorDataType>
 void gemm(cublasHandle_t const& handle,
           cublasOperation_t transa, cublasOperation_t transb,
           int m, int n, int k,
-          DataType alpha,
-          DataType const * A, int lda,
-          DataType const * B, int ldb,
-          DataType beta,
-          DataType * C, int ldc) {
-  cuBLAS_Caller<DataType>{}.gemm(handle, transa, transb, m, n, k,
+          TensorDataType alpha,
+          TensorDataType const * A, int lda,
+          TensorDataType const * B, int ldb,
+          TensorDataType beta,
+          TensorDataType * C, int ldc) {
+  cuBLAS_Caller<TensorDataType>{}.gemm(handle, transa, transb, m, n, k,
                                  &alpha, A, lda, B, ldb, &beta, C, ldc);
 }
 
+template <typename TensorDataType>
 void geam(cublasHandle_t const& handle,
           cublasOperation_t transa, cublasOperation_t transb,
           int m, int n,
-          DataType alpha,
-          DataType const * A, int lda,
-          DataType beta,
-          DataType const * B, int ldb,
-          DataType * C, int ldc) {
-  cuBLAS_Caller<DataType>{}.geam(handle, transa, transb, m, n,
+          TensorDataType alpha,
+          TensorDataType const * A, int lda,
+          TensorDataType beta,
+          TensorDataType const * B, int ldb,
+          TensorDataType * C, int ldc) {
+  cuBLAS_Caller<TensorDataType>{}.geam(handle, transa, transb, m, n,
                                  &alpha, A, lda, &beta, B, ldb, C, ldc);
 }
 
+template <typename TensorDataType>
 void gemm_strided_batched(cublasHandle_t const& handle,
                           cublasOperation_t transa, cublasOperation_t transb,
                           int m, int n, int k,
-                          DataType alpha,
-                          DataType const * A, int lda,
+                          TensorDataType alpha,
+                          TensorDataType const * A, int lda,
                           long long int strideA,
-                          DataType const * B, int ldb,
+                          TensorDataType const * B, int ldb,
                           long long int strideB,
-                          DataType beta,
-                          DataType * C, int ldc,
+                          TensorDataType beta,
+                          TensorDataType * C, int ldc,
                           long long int strideC,
                           int batchCount) {
-  cuBLAS_Caller<DataType>{}.gemm_strided_batched(
+  cuBLAS_Caller<TensorDataType>{}.gemm_strided_batched(
     handle, transa, transb, m, n, k,
     &alpha, A, lda, strideA, B, ldb, strideB,
     &beta, C, ldc, strideC, batchCount);
 }
+
+#define PROTO(T)                                                                       \
+  template void axpy<T>(cublasHandle_t const&, int, T, T const*, int, T *, int);       \
+  template void dot<T>(cublasHandle_t const&, int, T const*, int, T const*, int, T *); \
+  template T dot<T>(cublasHandle_t const&, int, T const*, int, T const*, int);         \
+  template void nrm2<T>(cublasHandle_t const&, int, T const*, int, T *);               \
+  template T nrm2<T>(cublasHandle_t const&, int, T const*, int);                       \
+  template void scal<T>(cublasHandle_t const&, int, T, T *, int);                      \
+  template void gemv<T>(cublasHandle_t const&, cublasOperation_t, int, int, T,         \
+    T const *, int, T const *, int, T, T *, int);                                      \
+  template void gemm<T>(cublasHandle_t const&, cublasOperation_t, cublasOperation_t,   \
+    int, int, int, T, T const *, int, T const *, int, T, T *, int);                    \
+  template void geam<T>(cublasHandle_t const&, cublasOperation_t, cublasOperation_t,   \
+    int, int, T, T const *, int, T, T const *, int, T *, int);                         \
+  template void gemm_strided_batched<T>(cublasHandle_t const&, cublasOperation_t,      \
+    cublasOperation_t, int, int, int, T, T const *, int, long long int, T const *,     \
+    int, long long int, T, T *, int, long long int, int)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace cublas
 } // namespace lbann

@@ -30,11 +30,12 @@
 
 namespace lbann {
 
-template <>
-void argmin_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  const auto& local_input = dynamic_cast<const CPUMat&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<CPUMat&>(get_local_activations());
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void argmin_layer<TensorDataType, Layout, Device>::fp_compute() {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+  const auto& local_input =
+    dynamic_cast<const CPUMatType&>(this->get_local_prev_activations());
+  auto& local_output = dynamic_cast<CPUMatType&>(this->get_local_activations());
   const El::Int local_height = local_input.Height();
   const El::Int local_width = local_input.Width();
   LBANN_OMP_PARALLEL_FOR
@@ -43,11 +44,11 @@ void argmin_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
     const auto buf_min = std::min_element(buf_start,
                                           buf_start+local_height);
     const auto min_ind = std::distance(buf_start, buf_min);
-    local_output(0, col) = static_cast<DataType>(min_ind);
+    local_output(0, col) = static_cast<TensorDataType>(min_ind);
   }
 }
 
 template class argmin_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

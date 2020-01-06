@@ -69,8 +69,8 @@ private:
    */
   std::set<std::string> m_layer_names;
 
-  template <data_layout T_layout, El::Device Dev>
-  dropout<T_layout, Dev>* get_dropout_layer(Layer* l);
+  template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+  dropout<TensorDataType, T_layout, Dev>* get_dropout_layer(Layer* l);
 
   /** Perturb dropout keep prob in model. */
   void perturb(model& m);

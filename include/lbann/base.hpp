@@ -86,6 +86,7 @@ using CPUMat = El::Matrix<DataType, El::Device::CPU>;
 using GPUMat = El::Matrix<DataType, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 using AbsDistMat = El::AbstractDistMatrix<DataType>;
+using BaseDistMat = El::BaseDistMatrix;
 
 // Deprecated typedefs
 /// @todo Remove
@@ -97,22 +98,45 @@ template <El::Device D>
 using AbsDistMatReadProxy = El::AbstractDistMatrixReadDeviceProxy<DataType, D>;
 using ElMat      = El::ElementalMatrix<DataType>;
 using BlockMat   = El::BlockMatrix<DataType>;
+
+template <typename TensorDataType>
+using CPUMatDT = El::Matrix<TensorDataType, El::Device::CPU>;
+
+template <typename TensorDataType, El::Device D>
+using MCMRMatDT   = El::DistMatrix<TensorDataType, El::MC  , El::MR  , El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using CircMatDT   = El::DistMatrix<TensorDataType, El::CIRC, El::CIRC, El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using StarMatDT   = El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using StarVCMatDT = El::DistMatrix<TensorDataType, El::STAR, El::VC  , El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using VCStarMatDT = El::DistMatrix<TensorDataType, El::VC  , El::STAR, El::ELEMENT, D>; /// ColSumStarVCMat
+template <typename TensorDataType, El::Device D>
+using MCStarMatDT = El::DistMatrix<TensorDataType, El::MC  , El::STAR, El::ELEMENT, D>; /// RowSumMat
+template <typename TensorDataType, El::Device D>
+using MRStarMatDT = El::DistMatrix<TensorDataType, El::MR  , El::STAR, El::ELEMENT, D>; /// ColSumMat
+template <typename TensorDataType, El::Device D>
+using StarMRMatDT = El::DistMatrix<TensorDataType, El::STAR, El::MR  , El::ELEMENT, D>;
+template <typename TensorDataType>
+using DistMatDT   = MCMRMatDT<TensorDataType, El::Device::CPU>;
+
 template <El::Device D>
-using MCMRMat    = El::DistMatrix<DataType, El::MC  , El::MR  , El::ELEMENT, D>;
+using MCMRMat    = MCMRMatDT<DataType, D>;
 template <El::Device D>
-using CircMat    = El::DistMatrix<DataType, El::CIRC, El::CIRC, El::ELEMENT, D>;
+using CircMat    = CircMatDT<DataType, D>;
 template <El::Device D>
-using StarMat    = El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, D>;
+using StarMat    = StarMatDT<DataType, D>;
 template <El::Device D>
-using StarVCMat  = El::DistMatrix<DataType, El::STAR, El::VC  , El::ELEMENT, D>;
+using StarVCMat  = StarVCMatDT<DataType, D>;
 template <El::Device D>
-using VCStarMat  = El::DistMatrix<DataType, El::VC  , El::STAR, El::ELEMENT, D>; /// ColSumStarVCMat
+using VCStarMat  = VCStarMatDT<DataType, D>; /// ColSumStarVCMat
 template <El::Device D>
-using MCStarMat  = El::DistMatrix<DataType, El::MC  , El::STAR, El::ELEMENT, D>; /// RowSumMat
+using MCStarMat  = MCStarMatDT<DataType, D>; /// RowSumMat
 template <El::Device D>
-using MRStarMat  = El::DistMatrix<DataType, El::MR  , El::STAR, El::ELEMENT, D>; /// ColSumMat
+using MRStarMat  = MRStarMatDT<DataType, D>; /// ColSumMat
 template <El::Device D>
-using StarMRMat  = El::DistMatrix<DataType, El::STAR, El::MR  , El::ELEMENT, D>;
+using StarMRMat  = StarMRMatDT<DataType, D>;
 using DistMat = MCMRMat<El::Device::CPU>;
 using Mat = El::Matrix<DataType, El::Device::CPU>; // Temporarily define as CPUMat
 
@@ -123,9 +147,15 @@ using EvalType = double;
 /// Distributed matrix format
 enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid};
 
+/// @todo This should move to hydrogen
+std::string to_string(El::Device const& d);
+El::Device device_from_string(std::string const& str);
+
 /// Data layout that is optimized for different modes of parallelism
 enum class data_layout {MODEL_PARALLEL, DATA_PARALLEL, invalid};
 matrix_format data_layout_to_matrix_format(data_layout layout);
+std::string to_string(data_layout const& dl);
+data_layout data_layout_from_string(std::string const& str);
 
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};

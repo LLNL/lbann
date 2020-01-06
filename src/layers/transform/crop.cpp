@@ -29,16 +29,20 @@
 
 namespace lbann {
 
-template <>
-void crop_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute_3d() {
-  fp_compute_nd();
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d() {
+  this->fp_compute_nd();
 }
 
-template <>
-void crop_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute_3d() {
-  bp_compute_nd();
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d() {
+  this->bp_compute_nd();
 }
 
-template class crop_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class crop_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

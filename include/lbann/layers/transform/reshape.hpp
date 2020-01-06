@@ -36,13 +36,13 @@ namespace lbann {
  *  Forward and backward prop simply involve setting up tensor views,
  *  and hence are very cheap.
  */
-template <data_layout T_layout, El::Device Dev>
-class reshape_layer : public transform_layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class reshape_layer : public transform_layer<TensorDataType> {
 public:
   reshape_layer(lbann_comm *comm,
                 std::vector<int> dims)
-    : transform_layer(comm) {
-    set_output_dims(dims);
+    : transform_layer<TensorDataType>(comm) {
+    this->set_output_dims(dims);
   }
   reshape_layer* copy() const override { return new reshape_layer(*this); }
   std::string get_type() const override { return "reshape"; }
@@ -52,10 +52,10 @@ public:
 protected:
 
   void setup_dims() override {
-    transform_layer::setup_dims();
+    transform_layer<TensorDataType>::setup_dims();
 
-    const auto& input_dims = get_input_dims();
-    auto output_dims = get_output_dims();
+    const auto& input_dims = this->get_input_dims();
+    auto output_dims = this->get_output_dims();
 
     // Determine any unspecified dimensions
     int unspecified_dim = -1;
@@ -70,12 +70,12 @@ protected:
                                                    output_dims.end(),
                                                    1,
                                                    std::multiplies<int>());
-      output_dims[unspecified_dim] = get_input_size() / specified_size;
-      set_output_dims(output_dims);
+      output_dims[unspecified_dim] = this->get_input_size() / specified_size;
+      this->set_output_dims(output_dims);
     }
 
     // Check that reshape is valid
-    if (get_input_size() != get_output_size()) {
+    if (this->get_input_size() != this->get_output_size()) {
       std::stringstream err;
       err << "input tensor dimensions (";
       for (size_t i = 0; i < input_dims.size(); ++i) {
@@ -92,10 +92,10 @@ protected:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    El::LockedView(get_activations(), get_prev_activations());
+    El::LockedView(this->get_activations(), this->get_prev_activations());
   }
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    El::LockedView(get_error_signals(), get_prev_error_signals());
+    El::LockedView(this->get_error_signals(), this->get_prev_error_signals());
   }
   void fp_compute() override {}
   void bp_compute() override {}
@@ -103,16 +103,16 @@ protected:
 };
 
 #ifndef LBANN_RESHAPE_LAYER_INSTANTIATE
-extern template class reshape_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class reshape_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class reshape_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class reshape_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class reshape_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class reshape_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_RESHAPE_LAYER_INSTANTIATE
 
 } // namespace lbann

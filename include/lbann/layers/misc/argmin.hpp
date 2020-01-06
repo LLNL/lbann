@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_ARGMIN_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_ARGMIN_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -36,15 +36,15 @@ namespace lbann {
  *  Expects a 1-D input tensor. If multiple entries have the same
  *  minimum value, outputs the index of the first one.
  */
-template <data_layout Layout, El::Device Device>
-class argmin_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class argmin_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "argmin layer only supports data parallel layout");
   static_assert(Device == El::Device::CPU,
                 "argmin layer only supports CPU");
 public:
 
-  argmin_layer(lbann_comm* comm) : Layer(comm) { }
+  argmin_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) { }
   argmin_layer* copy() const override { return new argmin_layer(*this); }
   std::string get_type() const override { return "argmin"; }
   data_layout get_data_layout() const override { return Layout; }
@@ -53,15 +53,15 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims({1});
+    data_type_layer<TensorDataType>::setup_dims();
+    this->set_output_dims({1});
 
     // Make sure input tensor is 1-D
-    const auto input_dims = get_input_dims();
+    const auto input_dims = this->get_input_dims();
     if (input_dims.size() != 1) {
-      LBANN_ERROR(get_type()," layer \"",get_name(),"\" ",
+      LBANN_ERROR(get_type()," layer \"",this->get_name(),"\" ",
                   "expects a 1-D input tensor, ",
-                  "but parent layer \"",m_parent_layers[0]->get_name(),"\" ",
+                  "but parent layer \"",this->m_parent_layers[0]->get_name(),"\" ",
                   "outputs a ",input_dims.size(),"-D tensor");
     }
 
@@ -73,7 +73,7 @@ protected:
 
 #ifndef LBANN_ARGMIN_LAYER_INSTANTIATE
 extern template class argmin_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #endif // LBANN_ARGMIN_LAYER_INSTANTIATE
 } // namespace lbann
 

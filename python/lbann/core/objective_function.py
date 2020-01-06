@@ -1,7 +1,7 @@
 import abc
 from lbann import objective_functions_pb2
 from lbann.util import make_iterable
-import lbann.layer
+import lbann.core.layer
 
 # Note: Currently, only layer terms and L2 weight regularization terms
 # are supported in LBANN. If more terms are added, it may be
@@ -59,7 +59,7 @@ class ObjectiveFunction:
         constructed and added to the objective function.
 
         """
-        if isinstance(term, lbann.layer.Layer):
+        if isinstance(term, lbann.core.layer.Layer):
             term = LayerTerm(term)
         self.terms.append(term)
 

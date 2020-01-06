@@ -39,10 +39,10 @@ namespace lbann {
  *  means that computed gradients in preceeding layers are not exact
  *  gradients of the objective function.
  */
-template <data_layout T_layout, El::Device Dev>
-class stop_gradient_layer : public transform_layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class stop_gradient_layer : public transform_layer<TensorDataType> {
 public:
-  stop_gradient_layer(lbann_comm *comm) : transform_layer(comm) {}
+  stop_gradient_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {}
   stop_gradient_layer* copy() const override { return new stop_gradient_layer(*this); }
   std::string get_type() const override { return "stop_gradient"; }
   data_layout get_data_layout() const override { return T_layout; }
@@ -50,27 +50,27 @@ public:
 
 protected:
   void setup_dims() override {
-    transform_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    transform_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    El::LockedView(get_activations(), get_prev_activations());
+    El::LockedView(this->get_activations(), this->get_prev_activations());
   }
   void fp_compute() override {}
 
 };
 
 #ifndef LBANN_STOP_GRADIENT_LAYER_INSTANTIATE
-extern template class stop_gradient_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class stop_gradient_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class stop_gradient_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class stop_gradient_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class stop_gradient_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class stop_gradient_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_STOP_GRADIENT_LAYER_INSTANTIATE
 
 } // namespace lbann

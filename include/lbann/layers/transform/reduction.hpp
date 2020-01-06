@@ -38,9 +38,10 @@ enum class reduction_mode {INVALID, SUM, AVERAGE};
  *
  *  @todo Reduction over specified dimensions.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class reduction_layer : public transform_layer {
+class reduction_layer : public transform_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "reduction currently only supports DATA_PARALLEL");
 private:
@@ -49,13 +50,13 @@ private:
   const reduction_mode m_mode;
 
   /** Vector composed of ones. */
-  DMat<Dev> m_ones;
+  El::Matrix<TensorDataType, Dev> m_ones;
 
 public:
 
   reduction_layer(lbann_comm *comm,
                   reduction_mode mode)
-    : transform_layer(comm),
+    : transform_layer<TensorDataType>(comm),
       m_mode(mode) {
     if (mode == reduction_mode::INVALID) {
       LBANN_ERROR("invalid reduction mode");
@@ -68,7 +69,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     std::string mode_str;
     switch (m_mode) {
     case reduction_mode::SUM:     mode_str = "sum";     break;
@@ -84,15 +85,15 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims({1});
+    data_type_layer<TensorDataType>::setup_dims();
+    this->set_output_dims({1});
   }
 
   void fp_compute() override {
 
     // Local matrices
-    const auto& local_input = get_local_prev_activations();
-    auto& local_output = get_local_activations();
+    const auto& local_input = this->get_local_prev_activations();
+    auto& local_output = this->get_local_activations();
     const El::Int input_size = local_input.Height();
 
     // Apply reduction
@@ -100,14 +101,14 @@ protected:
     case reduction_mode::SUM:
       El::Ones(m_ones, input_size, 1);
       El::Gemv(El::TRANSPOSE,
-               DataType(1), local_input, m_ones,
-               DataType(0), local_output);
+               TensorDataType(1), local_input, m_ones,
+               TensorDataType(0), local_output);
       break;
     case reduction_mode::AVERAGE:
       El::Ones(m_ones, input_size, 1);
       El::Gemv(El::TRANSPOSE,
-               DataType(1) / input_size, local_input, m_ones,
-               DataType(0), local_output);
+               TensorDataType(1) / input_size, local_input, m_ones,
+               TensorDataType(0), local_output);
       break;
     default:
       LBANN_ERROR("invalid reduction mode");
@@ -118,8 +119,8 @@ protected:
   void bp_compute() override {
 
     // Local matrices
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = get_local_error_signals();
+    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = this->get_local_error_signals();
     const El::Int input_size = local_gradient_wrt_input.Height();
 
     // Compute gradients w.r.t. inputs
@@ -127,14 +128,14 @@ protected:
     case reduction_mode::SUM:
       El::Ones(m_ones, input_size, 1);
       El::Gemm(El::NORMAL, El::NORMAL,
-               DataType(1), m_ones, local_gradient_wrt_output,
-               DataType(0), local_gradient_wrt_input);
+               TensorDataType(1), m_ones, local_gradient_wrt_output,
+               TensorDataType(0), local_gradient_wrt_input);
       break;
     case reduction_mode::AVERAGE:
       El::Ones(m_ones, input_size, 1);
       El::Gemm(El::NORMAL, El::NORMAL,
-               DataType(1) / input_size, m_ones, local_gradient_wrt_output,
-               DataType(0), local_gradient_wrt_input);
+               TensorDataType(1) / input_size, m_ones, local_gradient_wrt_output,
+               TensorDataType(0), local_gradient_wrt_input);
       break;
     default:
       LBANN_ERROR("invalid reduction mode");
@@ -145,12 +146,15 @@ protected:
 };
 
 #ifndef LBANN_REDUCTION_LAYER_INSTANTIATE
-extern template class reduction_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class reduction_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class reduction_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_REDUCTION_LAYER_INSTANTIATE
 
 } // namespace lbann

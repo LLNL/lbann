@@ -41,6 +41,21 @@ namespace proto {
 
 namespace {
 
+template <typename T>
+struct TypeToProtoDataType;
+
+template <>
+struct TypeToProtoDataType<float>
+{
+  static constexpr auto value = lbann_data::FLOAT;
+};
+
+template <>
+struct TypeToProtoDataType<double>
+{
+  static constexpr auto value = lbann_data::DOUBLE;
+};
+
 /** Setup parent/child relationships between layers. */
 void setup_parents_and_children(
        lbann_comm* comm,
@@ -98,12 +113,12 @@ void setup_unpooling_pointers(lbann_comm* comm,
   std::stringstream err;
   for (int i=0; i<proto_model.layer_size(); ++i) {
     {
-      unpooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>* unpool
-        = dynamic_cast<unpooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>*>(layers[i]);
+      unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>* unpool
+        = dynamic_cast<unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>*>(layers[i]);
       if (unpool != nullptr) {
         const auto& pool_name = proto_model.layer(i).unpooling().pooling_layer();
-        pooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>* pool
-          = dynamic_cast<pooling_layer<data_layout::DATA_PARALLEL, El::Device::CPU>*>(names_to_layers[pool_name]);
+        pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>* pool
+          = dynamic_cast<pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>*>(names_to_layers[pool_name]);
         if (pool == nullptr) {
           err << "could not find pooling layer " << pool_name << " "
               << "to pair with unpooling layer " << unpool->get_name();
@@ -114,12 +129,12 @@ void setup_unpooling_pointers(lbann_comm* comm,
     }
 #if defined(LBANN_HAS_GPU) && defined(LBANN_UNPOOLING_LAYER_SUPPORTS_GPU)
     {
-      unpooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>* unpool
-        = dynamic_cast<unpooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>*>(layers[i]);
+      unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>* unpool
+        = dynamic_cast<unpooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(layers[i]);
       if (unpool != nullptr) {
         const auto& pool_name = proto_model.layer(i).unpooling().pooling_layer();
-        pooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>* pool
-          = dynamic_cast<pooling_layer<data_layout::DATA_PARALLEL, El::Device::GPU>*>(names_to_layers[pool_name]);
+        pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>* pool
+          = dynamic_cast<pooling_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>*>(names_to_layers[pool_name]);
         if (pool == nullptr) {
           err << "could not find pooling layer " << pool_name << " "
               << "to pair with unpooling layer " << unpool->get_name();
@@ -168,45 +183,52 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
     }
 
     // Get parameters from prototext
+    const auto model_disable_gpus = proto_model.disable_cuda();
+
     const auto& layout_str = proto_layer.data_layout();
-    data_layout layout = data_layout::invalid;
-    if (layout_str.empty())             { layout = data_layout::DATA_PARALLEL; }
-    if (layout_str == "data_parallel")  { layout = data_layout::DATA_PARALLEL; }
-    if (layout_str == "model_parallel") { layout = data_layout::MODEL_PARALLEL; }
+    data_layout layout = (layout_str.empty()
+                          ? data_layout::DATA_PARALLEL
+                          : data_layout_from_string(layout_str));
+
     const auto& num_parallel_readers = proto_trainer.num_parallel_readers();
     El::Device device = El::Device::CPU;
 #ifdef LBANN_HAS_GPU
-    const auto& device_str = proto_layer.device_allocation();
-    if (!proto_model.disable_cuda()) {
-      if (device_str == "gpu" || device_str.empty()) {
-        device = El::Device::GPU;
-      }
-      if (device_str == "cpu") { device = El::Device::CPU; }
-      if (proto_layer.has_input()) {
-        // Input layers must be on CPU
-        device = El::Device::CPU;
-      }
+    // Input layers must be on CPU
+    if (!proto_layer.has_input() && !model_disable_gpus) {
+      const auto& device_str = proto_layer.device_allocation();
+      device = (device_str.empty()
+                ? El::Device::GPU
+                : device_from_string(device_str));
     }
+#else
+    (void) model_disable_gpus;
 #endif // LBANN_HAS_GPU
+
+    auto proto_datatype = proto_layer.datatype();
 
     // Construct layer
     std::unique_ptr<Layer> l;
-#define TEMPLATE_INSTANTIATION(T_layout, T_device)                      \
+#define TEMPLATE_INSTANTIATION(TensorDataType, T_layout, T_device)      \
     do {                                                                \
-      if (layout == T_layout && device == T_device) {        \
-        l = construct_layer<T_layout, T_device>(                        \
-              comm,                                                     \
-              data_readers,                                             \
-              num_parallel_readers,                                     \
-              proto_layer);                                             \
+      if (proto_datatype == TypeToProtoDataType<TensorDataType>::value  \
+          && layout == T_layout                                         \
+          && device == T_device) {                                      \
+        l = construct_layer<TensorDataType, T_layout, T_device>(        \
+          comm,                                                         \
+          data_readers,                                                 \
+          num_parallel_readers,                                         \
+          proto_layer);                                                 \
       }                                                                 \
     } while (0)
-    TEMPLATE_INSTANTIATION(data_layout::DATA_PARALLEL, El::Device::CPU);
-    TEMPLATE_INSTANTIATION(data_layout::MODEL_PARALLEL, El::Device::CPU);
-#ifdef LBANN_HAS_GPU
-    TEMPLATE_INSTANTIATION(data_layout::DATA_PARALLEL, El::Device::GPU);
-    TEMPLATE_INSTANTIATION(data_layout::MODEL_PARALLEL, El::Device::GPU);
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device) \
+    TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \
+    TEMPLATE_INSTANTIATION(T, data_layout::MODEL_PARALLEL, Device)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+
 #undef TEMPLATE_INSTANTIATION
 
     // Check that layer has been constructed

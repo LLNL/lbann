@@ -27,7 +27,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/learning_rate.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include "callback_helpers.hpp"
 
@@ -56,7 +58,7 @@ learning_rate::learning_rate(
 void learning_rate::setup(model *m) {
 
   // Add all weights if list of weights is not initialized
-  std::vector<weights *> weights_list =
+  std::vector<weights*> weights_list =
     select_things_by_name(m->get_weights(), m_weights_names);
   if (weights_list.empty()) {
     weights_list = m->get_weights();
@@ -65,12 +67,12 @@ void learning_rate::setup(model *m) {
   // Remove weights that are not being optimized
   std::unordered_set<weights*>().swap(m_weights);
   for (weights *w : weights_list) {
-    optimizer *opt = w->get_optimizer();
-    if (opt != nullptr) {
+    if (w->has_optimizer()) {
       m_weights.insert(w);
       // Initialize the global learning rate, exactly once.
       if (m_cur_global_lr == 0.0f) {
-        m_cur_global_lr = opt->get_learning_rate();
+        m_cur_global_lr =
+          dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer())->get_learning_rate();
       }
     }
   }
@@ -88,8 +90,8 @@ void learning_rate::on_epoch_end(model *m) {
               << "changing global learning rate to " << new_lr
               << " at epoch " << c.get_epoch() << std::endl;
   }
-  for (weights *w : this->get_weights()) {
-    optimizer *opt = w->get_optimizer();
+  for (weights* w : this->get_weights()) {
+    auto *opt = dynamic_cast<data_type_optimizer<DataType>*>(w->get_optimizer());
     const float old_lr = opt->get_learning_rate();
     if (old_lr != new_lr) {
       opt->set_learning_rate(new_lr);
@@ -99,13 +101,17 @@ void learning_rate::on_epoch_end(model *m) {
 
 void learning_rate::on_backward_prop_end(model *m) {
   for (weights *w : this->get_weights()) {
-    optimizer& opt = *w->get_optimizer();
+    auto &opt = dynamic_cast<data_type_optimizer<DataType>&>(*w->get_optimizer());
     const float old_lr = opt.get_learning_rate();
     const float new_lr = optimizer_schedule(m, opt);
     if (old_lr != new_lr) {
       opt.set_learning_rate(new_lr);
     }
   }
+}
+
+float learning_rate::optimizer_schedule(model *m, optimizer &opt) {
+  return dynamic_cast<data_type_optimizer<DataType>&>(opt).get_learning_rate();
 }
 
 step_learning_rate::step_learning_rate(
@@ -120,9 +126,9 @@ step_learning_rate::step_learning_rate(
 float step_learning_rate::global_schedule(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   if (c.get_epoch() % m_step == 0) {
-    return get_current_global_learning_rate() * m_amt;
+    return step_learning_rate::get_current_global_learning_rate() * m_amt;
   } else {
-    return get_current_global_learning_rate();
+    return step_learning_rate::get_current_global_learning_rate();
   }
 }
 
@@ -162,9 +168,9 @@ float adaptive_learning_rate::global_schedule(model *m) {
 
   // Adjust learning rate if needed
   if (m_adjust_learning_rate) {
-    return get_current_global_learning_rate() * m_amt;
+    return adaptive_learning_rate::get_current_global_learning_rate() * m_amt;
   } else {
-    return get_current_global_learning_rate();
+    return adaptive_learning_rate::get_current_global_learning_rate();
   }
 }
 
@@ -191,9 +197,9 @@ float drop_fixed_learning_rate::global_schedule(model* m) {
 
   // Adjust learning rate if at a drop epoch
   if (!m_drop_epochs.empty() && c.get_epoch() == m_drop_epochs.back()) {
-    return get_current_global_learning_rate() * m_amt;
+    return drop_fixed_learning_rate::get_current_global_learning_rate() * m_amt;
   } else {
-    return get_current_global_learning_rate();
+    return drop_fixed_learning_rate::get_current_global_learning_rate();
   }
 }
 
@@ -219,7 +225,7 @@ void linear_growth_learning_rate::setup(model *m) {
   // Compute the learning rate increase.
   if (!this->get_weights().empty()) {
     // Assumes all optimizers have the same initial learning rate.
-    m_base_lr = get_current_global_learning_rate();
+    m_base_lr = linear_growth_learning_rate::get_current_global_learning_rate();
     m_inc = (m_target - m_base_lr) / m_num_epochs;
   }
 }
@@ -227,12 +233,12 @@ void linear_growth_learning_rate::setup(model *m) {
 float linear_growth_learning_rate::global_schedule(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
   if (c.get_epoch() < m_delay) {
-    return get_current_global_learning_rate();
+    return linear_growth_learning_rate::get_current_global_learning_rate();
   } else if (c.get_epoch() <= m_num_epochs + m_delay) {
     int num_left = m_num_epochs + m_delay - c.get_epoch();
     return m_base_lr + m_inc*(m_num_epochs - num_left);
   } else {
-    return get_current_global_learning_rate();
+    return linear_growth_learning_rate::get_current_global_learning_rate();
   }
 }
 
@@ -273,7 +279,7 @@ void poly_learning_rate::setup(model *m) {
 float poly_learning_rate::global_schedule(model *m) {
   const float scale = m_lr / m_last_epoch_lr;
   m_last_epoch_lr = m_lr;
-  return (get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
+  return (poly_learning_rate::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
 }
 
 /**
@@ -286,7 +292,7 @@ float poly_learning_rate::optimizer_schedule(model *m, optimizer &opt) {
     m_lr = static_cast<float>(std::pow(static_cast<double>(m_max_iter - cur_iter)/m_max_iter, m_p));
   }
   const float scale = m_lr / m_last_epoch_lr;
-  return (get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
+  return (poly_learning_rate::get_current_global_learning_rate() - m_end_lr) * scale + m_end_lr;
 }
 
 optimizerwise_adaptive_learning_rate::
@@ -303,13 +309,15 @@ optimizerwise_adaptive_learning_rate(
 
 float optimizerwise_adaptive_learning_rate::optimizer_schedule(
   model *m, optimizer &opt) {
-  DataType param_norm = El::Nrm2(opt.get_weights().get_values());
-  DataType param_grad_norm = El::Nrm2(opt.get_gradient());
+  auto& dto = dynamic_cast<data_type_optimizer<DataType>&>(opt);
+  DataType param_norm = El::Nrm2(dto.get_weights().get_values());
+  DataType param_grad_norm = El::Nrm2(dto.get_gradient());
   if (param_norm > DataType(0) && param_grad_norm > DataType(0)) {
     // TODO: Should incorporate weight decay, etc. here.
-    return get_current_global_learning_rate() * m_scale * param_norm / param_grad_norm;
+    return optimizerwise_adaptive_learning_rate::get_current_global_learning_rate()
+      * m_scale * param_norm / param_grad_norm;
   } else {
-    return opt.get_learning_rate();
+    return dto.get_learning_rate();
   }
 }
 

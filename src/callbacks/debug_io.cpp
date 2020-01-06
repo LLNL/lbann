@@ -46,7 +46,7 @@ void debug_io::on_epoch_begin(model *m) {
 }
 
 void debug_io::on_forward_prop_begin(model *m, Layer *l) {
-  auto *input = dynamic_cast<generic_input_layer*>(l);
+  auto *input = dynamic_cast<generic_input_layer<DataType>*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
   }
@@ -62,7 +62,7 @@ void debug_io::on_forward_prop_begin(model *m, Layer *l) {
   /// I think that the reset mini batch index may be off
 }
 
-void debug_io::print_fp_start(model *m, generic_input_layer *input) {
+void debug_io::print_fp_start(model *m, generic_input_layer<DataType> *input) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   const auto& step = c.get_step();
   std::cout << "[" << m->get_comm()->get_trainer_rank()
@@ -88,7 +88,7 @@ void debug_io::print_phase_start(model *m, execution_mode mode) {
   // Get data reader from first input layer in model
   generic_data_reader* data_reader = nullptr;
   for (auto&& l : m->get_layers()) {
-    auto&& input = dynamic_cast<generic_input_layer*>(l);
+    auto&& input = dynamic_cast<generic_input_layer<DataType>*>(l);
     if (input != nullptr) {
       data_reader = input->get_data_reader(mode);
       break;
@@ -142,7 +142,7 @@ void debug_io::on_validation_begin(model *m) {
 
 void debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
   const auto& c = m->get_execution_context();
-  auto *input = dynamic_cast<generic_input_layer*>(l);
+  auto *input = dynamic_cast<generic_input_layer<DataType>*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
   }

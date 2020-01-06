@@ -117,7 +117,7 @@ class GutenbergCorpus():
         if os.path.isfile(token_data_file):
             data = np.load(token_data_file)
             token_data = data['encoded_data']
-            vocab_size = data['vocab_size']
+            vocab_size = int(data['vocab_size'])
         else:
             text_data_file = os.path.join(data_dir, 'text_data.txt')
             if not os.path.isfile(text_data_file):
