@@ -78,9 +78,9 @@ void fp_impl(lbann_comm& comm,
     for (El::Int i = 0; i < local_num_samples; ++i) {
       const auto sum = local_means(0,i);
       const auto sqsum = local_vars(0,i);
-      const auto& mean = sum / sample_size;
-      const auto& sqmean = sqsum / sample_size;
-      const auto& var = (sqmean - mean*mean) * sample_size / (sample_size-1);
+      const auto& mean = El::To<TensorDataType>(sum / sample_size);
+      const auto& sqmean = El::To<TensorDataType>(sqsum / sample_size);
+      const auto& var = El::To<TensorDataType>((sqmean - mean*mean) * sample_size / (sample_size-1));
       local_means(0,i) = mean;
       local_vars(0,i) = std::max(var, El::TypeTraits<TensorDataType>::Zero());
     }

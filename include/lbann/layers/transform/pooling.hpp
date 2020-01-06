@@ -480,7 +480,7 @@ private:
             TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
             const int input_index = j + channel * num_per_input_channel;
             const TensorDataType output_entry
-              = gradient_wrt_output_buffer[input_index] / m_pool_size;
+              = El::To<TensorDataType>(gradient_wrt_output_buffer[input_index] / m_pool_size);
             for(int i = 0; i < m_pool_size; ++i) {
               im2col_buffer[i] = output_entry;
             }

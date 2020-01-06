@@ -107,7 +107,7 @@ protected:
     case reduction_mode::AVERAGE:
       El::Ones(m_ones, input_size, 1);
       El::Gemv(El::TRANSPOSE,
-               El::TypeTraits<TensorDataType>::One() / input_size, local_input, m_ones,
+               El::To<TensorDataType>(1.0 / input_size), local_input, m_ones,
                El::TypeTraits<TensorDataType>::Zero(), local_output);
       break;
     default:
@@ -134,7 +134,7 @@ protected:
     case reduction_mode::AVERAGE:
       El::Ones(m_ones, input_size, 1);
       El::Gemm(El::NORMAL, El::NORMAL,
-               El::TypeTraits<TensorDataType>::One() / input_size, m_ones, local_gradient_wrt_output,
+               El::To<TensorDataType>(1.0 / input_size), m_ones, local_gradient_wrt_output,
                El::TypeTraits<TensorDataType>::Zero(), local_gradient_wrt_input);
       break;
     default:
