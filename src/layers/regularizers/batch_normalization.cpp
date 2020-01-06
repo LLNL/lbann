@@ -103,9 +103,11 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     } else {
       LBANN_OMP_PARALLEL_FOR
       for (El::Int channel = 0; channel < num_channels; ++channel) {
-        const auto& mean = local_mean(channel, 0) / num_per_sum;
-        const auto& sqmean = local_var(channel, 0) / num_per_sum;
-        auto var = El::To<TensorDataType>(num_per_sum * (sqmean - mean * mean) / (num_per_sum - 1));
+        auto num_per_sum_dt = El::To<TensorDataType>(num_per_sum);
+        const auto& mean = local_mean(channel, 0) / num_per_sum_dt;
+        const auto& sqmean = local_var(channel, 0) / num_per_sum_dt;
+        auto var = num_per_sum_dt * (sqmean - mean * mean)
+          / (num_per_sum_dt - El::TypeTraits<TensorDataType>::One());
         var = std::max(var, this->m_epsilon);
         local_mean(channel, 0) = mean;
         local_var(channel, 0) = var;

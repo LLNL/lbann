@@ -276,8 +276,11 @@ void bp_training_impl(lbann_comm& comm,
   //   dL/dx_i = ( dL/dy_i / sqrt(var+epsilon)
   //             + dL/dmean / n
   //             + dL/dvar * (x_i - mean) * 2/(n-1) )
-  const TensorDataType inv_stats_count = El::To<TensorDataType>(1.0 / statistics_count);
-  const TensorDataType inv_stats_countm1 = El::To<TensorDataType>(1.0 / (statistics_count - 1));
+  const auto statistics_count_dt = El::To<TensorDataType>(statistics_count);
+  const TensorDataType inv_stats_count = El::TypeTraits<TensorDataType>::One()
+    / statistics_count_dt;
+  const TensorDataType inv_stats_countm1 = El::TypeTraits<TensorDataType>::One()
+    / (statistics_count_dt - El::TypeTraits<TensorDataType>::One());
   LBANN_OMP_PARALLEL_FOR
   for (El::Int row_start = 0; row_start < local_height; row_start += bsize) {
     const El::Int row_end = std::min(row_start + bsize, local_height);

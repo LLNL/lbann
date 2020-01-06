@@ -79,6 +79,8 @@ void variance_scaling_initializer<TensorDataType>::fill(El::AbstractDistMatrix<T
     LBANN_ERROR(err.str());
   }
 
+  using std::sqrt;
+
   // Get variance
   const auto& variance = get_variance(m_fan_in, m_fan_out);
 
@@ -86,11 +88,11 @@ void variance_scaling_initializer<TensorDataType>::fill(El::AbstractDistMatrix<T
   switch (m_prob_dist) {
   case probability_distribution::gaussian:
     gaussian_fill(matrix, matrix.Height(), matrix.Width(),
-                  TensorDataType(0), std::sqrt(variance));
+                  TensorDataType(0), sqrt(variance));
     break;
   case probability_distribution::uniform:
     uniform_fill(matrix, matrix.Height(), matrix.Width(),
-                 TensorDataType(0), std::sqrt(3*variance));
+                 TensorDataType(0), sqrt(El::To<TensorDataType>(3)*variance));
     break;
   default:
     std::stringstream err;
@@ -104,17 +106,17 @@ void variance_scaling_initializer<TensorDataType>::fill(El::AbstractDistMatrix<T
 
 template <typename TensorDataType>
 TensorDataType glorot_initializer<TensorDataType>::get_variance(El::Int fan_in, El::Int fan_out) {
-  return TensorDataType(2) / (fan_in + fan_out);
+  return El::To<TensorDataType>(2.0) / El::To<TensorDataType>(fan_in + fan_out);
 }
 
 template <typename TensorDataType>
 TensorDataType he_initializer<TensorDataType>::get_variance(El::Int fan_in, El::Int fan_out) {
-  return TensorDataType(2) / fan_in;
+  return El::To<TensorDataType>(2.0) / El::To<TensorDataType>(fan_in);
 }
 
 template <typename TensorDataType>
 TensorDataType lecun_initializer<TensorDataType>::get_variance(El::Int fan_in, El::Int fan_out) {
-  return TensorDataType(1) / fan_in;
+  return El::TypeTraits<TensorDataType>::One() / El::To<TensorDataType>(fan_in);
 }
 
 //

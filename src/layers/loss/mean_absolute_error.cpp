@@ -63,7 +63,7 @@ void local_bp_cpu(El::Int height,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
 
   // Useful constants
-  const TensorDataType scale = El::To<TensorDataType>(1.0 / height);
+  const TensorDataType scale = El::TypeTraits<TensorDataType>::One() / El::To<TensorDataType>(height);
   const El::Int local_height = local_prediction.Height();
   const El::Int local_width = local_prediction.Width();
 

@@ -29,6 +29,8 @@
 
 namespace lbann {
 
+using std::sqrt;
+
 namespace {
 
 /** @brief Forward prop */
@@ -78,9 +80,11 @@ void fp_impl(lbann_comm& comm,
     for (El::Int i = 0; i < local_num_samples; ++i) {
       const auto sum = local_means(0,i);
       const auto sqsum = local_vars(0,i);
-      const auto& mean = El::To<TensorDataType>(sum / sample_size);
-      const auto& sqmean = El::To<TensorDataType>(sqsum / sample_size);
-      const auto& var = El::To<TensorDataType>((sqmean - mean*mean) * sample_size / (sample_size-1));
+      auto sample_size_dt = El::To<TensorDataType>(sample_size);
+      const auto& mean = sum / sample_size_dt;
+      const auto& sqmean = sqsum / sample_size_dt;
+      const auto& var = (sqmean - mean*mean) * sample_size_dt
+        / (sample_size_dt-El::TypeTraits<TensorDataType>::One());
       local_means(0,i) = mean;
       local_vars(0,i) = std::max(var, El::TypeTraits<TensorDataType>::Zero());
     }
@@ -91,7 +95,7 @@ void fp_impl(lbann_comm& comm,
   for (El::Int i = 0; i < local_num_samples; ++i) {
     const auto& mean = local_means(0,i);
     const auto& var = local_vars(0,i);
-    const TensorDataType inv_stdev = El::To<TensorDataType>(1.0 / std::sqrt(var + epsilon));
+    const TensorDataType inv_stdev = El::TypeTraits<TensorDataType>::One() / sqrt(var + epsilon);
     for (El::Int j = 0; j < local_sample_size; ++j) {
       const auto& x = local_input(j,i);
       auto& y = local_output(j,i);
@@ -143,7 +147,7 @@ void bp_impl(lbann_comm& comm,
   for (El::Int i = 0; i < local_num_samples; ++i) {
     const auto& mean = local_means(0,i);
     const auto& var = local_vars(0,i);
-    const TensorDataType inv_stdev = El::To<TensorDataType>(1.0 / std::sqrt(var + epsilon));
+    const TensorDataType inv_stdev = El::TypeTraits<TensorDataType>::One() / sqrt(var + epsilon);
     auto& dmean = local_means_grad(0,i);
     auto& dvar = local_vars_grad(0,i);
     for (El::Int j = 0; j < local_sample_size; ++j) {
@@ -167,7 +171,7 @@ void bp_impl(lbann_comm& comm,
   for (El::Int i = 0; i < local_num_samples; ++i) {
     const auto& mean = local_means(0,i);
     const auto& var = local_vars(0,i);
-    const TensorDataType inv_stdev = El::To<TensorDataType>(1.0 / std::sqrt(var + epsilon));
+    const TensorDataType inv_stdev = El::TypeTraits<TensorDataType>::One() / sqrt(var + epsilon);
     const auto& dmean = local_means_grad(0,i);
     const auto& dvar = local_vars_grad(0,i);
     for (El::Int j = 0; j < local_sample_size; ++j) {

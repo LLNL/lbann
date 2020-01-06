@@ -74,8 +74,8 @@ public:
 protected:
 
   void fp_compute() override {
-    const auto& mean = El::To<TensorDataType>((m_max + m_min) / 2);
-    const auto& radius = El::To<TensorDataType>((m_max - m_min) / 2);
+    const auto& mean = (m_max + m_min) / El::To<TensorDataType>(2);
+    const auto& radius = (m_max - m_min) / El::To<TensorDataType>(2);
     auto& output = this->get_activations();
     if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
       uniform_fill(output, output.Height(), output.Width(), mean, radius);
