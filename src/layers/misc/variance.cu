@@ -224,7 +224,7 @@ void variance_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 #define PROTO(T)                     \
-  template class variance_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU> \
+  template class variance_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
   template class variance_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
 
 #define LBANN_INSTANTIATE_GPU_HALF

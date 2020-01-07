@@ -44,10 +44,16 @@ namespace lbann {
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class clamp_layer : public data_type_layer<TensorDataType> {
+#ifdef LBANN_HAS_GPU_FP16
+  using CompareType = typename std::conditional<std::is_same<TensorDataType, fp16>::value, float, TensorDataType>::type;
+#else
+  using CompareType = TensorDataType;
+#endif
+
 public:
   clamp_layer(lbann_comm *comm, TensorDataType min, TensorDataType max)
     : data_type_layer<TensorDataType>(comm), m_min(min), m_max(max) {
-    if (m_min > m_max) {
+    if (CompareType(m_min) > CompareType(m_max)) {
       std::stringstream err;
       err << "[" << m_min << "," << m_max << "] is an invalid range";
       LBANN_ERROR(err.str());
