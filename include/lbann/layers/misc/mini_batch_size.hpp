@@ -64,7 +64,7 @@ protected:
   }
 
   void fp_compute() override {
-    El::Fill(this->get_activations(), TensorDataType(m_mini_batch_size));
+    El::Fill(this->get_activations(), El::To<TensorDataType>(m_mini_batch_size));
   }
 
 private:

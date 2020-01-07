@@ -92,7 +92,7 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
   const TensorDataType correction = this->get_learning_rate() *
-                              (std::sqrt(one - m_current_beta2)
+                              (El::Sqrt(one - m_current_beta2)
                                / (one - m_current_beta1));
 
   // Get matrix dimensions

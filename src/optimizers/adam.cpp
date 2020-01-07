@@ -135,7 +135,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
   const TensorDataType correction = this->get_learning_rate() *
-                              (std::sqrt(one - m_current_beta2)
+                              (El::Sqrt(one - m_current_beta2)
                                / (one - m_current_beta1));
 
   // Get local matrix data
@@ -159,7 +159,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
       auto& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (one - m_beta1) * g;
       m2 = m_beta2 * m2 + (one - m_beta2) * g * g;
-      x -= correction * m1 / (std::sqrt(m2) + m_eps);
+      x -= correction * m1 / (El::Sqrt(m2) + m_eps);
     }
 
   } else {
@@ -178,7 +178,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
         auto& m2 = moment2_buffer[row+col*moment2_ldim];
         m1 = m_beta1 * m1 + (one - m_beta1) * g;
         m2 = m_beta2 * m2 + (one - m_beta2) * g * g;
-        x -= correction * m1 / (std::sqrt(m2) + m_eps);
+        x -= correction * m1 / (El::Sqrt(m2) + m_eps);
       }
     }
 

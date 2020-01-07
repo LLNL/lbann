@@ -137,7 +137,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     // Get channel parameters
     const auto& mean = local_mean(channel, 0);
     const auto& var = local_var(channel, 0);
-    const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / std::sqrt(var + this->m_epsilon));
+    const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / El::Sqrt(var + this->m_epsilon));
     const auto& scale = local_scale(channel, 0);
     const auto& bias = local_bias(channel, 0);
 
@@ -193,7 +193,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     const auto& mean = local_mean(channel, 0);
     const auto& var = local_var(channel, 0);
     const auto& scale = local_scale(channel, 0);
-    const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / std::sqrt(var + this->m_epsilon));
+    const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / El::Sqrt(var + this->m_epsilon));
     const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
     TensorDataType dmean = El::TypeTraits<TensorDataType>::Zero();
     TensorDataType dvar = El::TypeTraits<TensorDataType>::Zero();
@@ -274,7 +274,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
       const auto& dvar = local_var_gradient(channel, 0);
 
       // Compute useful constants
-      const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / std::sqrt(var + this->m_epsilon));
+      const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / El::Sqrt(var + this->m_epsilon));
       const auto& dmean_term = dmean / num_per_sum;
       const auto& dvar_term = dvar * 2 / (num_per_sum - 1);
 

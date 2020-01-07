@@ -128,7 +128,7 @@ void apply_batchnorm(DataType epsilon,
     TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_var(row, 0);
-      _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
+      _inv_stdev[row-row_start] = 1 / El::Sqrt(var + epsilon);
     }
     for (El::Int col = col_start; col < col_end; ++col) {
       for (El::Int row = row_start; row < row_end; ++row) {
@@ -249,7 +249,7 @@ void bp_training_impl(lbann_comm& comm,
     TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_var(row, 0);
-      _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
+      _inv_stdev[row-row_start] = 1 / El::Sqrt(var + epsilon);
     }
     for (El::Int col = col_start; col < col_end; ++col) {
       for (El::Int row = row_start; row < row_end; ++row) {
@@ -289,7 +289,7 @@ void bp_training_impl(lbann_comm& comm,
     TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_var(row, 0);
-      _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
+      _inv_stdev[row-row_start] = 1 / El::Sqrt(var + epsilon);
     }
     for (El::Int col = col_start; col < col_end; ++col) {
       for (El::Int row = row_start; row < row_end; ++row) {
@@ -340,7 +340,7 @@ void bp_inference_impl(DataType epsilon,
     TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_running_var(row, 0);
-      _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
+      _inv_stdev[row-row_start] = 1 / El::Sqrt(var + epsilon);
     }
     for (El::Int col = col_start; col < col_end; ++col) {
       for (El::Int row = row_start; row < row_end; ++row) {

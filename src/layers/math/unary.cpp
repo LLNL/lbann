@@ -153,10 +153,10 @@ struct square_op {
 template <typename TensorDataType>
 struct sqrt_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::sqrt(x);
+    return El::Sqrt(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (2 * std::sqrt(x));
+    return dy / (2 * El::Sqrt(x));
   }
 };
 
@@ -164,10 +164,10 @@ struct sqrt_op {
 template <typename TensorDataType>
 struct rsqrt_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return 1 / std::sqrt(x);
+    return 1 / El::Sqrt(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& s = std::sqrt(x);
+    const auto& s = El::Sqrt(x);
     return - dy / (2 * x * s);
   }
 };
@@ -272,7 +272,7 @@ struct acos_op {
     return std::acos(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / std::sqrt(El::TypeTraits<TensorDataType>::One() - x*x);
+    return -dy / El::Sqrt(El::TypeTraits<TensorDataType>::One() - x*x);
   }
 };
 
@@ -283,7 +283,7 @@ struct asin_op {
     return std::asin(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / std::sqrt(El::TypeTraits<TensorDataType>::One() - x*x);
+    return dy / El::Sqrt(El::TypeTraits<TensorDataType>::One() - x*x);
   }
 };
 
@@ -339,7 +339,7 @@ struct acosh_op {
     return std::acosh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / (std::sqrt(x - El::TypeTraits<TensorDataType>::One()) * std::sqrt(x + El::TypeTraits<TensorDataType>::One()));
+    return -dy / (El::Sqrt(x - El::TypeTraits<TensorDataType>::One()) * El::Sqrt(x + El::TypeTraits<TensorDataType>::One()));
   }
 };
 
@@ -350,7 +350,7 @@ struct asinh_op {
     return std::asinh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / std::sqrt(El::TypeTraits<TensorDataType>::One() + x*x);
+    return dy / El::Sqrt(El::TypeTraits<TensorDataType>::One() + x*x);
   }
 };
 

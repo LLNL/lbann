@@ -102,7 +102,7 @@ void adagrad<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
       const auto& g = gradient_buffer[row+col*gradient_ldim];
       auto& c = cache_buffer[row+col*cache_ldim];
       c += g * g;
-      x -= learning_rate * g / (std::sqrt(c) + m_eps);
+      x -= learning_rate * g / (El::Sqrt(c) + m_eps);
     }
   }
 

@@ -108,7 +108,7 @@ void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
   // Precompute the bias correction.
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
-  const TensorDataType correction = std::sqrt(TensorDataType(1) - m_current_beta2) /
+  const TensorDataType correction = El::Sqrt(TensorDataType(1) - m_current_beta2) /
                               (TensorDataType(1) - m_current_beta1);
 
   // Get local matrix data
@@ -142,7 +142,7 @@ void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
       auto& old_c = old_gradient_buffer[row+col*old_gradient_ldim];
       m1 = m_beta1 * m1 + (TensorDataType(1) - m_beta1) * g;
       m2 = m_beta2 * m2 + (TensorDataType(1) - m_beta2) * g * g;
-      old_c = correction * m1 / (std::sqrt(m2) + m_eps);
+      old_c = correction * m1 / (El::Sqrt(m2) + m_eps);
       x -= learning_rate * old_c;
     }
   }

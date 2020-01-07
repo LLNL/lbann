@@ -78,7 +78,7 @@ protected:
     // Populate matrix on CPU
     LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
-      local_output_v(0, col) = TensorDataType(output.GlobalCol(col));
+      local_output_v(0, col) = El::To<TensorDataType>(output.GlobalCol(col));
     }
 
     // Copy result from CPU if needed
