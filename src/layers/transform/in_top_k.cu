@@ -148,7 +148,7 @@ __global__ void indicate_matrix_entries(El::Int k,
         local_row = ((global_row - global_matrix_col_shift - 1)
                      / global_matrix_col_stride + 1);
       }
-      local_matrix[local_row + local_col * local_matrix_ldim] = El::TypeTraits<TensorDataType>::One();
+      local_matrix[local_row + local_col * local_matrix_ldim] = TensorDataType(1.0);
     }
   }
 }

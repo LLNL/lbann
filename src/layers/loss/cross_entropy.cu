@@ -56,7 +56,7 @@ __global__ void fp_kernel(int height, int width,
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
       if (xhat > El::TypeTraits<TensorDataType>::Zero()) {
         const auto& x = prediction[row + col * prediction_ldim];
-        private_contribution += - xhat * log(x);
+        private_contribution += - xhat * std::log(x);
       }
     }
 
