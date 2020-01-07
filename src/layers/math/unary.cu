@@ -44,11 +44,11 @@ namespace {
 template <typename TensorDataType>
 struct logical_not_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    const auto& b = x != El::TypeTraits<TensorDataType>::Zero() && !isnan(x);
-    return !b ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
+    const auto& b = x != TensorDataType(0.0) && !isnan(x);
+    return !b ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return El::TypeTraits<TensorDataType>::Zero();
+    return TensorDataType(0.0);
   }
 };
 
@@ -88,7 +88,7 @@ struct sign_op {
     else               { return zero; }
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return El::TypeTraits<TensorDataType>::Zero();
+    return TensorDataType(0.0);
   }
 };
 
@@ -99,7 +99,7 @@ struct round_op {
     return cuda::round(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return El::TypeTraits<TensorDataType>::Zero();
+    return TensorDataType(0.0);
   }
 };
 
@@ -110,7 +110,7 @@ struct ceil_op {
     return cuda::ceil(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return El::TypeTraits<TensorDataType>::Zero();
+    return TensorDataType(0.0);
   }
 };
 
@@ -121,7 +121,7 @@ struct floor_op {
     return cuda::floor(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return El::TypeTraits<TensorDataType>::Zero();
+    return TensorDataType(0.0);
   }
 };
 
@@ -132,7 +132,7 @@ struct reciprocal_op {
     return 1 / x;
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    if (dy == El::TypeTraits<TensorDataType>::Zero()) { return El::TypeTraits<TensorDataType>::Zero(); }
+    if (dy == TensorDataType(0.0)) { return TensorDataType(0.0); }
     else                   { return - dy / (x*x); }
 
   }
@@ -182,12 +182,12 @@ struct safe_reciprocal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
     const auto& y = 1 / x;
     if (isfinite(y)) { return y; }
-    else             { return El::TypeTraits<TensorDataType>::Zero(); }
+    else             { return TensorDataType(0.0); }
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const auto& y = 1 / x;
     if (isfinite(y)) { return - dy * y*y; }
-    else             { return El::TypeTraits<TensorDataType>::Zero(); }
+    else             { return TensorDataType(0.0); }
   }
 };
 
@@ -231,7 +231,7 @@ struct log1p_op {
     return cuda::log1p(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (x + El::TypeTraits<TensorDataType>::One());
+    return dy / (x + TensorDataType(1.0));
   }
 };
 
@@ -276,7 +276,7 @@ struct acos_op {
     return cuda::acos(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / cuda::sqrt(El::TypeTraits<TensorDataType>::One() - x*x);
+    return -dy / cuda::sqrt(TensorDataType(1.0) - x*x);
   }
 };
 
@@ -287,7 +287,7 @@ struct asin_op {
     return cuda::asin(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / cuda::sqrt(El::TypeTraits<TensorDataType>::One() - x*x);
+    return dy / cuda::sqrt(TensorDataType(1.0) - x*x);
   }
 };
 
@@ -298,7 +298,7 @@ struct atan_op {
     return cuda::atan(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (El::TypeTraits<TensorDataType>::One() + x*x);
+    return dy / (TensorDataType(1.0) + x*x);
   }
 };
 
@@ -343,7 +343,7 @@ struct acosh_op {
     return cuda::acosh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / (cuda::sqrt(x - El::TypeTraits<TensorDataType>::One()) * cuda::sqrt(x + El::TypeTraits<TensorDataType>::One()));
+    return -dy / (cuda::sqrt(x - TensorDataType(1.0)) * cuda::sqrt(x + TensorDataType(1.0)));
   }
 };
 
@@ -354,7 +354,7 @@ struct asinh_op {
     return cuda::asinh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / cuda::sqrt(El::TypeTraits<TensorDataType>::One() + x*x);
+    return dy / cuda::sqrt(TensorDataType(1.0) + x*x);
   }
 };
 
@@ -365,7 +365,7 @@ struct atanh_op {
     return cuda::atanh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (El::TypeTraits<TensorDataType>::One() - x*x);
+    return dy / (TensorDataType(1.0) - x*x);
   }
 };
 
