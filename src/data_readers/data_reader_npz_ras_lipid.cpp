@@ -138,8 +138,8 @@ void ras_lipid_conduit_data_reader::load() {
     m_multi_samples_per_file.push_back(n);
     m_num_global_indices += n;
   }
-  m_train_indices = m_num_global_indices;
-  m_validate_indices = 0; //TODO
+  m_num_train_indices = m_num_global_indices;
+  m_num_validate_indices = 0; //TODO
 
   fill_in_metadata();
 
@@ -148,9 +148,6 @@ void ras_lipid_conduit_data_reader::load() {
   for (size_t j=1; j<m_samples_per_file.size()+1; j++) {
     m_first_multi_id_per_file[j] = (m_first_multi_id_per_file[j-1] + m_multi_samples_per_file[j-1]);
   }
-
-  // user feedback
-  print_shapes_etc();
 
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_global_indices);
@@ -234,6 +231,12 @@ data types, from python+numpy:
 
         // most efficient for seq_len = 1
         if (m_seq_len == 1 && !options::get()->get_bool("seq_len_one_debug")) {
+          const conduit::Node* n6 = work[0].child_ptr(0);
+          int label2 = (*n6)["states"].value();
+          if (m_label_distribution.find(label2) == m_label_distribution.end()) {
+            m_label_distribution[label2] = 0;
+          }
+          m_label_distribution[label2] += 1;
           m_data_store->set_conduit_node(multi_data_id, work[0]);
         }
 
@@ -297,7 +300,10 @@ data types, from python+numpy:
           }
           n3[LBANN_DATA_ID_STR(multi_data_id) + "/states"].set(label);
           m_data_store->set_conduit_node(multi_data_id, n3);
-  
+          if (m_label_distribution.find(label) == m_label_distribution.end()) {
+            m_label_distribution[label] = 0;
+          }
+          m_label_distribution[label] += 1;
         }
 
         // set variables for the beginning of the next multi-sample
@@ -329,6 +335,9 @@ data types, from python+numpy:
     }
   }
   m_data_store->set_preloaded_owner_map(owners);
+
+  // user feedback
+  print_shapes_etc();
 }
 
 bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
@@ -560,45 +569,56 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
   }
 }
 
+//user feedback
 void ras_lipid_conduit_data_reader::print_shapes_etc() {
-  //user feedback
+  // Collect the label distribution
+  std::vector<int> work(m_num_labels, 0);
+  std::vector<int> work_all(m_num_labels, 0);
+  for (const auto t : m_label_distribution) {
+    work[t.first] = t.second;
+  }
+  if (!is_master()) {
+    m_comm->trainer_reduce<int>(work.data(), m_num_labels, 0);
+  } else {
+    m_comm->trainer_reduce<int>(work.data(), m_num_labels, work_all.data());
+  }
   if (!is_master()) {
     return;
   }
   
   std::cout << "\n======================================================\n";
-  std::cout << "Role: " << get_role() << std::endl; 
-  std::cout << "Sequence Length: " << m_seq_len << std::endl;
-  std::cout << "Num samples: " << m_train_indices << std::endl;
-  std::cout << "\nData Shapes:\n";
-  for (auto t : m_datum_shapes) {
-    std::cout << "  " << t.first << " ";
-    for (auto t2 : t.second) {
-      std::cout << t2 << " ";
+  std::cout << "num samples=" << m_num_train_indices << std::endl;
+  std::cout << "sequence length=" << m_seq_len << std::endl;
+  std::cout << "num features=" << m_num_features << std::endl;
+  std::cout << "num labels=" << m_num_labels << std::endl;
+  std::cout << "data dims=";
+  for (size_t h=0; h<m_datum_shapes["density_sig1"].size(); h++) {
+    std::cout << m_datum_shapes["density_sig1"][h];
+    if (h < m_datum_shapes["density_sig1"].size() - 1) {
+      std::cout << "x";
+    }
+  }
+  std::cout << std::endl;
+
+  if (options::get()->get_bool("verbose_print")) {
+    std::cout << "\nAll data shapes:\n";
+    for (const auto &t : m_datum_shapes) {
+      std::cout << "  " << t.first << " ";
+      for (const auto &t2 : t.second) {
+        std::cout << t2 << " ";
+      }
+      std::cout << std::endl;
     }
     std::cout << std::endl;
-  }
-  std::cout << "\nlinearized data size: " << get_linearized_data_size() << "\n"
-            << "linearized label size: " << get_linearized_label_size() << "\n"
-            << "num labels: " << get_num_labels() << "\n"
-            << "data dims: ";
-  for (auto t : m_data_dims) std::cout << t << " ";
-  std::cout << std::endl;
-  std::cout << "======================================================\n\n";
-  
-  /*
-    TODO: label distribution
-    std::vector<size_t> r(3);
-    m_comm->trainer_reduce(dist.data(), 3, r.data());
-    std::cout << "\nLabel distribution:\n";
-    for (size_t h=0; h<3; h++) {
-      std::cout << "  " << h << " " << r[h] << std::endl;
+
+    std::cout << "Label Distribution:\n";
+    for (size_t h=0; h<work_all.size(); h++) {
+      std::cout << "  " << h << ": " << (100.0 * work_all[h])/m_num_global_indices << "%\n";
     }
-  else {
-    m_comm->trainer_reduce(dist.data(), 3, 0);
   }
-    */
-} 
+
+  std::cout << "======================================================\n\n";
+}
 
 void ras_lipid_conduit_data_reader::load_the_next_sample(conduit::Node &node, int data_id, int sample_index, std::map<std::string, cnpy::NpyArray> &a) {
   size_t offset;

@@ -73,9 +73,9 @@ private:
   /** Number of global indices */
   size_t m_num_global_indices = 0;
   /** The number of indices for the train set */
-  size_t m_train_indices;
+  size_t m_num_train_indices;
   /** The number of indices for the validation set */
-  size_t m_validate_indices;
+  size_t m_num_validate_indices;
 
   std::vector<int> m_multi_samples_per_file;
 
@@ -86,6 +86,8 @@ private:
   int m_num_labels = 0;
   int m_num_response_features = 0;
   std::vector<int> m_data_dims;
+
+  std::map<int, int> m_label_distribution;
 
 //  sample_list_t m_sample_list;
 
