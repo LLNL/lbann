@@ -221,7 +221,6 @@ data types, from python+numpy:
         std::cout << "estimated number of samples processed: " 
                   << utils::commify(nn/1000*np) << "K" << std::endl;
       }  
-static bool testme = true;
       // Construct the multi-node (if seq_len > 1) and put the node 
       // in the data store
       if (count == m_seq_len) {
@@ -302,6 +301,7 @@ bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
   const conduit::Node& node = m_data_store->get_conduit_node(data_id);
   double scaling_factor = 1.0;
   const double *data = node[LBANN_DATA_ID_STR(data_id) + "/density_sig1"].value();
+
   size_t n = m_seq_len*m_datum_num_words["density_sig1"];
   for (size_t j = 0; j < n; ++j) {
     X(j, mb_idx) = data[j] * scaling_factor;
@@ -330,14 +330,10 @@ bool ras_lipid_conduit_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx)
   const double *label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
   size_t n = m_seq_len*m_datum_num_words["states"];
 
-if (n != 1) LBANN_ERROR("n != 1");
-
-int label2 = (int) label[0];
-//std::cout << label2 << " ";
+  int label2 = (int) label[0];
 
   for (size_t j = 0; j < n; ++j) {
     Y.Set(label2, mb_idx, 1);
-    Y(j, mb_idx) = label[j];
   }
   //int label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
   //Y.Set(label, mb_idx, 1);
