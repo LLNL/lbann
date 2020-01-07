@@ -319,7 +319,7 @@ inline auto lbann_summary::local_2norm(const El::AbstractMatrix<TensorDataType>&
       }
     }
   }
-  return std::sqrt(norm);
+  return El::Sqrt(norm);
 }
 
 #endif  // LBANN_HAS_TBINF

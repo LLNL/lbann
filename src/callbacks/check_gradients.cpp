@@ -119,7 +119,7 @@ void check_gradients::do_check_gradients(model& m) const {
   const DataType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.9);
   const DataType step_size = (m_step_size > DataType{0} ?
                               m_step_size :
-                              std::fabs(objective) * std::sqrt(epsilon));
+                              std::fabs(objective) * El::Sqrt(epsilon));
   DataType expected_error = (epsilon * objective / step_size
                              + std::pow(step_size, 4) / 18);
   expected_error = std::pow(expected_error, 0.9);
