@@ -34,6 +34,7 @@
 #include "lbann/models/model.hpp"
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include <valarray>
 
 #undef DEBUG
 #define DEBUG
@@ -126,6 +127,8 @@ void ras_lipid_conduit_data_reader::load() {
     m_seq_len = opts->get_int("seq_len");
   }
 
+  set_num_labels( std::pow(3, m_seq_len) );
+
   // Get the number of global multi-samples, and the number of
   // multi-samples in each file
   m_multi_samples_per_file.reserve(m_filenames.size());
@@ -196,6 +199,8 @@ data types, from python+numpy:
 
   std::vector<conduit::Node> work(m_seq_len);
 
+  static bool testme = true;
+
   // Loop over the files owned by this processer
   for (const auto &t : my_samples) {
 
@@ -221,63 +226,92 @@ data types, from python+numpy:
         std::cout << "estimated number of samples processed: " 
                   << utils::commify(nn/1000*np) << "K" << std::endl;
       }  
-      // Construct the multi-node (if seq_len > 1) and put the node 
-      // in the data store
+
+      // Construct the multi-node and set the node in the data store
+      int label = 0;
+      int label_idx = 0;
       if (count == m_seq_len) {
-        if (m_seq_len == 1 && options::get()->get_bool("direct")) {
+
+        // most efficient for seq_len = 1
+        if (m_seq_len == 1 && !options::get()->get_bool("seq_len_one_debug")) {
           m_data_store->set_conduit_node(multi_data_id, work[0]);
         }
 
+        // construct multi-sample
         else {
-
-        // get pointers to the children, i.e, bypass the encoded data_id
-        std::vector<const conduit::Node*> work_ptr(m_seq_len);
-        for (int h=0; h<m_seq_len; h++) {
-          work_ptr[h]  = work[h].child_ptr(0);
-        }
-
-        conduit::Node n3;
-        std::vector<double> work_d;
-        std::vector<float> work_f;
-        for (const auto &t42 : m_datum_num_words) {
-          const std::string &name = t42.first;
-          if (name == "frames") {
-            continue;
+          if (is_master() && testme && m_seq_len == 1 && verbose) {
+            std::cout << "seq_len == 1, but running multi-sample block of code anyway (for debugging)\n";
+            testme = false;
           }
-          int n_words = t42.second;
-          if (name == "bbs") {
-            work_f.resize(m_seq_len*n_words);
-            int offset = 0;
-            for (const auto &t5 : work_ptr) {
-              const float *d = (*t5)[name].value();
-              for (size_t u=0; u<m_datum_num_words[name]; u++) {
-                work_f[offset++] = d[u];
-              }
-            }
-            n3[LBANN_DATA_ID_STR(multi_data_id) + "/" + name].set(work_f.data(), m_seq_len * m_datum_num_words[name]);
-          } else {
-            work_d.resize(m_seq_len*n_words);
-            int offset = 0;
-            for (const auto &t5 : work_ptr) {
-              const double *d = (*t5)[name].value();
-              for (size_t u=0; u<m_datum_num_words[name]; u++) {
-                work_d[offset++] = d[u];
-              }
-            }
-            n3[LBANN_DATA_ID_STR(multi_data_id) + "/" + name].set(work_d.data(), m_seq_len * m_datum_num_words[name]);
+
+          // get pointers to the children, i.e, bypass the encoded data_id
+          std::vector<const conduit::Node*> work_ptr(m_seq_len);
+          for (int h=0; h<m_seq_len; h++) {
+            work_ptr[h]  = work[h].child_ptr(0);
           }
-        }
-        m_data_store->set_conduit_node(multi_data_id, n3);
+  
+          conduit::Node n3;
+          std::vector<double> work_d;
+          std::vector<float> work_f;
+          for (const auto &t42 : m_datum_num_words) {
+            const std::string &name = t42.first;
+            int n_words = t42.second;
+  
+            if (name == "frames") {
+              continue;
+            }
 
+            if (name == "states") {
+              for (const auto &t5 : work_ptr) {
+                const int d = (*t5)[name].value();
+                label += d * std::pow(3, label_idx++);
+              }
+            } 
+            
+            // 'bbs' is float32
+            else if (name == "bbs") {
+              work_f.resize(m_seq_len*n_words);
+              int offset = 0;
+              for (const auto &t5 : work_ptr) {
+                const float *d = (*t5)[name].value();
+                for (size_t u=0; u<m_datum_num_words[name]; u++) {
+                  work_f[offset++] = d[u];
+                }
+              }
+              n3[LBANN_DATA_ID_STR(multi_data_id) + "/" + name].set(work_f.data(), m_seq_len * m_datum_num_words[name]);
+  
+            } 
+            
+            // rots, tilts, density_sig1, probs are float64
+            else {
+              work_d.resize(m_seq_len*n_words);
+              int offset = 0;
+              for (const auto &t5 : work_ptr) {
+                const double *d = (*t5)[name].value();
+                for (size_t u=0; u<m_datum_num_words[name]; u++) {
+                  work_d[offset++] = d[u];
+                }
+              }
+              n3[LBANN_DATA_ID_STR(multi_data_id) + "/" + name].set(work_d.data(), m_seq_len * m_datum_num_words[name]);
+            }
+          }
+          n3[LBANN_DATA_ID_STR(multi_data_id) + "/states"].set(label);
+          m_data_store->set_conduit_node(multi_data_id, n3);
+  
         }
 
+        // set variables for the beginning of the next multi-sample
         count = 0;
         for (auto &t5 : work) {
           t5.reset();
         }
         ++multi_data_id;
-      }
 
+      } //if (count == m_seq_len)
+
+
+      // possible early exit: discard samples that are too few
+      // to form a multi-sample
       if (count / m_seq_len == m_multi_samples_per_file[t.first]) {
         break;
       }
@@ -327,16 +361,8 @@ std::map<double,int> m2;
 
 bool ras_lipid_conduit_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
-  const double *label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
-  size_t n = m_seq_len*m_datum_num_words["states"];
-
-  int label2 = (int) label[0];
-
-  for (size_t j = 0; j < n; ++j) {
-    Y.Set(label2, mb_idx, 1);
-  }
-  //int label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
-  //Y.Set(label, mb_idx, 1);
+  int label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
+  Y.Set(label, mb_idx, 1);
   return true;
 }
 
@@ -589,15 +615,8 @@ void ras_lipid_conduit_data_reader::load_the_next_sample(conduit::Node &node, in
       conduit::float64 *data = reinterpret_cast<conduit::float64*>(a[name].data_holder->data());
 
       if (name == "states") {
-        node[LBANN_DATA_ID_STR(data_id) + "/states"].set(data + offset, m_datum_num_words[name]);
-        /*
-        int label = (data + offset)[0];
-        if (label < 0 || label > 2) {
-          LBANN_ERROR("bad label; should be 0, 1, or 2 but it's: ", label);
-        }
-        node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(label);
-        */
-
+        int label = static_cast<int>((data + offset)[0]);
+        node[LBANN_DATA_ID_STR(data_id) + "/states"].set(label);
       } else if (name == "density_sig1") {
         int s = 0;
         if (m_use_z_score) {
