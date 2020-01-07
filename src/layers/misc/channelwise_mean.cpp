@@ -50,7 +50,7 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::fp_compute() {
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int channel = 0; channel < num_channels; ++channel) {
-      TensorDataType sum = 0;
+      TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
       for (El::Int i = 0; i < channel_size; ++i) {
         sum += local_input(i + channel * channel_size, col);
       }
