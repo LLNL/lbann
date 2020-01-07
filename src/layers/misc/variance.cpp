@@ -149,9 +149,11 @@ void variance_layer<TensorDataType, Layout, Device>::bp_compute() {
          this->m_biased);
 }
 
-template class variance_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class variance_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                     \
+  template class variance_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU> \
+  template class variance_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

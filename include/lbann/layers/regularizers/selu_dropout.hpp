@@ -145,7 +145,7 @@ public:
         for (El::Int row = 0; row < local_height; ++row) {
           local_output_acts(row, col) = m_a *
             (local_input_acts(row, col)*local_mask(row, col) +
-             m_alpha_prime*(1 - local_mask(row, col))) + m_b;
+             m_alpha_prime*(El::TypeTraits<TensorDataType>::One() - local_mask(row, col))) + m_b;
         }
       }
 
