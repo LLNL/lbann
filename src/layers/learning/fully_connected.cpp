@@ -485,9 +485,6 @@ std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
   build_fully_connected_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, Device>( \
     lbann_comm*, lbann_data::Layer const&)
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
-
 
 } // namespace lbann

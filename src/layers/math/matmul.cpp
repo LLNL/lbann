@@ -293,8 +293,6 @@ void matmul_layer<TensorDataType, Layout, Device>::bp_compute() {
 #define PROTO_DEVICE(T, Device) \
   template class matmul_layer<T, data_layout::DATA_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

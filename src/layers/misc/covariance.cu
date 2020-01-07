@@ -312,9 +312,11 @@ void covariance_layer<TensorDataType, Layout, Device>::bp_compute() {
          this->m_biased);
 }
 
-template class covariance_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class covariance_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                     \
+  template class covariance_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU> \
+  template class covariance_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -180,7 +180,10 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
 
 }
 
-template class channelwise_mean_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                     \
+  template class channelwise_mean_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

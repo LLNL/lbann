@@ -559,12 +559,8 @@ private:
 #define PROTO_DEVICE(T, Device) \
   extern template class pooling_layer<T, data_layout::DATA_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_POOLING_LAYER_INSTANTIATE
 
 } // namespace lbann

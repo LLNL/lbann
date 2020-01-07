@@ -225,8 +225,6 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
     TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \
     TEMPLATE_INSTANTIATION(T, data_layout::MODEL_PARALLEL, Device)
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 #undef TEMPLATE_INSTANTIATION

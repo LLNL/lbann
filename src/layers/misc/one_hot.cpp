@@ -53,7 +53,10 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 }
 
-template class one_hot_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                     \
+  template class one_hot_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
