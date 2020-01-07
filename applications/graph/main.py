@@ -41,9 +41,15 @@ args = parser.parse_args()
 # Embedding weights
 # ----------------------------------
 
-embeddings = lbann.Weights(
-    initializer=lbann.NormalInitializer(mean=0, standard_deviation=1),
+encoder_embeddings_weights = lbann.Weights(
+    initializer=lbann.NormalInitializer(
+        mean=0, standard_deviation=1/args.latent_dim,
+    ),
     name='embeddings',
+)
+decoder_embeddings_weights = lbann.Weights(
+    initializer=lbann.ConstantInitializer(value=0),
+    name='decoder_embeddings',
 )
 
 # ----------------------------------
@@ -58,22 +64,26 @@ input_size = dataset.sample_dims()[0]
 
 # Embedding vectors, including negative sampling
 # Note: Input is sequence of graph node IDs
-input_embeddings = lbann.Embedding(
-    lbann.Input(),
-    weights=embeddings,
+input_ = lbann.Identity(lbann.Input())
+input_slice = lbann.Slice(
+    input_,
+    slice_points=f'0 {num_negative_samples+1} {input_size}'
+)
+decoder_embeddings = lbann.Embedding(
+    input_slice,
+    weights=decoder_embeddings_weights,
+    num_embeddings=num_graph_nodes,
+    embedding_dim=args.latent_dim,
+)
+encoder_embeddings = lbann.Embedding(
+    input_slice,
+    weights=encoder_embeddings_weights,
     num_embeddings=num_graph_nodes,
     embedding_dim=args.latent_dim,
 )
 
 # Skip-Gram with negative sampling
-input_embeddings_slice = lbann.Slice(
-    input_embeddings,
-    axis=0,
-    slice_points=f'0 {num_negative_samples+1} {input_size}'
-)
-left_embeddings = lbann.Identity(input_embeddings_slice)
-right_embeddings = lbann.Identity(input_embeddings_slice)
-preds = lbann.MatMul(left_embeddings, right_embeddings, transpose_b=True)
+preds = lbann.MatMul(decoder_embeddings, encoder_embeddings, transpose_b=True)
 preds_slice = lbann.Slice(
     preds,
     axis=0,
@@ -81,13 +91,13 @@ preds_slice = lbann.Slice(
 preds_negative = lbann.Identity(preds_slice)
 preds_positive = lbann.Identity(preds_slice)
 obj_positive = lbann.LogSigmoid(preds_positive)
-obj_positive = lbann.Reduction(obj_positive, mode='average')
+obj_positive = lbann.Reduction(obj_positive, mode='sum')
 obj_negative = lbann.WeightedSum(preds_negative, scaling_factors='-1')
 obj_negative = lbann.LogSigmoid(obj_negative)
-obj_negative = lbann.Reduction(obj_negative, mode='average')
+obj_negative = lbann.Reduction(obj_negative, mode='sum')
 obj = [
     lbann.LayerTerm(obj_positive, scale=-1),
-    lbann.LayerTerm(obj_negative, scale=-1),
+    lbann.LayerTerm(obj_negative, scale=-1/num_negative_samples),
 ]
 
 # ----------------------------------
@@ -126,7 +136,7 @@ callbacks = [
 ]
 model = lbann.Model(args.mini_batch_size,
                     args.num_epochs,
-                    layers=lbann.traverse_layer_graph(input_embeddings),
+                    layers=lbann.traverse_layer_graph(input_),
                     objective_function=obj,
                     callbacks=callbacks)
 
