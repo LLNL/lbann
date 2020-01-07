@@ -104,8 +104,8 @@ struct cuBLAS_Caller<__half> {
   }
 
   void scal(cublasHandle_t handle, int n,
-            float const* alpha,
-            float* x, int incx)
+            __half const* alpha,
+            __half* x, int incx)
   {
     CHECK_CUBLAS(
       cublasScalEx(handle, n, alpha, CUDA_R_16F,
