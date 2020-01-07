@@ -265,7 +265,8 @@ private:
     const int num_per_channel = this->get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
-    const bool default_beta = (std::fabs((m_beta - 0.75) / 0.75)
+    const bool default_beta = (std::fabs((m_beta - El::To<TensorDataType>(0.75))
+                                         / El::To<TensorDataType>(0.75))
                                < 2 * std::numeric_limits<DataType>::epsilon());
 
     ////////////////////////////////////////////////////////////////
@@ -303,7 +304,8 @@ private:
 
           // Compute 1 / (k + alpha * sum(x^2) ) in workspace
           for (int block_pos = 0; block_pos < block_size; ++block_pos) {
-            workspace[block_pos] = 1 / (m_k + m_alpha * workspace[block_pos]);
+            workspace[block_pos] = El::TypeTraits<TensorDataType>::One()
+              / (m_k + m_alpha * workspace[block_pos]);
           }
 
           // Compute output
@@ -314,10 +316,10 @@ private:
             TensorDataType& output_entry = output_buffer[index + sample * output_ldim];
             if (default_beta) { // Special case when beta = 0.75
               output_entry = (input_entry
-                              * std::sqrt(scale_factor * std::sqrt(scale_factor)));
+                              * El::Sqrt(scale_factor * El::Sqrt(scale_factor)));
             }
             else {
-              output_entry = input_entry * std::pow(scale_factor, m_beta);
+              output_entry = input_entry * El::Pow(scale_factor, m_beta);
             }
           }
 
@@ -354,8 +356,9 @@ private:
     const int num_per_channel = this->get_output_size() / num_channels;
 
     // Check if LRN is using default beta parameter
-    const bool default_beta = (std::fabs((m_beta - 0.75) / 0.75)
-                               < 2 * std::numeric_limits<DataType>::epsilon());
+    const bool default_beta = (std::fabs((m_beta - El::To<TensorDataType>(0.75))
+                                         / El::To<TensorDataType>(0.75))
+                               < El::To<TensorDataType>(2) * std::numeric_limits<TensorDataType>::epsilon());
 
     ////////////////////////////////////////////////////////////////
     // error_signal(i)
@@ -396,7 +399,8 @@ private:
 
           // Compute 1 / (k + alpha * sum(x^2) ) in workspace
           for (int block_pos = 0; block_pos < block_size; ++block_pos) {
-            workspace[block_pos] = 1 / (m_k + m_alpha * workspace[block_pos]);
+            workspace[block_pos] = El::TypeTraits<TensorDataType>::One()
+              / (m_k + m_alpha * workspace[block_pos]);
           }
 
           // Compute error signal contribution for current entry
@@ -409,11 +413,11 @@ private:
               = gradient_wrt_input_buffer[index + sample * gradient_wrt_input_ldim];
             if (default_beta) { // Special case when beta = 0.75
               gradient_wrt_input_entry
-                = gradient_wrt_output_entry * std::sqrt(scale_factor * std::sqrt(scale_factor));
+                = gradient_wrt_output_entry * El::Sqrt(scale_factor * El::Sqrt(scale_factor));
             }
             else {
               gradient_wrt_input_entry
-                = gradient_wrt_output_entry * std::pow(scale_factor, m_beta);
+                = gradient_wrt_output_entry * El::Pow(scale_factor, m_beta);
             }
           }
 
@@ -423,7 +427,7 @@ private:
             const TensorDataType output_entry = output_buffer[index + sample * output_ldim];
             const TensorDataType gradient_wrt_output_entry
               = gradient_wrt_output_buffer[index + sample * gradient_wrt_output_ldim];
-            workspace[block_pos] = (-2 * m_alpha * m_beta * workspace[block_pos]
+            workspace[block_pos] = (El::To<TensorDataType>(-2) * m_alpha * m_beta * workspace[block_pos]
                                     * output_entry * gradient_wrt_output_entry);
           }
 

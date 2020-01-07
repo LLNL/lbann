@@ -79,8 +79,6 @@ void variance_scaling_initializer<TensorDataType>::fill(El::AbstractDistMatrix<T
     LBANN_ERROR(err.str());
   }
 
-  using std::sqrt;
-
   // Get variance
   const auto& variance = get_variance(m_fan_in, m_fan_out);
 
@@ -88,11 +86,11 @@ void variance_scaling_initializer<TensorDataType>::fill(El::AbstractDistMatrix<T
   switch (m_prob_dist) {
   case probability_distribution::gaussian:
     gaussian_fill(matrix, matrix.Height(), matrix.Width(),
-                  TensorDataType(0), sqrt(variance));
+                  TensorDataType(0), El::Sqrt(variance));
     break;
   case probability_distribution::uniform:
     uniform_fill(matrix, matrix.Height(), matrix.Width(),
-                 TensorDataType(0), sqrt(El::To<TensorDataType>(3)*variance));
+                 TensorDataType(0), El::Sqrt(El::To<TensorDataType>(3)*variance));
     break;
   default:
     std::stringstream err;
