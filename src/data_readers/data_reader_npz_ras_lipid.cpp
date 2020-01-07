@@ -35,6 +35,9 @@
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
 
+#undef DEBUG
+#define DEBUG
+
 namespace lbann {
 
 ras_lipid_conduit_data_reader::ras_lipid_conduit_data_reader(const bool shuffle)
@@ -218,15 +221,57 @@ data types, from python+numpy:
         std::cout << "estimated number of samples processed: " 
                   << utils::commify(nn/1000*np) << "K" << std::endl;
       }  
-
+static bool testme = true;
       // Construct the multi-node (if seq_len > 1) and put the node 
       // in the data store
       if (count == m_seq_len) {
-        if (m_seq_len == 1) {
+        if (m_seq_len == 1 && options::get()->get_bool("direct")) {
           m_data_store->set_conduit_node(multi_data_id, work[0]);
-        } else {
-          //TODO: combine the Nodes in work, and put in the data_store
         }
+
+        else {
+
+        // get pointers to the children, i.e, bypass the encoded data_id
+        std::vector<const conduit::Node*> work_ptr(m_seq_len);
+        for (int h=0; h<m_seq_len; h++) {
+          work_ptr[h]  = work[h].child_ptr(0);
+        }
+
+        conduit::Node n3;
+        std::vector<double> work_d;
+        std::vector<float> work_f;
+        for (const auto &t42 : m_datum_num_words) {
+          const std::string &name = t42.first;
+          if (name == "frames") {
+            continue;
+          }
+          int n_words = t42.second;
+          if (name == "bbs") {
+            work_f.resize(m_seq_len*n_words);
+            int offset = 0;
+            for (const auto &t5 : work_ptr) {
+              const float *d = (*t5)[name].value();
+              for (size_t u=0; u<m_datum_num_words[name]; u++) {
+                work_f[offset++] = d[u];
+              }
+            }
+            n3[LBANN_DATA_ID_STR(multi_data_id) + "/" + name].set(work_f.data(), m_seq_len * m_datum_num_words[name]);
+          } else {
+            work_d.resize(m_seq_len*n_words);
+            int offset = 0;
+            for (const auto &t5 : work_ptr) {
+              const double *d = (*t5)[name].value();
+              for (size_t u=0; u<m_datum_num_words[name]; u++) {
+                work_d[offset++] = d[u];
+              }
+            }
+            n3[LBANN_DATA_ID_STR(multi_data_id) + "/" + name].set(work_d.data(), m_seq_len * m_datum_num_words[name]);
+          }
+        }
+        m_data_store->set_conduit_node(multi_data_id, n3);
+
+        }
+
         count = 0;
         for (auto &t5 : work) {
           t5.reset();
@@ -257,10 +302,10 @@ bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx)
   const conduit::Node& node = m_data_store->get_conduit_node(data_id);
   double scaling_factor = 1.0;
   const double *data = node[LBANN_DATA_ID_STR(data_id) + "/density_sig1"].value();
-  size_t n = m_datum_num_words["density_sig1"];
+  size_t n = m_seq_len*m_datum_num_words["density_sig1"];
   for (size_t j = 0; j < n; ++j) {
     X(j, mb_idx) = data[j] * scaling_factor;
-  }  
+  }
 
 #if 0
 Notes from Adam:
@@ -282,8 +327,20 @@ std::map<double,int> m2;
 
 bool ras_lipid_conduit_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
-  int label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
-  Y.Set(label, mb_idx, 1);
+  const double *label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
+  size_t n = m_seq_len*m_datum_num_words["states"];
+
+if (n != 1) LBANN_ERROR("n != 1");
+
+int label2 = (int) label[0];
+//std::cout << label2 << " ";
+
+  for (size_t j = 0; j < n; ++j) {
+    Y.Set(label2, mb_idx, 1);
+    Y(j, mb_idx) = label[j];
+  }
+  //int label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
+  //Y.Set(label, mb_idx, 1);
   return true;
 }
 
@@ -298,7 +355,8 @@ void ras_lipid_conduit_data_reader::fill_in_metadata() {
     const std::string &name = t.first;
     size_t word_size = t.second.word_size;
     const std::vector<size_t> &shape = t.second.shape;
-    size_t num_words = m_seq_len;
+    size_t num_words = 1;
+    //size_t num_words = m_seq_len;
     if (shape.size() == 1) {
       m_datum_shapes[name].push_back(1*m_seq_len);
     } else {
@@ -535,11 +593,14 @@ void ras_lipid_conduit_data_reader::load_the_next_sample(conduit::Node &node, in
       conduit::float64 *data = reinterpret_cast<conduit::float64*>(a[name].data_holder->data());
 
       if (name == "states") {
+        node[LBANN_DATA_ID_STR(data_id) + "/states"].set(data + offset, m_datum_num_words[name]);
+        /*
         int label = (data + offset)[0];
         if (label < 0 || label > 2) {
           LBANN_ERROR("bad label; should be 0, 1, or 2 but it's: ", label);
         }
         node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(label);
+        */
 
       } else if (name == "density_sig1") {
         int s = 0;
