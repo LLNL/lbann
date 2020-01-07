@@ -56,6 +56,18 @@ struct TypeToProtoDataType<double>
   static constexpr auto value = lbann_data::DOUBLE;
 };
 
+template <>
+struct TypeToProtoDataType<cpu_fp16>
+{
+  static constexpr auto value = lbann_data::FP16;
+};
+
+template <>
+struct TypeToProtoDataType<fp16>
+{
+  static constexpr auto value = lbann_data::FP16;
+};
+
 /** Setup parent/child relationships between layers. */
 void setup_parents_and_children(
        lbann_comm* comm,
