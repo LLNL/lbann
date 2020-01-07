@@ -59,7 +59,7 @@ __global__ void fp_kernel(El::Int num_embeddings,
         y = embeddings[i+ind*embeddings_ldim];
       }
       else {
-        y = El::TypeTraits<TensorDataType>::Zero();
+        y = TensorDataType(0.0);
       }
     }
   }

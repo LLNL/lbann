@@ -44,14 +44,14 @@ namespace {
 template <typename TensorDataType>
 struct log_sigmoid_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    if (x >= El::TypeTraits<TensorDataType>::Zero()) {
+    if (x >= TensorDataType(0.0)) {
       return -cuda::log1p(cuda::exp(-x));
     } else {
       return x - cuda::log1p(cuda::exp(x));
     }
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (El::TypeTraits<TensorDataType>::One() + cuda::exp(x));
+    return dy / (TensorDataType(1.0) + cuda::exp(x));
   }
 };
 
@@ -59,10 +59,10 @@ struct log_sigmoid_op {
 template <typename TensorDataType>
 struct relu_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return cuda::max(x, El::TypeTraits<TensorDataType>::Zero());
+    return cuda::max(x, TensorDataType(0.0));
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return x > El::TypeTraits<TensorDataType>::Zero() ? dy : El::TypeTraits<TensorDataType>::Zero();
+    return x > TensorDataType(0.0) ? dy : TensorDataType(0.0);
   }
 };
 
@@ -70,12 +70,12 @@ struct relu_op {
 template <typename TensorDataType>
 struct selu_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return (x > El::TypeTraits<TensorDataType>::Zero() ?
+    return (x > TensorDataType(0.0) ?
             scale * x :
             scale * alpha * cuda::expm1(x));
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return (x > El::TypeTraits<TensorDataType>::Zero() ?
+    return (x > TensorDataType(0.0) ?
             dy * scale :
             dy * scale * alpha * cuda::exp(x));
   }
@@ -102,9 +102,9 @@ struct sigmoid_op {
     const auto& y = 1 / (one + cuda::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
     constexpr TensorDataType eps = cuda::epsilon<TensorDataType>();
-    if (y <= eps || y >= El::TypeTraits<TensorDataType>::One() - eps) { return El::TypeTraits<TensorDataType>::Zero(); }
+    if (y <= eps || y >= TensorDataType(1.0) - eps) { return TensorDataType(0.0); }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    return dy * y * (El::TypeTraits<TensorDataType>::One() - y);
+    return dy * y * (TensorDataType(1.0) - y);
   }
 };
 
@@ -112,14 +112,14 @@ struct sigmoid_op {
 template <typename TensorDataType>
 struct softplus_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    if (x > El::TypeTraits<TensorDataType>::Zero()) {
+    if (x > TensorDataType(0.0)) {
       return cuda::log1p(cuda::exp(-x)) + x;
     } else {
       return cuda::log1p(cuda::exp(x));
     }
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (El::TypeTraits<TensorDataType>::One() + cuda::exp(-x));
+    return dy / (TensorDataType(1.0) + cuda::exp(-x));
   }
 };
 
@@ -127,10 +127,10 @@ struct softplus_op {
 template <typename TensorDataType>
 struct softsign_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return x / (El::TypeTraits<TensorDataType>::One() + cuda::abs(x));
+    return x / (TensorDataType(1.0) + cuda::abs(x));
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& denom = El::TypeTraits<TensorDataType>::One() + cuda::abs(x);
+    const auto& denom = TensorDataType(1.0) + cuda::abs(x);
     return dy / (denom * denom);
   }
 };

@@ -56,7 +56,7 @@ __global__ void fp_kernel(int height, int width,
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
       if (xhat > El::TypeTraits<TensorDataType>::Zero()) {
         const auto& x = prediction[row + col * prediction_ldim];
-        private_contribution += - xhat * std::log(x);
+        private_contribution += - xhat * log(x);
       }
     }
 
@@ -127,7 +127,7 @@ __global__ void bp_kernel(int height, int width,
       auto& dx = gradient_wrt_prediction[row + col * gradient_wrt_prediction_ldim];
       auto& dxhat = gradient_wrt_ground_truth[row + col * gradient_wrt_ground_truth_ldim];
       dx = (xhat > El::TypeTraits<TensorDataType>::Zero()) ? - dy * xhat / x : El::TypeTraits<TensorDataType>::Zero();
-      dxhat = - dy * std::log(x);
+      dxhat = - dy * log(x);
     }
   }
 
