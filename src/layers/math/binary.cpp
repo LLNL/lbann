@@ -158,7 +158,8 @@ template <typename TensorDataType>
 struct mod_op {
   inline TensorDataType operator()(const TensorDataType& x1,
                              const TensorDataType& x2) const {
-    return std::fmod(x1, x2);
+    using std::fmod;
+    return fmod(x1, x2);
   }
   inline void operator()(const TensorDataType& x1,
                          const TensorDataType& x2,
@@ -175,7 +176,7 @@ template <typename TensorDataType>
 struct pow_op {
   inline TensorDataType operator()(const TensorDataType& x1,
                              const TensorDataType& x2) const {
-    return std::pow(x1, x2);
+    return El::Pow(x1, x2);
   }
   inline void operator()(const TensorDataType& x1,
                          const TensorDataType& x2,
