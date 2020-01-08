@@ -372,7 +372,7 @@ struct atanh_op {
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
+#define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
     cuda::apply_entrywise_unary_operator<op>(                           \
@@ -385,36 +385,68 @@ struct atanh_op {
       this->get_prev_activations(),                                     \
       this->get_prev_error_signals(),                                   \
       this->get_error_signals());                                       \
-  }                                                                     \
-  UNARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
+  }
 
-INSTANTIATE(logical_not_layer, logical_not_op);
-INSTANTIATE(abs_layer, abs_op);
-INSTANTIATE(negative_layer, negative_op);
-INSTANTIATE(sign_layer, sign_op);
-INSTANTIATE(round_layer, round_op);
-INSTANTIATE(ceil_layer, ceil_op);
-INSTANTIATE(floor_layer, floor_op);
-INSTANTIATE(reciprocal_layer, reciprocal_op);
-INSTANTIATE(square_layer, square_op);
-INSTANTIATE(sqrt_layer, sqrt_op);
-INSTANTIATE(safe_reciprocal_layer, safe_reciprocal_op);
-INSTANTIATE(rsqrt_layer, rsqrt_op);
-INSTANTIATE(exp_layer, exp_op);
-INSTANTIATE(expm1_layer, expm1_op);
-INSTANTIATE(log_layer, log_op);
-INSTANTIATE(log1p_layer, log1p_op);
-INSTANTIATE(cos_layer, cos_op);
-INSTANTIATE(sin_layer, sin_op);
-INSTANTIATE(tan_layer, tan_op);
-INSTANTIATE(acos_layer, acos_op);
-INSTANTIATE(asin_layer, asin_op);
-INSTANTIATE(atan_layer, atan_op);
-INSTANTIATE(cosh_layer, cosh_op);
-INSTANTIATE(sinh_layer, sinh_op);
-INSTANTIATE(tanh_layer, tanh_op);
-INSTANTIATE(acosh_layer, acosh_op);
-INSTANTIATE(asinh_layer, asinh_op);
-INSTANTIATE(atanh_layer, atanh_op);
+DEFINE_COMPUTE_OPS(logical_not_layer, logical_not_op)
+DEFINE_COMPUTE_OPS(abs_layer, abs_op)
+DEFINE_COMPUTE_OPS(negative_layer, negative_op)
+DEFINE_COMPUTE_OPS(sign_layer, sign_op)
+DEFINE_COMPUTE_OPS(round_layer, round_op)
+DEFINE_COMPUTE_OPS(ceil_layer, ceil_op)
+DEFINE_COMPUTE_OPS(floor_layer, floor_op)
+DEFINE_COMPUTE_OPS(reciprocal_layer, reciprocal_op)
+DEFINE_COMPUTE_OPS(square_layer, square_op)
+DEFINE_COMPUTE_OPS(sqrt_layer, sqrt_op)
+DEFINE_COMPUTE_OPS(rsqrt_layer, rsqrt_op)
+DEFINE_COMPUTE_OPS(safe_reciprocal_layer, safe_reciprocal_op)
+DEFINE_COMPUTE_OPS(exp_layer, exp_op)
+DEFINE_COMPUTE_OPS(expm1_layer, expm1_op)
+DEFINE_COMPUTE_OPS(log_layer, log_op)
+DEFINE_COMPUTE_OPS(log1p_layer, log1p_op)
+DEFINE_COMPUTE_OPS(cos_layer, cos_op)
+DEFINE_COMPUTE_OPS(sin_layer, sin_op)
+DEFINE_COMPUTE_OPS(tan_layer, tan_op)
+DEFINE_COMPUTE_OPS(acos_layer, acos_op)
+DEFINE_COMPUTE_OPS(asin_layer, asin_op)
+DEFINE_COMPUTE_OPS(atan_layer, atan_op)
+DEFINE_COMPUTE_OPS(cosh_layer, cosh_op)
+DEFINE_COMPUTE_OPS(sinh_layer, sinh_op)
+DEFINE_COMPUTE_OPS(tanh_layer, tanh_op)
+DEFINE_COMPUTE_OPS(acosh_layer, acosh_op)
+DEFINE_COMPUTE_OPS(asinh_layer, asinh_op)
+DEFINE_COMPUTE_OPS(atanh_layer, atanh_op)
+
+#define PROTO(T) \
+  UNARY_ETI_INST_MACRO_DEV_DT(logical_not_layer, T, El::Device::GPU); \
+  UNARY_ETI_INST_MACRO_DEV_DT(abs_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(negative_layer, T, El::Device::GPU);    \
+  UNARY_ETI_INST_MACRO_DEV_DT(sign_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(round_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(ceil_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(floor_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(reciprocal_layer, T, El::Device::GPU);  \
+  UNARY_ETI_INST_MACRO_DEV_DT(square_layer, T, El::Device::GPU);      \
+  UNARY_ETI_INST_MACRO_DEV_DT(sqrt_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(rsqrt_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(safe_reciprocal_layer, T, El::Device::GPU); \
+  UNARY_ETI_INST_MACRO_DEV_DT(exp_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(expm1_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(log_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(log1p_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(cos_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(sin_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(tan_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(acos_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(asin_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(atan_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(cosh_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(sinh_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(tanh_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(acosh_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(asinh_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(atanh_layer, T, El::Device::GPU)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -475,7 +475,7 @@ struct logical_xor_op {
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
+#define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
     cuda::apply_entrywise_binary_operator<op>(                          \
@@ -491,27 +491,50 @@ struct logical_xor_op {
       this->get_local_prev_error_signals(),                             \
       this->get_local_error_signals(0),                                 \
       this->get_local_error_signals(1));                                \
-  }                                                                     \
-  BINARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
+  }
 
-INSTANTIATE(add_layer, add_op);
-INSTANTIATE(subtract_layer, subtract_op);
-INSTANTIATE(multiply_layer, multiply_op);
-INSTANTIATE(divide_layer, divide_op);
-INSTANTIATE(mod_layer, mod_op);
-INSTANTIATE(pow_layer, pow_op);
-INSTANTIATE(safe_divide_layer, safe_divide_op);
-INSTANTIATE(squared_difference_layer, squared_difference_op);
-INSTANTIATE(max_layer, max_op);
-INSTANTIATE(min_layer, min_op);
-INSTANTIATE(equal_layer, equal_op);
-INSTANTIATE(not_equal_layer, not_equal_op);
-INSTANTIATE(less_layer, less_op);
-INSTANTIATE(less_equal_layer, less_equal_op);
-INSTANTIATE(greater_layer, greater_op);
-INSTANTIATE(greater_equal_layer, greater_equal_op);
-INSTANTIATE(logical_and_layer, logical_and_op);
-INSTANTIATE(logical_or_layer, logical_or_op);
-INSTANTIATE(logical_xor_layer, logical_xor_op);
+DEFINE_COMPUTE_OPS(add_layer, add_op)
+DEFINE_COMPUTE_OPS(subtract_layer, subtract_op)
+DEFINE_COMPUTE_OPS(multiply_layer, multiply_op)
+DEFINE_COMPUTE_OPS(divide_layer, divide_op)
+DEFINE_COMPUTE_OPS(mod_layer, mod_op)
+DEFINE_COMPUTE_OPS(pow_layer, pow_op)
+DEFINE_COMPUTE_OPS(safe_divide_layer, safe_divide_op)
+DEFINE_COMPUTE_OPS(squared_difference_layer, squared_difference_op)
+DEFINE_COMPUTE_OPS(max_layer, max_op)
+DEFINE_COMPUTE_OPS(min_layer, min_op)
+DEFINE_COMPUTE_OPS(equal_layer, equal_op)
+DEFINE_COMPUTE_OPS(not_equal_layer, not_equal_op)
+DEFINE_COMPUTE_OPS(less_layer, less_op)
+DEFINE_COMPUTE_OPS(less_equal_layer, less_equal_op)
+DEFINE_COMPUTE_OPS(greater_layer, greater_op)
+DEFINE_COMPUTE_OPS(greater_equal_layer, greater_equal_op)
+DEFINE_COMPUTE_OPS(logical_and_layer, logical_and_op)
+DEFINE_COMPUTE_OPS(logical_or_layer, logical_or_op)
+DEFINE_COMPUTE_OPS(logical_xor_layer, logical_xor_op)
+
+#define PROTO(T)                                                       \
+  BINARY_ETI_INST_MACRO_DEV_DT(add_layer, T, El::Device::GPU);         \
+  BINARY_ETI_INST_MACRO_DEV_DT(subtract_layer, T, El::Device::GPU);    \
+  BINARY_ETI_INST_MACRO_DEV_DT(multiply_layer, T, El::Device::GPU);    \
+  BINARY_ETI_INST_MACRO_DEV_DT(divide_layer, T, El::Device::GPU);      \
+  BINARY_ETI_INST_MACRO_DEV_DT(mod_layer, T, El::Device::GPU);         \
+  BINARY_ETI_INST_MACRO_DEV_DT(pow_layer, T, El::Device::GPU);         \
+  BINARY_ETI_INST_MACRO_DEV_DT(safe_divide_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(squared_difference_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(max_layer, T, El::Device::GPU);         \
+  BINARY_ETI_INST_MACRO_DEV_DT(min_layer, T, El::Device::GPU);         \
+  BINARY_ETI_INST_MACRO_DEV_DT(equal_layer, T, El::Device::GPU);       \
+  BINARY_ETI_INST_MACRO_DEV_DT(not_equal_layer, T, El::Device::GPU);   \
+  BINARY_ETI_INST_MACRO_DEV_DT(less_layer, T, El::Device::GPU);        \
+  BINARY_ETI_INST_MACRO_DEV_DT(less_equal_layer, T, El::Device::GPU);  \
+  BINARY_ETI_INST_MACRO_DEV_DT(greater_layer, T, El::Device::GPU);     \
+  BINARY_ETI_INST_MACRO_DEV_DT(greater_equal_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(logical_and_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(logical_or_layer, T, El::Device::GPU);  \
+  BINARY_ETI_INST_MACRO_DEV_DT(logical_xor_layer, T, El::Device::GPU)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
