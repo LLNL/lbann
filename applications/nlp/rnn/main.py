@@ -50,7 +50,7 @@ input_slice = lbann.Slice(input_,
                           slice_points=str_list(range(sequence_length+1)))
 tokens_list = [lbann.Identity(input_slice) for _ in range(sequence_length)]
 
-# Extract embedding vectors
+# Get sequence of embedding vectors
 embeddings = lbann.Embedding(input_,
                              num_embeddings=vocab_size,
                              embedding_dim=args.latent_dim)
