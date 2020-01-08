@@ -172,7 +172,7 @@ void bp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
   // Update optimizer with gradient
   auto* opt = scale_bias.get_optimizer();
   if (opt != nullptr) {
-    opt->add_to_gradient(gradient_wrt_scale_bias, DataType{1}, true);
+    opt->add_to_gradient(gradient_wrt_scale_bias, TensorDataType{1}, true);
   }
 
 }
