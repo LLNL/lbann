@@ -60,7 +60,7 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
   means.Resize(1, width);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    TensorDataType sum = 0;
+    TensorDataType sum = El::To<TensorDataType>(0);
     for (El::Int row = 0; row < local_height; ++row) {
       sum += local_input(row, col);
     }
@@ -75,7 +75,7 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& mean = local_means(0, col);
-    TensorDataType sum = 0;
+    TensorDataType sum = El::To<TensorDataType>(0);
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& diff = local_input(row, col) - mean;
       sum += diff * diff;
@@ -114,7 +114,8 @@ void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input,
   El::Copy(gradient_wrt_output, workspace);
 
   // Compute gradients w.r.t. input
-  const TensorDataType scale = TensorDataType(2) / (biased? height : height - 1);
+  const TensorDataType scale = TensorDataType(2)
+    / (biased? El::To<TensorDataType>(height) : El::To<TensorDataType>(height - 1));
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
