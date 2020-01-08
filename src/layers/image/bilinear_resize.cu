@@ -45,8 +45,8 @@ __global__ void fp_kernel(El::Int num_samples,
                           El::Int output_ldim) {
 
   // Useful constants
-  constexpr TensorDataType half = 0.5;
-  constexpr TensorDataType one = 1;
+  const TensorDataType half = 0.5;
+  const TensorDataType one = 1.;
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
 
