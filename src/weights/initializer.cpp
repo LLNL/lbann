@@ -51,7 +51,7 @@ description constant_initializer<TensorDataType>::get_description() const {
 
 template <typename TensorDataType>
 void constant_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
-  if (m_value == TensorDataType(0)) {
+  if (m_value == TensorDataType(0.)) {
     El::Zero(matrix);
   } else {
     El::Fill(matrix, m_value);
@@ -184,6 +184,7 @@ build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   template class normal_initializer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
