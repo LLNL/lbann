@@ -205,7 +205,7 @@ void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
   template class entrywise_scale_bias_layer<         \
     T, data_layout::MODEL_PARALLEL, El::Device::GPU>
 
-#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
