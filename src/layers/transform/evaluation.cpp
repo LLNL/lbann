@@ -144,7 +144,7 @@ void fp_gpu(lbann_comm& comm,
   CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
 
   // Compute average value across mini-batch
-  El::Scale(one / mini_batch_size, sum_d);
+  El::Scale(one / El::To<TensorDataType>(mini_batch_size), sum_d);
   comm.allreduce(static_cast<El::AbstractMatrix<TensorDataType>&>(sum_d), input.DistComm());
   CHECK_CUDA(cudaMemcpyAsync(&value,
                              sum_d.LockedBuffer(),
