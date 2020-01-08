@@ -226,7 +226,7 @@ struct safe_divide_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
     const auto& y = x1 / x2;
-    if (isfinite(y)) { return y; }
+    if (cuda::isfinite(y)) { return y; }
     else             { return TensorDataType(0.0); }
   }
   inline __device__ void operator()(const TensorDataType& x1,
@@ -235,7 +235,7 @@ struct safe_divide_op {
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
     const auto& y = x1 / x2;
-    if (isfinite(y)) {
+    if (cuda::isfinite(y)) {
       dx1 = dy / x2;
       dx2 = -dy * x1 / (x2*x2);
     } else {
@@ -258,8 +258,8 @@ struct squared_difference_op {
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = dy * 2*(x1-x2);
-    dx2 = dy * 2*(x2-x1);
+    dx1 = dy * TensorDataType(2.) * (x1-x2);
+    dx2 = dy * TensorDataType(2.) * (x2-x1);
   }
 };
 
@@ -282,8 +282,8 @@ struct max_op {
       dx1 = TensorDataType(0.0);
       dx2 = dy;
     } else {
-      dx1 = dy / 2;
-      dx2 = dy / 2;
+      dx1 = dy / TensorDataType(2.);
+      dx2 = dy / TensorDataType(2.);
     }
   }
 };
@@ -307,8 +307,8 @@ struct min_op {
       dx1 = TensorDataType(0.0);
       dx2 = dy;
     } else {
-      dx1 = dy / 2;
-      dx2 = dy / 2;
+      dx1 = dy / TensorDataType(2.);
+      dx2 = dy / TensorDataType(2.);
     }
   }
 };
@@ -420,8 +420,8 @@ template <typename TensorDataType>
 struct logical_and_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    const auto& b1 = x1 != TensorDataType(0.0) && !isnan(x1);
-    const auto& b2 = x2 != TensorDataType(0.0) && !isnan(x2);
+    const auto& b1 = x1 != TensorDataType(0.0) && !cuda::isnan(x1);
+    const auto& b2 = x2 != TensorDataType(0.0) && !cuda::isnan(x2);
     return (b1 && b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ void operator()(const TensorDataType& x1,
@@ -439,8 +439,8 @@ template <typename TensorDataType>
 struct logical_or_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    const auto& b1 = x1 != TensorDataType(0.0) && !isnan(x1);
-    const auto& b2 = x2 != TensorDataType(0.0) && !isnan(x2);
+    const auto& b1 = x1 != TensorDataType(0.0) && !cuda::isnan(x1);
+    const auto& b2 = x2 != TensorDataType(0.0) && !cuda::isnan(x2);
     return (b1 || b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ void operator()(const TensorDataType& x1,
@@ -458,8 +458,8 @@ template <typename TensorDataType>
 struct logical_xor_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    const auto& b1 = x1 != TensorDataType(0.0) && !isnan(x1);
-    const auto& b2 = x2 != TensorDataType(0.0) && !isnan(x2);
+    const auto& b1 = x1 != TensorDataType(0.0) && !cuda::isnan(x1);
+    const auto& b2 = x2 != TensorDataType(0.0) && !cuda::isnan(x2);
     return (b1 || b2) && !(b1 && b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ void operator()(const TensorDataType& x1,

@@ -70,41 +70,42 @@ struct relu_op {
 template <typename TensorDataType>
 struct selu_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
+    const TensorDataType alpha = 1.6732632423543772848170429916717;
+    const TensorDataType scale = 1.0507009873554804934193349852946;
     return (x > TensorDataType(0.0) ?
             scale * x :
             scale * alpha * cuda::expm1(x));
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
+    const TensorDataType alpha = 1.6732632423543772848170429916717;
+    const TensorDataType scale = 1.0507009873554804934193349852946;
     return (x > TensorDataType(0.0) ?
             dy * scale :
             dy * scale * alpha * cuda::exp(x));
   }
-private:
-  static constexpr TensorDataType alpha = 1.6732632423543772848170429916717;
-  static constexpr TensorDataType scale = 1.0507009873554804934193349852946;
 };
 
 /** Sigmoid operator. */
 template <typename TensorDataType>
 struct sigmoid_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    constexpr TensorDataType one = 1;
-    const auto& y = 1 / (one + cuda::exp(-x));
+    const TensorDataType one = 1.;
+    const auto& y = one / (one + cuda::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    constexpr TensorDataType eps = cuda::epsilon<TensorDataType>();
+    const auto eps = cuda::epsilon<TensorDataType>();
     if (y <= eps) { return eps; }
     else if (y >= one - eps) { return one - eps; }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
     return y;
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    constexpr TensorDataType one = 1;
-    const auto& y = 1 / (one + cuda::exp(-x));
+    const TensorDataType one = 1.;
+    const auto& y = one / (one + cuda::exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    constexpr TensorDataType eps = cuda::epsilon<TensorDataType>();
-    if (y <= eps || y >= TensorDataType(1.0) - eps) { return TensorDataType(0.0); }
+    const auto eps = cuda::epsilon<TensorDataType>();
+    if (y <= eps || y >= one - eps) { return TensorDataType(0.0); }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    return dy * y * (TensorDataType(1.0) - y);
+    return dy * y * (one - y);
   }
 };
 
@@ -138,7 +139,7 @@ struct softsign_op {
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
+#define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
     cuda::apply_entrywise_unary_operator<op>(                           \
@@ -151,14 +152,24 @@ struct softsign_op {
       this->get_prev_activations(),                                     \
       this->get_prev_error_signals(),                                   \
       this->get_error_signals());                                       \
-  }                                                                     \
-  UNARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
+  }
 
-INSTANTIATE(log_sigmoid_layer, log_sigmoid_op);
-INSTANTIATE(relu_layer, relu_op);
-INSTANTIATE(selu_layer, selu_op);
-INSTANTIATE(sigmoid_layer, sigmoid_op);
-INSTANTIATE(softplus_layer, softplus_op);
-INSTANTIATE(softsign_layer, softsign_op);
+DEFINE_COMPUTE_OPS(log_sigmoid_layer, log_sigmoid_op)
+DEFINE_COMPUTE_OPS(relu_layer, relu_op)
+DEFINE_COMPUTE_OPS(selu_layer, selu_op)
+DEFINE_COMPUTE_OPS(sigmoid_layer, sigmoid_op)
+DEFINE_COMPUTE_OPS(softplus_layer, softplus_op)
+DEFINE_COMPUTE_OPS(softsign_layer, softsign_op)
+
+#define PROTO(T) \
+  UNARY_ETI_INST_MACRO_DEV_DT(log_sigmoid_layer, T, El::Device::GPU); \
+  UNARY_ETI_INST_MACRO_DEV_DT(relu_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(selu_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(sigmoid_layer, T, El::Device::GPU);     \
+  UNARY_ETI_INST_MACRO_DEV_DT(softplus_layer, T, El::Device::GPU);    \
+  UNARY_ETI_INST_MACRO_DEV_DT(softsign_layer, T, El::Device::GPU)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -44,7 +44,7 @@ namespace {
 template <typename TensorDataType>
 struct logical_not_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    const auto& b = x != TensorDataType(0.0) && !isnan(x);
+    const auto& b = x != TensorDataType(0.0) && !cuda::isnan(x);
     return !b ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
@@ -59,7 +59,7 @@ struct abs_op {
     return cuda::abs(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    constexpr TensorDataType zero = 0;
+    const TensorDataType zero = 0.;
     if      (x > zero) { return dy;   }
     else if (x < zero) { return -dy;  }
     else               { return zero; }
@@ -81,8 +81,8 @@ struct negative_op {
 template <typename TensorDataType>
 struct sign_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    constexpr TensorDataType zero = 0;
-    constexpr TensorDataType one = 1;
+    const TensorDataType zero = 0.;
+    const TensorDataType one = 1.;
     if      (x > zero) { return one;  }
     else if (x < zero) { return -one; }
     else               { return zero; }
@@ -129,7 +129,7 @@ struct floor_op {
 template <typename TensorDataType>
 struct reciprocal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return 1 / x;
+    return TensorDataType(1.) / x;
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     if (dy == TensorDataType(0.0)) { return TensorDataType(0.0); }
@@ -145,7 +145,7 @@ struct square_op {
     return x*x;
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return 2*x * dy;
+    return TensorDataType(2.) * x * dy;
   }
 };
 
@@ -157,7 +157,7 @@ struct sqrt_op {
     return cuda::sqrt(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (2 * cuda::sqrt(x));
+    return dy / (TensorDataType(2.) * cuda::sqrt(x));
   }
 };
 
@@ -169,7 +169,7 @@ struct rsqrt_op {
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const auto& s = cuda::sqrt(x);
-    return - dy / (2 * x * s);
+    return - dy / (TensorDataType(2.) * x * s);
   }
 };
 
@@ -180,13 +180,13 @@ struct rsqrt_op {
 template <typename TensorDataType>
 struct safe_reciprocal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    const auto& y = 1 / x;
-    if (isfinite(y)) { return y; }
+    const auto& y = TensorDataType(1.) / x;
+    if (cuda::isfinite(y)) { return y; }
     else             { return TensorDataType(0.0); }
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& y = 1 / x;
-    if (isfinite(y)) { return - dy * y*y; }
+    const auto& y = TensorDataType(1.) / x;
+    if (cuda::isfinite(y)) { return - dy * y*y; }
     else             { return TensorDataType(0.0); }
   }
 };

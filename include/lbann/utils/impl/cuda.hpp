@@ -176,18 +176,31 @@ WRAP_UNARY_CUDA_MATH_FUNCTION(asinh)
 WRAP_UNARY_CUDA_MATH_FUNCTION(atanh)
 #undef WRAP_UNARY_CUDA_MATH_FUNCTION
 
+template <typename T> __device__ __forceinline__
+bool isfinite(T const& x) { return ::isfinite(x); }
+
+template <typename T> __device__ __forceinline__
+bool isnan(T const& x) { return ::isnan(x); }
+
+template <> __device__ __forceinline__
+bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
+
+template <> __device__ __forceinline__
+bool isnan(__half const& x) { return ::__hisnan(x); }
+
 // This support is far from complete!
 #define WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(func)              \
   template <> __device__ __forceinline__                      \
   __half func<__half>(__half const& x) { return ::h##func(x); }
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(round)
-//
-// We could do this: But this will round X.5 to whichever of X or X+1
-// is *even*. (round() will round away from zero.) Thoughts?
-//
-//template <> __device__ __forceinline__
-//__half round<__half>(__half const& x) { return ::hrint(x); }
 
+// FIXME (trb): This is maybe not the best long-term solution, but it
+// might be the best we can do without really digging into
+// half-precision implementation.
+#define WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(func) \
+  template <> __device__ __forceinline__                       \
+  __half func<__half>(__half const& x) { return func(float(x)); }
+
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(round)
 WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(ceil)
 WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(floor)
 WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(sqrt)
@@ -203,7 +216,7 @@ __half expm1<__half>(__half const& x) {
 }
 
 WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(log)
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(log1p)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(log1p)
 WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(cos)
 WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(sin)
 
@@ -214,15 +227,15 @@ WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(sin)
 template <> __device__ __forceinline__
 __half tan<__half>(__half const& x) { return ::__hdiv(::hsin(x), ::hcos(x)); }
 
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(acos)
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(asin)
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(atan)
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(cosh)
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(sinh)
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(tanh)
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(acosh)
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(asinh)
-//WRAP_UNARY_CUDA_HALF_MATH_FUNCTION(atanh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(acos)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(asin)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atan)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(cosh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(sinh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(tanh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(acosh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(asinh)
+WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atanh)
 
 #undef WRAP_UNARY_CUDA_HALF_MATH_FUNCTION
 
@@ -258,13 +271,20 @@ WRAP_BINARY_CUDA_MATH_FUNCTION(pow)
 #undef WRAP_BINARY_CUDA_MATH_FUNCTION
 
 template <> __device__ __forceinline__
+__half pow<__half>(const __half& x, const __half& y)
+{ return pow(float(x), float(y)); }
+
+template <> __device__ __forceinline__
+__half mod<__half>(const __half& x, const __half& y)
+{ return mod(float(x), float(y)); }
+
+template <> __device__ __forceinline__
 __half min<__half>(const __half& x, const __half& y)
 { return ::__hle(x, y) ? x : y; }
 
 template <> __device__ __forceinline__
 __half max<__half>(const __half& x, const __half& y)
 { return ::__hle(x, y) ? y : x; }
-
 
 // Numeric limits
 #ifdef __CUDACC_RELAXED_CONSTEXPR__
