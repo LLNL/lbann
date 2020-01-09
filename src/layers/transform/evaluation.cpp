@@ -154,6 +154,19 @@ void fp_gpu(lbann_comm& comm,
   copy_event.record(stream);
 
 }
+
+#ifdef LBANN_HAS_GPU_FP16
+void fp_gpu(lbann_comm& comm,
+            const El::AbstractDistMatrix<cpu_fp16>& input,
+            cpu_fp16& value,
+            cuda::event_wrapper& copy_event) {
+  LBANN_ERROR("This function is not supported with "
+              "the CPU FP16 type on GPUs. "
+              "A severe logic error has occured; please "
+              "report this bug to LBANN developers (or just Tim).");
+}
+#endif // LBANN_HAS_GPU_HALF
+
 #endif // LBANN_HAS_GPU
 
 } // namespace

@@ -147,7 +147,7 @@ void im2col(const CPUMatDT<TensorDataType>& im,
 
       // Copy im matrix entry to col matrix if valid
       col_buffer[col_index] = (im_pos_valid ?
-                               im_buffer[im_index] : TensorDataType(0));
+                               im_buffer[im_index] : TensorDataType(0.));
 
     }
   }
@@ -442,7 +442,7 @@ void im2col_2d(const TensorDataType *__restrict__ input_buffer,
 
             // Copy input entry to output entry if valid
             output_buffer[output_index]
-              = input_pos_valid ? input_buffer[input_index] : TensorDataType(0);
+              = input_pos_valid ? input_buffer[input_index] : TensorDataType(0.);
 
           }
         }
@@ -578,6 +578,8 @@ void col2im_2d(const TensorDataType *__restrict__ input_buffer,
     const T*, T*, int, int, int, int, int, int, int, int, int)
 
 #define LBANN_INSTANTIATE_CPU_HALF
+// FIXME -- these should never be called in GPU code.
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann
