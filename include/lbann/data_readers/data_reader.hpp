@@ -669,12 +669,6 @@ class generic_data_reader {
   double get_use_percent() const;
 
   /**
-   * Returns the percent of the shuffled indices that are to be
-   * used. Code in this method was formerly in select_subset_of_data()
-   */
-  size_t get_num_indices_to_use() const;
-
-  /**
    * Return the percent of the dataset to be used for validation.
    */
   double get_validation_percent() const;
@@ -789,6 +783,12 @@ class generic_data_reader {
   std::string m_role;
 
   bool m_master;
+
+  /**
+   * Returns the number of the shuffled indices that are to be
+   * used. Code in this method was formerly in select_subset_of_data()
+   */
+  size_t get_num_indices_to_use() const;
 
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
