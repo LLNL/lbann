@@ -886,6 +886,7 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   template class entrywise_layer_tensor_manager<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace cudnn
