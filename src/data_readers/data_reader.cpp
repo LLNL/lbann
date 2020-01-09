@@ -493,18 +493,22 @@ void generic_data_reader::select_subset_of_data_partitioned() {
   }
 }
 
-double generic_data_reader::get_percent_to_use() {
+size_t generic_data_reader::get_num_indices_to_use() const {
   error_check_counts();
+  //note: exactly one of the following is guaranteed to be non-zero
   size_t count = get_absolute_sample_count();
   double use_percent = get_use_percent();
-  double r = 0.;
 
-  if (count != 0) {
-    r = count / get_num_data();
-  }
-
-  if (use_percent) {
-    r = (use_percent*get_num_data()) / get_num_data();
+  size_t r = 0.;
+  if (count) {
+    r = count;
+  } else if (use_percent) {
+    r = use_percent*get_num_data();
+    if (r == 0) {
+      LBANN_ERROR("get_num_indices_to_use() computed zero indices; probably: percent_of_data_to_use is too small WRT num_data");
+    }
+  } else {
+    LBANN_ERROR("it's impossible to be here");
   }
 
   return r;
@@ -517,9 +521,9 @@ void generic_data_reader::resize_shuffled_indices() {
     m_shuffled_indices.resize(n);
   }
 
-  double use_percent = get_percent_to_use();
+  size_t num_indices = get_num_indices_to_use();
   shuffle_indices();
-  m_shuffled_indices.resize(use_percent * get_num_data());
+  m_shuffled_indices.resize(num_indices);
 }
 
 void generic_data_reader::select_subset_of_data() {
@@ -529,7 +533,14 @@ void generic_data_reader::select_subset_of_data() {
     return ;
   }
 
+  if (get_validation_percent() == 0.) {
+    return;
+  }
+
   long unused = get_validation_percent()*get_num_data();
+  if (unused == 0) {
+    LBANN_ERROR("validation % of ", get_validation_percent(), " was requested, but the number of validation indices was computed as zero. Probably: % validation requested is too small wrt num_indices (aka, num samples)");
+  }
   long use_me = get_num_data() - unused;
   if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());

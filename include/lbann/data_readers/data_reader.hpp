@@ -672,7 +672,7 @@ class generic_data_reader {
    * Returns the percent of the shuffled indices that are to be
    * used. Code in this method was formerly in select_subset_of_data()
    */
-  double get_percent_to_use() const;
+  size_t get_num_indices_to_use() const;
 
   /**
    * Return the percent of the dataset to be used for validation.
