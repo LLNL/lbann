@@ -92,7 +92,6 @@ preds = [pred_fc(x) for x in result]
 # Cross entropy loss
 # Note: Apply label smoothing
 loss = []
-acc = []
 uniform_label = lbann.Constant(value=1/vocab_size, num_neurons=str(vocab_size))
 for i in range(sequence_length-1):
     pred = preds[i]
@@ -104,8 +103,6 @@ for i in range(sequence_length-1):
             scaling_factors=str_list([1-args.label_smoothing, args.label_smoothing]),
         )
     loss.append(lbann.CrossEntropy(pred, label))
-    acc.append(lbann.TopKCategoricalAccuracy(pred, label, k=10))
-acc = lbann.Reduction(lbann.Concatenation(acc), mode='average')
 
 # ----------------------------------
 # Create data reader
@@ -128,7 +125,7 @@ _reader.python.sample_dims_function = 'sample_dims'
 
 # Create LBANN objects
 trainer = lbann.Trainer()
-metrics = [lbann.Metric(acc, name='top-10 accuracy', unit='%')]
+metrics = []
 callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer()]
 model = lbann.Model(args.mini_batch_size,
