@@ -328,17 +328,12 @@ private:
 #define PROTO(T)                           \
   extern template class data_type_layer<T>
 
-#define LBANN_INSTANTIATE_CPU_HALF_BVE
-
-
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #undef LBANN_INSTANTIATE_CPU_HALF
 #undef LBANN_INSTANTIATE_GPU_HALF
-
-#undef LBANN_INSTANTIATE_CPU_HALF_BVE
 
 #endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
 
