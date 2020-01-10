@@ -201,7 +201,7 @@ struct exp_op {
   }
 };
 
-/** ExpEl::TypeTraits<TensorDataType>::One()ntial minus El::TypeTraits<TensorDataType>::One() operator. */
+/** Exponential minus one operator. */
 template <typename TensorDataType>
 struct expm1_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
