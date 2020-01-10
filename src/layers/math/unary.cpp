@@ -224,7 +224,7 @@ struct log_op {
   }
 };
 
-/** Natural logarithm El::TypeTraits<TensorDataType>::One() plus operator. */
+/** Natural logarithm one plus operator. */
 template <typename TensorDataType>
 struct log1p_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
