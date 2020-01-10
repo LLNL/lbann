@@ -248,9 +248,9 @@ def get_command(cluster,
                     raise Exception('num_processes %s, is not divisible by num_nodes %d'
                                     % (num_processes, num_nodes))
 
-                else:
-                    # -np => Run this many copies of the program on the given nodes.
-                    option_num_processes = ' -np %d' % num_processes
+            else:
+                # -np => Run this many copies of the program on the given nodes.
+                option_num_processes = ' -np %d' % num_processes
                 if (num_nodes is not None) and (num_nodes != 0):
                     processes_per_node = int(
                         math.ceil(float(num_processes)/num_nodes))
