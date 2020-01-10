@@ -446,7 +446,7 @@ public:
     // Set kernel descriptor
     CHECK_CUDNN(cudnnCreateFilterDescriptor(&m_kernel_cudnn_desc));
     CHECK_CUDNN(cudnnSetFilterNdDescriptor(m_kernel_cudnn_desc,
-                                           cudnn::get_data_type(),
+                                           cudnn::get_data_type<TensorDataType>(),
                                            CUDNN_TENSOR_NCHW,
                                            kernel_dims.size(),
                                            kernel_dims.data()));
@@ -459,7 +459,7 @@ public:
                                                 m_strides.data(),
                                                 m_dilations.data(),
                                                 CUDNN_CROSS_CORRELATION,
-                                                cudnn::get_data_type()));
+                                                cudnn::get_data_type<TensorDataType>()));
     CHECK_CUDNN(cudnnSetConvolutionGroupCount(m_convolution_cudnn_desc,
                                               m_groups));
 
@@ -467,7 +467,7 @@ public:
     if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
       std::vector<int> bias_dims(output_dims.size() + 1, 1);
       bias_dims[1] = output_dims[0];
-      cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
+      cudnn::set_tensor_desc<TensorDataType>(m_bias_cudnn_desc, bias_dims);
     }
 
 #endif // LBANN_HAS_CUDNN
@@ -509,8 +509,8 @@ protected:
     workspace.SetMemoryMode(1);
 #endif // HYDROGEN_HAVE_CUB
     size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-    workspace.Resize(workspace_size / sizeof(DataType), 1);
-    workspace_size = workspace.Height() * sizeof(DataType);
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+    workspace_size = workspace.Height() * sizeof(TensorDataType);
 
     // Convolution parameters
     std::vector<int> input_dims, output_dims;
@@ -587,8 +587,8 @@ protected:
     workspace.SetMemoryMode(1);
 #endif // HYDROGEN_HAVE_CUB
     size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-    workspace.Resize(workspace_size / sizeof(DataType), 1);
-    workspace_size = workspace.Height() * sizeof(DataType);
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+    workspace_size = workspace.Height() * sizeof(TensorDataType);
 
     // Convolution transpose parameters
     std::vector<int> input_dims, output_dims;
@@ -703,8 +703,8 @@ protected:
         workspace.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
         size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-        workspace.Resize(workspace_size / sizeof(DataType), 1);
-        workspace_size = workspace.Height() * sizeof(DataType);
+        workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+        workspace_size = workspace.Height() * sizeof(TensorDataType);
 
         // Initialize cuDNN objects
         auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
@@ -1233,7 +1233,7 @@ private:
 #ifndef LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device) \
-  extern template class base_convolution_layer<DataType, Device>
+  extern template class base_convolution_layer<T, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

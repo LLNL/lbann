@@ -85,8 +85,9 @@ cudnnHandle_t& get_handle() {
 // Helper functions for cuDNN types
 ////////////////////////////////////////////////////////////
 
+template <typename TensorDataType>
 cudnnDataType_t get_data_type() {
-  switch (sizeof(DataType)) {
+  switch (sizeof(TensorDataType)) {
   case 2: return CUDNN_DATA_HALF;
   case 4: return CUDNN_DATA_FLOAT;
   case 8: return CUDNN_DATA_DOUBLE;
@@ -95,6 +96,7 @@ cudnnDataType_t get_data_type() {
   return CUDNN_DATA_FLOAT;
 }
 
+template <typename TensorDataType>
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,
                      std::vector<int> dims,
                      std::vector<int> strides) {
@@ -164,7 +166,7 @@ void set_tensor_desc(cudnnTensorDescriptor_t& desc,
     CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
   }
   CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
-                                         get_data_type(),
+                                         get_data_type<TensorDataType>(),
                                          dims.size(),
                                          dims.data(),
                                          strides.data()));
@@ -394,7 +396,7 @@ void set_data_parallel_tensor_desc(cudnnTensorDescriptor_t& desc,
     }
     dims.insert(dims.begin(), local_data.Width());
     strides.insert(strides.begin(), local_data.LDim());
-    set_tensor_desc(desc, dims, strides);
+    set_tensor_desc<TensorDataType>(desc, dims, strides);
   }
 }
 
@@ -491,7 +493,7 @@ void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
     }
 
     // Set cuDNN tensor descriptor with 4D tensor
-    set_tensor_desc(desc,
+    set_tensor_desc<TensorDataType>(desc,
                     {width, factors[2], factors[1], factors[0]},
                     {ldim, factors[1]*factors[0], factors[0], 1});
 
@@ -881,6 +883,8 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
 }
 
 #define PROTO(T)                                       \
+  template cudnnDataType_t get_data_type<T>();                   \
+  template void set_tensor_desc<T>(cudnnTensorDescriptor_t&, std::vector<int>, std::vector<int>); \
   template class layer_tensor_manager<T>;               \
   template class data_parallel_layer_tensor_manager<T>; \
   template class entrywise_layer_tensor_manager<T>
