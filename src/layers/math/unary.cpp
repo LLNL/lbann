@@ -190,7 +190,7 @@ struct safe_reciprocal_op {
   }
 };
 
-/** ExpEl::TypeTraits<TensorDataType>::One()ntial operator. */
+/** Exponential operator. */
 template <typename TensorDataType>
 struct exp_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
