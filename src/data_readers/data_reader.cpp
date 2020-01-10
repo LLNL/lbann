@@ -843,4 +843,28 @@ void generic_data_reader::preload_data_store() {
 
 }
 
+void generic_data_reader::print_get_methods(const std::string filename) {
+  if (!is_master()) {
+    return;
+  }
+  std::ofstream out(filename.c_str());
+  if (!out) {
+    LBANN_ERROR("failed to open ", filename, " for writing");
+  }
+
+  out << "get_file_dir " << get_file_dir() << std::endl;
+  out << "get_local_file_dir " << get_local_file_dir() << std::endl;
+  out << "get_data_index_list " << get_data_index_list() << std::endl;
+  out << "get_data_filename " << get_data_filename()  << std::endl;
+  out << "get_label_filename " << get_label_filename() << std::endl;
+  out << "get_role " << get_role() << std::endl;
+  out << "get_type " << get_type() << std::endl;
+  out << "get_num_data " << get_num_data() << std::endl;
+  out << "get_absolute_sample_count" << get_absolute_sample_count() << std::endl;
+  out << "get_use_percent " << get_use_percent() << std::endl;
+  out << "get_validation_percent " << get_validation_percent() << std::endl;
+  out.close();
+}
+
+
 }  // namespace lbann

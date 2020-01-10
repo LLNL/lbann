@@ -712,11 +712,6 @@ class generic_data_reader {
     return false;
   }
 
-  /// returns the percent of shuffled indices that are used;
-  /// the returned value  depends on the values returned by
-  /// get_absolute_sample_count() and get_use_percent().
-  double get_percent_to_use();
-
   /**
    * Called before fetch_datum/label/response to allow initialization.
    */
@@ -783,6 +778,14 @@ class generic_data_reader {
   std::string m_role;
 
   bool m_master;
+
+  /** @brief Print the return values from various get_X methods to file
+   *
+   * For use in unit testing. Only the master prints.
+   * Currently only prints values from get_X methods that only depend
+   * on the data_reader (i.e, not on the trainer, model, etc)
+   */
+  void print_get_methods(const std::string filename);
 
   /**
    * Returns the number of the shuffled indices that are to be
