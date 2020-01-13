@@ -97,7 +97,7 @@ private:
 template <typename TensorDataType>
 factory_type const& get_weight_initializer_factory() noexcept
 {
-  factory_manager<TensorDataType> factory_mgr_;
+  static factory_manager<TensorDataType> factory_mgr_;
   return factory_mgr_.get();
 }
 
@@ -130,6 +130,7 @@ std::unique_ptr<weights> construct_weights(
 #define TEMPLATE_INSTANTIATION(TensorDataType)                                \
     do {                                                                      \
       if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {     \
+          std::cout << "Using TensorDataType = " #TensorDataType << std::endl; \
         w = make_unique<data_type_weights<TensorDataType>>(comm);             \
         init = (proto_weights.has_initializer()                               \
           ? construct_initializer<TensorDataType>(proto_weights)              \
