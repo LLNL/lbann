@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+. /usr/share/lmod/lmod/init/bash
 
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
@@ -68,8 +70,8 @@ ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=ON
 AVOID_CUDA_AWARE_MPI=OFF
 WITH_DISTCONV=OFF
-DISTCONV_URL=ssh://git@cz-bitbucket.llnl.gov:7999/~maruyama/distconv.git
-DISTCONV_TAG=master
+DIHYDROGEN_URL=https://github.com/llnl/dihydrogen
+DIHYDROGEN_TAG=master
 LBANN_DISTCONV_NUM_DIMS=4
 WITH_P2P=OFF
 WITH_TBINF=OFF
@@ -279,12 +281,12 @@ while :; do
             # MPI-CUDA backend is required for Distconv
             ALUMINUM_WITH_MPI_CUDA=ON
             ;;
-        --distconv-url)
-            DISTCONV_URL=$2
+        --dihydrogen-url)
+            DIHYDROGEN_URL=$2
             shift
             ;;
-        --distconv-tag)
-            DISTCONV_TAG=$2
+        --dihydrogen-tag)
+            DIHYDROGEN_TAG=$2
             shift
             ;;
         --distconv-num-dims)
@@ -840,16 +842,16 @@ cmake \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
--D LBANN_SB_BUILD_DISTCONV=${WITH_DISTCONV} \
+-D LBANN_SB_BUILD_DIHYDROGEN=${WITH_DISTCONV} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
--D DISTCONV_URL=${DISTCONV_URL} \
--D DISTCONV_TAG=${DISTCONV_TAG} \
+-D DIHYDROGEN_URL=${DIHYDROGEN_URL} \
+-D DIHYDROGEN_TAG=${DIHYDROGEN_TAG} \
 -D LBANN_DISTCONV_NUM_DIMS=${LBANN_DISTCONV_NUM_DIMS} \
 -D LBANN_DISTCONV_COSMOFLOW_KEEP_INT16=${LBANN_DISTCONV_COSMOFLOW_KEEP_INT16} \
 -D LBANN_SB_BUILD_P2P=${WITH_P2P} \
 -D LBANN_WITH_P2P=${WITH_P2P} \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_AVOID_CUDA_AWARE_MPI=${AVOID_CUDA_AWARE_MPI} \
--D LBANN_SB_FWD_ALUMINUM_ALUMINUM_ENABLE_STREAM_MEM_OPS=ON \
+-D LBANN_SB_FWD_ALUMINUM_ALUMINUM_ENABLE_STREAM_MEM_OPS=OFF \
 -D LBANN_SB_FWD_ALUMINUM_ALUMINUM_HT_USE_PASSTHROUGH=OFF \
 ${CMAKE_BLAS_OPTIONS} \
 ${SUPERBUILD_DIR}

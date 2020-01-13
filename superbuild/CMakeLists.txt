@@ -59,7 +59,7 @@ option(LBANN_SB_BUILD_LBANN "Pull and build LBANN from Github" OFF)
 
 # Distconv packages
 option(LBANN_SB_BUILD_P2P "Pull and build P2P from Github" OFF)
-option(LBANN_SB_BUILD_DISTCONV "Pull and build Distconv from Github" OFF)
+option(LBANN_SB_BUILD_DIHYDROGEN "Pull and build DiHydrogen from Github" OFF)
 
 #
 # Add the TPL subdirectories
@@ -135,9 +135,9 @@ if (LBANN_SB_BUILD_P2P)
   add_subdirectory(p2p)
   list(APPEND _BUILD_PKGS P2P)
 endif ()
-if (LBANN_SB_BUILD_DISTCONV)
-  add_subdirectory(distconv)
-  list(APPEND _BUILD_PKGS DISTCONV)
+if (LBANN_SB_BUILD_DIHYDROGEN)
+  add_subdirectory(dihydrogen)
+  list(APPEND _BUILD_PKGS DIHYDROGEN)
 endif ()
 
 #

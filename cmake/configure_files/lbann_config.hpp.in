@@ -49,8 +49,14 @@
 #cmakedefine LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
 
 /* Defined if LBANN has Distconv */
-#cmakedefine LBANN_HAS_DISTCONV
 #cmakedefine LBANN_HAS_P2P
+#cmakedefine LBANN_HAS_DIHYDROGEN
+// Temporarily define LBANN_HAS_DISTCONV until Distconv is fully
+// merged. The macro has been used to enable Distconv and should be
+// removed once it's fully merged.
+#ifdef LBANN_HAS_DIHYDROGEN
+#define LBANN_HAS_DISTCONV
+#endif
 
 #ifdef LBANN_HAS_DISTCONV
 #cmakedefine LBANN_DISTCONV_NUM_DIMS @LBANN_DISTCONV_NUM_DIMS@
