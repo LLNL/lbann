@@ -511,6 +511,11 @@ void init_data_readers(
         reader_validation->get_data_store_ptr()->compact_nodes();
       }
 
+      size_t ntrain = reader->get_num_data();
+      if (ntrain == 0) {
+        LBANN_ERROR("num train samples = 0; something is wrong");
+      }
+
       if (master) {
         size_t num_train = reader->get_num_data();
         size_t num_validate = reader_validation->get_num_data();
