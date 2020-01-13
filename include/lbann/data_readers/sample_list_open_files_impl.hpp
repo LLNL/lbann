@@ -111,7 +111,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
-    if (filename.empty() || !check_if_file_exists(file_path)) {
+    if (filename.empty() || (this->m_check_data_file && !check_if_file_exists(file_path))) {
       LBANN_ERROR(std::string{} + " :: data file '" + file_path + "' does not exist.");
     }
 
@@ -214,7 +214,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
-    if (filename.empty() || !check_if_file_exists(file_path)) {
+    if (filename.empty() || (this->m_check_data_file && !check_if_file_exists(file_path))) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                             + " :: data file '" + filename + "' does not exist.");
     }

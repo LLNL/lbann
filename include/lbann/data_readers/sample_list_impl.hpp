@@ -175,7 +175,7 @@ inline const std::string& sample_list_header::get_label_filename() const {
 
 template <typename sample_name_t>
 inline sample_list<sample_name_t>::sample_list()
-: m_stride(1ul), m_keep_order(true) {
+: m_stride(1ul), m_keep_order(true), m_check_data_file(false) {
 }
 
 template <typename sample_name_t>
@@ -219,6 +219,8 @@ inline void sample_list<sample_name_t>
 ::copy_members(const sample_list& rhs) {
   m_header = rhs.m_header;
   m_stride = rhs.m_stride;
+  m_keep_order = rhs.m_keep_order;
+  m_check_data_file = rhs.m_check_data_file;
   m_sample_list = rhs.m_sample_list;
 
   /// Keep track of existing filenames
@@ -358,7 +360,7 @@ inline void sample_list<sample_name_t>
 
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
-    if (filename.empty() || !check_if_file_exists(file_path)) {
+    if (filename.empty() || (m_check_data_file && !check_if_file_exists(file_path))) {
       throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                             + " :: data file '" + file_path + "' does not exist.");
     }
@@ -575,6 +577,9 @@ template <class Archive>
 void sample_list<sample_name_t>
 ::serialize( Archive & ar ) {
   ar(m_header, m_sample_list, m_file_id_stats_map);
+  // The member variables that are only meaningful during initial loading
+  // are not included here.
+  // e.g., m_stride, m_keep_order, m_check_data_file
 }
 
 template <typename sample_name_t>
@@ -861,6 +866,18 @@ template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::set_sample_list_name(const std::string& n) {
   m_header.set_sample_list_name(n);
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::set_data_file_check() {
+  m_check_data_file = true;
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::unset_data_file_check() {
+  m_check_data_file = false;
 }
 
 } // end of namespace lbann

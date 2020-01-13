@@ -143,6 +143,11 @@ class sample_list {
   /// Manually set the sample list name, which can be used for stream-based sources
   void set_sample_list_name(const std::string& n);
 
+  /// Set to check the existence of data file in the list
+  void set_data_file_check();
+  /// Set not to check the existence of data file in the list
+  void unset_data_file_check();
+
  protected:
 
   /// Reads a header line from the sample list given as a stream, and use the info string for error message
@@ -180,6 +185,9 @@ class sample_list {
 
   /// maintain the original sample order as listed in the file
   bool m_keep_order;
+
+  /// Whether to check the existence of data file
+  bool m_check_data_file;
 
  private:
   /// List of all samples with a file identifier and sample name for each sample

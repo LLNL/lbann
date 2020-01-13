@@ -792,6 +792,10 @@ void data_reader_jag_conduit::load() {
   options *opts = options::get();
   bool check_data = opts->get_bool("check_data");
 
+  if (check_data) {
+    m_sample_list.set_data_file_check();
+  }
+
   /// The use of these flags need to be updated to properly separate
   /// how sample lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model

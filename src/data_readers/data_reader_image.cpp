@@ -306,9 +306,14 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
     m_sample_list.override_samples_dirname(get_file_dir());
   }
 
+  m_sample_list.keep_sample_order(m_keep_sample_order);
+
   std::vector<char> buffer;
   options *opts = options::get();
-  m_sample_list.keep_sample_order(m_keep_sample_order);
+
+  if (opts->get_bool("check_data")) {
+    m_sample_list.set_data_file_check();
+  }
 
   if (opts->has_string("load_full_sample_list_once")) {
     if (m_comm->am_trainer_master()) {
