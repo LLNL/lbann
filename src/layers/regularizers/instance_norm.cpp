@@ -39,17 +39,12 @@ void fp_impl(lbann_comm& comm,
              TensorDataType epsilon,
              const El::AbstractDistMatrix<TensorDataType>& input,
              El::AbstractDistMatrix<TensorDataType>& output,
-             El::AbstractDistMatrix<TensorDataType>& statistics) {
+             El::Matrix<TensorDataType, El::Device::CPU>& local_workspace) {
 
   // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& local_input = dynamic_cast<const LocalMat&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<LocalMat&>(output.Matrix());
-  auto& local_statistics = dynamic_cast<LocalMat&>(statistics.Matrix());
-  auto local_means = El::View(local_statistics,
-                              El::IR(0, num_channels), El::ALL);
-  auto local_vars = El::View(local_statistics,
-                             El::IR(num_channels, 2*num_channels), El::ALL);
 
   // Dimensions
   const El::Int local_mini_batch_size = local_input.Width();
@@ -62,12 +57,18 @@ void fp_impl(lbann_comm& comm,
   }
 
   // Compute sums
-  El::Zero(statistics);
+  El::Zeros(local_workspace, 2*num_channels, local_mini_batch_size);
+  auto local_sums = El::View(local_workspace,
+                             El::IR(0, num_channels),
+                             El::ALL);
+  auto local_sqsums = El::View(local_workspace,
+                               El::IR(num_channels, 2*num_channels),
+                               El::ALL);
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int k = 0; k < local_mini_batch_size; ++k) {
     for (El::Int j = 0; j < num_channels; ++j) {
-      auto& sum = local_means(j,k);
-      auto& sqsum = local_vars(j,k);
+      auto& sum = local_sums(j,k);
+      auto& sqsum = local_sqsums(j,k);
       for (El::Int i = 0; i < channel_size; ++i) {
         const auto& x = local_input(i+j*channel_size,k);
         sum += x;
@@ -76,30 +77,23 @@ void fp_impl(lbann_comm& comm,
     }
   }
 
-  // Compute statistics from sums
+  // Normalize output
   //   mean = sum(x_i) / n
   //   var = ( sum(x_i^2)/n - mean^2 ) * n/(n-1)
-  LBANN_OMP_PARALLEL_FOR_COLLAPSE2
-  for (El::Int k = 0; k < local_mini_batch_size; ++k) {
-    for (El::Int j = 0; j < num_channels; ++j) {
-      const auto sum = local_means(j,k);
-      const auto sqsum = local_vars(j,k);
-      const auto& mean = sum / channel_size;
-      const auto& sqmean = sqsum / channel_size;
-      const auto& var = (sqmean - mean*mean) * channel_size / (channel_size-1);
-      local_means(j,k) = mean;
-      local_vars(j,k) = std::max(var, TensorDataType{0});;
-    }
-  }
-
-  // Normalize output
   //   y_i = (x_i - mean) / sqrt(var + epsilon)
+  const TensorDataType mean_scale = 1. / channel_size;
+  const TensorDataType var_correction = double(channel_size) / (channel_size - 1);
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int k = 0; k < local_mini_batch_size; ++k) {
     for (El::Int j = 0; j < num_channels; ++j) {
-      const auto& mean = local_means(j,k);
-      const auto& var = local_vars(j,k);
-      const TensorDataType inv_stdev = 1 / std::sqrt(var + epsilon);
+      const auto& sum = local_sums(j,k);
+      const auto& sqsum = local_sqsums(j,k);
+      const auto mean = sum * mean_scale;
+      const auto sqmean = sqsum * mean_scale;
+      auto var = (sqmean - mean * mean) * var_correction;
+      var = std::max(var, TensorDataType{0.});
+      const TensorDataType inv_stdev
+        = TensorDataType{1.} / std::sqrt(var + epsilon);
       for (El::Int i = 0; i < channel_size; ++i) {
         const auto& x = local_input(i+j*channel_size,k);
         auto& y = local_output(i+j*channel_size,k);
@@ -119,24 +113,19 @@ void bp_impl(lbann_comm& comm,
              const El::AbstractDistMatrix<TensorDataType>& input,
              const El::AbstractDistMatrix<TensorDataType>& output_grad,
              El::AbstractDistMatrix<TensorDataType>& input_grad,
-             const El::AbstractDistMatrix<TensorDataType>& statistics,
-             El::AbstractDistMatrix<TensorDataType>& statistics_grad) {
+             const El::Matrix<TensorDataType, El::Device::CPU>& local_workspace) {
 
   // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
   const auto& local_input = dynamic_cast<const LocalMat&>(input.LockedMatrix());
   const auto& local_output_grad = dynamic_cast<const LocalMat&>(output_grad.LockedMatrix());
   auto& local_input_grad = dynamic_cast<LocalMat&>(input_grad.Matrix());
-  const auto& local_statistics = dynamic_cast<const LocalMat&>(statistics.LockedMatrix());
-  auto& local_statistics_grad = dynamic_cast<LocalMat&>(statistics_grad.Matrix());
-  const auto local_means = El::LockedView(local_statistics,
-                                          El::IR(0, num_channels), El::ALL);
-  const auto local_vars = El::LockedView(local_statistics,
-                                         El::IR(num_channels, 2*num_channels), El::ALL);
-  auto local_means_grad = El::View(local_statistics_grad,
-                                   El::IR(0, num_channels), El::ALL);
-  auto local_vars_grad = El::View(local_statistics_grad,
-                                  El::IR(num_channels, 2*num_channels), El::ALL);
+  const auto local_sums = El::LockedView(local_workspace,
+                                         El::IR(0, num_channels),
+                                         El::ALL);
+  const auto local_sqsums = El::LockedView(local_workspace,
+                                           El::IR(num_channels, 2*num_channels),
+                                           El::ALL);
 
   // Dimensions
   const El::Int local_mini_batch_size = local_input.Width();
@@ -151,13 +140,26 @@ void bp_impl(lbann_comm& comm,
   // Compute gradient w.r.t. statistics
   //   dL/dmean = - sum(dL/dy_i) / sqrt(var+epsilon)
   //   dL/dvar = - sum(dL/dy_i * (x_i-mean)) * (var+epsilon)^(-3/2) / 2
-  El::Zero(statistics_grad);
+  LocalMat local_statistics_grad;
+  El::Zeros(local_statistics_grad, 2*num_channels, local_mini_batch_size);
+  auto local_means_grad = El::View(local_statistics_grad,
+                                   El::IR(0, num_channels),
+                                   El::ALL);
+  auto local_vars_grad = El::View(local_statistics_grad,
+                                  El::IR(num_channels, 2*num_channels),
+                                  El::ALL);
+  const TensorDataType mean_scale = 1. / channel_size;
+  const TensorDataType var_correction = double(channel_size) / (channel_size - 1);
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int k = 0; k < local_mini_batch_size; ++k) {
     for (El::Int j = 0; j < num_channels; ++j) {
-      const auto& mean = local_means(j,k);
-      const auto& var = local_vars(j,k);
-      const TensorDataType inv_stdev = 1 / std::sqrt(var + epsilon);
+      const auto& sum = local_sums(j,k);
+      const auto& sqsum = local_sqsums(j,k);
+      const auto mean = sum * mean_scale;
+      const auto sqmean = sqsum * mean_scale;
+      auto var = (sqmean - mean * mean) * var_correction;
+      const TensorDataType inv_stdev
+        = TensorDataType{1.} / std::sqrt(var + epsilon);
       auto& dmean = local_means_grad(j,k);
       auto& dvar = local_vars_grad(j,k);
       for (El::Int i = 0; i < channel_size; ++i) {
@@ -178,9 +180,13 @@ void bp_impl(lbann_comm& comm,
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int k = 0; k < local_mini_batch_size; ++k) {
     for (El::Int j = 0; j < num_channels; ++j) {
-      const auto& mean = local_means(j,k);
-      const auto& var = local_vars(j,k);
-      const TensorDataType inv_stdev = 1 / std::sqrt(var + epsilon);
+      const auto& sum = local_sums(j,k);
+      const auto& sqsum = local_sqsums(j,k);
+      const auto mean = sum * mean_scale;
+      const auto sqmean = sqsum * mean_scale;
+      auto var = (sqmean - mean * mean) * var_correction;
+      const TensorDataType inv_stdev
+        = TensorDataType{1.} / std::sqrt(var + epsilon);
       const auto& dmean = local_means_grad(j,k);
       const auto& dvar = local_vars_grad(j,k);
       for (El::Int i = 0; i < channel_size; ++i) {
@@ -209,7 +215,7 @@ void instance_norm_layer<TensorDataType,Layout,Device>::fp_compute() {
           this->m_epsilon,
           this->get_prev_activations(),
           this->get_activations(),
-          *this->m_statistics);
+          this->m_workspace);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -223,8 +229,7 @@ void instance_norm_layer<TensorDataType,Layout,Device>::bp_compute() {
           this->get_prev_activations(),
           this->get_prev_error_signals(),
           this->get_error_signals(),
-          *this->m_statistics,
-          *this->m_statistics_gradient);
+          this->m_workspace);
 }
 
 #define PROTO(T)                                        \

@@ -29,8 +29,6 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 
-#include <memory>
-
 namespace lbann {
 
 /** @brief
@@ -58,8 +56,8 @@ public:
    */
   instance_norm_layer(lbann_comm* comm, TensorDataType epsilon=1e-5);
 
-  instance_norm_layer(const instance_norm_layer& other);
-  instance_norm_layer& operator=(const instance_norm_layer& other);
+  instance_norm_layer(const instance_norm_layer& other) = default;
+  instance_norm_layer& operator=(const instance_norm_layer& other) = default;
   instance_norm_layer* copy() const override;
 
   std::string get_type() const override;
@@ -70,9 +68,6 @@ public:
 protected:
 
   void setup_dims() override;
-  void setup_matrices(const El::Grid& grid) override;
-  void fp_setup_outputs(El::Int mini_batch_size) override;
-  void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
 
   void fp_compute() override;
   void bp_compute() override;
@@ -82,16 +77,8 @@ private:
   /** Small number to avoid division by zero. */
   TensorDataType m_epsilon;
 
-  /** @brief Per-channel statistics.
-   *
-   *  The means and variances are fused for performance.
-   */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_statistics;
-  /** @brief Gradients w.r.t. per-channel statistics.
-   *
-   *  The means and variances are fused for performance.
-   */
-  std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> m_statistics_gradient;
+  /** Contains per-channel sums and sums of squares. */
+  El::Matrix<TensorDataType,Device> m_workspace;
 
 };
 
@@ -105,33 +92,6 @@ instance_norm_layer<TensorDataType,Layout,Device>::instance_norm_layer(
   TensorDataType epsilon)
   : data_type_layer<TensorDataType>(comm), m_epsilon(epsilon)
 {}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-instance_norm_layer<TensorDataType,Layout,Device>::instance_norm_layer(
-  const instance_norm_layer<TensorDataType,Layout,Device>& other)
-  : data_type_layer<TensorDataType>(other),
-    m_epsilon(other.m_epsilon),
-    m_statistics(other.m_statistics
-                 ? other.m_statistics->Copy()
-                 : nullptr),
-    m_statistics_gradient(other.m_statistics_gradient
-                          ? other.m_statistics_gradient->Copy()
-                          : nullptr)
-{}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-instance_norm_layer<TensorDataType,Layout,Device>& instance_norm_layer<TensorDataType,Layout,Device>::operator=(
-  const instance_norm_layer<TensorDataType,Layout,Device>& other) {
-  data_type_layer<TensorDataType>::operator=(other);
-  m_epsilon = other.m_epsilon;
-  m_statistics.reset(other.m_statistics
-                     ? other.m_statistics->Copy()
-                     : nullptr);
-  m_statistics_gradient.reset(other.m_statistics_gradient
-                              ? other.m_statistics_gradient->Copy()
-                              : nullptr);
-  return *this;
-}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 instance_norm_layer<TensorDataType,Layout,Device>* instance_norm_layer<TensorDataType,Layout,Device>::copy() const {
@@ -164,35 +124,6 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void instance_norm_layer<TensorDataType,Layout,Device>::setup_dims() {
   data_type_layer<TensorDataType>::setup_dims();
   this->set_output_dims(this->get_input_dims());
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void instance_norm_layer<TensorDataType,Layout,Device>::setup_matrices(const El::Grid& grid) {
-  data_type_layer<TensorDataType>::setup_matrices(grid);
-  auto dist = this->get_prev_activations().DistData();
-  dist.colDist = El::STAR;
-  m_statistics.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
-  m_statistics_gradient.reset(El::AbstractDistMatrix<TensorDataType>::Instantiate(dist));
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void instance_norm_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
-  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-  const auto& input = this->get_prev_activations();
-  const size_t num_channels = this->get_input_dims().front();
-  m_statistics->Empty(false);
-  m_statistics->AlignWith(input);
-  m_statistics->Resize(2*num_channels, input.Width());
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void instance_norm_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
-  data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(mini_batch_size);
-  const auto& input = this->get_prev_activations();
-  const size_t num_channels = this->get_input_dims().front();
-  m_statistics_gradient->Empty(false);
-  m_statistics_gradient->AlignWith(input);
-  m_statistics_gradient->Resize(2*num_channels, input.Width());
 }
 
 // =========================================================
