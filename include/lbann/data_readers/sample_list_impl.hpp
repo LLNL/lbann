@@ -585,18 +585,26 @@ void sample_list<sample_name_t>
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
 ::write_header(std::string& sstr, size_t num_files) const {
-  // The first line indicate if the list is exclusive or inclusive
-  // The next line contains the number of samples (included and excluded),
-  // as well as the number of files, which are the same in this caes
-  // The next line contains the root data file directory
+  // The first line indicate if the list is single-sample-per-file type,
+  // multi-sample-exclusive or multi-sample-inclusive.
+  // The second line contains the number of samples (included and excluded
+  // when applicable), as well as the number of files.
+  // The third line contains the root data file directory.
+  // The fourth line contains the path to the label file when applicable
 
-  sstr += (m_header.is_exclusive()? multi_sample_exclusion + "\n" : multi_sample_inclusion + "\n");
-  size_t total, included, excluded;
-  get_num_samples(total, included, excluded);
-  /// TODO: clarify the comment below
-  /// Include the number of invalid samples, which for an inclusive sample list is always 0
-  sstr += std::to_string(included) + ' '  + std::to_string(excluded) + ' '  + std::to_string(num_files) + '\n';
+  if (m_header.is_multi_sample()) {
+    sstr += (m_header.is_exclusive()? multi_sample_exclusion + "\n" : multi_sample_inclusion + "\n");
+
+    size_t total, included, excluded;
+    get_num_samples(total, included, excluded);
+
+    sstr += std::to_string(included) + ' '  + std::to_string(excluded) + ' '  + std::to_string(num_files) + '\n';
+  } else {
+    sstr += single_sample + "\n";
+    sstr += std::to_string(num_files) + '\n';
+  }
   sstr += m_header.get_file_dir() + '\n';
+  sstr += m_header.get_label_filename() + '\n';
 }
 
 template <typename sample_name_t>
