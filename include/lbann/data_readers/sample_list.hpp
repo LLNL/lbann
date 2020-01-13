@@ -34,8 +34,9 @@ struct sample_list_header {
   size_t m_num_files;
   /// whether file_dir is overriden, and not to be read from a file header
   bool m_is_file_dir_overriden;
+  /// Data file directory
   std::string m_file_dir;
-  std::string m_sample_list_filename;
+  std::string m_sample_list_name;
   std::string m_label_filename;
 
   sample_list_header();
@@ -51,13 +52,15 @@ struct sample_list_header {
   size_t get_sample_count() const;
   size_t get_num_files() const;
   const std::string& get_file_dir() const;
-  const std::string& get_sample_list_filename() const;
+  const std::string& get_sample_list_name() const;
+  /// Save the filename or stream name of this sample list for debugging
+  void set_sample_list_name(const std::string& n);
   const std::string& get_label_filename() const;
   template <class Archive> void serialize( Archive & ar ) {
     ar(m_is_multi_sample, m_is_exclusive,
        m_included_sample_count, m_excluded_sample_count,
        m_num_files, m_file_dir,
-       m_sample_list_filename, m_label_filename);
+       m_sample_list_name, m_label_filename);
   }
 };
 
@@ -82,16 +85,15 @@ class sample_list {
 
   void copy_members(const sample_list& rhs);
 
-  /// Load a sample list file
-  void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);
+  /// Load a sample list file using the given stride and offset on the sample sequence
+  void load(std::istream& istrm, size_t stride=1, size_t offset=0);
 
   /** Load a sample list file using the stride as the number of processes per
-   *  trainer and the offset as the current rank within the trainer.
+   *  trainer and the offset as the current rank within the trainer if
+   *  interleaving option is on.
    */
-  void load(const std::string& samplelist_file, const lbann_comm& comm);
-
-  /// Load the header of a sample list file
-  sample_list_header load_header(const std::string& samplelist_file) const;
+  void load(const std::string& samplelist_file, const lbann_comm& comm, bool interleave);
+  void load(std::istream& istrm, const lbann_comm& comm, bool interleave);
 
   /// Restore a sample list from a serialized string
   void load_from_string(const std::string& samplelist);
@@ -138,13 +140,16 @@ class sample_list {
   /// Set to maintain the original sample order as listed in the file
   void keep_sample_order(bool keep);
 
+  /// Manually set the sample list name, which can be used for stream-based sources
+  void set_sample_list_name(const std::string& n);
+
  protected:
 
   /// Reads a header line from the sample list given as a stream, and use the info string for error message
-  std::string read_header_line(std::istream& ifs, const std::string& filename, const std::string& info) const;
+  std::string read_header_line(std::istream& ifs, const std::string& listname, const std::string& info) const;
 
   /// Reads the header of a sample list
-  sample_list_header read_header(std::istream& istrm, const std::string& filename) const;
+  sample_list_header read_header(std::istream& istrm, const std::string& listname) const;
 
   /// read the body of a sample list, which is the list of sample files, where each file contains a single sample.
   virtual void read_sample_list(std::istream& istrm, size_t stride=1, size_t offset=0);
@@ -153,7 +158,7 @@ class sample_list {
   virtual void assign_samples_name();
 
   /// Reads a sample list and populates the internal list
-  size_t get_samples_per_file(std::istream& istrm, const std::string& filename, size_t stride=1, size_t offset=0);
+  size_t get_samples_per_file(std::istream& istrm, size_t stride=1, size_t offset=0);
 
   /// Add the header info to the given string
   void write_header(std::string& sstr, size_t num_files) const;

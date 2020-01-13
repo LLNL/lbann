@@ -291,6 +291,14 @@ void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &
   node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
 }
 
+template<typename CharT, typename Traits = std::char_traits<CharT> >
+class vectorwrapbuf : public std::basic_streambuf<CharT, Traits> {
+public:
+    vectorwrapbuf(std::vector<CharT> &vec) {
+        this->setg(vec.data(), vec.data(), vec.data() + vec.size());
+    }
+};
+
 void image_data_reader::load_list_of_samples(const std::string sample_list_file) {
   // load the sample list
   double tm1 = get_time();
@@ -298,16 +306,29 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
     m_sample_list.override_samples_dirname(get_file_dir());
   }
 
-  if (m_keep_sample_order) {
-    m_sample_list.keep_sample_order(true);
-    m_sample_list.load(sample_list_file, *m_comm);
+  std::vector<char> buffer;
+  options *opts = options::get();
+  m_sample_list.keep_sample_order(m_keep_sample_order);
+
+  if (opts->has_string("load_full_sample_list_once")) {
+    if (m_comm->am_trainer_master()) {
+      load_file(sample_list_file, buffer);
+    }
+    m_comm->trainer_broadcast(m_comm->get_trainer_master(), buffer);
+
+    vectorwrapbuf<char> strmbuf(buffer);
+    std::istream iss(&strmbuf);
+
+    m_sample_list.set_sample_list_name(sample_list_file);
+    m_sample_list.load(iss, *m_comm, true);
   } else {
-    m_sample_list.load(sample_list_file);
+    m_sample_list.load(sample_list_file, *m_comm, true);
   }
+
   double tm2 = get_time();
 
   if (is_master()) {
-    std::cout << "Time to load sample list: " << tm2 - tm1 << std::endl;
+    std::cout << "Time to load sample list '" << sample_list_file << "': " << tm2 - tm1 << std::endl;
   }
 
   /// Merge all of the sample lists
@@ -316,7 +337,7 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
 
   double tm3 = get_time();
   if(is_master()) {
-    std::cout << "Time to gather sample list: " << tm3 - tm2 << std::endl;
+    std::cout << "Time to gather sample list '" << sample_list_file << "': " << tm3 - tm2 << std::endl;
   }
 }
 
@@ -338,6 +359,8 @@ void image_data_reader::load_list_of_samples_from_archive(const std::string& sam
 void image_data_reader::load_labels() {
   const std::string imageListFile = m_sample_list.get_label_filename();
 
+  double tm1 = get_time();
+
   // load labels
   m_labels.clear();
   FILE *fplist = fopen(imageListFile.c_str(), "rt");
@@ -353,6 +376,10 @@ void image_data_reader::load_labels() {
     m_labels.insert(std::make_pair(sample_name_t(imagepath), imagelabel));
   }
   fclose(fplist);
+
+  if (is_master()) {
+    std::cout << "Time to load label file '" << imageListFile << "': " << get_time() - tm1 << std::endl;
+  }
 }
 
 }  // namespace lbann

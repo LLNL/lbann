@@ -173,7 +173,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
 
   if (m_header.get_num_files() != cnt_files) {
     LBANN_ERROR(std::string("Sample list ")
-                + m_header.get_sample_list_filename()
+                + m_header.get_sample_list_name()
                 + std::string(": number of files requested ")
                 + std::to_string(m_header.get_num_files())
                 + std::string(" does not equal number of files loaded ")

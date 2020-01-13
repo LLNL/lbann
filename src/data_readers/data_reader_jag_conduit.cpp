@@ -795,7 +795,7 @@ void data_reader_jag_conduit::load() {
   /// The use of these flags need to be updated to properly separate
   /// how sample lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
-  load_list_of_samples(sample_list_file, true);
+  load_list_of_samples(sample_list_file);
 
   /// Check the data that each rank loaded
   if (!m_is_data_loaded && !m_sample_list.empty()) {
@@ -923,18 +923,11 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
 }
 
-void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, bool load_interleave) {
+void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file) {
   // load the sample list
   double tm1 = get_time();
-  if (load_interleave) {
-    // data_reader_jag_conduit does use any label. Thus, the information in
-    // sample list is self-contained and does not require maintaining the
-    // original sample order.
-    m_sample_list.keep_sample_order(false);
-    m_sample_list.load(sample_list_file, *(this->m_comm));
-  } else {
-    m_sample_list.load(sample_list_file);
-  }
+  m_sample_list.keep_sample_order(false);
+  m_sample_list.load(sample_list_file, *(this->m_comm), true);
   double tm2 = get_time();
 
   if (is_master()) {
