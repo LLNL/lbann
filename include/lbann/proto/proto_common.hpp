@@ -102,7 +102,12 @@ namespace details {
 
 template <typename T>
 std::vector<T> parse_list_impl(std::string const& str) {
-  T entry;
+#ifdef LBANN_HAS_GPU_FP16
+  using ParseType = typename std::conditional<std::is_same<T, fp16>::value, float, T>::type;
+#else
+  using ParseType = T;
+#endif
+  ParseType entry;
   std::vector<T> list;
   std::istringstream iss(str);
   while (iss.good()) {
@@ -114,7 +119,12 @@ std::vector<T> parse_list_impl(std::string const& str) {
 
 template <typename T>
 std::set<T> parse_set_impl(std::string const& str) {
-  T entry;
+#ifdef LBANN_HAS_GPU_FP16
+  using ParseType = typename std::conditional<std::is_same<T, fp16>::value, float, T>::type;
+#else
+  using ParseType = T;
+#endif
+  ParseType entry;
   std::set<T> set;
   std::istringstream iss(str);
   while(iss.good()) {

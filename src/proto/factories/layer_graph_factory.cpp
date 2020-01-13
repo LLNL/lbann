@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/transform/pooling.hpp"
@@ -40,33 +41,6 @@ namespace lbann {
 namespace proto {
 
 namespace {
-
-template <typename T>
-struct TypeToProtoDataType;
-
-template <>
-struct TypeToProtoDataType<float>
-{
-  static constexpr auto value = lbann_data::FLOAT;
-};
-
-template <>
-struct TypeToProtoDataType<double>
-{
-  static constexpr auto value = lbann_data::DOUBLE;
-};
-
-template <>
-struct TypeToProtoDataType<cpu_fp16>
-{
-  static constexpr auto value = lbann_data::FP16;
-};
-
-template <>
-struct TypeToProtoDataType<fp16>
-{
-  static constexpr auto value = lbann_data::FP16;
-};
 
 /** Setup parent/child relationships between layers. */
 void setup_parents_and_children(
