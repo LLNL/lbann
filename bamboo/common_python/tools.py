@@ -241,7 +241,13 @@ def get_command(cluster,
                 # Avoid `nrs (32) should not be greater than rs_per_host (1) * number of servers available (16).`
                 if num_processes > 16:
                     num_processes = 16
-                option_num_processes = ' -n {n}'.format(n=num_processes)
+                if num_nodes is None:
+                    num_nodes = 1
+                # The "option_num_processes" is a misnomer for the LSF case. Rather than
+                # changing the rest of the code, set it to be the number of nodes. Within
+                # JSRUN, the correct number of processes will be obtained when combined
+                # with "option_tasks_per_resource".
+                option_num_processes = ' -n {n}'.format(n=num_nodes)
                 option_resources_per_host = ' -r 1'
                 option_tasks_per_resource = ' -a %d' % (num_processes/num_nodes)
                 if (num_processes%num_nodes) is not 0:
