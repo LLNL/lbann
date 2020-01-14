@@ -315,10 +315,7 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 
 //n.b. Do not put any PROFILE or DEBUG statements in this method,
 //     since the threading from the data_reader will cause you grief
-void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool already_have) {
-
-// XX DEBUG("starting set_conduit_node; m_data.size: ", m_data.size(), " data_id: ", data_id, " already_have: ", already_have);
-
+void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node, bool already_have) {
 
   std::lock_guard<std::mutex> lock(m_mutex);
   // TODO: test whether having multiple mutexes below is better (faster) than
@@ -1464,7 +1461,8 @@ void data_store_conduit::flush_profile_file() const {
 }
 
 size_t data_store_conduit::get_num_global_indices() const {
-  size_t n = m_comm->trainer_allreduce<size_t>(m_my_num_indices);
+  size_t n = m_comm->trainer_allreduce<size_t>(m_data.size());
+  //size_t n = m_comm->trainer_allreduce<size_t>(m_my_num_indices);
   return n;
 }
 
@@ -1923,7 +1921,8 @@ void data_store_conduit::check_query_flags() const {
 
 void data_store_conduit::clear_owner_map() { 
     m_owner_maps_were_exchanged = false;
-PROFILE("clear_owner_map; m_owner_maps_were_exchanged = false");
     m_owner.clear(); 
   }
+
 }  // namespace lbann
+

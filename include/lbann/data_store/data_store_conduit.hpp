@@ -97,7 +97,7 @@ class data_store_conduit {
    * if 'already_have = true' then the passed 'node' was obtained by a call to
    * get_empty_node(); note, we do this to prevent copying the node
    */
-  void set_conduit_node(int data_id, conduit::Node &node, bool already_have = false);
+  void set_conduit_node(int data_id, const conduit::Node &node, bool already_have = false);
 
   void set_preloaded_conduit_node(int data_id, const conduit::Node &node);
 
@@ -188,6 +188,8 @@ class data_store_conduit {
   /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
   void clear_owner_map();
 
+  void set_owner_map(const std::unordered_map<int, int> &m) { m_owner = m; }
+
   /** @brief Special handling for ras_lipid_conduit_data_reader; may go away in the future */
   void add_owner(int data_id, int owner) { m_owner[data_id] = owner; }
 
@@ -233,7 +235,6 @@ class data_store_conduit {
    * Debug logging is enabled on all ranks via the cmd line flag: --data_store_debug
    */
   void flush_debug_file(); 
-
 
   /** @brief Closes then reopens the profile logging file
    *

@@ -503,7 +503,6 @@ void init_data_readers(
 #endif // LBANN_HAS_PYTHON
       }
 
-      reader->set_validation_reader(reader_validation);
       reader_validation->set_role("validate");
       reader_validation->use_unused_index_set();
       data_store_conduit *store = reader_validation->get_data_store_ptr();

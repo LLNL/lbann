@@ -650,8 +650,6 @@ class generic_data_reader {
     m_transform_pipeline = std::move(tp);
   }
 
-  void set_validation_reader(generic_data_reader *other) { m_other = other; }
-
  protected:
 
   // For use with conduit when samples are corrupt.
@@ -796,11 +794,6 @@ class generic_data_reader {
   friend class data_reader_merge_samples;
 
 private:
-
-  // if not null, 'm_other' points from a train to a validation
-  // data store; this permits communication which is needed in
-  // special cases (e.g, see: data_reader_npz_ras_lipid.cpp)
-  generic_data_reader *m_other = nullptr;
 
   virtual void do_preload_data_store() {
     LBANN_ERROR("Not implemented.");
