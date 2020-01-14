@@ -145,6 +145,8 @@ std::unique_ptr<weights> construct_weights(
 #define PROTO(T) \
     TEMPLATE_INSTANTIATION(T)
 
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 #undef PROTO
