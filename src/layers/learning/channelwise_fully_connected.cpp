@@ -35,6 +35,7 @@ namespace lbann {
 
 namespace {
 
+/** Helper struct to build layer from a protobuf message. */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 struct LayerBuilder
 {
@@ -69,9 +70,21 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::channelwise_fully_connected_layer(
   lbann_comm* comm,
   std::vector<size_t> output_channel_dims)
-  : data_type_layer<TensorDataType>(comm),
-    m_output_channel_dims(std::move(output_channel_dims))
-{}
+  : data_type_layer<TensorDataType>(comm) {
+
+  // Initialize output tensor dimensions
+  if (output_channel_dims.empty()) {
+    output_channel_dims.push_back(1);
+  }
+  std::vector<int> output_dims;
+  output_dims.push_back(1);
+  output_dims.insert(
+    output_dims.end(),
+    output_channel_dims.begin(),
+    output_channel_dims.end());
+  this->set_output_dims(output_dims);
+
+}
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>*
@@ -107,8 +120,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::setup_dims() {
   data_type_layer<TensorDataType>::setup_dims();
 
-  // Make sure input dimensions are valid
+  // Make sure input and output dimensions are valid
   const auto& input_dims = this->get_input_dims();
+  auto output_dims = this->get_output_dims();
   if (input_dims.size() <= 1) {
     LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
                 "expects an input tensor with >1 dimensions, ",
@@ -116,18 +130,15 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
                 "\"",this->get_parent_layers()[0]->get_name(),"\" ",
                 "outputs a ",input_dims.size(),"-D tensor");
   }
+  if (output_dims.size() <= 1) {
+    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
+                "expects an output tensor with >1 dimensions,",
+                "but it has been configured ",
+                "as a ",output_dims.size(),"-D tensor");
+  }
 
-  // Construct output dimensions
-  std::vector<int> output_dims;
-  output_dims.push_back(input_dims[0]);
-  if (m_output_channel_dims.empty()) {
-    output_dims.push_back(1);
-  }
-  else {
-    for (const auto& d : m_output_channel_dims) {
-      output_dims.push_back(d);
-    }
-  }
+  // Input and output tensors have same number of channels
+  output_dims[0] = input_dims[0];
   this->set_output_dims(output_dims);
 
 }
@@ -143,16 +154,17 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
   // Tensor dimensions
   const auto& input_dims = this->get_input_dims();
+  const auto& output_dims = this->get_output_dims();
   const std::vector<int> input_channel_dims(
     input_dims.begin()+1, input_dims.end());
   const std::vector<int> output_channel_dims(
-    m_output_channel_dims.begin(), m_output_channel_dims.end());
+    output_dims.begin()+1, output_dims.end());
   const auto& input_channel_size = std::accumulate(
     input_channel_dims.begin(), input_channel_dims.end(),
-    1, std::multiplies<int>());
+    1, std::multiplies<size_t>());
   const auto& output_channel_size = std::accumulate(
     output_channel_dims.begin(), output_channel_dims.end(),
-    1, std::multiplies<int>());
+    1, std::multiplies<size_t>());
 
   // Construct default weights if needed
   this->set_num_data_type_weights(2);
@@ -223,15 +235,14 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   // Tensor dimensions
   const auto& local_mini_batch_size = local_input.Width();
   const auto& input_dims = this->get_input_dims();
+  const auto& output_dims = this->get_output_dims();
   const auto& num_channels = input_dims[0];
-  const std::vector<int> input_channel_dims(input_dims.begin()+1, input_dims.end());
-  const auto& output_channel_dims = this->m_output_channel_dims;
   const auto& input_channel_size = std::accumulate(
-    input_channel_dims.begin(), input_channel_dims.end(),
-    1, std::multiplies<int>());
+    input_dims.begin()+1, input_dims.end(),
+    1, std::multiplies<size_t>());
   const auto& output_channel_size = std::accumulate(
-    output_channel_dims.begin(), output_channel_dims.end(),
-    1, std::multiplies<int>());
+    output_dims.begin()+1, output_dims.end(),
+    1, std::multiplies<size_t>());
 
   // Reshape input and output tensors
   // Note: [mini_batch_size,num_channels,*] -> [mini_batch_size*num_channels,*]
@@ -297,15 +308,14 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   // Tensor dimensions
   const auto& local_mini_batch_size = local_input.Width();
   const auto& input_dims = this->get_input_dims();
+  const auto& output_dims = this->get_output_dims();
   const auto& num_channels = input_dims[0];
-  const std::vector<int> input_channel_dims(input_dims.begin()+1, input_dims.end());
-  const auto& output_channel_dims = this->m_output_channel_dims;
   const auto& input_channel_size = std::accumulate(
-    input_channel_dims.begin(), input_channel_dims.end(),
-    1, std::multiplies<int>());
+    input_dims.begin()+1, input_dims.end(),
+    1, std::multiplies<size_t>());
   const auto& output_channel_size = std::accumulate(
-    output_channel_dims.begin(), output_channel_dims.end(),
-    1, std::multiplies<int>());
+    output_dims.begin()+1, output_dims.end(),
+    1, std::multiplies<size_t>());
 
   // Reshape input and output tensors
   // Note: [mini_batch_size,num_channels,*] -> [mini_batch_size*num_channels,*]
@@ -390,6 +400,7 @@ std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
   return Builder::Build(comm, proto_layer);
 }
 
+// Explicit template instantiation
 #define PROTO_DEVICE(T, Device)                                         \
   template class channelwise_fully_connected_layer<T,data_layout::DATA_PARALLEL,Device>; \
   template std::unique_ptr<Layer>                                       \
@@ -397,8 +408,7 @@ std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
     lbann_comm*, lbann_data::Layer const&);                             \
   template std::unique_ptr<Layer>                                       \
   build_channelwise_fully_connected_layer_from_pbuf<T,data_layout::MODEL_PARALLEL,Device>( \
-    lbann_comm*, lbann_data::Layer const&);                             \
-
+    lbann_comm*, lbann_data::Layer const&)
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"

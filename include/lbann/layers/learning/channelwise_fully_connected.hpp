@@ -31,7 +31,19 @@
 
 namespace lbann {
 
-/**
+/** @brief Apply affine transformation to tensor channels.
+ *
+ *  The input tensor is sliced along the first tensor dimension (the
+ *  "channel" dimension for image data in CHW format) and the same
+ *  affine transformation is applied to each slice. Following a
+ *  row-vector convention:
+ *    @f[ y(i,*) = \text{vec}( x(i,*) ) W^T + b @f]
+ *
+ *  Two weights are required: the linearity and the bias. If weights
+ *  aren't provided, the linearity weights are initialized with He
+ *  normal initialization and the bias weights are initialized to
+ *  zero.
+ *
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class channelwise_fully_connected_layer
@@ -43,6 +55,10 @@ class channelwise_fully_connected_layer
 
 public:
 
+  /** @param comm                   LBANN communicator.
+   *  @param output_channel_dims    Output tensor dimensions,
+   *                                excluding the first dimension.
+   */
   channelwise_fully_connected_layer(
     lbann_comm* comm,
     std::vector<size_t> output_channel_dims);
@@ -66,10 +82,6 @@ protected:
   void fp_compute() override;
   void bp_compute() override;
 
-private:
-
-  std::vector<size_t> m_output_channel_dims;
-
 };
 
 // Builder function
@@ -77,9 +89,8 @@ LBANN_DEFINE_LAYER_BUILDER(channelwise_fully_connected);
 
 #ifndef LBANN_CHANNELWISE_FULLY_CONNECTED_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device) \
+#define PROTO_DEVICE(T, Device)                                         \
   extern template class channelwise_fully_connected_layer<T, data_layout::DATA_PARALLEL, Device>
-
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
