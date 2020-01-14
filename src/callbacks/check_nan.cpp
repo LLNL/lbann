@@ -160,14 +160,7 @@ struct DumpWeightsFunctor : DefaultErrorReporter
  *  necessarily have bad data, and the check is purely local.
  */
 void dump_network(model *m) {
-  using ValidFPTypes = h2::meta::TL<float, double
-#ifdef LBANN_HAS_HALF
-                                    , cpu_fp16
-#endif // LBANN_HAS_HALF
-#ifdef LBANN_HAS_GPU_FP16
-                                    , fp16
-#endif // LBANN_HAS_GPU_FP16
-                                    >;
+  using ValidFPTypes = supported_layer_data_type;
 
   const auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
   for (auto* l : m->get_layers()) {
