@@ -41,6 +41,7 @@
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/io_layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
+#include "lbann/layers/learning/channelwise_fully_connected.hpp"
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
@@ -157,6 +158,8 @@ private:
                               build_fully_connected_layer_from_pbuf<T,L,D>);
     factory_.register_builder("Convolution",
                               build_convolution_layer_from_pbuf<T,L,D>);
+    factory_.register_builder("ChannelwiseFullyConnected",
+                              build_channelwise_fully_connected_layer_from_pbuf<T,L,D>);
 
     // Math layers
     LBANN_REGISTER_DEFAULT_BUILDER(Abs, abs);
