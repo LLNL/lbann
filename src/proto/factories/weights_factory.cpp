@@ -34,7 +34,6 @@
 #include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/factory.hpp"
 
-#include <optimizers.pb.h>
 #include <weights.pb.h>
 
 namespace lbann {
@@ -130,7 +129,6 @@ std::unique_ptr<weights> construct_weights(
 #define TEMPLATE_INSTANTIATION(TensorDataType)                                \
     do {                                                                      \
       if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {     \
-          std::cout << "Using TensorDataType = " #TensorDataType << std::endl; \
         w = make_unique<data_type_weights<TensorDataType>>(comm);             \
         init = (proto_weights.has_initializer()                               \
           ? construct_initializer<TensorDataType>(proto_weights)              \
@@ -139,7 +137,7 @@ std::unique_ptr<weights> construct_weights(
           ? proto_weights.optimizer()                                         \
           : proto_opt);                                                       \
         opt = (helpers::has_oneof(opt_msg, "optimizer_type")                  \
-          ? construct_optimizer(opt_msg)                                      \
+          ? construct_optimizer<TensorDataType>(opt_msg)                      \
           : nullptr);                                                         \
       }                                                                       \
     } while (0)

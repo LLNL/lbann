@@ -32,6 +32,7 @@
 #include "lbann/layers/transform/unpooling.hpp"
 
 #include <model.pb.h>
+#include <trainer.pb.h>
 
 #include <string>
 #include <unordered_map>

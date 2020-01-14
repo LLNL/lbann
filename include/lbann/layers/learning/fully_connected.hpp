@@ -156,8 +156,7 @@ protected:
     if (!this->has_data_type_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
-      auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                                 this->get_model()->create_optimizer()));
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_linearity_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -192,8 +191,7 @@ protected:
     if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
       if (!this->has_data_type_weights(1)) {
         auto w = make_unique<WeightsType>(this->get_comm());
-        auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                                   this->get_model()->create_optimizer()));
+        auto opt = this->m_model->template create_optimizer<TensorDataType>();
         w->set_name(this->get_name() + "_bias_weights");
         w->set_optimizer(std::move(opt));
         this->set_data_type_weights(1, w.get());

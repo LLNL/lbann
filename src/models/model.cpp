@@ -41,6 +41,7 @@
 #include "lbann/data_store/data_store_conduit.hpp"
 
 #include <model.pb.h>
+#include <optimizers.pb.h>
 
 #include <mpi.h>
 
@@ -59,11 +60,11 @@ namespace lbann {
 model::model(lbann_comm* comm,
              size_t mini_batch_size,
              objective_function* obj_fn,
-             optimizer* default_optimizer)
+             std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg)
   : m_execution_context(nullptr),
     m_comm(comm),
     m_max_mini_batch_size(mini_batch_size),
-    m_default_optimizer(default_optimizer),
+    m_default_optimizer_msg(std::move(default_optimizer_msg)),
     m_objective_function(obj_fn) {
 
   // Default model name
@@ -80,8 +81,10 @@ model::model(const model& other) :
   m_max_mini_batch_size(other.m_max_mini_batch_size) {
 
   // Deep copies
-  m_default_optimizer = (other.m_default_optimizer ?
-                         other.m_default_optimizer->copy() : nullptr);
+  m_default_optimizer_msg = (other.m_default_optimizer_msg
+                             ? make_unique<lbann_data::Optimizer>(
+                               *other.m_default_optimizer_msg)
+                             : nullptr);
   m_objective_function = (other.m_objective_function ?
                           other.m_objective_function->copy() : nullptr);
   m_metrics = other.m_metrics;
@@ -186,7 +189,6 @@ model& model::operator=(const model& other) {
 
 model::~model() {
   if (m_objective_function != nullptr) { delete m_objective_function; }
-  if (m_default_optimizer != nullptr)  { delete m_default_optimizer; }
   for (const auto& m : m_metrics)      { delete m; }
   for (const auto& cb : m_callbacks)   { delete cb; }
 }
@@ -464,14 +466,6 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
        }
      }
    }
-}
-
-optimizer* model::create_optimizer() const {
-  if (m_default_optimizer != nullptr) {
-    return m_default_optimizer->copy();
-  } else {
-    return nullptr;
-  }
 }
 
 bool model::is_execution_mode_valid(execution_mode mode) const {
