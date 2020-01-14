@@ -136,7 +136,7 @@ struct DumpWeightsFunctor : DefaultErrorReporter
   {}
 
   template <typename TensorDataType>
-  void operator()(data_type_layer<TensorDataType> const& dtw) {
+  void operator()(data_type_weights<TensorDataType>& dtw) {
     const std::string prefix = build_string(
       "model", m->get_comm()->get_trainer_rank(),
       "-rank", m->get_comm()->get_rank_in_trainer(),
