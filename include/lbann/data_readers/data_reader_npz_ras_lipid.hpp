@@ -60,17 +60,17 @@ public:
 
   void set_num_labels(int n) { m_num_labels = n; }
 
-  int get_linearized_data_size() const override { return m_num_features; }
-  int get_linearized_label_size() const override { return m_num_labels; }
+  int get_linearized_data_size() const override { return m_seq_len*m_num_features; }
+  int get_linearized_label_size() const override {  return m_seq_len*m_num_labels; }
   int get_linearized_response_size() const override { return m_num_response_features; }
   //const std::vector<int> get_data_dims() const override {  return m_data_dims; }
   const std::vector<int> get_data_dims() const override {  return {get_linearized_data_size()}; }
-  int get_num_labels() const override { return m_num_labels; }
+  int get_num_labels() const override { return m_seq_len*m_num_labels; }
 
 private:
 
   int m_num_features = 0;
-  int m_num_labels = 0;
+  int m_num_labels = 3;
   int m_num_response_features = 0;
   std::vector<int> m_data_dims;
 
@@ -84,8 +84,6 @@ private:
 
   // owner map for multi-samples
   std::unordered_map<int, int> m_multi_sample_to_owner;
-
-  std::map<int, int> m_label_distribution;
 
   std::unordered_map<std::string, std::set<int>> m_filename_to_multi_sample;
   //std::unordered_map<std::string, std::unordered_set<int>> m_filename_to_multi_sample;
@@ -173,7 +171,7 @@ private:
 
   void load_the_next_sample(conduit::Node &node, int sample_index, std::map<std::string, cnpy::NpyArray> &data);
 
-  int construct_multi_sample(std::vector<conduit::Node> &work, int data_id, conduit::Node &node); 
+  void construct_multi_sample(std::vector<conduit::Node> &work, int data_id, conduit::Node &node); 
 
 };
 

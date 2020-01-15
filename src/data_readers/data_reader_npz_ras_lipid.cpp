@@ -120,7 +120,7 @@ void ras_lipid_conduit_data_reader::load() {
   }
 
   // set the number of labels
-  set_num_labels( std::pow(3, m_seq_len) );
+  set_num_labels(3);
 
   // Get the number of global multi-samples, and the number of
   // multi-samples in each file
@@ -271,8 +271,7 @@ data types, from python+numpy:
             testme = false;
           }
 
-          const int label = work[0]["states"].value();
-          m_label_distribution[label] += 1;
+          work[0]["states"].value();
           m_data_store->set_conduit_node(multi_sample_id, work[0]);
         }  
 
@@ -287,14 +286,8 @@ data types, from python+numpy:
 
           // Construct the multi-sample and set it in the data store
           conduit::Node n3;
-          int label = construct_multi_sample(work, multi_sample_id, n3);
+          construct_multi_sample(work, multi_sample_id, n3);
           m_data_store->set_conduit_node(multi_sample_id, n3);
-
-          // collect statistics
-          if (m_label_distribution.find(label) == m_label_distribution.end()) {
-              m_label_distribution[label] = 0;
-          }   
-          m_label_distribution[label] += 1;
         }
       }
     }
@@ -308,13 +301,11 @@ data types, from python+numpy:
 
 bool ras_lipid_conduit_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   const conduit::Node& node = m_data_store->get_conduit_node(data_id);
-
-  double scaling_factor = 1.0;
   const double *data = node[LBANN_DATA_ID_STR(data_id) + "/density_sig1"].value();
 
   size_t n = m_seq_len*m_datum_num_words["density_sig1"];
   for (size_t j = 0; j < n; ++j) {
-    X(j, mb_idx) = data[j] * scaling_factor;
+    X(j, mb_idx) = data[j];
   }
 
 #if 0
@@ -337,8 +328,10 @@ std::map<double,int> m2;
 
 bool ras_lipid_conduit_data_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
   const conduit::Node node = m_data_store->get_conduit_node(data_id);
-  int label = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
-  Y.Set(label, mb_idx, 1);
+  const int *labels = node[LBANN_DATA_ID_STR(data_id) + "/states"].value();
+  for (int j=0; j<m_seq_len; j++) {
+    Y.Set(3*j + labels[j], mb_idx, 1);
+  }
   return true;
 }
 
@@ -524,28 +517,17 @@ void ras_lipid_conduit_data_reader::read_normalization_data() {
 
 //user feedback
 void ras_lipid_conduit_data_reader::print_shapes_etc() {
-  // Collect the label distribution
-  std::vector<int> work(m_num_labels, 0);
-  std::vector<int> work_all(m_num_labels, 0);
-  for (const auto t : m_label_distribution) {
-    work[t.first] = t.second;
-  }
-  if (!is_master()) {
-    m_comm->trainer_reduce<int>(work.data(), m_num_labels, 0);
-  } else {
-    m_comm->trainer_reduce<int>(work.data(), m_num_labels, work_all.data());
-  }
-
   if (!is_master()) {
     return;
   }
-  
+
+  // master prints statistics
   std::cout << "\n======================================================\n";
   std::cout << "num train samples=" << m_num_train_samples << std::endl;
   std::cout << "num validate samples=" << m_num_validate_samples << std::endl;
   std::cout << "sequence length=" << m_seq_len << std::endl;
-  std::cout << "num features=" << m_num_features << std::endl;
-  std::cout << "num labels=" << m_num_labels << std::endl;
+  std::cout << "num features=" << get_linearized_data_size() << std::endl;
+  std::cout << "num labels=" << get_num_labels() << std::endl;
   std::cout << "data dims=";
   for (size_t h=0; h<m_datum_shapes["density_sig1"].size(); h++) {
     std::cout << m_datum_shapes["density_sig1"][h];
@@ -565,12 +547,7 @@ void ras_lipid_conduit_data_reader::print_shapes_etc() {
       std::cout << std::endl;
     }
     std::cout << std::endl;
-
-    std::cout << "Label Distribution:\n";
-    for (size_t h=0; h<work_all.size(); h++) {
-      std::cout << "  " << h << ": " << (100.0 * work_all[h])/m_num_global_samples << "%\n";
-    }
-  }
+  }  
 
   std::cout << "======================================================\n\n";
 }
@@ -622,12 +599,14 @@ void ras_lipid_conduit_data_reader::load_the_next_sample(conduit::Node &node, in
   }
 }
 
-int ras_lipid_conduit_data_reader::construct_multi_sample(std::vector<conduit::Node> &work, int data_id, conduit::Node &node) {
+void ras_lipid_conduit_data_reader::construct_multi_sample(std::vector<conduit::Node> &work, int data_id, conduit::Node &node) {
   node.reset();
   std::vector<double> work_d;
   std::vector<float> work_f;
-  int label = 0;
-  int label_idx = 0;
+  std::vector<int> work_i;
+  if (m_datum_num_words["states"] != 1) {
+    LBANN_ERROR("m_data_num_words[states] = ", m_datum_num_words["states"], "; should be 1");
+  }
   for (const auto &t42 : m_datum_num_words) {
     const std::string &name = t42.first;
     int n_words = t42.second;
@@ -637,10 +616,12 @@ int ras_lipid_conduit_data_reader::construct_multi_sample(std::vector<conduit::N
     }
 
     if (name == "states") {
+      work_i.clear();
       for (const auto &t5 : work) {
-        const int d = t5[name].value();
-        label += d * std::pow(3, label_idx++);
+        const int label = t5[name].value();
+        work_i.push_back(label);
       }
+      node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(work_i.data(), m_seq_len * m_datum_num_words[name]);
     }
             
     // 'bbs' is float32
@@ -670,9 +651,6 @@ int ras_lipid_conduit_data_reader::construct_multi_sample(std::vector<conduit::N
       node[LBANN_DATA_ID_STR(data_id) + "/" + name].set(work_d.data(), m_seq_len * m_datum_num_words[name]);
     }
   }
-  node[LBANN_DATA_ID_STR(data_id) + "/states"].set(label);
-
-  return label;
 }
 
 }  // namespace lbann
