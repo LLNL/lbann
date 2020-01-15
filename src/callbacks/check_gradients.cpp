@@ -228,8 +228,10 @@ void check_gradients::do_check_gradients(model& m) const {
   // For simplicity, we assume f(chi) ~ f(x), and | f'''''(xi) | ~ 1.
   // If step size is not specified, then we choose h so that
   //   E_fl <= sqrt(epsilon)
-  const EvalType epsilon = std::pow(std::numeric_limits<EvalType>::epsilon(), 0.9);
-  const EvalType step_size = (m_step_size > DataType{0} ?
+  // For the integrity of the test, the current implementation uses an
+  // epsilon based on the minimum step size of the float data type
+  const EvalType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.9);
+  const EvalType step_size = (m_step_size > EvalType{0} ?
                               m_step_size :
                               std::fabs(objective) * El::Sqrt(epsilon));
   EvalType expected_error = (epsilon * objective / step_size
