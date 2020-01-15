@@ -11,10 +11,10 @@ def skeleton_jag_reconstruction_loss(cluster, executables, dir_name, compiler_na
         e = 'skeleton_jag_reconstruction_loss: default_exes[%s] does not exist' % compiler_name
         print('Skip - ' + e)
         pytest.skip(e)
-    if cluster == 'ray':
+    if cluster == 'ray' or cluster == 'lassen':
         e = 'skeleton_jag_reconstruction_loss: dataset does not exist on %s' % cluster
         print('Skip - ' + e)
-        pytest.skip(e)    
+        pytest.skip(e)
     output_file_name = '%s/bamboo/unit_tests/output/jag_reconstruction_loss_%s_output.txt' % (dir_name, compiler_name)
     error_file_name  = '%s/bamboo/unit_tests/error/jag_reconstruction_loss_%s_error.txt' % (dir_name, compiler_name)
     command = tools.get_command(
