@@ -332,6 +332,7 @@ template <> __device__ __forceinline__ __half epsilon<__half>() {
 }
 template <> __device__ __forceinline__ __half infinity<__half>() {
   return __short_as_half(0x7C00);
+}
 
 // Array member functions
 template <typename T, size_t N>
