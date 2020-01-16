@@ -322,10 +322,13 @@ void bp_compute_impl(
 
 }
 
-#define PROTO_DEVICE(T, Device) \
-  template class slice_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class slice_layer<T, data_layout::MODEL_PARALLEL, Device>
+#define PROTO(T)                                        \
+  template class slice_layer<                           \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;    \
+  template class slice_layer<                           \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
-#include "lbann/macros/instantiate_device.hpp"
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
