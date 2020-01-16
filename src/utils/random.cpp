@@ -373,7 +373,7 @@ void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int 
     std::normal_distribution<RandDataType> dist(mean, stddev);
     for (El::Int col = 0; col < local_vals.Width(); ++col) {
       for (El::Int row = 0; row < local_vals.Height(); ++row) {
-        local_vals(row, col) = El::To<TensorDataType>(dist(gen));
+        local_vals(row, col) = dist(gen);
       }
     }
   }
