@@ -29,6 +29,7 @@
 
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
 
@@ -155,6 +156,20 @@ protected:
 
   void fp_compute() override {
     if(this->using_gpus()) {
+#ifdef LBANN_HAS_DISTCONV
+      if (this->distconv_enabled()) {
+        this->distconv_forward();
+        this->apply_bias_distconv();
+        this->copy_out_activations();
+        if (this->early_terminate_last_iteration() &&
+            this->keep_original()) {
+          base_convolution_layer<Device>::apply_transposed_convolution_cudnn(true);
+          base_convolution_layer<Device>::apply_bias_cudnn();
+          this->dump_reference_activations();
+        }
+        return;
+      }
+#endif
       base_convolution_layer<Device>::apply_transposed_convolution_cudnn(true);
       base_convolution_layer<Device>::apply_bias_cudnn();
     } else {
@@ -165,6 +180,29 @@ protected:
 
   void bp_compute() override {
     if(this->using_gpus()) {
+#ifdef LBANN_HAS_DISTCONV
+      if (this->distconv_enabled()) {
+        // Only weight gradients need to be computed
+        if (this->skip_first_layer_bp()) {
+          dc::MPIRootPrintStreamDebug() << "Skipping bp data for "
+                                        << this->get_name();
+          this->distconv_backward_filter();
+          return;
+        }
+        if (this->m_conv->is_overlap_bwd_halo_exchange_enabled()) {
+          this->m_conv->backward_data_exchange_halo(this->m_prev_error_signals_t);
+        }
+        this->distconv_backward_filter();
+        this->distconv_backward_data();
+        if (this->early_terminate_last_iteration() &&
+            this->keep_original()) {
+          base_convolution_layer<Device>::compute_gradients_cudnn(true);
+          base_convolution_layer<Device>::apply_convolution_cudnn(false);
+          this->dump_reference_error_signals();
+        }
+        return;
+      }
+#endif
       base_convolution_layer<Device>::compute_gradients_cudnn(true);
       base_convolution_layer<Device>::apply_convolution_cudnn(false);
     } else {
@@ -173,6 +211,110 @@ protected:
     }
   }
 
+#ifdef LBANN_HAS_DISTCONV
+ public:
+  void setup_tensor_distribution_init(
+      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::set<dc::Dist*> &updated,
+      std::set<dc::Dist*> &fixed) override {
+    Layer::setup_tensor_distribution_init(
+        dists, invariants, updated, fixed);
+    if (!this->distconv_enabled()) return;
+    auto &prev_activations_dist = dists[this][0];
+    auto &activations_dist = dists[this][1];
+    auto &error_signals_dist = dists[this][2];
+    auto &prev_error_signals_dist = dists[this][3];
+    // Assumes zero halo all tensor for now
+    const dc::IntVector overlap(dc::num_dims, 0);
+    // prev activations
+    prev_activations_dist.set_overlap(overlap);
+    updated.insert(&prev_activations_dist);
+    fixed.insert(&prev_activations_dist);
+    // activations
+    activations_dist.set_overlap(overlap);
+    updated.insert(&activations_dist);
+    fixed.insert(&activations_dist);
+    // prev error signals
+    prev_error_signals_dist.set_overlap(overlap);
+    updated.insert(&prev_error_signals_dist);
+    fixed.insert(&prev_error_signals_dist);
+    // error signals
+    error_signals_dist.set_overlap(overlap);
+    updated.insert(&error_signals_dist);
+    fixed.insert(&error_signals_dist);
+  }
+
+  dc::Shape get_activations_tensor_local_shape() const override {
+    std::vector<int> filter_dims = get_kernel_dims();
+    std::reverse(filter_dims.begin(), filter_dims.end());
+    std::vector<int> strides = this->m_strides;
+    std::reverse(strides.begin(), strides.end());
+    std::vector<int> dilations = this->m_dilations;
+    std::reverse(dilations.begin(), dilations.end());
+    const auto output_spatial_local_shape =
+        ::distconv::get_deconvolution_output_local_tensor_shape(
+            this->m_prev_activations_t,
+            filter_dims, strides, true, dilations,
+            this->m_groups);
+    return output_spatial_local_shape;
+  }
+
+  void setup_distconv_post(size_t ws_size) override {
+    Layer::setup_distconv_post(ws_size);
+    if (!this->distconv_enabled()) return;
+
+    if (dc::is_deterministic()) {
+      dc::MPIRootPrintStreamInfo() << "Using deterministic convolution algorithms";
+      this->m_fwd_algo = "DETERMINISTIC";
+      this->m_bwd_data_algo = "DETERMINISTIC";
+      this->m_bwd_filter_algo = "DETERMINISTIC";
+    } else {
+      this->m_fwd_algo = dc::get_convolution_bwd_data_algorithm();
+      this->m_bwd_data_algo = dc::get_convolution_fwd_algorithm();
+      this->m_bwd_filter_algo = dc::get_convolution_bwd_filter_algorithm();
+    }
+
+    std::vector<int> pads = this->m_pads;
+    std::reverse(pads.begin(), pads.end());
+    std::vector<int> strides = this->m_strides;
+    std::reverse(strides.begin(), strides.end());
+    std::vector<int> dilations = this->m_dilations;
+    std::reverse(dilations.begin(), dilations.end());
+
+    this->m_conv->setup(this->m_prev_activations_t,
+                        this->m_kernel_t, this->m_activations_t,
+                        this->m_error_signals_t, this->m_kernel_gradient_e,
+                        this->m_prev_error_signals_t,
+                        pads, strides, dilations, this->m_groups,
+                        this->m_fwd_algo, this->m_bwd_data_algo,
+                        this->m_bwd_filter_algo,
+                        ws_size, this->skip_first_layer_bp(), true);
+  }
+
+ protected:
+  bool using_distconv() const override {
+    if (!Layer::using_distconv()) return false;
+
+    const auto& kernel_dims = get_kernel_dims();
+    for(int i = 0; i < dc::num_spatial_dims; i++) {
+      auto pad = this->m_pads[i];
+      if (pad != 0) {
+        dc::MPIPrintStreamDebug() << this->get_name()
+                                  << " unsupported as padding must be zero";
+        return false;
+      }
+      auto stride_size = this->m_strides[i];
+      auto filter_size = kernel_dims[2+i];
+      if (!(filter_size % 2 == 0 && filter_size == stride_size)) {
+        dc::MPIPrintStreamDebug() << this->get_name()
+                                  << " unsupported due to filter and stride sizes";
+        return false;
+      }
+    }
+    return true;
+  }
+#endif // LBANN_HAS_DISTCONV
 };
 
 #ifndef LBANN_DECONVOLUTION_LAYER_INSTANTIATE
