@@ -27,9 +27,6 @@ spack:
   - ninja
   - zlib
   - cmake
-  - cudnn
-  - cub
-  - nccl
   - hwloc
   - py-argparse
   - py-configparser
