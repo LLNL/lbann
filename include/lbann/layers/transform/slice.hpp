@@ -183,7 +183,7 @@ void slice_layer<TensorDataType,Layout,Device>::setup_dims() {
     LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
                 "has a slice point of ",m_slice_points.back(),", ",
                 "which is outside the expected range "
-                "[0",input_dims[m_slice_dim],"]");
+                "[0 ",input_dims[m_slice_dim],"]");
   }
 
   // Model-parallel implementation only supports flat data
