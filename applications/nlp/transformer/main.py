@@ -50,33 +50,28 @@ args = parser.parse_args()
 vocab_size = dataset.corpus.vocab_size
 sequence_length = dataset.sample_dims()[0]
 
-# Split input into sequence of token IDs
-# Note: Sequence of token IDs and sequence of embeddings
+# Input is a sequence of token IDs
 input_ = lbann.Identity(lbann.Input())
-input_slice = lbann.Slice(
-    input_,
-    slice_points=str_list(range(sequence_length+1)),
-)
-tokens = [lbann.Identity(input_slice) for _ in range(sequence_length)]
+input_slice = lbann.Slice(input_,
+                          slice_points=str_list(range(sequence_length+1)))
+tokens_list = [lbann.Identity(input_slice) for _ in range(sequence_length)]
 
 # Get sequence of embedding vectors
-embedding_weights = lbann.Weights(
-    initializer=lbann.NormalInitializer(mean=0, standard_deviation=1),
-    name='embeddings',
+# Note: Embeddings are scaled by sqrt(embed_dim)
+embeddings = lbann.Embedding(
+    input_,
+    num_embeddings=vocab_size,
+    embedding_dim=args.embed_dim
 )
-embeddings = []
-for token in tokens:
-    embedding = lbann.Embedding(
-        token,
-        num_embeddings=vocab_size,
-        embedding_dim=args.embed_dim,
-        weights=embedding_weights,
-    )
-    embedding = lbann.WeightedSum(
-        embedding,
-        scaling_factors=str(math.sqrt(args.embed_dim)),
-    )
-    embeddings.append(embedding)
+embeddings = lbann.WeightedSum(
+    embeddings,
+    scaling_factors=str(math.sqrt(args.embed_dim)),
+)
+embeddings_slice = lbann.Slice(embeddings,
+                               axis=0,
+                               slice_points=str_list(range(sequence_length+1)))
+embeddings_list = [lbann.Reshape(embeddings_slice, dims='-1')
+                   for _ in range(sequence_length)]
 
 # Apply transformer model
 model = model.Transformer(
@@ -84,7 +79,7 @@ model = model.Transformer(
     num_heads=args.num_attention_heads,
     dropout=0,  # TODO: Restore dropout
 )
-result = model(embeddings, embeddings[:-1])
+result = model(embeddings_list, embeddings_list[:-1])
 
 # Predict next token in sequence
 pred_fc = lbann.modules.FullyConnectedModule(
@@ -97,11 +92,10 @@ preds = [pred_fc(x) for x in result]
 # Cross entropy loss
 # Note: Apply label smoothing
 loss = []
-acc = []
 uniform_label = lbann.Constant(value=1/vocab_size, num_neurons=str(vocab_size))
 for i in range(sequence_length-1):
     pred = preds[i]
-    label = lbann.OneHot(tokens[i+1], size=vocab_size)
+    label = lbann.OneHot(tokens_list[i+1], size=vocab_size)
     if args.label_smoothing > 0:
         label = lbann.WeightedSum(
             label,
@@ -109,8 +103,6 @@ for i in range(sequence_length-1):
             scaling_factors=str_list([1-args.label_smoothing, args.label_smoothing]),
         )
     loss.append(lbann.CrossEntropy(pred, label))
-    acc.append(lbann.TopKCategoricalAccuracy(pred, label, k=10))
-acc = lbann.Reduction(lbann.Concatenation(acc), mode='average')
 
 # ----------------------------------
 # Create data reader
@@ -133,7 +125,7 @@ _reader.python.sample_dims_function = 'sample_dims'
 
 # Create LBANN objects
 trainer = lbann.Trainer()
-metrics = [lbann.Metric(acc, name='top-10 accuracy', unit='%')]
+metrics = []
 callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer()]
 model = lbann.Model(args.mini_batch_size,
