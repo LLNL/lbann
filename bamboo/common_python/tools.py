@@ -239,8 +239,6 @@ def get_command(cluster,
                 option_gpu_per_resource = ' -g 4'
                 option_launch_distribution = ' -d packed'
                 # Avoid `nrs (32) should not be greater than rs_per_host (1) * number of servers available (16).`
-                #if num_processes > 16:
-                    #num_processes = 16
                 if num_nodes is None:
                     num_nodes = 1
                 # The "option_num_processes" is a misnomer for the LSF case. Rather than
