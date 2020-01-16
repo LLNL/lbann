@@ -343,10 +343,13 @@ std::unique_ptr<Layer> build_concatenate_layer_from_pbuf(
 #define PROTO_DEVICE(T,D) \
   template std::unique_ptr<Layer>                                       \
   build_concatenate_layer_from_pbuf<T,data_layout::DATA_PARALLEL, D> (  \
-    lbann_comm*, lbann_data::Layer const);                              \
+    lbann_comm*, lbann_data::Layer const&);                             \
   template std::unique_ptr<Layer>                                       \
   build_concatenate_layer_from_pbuf<T,data_layout::MODEL_PARALLEL, D>(  \
-    lbann_comm*, lbann_data::Layer const)
+    lbann_comm*, lbann_data::Layer const&)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann
