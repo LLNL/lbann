@@ -87,14 +87,13 @@ cudnnHandle_t& get_handle() {
 
 template <typename TensorDataType>
 cudnnDataType_t get_data_type() {
-  switch (sizeof(TensorDataType)) {
-  case 2: return CUDNN_DATA_HALF;
-  case 4: return CUDNN_DATA_FLOAT;
-  case 8: return CUDNN_DATA_DOUBLE;
-  default: LBANN_ERROR("invalid data type for cuDNN");
-  }
+  LBANN_ERROR("invalid data type for cuDNN");
   return CUDNN_DATA_FLOAT;
 }
+
+template <> cudnnDataType_t get_data_type<fp16>() { return CUDNN_DATA_HALF; }
+template <> cudnnDataType_t get_data_type<float>() { return CUDNN_DATA_FLOAT; }
+template <> cudnnDataType_t get_data_type<double>() { return CUDNN_DATA_DOUBLE; }
 
 template <typename TensorDataType>
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,
