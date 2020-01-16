@@ -865,7 +865,7 @@ void generic_data_reader::print_get_methods(const std::string filename) {
 
   out << "get_file_dir " << get_file_dir() << std::endl;
   out << "get_local_file_dir " << get_local_file_dir() << std::endl;
-  out << "get_data_index_list " << get_data_index_list() << std::endl;
+  out << "get_data_sample_list " << get_data_sample_list() << std::endl;
   out << "get_data_filename " << get_data_filename()  << std::endl;
   out << "get_label_filename " << get_label_filename() << std::endl;
   out << "get_role " << get_role() << std::endl;
