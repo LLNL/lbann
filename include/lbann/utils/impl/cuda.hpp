@@ -316,7 +316,7 @@ SPECIFIERS constexpr float epsilon<float>()   { return FLT_EPSILON; }
 SPECIFIERS constexpr double epsilon<double>() { return DBL_EPSILON; }
 SPECIFIERS float infinity<float>()   { return CUDART_INF_F; }
 SPECIFIERS double infinity<double>() { return CUDART_INF;   }
-#undef HEADER
+#undef SPECIFIERS
 #endif // __CUDACC_RELAXED_CONSTEXPR__
 
 // FIXME (TRB): I think this is right? Borrowed the values from the
@@ -332,6 +332,22 @@ template <> __device__ __forceinline__ __half epsilon<__half>() {
 }
 template <> __device__ __forceinline__ __half infinity<__half>() {
   return __short_as_half(0x7C00);
+
+// Array member functions
+template <typename T, size_t N>
+__host__ __device__ __forceinline__
+size_t array<T,N>::size() const {
+  return N;
+}
+template <typename T, size_t N>
+__host__ __device__ __forceinline__
+T& array<T,N>::operator[](size_t i) {
+  return vals[i];
+}
+template <typename T, size_t N>
+__host__ __device__ __forceinline__
+const T& array<T,N>::operator[](size_t i) const {
+  return vals[i];
 }
 
 #endif // __CUDACC__

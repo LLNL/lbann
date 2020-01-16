@@ -437,6 +437,7 @@ void ras_lipid_conduit_data_reader::rebuild_data_store_owner_map() {
       ++data_id;
     }
   }
+  m_data_store->set_finished_building_map();
 }
 
 void ras_lipid_conduit_data_reader::get_samples_per_file() {

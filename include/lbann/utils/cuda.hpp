@@ -180,6 +180,15 @@ template <typename T> constexpr __device__ __forceinline__ T max();
 template <typename T> constexpr __device__ __forceinline__ T epsilon();
 template <typename T> __device__ __forceinline__ T infinity();
 
+/** @brief Array with fixed type and size. */
+template <typename T, size_t N>
+struct array {
+  T vals[N];
+  __host__ __device__ __forceinline__ size_t size() const;
+  __host__ __device__ __forceinline__ T& operator[](size_t i);
+  __host__ __device__ __forceinline__ const T& operator[](size_t i) const;
+};
+
 #endif // __CUDACC__
 
 // -------------------------------------------------------------

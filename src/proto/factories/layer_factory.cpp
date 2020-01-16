@@ -190,7 +190,7 @@ private:
     LBANN_REGISTER_DEFAULT_BUILDER(Mod, mod);
     LBANN_REGISTER_DEFAULT_BUILDER(Multiply, multiply);
     LBANN_REGISTER_DEFAULT_BUILDER(Negative, negative);
-    LBANN_REGISTER_DEFAULT_BUILDER(Not_Equal, not_equal);
+    LBANN_REGISTER_DEFAULT_BUILDER(NotEqual, not_equal);
     LBANN_REGISTER_DEFAULT_BUILDER(Pow, pow);
     LBANN_REGISTER_DEFAULT_BUILDER(Reciprocal, reciprocal);
     LBANN_REGISTER_DEFAULT_BUILDER(Round, round);
@@ -390,7 +390,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
   }
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
-    std::vector<El::Int> slice_points;
+    std::vector<size_t> slice_points;
     bool is_supported = false;
     std::string slice_point_method_name;
 
@@ -398,10 +398,13 @@ std::unique_ptr<Layer> construct_layer_legacy(
       slice_point_method_name = "'get_slice_points_from_reader'";
       const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
       const std::string& var = params.get_slice_points_from_reader();
-      slice_points = get_slice_points_from_reader(dr_generic, var, is_supported);
+      for (const auto& slice_point
+             : get_slice_points_from_reader(dr_generic, var, is_supported)) {
+        slice_points.push_back(slice_point);
+      }
     } else {
       slice_point_method_name = "'slice_points'";
-      slice_points = parse_list<El::Int>(params.slice_points());
+      slice_points = parse_list<size_t>(params.slice_points());
       is_supported = true;
     }
     if (slice_points.size() < 2u) {
@@ -676,7 +679,14 @@ std::unique_ptr<Layer> construct_layer_legacy(
   CONSTRUCT_LAYER(relu);
   CONSTRUCT_LAYER(selu);
   CONSTRUCT_LAYER(sigmoid);
-  CONSTRUCT_LAYER(softmax);
+  if (proto_layer.has_softmax()) {
+    const auto& params = proto_layer.softmax();
+    const auto& mode_str = params.softmax_mode();
+    softmax_mode mode = softmax_mode::INVALID;
+    if(mode_str == "instance" || mode_str.empty()) { mode = softmax_mode::INSTANCE; }
+    if(mode_str == "channel") { mode = softmax_mode::CHANNEL; }
+    return lbann::make_unique<softmax_layer<TensorDataType, Layout, Device>>(comm, mode);
+  }
   CONSTRUCT_LAYER(softplus);
   CONSTRUCT_LAYER(softsign);
 
