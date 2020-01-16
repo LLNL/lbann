@@ -148,7 +148,7 @@ void fp_gpu(lbann_comm& comm,
   comm.allreduce(static_cast<El::AbstractMatrix<TensorDataType>&>(sum_d), input.DistComm());
   CHECK_CUDA(cudaMemcpyAsync(&value,
                              sum_d.LockedBuffer(),
-                             sizeof(DataType),
+                             sizeof(TensorDataType),
                              cudaMemcpyDeviceToHost,
                              stream));
   copy_event.record(stream);
