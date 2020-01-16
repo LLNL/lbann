@@ -138,7 +138,7 @@ __global__ void fp_exp_kernel(size_t height,
     }
 
     // Compute sum for each block
-    const DataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
+    const TensorDataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
     if (tid == 0) {
       cuda::atomic_add(&sums[col], block_sum);
     }
@@ -178,7 +178,7 @@ __global__ void fp_output_kernel(size_t height,
       auto& y = output[row+col*output_ldim];
       y /= denom;
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-      y = cuda::max(y, cuda::sqrt(cuda::min<DataType>()));
+      y = cuda::max(y, cuda::sqrt(cuda::min<TensorDataType>()));
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
     }
   }
@@ -218,7 +218,7 @@ __global__ void bp_dot_product_kernel(
     }
 
     // Compute dot product contribution for each block
-    const DataType block_dot_product
+    const TensorDataType block_dot_product
       = cuda::block_reduce<bsize,1,1>(thread_dot_product);
     if (tid == 0) {
       cuda::atomic_add(&dot_products[col], block_dot_product);
@@ -267,6 +267,19 @@ __global__ void bp_kernel(size_t height,
 
 template <typename TensorDataType>
 void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+
+  cudnnSoftmaxMode_t cudnn_softmax_mode;
+  switch(l.m_mode) {
+    case softmax_mode::INSTANCE:
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_INSTANCE;
+      break;
+    case softmax_mode::CHANNEL:
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_CHANNEL;
+      break;
+    default:
+      LBANN_ERROR("Unsupported softmax mode");
+  }
+
   constexpr TensorDataType zero = 0;
   constexpr TensorDataType one = 1;
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
@@ -274,7 +287,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   if (!local_input.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxForward(cudnn::get_handle(),
                                     CUDNN_SOFTMAX_ACCURATE,
-                                    CUDNN_SOFTMAX_MODE_INSTANCE,
+                                    cudnn_softmax_mode,
                                     &one,
                                     l.m_tensors_cudnn_desc.get_prev_activations(),
                                     local_input.LockedBuffer(),
@@ -290,6 +303,19 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
 
 template <typename TensorDataType>
 void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+
+  cudnnSoftmaxMode_t cudnn_softmax_mode;
+  switch(l.m_mode) {
+    case softmax_mode::INSTANCE:
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_INSTANCE;
+      break;
+    case softmax_mode::CHANNEL:
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_CHANNEL;
+      break;
+    default:
+      LBANN_ERROR("Unsupported softmax mode");
+  }
+
   constexpr TensorDataType zero = 0;
   constexpr TensorDataType one = 1;
   const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
@@ -298,7 +324,7 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   if (!local_output.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxBackward(cudnn::get_handle(),
                                      CUDNN_SOFTMAX_ACCURATE,
-                                     CUDNN_SOFTMAX_MODE_INSTANCE,
+                                     cudnn_softmax_mode,
                                      &one,
                                      l.m_tensors_cudnn_desc.get_activations(),
                                      local_output.LockedBuffer(),
@@ -312,6 +338,10 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
 
 template <typename TensorDataType>
 void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+
+  if(l.m_mode != softmax_mode::INSTANCE) {
+    LBANN_ERROR("Unsupported softmax mode");
+  }
 
   // Local matrices
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
@@ -345,7 +375,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
     while (grid_dims.x > 1) {
       const size_t prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<DataType> prev_vals(std::move(max_vals));
+      cuda::thrust::vector<TensorDataType> prev_vals(std::move(max_vals));
       max_vals.resize(grid_dims.x * local_width);
       reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
@@ -392,6 +422,10 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, 
 
 template <typename TensorDataType>
 void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
+
+  if(l.m_mode != softmax_mode::INSTANCE) {
+    LBANN_ERROR("Unsupported softmax mode");
+  }
 
   // Local matrices
   const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
@@ -455,9 +489,11 @@ void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 // Template instantiation
-template class softmax_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class softmax_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class softmax_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class softmax_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

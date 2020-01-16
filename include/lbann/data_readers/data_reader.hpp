@@ -669,12 +669,6 @@ class generic_data_reader {
   double get_use_percent() const;
 
   /**
-   * Returns the percent of the shuffled indices that are to be
-   * used. Code in this method was formerly in select_subset_of_data()
-   */
-  double get_percent_to_use() const;
-
-  /**
    * Return the percent of the dataset to be used for validation.
    */
   double get_validation_percent() const;
@@ -717,11 +711,6 @@ class generic_data_reader {
     NOT_IMPLEMENTED("fetch_response");
     return false;
   }
-
-  /// returns the percent of shuffled indices that are used;
-  /// the returned value  depends on the values returned by
-  /// get_absolute_sample_count() and get_use_percent().
-  double get_percent_to_use();
 
   /**
    * Called before fetch_datum/label/response to allow initialization.
@@ -789,6 +778,20 @@ class generic_data_reader {
   std::string m_role;
 
   bool m_master;
+
+  /** @brief Print the return values from various get_X methods to file
+   *
+   * For use in unit testing. Only the master prints.
+   * Currently only prints values from get_X methods that only depend
+   * on the data_reader (i.e, not on the trainer, model, etc)
+   */
+  void print_get_methods(const std::string filename);
+
+  /**
+   * Returns the number of the shuffled indices that are to be
+   * used. Code in this method was formerly in select_subset_of_data()
+   */
+  size_t get_num_indices_to_use() const;
 
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;

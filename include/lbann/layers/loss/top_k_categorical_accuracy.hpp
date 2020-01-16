@@ -100,16 +100,19 @@ private:
 };
 
 #ifndef LBANN_TOP_K_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
-extern template class top_k_categorical_accuracy_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class top_k_categorical_accuracy_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class top_k_categorical_accuracy_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class top_k_categorical_accuracy_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device)                           \
+  extern template class top_k_categorical_accuracy_layer< \
+    T, data_layout::DATA_PARALLEL, Device>;               \
+  extern template class top_k_categorical_accuracy_layer< \
+    T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_TOP_K_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 
 } // namespace lbann

@@ -36,7 +36,12 @@ void fp(lbann_comm& comm,
         const El::AbstractDistMatrix<TensorDataType>& input,
         El::AbstractDistMatrix<TensorDataType>& output,
         El::AbstractDistMatrix<TensorDataType>& workspace,
-        TensorDataType threshold_val) {
+        TensorDataType threshold_val,
+        softmax_mode mode) {
+
+  if(mode != softmax_mode::INSTANCE) {
+    LBANN_ERROR("Unsupported softmax mode");
+  }
 
   // Local matrices
   const auto& local_input = input.LockedMatrix();
@@ -96,7 +101,12 @@ void bp(lbann_comm& comm,
         const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
         El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
         El::AbstractDistMatrix<TensorDataType>& workspace,
-        TensorDataType threshold_val) {
+        TensorDataType threshold_val,
+        softmax_mode mode) {
+
+  if(mode != softmax_mode::INSTANCE) {
+    LBANN_ERROR("Unsupported softmax mode");
+  }
 
   // Local matrices
   const auto& local_output = output.LockedMatrix();
@@ -141,7 +151,8 @@ void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
      this->get_prev_activations(),
      this->get_activations(),
      *this->m_workspace,
-     this->threshold_val);
+     this->threshold_val,
+     this->m_mode);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -151,12 +162,15 @@ void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
      this->get_prev_error_signals(),
      this->get_error_signals(),
      *this->m_workspace,
-     this->threshold_val);
+     this->threshold_val,
+     this->m_mode);
 }
 
-template class softmax_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class softmax_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class softmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class softmax_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

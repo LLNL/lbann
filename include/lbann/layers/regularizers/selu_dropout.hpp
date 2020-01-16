@@ -49,6 +49,9 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  /** @brief The tensor type expected in this object. */
+  using CPUMatrixType = El::Matrix<TensorDataType, El::Device::CPU>;
+
   ///@}
 
  public:
@@ -132,8 +135,8 @@ public:
       const El::Int local_width = input_acts->LocalWidth();
 
       const auto& local_input_acts = input_acts->LockedMatrix();
-      Mat& local_output_acts = this->get_local_activations();
-      Mat& local_mask = m_mask->Matrix();
+      CPUMatrixType& local_output_acts = this->get_local_activations();
+      CPUMatrixType& local_mask = m_mask->Matrix();
 
       // Construct and apply mask and the affine transform.
       // TODO: Optimize.
@@ -157,8 +160,8 @@ public:
     } else {
 
       const auto& local_prev_error_signal = this->get_local_prev_error_signals();
-      Mat& local_error_signal = this->get_local_error_signals();
-      Mat& local_mask = m_mask->Matrix();
+      CPUMatrixType& local_error_signal = this->get_local_error_signals();
+      CPUMatrixType& local_mask = m_mask->Matrix();
       const El::Int local_height = local_prev_error_signal.Height();
       const El::Int local_width = local_prev_error_signal.Width();
       // Reweight with the affine scale factor and the dropout mask.
@@ -186,16 +189,16 @@ public:
 };
 
 #ifndef LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
-extern template class selu_dropout<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class selu_dropout<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class selu_dropout<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class selu_dropout<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class selu_dropout<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class selu_dropout<T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
 
 } // namespace lbann

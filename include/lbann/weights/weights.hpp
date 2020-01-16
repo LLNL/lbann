@@ -194,6 +194,21 @@ public:
   bool is_frozen() const { return m_frozen; }
 
   // -----------------------------------------------
+  // Weight matrix accessors
+  // -----------------------------------------------
+
+  /** Reconcile weight values.
+   *  If weight values are duplicated across multiple processes, they
+   *  are set to the average across the processes.
+   */
+  virtual void reconcile_values() = 0;
+  /** Asynchronously reconcile weight values.
+   *  If weight values are duplicated across multiple processes, they
+   *  are set to the average across the processes.
+   */
+  virtual void reconcile_values(Al::request& req) = 0;
+
+  // -----------------------------------------------
   // Checkpointing
   // -----------------------------------------------
   virtual bool save_to_checkpoint_shared(persist& p) = 0;

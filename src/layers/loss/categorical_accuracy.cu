@@ -380,9 +380,13 @@ void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
          this->get_activations());
 }
 
-template class categorical_accuracy_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class categorical_accuracy_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class categorical_accuracy_layer<          \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>;  \
+  template class categorical_accuracy_layer<          \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -35,8 +35,16 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/typename.hpp"
 #include <string>
 #include <vector>
+
+/** @brief A utility macro for easily defining default-constructed sub-class
+ *  builders.*/
+#define LBANN_DEFINE_LAYER_BUILDER(LAYER_NAME)                          \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf( \
+    lbann_comm*, lbann_data::Layer const&)
 
 // Forward-declare protobuf classes
 namespace lbann_data {
@@ -101,6 +109,11 @@ public:
    *  human-readable, name.
    */
   inline void set_name(const std::string name) { m_name = name; }
+  /** Get a string representing the layer datatype
+   */
+  virtual std::string get_datatype_name() const {
+    return TypeName<DataType>();
+  };
 
   /** Human-readable description. */
   virtual description get_description() const;
@@ -150,12 +163,6 @@ public:
    *  should override this function to return its template parameter.
    */
   virtual El::Device get_device_allocation() const = 0;
-  /** Get a human-readable description of the data_layout */
-  std::string get_data_layout_string(data_layout d) const;
-  /** Get a human-readable description of the device allocation */
-  std::string get_device_allocation_string(El::Device dev) const;
-  /** Get a short human-readable description of the device allocation */
-  std::string get_device_allocation_string_short(El::Device dev) const;
 
   /** Reset layer stat counters. */
   virtual void reset_counters();
@@ -203,10 +210,19 @@ public:
   /** Get child layers. (const) */
   inline const std::vector<const Layer*>& get_child_layers() const { return m_child_layers; }
 
-  inline int find_layer_index(const Layer* l) const {
-    return (std::find(m_child_layers.begin(),
-                      m_child_layers.end(),
-                      l) - m_child_layers.begin()); }
+  inline int find_child_layer_index(const Layer* l) const {
+    return std::distance(m_child_layers.begin(),
+                         std::find(m_child_layers.begin(),
+                                   m_child_layers.end(),
+                                   l));
+  }
+
+  inline int find_parent_layer_index(const Layer* l) const {
+    return std::distance(m_parent_layers.begin(),
+                         std::find(m_parent_layers.begin(),
+                                   m_parent_layers.end(),
+                                   l));
+  }
 
   /** Get number of parent layers. */
   inline int get_num_parents() const { return get_parent_layers().size(); }

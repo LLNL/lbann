@@ -43,14 +43,22 @@ class FullyConnectedModule(Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, size, bias=True, weights=[], activation=None,
-                 name=None, data_layout='data_parallel'):
+    def __init__(self,
+                 size,
+                 bias=True,
+                 transpose=False,
+                 weights=[],
+                 activation=None,
+                 name=None,
+                 data_layout='data_parallel'):
         """Initialize fully-connected module.
 
         Args:
             size (int): Size of output tensor.
             activation (type): Layer class for activation function.
             bias (bool): Whether to apply bias after linearity.
+            transpose (bool): Whether to apply transpose of weights
+                matrix.
             weights (`Weights` or iterator of `Weights`): Weights in
                 fully-connected layer. There are at most two: the
                 matrix and the bias. If weights are not provided, the
@@ -65,6 +73,7 @@ class FullyConnectedModule(Module):
         self.instance = 0
         self.size = size
         self.bias = bias
+        self.transpose = transpose
         self.name = (name
                      if name
                      else 'fcmodule{0}'.format(FullyConnectedModule.global_count))
@@ -106,7 +115,8 @@ class FullyConnectedModule(Module):
                                  name=(name+'_fc' if self.activation else name),
                                  data_layout=self.data_layout,
                                  num_neurons=self.size,
-                                 has_bias=self.bias)
+                                 has_bias=self.bias,
+                                 transpose=self.transpose)
         if self.activation:
             return self.activation(y,
                                    name=name+'_activation',

@@ -40,6 +40,8 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  ///@}
+
  public:
   /** Number of samples in the current mini-batch */
   int m_num_samples_fetched;
@@ -56,7 +58,7 @@ public:
     m_input_buffers.clear();
     m_input_buffers.resize(num_child_layers);
     for(int i = 0; i < num_child_layers; i++) {
-      m_input_buffers[i].reset(new StarVCMat<El::Device::CPU>(comm->get_trainer_grid()));
+      m_input_buffers[i].reset(new StarVCMatDT<TensorDataType, El::Device::CPU>(comm->get_trainer_grid()));
     }
   }
 
@@ -87,7 +89,7 @@ public:
  * Parallel I/O routines for managing partitioned minibatches
  */
 template <typename TensorDataType>
-class partitioned_io_buffer : public generic_io_buffer {
+class partitioned_io_buffer : public generic_io_buffer<TensorDataType> {
 public:
   /** @name Public Types */
   ///@{
@@ -95,10 +97,13 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  /** @brief The local tensor type expected for IO in this object. */
+  using IODataType = DataType;
+
   ///@}
 
  public:
-  typedef std::map<execution_mode, data_buffer<TensorDataType> *> data_buffer_map_t;
+  typedef std::map<execution_mode, data_buffer<IODataType> *> data_buffer_map_t;
  public:
   partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
   partitioned_io_buffer(const partitioned_io_buffer& other);
@@ -127,8 +132,8 @@ public:
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const override;
   static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
 
-  data_buffer<TensorDataType> *get_data_buffer(const execution_mode mode) const {
-    data_buffer<TensorDataType> *data_buffer = nullptr;
+  data_buffer<IODataType> *get_data_buffer(const execution_mode mode) const {
+    data_buffer<IODataType> *data_buffer = nullptr;
     typename data_buffer_map_t::const_iterator it = m_data_buffers.find(mode);
     if (it != m_data_buffers.end()) data_buffer = it->second;
 

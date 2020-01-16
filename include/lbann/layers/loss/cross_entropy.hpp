@@ -105,12 +105,14 @@ public:
     const auto& prediction = this->get_prev_activations(0);
     switch (this->get_data_layout()) {
     case data_layout::DATA_PARALLEL:
-      m_workspace.reset(new StarVCMat<Dev>(prediction.Grid(),
-                                           prediction.Root()));
+      m_workspace.reset(new StarVCMatDT<TensorDataType, Dev>(
+                          prediction.Grid(),
+                          prediction.Root()));
       break;
     case data_layout::MODEL_PARALLEL:
-      m_workspace.reset(new StarMRMat<Dev>(prediction.Grid(),
-                                           prediction.Root()));
+      m_workspace.reset(new StarMRMatDT<TensorDataType, Dev>(
+                          prediction.Grid(),
+                          prediction.Root()));
       break;
     default: LBANN_ERROR("invalid data layout");
     }
@@ -162,16 +164,20 @@ private:
 };
 
 #ifndef LBANN_CROSS_ENTROPY_LAYER_INSTANTIATE
-extern template class cross_entropy_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class cross_entropy_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class cross_entropy_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class cross_entropy_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device)              \
+  extern template class cross_entropy_layer< \
+    T, data_layout::DATA_PARALLEL, Device>;  \
+  extern template class cross_entropy_layer< \
+    T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+
 #endif // LBANN_CROSS_ENTROPY_LAYER_INSTANTIATE
 
 } // namespace lbann
