@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_SOURCES
   argmax.cpp
   argmin.cpp
   channelwise_mean.cpp
+  channelwise_softmax.cpp
   covariance.cpp
   mini_batch_index.cpp
   mini_batch_size.cpp
@@ -16,6 +17,7 @@ if (LBANN_HAS_CUDA)
     covariance.cu
     variance.cu
     channelwise_mean.cu
+    channelwise_softmax.cu
     one_hot.cu
     )
 endif ()

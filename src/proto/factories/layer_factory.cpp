@@ -61,6 +61,7 @@
 #include "lbann/layers/math/matmul.hpp"
 #include "lbann/layers/math/unary.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
+#include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
@@ -733,6 +734,14 @@ std::unique_ptr<Layer> construct_layer_legacy(
       return lbann::make_unique<channelwise_mean_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm);
     } else {
       LBANN_ERROR("channel-wise mean layer is only supported with "
+                  "a data-parallel layout");
+    }
+  }
+  if (proto_layer.has_channelwise_softmax()) {
+    if (Layout == data_layout::DATA_PARALLEL) {
+      return lbann::make_unique<channelwise_softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(comm);
+    } else {
+      LBANN_ERROR("channel-wise softmax layer is only supported with "
                   "a data-parallel layout");
     }
   }
