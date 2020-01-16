@@ -124,7 +124,6 @@
 #include "lbann/data_readers/data_reader_multi_images.hpp"
 #include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
-#include "lbann/data_readers/data_reader_jag.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"

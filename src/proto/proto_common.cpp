@@ -103,41 +103,6 @@ void init_data_readers(
                (name == "multihead_siamese")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_transform_pipeline = false;
-    } else if (name == "jag") {
-      auto* reader_jag = new data_reader_jag(shuffle);
-
-      const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
-
-      using var_t = data_reader_jag::variable_t;
-
-      // composite independent variable
-      std::vector<std::vector<var_t>> independent_type(pb_schema.independent_size());
-
-      for (int i=0; i < pb_schema.independent_size(); ++i) {
-        const lbann_data::DataSetMetaData::Schema::JAGDataSlice& slice = pb_schema.independent(i);
-        const int slice_size = slice.pieces_size();
-        for (int k=0; k < slice_size; ++k) {
-          const auto var_type = static_cast<var_t>(slice.pieces(k));
-          independent_type[i].push_back(var_type);
-        }
-      }
-
-      reader_jag->set_independent_variable_type(independent_type);
-
-      // composite dependent variable
-      std::vector<std::vector<var_t>> dependent_type(pb_schema.dependent_size());
-
-      for (int i=0; i < pb_schema.dependent_size(); ++i) {
-        const lbann_data::DataSetMetaData::Schema::JAGDataSlice& slice = pb_schema.dependent(i);
-        const int slice_size = slice.pieces_size();
-        for (int k=0; k < slice_size; ++k) {
-          const auto var_type = static_cast<var_t>(slice.pieces(k));
-          dependent_type[i].push_back(var_type);
-        }
-      }
-
-      reader_jag->set_dependent_variable_type(dependent_type);
-      reader = reader_jag;
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_transform_pipeline = false;
@@ -429,9 +394,6 @@ void init_data_readers(
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
       } else if (name == "multihead_siamese") {
   	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
-      } else if (name == "jag") {
-        reader_validation = new data_reader_jag(shuffle);
-        *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
       } else if (name == "jag_conduit") {
         /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
         /// is also shared
