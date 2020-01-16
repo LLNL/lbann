@@ -586,8 +586,15 @@ private:
             {this->get_parallel_strategy().height_splits,
              this->get_parallel_strategy().width_splits})[i];
 #endif // LBANN_DISTCONV_HAS_DEPTH
-        if(splits > 1)
-          overlap[dc::num_spatial_dims - 1 - i] = (this->m_pool_dims[i] - 1) / 2;
+        if(splits == 1) continue;
+        int ov = 0;
+        if (this->m_pool_dims[i] % 2) {
+          ov = (this->m_pool_dims[i] - 1) / 2;
+        } else {
+          // no halo dependency is assumed for now
+          ov = 0;
+        }
+        overlap[dc::num_spatial_dims - 1 - i] = ov;
       }
       auto &prev_activations_dist = dists[this][0];
       auto &activations_dist = dists[this][1];
@@ -695,36 +702,35 @@ private:
     if (!Layer::using_distconv()) return false;
 
     bool cond = true;
-    for(int i = 0; i < dc::num_spatial_dims; i++)
-      cond &= (m_pool_dims[i] % 2 != 0);
+    for(int i = 0; i < dc::num_spatial_dims; i++) {
+      cond &= (m_pool_dims[i] % 2 != 0) ||
+          (m_pool_dims[i] == m_strides[i]);
+    }
     if (!cond) {
       dc::MPIPrintStreamDebug() << "pooling: unsupported due to window shape: "
                                 << dc::util::join_xd_array(m_pool_dims);
       return false;
     }
 
-    std::vector<int> stencils;
-    for(int i = 0; i < dc::num_spatial_dims; i++)
-      stencils.push_back((m_pool_dims[i] - 1) / 2);
-
-    bool pad_zero = true, pad_stencil = true, stride_one = true, stride_stencil = true;
-    for(int i = 0; i < dc::num_spatial_dims; i++) {
-      pad_zero &= (m_pads[i] == 0);
-      pad_stencil &= (m_pads[i] == stencils[i]);
-      stride_one &= (m_strides[i] == 1);
-      stride_stencil &= (m_strides[i] == stencils[i] + 1);
+    for (int i = 0; i < dc::num_spatial_dims; i++) {
+      bool odd = m_pool_dims[i] % 2;
+      if (odd) {
+        int stencil = (m_pool_dims[i] - 1) / 2;
+        if (!(m_pads[i] == 0 || m_pads[i] == stencil)) {
+          dc::MPIPrintStreamDebug() << "pooling: unsupported due to padding: "
+                                    << m_pads[i];
+          return false;
+        }
+        if (!(m_strides[i] == 1 || m_strides[i] == stencil + 1)) {
+          dc::MPIPrintStreamDebug() << "pooling: unsupported due to strides";
+          return false;
+        }
+      } else {
+        if (m_pads[i] != 0) return false;
+        if (m_pool_dims[i] != m_strides[i]) return false;
+      }
     }
 
-    if (!(pad_zero || pad_stencil)) {
-      dc::MPIPrintStreamDebug() << "pooling: unsupported due to padding: "
-                                << m_pads[0] << "x" << m_pads[1];
-      return false;
-    }
-
-    if (!(stride_one || stride_stencil)) {
-      dc::MPIPrintStreamDebug() << "pooling: unsupported due to strides";
-      return false;
-    }
     char *env = getenv("DISTCONV_DISABLE");
     if (env) {
       std::string s(env);
@@ -732,7 +738,6 @@ private:
         return false;
       }
     }
-
     return true;
   }
 
