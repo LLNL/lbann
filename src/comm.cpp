@@ -140,13 +140,13 @@ namespace {
 template <typename BackendT>
 struct BackendTag {};
 
+#if defined(LBANN_HAS_GPU) && defined(LBANN_HAS_ALUMINUM)
 auto GetRequest(Al::request& r, BackendTag<Al::dummy_backend>)
     -> typename Al::dummy_backend::req_type
 {
     return Al::dummy_backend::null_req;
 }
 
-#ifdef LBANN_HAS_ALUMINUM
 auto GetRequest(Al::request& r, BackendTag<::Al::MPIBackend>)
     -> typename ::Al::MPIBackend::req_type&
 {
@@ -168,7 +168,7 @@ auto GetRequest(Al::request& r, BackendTag<::Al::MPICUDABackend>)
     return r.mpicuda_req;
 }
 #endif // AL_HAS_NCCL
-#endif // LBANN_HAS_ALUMINUM
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_HAS_ALUMINUM)
 
 // The best we can do on CPU is exactly the Elemental implementation:
 // If the buffer is contiguous, call the El::mpi interface, which will

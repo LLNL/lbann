@@ -362,10 +362,23 @@ void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::In
 template <typename TensorDataType>
 void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
                            TensorDataType mean, TensorDataType stddev) {
+#if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
   using RandDataType = typename std::conditional<
     El::Or<std::is_same<TensorDataType,cpu_fp16>,
            std::is_same<TensorDataType,fp16>>::value,
     float, TensorDataType>::type;
+#elif defined(LBANN_HAS_GPU_FP16)
+  using RandDataType = typename std::conditional<
+    std::is_same<TensorDataType,fp16>::value,
+    float, TensorDataType>::type;
+#elif defined(LBANN_HAS_HALF)
+  using RandDataType = typename std::conditional<
+    std::is_same<TensorDataType,cpu_fp16>::value,
+    float, TensorDataType>::type;
+#else
+  using RandDataType = TensorDataType;
+#endif // LBANN_HAS_GPU_FP16
+
   CircMatDT<RandDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
@@ -399,10 +412,23 @@ void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int
 template <typename TensorDataType>
 void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
                           TensorDataType center, TensorDataType radius) {
+#if defined(LBANN_HAS_GPU_FP16) && defined(LBANN_HAS_HALF)
   using RandDataType = typename std::conditional<
     El::Or<std::is_same<TensorDataType,cpu_fp16>,
            std::is_same<TensorDataType,fp16>>::value,
     float, TensorDataType>::type;
+#elif defined(LBANN_HAS_GPU_FP16)
+  using RandDataType = typename std::conditional<
+    std::is_same<TensorDataType,fp16>::value,
+    float, TensorDataType>::type;
+#elif defined(LBANN_HAS_HALF)
+  using RandDataType = typename std::conditional<
+    std::is_same<TensorDataType,cpu_fp16>::value,
+    float, TensorDataType>::type;
+#else
+  using RandDataType = TensorDataType;
+#endif // LBANN_HAS_GPU_FP16
+
   CircMatDT<RandDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();

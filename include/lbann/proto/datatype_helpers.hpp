@@ -49,17 +49,21 @@ struct TypeToProtoDataType<double>
   static constexpr auto value = lbann_data::DOUBLE;
 };
 
+#ifdef LBANN_HAS_HALF
 template <>
 struct TypeToProtoDataType<cpu_fp16>
 {
   static constexpr auto value = lbann_data::FP16;
 };
+#endif // LBANN_HAS_HALF
 
+#ifdef LBANN_HAS_GPU_FP16
 template <>
 struct TypeToProtoDataType<fp16>
 {
   static constexpr auto value = lbann_data::FP16;
 };
+#endif // LBANN_HAS_GPU_FP16
 
 }// namespace proto
 }// namespace lbann
