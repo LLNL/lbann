@@ -325,6 +325,5 @@ void bp_compute_impl(
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
-#undef PROTO
 
 } // namespace lbann

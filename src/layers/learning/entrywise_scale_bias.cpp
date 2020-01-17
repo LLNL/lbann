@@ -154,6 +154,5 @@ LBANN_LAYER_DEFAULT_BUILDER(entrywise_scale_bias)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
-#undef PROTO
 
 } // namespace lbann

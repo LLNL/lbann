@@ -66,9 +66,6 @@ std::unique_ptr<Layer> build_channelwise_scale_bias_layer_from_pbuf(
 
 #define PROTO_DEVICE(T, Device) \
   LBANN_LAYER_BUILDER_ETI(channelwise_scale_bias, T, Device)
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

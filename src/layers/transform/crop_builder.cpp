@@ -72,9 +72,6 @@ std::unique_ptr<Layer> build_crop_layer_from_pbuf(
 // Builder function ETI
 #define PROTO_DEVICE(T, Device) \
   LBANN_LAYER_BUILDER_ETI(crop, T, Device)
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

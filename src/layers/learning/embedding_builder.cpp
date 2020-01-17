@@ -74,9 +74,6 @@ std::unique_ptr<Layer> build_embedding_layer_from_pbuf(
 
 #define PROTO_DEVICE(T, Device) \
   LBANN_LAYER_BUILDER_ETI(embedding, T, Device)
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann
