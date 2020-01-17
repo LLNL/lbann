@@ -33,7 +33,6 @@
 #undef LBANN_INSTANTIATE_CPU_HALF
 
 #ifdef LBANN_HAS_GPU
-#ifdef LBANN_HAS_GPU_FP16
 #define LBANN_INSTANTIATE_GPU_HALF
 #define PROTO(T)                    \
   PROTO_DEVICE(T, El::Device::GPU)
@@ -41,5 +40,4 @@
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 #undef LBANN_INSTANTIATE_GPU_HALF
-#endif // LBANN_HAS_GPU_FP16
 #endif // LBANN_HAS_GPU
