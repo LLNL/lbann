@@ -91,7 +91,9 @@ cudnnDataType_t get_data_type() {
   return CUDNN_DATA_FLOAT;
 }
 
+#ifdef LBANN_HAS_GPU_FP16
 template <> cudnnDataType_t get_data_type<fp16>() { return CUDNN_DATA_HALF; }
+#endif // LBANN_HAS_GPU_FP16
 template <> cudnnDataType_t get_data_type<float>() { return CUDNN_DATA_FLOAT; }
 template <> cudnnDataType_t get_data_type<double>() { return CUDNN_DATA_DOUBLE; }
 

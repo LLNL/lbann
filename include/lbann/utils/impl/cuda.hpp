@@ -32,7 +32,7 @@
 #include "cub/block/block_reduce.cuh"
 #endif // HYDROGEN_HAVE_CUB
 #include <math_constants.h>
-#include <cuda_fp16.hpp>
+#include <cuda_fp16.h>
 #endif // __CUDACC__
 
 namespace lbann {
@@ -182,6 +182,7 @@ bool isfinite(T const& x) { return ::isfinite(x); }
 template <typename T> __device__ __forceinline__
 bool isnan(T const& x) { return ::isnan(x); }
 
+#if __CUDA_ARCH__ >= 530
 template <> __device__ __forceinline__
 bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
 
@@ -238,6 +239,7 @@ WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(asinh)
 WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atanh)
 
 #undef WRAP_UNARY_CUDA_HALF_MATH_FUNCTION
+#endif // __CUDA_ARCH__ >= 530
 
 // Binary math functions
 #define WRAP_BINARY_CUDA_MATH_FUNCTION(func)                    \
@@ -278,6 +280,7 @@ template <> __device__ __forceinline__
 __half mod<__half>(const __half& x, const __half& y)
 { return mod(float(x), float(y)); }
 
+#if __CUDA_ARCH__ >= 530
 template <> __device__ __forceinline__
 __half min<__half>(const __half& x, const __half& y)
 { return ::__hle(x, y) ? x : y; }
@@ -285,6 +288,7 @@ __half min<__half>(const __half& x, const __half& y)
 template <> __device__ __forceinline__
 __half max<__half>(const __half& x, const __half& y)
 { return ::__hle(x, y) ? y : x; }
+#endif // __CUDA_ARCH__ >= 530
 
 // Numeric limits
 #ifdef __CUDACC_RELAXED_CONSTEXPR__
