@@ -103,11 +103,13 @@ cudnnHandle_t& get_handle();
 ////////////////////////////////////////////////////////////
 
 /** Get cuDNN data type associated with DataType. */
+template <typename TensorDataType>
 cudnnDataType_t get_data_type();
 
 /** Set cuDNN tensor descriptor.
  *  desc is created if necessary.
  */
+template <typename TensorDataType>
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,
                      std::vector<int> dims,
                      std::vector<int> strides = {});

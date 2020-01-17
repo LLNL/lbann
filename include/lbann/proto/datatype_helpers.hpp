@@ -24,40 +24,47 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/proto/factories.hpp"
+#ifndef LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED
+#define LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED
 
-#include "lbann/objective_functions/objective_function.hpp"
+#include <model.pb.h>
 
-#include "lbann/objective_functions/layer_term.hpp"
-#include "lbann/objective_functions/weight_regularization/l2.hpp"
+namespace lbann
+{
+namespace proto
+{
 
-#include <objective_functions.pb.h>
+template <typename T>
+struct TypeToProtoDataType;
 
-namespace lbann {
-namespace proto {
+template <>
+struct TypeToProtoDataType<float>
+{
+  static constexpr auto value = lbann_data::FLOAT;
+};
 
-std::unique_ptr<objective_function>
-construct_objective_function(const lbann_data::ObjectiveFunction& proto_obj) {
+template <>
+struct TypeToProtoDataType<double>
+{
+  static constexpr auto value = lbann_data::DOUBLE;
+};
 
-  // Instantiate objective function
-  auto obj = make_unique<objective_function>();
+#ifdef LBANN_HAS_HALF
+template <>
+struct TypeToProtoDataType<cpu_fp16>
+{
+  static constexpr auto value = lbann_data::FP16;
+};
+#endif // LBANN_HAS_HALF
 
-  // Weight regularization terms
-  for (int i=0; i<proto_obj.l2_weight_regularization_size(); ++i) {
-    const auto& params = proto_obj.l2_weight_regularization(i);
-    obj->add_term(new l2_weight_regularization(params.scale_factor()));
-  }
+#ifdef LBANN_HAS_GPU_FP16
+template <>
+struct TypeToProtoDataType<fp16>
+{
+  static constexpr auto value = lbann_data::FP16;
+};
+#endif // LBANN_HAS_GPU_FP16
 
-  // Layer terms
-  for (int i=0; i<proto_obj.layer_term_size(); ++i) {
-    const auto& params = proto_obj.layer_term(i);
-    obj->add_term(new layer_term(params.scale_factor()));
-  }
-
-  // Return objective function
-  return obj;
-
-}
-
-} // namespace proto
-} // namespace lbann
+}// namespace proto
+}// namespace lbann
+#endif /* LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED */

@@ -249,8 +249,8 @@ __global__ void bp_kernel(size_t height,
 
 template <typename TensorDataType>
 void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  constexpr TensorDataType zero = 0;
-  constexpr TensorDataType one = 1;
+  const TensorDataType zero = 0;
+  const TensorDataType one = 1;
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
   if (!local_input.IsEmpty()) {
@@ -269,8 +269,8 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLE
 template <typename TensorDataType>
 void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
   using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
-  constexpr TensorDataType zero = 0;
-  constexpr TensorDataType one = 1;
+  const TensorDataType zero = 0;
+  const TensorDataType one = 1;
   const auto& local_output = dynamic_cast<const GPUMatType&>(l.get_local_activations());
   const auto& local_gradient_wrt_output = dynamic_cast<const GPUMatType&>(l.get_local_prev_error_signals());
   auto& local_gradient_wrt_input = dynamic_cast<GPUMatType&>(l.get_local_error_signals());

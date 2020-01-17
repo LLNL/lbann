@@ -78,7 +78,7 @@ protected:
     // Populate matrix on CPU
     LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
-      local_output_v(0, col) = TensorDataType(output.GlobalCol(col));
+      local_output_v(0, col) = El::To<TensorDataType>(output.GlobalCol(col));
     }
 
     // Copy result from CPU if needed
@@ -91,16 +91,12 @@ protected:
 };
 
 #ifndef LBANN_MINI_BATCH_INDEX_LAYER_INSTANTIATE
-extern template class mini_batch_index_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class mini_batch_index_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class mini_batch_index_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class mini_batch_index_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class mini_batch_index_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class mini_batch_index_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_MINI_BATCH_INDEX_LAYER_INSTANTIATE
 
 } // namespace lbann

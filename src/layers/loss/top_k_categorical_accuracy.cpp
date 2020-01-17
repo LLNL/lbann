@@ -79,7 +79,7 @@ void fp_cpu(lbann_comm& comm,
     El::Zero(loss);
     return;
   } else if (k >= height) {
-    El::Fill(loss, TensorDataType(1));
+    El::Fill(loss, El::TypeTraits<TensorDataType>::One());
     return;
   } else if (local_width < 1) {
     return;
@@ -99,7 +99,7 @@ void fp_cpu(lbann_comm& comm,
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
-      if (local_labels(row, col) > TensorDataType(0)) {
+      if (local_labels(row, col) > El::TypeTraits<TensorDataType>::Zero()) {
         label_indices[col] = labels.GlobalRow(row);
       }
     }
@@ -166,7 +166,7 @@ void fp_cpu(lbann_comm& comm,
         const auto& label_index = label_indices[col];
         if (top_entries[col*k+i].index == label_index
             && label_index < height) {
-          local_loss(0, col) = TensorDataType(1);
+          local_loss(0, col) = El::TypeTraits<TensorDataType>::One();
         }
       }
     }

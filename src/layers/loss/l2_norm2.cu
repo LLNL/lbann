@@ -108,7 +108,7 @@ __global__ void bp_kernel(El::Int local_height, El::Int local_width,
     for (El::Int row = gidx; row < local_height; row += nthreadsx) {
       const auto& x = input[row + col * input_ldim];
       auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-      dx = 2 * x * dy;
+      dx = TensorDataType(2) * x * dy;
     }
   }
 }

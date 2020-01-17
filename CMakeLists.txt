@@ -285,6 +285,11 @@ if (LBANN_HAS_CUDA)
 
   include(SetupCUDAToolkit)
 
+  if (LBANN_HAS_GPU_FP16)
+    set_property(TARGET cuda::toolkit PROPERTY
+      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
+  endif (LBANN_HAS_GPU_FP16)
+
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
 
   if (LBANN_HAS_ALUMINUM AND AL_HAS_NCCL)

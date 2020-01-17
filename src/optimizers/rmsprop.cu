@@ -77,7 +77,20 @@ void rmsprop<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
   }
 }
 
-template void rmsprop<DataType>::step_compute_gpu(El::AbstractDistMatrix<DataType>& values,
-                                               const El::AbstractDistMatrix<DataType>& gradient);
+#ifdef LBANN_HAS_HALF
+template <>
+void rmsprop<cpu_fp16>::step_compute_gpu(AbsDistMatrixType&,
+                                         const AbsDistMatrixType&) {
+  LBANN_ERROR("Can't call this function with cpu_fp16!");
+}
+#endif // LBANN_HAS_HALF
+
+#define PROTO(T)                               \
+  template void rmsprop<T>::step_compute_gpu(  \
+    El::AbstractDistMatrix<T>&,                \
+    const El::AbstractDistMatrix<T>&)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

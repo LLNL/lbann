@@ -834,8 +834,6 @@ std::unique_ptr<Layer> construct_layer(
     const lbann_data::Layer& proto_layer                                                   \
   )
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace proto

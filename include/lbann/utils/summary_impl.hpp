@@ -258,13 +258,13 @@ inline auto lbann_summary::local_min(const El::AbstractMatrix<TensorDataType>& m
     const El::Int size = height*width;
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(min:min))
     for (El::Int i = 0; i < size; ++i) {
-      min = std::min(min, mat_buf[i]);
+      min = El::Min(min, mat_buf[i]);
     }
   } else {
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(min:min) collapse(2))
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
-        min = std::min(min, mat_buf[row + col*ldim]);
+        min = El::Min(min, mat_buf[row + col*ldim]);
       }
     }
   }
@@ -283,13 +283,13 @@ inline auto lbann_summary::local_max(const El::AbstractMatrix<TensorDataType>& m
     const El::Int size = height*width;
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(max:max))
     for (El::Int i = 0; i < size; ++i) {
-      max = std::max(max, mat_buf[i]);
+      max = El::Max(max, mat_buf[i]);
     }
   } else {
     LBANN_OMP_PARALLEL_FOR_ARGS(reduction(max:max) collapse(2))
     for (El::Int row = 0; row < height; ++row) {
       for (El::Int col = 0; col < width; ++col) {
-        max = std::max(max, mat_buf[row + col*ldim]);
+        max = El::Max(max, mat_buf[row + col*ldim]);
       }
     }
   }
@@ -319,7 +319,7 @@ inline auto lbann_summary::local_2norm(const El::AbstractMatrix<TensorDataType>&
       }
     }
   }
-  return std::sqrt(norm);
+  return El::Sqrt(norm);
 }
 
 #endif  // LBANN_HAS_TBINF

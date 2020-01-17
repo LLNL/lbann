@@ -77,7 +77,7 @@ void fp_cpu(lbann_comm& comm,
     El::Zero(output);
     return;
   } else if (k >= height) {
-    El::Fill(output, TensorDataType(1));
+    El::Fill(output, El::TypeTraits<TensorDataType>::One());
     return;
   } else if (local_width < 1) {
     return;
@@ -134,7 +134,7 @@ void fp_cpu(lbann_comm& comm,
       const auto& global_row = top_entries[col*k+i].index;
       if (global_row < height && output.IsLocalRow(global_row)) {
         const auto& row = output.LocalRow(global_row);
-        local_output(row, col) = TensorDataType(1);
+        local_output(row, col) = El::TypeTraits<TensorDataType>::One();
       }
     }
   }

@@ -60,7 +60,7 @@ void entrywise_mean_and_stdev(const Mat& data,
   mean = shifted_mean + shift;
   const DataType var = std::max(shifted_sqmean - shifted_mean * shifted_mean,
                                 DataType(0));
-  stdev = std::sqrt(var);
+  stdev = El::Sqrt(var);
 
 }
 
@@ -94,7 +94,7 @@ void entrywise_mean_and_stdev(const AbsDistMat& data,
   // Compute mean and standard deviation
   mean = sum_sqsum[0] / size;
   const DataType var = std::max(sum_sqsum[1] / size - mean * mean, DataType(0));
-  stdev = std::sqrt(var);
+  stdev = El::Sqrt(var);
 
 }
 
@@ -126,7 +126,7 @@ void columnwise_mean_and_stdev(const Mat& data,
     const DataType mean = shifted_mean + shift;
     const DataType var = std::max(shifted_sqmean - shifted_mean * shifted_mean,
                                   DataType(0));
-    const DataType stdev = std::sqrt(var);
+    const DataType stdev = El::Sqrt(var);
     means(0, col) = mean;
     stdevs(0, col) = stdev;
   }
@@ -209,7 +209,7 @@ void columnwise_mean_and_stdev(const AbsDistMat& data,
     const DataType mean = local_means(0, col) / height;
     const DataType sqmean = local_stdevs(0, col) / height;
     const DataType var = std::max(sqmean - mean * mean, DataType(0));
-    const DataType stdev = std::sqrt(var);
+    const DataType stdev = El::Sqrt(var);
     local_means(0, col) = mean;
     local_stdevs(0, col) = stdev;
   }
@@ -265,7 +265,7 @@ void rowwise_mean_and_stdev(const Mat& data,
       const DataType mean = shifted_mean + shifts[row - row_start];
       const DataType var = std::max(shifted_sqmean - shifted_mean * shifted_mean,
                                     DataType(0));
-      const DataType stdev = std::sqrt(var);
+      const DataType stdev = El::Sqrt(var);
       means(row, 0) = mean;
       stdevs(row, 0) = stdev;
     }
@@ -356,7 +356,7 @@ void rowwise_mean_and_stdev(const AbsDistMat& data,
     const DataType mean = local_means(row, 0) / width;
     const DataType sqmean = local_stdevs(row, 0) / width;
     const DataType var = std::max(sqmean - mean * mean, DataType(0));
-    const DataType stdev = std::sqrt(var);
+    const DataType stdev = El::Sqrt(var);
     local_means(row, 0) = mean;
     local_stdevs(row, 0) = stdev;
   }

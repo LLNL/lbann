@@ -178,6 +178,7 @@ private:
 
 };
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_hypergradient_adam_optimizer_from_pbuf(
   google::protobuf::Message const&);

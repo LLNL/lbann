@@ -50,7 +50,7 @@ __global__ void fp_kernel(int global_height,
   for (int col = bidy; col < local_width; col += gridDim.y) {
 
     // Compute contributions for each thread
-    TensorDataType private_contribution = TensorDataType(0);
+    TensorDataType private_contribution = TensorDataType(0.0);
     for (int row = gidx; row < local_height; row += nthreadsx) {
       const auto& err = (prediction[row + col * prediction_ldim]
                          - ground_truth[row + col * ground_truth_ldim]);
@@ -126,8 +126,8 @@ __global__ void bp_kernel(int global_height,
                          - ground_truth[row + col * ground_truth_ldim]);
       auto& dx = gradient_wrt_prediction[row + col * gradient_wrt_prediction_ldim];
       auto& dxhat = gradient_wrt_ground_truth[row + col * gradient_wrt_ground_truth_ldim];
-      dx = 2 * err * dy / global_height;
-      dxhat = - 2 * err * dy / global_height;
+      dx = TensorDataType(2) * err * dy / TensorDataType(global_height);
+      dxhat = TensorDataType(-2) * err * dy / TensorDataType(global_height);
     }
   }
 

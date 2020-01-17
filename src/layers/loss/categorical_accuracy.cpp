@@ -190,7 +190,7 @@ void fp_cpu(lbann_comm& comm,
     LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
       local_loss(0, col) = (prediction_inds[col] == label_inds[col] ?
-                            TensorDataType(1) : TensorDataType(0));
+                            El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero());
     }
   }
 

@@ -25,16 +25,16 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 PROTO(float);
-#ifndef LBANN_INSTANTIATE_FLOAT_ONLY
 PROTO(double);
-#endif // LBANN_INSTANTIATE_FLOAT_ONLY
 
-// #if 0 // Don't allow HALF yet
-// #ifdef LBANN_INSTANTIATE_CPU_HALF
-// PROTO(cpu_half_type);
-// #endif
+#ifdef LBANN_HAS_HALF
+#ifdef LBANN_INSTANTIATE_CPU_HALF
+PROTO(cpu_fp16);
+#endif // LBANN_INSTANTIATE_CPU_HALF
+#endif // LBANN_HAS_HALF
 
-// #ifdef LBANN_INSTANTIATE_GPU_HALF
-// PROTO(gpu_half_type);
-// #endif
-// #endif // Don't allow HALF yet
+#ifdef LBANN_HAS_GPU_FP16
+#ifdef LBANN_INSTANTIATE_GPU_HALF
+PROTO(fp16);
+#endif // LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_HAS_GPU_FP16

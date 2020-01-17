@@ -64,7 +64,7 @@ protected:
   }
 
   void fp_compute() override {
-    El::Fill(this->get_activations(), TensorDataType(m_mini_batch_size));
+    El::Fill(this->get_activations(), El::To<TensorDataType>(m_mini_batch_size));
   }
 
 private:
@@ -75,16 +75,12 @@ private:
 };
 
 #ifndef LBANN_MINI_BATCH_SIZE_LAYER_INSTANTIATE
-extern template class mini_batch_size_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class mini_batch_size_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class mini_batch_size_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class mini_batch_size_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class mini_batch_size_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class mini_batch_size_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_MINI_BATCH_SIZE_LAYER_INSTANTIATE
 
 } // namespace lbann
