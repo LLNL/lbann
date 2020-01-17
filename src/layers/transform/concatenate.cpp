@@ -320,26 +320,24 @@ void bp_compute_impl(
 
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_concatenate_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
-{
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, concatenation);
-  using LayerType = concatenate_layer<TensorDataType, Layout, Device>;
-  const auto& axis = proto_layer.concatenation().axis();
-  return lbann::make_unique<LayerType>(comm, axis);
-}
-
 // Explicit instantiation
 #define PROTO(T)                                        \
   template class concatenate_layer<                     \
     T, data_layout::DATA_PARALLEL, El::Device::CPU>;    \
   template class concatenate_layer<                     \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU> ;  \
+  template std::unique_ptr<Layer>                                       \
+  build_concatenate_layer_from_pbuf<T,data_layout::DATA_PARALLEL, El::Device::CPU> ( \
+    lbann_comm*, lbann_data::Layer const&);                             \
+  template std::unique_ptr<Layer>                                       \
+  build_concatenate_layer_from_pbuf<T,data_layout::MODEL_PARALLEL, El::Device::CPU>( \
+    lbann_comm*, lbann_data::Layer const&)
+
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 
+#if 0
 #define PROTO_DEVICE(T,D) \
   template std::unique_ptr<Layer>                                       \
   build_concatenate_layer_from_pbuf<T,data_layout::DATA_PARALLEL, D> (  \
@@ -351,5 +349,5 @@ std::unique_ptr<Layer> build_concatenate_layer_from_pbuf(
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
-
+#endif // 0
 } // namespace lbann

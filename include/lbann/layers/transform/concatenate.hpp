@@ -30,6 +30,9 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <layers.pb.h>
+
 namespace lbann {
 
 /** @brief Concatenate tensors along specified dimension. */
@@ -286,7 +289,15 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
 
 }
 
-LBANN_DEFINE_LAYER_BUILDER(concatenate);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_concatenate_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+{
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, concatenation);
+  using LayerType = concatenate_layer<TensorDataType, Layout, Device>;
+  const auto& axis = proto_layer.concatenation().axis();
+  return lbann::make_unique<LayerType>(comm, axis);
+}
 
 #ifndef LBANN_CONCATENATE_LAYER_INSTANTIATE
 
@@ -294,7 +305,13 @@ LBANN_DEFINE_LAYER_BUILDER(concatenate);
   extern template class concatenate_layer<  \
     T, data_layout::DATA_PARALLEL, Device>; \
   extern template class concatenate_layer<  \
-    T, data_layout::MODEL_PARALLEL, Device>
+    T, data_layout::MODEL_PARALLEL, Device>; \
+  extern template std::unique_ptr<Layer>                                \
+  build_concatenate_layer_from_pbuf<T,data_layout::DATA_PARALLEL, Device> ( \
+    lbann_comm*, lbann_data::Layer const&);                             \
+  extern template std::unique_ptr<Layer>                                \
+  build_concatenate_layer_from_pbuf<T,data_layout::MODEL_PARALLEL, Device>( \
+    lbann_comm*, lbann_data::Layer const&)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

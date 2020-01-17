@@ -234,7 +234,7 @@ private:
     LBANN_REGISTER_DEFAULT_BUILDER(Relu, relu);
     LBANN_REGISTER_DEFAULT_BUILDER(Selu, selu);
     LBANN_REGISTER_DEFAULT_BUILDER(Sigmoid, sigmoid);
-    LBANN_REGISTER_DEFAULT_BUILDER(Softmax, softmax);
+    LBANN_REGISTER_BUILDER(Softmax, softmax);
     LBANN_REGISTER_DEFAULT_BUILDER(Softplus, softplus);
     LBANN_REGISTER_DEFAULT_BUILDER(Softsign, softsign);
 

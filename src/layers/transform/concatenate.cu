@@ -470,13 +470,28 @@ void bp_compute_impl(
 }
 
 // Explicit instantiation
-#define PROTO(T)                                        \
-  template class concatenate_layer<                     \
-    T, data_layout::DATA_PARALLEL, El::Device::GPU>;    \
-  template class concatenate_layer<                     \
-    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+#define PROTO(T)                                                        \
+  template class concatenate_layer<                                     \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>;                    \
+  template class concatenate_layer<                                     \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>;                   \
+  template std::unique_ptr<Layer>                                       \
+  build_concatenate_layer_from_pbuf<T,data_layout::DATA_PARALLEL, El::Device::GPU> ( \
+    lbann_comm*, lbann_data::Layer const&);                             \
+  template std::unique_ptr<Layer>                                       \
+  build_concatenate_layer_from_pbuf<T,data_layout::MODEL_PARALLEL, El::Device::GPU>( \
+    lbann_comm*, lbann_data::Layer const&)
 
-#define LBANN_INSTANTIATE_CPU_HALF
+#if 0
+  template void fp_compute_impl<T>(                                     \
+    concatenate_layer<T,data_layout::DATA_PARALLEL,El::Device::GPU>&,   \
+    size_t);                                                            \
+  template void bp_compute_impl<T>(                                     \
+    concatenate_layer<T,data_layout::DATA_PARALLEL,El::Device::GPU>&,   \
+    size_t)
+#endif
+
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

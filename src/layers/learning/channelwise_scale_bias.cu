@@ -274,9 +274,9 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 
 #define PROTO(T)                                      \
   template class channelwise_scale_bias_layer<        \
-    T, data_layout::DATA_PARALLEL, El::Device::GPU>;
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>
 
-#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
