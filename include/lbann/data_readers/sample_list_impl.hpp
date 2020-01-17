@@ -76,7 +76,7 @@ template<> inline std::string to_sample_name_t<std::string>(const std::string& s
 //------------------------
 
 inline sample_list_header::sample_list_header()
-  : m_is_multi_sample(false), m_is_exclusive(false),
+  : m_is_multi_sample(false), m_is_exclusive(false), m_no_label_header(false),
     m_included_sample_count(0u), m_excluded_sample_count(0u), m_num_files(0u),
     m_is_file_dir_overriden(false),
     m_file_dir(""), m_sample_list_name(""), m_label_filename("") {
@@ -92,6 +92,7 @@ inline void sample_list_header::set_sample_list_type(const std::string& line1) {
 
   m_is_multi_sample = false;
   m_is_exclusive = false;
+  m_no_label_header = false;
 
   if (sample_list_type == single_sample) {
   } else if (sample_list_type == multi_sample_inclusion) {
@@ -100,6 +101,16 @@ inline void sample_list_header::set_sample_list_type(const std::string& line1) {
   } else if (sample_list_type == multi_sample_exclusion) {
     m_is_multi_sample = true;
     m_is_exclusive = true;
+  } else if (sample_list_type == "CONDUIT_HDF5_INCLUSION") {
+    // For backward compatibility
+    m_is_multi_sample = true;
+    m_is_exclusive = false;
+    m_no_label_header = true; // old format does not use a line for label file
+  } else if (sample_list_type == "CONDUIT_HDF5_EXCLUSION") {
+    // For backward compatibility
+    m_is_multi_sample = true;
+    m_is_exclusive = true;
+    m_no_label_header = true;
   } else {
     LBANN_ERROR("Unknown sample list type: ", sample_list_type);
   }
@@ -143,6 +154,10 @@ inline bool sample_list_header::is_multi_sample() const {
 
 inline bool sample_list_header::is_exclusive() const {
   return m_is_exclusive;
+}
+
+inline bool sample_list_header::use_label_header() const {
+  return !m_no_label_header;
 }
 
 inline size_t sample_list_header::get_sample_count() const {
@@ -314,12 +329,15 @@ inline sample_list_header sample_list<sample_name_t>
   std::string line1 = read_header_line(istrm, listname, "the exclusiveness\n");
   std::string line2 = read_header_line(istrm, listname, "the number of samples and the number of files\n");
   std::string line3 = read_header_line(istrm, listname, "the data file directory\n");
-  std::string line4 = read_header_line(istrm, listname, "the path to label/response file\n");
 
   hdr.set_sample_list_type(line1);
   hdr.set_sample_count(line2);
   hdr.set_data_file_dir(line3);
-  hdr.set_label_filename(line4);
+
+  if (hdr.use_label_header()) {
+    std::string line4 = read_header_line(istrm, listname, "the path to label/response file\n");
+    hdr.set_label_filename(line4);
+  }
 
   if (hdr.get_file_dir().empty() || !check_if_dir_exists(hdr.get_file_dir())) {
     LBANN_ERROR(std::string{} + "file " + listname

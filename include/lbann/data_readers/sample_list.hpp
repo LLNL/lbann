@@ -27,6 +27,8 @@ struct sample_list_header {
   bool m_is_multi_sample;
   /// Whether to list the IDs of samples to exclude or to include
   bool m_is_exclusive;
+  /// Whether to read the header line for a label file
+  bool m_no_label_header;
   /// Number of included samples
   size_t m_included_sample_count;
   /// Number of excluded samples
@@ -49,6 +51,7 @@ struct sample_list_header {
 
   bool is_multi_sample() const;
   bool is_exclusive() const;
+  bool use_label_header() const;
   size_t get_sample_count() const;
   size_t get_num_files() const;
   const std::string& get_file_dir() const;
@@ -57,7 +60,7 @@ struct sample_list_header {
   void set_sample_list_name(const std::string& n);
   const std::string& get_label_filename() const;
   template <class Archive> void serialize( Archive & ar ) {
-    ar(m_is_multi_sample, m_is_exclusive,
+    ar(m_is_multi_sample, m_is_exclusive, m_no_label_header,
        m_included_sample_count, m_excluded_sample_count,
        m_num_files, m_file_dir,
        m_sample_list_name, m_label_filename);
