@@ -44,7 +44,7 @@ void local_fp_cpu(El::Int height,
   // Compute local contribution to mean absolute error
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    TensorDataType sum = 0;
+    TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_height; ++row) {
       sum += std::fabs(local_prediction(row, col)
                        - local_ground_truth(row, col));
@@ -63,7 +63,7 @@ void local_bp_cpu(El::Int height,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
 
   // Useful constants
-  const TensorDataType scale = TensorDataType(1) / height;
+  const TensorDataType scale = El::TypeTraits<TensorDataType>::One() / El::To<TensorDataType>(height);
   const El::Int local_height = local_prediction.Height();
   const El::Int local_width = local_prediction.Width();
 
@@ -83,8 +83,8 @@ void local_bp_cpu(El::Int height,
         dx = - scale * dy;
         dxhat = scale * dy;
       } else {
-        dx = TensorDataType(0);
-        dxhat = TensorDataType(0);
+        dx = El::TypeTraits<TensorDataType>::Zero();
+        dxhat = El::TypeTraits<TensorDataType>::Zero();
       }
     }
   }

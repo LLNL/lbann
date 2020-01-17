@@ -23,6 +23,7 @@ spack:
   - cnpy
   - opencv
   - cereal
+  - half
   - ninja
   - zlib
   - cmake
@@ -37,8 +38,7 @@ spack:
   - py-matplotlib
   - py-onnx
   - py-pandas
-  - protobuf
-  - py-protobuf+cpp
+  - py-protobuf
   - py-pytest
   - py-setuptools
   - py-texttable

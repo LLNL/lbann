@@ -62,9 +62,9 @@ __global__ void fp_compute_3d_kernel(
   for (El::Int col = bidy; col < width; col += num_blocks_y) {
 
     // Crop offsets
-    El::Int offz = num_offsets_z * crop_pos[col*crop_pos_ldim];
-    El::Int offy = num_offsets_y * crop_pos[col*crop_pos_ldim+1];
-    El::Int offx = num_offsets_x * crop_pos[col*crop_pos_ldim+2];
+    El::Int offz = num_offsets_z * static_cast<El::Int>(crop_pos[col*crop_pos_ldim]);
+    El::Int offy = num_offsets_y * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+1]);
+    El::Int offx = num_offsets_x * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+2]);
     offz = min(max(offz, El::Int(0)), num_offsets_z - 1);
     offy = min(max(offy, El::Int(0)), num_offsets_y - 1);
     offx = min(max(offx, El::Int(0)), num_offsets_x - 1);
@@ -127,9 +127,9 @@ __global__ void bp_compute_3d_kernel(
   for (El::Int col = bidy; col < width; col += num_blocks_y) {
 
     // Crop offsets
-    El::Int offz = num_offsets_z * crop_pos[col*crop_pos_ldim];
-    El::Int offy = num_offsets_y * crop_pos[col*crop_pos_ldim+1];
-    El::Int offx = num_offsets_x * crop_pos[col*crop_pos_ldim+2];
+    El::Int offz = num_offsets_z * static_cast<El::Int>(crop_pos[col*crop_pos_ldim]);
+    El::Int offy = num_offsets_y * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+1]);
+    El::Int offx = num_offsets_x * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+2]);
     offz = min(max(offz, El::Int(0)), num_offsets_z - 1);
     offy = min(max(offy, El::Int(0)), num_offsets_y - 1);
     offx = min(max(offx, El::Int(0)), num_offsets_x - 1);

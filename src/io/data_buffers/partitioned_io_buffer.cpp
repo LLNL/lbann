@@ -393,6 +393,7 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
   template class partitioned_io_buffer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

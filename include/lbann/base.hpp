@@ -79,6 +79,14 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed = -1);
  */
 void finalize(lbann_comm* comm = nullptr);
 
+#ifdef LBANN_HAS_HALF
+using cpu_fp16 = El::cpu_half_type;
+#endif
+
+#ifdef LBANN_HAS_GPU_FP16
+using fp16 = El::gpu_half_type;
+#endif
+
 // Typedefs for Elemental matrices
 using AbsMat = El::AbstractMatrix<DataType>;
 using CPUMat = El::Matrix<DataType, El::Device::CPU>;

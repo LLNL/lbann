@@ -137,7 +137,7 @@ __global__ void compute_accuracy_kernel(El::Int local_width,
     const auto& prediction = prediction_indices[col];
     const auto& label = label_indices[col];
     loss[col*loss_ldim] = (prediction == label && prediction < max_ind ?
-                           TensorDataType(1) : TensorDataType(0));
+                           TensorDataType(1.0) : TensorDataType(0.0));
   }
 }
 

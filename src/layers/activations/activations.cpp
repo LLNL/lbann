@@ -44,14 +44,15 @@ namespace {
 template <typename TensorDataType>
 struct log_sigmoid_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    if (x >= TensorDataType(0)) {
-      return -std::log1p(std::exp(-x));
+    using std::log1p;
+    if (x >= El::TypeTraits<TensorDataType>::Zero()) {
+      return -log1p(El::Exp(-x));
     } else {
-      return x - std::log1p(std::exp(x));
+      return x - log1p(El::Exp(x));
     }
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1) + std::exp(x));
+    return dy / (El::TypeTraits<TensorDataType>::One() + El::Exp(x));
   }
 };
 
@@ -59,10 +60,10 @@ struct log_sigmoid_op {
 template <typename TensorDataType>
 struct relu_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::max(x, TensorDataType(0));
+    return std::max(x, El::TypeTraits<TensorDataType>::Zero());
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return x > TensorDataType(0) ? dy : TensorDataType(0);
+    return x > El::TypeTraits<TensorDataType>::Zero() ? dy : El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -70,18 +71,22 @@ struct relu_op {
 template <typename TensorDataType>
 struct selu_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return (x > TensorDataType(0) ?
+    using std::expm1;
+    static const auto alpha = TensorDataType(1.6732632423543772848170429916717);
+    static const auto scale = TensorDataType(1.0507009873554804934193349852946);
+    static const auto zero = TensorDataType(0.);
+    return (x > zero ?
             scale * x :
-            scale * alpha * std::expm1(x));
+            scale * alpha * expm1(x));
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return (x > TensorDataType(0) ?
+    static const auto alpha = TensorDataType(1.6732632423543772848170429916717);
+    static const auto scale = TensorDataType(1.0507009873554804934193349852946);
+    static const auto zero = TensorDataType(0.);
+    return (x > zero ?
             dy * scale :
-            dy * scale * alpha * std::exp(x));
+            dy * scale * alpha * El::Exp(x));
   }
-private:
-  static constexpr TensorDataType alpha = 1.6732632423543772848170429916717;
-  static constexpr TensorDataType scale = 1.0507009873554804934193349852946;
 };
 
 /** Sigmoid operator. */
@@ -89,19 +94,21 @@ template <typename TensorDataType>
 struct sigmoid_op {
   TensorDataType eps = std::numeric_limits<TensorDataType>::epsilon();
   inline TensorDataType operator()(const TensorDataType& x) const {
-    const auto& y = 1 / (TensorDataType(1) + std::exp(-x));
+    static const auto one = El::TypeTraits<TensorDataType>::One();
+    const auto& y = one / (one + El::Exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
     if (y <= eps)            { return eps; }
-    else if (y >= TensorDataType(1) - eps) { return TensorDataType(1) - eps; }
+    else if (y >= one - eps) { return one - eps; }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
     return y;
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& y = 1 / (TensorDataType(1) + std::exp(-x));
+    static const auto one = El::TypeTraits<TensorDataType>::One();
+    const auto& y = one / (one + El::Exp(-x));
 #ifdef LBANN_ENABLE_SIGMOID_CUTOFF
-    if (y <= eps || y >= TensorDataType(1) - eps) { return TensorDataType(0); }
+    if (y <= eps || y >= one - eps) { return El::TypeTraits<TensorDataType>::Zero(); }
 #endif // LBANN_ENABLE_SIGMOID_CUTOFF
-    return dy * y * (TensorDataType(1) - y);
+    return dy * y * (one - y);
   }
 };
 
@@ -109,14 +116,15 @@ struct sigmoid_op {
 template <typename TensorDataType>
 struct softplus_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    if (x > TensorDataType(0)) {
-      return std::log1p(std::exp(-x)) + x;
+    using std::log1p;
+    if (x > El::TypeTraits<TensorDataType>::Zero()) {
+      return log1p(El::Exp(-x)) + x;
     } else {
-      return std::log1p(std::exp(x));
+      return log1p(El::Exp(x));
     }
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1) + std::exp(-x));
+    return dy / (El::TypeTraits<TensorDataType>::One() + El::Exp(-x));
   }
 };
 
@@ -124,10 +132,12 @@ struct softplus_op {
 template <typename TensorDataType>
 struct softsign_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return x / (TensorDataType(1) + std::fabs(x));
+    using std::fabs;
+    return x / (El::TypeTraits<TensorDataType>::One() + fabs(x));
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& denom = TensorDataType(1) + std::fabs(x);
+    using std::fabs;
+    const auto& denom = El::TypeTraits<TensorDataType>::One() + fabs(x);
     return dy / (denom * denom);
   }
 };
@@ -135,7 +145,7 @@ struct softsign_op {
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
+#define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
     apply_entrywise_unary_operator<op>(                                 \
@@ -148,14 +158,24 @@ struct softsign_op {
       this->get_prev_activations(),                                     \
       this->get_prev_error_signals(),                                   \
       this->get_error_signals());                                       \
-  }                                                                     \
-  UNARY_ETI_INST_MACRO_DEV(layer, El::Device::CPU)
+  }
 
-INSTANTIATE(log_sigmoid_layer, log_sigmoid_op);
-INSTANTIATE(relu_layer, relu_op);
-INSTANTIATE(selu_layer, selu_op);
-INSTANTIATE(sigmoid_layer, sigmoid_op);
-INSTANTIATE(softplus_layer, softplus_op);
-INSTANTIATE(softsign_layer, softsign_op);
+DEFINE_COMPUTE_OPS(log_sigmoid_layer, log_sigmoid_op)
+DEFINE_COMPUTE_OPS(relu_layer, relu_op)
+DEFINE_COMPUTE_OPS(selu_layer, selu_op)
+DEFINE_COMPUTE_OPS(sigmoid_layer, sigmoid_op)
+DEFINE_COMPUTE_OPS(softplus_layer, softplus_op)
+DEFINE_COMPUTE_OPS(softsign_layer, softsign_op)
+
+#define PROTO(T) \
+  UNARY_ETI_INST_MACRO_DEV_DT(log_sigmoid_layer, T, El::Device::CPU); \
+  UNARY_ETI_INST_MACRO_DEV_DT(relu_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(selu_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(sigmoid_layer, T, El::Device::CPU);     \
+  UNARY_ETI_INST_MACRO_DEV_DT(softplus_layer, T, El::Device::CPU);    \
+  UNARY_ETI_INST_MACRO_DEV_DT(softsign_layer, T, El::Device::CPU)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -33,6 +33,7 @@ import "google/protobuf/wrappers.proto";
 enum DataType {
   FLOAT = 0;
   DOUBLE = 1;
+  FP16 = 2;
 }
 
 message Layer {
@@ -289,7 +290,9 @@ message Layer {
   /**
    *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
    */
-  message Softmax {}
+  message Softmax {
+    string softmax_mode = 1; // default: "instance"; should be "instance" or "channel"
+  }
 
   message Softplus {}
   message Softsign {}

@@ -85,16 +85,8 @@ __global__ void adam_contiguous_kernel(size_t size,
 
 template <typename TensorDataType>
 void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
-                                            const AbsDistMatrixType& gradient) {
-  constexpr TensorDataType one = 1;
-
-  // Precompute the bias correction and learning rate.
-  m_current_beta1 *= m_beta1;
-  m_current_beta2 *= m_beta2;
-  const TensorDataType correction = this->get_learning_rate() *
-                              (std::sqrt(one - m_current_beta2)
-                               / (one - m_current_beta1));
-
+                                            const AbsDistMatrixType& gradient,
+                                            const TensorDataType& correction) {
   // Get matrix dimensions
   const size_t local_height = values.LocalHeight();
   const size_t local_width = values.LocalWidth();
@@ -122,7 +114,22 @@ void adam<TensorDataType>::step_compute_gpu(AbsDistMatrixType& values,
 
 }
 
-template void adam<DataType>::step_compute_gpu(El::AbstractDistMatrix<DataType>& values,
-                                            const El::AbstractDistMatrix<DataType>& gradient);
+#ifdef LBANN_HAS_HALF
+template <>
+void adam<cpu_fp16>::step_compute_gpu(AbsDistMatrixType&,
+                                      const AbsDistMatrixType&,
+                                      const cpu_fp16&) {
+  LBANN_ERROR("Can't call this function with cpu_fp16!");
+}
+#endif // LBANN_HAS_HALF
+
+
+#define PROTO(T)                                \
+  template void adam<T>::step_compute_gpu(      \
+    El::AbstractDistMatrix<T>&,                 \
+    const El::AbstractDistMatrix<T>&, const T&)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

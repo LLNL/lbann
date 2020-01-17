@@ -71,7 +71,7 @@ __global__ void mean_kernel(El::Int num_channels,
       }
       if (tid == 0) {
         cuda::atomic_add(&output[channel + col * output_ldim],
-                         shared_sums[0] / channel_size);
+                         shared_sums[0] / TensorDataType(channel_size));
       }
 
     }
@@ -100,7 +100,7 @@ __global__ void backprop_kernel(El::Int num_channels,
   for (El::Int col = bidz; col < width; col += nblocksz) {
     for (El::Int channel = bidy; channel < num_channels; channel += nblocksy) {
       const auto& dy = gradient_wrt_output[channel + col * gradient_wrt_output_ldim];
-      const auto& dx = dy / channel_size;
+      const auto& dx = dy / TensorDataType(channel_size);
       for (El::Int i = gidx; i < channel_size; i += nthreadsx) {
         gradient_wrt_input[i + channel*channel_size + col*gradient_wrt_input_ldim] = dx;
       }
@@ -180,7 +180,10 @@ void channelwise_mean_layer<TensorDataType, Layout, Device>::bp_compute() {
 
 }
 
-template class channelwise_mean_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                     \
+  template class channelwise_mean_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

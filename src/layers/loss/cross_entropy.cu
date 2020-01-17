@@ -51,12 +51,12 @@ __global__ void fp_kernel(int height, int width,
   for (int col = bidy; col < width; col += gridDim.y) {
 
     // Compute contributions for each thread
-    TensorDataType private_contribution = TensorDataType(0);
+    auto private_contribution = TensorDataType(0.);
     for (int row = gidx; row < height; row += nthreadsx) {
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
-      if (xhat > TensorDataType(0)) {
+      if (xhat > TensorDataType(0.)){
         const auto& x = prediction[row + col * prediction_ldim];
-        private_contribution += - xhat * log(x);
+        private_contribution += - xhat * cuda::log(x);
       }
     }
 
@@ -126,8 +126,8 @@ __global__ void bp_kernel(int height, int width,
       const auto& xhat = ground_truth[row + col * ground_truth_ldim];
       auto& dx = gradient_wrt_prediction[row + col * gradient_wrt_prediction_ldim];
       auto& dxhat = gradient_wrt_ground_truth[row + col * gradient_wrt_ground_truth_ldim];
-      dx = (xhat > TensorDataType(0)) ? - dy * xhat / x : TensorDataType(0);
-      dxhat = - dy * std::log(x);
+      dx = (xhat > TensorDataType(0.)) ? - dy * xhat / x : TensorDataType(0.);
+      dxhat = - dy * cuda::log(x);
     }
   }
 

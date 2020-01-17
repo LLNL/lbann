@@ -45,13 +45,20 @@ vocab_size = dataset.corpus.vocab_size
 sequence_length = dataset.sample_dims()[0]
 
 # Input is a sequence of token IDs
-input_ = lbann.Identity(lbann.Input(), device='cpu')
+input_ = lbann.Identity(lbann.Input())
 input_slice = lbann.Slice(input_,
-                          slice_points=str_list(range(sequence_length+1)),
-                          device='cpu')
-tokens = []
-for _ in range(sequence_length):
-    tokens.append(lbann.Identity(input_slice, device='cpu'))
+                          slice_points=str_list(range(sequence_length+1)))
+tokens_list = [lbann.Identity(input_slice) for _ in range(sequence_length)]
+
+# Get sequence of embedding vectors
+embeddings = lbann.Embedding(input_,
+                             num_embeddings=vocab_size,
+                             embedding_dim=args.latent_dim)
+embeddings_slice = lbann.Slice(embeddings,
+                               axis=0,
+                               slice_points=str_list(range(sequence_length+1)))
+embeddings_list = [lbann.Reshape(embeddings_slice, dims='-1')
+                   for _ in range(sequence_length)]
 
 # Layer modules
 lstm = lbann.modules.LSTMCell(args.latent_dim)
@@ -65,16 +72,13 @@ loss = []
 for step in range(sequence_length-1):
 
     # Predict next token with RNN
-    x = lbann.Embedding(tokens[step],
-                        num_embeddings=vocab_size,
-                        embedding_dim=args.latent_dim,
-                        device='cpu')
+    x = embeddings_list[step]
     x, lstm_state = lstm(x, lstm_state)
     x = pred_fc(x)
     pred = lbann.Softmax(x)
 
     # Evaluate prediction with cross entropy
-    ground_truth = lbann.OneHot(tokens[step+1], size=vocab_size)
+    ground_truth = lbann.OneHot(tokens_list[step+1], size=vocab_size)
     cross_entropy = lbann.CrossEntropy([pred, ground_truth])
     loss.append(lbann.LayerTerm(cross_entropy, scale=1/(sequence_length-1)))
 

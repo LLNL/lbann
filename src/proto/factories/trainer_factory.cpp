@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
-#include "lbann/objective_functions/layer_term.hpp"
+#include "lbann/trainers/trainer.hpp"
+
+#include <trainer.pb.h>
 
 namespace lbann {
 namespace proto {

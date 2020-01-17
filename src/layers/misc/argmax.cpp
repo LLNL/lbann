@@ -48,7 +48,10 @@ void argmax_layer<TensorDataType, Layout, Device>::fp_compute() {
   }
 }
 
-template class argmax_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                     \
+  template class argmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -101,14 +101,15 @@ protected:
     case reduction_mode::SUM:
       El::Ones(m_ones, input_size, 1);
       El::Gemv(El::TRANSPOSE,
-               TensorDataType(1), local_input, m_ones,
-               TensorDataType(0), local_output);
+               El::TypeTraits<TensorDataType>::One(), local_input, m_ones,
+               El::TypeTraits<TensorDataType>::Zero(), local_output);
       break;
     case reduction_mode::AVERAGE:
       El::Ones(m_ones, input_size, 1);
       El::Gemv(El::TRANSPOSE,
-               TensorDataType(1) / input_size, local_input, m_ones,
-               TensorDataType(0), local_output);
+               El::TypeTraits<TensorDataType>::One() / El::To<TensorDataType>(input_size),
+               local_input, m_ones,
+               El::TypeTraits<TensorDataType>::Zero(), local_output);
       break;
     default:
       LBANN_ERROR("invalid reduction mode");
@@ -128,14 +129,15 @@ protected:
     case reduction_mode::SUM:
       El::Ones(m_ones, input_size, 1);
       El::Gemm(El::NORMAL, El::NORMAL,
-               TensorDataType(1), m_ones, local_gradient_wrt_output,
-               TensorDataType(0), local_gradient_wrt_input);
+               El::TypeTraits<TensorDataType>::One(), m_ones, local_gradient_wrt_output,
+               El::TypeTraits<TensorDataType>::Zero(), local_gradient_wrt_input);
       break;
     case reduction_mode::AVERAGE:
       El::Ones(m_ones, input_size, 1);
       El::Gemm(El::NORMAL, El::NORMAL,
-               TensorDataType(1) / input_size, m_ones, local_gradient_wrt_output,
-               TensorDataType(0), local_gradient_wrt_input);
+               El::TypeTraits<TensorDataType>::One() / El::To<TensorDataType>(input_size),
+               m_ones, local_gradient_wrt_output,
+               El::TypeTraits<TensorDataType>::Zero(), local_gradient_wrt_input);
       break;
     default:
       LBANN_ERROR("invalid reduction mode");
@@ -149,12 +151,8 @@ protected:
 #define PROTO_DEVICE(T, Device) \
   extern template class reduction_layer<T, data_layout::DATA_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_REDUCTION_LAYER_INSTANTIATE
 
 } // namespace lbann

@@ -66,7 +66,7 @@ void local_bp(TensorDataType min,
       const auto& x = input(row, col);
       const auto& dy = gradient_wrt_output(row, col);
       auto& dx = gradient_wrt_input(row, col);
-      dx = (x <= min || x >= max) ? TensorDataType(0) : dy;
+      dx = (x <= min || x >= max) ? El::TypeTraits<TensorDataType>::Zero() : dy;
     }
   }
 }

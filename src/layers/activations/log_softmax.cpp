@@ -38,9 +38,9 @@ void fp(lbann_comm& comm,
         El::AbstractDistMatrix<TensorDataType>& workspace) {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
-  auto& local_output = dynamic_cast<CPUMat&>(output.Matrix());
-  auto& local_workspace = dynamic_cast<CPUMat&>(workspace.Matrix());
+  const auto& local_input = dynamic_cast<const CPUMatDT<TensorDataType>&>(input.LockedMatrix());
+  auto& local_output = dynamic_cast<CPUMatDT<TensorDataType>&>(output.Matrix());
+  auto& local_workspace = dynamic_cast<CPUMatDT<TensorDataType>&>(workspace.Matrix());
   const auto local_height = local_input.Height();
   const auto local_width = local_input.Width();
 
@@ -74,7 +74,7 @@ void fp(lbann_comm& comm,
   // Compute output by subtracting LogSumExp
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    const TensorDataType log_sum_exp = std::log(local_workspace(0, col));
+    const TensorDataType log_sum_exp = static_cast<TensorDataType>(std::log(local_workspace(El::TypeTraits<TensorDataType>::Zero(), col)));
     for (El::Int row = 0; row < local_height; ++row) {
       auto& y = local_output(row, col);
       y -= log_sum_exp;

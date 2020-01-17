@@ -109,7 +109,7 @@ __global__ void fp_sums_kernel(
  */
 template <typename TensorDataType>
 __global__ void fp_statistics_kernel(
-  size_t sample_size,
+  unsigned long long sample_size,
   size_t local_num_samples,
   TensorDataType* means,
   size_t means_stride,
@@ -121,11 +121,12 @@ __global__ void fp_statistics_kernel(
   for (size_t i = gid; i < local_num_samples; i += nthreads) {
     const auto sum = means[i*means_stride];
     const auto sqsum = vars[i*means_stride];
-    const auto& mean = sum / sample_size;
-    const auto& sqmean = sqsum / sample_size;
-    const auto& var = (sqmean - mean*mean) * sample_size / (sample_size-1);
+    const TensorDataType sample_size_dt = TensorDataType(sample_size);
+    const auto& mean = sum / sample_size_dt;
+    const auto& sqmean = sqsum / sample_size_dt;
+    const auto& var = (sqmean - mean*mean) * sample_size_dt / TensorDataType(sample_size-1);
     means[i*means_stride] = mean;
-    vars[i*vars_stride] = cuda::max(var, TensorDataType{0});
+    vars[i*vars_stride] = cuda::max(var, TensorDataType(0.0));
   }
 
 }
@@ -212,7 +213,7 @@ void fp_impl(lbann_comm& comm,
   // Compute statistics from sums
   if (sample_size <= 1) {
     // local_means already has correct values
-    El::Fill(local_vars, TensorDataType{1});
+    El::Fill(local_vars, El::TypeTraits<TensorDataType>::One());
   }
   else if (!local_statistics.IsEmpty()) {
     constexpr size_t block_size = 256;
@@ -301,7 +302,7 @@ __global__ void bp_statistics_grad_kernel(
       const auto& var = vars[i*vars_stride];
       const auto& inv_stdev = cuda::rsqrt(var + epsilon);
       const TensorDataType dmean = -sums.first * inv_stdev;
-      const TensorDataType dvar = -sums.second * inv_stdev*inv_stdev*inv_stdev / 2;
+      const TensorDataType dvar = -sums.second * inv_stdev*inv_stdev*inv_stdev / TensorDataType(2);
       cuda::atomic_add(&means_grad[i*means_grad_stride], dmean);
       cuda::atomic_add(&vars_grad[i*vars_grad_stride], dvar);
     }
@@ -322,7 +323,7 @@ __global__ void bp_statistics_grad_kernel(
  */
 template <typename TensorDataType>
 __global__ void bp_input_grad_kernel(
-  size_t sample_size,
+  unsigned long long sample_size,
   size_t local_num_samples,
   size_t local_sample_size,
   TensorDataType epsilon,
@@ -356,8 +357,8 @@ __global__ void bp_input_grad_kernel(
       const auto& dy = output_grad[i*output_grad_ldim + j];
       auto& dx = input_grad[i*input_grad_ldim + j];
       dx = (dy * inv_stdev
-            + dmean / sample_size
-            + dvar * (x - mean) * 2 / (sample_size - 1));
+            + dmean / TensorDataType(sample_size)
+            + dvar * (x - mean) * TensorDataType(2) / TensorDataType(sample_size - 1));
     }
   }
 

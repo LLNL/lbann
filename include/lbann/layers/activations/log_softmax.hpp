@@ -137,12 +137,8 @@ private:
   extern template class log_softmax_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class log_softmax_layer<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_LOG_SOFTMAX_LAYER_INSTANTIATE
 
 } // namespace lbann

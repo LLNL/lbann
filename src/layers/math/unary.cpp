@@ -44,11 +44,11 @@ namespace {
 template <typename TensorDataType>
 struct logical_not_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    const auto& b = x != TensorDataType(0) && !std::isnan(x);
-    return !b ? TensorDataType(1) : TensorDataType(0);
+    const auto& b = x != El::TypeTraits<TensorDataType>::Zero() && !std::isnan(x);
+    return !b ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -56,12 +56,12 @@ struct logical_not_op {
 template <typename TensorDataType>
 struct abs_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return x >= TensorDataType(0) ? x : -x;
+    return x >= El::TypeTraits<TensorDataType>::Zero() ? x : -x;
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    if      (x > TensorDataType(0)) { return dy;   }
-    else if (x < TensorDataType(0)) { return -dy;  }
-    else               { return TensorDataType(0); }
+    if      (x > El::TypeTraits<TensorDataType>::Zero()) { return dy;   }
+    else if (x < El::TypeTraits<TensorDataType>::Zero()) { return -dy;  }
+    else               { return El::TypeTraits<TensorDataType>::Zero(); }
   }
 };
 
@@ -80,12 +80,12 @@ struct negative_op {
 template <typename TensorDataType>
 struct sign_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    if      (x > TensorDataType(0)) { return TensorDataType(1);  }
-    else if (x < TensorDataType(0)) { return -TensorDataType(1); }
-    else               { return TensorDataType(0); }
+    if      (x > El::TypeTraits<TensorDataType>::Zero()) { return El::TypeTraits<TensorDataType>::One();  }
+    else if (x < El::TypeTraits<TensorDataType>::Zero()) { return -El::TypeTraits<TensorDataType>::One(); }
+    else               { return El::TypeTraits<TensorDataType>::Zero(); }
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -93,10 +93,11 @@ struct sign_op {
 template <typename TensorDataType>
 struct round_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::round(x);
+    using std::round;
+    return round(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -104,10 +105,11 @@ struct round_op {
 template <typename TensorDataType>
 struct ceil_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::ceil(x);
+    using std::ceil;
+    return ceil(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
@@ -115,24 +117,25 @@ struct ceil_op {
 template <typename TensorDataType>
 struct floor_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::floor(x);
+    using std::floor;
+    return floor(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
 /** Reciprocal operator.
- *  If a standard reciprocal produces an infinity or NaN, TensorDataType(0) is
+ *  If a standard reciprocal produces an infinity or NaN, El::TypeTraits<TensorDataType>::Zero() is
  *  output instead.
  */
 template <typename TensorDataType>
 struct reciprocal_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return 1 / x;
+    return El::To<TensorDataType>(1) / x;
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    if (dy == TensorDataType(0)) { return TensorDataType(0); }
+    if (dy == El::TypeTraits<TensorDataType>::Zero()) { return El::TypeTraits<TensorDataType>::Zero(); }
     else            { return - dy / (x*x); }
   }
 };
@@ -144,7 +147,7 @@ struct square_op {
     return x*x;
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return 2*x * dy;
+    return El::To<TensorDataType>(2)*x * dy;
   }
 };
 
@@ -153,10 +156,10 @@ struct square_op {
 template <typename TensorDataType>
 struct sqrt_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::sqrt(x);
+    return El::Sqrt(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (2 * std::sqrt(x));
+    return dy / (El::To<TensorDataType>(2) * El::Sqrt(x));
   }
 };
 
@@ -164,11 +167,11 @@ struct sqrt_op {
 template <typename TensorDataType>
 struct rsqrt_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return 1 / std::sqrt(x);
+    return El::To<TensorDataType>(1) / El::Sqrt(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& s = std::sqrt(x);
-    return - dy / (2 * x * s);
+    const auto& s = El::Sqrt(x);
+    return - dy / (El::To<TensorDataType>(2) * x * s);
   }
 };
 
@@ -176,36 +179,37 @@ struct rsqrt_op {
 template <typename TensorDataType>
 struct safe_reciprocal_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    const auto& y = 1 / x;
+    const auto& y = El::To<TensorDataType>(1) / x;
     if (std::isfinite(y)) { return y; }
-    else                  { return TensorDataType(0); }
+    else                  { return El::TypeTraits<TensorDataType>::Zero(); }
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& y = 1 / x;
+    const auto& y = El::To<TensorDataType>(1) / x;
     if (std::isfinite(y)) { return - dy * y*y; }
-    else                  { return TensorDataType(0); }
+    else                  { return El::TypeTraits<TensorDataType>::Zero(); }
   }
 };
 
-/** ExpTensorDataType(1)ntial operator. */
+/** Exponential operator. */
 template <typename TensorDataType>
 struct exp_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::exp(x);
+    return El::Exp(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy * std::exp(x);
+    return dy * El::Exp(x);
   }
 };
 
-/** ExpTensorDataType(1)ntial minus TensorDataType(1) operator. */
+/** Exponential minus one operator. */
 template <typename TensorDataType>
 struct expm1_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::expm1(x);
+    using std::expm1;
+    return expm1(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy * std::exp(x);
+    return dy * El::Exp(x);
   }
 };
 
@@ -213,21 +217,22 @@ struct expm1_op {
 template <typename TensorDataType>
 struct log_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::log(x);
+    return El::Log(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     return dy / x;
   }
 };
 
-/** Natural logarithm TensorDataType(1) plus operator. */
+/** Natural logarithm one plus operator. */
 template <typename TensorDataType>
 struct log1p_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::log1p(x);
+    using std::log1p;
+    return log1p(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (x + TensorDataType(1));
+    return dy / (x + El::TypeTraits<TensorDataType>::One());
   }
 };
 
@@ -235,10 +240,10 @@ struct log1p_op {
 template <typename TensorDataType>
 struct cos_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::cos(x);
+    return El::Cos(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy * std::sin(x);
+    return -dy * El::Sin(x);
   }
 };
 
@@ -246,10 +251,10 @@ struct cos_op {
 template <typename TensorDataType>
 struct sin_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::sin(x);
+    return El::Sin(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy * std::cos(x);
+    return dy * El::Cos(x);
   }
 };
 
@@ -257,10 +262,10 @@ struct sin_op {
 template <typename TensorDataType>
 struct tan_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::tan(x);
+    return El::Tan(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& c = std::cos(x);
+    const auto& c = El::Cos(x);
     return dy / (c*c);
   }
 };
@@ -269,10 +274,10 @@ struct tan_op {
 template <typename TensorDataType>
 struct acos_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::acos(x);
+    return El::Acos(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / std::sqrt(TensorDataType(1) - x*x);
+    return -dy / El::Sqrt(El::TypeTraits<TensorDataType>::One() - x*x);
   }
 };
 
@@ -280,10 +285,10 @@ struct acos_op {
 template <typename TensorDataType>
 struct asin_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::asin(x);
+    return El::Asin(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / std::sqrt(TensorDataType(1) - x*x);
+    return dy / El::Sqrt(El::TypeTraits<TensorDataType>::One() - x*x);
   }
 };
 
@@ -291,10 +296,10 @@ struct asin_op {
 template <typename TensorDataType>
 struct atan_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::atan(x);
+    return El::Atan(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1) + x*x);
+    return dy / (El::TypeTraits<TensorDataType>::One() + x*x);
   }
 };
 
@@ -302,10 +307,10 @@ struct atan_op {
 template <typename TensorDataType>
 struct cosh_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::cosh(x);
+    return El::Cosh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy * std::sinh(x);
+    return dy * El::Sinh(x);
   }
 };
 
@@ -313,10 +318,10 @@ struct cosh_op {
 template <typename TensorDataType>
 struct sinh_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::sinh(x);
+    return El::Sinh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy * std::cosh(x);
+    return dy * El::Cosh(x);
   }
 };
 
@@ -324,10 +329,10 @@ struct sinh_op {
 template <typename TensorDataType>
 struct tanh_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::tanh(x);
+    return El::Tanh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& c = std::cosh(x);
+    const auto& c = El::Cosh(x);
     return dy / (c*c);
   }
 };
@@ -336,10 +341,10 @@ struct tanh_op {
 template <typename TensorDataType>
 struct acosh_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::acosh(x);
+    return El::Acosh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / (std::sqrt(x - TensorDataType(1)) * std::sqrt(x + TensorDataType(1)));
+    return -dy / (El::Sqrt(x - El::TypeTraits<TensorDataType>::One()) * El::Sqrt(x + El::TypeTraits<TensorDataType>::One()));
   }
 };
 
@@ -347,10 +352,10 @@ struct acosh_op {
 template <typename TensorDataType>
 struct asinh_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::asinh(x);
+    return El::Asinh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / std::sqrt(TensorDataType(1) + x*x);
+    return dy / El::Sqrt(El::TypeTraits<TensorDataType>::One() + x*x);
   }
 };
 
@@ -358,22 +363,22 @@ struct asinh_op {
 template <typename TensorDataType>
 struct atanh_op {
   inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::atanh(x);
+    return El::Atanh(x);
   }
   inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1) - x*x);
+    return dy / (El::TypeTraits<TensorDataType>::One() - x*x);
   }
 };
 
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
+#define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
-    apply_entrywise_unary_operator<op>(                                 \
-      this->get_prev_activations(),                                     \
-      this->get_activations());                                         \
+      apply_entrywise_unary_operator<op>(                               \
+        this->get_prev_activations(),                                   \
+    this->get_activations());                                           \
   }                                                                     \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::bp_compute() {            \
@@ -381,36 +386,68 @@ struct atanh_op {
       this->get_prev_activations(),                                     \
       this->get_prev_error_signals(),                                   \
       this->get_error_signals());                                       \
-  }                                                                     \
-  UNARY_ETI_INST_MACRO_DEV(layer, El::Device::CPU)
+  }
 
-INSTANTIATE(logical_not_layer, logical_not_op);
-INSTANTIATE(abs_layer, abs_op);
-INSTANTIATE(negative_layer, negative_op);
-INSTANTIATE(sign_layer, sign_op);
-INSTANTIATE(round_layer, round_op);
-INSTANTIATE(ceil_layer, ceil_op);
-INSTANTIATE(floor_layer, floor_op);
-INSTANTIATE(reciprocal_layer, reciprocal_op);
-INSTANTIATE(square_layer, square_op);
-INSTANTIATE(sqrt_layer, sqrt_op);
-INSTANTIATE(rsqrt_layer, rsqrt_op);
-INSTANTIATE(safe_reciprocal_layer, safe_reciprocal_op);
-INSTANTIATE(exp_layer, exp_op);
-INSTANTIATE(expm1_layer, expm1_op);
-INSTANTIATE(log_layer, log_op);
-INSTANTIATE(log1p_layer, log1p_op);
-INSTANTIATE(cos_layer, cos_op);
-INSTANTIATE(sin_layer, sin_op);
-INSTANTIATE(tan_layer, tan_op);
-INSTANTIATE(acos_layer, acos_op);
-INSTANTIATE(asin_layer, asin_op);
-INSTANTIATE(atan_layer, atan_op);
-INSTANTIATE(cosh_layer, cosh_op);
-INSTANTIATE(sinh_layer, sinh_op);
-INSTANTIATE(tanh_layer, tanh_op);
-INSTANTIATE(acosh_layer, acosh_op);
-INSTANTIATE(asinh_layer, asinh_op);
-INSTANTIATE(atanh_layer, atanh_op);
+DEFINE_COMPUTE_OPS(logical_not_layer, logical_not_op)
+DEFINE_COMPUTE_OPS(abs_layer, abs_op)
+DEFINE_COMPUTE_OPS(negative_layer, negative_op)
+DEFINE_COMPUTE_OPS(sign_layer, sign_op)
+DEFINE_COMPUTE_OPS(round_layer, round_op)
+DEFINE_COMPUTE_OPS(ceil_layer, ceil_op)
+DEFINE_COMPUTE_OPS(floor_layer, floor_op)
+DEFINE_COMPUTE_OPS(reciprocal_layer, reciprocal_op)
+DEFINE_COMPUTE_OPS(square_layer, square_op)
+DEFINE_COMPUTE_OPS(sqrt_layer, sqrt_op)
+DEFINE_COMPUTE_OPS(rsqrt_layer, rsqrt_op)
+DEFINE_COMPUTE_OPS(safe_reciprocal_layer, safe_reciprocal_op)
+DEFINE_COMPUTE_OPS(exp_layer, exp_op)
+DEFINE_COMPUTE_OPS(expm1_layer, expm1_op)
+DEFINE_COMPUTE_OPS(log_layer, log_op)
+DEFINE_COMPUTE_OPS(log1p_layer, log1p_op)
+DEFINE_COMPUTE_OPS(cos_layer, cos_op)
+DEFINE_COMPUTE_OPS(sin_layer, sin_op)
+DEFINE_COMPUTE_OPS(tan_layer, tan_op)
+DEFINE_COMPUTE_OPS(acos_layer, acos_op)
+DEFINE_COMPUTE_OPS(asin_layer, asin_op)
+DEFINE_COMPUTE_OPS(atan_layer, atan_op)
+DEFINE_COMPUTE_OPS(cosh_layer, cosh_op)
+DEFINE_COMPUTE_OPS(sinh_layer, sinh_op)
+DEFINE_COMPUTE_OPS(tanh_layer, tanh_op)
+DEFINE_COMPUTE_OPS(acosh_layer, acosh_op)
+DEFINE_COMPUTE_OPS(asinh_layer, asinh_op)
+DEFINE_COMPUTE_OPS(atanh_layer, atanh_op)
+
+#define PROTO(T) \
+  UNARY_ETI_INST_MACRO_DEV_DT(logical_not_layer, T, El::Device::CPU); \
+  UNARY_ETI_INST_MACRO_DEV_DT(abs_layer, T, El::Device::CPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(negative_layer, T, El::Device::CPU);    \
+  UNARY_ETI_INST_MACRO_DEV_DT(sign_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(round_layer, T, El::Device::CPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(ceil_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(floor_layer, T, El::Device::CPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(reciprocal_layer, T, El::Device::CPU);  \
+  UNARY_ETI_INST_MACRO_DEV_DT(square_layer, T, El::Device::CPU);      \
+  UNARY_ETI_INST_MACRO_DEV_DT(sqrt_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(rsqrt_layer, T, El::Device::CPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(safe_reciprocal_layer, T, El::Device::CPU); \
+  UNARY_ETI_INST_MACRO_DEV_DT(exp_layer, T, El::Device::CPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(expm1_layer, T, El::Device::CPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(log_layer, T, El::Device::CPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(log1p_layer, T, El::Device::CPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(cos_layer, T, El::Device::CPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(sin_layer, T, El::Device::CPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(tan_layer, T, El::Device::CPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(acos_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(asin_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(atan_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(cosh_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(sinh_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(tanh_layer, T, El::Device::CPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(acosh_layer, T, El::Device::CPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(asinh_layer, T, El::Device::CPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(atanh_layer, T, El::Device::CPU)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

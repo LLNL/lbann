@@ -34,7 +34,7 @@ namespace {
 template <typename TensorDataType>
 bool is_good(const El::AbstractDistMatrix<TensorDataType>& m) {
   static const TensorDataType threshold
-    = std::sqrt(std::numeric_limits<TensorDataType>::min());
+    = El::Sqrt(std::numeric_limits<TensorDataType>::min());
 
   const auto& local_mat = m.LockedMatrix();
   const El::Int height = local_mat.Height();
