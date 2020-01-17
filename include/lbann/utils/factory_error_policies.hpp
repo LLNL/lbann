@@ -28,7 +28,7 @@ struct default_key_error_policy
     // assume that either the key can be inserted into a stream or
     // that the key can be converted to a string, which isn't
     // necessarily the case.
-      LBANN_ERROR("Unknown key \"", key, "\" detected.");
+    LBANN_ERROR("Unknown key \"", key, "\" detected.");
   }
 };// class default_key_error_policy
 
