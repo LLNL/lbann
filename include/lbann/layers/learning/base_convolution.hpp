@@ -60,7 +60,11 @@ public:
   template <El::Device D>
   using DMatDT = El::Matrix<TensorDataType, D>;
 
+#ifdef LBANN_HAS_CUDNN
   using ScalingType = cudnn::ScalingParamType<TensorDataType>;
+#else
+  using ScalingType = TensorDataType;
+#endif // LBANN_HAS_CUDNN
 
   ///@}
 
