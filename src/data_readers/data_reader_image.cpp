@@ -146,7 +146,6 @@ void image_data_reader::load() {
   options *opts = options::get();
 
   // Load sample list
-  const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = get_data_sample_list();
 
   load_list_of_samples(sample_list_file);

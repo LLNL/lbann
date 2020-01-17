@@ -316,6 +316,8 @@ class data_reader_jag_conduit : public generic_data_reader {
    * the number of models and the mini batch size.
    */
   bool check_num_parallel_readers(long data_set_size);
+  /// Check the consistency of the schema of the first sample
+  void sample_schema_check(const bool check_data);
   /// Rely on pre-determined list of samples.
   void load_list_of_samples(const std::string filename);
   /// Load the sample list from a serialized archive from another rank

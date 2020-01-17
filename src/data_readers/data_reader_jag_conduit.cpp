@@ -54,6 +54,7 @@
 
 #include <cereal/archives/binary.hpp>
 #include <sstream>
+#include <fstream>
 
 // This comes after all the headers, and is only visible within the current implementation file.
 // To make sure, we put '#undef _CN_' at the end of this file
@@ -786,59 +787,11 @@ void data_reader_jag_conduit::load() {
   if(is_master()) {
     std::cout << "data_reader_jag_conduit - starting load" << std::endl;
   }
-  const std::string data_dir = add_delimiter(get_file_dir());
-  const std::string sample_list_file = data_dir + get_data_sample_list();
+  const std::string sample_list_file = get_data_sample_list();
 
-  options *opts = options::get();
-  bool check_data = opts->get_bool("check_data");
-
-  if (check_data) {
-    m_sample_list.set_data_file_check();
-  }
-
-  /// The use of these flags need to be updated to properly separate
-  /// how sample lists are used between trainers and models
-  /// @todo m_list_per_trainer || m_list_per_model
   load_list_of_samples(sample_list_file);
 
-  /// Check the data that each rank loaded
-  if (!m_is_data_loaded && !m_sample_list.empty()) {
-    m_is_data_loaded = true;
-
-    /// Open the first sample to make sure that all of the fields are correct
-    m_sample_list.open_samples_file_handle(0, true);
-
-    if (m_scalar_keys.size() == 0u) {
-      set_all_scalar_choices(); // use all by default if none is specified
-    }
-    if (check_data) {
-      check_scalar_keys();
-    }
-
-    if (m_input_keys.size() == 0u) {
-      set_all_input_choices(); // use all by default if none is specified
-    }
-    if (check_data) {
-      check_input_keys();
-    }
-
-    if (check_data) {
-      check_image_data();
-    }
-
-    m_sample_list.close_if_done_samples_file_handle(0);
-  }
-  if(is_master()) {
-    if (!check_data) {
-      std::cout << "Skip data checking" << std::endl;
-    } else {
-      std::cout << "Done with data checking" << std::endl;
-    }
-  }
-
-  /// Merge all of the sample lists
-  double tm2 = get_time();
-  m_sample_list.all_gather_packed_lists(*m_comm);
+  options *opts = options::get();
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
     {
       const std::string msg = " writing sample list " + sample_list_file;
@@ -850,17 +803,11 @@ void data_reader_jag_conduit::load() {
     s << basename << "." << ext;
     m_sample_list.write(s.str());
   }
-  if (is_master()) {
-    std::cout << "time for all_gather_packed_lists: " << get_time() - tm2 << std::endl;
-  }
 
+  m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_sample_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
-
-  if(is_master()) {
-    std::cout << "Lists have been gathered" << std::endl;
-  }
 
   instantiate_data_store();
   select_subset_of_data();
@@ -927,16 +874,101 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
 }
 
+void data_reader_jag_conduit::sample_schema_check(const bool check_data) {
+  /// Check the data that each rank loaded
+  if (!m_is_data_loaded && !m_sample_list.empty()) {
+    m_is_data_loaded = true;
+
+    /// Open the first sample to make sure that all of the fields are correct
+    m_sample_list.open_samples_file_handle(0, true);
+
+    if (m_scalar_keys.size() == 0u) {
+      set_all_scalar_choices(); // use all by default if none is specified
+    }
+    if (check_data) {
+      check_scalar_keys();
+    }
+
+    if (m_input_keys.size() == 0u) {
+      set_all_input_choices(); // use all by default if none is specified
+    }
+    if (check_data) {
+      check_input_keys();
+    }
+
+    if (check_data) {
+      check_image_data();
+    }
+
+    m_sample_list.close_if_done_samples_file_handle(0);
+  }
+}
+
+template<typename CharT, typename Traits = std::char_traits<CharT> >
+class vectorwrapbuf : public std::basic_streambuf<CharT, Traits> {
+public:
+    vectorwrapbuf(std::vector<CharT> &vec) {
+        this->setg(vec.data(), vec.data(), vec.data() + vec.size());
+    }
+};
+
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file) {
   // load the sample list
   double tm1 = get_time();
-  m_sample_list.keep_sample_order(false);
-  m_sample_list.load(sample_list_file, *(this->m_comm), true);
+  if (! get_file_dir().empty()) {
+    m_sample_list.override_samples_dirname(get_file_dir());
+  }
+
+  m_sample_list.keep_sample_order(this->m_keep_sample_order);
+
+  std::vector<char> buffer;
+  options *opts = options::get();
+  const bool check_data = opts->get_bool("check_data");
+
+
+  if (check_data) {
+    m_sample_list.set_data_file_check();
+  }
+
+  if (opts->has_string("load_full_sample_list_once")) {
+    if (m_comm->am_trainer_master()) {
+      load_file(sample_list_file, buffer);
+    }
+    m_comm->trainer_broadcast(m_comm->get_trainer_master(), buffer);
+
+    vectorwrapbuf<char> strmbuf(buffer);
+    std::istream iss(&strmbuf);
+
+    m_sample_list.set_sample_list_name(sample_list_file);
+    m_sample_list.load(iss, *(this->m_comm), true);
+  } else {
+    m_sample_list.load(sample_list_file, *(this->m_comm), true);
+  }
+
   double tm2 = get_time();
 
   if (is_master()) {
-    std::cout << "Finished loading sample list; time: "
-              << tm2 - tm1 << " (sec)" << std::endl;
+    std::cout << "Time to load sample list '" << sample_list_file << "': " << tm2 - tm1 << std::endl;
+  }
+
+  sample_schema_check(check_data);
+
+  double tm3 = get_time();
+  if (is_master()) {
+    if (!check_data) {
+      std::cout << "Skip data checking" << std::endl;
+    } else {
+      std::cout << "Time to check sample data: " << tm3 - tm2 << std::endl;
+    }
+  }
+
+  /// Merge all of the sample lists
+  m_sample_list.all_gather_packed_lists(*m_comm);
+  set_file_dir(m_sample_list.get_samples_dirname());
+
+  double tm4 = get_time();
+  if(is_master()) {
+    std::cout << "Time to gather sample list '" << sample_list_file << "': " << tm4 - tm3 << std::endl;
   }
 }
 
