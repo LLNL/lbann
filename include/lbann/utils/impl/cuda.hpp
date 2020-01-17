@@ -32,7 +32,9 @@
 #include "cub/block/block_reduce.cuh"
 #endif // HYDROGEN_HAVE_CUB
 #include <math_constants.h>
+#ifdef LBANN_HAS_GPU_FP16
 #include <cuda_fp16.hpp>
+#endif // LBANN_HAS_GPU_FP16
 #endif // __CUDACC__
 
 namespace lbann {
@@ -43,6 +45,7 @@ namespace cuda {
 // -------------------------------------------------------------
 #ifdef __CUDACC__
 
+#ifdef LBANN_HAS_GPU_FP16
 // Atomic add function
 #if __CUDA_ARCH__ >= 530
 template <> __device__ __forceinline__
@@ -66,6 +69,8 @@ __half atomic_add<__half>(__half* address, __half val) {
 #endif // __CUDA_ARCH__ >= 700 || !defined(__CUDA_ARCH__)
 }
 #endif // __CUDA_ARCH__ >= 530
+#endif // LBANN_HAS_GPU_FP16
+
 template <> __device__ __forceinline__
 float atomic_add<float>(float* address, float val) {
   return atomicAdd(address, val);
@@ -182,6 +187,7 @@ bool isfinite(T const& x) { return ::isfinite(x); }
 template <typename T> __device__ __forceinline__
 bool isnan(T const& x) { return ::isnan(x); }
 
+#ifdef LBANN_HAS_GPU_FP16
 template <> __device__ __forceinline__
 bool isfinite(__half const& x) { return !(::__isnan(x) || ::__hisinf(x)); }
 
@@ -239,6 +245,8 @@ WRAP_UNARY_CUDA_HALF_CAST_TO_FLOAT_MATH_FUNCTION(atanh)
 
 #undef WRAP_UNARY_CUDA_HALF_MATH_FUNCTION
 
+#endif // LBANN_HAS_GPU_FP16
+
 // Binary math functions
 #define WRAP_BINARY_CUDA_MATH_FUNCTION(func)                    \
   template <> __device__ __forceinline__                        \
@@ -270,6 +278,7 @@ double mod<double>(const double& x, const double& y) { return ::fmod(x,y); }
 WRAP_BINARY_CUDA_MATH_FUNCTION(pow)
 #undef WRAP_BINARY_CUDA_MATH_FUNCTION
 
+#ifdef LBANN_HAS_GPU_FP16
 template <> __device__ __forceinline__
 __half pow<__half>(const __half& x, const __half& y)
 { return pow(float(x), float(y)); }
@@ -285,6 +294,7 @@ __half min<__half>(const __half& x, const __half& y)
 template <> __device__ __forceinline__
 __half max<__half>(const __half& x, const __half& y)
 { return ::__hle(x, y) ? y : x; }
+#endif // LBANN_HAS_GPU_FP16
 
 // Numeric limits
 #ifdef __CUDACC_RELAXED_CONSTEXPR__
@@ -319,6 +329,7 @@ SPECIFIERS double infinity<double>() { return CUDART_INF;   }
 #undef SPECIFIERS
 #endif // __CUDACC_RELAXED_CONSTEXPR__
 
+#ifdef LBANN_HAS_GPU_FP16
 // FIXME (TRB): I think this is right? Borrowed the values from the
 // sourceforge half library.
 template <> __device__ __forceinline__ __half min<__half>() {
@@ -333,6 +344,7 @@ template <> __device__ __forceinline__ __half epsilon<__half>() {
 template <> __device__ __forceinline__ __half infinity<__half>() {
   return __short_as_half(0x7C00);
 }
+#endif // LBANN_HAS_GPU_FP16
 
 // Array member functions
 template <typename T, size_t N>
