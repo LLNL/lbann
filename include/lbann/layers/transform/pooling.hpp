@@ -287,8 +287,8 @@ private:
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
-      const TensorDataType one = El::TypeTraits<TensorDataType>::One();
+      const auto zero = El::TypeTraits<cudnn::ParamType<TensorDataType>>::Zero();
+      const auto one = El::TypeTraits<cudnn::ParamType<TensorDataType>>::One();
       CHECK_CUDNN(cudnnPoolingForward(cudnn::get_handle(),
                                       m_pooling_cudnn_desc,
                                       &one,
@@ -313,8 +313,8 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
 
       // Useful constants
-      const TensorDataType one = El::TypeTraits<TensorDataType>::One();
-      const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+      const auto one = El::TypeTraits<cudnn::ParamType<TensorDataType>>::One();
+      const auto zero = El::TypeTraits<cudnn::ParamType<TensorDataType>>::Zero();
 
       // Perform backprop on GPU
       CHECK_CUDNN(cudnnPoolingBackward(cudnn::get_handle(),
@@ -554,6 +554,8 @@ private:
 #endif // LBANN_HAS_CUDNN
 
 };
+
+LBANN_DEFINE_LAYER_BUILDER(pooling);
 
 #ifndef LBANN_POOLING_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

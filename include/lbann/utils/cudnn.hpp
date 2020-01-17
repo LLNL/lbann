@@ -84,6 +84,23 @@ class Layer;
 
 namespace cudnn {
 
+template <typename T>
+struct ScalingParameterT
+{
+  using type = T;
+};
+
+template <typename T>
+using ParamType = typename ScalingParameterT<T>::type;
+
+#ifdef LBANN_USE_GPU_FP16
+template <>
+struct ScalingParameterT<fp16>
+{
+  using type = float;
+};
+#endif // LBANN_USE_GPU_FP16
+
 ////////////////////////////////////////////////////////////
 // Global cuDNN objects
 ////////////////////////////////////////////////////////////

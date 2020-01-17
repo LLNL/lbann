@@ -60,11 +60,7 @@ public:
   template <El::Device D>
   using DMatDT = El::Matrix<TensorDataType, D>;
 
-#ifdef LBANN_HAS_GPU_FP16
-  using ScalingType = typename std::conditional<std::is_same<TensorDataType, fp16>::value, float, TensorDataType>::type;
-#else
-  using ScalingType = TensorDataType;
-#endif
+  using ScalingType = cudnn::ParamType<TensorDataType>;
 
   ///@}
 
