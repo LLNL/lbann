@@ -176,7 +176,7 @@ std::unique_ptr<Layer> build_softmax_layer_from_pbuf(
   LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, softmax);
   using LayerType = softmax_layer<TensorDataType, Layout, Device>;
   const auto& sm_mode = proto_layer.softmax().softmax_mode();
-  if (sm_mode == "instance")
+  if (sm_mode == "instance" || sm_mode == "")
     return lbann::make_unique<LayerType>(comm, softmax_mode::INSTANCE);
   else if (sm_mode == "channel")
     return lbann::make_unique<LayerType>(comm, softmax_mode::CHANNEL);
