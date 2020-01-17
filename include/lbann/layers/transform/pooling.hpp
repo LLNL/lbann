@@ -284,11 +284,12 @@ private:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
+    using ScalingType = cudnn::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const auto zero = El::TypeTraits<cudnn::ParamType<TensorDataType>>::Zero();
-      const auto one = El::TypeTraits<cudnn::ParamType<TensorDataType>>::One();
+      const auto zero = El::TypeTraits<ScalingType>::Zero();
+      const auto one = El::TypeTraits<ScalingType>::One();
       CHECK_CUDNN(cudnnPoolingForward(cudnn::get_handle(),
                                       m_pooling_cudnn_desc,
                                       &one,
@@ -306,6 +307,7 @@ private:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
+    using ScalingType = cudnn::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     const auto& local_output = this->get_local_activations();
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
@@ -313,8 +315,8 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
 
       // Useful constants
-      const auto one = El::TypeTraits<cudnn::ParamType<TensorDataType>>::One();
-      const auto zero = El::TypeTraits<cudnn::ParamType<TensorDataType>>::Zero();
+      const auto one = El::TypeTraits<ScalingType>::One();
+      const auto zero = El::TypeTraits<ScalingType>::Zero();
 
       // Perform backprop on GPU
       CHECK_CUDNN(cudnnPoolingBackward(cudnn::get_handle(),

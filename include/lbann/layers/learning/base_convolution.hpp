@@ -60,7 +60,7 @@ public:
   template <El::Device D>
   using DMatDT = El::Matrix<TensorDataType, D>;
 
-  using ScalingType = cudnn::ParamType<TensorDataType>;
+  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
 
   ///@}
 
