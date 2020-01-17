@@ -76,7 +76,7 @@ __global__ void bp_kernel(TensorDataType min,
     const auto& x = input[row + col * input_ldim];
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-    dx = (x <= min || x >= max) ? TensorDataType(0) : dy;
+    dx = (x <= min || x >= max) ? TensorDataType(0.f) : dy;
   }
 }
 

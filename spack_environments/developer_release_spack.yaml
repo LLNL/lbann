@@ -35,8 +35,8 @@ spack:
   - py-matplotlib
   - py-onnx
   - py-pandas
-  - protobuf
-  - py-protobuf+cpp
+  - py-protobuf
+  - py-pytest
   - py-setuptools
   - py-texttable
   mirrors: {}
@@ -51,4 +51,4 @@ spack:
 ################################################################################
   include:
     - std_versions_and_variants_llnl_lc_cz.yaml
-    - externals_osx_highsierra_skylake.yaml
+    - externals_llnl_lc_cz.yaml

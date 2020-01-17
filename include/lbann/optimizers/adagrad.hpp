@@ -103,6 +103,7 @@ private:
 
 };
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_adagrad_optimizer_from_pbuf(
   google::protobuf::Message const&);

@@ -32,7 +32,7 @@
     protobuf::
       buildable: True
       variants: build_type=Release +shared
-      version: [3.7.1]
+      version: [3.10.0]
 
     python::
       buildable: True
@@ -50,6 +50,11 @@
     py-numpy::
       buildable: True
       version: [1.16.2]
+
+    py-protobuf::
+      buildable: True
+      variants: +cpp
+      version: [3.10.0]
 
     zlib::
       buildable: True

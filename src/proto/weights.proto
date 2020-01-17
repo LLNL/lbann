@@ -27,6 +27,7 @@
 syntax = "proto3";
 
 import "optimizers.proto";
+import "layers.proto";
 
 package lbann_data;
 
@@ -34,6 +35,7 @@ message Weights {
   string name = 1;
   Optimizer optimizer = 2;
   Initializer initializer = 3;
+  DataType datatype = 4;
 }
 
 message Initializer {

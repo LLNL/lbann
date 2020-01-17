@@ -317,7 +317,6 @@ void bp_compute_impl(
 
 }
 
-// Explicit instantiation
 #define PROTO(T)                                        \
   template class concatenate_layer<                     \
     T, data_layout::DATA_PARALLEL, El::Device::CPU>;    \

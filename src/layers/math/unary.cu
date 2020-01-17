@@ -44,11 +44,11 @@ namespace {
 template <typename TensorDataType>
 struct logical_not_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    const auto& b = x != TensorDataType(0) && !isnan(x);
-    return !b ? TensorDataType(1) : TensorDataType(0);
+    const auto& b = x != TensorDataType(0.0) && !cuda::isnan(x);
+    return !b ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return TensorDataType(0.0);
   }
 };
 
@@ -59,7 +59,7 @@ struct abs_op {
     return cuda::abs(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    constexpr TensorDataType zero = 0;
+    const TensorDataType zero = 0.;
     if      (x > zero) { return dy;   }
     else if (x < zero) { return -dy;  }
     else               { return zero; }
@@ -81,14 +81,14 @@ struct negative_op {
 template <typename TensorDataType>
 struct sign_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    constexpr TensorDataType zero = 0;
-    constexpr TensorDataType one = 1;
+    const TensorDataType zero = 0.;
+    const TensorDataType one = 1.;
     if      (x > zero) { return one;  }
     else if (x < zero) { return -one; }
     else               { return zero; }
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return TensorDataType(0.0);
   }
 };
 
@@ -99,7 +99,7 @@ struct round_op {
     return cuda::round(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return TensorDataType(0.0);
   }
 };
 
@@ -110,7 +110,7 @@ struct ceil_op {
     return cuda::ceil(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return TensorDataType(0.0);
   }
 };
 
@@ -121,7 +121,7 @@ struct floor_op {
     return cuda::floor(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return TensorDataType(0);
+    return TensorDataType(0.0);
   }
 };
 
@@ -129,10 +129,10 @@ struct floor_op {
 template <typename TensorDataType>
 struct reciprocal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    return 1 / x;
+    return TensorDataType(1.) / x;
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    if (dy == TensorDataType(0)) { return TensorDataType(0); }
+    if (dy == TensorDataType(0.0)) { return TensorDataType(0.0); }
     else                   { return - dy / (x*x); }
 
   }
@@ -145,7 +145,7 @@ struct square_op {
     return x*x;
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return 2*x * dy;
+    return TensorDataType(2.) * x * dy;
   }
 };
 
@@ -157,7 +157,7 @@ struct sqrt_op {
     return cuda::sqrt(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (2 * cuda::sqrt(x));
+    return dy / (TensorDataType(2.) * cuda::sqrt(x));
   }
 };
 
@@ -169,7 +169,7 @@ struct rsqrt_op {
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
     const auto& s = cuda::sqrt(x);
-    return - dy / (2 * x * s);
+    return - dy / (TensorDataType(2.) * x * s);
   }
 };
 
@@ -180,14 +180,14 @@ struct rsqrt_op {
 template <typename TensorDataType>
 struct safe_reciprocal_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x) const {
-    const auto& y = 1 / x;
-    if (isfinite(y)) { return y; }
-    else             { return TensorDataType(0); }
+    const auto& y = TensorDataType(1.) / x;
+    if (cuda::isfinite(y)) { return y; }
+    else             { return TensorDataType(0.0); }
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    const auto& y = 1 / x;
-    if (isfinite(y)) { return - dy * y*y; }
-    else             { return TensorDataType(0); }
+    const auto& y = TensorDataType(1.) / x;
+    if (cuda::isfinite(y)) { return - dy * y*y; }
+    else             { return TensorDataType(0.0); }
   }
 };
 
@@ -231,7 +231,7 @@ struct log1p_op {
     return cuda::log1p(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (x + TensorDataType(1));
+    return dy / (x + TensorDataType(1.0));
   }
 };
 
@@ -276,7 +276,7 @@ struct acos_op {
     return cuda::acos(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / cuda::sqrt(TensorDataType(1) - x*x);
+    return -dy / cuda::sqrt(TensorDataType(1.0) - x*x);
   }
 };
 
@@ -287,7 +287,7 @@ struct asin_op {
     return cuda::asin(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / cuda::sqrt(TensorDataType(1) - x*x);
+    return dy / cuda::sqrt(TensorDataType(1.0) - x*x);
   }
 };
 
@@ -298,7 +298,7 @@ struct atan_op {
     return cuda::atan(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1) + x*x);
+    return dy / (TensorDataType(1.0) + x*x);
   }
 };
 
@@ -343,7 +343,7 @@ struct acosh_op {
     return cuda::acosh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return -dy / (cuda::sqrt(x - TensorDataType(1)) * cuda::sqrt(x + TensorDataType(1)));
+    return -dy / (cuda::sqrt(x - TensorDataType(1.0)) * cuda::sqrt(x + TensorDataType(1.0)));
   }
 };
 
@@ -354,7 +354,7 @@ struct asinh_op {
     return cuda::asinh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / cuda::sqrt(TensorDataType(1) + x*x);
+    return dy / cuda::sqrt(TensorDataType(1.0) + x*x);
   }
 };
 
@@ -365,14 +365,14 @@ struct atanh_op {
     return cuda::atanh(x);
   }
   inline __device__ TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return dy / (TensorDataType(1) - x*x);
+    return dy / (TensorDataType(1.0) - x*x);
   }
 };
 
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
+#define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
     cuda::apply_entrywise_unary_operator<op>(                           \
@@ -385,36 +385,68 @@ struct atanh_op {
       this->get_prev_activations(),                                     \
       this->get_prev_error_signals(),                                   \
       this->get_error_signals());                                       \
-  }                                                                     \
-  UNARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
+  }
 
-INSTANTIATE(logical_not_layer, logical_not_op);
-INSTANTIATE(abs_layer, abs_op);
-INSTANTIATE(negative_layer, negative_op);
-INSTANTIATE(sign_layer, sign_op);
-INSTANTIATE(round_layer, round_op);
-INSTANTIATE(ceil_layer, ceil_op);
-INSTANTIATE(floor_layer, floor_op);
-INSTANTIATE(reciprocal_layer, reciprocal_op);
-INSTANTIATE(square_layer, square_op);
-INSTANTIATE(sqrt_layer, sqrt_op);
-INSTANTIATE(safe_reciprocal_layer, safe_reciprocal_op);
-INSTANTIATE(rsqrt_layer, rsqrt_op);
-INSTANTIATE(exp_layer, exp_op);
-INSTANTIATE(expm1_layer, expm1_op);
-INSTANTIATE(log_layer, log_op);
-INSTANTIATE(log1p_layer, log1p_op);
-INSTANTIATE(cos_layer, cos_op);
-INSTANTIATE(sin_layer, sin_op);
-INSTANTIATE(tan_layer, tan_op);
-INSTANTIATE(acos_layer, acos_op);
-INSTANTIATE(asin_layer, asin_op);
-INSTANTIATE(atan_layer, atan_op);
-INSTANTIATE(cosh_layer, cosh_op);
-INSTANTIATE(sinh_layer, sinh_op);
-INSTANTIATE(tanh_layer, tanh_op);
-INSTANTIATE(acosh_layer, acosh_op);
-INSTANTIATE(asinh_layer, asinh_op);
-INSTANTIATE(atanh_layer, atanh_op);
+DEFINE_COMPUTE_OPS(logical_not_layer, logical_not_op)
+DEFINE_COMPUTE_OPS(abs_layer, abs_op)
+DEFINE_COMPUTE_OPS(negative_layer, negative_op)
+DEFINE_COMPUTE_OPS(sign_layer, sign_op)
+DEFINE_COMPUTE_OPS(round_layer, round_op)
+DEFINE_COMPUTE_OPS(ceil_layer, ceil_op)
+DEFINE_COMPUTE_OPS(floor_layer, floor_op)
+DEFINE_COMPUTE_OPS(reciprocal_layer, reciprocal_op)
+DEFINE_COMPUTE_OPS(square_layer, square_op)
+DEFINE_COMPUTE_OPS(sqrt_layer, sqrt_op)
+DEFINE_COMPUTE_OPS(rsqrt_layer, rsqrt_op)
+DEFINE_COMPUTE_OPS(safe_reciprocal_layer, safe_reciprocal_op)
+DEFINE_COMPUTE_OPS(exp_layer, exp_op)
+DEFINE_COMPUTE_OPS(expm1_layer, expm1_op)
+DEFINE_COMPUTE_OPS(log_layer, log_op)
+DEFINE_COMPUTE_OPS(log1p_layer, log1p_op)
+DEFINE_COMPUTE_OPS(cos_layer, cos_op)
+DEFINE_COMPUTE_OPS(sin_layer, sin_op)
+DEFINE_COMPUTE_OPS(tan_layer, tan_op)
+DEFINE_COMPUTE_OPS(acos_layer, acos_op)
+DEFINE_COMPUTE_OPS(asin_layer, asin_op)
+DEFINE_COMPUTE_OPS(atan_layer, atan_op)
+DEFINE_COMPUTE_OPS(cosh_layer, cosh_op)
+DEFINE_COMPUTE_OPS(sinh_layer, sinh_op)
+DEFINE_COMPUTE_OPS(tanh_layer, tanh_op)
+DEFINE_COMPUTE_OPS(acosh_layer, acosh_op)
+DEFINE_COMPUTE_OPS(asinh_layer, asinh_op)
+DEFINE_COMPUTE_OPS(atanh_layer, atanh_op)
+
+#define PROTO(T) \
+  UNARY_ETI_INST_MACRO_DEV_DT(logical_not_layer, T, El::Device::GPU); \
+  UNARY_ETI_INST_MACRO_DEV_DT(abs_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(negative_layer, T, El::Device::GPU);    \
+  UNARY_ETI_INST_MACRO_DEV_DT(sign_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(round_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(ceil_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(floor_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(reciprocal_layer, T, El::Device::GPU);  \
+  UNARY_ETI_INST_MACRO_DEV_DT(square_layer, T, El::Device::GPU);      \
+  UNARY_ETI_INST_MACRO_DEV_DT(sqrt_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(rsqrt_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(safe_reciprocal_layer, T, El::Device::GPU); \
+  UNARY_ETI_INST_MACRO_DEV_DT(exp_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(expm1_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(log_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(log1p_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(cos_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(sin_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(tan_layer, T, El::Device::GPU);         \
+  UNARY_ETI_INST_MACRO_DEV_DT(acos_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(asin_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(atan_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(cosh_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(sinh_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(tanh_layer, T, El::Device::GPU);        \
+  UNARY_ETI_INST_MACRO_DEV_DT(acosh_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(asinh_layer, T, El::Device::GPU);       \
+  UNARY_ETI_INST_MACRO_DEV_DT(atanh_layer, T, El::Device::GPU)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

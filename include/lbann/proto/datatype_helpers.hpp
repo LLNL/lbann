@@ -24,21 +24,47 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_SUM_LAYER_INSTANTIATE
-#include "lbann/layers/transform/sum.hpp"
+#ifndef LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED
+#define LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED
 
-#include <lbann/proto/proto_common.hpp>
-#include <lbann.pb.h>
+#include <model.pb.h>
 
-namespace lbann {
+namespace lbann
+{
+namespace proto
+{
 
-LBANN_LAYER_DEFAULT_BUILDER(sum)
+template <typename T>
+struct TypeToProtoDataType;
 
-#define PROTO_DEVICE(T, Device)                                    \
-  template class sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class sum_layer<T, data_layout::MODEL_PARALLEL, Device>; \
-  LBANN_LAYER_BUILDER_ETI(sum, T, Device)
+template <>
+struct TypeToProtoDataType<float>
+{
+  static constexpr auto value = lbann_data::FLOAT;
+};
 
-#include "lbann/macros/instantiate_device.hpp"
+template <>
+struct TypeToProtoDataType<double>
+{
+  static constexpr auto value = lbann_data::DOUBLE;
+};
 
+#ifdef LBANN_HAS_HALF
+template <>
+struct TypeToProtoDataType<cpu_fp16>
+{
+  static constexpr auto value = lbann_data::FP16;
+};
+#endif // LBANN_HAS_HALF
+
+#ifdef LBANN_HAS_GPU_FP16
+template <>
+struct TypeToProtoDataType<fp16>
+{
+  static constexpr auto value = lbann_data::FP16;
+};
+#endif // LBANN_HAS_GPU_FP16
+
+}// namespace proto
 }// namespace lbann
+#endif /* LBANN_PROTO_DATATYPE_HELPERS_HPP_INCLUDED */

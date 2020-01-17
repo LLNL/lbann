@@ -49,8 +49,6 @@ std::unique_ptr<Layer> build_weights_layer_from_pbuf(
   template class weights_layer<T, data_layout::MODEL_PARALLEL, Device>; \
   LBANN_LAYER_BUILDER_ETI(weights, T, Device)
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

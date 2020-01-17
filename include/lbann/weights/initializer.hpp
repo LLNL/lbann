@@ -142,8 +142,8 @@ public:
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
  public:
-  uniform_initializer(TensorDataType min = TensorDataType(0),
-                      TensorDataType max = TensorDataType(1))
+  uniform_initializer(TensorDataType min = El::To<TensorDataType>(0),
+                      TensorDataType max = El::To<TensorDataType>(1))
     : data_type_weights_initializer<TensorDataType>(), m_min(min), m_max(max) {}
   uniform_initializer* copy() const override {
     return new uniform_initializer(*this);
@@ -174,8 +174,8 @@ public:
   ///@}
 
 public:
-  normal_initializer(TensorDataType mean = TensorDataType(0),
-                     TensorDataType standard_deviation = TensorDataType(1))
+  normal_initializer(TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
+                     TensorDataType standard_deviation = El::TypeTraits<TensorDataType>::One())
     : data_type_weights_initializer<TensorDataType>(),
       m_mean(mean),
       m_standard_deviation(standard_deviation) {}
@@ -195,15 +195,19 @@ private:
 
 };
 
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_constant_initializer_from_pbuf(google::protobuf::Message const& msg);
 
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_value_initializer_from_pbuf(google::protobuf::Message const& msg);
 
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg);
 
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg);
 

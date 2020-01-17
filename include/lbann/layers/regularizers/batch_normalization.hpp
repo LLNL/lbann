@@ -265,9 +265,8 @@ protected:
     this->set_num_data_type_weights(4);
     if (!this->has_data_type_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
-      auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                                 this->m_model->create_optimizer()));
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -276,9 +275,8 @@ protected:
     }
     if (!this->has_data_type_weights(1)) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
-      auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                                 this->m_model->create_optimizer()));
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -287,7 +285,7 @@ protected:
     }
     if (!this->has_data_type_weights(2)) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(0));
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->set_data_type_weights(2, w.get());
@@ -295,7 +293,7 @@ protected:
     }
     if (!this->has_data_type_weights(3)) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType(1));
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->set_data_type_weights(3, w.get());
@@ -355,12 +353,8 @@ protected:
 #define PROTO_DEVICE(T, Device) \
   extern template class batch_normalization_layer<T, data_layout::DATA_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 
 } // namespace lbann

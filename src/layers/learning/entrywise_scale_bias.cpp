@@ -118,7 +118,7 @@ void bp_impl(
   // Update optimizer with gradient
   auto* opt = scale_bias.get_optimizer();
   if (opt != nullptr) {
-    opt->add_to_gradient(gradient_wrt_scale_bias, DataType{1}, true);
+    opt->add_to_gradient(gradient_wrt_scale_bias, El::TypeTraits<TensorDataType>::One(), true);
   }
 
 }

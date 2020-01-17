@@ -33,8 +33,6 @@ namespace lbann {
   template class reshape_layer<T, data_layout::DATA_PARALLEL, Device>; \
   template class reshape_layer<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

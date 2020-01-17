@@ -147,7 +147,7 @@ void im2col(const CPUMatDT<TensorDataType>& im,
 
       // Copy im matrix entry to col matrix if valid
       col_buffer[col_index] = (im_pos_valid ?
-                               im_buffer[im_index] : TensorDataType(0));
+                               im_buffer[im_index] : TensorDataType(0.));
 
     }
   }
@@ -212,7 +212,7 @@ void col2im_impl(const CPUMatDT<TensorDataType>& col,
     const int channel = im_index_remainder;
 
     // Initialize im matrix entry
-    TensorDataType im_entry = 0;
+    TensorDataType im_entry = El::TypeTraits<TensorDataType>::Zero();
     bool im_entry_initialized = false;
     bool offsets_finished = false;
 
@@ -442,7 +442,7 @@ void im2col_2d(const TensorDataType *__restrict__ input_buffer,
 
             // Copy input entry to output entry if valid
             output_buffer[output_index]
-              = input_pos_valid ? input_buffer[input_index] : TensorDataType(0);
+              = input_pos_valid ? input_buffer[input_index] : TensorDataType(0.);
 
           }
         }
@@ -505,7 +505,7 @@ void col2im_2d(const TensorDataType *__restrict__ input_buffer,
         const int output_index = (output_pos_x
                                   + output_pos_y * output_dim_x
                                   + channel * output_dim_x * output_dim_y);
-        TensorDataType output_entry = 0;
+        TensorDataType output_entry = El::TypeTraits<TensorDataType>::Zero();
 
         // Get window offsets containing output entry
         const int offset_x_lower = (output_pos_x - offset_start_x - window_dim_x + offset_stride_x) / offset_stride_x;
@@ -578,6 +578,8 @@ void col2im_2d(const TensorDataType *__restrict__ input_buffer,
     const T*, T*, int, int, int, int, int, int, int, int, int)
 
 #define LBANN_INSTANTIATE_CPU_HALF
+// FIXME -- these should never be called in GPU code.
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann

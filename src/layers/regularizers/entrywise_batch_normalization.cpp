@@ -89,7 +89,7 @@ void compute_batch_statistics(lbann_comm& comm,
   // Compute mini-batch statistics from sums
   if (statistics_count <= 1) {
     // local_mean already has correct values
-    El::Fill(local_batch_var, TensorDataType{1});
+    El::Fill(local_batch_var, El::TypeTraits<TensorDataType>::One());
   } else {
     LBANN_OMP_PARALLEL_FOR
     for (El::Int row = 0; row < local_height; ++row) {
@@ -128,7 +128,7 @@ void apply_batchnorm(DataType epsilon,
     TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_var(row, 0);
-      _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
+      _inv_stdev[row-row_start] = 1 / El::Sqrt(var + epsilon);
     }
     for (El::Int col = col_start; col < col_end; ++col) {
       for (El::Int row = row_start; row < row_end; ++row) {
@@ -249,7 +249,7 @@ void bp_training_impl(lbann_comm& comm,
     TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_var(row, 0);
-      _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
+      _inv_stdev[row-row_start] = 1 / El::Sqrt(var + epsilon);
     }
     for (El::Int col = col_start; col < col_end; ++col) {
       for (El::Int row = row_start; row < row_end; ++row) {
@@ -276,8 +276,11 @@ void bp_training_impl(lbann_comm& comm,
   //   dL/dx_i = ( dL/dy_i / sqrt(var+epsilon)
   //             + dL/dmean / n
   //             + dL/dvar * (x_i - mean) * 2/(n-1) )
-  const TensorDataType inv_stats_count = TensorDataType{1} / statistics_count;
-  const TensorDataType inv_stats_countm1 = TensorDataType{1} / (statistics_count - 1);
+  const auto statistics_count_dt = El::To<TensorDataType>(statistics_count);
+  const TensorDataType inv_stats_count = El::TypeTraits<TensorDataType>::One()
+    / statistics_count_dt;
+  const TensorDataType inv_stats_countm1 = El::TypeTraits<TensorDataType>::One()
+    / (statistics_count_dt - El::TypeTraits<TensorDataType>::One());
   LBANN_OMP_PARALLEL_FOR
   for (El::Int row_start = 0; row_start < local_height; row_start += bsize) {
     const El::Int row_end = std::min(row_start + bsize, local_height);
@@ -286,7 +289,7 @@ void bp_training_impl(lbann_comm& comm,
     TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_var(row, 0);
-      _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
+      _inv_stdev[row-row_start] = 1 / El::Sqrt(var + epsilon);
     }
     for (El::Int col = col_start; col < col_end; ++col) {
       for (El::Int row = row_start; row < row_end; ++row) {
@@ -337,7 +340,7 @@ void bp_inference_impl(DataType epsilon,
     TensorDataType _inv_stdev[bsize];
     for (El::Int row = row_start; row < row_end; ++row) {
       const auto& var = local_running_var(row, 0);
-      _inv_stdev[row-row_start] = 1 / std::sqrt(var + epsilon);
+      _inv_stdev[row-row_start] = 1 / El::Sqrt(var + epsilon);
     }
     for (El::Int col = col_start; col < col_end; ++col) {
       for (El::Int row = row_start; row < row_end; ++row) {

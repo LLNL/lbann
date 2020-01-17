@@ -76,7 +76,7 @@ private:
   /** Execution modes with gradient checks. */
   std::set<execution_mode> m_modes;
   /** Step size for numerical differentiation. */
-  DataType m_step_size;
+  EvalType m_step_size;
   /** Whether to print results for each parameter. */
   bool m_verbose;
   /** Whether to throw an exception for large gradient errors. */

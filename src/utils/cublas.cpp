@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <lbann_config.hpp>
 #include "lbann/utils/cublas.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -35,6 +36,13 @@
   void wrapper(Ts&&... args) {                                  \
     CHECK_CUBLAS(function(std::forward<Ts>(args)...));          \
   }
+
+#define ERROR_OUT(wrapper)                                          \
+  template <typename... Ts>                                         \
+  void wrapper(Ts&&... args) {                                      \
+    LBANN_ERROR("Cannot dispatch " #wrapper "() for this type.");   \
+  }
+
 namespace {
 
 template <typename T>
@@ -64,6 +72,54 @@ struct cuBLAS_Caller<double> {
   WRAP_CUBLAS(cublasDgemmStridedBatched, gemm_strided_batched)
 };
 
+#ifdef LBANN_HAS_GPU_FP16
+template <>
+struct cuBLAS_Caller<__half> {
+  void axpy(cublasHandle_t handle, int n,
+            __half const* alpha,
+            __half const* x, int incx,
+            __half* y, int incy)
+  {
+    CHECK_CUBLAS(
+      cublasAxpyEx(handle, n, alpha, CUDA_R_16F, x, CUDA_R_16F, incx,
+                   y, CUDA_R_16F, incy, CUDA_R_32F));
+  }
+
+  void dot(cublasHandle_t handle, int n,
+           __half const* x, int incx,
+           __half const* y, int incy,
+           __half* result)
+  {
+    CHECK_CUBLAS(
+      cublasDotEx(handle, n, x, CUDA_R_16F, incx, y, CUDA_R_16F, incy,
+                  result, CUDA_R_16F,  CUDA_R_32F));
+  }
+
+  void nrm2(cublasHandle_t handle, int n, __half const* x, int incx,
+            __half* result)
+  {
+    CHECK_CUBLAS(
+      cublasNrm2Ex(handle, n, x, CUDA_R_16F, incx,
+                   result, CUDA_R_16F, CUDA_R_32F));
+  }
+
+  void scal(cublasHandle_t handle, int n,
+            __half const* alpha,
+            __half* x, int incx)
+  {
+    CHECK_CUBLAS(
+      cublasScalEx(handle, n, alpha, CUDA_R_16F,
+                   x, CUDA_R_16F, incx,
+                   CUDA_R_32F));
+  }
+
+  WRAP_CUBLAS(cublasHgemm, gemm)
+  WRAP_CUBLAS(cublasHgemmStridedBatched, gemm_strided_batched)
+
+  ERROR_OUT(geam)
+  ERROR_OUT(gemv)
+};
+#endif // LBANN_HAS_GPU_FP16
 } // namespace
 
 namespace lbann {
@@ -225,7 +281,7 @@ void gemm_strided_batched(cublasHandle_t const& handle,
     cublasOperation_t, int, int, int, T, T const *, int, long long int, T const *,     \
     int, long long int, T, T *, int, long long int, int)
 
-#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace cublas

@@ -111,8 +111,6 @@ std::unique_ptr<Layer> build_convolution_layer_from_pbuf(
     lbann_comm*, lbann_data::Layer const&)
 
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann
