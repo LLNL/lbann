@@ -474,22 +474,7 @@ void bp_compute_impl(
   template class concatenate_layer<                                     \
     T, data_layout::DATA_PARALLEL, El::Device::GPU>;                    \
   template class concatenate_layer<                                     \
-    T, data_layout::MODEL_PARALLEL, El::Device::GPU>;                   \
-  template std::unique_ptr<Layer>                                       \
-  build_concatenate_layer_from_pbuf<T,data_layout::DATA_PARALLEL, El::Device::GPU> ( \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template std::unique_ptr<Layer>                                       \
-  build_concatenate_layer_from_pbuf<T,data_layout::MODEL_PARALLEL, El::Device::GPU>( \
-    lbann_comm*, lbann_data::Layer const&)
-
-#if 0
-  template void fp_compute_impl<T>(                                     \
-    concatenate_layer<T,data_layout::DATA_PARALLEL,El::Device::GPU>&,   \
-    size_t);                                                            \
-  template void bp_compute_impl<T>(                                     \
-    concatenate_layer<T,data_layout::DATA_PARALLEL,El::Device::GPU>&,   \
-    size_t)
-#endif
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

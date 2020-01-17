@@ -132,10 +132,13 @@ int main(int argc, char *argv[]) {
     }
     El::ReportException(e);
     return EXIT_FAILURE;
-  } catch (std::exception& e) {
+  }
+#if 0
+  catch (std::exception& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
   }
+#endif // 0
 
   return EXIT_SUCCESS;
 }

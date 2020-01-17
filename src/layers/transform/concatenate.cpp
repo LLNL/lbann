@@ -27,9 +27,6 @@
 #define LBANN_CONCATENATE_LAYER_INSTANTIATE
 #include "lbann/layers/transform/concatenate.hpp"
 
-#include <lbann/proto/proto_common.hpp>
-#include <layers.pb.h>
-
 namespace lbann {
 
 namespace {
@@ -325,29 +322,10 @@ void bp_compute_impl(
   template class concatenate_layer<                     \
     T, data_layout::DATA_PARALLEL, El::Device::CPU>;    \
   template class concatenate_layer<                     \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU> ;  \
-  template std::unique_ptr<Layer>                                       \
-  build_concatenate_layer_from_pbuf<T,data_layout::DATA_PARALLEL, El::Device::CPU> ( \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template std::unique_ptr<Layer>                                       \
-  build_concatenate_layer_from_pbuf<T,data_layout::MODEL_PARALLEL, El::Device::CPU>( \
-    lbann_comm*, lbann_data::Layer const&)
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 #undef PROTO
 
-#if 0
-#define PROTO_DEVICE(T,D) \
-  template std::unique_ptr<Layer>                                       \
-  build_concatenate_layer_from_pbuf<T,data_layout::DATA_PARALLEL, D> (  \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template std::unique_ptr<Layer>                                       \
-  build_concatenate_layer_from_pbuf<T,data_layout::MODEL_PARALLEL, D>(  \
-    lbann_comm*, lbann_data::Layer const&)
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate_device.hpp"
-#endif // 0
 } // namespace lbann

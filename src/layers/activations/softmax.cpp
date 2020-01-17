@@ -27,9 +27,6 @@
 #define LBANN_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/layers/activations/softmax.hpp"
 
-#include <lbann/proto/proto_common.hpp>
-#include <layers.pb.h>
-
 namespace lbann {
 
 namespace {
@@ -169,39 +166,11 @@ void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
      this->m_mode);
 }
 
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_softmax_layer_from_pbuf(
-  lbann_comm* comm, lbann_data::Layer const& proto_layer)
-{
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, softmax);
-  using LayerType = softmax_layer<TensorDataType, Layout, Device>;
-  const auto& sm_mode = proto_layer.softmax().softmax_mode();
-  if (sm_mode == "instance" || sm_mode == "")
-    return lbann::make_unique<LayerType>(comm, softmax_mode::INSTANCE);
-  else if (sm_mode == "channel")
-    return lbann::make_unique<LayerType>(comm, softmax_mode::CHANNEL);
-  else
-    return lbann::make_unique<LayerType>(comm, softmax_mode::INVALID);
-}
-
 #define PROTO(T)                                      \
   template class softmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
   template class softmax_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
-#undef PROTO
-
-#define PROTO_DEVICE(T,D)                                               \
-  template std::unique_ptr<Layer>                                       \
-  build_softmax_layer_from_pbuf<T, data_layout::DATA_PARALLEL, D>(      \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template std::unique_ptr<Layer>                                       \
-  build_softmax_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, D>(     \
-    lbann_comm*, lbann_data::Layer const&);
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

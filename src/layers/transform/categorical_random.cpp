@@ -76,24 +76,18 @@ std::unique_ptr<Layer> build_categorical_random_layer_from_pbuf(
   return BuilderType::Build(comm);
 }
 
-#ifdef LBANN_HAS_GPU
-#define BUILDER_PROTO(T) \
-  LBANN_LAYER_BUILDER_ETI(categorical_random, T, El::Device::CPU); \
-  LBANN_LAYER_BUILDER_ETI(categorical_random, T, El::Device::GPU)
-#else
-#define BUILDER_PROTO(T) \
-  LBANN_LAYER_BUILDER_ETI(categorical_random, T, El::Device::CPU)
-#endif // LBANN_HAS_GPU
-
 #define PROTO(T)                                                        \
   template class                                                        \
-  categorical_random_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  BUILDER_PROTO(T)
+  categorical_random_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
+#undef PROTO
 
-#ifdef LBANN_HAS_GPU_FP16
-BUILDER_PROTO(El::gpu_half_type);
-#endif // LBANN_HAS_GPU_FP16
+#define PROTO_DEVICE(T, Device) \
+  LBANN_LAYER_BUILDER_ETI(categorical_random, T, Device)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+
 }// namespace lbann

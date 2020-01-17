@@ -24,25 +24,28 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_CROP_LAYER_INSTANTIATE
-#include "lbann/layers/transform/crop.hpp"
+#include "lbann/layers/transform/concatenate.hpp"
+
+#include <lbann/proto/proto_common.hpp>
+#include <layers.pb.h>
 
 namespace lbann {
 
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d() {
-  this->fp_compute_nd();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_concatenate_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+{
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, concatenation);
+  using LayerType = concatenate_layer<TensorDataType, Layout, Device>;
+  const auto& axis = proto_layer.concatenation().axis();
+  return lbann::make_unique<LayerType>(comm, axis);
 }
 
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d() {
-  this->bp_compute_nd();
-}
-
-#define PROTO(T)                                      \
-  template class crop_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+#define PROTO_DEVICE(T, Device) \
+  LBANN_LAYER_BUILDER_ETI(concatenate, T, Device)
 
 #define LBANN_INSTANTIATE_CPU_HALF
-#include "lbann/macros/instantiate.hpp"
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
 
-} // namespace lbann
+  } // namespace lbann
