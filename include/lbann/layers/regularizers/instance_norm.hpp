@@ -48,6 +48,8 @@ namespace lbann {
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 class instance_norm_layer : public data_type_layer<TensorDataType> {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "instance norm layer only supports data parallel layout");
 public:
 
   /**
@@ -134,13 +136,8 @@ void instance_norm_layer<TensorDataType,Layout,Device>::setup_dims() {
 #define PROTO_DEVICE(T, Device)                 \
   extern template class instance_norm_layer<    \
     T, data_layout::DATA_PARALLEL, Device>;
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_INSTANCE_NORM_LAYER_INSTANTIATE
 
 } // namespace lbann
