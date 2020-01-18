@@ -17,21 +17,17 @@ spack:
   concretization: together
   # add package specs to the `specs` list
   specs:
-  - catch2
-  - clara
-  - conduit
-  - cnpy
-  - opencv
-  - cereal
-  - half
-  - ninja
-  - zlib
-  - cmake
-  - hwloc
-  - py-numpy
-  - py-protobuf
-  - py-pytest
-  - py-setuptools
+  - py-argparse
+  - py-configparser
+  - py-cython
+
+  - py-graphviz
+  - py-matplotlib
+  - py-texttable
+
+  - py-onnx
+  - py-pandas
+
   mirrors: {}
   modules:
     enable: []
@@ -43,5 +39,5 @@ spack:
 # Note that the include files are expected to be local to this yaml file
 ################################################################################
   include:
-    - std_versions_and_variants_llnl_lc_cz.yaml
-    - externals_llnl_lc_cz.yaml
+    - ../std_versions_and_variants_llnl_lc_cz.yaml
+    - ../externals_llnl_lc_cz.yaml

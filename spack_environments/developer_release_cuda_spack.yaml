@@ -31,17 +31,10 @@ spack:
   - cub
   - nccl
   - hwloc
-  - py-argparse
-  - py-configparser
-  - py-cython
-  - py-graphviz
-  - py-matplotlib
-  - py-onnx
-  - py-pandas
+  - py-numpy
   - py-protobuf
   - py-pytest
   - py-setuptools
-  - py-texttable
   mirrors: {}
   modules:
     enable: []
