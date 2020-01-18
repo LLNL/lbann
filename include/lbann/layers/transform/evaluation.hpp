@@ -93,6 +93,8 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 };
 
+LBANN_DEFINE_LAYER_BUILDER(evaluation);
+
 #ifndef LBANN_EVALUATION_LAYER_INSTANTIATE
 #define PROTO(T)                           \
   extern template class abstract_evaluation_layer<T>

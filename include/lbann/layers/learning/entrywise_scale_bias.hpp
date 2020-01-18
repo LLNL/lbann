@@ -189,6 +189,8 @@ private:
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(entrywise_scale_bias);
+
 #ifndef LBANN_ENTRYWISE_SCALE_BIAS_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device)                     \

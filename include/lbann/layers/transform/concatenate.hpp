@@ -30,6 +30,9 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <layers.pb.h>
+
 namespace lbann {
 
 /** @brief Concatenate tensors along specified dimension. */
@@ -285,6 +288,8 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
   bp_compute_impl(*this, m_concat_dim);
 
 }
+
+LBANN_DEFINE_LAYER_BUILDER(concatenate);
 
 #ifndef LBANN_CONCATENATE_LAYER_INSTANTIATE
 

@@ -24,32 +24,54 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#define LBANN_CONSTANT_LAYER_INSTANTIATE
-#include "lbann/layers/transform/constant.hpp"
+#include "lbann/layers/transform/crop.hpp"
 
 #include <lbann/proto/proto_common.hpp>
 #include <lbann.pb.h>
 
 namespace lbann {
+namespace {
+
+template <typename T, data_layout L, El::Device D>
+struct Builder
+{
+  static std::unique_ptr<Layer> Build(...)
+  {
+    LBANN_ERROR("Attempted to instantiate layer \"crop\" with "
+                "Layout=", to_string(L), ".\nThis layer is only "
+                "supported with DATA_PARALLEL data layout.");
+    return nullptr;
+  }
+};
+
+template <typename TensorDataType, El::Device Device>
+struct Builder<TensorDataType, data_layout::DATA_PARALLEL, Device>
+{
+  template <typename... Args>
+  static std::unique_ptr<Layer> Build(Args&&... args)
+  {
+    using LayerType = crop_layer<TensorDataType,
+                                 data_layout::DATA_PARALLEL,
+                                 Device>;
+    return lbann::make_unique<LayerType>(std::forward<Args>(args)...);
+  }
+};
+}// namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> build_constant_layer_from_pbuf(
+std::unique_ptr<Layer> build_crop_layer_from_pbuf(
   lbann_comm* comm, lbann_data::Layer const& proto_layer)
 {
-  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, constant);
-  using LayerType = constant_layer<TensorDataType, Layout, Device>;
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, crop);
 
-  const auto& params = proto_layer.constant();
-  const auto& dims = parse_list<int>(params.num_neurons());
-  return lbann::make_unique<LayerType>(
-    comm, El::To<TensorDataType>(params.value()), dims);
+  using BuilderType = Builder<TensorDataType, Layout, Device>;
+  const auto& params = proto_layer.crop();
+  return BuilderType::Build(comm, parse_list<int>(params.dims()));
 }
 
+// Builder function ETI
 #define PROTO_DEVICE(T, Device) \
-  template class constant_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>; \
-  LBANN_LAYER_BUILDER_ETI(constant, T, Device)
-
+  LBANN_LAYER_BUILDER_ETI(crop, T, Device)
 #include "lbann/macros/instantiate_device.hpp"
 
-}// namespace lbann
+} // namespace lbann
