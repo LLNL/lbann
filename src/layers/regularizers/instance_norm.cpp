@@ -27,9 +27,15 @@
 #define LBANN_INSTANCE_NORM_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/instance_norm.hpp"
 
-namespace lbann {
+namespace lbann
+{
 
-namespace {
+// =============================================
+// Forward prop
+// =============================================
+
+namespace
+{
 
 /** @brief Forward prop */
 template <typename TensorDataType>
@@ -39,7 +45,8 @@ void fp_impl(lbann_comm& comm,
              TensorDataType epsilon,
              const El::AbstractDistMatrix<TensorDataType>& input,
              El::AbstractDistMatrix<TensorDataType>& output,
-             El::Matrix<TensorDataType, El::Device::CPU>& local_workspace) {
+             El::Matrix<TensorDataType, El::Device::CPU>& local_workspace)
+{
 
   // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
@@ -104,6 +111,29 @@ void fp_impl(lbann_comm& comm,
 
 }
 
+} // namespace <anon>
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void instance_norm_layer<TensorDataType,Layout,Device>::fp_compute()
+{
+  const El::Int num_channels = this->get_output_dims().front();
+  const El::Int channel_size = this->get_output_size() / num_channels;
+  fp_impl(*this->get_comm(),
+          num_channels,
+          channel_size,
+          this->m_epsilon,
+          this->get_prev_activations(),
+          this->get_activations(),
+          this->m_workspace);
+}
+
+// =============================================
+// Backprop
+// =============================================
+
+namespace
+{
+
 /** @brief Backprop */
 template <typename TensorDataType>
 void bp_impl(lbann_comm& comm,
@@ -113,7 +143,8 @@ void bp_impl(lbann_comm& comm,
              const El::AbstractDistMatrix<TensorDataType>& input,
              const El::AbstractDistMatrix<TensorDataType>& output_grad,
              El::AbstractDistMatrix<TensorDataType>& input_grad,
-             const El::Matrix<TensorDataType, El::Device::CPU>& local_workspace) {
+             const El::Matrix<TensorDataType, El::Device::CPU>& local_workspace)
+{
 
   // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::CPU>;
@@ -204,22 +235,9 @@ void bp_impl(lbann_comm& comm,
 
 } // namespace <anon>
 
-// Template instantiation
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void instance_norm_layer<TensorDataType,Layout,Device>::fp_compute() {
-  const El::Int num_channels = this->get_output_dims().front();
-  const El::Int channel_size = this->get_output_size() / num_channels;
-  fp_impl(*this->get_comm(),
-          num_channels,
-          channel_size,
-          this->m_epsilon,
-          this->get_prev_activations(),
-          this->get_activations(),
-          this->m_workspace);
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void instance_norm_layer<TensorDataType,Layout,Device>::bp_compute() {
+void instance_norm_layer<TensorDataType,Layout,Device>::bp_compute()
+{
   const El::Int num_channels = this->get_output_dims().front();
   const El::Int channel_size = this->get_output_size() / num_channels;
   bp_impl(*this->get_comm(),
@@ -232,11 +250,70 @@ void instance_norm_layer<TensorDataType,Layout,Device>::bp_compute() {
           this->m_workspace);
 }
 
+// =============================================
+// Builder function
+// =============================================
+
+namespace
+{
+
+template <typename T, data_layout L, El::Device D>
+struct Builder
+{
+  static std::unique_ptr<Layer> Build(...)
+  {
+    LBANN_ERROR(
+      "Attempted to construct instance_norm_layer ",
+      "with Layout=",to_string(L),". ",
+      "This layer is only supported with DATA_PARALLEL data layout.");
+    return nullptr;
+  }
+};
+
+template <typename TensorDataType, El::Device Device>
+struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>
+{
+  template <typename... Args>
+  static std::unique_ptr<Layer> Build(Args&&... args)
+  {
+    using LayerType = instance_norm_layer<TensorDataType,
+                                          data_layout::DATA_PARALLEL,
+                                          Device>;
+    return make_unique<LayerType>(std::forward<Args>(args)...);
+  }
+};
+
+} // namespace <anon>
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_instance_norm_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const&)
+{
+  using BuilderType = Builder<TensorDataType, Layout, Device>;
+  return BuilderType::Build(comm);
+}
+
+// =============================================
+// Explicit template instantiation
+// =============================================
+
 #define PROTO(T)                                        \
   template class instance_norm_layer<                   \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;
-
-#define LBANN_INSTANTIATE_CPU_HALF
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>
 #include "lbann/macros/instantiate.hpp"
+#undef PROTO
+
+#ifdef LBANN_HAS_GPU
+#define PROTO(T)                                        \
+  extern template class instance_norm_layer<            \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device) \
+  LBANN_LAYER_BUILDER_ETI(instance_norm, T, Device)
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 
 } // namespace lbann

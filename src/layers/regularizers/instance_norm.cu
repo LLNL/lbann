@@ -30,18 +30,31 @@
 
 #include <thrust/pair.h>
 
-namespace lbann {
+namespace lbann
+{
 
-namespace {
+namespace
+{
 
 /** Functor for adding @c thrust::pair objects. */
 template <typename Pair>
-struct pair_sum {
+struct pair_sum
+{
   __device__ __forceinline__
-  Pair operator()(const Pair& x, const Pair& y) {
+  Pair operator()(const Pair& x, const Pair& y)
+  {
     return Pair(x.first+y.first, x.second+y.second);
   }
 };
+
+} // namespace <anon>
+
+// =============================================
+// Forward prop
+// =============================================
+
+namespace
+{
 
 /** Accumulate sums and sums of squares for each channel.
  *
@@ -61,7 +74,8 @@ __global__ void fp_sums_kernel(
   TensorDataType* sums,
   size_t sums_ldim,
   TensorDataType* sqsums,
-  size_t sqsums_ldim) {
+  size_t sqsums_ldim)
+{
 
   // Indices and dimensions
   constexpr size_t bdimy = 1;
@@ -120,7 +134,8 @@ __global__ void fp_output_kernel(
   const TensorDataType* sums,
   size_t sums_ldim,
   const TensorDataType* sqsums,
-  size_t sqsums_ldim) {
+  size_t sqsums_ldim)
+{
 
   // Indices
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -159,7 +174,8 @@ void fp_impl(lbann_comm& comm,
              TensorDataType epsilon,
              const El::AbstractDistMatrix<TensorDataType>& input,
              El::AbstractDistMatrix<TensorDataType>& output,
-             El::Matrix<TensorDataType, El::Device::GPU>& local_workspace) {
+             El::Matrix<TensorDataType, El::Device::GPU>& local_workspace)
+{
 
   // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
@@ -217,6 +233,29 @@ void fp_impl(lbann_comm& comm,
 
 }
 
+} // namespace <anon>
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void instance_norm_layer<TensorDataType, Layout, Device>::fp_compute()
+{
+  const size_t num_channels = this->get_output_dims().front();
+  const size_t channel_size = this->get_output_size() / num_channels;
+  fp_impl(*this->get_comm(),
+          num_channels,
+          channel_size,
+          this->m_epsilon,
+          this->get_prev_activations(),
+          this->get_activations(),
+          this->m_workspace);
+}
+
+// =============================================
+// Backprop
+// =============================================
+
+namespace
+{
+
 /** Compute gradients w.r.t. per-channel statistics.
  *
  *  dL/dmean = - sum(dL/dy_i) / sqrt(var+epsilon)
@@ -246,7 +285,8 @@ __global__ void bp_statistics_grad_kernel(
   TensorDataType* means_grad,
   size_t means_grad_ldim,
   TensorDataType* vars_grad,
-  size_t vars_grad_ldim) {
+  size_t vars_grad_ldim)
+{
 
   // Indices and dimensions
   constexpr size_t bdimy = 1;
@@ -327,7 +367,8 @@ __global__ void bp_input_grad_kernel(
   const TensorDataType* means_grad,
   size_t means_grad_ldim,
   const TensorDataType* vars_grad,
-  size_t vars_grad_ldim) {
+  size_t vars_grad_ldim)
+{
 
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
@@ -371,7 +412,8 @@ void bp_impl(lbann_comm& comm,
              const El::AbstractDistMatrix<TensorDataType>& input,
              const El::AbstractDistMatrix<TensorDataType>& output_grad,
              El::AbstractDistMatrix<TensorDataType>& input_grad,
-             const El::Matrix<TensorDataType, El::Device::GPU>& local_workspace) {
+             const El::Matrix<TensorDataType, El::Device::GPU>& local_workspace)
+{
 
   // Local matrices
   using LocalMat = El::Matrix<TensorDataType, El::Device::GPU>;
@@ -446,22 +488,9 @@ void bp_impl(lbann_comm& comm,
 
 } // namespace <anon>
 
-// Template instantiation
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void instance_norm_layer<TensorDataType, Layout, Device>::fp_compute() {
-  const size_t num_channels = this->get_output_dims().front();
-  const size_t channel_size = this->get_output_size() / num_channels;
-  fp_impl(*this->get_comm(),
-          num_channels,
-          channel_size,
-          this->m_epsilon,
-          this->get_prev_activations(),
-          this->get_activations(),
-          this->m_workspace);
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void instance_norm_layer<TensorDataType, Layout, Device>::bp_compute() {
+void instance_norm_layer<TensorDataType, Layout, Device>::bp_compute()
+{
   const size_t num_channels = this->get_output_dims().front();
   const size_t channel_size = this->get_output_size() / num_channels;
   bp_impl(*this->get_comm(),
@@ -474,9 +503,13 @@ void instance_norm_layer<TensorDataType, Layout, Device>::bp_compute() {
           this->m_workspace);
 }
 
+// =============================================
+// Explicit template instantiation
+// =============================================
+
 #define PROTO(T)                                        \
   template class instance_norm_layer<                   \
-    T, data_layout::DATA_PARALLEL, El::Device::GPU>;
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

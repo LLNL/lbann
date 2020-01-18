@@ -84,6 +84,9 @@ private:
 
 };
 
+// Layer builder for factory
+LBANN_DEFINE_LAYER_BUILDER(instance_norm);
+
 // =========================================================
 // Implementation
 // =========================================================
