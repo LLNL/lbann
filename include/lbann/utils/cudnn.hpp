@@ -93,7 +93,7 @@ struct ScalingParameterT
 template <typename T>
 using ScalingParamType = typename ScalingParameterT<T>::type;
 
-#ifdef LBANN_USE_GPU_FP16
+#ifdef LBANN_HAS_GPU_FP16
 template <>
 struct ScalingParameterT<fp16>
 {
