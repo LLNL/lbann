@@ -27,11 +27,17 @@
 #define LBANN_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/sum.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <lbann.pb.h>
+
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device) \
+LBANN_LAYER_DEFAULT_BUILDER(sum)
+
+#define PROTO_DEVICE(T, Device)                                    \
   template class sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class sum_layer<T, data_layout::MODEL_PARALLEL, Device>
+  template class sum_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(sum, T, Device)
 
 #include "lbann/macros/instantiate_device.hpp"
 

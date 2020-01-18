@@ -112,6 +112,8 @@ class categorical_random_layer : public transform_layer<TensorDataType> {
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(categorical_random);
+
 #ifndef LBANN_CATEGORICAL_RANDOM_LAYER_INSTANTIATE
 
 #define PROTO(T)                           \
