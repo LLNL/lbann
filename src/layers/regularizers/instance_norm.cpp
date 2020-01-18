@@ -26,6 +26,7 @@
 
 #define LBANN_INSTANCE_NORM_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/instance_norm.hpp"
+#include "lbann/utils/h2_tmp.hpp"
 
 namespace lbann
 {
@@ -264,19 +265,34 @@ struct Builder
   {
     LBANN_ERROR(
       "Attempted to construct instance_norm_layer ",
-      "with Layout=",to_string(L),". ",
-      "This layer is only supported with DATA_PARALLEL data layout.");
+      "with invalid parameters ",
+      "(TensorDataType=",TypeName<T>(),", ",
+      "Layout=",to_string(L),", ",
+      "Device=",to_string(D),")");
     return nullptr;
   }
 };
 
-template <typename TensorDataType, El::Device Device>
-struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>
+template <El::Device Device>
+struct Builder<float,data_layout::DATA_PARALLEL,Device>
 {
   template <typename... Args>
   static std::unique_ptr<Layer> Build(Args&&... args)
   {
-    using LayerType = instance_norm_layer<TensorDataType,
+    using LayerType = instance_norm_layer<float,
+                                          data_layout::DATA_PARALLEL,
+                                          Device>;
+    return make_unique<LayerType>(std::forward<Args>(args)...);
+  }
+};
+
+template <El::Device Device>
+struct Builder<double,data_layout::DATA_PARALLEL,Device>
+{
+  template <typename... Args>
+  static std::unique_ptr<Layer> Build(Args&&... args)
+  {
+    using LayerType = instance_norm_layer<double,
                                           data_layout::DATA_PARALLEL,
                                           Device>;
     return make_unique<LayerType>(std::forward<Args>(args)...);
