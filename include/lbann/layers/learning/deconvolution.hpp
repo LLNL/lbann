@@ -255,7 +255,7 @@ protected:
     const auto output_spatial_local_shape =
         ::distconv::get_deconvolution_output_local_tensor_shape(
             this->m_prev_activations_t,
-            filter_dims, strides, true, dilations,
+            filter_dims, strides, false, dilations,
             this->m_groups);
     return output_spatial_local_shape;
   }
