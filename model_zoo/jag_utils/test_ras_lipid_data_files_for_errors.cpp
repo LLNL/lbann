@@ -78,21 +78,11 @@ int main(int argc, char *argv[]) {
         std::cerr << "loading: " << filenames[j] << std::endl;
       }
 
-/*
       out << "opening: " << filenames[j] << std::endl;
       out.close();
       out.open(b, std::ofstream::out | std::ofstream::app);
-*/
 
-  try {
-  std::cerr << "still here" << std::endl;
       std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filenames[j]);
-  std::cerr << "DONE! still here" << std::endl;
-  } catch (...) {
-
-  //} catch (std::exception const &e) {
-    std::cerr << "FAILED: "<< filenames[j] << std::endl;
-  }
 
       out << "DONE! opening: " << filenames[j] << std::endl;
       out.close();
