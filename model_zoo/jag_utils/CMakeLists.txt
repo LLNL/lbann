@@ -1,11 +1,6 @@
 # Add a target to control building all the utilities
 add_custom_target(jag-utils)
 
-add_executable(compute_pilot2_normalization
-  EXCLUDE_FROM_ALL compute_pilot2_normalization.cpp)
-target_link_libraries(compute_pilot2_normalization lbann)
-add_dependencies(jag-utils compute_pilot2_normalization)
-
 add_executable(build_index
   EXCLUDE_FROM_ALL build_index.cpp)
 target_link_libraries(build_index lbann)
@@ -96,14 +91,9 @@ add_executable(convert_npz_to_conduit
 target_link_libraries(convert_npz_to_conduit lbann)
 add_dependencies(jag-utils convert_npz_to_conduit)
 
-add_executable(test_ras_lipid_data_files_for_errors
-  EXCLUDE_FROM_ALL test_ras_lipid_data_files_for_errors.cpp)
-target_link_libraries(test_ras_lipid_data_files_for_errors lbann)
-add_dependencies(jag-utils test_ras_lipid_data_files_for_errors)
-
 # Install the binaries
 install(
-  TARGETS select_samples build_sample_id_mapping build_index compute_pilot2_normalization convert_npz_to_conduit test_ras_lipid_data_files_for_errors
+  TARGETS select_samples build_sample_id_mapping build_index convert_npz_to_conduit 
   OPTIONAL
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
