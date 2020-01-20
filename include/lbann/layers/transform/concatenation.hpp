@@ -314,6 +314,12 @@ private:
   std::vector<dc::TensorDev> m_prev_activations_siblings;
   std::vector<dc::TensorDev> m_error_signals_siblings;
 
+  dc::Shape get_activations_tensor_local_shape() const override {
+    auto shape = m_prev_activations_t.get_local_shape();
+    shape[-2] = get_output_tensor_shape()[-2];
+    return shape;
+  }
+
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     Layer::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
