@@ -200,8 +200,11 @@ void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::fp_compute()
 {
+  const auto& zero = El::TypeTraits<TensorDataType>::Zero();
+  const auto& one = El::TypeTraits<TensorDataType>::One();
 
   // Data tensors
+  using AbsLocalMat = El::AbstractMatrix<TensorDataType>;
   using LocalMat = El::Matrix<TensorDataType,Device>;
   const auto& linearity = this->get_data_type_weights(0).get_values();
   const auto& bias = this->get_data_type_weights(1).get_values();
@@ -253,16 +256,16 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   // Apply linearity
   El::Gemm(
     El::NORMAL, El::NORMAL,
-    TensorDataType{1.0}, local_linearity, local_input_reshaped,
-    TensorDataType{0.0}, local_output_reshaped);
+    one, local_linearity, local_input_reshaped,
+    zero, reinterpret_cast<AbsLocalMat&>(local_output_reshaped));
 
   // Apply bias
   LocalMat ones(local_mini_batch_size * num_channels, 1);
-  El::Fill(ones, TensorDataType{1.0});
+  El::Fill(ones, one);
   El::Gemm(
     El::NORMAL, El::TRANSPOSE,
-    TensorDataType{1.0}, local_bias, ones,
-    TensorDataType{1.0}, local_output_reshaped);
+    one, local_bias, ones,
+    one, reinterpret_cast<AbsLocalMat&>(local_output_reshaped));
 
 }
 
@@ -271,12 +274,15 @@ void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::bp_compute()
 {
+  const auto& zero = El::TypeTraits<TensorDataType>::Zero();
+  const auto& one = El::TypeTraits<TensorDataType>::One();
 
   // Weights
   auto& linearity_weights = this->get_data_type_weights(0);
   auto& bias_weights = this->get_data_type_weights(1);
 
   // Data tensors
+  using AbsLocalMat = El::AbstractMatrix<TensorDataType>;
   using LocalMat = El::Matrix<TensorDataType,Device>;
   const auto& linearity = linearity_weights.get_values();
   const auto& local_input = dynamic_cast<const LocalMat&>(this->get_local_prev_activations());
@@ -340,13 +346,13 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   // Compute gradient w.r.t. input
   El::Gemm(
     El::TRANSPOSE, El::NORMAL,
-    TensorDataType{1.0}, local_linearity, local_output_grad_reshaped,
-    TensorDataType{0.0}, local_input_grad_reshaped);
+    one, local_linearity, local_output_grad_reshaped,
+    zero, reinterpret_cast<AbsLocalMat&>(local_input_grad_reshaped));
 
   // Compute gradient w.r.t. linearity
   auto* linearity_optimizer = linearity_weights.get_optimizer();
   if (linearity_optimizer != nullptr) {
-    TensorDataType dst_scale{0.0}, gradient_scale{0.0};
+    TensorDataType dst_scale, gradient_scale;
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
     El::Gemm(
@@ -358,11 +364,11 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   // Compute gradient w.r.t. bias
   auto* bias_optimizer = bias_weights.get_optimizer();
   if (bias_optimizer != nullptr) {
-    TensorDataType dst_scale{0.0}, gradient_scale{0.0};
+    TensorDataType dst_scale, gradient_scale;
     auto& bias_gradient = bias_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
     LocalMat ones(local_mini_batch_size * num_channels, 1);
-    El::Fill(ones, TensorDataType{1.0});
+    El::Fill(ones, one);
     El::Gemv(
       El::NORMAL,
       gradient_scale, local_output_grad_reshaped, ones,
