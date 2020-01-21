@@ -335,6 +335,7 @@ private:
                   !m_parent_copy_in_required);
     m_prev_activations_siblings.reserve(get_num_parents() - 1);
     for (int i = 0; i < get_num_parents() - 1; ++i) {
+      // TODO: Think about the parent has two output tensors (e.g., split).
       m_prev_activations_siblings.emplace_back(
           get_parent_layers()[i+1]->get_activations_t());
     }
@@ -358,6 +359,21 @@ private:
       assert0(m_error_signals_siblings.back().allocate());
       m_error_signals_siblings.back().zero(dc::get_stream());
     }
+  }
+
+  // TODO: Make the layer class have multiple parents and children
+  const dc::TensorDev &get_error_signals_t(const Layer &parent) const {
+    const auto parents = get_parent_layers();
+    for (int i = 0; i < (int)parents.size(); ++i) {
+      if (parents[i] == &parent) {
+        if (i == 0) {
+          return m_error_signals_t;
+        } else {
+          return m_error_signals_siblings[i-1];
+        }
+      }
+    }
+    LBANN_ERROR("No such parent found");
   }
 
   void fp_compute_distconv() {

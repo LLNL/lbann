@@ -133,7 +133,7 @@ protected:
     m_prev_error_signals_siblings.reserve(get_num_children() - 1);
     for (int i = 1; i < get_num_children(); ++i) {
       m_prev_error_signals_siblings.emplace_back(
-          get_child_layers()[i]->get_error_signals_t());
+          get_child_layers()[i]->get_error_signals_t(*this));
     }
   }
 #endif

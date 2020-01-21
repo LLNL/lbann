@@ -589,6 +589,7 @@ protected:
   // REFACTORING: returning non-const tensor should be protected
   virtual const dc::TensorDev &get_activations_t() const;
   virtual const dc::TensorDev &get_error_signals_t() const;
+  virtual const dc::TensorDev &get_error_signals_t(const Layer &parent) const;
   //virtual ConstTensorDev get_activations_const_view() const;
   //virtual ConstTensorDev get_prev_activations_const_view() const;
 
