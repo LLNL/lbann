@@ -11,14 +11,20 @@ add_executable(compute_ras_lipid_sig1_normalization
   target_link_libraries(compute_ras_lipid_sig1_normalization lbann)
   add_dependencies(jag-utils compute_ras_lipid_sig1_normalization)
 
-add_executable(compute_ras_lipid_bbs_normalization
-  EXCLUDE_FROM_ALL compute_ras_lipid_bbs_normalization.cpp)
-  target_link_libraries(compute_ras_lipid_bbs_normalization lbann)
-  add_dependencies(jag-utils compute_ras_lipid_bbs_normalization)
+add_executable(compute_ras_lipid_bbs_statistics
+  EXCLUDE_FROM_ALL compute_ras_lipid_bbs_statistics.cpp)
+  target_link_libraries(compute_ras_lipid_bbs_statistics lbann)
+  add_dependencies(jag-utils compute_ras_lipid_bbs_statistics)
+
+add_executable(compute_ras_lipid_bbs_max_min
+  EXCLUDE_FROM_ALL compute_ras_lipid_bbs_max_min.cpp)
+  target_link_libraries(compute_ras_lipid_bbs_max_min lbann)
 
 # Install the binaries
-install(
-  TARGETS test_ras_lipid_data_files_for_errors compute_ras_lipid_sig1_normalization compute_ras_lipid_bbs_normalization
+install( TARGETS 
+  test_ras_lipid_data_files_for_errors 
+  compute_ras_lipid_sig1_normalization 
+  compute_ras_lipid_bbs_statistics
 
   OPTIONAL
   EXPORT LBANNTargets
