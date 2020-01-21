@@ -349,7 +349,7 @@ def get_command(cluster,
             option_data_filedir = ' --data_filedir=%s' % re.sub(
                 '[a-z]scratch[a-z]', 'gscratchr', data_filedir_default)
     elif not data_file_parameters == [None, None, None, None]:
-        # Any of the data_file_parameters have a non-None value.
+        # Any of the data_file_parameters has a non-None value.
         if cluster in ['catalyst', 'corona', 'pascal']:
             # option_data_filedir_train = data_filedir_train_default
             # option_data_filename_train = data_filename_train_default
@@ -357,16 +357,22 @@ def get_command(cluster,
             # option_data_filename_train = data_filename_test_default
             pass  # No need to pass in a parameter
         elif cluster == 'lassen':
-            filename_train = re.sub(
-                '[a-z]scratch[a-z]', 'gpfs1', data_filename_train_default)
-            filename_train = re.sub(
-                'labels', 'original/labels', filename_train)
-            print('filename_train={f}'.format(f=filename_train))
-            filename_test = re.sub(
-                '[a-z]scratch[a-z]', 'gpfs1', data_filename_test_default)
-            filename_test = re.sub(
-                'labels', 'original/labels', filename_test)
-            print('filename_test={f}'.format(f=filename_test))
+            if data_filedir_train_default is not None:
+                option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_train_default)
+            if data_filename_train_default is not None:
+                filename_train = re.sub(
+                    '[a-z]scratch[a-z]', 'gpfs1', data_filename_train_default)
+                filename_train = re.sub(
+                    'labels', 'original/labels', filename_train)
+                option_data_filename_train = ' --data_filename_train=%s' % filename_train
+            if data_filedir_test_default is not None:
+                option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_test_default)
+            if data_filename_test_default is not None:
+                filename_test = re.sub(
+                    '[a-z]scratch[a-z]', 'gpfs1', data_filename_test_default)
+                filename_test = re.sub(
+                    'labels', 'original/labels', filename_test)
+                option_data_filename_test  = ' --data_filename_test=%s'  % filename_test
             option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_train_default)
             option_data_filename_train = ' --data_filename_train=%s' % filename_train
             option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_test_default)
