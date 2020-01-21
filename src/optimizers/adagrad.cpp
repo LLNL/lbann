@@ -102,7 +102,7 @@ void adagrad<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
       const auto& g = gradient_buffer[row+col*gradient_ldim];
       auto& c = cache_buffer[row+col*cache_ldim];
       c += g * g;
-      x -= learning_rate * g / (std::sqrt(c) + m_eps);
+      x -= learning_rate * g / (El::Sqrt(c) + m_eps);
     }
   }
 
@@ -156,14 +156,24 @@ bool adagrad<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::
   return true;
 }
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_adagrad_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::AdaGrad const&>(msg);
-  return make_unique<adagrad<DataType>>(params.learn_rate(), params.eps());
+  return make_unique<adagrad<TensorDataType>>(TensorDataType(params.learn_rate()),
+                                              TensorDataType(params.eps()));
 }
 
-template class adagrad<DataType>;
+#define PROTO(T)                                    \
+  template class adagrad<T>;                        \
+  template std::unique_ptr<optimizer>               \
+  build_adagrad_optimizer_from_pbuf<T>(             \
+    google::protobuf::Message const&)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

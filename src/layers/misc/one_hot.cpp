@@ -45,15 +45,18 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& ind = local_input(0, col);
-    if (TensorDataType{0} <= ind && ind < TensorDataType(local_height)) {
+    if (El::TypeTraits<TensorDataType>::Zero() <= ind && ind < TensorDataType(local_height)) {
       const El::Int row = static_cast<El::Int>(ind);
-      local_output(row, col) = TensorDataType{1};
+      local_output(row, col) = El::TypeTraits<TensorDataType>::One();
     }
   }
 
 }
 
-template class one_hot_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                     \
+  template class one_hot_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

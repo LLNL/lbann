@@ -100,7 +100,7 @@ __global__ void bp_kernel(El::Int local_height, El::Int local_width,
                           const TensorDataType* __restrict__ gradient_wrt_output,
                           TensorDataType* __restrict__ gradient_wrt_input,
                           El::Int gradient_wrt_input_ldim) {
-  constexpr TensorDataType zero = 0;
+  const TensorDataType zero = 0.;
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int bidy = blockIdx.y;
   const El::Int nthreadsx = blockDim.x * gridDim.x;

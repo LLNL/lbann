@@ -102,9 +102,10 @@ void embedding_layer<TensorDataType, Layout, Device>::bp_compute() {
       }
     }
   }
-  opt.add_to_gradient(*this->m_embeddings_grad, one, true);
+  opt.add_to_gradient(*this->m_embeddings_grad, El::TypeTraits<TensorDataType>::One(), true);
 
 }
+
 
 // Explicit instantiation
 #define PROTO(T)                                                        \

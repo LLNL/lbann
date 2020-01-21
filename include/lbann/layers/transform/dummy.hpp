@@ -52,17 +52,15 @@ protected:
   void fp_compute() override {}
 };
 
+LBANN_DEFINE_LAYER_BUILDER(dummy);
+
 #ifndef LBANN_DUMMY_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class dummy_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class dummy_layer<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_DUMMY_LAYER_INSTANTIATE
 
 } // namespace lbann

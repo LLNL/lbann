@@ -35,11 +35,19 @@
 #include "lbann/utils/graph.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/metrics/metric.hpp"
-#include "lbann/weights/weights.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/proto/factories.hpp"
+#include "lbann/weights/weights.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+
+// Note (trb): There's what is, IMO, an STL error in GCC in which the
+// dtor for unique_ptr is checking sizeof(T), so this must be a
+// complete type. Sigh. (The greater implication of this is that you
+// cannot have `unique_ptr<IncompleteType>` as a drop-in for
+// `IncompleteType*`, which is annoying.
+#include <optimizers.pb.h>
 
 #include <vector>
 #include <string>
@@ -68,7 +76,7 @@ public:
   model(lbann_comm* comm,
         size_t mini_batch_size,
         objective_function* obj_fn,
-        optimizer* default_optimizer = nullptr);
+        std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
   model& operator=(const model& other);
   virtual ~model();
@@ -185,7 +193,14 @@ public:
    *
    *  If there is no default optimizer, a null pointer is returned.
    */
-  optimizer* create_optimizer() const;
+  template <typename TensorDataType>
+  std::unique_ptr<optimizer> create_optimizer() const
+  {
+    if (m_default_optimizer_msg)
+      return proto::construct_optimizer<TensorDataType>(
+        *m_default_optimizer_msg);
+    return nullptr;
+  }
 
   /** Get the trainer's maximum mini-batch size. */
   inline size_t get_max_mini_batch_size() const {
@@ -420,7 +435,7 @@ private:
    *  is just used to create copies and is not actually used for
    *  optimization.
    */
-  optimizer* m_default_optimizer = nullptr;
+  std::unique_ptr<lbann_data::Optimizer> m_default_optimizer_msg;
 
   /** @brief Mathematical function to be minimized during training. */
   objective_function* m_objective_function;

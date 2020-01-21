@@ -85,16 +85,19 @@ cudnnHandle_t& get_handle() {
 // Helper functions for cuDNN types
 ////////////////////////////////////////////////////////////
 
+template <typename TensorDataType>
 cudnnDataType_t get_data_type() {
-  switch (sizeof(DataType)) {
-  case 2: return CUDNN_DATA_HALF;
-  case 4: return CUDNN_DATA_FLOAT;
-  case 8: return CUDNN_DATA_DOUBLE;
-  default: LBANN_ERROR("invalid data type for cuDNN");
-  }
+  LBANN_ERROR("invalid data type for cuDNN");
   return CUDNN_DATA_FLOAT;
 }
 
+#ifdef LBANN_HAS_GPU_FP16
+template <> cudnnDataType_t get_data_type<fp16>() { return CUDNN_DATA_HALF; }
+#endif // LBANN_HAS_GPU_FP16
+template <> cudnnDataType_t get_data_type<float>() { return CUDNN_DATA_FLOAT; }
+template <> cudnnDataType_t get_data_type<double>() { return CUDNN_DATA_DOUBLE; }
+
+template <typename TensorDataType>
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,
                      std::vector<int> dims,
                      std::vector<int> strides) {
@@ -164,7 +167,7 @@ void set_tensor_desc(cudnnTensorDescriptor_t& desc,
     CHECK_CUDNN(cudnnCreateTensorDescriptor(&desc));
   }
   CHECK_CUDNN(cudnnSetTensorNdDescriptor(desc,
-                                         get_data_type(),
+                                         get_data_type<TensorDataType>(),
                                          dims.size(),
                                          dims.data(),
                                          strides.data()));
@@ -394,7 +397,7 @@ void set_data_parallel_tensor_desc(cudnnTensorDescriptor_t& desc,
     }
     dims.insert(dims.begin(), local_data.Width());
     strides.insert(strides.begin(), local_data.LDim());
-    set_tensor_desc(desc, dims, strides);
+    set_tensor_desc<TensorDataType>(desc, dims, strides);
   }
 }
 
@@ -491,7 +494,7 @@ void set_entrywise_tensor_desc(cudnnTensorDescriptor_t& desc,
     }
 
     // Set cuDNN tensor descriptor with 4D tensor
-    set_tensor_desc(desc,
+    set_tensor_desc<TensorDataType>(desc,
                     {width, factors[2], factors[1], factors[0]},
                     {ldim, factors[1]*factors[0], factors[0], 1});
 
@@ -881,11 +884,14 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
 }
 
 #define PROTO(T)                                       \
+  template cudnnDataType_t get_data_type<T>();                   \
+  template void set_tensor_desc<T>(cudnnTensorDescriptor_t&, std::vector<int>, std::vector<int>); \
   template class layer_tensor_manager<T>;               \
   template class data_parallel_layer_tensor_manager<T>; \
   template class entrywise_layer_tensor_manager<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace cudnn

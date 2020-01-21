@@ -201,6 +201,7 @@ Hydrogen, and LBANN separately, by whatever means they choose.
           -D Hydrogen_ENABLE_ALUMINUM=ON \
           -D Hydrogen_ENABLE_CUB=ON \
           -D Hydrogen_ENABLE_CUDA=ON \
+          -D Hydrogen_ENABLE_HALF=ON \
           \
           -D LBANN_SB_BUILD_LBANN=ON \
           -D LBANN_DATATYPE:STRING=float \

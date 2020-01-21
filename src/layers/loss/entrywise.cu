@@ -118,8 +118,8 @@ template <typename TensorDataType>
 struct binary_cross_entropy_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    constexpr TensorDataType zero = 0;
-    constexpr TensorDataType one = 1;
+    const TensorDataType zero = 0.;
+    const TensorDataType one = 1.;
     TensorDataType y = zero;
     if (x2 > zero) { y += -x2 * cuda::log(x1); }
     if (x2 < one)  { y += -(one-x2) * cuda::log(one-x1); }
@@ -130,8 +130,8 @@ struct binary_cross_entropy_op {
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    constexpr TensorDataType zero = 0;
-    constexpr TensorDataType one = 1;
+    const TensorDataType zero = 0.;
+    const TensorDataType one = 1.;
     dx1 = zero;
     dx2 = zero;
     if (dy == zero) { return; }
@@ -156,8 +156,8 @@ template <typename TensorDataType>
 struct sigmoid_binary_cross_entropy_op {
   inline __device__ TensorDataType operator()(const TensorDataType& x1,
                                         const TensorDataType& x2) const {
-    constexpr TensorDataType zero = 0;
-    constexpr TensorDataType one = 1;
+    const TensorDataType zero = 0.;
+    const TensorDataType one = 1.;
     const auto& z = cuda::max(zero, cuda::min(x2, one));
     if (x1 > zero) {
       return (one - z) * x1 + cuda::log1p(cuda::exp(-x1));
@@ -170,13 +170,13 @@ struct sigmoid_binary_cross_entropy_op {
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    constexpr TensorDataType zero = 0;
-    constexpr TensorDataType one = 1;
+    const TensorDataType zero = 0.;
+    const TensorDataType one = 1.;
     const auto& z = cuda::max(zero, cuda::min(x2, one));
     if (x1 > zero) {
-      dx1 = -z + 1 / (one + cuda::exp(-x1));
+      dx1 = -z + one / (one + cuda::exp(-x1));
     } else {
-      dx1 = one - z - 1 / (one + cuda::exp(x1));
+      dx1 = one - z - one / (one + cuda::exp(x1));
     }
     dx1 *= dy;
     dx2 = (x2 == z) ? -x1 * dy : zero;
@@ -190,15 +190,15 @@ struct boolean_accuracy_op {
                                         const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
     const auto& b2 = x2 >= TensorDataType(0.5);
-    return b1 == b2 ? TensorDataType(1) : TensorDataType(0);
+    return b1 == b2 ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
@@ -209,15 +209,15 @@ struct boolean_false_negative_op {
                                         const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
     const auto& b2 = x2 >= TensorDataType(0.5);
-    return (!b1 && b2) ? TensorDataType(1) : TensorDataType(0);
+    return (!b1 && b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
@@ -228,22 +228,22 @@ struct boolean_false_positive_op {
                                         const TensorDataType& x2) const {
     const auto& b1 = x1 >= TensorDataType(0.5);
     const auto& b2 = x2 >= TensorDataType(0.5);
-    return (b1 && !b2) ? TensorDataType(1) : TensorDataType(0);
+    return (b1 && !b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
   inline __device__ void operator()(const TensorDataType& x1,
                                     const TensorDataType& x2,
                                     const TensorDataType& dy,
                                     TensorDataType& dx1,
                                     TensorDataType& dx2) const {
-    dx1 = TensorDataType(0);
-    dx2 = TensorDataType(0);
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
+#define DEFINE_COMPUTE_OPS(layer, op)                                   \
   template <typename TensorDataType, data_layout Layout, El::Device Device> \
   void layer<TensorDataType, Layout, Device>::fp_compute() {            \
     cuda::apply_entrywise_binary_operator<op>(                          \
@@ -260,13 +260,21 @@ struct boolean_false_positive_op {
       this->get_local_error_signals(0),                                 \
       this->get_local_error_signals(1));                                \
   }                                                                     \
-  BINARY_ETI_INST_MACRO_DEV(layer, El::Device::GPU)
 
-INSTANTIATE(binary_cross_entropy_layer, binary_cross_entropy_op);
-INSTANTIATE(sigmoid_binary_cross_entropy_layer,
-            sigmoid_binary_cross_entropy_op);
-INSTANTIATE(boolean_accuracy_layer, boolean_accuracy_op);
-INSTANTIATE(boolean_false_negative_layer, boolean_false_negative_op);
-INSTANTIATE(boolean_false_positive_layer, boolean_false_positive_op);
+DEFINE_COMPUTE_OPS(binary_cross_entropy_layer, binary_cross_entropy_op)
+DEFINE_COMPUTE_OPS(sigmoid_binary_cross_entropy_layer, sigmoid_binary_cross_entropy_op)
+DEFINE_COMPUTE_OPS(boolean_accuracy_layer, boolean_accuracy_op)
+DEFINE_COMPUTE_OPS(boolean_false_negative_layer, boolean_false_negative_op)
+DEFINE_COMPUTE_OPS(boolean_false_positive_layer, boolean_false_positive_op)
+
+#define PROTO(T) \
+  BINARY_ETI_INST_MACRO_DEV_DT(binary_cross_entropy_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(sigmoid_binary_cross_entropy_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(boolean_accuracy_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(boolean_false_negative_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(boolean_false_positive_layer, T, El::Device::GPU)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

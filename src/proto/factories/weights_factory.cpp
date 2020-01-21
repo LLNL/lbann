@@ -31,9 +31,9 @@
 #include "lbann/weights/variance_scaling_initializers.hpp"
 
 #include "lbann/proto/helpers.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 #include "lbann/utils/factory.hpp"
 
-#include <optimizers.pb.h>
 #include <weights.pb.h>
 
 namespace lbann {
@@ -50,50 +50,61 @@ using factory_type = lbann::generic_factory<
                         MessageT const&>,
   default_key_error_policy>;
 
-void register_default_builders(factory_type& factory)
+/** @brief Singleton holder for a factory.
+ *
+ *  @note This design requires that the builder function be valid for
+ *  every combination of T, L, and D. That is, layer types for which a
+ *  combination is invalid must handle that error inside their builder
+ *  function.
+ */
+template <typename T>
+class factory_manager
 {
-  factory.register_builder("ConstantInitializer",
-                           build_constant_initializer_from_pbuf);
-  factory.register_builder("ValueInitializer",
-                           build_value_initializer_from_pbuf);
-  factory.register_builder("UniformInitializer",
-                           build_uniform_initializer_from_pbuf);
-  factory.register_builder("NormalInitializer",
-                           build_normal_initializer_from_pbuf);
-  factory.register_builder("GlorotNormalInitializer",
-                           build_glorot_initializer_from_pbuf);
-  factory.register_builder("GlorotUniformInitializer",
-                           build_glorot_initializer_from_pbuf);
-  factory.register_builder("HeNormalInitializer",
-                           build_he_initializer_from_pbuf);
-  factory.register_builder("HeUniformInitializer",
-                           build_he_initializer_from_pbuf);
-  factory.register_builder("LeCunNormalInitializer",
-                           build_lecun_initializer_from_pbuf);
-  factory.register_builder("LeCunUniformInitializer",
-                           build_lecun_initializer_from_pbuf);
-}
+public:
+  factory_manager() { register_default_builders(); }
+  factory_type const& get() const noexcept { return factory_; }
 
-// Manage a global factory
-struct factory_manager
-{
-    factory_type factory_;
+private:
+  void register_default_builders()
+  {
+    factory_.register_builder("ConstantInitializer",
+                              build_constant_initializer_from_pbuf<T>);
+    factory_.register_builder("ValueInitializer",
+                              build_value_initializer_from_pbuf<T>);
+    factory_.register_builder("UniformInitializer",
+                              build_uniform_initializer_from_pbuf<T>);
+    factory_.register_builder("NormalInitializer",
+                              build_normal_initializer_from_pbuf<T>);
+    factory_.register_builder("GlorotNormalInitializer",
+                              build_glorot_initializer_from_pbuf<T>);
+    factory_.register_builder("GlorotUniformInitializer",
+                              build_glorot_initializer_from_pbuf<T>);
+    factory_.register_builder("HeNormalInitializer",
+                              build_he_initializer_from_pbuf<T>);
+    factory_.register_builder("HeUniformInitializer",
+                              build_he_initializer_from_pbuf<T>);
+    factory_.register_builder("LeCunNormalInitializer",
+                              build_lecun_initializer_from_pbuf<T>);
+    factory_.register_builder("LeCunUniformInitializer",
+                              build_lecun_initializer_from_pbuf<T>);
+  }
 
-    factory_manager() {
-        register_default_builders(factory_);
-    }
+private:
+  factory_type factory_;
 };
 
-factory_manager factory_mgr_;
+template <typename TensorDataType>
 factory_type const& get_weight_initializer_factory() noexcept
 {
-  return factory_mgr_.factory_;
+  static factory_manager<TensorDataType> factory_mgr_;
+  return factory_mgr_.get();
 }
 
 /* Construct a weights initialization specified with prototext. */
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 construct_initializer(const lbann_data::Weights& proto_weights) {
-  auto const& factory = get_weight_initializer_factory();
+  auto const& factory = get_weight_initializer_factory<TensorDataType>();
   auto const& msg =
     helpers::get_oneof_message(proto_weights.initializer(), "initializer_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg);
@@ -107,8 +118,39 @@ std::unique_ptr<weights> construct_weights(
   const lbann_data::Weights& proto_weights) {
   std::stringstream err;
 
+  auto proto_datatype = proto_weights.datatype();
+
   // Instantiate weights
-  auto w = make_unique<data_type_weights<DataType>>(comm);
+  //  auto w = make_unique<data_type_weights<DataType>>(comm);
+  std::unique_ptr<weights> w;
+  std::unique_ptr<weights_initializer> init;
+  std::unique_ptr<optimizer> opt;
+
+#define TEMPLATE_INSTANTIATION(TensorDataType)                                \
+    do {                                                                      \
+      if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {     \
+        w = make_unique<data_type_weights<TensorDataType>>(comm);             \
+        init = (proto_weights.has_initializer()                               \
+          ? construct_initializer<TensorDataType>(proto_weights)              \
+          : nullptr);                                                         \
+        const lbann_data::Optimizer& opt_msg = (proto_weights.has_optimizer() \
+          ? proto_weights.optimizer()                                         \
+          : proto_opt);                                                       \
+        opt = (helpers::has_oneof(opt_msg, "optimizer_type")                  \
+          ? construct_optimizer<TensorDataType>(opt_msg)                      \
+          : nullptr);                                                         \
+      }                                                                       \
+    } while (0)
+
+#define PROTO(T) \
+    TEMPLATE_INSTANTIATION(T)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+
+#undef PROTO
+#undef TEMPLATE_INSTANTIATION
 
   // Set weights name if provided
   const auto& name = proto_weights.name();
@@ -123,20 +165,6 @@ std::unique_ptr<weights> construct_weights(
   }
 
   // Set weights initializer and optimizer
-  std::unique_ptr<weights_initializer> init =
-    (proto_weights.has_initializer()
-     ? construct_initializer(proto_weights)
-     : nullptr);
-
-  const lbann_data::Optimizer& opt_msg =
-    (proto_weights.has_optimizer()
-     ? proto_weights.optimizer()
-     : proto_opt);
-
-  std::unique_ptr<optimizer> opt =
-    (helpers::has_oneof(opt_msg, "optimizer_type")
-     ? construct_optimizer(opt_msg)
-     : nullptr);
   w->set_initializer(std::move(init));
   w->set_optimizer(std::move(opt));
 

@@ -152,9 +152,9 @@ private:
   /** Small factor to avoid division by zero. */
   TensorDataType m_eps;
   /** beta1 ^ iteration. */
-  TensorDataType m_current_beta1 = 1;
+  TensorDataType m_current_beta1 = TensorDataType(1.);
   /** beta2 ^ iteration. */
-  TensorDataType m_current_beta2 = 1;
+  TensorDataType m_current_beta2 = TensorDataType(1.);
   /** First moment estimates. */
   std::unique_ptr<AbsDistMatrixType> m_moment1;
   /** Second moment estimates. */
@@ -164,10 +164,12 @@ private:
   friend class callback::perturb_adam;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
+  void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient,
+                        const TensorDataType& correction);
 #ifdef LBANN_HAS_CUDA
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
+  void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient,
+                        const TensorDataType& correction);
 #endif // LBANN_HAS_CUDA
 
   /** @name Checkpointing */
@@ -225,6 +227,7 @@ private:
 
 };
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_adam_optimizer_from_pbuf(
   google::protobuf::Message const&);

@@ -129,6 +129,7 @@ private:
 
 };
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_rmsprop_optimizer_from_pbuf(
   google::protobuf::Message const&);

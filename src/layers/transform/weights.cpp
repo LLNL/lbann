@@ -27,14 +27,28 @@
 #define LBANN_WEIGHTS_LAYER_INSTANTIATE
 #include "lbann/layers/transform/weights.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <lbann.pb.h>
+
 namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_weights_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+{
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, weights_layer);
+  using LayerType = weights_layer<TensorDataType, Layout, Device>;
+
+  const auto& params = proto_layer.weights_layer();
+  const auto& dims = parse_list<El::Int>(params.dims());
+  return lbann::make_unique<LayerType>(comm, dims);
+}
 
 #define PROTO_DEVICE(T, Device) \
   template class weights_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class weights_layer<T, data_layout::MODEL_PARALLEL, Device>
+  template class weights_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(weights, T, Device)
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

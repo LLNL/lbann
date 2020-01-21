@@ -28,6 +28,8 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
+#include "lbann/utils/h2_tmp.hpp"
+
 namespace lbann {
 namespace callback {
 
@@ -79,51 +81,106 @@ bool has_inf(
   return false;
 }
 
-/** Dump the local network matrices for debugging.
- *  Dump only the local matrices because not every rank will
- *  necessarily have bad data, and the check is purely local.
- */
-void dump_network(model *m) {
-  const auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
-  for (const auto* l : m->get_layers()) {
-    const auto* dtl = dynamic_cast<const data_type_layer<DataType>*>(l);
+struct DefaultErrorReporter
+{
+  template <typename... Ts>
+  void DispatchError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to dispatch functor.");
+  }
+
+  template <typename... Ts>
+  void DeductionError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to deduce an argument type.");
+  }
+};
+
+struct DumpLayerFunctor : DefaultErrorReporter
+{
+  model * m;
+  sgd_execution_context const& c;
+
+  DumpLayerFunctor(model* arg_m, sgd_execution_context const& arg_c)
+    : m(arg_m), c(arg_c)
+  {}
+
+  template <typename TensorDataType>
+  void operator()(data_type_layer<TensorDataType> const& dtl) {
     const std::string prefix = build_string(
       "model", m->get_comm()->get_trainer_rank(),
       "-rank", m->get_comm()->get_rank_in_trainer(),
       "-epoch", c.get_epoch(),
       "-step", c.get_step(),
-      "-",  l->get_name(), "-");
-    for (int i = 0; i < l->get_num_children(); ++i) {
-      El::Write(dtl->get_local_activations(i),
+      "-",  dtl.get_name(), "-");
+    for (int i = 0; i < dtl.get_num_children(); ++i) {
+      El::Write(dtl.get_local_activations(i),
                 prefix + "Activations" + std::to_string(i),
                 El::ASCII);
     }
-    for (int i = 0; i < l->get_num_parents(); ++i) {
-      El::Write(dtl->get_local_error_signals(i),
+    for (int i = 0; i < dtl.get_num_parents(); ++i) {
+      El::Write(dtl.get_local_error_signals(i),
                 prefix + "ErrorSignal" + std::to_string(i),
                 El::ASCII);
     }
   }
-  for (auto* w : m->get_weights()) {
-    auto & real_w = dynamic_cast<data_type_weights<DataType>&>(*w);
+}; // struct DumpLayerFunctor
+
+struct DumpWeightsFunctor : DefaultErrorReporter
+{
+  model * m;
+  sgd_execution_context const& c;
+
+  DumpWeightsFunctor(model* arg_m, sgd_execution_context const& arg_c)
+    : m(arg_m), c(arg_c)
+  {}
+
+  template <typename TensorDataType>
+  void operator()(data_type_weights<TensorDataType>& dtw) {
     const std::string prefix = build_string(
       "model", m->get_comm()->get_trainer_rank(),
       "-rank", m->get_comm()->get_rank_in_trainer(),
       "-epoch", c.get_epoch(),
       "-step", c.get_step(),
-      "-", w->get_name(), "-");
-    El::Write(real_w.get_values().LockedMatrix(),
+      "-", dtw.get_name(), "-");
+    El::Write(dtw.get_values().LockedMatrix(),
               prefix + "Weights",
               El::ASCII);
-    auto* opt = real_w.get_optimizer();
+    auto* opt = dtw.get_optimizer();
     if (opt != nullptr) {
       El::Write(opt->get_gradient().LockedMatrix(),
                 prefix + "Gradient",
                 El::ASCII);
     }
   }
-}
+}; // struct DumpWeightsFunctor
 
+/** Dump the local network matrices for debugging.
+ *  Dump only the local matrices because not every rank will
+ *  necessarily have bad data, and the check is purely local.
+ */
+void dump_network(model *m) {
+  using ValidFPTypes = supported_layer_data_type;
+
+  const auto& c = dynamic_cast<sgd_execution_context&>(m->get_execution_context());
+  for (auto* l : m->get_layers()) {
+    using LayerTypes = h2::meta::tlist::ExpandTL<data_type_layer, ValidFPTypes>;
+    using Dispatcher = h2::multimethods::SwitchDispatcher<DumpLayerFunctor,
+                                                          void,
+                                                          Layer,
+                                                          LayerTypes>;
+    Dispatcher::Exec(DumpLayerFunctor(m, c), *l);
+  }
+  for (auto* w : m->get_weights()) {
+    using WeightsTypes =
+      h2::meta::tlist::ExpandTL<data_type_weights, ValidFPTypes>;
+    using Dispatcher = h2::multimethods::SwitchDispatcher<DumpWeightsFunctor,
+                                                          void,
+                                                          weights,
+                                                          WeightsTypes>;
+    Dispatcher::Exec(DumpWeightsFunctor(m, c), *w);
+  }
+}
 } // namespace
 
 void check_nan::on_forward_prop_end(model *m, Layer *l) {

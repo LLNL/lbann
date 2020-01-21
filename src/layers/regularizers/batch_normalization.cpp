@@ -31,8 +31,8 @@ namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  constexpr TensorDataType zero = 0;
-  constexpr TensorDataType one = 1;
+  const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+  const TensorDataType one = El::TypeTraits<TensorDataType>::One();
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
@@ -103,9 +103,11 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     } else {
       LBANN_OMP_PARALLEL_FOR
       for (El::Int channel = 0; channel < num_channels; ++channel) {
-        const auto& mean = local_mean(channel, 0) / num_per_sum;
-        const auto& sqmean = local_var(channel, 0) / num_per_sum;
-        auto var = num_per_sum * (sqmean - mean * mean) / (num_per_sum - 1);
+        auto num_per_sum_dt = El::To<TensorDataType>(num_per_sum);
+        const auto& mean = local_mean(channel, 0) / num_per_sum_dt;
+        const auto& sqmean = local_var(channel, 0) / num_per_sum_dt;
+        auto var = num_per_sum_dt * (sqmean - mean * mean)
+          / (num_per_sum_dt - El::TypeTraits<TensorDataType>::One());
         var = std::max(var, this->m_epsilon);
         local_mean(channel, 0) = mean;
         local_var(channel, 0) = var;
@@ -135,7 +137,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
     // Get channel parameters
     const auto& mean = local_mean(channel, 0);
     const auto& var = local_var(channel, 0);
-    const TensorDataType inv_stdev = 1 / std::sqrt(var + this->m_epsilon);
+    const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / El::Sqrt(var + this->m_epsilon));
     const auto& scale = local_scale(channel, 0);
     const auto& bias = local_bias(channel, 0);
 
@@ -191,12 +193,12 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     const auto& mean = local_mean(channel, 0);
     const auto& var = local_var(channel, 0);
     const auto& scale = local_scale(channel, 0);
-    const TensorDataType inv_stdev = 1 / std::sqrt(var + this->m_epsilon);
+    const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / El::Sqrt(var + this->m_epsilon));
     const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
-    TensorDataType dmean = 0;
-    TensorDataType dvar = 0;
-    TensorDataType dscale = 0;
-    TensorDataType dbias = 0;
+    TensorDataType dmean = El::TypeTraits<TensorDataType>::Zero();
+    TensorDataType dvar = El::TypeTraits<TensorDataType>::Zero();
+    TensorDataType dscale = El::TypeTraits<TensorDataType>::Zero();
+    TensorDataType dbias = El::TypeTraits<TensorDataType>::Zero();
 
     // Compute gradient contributions from local entries
     const auto& row_start = channel * channel_size;
@@ -239,11 +241,11 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   }
   auto* scale_optimizer = this->get_data_type_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(*this->m_scale_gradient, TensorDataType{1}, true);
+    scale_optimizer->add_to_gradient(*this->m_scale_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
   auto* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(*this->m_bias_gradient, TensorDataType{1}, true);
+    bias_optimizer->add_to_gradient(*this->m_bias_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
 
   // Compute error signal
@@ -272,7 +274,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
       const auto& dvar = local_var_gradient(channel, 0);
 
       // Compute useful constants
-      const TensorDataType inv_stdev = 1 / std::sqrt(var + this->m_epsilon);
+      const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / El::Sqrt(var + this->m_epsilon));
       const auto& dmean_term = dmean / num_per_sum;
       const auto& dvar_term = dvar * 2 / (num_per_sum - 1);
 

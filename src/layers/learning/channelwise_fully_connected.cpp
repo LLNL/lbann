@@ -31,46 +31,20 @@
 #include "lbann/weights/variance_scaling_initializers.hpp"
 #include <layers.pb.h>
 
-namespace lbann {
-
-namespace {
-
-/** Helper struct to build layer from a protobuf message. */
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-struct LayerBuilder
+namespace lbann
 {
-  static std::unique_ptr<Layer> Build(
-    lbann_comm* comm, lbann_data::Layer const& proto_layer){
-    LBANN_ERROR("channel-wise fully-connected layer ",
-                "is only supported with a data-parallel layout");
-    return nullptr;
-  }
-};
 
-template <typename TensorDataType, El::Device Device>
-struct LayerBuilder<TensorDataType,data_layout::DATA_PARALLEL,Device>
-{
-  static std::unique_ptr<Layer> Build(
-    lbann_comm* comm, lbann_data::Layer const& proto_layer){
-    const auto& params = proto_layer.channelwise_fully_connected();
-    std::vector<size_t> output_channel_dims;
-    const size_t num_output_channel_dims = params.output_channel_dims_size();
-    for (size_t i=0; i<num_output_channel_dims; ++i) {
-      output_channel_dims.push_back(params.output_channel_dims(i));
-    }
-    return lbann::make_unique<channelwise_fully_connected_layer<TensorDataType,data_layout::DATA_PARALLEL,Device>>(
-      comm, output_channel_dims);
-  }
-};
-
-} // namespace <anon>
+// =========================================================
+// Class member functions
+// =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::channelwise_fully_connected_layer(
   lbann_comm* comm,
   std::vector<size_t> output_channel_dims)
-  : data_type_layer<TensorDataType>(comm) {
+  : data_type_layer<TensorDataType>(comm)
+{
 
   // Initialize output tensor dimensions
   if (output_channel_dims.empty()) {
@@ -89,35 +63,40 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>*
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::copy() const {
+::copy() const
+{
   return new channelwise_fully_connected_layer(*this);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::string
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::get_type() const {
+::get_type() const
+{
   return "channel-wise fully-connected";
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 data_layout
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::get_data_layout() const {
+::get_data_layout() const
+{
   return Layout;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 El::Device
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::get_device_allocation() const {
+::get_device_allocation() const
+{
   return Device;
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::setup_dims() {
+::setup_dims()
+{
   data_type_layer<TensorDataType>::setup_dims();
 
   // Make sure input and output dimensions are valid
@@ -146,11 +125,11 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::setup_data() {
+::setup_data()
+{
   data_type_layer<TensorDataType>::setup_data();
 
   using WeightsType = data_type_weights<TensorDataType>;
-  using OptimizerType = data_type_optimizer<TensorDataType>;
 
   // Tensor dimensions
   const auto& input_dims = this->get_input_dims();
@@ -171,8 +150,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   if (!this->has_data_type_weights(0)) {
     auto w = make_unique<WeightsType>(this->get_comm());
     auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
-    auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                               this->m_model->create_optimizer()));
+    auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_linearity_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
@@ -181,8 +159,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   }
   if (!this->has_data_type_weights(1)) {
     auto w = make_unique<WeightsType>(this->get_comm());
-    auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                               this->get_model()->create_optimizer()));
+    auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_bias_weights");
     w->set_optimizer(std::move(opt));
     this->set_data_type_weights(1, w.get());
@@ -221,7 +198,8 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::fp_compute() {
+::fp_compute()
+{
 
   // Data tensors
   using LocalMat = El::Matrix<TensorDataType,Device>;
@@ -291,7 +269,8 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::bp_compute() {
+::bp_compute()
+{
 
   // Weights
   auto& linearity_weights = this->get_data_type_weights(0);
@@ -392,23 +371,66 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
 }
 
+// =========================================================
+// Builder function
+// =========================================================
+
+namespace
+{
+
+template <typename T, data_layout L, El::Device D>
+struct Builder
+{
+  static std::unique_ptr<Layer> Build(...)
+  {
+    LBANN_ERROR(
+      "Attempted to construct channelwise_fully_connected_layer ",
+      "with invalid parameters ",
+      "(TensorDataType=",TypeName<T>(),", ",
+      "Layout=",to_string(L),", ",
+      "Device=",to_string(D),")");
+    return nullptr;
+  }
+};
+
+template <typename TensorDataType, El::Device Device>
+struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>
+{
+  static std::unique_ptr<Layer> Build(
+    lbann_comm* comm, lbann_data::Layer const& proto_layer)
+  {
+    const auto& params = proto_layer.channelwise_fully_connected();
+    std::vector<size_t> output_channel_dims;
+    const size_t num_output_channel_dims = params.output_channel_dims_size();
+    for (size_t i=0; i<num_output_channel_dims; ++i) {
+      output_channel_dims.push_back(params.output_channel_dims(i));
+    }
+    using LayerType = channelwise_fully_connected_layer<
+      TensorDataType,
+      data_layout::DATA_PARALLEL,
+      Device>;
+    return make_unique<LayerType>(comm, output_channel_dims);
+  }
+};
+
+} // namespace <anon>
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
-  lbann_comm* comm,
-  const lbann_data::Layer& proto_layer) {
-  using Builder = LayerBuilder<TensorDataType,Layout,Device>;
-  return Builder::Build(comm, proto_layer);
+  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+{
+  using BuilderType = Builder<TensorDataType, Layout, Device>;
+  return BuilderType::Build(comm, proto_layer);
 }
 
+// =========================================================
 // Explicit template instantiation
+// =========================================================
+
 #define PROTO_DEVICE(T, Device)                                         \
-  template class channelwise_fully_connected_layer<T,data_layout::DATA_PARALLEL,Device>; \
-  template std::unique_ptr<Layer>                                       \
-  build_channelwise_fully_connected_layer_from_pbuf<T,data_layout::DATA_PARALLEL,Device>( \
-    lbann_comm*, lbann_data::Layer const&);                             \
-  template std::unique_ptr<Layer>                                       \
-  build_channelwise_fully_connected_layer_from_pbuf<T,data_layout::MODEL_PARALLEL,Device>( \
-    lbann_comm*, lbann_data::Layer const&)
+  template class channelwise_fully_connected_layer<                     \
+    T,data_layout::DATA_PARALLEL,Device>;                               \
+  LBANN_LAYER_BUILDER_ETI(channelwise_fully_connected, T, Device)
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"

@@ -23,6 +23,7 @@ spack:
   - cnpy
   - opencv
   - cereal
+  - half
   - ninja
   - zlib
   - cmake

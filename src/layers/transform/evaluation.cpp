@@ -47,7 +47,7 @@ void fp_cpu(lbann_comm& comm,
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
   const auto& mini_batch_size = input.Width();
-  value = 0;
+  value = El::TypeTraits<TensorDataType>::Zero();
   LBANN_OMP_PARALLEL_FOR_ARGS(reduction(+:value) collapse(2))
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
@@ -58,6 +58,24 @@ void fp_cpu(lbann_comm& comm,
   comm.nb_allreduce(&value, 1, input.DistComm(), req);
 }
 
+#ifdef LBANN_HAS_HALF
+void fp_cpu(lbann_comm& comm,
+            const El::AbstractDistMatrix<cpu_fp16>& input,
+            cpu_fp16& value,
+            Al::request& req) {
+    LBANN_ERROR("This function is not supported in FP16 on CPUs");
+}
+#endif // LBANN_HAS_HALF
+
+#ifdef LBANN_HAS_GPU_FP16
+void fp_cpu(lbann_comm& comm,
+            const El::AbstractDistMatrix<fp16>& input,
+            fp16& value,
+            Al::request& req) {
+    LBANN_ERROR("This function is not supported in FP16 on CPUs");
+}
+#endif // LBANN_HAS_GPU_HALF
+
 #ifdef LBANN_HAS_GPU
 /** GPU implementation of evaluation layer forward prop. */
 template <typename TensorDataType>
@@ -65,8 +83,8 @@ void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& input,
             TensorDataType& value,
             cuda::event_wrapper& copy_event) {
-  constexpr TensorDataType zero = 0;
-  constexpr TensorDataType one = 1;
+  const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+  const TensorDataType one = El::TypeTraits<TensorDataType>::One();
 
   // Local matrix
   const auto& local_input = input.LockedMatrix();
@@ -126,16 +144,29 @@ void fp_gpu(lbann_comm& comm,
   CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_HOST));
 
   // Compute average value across mini-batch
-  El::Scale(one / mini_batch_size, sum_d);
+  El::Scale(one / El::To<TensorDataType>(mini_batch_size), sum_d);
   comm.allreduce(static_cast<El::AbstractMatrix<TensorDataType>&>(sum_d), input.DistComm());
   CHECK_CUDA(cudaMemcpyAsync(&value,
                              sum_d.LockedBuffer(),
-                             sizeof(DataType),
+                             sizeof(TensorDataType),
                              cudaMemcpyDeviceToHost,
                              stream));
   copy_event.record(stream);
 
 }
+
+#ifdef LBANN_HAS_GPU_FP16
+void fp_gpu(lbann_comm& comm,
+            const El::AbstractDistMatrix<cpu_fp16>& input,
+            cpu_fp16& value,
+            cuda::event_wrapper& copy_event) {
+  LBANN_ERROR("This function is not supported with "
+              "the CPU FP16 type on GPUs. "
+              "A severe logic error has occured; please "
+              "report this bug to LBANN developers (or just Tim).");
+}
+#endif // LBANN_HAS_GPU_HALF
+
 #endif // LBANN_HAS_GPU
 
 } // namespace
@@ -149,8 +180,8 @@ EvalType abstract_evaluation_layer<TensorDataType>::get_value(bool scaled) {
 #endif // LBANN_HAS_GPU
   default: LBANN_ERROR("invalid device");
   }
-  if (scaled) { return m_scale * m_value(0, 0); }
-  else        { return m_value(0, 0); }
+  if (scaled) { return m_scale * El::To<EvalType>(m_value(0,0)); }
+  else        { return m_value(0,0); }
 }
 
 template <typename TensorDataType>
@@ -233,15 +264,14 @@ abstract_evaluation_layer<TensorDataType>::construct(lbann_comm *comm,
 #undef EVAL_LAYER_CONSTRUCT
 
   // Could not construct evaluation layer
-  std::stringstream err;
-  err << "attempted to construct evaluation layer "
-      << "with invalid parameters "
-      << "(data layout type " << static_cast<int>(layout) << ", "
-      << "device type " << static_cast<int>(device) << ")";
-  LBANN_ERROR(err.str());
+  LBANN_ERROR("Attempted to construct evaluation layer "
+              "with invalid parameters "
+              "(data layout type: ", to_string(layout), ", device type: ",
+              to_string(device), ")");
   return nullptr;
-
 }
+
+LBANN_LAYER_DEFAULT_BUILDER(evaluation)
 
 #define PROTO(T)                              \
   template class abstract_evaluation_layer<T>
@@ -255,10 +285,9 @@ abstract_evaluation_layer<TensorDataType>::construct(lbann_comm *comm,
 
 #define PROTO_DEVICE(T, Device)                                           \
   template class evaluation_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>
+  template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(evaluation, T, Device)
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann

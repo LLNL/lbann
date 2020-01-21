@@ -204,9 +204,9 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data() {
   // standard deviation 1.
   if (!this->has_weights()) {
     auto w = make_unique<WeightsType>(this->get_comm());
-    auto init = make_unique<normal_initializer<TensorDataType>>(0,1);
-    auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                               this->m_model->create_optimizer()));
+    auto init = make_unique<normal_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero(),
+                                                                El::TypeTraits<TensorDataType>::One());
+    auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
@@ -246,17 +246,15 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_data() {
 
 }
 
+LBANN_DEFINE_LAYER_BUILDER(embedding);
+
 #ifndef LBANN_EMBEDDING_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device) \
   extern template class embedding_layer<T, data_layout::DATA_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 
 #endif // LBANN_EMBEDDING_LAYER_INSTANTIATE
 
