@@ -30,6 +30,8 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
+#include "lbann/utils/h2_tmp.hpp"
+
 namespace lbann {
 
 // Forward declarations
@@ -40,20 +42,14 @@ template <typename U>
 class entrywise_layer_tensor_manager;
 }
 
-using supported_layer_data_type = El::TypeList<float, double>;
-
-template <typename T, typename List> struct IsElement;
-
-template <typename Head, typename... Tail>
-struct IsElement<Head, El::TypeList<Head,Tail...>> : std::true_type {};
-
-template <typename T, typename Head, typename... Tail>
-struct IsElement<T, El::TypeList<Head,Tail...>> : IsElement<T, El::TypeList<Tail...>> {};
-
-template <typename T>
-struct IsElement<T, El::TypeList<>> : std::false_type {};
-
-template <typename T> using is_supported_layer_data_type = IsElement<T, supported_layer_data_type>;
+using supported_layer_data_type = h2::meta::TL<
+#ifdef LBANN_HAS_GPU_FP16
+  fp16,
+#endif
+#ifdef LBANN_HAS_HALF
+  cpu_fp16,
+#endif
+  float, double>;
 
 template <typename TensorDataType>
 class data_type_layer : public Layer {
@@ -77,8 +73,9 @@ public:
   ///@}
 
 public:
-  static_assert(is_supported_layer_data_type<TensorDataType>::value,
-                "Must use a supported type.");
+  static_assert(
+    h2::meta::tlist::MemberV<TensorDataType, supported_layer_data_type>(),
+    "Must use a supported type.");
 
   data_type_layer(lbann_comm *comm) : Layer(comm) {}
   data_type_layer(const data_type_layer<TensorDataType>& other);
@@ -334,6 +331,7 @@ private:
 #undef PROTO
 #undef LBANN_INSTANTIATE_CPU_HALF
 #undef LBANN_INSTANTIATE_GPU_HALF
+
 #endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
 
 } // namespace lbann

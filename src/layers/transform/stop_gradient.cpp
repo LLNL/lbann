@@ -27,14 +27,18 @@
 #define LBANN_STOP_GRADIENT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/stop_gradient.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <lbann.pb.h>
+
 namespace lbann {
+
+LBANN_LAYER_DEFAULT_BUILDER(stop_gradient)
 
 #define PROTO_DEVICE(T, Device) \
   template class stop_gradient_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class stop_gradient_layer<T, data_layout::MODEL_PARALLEL, Device>
+  template class stop_gradient_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(stop_gradient, T, Device)
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

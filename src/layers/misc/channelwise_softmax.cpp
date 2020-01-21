@@ -26,12 +26,16 @@
 
 #define LBANN_CHANNELWISE_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/layers/misc/channelwise_softmax.hpp"
+#include "lbann/utils/memory.hpp"
 
 namespace lbann {
 
+// =========================================================
+// Forward prop
+// =========================================================
+
 namespace {
 
-/** @brief Forward prop */
 template <typename TensorDataType>
 void fp_impl(El::Int num_channels,
              El::Int channel_size,
@@ -91,7 +95,24 @@ void fp_impl(El::Int num_channels,
 
 }
 
-/** @brief Backprop */
+} // namespace <anon>
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void channelwise_softmax_layer<TensorDataType,Layout,Device>::fp_compute() {
+  const El::Int num_channels = this->get_output_dims().front();
+  const El::Int channel_size = this->get_output_size() / num_channels;
+  fp_impl(num_channels,
+          channel_size,
+          this->get_prev_activations(),
+          this->get_activations());
+}
+
+// =========================================================
+// Backprop
+// =========================================================
+
+namespace {
+
 template <typename TensorDataType>
 void bp_impl(El::Int num_channels,
              El::Int channel_size,
@@ -142,17 +163,6 @@ void bp_impl(El::Int num_channels,
 
 } // namespace <anon>
 
-// Template instantiation
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_softmax_layer<TensorDataType,Layout,Device>::fp_compute() {
-  const El::Int num_channels = this->get_output_dims().front();
-  const El::Int channel_size = this->get_output_size() / num_channels;
-  fp_impl(num_channels,
-          channel_size,
-          this->get_prev_activations(),
-          this->get_activations());
-}
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType,Layout,Device>::bp_compute() {
   const El::Int num_channels = this->get_output_dims().front();
@@ -164,10 +174,85 @@ void channelwise_softmax_layer<TensorDataType,Layout,Device>::bp_compute() {
           this->get_error_signals());
 }
 
+// =============================================
+// Builder function
+// =============================================
+
+namespace
+{
+
+template <typename T, data_layout L, El::Device D>
+struct Builder
+{
+  static std::unique_ptr<Layer> Build(...)
+  {
+    LBANN_ERROR(
+      "Attempted to construct channelwise_softmax_layer ",
+      "with invalid parameters ",
+      "(TensorDataType=",TypeName<T>(),", ",
+      "Layout=",to_string(L),", ",
+      "Device=",to_string(D),")");
+    return nullptr;
+  }
+};
+
+template <El::Device Device>
+struct Builder<float,data_layout::DATA_PARALLEL,Device>
+{
+  template <typename... Args>
+  static std::unique_ptr<Layer> Build(Args&&... args)
+  {
+    using LayerType = channelwise_softmax_layer<float,
+                                                data_layout::DATA_PARALLEL,
+                                                Device>;
+    return make_unique<LayerType>(std::forward<Args>(args)...);
+  }
+};
+
+template <El::Device Device>
+struct Builder<double,data_layout::DATA_PARALLEL,Device>
+{
+  template <typename... Args>
+  static std::unique_ptr<Layer> Build(Args&&... args)
+  {
+    using LayerType = channelwise_softmax_layer<double,
+                                                data_layout::DATA_PARALLEL,
+                                                Device>;
+    return make_unique<LayerType>(std::forward<Args>(args)...);
+  }
+};
+
+} // namespace <anon>
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_channelwise_softmax_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const&)
+{
+  using BuilderType = Builder<TensorDataType, Layout, Device>;
+  return BuilderType::Build(comm);
+}
+
+// =========================================================
+// Explicit template instantiation
+// =========================================================
+
 #define PROTO(T)                                        \
   template class channelwise_softmax_layer<             \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>;
-#define LBANN_INSTANTIATE_CPU_HALF
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>
 #include "lbann/macros/instantiate.hpp"
+#undef PROTO
+
+#ifdef LBANN_HAS_GPU
+#define PROTO(T)                                        \
+  extern template class channelwise_softmax_layer<      \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device) \
+  LBANN_LAYER_BUILDER_ETI(channelwise_softmax, T, Device)
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 
 } // namespace lbann

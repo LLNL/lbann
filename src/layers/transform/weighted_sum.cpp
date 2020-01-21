@@ -27,14 +27,27 @@
 #define LBANN_WEIGHTED_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/weighted_sum.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <lbann.pb.h>
+
 namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_weighted_sum_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+{
+  using LayerType = weighted_sum_layer<TensorDataType, Layout, Device>;
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, weighted_sum);
+  const auto& params = proto_layer.weighted_sum();
+  const auto& scaling_factors = parse_list<DataType>(params.scaling_factors());
+  return lbann::make_unique<LayerType>(comm, scaling_factors);
+}
 
 #define PROTO_DEVICE(T, Device) \
   template class weighted_sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class weighted_sum_layer<T, data_layout::MODEL_PARALLEL, Device>
+  template class weighted_sum_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(weighted_sum, T, Device)
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

@@ -43,6 +43,14 @@ struct max_op {
   }
 };
 
+} // namespace <anon>
+
+// =========================================================
+// Forward prop
+// =========================================================
+
+namespace {
+
 /** @brief Max reduction over last dimension of 3D tensor.
  *
  *  Each CUDA block computes the max over a subset of tensor entries
@@ -289,6 +297,24 @@ void fp_impl(size_t num_channels,
 
 }
 
+} // namespace <anon>
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void channelwise_softmax_layer<TensorDataType,Layout,Device>::fp_compute() {
+  const size_t num_channels = this->get_output_dims().front();
+  const size_t channel_size = this->get_output_size() / num_channels;
+  fp_impl(num_channels,
+          channel_size,
+          this->get_prev_activations(),
+          this->get_activations());
+}
+
+// =========================================================
+// Backprop
+// =========================================================
+
+namespace {
+
 /** Compute dot product between output and gradient w.r.t. output.
  *
  *  Block dimensions: bdimx x 1 x 1
@@ -453,17 +479,6 @@ void bp_impl(size_t num_channels,
 
 } // namespace <anon>
 
-// Template instantiation
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_softmax_layer<TensorDataType,Layout,Device>::fp_compute() {
-  const size_t num_channels = this->get_output_dims().front();
-  const size_t channel_size = this->get_output_size() / num_channels;
-  fp_impl(num_channels,
-          channel_size,
-          this->get_prev_activations(),
-          this->get_activations());
-}
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void channelwise_softmax_layer<TensorDataType,Layout,Device>::bp_compute() {
   const size_t num_channels = this->get_output_dims().front();
@@ -474,6 +489,10 @@ void channelwise_softmax_layer<TensorDataType,Layout,Device>::bp_compute() {
           this->get_prev_error_signals(),
           this->get_error_signals());
 }
+
+// =========================================================
+// Explicit template instantiation
+// =========================================================
 
 #define PROTO(T)                                        \
   template class channelwise_softmax_layer<             \

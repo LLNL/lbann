@@ -144,8 +144,7 @@ public:
     if (!this->has_weights()) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<constant_initializer<DataType>>(DataType(0));
-      auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                                 this->m_model->create_optimizer()));
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -184,12 +183,12 @@ public:
     const auto& local_weights = this->get_data_type_weights(0).get_values().LockedMatrix();
     auto& local_output = this->get_local_activations();
     m_workspace->Resize(local_output.Width(), 1);
-    El::Fill(*m_workspace, TensorDataType(1));
+    El::Fill(*m_workspace, El::TypeTraits<TensorDataType>::One());
 
     // Duplicate weights across matrix columns
     El::Gemm(El::NORMAL, El::TRANSPOSE,
-             TensorDataType(1), local_weights, *m_workspace,
-             TensorDataType(0), local_output);
+             El::TypeTraits<TensorDataType>::One(), local_weights, *m_workspace,
+             El::TypeTraits<TensorDataType>::Zero(), local_output);
 
     // Clean up
     m_workspace->Empty();
@@ -206,12 +205,12 @@ public:
     // Matrices
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
     m_workspace->Resize(local_gradient_wrt_output.Width(), 1);
-    El::Fill(*m_workspace, TensorDataType{1});
+    El::Fill(*m_workspace, El::TypeTraits<TensorDataType>::One());
 
     El::Gemv(El::NORMAL,
-             TensorDataType{1}, local_gradient_wrt_output, *m_workspace,
-             TensorDataType{0}, m_gradient->Matrix());
-    opt->add_to_gradient(*m_gradient, TensorDataType{1}, true);
+             El::TypeTraits<TensorDataType>::One(), local_gradient_wrt_output, *m_workspace,
+             El::TypeTraits<TensorDataType>::Zero(), m_gradient->Matrix());
+    opt->add_to_gradient(*m_gradient, El::TypeTraits<TensorDataType>::One(), true);
 
     // Clean up
     m_workspace->Empty();
@@ -227,17 +226,15 @@ public:
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(weights);
+
 #ifndef LBANN_WEIGHTS_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class weights_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class weights_layer<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_WEIGHTS_LAYER_INSTANTIATE
 
 } // namespace lbann

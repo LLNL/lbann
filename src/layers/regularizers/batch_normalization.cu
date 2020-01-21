@@ -103,10 +103,11 @@ __global__ void compute_statistics_kernel(
   const El::Int num_threads = blockDim.x * gridDim.x;
   for (El::Int i = gid; i < num_sums; i += num_threads) {
 
+    TensorDataType num_per_sum_dt = TensorDataType(num_per_sum);
     // Compute mean and variance
-    const auto& mean = global_mean[i] / num_per_sum;
-    const auto& sqmean = global_var[i] / num_per_sum;
-    auto var = num_per_sum * (sqmean - mean * mean) / (num_per_sum - 1);
+    const auto& mean = global_mean[i] / num_per_sum_dt;
+    const auto& sqmean = global_var[i] / num_per_sum_dt;
+    auto var = num_per_sum_dt * (sqmean - mean * mean) / TensorDataType(num_per_sum - 1);
     var = var > epsilon ? var : epsilon;
     global_mean[gid] = mean;
     global_var[gid] = var;
@@ -114,8 +115,8 @@ __global__ void compute_statistics_kernel(
     // Compute running statistics
     auto& running_mean = global_running_mean[gid];
     auto& running_var = global_running_var[gid];
-    running_mean = decay * running_mean + (TensorDataType{1} - decay) * mean;
-    running_var = decay * running_var + (TensorDataType{1} - decay) * var;
+    running_mean = decay * running_mean + (TensorDataType(1.0) - decay) * mean;
+    running_var = decay * running_var + (TensorDataType(1.0) - decay) * var;
 
   }
 
@@ -195,9 +196,9 @@ __global__ void backprop1_kernel(
   const auto& scale = global_scale[bidy];
 
   // Compute useful constants
-  constexpr TensorDataType zero = 0;
+  const TensorDataType zero = TensorDataType(0);
   const auto& inv_stdev = cuda::rsqrt(var + epsilon);
-  const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
+  const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / TensorDataType(2);
 
   // Compute row-wise gradient contributions in shared memory
   auto dscale = zero;
@@ -276,8 +277,8 @@ __global__ void backprop2_kernel(
 
   // Compute useful constants
   const auto& inv_stdev = cuda::rsqrt(var + epsilon);
-  const auto& dmean_term = dmean / num_per_sum;
-  const auto& dvar_term = dvar * 2 / (num_per_sum - 1);
+  const auto& dmean_term = dmean / TensorDataType(num_per_sum);
+  const auto& dvar_term = dvar * TensorDataType(2) / TensorDataType(num_per_sum - 1);
 
   // Apply batch normalization
   if (gidx < channel_height) {
@@ -366,7 +367,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
     // Compute minibatch statistics
     if (num_per_sum <= 1) {
-      El::Fill(local_var, TensorDataType{1});
+      El::Fill(local_var, TensorDataType(1.0));
     } else if (num_channels > 0) {
       const El::Int block_dim = 256;
       const El::Int grid_dim = (num_channels + block_dim - 1) / block_dim;
@@ -479,11 +480,11 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   }
   auto* scale_optimizer = this->get_data_type_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(*this->m_scale_gradient, TensorDataType{1}, true);
+    scale_optimizer->add_to_gradient(*this->m_scale_gradient, TensorDataType(1.0), true);
   }
   auto* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(*this->m_bias_gradient, TensorDataType{1}, true);
+    bias_optimizer->add_to_gradient(*this->m_bias_gradient, TensorDataType(1.0), true);
   }
 
   // Compute error signal

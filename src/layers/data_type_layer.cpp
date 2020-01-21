@@ -633,6 +633,7 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(El::Int mini_
   template class data_type_layer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

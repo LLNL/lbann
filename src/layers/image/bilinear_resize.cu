@@ -45,14 +45,14 @@ __global__ void fp_kernel(El::Int num_samples,
                           El::Int output_ldim) {
 
   // Useful constants
-  constexpr TensorDataType half = 0.5;
-  constexpr TensorDataType one = 1;
+  const TensorDataType half = 0.5;
+  const TensorDataType one = 1.;
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
 
   // Stride between interpolation points
-  const auto& x_stride = static_cast<TensorDataType>(input_width) / output_width;
-  const auto& y_stride = static_cast<TensorDataType>(input_height) / output_height;
+  const auto& x_stride = TensorDataType(input_width) / TensorDataType(output_width);
+  const auto& y_stride = TensorDataType(input_height) / TensorDataType(output_height);
 
   const auto& size = (num_samples * num_channels
                       * output_height * output_width);
@@ -65,8 +65,8 @@ __global__ void fp_kernel(El::Int num_samples,
     const auto& output_col = pos % output_width;
 
     // Interpolation point
-    const auto& x = (output_col + half) * x_stride;
-    const auto& y = (output_row + half) * y_stride;
+    const auto& x = (TensorDataType(output_col) + half) * x_stride;
+    const auto& y = (TensorDataType(output_row) + half) * y_stride;
 
     // Find input pixels near interpolation point
     const auto input_col = static_cast<El::Int>(cuda::floor(x - half));
@@ -77,8 +77,8 @@ __global__ void fp_kernel(El::Int num_samples,
     const auto& input_row1 = cuda::min(input_row+1, input_height-1);
 
     // Interpolation point relative to input pixel centers
-    const auto& unit_x = x - (input_col + half);
-    const auto& unit_y = y - (input_row + half);
+    const auto& unit_x = x - (TensorDataType(input_col) + half);
+    const auto& unit_y = y - (TensorDataType(input_row) + half);
 
     // Input and output pixels
     const auto& pixel00 = input[sample * input_ldim

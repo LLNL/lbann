@@ -132,7 +132,7 @@ __global__ void one_hot_matrix_to_indices(El::Int local_height,
   for (El::Int i = gid; i < local_size; i += num_threads) {
     const auto& local_row = i % local_height;
     const auto& local_col = i / local_height;
-    if (local_matrix[local_row + local_col * local_matrix_ldim] > TensorDataType(0)) {
+    if (local_matrix[local_row + local_col * local_matrix_ldim] > TensorDataType(0.0)) {
       const auto& global_row = (global_matrix_col_shift
                                 + local_row * global_matrix_col_stride);
       indices[local_col] = global_row;
@@ -162,7 +162,7 @@ __global__ void compute_categorical_accuracy(El::Int k,
     const auto& label_index = label_indices[col];
     if (top_entries[ind + col * top_entries_ldim].index == label_index
         && label_index <= max_entry) {
-      loss[col * loss_stride] = TensorDataType(1);
+      loss[col * loss_stride] = TensorDataType(1.0);
     }
   }
 }
@@ -188,7 +188,7 @@ void fp_gpu(lbann_comm& comm,
     El::Zero(loss);
     return;
   } else if (k >= height) {
-    El::Fill(loss, TensorDataType(1));
+    El::Fill(loss, El::TypeTraits<TensorDataType>::One());
     return;
   } else if (local_width < 1) {
     return;

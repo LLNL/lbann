@@ -71,6 +71,9 @@ protected:
 
 };
 
+// Builder function
+LBANN_DEFINE_LAYER_BUILDER(channelwise_softmax);
+
 // =========================================================
 // Implementation
 // =========================================================
@@ -112,7 +115,6 @@ void channelwise_softmax_layer<TensorDataType,Layout,Device>::setup_dims() {
 // =========================================================
 
 #ifndef LBANN_CHANNELWISE_SOFTMAX_LAYER_INSTANTIATE
-
 #define PROTO_DEVICE(T, Device)                         \
   extern template class channelwise_softmax_layer<      \
     T, data_layout::DATA_PARALLEL, Device>;
@@ -122,7 +124,6 @@ void channelwise_softmax_layer<TensorDataType,Layout,Device>::setup_dims() {
 #undef PROTO_DEVICE
 #undef LBANN_INSTANTIATE_CPU_HALF
 #undef LBANN_INSTANTIATE_GPU_HALF
-
 #endif // LBANN_CHANNELWISE_SOFTMAX_LAYER_INSTANTIATE
 
 } // namespace lbann

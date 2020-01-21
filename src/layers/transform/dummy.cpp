@@ -26,15 +26,17 @@
 
 #define LBANN_DUMMY_LAYER_INSTANTIATE
 #include "lbann/layers/transform/dummy.hpp"
+#include <lbann/utils/memory.hpp>
 
 namespace lbann {
 
+LBANN_LAYER_DEFAULT_BUILDER(dummy)
+
 #define PROTO_DEVICE(T, Device) \
   template class dummy_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class dummy_layer<T, data_layout::MODEL_PARALLEL, Device>
+  template class dummy_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(dummy, T, Device)
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

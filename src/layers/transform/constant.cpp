@@ -27,14 +27,29 @@
 #define LBANN_CONSTANT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/constant.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <lbann.pb.h>
+
 namespace lbann {
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> build_constant_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const& proto_layer)
+{
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, constant);
+  using LayerType = constant_layer<TensorDataType, Layout, Device>;
+
+  const auto& params = proto_layer.constant();
+  const auto& dims = parse_list<int>(params.num_neurons());
+  return lbann::make_unique<LayerType>(
+    comm, El::To<TensorDataType>(params.value()), dims);
+}
 
 #define PROTO_DEVICE(T, Device) \
   template class constant_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>
+  template class constant_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(constant, T, Device)
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

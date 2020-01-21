@@ -46,6 +46,11 @@ template <typename TensorDataType,
 class crop_layer : public transform_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "crop layer only supports DATA_PARALLEL");
+#ifdef LBANN_HAS_GPU_FP16
+  using CompareType = typename std::conditional<std::is_same<TensorDataType, fp16>::value, float, TensorDataType>::type;
+#else
+  using CompareType = TensorDataType;
+#endif
 public:
   /** @name Public Types */
   ///@{
@@ -197,7 +202,7 @@ private:
       std::vector<El::Int> crop_offsets;
       for (El::Int d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, local_col);
-        if (pos < TensorDataType(0) || pos > TensorDataType(1)) {
+        if (CompareType(pos) < CompareType(0.0) || CompareType(pos) > CompareType(1.0)) {
           std::stringstream err;
           err << "crop position not in range [0,1] (pos=(";
           for (El::Int i = 0; i < local_crop_pos.Height(); ++i) {
@@ -207,7 +212,7 @@ private:
           LBANN_ERROR(err.str());
         }
         const El::Int num_offsets = input_dims[d] - output_dims[d] + 1;
-        crop_offsets.push_back(std::min(El::Int(pos * num_offsets),
+        crop_offsets.push_back(std::min(El::Int(static_cast<CompareType>(pos) * num_offsets),
                                         num_offsets - 1));
       }
 
@@ -276,7 +281,7 @@ private:
       std::vector<El::Int> crop_offsets;
       for (El::Int d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, local_col);
-        if (pos < TensorDataType(0) || pos > TensorDataType(1)) {
+        if (CompareType(pos) < CompareType(0.0) || CompareType(pos) > CompareType(1.0)) {
           std::stringstream err;
           err << "crop position not in range [0,1] (pos=(";
           for (El::Int i = 0; i < local_crop_pos.Height(); ++i) {
@@ -286,7 +291,7 @@ private:
           LBANN_ERROR(err.str());
         }
         const El::Int num_offsets = input_dims[d] - output_dims[d] + 1;
-        crop_offsets.push_back(std::min(El::Int(pos * num_offsets),
+        crop_offsets.push_back(std::min(El::Int(static_cast<CompareType>(pos) * num_offsets),
                                         num_offsets - 1));
       }
 
@@ -338,16 +343,14 @@ private:
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(crop);
+
 #ifndef LBANN_CROP_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class crop_layer<T, data_layout::DATA_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_CROP_LAYER_INSTANTIATE
 
 } // namespace lbann

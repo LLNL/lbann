@@ -43,6 +43,7 @@ namespace lbann {
 namespace proto {
 namespace {
 
+template <typename T>
 std::unique_ptr<optimizer>
 build_no_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
@@ -56,39 +57,50 @@ using factory_type = lbann::generic_factory<
                         google::protobuf::Message const&>,
   default_key_error_policy>;
 
-void register_default_builders(factory_type& factory) {
-  factory.register_builder("NoOptimizer", build_no_optimizer_from_pbuf);
-  factory.register_builder("AdaGrad", build_adagrad_optimizer_from_pbuf);
-  factory.register_builder("Adam", build_adam_optimizer_from_pbuf);
-  factory.register_builder("HypergradientAdam",
-                           build_hypergradient_adam_optimizer_from_pbuf);
-  factory.register_builder("RMSprop", build_rmsprop_optimizer_from_pbuf);
-  factory.register_builder("SGD", build_sgd_optimizer_from_pbuf);
-}
-
 // Manage a global factory
+template <typename T>
 struct factory_manager {
   factory_type factory_;
 
   factory_manager() {
-    register_default_builders(factory_);
+    register_default_builders();
+  }
+
+private:
+  void register_default_builders() {
+    factory_.register_builder("NoOptimizer", build_no_optimizer_from_pbuf<T>);
+    factory_.register_builder("AdaGrad", build_adagrad_optimizer_from_pbuf<T>);
+    factory_.register_builder("Adam", build_adam_optimizer_from_pbuf<T>);
+    factory_.register_builder("HypergradientAdam",
+                              build_hypergradient_adam_optimizer_from_pbuf<T>);
+    factory_.register_builder("RMSprop", build_rmsprop_optimizer_from_pbuf<T>);
+    factory_.register_builder("SGD", build_sgd_optimizer_from_pbuf<T>);
   }
 };
 
-factory_manager factory_mgr_;
+template <typename T>
 factory_type const& get_optimizer_factory() noexcept {
+  static factory_manager<T> factory_mgr_;
   return factory_mgr_.factory_;
 }
 
 }// namespace <anon>
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer> construct_optimizer(
   const lbann_data::Optimizer& proto_opt) {
-  auto const& factory = get_optimizer_factory();
+  auto const& factory = get_optimizer_factory<TensorDataType>();
   auto const& msg =
     helpers::get_oneof_message(proto_opt, "optimizer_type");
   return factory.create_object(msg.GetDescriptor()->name(), msg);
 }
+
+#define PROTO(T)                                                \
+  template std::unique_ptr<optimizer> construct_optimizer<T>(   \
+    const lbann_data::Optimizer&)
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace proto
 } // namespace lbann
