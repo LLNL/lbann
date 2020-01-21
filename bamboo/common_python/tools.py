@@ -348,8 +348,8 @@ def get_command(cluster,
         elif cluster == 'ray':
             option_data_filedir = ' --data_filedir=%s' % re.sub(
                 '[a-z]scratch[a-z]', 'gscratchr', data_filedir_default)
-    elif None not in data_file_parameters:
-        # Everything in data_file_parameters has a non-None value.
+    elif not data_file_parameters == [None, None, None, None]:
+        # Any of the data_file_parameters have a non-None value.
         if cluster in ['catalyst', 'corona', 'pascal']:
             # option_data_filedir_train = data_filedir_train_default
             # option_data_filename_train = data_filename_train_default
