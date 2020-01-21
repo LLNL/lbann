@@ -197,7 +197,7 @@ protected:
     }
 
     // Construct mask matrix
-    const TensorDataType scale = 1 / m_keep_prob;
+    const TensorDataType scale = static_cast<TensorDataType>(1 / m_keep_prob);
     const auto& height = input.Height();
     const auto& width = input.Width();
     m_mask->Resize(height, width);
@@ -207,10 +207,10 @@ protected:
 #else
     El::EntrywiseMap(*m_mask,
                      (std::function<TensorDataType(const TensorDataType&)>)
-                     ([this,scale](const TensorDataType& z)->DataType {
+                     ([this,scale](const TensorDataType& z)->TensorDataType {
                        auto& gen = get_fast_generator();
                        std::bernoulli_distribution dist(m_keep_prob);
-                       return dist(gen) ? scale : TensorDataType(0);
+                       return dist(gen) ? scale : El::TypeTraits<TensorDataType>::Zero();
                      }));
 #endif // LBANN_DETERMINISTIC
 
@@ -352,12 +352,8 @@ protected:
   extern template class dropout<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class dropout<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_DROPOUT_LAYER_INSTANTIATE
 
 } // namespace lbann

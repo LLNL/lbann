@@ -141,24 +141,22 @@ private:
 
 // Minimum output value to avoid denormalized floats
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-  const TensorDataType threshold_val = std::sqrt(std::numeric_limits<TensorDataType>::min());
+  const TensorDataType threshold_val = static_cast<TensorDataType>(El::Sqrt(std::numeric_limits<TensorDataType>::min()));
 #else
-  const TensorDataType threshold_val = 0;
+  const TensorDataType threshold_val = El::TypeTraits<TensorDataType>::Zero();
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 };
+
+LBANN_DEFINE_LAYER_BUILDER(softmax);
 
 #ifndef LBANN_SOFTMAX_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class softmax_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class softmax_layer<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_SOFTMAX_LAYER_INSTANTIATE
 
 } // namespace lbann

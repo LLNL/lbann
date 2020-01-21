@@ -93,6 +93,8 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 };
 
+LBANN_DEFINE_LAYER_BUILDER(evaluation);
+
 #ifndef LBANN_EVALUATION_LAYER_INSTANTIATE
 #define PROTO(T)                           \
   extern template class abstract_evaluation_layer<T>
@@ -108,12 +110,8 @@ public:
   extern template class evaluation_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_EVALUATION_LAYER_INSTANTIATE
 
 } // namespace lbann

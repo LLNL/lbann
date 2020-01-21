@@ -41,14 +41,14 @@ template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
 class bernoulli_layer : public transform_layer<TensorDataType> {
-private:
-  /** Probability of outputting 1. */
-  TensorDataType m_prob;
+public:
+
+  using ProbabilityType = double;
 
 public:
   bernoulli_layer(lbann_comm *comm,
                   std::vector<int> dims,
-                  TensorDataType prob = TensorDataType(0.5))
+                  ProbabilityType prob = 0.5)
     : transform_layer<TensorDataType>(comm), m_prob(prob) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
@@ -75,7 +75,14 @@ protected:
     }
   }
 
+private:
+
+  /** Probability of outputting 1. */
+  ProbabilityType m_prob;
+
 };
+
+LBANN_DEFINE_LAYER_BUILDER(bernoulli);
 
 #ifndef LBANN_BERNOULLI_LAYER_INSTANTIATE
 
@@ -83,12 +90,8 @@ protected:
   extern template class bernoulli_layer<T, data_layout::DATA_PARALLEL, Device>;  \
   extern template class bernoulli_layer<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 
 #endif // LBANN_BERNOULLI_LAYER_INSTANTIATE
 

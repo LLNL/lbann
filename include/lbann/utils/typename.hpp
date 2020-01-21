@@ -27,6 +27,8 @@
 #ifndef LBANN_UTILS_TYPENAME_HPP_INCLUDED
 #define LBANN_UTILS_TYPENAME_HPP_INCLUDED
 
+#include <lbann_config.hpp>
+
 namespace lbann {
 
 template <typename T>
@@ -37,6 +39,12 @@ std::string TypeName();
 
 ADD_TYPENAME_INST(float)
 ADD_TYPENAME_INST(double)
+#ifdef LBANN_HAS_HALF
+ADD_TYPENAME_INST(cpu_fp16)
+#endif
+#ifdef LBANN_HAS_GPU_FP16
+ADD_TYPENAME_INST(fp16)
+#endif
 ADD_TYPENAME_INST(std::complex<float>)
 ADD_TYPENAME_INST(std::complex<double>)
 

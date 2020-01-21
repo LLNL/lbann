@@ -69,9 +69,9 @@ public:
     // Compute alpha' and the affine transform.
     m_alpha_prime = -scale*alpha;
     m_a = keep_prob +
-      m_alpha_prime*m_alpha_prime*keep_prob*(TensorDataType(1) - keep_prob);
-    m_a = TensorDataType(1) / std::sqrt(m_a);
-    m_b = -m_a * m_alpha_prime*(TensorDataType(1) - keep_prob);
+      m_alpha_prime*m_alpha_prime*keep_prob*(El::TypeTraits<TensorDataType>::One() - keep_prob);
+    m_a = El::TypeTraits<TensorDataType>::One() / El::Sqrt(m_a);
+    m_b = -m_a * m_alpha_prime*(El::TypeTraits<TensorDataType>::One() - keep_prob);
   }
 
   selu_dropout(const selu_dropout& other) :
@@ -145,7 +145,7 @@ public:
         for (El::Int row = 0; row < local_height; ++row) {
           local_output_acts(row, col) = m_a *
             (local_input_acts(row, col)*local_mask(row, col) +
-             m_alpha_prime*(1 - local_mask(row, col))) + m_b;
+             m_alpha_prime*(El::TypeTraits<TensorDataType>::One() - local_mask(row, col))) + m_b;
         }
       }
 
@@ -193,12 +193,8 @@ public:
   extern template class selu_dropout<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class selu_dropout<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_SELU_DROPOUT_LAYER_INSTANTIATE
 
 } // namespace lbann

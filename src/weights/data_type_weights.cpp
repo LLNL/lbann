@@ -340,7 +340,7 @@ template <typename TensorDataType>
 void data_type_weights<TensorDataType>::reconcile_values() {
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
-    El::Scale(TensorDataType(1) / values.RedundantSize(), values);
+    El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     get_comm().allreduce(values, values.RedundantComm());
   }
 }
@@ -349,7 +349,7 @@ template <typename TensorDataType>
 void data_type_weights<TensorDataType>::reconcile_values(Al::request& req) {
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
-    El::Scale(TensorDataType(1) / values.RedundantSize(), values);
+    El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     get_comm().nb_allreduce(values, values.RedundantComm(), req);
   }
 }
@@ -479,6 +479,7 @@ bool data_type_weights<TensorDataType>::load_from_checkpoint_distributed(lbann::
   template class data_type_weights<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann

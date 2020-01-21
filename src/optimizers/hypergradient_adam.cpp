@@ -43,8 +43,8 @@ hypergradient_adam<TensorDataType>::hypergradient_adam(TensorDataType init_learn
     m_beta1(beta1),
     m_beta2(beta2),
     m_eps(eps),
-    m_current_beta1(1),
-    m_current_beta2(1) {}
+    m_current_beta1(1.),
+    m_current_beta2(1.) {}
 
 template <typename TensorDataType>
 hypergradient_adam<TensorDataType>::hypergradient_adam(const hypergradient_adam& other)
@@ -108,8 +108,8 @@ void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
   // Precompute the bias correction.
   m_current_beta1 *= m_beta1;
   m_current_beta2 *= m_beta2;
-  const TensorDataType correction = std::sqrt(TensorDataType(1) - m_current_beta2) /
-                              (TensorDataType(1) - m_current_beta1);
+  const TensorDataType correction = El::Sqrt(TensorDataType(1.) - m_current_beta2) /
+                              (TensorDataType(1.) - m_current_beta1);
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
@@ -140,9 +140,9 @@ void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
       auto& m1 = moment1_buffer[row+col*moment1_ldim];
       auto& m2 = moment2_buffer[row+col*moment2_ldim];
       auto& old_c = old_gradient_buffer[row+col*old_gradient_ldim];
-      m1 = m_beta1 * m1 + (TensorDataType(1) - m_beta1) * g;
-      m2 = m_beta2 * m2 + (TensorDataType(1) - m_beta2) * g * g;
-      old_c = correction * m1 / (std::sqrt(m2) + m_eps);
+      m1 = m_beta1 * m1 + (TensorDataType(1.) - m_beta1) * g;
+      m2 = m_beta2 * m2 + (TensorDataType(1.) - m_beta2) * g * g;
+      old_c = correction * m1 / (El::Sqrt(m2) + m_eps);
       x -= learning_rate * old_c;
     }
   }
@@ -229,16 +229,28 @@ bool hypergradient_adam<TensorDataType>::load_from_checkpoint_distributed(persis
   return true;
 }
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_hypergradient_adam_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::HypergradientAdam const&>(msg);
-  return make_unique<hypergradient_adam<DataType>>(params.init_learning_rate(),
-                                                   params.hyper_learning_rate(),
-                                                   params.beta1(),
-                                                   params.beta2(),
-                                                   params.eps());
+  return make_unique<hypergradient_adam<TensorDataType>>(
+    TensorDataType(params.init_learning_rate()),
+    TensorDataType(params.hyper_learning_rate()),
+    TensorDataType(params.beta1()),
+    TensorDataType(params.beta2()),
+    TensorDataType(params.eps()));
 }
+
+#define PROTO(T)                                    \
+  template class hypergradient_adam<T>;             \
+  template std::unique_ptr<optimizer>               \
+  build_hypergradient_adam_optimizer_from_pbuf<T>(  \
+    google::protobuf::Message const&)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann

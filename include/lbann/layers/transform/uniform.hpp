@@ -52,8 +52,8 @@ public:
 
   uniform_layer(lbann_comm *comm,
                 std::vector<int> dims,
-                TensorDataType min = TensorDataType(0),
-                TensorDataType max = TensorDataType(1))
+                TensorDataType min = El::TypeTraits<TensorDataType>::Zero(),
+                TensorDataType max = El::TypeTraits<TensorDataType>::One())
     : transform_layer<TensorDataType>(comm), m_min(min), m_max(max) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
@@ -74,8 +74,8 @@ public:
 protected:
 
   void fp_compute() override {
-    const auto& mean = (m_max + m_min) / 2;
-    const auto& radius = (m_max - m_min) / 2;
+    const auto& mean = (m_max + m_min) / El::To<TensorDataType>(2);
+    const auto& radius = (m_max - m_min) / El::To<TensorDataType>(2);
     auto& output = this->get_activations();
     if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
       uniform_fill(output, output.Height(), output.Width(), mean, radius);
@@ -91,12 +91,8 @@ protected:
   extern template class uniform_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class uniform_layer<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_UNIFORM_LAYER_INSTANTIATE
 
 } // namespace lbann

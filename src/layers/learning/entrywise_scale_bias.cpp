@@ -118,7 +118,7 @@ void bp_impl(
   // Update optimizer with gradient
   auto* opt = scale_bias.get_optimizer();
   if (opt != nullptr) {
-    opt->add_to_gradient(gradient_wrt_scale_bias, DataType{1}, true);
+    opt->add_to_gradient(gradient_wrt_scale_bias, El::TypeTraits<TensorDataType>::One(), true);
   }
 
 }
@@ -143,11 +143,14 @@ void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
           *this->m_weights_gradient);
 }
 
-#define PROTO(T)                                     \
-  template class entrywise_scale_bias_layer<         \
-    T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class entrywise_scale_bias_layer<         \
-    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+LBANN_LAYER_DEFAULT_BUILDER(entrywise_scale_bias)
+
+#define PROTO(T)                                                        \
+  template class entrywise_scale_bias_layer<                            \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;                    \
+  template class entrywise_scale_bias_layer<                            \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>;                   \
+  LBANN_LAYER_BUILDER_ETI(entrywise_scale_bias, T, El::Device::CPU)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

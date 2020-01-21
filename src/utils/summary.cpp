@@ -149,7 +149,7 @@ void lbann_summary::flush_stdevs() {
                            global_sqsums.data());
     // Re-use the global_sums vector for the standard deviation.
     for (unsigned i = 0; i < global_sums.size(); ++i) {
-      global_sums[i] = std::sqrt(
+      global_sums[i] = El::Sqrt(
                          (global_sqsums[i] -
                           global_sums[i] * global_sums[i] / m_pending_stdevs[i].num) /
                          (m_pending_stdevs[i].num - 1));

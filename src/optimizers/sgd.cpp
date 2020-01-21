@@ -87,7 +87,7 @@ void sgd<TensorDataType>::setup(WeightsType* w) {
 
 template <typename TensorDataType>
 void sgd<TensorDataType>::step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) {
-  if (m_momentum == TensorDataType(0)) {
+  if (m_momentum == TensorDataType(0.)) {
     // Vanilla SGD
     El::Axpy(-this->get_learning_rate(), gradient, values);
   } else {
@@ -232,15 +232,23 @@ bool sgd<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::stri
   return true;
 }
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_sgd_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params = dynamic_cast<lbann_data::Optimizer::SGD const&>(msg);
-  return make_unique<sgd<DataType>>(params.learn_rate(),
-                                    params.momentum(),
-                                    params.nesterov());
+  return make_unique<sgd<TensorDataType>>(TensorDataType(params.learn_rate()),
+                                          TensorDataType(params.momentum()),
+                                          params.nesterov());
 }
 
-template class sgd<DataType>;
+#define PROTO(T)                                \
+  template class sgd<T>;                        \
+  template std::unique_ptr<optimizer>           \
+  build_sgd_optimizer_from_pbuf<T>(             \
+    google::protobuf::Message const&)
 
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 } // namespace lbann

@@ -48,8 +48,8 @@ void random_resized_crop::apply(utils::type_erased_matrix& data,
     const float target_area = area*transform::get_uniform_random(m_scale_min,
                                                                  m_scale_max);
     const float target_ar = transform::get_uniform_random(m_ar_min, m_ar_max);
-    w = std::sqrt(target_area * target_ar);
-    h = std::sqrt(target_area / target_ar);
+    w = El::Sqrt(target_area * target_ar);
+    h = El::Sqrt(target_area / target_ar);
     // Swap these with 50% probability.
     if (transform::get_bool_random(0.5)) {
       std::swap(w, h);

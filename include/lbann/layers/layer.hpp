@@ -46,6 +46,28 @@
   std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf( \
     lbann_comm*, lbann_data::Layer const&)
 
+/** @brief A utility macro for easily defining "default" builders.
+ *  @note Must be called inside lbann namespace.
+ */
+#define LBANN_LAYER_DEFAULT_BUILDER(LAYER_NAME) \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf(          \
+    lbann_comm* comm, lbann_data::Layer const&) {                       \
+    using LayerType = LAYER_NAME##_layer<TensorDataType, Layout, Device>; \
+    return make_unique<LayerType>(comm);                                \
+  }
+
+/** @brief A utility macro for easily adding ETI for layer builders
+ *  @note Must be called inside lbann namespace.
+ */
+#define LBANN_LAYER_BUILDER_ETI(LAYER_NAME, T, Device)                  \
+  template std::unique_ptr<Layer>                                       \
+  build_##LAYER_NAME##_layer_from_pbuf<T,::lbann::data_layout::DATA_PARALLEL,Device>( \
+    lbann_comm*, lbann_data::Layer const&);                             \
+  template std::unique_ptr<Layer>                                       \
+  build_##LAYER_NAME##_layer_from_pbuf<T,::lbann::data_layout::MODEL_PARALLEL,Device>( \
+    lbann_comm*, lbann_data::Layer const&)
+
 // Forward-declare protobuf classes
 namespace lbann_data {
 class Layer;

@@ -30,6 +30,9 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <layers.pb.h>
+
 namespace lbann {
 
 /** @brief Concatenate tensors along specified dimension. */
@@ -286,6 +289,8 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
 
 }
 
+LBANN_DEFINE_LAYER_BUILDER(concatenate);
+
 #ifndef LBANN_CONCATENATE_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device)             \
@@ -294,12 +299,8 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
   extern template class concatenate_layer<  \
     T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 
 #endif // LBANN_CONCATENATE_LAYER_INSTANTIATE
 

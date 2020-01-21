@@ -63,7 +63,7 @@ __global__ void fp_kernel(El::Int num_embeddings,
           y = embeddings[i+ind*embeddings_ldim];
         }
         else {
-          y = TensorDataType{0};
+          y = TensorDataType(0.0);
         }
       }
     }
@@ -190,7 +190,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
       local_embedding_grad.Buffer(),
       local_embedding_grad.LDim());
   }
-  opt.add_to_gradient(*this->m_embeddings_grad, TensorDataType{1}, true);
+  opt.add_to_gradient(*this->m_embeddings_grad, El::TypeTraits<TensorDataType>::One(), true);
 
 }
 
@@ -198,7 +198,7 @@ void embedding_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 #define PROTO(T)                     \
   template class embedding_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
 
-#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

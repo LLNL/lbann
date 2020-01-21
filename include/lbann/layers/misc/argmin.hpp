@@ -72,8 +72,13 @@ protected:
 };
 
 #ifndef LBANN_ARGMIN_LAYER_INSTANTIATE
-extern template class argmin_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T) \
+  extern template class argmin_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
 #endif // LBANN_ARGMIN_LAYER_INSTANTIATE
 } // namespace lbann
 

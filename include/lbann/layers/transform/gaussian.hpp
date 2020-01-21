@@ -51,8 +51,8 @@ private:
 public:
   gaussian_layer(lbann_comm *comm,
                  const std::vector<int>& dims,
-                 TensorDataType mean = TensorDataType(0),
-                 TensorDataType stdev = TensorDataType(1))
+                 TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
+                 TensorDataType stdev = El::TypeTraits<TensorDataType>::One())
     : transform_layer<TensorDataType>(comm), m_mean(mean), m_stdev(stdev) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
@@ -87,12 +87,8 @@ protected:
   extern template class gaussian_layer<T, data_layout::DATA_PARALLEL, Device>; \
   extern template class gaussian_layer<T, data_layout::MODEL_PARALLEL, Device>
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#undef LBANN_INSTANTIATE_CPU_HALF
-#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_GAUSSIAN_LAYER_INSTANTIATE
 
 } // namespace lbann

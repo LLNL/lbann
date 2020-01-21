@@ -65,6 +65,7 @@ generic_io_buffer<TensorDataType>& generic_io_buffer<TensorDataType>::operator=(
   template class generic_io_buffer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

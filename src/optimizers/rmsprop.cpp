@@ -108,8 +108,8 @@ void rmsprop<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
       auto& x = values_buffer[row+col*values_ldim];
       const auto& g = gradient_buffer[row+col*gradient_ldim];
       auto& c = cache_buffer[row+col*cache_ldim];
-      c = m_decay_rate * c + (TensorDataType(1) - m_decay_rate) * g * g;
-      x -= learning_rate * g / (std::sqrt(c) + m_eps);
+      c = m_decay_rate * c + (TensorDataType(1.) - m_decay_rate) * g * g;
+      x -= learning_rate * g / (El::Sqrt(c) + m_eps);
     }
   }
 
@@ -163,14 +163,26 @@ bool rmsprop<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::
   return true;
 }
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_rmsprop_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::RMSprop const&>(msg);
-  return make_unique<rmsprop<DataType>>(params.learn_rate(),
-                                        params.decay_rate(),
-                                        params.eps());
+  return make_unique<rmsprop<TensorDataType>>(
+    TensorDataType(params.learn_rate()),
+    TensorDataType(params.decay_rate()),
+    TensorDataType(params.eps()));
 }
+
+#define PROTO(T)                                    \
+  template class rmsprop<T>;                        \
+  template std::unique_ptr<optimizer>               \
+  build_rmsprop_optimizer_from_pbuf<T>(             \
+    google::protobuf::Message const&)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

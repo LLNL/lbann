@@ -69,7 +69,7 @@ __global__ void row_sums_kernel(size_t height,
  */
 template <typename TensorDataType>
 __global__ void compute_statistics_kernel(size_t size,
-                                          size_t statistics_count,
+                                          unsigned long long statistics_count,
                                           TensorDataType decay,
                                           TensorDataType* __restrict__ batch_mean,
                                           TensorDataType* __restrict__ batch_var,
@@ -84,11 +84,12 @@ __global__ void compute_statistics_kernel(size_t size,
     auto& _running_var = running_var[i];
     const auto sum = batch_mean[i];
     const auto sqsum = batch_var[i];
-    mean = sum / statistics_count;
-    const auto sqmean = sqsum / statistics_count;
-    var = (sqmean - mean * mean) * statistics_count / (statistics_count - 1);
-    _running_mean = decay * _running_mean + (DataType{1} - decay) * mean;
-    _running_var = decay * _running_var + (DataType{1} - decay) * var;
+    const TensorDataType statistics_count_dt = TensorDataType(statistics_count);
+    mean = sum / statistics_count_dt;
+    const auto sqmean = sqsum / statistics_count_dt;
+    var = (sqmean - mean * mean) * statistics_count_dt / TensorDataType(statistics_count - 1);
+    _running_mean = decay * _running_mean + (TensorDataType{1} - decay) * mean;
+    _running_var = decay * _running_var + (TensorDataType{1} - decay) * var;
   }
 }
 
@@ -145,7 +146,7 @@ void compute_batch_statistics(lbann_comm& comm,
   // Compute mini-batch statistics from sums
   if (statistics_count <= 1) {
     // local_mean already has correct values
-    El::Fill(local_batch_var, TensorDataType{1});
+    El::Fill(local_batch_var, El::TypeTraits<TensorDataType>::One());
   } else {
     if (local_height > 0) {
       constexpr size_t block_size = 256;
@@ -319,7 +320,7 @@ __global__ void bp_training_stats_gradient_kernel(size_t height,
       const auto& x = input[row + col * input_ldim];
       const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       dmean += - dy * inv_stdev;
-      dvar += - dy * (x - _mean) * inv_stdev*inv_stdev*inv_stdev / 2;
+      dvar += - dy * (x - _mean) * inv_stdev*inv_stdev*inv_stdev / TensorDataType(2);
     }
   }
 }
@@ -337,7 +338,7 @@ template <typename TensorDataType>
 __global__ void bp_training_error_signal_kernel(size_t height,
                                                 size_t width,
                                                 TensorDataType epsilon,
-                                                size_t statistics_count,
+                                                unsigned long long statistics_count,
                                                 const TensorDataType* __restrict__ input,
                                                 size_t input_ldim,
                                                 const TensorDataType* __restrict__ gradient_wrt_output,
@@ -363,8 +364,8 @@ __global__ void bp_training_error_signal_kernel(size_t height,
       const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
       dx = (dy * inv_stdev
-            + dmean / statistics_count
-            + dvar * (x - _mean) * 2 / (statistics_count - 1));
+            + dmean / TensorDataType(statistics_count)
+            + dvar * (x - _mean) * TensorDataType(2) / TensorDataType(statistics_count - 1));
     }
   }
 }
