@@ -373,10 +373,6 @@ def get_command(cluster,
                 filename_test = re.sub(
                     'labels', 'original/labels', filename_test)
                 option_data_filename_test  = ' --data_filename_test=%s'  % filename_test
-            option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_train_default)
-            option_data_filename_train = ' --data_filename_train=%s' % filename_train
-            option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_test_default)
-            option_data_filename_test  = ' --data_filename_test=%s'  % filename_test
         elif cluster == 'ray':
             option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_train_default)
             option_data_filename_train = ' --data_filename_train=%s' % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_train_default)
