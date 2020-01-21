@@ -28,8 +28,8 @@ def skeleton_jag_reconstruction_loss(cluster, executables, dir_name, compiler_na
         num_processes=32,
         disable_cuda=1,
         dir_name=dir_name,
-        data_filedir_train_default='/p/lscratchh/brainusr/datasets/10MJAG/1M_A/100K4trainers'
-        data_filedir_test_default='/p/lscratchh/brainusr/datasets/10MJAG/1M_A/100K16trainers'
+        data_filedir_train_default='/p/lscratchh/brainusr/datasets/10MJAG/1M_A/100K4trainers',
+        data_filedir_test_default='/p/lscratchh/brainusr/datasets/10MJAG/1M_A/100K16trainers',
         data_reader_name='jag',
         data_reader_percent='prototext',
         metadata='model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext',
