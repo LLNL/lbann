@@ -437,8 +437,6 @@ std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
   template class channelwise_fully_connected_layer<                     \
     T,data_layout::DATA_PARALLEL,Device>;                               \
   LBANN_LAYER_BUILDER_ETI(channelwise_fully_connected, T, Device)
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 } // namespace lbann
