@@ -192,10 +192,10 @@ class sample_list {
   /// Whether to check the existence of data file
   bool m_check_data_file;
 
- private:
   /// List of all samples with a file identifier and sample name for each sample
   samples_t m_sample_list;
 
+ private:
   /// Maps sample's file id to file names, file descriptors, and use counts
   file_id_stats_v_t m_file_id_stats_map;
 

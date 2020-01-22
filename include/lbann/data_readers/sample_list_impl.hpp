@@ -13,6 +13,7 @@
 #include <memory>
 #include <type_traits>
 #include <limits>
+#include <algorithm>
 
 #include <cereal/archives/binary.hpp>
 #include <unistd.h>
@@ -644,8 +645,21 @@ inline bool sample_list<sample_name_t>
 
   sstr.clear();
 
-  // reserve the string to hold the entire sample lit
-  size_t estimated_len = 30 + 42 + m_header.get_file_dir().size() + 1 + total_len + 1000;
+  static const size_t max_type_len
+    = std::max(std::max(multi_sample_exclusion.size(),
+                        multi_sample_inclusion.size()),
+               single_sample.size());
+
+  static const size_t max_num_len
+    = std::to_string(std::numeric_limits<size_t>::max()).size();
+
+  // reserve the string to hold the entire sample list
+  size_t estimated_len = max_type_len
+                       + max_num_len + 2
+                       + m_header.get_file_dir().size()
+                       + m_header.get_label_filename().size()
+                       + 4 // sizeof('\n') * 4
+                       + total_len + 1000;
   sstr.reserve(estimated_len);
 
   // write the list header

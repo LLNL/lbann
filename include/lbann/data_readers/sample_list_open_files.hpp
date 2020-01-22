@@ -16,13 +16,13 @@ class sample_list_open_files : public sample_list<sample_name_t> {
   using sample_file_id_t = std::size_t;
   /** To describe a sample as a pair of the file to which it belongs and its name
       Each file may contain multiple samples. */
-  using sample_t = std::pair<sample_file_id_t, sample_name_t>;
+  using sample_t = typename sample_list<sample_name_t>::sample_t;
   /// Information for each file used by the sample list: includes the file name, file descriptor, and
   /// and a queue of each step and substep when data will be loaded from the file
   using file_id_stats_t = std::tuple<std::string, file_handle_t, std::deque<std::pair<int,int>>>;
 
   /// Type for the list of samples
-  using samples_t = std::template vector< sample_t >;
+  using samples_t = typename sample_list<sample_name_t>::samples_t;
   /// Mapping of the file index to the statistics for each file
   using file_id_stats_v_t = std::vector< file_id_stats_t >; // rename to sample_to_file_v or something
   /// Type for the map of file descriptors to usage step and substep
@@ -54,12 +54,6 @@ class sample_list_open_files : public sample_list<sample_name_t> {
 
   /// Serialize this sample list into an std::string object
   bool to_string(std::string& sstr) const override;
-
-  /// Allow read-only access to the internal list data
-  const samples_t& get_list() const;
-
-  /// Allow read-only access to the metadata of the idx-th sample in the list
-  const sample_t& operator[](size_t idx) const;
 
   const std::string& get_samples_filename(sample_file_id_t id) const override;
 
@@ -107,9 +101,6 @@ class sample_list_open_files : public sample_list<sample_name_t> {
 
   void assign_samples_name() override {}
 
-  /// Reorder the sample list to its initial order
-  void reorder() override;
-
   /// Get the number of total/included/excluded samples
   void get_num_samples(size_t& total, size_t& included, size_t& excluded) const override;
 
@@ -133,9 +124,6 @@ class sample_list_open_files : public sample_list<sample_name_t> {
   file_id_stats_v_t m_file_id_stats_map;
 
  private:
-  /// List of all samples with a file identifier and sample name for each sample
-  samples_t m_sample_list;
-
   /// Track the number of samples per file
   std::unordered_map<std::string, size_t> m_file_map;
 
