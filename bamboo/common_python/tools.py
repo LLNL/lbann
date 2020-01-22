@@ -239,11 +239,19 @@ def get_command(cluster,
                 option_gpu_per_resource = ' -g 4'
                 option_launch_distribution = ' -d packed'
                 # Avoid `nrs (32) should not be greater than rs_per_host (1) * number of servers available (16).`
-                if num_processes > 16:
-                    num_processes = 16
-                option_num_processes = ' -n {n}'.format(n=num_processes)
+                if num_nodes is None:
+                    num_nodes = 1
+                # The "option_num_processes" is a misnomer for the LSF case. Rather than
+                # changing the rest of the code, set it to be the number of nodes. Within
+                # JSRUN, the correct number of processes will be obtained when combined
+                # with "option_tasks_per_resource".
+                option_num_processes = ' -n {n}'.format(n=num_nodes)
                 option_resources_per_host = ' -r 1'
-                option_tasks_per_resource = ' -a 4'
+                option_tasks_per_resource = ' -a %d' % (num_processes/num_nodes)
+                if (num_processes%num_nodes) is not 0:
+                    raise Exception('num_processes %s, is not divisible by num_nodes %d'
+                                    % (num_processes, num_nodes))
+
             else:
                 # -np => Run this many copies of the program on the given nodes.
                 option_num_processes = ' -np %d' % num_processes
@@ -340,8 +348,8 @@ def get_command(cluster,
         elif cluster == 'ray':
             option_data_filedir = ' --data_filedir=%s' % re.sub(
                 '[a-z]scratch[a-z]', 'gscratchr', data_filedir_default)
-    elif None not in data_file_parameters:
-        # Everything in data_file_parameters has a non-None value.
+    elif not data_file_parameters == [None, None, None, None]:
+        # Any of the data_file_parameters has a non-None value.
         if cluster in ['catalyst', 'corona', 'pascal']:
             # option_data_filedir_train = data_filedir_train_default
             # option_data_filename_train = data_filename_train_default
@@ -349,20 +357,22 @@ def get_command(cluster,
             # option_data_filename_train = data_filename_test_default
             pass  # No need to pass in a parameter
         elif cluster == 'lassen':
-            filename_train = re.sub(
-                '[a-z]scratch[a-z]', 'gpfs1', data_filename_train_default)
-            filename_train = re.sub(
-                'labels', 'original/labels', filename_train)
-            print('filename_train={f}'.format(f=filename_train))
-            filename_test = re.sub(
-                '[a-z]scratch[a-z]', 'gpfs1', data_filename_test_default)
-            filename_test = re.sub(
-                'labels', 'original/labels', filename_test)
-            print('filename_test={f}'.format(f=filename_test))
-            option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_train_default)
-            option_data_filename_train = ' --data_filename_train=%s' % filename_train
-            option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_test_default)
-            option_data_filename_test  = ' --data_filename_test=%s'  % filename_test
+            if data_filedir_train_default is not None:
+                option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_train_default)
+            if data_filename_train_default is not None:
+                filename_train = re.sub(
+                    '[a-z]scratch[a-z]', 'gpfs1', data_filename_train_default)
+                filename_train = re.sub(
+                    'labels', 'original/labels', filename_train)
+                option_data_filename_train = ' --data_filename_train=%s' % filename_train
+            if data_filedir_test_default is not None:
+                option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_test_default)
+            if data_filename_test_default is not None:
+                filename_test = re.sub(
+                    '[a-z]scratch[a-z]', 'gpfs1', data_filename_test_default)
+                filename_test = re.sub(
+                    'labels', 'original/labels', filename_test)
+                option_data_filename_test  = ' --data_filename_test=%s'  % filename_test
         elif cluster == 'ray':
             option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_train_default)
             option_data_filename_train = ' --data_filename_train=%s' % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_train_default)
