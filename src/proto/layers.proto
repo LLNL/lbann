@@ -164,6 +164,7 @@ message Layer {
     SeluDropout selu_dropout = 229;
     EntrywiseBatchNormalization entrywise_batch_normalization = 230;
     LayerNorm layer_norm = 231;
+    InstanceNorm instance_norm = 232;
 
     // Activation layers
     Elu elu = 200;
@@ -363,6 +364,13 @@ message Layer {
    *  reproduce that functionality.
    */
   message LayerNorm {
+    /** @brief Small number to avoid division by zero.
+     *  @details Default is 1e-5.
+     */
+    google.protobuf.DoubleValue epsilon = 1;
+  }
+
+  message InstanceNorm {
     /** @brief Small number to avoid division by zero.
      *  @details Default is 1e-5.
      */

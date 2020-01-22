@@ -35,6 +35,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/utils/typename.hpp"
 #include <string>
 #include <vector>
