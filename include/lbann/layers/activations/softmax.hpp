@@ -41,7 +41,27 @@
 
 namespace lbann {
 
-enum class softmax_mode {INVALID, INSTANCE, CHANNEL};
+/** @brief Which tensor dimensions to apply softmax over. */
+enum class softmax_mode {
+  INVALID,
+  /** @brief Sample-wise softmax.
+   *
+   *  Slice tensor along the sample dimension (assuming data in NCHW
+   *  format) and apply softmax independently to each slice (once per
+   *  sample).
+   */
+  INSTANCE,
+  /** @brief Position-wise softmax.
+   *
+   *  Split tensor along all but the channel dimension (assuming data
+   *  in NCHW format) and apply softmax independently to each piece
+   *  (once per spatial position per sample).
+   *
+   *  This is not to be confused with @c channelwise_softmax, which
+   *  slices along the sample and channel dimensions.
+   */
+  CHANNEL
+};
 
 /**
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
