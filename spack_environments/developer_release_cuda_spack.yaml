@@ -46,5 +46,6 @@ spack:
 # Note that the include files are expected to be local to this yaml file
 ################################################################################
   include:
-    - std_versions_and_variants_llnl_lc_cz.yaml
-    - externals_llnl_lc_cz.yaml
+    - std_versions_and_variants.yaml
+    - externals.yaml
+    - compilers_and_build_env.yaml

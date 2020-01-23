@@ -15,7 +15,6 @@
 
 spack:
   concretization: together
-  # add package specs to the `specs` list
   specs:
   - py-argparse
   - py-configparser
@@ -28,16 +27,25 @@ spack:
   - py-onnx
   - py-pandas
 
-  mirrors: {}
-  modules:
-    enable: []
-  repos: []
-  config: {}
-################################################################################
-# Include paths to standard compilers and packages on LLNL LC systems
-# Remove and/or replace these with your site specific packages and paths
-# Note that the include files are expected to be local to this yaml file
-################################################################################
   include:
-    - ../std_versions_and_variants_llnl_lc_cz.yaml
-    - ../externals_llnl_lc_cz.yaml
+  - ../std_versions_and_variants.yaml
+  - ../compilers_and_build_env.yaml
+  packages:
+    'py-cython:':
+      buildable: true
+      version: [0.29]
+      target: []
+      providers: {}
+      paths: {}
+      modules: {}
+      compiler: []
+    'py-matplotlib:':
+      buildable: true
+      variants: ~tk ~image
+      version: []
+      target: []
+      providers: {}
+      paths: {}
+      modules: {}
+      compiler: []
+  view: true

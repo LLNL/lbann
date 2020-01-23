@@ -39,14 +39,6 @@
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
       version: [3.7.2]
 
-    py-cython::
-      buildable: True
-      version: [0.29]
-
-    py-matplotlib::
-      buildable: True
-      variants: ~tk ~image
-
     py-numpy::
       buildable: True
       version: [1.16.2]

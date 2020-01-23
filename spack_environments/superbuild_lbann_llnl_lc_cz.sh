@@ -1,0 +1,34 @@
+#! /bin/bash
+
+CMD="cmake \
+       -G Ninja \
+       -D CMAKE_BUILD_TYPE:STRING=Release \
+       -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
+       \
+       -D LBANN_SB_BUILD_ALUMINUM=ON \
+       -D ALUMINUM_ENABLE_MPI_CUDA=OFF \
+       -D ALUMINUM_ENABLE_NCCL=ON \
+       \
+       -D LBANN_SB_BUILD_HYDROGEN=ON \
+       -D Hydrogen_ENABLE_ALUMINUM=ON \
+       -D Hydrogen_ENABLE_CUB=ON \
+       -D Hydrogen_ENABLE_CUDA=ON \
+       -D Hydrogen_ENABLE_HALF=ON \
+       \
+       -D LBANN_SB_BUILD_LBANN=ON \
+       -D LBANN_DATATYPE:STRING=float \
+       -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=OFF \
+       -D LBANN_WITH_ALUMINUM:BOOL=ON \
+       -D LBANN_WITH_CONDUIT:BOOL=ON \
+       -D LBANN_WITH_CUDA:BOOL=ON \
+       -D LBANN_WITH_CUDNN:BOOL=ON \
+       -D LBANN_WITH_NCCL:BOOL=ON \
+       -D LBANN_WITH_NVPROF:BOOL=ON \
+       -D LBANN_WITH_SOFTMAX_CUDA:BOOL=ON \
+       -D LBANN_WITH_TOPO_AWARE:BOOL=ON \
+       -D LBANN_WITH_TBINF=OFF \
+       -D LBANN_WITH_VTUNE:BOOL=OFF \
+       ${LBANN_HOME}/superbuild"
+
+echo ${CMD}
+${CMD}

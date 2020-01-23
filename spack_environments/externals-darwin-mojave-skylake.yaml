@@ -8,14 +8,7 @@
       version: []
       paths: {}
       modules: {}
-      compiler: [clang@9.0.0 arch=darwin-mojave-skylake]
-
-    cmake::
-      buildable: True
-      variants: ~openssl ~ncurses
-      version: [3.15.4]
-      paths:
-        cmake@3.15.4 arch=darwin-mojave-skylake: /usr/local/
+      compiler: []
 
     hwloc::
       buildable: True
@@ -31,18 +24,3 @@
       version: [4.0]
       paths:
         openmpi@4.0 arch=darwin-mojave-skylake: /usr/local/
-
-  compilers:
-  - compiler:
-      environment: {}
-      extra_rpaths: []
-      flags: {}
-      modules: []
-      operating_system: mojave
-      paths:
-        cc: /usr/local/Cellar/llvm/9.0.0_1/bin/clang
-        cxx: /usr/local/Cellar/llvm/9.0.0_1/bin/clang++
-        f77: /usr/local/bin/gfortran
-        fc: /usr/local/bin/gfortran
-      spec: clang@9.0.0
-      target: x86_64
