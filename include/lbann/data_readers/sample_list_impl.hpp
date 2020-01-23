@@ -898,6 +898,35 @@ inline void sample_list<sample_name_t>
 
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
+::build_sample_map_from_name_to_index() {
+  m_map_name_to_idx.clear();
+  for (size_t i = 0ul; i < m_sample_list.size(); ++i) {
+    m_map_name_to_idx.insert(std::make_pair(m_sample_list[i].second, i));
+  }
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
+::clear_sample_map_from_name_to_index() {
+  m_map_name_to_idx.clear();
+  m_map_name_to_idx.rehash(0);
+  sample_map_t tmp;
+  tmp.rehash(0);
+  tmp.swap(m_map_name_to_idx);
+}
+
+template <typename sample_name_t>
+inline typename sample_list<sample_name_t>::sample_idx_t sample_list<sample_name_t>
+::get_sample_index(const sample_name_t& sn) {
+  typename sample_map_t::const_iterator it = m_map_name_to_idx.find(sn);
+  if (it == m_map_name_to_idx.cend()) {
+    LBANN_ERROR(" :: cannot find the sample name ", lbann::to_string(sn));
+  }
+  return it->second;
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
 ::keep_sample_order(bool keep) {
   m_keep_order = keep;
 }

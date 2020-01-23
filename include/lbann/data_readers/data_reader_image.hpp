@@ -41,7 +41,8 @@ class image_data_reader : public generic_data_reader {
   using sample_t = std::pair<img_src_t, label_t>;
   using sample_name_t = img_src_t;
   using sample_list_t = sample_list<sample_name_t>;
-  using labels_t = std::unordered_map<sample_name_t, label_t>;
+  using sample_idx_t = sample_list_t::sample_idx_t;
+  using labels_t = std::vector<label_t>;
 
   image_data_reader(bool shuffle = true);
   image_data_reader(const image_data_reader&);

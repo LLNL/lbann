@@ -77,6 +77,10 @@ class sample_list {
   using sample_t = std::template pair<sample_file_id_t, sample_name_t>;
   /// Type for the list of samples
   using samples_t = std::template vector< sample_t >;
+  /// Type for the index into the sample list
+  using sample_idx_t = typename samples_t::size_type;
+  /// Type for the map from sample name to the sample list index
+  using sample_map_t = std::unordered_map<sample_name_t, sample_idx_t>;
   /// Mapping of the file index to the filename
   using file_id_stats_v_t = std::vector< std::string >;
 
@@ -151,6 +155,15 @@ class sample_list {
   /// Set not to check the existence of data file in the list
   void unset_data_file_check();
 
+  /// Build map from sample names to indices for sample list
+  void build_sample_map_from_name_to_index();
+
+  /// Clear the map from sample names to indices
+  void clear_sample_map_from_name_to_index();
+
+  /// Return the index of the sample with the specified name
+  sample_idx_t get_sample_index(const sample_name_t& sn );
+
  protected:
 
   /// Reads a header line from the sample list given as a stream, and use the info string for error message
@@ -194,6 +207,9 @@ class sample_list {
 
   /// List of all samples with a file identifier and sample name for each sample
   samples_t m_sample_list;
+
+  /// Map from sample name to the corresponding index into the sample list
+  sample_map_t m_map_name_to_idx;
 
  private:
   /// Maps sample's file id to file names, file descriptors, and use counts
