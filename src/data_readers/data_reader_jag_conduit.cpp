@@ -919,16 +919,21 @@ void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list
     m_sample_list.override_samples_dirname(get_file_dir());
   }
 
-  m_sample_list.keep_sample_order(this->m_keep_sample_order);
-
-  std::vector<char> buffer;
   options *opts = options::get();
-  const bool check_data = opts->get_bool("check_data");
 
+  if (this->m_keep_sample_order || opts->has_string("keep_sample_order")) {
+    m_sample_list.keep_sample_order(true);
+  } else {
+    m_sample_list.keep_sample_order(false);
+  }
+
+  const bool check_data = opts->get_bool("check_data");
 
   if (check_data) {
     m_sample_list.set_data_file_check();
   }
+
+  std::vector<char> buffer;
 
   if (opts->has_string("load_full_sample_list_once")) {
     if (m_comm->am_trainer_master()) {
