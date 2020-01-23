@@ -122,36 +122,34 @@ Building & Installing LBANN as a developer
 
 Developers of LBANN will often need to interact with the source code
 and/or advanced configuration options for Aluminum, Hydrogen, and
-LBANN while the other dependencies remain constant. The Spack
-installation instructions below set up a Spack environment with the
-remaining dependencies, requiring the developer to build Aluminum,
-Hydrogen, and LBANN separately, by whatever means they choose.
+LBANN while the other dependencies remain constant. The installation
+instructions below provide a script that will setup a Spack
+environment with the remaining dependencies, and then invoke the LBANN
+superbuild CMake infrastructure to build LBANN from the local source
+and to download versions of Aluminum and Hydrogen from GitHub.  The
+provided script will build with a standard compiler for a given
+platform and the nominal options in the CMake build environment.
+Expert developers should refer to :ref:`here
+<building-with-the-superbuild>` for a list and descriptions of all
+CMake flags known to LBANN's "Superbuild" build system.
 
-1.  Establish a Spack environment and install software dependencies.
-    Note that there are four environments to pick from along two axes:
-
-    .. note:: This spack environment has to be setup once each time
-              you create a new build directory.
-
-    1. developers or users
-    2. x86_64 and ppc64le
-
-    For example if you are a developer and want to build the inside of
-    the git repo use the following instructions:
+1.  Running this integrated script that will setup both the
+    dependencies via spack and Aluminum, Hydrogen, and LBANN via
+    CMake.
 
     .. code-block:: bash
 
-        export LBANN_HOME=/path/to/lbann/git/repo
-        export LBANN_BUILD_DIR=/path/to/a/build/directory
-        export LBANN_INSTALL_DIR=/path/to/an/install/directory
-        cd ${LBANN_BUILD_DIR}
-        spack env create -d . ${LBANN_HOME}/spack_environments/developer_release_cuda_spack.yaml
-        cp ${LBANN_HOME}/spack_environments/std_versions_and_variants_llnl_lc_cz.yaml .
-        cp ${LBANN_HOME}/spack_environments/externals_<arch>_llnl_lc_cz.yaml externals_llnl_lc_cz.yaml # where <arch> = x86_64_broadwell | power9le
-        spack install
-        spack env loads # Spack creates a file named loads that has all of the correct modules
-        source ${SPACK_ROOT}/share/spack/setup-env.sh # Rerun setup since spack doesn't modify MODULEPATH unless there are module files defined
-        source loads
+        <lbann.git>/spack_environments/build_lbann.sh -p <build and install prefix>
+
+
+    + Options exist in the script to disable the GPUs, and separately
+      set the build and install directories.  Additionally, the script
+      can setup the environment variables and load the modules in the
+      current shell with the following command
+
+    .. code-block:: bash
+
+        source <lbann.git>/spack_environments/build_lbann.sh -p <build and install prefix>
 
 
     + Note that the environments provided here have a set of external
@@ -165,20 +163,11 @@ Hydrogen, and LBANN separately, by whatever means they choose.
     + Note that the initial build of all of the standard packages in Spack
       will take a while.
 
-    + Note that the Spack module files set the :bash:`LIBRARY_PATH` environment
-      variable. This behavior allows autotools-based builds to pickup the
-      correct libraries but interferes with the way that CMake sets up
-      RPATHs.  To correctly establish the RPATH, please unset the variable
-      as noted above, or you can explicitly pass the RPATH fields to CMake
-      using a command such as:
 
-      .. code-block:: bash
+2.  Once the installation has completed you can load the module file
+    for LBANN with the following command
 
-          cmake -DCMAKE_INSTALL_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") \
-                -DCMAKE_BUILD_RPATH=$(sed 's/:/;/g' <<< "${LIBRARY_PATH}") \
-                ...
-
-2.  Build LBANN locally from source and build Hydrogen and Aluminum
+    Build LBANN locally from source and build Hydrogen and Aluminum
     using the superbuild. See :ref:`here <building-with-the-superbuild>`
     for a list and descriptions of all CMake flags known to LBANN's
     "Superbuild" build system. A representative CMake command line
@@ -187,39 +176,7 @@ Hydrogen, and LBANN separately, by whatever means they choose.
 
     .. code-block:: console
 
-        cd ${LBANN_BUILD_DIR}
-        cmake \
-          -G Ninja \
-          -D CMAKE_BUILD_TYPE:STRING=Release \
-          -D CMAKE_INSTALL_PREFIX:PATH=${LBANN_INSTALL_DIR} \
-          \
-          -D LBANN_SB_BUILD_ALUMINUM=ON \
-          -D ALUMINUM_ENABLE_MPI_CUDA=OFF \
-          -D ALUMINUM_ENABLE_NCCL=ON \
-          \
-          -D LBANN_SB_BUILD_HYDROGEN=ON \
-          -D Hydrogen_ENABLE_ALUMINUM=ON \
-          -D Hydrogen_ENABLE_CUB=ON \
-          -D Hydrogen_ENABLE_CUDA=ON \
-          -D Hydrogen_ENABLE_HALF=ON \
-          \
-          -D LBANN_SB_BUILD_LBANN=ON \
-          -D LBANN_DATATYPE:STRING=float \
-          -D LBANN_SEQUENTIAL_INITIALIZATION:BOOL=OFF \
-          -D LBANN_WITH_ALUMINUM:BOOL=ON \
-          -D LBANN_WITH_CONDUIT:BOOL=ON \
-          -D LBANN_WITH_CUDA:BOOL=ON \
-          -D LBANN_WITH_CUDNN:BOOL=ON \
-          -D LBANN_WITH_NCCL:BOOL=ON \
-          -D LBANN_WITH_NVPROF:BOOL=ON \
-          -D LBANN_WITH_SOFTMAX_CUDA:BOOL=ON \
-          -D LBANN_WITH_TOPO_AWARE:BOOL=ON \
-          -D LBANN_WITH_TBINF=OFF \
-          -D LBANN_WITH_VTUNE:BOOL=OFF \
-          ${LBANN_HOME}/superbuild
-
-        ninja
-        ml use ${LBANN_INSTALL_DIR}/etc/modulefiles/
+        ml use <path to installation>/etc/modulefiles/
         ml load lbann-0.99.0
 
 
