@@ -15,7 +15,7 @@ ${CMD}
 CMD="cp ${SPACK_ENV_DIR}/${CENTER}/externals-${ARCH}.yaml ${LBANN_BUILD_DIR}/externals.yaml"
 echo ${CMD}
 ${CMD}
-CMD="cp ${SPACK_ENV_DIR}/compilers_and_build_env.yaml ${LBANN_BUILD_DIR}/"
+CMD="cp ${SPACK_ENV_DIR}/${CENTER}/compilers.yaml ${LBANN_BUILD_DIR}/"
 echo ${CMD}
 ${CMD}
 cd ${LBANN_BUILD_DIR}

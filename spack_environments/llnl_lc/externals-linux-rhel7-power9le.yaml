@@ -32,6 +32,12 @@
         cudnn@7.5.1 arch=linux-rhel7-power9le: /usr/workspace/wsb/brain/cudnn/cudnn-7.5.1/cuda-10.1_ppc64le/
         cudnn@7.4.2 arch=linux-rhel7-power9le: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-9.2_ppc64le/
 
+    gcc::
+       buildable: False
+       version: [7.3.1]
+       modules:
+         gcc@7.3.1 arch=linux-rhel7-power9le: gcc/7.3.1
+
     hwloc::
       buildable: False
       version: [2.0.2]

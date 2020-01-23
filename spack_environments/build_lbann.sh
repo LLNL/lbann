@@ -12,11 +12,16 @@ else
     SPACK_ENV_DIR=${LBANN_HOME}/spack_environments
 fi
 
+# Detect system parameters
+CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
+ARCH=$(spack arch) # $(uname -m)
+SYS=$(uname -s)
+
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
-INSTALL_DIR=${LBANN_HOME}/build/gnu.Release.test.bar
-DISABLE_GPUS=OFF
+ENABLE_GPUS=ON
 BUILD_ENV=TRUE
+BUILD_TYPE=Release
 
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     echo "script ${BASH_SOURCE[0]} is being sourced ... only setting environment variables."
@@ -36,11 +41,15 @@ Build LBANN on an LLNL LC system.
 Can be called anywhere in the LBANN project tree.
 Usage: ${SCRIPT} [options]
 Options:
-  ${C}--help${N}          Display this help message and exit.
+  ${C}--help${N}               Display this help message and exit.
+  ${C}--debug${N}              Build with debug flag.
+  ${C}--verbose${N}            Verbose output.
+  ${C}-p | --prefix${N}        Build and install LBANN headers and dynamic library into subdirectorys at this path prefix.
   ${C}-i | --install-dir${N}   Install LBANN headers and dynamic library into the install directory.
   ${C}-b | --build-dir${N}     Specify alternative build directory; default is <lbann_home>/build/spack.
-  ${C}--disable-gpus${N}  Disable GPUS
+  ${C}--disable-gpus${N}       Disable GPUS
   ${C}-r | --rebuild-env${N}   Rebuild the environment variables and load the modules
+  ${C}--instrument${N}         Use -finstrument-functions flag, for profiling stack traces
 EOF
 }
 
@@ -87,11 +96,42 @@ while :; do
                 exit 1
             fi
             ;;
+        -p|--prefix)
+            # Change default build directory
+            if [ -n "${2}" ]; then
+                if [[ ${2} = "." ]]; then
+                    BUILD_DIR=${SPACK_ENV_DIR}/${2}/build
+                    INSTALL_DIR=${SPACK_ENV_DIR}/${2}/install
+                elif [[ ${2} = /* ]]; then
+                    BUILD_DIR=${2}/build
+                    INSTALL_DIR=${2}/install
+                else
+                    BUILD_DIR=${SPACK_ENV_DIR}/${2}/build
+                    INSTALL_DIR=${SPACK_ENV_DIR}/${2}/install
+                fi
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
+                exit 1
+            fi
+            ;;
         --disable-gpus)
-            DISABLE_GPUS=ON
+            ENABLE_GPUS=OFF
             ;;
         -r|--rebuild-env)
             BUILD_ENV=FALSE
+            ;;
+        -v|--verbose)
+            # Verbose output
+            VERBOSE=1
+            ;;
+        -d|--debug)
+            # Debug mode
+            BUILD_TYPE=Debug
+            DETERMINISTIC=ON
+            ;;
+        --instrument)
+            INSTRUMENT="-finstrument-functions -ldl"
             ;;
         -?*)
             # Unknown option
@@ -105,10 +145,7 @@ while :; do
     shift
 done
 
-# echo $SCRIPT
-# echo $SPACK_ENV_DIR
-# echo $LBANN_HOME
-# echo $INSTALL_DIR
+INSTALL_DIR="${INSTALL_DIR:-${LBANN_HOME}/build/gnu.${BUILD_TYPE}.${CLUSTER}.llnl.gov}"
 
 export LBANN_HOME=${LBANN_HOME}
 export LBANN_BUILD_DIR=${BUILD_DIR}
@@ -132,14 +169,6 @@ CMD="mkdir -p ${INSTALL_DIR}"
 echo ${CMD}
 ${CMD}
 
-# Detect system parameters
-CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
-TOSS=$(uname -r | sed 's/\([0-9][0-9]*\.*\)\-.*/\1/g')
-#ARCH=$(uname -m)
-SYS=$(uname -s)
-CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
-
-ARCH=$(spack arch)
 CENTER=
 SPACK_ENV=
 SUPERBUILD=
@@ -154,7 +183,7 @@ else
     else
         SPACK_ENV=developer_release_cuda_spack.yaml
     fi
-    SUPERBUILD=superbuild_lbann_llnl_lc_cz.sh
+    SUPERBUILD=superbuild_lbann.sh
 fi
 
 source ${SPACK_ENV_DIR}/setup_lbann_dependencies.sh
@@ -162,6 +191,9 @@ source ${SPACK_ENV_DIR}/setup_lbann_dependencies.sh
 if [[ ${SYS} = "Darwin" ]]; then
     export DYLD_LIBRARY_PATH=/System/Library/Frameworks/ImageIO.framework/Resources/:/usr/lib/:${DYLD_LIBRARY_PATH}
 fi
+
+C_FLAGS="${INSTRUMENT} -fno-omit-frame-pointer"
+CXX_FLAGS="-DLBANN_SET_EL_RNG -mcpu=native ${INSTRUMENT} -fno-omit-frame-pointer"
 
 source ${SPACK_ENV_DIR}/${SUPERBUILD}
 

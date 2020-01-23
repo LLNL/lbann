@@ -10,6 +10,12 @@
       modules: {}
       compiler: []
 
+    clang::
+       buildable: False
+       version: [9.0.0]
+       paths:
+         clang@9.0.0 arch=darwin-mojave-skylake: /usr/local/Cellar/llvm/9.0.0_1/
+
     cmake::
       buildable: True
       variants: ~openssl ~ncurses

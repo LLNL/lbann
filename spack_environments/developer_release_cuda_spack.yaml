@@ -21,6 +21,7 @@ spack:
   - clara
   - conduit
   - cnpy
+  - gcc
   - opencv
   - cereal
   - half
@@ -48,4 +49,4 @@ spack:
   include:
     - std_versions_and_variants.yaml
     - externals.yaml
-    - compilers_and_build_env.yaml
+    - compilers.yaml

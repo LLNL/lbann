@@ -18,6 +18,7 @@ spack:
   # add package specs to the `specs` list
   specs:
   - catch2
+  - clang
   - clara
   - conduit
   - cnpy
@@ -44,4 +45,4 @@ spack:
   include:
     - std_versions_and_variants.yaml
     - externals.yaml
-    - compilers_and_build_env.yaml
+    - compilers.yaml

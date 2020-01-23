@@ -28,6 +28,12 @@
       buildable: true
       version: [7.6.3-10.1-broadwell]
 
+    gcc::
+       buildable: False
+       version: [7.3.0]
+       modules:
+         gcc@7.3.0 arch=linux-rhel7-broadwell: gcc/7.3.0
+
     hwloc::
       buildable: False
       version: [2.0.2]
