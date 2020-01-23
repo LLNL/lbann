@@ -4,21 +4,13 @@
 # configuration settings.
 
 spack:
-  # add package specs to the `specs` list
+  concretization: together
   specs:
-  - lbann@develop+docs+gpu+nccl
-  mirrors: {}
-  modules:
-    enable: []
-  repos: []
-  config: {}
-################################################################################
-# Include paths to standard compilers and packages on LLNL LC systems
-# Remove and/or replace these with your site specific packages and paths
-################################################################################
+  - lbann@develop+gpu+nccl
   include:
-  - ../../../std_versions_and_variants_llnl_lc_cz.yaml
-  - ../../../externals_x86_64_llnl_lc_cz.yaml
+  - ../../../std_versions_and_variants.yaml
+  - ../../../llnl_lc/externals-linux-rhel7-broadwell.yaml
+  - ../../../llnl_lc/compilers.yaml
   packages:
     aluminum:
       buildable: true
@@ -27,6 +19,7 @@ spack:
       paths: {}
       modules: {}
       compiler: []
+      target: []
     hydrogen:
       buildable: true
       version: [develop]
@@ -34,4 +27,5 @@ spack:
       paths: {}
       modules: {}
       compiler: []
-  upstreams: {}
+      target: []
+  view: true

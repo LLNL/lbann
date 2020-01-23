@@ -16,8 +16,9 @@ spack:
 # Remove and/or replace these with your site specific packages and paths
 ################################################################################
   include:
-  - ../../../std_versions_and_variants_llnl_lc_cz.yaml
-  - ../../../externals_ppc64le_llnl_lc_cz.yaml
+  - ../../../std_versions_and_variants.yaml
+  - ../../../llnl_lc/externals-linux-rhel7-power9le.yaml
+  - ../../../llnl_lc/compilers.yaml
   packages:
     aluminum:
       buildable: true
