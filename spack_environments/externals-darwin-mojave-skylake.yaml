@@ -10,6 +10,13 @@
       modules: {}
       compiler: []
 
+    cmake::
+      buildable: True
+      variants: ~openssl ~ncurses
+      version: [3.16.2]
+      paths:
+        cmake@3.16.2 arch=darwin-mojave-skylake:  /usr/local/
+
     hwloc::
       buildable: True
       version: [2.0.2]

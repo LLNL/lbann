@@ -148,6 +148,7 @@ if [[ ${SYS} = "Darwin" ]]; then
     SPACK_ENV=developer_release_osx_spack.yaml
     SUPERBUILD=superbuild_lbann_osx.sh
 else
+    CENTER="llnl_lc"
     if [[ "${DISABLE_GPUS}" == "ON" ]]; then
         SPACK_ENV=developer_release_spack.yaml
     else

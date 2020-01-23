@@ -25,8 +25,15 @@ echo "**************************************************************************
 CMD="spack install"
 echo ${CMD}
 ${CMD}
+RESULT=$?
+if [ $RESULT -ne 0 ]; then
+    echo "Spack installation failed"
+    exit -1
+fi
 CMD="spack env loads" # Spack creates a file named loads that has all of the correct modules
 echo ${CMD}
 ${CMD}
 source ${SPACK_ROOT}/share/spack/setup-env.sh # Rerun setup since spack doesn't modify MODULEPATH unless there are module files defined
-source loads
+CMD="source ${PWD}/loads"
+echo ${CMD}
+${CMD}

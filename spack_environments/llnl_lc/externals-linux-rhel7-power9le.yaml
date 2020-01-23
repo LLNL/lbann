@@ -10,6 +10,13 @@
       modules: {}
       compiler: []
 
+    cmake::
+      buildable: True
+      variants: ~openssl ~ncurses
+      version: [3.12.1]
+      paths:
+        cmake@3.12.1 arch=linux-rhel7-power9le:   /usr/tce/packages/cmake/cmake-3.12.1
+
     cuda::
       buildable: False
       version: [9.2.88, 10.1.105, 10.1.168]
@@ -46,4 +53,3 @@
       version: [rolling-release]
       paths:
         spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel7-power9le: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
-

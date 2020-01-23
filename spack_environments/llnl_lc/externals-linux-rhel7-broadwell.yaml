@@ -10,6 +10,13 @@
       modules: {}
       compiler: []
 
+    cmake::
+      buildable: True
+      variants: ~openssl ~ncurses
+      version: [3.12.1]
+      paths:
+        cmake@3.12.1 arch=linux-rhel7-broadwell:  /usr/tce/packages/cmake/cmake-3.12.1
+
     cuda::
       buildable: False
       version: [10.0.130, 10.1.168]
