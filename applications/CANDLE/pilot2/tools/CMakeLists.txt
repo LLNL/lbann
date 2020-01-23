@@ -20,11 +20,16 @@ add_executable(compute_ras_lipid_bbs_max_min
   EXCLUDE_FROM_ALL compute_ras_lipid_bbs_max_min.cpp)
   target_link_libraries(compute_ras_lipid_bbs_max_min lbann)
 
+add_executable(compute_xyz_scaled_values
+  EXCLUDE_FROM_ALL compute_xyz_scaled_values.cpp)
+  target_link_libraries(compute_xyz_scaled_values lbann)
+
 # Install the binaries
 install( TARGETS 
   test_ras_lipid_data_files_for_errors 
   compute_ras_lipid_sig1_normalization 
   compute_ras_lipid_bbs_statistics
+  compute_xyz_scaled_values
 
   OPTIONAL
   EXPORT LBANNTargets
