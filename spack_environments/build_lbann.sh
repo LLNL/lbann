@@ -14,7 +14,8 @@ fi
 
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
-ARCH=$(spack arch) # $(uname -m)
+ARCH=$(uname -m)
+SPACK_ARCH=$(spack arch)
 SYS=$(uname -s)
 
 SCRIPT=$(basename ${BASH_SOURCE})
@@ -199,6 +200,12 @@ fi
 
 C_FLAGS="${INSTRUMENT} -fno-omit-frame-pointer"
 CXX_FLAGS="-DLBANN_SET_EL_RNG -mcpu=native ${INSTRUMENT} -fno-omit-frame-pointer"
+
+if [[ ${ARCH} = "x86_64" ]]; then
+    CXX_FLAGS="-march=native ${CXX_FLAGS}"
+else
+    CXX_FLAGS="-mcpu=native ${CXX_FLAGS}"
+fi
 
 source ${SPACK_ENV_DIR}/${SUPERBUILD}
 
