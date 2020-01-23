@@ -1,5 +1,16 @@
 These notes are for use during development
 =========================================================================
+RAS BB bead min/max xyz coordinates:
+max x/y/z: 9.6067 7.46754 3.14485 
+min x/y/z: -3.53206 -5.68766 -7.9664
+
+=========================================================================
+(mail 1/21)
+Good question.  It's a good idea to scale these values, especially since we are mixing them into the input with lipid densities.  Can you look at doing the same three options here?
+
+a) raw values w/o scaling
+b) min-max
+c) mean/stddev (z-scale)
 
 (mail from 1/18/2020)
 Hi Dave,

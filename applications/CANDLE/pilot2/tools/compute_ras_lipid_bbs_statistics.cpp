@@ -33,10 +33,12 @@
 #include "lbann/utils/commify.hpp"
 #include <cnpy.h>
 #include <cmath>
+#include <cfloat>
 
 using namespace lbann;
 
-#if 0
+const int Num_beads = 184;
+
 struct xyz {
   xyz(float xx, float yy, float zz) : x(xx), y(yy), z(zz) { }
 
@@ -44,23 +46,22 @@ struct xyz {
   float y;
   float z;
 
-  float dist(const xyz &point) {
+  float dist(const xyz &p) {
     return sqrt( 
-             (pow( (x-xyz.x), 2) 
-             + pow( (x-xyz.x), 2) 
-             + pow( (x-xyz.x), 2))
+             (pow( (x-p.x), 2) 
+             + pow( (x-p.x), 2) 
+             + pow( (x-p.x), 2))
            );  
   }
 };
-#endif
 
 int main(int argc, char *argv[]) {
-#if 0
   int random_seed = 0;
   world_comm_ptr comm = initialize(argc, argv, random_seed);
   bool master = comm->am_world_master();
 
   try {
+#if 0
     options *opts = options::get();
     opts->init(argc, argv);
 
@@ -68,7 +69,7 @@ int main(int argc, char *argv[]) {
       LBANN_ERROR("usage: ", argv[0], " --filelist=<string>");
     }
 
-    const std::string input_fn = opts->get_string("filelist");
+    std::string input_fn = opts->get_string("filelist");
 
     int rank = comm->get_rank_in_world();
     int np = comm->get_procs_in_world();
@@ -77,57 +78,67 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> filenames;
     read_filelist(comm.get(), input_fn, filenames);
 
-    const std::map<std::string, cnpy::NpyArray> aa = cnpy::npz_load(filenames[ran]);
-    const std::vector<size_t> shape = aa["bbs"].shape;
-    const size_t              word_size = aa["bbs"].word_size;
-    const size_t              num_vals = aa["bbs"].num_vals;
-
-std::cout << "shape: ";
-for (auto t : shape) std::cout << t<< " ";
-std::cout << "\nword_size: " << word_size << "\nnum_vals: " <<num_vals
-          << std::endl;
-exit(0);
-
     size_t nn = 0; // only for user feedback
+    std::vector<xyz> data(Num_beads);  
     for (size_t j=rank; j<filenames.size(); j+=np) {
-      if (master) {
-        std::cerr << "master is loading: " << filenames[j] << std::endl;
-      }
 
-      size_t jj = filenames[j].rfind(".");
-      if (jj == std::string::npos) {
-        LBANN_ERROR("failed find '.' in filename: ", filenames[j]);
-      }
-      const std::string fn = filenames[j].substr(0, j) + ".bbs_stat";
-      std::ofstream out(fn);
-      if (!out) {
-        LBANN_ERROR("failed to open ", fn, " for writing");
-      }
-
-std::cout << "will open: " << fn << " for writing" << std::endl;
-exit(0);
-
+      // Get num samples, and run sanity checks
       std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filenames[j]);
-      ++nn;
-
-
-      out.close();
-      const float *data = a[name].data();
-      size_t num_bytes = a[name].num_bytes();
-
-/*
-      size_t n_elts = a["density_sig1"].num_vals;
-      double *data = reinterpret_cast<double*>(a["density_sig1"].data_holder->data());
-*/
-
-      if (master) {
-        std::cerr << "approx " << utils::commify(nn*np) << " files of " 
-                  << filenames.size() << " processed\n";
+      const std::vector<size_t> shape = a["bbs"].shape;
+      const size_t num_samples = shape[0];
+      bool is_good = true;
+      if (shape[1] != 184) {
+        LBANN_WARNING("shape[1] != 184; shape[1]= ", shape[1], " for file: ", filenames[j], "; shape[1]: ", shape[1], " shape[2]: ", shape[2]);
+        is_good = false;
       }
-    }
-    // ==================== finished processing all files ========================
+      if (shape[2] != 3) {
+        LBANN_WARNING("shape[2] != 3; shape[1]= ", shape[1], " for file: ", filenames[j], "; shape[1]: ", shape[1], " shape[2]: ", shape[2]);
+        is_good = false;
+      }
+      const size_t word_size = a["bbs"].word_size;
+      if (word_size != 4) {
+        LBANN_WARNING("word_size != 4; word_size: ", word_size, " for file: ", filenames[j]);
+        is_good = false;
+      }
 
+      // Open output file
+      std::string fn = filename[j] + ".bbs_stats";
+      if (!is_good) {
+        fn += ".bad";
+      }
+      std::ofstream out(fn.c_str());
+      if (!out) {
+        LBANN_ERROR("failed to open ", fn, "for writing");
+      }
 
+      if (is_good) {
+  
+        // Get the bbs data array
+        const float *data = a["bbs"].data<float>();
+
+        // Loop over the samples (frames) in this file
+        for (size_t k=0; k<num_samples; k++) {
+  
+          // Cache all RAS BB beads coordinates for the current sample
+          for (size_t k=0; k<num_samples; k++) {
+            data.push_back(xyz(data[0], data[1], data[2]);
+            data += 3;
+          }  
+        }  
+  
+        ++nn;
+        if (!rank) {
+          std::cout << "approx " << (nn*np) << " files of " 
+          << filenames.size() << " processed\n";
+        }
+      }
+
+      // Close output file
+      out.close();
+
+    } // END: for (size_t j=rank; j<filenames.size(); j+=np) 
+
+#endif
   } catch (std::exception const &e) {
     if (master) std::cerr << "caught exception: " << e.what() << "\n";
     return EXIT_FAILURE;
@@ -136,6 +147,5 @@ exit(0);
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
-#endif
 }
 
