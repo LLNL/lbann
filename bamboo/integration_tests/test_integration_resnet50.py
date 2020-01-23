@@ -182,5 +182,6 @@ def augment_test_func(test_func):
 # Create test functions that can interact with PyTest
 for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
-                                     nodes=num_nodes):
+                                     nodes=num_nodes,
+                                     lbann_args=['--load_full_sample_list_once']):
     globals()[_test_func.__name__] = augment_test_func(_test_func)
