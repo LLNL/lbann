@@ -45,75 +45,84 @@ class TransformerEncoderLayer(lbann.modules.Module):
     ):
         TransformerEncoderLayer.global_count += 1
         self.instance = 0
-        self.name = (name
-                     if name
-                     else f'transformerencoderlayer{TransformerEncoderLayer.global_count}')
+        self.embed_dim = embed_dim
+        self.feedforward_dim = feedforward_dim
         self.dropout_prob = dropout
+
+        # Module name
+        self.name = name
+        if not self.name:
+            self.name = f'transformerencoderlayer{TransformerEncoderLayer.global_count}'
 
         # Layer modules
         self.attention = lbann.modules.transformer.MultiheadAttention(
-            embed_dim,
+            self.embed_dim,
             num_heads,
             name=f'{self.name}_attention'
         )
-        self.fc1 = lbann.modules.FullyConnectedModule(
-            feedforward_dim,
-            activation=lbann.Relu,
-            name=f'{self.name}_fc1',
-        )
-        self.fc2 = lbann.modules.FullyConnectedModule(
-            embed_dim,
-            name=f'{self.name}_fc2',
-        )
+
+        # Weights for fully-connected layers
+        self.fc1_weights = [
+            lbann.Weights(initializer=lbann.HeNormalInitializer(),
+                          name=f'{self.name}_fc1_matrix'),
+            lbann.Weights(initializer=lbann.ConstantInitializer(value=0),
+                          name=f'{self.name}_fc1_bias'),
+        ]
+        self.fc2_weights = [
+            lbann.Weights(initializer=lbann.GlorotNormalInitializer(),
+                          name=f'{self.name}_fc2_matrix'),
+            lbann.Weights(initializer=lbann.ConstantInitializer(value=0),
+                          name=f'{self.name}_fc2_bias'),
+        ]
 
     def forward(self, x, mask=None):
         """Apply transformer encoder layer.
 
         Args:
-            x (Iterable of lbann.Layer): Sequence of input vectors.
+            x (lbann.Layer): Sequence of input vectors.
             mask (lbann.Layer, optional): Attention mask.
 
         Returns:
-            list of lbann.Layer: Sequence of output vectors.
+            lbann.Layer: Sequence of output vectors.
 
         """
         self.instance += 1
-        sequence_length = len(x)
+        name = f'{self.name}_instance{self.instance}'
 
         # Self-attention with residual connection
         y = self.attention(x, x, x, mask=mask)
-        z = []
-        for i in range(sequence_length):
-            name = f'{self.name}_instance{self.instance}_pos{i}'
-            xi = x[i]
-            yi = y[i]
-            if self.dropout_prob > 0:
-                yi = lbann.Dropout(
-                    yi,
-                    keep_prob=1-self.dropout_prob,
-                    name=f'{name}_drop1',
-                )
-            zi = lbann.Sum(xi, yi, name=f'{name}_sum1')
-            zi = lbann.LayerNorm(zi, name=f'{name}_norm1')
-            z.append(zi)
+        if self.dropout_prob > 0:
+            y = lbann.Dropout(
+                y,
+                keep_prob=1-self.dropout_prob,
+                name=f'{name}_drop1',
+            )
+        z = lbann.Sum(x, y, name=f'{name}_sum1')
+        z = lbann.InstanceNorm(z, name=f'{name}_norm1')
         x = z
 
         # Feedforward network with residual connection
-        z = []
-        for i in range(sequence_length):
-            name = f'{self.name}_instance{self.instance}_pos{i}'
-            xi = x[i]
-            yi = self.fc2(self.fc1(xi))
-            if self.dropout_prob > 0:
-                yi = lbann.Dropout(
-                    yi,
-                    keep_prob=1-self.dropout_prob,
-                    name=f'{name}_drop2',
-                )
-            zi = lbann.Sum(xi, yi, name=f'{name}_sum2')
-            zi = lbann.LayerNorm(zi, name=f'{name}_norm2')
-            z.append(zi)
-
+        y = lbann.ChannelwiseFullyConnected(
+            x,
+            weights=self.fc1_weights,
+            output_channel_dims=[self.feedforward_dim],
+            name=f'{name}_fc1',
+        )
+        y = lbann.Relu(y, name=f'{name}_relu1')
+        y = lbann.ChannelwiseFullyConnected(
+            y,
+            weights=self.fc2_weights,
+            output_channel_dims=[self.embed_dim],
+            name=f'{name}_fc2',
+        )
+        if self.dropout_prob > 0:
+            y = lbann.Dropout(
+                y,
+                keep_prob=1-self.dropout_prob,
+                name=f'{name}_drop2',
+            )
+        z = lbann.Sum(x, y, name=f'{name}_sum2')
+        z = lbann.InstanceNorm(z, name=f'{name}_norm2')
         return z
 
 class TransformerDecoderLayer(lbann.modules.Module):
@@ -147,10 +156,14 @@ class TransformerDecoderLayer(lbann.modules.Module):
     ):
         TransformerDecoderLayer.global_count += 1
         self.instance = 0
-        self.name = (name
-                     if name
-                     else f'transformerdecoderlayer{TransformerEncoderLayer.global_count}')
+        self.embed_dim = embed_dim
+        self.feedforward_dim = feedforward_dim
         self.dropout_prob = dropout
+
+        # Module name
+        self.name = name
+        if not self.name:
+            self.name = f'transformerdecoderlayer{TransformerDecoderLayer.global_count}'
 
         # Layer modules
         self.attention1 = lbann.modules.transformer.MultiheadAttention(
@@ -163,23 +176,28 @@ class TransformerDecoderLayer(lbann.modules.Module):
             num_heads,
             name=f'{self.name}_attention2'
         )
-        self.fc1 = lbann.modules.FullyConnectedModule(
-            feedforward_dim,
-            activation=lbann.Relu,
-            name=f'{self.name}_fc1',
-        )
-        self.fc2 = lbann.modules.FullyConnectedModule(
-            embed_dim,
-            name=f'{self.name}_fc2',
-        )
+
+        # Weights for fully-connected layers
+        self.fc1_weights = [
+            lbann.Weights(initializer=lbann.HeNormalInitializer(),
+                          name=f'{self.name}_fc1_matrix'),
+            lbann.Weights(initializer=lbann.ConstantInitializer(value=0),
+                          name=f'{self.name}_fc1_bias'),
+        ]
+        self.fc2_weights = [
+            lbann.Weights(initializer=lbann.GlorotNormalInitializer(),
+                          name=f'{self.name}_fc2_matrix'),
+            lbann.Weights(initializer=lbann.ConstantInitializer(value=0),
+                          name=f'{self.name}_fc2_bias'),
+        ]
 
     def forward(self, x, memory, src_mask=None, tgt_mask=None):
         """Apply transformer decoder layer.
 
         Args:
-            x (Iterable of lbann.Layer): Sequence of input vectors.
-            memory (Iterable of lbann.Layer): Sequence of vectors
-                produced by transformer encoder stack.
+            x (lbann.Layer): Sequence of input vectors.
+            memory (lbann.Layer): Sequence of vectors produced by
+                transformer encoder stack.
             src_mask (lbann.Layer, optional): Attention mask for
                 second attention module (attends to both `x` and
                 `memory`).
@@ -187,64 +205,58 @@ class TransformerDecoderLayer(lbann.modules.Module):
                 attention module (attends only to `x`).
 
         Returns:
-            list of lbann.Layer: Sequence of output vectors.
+            lbann.Layer: Sequence of output vectors.
 
         """
         self.instance += 1
-        sequence_length = len(x)
+        name = f'{self.name}_instance{self.instance}'
 
         # Self-attention with residual connection
         y = self.attention1(x, x, x, mask=tgt_mask)
-        z = []
-        for i in range(sequence_length):
-            name = f'{self.name}_instance{self.instance}_pos{i}'
-            xi = x[i]
-            yi = y[i]
-            if self.dropout_prob > 0:
-                yi = lbann.Dropout(
-                    yi,
-                    keep_prob=1-self.dropout_prob,
-                    name=f'{name}_drop1',
-                )
-            zi = lbann.Sum(xi, yi, name=f'{name}_sum1')
-            zi = lbann.LayerNorm(zi, name=f'{name}_norm1')
-            z.append(zi)
+        if self.dropout_prob > 0:
+            y = lbann.Dropout(
+                y,
+                keep_prob=1-self.dropout_prob,
+                name=f'{name}_drop1',
+            )
+        z = lbann.Sum(x, y, name=f'{name}_sum1')
+        z = lbann.InstanceNorm(z, name=f'{name}_norm1')
         x = z
 
         # Attention on encoder output with residual connection
         y = self.attention2(x, memory, memory, mask=src_mask)
-        z = []
-        for i in range(sequence_length):
-            name = f'{self.name}_instance{self.instance}_pos{i}'
-            xi = x[i]
-            yi = y[i]
-            if self.dropout_prob > 0:
-                yi = lbann.Dropout(
-                    yi,
-                    keep_prob=1-self.dropout_prob,
-                    name=f'{name}_drop2',
-                )
-            zi = lbann.Sum(xi, yi, name=f'{name}_sum2')
-            zi = lbann.LayerNorm(zi, name=f'{name}_norm2')
-            z.append(zi)
+        if self.dropout_prob > 0:
+            y = lbann.Dropout(
+                y,
+                keep_prob=1-self.dropout_prob,
+                name=f'{name}_drop2',
+            )
+        z = lbann.Sum(x, y, name=f'{name}_sum2')
+        z = lbann.InstanceNorm(z, name=f'{name}_norm2')
         x = z
 
         # Feedforward network with residual connection
-        z = []
-        for i in range(sequence_length):
-            name = f'{self.name}_instance{self.instance}_pos{i}'
-            xi = x[i]
-            yi = self.fc2(self.fc1(xi))
-            if self.dropout_prob > 0:
-                yi = lbann.Dropout(
-                    yi,
-                    keep_prob=1-self.dropout_prob,
-                    name=f'{name}_drop3',
-                )
-            zi = lbann.Sum(xi, yi, name=f'{name}_sum3')
-            zi = lbann.LayerNorm(zi, name=f'{name}_norm3')
-            z.append(zi)
-
+        y = lbann.ChannelwiseFullyConnected(
+            x,
+            weights=self.fc1_weights,
+            output_channel_dims=[self.feedforward_dim],
+            name=f'{name}_fc1',
+        )
+        y = lbann.Relu(y, name=f'{name}_relu1')
+        y = lbann.ChannelwiseFullyConnected(
+            y,
+            weights=self.fc2_weights,
+            output_channel_dims=[self.embed_dim],
+            name=f'{name}_fc2',
+        )
+        if self.dropout_prob > 0:
+            y = lbann.Dropout(
+                y,
+                keep_prob=1-self.dropout_prob,
+                name=f'{name}_drop3',
+            )
+        z = lbann.Sum(x, y, name=f'{name}_sum3')
+        z = lbann.InstanceNorm(z, name=f'{name}_norm3')
         return z
 
 class Transformer(lbann.modules.Module):
@@ -285,10 +297,12 @@ class Transformer(lbann.modules.Module):
     ):
         Transformer.global_count += 1
         self.instance = 0
-        self.name = (name
-                     if name
-                     else f'transformer{Transformer.global_count}')
         self.hidden_size = hidden_size
+
+        # Module name
+        self.name = name
+        if not self.name:
+            self.name = f'transformer{Transformer.global_count}'
 
         # Caches for helper functions
         self._subsequent_mask_cache = {}
@@ -316,8 +330,8 @@ class Transformer(lbann.modules.Module):
             for i in range(num_decoder_layers)
         ]
 
-    def _positional_encoding(self, pos):
-        """Positional encoding corresponding to a sequence position.
+    def _positional_encoding(self, sequence_length):
+        """Positional encodings corresponding to a sequence length.
 
         PE(pos,2*i)   = sin( pos / 10000**(2*i/hidden_size) )
 
@@ -328,25 +342,28 @@ class Transformer(lbann.modules.Module):
         """
 
         # Construct positional encoding if not in cache
-        if pos not in self._positional_encoding_cache:
+        if sequence_length not in self._positional_encoding_cache:
             vals = []
-            for i in range((self.hidden_size+1) // 2):
-                x = pos / 10000**(2*i/self.hidden_size)
-                vals.append(math.sin(x))
-                vals.append(math.cos(x))
+            for pos in range(sequence_length):
+                for i in range((self.hidden_size+1) // 2):
+                    x = pos / 10000**(2*i/self.hidden_size)
+                    vals.append(math.sin(x))
+                    vals.append(math.cos(x))
+                if self.hidden_size % 2 != 0:
+                    vals.pop()
             weights = lbann.Weights(
-                initializer=lbann.ValueInitializer(values=str_list(vals[:self.hidden_size])),
+                initializer=lbann.ValueInitializer(values=str_list(vals)),
                 optimizer=None,
-                name=f'{self.name}_positional{pos}_weights',
+                name=f'{self.name}_positional{sequence_length}_weights',
             )
-            self._positional_encoding_cache[pos] = lbann.WeightsLayer(
-                dims=str(self.hidden_size),
+            self._positional_encoding_cache[sequence_length] = lbann.WeightsLayer(
+                dims=str_list([sequence_length, self.hidden_size]),
                 weights=weights,
-                name=f'{self.name}_positional{pos}',
+                name=f'{self.name}_positional{sequence_length}',
             )
 
         # Return cached positional encoding
-        return self._positional_encoding_cache[pos]
+        return self._positional_encoding_cache[sequence_length]
 
     def _subsequent_mask(self, size):
         """Attention mask to prevent attending to subsequent positions.
@@ -373,50 +390,50 @@ class Transformer(lbann.modules.Module):
         # Return cached mask
         return self._subsequent_mask_cache[size]
 
-    def forward(self, source, target):
+    def forward(self, source, source_length, target, target_length):
         """Apply transformer.
 
+        The input and output tensors are interpreted as sequences of
+        vectors, where the first tensor dimension is the sequence
+        dimension.
+
         Args:
-            source (Iterable of lbann.Layer): Sequence of input
-                vectors to encoder stack.
-            target (Iterable of lbann.Layer): Sequence of input
-                vectors to decoder stack.
+            source (lbann.Layer): Sequence of input vectors to encoder
+                stack.
+            source_length (int): Length of input sequence to encoder.
+            target (lbann.Layer): Sequence of input vectors to decoder
+                stack.
+            target_length (int): Length of input sequence to decoder.
 
         Returns:
-            list of lbann.Layer: Sequence of output vectors.
+            lbann.Layer: Sequence of output vectors.
 
         """
         self.instance += 1
 
-        # Add positional encoding
-        source = source.copy()
-        target = target.copy()
-        for pos in range(len(source)):
-            source[pos] = lbann.Add(
-                source[pos],
-                self._positional_encoding(pos),
-                name=f'{self.name}_instance{self.instance}_positional_source{pos}',
-            )
-        for pos in range(len(target)):
-            target[pos] = lbann.Add(
-                target[pos],
-                self._positional_encoding(pos),
-                name=f'{self.name}_instance{self.instance}_positional_target{pos}',
-            )
-
         # Encoder stack
-        x = source
+        # Note: Add positional encoding to input
+        x = lbann.Add(
+            source,
+            self._positional_encoding(source_length),
+            name=f'{self.name}_instance{self.instance}_positional_source',
+        )
         for encoder_layer in self.encoder:
             x = encoder_layer(x)
         memory = x
 
         # Decoder stack
-        x = target
+        # Note: Add positional encoding to input
+        x = lbann.Add(
+            target,
+            self._positional_encoding(target_length),
+            name=f'{self.name}_instance{self.instance}_positional_target',
+        )
         for decoder_layer in self.decoder:
             x = decoder_layer(
                 x,
                 memory,
-                tgt_mask=self._subsequent_mask(len(target)),
+                tgt_mask=self._subsequent_mask(target_length),
             )
 
         return x
