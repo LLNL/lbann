@@ -25,7 +25,6 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-//#include <vector>
 #include "lbann/comm.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/exception.hpp"
@@ -62,6 +61,8 @@ int main(int argc, char *argv[]) {
     size_t nn = 0; // only for user feedback
     std::vector<float> max(3, FLT_MIN);
     std::vector<float> min(3, FLT_MAX);
+    std::vector<double> total(3, 0.); //for computing mean
+    size_t n_samples = 0;            //for compputing mean
     for (size_t j=rank; j<filenames.size(); j+=np) {
 
       // Get num samples, and sanity check
@@ -89,7 +90,8 @@ int main(int argc, char *argv[]) {
         const float *data = a["bbs"].data<float>();
   
         // Loop over the bbs entries
-        for (size_t k=0; k<num_samples; k++) {
+        for (size_t k=0; k<num_samples*184; k++) {
+          ++n_samples;
           float xx = data[0];
           float yy = data[1];
           float zz = data[2];
@@ -99,13 +101,16 @@ int main(int argc, char *argv[]) {
           if (yy > max[1]) max[1] = yy;
           if (zz < min[2]) min[2] = zz;
           if (zz > max[2]) max[2] = zz;
+          total[0] += xx;
+          total[1] += yy;
+          total[2] += zz;
           data += 3;
         }  
   
         ++nn;
         if (!rank) {
-          std::cout << "approx " << (nn*np) << " files of " 
-          << filenames.size() << " processed\n";
+          std::cout << "approx " << utils::commify(nn*np) << " files of " 
+          << utils::commify(filenames.size()) << " processed\n";
         }
       }
     } // END: for (size_t j=rank; j<filenames.size(); j+=np) 
@@ -116,14 +121,65 @@ int main(int argc, char *argv[]) {
     // methods, and I can never remember which to use
     std::vector<float> max_all(3);
     std::vector<float> min_all(3);
+    std::vector<double> mean(3);
+    size_t n_samples_all; 
+
+    // only master needs to know min and max
     MPI_Reduce(max.data(), max_all.data(), 3, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
     MPI_Reduce(min.data(), min_all.data(), 3, MPI_FLOAT, MPI_MIN, 0, MPI_COMM_WORLD);
+    // all ranks need to know totals and num_samples, in order to compute
+    // std deviation
+    MPI_Allreduce(total.data(), mean.data(), 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&n_samples, &n_samples_all, 3, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+
+    for (size_t i=0; i<3; i++) {
+      mean[i] /= n_samples_all;
+    }
+
+    // compute standard deviation
+    std::vector<double> v_minus_mean_squared(3, 0);
+    for (size_t j=rank; j<filenames.size(); j+=np) {
+      std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filenames[j]);
+      const std::vector<size_t> shape = a["bbs"].shape;
+      const size_t word_size = a["bbs"].word_size;
+      const size_t num_samples = shape[0];
+      bool is_good = true;
+      if (shape[1] != 184) { is_good = false; }
+      if (shape[2] != 3) { is_good = false; }
+      if (word_size != 4) { is_good = false; }
+      if (is_good) {
+        const float *data = a["bbs"].data<float>();
+        for (size_t k=0; k<num_samples*184; k++) {
+          float xx = data[0];
+          float yy = data[1];
+          float zz = data[2];
+          v_minus_mean_squared[0] += ((xx - mean[0])*(xx - mean[0]));
+          v_minus_mean_squared[1] += ((yy - mean[1])*(yy - mean[1]));
+          v_minus_mean_squared[2] += ((zz - mean[2])*(zz - mean[2]));
+          data += 3;
+        }  
+      }
+    }  
+    std::vector<double> all_minus_mean_squared(3, 0.);
+    std::vector<double> std_dev(3, 0.);
+    MPI_Reduce(v_minus_mean_squared.data(), all_minus_mean_squared.data(), 3, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     if (!rank) {
+      for (size_t i=0; i<3; i++) {
+        double v3 = all_minus_mean_squared[i] / n_samples_all;
+        std_dev[i] = sqrt(v3);
+      }
+      
       std::cout << "\nmax x/y/z: ";
       for (auto t : max_all) std::cout << t << " ";
       std::cout << std::endl;
       std::cout << "min x/y/z: ";
       for (auto t : min_all) std::cout << t << " ";
+      std::cout << std::endl;
+      std::cout << "mean x/y/z: ";
+      for (auto t : mean) std::cout << t << " ";
+      std::cout << std::endl;
+      std::cout << "std dev: ";
+      for (auto t : std_dev) std::cout << t << " ";
       std::cout << std::endl;
     }
 
