@@ -1,5 +1,30 @@
 #!/bin/sh
 
+SPACK_VERSION=$(spack --version)
+MIN_SPACK_VERSION=0.13.3
+
+compare_versions()
+{
+    local v1=( $(echo "$1" | tr '.' ' ') )
+    local v2=( $(echo "$2" | tr '.' ' ') )
+    local len=$(( ${#v1[*]} > ${#v2[*]} ? ${#v1[*]} : ${#v2[*]} ))
+    #local len=3
+    for ((i=0; i<len; i++))
+    do
+        [ "${v1[i]:-0}" -gt "${v2[i]:-0}" ] && return 1
+        [ "${v1[i]:-0}" -lt "${v2[i]:-0}" ] && return 2
+    done
+    return 0
+}
+
+compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
+VALID_SPACK=$?
+
+if [[ ${VALID_SPACK} -eq 2 ]]; then
+    echo "Newer version of Spack required.  Detected version ${SPACK_VERSION} requires at least ${MIN_SPACK_VERSION}"
+    exit 1
+fi
+
 SPACK_ENV_DIR=$(dirname ${BASH_SOURCE})
 
 if [[ ${SPACK_ENV_DIR} = "." ]]; then
