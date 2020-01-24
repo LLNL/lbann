@@ -129,8 +129,6 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 {
   data_type_layer<TensorDataType>::setup_data();
 
-  using WeightsType = data_type_weights<TensorDataType>;
-
   // Tensor dimensions
   const auto& input_dims = this->get_input_dims();
   const auto& output_dims = this->get_output_dims();
@@ -204,7 +202,6 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   const auto& one = El::TypeTraits<TensorDataType>::One();
 
   // Data tensors
-  using AbsLocalMat = El::AbstractMatrix<TensorDataType>;
   using LocalMat = El::Matrix<TensorDataType,Device>;
   const auto& linearity = this->get_data_type_weights(0).get_values();
   const auto& bias = this->get_data_type_weights(1).get_values();
@@ -257,7 +254,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   El::Gemm(
     El::NORMAL, El::NORMAL,
     one, local_linearity, local_input_reshaped,
-    zero, reinterpret_cast<AbsLocalMat&>(local_output_reshaped));
+    zero, reinterpret_cast<AbsMatrixType&>(local_output_reshaped));
 
   // Apply bias
   LocalMat ones(local_mini_batch_size * num_channels, 1);
@@ -265,7 +262,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   El::Gemm(
     El::NORMAL, El::TRANSPOSE,
     one, local_bias, ones,
-    one, reinterpret_cast<AbsLocalMat&>(local_output_reshaped));
+    one, reinterpret_cast<AbsMatrixType&>(local_output_reshaped));
 
 }
 
@@ -282,7 +279,6 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   auto& bias_weights = this->get_data_type_weights(1);
 
   // Data tensors
-  using AbsLocalMat = El::AbstractMatrix<TensorDataType>;
   using LocalMat = El::Matrix<TensorDataType,Device>;
   const auto& linearity = linearity_weights.get_values();
   const auto& local_input = dynamic_cast<const LocalMat&>(this->get_local_prev_activations());
@@ -347,7 +343,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   El::Gemm(
     El::TRANSPOSE, El::NORMAL,
     one, local_linearity, local_output_grad_reshaped,
-    zero, reinterpret_cast<AbsLocalMat&>(local_input_grad_reshaped));
+    zero, reinterpret_cast<AbsMatrixType&>(local_input_grad_reshaped));
 
   // Compute gradient w.r.t. linearity
   auto* linearity_optimizer = linearity_weights.get_optimizer();
