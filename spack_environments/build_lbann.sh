@@ -40,8 +40,24 @@ fi
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 ARCH=$(uname -m)
-SPACK_ARCH=$(spack arch)
 SYS=$(uname -s)
+
+# Identify the center that we are running at
+CENTER=
+if [[ ${SYS} = "Darwin" ]]; then
+    CENTER="osx"
+else
+    CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
+    if [[ ${CORI} -eq 1 ]]; then
+	CENTER="nersc"
+	# Make sure to purge and setup the modules properly prior to finding the Spack architecture
+	source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
+    else
+	CENTER="llnl_lc"
+    fi
+fi
+
+SPACK_ARCH=$(spack arch)
 
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
@@ -196,21 +212,13 @@ CMD="mkdir -p ${INSTALL_DIR}"
 echo ${CMD}
 ${CMD}
 
-CENTER=
 SPACK_ENV=
 SUPERBUILD=
 if [[ ${SYS} = "Darwin" ]]; then
-    CENTER="osx"
     OSX_VER=$(sw_vers -productVersion)
     SPACK_ENV=developer_release_osx_spack.yaml
     SUPERBUILD=superbuild_lbann_osx.sh
 else
-    CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
-    if [[ ${CORI} -eq 1 ]]; then
-	CENTER="nersc"
-    else
-	CENTER="llnl_lc"
-    fi
     if [[ "${DISABLE_GPUS}" == "ON" ]]; then
         SPACK_ENV=developer_release_spack.yaml
     else
