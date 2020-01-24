@@ -22,7 +22,7 @@ cmake \
   -D Hydrogen_ENABLE_CUDA=OFF \
   -D Hydrogen_ENABLE_HALF=ON \
   -D LBANN_SB_FWD_HYDROGEN_OpenMP_CXX_LIB_NAMES=omp \
-  -D LBANN_SB_FWD_HYDROGEN_OpenMP_CXX_FLAGS=\"-fopenmp=libomp\" \
+  -D LBANN_SB_FWD_HYDROGEN_OpenMP_CXX_FLAGS="-fopenmp=libomp" \
   -D LBANN_SB_FWD_HYDROGEN_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib \
   \
   -D LBANN_SB_BUILD_LBANN=ON \
@@ -41,7 +41,7 @@ cmake \
   -D LBANN_DETERMINISTIC=${DETERMINISTIC} \
   -D LBANN_SB_FWD_LBANN_HWLOC_DIR=/usr/local/opt/hwloc \
   -D LBANN_SB_FWD_LBANN_OpenMP_CXX_LIB_NAMES=omp \
-  -D LBANN_SB_FWD_LBANN_OpenMP_CXX_FLAGS=\"-fopenmp=libomp\" \
+  -D LBANN_SB_FWD_LBANN_OpenMP_CXX_FLAGS="-fopenmp=libomp" \
   -D LBANN_SB_FWD_LBANN_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib \
   \
   -D CMAKE_CXX_COMPILER=$(which clang++) \
@@ -50,8 +50,10 @@ cmake \
 EOF
 )
 
+#echo ${CONFIGURE_COMMAND}
+
 if [[ ${VERBOSE} -ne 0 ]]; then
-    echo "${CONFIGURE_COMMAND}" |& tee cmake_superbuild_invocation.txt
+    echo "${CONFIGURE_COMMAND}" 2>&1 | tee cmake_superbuild_invocation.txt
 else
     echo "${CONFIGURE_COMMAND}" > cmake_superbuild_invocation.txt
 fi

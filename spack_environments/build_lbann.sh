@@ -23,6 +23,7 @@ BUILD_DIR=${LBANN_HOME}/build/spack
 ENABLE_GPUS=ON
 BUILD_ENV=TRUE
 BUILD_TYPE=Release
+VERBOSE=0
 
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     echo "script ${BASH_SOURCE[0]} is being sourced ... only setting environment variables."
@@ -174,6 +175,7 @@ CENTER=
 SPACK_ENV=
 SUPERBUILD=
 if [[ ${SYS} = "Darwin" ]]; then
+    CENTER="osx"
     OSX_VER=$(sw_vers -productVersion)
     SPACK_ENV=developer_release_osx_spack.yaml
     SUPERBUILD=superbuild_lbann_osx.sh
