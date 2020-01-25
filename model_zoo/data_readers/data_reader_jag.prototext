@@ -14,8 +14,7 @@ data_reader {
     name: "jag_conduit"
     role: "train"
     shuffle: true
-    data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/100K4trainers/"
-    sample_list: "100Kindex.txt"
+    sample_list: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/100K4trainers/100Kindex.txt"
     sample_list_per_trainer: false
     sample_list_per_model: false
 
@@ -34,8 +33,7 @@ data_reader {
     role: "test"
     shuffle: false
     # change to a lustre path
-    data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/100K16trainers/"
-    sample_list: "t1_sample_list.txt"
+    sample_list: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/100K16trainers/t1_sample_list.txt"
     sample_list_per_trainer: false
     sample_list_per_model: false
 

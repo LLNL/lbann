@@ -694,13 +694,13 @@ void customize_data_readers_sample_list(const lbann_comm& comm, lbann_data::Lban
       dir = ".";
     }
 
+    s << dir << '/';
     if(r->sample_list_per_model()) {
       s << pb_model.name() << "_";
     }
     if(r->sample_list_per_trainer()) {
       s << "t" << comm.get_trainer_rank() << "_";
     }
-    s << dir << '/';
     s << basename;
     s << "." << ext;
     r->set_sample_list(s.str());
