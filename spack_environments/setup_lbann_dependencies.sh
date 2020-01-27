@@ -6,16 +6,76 @@
 # SPACK_ENV_DIR
 # CENTER
 
-CMD="spack env create -d ${LBANN_BUILD_DIR} ${SPACK_ENV_DIR}/${SPACK_ENV}"
-echo ${CMD}
-${CMD}
-CMD="cp ${SPACK_ENV_DIR}/std_versions_and_variants.yaml ${LBANN_BUILD_DIR}/"
-echo ${CMD}
-${CMD}
-CMD="cp ${SPACK_ENV_DIR}/${CENTER}/externals-${SPACK_ARCH}.yaml ${LBANN_BUILD_DIR}/externals.yaml"
-echo ${CMD}
-${CMD}
-CMD="cp ${SPACK_ENV_DIR}/${CENTER}/compilers.yaml ${LBANN_BUILD_DIR}/"
+temp_file=$(mktemp)
+
+# Defines STD_PACKAGES and STD_MODULES
+source ${SPACK_ENV_DIR}/std_versions_and_variants.sh
+# Defines EXTERNAL_ALL_PACKAGES and EXTERNAL_PACKAGES
+source ${SPACK_ENV_DIR}/${CENTER}/externals-${SPACK_ARCH}.sh
+# Defines COMPILER_ALL_PACKAGES and COMPILER_DEFINITIONS
+source ${SPACK_ENV_DIR}/${CENTER}/compilers.sh
+
+if [[ ${SYS} != "Darwin" ]]; then
+COMPILER_PACKAGE=$(cat <<EOF
+  - gcc
+EOF
+)
+fi
+
+if [[ "${DISABLE_GPUS}" == "OFF" ]]; then
+GPU_PACKAGES=$(cat <<EOF
+  - cudnn
+  - cub
+  - nccl
+EOF
+)
+fi
+
+SPACK_ENV=$(cat <<EOF
+spack:
+  concretization: together
+  specs:
+  - catch2
+  - cereal
+  - clara
+  - cmake
+  - cnpy
+  - conduit
+  - half
+  - hwloc
+${COMPILER_PACKAGE}
+  - opencv
+  - ninja
+  - zlib
+${GPU_PACKAGES}
+  - py-numpy
+  - py-protobuf
+  - py-pytest
+  - py-setuptools
+  mirrors: {}
+  modules:
+    enable: []
+  repos: []
+  config: {}
+
+  packages:
+${EXTERNAL_ALL_PACKAGES}
+${COMPILER_ALL_PACKAGES}
+
+${EXTERNAL_PACKAGES}
+
+${STD_PACKAGES}
+
+${COMPILER_DEFINITIONS}
+
+${STD_MODULES}
+  view: true
+EOF
+)
+
+echo "${SPACK_ENV}" > ${temp_file}
+
+CMD="spack env create -d ${LBANN_BUILD_DIR} ${temp_file}"
 echo ${CMD}
 ${CMD}
 cd ${LBANN_BUILD_DIR}

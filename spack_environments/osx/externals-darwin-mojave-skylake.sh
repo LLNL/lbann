@@ -40,5 +40,6 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       buildable: False
       version: [4.0]
       paths:
+        openmpi@4.0 arch=darwin-mojave-skylake: /usr/local/
 EOF
 )
