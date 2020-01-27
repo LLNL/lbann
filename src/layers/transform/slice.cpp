@@ -167,12 +167,6 @@ template <typename TensorDataType>
 void fp_compute_impl(
   slice_layer<TensorDataType,data_layout::DATA_PARALLEL,El::Device::CPU>& l) {
 
-  // Just make a view if there is one output
-  if (l.get_num_children() == 1) {
-    El::LockedView(l.get_activations(0), l.get_prev_activations());
-    return;
-  }
-
   // Check that number of dimensions is valid
   /// @todo Support tensors with arbitrary number of dimensions
   const auto& input_dims = l.get_input_dims();
