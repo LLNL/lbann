@@ -176,9 +176,30 @@ EOF
 
 echo "${SPACK_ENV}" > ${temp_file}
 
-spack env create ${LBANN_ENV} ${temp_file}
-spack env activate -p ${LBANN_ENV}
-spack install
+if [[ $(spack env list | grep ${LBANN_ENV}) ]]; then
+    echo "Spack environment ${LBANN_ENV} already exists... overwriting it"
+    CMD="spack env rm ${LBANN_ENV}"
+    echo ${CMD}
+    ${CMD}
+fi
 
-echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:"
-echo "  spack env activate -p ${LBANN_ENV}"
+CMD="spack env create ${LBANN_ENV} ${temp_file}"
+echo ${CMD}
+${CMD}
+
+CMD="spack env activate -p ${LBANN_ENV}"
+echo ${CMD}
+${CMD}
+
+CMD="spack install"
+echo ${CMD}
+eval ${CMD}
+if [[ $? -ne 0 ]]; then
+    echo "--------------------"
+    echo "Spack installation FAILED"
+    echo "--------------------"
+    exit 1
+else
+    echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:"
+    echo "  spack env activate -p ${LBANN_ENV}"
+fi
