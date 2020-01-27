@@ -653,4 +653,14 @@ void ras_lipid_conduit_data_reader::construct_multi_sample(std::vector<conduit::
   }
 }
 
+
+void ras_lipid_conduit_data_reader::read_xyz_normalization() {
+  //TODO
+}
+
+void ras_lipid_conduit_data_reader::read_euclid_normalization() {
+  //TODO
+}
+
+
 }  // namespace lbann

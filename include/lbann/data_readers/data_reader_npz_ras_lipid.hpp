@@ -69,6 +69,23 @@ public:
 
 private:
 
+  /** @brief normalization values for x/y/z coordinates
+   *
+   * Outer vector length is 4
+   *   max
+   *   min
+   *   mean
+   *   std_dev
+   * Inner vector length is 3 (x,y,z)
+   */ 
+  std::vector<std::vector<float>> m_normalization;
+
+  /** @brief normalization values for euclid distances
+   *
+   * vector length is four: max, min, mean, std_dev
+   */ 
+  std::vector<float> m_euclid_normalization;
+
   int m_num_features = 0;
   int m_num_labels = 3;
   int m_num_response_features = 0;
@@ -165,6 +182,12 @@ private:
   void read_file_sizes();
 
   void read_normalization_data();
+
+  /// fills in: m_xyz_normalization;
+  void read_xyz_normalization();
+
+  /// fills in: m_euclid__normalization;
+  void read_euclid_normalization();
 
   /** Print some statistics to cout */
   void print_shapes_etc();
