@@ -57,9 +57,10 @@ input_slice = lbann.Slice(input_,
 tokens_list = [lbann.Identity(input_slice) for _ in range(sequence_length)]
 
 # Get sequence of embedding vectors
+# Note: Inputs to transformer decoder are shifted right
 # Note: Embeddings are scaled by sqrt(embed_dim)
 embeddings = lbann.Embedding(
-    input_,
+    lbann.Concatenation(lbann.Constant(value=-1, num_neurons='1'), input_),
     num_embeddings=vocab_size,
     embedding_dim=args.embed_dim
 )
@@ -67,11 +68,16 @@ embeddings = lbann.WeightedSum(
     embeddings,
     scaling_factors=str(math.sqrt(args.embed_dim)),
 )
-embeddings_slice = lbann.Slice(embeddings,
-                               axis=0,
-                               slice_points=str_list(range(sequence_length+1)))
-embeddings_list = [lbann.Reshape(embeddings_slice, dims='-1')
-                   for _ in range(sequence_length)]
+source_embeddings = lbann.Identity(lbann.Slice(
+    embeddings,
+    axis=0,
+    slice_points=str_list([1, sequence_length+1]),
+))
+target_embeddings = lbann.Identity(lbann.Slice(
+    embeddings,
+    axis=0,
+    slice_points=str_list([0, sequence_length]),
+))
 
 # Apply transformer model
 model = model.Transformer(
@@ -79,30 +85,36 @@ model = model.Transformer(
     num_heads=args.num_attention_heads,
     dropout=0,  # TODO: Restore dropout
 )
-result = model(embeddings_list, embeddings_list[:-1])
-
-# Predict next token in sequence
-pred_fc = lbann.modules.FullyConnectedModule(
-    vocab_size,
-    transpose=True,
-    activation=lbann.Softmax,
+result = model(
+    source_embeddings, sequence_length,
+    target_embeddings, sequence_length,
 )
-preds = [pred_fc(x) for x in result]
+
+# Use transformer decoder output to reconstruct input sequence
+preds = lbann.ChannelwiseFullyConnected(
+    result,
+    output_channel_dims=[vocab_size],
+)
+preds = lbann.ChannelwiseSoftmax(preds)
 
 # Cross entropy loss
 # Note: Apply label smoothing
-loss = []
-uniform_label = lbann.Constant(value=1/vocab_size, num_neurons=str(vocab_size))
-for i in range(sequence_length-1):
-    pred = preds[i]
-    label = lbann.OneHot(tokens_list[i+1], size=vocab_size)
-    if args.label_smoothing > 0:
-        label = lbann.WeightedSum(
-            label,
-            uniform_label,
-            scaling_factors=str_list([1-args.label_smoothing, args.label_smoothing]),
-        )
-    loss.append(lbann.CrossEntropy(pred, label))
+labels = [lbann.OneHot(token, size=vocab_size) for token in tokens_list]
+labels = lbann.Concatenation(
+    [lbann.Reshape(label, dims=str_list([1, vocab_size])) for label in labels],
+    axis=0,
+)
+if args.label_smoothing > 0:
+    uniform_labels = lbann.Constant(
+        value=1/vocab_size,
+        num_neurons=str_list([sequence_length, vocab_size])
+    )
+    labels = lbann.WeightedSum(
+        labels,
+        uniform_labels,
+        scaling_factors=str_list([1-args.label_smoothing, args.label_smoothing]),
+    )
+loss = lbann.CrossEntropy(preds, labels)
 
 # ----------------------------------
 # Create data reader
