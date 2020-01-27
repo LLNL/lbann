@@ -184,7 +184,8 @@ namespace
 template <typename T, data_layout L, El::Device D>
 struct Builder
 {
-  static std::unique_ptr<Layer> Build(...)
+  template <typename... Args>
+  static std::unique_ptr<Layer> Build(Args&&...)
   {
     LBANN_ERROR(
       "Attempted to construct channelwise_softmax_layer ",
