@@ -22,7 +22,7 @@ EOF
 )
 fi
 
-if [[ "${DISABLE_GPUS}" == "OFF" ]]; then
+if [[ "${ENABLE_GPUS}" == "ON" ]]; then
 GPU_PACKAGES=$(cat <<EOF
   - cudnn
   - cub

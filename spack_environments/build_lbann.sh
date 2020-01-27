@@ -213,19 +213,9 @@ CMD="mkdir -p ${INSTALL_DIR}"
 echo ${CMD}
 ${CMD}
 
-SPACK_ENV=
-SUPERBUILD=
+SUPERBUILD=superbuild_lbann.sh
 if [[ ${SYS} = "Darwin" ]]; then
     OSX_VER=$(sw_vers -productVersion)
-    SPACK_ENV=developer_release_osx_spack.yaml
-    SUPERBUILD=superbuild_lbann_osx.sh
-else
-    if [[ "${DISABLE_GPUS}" == "ON" ]]; then
-        SPACK_ENV=developer_release_spack.yaml
-    else
-        SPACK_ENV=developer_release_cuda_spack.yaml
-    fi
-    SUPERBUILD=superbuild_lbann.sh
 fi
 
 source ${SPACK_ENV_DIR}/setup_lbann_dependencies.sh
@@ -237,10 +227,8 @@ fi
 C_FLAGS="${INSTRUMENT} -fno-omit-frame-pointer"
 CXX_FLAGS="-DLBANN_SET_EL_RNG ${INSTRUMENT} -fno-omit-frame-pointer"
 
-if [[ ${ARCH} = "x86_64" ]]; then
+if [ "${ARCH}" == "x86_64" ]; then
     CXX_FLAGS="-march=native ${CXX_FLAGS}"
-elif [[ ${ARCH} = "ppc64le" -o "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]]; then
-    CXX_FLAGS="-mcpu=power9 -mtune=power9 ${CXX_FLAGS}"
 else
     CXX_FLAGS="-mcpu=native -mtune=native ${CXX_FLAGS}"
 fi
