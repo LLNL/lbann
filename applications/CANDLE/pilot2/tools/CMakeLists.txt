@@ -4,32 +4,39 @@ add_custom_target(pilot2-utils)
 add_executable(test_ras_lipid_data_files_for_errors
   EXCLUDE_FROM_ALL test_ras_lipid_data_files_for_errors.cpp)
   target_link_libraries(test_ras_lipid_data_files_for_errors lbann)
-  add_dependencies(jag-utils test_ras_lipid_data_files_for_errors)
+  add_dependencies(pilot2-utils test_ras_lipid_data_files_for_errors)
 
 add_executable(compute_ras_lipid_sig1_normalization
   EXCLUDE_FROM_ALL compute_ras_lipid_sig1_normalization.cpp)
   target_link_libraries(compute_ras_lipid_sig1_normalization lbann)
-  add_dependencies(jag-utils compute_ras_lipid_sig1_normalization)
+  add_dependencies(pilot2-utils compute_ras_lipid_sig1_normalization)
 
-add_executable(compute_ras_lipid_bbs_statistics
-  EXCLUDE_FROM_ALL compute_ras_lipid_bbs_statistics.cpp)
-  target_link_libraries(compute_ras_lipid_bbs_statistics lbann)
-  add_dependencies(jag-utils compute_ras_lipid_bbs_statistics)
+add_executable(compute_ras_lipid_bbs_euclid_distances
+  EXCLUDE_FROM_ALL compute_ras_lipid_bbs_euclid_distances.cpp)
+  target_link_libraries(compute_ras_lipid_bbs_euclid_distances lbann)
+  add_dependencies(pilot2-utils compute_ras_lipid_bbs_euclid_distances)
 
 add_executable(compute_ras_lipid_bbs_max_min
   EXCLUDE_FROM_ALL compute_ras_lipid_bbs_max_min.cpp)
   target_link_libraries(compute_ras_lipid_bbs_max_min lbann)
+  add_dependencies(pilot2-utils compute_ras_lipid_bbs_max_min)
 
-add_executable(compute_xyz_scaled_values
-  EXCLUDE_FROM_ALL compute_xyz_scaled_values.cpp)
-  target_link_libraries(compute_xyz_scaled_values lbann)
+add_executable(compute_ras_lipid_bbs_euclid_normalization
+  EXCLUDE_FROM_ALL compute_ras_lipid_bbs_euclid_normalization.cpp)
+  target_link_libraries(compute_ras_lipid_bbs_euclid_normalization lbann)
+  add_dependencies(pilot2-utils compute_ras_lipid_bbs_euclid_normalization)
+
+add_executable(compute_sequence_distribution
+  EXCLUDE_FROM_ALL compute_sequence_distribution.cpp)
+  target_link_libraries(compute_sequence_distribution lbann)
+  add_dependencies(pilot2-utils compute_sequence_distribution)
 
 # Install the binaries
 install( TARGETS 
   test_ras_lipid_data_files_for_errors 
   compute_ras_lipid_sig1_normalization 
-  compute_ras_lipid_bbs_statistics
-  compute_xyz_scaled_values
+  compute_ras_lipid_bbs_euclid_distances
+  compute_ras_lipid_bbs_euclid_normalization
 
   OPTIONAL
   EXPORT LBANNTargets

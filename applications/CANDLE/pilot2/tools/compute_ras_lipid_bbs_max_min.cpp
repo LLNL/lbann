@@ -62,26 +62,20 @@ int main(int argc, char *argv[]) {
     std::vector<float> max(3, FLT_MIN);
     std::vector<float> min(3, FLT_MAX);
     std::vector<double> total(3, 0.); //for computing mean
-    size_t n_samples = 0;            //for compputing mean
+    size_t count = 0;            //for compputing mean
     for (size_t j=rank; j<filenames.size(); j+=np) {
 
       // Get num samples, and sanity check
       std::map<std::string, cnpy::NpyArray> a = cnpy::npz_load(filenames[j]);
       const std::vector<size_t> shape = a["bbs"].shape;
-      const size_t num_samples = shape[0];
-      bool is_good = true;
-      if (shape[1] != 184) {
-        LBANN_WARNING("shape[1] != 184; shape[1]= ", shape[1], " for file: ", filenames[j], "; shape[1]: ", shape[1], " shape[2]: ", shape[2]);
-        is_good = false;
-      }
-      if (shape[2] != 3) {
-        LBANN_WARNING("shape[2] != 3; shape[1]= ", shape[1], " for file: ", filenames[j], "; shape[1]: ", shape[1], " shape[2]: ", shape[2]);
-        is_good = false;
-      }
+      const size_t num_frames = shape[0];
       const size_t word_size = a["bbs"].word_size;
-      if (word_size != 4) {
-        LBANN_WARNING("word_size != 4; word_size: ", word_size, " for file: ", filenames[j]);
-        is_good = false;
+      bool is_good = true;
+      if (shape[1] != 184 || shape[2] != 3 || word_size != 4) { 
+        is_good = false; 
+        std::stringstream s3;
+        for (auto t : shape) { s3 << t << " "; }
+        LBANN_WARNING("Bad file: ", filenames[j], " word_size: ", word_size, " dinum_frames: ", num_frames, " shape: ", s3.str());
       }
 
       if (is_good) {
@@ -90,8 +84,7 @@ int main(int argc, char *argv[]) {
         const float *data = a["bbs"].data<float>();
   
         // Loop over the bbs entries
-        for (size_t k=0; k<num_samples*184; k++) {
-          ++n_samples;
+        for (size_t k=0; k<num_frames*184; k++) {
           float xx = data[0];
           float yy = data[1];
           float zz = data[2];
@@ -105,6 +98,7 @@ int main(int argc, char *argv[]) {
           total[1] += yy;
           total[2] += zz;
           data += 3;
+          ++count;
         }  
   
         ++nn;
@@ -122,7 +116,7 @@ int main(int argc, char *argv[]) {
     std::vector<float> max_all(3);
     std::vector<float> min_all(3);
     std::vector<double> mean(3);
-    size_t n_samples_all; 
+    size_t count_all; 
 
     // only master needs to know min and max
     MPI_Reduce(max.data(), max_all.data(), 3, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -130,10 +124,10 @@ int main(int argc, char *argv[]) {
     // all ranks need to know totals and num_samples, in order to compute
     // std deviation
     MPI_Allreduce(total.data(), mean.data(), 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allreduce(&n_samples, &n_samples_all, 3, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(&count, &count_all, 3, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 
     for (size_t i=0; i<3; i++) {
-      mean[i] /= n_samples_all;
+      mean[i] /= count_all;
     }
 
     // compute standard deviation
@@ -165,7 +159,7 @@ int main(int argc, char *argv[]) {
     MPI_Reduce(v_minus_mean_squared.data(), all_minus_mean_squared.data(), 3, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     if (!rank) {
       for (size_t i=0; i<3; i++) {
-        double v3 = all_minus_mean_squared[i] / n_samples_all;
+        double v3 = all_minus_mean_squared[i] / count_all;
         std_dev[i] = sqrt(v3);
       }
       

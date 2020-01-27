@@ -1,4 +1,4 @@
-The tools in this directory are (proabally all) embarrassingly 
+The tools in this directory are embarrassingly 
 parallel. They don't use GPUs, so you are advised to compile
 lbann without CUDA, in order to use all avalailable CPUs
 on your nodes. 
