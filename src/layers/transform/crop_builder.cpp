@@ -35,7 +35,8 @@ namespace {
 template <typename T, data_layout L, El::Device D>
 struct Builder
 {
-  static std::unique_ptr<Layer> Build(...)
+  template <typename... Args>
+  static std::unique_ptr<Layer> Build(Args&&...)
   {
     LBANN_ERROR("Attempted to instantiate layer \"crop\" with "
                 "Layout=", to_string(L), ".\nThis layer is only "
