@@ -87,27 +87,15 @@ Here are three easy ways to install LBANN:
 
   .. code-block:: bash
 
-      cd <path to LBANN repo>/spack_environments/users/llnl_lc/<arch>_cuda/ # where <arch> = x86_64 | ppc64le
-      spack install
-      spack env loads
-      source ./loads
+      ./install_user_env.sh -e lbann-test
+      spack env activate -p lbann-test
 
-- Building with the latest released versions and GPU support (use the
-  user's defaults for specifying the compiler, MPI library, etc.):
-
-  .. code-block:: bash
-
-      spack install lbann +gpu +nccl
-      ml load lbann
-
-- Building with the head of develop branch for lbann, hydrogen and
-  aluminum with GPU support (use the user's defaults for specifying
-  the compiler, MPI library, etc.):
-
-  .. code-block:: bash
-
-      spack install lbann@develop +gpu +nccl ^hydrogen@develop ^aluminum@master
-      ml load lbann
+      # Don't do any of these anymore
+      # cd <path to LBANN repo>/spack_environments/users/llnl_lc/<arch>_cuda/ # where <arch> = x86_64 | ppc64le
+      # spack env create -d . spack.yaml
+      # spack install
+      # spack env loads
+      # source ./loads
 
 There are numerous options for all of these packages. These options
 can be viewed via commands such as :bash:`spack info lbann`. To
@@ -139,7 +127,7 @@ CMake flags known to LBANN's "Superbuild" build system.
 
     .. code-block:: bash
 
-        <lbann.git>/spack_environments/build_lbann.sh -p <build and install prefix>
+        <path to lbann repo>/spack_environments/build_lbann.sh -p <insert build and install prefix>
 
 
     + Options exist in the script to disable the GPUs, and separately
