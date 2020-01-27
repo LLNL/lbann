@@ -65,6 +65,7 @@ ENABLE_GPUS=ON
 BUILD_ENV=TRUE
 BUILD_TYPE=Release
 VERBOSE=0
+DETERMINISTIC=OFF
 
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     echo "script ${BASH_SOURCE[0]} is being sourced ... only setting environment variables."
@@ -234,12 +235,14 @@ if [[ ${SYS} = "Darwin" ]]; then
 fi
 
 C_FLAGS="${INSTRUMENT} -fno-omit-frame-pointer"
-CXX_FLAGS="-DLBANN_SET_EL_RNG -mcpu=native ${INSTRUMENT} -fno-omit-frame-pointer"
+CXX_FLAGS="-DLBANN_SET_EL_RNG ${INSTRUMENT} -fno-omit-frame-pointer"
 
 if [[ ${ARCH} = "x86_64" ]]; then
     CXX_FLAGS="-march=native ${CXX_FLAGS}"
+elif [[ ${ARCH} = "ppc64le" -o "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]]; then
+    CXX_FLAGS="-mcpu=power9 -mtune=power9 ${CXX_FLAGS}"
 else
-    CXX_FLAGS="-mcpu=native ${CXX_FLAGS}"
+    CXX_FLAGS="-mcpu=native -mtune=native ${CXX_FLAGS}"
 fi
 
 source ${SPACK_ENV_DIR}/${SUPERBUILD}

@@ -1,34 +1,38 @@
 #!/bin/sh
 
-if [[ ${SYS} = "Darwin" ]]; then
+AL_FWD_CMD=
+HYDROGEN_FWD_CMD=
+LBANN_FWD_CMD=
+LBANN_COMPILER_CMD=
 
+if [[ ${SYS} = "Darwin" ]]; then
 AL_FWD_CMD=$(cat << EOF
   -D LBANN_SB_FWD_ALUMINUM_OpenMP_CXX_LIB_NAMES=omp \
   -D LBANN_SB_FWD_ALUMINUM_OpenMP_CXX_FLAGS=-fopenmp \
-  -D LBANN_SB_FWD_ALUMINUM_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib \
+  -D LBANN_SB_FWD_ALUMINUM_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib
 EOF
 )
 HYDROGEN_FWD_CMD=$(cat << EOF
   -D LBANN_SB_FWD_HYDROGEN_OpenMP_CXX_LIB_NAMES=omp \
   -D LBANN_SB_FWD_HYDROGEN_OpenMP_CXX_FLAGS="-fopenmp=libomp" \
-  -D LBANN_SB_FWD_HYDROGEN_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib \
+  -D LBANN_SB_FWD_HYDROGEN_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib
 EOF
 )
 LBANN_FWD_CMD=$(cat << EOF
   -D LBANN_SB_FWD_LBANN_HWLOC_DIR=/usr/local/opt/hwloc \
   -D LBANN_SB_FWD_LBANN_OpenMP_CXX_LIB_NAMES=omp \
   -D LBANN_SB_FWD_LBANN_OpenMP_CXX_FLAGS="-fopenmp=libomp" \
-  -D LBANN_SB_FWD_LBANN_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib \
+  -D LBANN_SB_FWD_LBANN_OpenMP_omp_LIBRARY=/usr/local/opt/llvm/lib/libomp.dylib
 EOF
 )
 LBANN_COMPILER_CMD=$(cat << EOF
   \
   -D CMAKE_CXX_COMPILER=$(which clang++) \
-  -D CMAKE_C_COMPILER=$(which clang) \
+  -D CMAKE_C_COMPILER=$(which clang)
 EOF
 )
 
-fi # "Darwin"
+fi
 
 # Configure build with CMake
 CONFIGURE_COMMAND=$(cat << EOF
@@ -42,14 +46,14 @@ cmake \
   -D LBANN_SB_BUILD_ALUMINUM=ON \
   -D ALUMINUM_ENABLE_MPI_CUDA=OFF \
   -D ALUMINUM_ENABLE_NCCL=${ENABLE_GPUS} \
-${AL_FWD_CMD}
+${AL_FWD_CMD}  \
   \
   -D LBANN_SB_BUILD_HYDROGEN=ON \
   -D Hydrogen_ENABLE_ALUMINUM=ON \
   -D Hydrogen_ENABLE_CUB=${ENABLE_GPUS} \
   -D Hydrogen_ENABLE_CUDA=${ENABLE_GPUS} \
   -D Hydrogen_ENABLE_HALF=ON \
-${HYDROGEN_FWD_CMD}
+${HYDROGEN_FWD_CMD}  \
   \
   -D LBANN_SB_BUILD_LBANN=ON \
   -D LBANN_DATATYPE:STRING=float \
@@ -65,8 +69,8 @@ ${HYDROGEN_FWD_CMD}
   -D LBANN_WITH_TBINF=OFF \
   -D LBANN_WITH_VTUNE:BOOL=OFF \
   -D LBANN_DETERMINISTIC=${DETERMINISTIC} \
-${LBANN_FWD_CMD}
-${LBANN_COMPILER_CMD}
+${LBANN_FWD_CMD}  \
+${LBANN_COMPILER_CMD}  \
   ${LBANN_HOME}/superbuild
 EOF
 )
