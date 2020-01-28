@@ -31,7 +31,6 @@
 
 #include "conduit/conduit.hpp"
 #include "lbann/utils/options.hpp"
-//#include "lbann/data_readers/sample_list_file_ptr.hpp"
 #include "lbann/data_readers/data_reader.hpp"
 #include "conduit/conduit.hpp"
 #include <cnpy.h>
@@ -45,8 +44,6 @@ namespace lbann {
 class ras_lipid_conduit_data_reader : public generic_data_reader {
 
 public:
-  //using sample_name_t = std::string;
-  //using sample_list_t = sample_list_file_ptr<sample_name_t>;
 
   ras_lipid_conduit_data_reader(const bool shuffle);
   ras_lipid_conduit_data_reader(const ras_lipid_conduit_data_reader&);
@@ -63,25 +60,40 @@ public:
 
   void set_num_labels(int n) { m_num_labels = n; }
 
-  int get_linearized_data_size() const override { return m_num_features; }
-  int get_linearized_label_size() const override { return m_num_labels; }
+  int get_linearized_data_size() const override { return m_seq_len*m_num_features; }
+  int get_linearized_label_size() const override {  return m_seq_len*m_num_labels; }
   int get_linearized_response_size() const override { return m_num_response_features; }
-  const std::vector<int> get_data_dims() const override {  return m_data_dims; }
-  int get_num_labels() const override { return m_num_labels; }
+  //const std::vector<int> get_data_dims() const override {  return m_data_dims; }
+  const std::vector<int> get_data_dims() const override {  return {get_linearized_data_size()}; }
+  int get_num_labels() const override { return m_seq_len*m_num_labels; }
 
 private:
+
   int m_num_features = 0;
-  int m_num_labels = 0;
+  int m_num_labels = 3;
   int m_num_response_features = 0;
   std::vector<int> m_data_dims;
+
+  /** @brief Total of train + validate samples */
+  size_t m_num_global_samples;
+  size_t m_num_train_samples;
+  size_t m_num_validate_samples;
+
+  /** the number of sequential samples that are combined into a multi-sample */
+  int m_seq_len = 1;
+
+  // owner map for multi-samples
+  std::unordered_map<int, int> m_multi_sample_to_owner;
+
+  std::unordered_map<std::string, std::set<int>> m_filename_to_multi_sample;
+  //std::unordered_map<std::string, std::unordered_set<int>> m_filename_to_multi_sample;
+
+  std::unordered_map<int, int> m_multi_sample_id_to_first_sample;
 
 //  sample_list_t m_sample_list;
 
   /** @brief List of input npz filenames */
   std::vector<std::string> m_filenames;
-
-  /** @brief The global number of samples */
-  int m_num_samples = 0;
 
   /** @brief m_samples_per_file[j] contains the number of samples in the j-th file */
   std::vector<int> m_samples_per_file;
@@ -108,6 +120,13 @@ private:
   /** @brief Maps a field name to the number of words in the datum */
   std::unordered_map<std::string, size_t> m_datum_num_words;
 
+  std::vector<double> m_min;
+  std::vector<double> m_max_min;
+  std::vector<double> m_mean;
+  std::vector<double> m_std_dev;
+  bool m_use_min_max;
+  bool m_use_z_score;
+
   //=====================================================================
   // private methods follow
   //=====================================================================
@@ -123,14 +142,6 @@ private:
 
   /** @brief Populates in m_datum_shapes, m_datum_num_bytes, m_datum_word_sizes */
   void fill_in_metadata();
-
-  /** @brief Collect the sample_ids that belong to this rank and
-   *         rebuild the data store's owner map
-   *
-   * my_samples maps a filename (index in m_filenames) to the pair:
-   * (data_id, local index of the sample wrt the samples in the file).
-   */
-  void get_my_indices(std::unordered_map<int, std::vector<std::pair<int,int>>> &my_samples);
 
   /** @brief Re-build the data store's owner map
    *
@@ -152,6 +163,16 @@ private:
    * see: write_file_sizes()
    */
   void read_file_sizes();
+
+  void read_normalization_data();
+
+  /** Print some statistics to cout */
+  void print_shapes_etc();
+
+  void load_the_next_sample(conduit::Node &node, int sample_index, std::map<std::string, cnpy::NpyArray> &data);
+
+  void construct_multi_sample(std::vector<conduit::Node> &work, int data_id, conduit::Node &node); 
+
 };
 
 }  // namespace lbann
