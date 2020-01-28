@@ -44,23 +44,30 @@ SYS=$(uname -s)
 
 # Identify the center that we are running at
 CENTER=
+# String to identify the default compiler - DON'T use this for picking a compiler
+COMPILER=
+BUILD_SUFFIX=
 if [[ ${SYS} = "Darwin" ]]; then
     CENTER="osx"
+    COMPILER="clang"
+    BUILD_SUFFIX=llnl.gov
 else
     CORI=$([[ $(hostname) =~ (cori|cgpu) ]] && echo 1 || echo 0)
     if [[ ${CORI} -eq 1 ]]; then
-	CENTER="nersc"
-	# Make sure to purge and setup the modules properly prior to finding the Spack architecture
-	source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
+        CENTER="nersc"
+        # Make sure to purge and setup the modules properly prior to finding the Spack architecture
+        source ${SPACK_ENV_DIR}/${CENTER}/setup_modules.sh
+        BUILD_SUFFIX=nersc.gov
     else
-	CENTER="llnl_lc"
+        CENTER="llnl_lc"
+        BUILD_SUFFIX=llnl.gov
     fi
+    COMPILER="gnu"
 fi
 
 SPACK_ARCH=$(spack arch)
 
 SCRIPT=$(basename ${BASH_SOURCE})
-BUILD_DIR=${LBANN_HOME}/build/spack
 ENABLE_GPUS=ON
 BUILD_ENV=TRUE
 BUILD_TYPE=Release
@@ -189,7 +196,9 @@ while :; do
     shift
 done
 
-INSTALL_DIR="${INSTALL_DIR:-${LBANN_HOME}/build/gnu.${BUILD_TYPE}.${CLUSTER}.llnl.gov}"
+CORE_BUILD_PATH="${LBANN_HOME}/build/${COMPILER}.${BUILD_TYPE}.${CLUSTER}.${BUILD_SUFFIX}"
+BUILD_DIR="${BUILD_DIR:-${CORE_BUILD_PATH}/build}"
+INSTALL_DIR="${INSTALL_DIR:-${CORE_BUILD_PATH}/install}"
 
 export LBANN_HOME=${LBANN_HOME}
 export LBANN_BUILD_DIR=${BUILD_DIR}
