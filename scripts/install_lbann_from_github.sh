@@ -3,19 +3,7 @@
 SPACK_VERSION=$(spack --version)
 MIN_SPACK_VERSION=0.13.3
 
-compare_versions()
-{
-    local v1=( $(echo "$1" | tr '.' ' ') )
-    local v2=( $(echo "$2" | tr '.' ' ') )
-    local len=$(( ${#v1[*]} > ${#v2[*]} ? ${#v1[*]} : ${#v2[*]} ))
-    #local len=3
-    for ((i=0; i<len; i++))
-    do
-        [ "${v1[i]:-0}" -gt "${v2[i]:-0}" ] && return 1
-        [ "${v1[i]:-0}" -lt "${v2[i]:-0}" ] && return 2
-    done
-    return 0
-}
+source $(dirname ${BASH_SOURCE})/utilities.sh
 
 compare_versions ${SPACK_VERSION} ${MIN_SPACK_VERSION}
 VALID_SPACK=$?
@@ -25,22 +13,21 @@ if [[ ${VALID_SPACK} -eq 2 ]]; then
     exit 1
 fi
 
-SPACK_ENV_DIR=$(dirname ${BASH_SOURCE})
-
-if [[ ${SPACK_ENV_DIR} = "." ]]; then
-    LBANN_HOME=$(dirname ${PWD})
-    SPACK_ENV_DIR=${LBANN_HOME}/spack_environments
-elif [[ ${SPACK_ENV_DIR} = /* ]]; then
-    LBANN_HOME=$(dirname ${SPACK_ENV_DIR})
-else
-    LBANN_HOME=$(dirname ${PWD}/${SPACK_ENV_DIR})
-    SPACK_ENV_DIR=${LBANN_HOME}/spack_environments
-fi
-
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 ARCH=$(uname -m)
 SYS=$(uname -s)
+
+SCRIPT=${BASH_SOURCE}
+
+if [[ ${SYS} = "Darwin" ]]; then
+SCRIPTS_DIR=$(normpath $(dirname $(osx_realpath ${SCRIPT})))
+else
+SCRIPTS_DIR=$(realpath $(dirname ${SCRIPT}))
+fi
+
+LBANN_HOME=$(dirname ${SCRIPTS_DIR})
+SPACK_ENV_DIR=${LBANN_HOME}/spack_environments
 
 # Identify the center that we are running at
 CENTER=

@@ -80,7 +80,7 @@ that want to train new or existing models using the python front-end.
 
     .. code-block:: bash
 
-        <path lbann repo>/spack_environments/install_lbann_from_github.sh -e lbann
+        <path lbann repo>/scripts/install_lbann_from_github.sh -e lbann
         spack env activate -p lbann
 
     + Options exist in the script to disable the GPUs and change the
@@ -118,7 +118,7 @@ CMake flags known to LBANN's "Superbuild" build system.
 
     .. code-block:: bash
 
-        <path to lbann repo>/spack_environments/build_lbann_from_source.sh -p <insert build and install prefix>
+        <path to lbann repo>/scripts/build_lbann_from_source.sh -p <insert build and install prefix>
 
 
     + Options exist in the script to disable the GPUs, and separately
@@ -128,7 +128,7 @@ CMake flags known to LBANN's "Superbuild" build system.
 
     .. code-block:: bash
 
-        source <lbann.git>/spack_environments/build_lbann.sh -p <build and install prefix>
+        source <lbann.git>/scripts/build_lbann.sh -p <build and install prefix>
 
 
     + Note that the environments provided here have a set of external
