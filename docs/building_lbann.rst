@@ -146,17 +146,17 @@ CMake flags known to LBANN's "Superbuild" build system.
 2.  Once the installation has completed you can load the module file
     for LBANN with the following command
 
-    Build LBANN locally from source and build Hydrogen and Aluminum
-    using the superbuild. See :ref:`here <building-with-the-superbuild>`
-    for a list and descriptions of all CMake flags known to LBANN's
-    "Superbuild" build system. A representative CMake command line
-    that expects :bash:`LBANN_HOME`, :bash:`LBANN_BUILD_DIR`,
-    :bash:`LBANN_INSTALL_DIR` environment variables might be:
-
     .. code-block:: console
 
         ml use <path to installation>/etc/modulefiles/
         ml load lbann-0.99.0
+
+
+    + Note If you need additional control when building LBANN locally
+    from source and building Hydrogen and Aluminum using the
+    superbuild then please look :ref:`here
+    <building-with-the-superbuild>` for a list and descriptions of all
+    CMake flags known to LBANN's "Superbuild" build system.
 
 
 The complete documentation for building LBANN directly with CMake can
