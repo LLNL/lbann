@@ -1,0 +1,39 @@
+These notes are for use during development
+=========================================================================
+(mail 1/21)
+Good question.  It's a good idea to scale these values, especially since we are mixing them into the input with lipid densities.  Can you look at doing the same three options here?
+
+a) raw values w/o scaling
+b) min-max
+c) mean/stddev (z-scale)
+
+(mail from 1/18/2020)
+Hi Dave,
+We currently have the models reading in the lipid densities (13x13x14) cube.  We next want to also include information about the RAS BB positions.  Each sample (frame) has a string of 184 RAS protein backbone beads, and we have the (x,y,z) coordinates of each one.  You can see this as the 184x3 portion below:
+
+In [1]: import numpy as np
+
+In [2]: dat = np.load('/p/gpfs1/moody20/pilot2/lipid_density/sr4/pfpatch_000000917813_sig1.npz')
+
+In [3]: dat.keys()
+Out[3]: ['rots', 'states', 'tilts', 'density_sig1', 'frames', 'bbs', 'probs']
+
+In [4]: dat['bbs'].shape
+Out[4]: (586, 184, 3)
+
+That particular patch file has 586 frames, and each frame has the xyz-coords for 184 backbone beads.
+
+There are lots of ways we can represent this data.  To get started, we are planning to use a matrix giving the distance between each pair of the RAS BB beads.  That gives a 184x184 matrix, where each row is the Euclidean distance from a particular bead to every bead in the chain (including itself).
+
+In addition to that, we'd like to tack on a last column to this matrix that encodes the z-value for each bead.  We may want to normalize that by using the relative distance to the z-position of the first bead in the chain (or maybe the last bead, I forget).  That particular bead, which ever one it is, is considered to be attached to the cell membrane, so it serves as a good baseline.
+
+Can you please help us extend the LBANN data reader to support this additional input?
+
+There is one extra complication in that some of these patch files have more than one RAS.  I think to get started, we only want to consider those patches with a single RAS.
+
+That might be hard to express well in email, so give me a call if you'd like to talk through the details.
+=========
+For "z-value", I just mean the value of the z-coordinate of each bead.  It turns out the cell membrane lies in the xy-plane so that the z-coordinate encodes the distance each bead is from the plane, once we subtract off the value of z-coordinate for the anchor bead that is attached the membrane.
+
+There is an sr4_counts.npz file that list the count of RAS in each patch.  We can use that to filter out patches with more than one RAS.  To get started, it might be ok to ignore that fact.  I think I have only captured a single RAS backbone in each patch, rather than a 184-chain for each one.  At some point when we care about patches with more than one RAS, I'll likely have to regenerate the dataset to make that clean.
+
