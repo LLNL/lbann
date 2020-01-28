@@ -690,6 +690,9 @@ void customize_data_readers_sample_list(const lbann_comm& comm, lbann_data::Lban
     std::string basename = get_basename_without_ext(r->sample_list());
     std::string ext = get_ext_name(r->sample_list());
     std::string dir = lbann::file::extract_parent_directory(r->sample_list());
+    if ((r->sample_list()).empty()) {
+      continue;
+    }
     if (dir.empty()) {
       dir = ".";
     }

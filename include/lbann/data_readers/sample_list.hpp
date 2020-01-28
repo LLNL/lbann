@@ -101,6 +101,8 @@ class sample_list {
    */
   void load(const std::string& samplelist_file, const lbann_comm& comm, bool interleave);
   void load(std::istream& istrm, const lbann_comm& comm, bool interleave);
+  /// Load sample list using the given header instead of reading it from the input stream
+  void load(const sample_list_header& header, std::istream& istrm, const lbann_comm& comm, bool interleave);
 
   /// Restore a sample list from a serialized string
   void load_from_string(const std::string& samplelist);

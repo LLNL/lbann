@@ -619,11 +619,6 @@ void generic_data_reader::set_data_sample_list(std::string s) {
 }
 
 std::string generic_data_reader::get_data_sample_list() const {
-  if (m_data_sample_list == "") {
-    throw lbann_exception(
-      std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
-      " :: you apparently did not call set_data_sample_list; error!");
-  }
   return m_data_sample_list;
 }
 

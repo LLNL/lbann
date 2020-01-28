@@ -274,6 +274,20 @@ inline void sample_list<sample_name_t>
 
 template <typename sample_name_t>
 inline void sample_list<sample_name_t>
+::load(const sample_list_header& header,
+       std::istream& istrm,
+       const lbann_comm& comm,
+       bool interleave) {
+  m_header = header;
+  const size_t stride = interleave? comm.get_procs_per_trainer() : 1ul;
+  const size_t offset = interleave? comm.get_rank_in_trainer() : 0ul;
+
+  m_stride = stride;
+  read_sample_list(istrm, stride, offset);
+}
+
+template <typename sample_name_t>
+inline void sample_list<sample_name_t>
 ::load_from_string(const std::string& samplelist) {
   m_header.set_sample_list_name("<LOAD_FROM_STRING>");
   std::istringstream istrm(samplelist);
@@ -920,7 +934,8 @@ inline typename sample_list<sample_name_t>::sample_idx_t sample_list<sample_name
 ::get_sample_index(const sample_name_t& sn) {
   typename sample_map_t::const_iterator it = m_map_name_to_idx.find(sn);
   if (it == m_map_name_to_idx.cend()) {
-    LBANN_ERROR(" :: cannot find the sample name ", lbann::to_string(sn));
+    return size();
+    //LBANN_ERROR(" :: cannot find the sample name ", lbann::to_string(sn));
   }
   return it->second;
 }

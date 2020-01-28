@@ -789,6 +789,10 @@ void data_reader_jag_conduit::load() {
   }
   const std::string sample_list_file = get_data_sample_list();
 
+  if (sample_list_file.empty()) {
+    LBANN_ERROR("sample list is not specified.");
+  }
+
   load_list_of_samples(sample_list_file);
 
   options *opts = options::get();

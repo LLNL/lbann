@@ -110,8 +110,14 @@ class image_data_reader : public generic_data_reader {
   void load_list_of_samples(const std::string filename);
   /// Load the sample list from a serialized archive from another rank
   void load_list_of_samples_from_archive(const std::string& sample_list_archive);
+  /// Use the imagenet image list file, and generate sample list header on-the-fly
+  void gen_list_of_samples();
   /// Load the labels for samples
-  void load_labels();
+  void load_labels(std::vector<char>& preloaded_buffer);
+  /// Read the labels from an open input stream
+  void read_labels(std::istream& istrm);
+  /// Return the number of lines in the input stream
+  size_t determine_num_of_samples(std::istream& istrm) const;
 
   std::string m_image_dir; ///< where images are stored
   int m_image_width; ///< image width

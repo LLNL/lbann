@@ -146,21 +146,24 @@ void image_data_reader::load() {
   // Load sample list
   const std::string sample_list_file = get_data_sample_list();
 
-  load_list_of_samples(sample_list_file);
+  if (sample_list_file.empty()) {
+    gen_list_of_samples();
+  } else {
+    load_list_of_samples(sample_list_file);
+  }
 
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
+    const std::string slist_name = (m_sample_list.get_header()).get_sample_list_name();
     {
-      const std::string msg = " writing sample list " + sample_list_file;
+      const std::string msg = " writing sample list " + slist_name;
       LBANN_WARNING(msg);
     }
     std::stringstream s;
-    std::string basename = get_basename_without_ext(sample_list_file);
-    std::string ext = get_ext_name(sample_list_file);
+    std::string basename = get_basename_without_ext(slist_name);
+    std::string ext = get_ext_name(slist_name);
     s << basename << "." << ext;
     m_sample_list.write(s.str());
   }
-
-  load_labels();
 
   // reset indices
   m_shuffled_indices.clear();
@@ -234,7 +237,6 @@ void image_data_reader::do_preload_data_store() {
     load_conduit_nodes_from_file(data_ids[io_thread_pool->get_local_thread_id()]);
     io_thread_pool->finish_work_group();
   }
-
   else {
     conduit::Node node;
     if (is_master()) {
@@ -286,6 +288,7 @@ void image_data_reader::load_conduit_node_from_file(int data_id, conduit::Node &
   node[LBANN_DATA_ID_STR(data_id) + "/buffer_size"] = data.size();
 }
 
+/// Allow streams to be constructed on an existing data buffer without copying
 template<typename CharT, typename Traits = std::char_traits<CharT> >
 class vectorwrapbuf : public std::basic_streambuf<CharT, Traits> {
 public:
@@ -294,6 +297,18 @@ public:
     }
 };
 
+/**
+ * Load a sample list and then load labels from a separate file using `load_labels()`
+ * With the command line option `--load_full_sample_list_once`, the trainer master
+ * first loads the entire sample list file into a memory buffer, and broadcasts it
+ * to the other workers within the trainer. Then, the sample list is populated
+ * using the buffer content. Otherwise, the sample list is directly read from the
+ * file. The prototext variable `data_filedir` when specified overrides the base
+ * location of data files, written in the header of the sample list file.
+ * The option `keep_sample_order` from the command line or data reader prototexts,
+ * makes sure the order of samples in the list remains the same even with loading
+ * in an interleaving order by multiple trainer workers.
+ */
 void image_data_reader::load_list_of_samples(const std::string sample_list_file) {
   // load the sample list
   double tm1 = get_time();
@@ -333,17 +348,24 @@ void image_data_reader::load_list_of_samples(const std::string sample_list_file)
   double tm2 = get_time();
 
   if (is_master()) {
-    std::cout << "Time to load sample list '" << sample_list_file << "': " << tm2 - tm1 << std::endl;
+    std::cout << "Time to load sample list '" << sample_list_file << "': "
+              << tm2 - tm1 << std::endl;
   }
 
-  /// Merge all of the sample lists
+  /// Merge all the sample list pieces from the workers within the trainer
   m_sample_list.all_gather_packed_lists(*m_comm);
   set_file_dir(m_sample_list.get_samples_dirname());
 
   double tm3 = get_time();
   if(is_master()) {
-    std::cout << "Time to gather sample list '" << sample_list_file << "': " << tm3 - tm2 << std::endl;
+    std::cout << "Time to gather sample list '" << sample_list_file << "': "
+              << tm3 - tm2 << std::endl;
   }
+  buffer.clear();
+  buffer.shrink_to_fit();
+
+  std::vector<char> empty_buffer;
+  load_labels(empty_buffer);
 }
 
 void image_data_reader::load_list_of_samples_from_archive(const std::string& sample_list_archive) {
@@ -361,37 +383,195 @@ void image_data_reader::load_list_of_samples_from_archive(const std::string& sam
   }
 }
 
-void image_data_reader::load_labels() {
+/**
+ * Similar to `load_list_of_samples()` but generates the sample list header
+ * on-the-fly, and reuse the original imagenet data list file for loading both
+ * the sample list and the label list.
+ */
+void image_data_reader::gen_list_of_samples() {
+  // load the sample list
+  double tm1 = get_time();
+
+  // The original imagenet data file specified via the prototext variable
+  // `data_filename`
+  const std::string imageListFile = get_data_filename();
+
+  sample_list_header header; // A sample list header being generated
+  header.set_sample_list_type(lbann::single_sample);
+  header.set_data_file_dir(get_file_dir());
+  header.set_label_filename(imageListFile);
+  const std::string sample_list_file = imageListFile;
+  header.set_sample_list_name(sample_list_file);
+
+  options *opts = options::get();
+
+  if (m_keep_sample_order || opts->has_string("keep_sample_order")) {
+    m_sample_list.keep_sample_order(true);
+  } else {
+    m_sample_list.keep_sample_order(false);
+  }
+
+  if (opts->get_bool("check_data")) {
+    m_sample_list.set_data_file_check();
+  }
+
+  std::vector<char> buffer;
+
+  if (opts->has_string("load_full_sample_list_once")) {
+    // The trainer master loads the entire file into a buffer in the memory
+    if (m_comm->am_trainer_master()) {
+      load_file(imageListFile, buffer);
+    }
+    // Broadcast the buffer to workers within this trainer
+    m_comm->trainer_broadcast(m_comm->get_trainer_master(), buffer);
+
+    // The trainer master counts the number of samples (lines) and broadcasts
+    // the result
+    size_t num_samples = 0ul;
+    if (m_comm->am_trainer_master()) {
+      vectorwrapbuf<char> strmbuf(buffer);
+      std::istream iss(&strmbuf);
+      num_samples = determine_num_of_samples(iss);
+    }
+    m_comm->trainer_broadcast(m_comm->get_trainer_master(), num_samples);
+    header.set_sample_count(std::to_string(num_samples));
+
+    // Populate the sample list using the generated header and the preloaded buffer
+    vectorwrapbuf<char> strmbuf(buffer);
+    std::istream iss(&strmbuf);
+    m_sample_list.load(header, iss, *m_comm, true);
+  } else {
+    // The trainer master counts the number of samples (lines) and broadcasts
+    // the result
+    size_t num_samples = 0ul;
+    if (m_comm->am_trainer_master()) {
+      std::ifstream iss(imageListFile);
+      num_samples = determine_num_of_samples(iss);
+    }
+    m_comm->trainer_broadcast(m_comm->get_trainer_master(), num_samples);
+    header.set_sample_count(std::to_string(num_samples));
+
+    // Populate the sample list using the generated header and the original
+    // imagenet data list file
+    std::ifstream iss(imageListFile);
+    m_sample_list.load(header, iss, *m_comm, true);
+  }
+
+  double tm2 = get_time();
+
+  if (is_master()) {
+    std::cout << "Time to load sample list '" << sample_list_file << "': "
+              << tm2 - tm1 << std::endl;
+  }
+
+  /// Merge all the sample list pieces from the workers within the trainer
+  m_sample_list.all_gather_packed_lists(*m_comm);
+
+  double tm3 = get_time();
+  if(is_master()) {
+    std::cout << "Time to gather sample list '" << sample_list_file << "': "
+              << tm3 - tm2 << std::endl;
+  }
+  // Reuse the preloaded buffer for obtaining labels when possible
+  load_labels(buffer);
+}
+
+/// Populate the sample label vector out of the given input stream
+void image_data_reader::read_labels(std::istream& istrm) {
+  const std::string whitespaces(" \t\f\v\n\r");
+  const size_t num_samples = m_sample_list.size();
+
+  // To help populating the label list, build a map from a sample name to
+  // the index of the corresponding item in the sample list
+  m_sample_list.build_sample_map_from_name_to_index();
+
+  options *opts = options::get();
+  const bool check_data = opts->get_bool("check_data");
+
+  m_labels.clear();
+  m_labels.resize(num_samples);
+  std::unordered_set<sample_idx_t> idx_set;
+
+  std::string line;
+
+  while (std::getline(istrm, line)) {
+    const size_t end_of_str = line.find_last_not_of(whitespaces);
+    if (end_of_str == std::string::npos) { // empty line
+      continue;
+    }
+
+    // clear trailing spaces for accurate parsing
+    std::stringstream sstr(line.substr(0, end_of_str + 1));
+    std::string sname;
+    label_t label;
+
+    sstr >> sname >> label;
+
+    // Translate the sample name into the index into the sample list
+    const auto sample_idx = m_sample_list.get_sample_index(sample_name_t(sname));
+    if (sample_idx >= num_samples) {
+      continue;
+    }
+    if (check_data) {
+      idx_set.insert(sample_idx);
+    }
+    m_labels[sample_idx] = label;
+  }
+
+  // Free the memory of the temporary map
+  m_sample_list.clear_sample_map_from_name_to_index();
+
+  if (check_data && (num_samples != idx_set.size())) {
+    LBANN_ERROR("The number of samples is different from the number of labels: ",
+                std::to_string(num_samples),
+                " != ",
+                std::to_string(idx_set.size()));
+  }
+}
+
+/**
+ * Load the sample labels either from a file or from a preloaded buffer.
+ * If the buffer given is empty, the label file specified in the sample list
+ * header is used.
+ */
+void image_data_reader::load_labels(std::vector<char>& preloaded_buffer) {
   const std::string imageListFile = m_sample_list.get_label_filename();
 
   double tm1 = get_time();
 
-  // load labels
-  m_labels.clear();
-  m_labels.resize(m_sample_list.size());
-  FILE *fplist = fopen(imageListFile.c_str(), "rt");
-  if (!fplist) {
-    LBANN_ERROR("failed to open: " + imageListFile + " for reading");
-  }
-
-  // To help populating the label list
-  m_sample_list.build_sample_map_from_name_to_index();
-
-  while (!feof(fplist)) {
-    char imagepath[512] = {'\0'};
-    label_t imagelabel;
-    if (fscanf(fplist, "%s%d", imagepath, &imagelabel) <= 1) {
-      break;
+  if (preloaded_buffer.empty()) { // read labels from a file
+    std::string line;
+    std::ifstream is;
+    is.open(imageListFile);
+    if (is.fail()) {
+      LBANN_ERROR("failed to open: " + imageListFile + " for reading");
     }
-    const auto sample_idx = m_sample_list.get_sample_index(sample_name_t(imagepath));
-    m_labels[sample_idx] = imagelabel;
+    read_labels(is);
+  } else { // read labels from a preloaded buffer
+    vectorwrapbuf<char> strmbuf(preloaded_buffer);
+    std::istream is(&strmbuf);
+    read_labels(is);
   }
-  fclose(fplist);
-  m_sample_list.clear_sample_map_from_name_to_index();
 
   if (is_master()) {
-    std::cout << "Time to load label file '" << imageListFile << "': " << get_time() - tm1 << std::endl;
+    std::cout << "Time to load label file '" << imageListFile << "': "
+              << get_time() - tm1 << std::endl;
   }
+}
+
+size_t image_data_reader::determine_num_of_samples(std::istream& istrm) const {
+  const std::string whitespaces(" \t\f\v\n\r");
+  size_t cnt = 0ul;
+  std::string line;
+
+  while (std::getline(istrm, line)) {
+    const size_t end_of_str = line.find_last_not_of(whitespaces);
+    if (end_of_str == std::string::npos) { // empty line
+      continue;
+    }
+    cnt ++;
+  }
+  return cnt;
 }
 
 }  // namespace lbann
