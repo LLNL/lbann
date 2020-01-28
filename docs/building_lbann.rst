@@ -65,10 +65,6 @@ Setup Spack and local base tools
 Building & Installing LBANN as a user
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. warning:: This section is still under development and being
-             tested. It contains known issues. This warning will be
-             removed when it is believed to be generally usable.
-
 With Spack setup and installed into your path, it can be used to
 install the LBANN executables. This approach is appropriate for users
 that want to train new or existing models using the python front-end.
@@ -77,32 +73,27 @@ that want to train new or existing models using the python front-end.
           may need to install LBANN as a developer, which would allow
           you to modify and recompile the source code.
 
-Here are three easy ways to install LBANN:
+- Using the Spack environment method:
 
-- Using the Spack environment method, (e.g., for an x86_64 LLNL LC
-  system with GPU support):
+    .. note:: This method provides a consistent set of dependencies during
+        installation.
 
-  .. note:: This method provides a consistent set of dependencies during
-      installation.
+    .. code-block:: bash
 
-  .. code-block:: bash
+        <path lbann repo>/spack_environments/install_lbann_from_github.sh -e lbann
+        spack env activate -p lbann
 
-      ./install_user_env.sh -e lbann-test
-      spack env activate -p lbann-test
+    + Options exist in the script to disable the GPUs and change the
+      name of the spack environment.
 
-      # Don't do any of these anymore
-      # cd <path to LBANN repo>/spack_environments/users/llnl_lc/<arch>_cuda/ # where <arch> = x86_64 | ppc64le
-      # spack env create -d . spack.yaml
-      # spack install
-      # spack env loads
-      # source ./loads
-
-There are numerous options for all of these packages. These options
+There are numerous options for the spack packages. These options
 can be viewed via commands such as :bash:`spack info lbann`. To
 specify the compiler, one can add options such as :code:`%gcc@7.3.0`.
 For further information about specifying dependencies, such as the MPI
 library, please consult `the Spack documentation
 <https://spack.readthedocs.io>`_.
+
+.. _build_lbann_from_source:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Building & Installing LBANN as a developer
@@ -127,7 +118,7 @@ CMake flags known to LBANN's "Superbuild" build system.
 
     .. code-block:: bash
 
-        <path to lbann repo>/spack_environments/build_lbann.sh -p <insert build and install prefix>
+        <path to lbann repo>/spack_environments/build_lbann_from_source.sh -p <insert build and install prefix>
 
 
     + Options exist in the script to disable the GPUs, and separately
@@ -141,12 +132,12 @@ CMake flags known to LBANN's "Superbuild" build system.
 
 
     + Note that the environments provided here have a set of external
-      packages and compilers that are installed on an LLNL LC CZ
-      system.  Please update these for your system environment.
-      Alternatively, you can create baseline versions of the
-      user-level Spack configuration files and remove the externals
-      and compilers from the :code:`spack.yaml` file. More details are
-      provided :ref:`here <setup-spack-env>`.
+      packages and compilers that are installed on an LLNL LC CZ,
+      NERSC, or LLNL configured OS X system.  Please update these for
+      your system environment.  Alternatively, you can create baseline
+      versions of the user-level Spack configuration files and remove
+      the externals and compilers from the :code:`spack.yaml`
+      file. More details are provided :ref:`here <setup-spack-env>`.
 
     + Note that the initial build of all of the standard packages in Spack
       will take a while.
