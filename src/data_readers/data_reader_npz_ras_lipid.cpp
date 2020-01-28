@@ -238,7 +238,6 @@ data types, from python+numpy:
   if (m_seq_len == 1 && !debug_concatenate) {
     which = 1;
   }
-  //TODO: fix this
   which = 2;
 
   // Loop over the files owned by this processer
@@ -254,7 +253,7 @@ data types, from python+numpy:
         // Load the single-samples that will be concatenated to form
         // the next multi-sample
         for (int k=0; k<m_seq_len; ++k) {
-          load_the_next_sample(work[k], starting_id+k, data);
+          preload_the_next_sample(work[k], starting_id+k, data);
 
           ++nn;
           if (verbose && is_master() && nn % 1000 == 0) {
@@ -552,7 +551,7 @@ void ras_lipid_conduit_data_reader::print_shapes_etc() {
   std::cout << "======================================================\n\n";
 }
 
-void ras_lipid_conduit_data_reader::load_the_next_sample(conduit::Node &node, int sample_index, std::map<std::string, cnpy::NpyArray> &a) {
+void ras_lipid_conduit_data_reader::preload_the_next_sample(conduit::Node &node, int sample_index, std::map<std::string, cnpy::NpyArray> &a) {
   node.reset();
   size_t offset;
   for (const auto &t5 : m_datum_shapes) {

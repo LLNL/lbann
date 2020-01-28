@@ -169,7 +169,7 @@ private:
   /** Print some statistics to cout */
   void print_shapes_etc();
 
-  void load_the_next_sample(conduit::Node &node, int sample_index, std::map<std::string, cnpy::NpyArray> &data);
+  void preload_the_next_sample(conduit::Node &node, int sample_index, std::map<std::string, cnpy::NpyArray> &data);
 
   void construct_multi_sample(std::vector<conduit::Node> &work, int data_id, conduit::Node &node); 
 
