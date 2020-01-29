@@ -215,13 +215,12 @@ template <typename TensorDataType>
 void exchange_models(lbann_comm& comm,
                      El::Int partner_trainer,
                      model& m,
+                     El::Int step,
                      const std::set<std::string>& weights_names,
                      const std::vector<data_type_weights<TensorDataType>*>& local_weights) {
 
   // Checkpoint directories
-  const auto& c = m.get_execution_context();
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = c.get_step();
   const std::string send_dir = (m.get_name()
                                 + "_trainer" + std::to_string(local_trainer)
                                 + "_step" + std::to_string(step));
@@ -230,15 +229,17 @@ void exchange_models(lbann_comm& comm,
                                 + "_step" + std::to_string(step));
 
   // Save model checkpoint
-  persist p;
-  p.set_cb_type(callback_type::model_only);
-  if (comm.am_trainer_master()) {
-    p.open_checkpoint(send_dir);
-  } else {
-    p.m_checkpoint_dir = send_dir;
+  {
+    persist p;
+    p.set_cb_type(callback_type::model_only);
+    if (comm.am_trainer_master()) {
+      p.open_checkpoint(send_dir);
+    } else {
+      p.m_checkpoint_dir = send_dir;
+    }
+    m.save_to_checkpoint_shared(p);
+    p.close_checkpoint();
   }
-  m.save_to_checkpoint_shared(p);
-  p.close_checkpoint();
 
   // Synchronize with partner trainer
   {
@@ -250,14 +251,11 @@ void exchange_models(lbann_comm& comm,
   }
 
   // Load model checkpoint from partner trainer
-  p.set_cb_type(callback_type::model_only);
-  if (comm.am_trainer_master()) {
+  {
+    persist p;
+    p.set_cb_type(callback_type::model_only);
     p.open_restart(recv_dir);
-  } else {
-    p.m_checkpoint_dir = recv_dir;
-  }
-  m.load_from_checkpoint_shared(p);
-  if (comm.am_trainer_master()) {
+    m.load_from_checkpoint_shared(p);
     p.close_restart();
   }
 
@@ -276,12 +274,10 @@ void exchange_models(lbann_comm& comm,
 
 }
 
-void restore_local_model(lbann_comm& comm, model& m) {
+void restore_local_model(lbann_comm& comm, model& m, El::Int step) {
 
   // Checkpoint directories
-  const auto& c = m.get_execution_context();
   const auto local_trainer = comm.get_trainer_rank();
-  const auto step = c.get_step();
   const std::string checkpoint_dir = (m.get_name()
                                       + "_trainer" + std::to_string(local_trainer)
                                       + "_step" + std::to_string(step));
@@ -489,6 +485,7 @@ void ltfb::on_batch_begin(model *m) {
     checkpoint_file::exchange_models(comm,
                                      partner_trainer,
                                      *m,
+                                     step,
                                      m_weights_names,
                                      local_weights);
     break;
@@ -515,7 +512,7 @@ void ltfb::on_batch_begin(model *m) {
       }
       break;
     case communication_algorithm::checkpoint_file:
-      checkpoint_file::restore_local_model(comm, *m);
+      checkpoint_file::restore_local_model(comm, *m, step);
       break;
     default:
       LBANN_ERROR("invalid LTFB communication algorithm");
