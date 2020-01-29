@@ -26,7 +26,6 @@ LBANN_FWD_CMD=$(cat << EOF
 EOF
 )
 LBANN_COMPILER_CMD=$(cat << EOF
-  \
   -D CMAKE_CXX_COMPILER=$(which clang++) \
   -D CMAKE_C_COMPILER=$(which clang)
 EOF
@@ -76,7 +75,7 @@ EOF
 )
 
 if [[ ${VERBOSE} -ne 0 ]]; then
-    echo "${CONFIGURE_COMMAND}" |& tee cmake_superbuild_invocation.txt
+    echo "${CONFIGURE_COMMAND}" 2>1 | tee cmake_superbuild_invocation.txt
 else
     echo "${CONFIGURE_COMMAND}" > cmake_superbuild_invocation.txt
 fi

@@ -49,15 +49,9 @@ SPACK_ARCH=$(spack arch)
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
 ENABLE_GPUS="+gpu+nccl"
-BUILD_ENV=TRUE
 BUILD_TYPE=Release
 VERBOSE=0
 LBANN_ENV=lbann
-
-if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-    echo "script ${BASH_SOURCE[0]} is being sourced ... only setting environment variables."
-    BUILD_ENV="FALSE"
-fi
 
 ################################################################
 # Help message
@@ -88,7 +82,7 @@ while :; do
         -h|--help)
             # Help message
             help_message
-            return
+            exit 1
             ;;
         -e|--env)
             # Change default build directory

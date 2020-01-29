@@ -86,7 +86,7 @@ Options:
   ${C}-i | --install-dir${N}   Install LBANN headers and dynamic library into the install directory.
   ${C}-b | --build-dir${N}     Specify alternative build directory; default is <lbann_home>/build/spack.
   ${C}--disable-gpus${N}       Disable GPUS
-  ${C}-r | --rebuild-env${N}   Rebuild the environment variables and load the modules
+  ${C}-r | --rebuild-env${N}   Rebuild the environment variables and load the spack modules
   ${C}--instrument${N}         Use -finstrument-functions flag, for profiling stack traces
 EOF
 }
@@ -100,7 +100,11 @@ while :; do
         -h|--help)
             # Help message
             help_message
-            return
+            if [[ ${BUILD_ENV} == "FALSE" ]]; then
+                return
+            else
+                exit 1
+            fi
             ;;
         -b|--build-dir)
             # Change default build directory
@@ -212,6 +216,7 @@ ${CMD}
 SUPERBUILD=superbuild_lbann.sh
 if [[ ${SYS} = "Darwin" ]]; then
     OSX_VER=$(sw_vers -productVersion)
+    ENABLE_GPUS=OFF
 fi
 
 source ${SPACK_ENV_DIR}/setup_lbann_dependencies.sh
