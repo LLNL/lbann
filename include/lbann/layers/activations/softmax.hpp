@@ -39,6 +39,8 @@
 
 namespace lbann {
 
+enum class softmax_mode {INVALID, INSTANCE, CHANNEL};
+
 /** @brief
  *
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
@@ -47,15 +49,20 @@ template <data_layout Layout, El::Device Device>
 class softmax_layer : public Layer {
 public:
 
-  softmax_layer(lbann_comm *comm)
-    : Layer(comm)
+  softmax_layer(lbann_comm *comm,
+                softmax_mode mode)
+    : Layer(comm), m_mode(mode)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
-  {}
+  {
+    if(mode == softmax_mode::INVALID) {
+      LBANN_ERROR("invalid softmax mode");
+    }
+  }
 
   softmax_layer(const softmax_layer& other)
-    : Layer(other),
+    : Layer(other), m_mode(other.m_mode),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
@@ -114,6 +121,9 @@ public:
   void bp_compute() override;
 
 private:
+
+  /** Softmax mode. */
+  const softmax_mode m_mode;
 
   /** Workspace for column-wise reductions. */
   std::unique_ptr<AbsDistMat> m_workspace;

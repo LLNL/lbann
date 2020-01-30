@@ -266,10 +266,23 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
   constexpr DataType one = 1;
   const auto& local_input = get_local_prev_activations();
   auto& local_output = get_local_activations();
+
+  cudnnSoftmaxMode_t cudnn_softmax_mode;
+  switch(m_mode) {
+    case softmax_mode::INSTANCE:
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_INSTANCE;
+      break;
+    case softmax_mode::CHANNEL:
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_CHANNEL;
+      break;
+    default:
+      LBANN_ERROR("Unsupported softmax mode");
+  }
+
   if (!local_input.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxForward(cudnn::get_handle(),
                                     CUDNN_SOFTMAX_ACCURATE,
-                                    CUDNN_SOFTMAX_MODE_INSTANCE,
+                                    cudnn_softmax_mode,
                                     &one,
                                     m_tensors_cudnn_desc.get_prev_activations(),
                                     local_input.LockedBuffer(),
@@ -290,10 +303,23 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
   const auto& local_output = get_local_activations();
   const auto& local_gradient_wrt_output = get_local_prev_error_signals();
   auto& local_gradient_wrt_input = get_local_error_signals();
+
+  cudnnSoftmaxMode_t cudnn_softmax_mode;
+  switch(m_mode) {
+    case softmax_mode::INSTANCE:
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_INSTANCE;
+      break;
+    case softmax_mode::CHANNEL:
+      cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_CHANNEL;
+      break;
+    default:
+      LBANN_ERROR("Unsupported softmax mode");
+  }
+
   if (!local_output.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxBackward(cudnn::get_handle(),
                                      CUDNN_SOFTMAX_ACCURATE,
-                                     CUDNN_SOFTMAX_MODE_INSTANCE,
+                                     cudnn_softmax_mode,
                                      &one,
                                      m_tensors_cudnn_desc.get_activations(),
                                      local_output.LockedBuffer(),
@@ -312,6 +338,10 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
 
 template <>
 void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
+
+  if(m_mode != softmax_mode::INSTANCE) {
+    LBANN_ERROR("Unsupported softmax mode");
+  }
 
   // Local matrices
   const auto& local_input = get_local_prev_activations();
@@ -381,6 +411,10 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
 
 template <>
 void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
+
+  if(m_mode != softmax_mode::INSTANCE) {
+    LBANN_ERROR("Unsupported softmax mode");
+  }
 
   // Local matrices
   const auto& local_output = get_local_activations();
