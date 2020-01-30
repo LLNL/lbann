@@ -77,7 +77,7 @@ class SlurmBatchScript(BatchScript):
             days, hours = divmod(hours, 24)
             self.add_header_line('#SBATCH --time={}-{:02d}:{:02d}:{:02d}'
                                  .format(days, hours, minutes, seconds))
-        self.add_header_line('#SBATCH --workdir={}'.format(self.work_dir))
+        self.add_header_line('#SBATCH --chdir={}'.format(self.work_dir))
         self.add_header_line('#SBATCH --output={}'.format(self.out_log_file))
         self.add_header_line('#SBATCH --error={}'.format(self.err_log_file))
         if partition:
