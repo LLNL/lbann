@@ -260,8 +260,38 @@ __global__ void bp_kernel(El::Int height, El::Int width,
 
 } // namespace
 
+#ifdef LBANN_HAS_DISTCONV
+template <>
+void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
+fp_compute_distconv() {
+  dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
+  assert_always(distconv_enabled());
+  m_softmax->forward(m_prev_activations_t, m_activations_t);
+  copy_out_activations();
+}
+
+template <>
+void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
+bp_compute_distconv() {
+  dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
+  assert_always(distconv_enabled());
+  m_softmax->backward(m_activations_t, m_prev_error_signals_t,
+                      m_error_signals_t);
+  copy_out_error_signals();
+}
+#endif // LBANN_HAS_DISTCONV
+
 template <>
 void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled()) {
+    fp_compute_distconv();
+    if (!early_terminate_last_iteration()) {
+      return;
+    }
+    // fall through the normal code path to obtain reference results
+  }
+#endif
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
   const auto& local_input = get_local_prev_activations();
@@ -293,11 +323,25 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
     cuda::apply_entrywise_unary_operator<fp_threshold_op>(local_output,
                                                           local_output);
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled() && early_terminate_last_iteration() &&
+      keep_original()) {
+    dump_reference_activations();
+  }
+#endif // LBANN_HAS_DISTCONV
   }
 }
 
 template <>
 void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled()) {
+    bp_compute_distconv();
+    if (!early_terminate_last_iteration()) {
+      return;
+    }
+  }
+#endif // LBANN_HAS_DISTCONV
   constexpr DataType zero = 0;
   constexpr DataType one = 1;
   const auto& local_output = get_local_activations();
@@ -333,6 +377,12 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
                                                            local_gradient_wrt_input,
                                                            local_gradient_wrt_input);
 #endif // LBANN_ENABLE_SOFTMAX_CUTOFF
+#ifdef LBANN_HAS_DISTCONV
+  if (distconv_enabled() && early_terminate_last_iteration() &&
+      keep_original()) {
+    dump_reference_error_signals();
+  }
+#endif // LBANN_HAS_DISTCONV
   }
 }
 
