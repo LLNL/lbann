@@ -104,6 +104,13 @@ option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
+option(LBANN_WITH_DIHYDROGEN "Build with DiHydrogen support" OFF)
+if (LBANN_WITH_DIHYDROGEN)
+  message(WARNING "DiHydrogen support is currently expermimental. "
+    "There is no stable interface. "
+    "Use caution before using any features.")
+endif (LBANN_WITH_DIHYDROGEN)
+
 option(LBANN_WITH_HWLOC
   "Enable topology-aware optimizations" ON)
 
@@ -186,6 +193,16 @@ if (NOT Hydrogen_FOUND)
 endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
+
+if (LBANN_WITH_DIHYDROGEN)
+  find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
+    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+    ${H2_DIR} $ENV{H2_DIR}
+    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+    NO_DEFAULT_PATH)
+  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
+  set(LBANN_HAS_DIHYDROGEN TRUE)
+endif ()
 
 # Inherit half-precision stuff from Hydrogen
 set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only
@@ -524,6 +541,11 @@ target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
 target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
+target_link_libraries(lbann PUBLIC
+  $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
+  $<TARGET_NAME_IF_EXISTS:H2::H2Patterns>
+  )
+
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
 endif ()
@@ -788,6 +810,7 @@ string(APPEND _str "\n")
 #Print the true/false guys
 append_str_tf(_str
   LBANN_GNU_LINUX
+  LBANN_HAS_DIHYDROGEN
   LBANN_HAS_HYDROGEN
   LBANN_HAS_OPENCV
   LBANN_HAS_CEREAL

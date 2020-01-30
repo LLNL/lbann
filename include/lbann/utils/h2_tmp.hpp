@@ -27,6 +27,24 @@
 #ifndef LBANN_UTILS_H2_TMP_HPP_
 #define LBANN_UTILS_H2_TMP_HPP_
 
+#include <lbann_config.hpp>
+
+// Disable C++17 features.
+#ifndef H2_NO_CXX17
+#define H2_NO_CXX17
+#endif // H2_NO_CXX17
+
+#ifdef LBANN_HAS_DIHYDROGEN
+
+#include <h2/meta/Core.hpp>
+#include <h2/meta/TypeList.hpp>
+#include <h2/patterns/multimethods/SwitchDispatcher.hpp>
+
+#else // !LBANN_HAS_DIHYDROGEN
+
+// WARNING: This code is deprecated and will be removed when
+// DiHydrogen becomes a required dependency of LBANN.
+
 /** @file
  *
  *  This file contains a small slice of the metaprogramming library
@@ -34,15 +52,14 @@
  *  DiHydrogen is integrated into LBANN; however, this was seen as too
  *  large a task for the present needs.
  *
- *  @note Testing for this functionality has not been included in LBANN. It is s
+ *  @note Testing for this functionality has not been included in
+ *        LBANN. It is available in the main H2 repository.
+ *
+ *  @warning This file is deprecated and will be removed when
+ *           DiHydrogen becomes a required dependency of LBANN.
  */
 
 #include <utility> // std::forward, std::declval
-
-// Disable C++17 features.
-#ifndef H2_NO_CPP17
-#define H2_NO_CPP17
-#endif // H2_NO_CPP17
 
 #ifndef H2_META_CORE_LAZY_HPP_
 #define H2_META_CORE_LAZY_HPP_
@@ -164,11 +181,11 @@ inline constexpr bool IsInvocableV()
     return IsInvocableVT<F, Args...>::value;
 }
 
-#ifndef H2_NO_CPP17
+#ifndef H2_NO_CXX17
 /** @brief Test whether F can be invoked with the given arguments. */
 template <typename F, typename... Args>
 inline constexpr bool IsInvocable = IsInvocableV<F, Args...>();
-#endif // H2_NO_CPP17
+#endif // H2_NO_CXX17
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -846,4 +863,5 @@ public:
 }// namespace h2
 #endif // H2_MULTIMETHODS_SWITCHDISPATCHER_HPP_
 
+#endif // LBANN_HAS_DIHYDROGEN
 #endif // LBANN_UTILS_H2_TMP_HPP_
