@@ -347,8 +347,9 @@ class generic_input_layer : public io_layer<TensorDataType> {
   generic_data_reader *get_data_reader(const execution_mode mode) const {
     generic_data_reader *data_reader = nullptr;
 
-    auto it = m_data_readers.find(mode);
-    if (it != m_data_readers.end()) data_reader = it->second;
+    data_reader_map_t& data_readers = this->get_execution_context()->get_trainer()->get_data_coordinator().get_data_readers(mode);
+    auto it = data_readers.find(mode);
+    if (it != data_readers.end()) data_reader = it->second;
 
     switch(mode) {
     case execution_mode::training:
@@ -860,7 +861,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
   dataset m_validation_dataset;
   //  bool m_data_sets_span_models;
 
-  data_reader_map_t m_data_readers;
+  ata_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
   bool m_data_set_processed;
   std::mutex dr_mutex;

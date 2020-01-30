@@ -29,6 +29,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/io/persist.hpp"
@@ -127,6 +128,8 @@ public:
 
   void for_each_execution_context(std::function<void(observer_ptr<execution_context>)>fn);
 
+  data_coordinator& get_data_coordinator() { return &m_data_coordinator; }
+
   void apply(training_algorithm& alg,
              observer_ptr<model> model,
              execution_mode mode,
@@ -202,6 +205,9 @@ private:
 
   /** @brief Current callbacks to process. */
   std::vector<std::shared_ptr<callback_base>> m_callbacks;
+
+  /** @brief Data Coordinator holding trainers data readers */
+  data_coordinator m_data_coordinator;
 };
 
 }  // namespace lbann
