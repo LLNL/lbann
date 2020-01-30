@@ -41,7 +41,12 @@ const DataType min_output = 0;
 void fp(lbann_comm& comm,
         const AbsDistMat& input,
         AbsDistMat& output,
-        AbsDistMat& workspace) {
+        AbsDistMat& workspace,
+        softmax_mode mode) {
+
+  if(mode != softmax_mode::INSTANCE) {
+    LBANN_ERROR("Unsupported softmax mode");
+  }
 
   // Local matrices
   const auto& local_input = input.LockedMatrix();
@@ -96,7 +101,12 @@ void bp(lbann_comm& comm,
         const AbsDistMat& output,
         const AbsDistMat& gradient_wrt_output,
         AbsDistMat& gradient_wrt_input,
-        AbsDistMat& workspace) {
+        AbsDistMat& workspace,
+        softmax_mode mode) {
+
+  if(mode != softmax_mode::INSTANCE) {
+    LBANN_ERROR("Unsupported softmax mode");
+  }
 
   // Local matrices
   const auto& local_output = output.LockedMatrix();
@@ -140,7 +150,8 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
   fp(*get_comm(),
      get_prev_activations(),
      get_activations(),
-     *m_workspace);
+     *m_workspace,
+     this->m_mode);
 }
 template <>
 void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
@@ -148,14 +159,16 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
      get_activations(),
      get_prev_error_signals(),
      get_error_signals(),
-     *m_workspace);
+     *m_workspace,
+     this->m_mode);
 }
 template <>
 void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
   fp(*get_comm(),
      get_prev_activations(),
      get_activations(),
-     *m_workspace);
+     *m_workspace,
+     this->m_mode);
 }
 template <>
 void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
@@ -163,7 +176,8 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
      get_activations(),
      get_prev_error_signals(),
      get_error_signals(),
-     *m_workspace);
+     *m_workspace,
+     this->m_mode);
 }
 
 template class softmax_layer<

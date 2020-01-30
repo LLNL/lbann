@@ -41,6 +41,7 @@ class ConvBNRelu(lbann.modules.Module):
             stride=stride, padding=padding,
             bias=False,
             name=self.name + '_conv')
+            
 
         # Initialize batch normalization
         bn_scale_init = 0.0 if bn_zero_init else 1.0

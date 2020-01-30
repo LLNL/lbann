@@ -252,7 +252,14 @@ message Layer {
   message Relu {}
   message Selu {}
   message Sigmoid {}
-  message Softmax {}
+
+  /**
+   *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
+   */
+  message Softmax {
+    string softmax_mode = 1; // default: "instance"; should be "instance" or "channel"
+  }
+
   message Softplus {}
   message Softsign {}
 
