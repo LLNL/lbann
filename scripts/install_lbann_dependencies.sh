@@ -48,7 +48,7 @@ SPACK_ARCH=$(spack arch)
 
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
-ENABLE_GPUS="+gpu+nccl"
+ENABLE_GPUS=ON
 BUILD_TYPE=Release
 VERBOSE=0
 LBANN_ENV=lbann
@@ -95,7 +95,7 @@ while :; do
             fi
             ;;
         --disable-gpus)
-            ENABLE_GPUS=
+            ENABLE_GPUS=OFF
             ;;
         -?*)
             # Unknown option
@@ -118,11 +118,55 @@ source ${SPACK_ENV_DIR}/${CENTER}/externals-${SPACK_ARCH}.sh
 # Defines COMPILER_ALL_PACKAGES and COMPILER_DEFINITIONS
 source ${SPACK_ENV_DIR}/${CENTER}/compilers.sh
 
+if [[ ${SYS} != "Darwin" ]]; then
+COMPILER_PACKAGE=$(cat <<EOF
+  - gcc
+EOF
+)
+fi
+
+AL_GPU_VARIANTS=
+HYDROGEN_GPU_VARIANTS=
+if [[ "${ENABLE_GPUS}" == "ON" ]]; then
+GPU_PACKAGES=$(cat <<EOF
+  - cudnn
+  - cub
+  - nccl
+EOF
+)
+AL_GPU_VARIANTS="+gpu+nccl~mpi_cuda"
+HYDROGEN_GPU_VARIANTS="+cuda"
+fi
+
 SPACK_ENV=$(cat <<EOF
 spack:
   concretization: together
   specs:
-  - lbann@develop${ENABLE_GPUS}
+  - aluminum
+  - catch2
+  - cereal
+  - clara
+  - cmake
+  - cnpy
+  - conduit
+  - half
+  - hwloc
+  - hydrogen
+${COMPILER_PACKAGE}
+  - opencv
+  - ninja
+  - zlib
+${GPU_PACKAGES}
+  - py-numpy
+  - py-protobuf
+  - py-pytest
+  - py-setuptools
+  mirrors: {}
+  modules:
+    enable: []
+  repos: []
+  config: {}
+
   packages:
 ${EXTERNAL_ALL_PACKAGES}
 ${COMPILER_ALL_PACKAGES}
@@ -134,6 +178,7 @@ ${STD_PACKAGES}
     aluminum:
       buildable: true
       version: [master]
+      variants: ${AL_GPU_VARIANTS}
       providers: {}
       paths: {}
       modules: {}
@@ -142,6 +187,7 @@ ${STD_PACKAGES}
     hydrogen:
       buildable: true
       version: [develop]
+      variants: +openmp_blas +shared +int64 +al ${HYDROGEN_GPU_VARIANTS}
       providers: {}
       paths: {}
       modules: {}
@@ -184,3 +230,6 @@ else
     echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:"
     echo "  spack env activate -p ${LBANN_ENV}"
 fi
+CMD="spack env loads"
+echo ${CMD}
+${CMD}

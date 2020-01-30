@@ -60,6 +60,7 @@ BUILD_ENV=TRUE
 BUILD_TYPE=Release
 VERBOSE=0
 DETERMINISTIC=OFF
+LBANN_ENV=lbann
 
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     echo "script ${BASH_SOURCE[0]} is being sourced ... only setting environment variables."
@@ -82,6 +83,7 @@ Options:
   ${C}--help${N}               Display this help message and exit.
   ${C}--debug${N}              Build with debug flag.
   ${C}--verbose${N}            Verbose output.
+  ${C}-e | --env${N}           Build and install LBANN in the spack environment provided.
   ${C}-p | --prefix${N}        Build and install LBANN headers and dynamic library into subdirectorys at this path prefix.
   ${C}-i | --install-dir${N}   Install LBANN headers and dynamic library into the install directory.
   ${C}-b | --build-dir${N}     Specify alternative build directory; default is <lbann_home>/build/spack.
@@ -103,6 +105,16 @@ while :; do
             if [[ ${BUILD_ENV} == "FALSE" ]]; then
                 return
             else
+                exit 1
+            fi
+            ;;
+        -e|--env)
+            # Change default build directory
+            if [ -n "${2}" ]; then
+                LBANN_ENV=${2}
+                shift
+            else
+                echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
             ;;
@@ -213,13 +225,20 @@ CMD="mkdir -p ${INSTALL_DIR}"
 echo ${CMD}
 ${CMD}
 
-SUPERBUILD=superbuild_lbann.sh
+SUPERBUILD=cmake_lbann.sh
 if [[ ${SYS} = "Darwin" ]]; then
     OSX_VER=$(sw_vers -productVersion)
     ENABLE_GPUS=OFF
 fi
 
-source ${SPACK_ENV_DIR}/setup_lbann_dependencies.sh
+CMD="cd ${LBANN_BUILD_DIR}"
+echo ${CMD}
+${CMD}
+echo ${PWD}
+
+#source ${SPACK_ENV_DIR}/setup_lbann_dependencies.sh
+spack env activate -p ${LBANN_ENV}
+source ${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/loads
 
 if [[ ${SYS} = "Darwin" ]]; then
     export DYLD_LIBRARY_PATH=/System/Library/Frameworks/ImageIO.framework/Resources/:/usr/lib/:${DYLD_LIBRARY_PATH}

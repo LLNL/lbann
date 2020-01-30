@@ -35,6 +35,7 @@ SPACK_ENV=$(cat <<EOF
 spack:
   concretization: together
   specs:
+  - aluminum
   - catch2
   - cereal
   - clara
@@ -43,6 +44,7 @@ spack:
   - conduit
   - half
   - hwloc
+  - hydrogen
 ${COMPILER_PACKAGE}
   - opencv
   - ninja
@@ -66,6 +68,25 @@ ${EXTERNAL_PACKAGES}
 
 ${STD_PACKAGES}
 
+    aluminum:
+      buildable: true
+      version: [master]
+      variants: +gpu +nccl ~mpi_cuda
+      providers: {}
+      paths: {}
+      modules: {}
+      compiler: []
+      target: []
+    hydrogen:
+      buildable: true
+      version: [develop]
+      variants: +openmp_blas +shared +int64 +al
+      providers: {}
+      paths: {}
+      modules: {}
+      compiler: []
+      target: []
+
 ${COMPILER_DEFINITIONS}
 
 ${STD_MODULES}
@@ -75,10 +96,21 @@ EOF
 
 echo "${SPACK_ENV}" > ${temp_file}
 
-CMD="spack env create -d ${LBANN_BUILD_DIR} ${temp_file}"
+if [[ $(spack env list | grep ${LBANN_ENV}) ]]; then
+    echo "Spack environment ${LBANN_ENV} already exists... overwriting it"
+    CMD="spack env rm ${LBANN_ENV}"
+    echo ${CMD}
+    ${CMD}
+fi
+
+CMD="spack env create ${LBANN_ENV} ${temp_file}"
+#CMD="spack env create -d ${LBANN_BUILD_DIR} ${temp_file}"
 echo ${CMD}
 ${CMD}
-cd ${LBANN_BUILD_DIR}
+#cd ${LBANN_BUILD_DIR}
+CMD="spack env activate -p ${LBANN_ENV}"
+echo ${CMD}
+${CMD}
 echo "********************************************************************************"
 echo "* WARNING a fresh installation of the spack dependencies can take a long time   "
 echo "********************************************************************************"

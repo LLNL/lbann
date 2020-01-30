@@ -112,6 +112,21 @@ Expert developers should refer to :ref:`here
 <building-with-the-superbuild>` for a list and descriptions of all
 CMake flags known to LBANN's "Superbuild" build system.
 
+1.  Install all of the external packages via spack (Aluminum, Hydrogen, etc).
+    Install packages into a spack environment.
+
+    .. code-block:: bash
+
+        <path to lbann repo>/scripts/install_lbann_dependencies.sh -e <name of spack environment>
+
+
+2.  Activate the spack environment and load the modules built by spack.
+
+    .. code-block:: bash
+
+        spack env activate -p <name of spack environment>
+        source ${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/loads
+
 1.  Running this integrated script that will setup both the
     dependencies via spack and Aluminum, Hydrogen, and LBANN via
     CMake.

@@ -5,7 +5,6 @@ compare_versions()
     local v1=( $(echo "$1" | tr '.' ' ') )
     local v2=( $(echo "$2" | tr '.' ' ') )
     local len=$(( ${#v1[*]} > ${#v2[*]} ? ${#v1[*]} : ${#v2[*]} ))
-    #local len=3
     for ((i=0; i<len; i++))
     do
         [ "${v1[i]:-0}" -gt "${v2[i]:-0}" ] && return 1
