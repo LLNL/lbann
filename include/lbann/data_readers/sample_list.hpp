@@ -62,7 +62,7 @@ struct sample_list_header {
   template <class Archive> void serialize( Archive & ar ) {
     ar(m_is_multi_sample, m_is_exclusive, m_no_label_header,
        m_included_sample_count, m_excluded_sample_count,
-       m_num_files, m_file_dir,
+       m_num_files, m_is_file_dir_overriden, m_file_dir,
        m_sample_list_name, m_label_filename);
   }
 };
@@ -169,10 +169,10 @@ class sample_list {
  protected:
 
   /// Reads a header line from the sample list given as a stream, and use the info string for error message
-  std::string read_header_line(std::istream& ifs, const std::string& listname, const std::string& info) const;
+  std::string read_header_line(std::istream& ifs, const std::string& listname, const std::string& info);
 
   /// Reads the header of a sample list
-  sample_list_header read_header(std::istream& istrm, const std::string& listname) const;
+  void read_header(std::istream& istrm);
 
   /// read the body of a sample list, which is the list of sample files, where each file contains a single sample.
   virtual void read_sample_list(std::istream& istrm, size_t stride=1, size_t offset=0);

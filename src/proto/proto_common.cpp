@@ -736,6 +736,12 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     set_data_readers_filenames("train", p);
   }
   if (opts->has_string("data_filedir")
+      or opts->has_string("data_filedir_validate")
+      or opts->has_string("data_filename_validate")
+      or opts->has_string("label_filename_validate")) {
+    set_data_readers_filenames("validate", p);
+  }
+  if (opts->has_string("data_filedir")
       or opts->has_string("data_filedir_test")
       or opts->has_string("data_filename_test")
       or opts->has_string("label_filename_test")) {
@@ -743,6 +749,9 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
   }
   if (opts->has_string("sample_list_train")) {
     set_data_readers_sample_list("train", p);
+  }
+  if (opts->has_string("sample_list_validate")) {
+    set_data_readers_sample_list("validate", p);
   }
   if (opts->has_string("sample_list_test")) {
     set_data_readers_sample_list("test", p);

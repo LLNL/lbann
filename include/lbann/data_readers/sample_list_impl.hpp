@@ -316,7 +316,7 @@ template <typename sample_name_t>
 inline std::string sample_list<sample_name_t>
 ::read_header_line(std::istream& istrm,
                    const std::string& listname,
-                   const std::string& info) const {
+                   const std::string& info) {
   if (!istrm.good()) {
     throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
                           + " :: unable to read the header line of sample list " + listname + " for " + info);
@@ -335,31 +335,27 @@ inline std::string sample_list<sample_name_t>
 
 
 template <typename sample_name_t>
-inline sample_list_header sample_list<sample_name_t>
-::read_header(std::istream& istrm,
-              const std::string& listname) const {
-  sample_list_header hdr;
-  hdr.set_sample_list_name(listname);
+inline void sample_list<sample_name_t>
+::read_header(std::istream& istrm) {
+  const std::string listname = m_header.get_sample_list_name();
 
   std::string line1 = read_header_line(istrm, listname, "the exclusiveness\n");
   std::string line2 = read_header_line(istrm, listname, "the number of samples and the number of files\n");
   std::string line3 = read_header_line(istrm, listname, "the data file directory\n");
 
-  hdr.set_sample_list_type(line1);
-  hdr.set_sample_count(line2);
-  hdr.set_data_file_dir(line3);
+  m_header.set_sample_list_type(line1);
+  m_header.set_sample_count(line2);
+  m_header.set_data_file_dir(line3);
 
-  if (hdr.use_label_header()) {
+  if (m_header.use_label_header()) {
     std::string line4 = read_header_line(istrm, listname, "the path to label/response file\n");
-    hdr.set_label_filename(line4);
+    m_header.set_label_filename(line4);
   }
 
-  if (hdr.get_file_dir().empty() || !check_if_dir_exists(hdr.get_file_dir())) {
+  if (m_header.get_file_dir().empty() || !check_if_dir_exists(m_header.get_file_dir())) {
     LBANN_ERROR(std::string{} + "file " + listname
-                 + " :: data root directory '" + hdr.get_file_dir() + "' does not exist.");
+                 + " :: data root directory '" + m_header.get_file_dir() + "' does not exist.");
   }
-
-  return hdr;
 }
 
 
@@ -424,8 +420,7 @@ template <typename sample_name_t>
 inline size_t sample_list<sample_name_t>
 ::get_samples_per_file(std::istream& istrm,
                        size_t stride, size_t offset) {
-  const std::string listname = m_header.get_sample_list_name();
-  m_header = read_header(istrm, listname);
+  read_header(istrm);
 
   m_stride = stride;
   read_sample_list(istrm, stride, offset);
