@@ -92,6 +92,12 @@ message Reader {
   PythonDataReader python = 501;
 
   repeated Transform transforms = 600;  // Ordered list of transforms to apply.
+
+  //------------- start of only for HDF5 data reader ------------------
+  string hdf5_key_data      = 700;
+  string hdf5_key_responses = 701;
+  //------------- end of only for HDF5 data reader ------------------
+
 }
 
 message PythonDataReader {

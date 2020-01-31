@@ -52,12 +52,16 @@ inline hid_t check_hdf5(hid_t hid, const char *file, int line) {
 
 namespace lbann {
 
-const std::string hdf5_reader::HDF5_KEY_DATA = "full";
-const std::string hdf5_reader::HDF5_KEY_RESPONSES = "unitPar";
-
-hdf5_reader::hdf5_reader(const bool shuffle)
+hdf5_reader::hdf5_reader(const bool shuffle,
+                         const std::string key_data,
+                         const std::string key_responses)
     : generic_data_reader(shuffle),
-      m_use_data_store(options::get()->get_bool("use_data_store")) {
+      m_use_data_store(options::get()->get_bool("use_data_store")),
+      m_key_data(key_data),
+      m_key_responses(key_responses) {
+#ifndef LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
+  LBANN_ERROR("HDF5 reader requires LBANN_DISTCONV_COSMOFLOW_KEEP_INT16 to be defined. Use the --distconv-cosmoflow-int16 option of build_lbann_lc.sh");
+#endif
 }
 
 hdf5_reader::hdf5_reader(const hdf5_reader& rhs)  : generic_data_reader(rhs) {
@@ -88,6 +92,8 @@ void hdf5_reader::copy_members(const hdf5_reader &rhs) {
   m_comm = rhs.m_comm;
   m_file_paths = rhs.m_file_paths;
   m_use_data_store = rhs.m_use_data_store;
+  m_key_data = rhs.m_key_data;
+  m_key_responses = rhs.m_key_responses;
 
   for(size_t i = 0; i < m_num_response_features; i++) {
     m_all_responses[i] = rhs.m_all_responses[i];
@@ -132,7 +138,7 @@ void hdf5_reader::read_hdf5_sample(int data_id, short *sample) {
 
   // load in dataset
   hid_t h_data = CHECK_HDF5(
-      H5Dopen(h_file, HDF5_KEY_DATA.c_str(), H5P_DEFAULT));
+      H5Dopen(h_file, m_key_data.c_str(), H5P_DEFAULT));
   hid_t filespace = CHECK_HDF5(H5Dget_space(h_data));
   //get the number of dimesnionse from the dataset
   int rank1 = H5Sget_simple_extent_ndims(filespace);
@@ -145,7 +151,7 @@ void hdf5_reader::read_hdf5_sample(int data_id, short *sample) {
   CHECK_HDF5(H5Dclose(h_data));
 
   if (m_has_responses) {
-    h_data = CHECK_HDF5(H5Dopen(h_file, HDF5_KEY_RESPONSES.c_str(), H5P_DEFAULT));
+    h_data = CHECK_HDF5(H5Dopen(h_file, m_key_responses.c_str(), H5P_DEFAULT));
     CHECK_HDF5(H5Dread(h_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, m_all_responses));
     CHECK_HDF5(H5Dclose(h_data));
   }
@@ -173,7 +179,7 @@ void hdf5_reader::load() {
   if (m_file_paths.size() > 0) {
     const hid_t h_file = CHECK_HDF5(H5Fopen(m_file_paths[0].c_str(),
                                             H5F_ACC_RDONLY, H5P_DEFAULT));
-    const hid_t h_data = CHECK_HDF5(H5Dopen(h_file, HDF5_KEY_DATA.c_str(),
+    const hid_t h_data = CHECK_HDF5(H5Dopen(h_file, m_key_data.c_str(),
                                             H5P_DEFAULT));
     const hid_t h_space = CHECK_HDF5(H5Dget_space(h_data));
     if (CHECK_HDF5(H5Sget_simple_extent_ndims(h_space)) != 4) {

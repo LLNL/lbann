@@ -23,7 +23,8 @@ namespace lbann {
  */
 class hdf5_reader : public generic_data_reader {
  public:
-  hdf5_reader(const bool shuffle);
+  hdf5_reader(const bool shuffle, const std::string key_data,
+              const std::string key_responses);
   hdf5_reader(const hdf5_reader&);
   hdf5_reader& operator=(const hdf5_reader&);
   ~hdf5_reader() override {}
@@ -77,6 +78,7 @@ class hdf5_reader : public generic_data_reader {
   hid_t m_dxpl;
   MPI_Comm m_response_gather_comm;
   bool m_use_data_store;
+  std::string m_key_data, m_key_responses;
  private:
   static const std::string HDF5_KEY_DATA, HDF5_KEY_LABELS, HDF5_KEY_RESPONSES;
 };
