@@ -154,14 +154,15 @@ void image_data_reader::load() {
 
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
     const std::string slist_name = (m_sample_list.get_header()).get_sample_list_name();
-    {
-      const std::string msg = " writing sample list " + slist_name;
-      LBANN_WARNING(msg);
-    }
     std::stringstream s;
     std::string basename = get_basename_without_ext(slist_name);
     std::string ext = get_ext_name(slist_name);
     s << basename << "." << ext;
+    {
+      const std::string msg = " writing sample list '" + slist_name
+                            + "' as '" + s.str() + "'";
+      LBANN_WARNING(msg);
+    }
     m_sample_list.write(s.str());
   }
 
@@ -386,7 +387,11 @@ void image_data_reader::load_list_of_samples_from_archive(const std::string& sam
 /**
  * Similar to `load_list_of_samples()` but generates the sample list header
  * on-the-fly, and reuse the original imagenet data list file for loading both
- * the sample list and the label list.
+ * the sample list and the label list, of which path is specified via the
+ * prototext variable `data_filedir`. This is for the backward compatibility
+ * and allows users to use the old data reader prototext without preparing a
+ * sample list and modifying the prototext. The base location of data files
+ * is specified via `data_filedir` prototext variable as it was.
  */
 void image_data_reader::gen_list_of_samples() {
   // load the sample list
