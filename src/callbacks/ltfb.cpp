@@ -285,17 +285,12 @@ void restore_local_model(lbann_comm& comm, model& m, El::Int step) {
   // Load local model checkpoint
   persist p;
   p.set_cb_type(callback_type::model_only);
-  if (comm.am_trainer_master()) {
-    p.open_restart(checkpoint_dir);
-  } else {
-    p.m_checkpoint_dir = checkpoint_dir;
-  }
+  p.open_restart(checkpoint_dir);
   m.load_from_checkpoint_shared(p);
-  if (comm.am_trainer_master()) {
-    p.close_restart();
-  }
+  p.close_restart();
 
 }
+
 } // namespace checkpoint_file
 
 /** Get mean metric value with validation set. */
