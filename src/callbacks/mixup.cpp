@@ -26,7 +26,8 @@
 
 #include <algorithm>
 #include "lbann/callbacks/mixup.hpp"
-#include "lbann/proto/factories.hpp"
+#include "lbann/layers/data_type_layer.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/beta.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/image.hpp"
@@ -42,13 +43,15 @@ void mixup::on_forward_prop_end(model *m, Layer *l) {
   if (!m_layers.count(l->get_name())) {
     return;
   }
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& c =
+    dynamic_cast<const sgd_execution_context&>(m->get_execution_context());
   if (c.get_execution_mode() != execution_mode::training) {
     return;  // No mixup outside of training.
   }
 
-  auto& samples_orig = l->get_local_activations(0);
-  auto& labels_orig = l->get_local_activations(1);
+  auto* dtl = dynamic_cast<data_type_layer<DataType>*>(l);
+  auto& samples_orig = dtl->get_local_activations(0);
+  auto& labels_orig = dtl->get_local_activations(1);
   if (samples_orig.GetDevice() != El::Device::CPU ||
       labels_orig.GetDevice() != El::Device::CPU) {
     LBANN_ERROR("Mixup requires CPU data.");

@@ -1,9 +1,11 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  argument_parser.cpp
   cnpy_utils.cpp
   cublas.cpp
   cudnn.cpp
   description.cpp
+  environment_variable.cpp
   exception.cpp
   file_utils.cpp
   graph.cpp
@@ -20,8 +22,10 @@ set_full_path(THIS_DIR_SOURCES
   stack_trace.cpp
   statistics.cpp
   summary.cpp
+  system_info.cpp
   lbann_library.cpp
   jag_common.cpp
+  commify.cpp
 )
 
 if (LBANN_HAS_CUDA)

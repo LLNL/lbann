@@ -41,6 +41,7 @@ class ConvBNRelu(lbann.modules.Module):
             stride=stride, padding=padding,
             bias=False,
             name=self.name + '_conv')
+            
 
         # Initialize batch normalization
         bn_scale_init = 0.0 if bn_zero_init else 1.0
@@ -130,7 +131,7 @@ class BasicBlock(lbann.modules.Module):
         self.instance += 1
         y1 = self.branch1(x) if self.branch1 else x
         y2 = self.branch2b(self.branch2a(x))
-        z = lbann.Add([y1, y2],
+        z = lbann.Add(y1, y2,
                       name='{0}_sum_instance{1}'.format(self.name,self.instance))
         return lbann.Relu(z, name='{0}_relu_instance{1}'.format(self.name,self.instance))
 
@@ -198,7 +199,7 @@ class BottleneckBlock(lbann.modules.Module):
         self.instance += 1
         y1 = self.branch1(x) if self.branch1 else x
         y2 = self.branch2c(self.branch2b(self.branch2a(x)))
-        z = lbann.Add([y1, y2],
+        z = lbann.Add(y1, y2,
                       name='{0}_sum_instance{1}'.format(self.name,self.instance))
         return lbann.Relu(z, name='{0}_relu_instance{1}'.format(self.name,self.instance))
 

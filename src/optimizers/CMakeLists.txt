@@ -2,6 +2,7 @@
 set_full_path(THIS_DIR_SOURCES
   adagrad.cpp
   adam.cpp
+  data_type_optimizer.cpp
   hypergradient_adam.cpp
   optimizer.cpp
   rmsprop.cpp

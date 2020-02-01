@@ -163,6 +163,9 @@ include(SetupCXX)
 # Required dependencies
 find_package(Threads REQUIRED)
 
+# Argument parsing backend
+find_package(Clara REQUIRED)
+
 find_package(CEREAL NO_MODULE
   HINTS ${CEREAL_DIR} $ENV{CEREAL_DIR}
   PATH_SUFFIXES share/cmake/cereal
@@ -174,15 +177,18 @@ set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
 # The imported target is just called "cereal". Super.
 
 # Setup the linear algebra library
-find_package(Hydrogen 1.2.0 NO_MODULE QUIET
+find_package(Hydrogen 1.3.3 NO_MODULE QUIET
   HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
   PATH_SUFFIXES lib/cmake/hydrogen
   NO_DEFAULT_PATH)
 if (NOT Hydrogen_FOUND)
-  find_package(Hydrogen 1.2.0 NO_MODULE QUIET REQUIRED)
+  find_package(Hydrogen 1.3.3 NO_MODULE QUIET REQUIRED)
 endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
+
+# Inherit half-precision stuff from Hydrogen
+set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only
 
 # Not the ideal fix, but should be fine for now.
 if (Aluminum_FOUND)
@@ -209,6 +215,11 @@ set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
 set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
 
+# Only used if have GPU and have CPU half.
+if (LBANN_HAS_CUDA AND LBANN_HAS_HALF)
+  set(LBANN_HAS_GPU_FP16 ${HYDROGEN_GPU_USE_FP16})
+endif ()
+
 if (LBANN_HAS_CUDA)
   enable_language(CUDA)
 
@@ -222,13 +233,15 @@ endif ()
 if (LBANN_WITH_ALUMINUM)
   # Aluminum may have already been found by Hydrogen
   if (NOT Aluminum_FOUND)
-    find_package(Aluminum 0.2.0 NO_MODULE QUIET
+    message(WARNING
+      "Using Aluminum without Hydrogen support may not be well-supported.")
+    find_package(Aluminum 0.3.0 NO_MODULE QUIET
       HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
       $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
       PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
       NO_DEFAULT_PATH)
     if (NOT Aluminum_FOUND)
-      find_package(Aluminum 0.2.0 NO_MODULE QUIET)
+      find_package(Aluminum 0.3.0 NO_MODULE QUIET)
     endif ()
   endif ()
   set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
@@ -271,6 +284,11 @@ if (LBANN_HAS_CUDA)
   endif ()
 
   include(SetupCUDAToolkit)
+
+  if (LBANN_HAS_GPU_FP16)
+    set_property(TARGET cuda::toolkit PROPERTY
+      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
+  endif (LBANN_HAS_GPU_FP16)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
 
@@ -497,6 +515,7 @@ target_include_directories(lbann PUBLIC
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
 target_link_libraries(lbann PUBLIC Threads::Threads)
+target_link_libraries(lbann PUBLIC clara::clara)
 target_link_libraries(lbann PUBLIC cereal)
 target_link_libraries(lbann PUBLIC OpenMP::OpenMP_CXX)
 target_link_libraries(lbann PUBLIC MPI::MPI_CXX)
@@ -546,10 +565,8 @@ if (APPLE)
   set_source_files_properties(${_LBANN_SRCS}
     PROPERTIES COMPILE_OPTIONS "-g")
 
-  # Cleanup bad files
-  list(APPEND BAD_FILES
-    "${CMAKE_SOURCE_DIR}/src/layers/loss/cross_entropy.cpp")
-  foreach (bad_file IN LISTS BAD_FILES)
+  # Cleanup source files
+  foreach (bad_file IN LISTS _LBANN_SRCS)
     get_source_file_property(
       _SRC_COMPILE_OPTS "${bad_file}" COMPILE_OPTIONS)
     string(REPLACE "-g" "" _SRC_COMPILE_OPTS "${COMPILE_OPTIONS}")
@@ -576,6 +593,7 @@ endif ()
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/jag_utils)
+add_subdirectory(applications/CANDLE/pilot2/tools)
 add_subdirectory(tests)
 add_subdirectory(scripts)
 

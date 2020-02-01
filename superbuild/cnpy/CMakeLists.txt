@@ -19,8 +19,9 @@ else ()
     CACHE STRING "The URL from which to clone CNPY")
 endif ()
 
+
 # ... then the tag.
-set(CNPY_TAG "f19917f6c442885dcf171de485ba8b17bd178da6"
+set(CNPY_TAG "4e8810b1a8637695171ed346ce68f6984e585ef4"
   CACHE STRING "The git tag or hash to checkout for CNPY")
 
 # Where to install CNPY

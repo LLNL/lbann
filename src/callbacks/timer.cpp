@@ -86,7 +86,7 @@ void timer::timing_end(model& m) {
       batch_time_stdev += diff * diff;
     }
     batch_time_stdev /= num_batches - 1;
-    batch_time_stdev = std::sqrt(std::max(batch_time_stdev, zero));
+    batch_time_stdev = El::Sqrt(std::max(batch_time_stdev, zero));
   }
 
   // Get string for execution mode

@@ -27,21 +27,22 @@
 #ifndef LBANN_LAYERS_MISC_CHANNELWISE_MEAN_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_CHANNELWISE_MEAN_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
 /** @todo Replace with more general reduction layer. */
-template <data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class channelwise_mean_layer : public Layer {
+class channelwise_mean_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "channelwise_mean_layer only supports "
                 "data-parallel data layout");
 public:
 
   channelwise_mean_layer(lbann_comm *comm)
-    : Layer(comm) {
+    : data_type_layer<TensorDataType>(comm) {
     if (comm->am_trainer_master()) {
       LBANN_WARNING("channelwise_mean_layer is experimental "
                     "and may be deprecated at any time");
@@ -56,9 +57,9 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
-    const auto& input_dims = get_input_dims();
-    set_output_dims({input_dims[0]});
+    data_type_layer<TensorDataType>::setup_dims();
+    const auto& input_dims = this->get_input_dims();
+    this->set_output_dims({input_dims[0]});
   }
 
   void fp_compute() override;
@@ -67,12 +68,11 @@ protected:
 };
 
 #ifndef LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
-extern template class channelwise_mean_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class channelwise_mean_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class channelwise_mean_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_CHANNELWISE_MEAN_LAYER_INSTANTIATE
 
 } // namespace lbann

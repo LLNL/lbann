@@ -1,0 +1,11 @@
+#max min mean std_dev for x/y/z coordinates:
+9.6067 7.46754 3.14485 
+-3.53206 -5.68766 -7.9664 
+1.66227 -0.00509318 -2.23788 
+1.17969 0.773128 1.04863 
+#max min mean std_dev for euclidean distances
+17.1385
+0
+1.91128
+1.41321
+

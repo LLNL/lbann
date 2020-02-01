@@ -39,6 +39,8 @@ option(LBANN_SB_BUILD_CATCH2 "Pull and install CATCH2 library from Github" OFF)
 
 option(LBANN_SB_BUILD_CEREAL "Pull and install CEREAL library from Github" OFF)
 
+option(LBANN_SB_BUILD_CLARA "Pull and install Clara library from Github" OFF)
+
 option(LBANN_SB_BUILD_CNPY "Pull and build CNPY from Github" OFF)
 
 option(LBANN_SB_BUILD_CONDUIT "Pull and build CONDUIT from Github" OFF)
@@ -72,6 +74,11 @@ endif ()
 if (LBANN_SB_BUILD_CATCH2)
   add_subdirectory(catch2)
   list(APPEND _BUILD_PKGS CATCH2)
+endif ()
+
+if (LBANN_SB_BUILD_CLARA)
+  add_subdirectory(clara)
+  list(APPEND _BUILD_PKGS CLARA)
 endif ()
 
 if (LBANN_SB_BUILD_CEREAL)

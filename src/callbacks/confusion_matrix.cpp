@@ -25,6 +25,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/confusion_matrix.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 #include <callbacks.pb.h>
 
@@ -41,13 +42,21 @@ namespace callback {
 // Constructors
 // ---------------------------------------------------------
 
-confusion_matrix::confusion_matrix(std::string prediction_layer,
-                                                                 std::string label_layer,
-                                                                 std::string prefix)
+confusion_matrix::confusion_matrix(std::string&& prediction_layer,
+                                   std::string&& label_layer,
+                                   std::string&& prefix)
   : callback_base(1),
     m_prediction_layer(std::move(prediction_layer)),
     m_label_layer(std::move(label_layer)),
     m_prefix(std::move(prefix)) {}
+
+confusion_matrix::confusion_matrix(std::string const& prediction_layer,
+                                   std::string const& label_layer,
+                                   std::string const& prefix)
+  : callback_base(1),
+    m_prediction_layer(prediction_layer),
+    m_label_layer(label_layer),
+    m_prefix(prefix) {}
 
 confusion_matrix::confusion_matrix(const confusion_matrix& other)
   : callback_base(other),
@@ -81,19 +90,17 @@ void confusion_matrix::setup(model* m) {
   const auto& labels = get_labels(*m);
   auto dist_data = predictions.DistData();
   dist_data.device = El::Device::CPU;
-  m_predictions_v.reset(AbsDistMat::Instantiate(dist_data));
-  m_labels_v.reset(AbsDistMat::Instantiate(dist_data));
+  m_predictions_v.reset(AbsDistMatType::Instantiate(dist_data));
+  m_labels_v.reset(AbsDistMatType::Instantiate(dist_data));
 
   // Check output dimensions of prediction and label layers
   if (predictions.Height() != labels.Height()) {
-    std::stringstream err;
-    err << "callback \"" << name() << "\" "
-        << "has prediction and label layers with different dimensions "
-        << "(prediction layer \"" << m_prediction_layer << "\" "
-        << "outputs " << predictions.Height() << " entries, "
-        << "label layer \"" << m_label_layer << "\" "
-        << "outputs " << labels.Height() << " entries)";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("callback \"", name(), "\" "
+                "has prediction and label layers with different dimensions "
+                "(prediction layer \"", m_prediction_layer, "\" "
+                "outputs ", predictions.Height(), " entries, "
+                "label layer \"", m_label_layer, "\" "
+                "outputs ", labels.Height(), " entries)");
   }
 
 }
@@ -102,30 +109,28 @@ void confusion_matrix::setup(model* m) {
 // Matrix access functions
 // ---------------------------------------------------------
 
-const AbsDistMat& confusion_matrix::get_predictions(const model& m) const {
+auto confusion_matrix::get_predictions(const model& m) const
+  -> const AbsDistMatType& {
   for (const auto* l : m.get_layers()) {
     if (l->get_name() == m_prediction_layer) {
-      return l->get_activations();
+      auto const& dtl = dynamic_cast<data_type_layer<DataType> const&>(*l);
+      return dtl.get_activations();
     }
   }
-  std::stringstream err;
-  err << "callback \"" << name() << "\" could not find "
-      << "prediction layer \"" << m_prediction_layer << "\"";
-  LBANN_ERROR(err.str());
-  return m.get_layers()[0]->get_activations();
+  LBANN_ERROR("callback \"", name(), "\" could not find "
+              "prediction layer \"", m_prediction_layer, "\"");
 }
 
-const AbsDistMat& confusion_matrix::get_labels(const model& m) const {
+auto confusion_matrix::get_labels(const model& m) const
+  -> const AbsDistMatType& {
   for (const auto* l : m.get_layers()) {
     if (l->get_name() == m_label_layer) {
-      return l->get_activations();
+      auto const& dtl = dynamic_cast<data_type_layer<DataType> const&>(*l);
+      return dtl.get_activations();
     }
   }
-  std::stringstream err;
-  err << "callback \"" << name() << "\" could not find "
-      << "label layer \"" << m_prediction_layer << "\"";
-  LBANN_ERROR(err.str());
-  return m.get_layers()[0]->get_activations();
+  LBANN_ERROR("callback \"", name(), "\" could not find "
+              "label layer \"", m_prediction_layer, "\"");
 }
 
 // ---------------------------------------------------------
@@ -246,12 +251,13 @@ void confusion_matrix::save_confusion_matrix(const model& m) {
 
 std::unique_ptr<callback_base>
 build_confusion_matrix_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackConfusionMatrix&>(proto_msg);
   return make_unique<confusion_matrix>(params.prediction(),
-                                                      params.label(),
-                                                      params.prefix());
+                                       params.label(),
+                                       params.prefix());
 }
 
 } // namespace callback

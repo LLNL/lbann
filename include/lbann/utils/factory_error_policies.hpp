@@ -22,13 +22,13 @@ namespace lbann
 template <typename KeyT, class ObjectT>
 struct default_key_error_policy
 {
-  std::unique_ptr<ObjectT> handle_unknown_key(KeyT const&) const
+  std::unique_ptr<ObjectT> handle_unknown_key(KeyT const& key) const
   {
     // This could be expanded to print the key, but that would
     // assume that either the key can be inserted into a stream or
     // that the key can be converted to a string, which isn't
     // necessarily the case.
-    LBANN_ERROR("Unknown key detected.");
+    LBANN_ERROR("Unknown key \"", key, "\" detected.");
   }
 };// class default_key_error_policy
 

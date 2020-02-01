@@ -99,7 +99,7 @@ def construct_model(run_args):
     for i in range(sequence_length-1):
     
         emb_l = lbann.Embedding(
-            idl[i], 
+            idl[i],
             name='emb_'+str(i),
             device='CPU',
             weights=emb_weights,

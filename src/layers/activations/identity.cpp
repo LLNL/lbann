@@ -29,11 +29,10 @@
 
 namespace lbann {
 
-template class lbann::identity_layer<lbann::data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class lbann::identity_layer<lbann::data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class lbann::identity_layer<lbann::data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class lbann::identity_layer<lbann::data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  template class identity_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  template class identity_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

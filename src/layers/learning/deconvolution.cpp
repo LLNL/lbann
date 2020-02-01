@@ -29,12 +29,10 @@
 
 namespace lbann {
 
-template class deconvolution_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
 
-#ifdef LBANN_HAS_GPU
-template class deconvolution_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device)                                             \
+  template class deconvolution_layer<T, data_layout::DATA_PARALLEL, Device>;
+
+#include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

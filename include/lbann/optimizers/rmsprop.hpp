@@ -27,8 +27,10 @@
 #ifndef LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_RMSPROP_HPP_INCLUDED
 
-#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
 #include <sys/stat.h>
+#include "lbann/io/persist.hpp"
+#include <optimizers.pb.h>
 
 namespace lbann {
 
@@ -37,12 +39,28 @@ namespace lbann {
  *  See
  *  https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf.
  */
-class rmsprop : public optimizer {
+template <typename TensorDataType>
+class rmsprop : public data_type_optimizer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The optimizer base type of this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  ///@}
+
 public:
 
-  rmsprop(DataType learning_rate,
-          DataType decay_rate,
-          DataType eps = 1e-8);
+  rmsprop(TensorDataType learning_rate,
+          TensorDataType decay_rate,
+          TensorDataType eps = 1e-8);
   rmsprop(const rmsprop& other);
   rmsprop& operator=(const rmsprop& other);
   ~rmsprop() override = default;
@@ -53,28 +71,28 @@ public:
   /** Human-readable description. */
   description get_description() const override;
 
-  void setup(weights* w = nullptr) override;
+  void setup(WeightsType* w = nullptr) override;
 
 protected:
 
   /** Computation for an optimization step. */
-  void step_compute(AbsDistMat& values,
-                    const AbsDistMat& gradient) override;
+  void step_compute(AbsDistMatrixType& values,
+                    const AbsDistMatrixType& gradient) override;
 
 private:
 
   /** Decay rate. */
-  DataType m_decay_rate;
+  TensorDataType m_decay_rate;
   /** Small factor to avoid division by zero. */
-  DataType m_eps;
+  TensorDataType m_eps;
   /** RMSprop cache. */
-  std::unique_ptr<AbsDistMat> m_cache;
+  std::unique_ptr<AbsDistMatrixType> m_cache;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #ifdef LBANN_HAS_CUDA
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_CUDA
 
   // ===========================================
@@ -82,7 +100,7 @@ private:
   // ===========================================
 
   struct packing_header {
-    DataType decay_rate;
+    TensorDataType decay_rate;
   };
 
   bool pack_scalars(persist& p) {
@@ -111,6 +129,7 @@ private:
 
 };
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_rmsprop_optimizer_from_pbuf(
   google::protobuf::Message const&);

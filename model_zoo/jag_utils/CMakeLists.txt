@@ -86,9 +86,14 @@ add_executable(convert
 target_link_libraries(convert lbann)
 add_dependencies(jag-utils convert)
 
+add_executable(convert_npz_to_conduit
+  EXCLUDE_FROM_ALL convert_npz_to_conduit.cpp)
+target_link_libraries(convert_npz_to_conduit lbann)
+add_dependencies(jag-utils convert_npz_to_conduit)
+
 # Install the binaries
 install(
-  TARGETS select_samples build_sample_id_mapping build_index
+  TARGETS select_samples build_sample_id_mapping build_index convert_npz_to_conduit 
   OPTIONAL
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

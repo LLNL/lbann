@@ -43,9 +43,9 @@ void perturb_dropout::setup(model* m) {
   perturb(*m);
 }
 
-template <data_layout T_layout, El::Device Dev>
-dropout<T_layout, Dev>* perturb_dropout::get_dropout_layer(Layer* l) {
-  if(auto d_layer = dynamic_cast<dropout<T_layout, Dev>*>(l)) return d_layer;
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+dropout<TensorDataType, T_layout, Dev>* perturb_dropout::get_dropout_layer(Layer* l) {
+  if(auto d_layer = dynamic_cast<dropout<TensorDataType, T_layout, Dev>*>(l)) return d_layer;
   else return nullptr;
 }
 
@@ -61,11 +61,11 @@ void perturb_dropout::perturb(model& m) {
     if (m_layer_names.empty()
         || m_layer_names.count(l->get_name()) > 0) {
 
-      auto d_dp_cpu = get_dropout_layer<data_layout::DATA_PARALLEL, El::Device::CPU>(l);
-      auto d_mp_cpu = get_dropout_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>(l);
+      auto d_dp_cpu = get_dropout_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>(l);
+      auto d_mp_cpu = get_dropout_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>(l);
       #ifdef LBANN_HAS_GPU
-      auto d_dp_gpu = get_dropout_layer<data_layout::DATA_PARALLEL, El::Device::GPU>(l);
-      auto d_mp_gpu = get_dropout_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>(l);
+      auto d_dp_gpu = get_dropout_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>(l);
+      auto d_mp_gpu = get_dropout_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>(l);
       #endif
       // Perturb dropout layer
         if(d_dp_cpu != nullptr || d_mp_cpu != nullptr

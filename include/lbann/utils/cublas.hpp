@@ -100,62 +100,83 @@ namespace cublas {
 const std::string get_error_string(cublasStatus_t status);
 
 // BLAS Level-1 functions
+template <typename TensorDataType>
 void axpy(cublasHandle_t const& handle,
           int n,
-          DataType alpha,
-          DataType const* x, int incx,
-          DataType * y, int incy);
+          TensorDataType alpha,
+          TensorDataType const* x, int incx,
+          TensorDataType * y, int incy);
+template <typename TensorDataType>
 void dot(cublasHandle_t const& handle,
          int n,
-         DataType const* x, int incx,
-         DataType const* y, int incy,
-         DataType * result);
-DataType dot(cublasHandle_t const& handle,
+         TensorDataType const* x, int incx,
+         TensorDataType const* y, int incy,
+         TensorDataType * result);
+template <typename TensorDataType>
+TensorDataType dot(cublasHandle_t const& handle,
              int n,
-             DataType const* x, int incx,
-             DataType const* y, int incy);
+             TensorDataType const* x, int incx,
+             TensorDataType const* y, int incy);
+template <typename TensorDataType>
 void nrm2(cublasHandle_t const& handle,
           int n,
-          DataType const* x, int incx,
-          DataType * result);
-DataType nrm2(cublasHandle_t const& handle,
+          TensorDataType const* x, int incx,
+          TensorDataType * result);
+template <typename TensorDataType>
+TensorDataType nrm2(cublasHandle_t const& handle,
               int n,
-              DataType const* x, int incx);
+              TensorDataType const* x, int incx);
+template <typename TensorDataType>
 void scal(cublasHandle_t const& handle,
           int n,
-          DataType alpha,
-          DataType * x, int incx);
+          TensorDataType alpha,
+          TensorDataType * x, int incx);
 
 // BLAS Level-2 functions
+template <typename TensorDataType>
 void gemv(cublasHandle_t const& handle,
           cublasOperation_t trans,
           int m, int n,
-          DataType alpha,
-          DataType const * A, int lda,
-          DataType const * x, int incx,
-          DataType beta,
-          DataType * y, int iny);
+          TensorDataType alpha,
+          TensorDataType const * A, int lda,
+          TensorDataType const * x, int incx,
+          TensorDataType beta,
+          TensorDataType * y, int iny);
 
 // BLAS Level-3 functions
+template <typename TensorDataType>
 void gemm(cublasHandle_t const& handle,
           cublasOperation_t transa, cublasOperation_t transb,
           int m, int n, int k,
-          DataType alpha,
-          DataType const * A, int lda,
-          DataType const * B, int ldb,
-          DataType beta,
-          DataType * C, int ldc);
+          TensorDataType alpha,
+          TensorDataType const * A, int lda,
+          TensorDataType const * B, int ldb,
+          TensorDataType beta,
+          TensorDataType * C, int ldc);
 
 // BLAS-like extension
+template <typename TensorDataType>
 void geam(cublasHandle_t const& handle,
           cublasOperation_t transa, cublasOperation_t transb,
           int m, int n,
-          DataType alpha,
-          DataType const * A, int lda,
-          DataType beta,
-          DataType const * B, int ldb,
-          DataType * C, int ldc);
-
+          TensorDataType alpha,
+          TensorDataType const * A, int lda,
+          TensorDataType beta,
+          TensorDataType const * B, int ldb,
+          TensorDataType * C, int ldc);
+template <typename TensorDataType>
+void gemm_strided_batched(cublasHandle_t const& handle,
+                          cublasOperation_t transa, cublasOperation_t transb,
+                          int m, int n, int k,
+                          TensorDataType alpha,
+                          TensorDataType const * A, int lda,
+                          long long int strideA,
+                          TensorDataType const * B, int ldb,
+                          long long int strideB,
+                          TensorDataType beta,
+                          TensorDataType * C, int ldc,
+                          long long int strideC,
+                          int batchCount);
 } // namespace cublas
 } // namespace lbann
 

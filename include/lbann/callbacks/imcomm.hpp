@@ -35,71 +35,81 @@
 #include "lbann/callbacks/callback.hpp"
 
 namespace lbann {
+
+template <typename T>
+class data_type_weights;
+
 namespace callback {
 
 /**
- * Support inter-model communication after each mini-batch to synchronize
- * gradient updates.
+ * @brief Support inter-model communication after each mini-batch to
+ *        synchronize gradient updates.
  */
 class imcomm : public callback_base {
  public:
   using callback_base::on_backward_prop_end;
 
   enum comm_type {
-    NONE,  /** Do no gradient updates. */
+    NONE=0,  /** Do no gradient updates. */
     NORMAL,  /** Simply sum gradient updates. */
   };
 
   /**
-   * Initialize with ct being used for all weights.
+   * @brief Initialize with ct being used for all weights.
    */
   imcomm(comm_type ct = NORMAL,
-                        const std::shared_ptr<lbann_summary>& summarizer = nullptr);
+         const std::shared_ptr<lbann_summary>& summarizer = nullptr);
   imcomm(const imcomm&) = default;
   imcomm& operator=(const imcomm&) = default;
   imcomm* copy() const override {
     return new imcomm(*this);
   }
   /**
-   * Convenience initialization to do one update type for specific weights.
-   * Implies no inter-model updates for other weights.
+   * @brief Convenience initialization to do one update type for specific weights.
+   *
+   * @details Implies no inter-model updates for other weights.
    */
   imcomm(comm_type ct, std::unordered_set<weights *> weights_list,
-                        const std::shared_ptr<lbann_summary>& summarizer = nullptr);
+         const std::shared_ptr<lbann_summary>& summarizer = nullptr);
 
-  /** Choose comm type ct for weights. */
+  /** @brief Choose comm type ct for weights. */
   void set_weights_comm(weights *w, comm_type ct);
 
-  /** Do initialization for this model. */
+  /** @brief Do initialization for this model. */
   void setup(model *m) override;
-  /** Make sure all models have the same weights. */
+
+  /** @brief Make sure all models have the same weights. */
   void on_train_begin(model *m) override;
-  /** Do inter-model gradient updates. */
+
+  /** @brief Do inter-model gradient updates. */
   void on_backward_prop_end(model *m) override;
 
   std::string name() const override { return "imcomm"; }
 
  private:
-  /** Parameters for a given set of weights. */
+  /** @brief Summarize relevant statistics. */
+  template <typename T>
+  void do_summary(model const& m, data_type_weights<T>& w, EvalType im_time);
+
+ private:
+  /** @brief Parameters for a given set of weights. */
   struct imcomm_params {
-    /** Type of communication done. */
+    /** @brief Type of communication done. */
     comm_type ct = NONE;
   };
-  /** Default communication type. */
+
+  /** @brief Default communication type. */
   comm_type m_default_ct;
-  /** Per-weights parameters. */
+
+  /** @brief Per-weights parameters. */
   std::unordered_map<weights *, imcomm_params> m_weights_params;
 
-  /** Summarize relevant statistics. */
-  void do_summary(model *m, weights *w, EvalType im_time);
-
-  /** @brief lbann_summary */
+  /** @brief @brief lbann_summary */
   std::shared_ptr<lbann_summary> m_summarizer = nullptr;
 };
 
-
-/** returns a string representation of the weight_initialization */
-std::string get_comm_type_name(imcomm::comm_type m);
+/** @brief returns a string representation of the weight_initialization */
+std::string get_comm_type_name(typename imcomm::comm_type m);
 
 // Builder function
 std::unique_ptr<callback_base>

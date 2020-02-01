@@ -27,7 +27,6 @@
 #define LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 #include "lbann/utils/cuda.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -40,12 +39,13 @@ namespace {
  *
  *  Grid dimensions: (height / bsize) x 1 x 1
  */
+template <typename TensorDataType>
 __global__ void row_sums_kernel(size_t height,
                                 size_t width,
-                                const DataType* __restrict__ vals,
+                                const TensorDataType* __restrict__ vals,
                                 size_t vals_ldim,
-                                DataType* __restrict__ sums,
-                                DataType* __restrict__ sqsums) {
+                                TensorDataType* __restrict__ sums,
+                                TensorDataType* __restrict__ sqsums) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = blockDim.x * gridDim.x;
   for (size_t row = gid; row < height; row += nthreads) {
@@ -67,13 +67,14 @@ __global__ void row_sums_kernel(size_t height,
  *
  *  Grid dimensions: (size / bsize) x 1 x 1
  */
+template <typename TensorDataType>
 __global__ void compute_statistics_kernel(size_t size,
-                                          size_t statistics_count,
-                                          DataType decay,
-                                          DataType* __restrict__ batch_mean,
-                                          DataType* __restrict__ batch_var,
-                                          DataType* __restrict__ running_mean,
-                                          DataType* __restrict__ running_var) {
+                                          unsigned long long statistics_count,
+                                          TensorDataType decay,
+                                          TensorDataType* __restrict__ batch_mean,
+                                          TensorDataType* __restrict__ batch_var,
+                                          TensorDataType* __restrict__ running_mean,
+                                          TensorDataType* __restrict__ running_var) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = blockDim.x * gridDim.x;
   for (size_t i = gid; i < size; i += nthreads) {
@@ -83,11 +84,12 @@ __global__ void compute_statistics_kernel(size_t size,
     auto& _running_var = running_var[i];
     const auto sum = batch_mean[i];
     const auto sqsum = batch_var[i];
-    mean = sum / statistics_count;
-    const auto sqmean = sqsum / statistics_count;
-    var = (sqmean - mean * mean) * statistics_count / (statistics_count - 1);
-    _running_mean = decay * _running_mean + (DataType{1} - decay) * mean;
-    _running_var = decay * _running_var + (DataType{1} - decay) * var;
+    const TensorDataType statistics_count_dt = TensorDataType(statistics_count);
+    mean = sum / statistics_count_dt;
+    const auto sqmean = sqsum / statistics_count_dt;
+    var = (sqmean - mean * mean) * statistics_count_dt / TensorDataType(statistics_count - 1);
+    _running_mean = decay * _running_mean + (TensorDataType{1} - decay) * mean;
+    _running_var = decay * _running_var + (TensorDataType{1} - decay) * var;
   }
 }
 
@@ -96,20 +98,21 @@ __global__ void compute_statistics_kernel(size_t size,
  *
  *  var = ( sum(x_i^2)/n - mean^2 ) * n/(n-1)
  */
+template <typename TensorDataType>
 void compute_batch_statistics(lbann_comm& comm,
-                              DataType decay,
-                              const AbsDistMat& input,
-                              AbsDistMat& batch_statistics,
-                              AbsDistMat& running_mean,
-                              AbsDistMat& running_var) {
+                              TensorDataType decay,
+                              const El::AbstractDistMatrix<TensorDataType>& input,
+                              El::AbstractDistMatrix<TensorDataType>& batch_statistics,
+                              El::AbstractDistMatrix<TensorDataType>& running_mean,
+                              El::AbstractDistMatrix<TensorDataType>& running_var) {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const GPUMat&>(input.LockedMatrix());
-  auto& local_batch_statistics = dynamic_cast<GPUMat&>(batch_statistics.Matrix());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input.LockedMatrix());
+  auto& local_batch_statistics = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(batch_statistics.Matrix());
   auto local_batch_mean = El::View(local_batch_statistics, El::ALL, El::IR(0));
   auto local_batch_var = El::View(local_batch_statistics, El::ALL, El::IR(1));
-  auto& local_running_mean = dynamic_cast<GPUMat&>(running_mean.Matrix());
-  auto& local_running_var = dynamic_cast<GPUMat&>(running_var.Matrix());
+  auto& local_running_mean = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(running_mean.Matrix());
+  auto& local_running_var = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(running_var.Matrix());
 
   // Dimensions
   const size_t local_height = local_input.Height();
@@ -122,7 +125,7 @@ void compute_batch_statistics(lbann_comm& comm,
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
-    row_sums_kernel
+    row_sums_kernel<TensorDataType>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height,
         local_width,
@@ -143,14 +146,14 @@ void compute_batch_statistics(lbann_comm& comm,
   // Compute mini-batch statistics from sums
   if (statistics_count <= 1) {
     // local_mean already has correct values
-    El::Fill(local_batch_var, DataType{1});
+    El::Fill(local_batch_var, El::TypeTraits<TensorDataType>::One());
   } else {
     if (local_height > 0) {
       constexpr size_t block_size = 256;
       dim3 block_dims, grid_dims;
       block_dims.x = block_size;
       grid_dims.x = (local_height + block_size - 1) / block_size;
-      compute_statistics_kernel
+      compute_statistics_kernel<TensorDataType>
         <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
           local_height,
           statistics_count,
@@ -169,15 +172,16 @@ void compute_batch_statistics(lbann_comm& comm,
  *
  *  Grid dimensions: (height / bsizex) x (width / bsizey) x 1
  */
+template <typename TensorDataType>
 __global__ void batchnorm_kernel(size_t height,
                                  size_t width,
-                                 DataType epsilon,
-                                 const DataType* __restrict__ input,
+                                 TensorDataType epsilon,
+                                 const TensorDataType* __restrict__ input,
                                  size_t input_ldim,
-                                 DataType* __restrict__ output,
+                                 TensorDataType* __restrict__ output,
                                  size_t output_ldim,
-                                 const DataType* __restrict__ mean,
-                                 const DataType* __restrict__ var) {
+                                 const TensorDataType* __restrict__ mean,
+                                 const TensorDataType* __restrict__ var) {
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
   const size_t nthreadsx = blockDim.x * gridDim.x;
@@ -197,11 +201,12 @@ __global__ void batchnorm_kernel(size_t height,
 /**
  *  y_i = (x_i - mean) / sqrt(var + epsilon)
  */
+template <typename TensorDataType>
 void apply_batchnorm(DataType epsilon,
-                     const GPUMat& local_input,
-                     GPUMat& local_output,
-                     const GPUMat& local_mean,
-                     const GPUMat& local_var) {
+                     const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
+                     El::Matrix<TensorDataType, El::Device::GPU>& local_output,
+                     const El::Matrix<TensorDataType, El::Device::GPU>& local_mean,
+                     const El::Matrix<TensorDataType, El::Device::GPU>& local_var) {
   if (!local_input.IsEmpty()) {
     const size_t local_height = local_input.Height();
     const size_t local_width = local_input.Width();
@@ -212,7 +217,7 @@ void apply_batchnorm(DataType epsilon,
     block_dims.y = block_size_y;
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    batchnorm_kernel
+    batchnorm_kernel<TensorDataType>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height,
         local_width,
@@ -226,53 +231,54 @@ void apply_batchnorm(DataType epsilon,
   }
 }
 
+template <typename TensorDataType>
 void fp_impl(lbann_comm& comm,
-             DataType decay,
-             DataType epsilon,
+             TensorDataType decay,
+             TensorDataType epsilon,
              bool is_training,
-             const AbsDistMat& input,
-             AbsDistMat& output,
-             AbsDistMat& batch_statistics,
-             AbsDistMat& running_mean,
-             AbsDistMat& running_var) {
+             const El::AbstractDistMatrix<TensorDataType>& input,
+             El::AbstractDistMatrix<TensorDataType>& output,
+             El::AbstractDistMatrix<TensorDataType>& batch_statistics,
+             El::AbstractDistMatrix<TensorDataType>& running_mean,
+             El::AbstractDistMatrix<TensorDataType>& running_var) {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const GPUMat&>(input.LockedMatrix());
-  auto& local_output = dynamic_cast<GPUMat&>(output.Matrix());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input.LockedMatrix());
+  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(output.Matrix());
 
   // Batchnorm has different behavior for training and inference
   if (is_training) {
 
     // For training, normalize with batch statistics
-    compute_batch_statistics(comm,
-                             decay,
-                             input,
-                             batch_statistics,
-                             running_mean,
-                             running_var);
+    compute_batch_statistics<TensorDataType>(comm,
+                                             decay,
+                                             input,
+                                             batch_statistics,
+                                             running_mean,
+                                             running_var);
     const auto& local_batch_statistics
-      = dynamic_cast<const GPUMat&>(batch_statistics.LockedMatrix());
+      = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(batch_statistics.LockedMatrix());
     const auto local_batch_mean = El::LockedView(local_batch_statistics,
                                                  El::ALL, El::IR(0));
     const auto local_batch_var = El::LockedView(local_batch_statistics,
                                                 El::ALL, El::IR(1));
-    apply_batchnorm(epsilon,
-                    local_input,
-                    local_output,
-                    local_batch_mean,
-                    local_batch_var);
+    apply_batchnorm<TensorDataType>(epsilon,
+                                    local_input,
+                                    local_output,
+                                    local_batch_mean,
+                                    local_batch_var);
 
   }
   else {
 
     // For inference, normalize with running statistics
-    const auto& local_running_mean = dynamic_cast<const GPUMat&>(running_mean.LockedMatrix());
-    const auto& local_running_var = dynamic_cast<const GPUMat&>(running_var.LockedMatrix());
-    apply_batchnorm(epsilon,
-                    local_input,
-                    local_output,
-                    local_running_mean,
-                    local_running_var);
+    const auto& local_running_mean = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(running_mean.LockedMatrix());
+    const auto& local_running_var = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(running_var.LockedMatrix());
+    apply_batchnorm<TensorDataType>(epsilon,
+                                    local_input,
+                                    local_output,
+                                    local_running_mean,
+                                    local_running_var);
 
   }
 
@@ -290,17 +296,18 @@ void fp_impl(lbann_comm& comm,
  *
  *  Grid dimensions: (height / bsize) x 1 x 1
  */
+template <typename TensorDataType>
 __global__ void bp_training_stats_gradient_kernel(size_t height,
                                                   size_t width,
-                                                  DataType epsilon,
-                                                  const DataType* __restrict__ input,
+                                                  TensorDataType epsilon,
+                                                  const TensorDataType* __restrict__ input,
                                                   size_t input_ldim,
-                                                  const DataType* __restrict__ gradient_wrt_output,
+                                                  const TensorDataType* __restrict__ gradient_wrt_output,
                                                   size_t gradient_wrt_output_ldim,
-                                                  const DataType* __restrict__ mean,
-                                                  const DataType* __restrict__ var,
-                                                  DataType* __restrict__ gradient_wrt_mean,
-                                                  DataType* __restrict__ gradient_wrt_var) {
+                                                  const TensorDataType* __restrict__ mean,
+                                                  const TensorDataType* __restrict__ var,
+                                                  TensorDataType* __restrict__ gradient_wrt_mean,
+                                                  TensorDataType* __restrict__ gradient_wrt_var) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = blockDim.x * gridDim.x;
   for (size_t row = gid; row < height; row += nthreads) {
@@ -313,7 +320,7 @@ __global__ void bp_training_stats_gradient_kernel(size_t height,
       const auto& x = input[row + col * input_ldim];
       const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       dmean += - dy * inv_stdev;
-      dvar += - dy * (x - _mean) * inv_stdev*inv_stdev*inv_stdev / 2;
+      dvar += - dy * (x - _mean) * inv_stdev*inv_stdev*inv_stdev / TensorDataType(2);
     }
   }
 }
@@ -327,20 +334,21 @@ __global__ void bp_training_stats_gradient_kernel(size_t height,
  *
  *  Grid dimensions: (height / bsizex) x (width / bsizey) x 1
  */
+template <typename TensorDataType>
 __global__ void bp_training_error_signal_kernel(size_t height,
                                                 size_t width,
-                                                DataType epsilon,
-                                                size_t statistics_count,
-                                                const DataType* __restrict__ input,
+                                                TensorDataType epsilon,
+                                                unsigned long long statistics_count,
+                                                const TensorDataType* __restrict__ input,
                                                 size_t input_ldim,
-                                                const DataType* __restrict__ gradient_wrt_output,
+                                                const TensorDataType* __restrict__ gradient_wrt_output,
                                                 size_t gradient_wrt_output_ldim,
-                                                DataType* __restrict__ gradient_wrt_input,
+                                                TensorDataType* __restrict__ gradient_wrt_input,
                                                 size_t gradient_wrt_input_ldim,
-                                                const DataType* __restrict__ mean,
-                                                const DataType* __restrict__ var,
-                                                const DataType* __restrict__ gradient_wrt_mean,
-                                                const DataType* __restrict__ gradient_wrt_var) {
+                                                const TensorDataType* __restrict__ mean,
+                                                const TensorDataType* __restrict__ var,
+                                                const TensorDataType* __restrict__ gradient_wrt_mean,
+                                                const TensorDataType* __restrict__ gradient_wrt_var) {
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
   const size_t nthreadsx = blockDim.x * gridDim.x;
@@ -356,8 +364,8 @@ __global__ void bp_training_error_signal_kernel(size_t height,
       const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
       auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
       dx = (dy * inv_stdev
-            + dmean / statistics_count
-            + dvar * (x - _mean) * 2 / (statistics_count - 1));
+            + dmean / TensorDataType(statistics_count)
+            + dvar * (x - _mean) * TensorDataType(2) / TensorDataType(statistics_count - 1));
     }
   }
 }
@@ -367,22 +375,23 @@ __global__ void bp_training_error_signal_kernel(size_t height,
  *  Assumes forward prop uses mini-batch statistics. In other words,
  *  statistics are dependent on input.
  */
+template <typename TensorDataType>
 void bp_training_impl(lbann_comm& comm,
-                      DataType epsilon,
-                      const AbsDistMat& input,
-                      const AbsDistMat& gradient_wrt_output,
-                      AbsDistMat& gradient_wrt_input,
-                      const AbsDistMat& statistics,
-                      AbsDistMat& gradient_wrt_statistics) {
+                      TensorDataType epsilon,
+                      const El::AbstractDistMatrix<TensorDataType>& input,
+                      const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                      El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+                      const El::AbstractDistMatrix<TensorDataType>& statistics,
+                      El::AbstractDistMatrix<TensorDataType>& gradient_wrt_statistics) {
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const GPUMat&>(input.LockedMatrix());
-  const auto& local_gradient_wrt_output = dynamic_cast<const GPUMat&>(gradient_wrt_output.LockedMatrix());
-  auto& local_gradient_wrt_input = dynamic_cast<GPUMat&>(gradient_wrt_input.Matrix());
-  const auto& local_statistics = dynamic_cast<const GPUMat&>(statistics.LockedMatrix());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input.LockedMatrix());
+  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_output.LockedMatrix());
+  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_input.Matrix());
+  const auto& local_statistics = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(statistics.LockedMatrix());
   const auto local_mean = El::LockedView(local_statistics, El::ALL, El::IR(0));
   const auto local_var = El::LockedView(local_statistics, El::ALL, El::IR(1));
-  auto& local_gradient_wrt_statistics = dynamic_cast<GPUMat&>(gradient_wrt_statistics.Matrix());
+  auto& local_gradient_wrt_statistics = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_statistics.Matrix());
   auto local_gradient_wrt_mean = El::View(local_gradient_wrt_statistics, El::ALL, El::IR(0));
   auto local_gradient_wrt_var = El::View(local_gradient_wrt_statistics, El::ALL, El::IR(1));
 
@@ -408,7 +417,7 @@ void bp_training_impl(lbann_comm& comm,
     dim3 block_dims, grid_dims;
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
-    bp_training_stats_gradient_kernel
+    bp_training_stats_gradient_kernel<TensorDataType>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height,
         local_width,
@@ -468,14 +477,15 @@ void bp_training_impl(lbann_comm& comm,
  *
  *  Grid dimensions: (height / bsizex) x (width / bsizey) x 1
  */
+template <typename TensorDataType>
 __global__ void bp_inference_kernel(size_t height,
                                     size_t width,
-                                    DataType epsilon,
-                                    const DataType* __restrict__ gradient_wrt_output,
+                                    TensorDataType epsilon,
+                                    const TensorDataType* __restrict__ gradient_wrt_output,
                                     size_t gradient_wrt_output_ldim,
-                                    DataType* __restrict__ gradient_wrt_input,
+                                    TensorDataType* __restrict__ gradient_wrt_input,
                                     size_t gradient_wrt_input_ldim,
-                                    const DataType* __restrict__ running_var) {
+                                    const TensorDataType* __restrict__ running_var) {
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
   const size_t nthreadsx = blockDim.x * gridDim.x;
@@ -496,15 +506,16 @@ __global__ void bp_inference_kernel(size_t height,
  *  Assumes forward prop uses running statistics. In other words,
  *  statistics are independent of input.
  */
+template <typename TensorDataType>
 void bp_inference_impl(DataType epsilon,
-                       const AbsDistMat& gradient_wrt_output,
-                       AbsDistMat& gradient_wrt_input,
-                       const AbsDistMat& running_var) {
+                       const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+                       El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+                       const El::AbstractDistMatrix<TensorDataType>& running_var) {
 
   // Local matrices
-  const auto& local_gradient_wrt_output = dynamic_cast<const GPUMat&>(gradient_wrt_output.LockedMatrix());
-  auto& local_gradient_wrt_input = dynamic_cast<GPUMat&>(gradient_wrt_input.Matrix());
-  const auto& local_running_var = dynamic_cast<const GPUMat&>(running_var.LockedMatrix());
+  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_output.LockedMatrix());
+  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_input.Matrix());
+  const auto& local_running_var = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(running_var.LockedMatrix());
 
   // Compute gradient w.r.t. input
   if (!local_gradient_wrt_output.IsEmpty()) {
@@ -517,7 +528,7 @@ void bp_inference_impl(DataType epsilon,
     block_dims.y = block_size_y;
     grid_dims.x = (local_height + block_size_x - 1) / block_size_x;
     grid_dims.y = (local_width + block_size_y - 1) / block_size_y;
-    bp_inference_kernel
+    bp_inference_kernel<TensorDataType>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height,
         local_width,
@@ -531,31 +542,32 @@ void bp_inference_impl(DataType epsilon,
 
 }
 
+template <typename TensorDataType>
 void bp_impl(lbann_comm& comm,
-             DataType epsilon,
+             TensorDataType epsilon,
              bool is_training,
-             const AbsDistMat& input,
-             const AbsDistMat& gradient_wrt_output,
-             AbsDistMat& gradient_wrt_input,
-             const AbsDistMat& batch_statistics,
-             AbsDistMat& gradient_wrt_batch_statistics,
-             const AbsDistMat& running_var) {
+             const El::AbstractDistMatrix<TensorDataType>& input,
+             const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+             El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+             const El::AbstractDistMatrix<TensorDataType>& batch_statistics,
+             El::AbstractDistMatrix<TensorDataType>& gradient_wrt_batch_statistics,
+             const El::AbstractDistMatrix<TensorDataType>& running_var) {
 
   // Batchnorm has different behavior for training and inference
   if (is_training) {
-    bp_training_impl(comm,
-                     epsilon,
-                     input,
-                     gradient_wrt_output,
-                     gradient_wrt_input,
-                     batch_statistics,
-                     gradient_wrt_batch_statistics);
+    bp_training_impl<TensorDataType>(comm,
+                                     epsilon,
+                                     input,
+                                     gradient_wrt_output,
+                                     gradient_wrt_input,
+                                     batch_statistics,
+                                     gradient_wrt_batch_statistics);
   }
   else {
-    bp_inference_impl(epsilon,
-                      gradient_wrt_output,
-                      gradient_wrt_input,
-                      running_var);
+    bp_inference_impl<TensorDataType>(epsilon,
+                                      gradient_wrt_output,
+                                      gradient_wrt_input,
+                                      running_var);
   }
 
 }
@@ -563,62 +575,41 @@ void bp_impl(lbann_comm& comm,
 } // namespace
 
 // Template instantiation
-template <>
-void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
-  fp_impl(*get_comm(),
-          m_decay,
-          m_epsilon,
-          c.get_execution_mode() == execution_mode::training,
-          get_prev_activations(),
-          get_activations(),
-          *m_batch_statistics,
-          m_weights[0]->get_values(),
-          m_weights[1]->get_values());
-}
-template <>
-void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
-  fp_impl(*get_comm(),
-          m_decay,
-          m_epsilon,
-          c.get_execution_mode() == execution_mode::training,
-          get_prev_activations(),
-          get_activations(),
-          *m_batch_statistics,
-          m_weights[0]->get_values(),
-          m_weights[1]->get_values());
-}
-template <>
-void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
-  bp_impl(*get_comm(),
-          m_epsilon,
-          c.get_execution_mode() == execution_mode::training,
-          get_prev_activations(),
-          get_prev_error_signals(),
-          get_error_signals(),
-          *m_batch_statistics,
-          *m_batch_statistics_gradient,
-          m_weights[1]->get_values());
-}
-template <>
-void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
-  bp_impl(*get_comm(),
-          m_epsilon,
-          c.get_execution_mode() == execution_mode::training,
-          get_prev_activations(),
-          get_prev_error_signals(),
-          get_error_signals(),
-          *m_batch_statistics,
-          *m_batch_statistics_gradient,
-          m_weights[1]->get_values());
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  const auto mode = this->get_model()->get_execution_context().get_execution_mode();
+  fp_impl(*this->get_comm(),
+          this->m_decay,
+          this->m_epsilon,
+          mode == execution_mode::training,
+          this->get_prev_activations(),
+          this->get_activations(),
+          *this->m_batch_statistics,
+          this->get_data_type_weights(0).get_values(),
+          this->get_data_type_weights(1).get_values());
 }
 
-template class entrywise_batch_normalization_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class entrywise_batch_normalization_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+  const auto mode = this->get_model()->get_execution_context().get_execution_mode();
+  bp_impl(*this->get_comm(),
+          this->m_epsilon,
+          mode == execution_mode::training,
+          this->get_prev_activations(),
+          this->get_prev_error_signals(),
+          this->get_error_signals(),
+          *this->m_batch_statistics,
+          *this->m_batch_statistics_gradient,
+          this->get_data_type_weights(1).get_values());
+}
+
+#define PROTO(T)                                      \
+  template class entrywise_batch_normalization_layer< \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>;  \
+  template class entrywise_batch_normalization_layer< \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

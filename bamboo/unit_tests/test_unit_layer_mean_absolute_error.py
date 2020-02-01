@@ -69,12 +69,10 @@ def construct_model(lbann):
                                name='input1_weights')
     x_slice = lbann.Slice(lbann.Input(),
                           slice_points=tools.str_list([0, slice_size, 2*slice_size]))
-    x0 = lbann.Sum([x_slice,
-                    lbann.WeightsLayer(weights=x0_weights,
-                                       dims=str(slice_size))])
-    x1 = lbann.Sum([x_slice,
-                    lbann.WeightsLayer(weights=x1_weights,
-                                       dims=str(slice_size))])
+    x0 = lbann.Sum(x_slice,
+                   lbann.WeightsLayer(weights=x0_weights, dims=str(slice_size)))
+    x1 = lbann.Sum(x_slice,
+                   lbann.WeightsLayer(weights=x1_weights, dims=str(slice_size)))
     x0_lbann = x0
     x1_lbann = x1
 
@@ -90,7 +88,7 @@ def construct_model(lbann):
     # LBANN implementation
     x0 = x0_lbann
     x1 = x1_lbann
-    y = lbann.MeanAbsoluteError([x0, x1], data_layout='data_parallel')
+    y = lbann.MeanAbsoluteError(x0, x1, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -120,10 +118,10 @@ def construct_model(lbann):
     # LBANN implementation
     x0 = x0_lbann
     x1 = x1_lbann
-    y = lbann.MeanAbsoluteError([x0, x1], data_layout='model_parallel')
+    y = lbann.MeanAbsoluteError(x0, x1, data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel layout, unbiased'))
+    metrics.append(lbann.Metric(z, name='model-parallel layout'))
 
     # NumPy implementation
     vals = []

@@ -11,21 +11,32 @@
       buildable: true
       version: [1.2.2]
 
+    conduit::
+      buildable: true
+      variants: ~doc~doxygen+hdf5~hdf5_compat+mpi+python+shared~silo
+      version: [0.4.0]
+
+    cnpy::
+      buildable: true
+      variants: build_type=RelWithDebInfo
+      version: [master]
+
     cub::
       buildable: true
       version: [1.7.1]
 
     nccl::
       buildable: true
-      version: [2.4.6-1]
+      version: [2.4.8-1]
 
     protobuf::
       buildable: True
       variants: build_type=Release +shared
-      version: [3.7.1]
+      version: [3.10.0]
 
     python::
       buildable: True
+      variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
       version: [3.7.2]
 
     py-cython::
@@ -40,11 +51,16 @@
       buildable: True
       version: [1.16.2]
 
+    py-protobuf::
+      buildable: True
+      variants: +cpp
+      version: [3.10.0]
+
     zlib::
       buildable: True
       version: [1.2.11]
 
-  modules::
+  modules:
     enable::
       - tcl
       - lmod
@@ -65,7 +81,6 @@
         suffixes:
           '^openblas': openblas
           '^netlib-lapack': netlib
-          '^python@3.7.2': python-3.7.2
         filter:
           # Exclude changes to any of these variables
           environment_blacklist: ['CPATH', 'LIBRARY_PATH']
@@ -87,7 +102,6 @@
         suffixes:
           '^openblas': openblas
           '^netlib-lapack': netlib
-          '^python@3.7.2': python-3.7.2
         filter:
           # Exclude changes to any of these variables
           environment_blacklist: ['CPATH', 'LIBRARY_PATH']

@@ -26,6 +26,7 @@
 
 #include "lbann/proto/factories.hpp"
 
+#include "lbann/callbacks/callback.hpp"
 #include "lbann/metrics/layer_metric.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/models/directed_acyclic_graph.hpp"
@@ -56,15 +57,13 @@ instantiate_model(lbann_comm* comm,
                   const lbann_data::Optimizer& proto_opt,
                   const lbann_data::Model& proto_model) {
 
-  // Default optimizer
-  auto opt = construct_optimizer(proto_opt);
-
   // Construct model
   const auto& type = proto_model.type();
   const auto& mini_batch_size = proto_model.mini_batch_size();
   if (type.empty() || type == "directed_acyclic_graph_model") {
     return make_unique<directed_acyclic_graph_model>(
-      comm, mini_batch_size, obj.release(), opt.release());
+      comm, mini_batch_size, obj.release(),
+      make_unique<lbann_data::Optimizer>(proto_opt));
   }
 
   // Throw error if model type is not supported
@@ -169,7 +168,7 @@ void assign_weights_to_layers(
   // Find weights assigned to each layer
   for (int i=0; i<proto_model.layer_size(); ++i) {
     const auto& proto_layer = proto_model.layer(i);
-    auto& layer_weights = layer_list[i]->get_weights();
+    auto layer_weights = extract_weights(*layer_list[i]);
     const bool is_frozen = layer_list[i]->is_frozen();
     for (auto&& name : parse_list<std::string>(proto_layer.weights())) {
       auto&& w = names_to_weights[name];
@@ -186,6 +185,7 @@ void assign_weights_to_layers(
       }
       layer_weights.push_back(w);
     }
+    layer_list[i]->set_weights(layer_weights);
   }
 
 }

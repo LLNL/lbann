@@ -493,18 +493,22 @@ void generic_data_reader::select_subset_of_data_partitioned() {
   }
 }
 
-double generic_data_reader::get_percent_to_use() {
+size_t generic_data_reader::get_num_indices_to_use() const {
   error_check_counts();
+  //note: exactly one of the following is guaranteed to be non-zero
   size_t count = get_absolute_sample_count();
   double use_percent = get_use_percent();
-  double r = 0.;
 
-  if (count != 0) {
-    r = count / get_num_data();
-  }
-
-  if (use_percent) {
-    r = (use_percent*get_num_data()) / get_num_data();
+  size_t r = 0.;
+  if (count) {
+    r = count;
+  } else if (use_percent) {
+    r = use_percent*get_num_data();
+    if (r == 0) {
+      LBANN_ERROR("get_num_indices_to_use() computed zero indices; probably: percent_of_data_to_use is too small WRT num_data");
+    }
+  } else {
+    LBANN_ERROR("it's impossible to be here");
   }
 
   return r;
@@ -517,9 +521,9 @@ void generic_data_reader::resize_shuffled_indices() {
     m_shuffled_indices.resize(n);
   }
 
-  double use_percent = get_percent_to_use();
+  size_t num_indices = get_num_indices_to_use();
   shuffle_indices();
-  m_shuffled_indices.resize(use_percent * get_num_data());
+  m_shuffled_indices.resize(num_indices);
 }
 
 void generic_data_reader::select_subset_of_data() {
@@ -529,7 +533,14 @@ void generic_data_reader::select_subset_of_data() {
     return ;
   }
 
+  if (get_validation_percent() == 0.) {
+    return;
+  }
+
   long unused = get_validation_percent()*get_num_data();
+  if (unused == 0) {
+    LBANN_ERROR("validation % of ", get_validation_percent(), " was requested, but the number of validation indices was computed as zero. Probably: % validation requested is too small wrt num_indices (aka, num samples)");
+  }
   long use_me = get_num_data() - unused;
   if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
@@ -707,15 +718,11 @@ void generic_data_reader::instantiate_data_store() {
     m_data_store->set_node_sizes_vary();
   }
 
-  //a call to m_data_store->check_mem_capacity(...) should go here, but
-  //at the moment that depends on the sample_list class, which it shouldn't
-  //TODO: revisit
-
   m_data_store->set_shuffled_indices(&m_shuffled_indices);
 
-  if (is_master()) {
-    std::cout << "generic_data_reader::instantiate_data_store time: : " << (get_time() - tm1) << std::endl;
-  }
+  std::stringstream s;
+  s << "generic_data_reader::instantiate_data_store time: : " << (get_time() - tm1);
+  m_data_store->set_profile_msg(s.str());
 }
 
 void generic_data_reader::setup_data_store(int mini_batch_size) {
@@ -723,28 +730,26 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
     LBANN_ERROR("m_data_store == nullptr; you shouldn't be here");
   }
   // optionally preload the data store
-  options *opts = options::get();
- 
-  if (opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
-    if(is_master()) {
-      std::cerr << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
-    }
+  if (m_data_store->is_preloading()) {
+    m_data_store->set_profile_msg("generic_data_reader::instantiate_data_store - starting the preload");
     double tm2 = get_time();
     preload_data_store();
-    if(is_master()) {
-     std::cout << "Preload complete; time: " << get_time() - tm2 << std::endl;
-    }
-
+    std::stringstream s;
+    s << "Preload complete; time: " << get_time() - tm2;
+    m_data_store->set_profile_msg(s.str());
+    /*
     size_t n = m_data_store->get_num_global_indices();
     if (n != m_shuffled_indices.size()) {
-      LBANN_ERROR("num samples loaded: ", n, " != shuffled-indices.size(): ", m_shuffled_indices.size());
+      LBANN_ERROR("num samples loaded in the data_store: ", n, " != shuffled-indices.size(): ", m_shuffled_indices.size(), " for role: ", get_role());
     }
+*/
   }
+
   m_data_store->setup(mini_batch_size);
 }
 
 bool generic_data_reader::data_store_active() const {
-  if (m_data_store != nullptr && m_data_store->is_preloaded()) {
+  if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return true;
   }
 
@@ -760,7 +765,7 @@ bool generic_data_reader::data_store_active() const {
 
 bool generic_data_reader::priming_data_store() const {
   const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
-  if (m_data_store != nullptr && m_data_store->is_preloaded()) {
+  if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }
 
@@ -812,8 +817,11 @@ void generic_data_reader::set_role(std::string role) {
 
 void generic_data_reader::preload_data_store() {
   if (m_data_store->is_local_cache()) {
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling m_data_store->preload_local_cache()");
     m_data_store->preload_local_cache();
-  } else {
+  } 
+  
+  else {
     std::vector<int> local_list_sizes;
     int np = m_comm->get_procs_per_trainer();
     int base_files_per_rank = m_shuffled_indices.size() / np;
@@ -828,11 +836,36 @@ void generic_data_reader::preload_data_store() {
         local_list_sizes[j] += 1;
       }
     }
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling m_data_store->build_preloaded_owner_map()");
     m_data_store->build_preloaded_owner_map(local_list_sizes);
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling do_preload_data_store()");
+    do_preload_data_store();
+    m_data_store->set_loading_is_complete();
   }
 
-  do_preload_data_store();
-  m_data_store->set_is_preloaded();
+}
+
+void generic_data_reader::print_get_methods(const std::string filename) {
+  if (!is_master()) {
+    return;
+  }
+  std::ofstream out(filename.c_str());
+  if (!out) {
+    LBANN_ERROR("failed to open ", filename, " for writing");
+  }
+
+  out << "get_file_dir " << get_file_dir() << std::endl;
+  out << "get_local_file_dir " << get_local_file_dir() << std::endl;
+  out << "get_data_index_list " << get_data_index_list() << std::endl;
+  out << "get_data_filename " << get_data_filename()  << std::endl;
+  out << "get_label_filename " << get_label_filename() << std::endl;
+  out << "get_role " << get_role() << std::endl;
+  out << "get_type " << get_type() << std::endl;
+  out << "get_num_data " << get_num_data() << std::endl;
+  out << "get_absolute_sample_count" << get_absolute_sample_count() << std::endl;
+  out << "get_use_percent " << get_use_percent() << std::endl;
+  out << "get_validation_percent " << get_validation_percent() << std::endl;
+  out.close();
 }
 
 

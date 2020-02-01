@@ -69,13 +69,13 @@ public:
    *                        perturbed.
    */
   perturb_adam(DataType learning_rate_factor,
-                              DataType beta1_factor,
-                              DataType beta2_factor,
-                              DataType eps_factor = 0,
-                              bool perturb_during_training = false,
-                              El::Int batch_interval = 1,
-                              std::set<std::string> weights_names
-                              = std::set<std::string>());
+               DataType beta1_factor,
+               DataType beta2_factor,
+               DataType eps_factor = 0,
+               bool perturb_during_training = false,
+               El::Int batch_interval = 1,
+               std::set<std::string> weights_names
+               = std::set<std::string>());
   perturb_adam* copy() const override { return new perturb_adam(*this); }
   std::string name() const override { return "perturb Adam"; }
 
@@ -120,7 +120,7 @@ private:
   /** Perturb Adam optimizers in model. */
   void perturb(model& m) const;
   /** Perturb Adam optimizer hyperparameters. */
-  void perturb(lbann_comm& comm, adam& m) const;
+  void perturb(lbann_comm& comm, adam<DataType>& m) const;
 
 };
 

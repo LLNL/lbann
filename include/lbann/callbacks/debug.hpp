@@ -72,8 +72,6 @@ class debug : public callback_base {
   using callback_base::on_backward_prop_end;
   using callback_base::on_evaluate_forward_prop_begin;
   using callback_base::on_evaluate_forward_prop_end;
-  using callback_base::on_optimize_begin;
-  using callback_base::on_optimize_end;
 
   /** @brief Print that a layer's forward prop is beginning. */
   void on_forward_prop_begin(model *m, Layer *l) override;

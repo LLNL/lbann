@@ -34,10 +34,10 @@ namespace lbann {
 
 namespace {
 
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void accumulate_contribution_kernel(El::Int height,
                                                El::Int width,
-                                               const DataType * __restrict__ vals,
+                                               const TensorDataType * __restrict__ vals,
                                                El::Int vals_ldim,
                                                DataType * __restrict__ contribution) {
 
@@ -47,7 +47,7 @@ __global__ void accumulate_contribution_kernel(El::Int height,
   const El::Int nthreads = blockDim.x * gridDim.x;
 
   // Compute contributions for each thread
-  DataType private_contribution = 0;
+  TensorDataType private_contribution = 0;
   const auto& size = height * width;
   for (El::Int i = gid; i < size; i += nthreads) {
     const auto& row = i % height;
@@ -58,7 +58,7 @@ __global__ void accumulate_contribution_kernel(El::Int height,
 
   // Shared memory reduction to get contribution for each block
   /// @todo unroll loops
-  __shared__ DataType shared_contribution[block_size];
+  __shared__ TensorDataType shared_contribution[block_size];
   shared_contribution[tid] = private_contribution;
   for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
     __syncthreads();
@@ -75,15 +75,15 @@ __global__ void accumulate_contribution_kernel(El::Int height,
 } // namespace
 
 template <>
-void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(const GPUMat& vals,
-                                                                        GPUMat& contribution) {
+void l2_weight_regularization::accumulate_contribution<El::Device::GPU>(const El::Matrix<AccumulateDataType, El::Device::GPU>& vals,
+                                                                        El::Matrix<AccumulateDataType, El::Device::GPU>& contribution) {
   if (!vals.IsEmpty()) {
     const auto& size = vals.Height() * vals.Width();
     const El::Int block_size = 256;
     const auto& grid_size = (size + block_size - 1) / block_size;
     auto&& stream = El::GPUManager::Stream();
     CHECK_CUDA(cudaSetDevice(El::GPUManager::Device()));
-    accumulate_contribution_kernel<block_size>
+    accumulate_contribution_kernel<AccumulateDataType, block_size>
       <<<grid_size, block_size, 0, stream>>>(
         vals.Height(), vals.Width(),
         vals.LockedBuffer(), vals.LDim(),

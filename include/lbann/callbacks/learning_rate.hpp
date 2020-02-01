@@ -75,9 +75,7 @@ class learning_rate : public callback_base {
    * learning rate for optimizer opt. The current global learning rate is *not*
    * updated automatically based on this method.
    */
-  virtual float optimizer_schedule(model *m, optimizer &opt) {
-    return opt.get_learning_rate();
-  }
+  virtual float optimizer_schedule(model *m, optimizer &opt);
 
   const std::unordered_set<weights*>& get_weights() const noexcept {
     return m_weights;
@@ -104,7 +102,7 @@ class learning_rate : public callback_base {
   std::vector<std::string> m_weights_names;
 
   /** Weights to update. */
-  std::unordered_set<weights *> m_weights;
+  std::unordered_set<weights*> m_weights;
 };
 
 /**
@@ -184,8 +182,7 @@ build_adaptive_learning_rate_callback_from_pbuf(
 /**
  * Decrease learning rate by a fixed amount at fixed times.
  */
-class drop_fixed_learning_rate :
-    public learning_rate {
+class drop_fixed_learning_rate : public learning_rate {
  public:
   /**
    * Decrease the learning rate by amt when each epoch in drop_epochs is
@@ -228,8 +225,7 @@ build_drop_fixed_learning_rate_callback_from_pbuf(
  * learning rate.  This also *forces* its schedule and will stomp over
  * other changes.
  */
-class linear_growth_learning_rate :
-    public learning_rate {
+class linear_growth_learning_rate : public learning_rate {
  public:
   /**
    * Linearly increase the learning rate to reach target after num_epochs.
