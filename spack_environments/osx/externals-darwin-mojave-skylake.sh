@@ -14,12 +14,6 @@ EOF
 )
 
 EXTERNAL_PACKAGES=$(cat <<EOF
-    clang::
-       buildable: False
-       version: [9.0.0]
-       paths:
-         clang@9.0.0 arch=darwin-mojave-skylake: /usr/local/Cellar/llvm/9.0.0_1/
-
     cmake::
       buildable: True
       variants: ~openssl ~ncurses
@@ -30,6 +24,13 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     hwloc::
       buildable: True
       version: [2.0.2]
+
+    llvm::
+       buildable: False
+       variants: +clang
+       version: [9.0.0]
+       paths:
+         llvm@9.0.0 arch=darwin-mojave-skylake: /usr/local/Cellar/llvm/9.0.0_1/
 
     opencv::
       buildable: true

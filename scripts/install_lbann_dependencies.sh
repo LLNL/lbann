@@ -118,15 +118,22 @@ source ${SPACK_ENV_DIR}/${CENTER}/externals-${SPACK_ARCH}.sh
 # Defines COMPILER_ALL_PACKAGES and COMPILER_DEFINITIONS
 source ${SPACK_ENV_DIR}/${CENTER}/compilers.sh
 
+HYDROGEN_VARIANTS="variants: +shared +int64 +al"
 if [[ ${SYS} != "Darwin" ]]; then
+    HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +openmp_blas"
 COMPILER_PACKAGE=$(cat <<EOF
   - gcc
 EOF
 )
+else
+    HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} blas=accelerate"
+COMPILER_PACKAGE=$(cat <<EOF
+  - llvm
+EOF
+)
 fi
 
-AL_GPU_VARIANTS=
-HYDROGEN_GPU_VARIANTS=
+AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
 GPU_PACKAGES=$(cat <<EOF
   - cudnn
@@ -134,8 +141,8 @@ GPU_PACKAGES=$(cat <<EOF
   - nccl
 EOF
 )
-AL_GPU_VARIANTS="+gpu+nccl~mpi_cuda"
-HYDROGEN_GPU_VARIANTS="+cuda"
+AL_VARIANTS="variants: +gpu+nccl~mpi_cuda"
+HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
 fi
 
 SPACK_ENV=$(cat <<EOF
@@ -178,7 +185,7 @@ ${STD_PACKAGES}
     aluminum:
       buildable: true
       version: [master]
-      variants: ${AL_GPU_VARIANTS}
+      ${AL_VARIANTS}
       providers: {}
       paths: {}
       modules: {}
@@ -187,7 +194,7 @@ ${STD_PACKAGES}
     hydrogen:
       buildable: true
       version: [develop]
-      variants: +openmp_blas +shared +int64 +al ${HYDROGEN_GPU_VARIANTS}
+      ${HYDROGEN_VARIANTS}
       providers: {}
       paths: {}
       modules: {}

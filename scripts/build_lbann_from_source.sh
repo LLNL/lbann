@@ -60,7 +60,7 @@ BUILD_ENV=TRUE
 BUILD_TYPE=Release
 VERBOSE=0
 DETERMINISTIC=OFF
-LBANN_ENV=lbann
+LBANN_ENV=
 
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     echo "script ${BASH_SOURCE[0]} is being sourced ... only setting environment variables."
@@ -236,9 +236,11 @@ echo ${CMD}
 ${CMD}
 echo ${PWD}
 
+if [[ ${LBANN_ENV} ]]; then
 #source ${SPACK_ENV_DIR}/setup_lbann_dependencies.sh
-spack env activate -p ${LBANN_ENV}
-source ${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/loads
+    spack env activate -p ${LBANN_ENV}
+    source ${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/loads
+fi
 
 if [[ ${SYS} = "Darwin" ]]; then
     export DYLD_LIBRARY_PATH=/System/Library/Frameworks/ImageIO.framework/Resources/:/usr/lib/:${DYLD_LIBRARY_PATH}
