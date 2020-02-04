@@ -23,11 +23,12 @@ EXTERNAL_PACKAGES=$(cat <<EOF
 
     cuda::
       buildable: False
-      version: [9.2.88, 10.1.105, 10.1.168]
+      version: [9.2.88, 10.1.105, 10.1.168, 10.1.243]
       paths:
         cuda@9.2.88 arch=linux-rhel7-power9le: /usr/tce/packages/cuda/cuda-9.2.88/
         cuda@10.1.105 arch=linux-rhel7-power9le: /usr/tce/packages/cuda/cuda-10.1.105
         cuda@10.1.168 arch=linux-rhel7-power9le: /usr/tce/packages/cuda/cuda-10.1.168
+        cuda@10.1.243 arch=linux-rhel7-power9le: /usr/tce/packages/cuda/cuda-10.1.243
 
     cudnn::
       buildable: true

@@ -107,15 +107,16 @@ CMake flags known to LBANN's "Superbuild" build system.
 
     .. code-block:: bash
 
-        <path to lbann repo>/scripts/install_lbann_dependencies.sh -e lbann-dev
+        <path to lbann repo>/scripts/install_lbann_dependencies.sh
 
+    + Note that the named environment can be controlled via the -e flag.
 
 2.  Setup the LBANN CMake environment using the spack environment for
     the dependencies.
 
     .. code-block:: bash
 
-        <path to lbann repo>/scripts/build_lbann_from_source.sh -e lbann-dev
+        <path to lbann repo>/scripts/build_lbann_from_source.sh
 
 
     + Options exist in the script to disable the GPUs, set a build and
@@ -149,6 +150,16 @@ CMake flags known to LBANN's "Superbuild" build system.
     <building-with-the-superbuild>` for a list and descriptions of all
     CMake flags known to LBANN's "Superbuild" build system.
 
+4.  After the initial setup of the LBANN CMake environment, you can
+    rebuild by activating the spack environment and then re-running
+    ninja.
+
+    .. code-block:: console
+
+         spack env activate -p <environmment>
+         cd <build directory>/lbann/build
+         unset CPATH
+         ninja
 
 The complete documentation for building LBANN directly with CMake can
 be found :ref:`here <build-with-cmake>`.

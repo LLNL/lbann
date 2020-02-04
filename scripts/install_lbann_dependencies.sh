@@ -45,13 +45,14 @@ else
 fi
 
 SPACK_ARCH=$(spack arch)
+SPACK_ARCH_TARGET=$(spack arch -t)
 
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
 ENABLE_GPUS=ON
 BUILD_TYPE=Release
 VERBOSE=0
-LBANN_ENV=lbann
+LBANN_ENV=lbann-dev-${SPACK_ARCH_TARGET}
 
 ################################################################
 # Help message

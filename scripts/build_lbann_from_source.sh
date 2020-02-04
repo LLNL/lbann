@@ -53,6 +53,7 @@ else
 fi
 
 SPACK_ARCH=$(spack arch)
+SPACK_ARCH_TARGET=$(spack arch -t)
 
 SCRIPT=$(basename ${BASH_SOURCE})
 ENABLE_GPUS=ON
@@ -60,7 +61,7 @@ EXEC_ENV=TRUE
 BUILD_TYPE=Release
 VERBOSE=0
 DETERMINISTIC=OFF
-LBANN_ENV=
+LBANN_ENV=lbann-dev-${SPACK_ARCH_TARGET}
 
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
     echo "script ${BASH_SOURCE[0]} is being sourced ..."
@@ -222,9 +223,12 @@ echo ${CMD}
 ${CMD}
 echo ${PWD}
 
+SPACK_ENV_CMD=
 if [[ ${LBANN_ENV} ]]; then
-    spack env activate -p ${LBANN_ENV}
+    SPACK_ENV_CMD="spack env activate -p ${LBANN_ENV}"
+    ${SPACK_ENV_CMD}
     source ${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/loads
+    unset CPATH
 fi
 
 if [[ ${SYS} = "Darwin" ]]; then
@@ -243,3 +247,9 @@ fi
 source ${SPACK_ENV_DIR}/${SUPERBUILD}
 
 ninja
+
+echo "To rebuild the environment:"
+echo "    ${SPACK_ENV_CMD}"
+echo "    cd ${LBANN_BUILD_DIR}/lbann/build"
+echo "    unset CPATH"
+echo "    ninja install"
