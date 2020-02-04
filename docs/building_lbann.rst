@@ -102,7 +102,8 @@ Expert developers should refer to :ref:`here
 CMake flags known to LBANN's "Superbuild" build system.
 
 1.  Install all of the external packages via spack (Aluminum, Hydrogen, etc).
-    Install packages into a spack environment.
+    Install packages into a spack environment. (This is only done when
+    initially installing or upgrading the dependencies.)
 
     .. code-block:: bash
 
