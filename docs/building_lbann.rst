@@ -19,7 +19,7 @@ Building with `Spack <https://github.com/llnl/spack>`_
 ------------------------------------------------------------
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Setup Spack and local base tools
+Setup Spack
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1.  Download and install `Spack <https://github.com/llnl/spack>`_.
@@ -31,35 +31,25 @@ Setup Spack and local base tools
         source ${SPACK_ROOT}/share/spack/setup-env.sh
 
 
-2.  Setup your compiler and external software environment. For example,
-    on LLNL\'s LC machines, one might load the following modules:
+2.  LBANN will use spack environments to specify both compilers and
+    versions of dependent libraries.  Go to the install instructions
+    for :ref:`users <install_lbann_as_user>` or :ref:`developers
+    <build_lbann_from_source>`.
 
-    .. code-block:: bash
+.. note:: Optionally, setup your spack environment to take advantage
+          of locally installed tools.  Note that unless your spack
+          environment is explicitly told about tools such as cmake,
+          python, mpi, etc. it will install everything that LBANN and
+          all of its dependencies require. This can take quite a long
+          time, but only has to be done once for a given spack
+          repository.  Once all of the standard tools are installed,
+          rebuilding LBANN with spack is quite fast.
 
-        ml gcc/7.3.0 mvapich2/2.3 cuda/10.0.130 # Pascal
+          + Advice on setting up paths to external installations is
+            beyond the scope of this document, but is covered in the
+            `Spack Documentation <https://spack.readthedocs.io/>`_.
 
-    or
-
-    .. code-block:: bash
-
-        ml gcc/7.3.1 cuda/9.2.148 spectrum-mpi/rolling-release  # Lassen / Sierra
-
-
-    + Note to unload unwanted modules you can execute :bash:`ml` with
-      package names prepended with a dash, e.g.: :bash:`ml -intel`. To
-      unload all currently loaded modules, use :bash:`ml purge`.
-
-3.  Optionally, setup your spack environment to take advantage of
-    locally installed tools.  Note that unless your spack environment
-    is explicitly told about tools such as cmake, python, mpi, etc. it
-    will install everything that LBANN and all of its dependencies
-    require. This can take quite a long time, but only has to be done
-    once for a given spack repository.  Once all of the standard tools
-    are installed, rebuilding LBANN with spack is quite fast.
-
-    + Advice on setting up paths to external installations is beyond
-      the scope of this document, but is covered in the `Spack
-      Documentation <https://spack.readthedocs.io/>`_.
+.. _install_lbann_as_user:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Building & Installing LBANN as a user
@@ -104,8 +94,7 @@ and/or advanced configuration options for Aluminum, Hydrogen, and
 LBANN while the other dependencies remain constant. The installation
 instructions below provide a script that will setup a Spack
 environment with the remaining dependencies, and then invoke the LBANN
-superbuild CMake infrastructure to build LBANN from the local source
-and to download versions of Aluminum and Hydrogen from GitHub.  The
+CMake infrastructure to build LBANN from the local source.  The
 provided script will build with a standard compiler for a given
 platform and the nominal options in the CMake build environment.
 Expert developers should refer to :ref:`here
@@ -117,34 +106,20 @@ CMake flags known to LBANN's "Superbuild" build system.
 
     .. code-block:: bash
 
-        <path to lbann repo>/scripts/install_lbann_dependencies.sh -e <name of spack environment>
+        <path to lbann repo>/scripts/install_lbann_dependencies.sh -e lbann-dev
 
 
-2.  Activate the spack environment and load the modules built by spack.
-
-    .. code-block:: bash
-
-        spack env activate -p <name of spack environment>
-        source ${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/loads
-
-1.  Running this integrated script that will setup both the
-    dependencies via spack and Aluminum, Hydrogen, and LBANN via
-    CMake.
+2.  Setup the LBANN CMake environment using the spack environment for
+    the dependencies.
 
     .. code-block:: bash
 
-        <path to lbann repo>/scripts/build_lbann_from_source.sh -p <insert build and install prefix>
+        <path to lbann repo>/scripts/build_lbann_from_source.sh -e lbann-dev
 
 
-    + Options exist in the script to disable the GPUs, and separately
-      set the build and install directories.  Additionally, the script
-      can setup the environment variables and load the modules in the
-      current shell with the following command
-
-    .. code-block:: bash
-
-        source <lbann.git>/scripts/build_lbann.sh -p <build and install prefix>
-
+    + Options exist in the script to disable the GPUs, set a build and
+      install prefix, separately set the build and install
+      directories, or use a different spack environment.
 
     + Note that the environments provided here have a set of external
       packages and compilers that are installed on an LLNL LC CZ,
@@ -158,7 +133,7 @@ CMake flags known to LBANN's "Superbuild" build system.
       will take a while.
 
 
-2.  Once the installation has completed you can load the module file
+3.  Once the installation has completed you can load the module file
     for LBANN with the following command
 
     .. code-block:: console

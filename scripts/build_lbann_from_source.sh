@@ -56,16 +56,18 @@ SPACK_ARCH=$(spack arch)
 
 SCRIPT=$(basename ${BASH_SOURCE})
 ENABLE_GPUS=ON
-BUILD_ENV=TRUE
+EXEC_ENV=TRUE
 BUILD_TYPE=Release
 VERBOSE=0
 DETERMINISTIC=OFF
 LBANN_ENV=
 
 if [[ "${BASH_SOURCE[0]}" != "${0}" ]]; then
-    echo "script ${BASH_SOURCE[0]} is being sourced ... only setting environment variables."
-    BUILD_ENV="FALSE"
+    echo "script ${BASH_SOURCE[0]} is being sourced ..."
+    EXEC_ENV="FALSE"
 fi
+
+CORE_BUILD_PATH="${LBANN_HOME}/build/${COMPILER}.${BUILD_TYPE}.${CLUSTER}.${BUILD_SUFFIX}"
 
 ################################################################
 # Help message
@@ -83,12 +85,11 @@ Options:
   ${C}--help${N}               Display this help message and exit.
   ${C}--debug${N}              Build with debug flag.
   ${C}--verbose${N}            Verbose output.
-  ${C}-e | --env${N}           Build and install LBANN in the spack environment provided.
+  ${C}-e | --env${N}           Build and install LBANN using the spack environment provided: default=lbann-dev
   ${C}-p | --prefix${N}        Build and install LBANN headers and dynamic library into subdirectorys at this path prefix.
-  ${C}-i | --install-dir${N}   Install LBANN headers and dynamic library into the install directory.
-  ${C}-b | --build-dir${N}     Specify alternative build directory; default is <lbann_home>/build/spack.
+  ${C}-i | --install-dir${N}   Install LBANN headers and dynamic library into the install directory: default=${CORE_BUILD_PATH}/install
+  ${C}-b | --build-dir${N}     Specify alternative build directory: default=${CORE_BUILD_PATH}/build
   ${C}--disable-gpus${N}       Disable GPUS
-  ${C}-r | --rebuild-env${N}   Rebuild the environment variables and load the spack modules
   ${C}--instrument${N}         Use -finstrument-functions flag, for profiling stack traces
 EOF
 }
@@ -102,7 +103,7 @@ while :; do
         -h|--help)
             # Help message
             help_message
-            if [[ ${BUILD_ENV} == "FALSE" ]]; then
+            if [[ ${EXEC_ENV} == "FALSE" ]]; then
                 return
             else
                 exit 1
@@ -172,9 +173,6 @@ while :; do
         --disable-gpus)
             ENABLE_GPUS=OFF
             ;;
-        -r|--rebuild-env)
-            BUILD_ENV=FALSE
-            ;;
         -v|--verbose)
             # Verbose output
             VERBOSE=1
@@ -199,24 +197,12 @@ while :; do
     shift
 done
 
-CORE_BUILD_PATH="${LBANN_HOME}/build/${COMPILER}.${BUILD_TYPE}.${CLUSTER}.${BUILD_SUFFIX}"
 BUILD_DIR="${BUILD_DIR:-${CORE_BUILD_PATH}/build}"
 INSTALL_DIR="${INSTALL_DIR:-${CORE_BUILD_PATH}/install}"
 
 export LBANN_HOME=${LBANN_HOME}
 export LBANN_BUILD_DIR=${BUILD_DIR}
 export LBANN_INSTALL_DIR=${INSTALL_DIR}
-
-if [[ ${BUILD_ENV} == "FALSE" ]]; then
-    echo "Setting environment variables: "
-    echo "LBANN_HOME=${LBANN_HOME}"
-    echo "LBANN_BUILD_DIR=${LBANN_BUILD_DIR}"
-    echo "LBANN_INSTALL_DIR=${LBANN_INSTALL_DIR}"
-    CMD="source ${LBANN_BUILD_DIR}/loads"
-    echo ${CMD}
-    ${CMD}
-    return
-fi
 
 CMD="mkdir -p ${BUILD_DIR}"
 echo ${CMD}
@@ -237,7 +223,6 @@ ${CMD}
 echo ${PWD}
 
 if [[ ${LBANN_ENV} ]]; then
-#source ${SPACK_ENV_DIR}/setup_lbann_dependencies.sh
     spack env activate -p ${LBANN_ENV}
     source ${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/loads
 fi

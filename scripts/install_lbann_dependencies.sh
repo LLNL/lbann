@@ -234,9 +234,11 @@ if [[ $? -ne 0 ]]; then
     echo "--------------------"
     exit 1
 else
-    echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:"
+    echo "LBANN's dependencies are installed in a spack environment named ${LBANN_ENV}, access it via:"
     echo "  spack env activate -p ${LBANN_ENV}"
 fi
 CMD="spack env loads"
-echo ${CMD}
 ${CMD}
+
+echo "Build LBANN from source using the spack environment ${LBANN_ENV}, using the build script:"
+echo "  ${SCRIPTS_DIR}/build_lbann_from_source.sh -e ${LBANN_ENV}"
