@@ -19,7 +19,7 @@ COMPILER_DEFINITIONS=$(cat <<EOF
         f77: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
         fc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
       spec: gcc@7.3.1
-      target: power9le
+      target: ppc64le
   - compiler:
       environment: {}
       extra_rpaths: []
@@ -32,6 +32,6 @@ COMPILER_DEFINITIONS=$(cat <<EOF
         f77: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
         fc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
       spec: gcc@7.3.0
-      target: broadwell
+      target: x86_64
 EOF
 )
