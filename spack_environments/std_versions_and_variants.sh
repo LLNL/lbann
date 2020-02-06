@@ -8,7 +8,7 @@ STD_PACKAGES=$(cat <<EOF
     conduit::
       buildable: true
       variants: ~doc~doxygen+hdf5~hdf5_compat+mpi+python+shared~silo
-      version: [0.4.0]
+      version: [0.5.1]
 
     cnpy::
       buildable: true

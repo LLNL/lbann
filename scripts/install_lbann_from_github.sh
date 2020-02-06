@@ -49,10 +49,12 @@ SPACK_ARCH_TARGET=$(spack arch -t)
 
 SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
-ENABLE_GPUS="+gpu+nccl"
+ENABLE_GPUS=ON
+GPU_VARIANTS="+gpu+nccl"
 BUILD_TYPE=Release
 VERBOSE=0
-LBANN_ENV=lbann-${SPACK_ARCH_TARGET}
+LBANN_ENV=
+SPACK_INSTALL_ARGS=
 
 ################################################################
 # Help message
@@ -69,6 +71,7 @@ Usage: ${SCRIPT} [options]
 Options:
   ${C}--help${N}               Display this help message and exit.
   ${C}--verbose${N}            Verbose output.
+  ${C}-d | -deps-only)${N}     Only install the lbann dependencies
   ${C}-e | --env${N}           Build and install LBANN in the spack environment provided.
   ${C}--disable-gpus${N}       Disable GPUS
 EOF
@@ -85,6 +88,10 @@ while :; do
             help_message
             exit 1
             ;;
+        -d|-deps-only)
+            DEPS_ONLY="TRUE"
+            SPACK_INSTALL_ARGS="--only dependencies"
+            ;;
         -e|--env)
             # Change default build directory
             if [ -n "${2}" ]; then
@@ -96,7 +103,8 @@ while :; do
             fi
             ;;
         --disable-gpus)
-            ENABLE_GPUS=
+            ENABLE_GPUS=OFF
+            GPU_VARIANTS=
             ;;
         -?*)
             # Unknown option
@@ -119,11 +127,61 @@ source ${SPACK_ENV_DIR}/${CENTER}/externals-${SPACK_ARCH}.sh
 # Defines COMPILER_ALL_PACKAGES and COMPILER_DEFINITIONS
 source ${SPACK_ENV_DIR}/${CENTER}/compilers.sh
 
+# Disable GPU features on OS X
+if [[ ${SYS} = "Darwin" ]]; then
+    ENABLE_GPUS=OFF
+    GPU_VARIANTS=
+fi
+
+BUILD_SPECS=
+HYDROGEN_VARIANTS="variants: +shared +int64 +al"
+if [[ ${DEPS_ONLY} = "TRUE" ]]; then
+    if [[ ${SYS} != "Darwin" ]]; then
+        HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +openmp_blas"
+        COMPILER_PACKAGE=$(cat <<EOF
+  - gcc
+EOF
+)
+    else
+        HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} blas=accelerate"
+        COMPILER_PACKAGE=$(cat <<EOF
+  - llvm
+EOF
+)
+    fi
+
+    # Include additional specs if only the dependencies are build
+    BUILD_SPECS=$(cat <<EOF
+  - catch2
+  - cmake
+  - ninja
+  - py-pytest
+${COMPILER_PACKAGE}
+EOF
+)
+    LBANN_ENV="${LBANN_ENV:-lbann-dev-${SPACK_ARCH_TARGET}}"
+else
+    LBANN_ENV="${LBANN_ENV:-lbann-${SPACK_ARCH_TARGET}}"
+fi
+
+AL_VARIANTS=
+if [[ "${ENABLE_GPUS}" == "ON" ]]; then
+    GPU_PACKAGES=$(cat <<EOF
+  - cudnn
+  - cub
+  - nccl
+EOF
+)
+    AL_VARIANTS="variants: +gpu+nccl~mpi_cuda"
+    HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
+fi
+
 SPACK_ENV=$(cat <<EOF
 spack:
   concretization: together
   specs:
-  - lbann@develop${ENABLE_GPUS}
+  - lbann@develop${GPU_VARIANTS}
+${BUILD_SPECS}
   packages:
 ${EXTERNAL_ALL_PACKAGES}
 ${COMPILER_ALL_PACKAGES}
@@ -135,6 +193,7 @@ ${STD_PACKAGES}
     aluminum:
       buildable: true
       version: [master]
+      ${AL_VARIANTS}
       providers: {}
       paths: {}
       modules: {}
@@ -143,6 +202,7 @@ ${STD_PACKAGES}
     hydrogen:
       buildable: true
       version: [develop]
+      ${HYDROGEN_VARIANTS}
       providers: {}
       paths: {}
       modules: {}
@@ -173,7 +233,7 @@ CMD="spack env activate -p ${LBANN_ENV}"
 echo ${CMD}
 ${CMD}
 
-CMD="spack install"
+CMD="spack install ${SPACK_INSTALL_ARGS}"
 echo ${CMD}
 eval ${CMD}
 if [[ $? -ne 0 ]]; then
@@ -182,6 +242,16 @@ if [[ $? -ne 0 ]]; then
     echo "--------------------"
     exit 1
 else
-    echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:"
-    echo "  spack env activate -p ${LBANN_ENV}"
+    if [[ ${DEPS_ONLY} = "TRUE" ]]; then
+        echo "LBANN's dependencies are installed in a spack environment named ${LBANN_ENV}, access it via:"
+        echo "  spack env activate -p ${LBANN_ENV}"
+        CMD="spack env loads"
+        ${CMD}
+
+        echo "Build LBANN from source using the spack environment ${LBANN_ENV}, using the build script:"
+        echo "  ${SCRIPTS_DIR}/build_lbann_from_source.sh -e ${LBANN_ENV}"
+    else
+        echo "LBANN is installed in a spack environment named ${LBANN_ENV}, access it via:"
+        echo "  spack env activate -p ${LBANN_ENV}"
+    fi
 fi
