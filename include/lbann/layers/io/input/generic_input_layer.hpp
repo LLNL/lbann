@@ -768,34 +768,37 @@ class generic_input_layer : public io_layer<TensorDataType> {
   bool load_from_checkpoint_shared(persist& p) override {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
+    if(p.get_cb_type() == callback_type::execution_context_only
+       || p.get_cb_type() == callback_type::full_checkpoint){
 
-    it = this->m_data_readers.find(execution_mode::training);
-    if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_shared(p, execution_mode::training);
+      it = this->m_data_readers.find(execution_mode::training);
+      if ((it != this->m_data_readers.end()) && it->second) {
+        (it->second)->load_from_checkpoint_shared(p, execution_mode::training);
+      }
+      it = this->m_data_readers.find(execution_mode::testing);
+      if ((it != this->m_data_readers.end()) && it->second) {
+        (it->second)->load_from_checkpoint_shared(p, execution_mode::testing);
+      }
+      it = this->m_data_readers.find(execution_mode::validation);
+      if ((it != this->m_data_readers.end()) && it->second) {
+        (it->second)->load_from_checkpoint_shared(p, execution_mode::validation);
+      }
+
+      std::string buf;
+      if (this->get_comm()->am_trainer_master()) {
+        read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
+        buf = create_cereal_archive_binary_string<generic_input_layer>(*this);
+      }
+
+      // TODO: this assumes homogeneous processors
+      // broadcast state from rank 0
+      this->get_comm()->trainer_broadcast(0, buf);
+
+      if (!this->get_comm()->am_trainer_master()) {
+        unpack_cereal_archive_binary_string<generic_input_layer>(*this, buf);
+      }
+
     }
-    it = this->m_data_readers.find(execution_mode::testing);
-    if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_shared(p, execution_mode::testing);
-    }
-    it = this->m_data_readers.find(execution_mode::validation);
-    if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_shared(p, execution_mode::validation);
-    }
-
-    std::string buf;
-    if (this->get_comm()->am_trainer_master()) {
-      read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
-      buf = create_cereal_archive_binary_string<generic_input_layer>(*this);
-   }
-
-    // TODO: this assumes homogeneous processors
-    // broadcast state from rank 0
-    this->get_comm()->trainer_broadcast(0, buf);
-
-    if (!this->get_comm()->am_trainer_master()) {
-      unpack_cereal_archive_binary_string<generic_input_layer>(*this, buf);
-    }
-
     return true;
   }
 
