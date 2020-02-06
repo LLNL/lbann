@@ -237,18 +237,20 @@ void exchange_models(lbann_comm& comm,
     } else {
       p.m_checkpoint_dir = send_dir;
     }
+    comm.trainer_barrier();
     m.save_to_checkpoint_shared(p);
     p.close_checkpoint();
   }
 
   // Synchronize with partner trainer
-  {
-    const auto rank_in_trainer = comm.get_rank_in_trainer();
-    TensorDataType send = false, recv = false;
-    comm.sendrecv(&send, 1, partner_trainer, rank_in_trainer,
-                  &recv, 1, partner_trainer, rank_in_trainer,
+  comm.trainer_barrier();
+  if (comm.am_trainer_master()) {
+    char send{0}, recv{0};
+    comm.sendrecv(&send, 1, partner_trainer, 0,
+                  &recv, 1, partner_trainer, 0,
                   El::SyncInfo<El::Device::CPU>{});
   }
+  comm.trainer_barrier();
 
   // Load model checkpoint from partner trainer
   {
