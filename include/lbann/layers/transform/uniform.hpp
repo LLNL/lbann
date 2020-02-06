@@ -33,10 +33,10 @@
 
 namespace lbann {
 
-/** @brief Random values with uniform distribution.
+/** @brief Random values with uniform distribution during training and inference.
  *
- *  During validation and testing, outputs are all equal to the
- *  distribution mean if optional apply_at_validation flag is false (default).
+ *  During validation and testing, outputs are all deterministic and equal to the
+ *  distribution mean if optional training_only flag is true (default is false).
  */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
@@ -44,7 +44,7 @@ template <typename TensorDataType,
 class uniform_layer : public transform_layer<TensorDataType> {
 private:
   /** Optional flag to allow uniform distribution at inference/sampling. */
-  bool m_apply_at_validation;
+  bool m_training_only;
   /** Uniform distribution mean. */
   TensorDataType m_min;
   /** Uniform distribution standard deviation. */
@@ -54,10 +54,10 @@ public:
 
   uniform_layer(lbann_comm *comm,
                 std::vector<int> dims,
-                bool apply_at_validation = false,
+                bool training_only = false,
                 TensorDataType min = El::TypeTraits<TensorDataType>::Zero(),
                 TensorDataType max = El::TypeTraits<TensorDataType>::One())
-    : transform_layer<TensorDataType>(comm), m_apply_at_validation(apply_at_validation),
+    : transform_layer<TensorDataType>(comm), m_training_only(training_only),
       m_min(min), m_max(max) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
@@ -82,7 +82,7 @@ protected:
     const auto& radius = (m_max - m_min) / El::To<TensorDataType>(2);
     auto& output = this->get_activations();
     if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training
-         || m_apply_at_validation) {
+         || !m_training_only) {
       uniform_fill(output, output.Height(), output.Width(), mean, radius);
     } else {
       El::Fill(output, mean);

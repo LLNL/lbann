@@ -439,11 +439,11 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& params = proto_layer.gaussian();
     const auto& dims = parse_list<int>(params.neuron_dims());
     if (params.mean() == 0 && params.stdev() == 0) {
-      return lbann::make_unique<gaussian_layer<TensorDataType, Layout, Device>>(comm, dims,params.apply_at_validation());
+      return lbann::make_unique<gaussian_layer<TensorDataType, Layout, Device>>(comm, dims,params.training_only());
     } else {
       return lbann::make_unique<gaussian_layer<TensorDataType, Layout, Device>>(comm,
                                              dims,
-                                             params.apply_at_validation(),
+                                             params.training_only(),
                                              params.mean(),
                                              params.stdev());
     }
@@ -452,10 +452,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& params = proto_layer.uniform();
     const auto& dims = parse_list<int>(params.neuron_dims());
     if (params.min() == 0 && params.max() == 0) {
-      return lbann::make_unique<uniform_layer<TensorDataType, Layout, Device>>(comm, dims, params.apply_at_validation());
+      return lbann::make_unique<uniform_layer<TensorDataType, Layout, Device>>(comm, dims, params.training_only());
     } else {
       return lbann::make_unique<uniform_layer<TensorDataType, Layout, Device>>(
-               comm, dims, params.apply_at_validation(), params.min(), params.max());
+               comm, dims, params.training_only(), params.min(), params.max());
     }
   }
   if (proto_layer.has_unpooling()) {

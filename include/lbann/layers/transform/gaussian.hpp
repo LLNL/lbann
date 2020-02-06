@@ -33,10 +33,10 @@
 
 namespace lbann {
 
-/** @brief Random values with Gaussian distribution.
+/** @brief Random values with Gaussian distribution at training and inference.
  *
- *  During validation and testing, outputs are all equal to the
- *  distribution mean if apply at validation flag is false( default).
+ *  During validation and testing, outputs are all deterninistic and equal to the
+ *  distribution mean if optional training_only flag is true (default is false).
  */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
@@ -44,7 +44,7 @@ template <typename TensorDataType,
 class gaussian_layer : public transform_layer<TensorDataType> {
 private:
   /** Optional flag to allow Gaussian distribution at inference/sampling. */
-  bool m_apply_at_validation;
+  bool m_training_only;
   /** Gaussian distribution mean. */
   TensorDataType m_mean;
   /** Gaussian distribution standard deviation. */
@@ -53,10 +53,10 @@ private:
 public:
   gaussian_layer(lbann_comm *comm,
                  const std::vector<int>& dims,
-                 bool apply_at_validation = false,
+                 bool training_only = false,
                  TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
                  TensorDataType stdev = El::TypeTraits<TensorDataType>::One())
-    : transform_layer<TensorDataType>(comm), m_apply_at_validation(apply_at_validation),
+    : transform_layer<TensorDataType>(comm), m_training_only(training_only),
        m_mean(mean), m_stdev(stdev) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
@@ -78,7 +78,7 @@ protected:
   void fp_compute() override {
     auto& output = this->get_activations();
     if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training
-         || m_apply_at_validation) {
+         || !m_training_only) {
       gaussian_fill(output, output.Height(), output.Width(), m_mean, m_stdev);
     } else {
       El::Fill(output, m_mean);
