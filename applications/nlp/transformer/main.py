@@ -47,50 +47,51 @@ args = parser.parse_args()
 # ----------------------------------
 
 # Dataset properties
-vocab_size = dataset.corpus.vocab_size
-sequence_length = dataset.sample_dims()[0]
+vocab_size = dataset.vocab_size()
+sequence_length = dataset.sequence_length
+pad_index = dataset.pad_index
 
-# Input is a sequence of token IDs
+# Input is two sequences of token IDs, separated by a pad token
 input_ = lbann.Identity(lbann.Input())
-input_slice = lbann.Slice(input_,
-                          slice_points=str_list(range(sequence_length+1)))
-tokens_list = [lbann.Identity(input_slice) for _ in range(sequence_length)]
 
-# Get sequence of embedding vectors
-# Note: Inputs to transformer decoder are shifted right
-# Note: Embeddings are scaled by sqrt(embed_dim)
+# Get sequences of embedding vectors
+# Note: Scale embeddings by sqrt(embed_dim).
+# Note: Decoder input is shifted right, so first entry is pad token.
+embeddings_tokens = lbann.Identity(lbann.Slice(
+    input_,
+    axis=0,
+    slice_points=str_list([0, 2*sequence_length]),
+))
 embeddings = lbann.Embedding(
-    lbann.Concatenation(lbann.Constant(value=-1, num_neurons='1'), input_),
+    embeddings_tokens,
     num_embeddings=vocab_size,
-    embedding_dim=args.embed_dim
+    embedding_dim=args.embed_dim,
+    padding_idx=pad_index,
 )
 embeddings = lbann.WeightedSum(
     embeddings,
     scaling_factors=str(math.sqrt(args.embed_dim)),
 )
-source_embeddings = lbann.Identity(lbann.Slice(
+embeddings_slice = lbann.Slice(
     embeddings,
     axis=0,
-    slice_points=str_list([1, sequence_length+1]),
-))
-target_embeddings = lbann.Identity(lbann.Slice(
-    embeddings,
-    axis=0,
-    slice_points=str_list([0, sequence_length]),
-))
+    slice_points=str_list([0, sequence_length, 2*sequence_length]),
+)
+encoder_input = lbann.Identity(embeddings_slice)
+decoder_input = lbann.Identity(embeddings_slice)
 
 # Apply transformer model
 model = model.Transformer(
     hidden_size=args.embed_dim,
     num_heads=args.num_attention_heads,
-    dropout=0,  # TODO: Restore dropout
+    dropout=0, # TODO: Restore dropout
 )
 result = model(
-    source_embeddings, sequence_length,
-    target_embeddings, sequence_length,
+    encoder_input, sequence_length,
+    decoder_input, sequence_length,
 )
 
-# Use transformer decoder output to reconstruct input sequence
+# Use transformer decoder output to reconstruct decoder input
 preds = lbann.ChannelwiseFullyConnected(
     result,
     output_channel_dims=[vocab_size],
@@ -98,8 +99,13 @@ preds = lbann.ChannelwiseFullyConnected(
 preds = lbann.ChannelwiseSoftmax(preds)
 
 # Cross entropy loss
-# Note: Apply label smoothing
-labels = [lbann.OneHot(token, size=vocab_size) for token in tokens_list]
+# Note: Apply label smoothing.
+label_tokens = lbann.Slice(
+    input_,
+    slice_points=str_list(range(sequence_length+1, 2*sequence_length+2)),
+)
+label_tokens = [lbann.Identity(label_tokens) for _ in range(sequence_length)]
+labels = [lbann.OneHot(token, size=vocab_size) for token in label_tokens]
 labels = lbann.Concatenation(
     [lbann.Reshape(label, dims=str_list([1, vocab_size])) for label in labels],
     axis=0,
