@@ -91,7 +91,7 @@ environment method:
 
 .. code-block:: bash
 
-   <path lbann repo>/scripts/install_lbann_from_github.sh -e lbann
+   <path lbann repo>/scripts/install_lbann.sh -e lbann
    spack env activate -p lbann
 
 Options exist in the script to disable the GPUs and change the
@@ -101,7 +101,7 @@ name of the Spack environment. These can be viewed by passing the
 .. note:: Currently this script will clone a second LBANN repository
           that Spack will use to build the LBANN library and
           executables. We are working on simplifying this further.
-          
+
 
 .. _build_lbann_from_source:
 
@@ -131,7 +131,7 @@ CMake flags known to LBANN's "Superbuild" build system.
 
     .. code-block:: bash
 
-        <path to lbann repo>/scripts/install_lbann_dependencies.sh
+        <path to lbann repo>/scripts/install_lbann.sh -d
 
     Note that the named environment can be controlled via the
     :code:`-e` flag. A full list of options can be viewed with the
