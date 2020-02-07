@@ -444,8 +444,22 @@ void data_store_conduit::build_node_for_sending(const conduit::Node &node_in, co
 }
 
 void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
+
   if (! m_is_setup) {
     LBANN_ERROR("setup(mb_size) has not been called");
+  }
+
+  // The following is needed to deal with one-off cases where one or
+  // more ranks do not own any samples (i.e, m_data is empty).
+  // In this case those processors won't know the size of the compacted
+  // nodes, hence, cannot properly set up their recv buffers, hence,
+  // mpi throws errors.
+  if (m_bcast_sample_size && !m_node_sizes_vary) {
+    if (m_trainer_master && m_compacted_sample_size == 0) {
+      LBANN_ERROR("m_trainer_master && m_bcast_sample_size == 0; please contact Dave Hysom");
+    }
+    m_comm->trainer_broadcast<int>(0, m_compacted_sample_size);
+    m_bcast_sample_size = false;
   }
 
   double tm5 = get_time();
@@ -1922,7 +1936,7 @@ void data_store_conduit::check_query_flags() const {
 void data_store_conduit::clear_owner_map() { 
     m_owner_maps_were_exchanged = false;
     m_owner.clear(); 
-  }
+}
 
 }  // namespace lbann
 

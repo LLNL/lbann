@@ -266,6 +266,8 @@ class data_store_conduit {
 
 private :
 
+  bool m_bcast_sample_size = true;
+
   // if not null, 'm_other' points from a train to a validation
   // data store; this permits communication which is needed in
   // special cases (e.g, see: data_reader_npz_ras_lipid.cpp)
