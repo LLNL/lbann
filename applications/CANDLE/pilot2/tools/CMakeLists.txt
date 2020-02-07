@@ -26,11 +26,6 @@ add_executable(compute_ras_lipid_bbs_euclid_normalization
   target_link_libraries(compute_ras_lipid_bbs_euclid_normalization lbann)
   add_dependencies(pilot2-utils compute_ras_lipid_bbs_euclid_normalization)
 
-add_executable(compute_sequence_distribution
-  EXCLUDE_FROM_ALL compute_sequence_distribution.cpp)
-  target_link_libraries(compute_sequence_distribution lbann)
-  add_dependencies(pilot2-utils compute_sequence_distribution)
-
 # Install the binaries
 install( TARGETS 
   test_ras_lipid_data_files_for_errors 
