@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-SPACK_VERSION=$(spack --version)
+SPACK_VERSION=$(spack --version | sed 's/-.*//g')
 MIN_SPACK_VERSION=0.13.3
 
 source $(dirname ${BASH_SOURCE})/utilities.sh
@@ -90,7 +90,8 @@ while :; do
             ;;
         -d|-deps-only)
             DEPS_ONLY="TRUE"
-            SPACK_INSTALL_ARGS="--only dependencies"
+# Until several spack bugs are fixed we cannot use this flag
+#            SPACK_INSTALL_ARGS="--only dependencies"
             ;;
         -e|--env)
             # Change default build directory
@@ -150,8 +151,35 @@ EOF
 )
     fi
 
+    GPU_PACKAGES=
+    if [[ "${ENABLE_GPUS}" == "ON" ]]; then
+        GPU_PACKAGES=$(cat <<EOF
+  - cudnn
+  - cub
+  - nccl
+EOF
+)
+    fi
+
     # Include additional specs if only the dependencies are build
     BUILD_SPECS=$(cat <<EOF
+# These packages should go away when spack fixes its environments
+  - aluminum
+  - cereal
+  - clara
+  - cnpy
+  - conduit
+  - half
+  - hwloc
+  - hydrogen
+  - opencv
+  - zlib
+${GPU_PACKAGES}
+  - py-numpy
+  - py-protobuf
+  - py-setuptools
+
+# These are required
   - catch2
   - cmake
   - ninja
@@ -162,16 +190,14 @@ EOF
     LBANN_ENV="${LBANN_ENV:-lbann-dev-${SPACK_ARCH_TARGET}}"
 else
     LBANN_ENV="${LBANN_ENV:-lbann-${SPACK_ARCH_TARGET}}"
+    BUILD_SPECS=$(cat <<EOF
+  - lbann@develop${GPU_VARIANTS}
+EOF
+)
 fi
 
 AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
-    GPU_PACKAGES=$(cat <<EOF
-  - cudnn
-  - cub
-  - nccl
-EOF
-)
     AL_VARIANTS="variants: +gpu+nccl~mpi_cuda"
     HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
 fi
@@ -180,7 +206,6 @@ SPACK_ENV=$(cat <<EOF
 spack:
   concretization: together
   specs:
-  - lbann@develop${GPU_VARIANTS}
 ${BUILD_SPECS}
   packages:
 ${EXTERNAL_ALL_PACKAGES}
@@ -245,6 +270,9 @@ else
     if [[ ${DEPS_ONLY} = "TRUE" ]]; then
         echo "LBANN's dependencies are installed in a spack environment named ${LBANN_ENV}, access it via:"
         echo "  spack env activate -p ${LBANN_ENV}"
+        # Reactivate the spack environment since a clean installation will note setup the modules properly
+        CMD=". $SPACK_ROOT/share/spack/setup-env.sh"
+        ${CMD}
         CMD="spack env loads"
         ${CMD}
 

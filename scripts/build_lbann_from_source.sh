@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 
-SPACK_VERSION=$(spack --version)
+SPACK_VERSION=$(spack --version | sed 's/-.*//g')
 MIN_SPACK_VERSION=0.13.3
 
 source $(dirname ${BASH_SOURCE})/utilities.sh
