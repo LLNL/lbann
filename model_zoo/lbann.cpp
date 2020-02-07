@@ -43,6 +43,10 @@ int main(int argc, char *argv[]) {
   world_comm_ptr comm = initialize(argc, argv, random_seed);
   const bool master = comm->am_world_master();
 
+  MPI_Errhandler err_handle;
+  MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);
+  MPI_Comm_set_errhandler(MPI_COMM_WORLD, err_handle);
+
   if (master) {
     std::cout << "\n\n==============================================================\n"
               << "STARTING lbann with this command line:\n";

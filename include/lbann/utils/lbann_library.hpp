@@ -53,6 +53,8 @@ void print_lbann_configuration(lbann_comm *comm,
                                int io_threads_per_process,
                                int io_threads_offset);
 
+void lbann_mpi_err_handler(MPI_Comm *comm, int *err_code, ... );
+
 } // namespace lbann
 
 #endif // LBANN_LIBRARY_HPP
