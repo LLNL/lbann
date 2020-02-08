@@ -51,6 +51,14 @@ vocab_size = dataset.vocab_size()
 sequence_length = dataset.sequence_length
 pad_index = dataset.pad_index
 
+# Initialize embedding weights
+# Note: Glorot normal initialization
+var = 2 / (args.embed_dim + vocab_size)
+embedding_weights = lbann.Weights(
+    name='embedding_weights',
+    initializer=lbann.NormalInitializer(standard_deviation=math.sqrt(var)),
+)
+
 # Input is two sequences of token IDs, separated by a pad token
 input_ = lbann.Identity(lbann.Input())
 
@@ -64,6 +72,7 @@ embeddings_tokens = lbann.Identity(lbann.Slice(
 ))
 embeddings = lbann.Embedding(
     embeddings_tokens,
+    weights=embedding_weights,
     num_embeddings=vocab_size,
     embedding_dim=args.embed_dim,
     padding_idx=pad_index,
@@ -84,7 +93,6 @@ decoder_input = lbann.Identity(embeddings_slice)
 model = model.Transformer(
     hidden_size=args.embed_dim,
     num_heads=args.num_attention_heads,
-    dropout=0, # TODO: Restore dropout
 )
 result = model(
     encoder_input, sequence_length,
@@ -92,6 +100,7 @@ result = model(
 )
 
 # Use transformer decoder output to reconstruct decoder input
+# TODO: Use embedding weights
 preds = lbann.ChannelwiseFullyConnected(
     result,
     output_channel_dims=[vocab_size],
