@@ -54,8 +54,9 @@ namespace lbann {
 // Constructors and destructor
 ////////////////////////////////////////////////////////////
 
-trainer::trainer(lbann_comm *comm)
+trainer::trainer(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers)
   : m_comm(comm),
+    m_data_coordinator(data_readers),
     m_io_thread_pool(),
     m_background_io_allowed(true) {
 

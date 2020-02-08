@@ -44,9 +44,6 @@ message Model {
   ObjectiveFunction objective_function = 2;
   repeated Metric metric = 5;
   string data_layout = 6;
-  bool shareable_training_data_reader = 42; // Can the data reader be shared across multiple models( e.g. GAN)
-  bool shareable_testing_data_reader = 43; // Can the data reader be shared across multiple models (e.g. GAN)
-  bool shareable_validation_data_reader = 44; // Can the data reader be shared across multiple models (e.g. GAN)
 
   int64 mini_batch_size = 12;
   int64 num_epochs = 4;

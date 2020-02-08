@@ -128,7 +128,7 @@ public:
 
   void for_each_execution_context(std::function<void(observer_ptr<execution_context>)>fn);
 
-  data_coordinator& get_data_coordinator() { return &m_data_coordinator; }
+  data_coordinator& get_data_coordinator() { return m_data_coordinator; }
 
   void apply(training_algorithm& alg,
              observer_ptr<model> model,

@@ -42,8 +42,9 @@ namespace lbann {
 
 /// Construct a trainer that contains a lbann comm object and threadpool
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
-                                             lbann_data::Trainer* pb_trainer,
-                                             options *opts) {
+                                           lbann_data::Trainer* pb_trainer,
+                                           lbann_data::LbannPB &pb,
+                                           options *opts) {
   try {
     int procs_per_trainer = 0;
     if(pb_trainer->procs_per_trainer() > 0) {
@@ -87,11 +88,34 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     //   display_omp_setup();
     // }
 
+    // Update the index lists to accomodate multi-trainer / multi-model specification
+    customize_data_readers_index_list(*comm, pb);
+
+    // Initialize data readers
+    //@todo: code not in place for correctly handling image preprocessing
+    std::map<execution_mode, generic_data_reader *> data_readers;
+    bool is_shared_training_data_reader = pb_trainer->shareable_training_data_reader();
+    bool is_shared_testing_data_reader = pb_trainer->shareable_testing_data_reader();
+    if (opts->has_string("share_testing_data_readers")) {
+      is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
+    }
+    init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
+
+    // hack to prevent all data readers from loading identical data; instead,
+    // share a single copy. See data_reader_jag_conduit_hdf5 for example
+    if (first_model) {
+      if (opts->has_string("share_data_reader_data")) {
+        for (auto&& t : data_readers) {
+          opts->set_ptr((void*)t.second);
+        }
+      }
+    }
+
     // User feedback
     //    print_parameters(comm, pb);
 
     // Initalize trainer
-    std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, *pb_trainer);
+    std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, data_readers, *pb_trainer);
 
     // If the checkpoint directory has been overridden reset it before
     // setting up the trainer
@@ -254,35 +278,11 @@ std::unique_ptr<model> build_model_from_prototext(
     display_omp_setup();
   }
 
-  // Update the index lists to accomodate multi-trainer / multi-model specification
-  customize_data_readers_index_list(*comm, pb);
-
-  // Initialize data readers
-  //@todo: code not in place for correctly handling image preprocessing
-  std::map<execution_mode, generic_data_reader *> data_readers;
-  bool is_shared_training_data_reader = pb_model->shareable_training_data_reader();
-  bool is_shared_testing_data_reader = pb_model->shareable_testing_data_reader();
-  if (opts->has_string("share_testing_data_readers")) {
-    is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
-  }
-  init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
-
-  // hack to prevent all data readers from loading identical data; instead,
-  // share a single copy. See data_reader_jag_conduit_hdf5 for example
-  if (first_model) {
-    if (opts->has_string("share_data_reader_data")) {
-      for (auto&& t : data_readers) {
-        opts->set_ptr((void*)t.second);
-      }
-    }
-  }
-
   // User feedback
   print_parameters(*comm, pb);
 
   // Initalize model
   std::unique_ptr<model> ret_model = proto::construct_model(comm,
-                                                            data_readers,
                                                             pb.optimizer(),
                                                             pb.trainer(),
                                                             pb.model());
