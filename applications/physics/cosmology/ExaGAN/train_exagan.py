@@ -63,7 +63,7 @@ def construct_model():
                  #                          format='npy'),
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
-                                      batch_interval=4)]
+                                      batch_interval=2)]
                                             
     # Construct model
     mini_batch_size = 64
