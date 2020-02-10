@@ -26,13 +26,11 @@ def construct_model():
     zero = lbann.LogicalNot(one,name='is_fake')
 
     z = lbann.Reshape(lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="64", name='noise_vec'),dims='1 64')
-    d1_real, d1_fake, d_adv, gen_img  = cosmoGAN.CosmoGAN()(input,z) 
+    d1_real, d1_fake, d_adv, gen_img  = ExaGAN.CosmoGAN()(input,z) 
     
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')
     d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
-    #For metric
-    mse = lbann.MeanSquaredError([lbann.Reshape(gen_img,dims='16384'),input])
 
     layers = list(lbann.traverse_layer_graph(input))
     # Setup objective function
@@ -51,26 +49,25 @@ def construct_model():
     #l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
     obj = lbann.ObjectiveFunction([d1_real_bce,d1_fake_bce,d_adv_bce])
     # Initialize check metric callback
-    metrics = [lbann.Metric(mse, name='mse'),lbann.Metric(d1_real_bce,name='d_real'),
-               lbann.Metric(d1_fake_bce, name='d_fake'),lbann.Metric(d_adv_bce,name='gen')]
+    metrics = [lbann.Metric(d1_real_bce,name='d_real'),
+               lbann.Metric(d1_fake_bce, name='d_fake'),
+               lbann.Metric(d_adv_bce,name='gen')]
 
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer(),
                  #Uncomment to dump output for plotting and further statistical analysis
-                 '''
-                 lbann.CallbackDumpOutputs(layers='inp_img gen_img_instance1_activation',
-                                           execution_modes='train validation',
-                                           directory='dump_outs',
-                                           batch_interval=100,
-                                           format='npy'),
-                 '''
+                 #lbann.CallbackDumpOutputs(layers='inp_img gen_img_instance1_activation',
+                 #                          execution_modes='train validation',
+                 #                          directory='dump_outs',
+                 #                          batch_interval=100,
+                 #                          format='npy'),
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
                                       batch_interval=4)]
                                             
     # Construct model
     mini_batch_size = 64
-    num_epochs = 200
+    num_epochs = 20
     return lbann.Model(mini_batch_size,
                        num_epochs,
                        weights=weights,
