@@ -92,6 +92,7 @@ Options:
   ${C}-b | --build-dir${N}     Specify alternative build directory: default=${CORE_BUILD_PATH}/build
   ${C}--disable-gpus${N}       Disable GPUS
   ${C}--instrument${N}         Use -finstrument-functions flag, for profiling stack traces
+  ${C}-s | --superbuild${N}    Superbuild LBANN with hydrogen and aluminum
 EOF
 }
 
@@ -186,6 +187,10 @@ while :; do
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
             ;;
+        -s|--superbuild)
+            # Debug mode
+            SUPERBUILD="superbuild_lbann_with_hydrogen_and_aluminum.sh"
+            ;;
         -?*)
             # Unknown option
             echo "Unknown option (${1})" >&2
@@ -212,7 +217,7 @@ CMD="mkdir -p ${INSTALL_DIR}"
 echo ${CMD}
 ${CMD}
 
-SUPERBUILD=cmake_lbann.sh
+SUPERBUILD="${SUPERBUILD:-cmake_lbann.sh}"
 if [[ ${SYS} = "Darwin" ]]; then
     OSX_VER=$(sw_vers -productVersion)
     ENABLE_GPUS=OFF

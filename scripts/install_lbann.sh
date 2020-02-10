@@ -55,6 +55,7 @@ BUILD_TYPE=Release
 VERBOSE=0
 LBANN_ENV=
 SPACK_INSTALL_ARGS=
+BUILD_LBANN_SW_STACK="TRUE"
 
 ################################################################
 # Help message
@@ -74,6 +75,7 @@ Options:
   ${C}-d | -deps-only)${N}     Only install the lbann dependencies
   ${C}-e | --env${N}           Build and install LBANN in the spack environment provided.
   ${C}--disable-gpus${N}       Disable GPUS
+  ${C}-s | --superbuild${N}    Superbuild LBANN with hydrogen and aluminum
 EOF
 }
 
@@ -106,6 +108,9 @@ while :; do
         --disable-gpus)
             ENABLE_GPUS=OFF
             GPU_VARIANTS=
+            ;;
+        -s|--superbuild)
+            BUILD_LBANN_SW_STACK="FALSE"
             ;;
         -?*)
             # Unknown option
@@ -161,17 +166,25 @@ EOF
 )
     fi
 
+    SUPERBUILD_SPECS=
+    if [[ ${BUILD_LBANN_SW_STACK} == "TRUE" ]]; then
+        SUPERBUILD_SPECS=$(cat <<EOF
+  - aluminum
+  - hydrogen
+EOF
+)
+    fi
+
     # Include additional specs if only the dependencies are build
     BUILD_SPECS=$(cat <<EOF
 # These packages should go away when spack fixes its environments
-  - aluminum
+${SUPERBUILD_SPECS}
   - cereal
   - clara
   - cnpy
   - conduit
   - half
   - hwloc
-  - hydrogen
   - opencv
   - zlib
 ${GPU_PACKAGES}
