@@ -119,8 +119,8 @@ if __name__ == '__main__':
     status = lbann.contrib.lc.launcher.run(trainer,model, data_reader, opt,
                        scheduler='slurm',
                        #account='lbpm',
-                       nodes=4,
-                       procs_per_node=2,
+                       nodes=1,
+                       procs_per_node=1,
                        time_limit=1440,
                        setup_only=False,
                        job_name='exagan')
