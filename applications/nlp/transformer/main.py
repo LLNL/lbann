@@ -1,4 +1,5 @@
 import argparse
+import datetime
 import math
 import os.path
 import sys
@@ -14,10 +15,11 @@ root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 import dataset
 import model
+import utils.paths
 
-# ----------------------------------
+# ----------------------------------------------
 # Options
-# ----------------------------------
+# ----------------------------------------------
 
 # Command-line arguments
 parser = argparse.ArgumentParser()
@@ -42,22 +44,50 @@ parser.add_argument(
     help='label smoothing (default: 0.1)', metavar='VAL')
 args = parser.parse_args()
 
-# ----------------------------------
-# Construct layer graph
-# ----------------------------------
-
 # Dataset properties
 vocab_size = dataset.vocab_size()
 sequence_length = dataset.sequence_length
 pad_index = dataset.pad_index
 
-# Initialize embedding weights
+# ----------------------------------------------
+# Shared objects for training and validation
+# ----------------------------------------------
+
+# Directory for results
+timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+experiment_dir = os.path.join(
+    utils.paths.root_dir(),
+    'experiments',
+    f'{timestamp}_{args.job_name}',
+)
+
+# Embedding weights
 # Note: Glorot normal initialization
 var = 2 / (args.embed_dim + vocab_size)
 embedding_weights = lbann.Weights(
     name='embedding_weights',
     initializer=lbann.NormalInitializer(standard_deviation=math.sqrt(var)),
 )
+
+# Classifier weights
+# TODO: Use embedding weights
+classifier_matrix_weights = lbann.Weights(
+    name='classifier_matrix_weights',
+    initializer=lbann.NormalInitializer(standard_deviation=math.sqrt(var)),
+)
+classifier_bias_weights = lbann.Weights(
+    name='classifier_bias_weights',
+)
+
+# Transformer model
+model = model.Transformer(
+    hidden_size=args.embed_dim,
+    num_heads=args.num_attention_heads,
+)
+
+# ----------------------------------------------
+# Layer graph for training
+# ----------------------------------------------
 
 # Input is two sequences of token IDs, separated by a pad token
 input_ = lbann.Identity(lbann.Input())
@@ -90,10 +120,6 @@ encoder_input = lbann.Identity(embeddings_slice)
 decoder_input = lbann.Identity(embeddings_slice)
 
 # Apply transformer model
-model = model.Transformer(
-    hidden_size=args.embed_dim,
-    num_heads=args.num_attention_heads,
-)
 result = model(
     encoder_input, sequence_length,
     decoder_input, sequence_length,
@@ -103,6 +129,7 @@ result = model(
 # TODO: Use embedding weights
 preds = lbann.ChannelwiseFullyConnected(
     result,
+    weights=[classifier_matrix_weights, classifier_bias_weights],
     output_channel_dims=[vocab_size],
 )
 preds = lbann.ChannelwiseSoftmax(preds)
@@ -131,40 +158,67 @@ if args.label_smoothing > 0:
     )
 loss = lbann.CrossEntropy(preds, labels)
 
-# ----------------------------------
-# Create data reader
-# ----------------------------------
+# ----------------------------------------------
+# Data reader for training
+# ----------------------------------------------
 
-reader = lbann.reader_pb2.DataReader()
-_reader = reader.reader.add()
+train_reader = lbann.reader_pb2.DataReader()
+_reader = train_reader.reader.add()
 _reader.name = 'python'
 _reader.role = 'train'
 _reader.percent_of_data_to_use = 1.0
 _reader.python.module = 'dataset'
 _reader.python.module_dir = current_dir
-_reader.python.sample_function = 'get_sample'
-_reader.python.num_samples_function = 'num_samples'
+_reader.python.sample_function = 'get_train_sample'
+_reader.python.num_samples_function = 'num_train_samples'
 _reader.python.sample_dims_function = 'sample_dims'
 
-# ----------------------------------
-# Run LBANN
-# ----------------------------------
+# ----------------------------------------------
+# Create batch script for training
+# ----------------------------------------------
+
+# Paths
+train_experiment_dir = os.path.join(experiment_dir, 'train')
+train_pb_file = os.path.join(train_experiment_dir, 'experiment.prototext')
 
 # Create LBANN objects
 trainer = lbann.Trainer()
 metrics = []
-callbacks = [lbann.CallbackPrint(),
-             lbann.CallbackTimer()]
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
-                    layers=lbann.traverse_layer_graph(input_),
-                    objective_function=loss,
-                    metrics=metrics,
-                    callbacks=callbacks)
+callbacks = [
+    lbann.CallbackPrint(),
+    lbann.CallbackTimer(),
+]
+model = lbann.Model(
+    args.mini_batch_size,
+    args.num_epochs,
+    layers=lbann.traverse_layer_graph(input_),
+    objective_function=loss,
+    metrics=metrics,
+    callbacks=callbacks
+)
 opt = lbann.Adam(learn_rate=0.0004, beta1=0.9, beta2=0.98, eps=1e-9) # TODO: LR schedule
 
-# Run LBANN
+# Create batch script
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.lc.launcher.run(trainer, model, reader, opt,
-                              job_name=args.job_name,
-                              **kwargs)
+train_script = lbann.contrib.lc.launcher.make_batch_script(
+    job_name=args.job_name,
+    work_dir=train_experiment_dir,
+    **kwargs,
+)
+train_script.add_command('echo "Started training at $(date)"')
+lbann.proto.save_prototext(
+    train_pb_file,
+    trainer=trainer,
+    model=model,
+    data_reader=train_reader,
+    optimizer=opt
+)
+train_script.add_parallel_command([
+    lbann.lbann_exe(),
+    f'--prototext={train_pb_file}',
+])
+train_script.add_command('status=$?')
+train_script.add_command('echo "Finished training at $(date)"')
+train_script.add_command('exit ${status}')
+train_script.write()
+train_script.run(overwrite=True)
