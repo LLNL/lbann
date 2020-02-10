@@ -30,7 +30,6 @@ LLVM, Open-MPI, ScaLAPACK, and CMake.
 
    brew install llvm
    brew install open-mpi
-   brew install scalapack
    brew install cmake
    brew install hwloc
 
@@ -56,7 +55,7 @@ Update your shell configuration files to enable use of modules via
    source $(brew --prefix lmod)/init/$(basename $SHELL)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Building & Installing LBANN 
+Building & Installing LBANN
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 From this point, follow the instructions for :ref:`building LBANN with
