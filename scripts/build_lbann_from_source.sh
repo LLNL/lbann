@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# "spack" is just a shell function; it may not be exported to this
+# scope. Just to be sure, reload the shell integration.
+if [ -n "${SPACK_ROOT}" ]; then
+    source ${SPACK_ROOT}/share/spack/setup-env.sh
+fi
+
 SPACK_VERSION=$(spack --version | sed 's/-.*//g')
 MIN_SPACK_VERSION=0.13.3
 
