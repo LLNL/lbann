@@ -18,7 +18,9 @@ COMPILER_DEFINITIONS=$(cat <<EOF
       operating_system: opensuse_leap15
       target: x86_64
       modules: []
-      environment: {}
+      environment:
+        prepend-path:
+          LD_LIBRARY_PATH: /opt/esslurm/lib64
       extra_rpaths: []
 EOF
 )
