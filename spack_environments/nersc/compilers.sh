@@ -19,7 +19,7 @@ COMPILER_DEFINITIONS=$(cat <<EOF
       target: x86_64
       modules: []
       environment:
-        prepend-path:
+        prepend_path:
           LD_LIBRARY_PATH: /opt/esslurm/lib64
       extra_rpaths: []
 EOF
