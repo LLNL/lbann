@@ -55,7 +55,7 @@
 
 namespace lbann {
 
-
+MPI_Errhandler err_handle;
 
 world_comm_ptr initialize(int& argc, char**& argv, int seed) {
   // Initialize Elemental.
@@ -65,7 +65,6 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed) {
   auto comm = world_comm_ptr{new lbann_comm(0), &lbann::finalize };
 
   // Install MPI error handler
-  MPI_Errhandler err_handle;
   MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);
   MPI_Comm_set_errhandler(MPI_COMM_WORLD, err_handle);
 
@@ -102,6 +101,7 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed) {
 }
 
 void finalize(lbann_comm* comm) {
+  MPI_Errhandler_free( &err_handle );
 #ifdef LBANN_HAS_CUDNN
   cudnn::destroy();
 #endif
