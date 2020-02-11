@@ -387,11 +387,4 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
   std::cout << std::endl;
 }
 
-void lbann_mpi_err_handler(MPI_Comm *comm, int *err_code, ... ) {
-  char err_string[1024];
-  int err_string_length;
-  MPI_Error_string(*err_code, &err_string[0], &err_string_length);
-  LBANN_ERROR("MPI threw this error: ", err_string);
-}
-
 } // namespace lbann
