@@ -1,12 +1,6 @@
-  packages:
-    all:
-      providers: {}
-      buildable: true
-      version: []
-      paths: {}
-      modules: {}
-      compiler: []
+#!/bin/sh
 
+STD_PACKAGES=$(cat <<EOF
     cereal::
       buildable: true
       version: [1.2.2]
@@ -14,7 +8,7 @@
     conduit::
       buildable: true
       variants: ~doc~doxygen+hdf5~hdf5_compat+mpi+python+shared~silo
-      version: [0.4.0]
+      version: [0.5.1]
 
     cnpy::
       buildable: true
@@ -39,14 +33,6 @@
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
       version: [3.7.2]
 
-    py-cython::
-      buildable: True
-      version: [0.29]
-
-    py-matplotlib::
-      buildable: True
-      variants: ~tk ~image
-
     py-numpy::
       buildable: True
       version: [1.16.2]
@@ -59,7 +45,10 @@
     zlib::
       buildable: True
       version: [1.2.11]
+EOF
+)
 
+STD_MODULES=$(cat <<EOF
   modules:
     enable::
       - tcl
@@ -69,7 +58,7 @@
       core_compilers:
         - 'gcc@7.3.0'
         - 'gcc@7.3.1'
-      naming_scheme: '${PACKAGE}/${VERSION}-${COMPILERNAME}-${COMPILERVER}'
+      naming_scheme: '\${PACKAGE}/\${VERSION}-\${COMPILERNAME}-\${COMPILERVER}'
       blacklist:
         - '%gcc@4.8'
         - '%gcc@4.9.3'
@@ -91,7 +80,7 @@
       core_compilers:
         - 'gcc@7.3.0'
         - 'gcc@7.3.1'
-      naming_scheme: '${PACKAGE}/${VERSION}-${COMPILERNAME}-${COMPILERVER}'
+      naming_scheme: '\${PACKAGE}/\${VERSION}-\${COMPILERNAME}-\${COMPILERVER}'
       whitelist:
         - gcc
       blacklist:
@@ -107,3 +96,5 @@
           environment_blacklist: ['CPATH', 'LIBRARY_PATH']
       ^python:
         autoload:  'direct'
+EOF
+)
