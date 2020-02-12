@@ -429,18 +429,17 @@ protected:
     setup_error_signals_tensor(dists);
     setup_error_signals_copyout_tensor(dists);
 
-    std::vector<bool> reduced_dims;
+    bool global_stats;
     if (m_statistics_group_size  == 0) {
-      reduced_dims = std::vector<bool>(dc::num_dims, true);
+      global_stats = true;
     } else if (m_statistics_group_size == 1) {
-      reduced_dims = std::vector<bool>(dc::num_dims, false);
+      global_stats = false;
     } else {
       LBANN_ERROR("statistics_group_size must be either 0 or 1 for now.");
     }
 
     m_bn = new dc::BatchNormalization(
-        dc::get_backend(), m_decay, m_epsilon,
-        reduced_dims);
+        dc::get_backend(), m_decay, m_epsilon, global_stats);
 
     dc::MPIPrintStreamDebug()
         << "BN prev_error_signals: " << m_prev_error_signals_t
