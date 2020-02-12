@@ -323,7 +323,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
   m_bn->forward_stage1(m_prev_activations_t,
                        m_mean_t,
                        m_var_t,
-                       is_training, false);
+                       is_training);
 
   if (m_statistics_group_size == 0) {
     m_comm->allreduce(*m_mean_and_var, m_mean_and_var->RedundantComm(),
@@ -365,8 +365,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
                         m_prev_error_signals_t,
                         m_mean_t, m_var_t, m_scale_t,
                         m_scale_gradient_t, m_bias_gradient_t,
-                        m_mean_gradient_t, m_var_gradient_t,
-                        false);
+                        m_mean_gradient_t, m_var_gradient_t);
 
   // Verbatim copy from bp_compute_gpu
   // Accumulate gradients
