@@ -13,6 +13,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 import train
+import evaluate
 import dataset
 import model
 import utils.paths
@@ -53,7 +54,7 @@ vocab_size = dataset.vocab_size()
 
 # Directory for results
 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
-experiment_dir = os.path.join(
+work_dir = os.path.join(
     utils.paths.root_dir(),
     'experiments',
     f'{timestamp}_{args.job_name}',
@@ -85,12 +86,13 @@ transformer = model.Transformer(
 )
 
 # ----------------------------------------------
-# Initialize training
+# Train
 # ----------------------------------------------
 
 # Create work directory
-train_work_dir = os.path.join(experiment_dir, 'train')
-os.makedirs(train_work_dir, exist_ok=True)
+os.makedirs(work_dir, exist_ok=True)
+
+
 
 # Create batch script
 train_params = {
@@ -104,40 +106,22 @@ batch_params['job_name'] = args.job_name
 train_script = train.make_batch_script(
     transformer=transformer,
     weights=weights,
-    work_dir=train_work_dir,
+    work_dir=work_dir,
     train_params=train_params,
     batch_params=batch_params,
 )
-train_script.write()
-
-# ----------------------------------------------
-# Initialize evaluation
-# ----------------------------------------------
-
-# Create work directory
-eval_work_dir = os.path.join(experiment_dir, 'eval')
-os.makedirs(eval_work_dir, exist_ok=True)
-
-# Clear caches in transformer
-# Note: Make sure layers graphs in training and evaluation models are
-# separate.
-transformer._positional_encoding_cache.clear()
-transformer._subsequent_mask_cache.clear()
-
-# Create batch script
-# TODO: Do this properly
-eval_script = train.make_batch_script(
-    transformer=transformer,
-    weights=weights,
-    work_dir=eval_work_dir,
-    train_params=train_params,
-    batch_params=batch_params,
+weights_prefix = os.path.join(
+    work_dir,
+    'weights',
+    f'model0-epoch{args.num_epochs-1}',
 )
-eval_script.write()
-
-# ----------------------------------------------
-# Run experiment
-# ----------------------------------------------
-
+train_script.add_command(
+    f'# python3 {utils.paths.root_dir()}/transformer/evaluate.py {weights_prefix}'
+)
 train_script.run(overwrite=True)
-eval_script.run(overwrite=True)
+
+# ----------------------------------------------
+# Evaluate
+# ----------------------------------------------
+
+evaluate.evaluate_transformer(weights_prefix)

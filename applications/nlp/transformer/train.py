@@ -103,8 +103,7 @@ def make_data_reader():
     _reader = reader.reader.add()
     _reader.name = 'python'
     _reader.role = 'train'
-    _reader.percent_of_data_to_use = 0.001421917
-    #_reader.percent_of_data_to_use = 1.0
+    _reader.percent_of_data_to_use = 1.0
     _reader.python.module = 'dataset'
     _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
     _reader.python.sample_function = 'get_train_sample'
@@ -132,6 +131,10 @@ def make_batch_script(
     callbacks = [
         lbann.CallbackPrint(),
         lbann.CallbackTimer(),
+        lbann.CallbackDumpWeights(
+            basename=os.path.join(work_dir, 'weights'),
+            epoch_interval=train_params['num_epochs'],
+        ),
     ]
     model = lbann.Model(
         train_params['mini_batch_size'],
