@@ -851,6 +851,13 @@ configure_file(
   "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.lua.in"
   "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   @ONLY)
+configure_file(
+  "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.tcl.in"
+  "${CMAKE_BINARY_DIR}/lbann_module.tcl.install")
+
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   RENAME "${LBANN_MODULEFILE_NAME}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles")
+install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
+  RENAME "${LBANN_VERSION}"
+  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")
