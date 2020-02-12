@@ -585,6 +585,8 @@ private :
 
   std::string get_lassen_spill_dir();
 
+  void verify_sufficient_samples();
+
   //=========================================================================
   // functions and templates for optional profiling and debug files follow
   //=========================================================================
@@ -627,7 +629,6 @@ private :
     DEBUG(var2...) ;
     flush_debug_file();
   }
-
 };
 
 }  // namespace lbann
