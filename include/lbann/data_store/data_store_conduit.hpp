@@ -585,7 +585,7 @@ private :
 
   std::string get_lassen_spill_dir();
 
-  void verify_sufficient_samples();
+  void verify_sample_size();
 
   //=========================================================================
   // functions and templates for optional profiling and debug files follow

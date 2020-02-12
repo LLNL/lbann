@@ -458,7 +458,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   // nodes, hence, cannot properly set up their recv buffers, hence,
   // mpi throws errors.
   if (m_bcast_sample_size && !m_node_sizes_vary) {
-    verify_sufficient_samples();
+    verify_sample_size();
     m_bcast_sample_size = false;
   }
 
@@ -1938,7 +1938,7 @@ void data_store_conduit::clear_owner_map() {
     m_owner.clear(); 
 }
 
-void data_store_conduit::verify_sufficient_samples() {
+void data_store_conduit::verify_sample_size() {
   // Note: m_compacted_sample_size is set during calls to set_conduit_node() or 
   //  set_preloaded_conduit_node(). Hence, if these are not called (i.e, the
   //  rank does not own any data), m_compacted_sample_size will be zero.
