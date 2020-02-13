@@ -84,7 +84,7 @@ def make_model(
         decoder_input, sequence_length-1,
     )
 
-    # Use transformer decoder output to reconstruct decoder input
+    # Reconstruct decoder input
     # TODO: Use embedding weights
     preds = lbann.ChannelwiseFullyConnected(
         result,
@@ -92,29 +92,49 @@ def make_model(
         output_channel_dims=[vocab_size],
     )
     preds = lbann.ChannelwiseSoftmax(preds)
+    preds = lbann.Slice(preds, axis=0, slice_points=str_list(range(sequence_length)))
+    preds = [lbann.Identity(preds) for _ in range(sequence_length-1)]
+
+    # Count number of non-pad tokens
+    label_tokens = lbann.Identity(lbann.Slice(
+        input_,
+        slice_points=str_list([sequence_length+1, 2*sequence_length]),
+    ))
+    pads = lbann.Constant(value=pad_index, num_neurons=str(sequence_length-1))
+    is_not_pad = lbann.NotEqual(label_tokens, pads)
+    num_not_pad = lbann.Reduction(is_not_pad, mode='sum')
 
     # Cross entropy loss with label smoothing
     label_tokens = lbann.Slice(
-        input_,
-        slice_points=str_list(range(sequence_length+1, 2*sequence_length+1)),
+        label_tokens,
+        slice_points=str_list(range(sequence_length)),
     )
     label_tokens = [lbann.Identity(label_tokens) for _ in range(sequence_length-1)]
-    labels = [lbann.OneHot(token, size=vocab_size) for token in label_tokens]
-    labels = lbann.Concatenation(
-        [lbann.Reshape(label, dims=str_list([1, vocab_size])) for label in labels],
-        axis=0,
-    )
     if label_smoothing > 0:
-        uniform_labels = lbann.Constant(
+        uniform_label = lbann.Constant(
             value=1/vocab_size,
-            num_neurons=str_list([sequence_length-1, vocab_size])
+            num_neurons=str_list([1, vocab_size])
         )
-        labels = lbann.WeightedSum(
-            labels,
-            uniform_labels,
-            scaling_factors=str_list([1-label_smoothing, label_smoothing]),
-        )
-    loss = lbann.CrossEntropy(preds, labels)
+    loss = []
+    for i in range(sequence_length-1):
+        label = lbann.OneHot(label_tokens[i], size=vocab_size)
+        label = lbann.Reshape(label, dims=str_list([1, vocab_size]))
+        if label_smoothing > 0:
+            label = lbann.WeightedSum(
+                labels,
+                uniform_labels,
+                scaling_factors=str_list([1-label_smoothing, label_smoothing]),
+            )
+        loss.append(lbann.CrossEntropy(preds[i], label))
+    loss = lbann.Concatenation(loss)
+
+    # Average cross entropy over non-pad tokens
+    loss_scales = lbann.Divide(
+        is_not_pad,
+        lbann.Tessellate(num_not_pad, hint_layer=is_not_pad),
+    )
+    loss = lbann.Multiply(loss, loss_scales)
+    loss = lbann.Reduction(loss, mode='sum')
 
     # Construct model
     metrics = []
@@ -137,6 +157,7 @@ def make_data_reader():
     _reader = reader.reader.add()
     _reader.name = 'python'
     _reader.role = 'train'
+    _reader.shuffle = True
     _reader.percent_of_data_to_use = 1.0
     _reader.python.module = 'dataset'
     _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
