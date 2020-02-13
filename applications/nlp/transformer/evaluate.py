@@ -30,7 +30,9 @@ dropout = 0.1
 
 # Dataset properties
 vocab_size = dataset.vocab_size()
-sequence_length = dataset.sequence_length
+max_sequence_length = dataset.sequence_length
+bos_index = dataset.bos_index
+eos_index = dataset.eos_index
 pad_index = dataset.pad_index
 num_samples = dataset.num_val_samples()
 
@@ -191,6 +193,36 @@ def add_positional_encoding(x):
         encoding[:,:,2*i+1] = np.cos(pos / 10000**(2*i/embed_dim))
     return x + torch.from_numpy(encoding)
 
+def greedy_decode(tokens_en, embedding_layer, transformer, classifier):
+    """Generate sequence with transformer.
+
+    Predict tokens one at a time by choosing the one that maximizes
+    the classification score.
+
+    """
+
+    # Encode English sequence
+    embeddings_en = embedding_layer(tokens_en)
+    memory = transformer.encoder(
+        add_positional_encoding(embeddings_en * np.sqrt(embed_dim))
+    )
+
+    # Decode German sequence
+    # TODO: Only perform compute for last sequence entry
+    # TODO: Detect EOS tokens and stop early
+    tokens_de = torch.full((1,tokens_en.shape[1]), bos_index, dtype=int)
+    for i in range(1, max_sequence_length):
+        embeddings_de = embedding_layer(tokens_de)
+        preds = transformer.decoder(
+            add_positional_encoding(embeddings_de * np.sqrt(embed_dim)),
+            memory,
+            tgt_mask=transformer.generate_square_subsequent_mask(i),
+        )
+        preds = classifier(preds[-1,:,:])
+        preds = preds.argmax(dim=1)
+        tokens_de = torch.cat([tokens_de, preds.reshape(1,-1)], dim=0)
+    return tokens_de
+
 def evaluate_transformer(weights_prefix):
     """Evaluate transformer model with weights from LBANN."""
 
@@ -207,32 +239,26 @@ def evaluate_transformer(weights_prefix):
     )
 
     # Evaluate model
-    # TODO: Greedy decoding
     bleu_scores = []
     for batch, index_start in enumerate(range(0, num_samples, mini_batch_size)):
         index_end = min(index_start+mini_batch_size, num_samples)
-
-        # Get embeddings
         indices = list(range(index_start, index_end))
-        tokens_en, tokens_de = get_batch(indices)
-        embeddings_en = embedding_layer(tokens_en)
-        embeddings_de = embedding_layer(tokens_de[:-1,:])
+        batch_size = len(indices)
 
-        # Apply transformer
-        preds = transformer(
-            add_positional_encoding(embeddings_en),
-            add_positional_encoding(embeddings_de),
-            tgt_mask=transformer.generate_square_subsequent_mask(embeddings_de.shape[0]),
+        # Translate English sequence to German
+        # TODO: Decoding with beam search
+        tokens_en, true_tokens_de = get_batch(indices)
+        pred_tokens_de = greedy_decode(
+            tokens_en,
+            embedding_layer,
+            transformer,
+            classifier,
         )
 
-        # Predict outputs
-        preds = classifier(preds)
-        preds = preds.argmax(dim=2)
-
         # Compute BLEU score
-        for i in range(preds.shape[1]):
-            hypothesis = dataset.detokenize(preds[:,i].numpy())
-            reference = dataset.detokenize(tokens_de[:,i].numpy())
+        for i in range(batch_size):
+            hypothesis = dataset.detokenize(pred_tokens_de[:,i].numpy())
+            reference = dataset.detokenize(true_tokens_de[:,i].numpy())
             bleu_scores.append(
                 torchnlp.metrics.get_moses_multi_bleu(
                     [hypothesis],
