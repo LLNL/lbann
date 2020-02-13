@@ -258,11 +258,6 @@ class generic_input_layer : public io_layer {
     prof_region_begin("fetch_sample", prof_colors[0], false);
     io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
     prof_region_end("fetch_sample", false);
-#ifdef LBANN_HAS_DISTCONV
-    if (m_background_shuffle) {
-      fp_compute_distconv_background(active_buffer, mode);
-    }
-#endif // LBANN_HAS_DISTCONV
     return;
   }
 
@@ -338,7 +333,7 @@ class generic_input_layer : public io_layer {
 #ifdef LBANN_HAS_DISTCONV
     // When enabled, shuffle the input samples and copy them to a device tensor
     if (this->distconv_enabled()) {
-      fp_compute_distconv(get_active_buffer_idx(mode) % m_io_buffers.size());
+      fp_compute_distconv();
     }
 #endif
   }
@@ -887,7 +882,6 @@ class generic_input_layer : public io_layer {
     Layer::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
 
-    const int num_buffers = m_io_buffers.size();
     const auto tensor_shape = get_output_tensor_shape();
     const Dist sample_dist = Layer::get_hydrogen_matrix_distribution();
     auto local_shape = tensor_shape;
@@ -904,55 +898,45 @@ class generic_input_layer : public io_layer {
     // TODO: Does this work when shuffling is done background?
     const LocaleMPI loc(dc::get_mpi_comm(), false);
 
-    for (int i = 0; i < num_buffers; ++i) {
-      if (dc::is_cosmoflow_parallel_io_enabled()) {
-        // Assumes the input buffer is already partitioned for
-        // Distconv
-        m_input_views.push_back(TensorHost(tensor_shape, loc,
-                                           dist_no_halo));
-        // Create a Distconv tensor at host memory.
-        m_input_tensors.push_back(TensorHost(tensor_shape, loc,
-                                             dist_no_halo));
-      } else {
-        // Create a view to the host Elemental matrix
-        m_input_views.push_back(TensorHost(tensor_shape, loc,
-                                           sample_dist, local_shape));
-        // Create a Distconv tensor at host memory.
-        m_input_tensors.push_back(TensorHost(tensor_shape, loc, dist));
-      }
-      if (!dc::is_cosmoflow_parallel_io_enabled()) {
-        // TODO: This is a temporary hack. Should use
-        // CUDAHostPooledAllocator, but the shuffler is
-        // only specialized for BaseAllocator.
+    if (dc::is_cosmoflow_parallel_io_enabled()) {
+      // Assumes the input buffer is already partitioned for
+      // Distconv
+      m_input_view = TensorHost(tensor_shape, loc, dist_no_halo);
+      // Create a Distconv tensor at host memory.
+      m_input_tensor = TensorHost(tensor_shape, loc, dist_no_halo);
+    } else {
+      // Create a view to the host Elemental matrix
+      m_input_view = TensorHost(tensor_shape, loc, sample_dist, local_shape);
+      // Create a Distconv tensor at host memory.
+      m_input_tensor = TensorHost(tensor_shape, loc, dist);
+    }
+    if (!dc::is_cosmoflow_parallel_io_enabled()) {
+      // TODO: This is a temporary hack. Should use
+      // CUDAHostPooledAllocator, but the shuffler is
+      // only specialized for BaseAllocator.
 #if 0
-        assert0(m_input_tensors.back().allocate());
+      assert0(m_input_tensor.allocate());
 #else
-        size_t buf_size = m_input_tensors.back().get_local_real_size()
-            * sizeof(InputType);
-        dc::MPIPrintStreamInfo() << "buf size: " << buf_size;
-        InputType *buf = nullptr;
-        CHECK_CUDA(cudaMallocHost(&buf, buf_size));
-        // Note buf should be deallocated.
-        dc::tensor::View(m_input_tensors.back(), buf);
+      size_t buf_size = m_input_tensor.get_local_real_size()
+          * sizeof(InputType);
+      dc::MPIPrintStreamInfo() << "buf size: " << buf_size;
+      InputType *buf = nullptr;
+      CHECK_CUDA(cudaMallocHost(&buf, buf_size));
+      // Note buf should be deallocated.
+      dc::tensor::View(m_input_tensor, buf);
 #endif
-      }
     }
 
     if (!dc::is_cosmoflow_parallel_io_enabled()) {
       // Setup the shuffle buffers
-      m_input_shufflers.resize(num_buffers);
-      size_t shuffler_src_size = TensorShuffler::get_buf_size(
-          m_input_views[0]);
-      size_t shuffler_dst_size = TensorShuffler::get_buf_size(
-          m_input_tensors[0]);
-      for (int i = 0; i < num_buffers; ++i) {
-        m_input_shuffler_src_bufs.push_back(
-            std::unique_ptr<InputType>(
-                static_cast<InputType*>(dc::util::aligned_malloc(shuffler_src_size))));
-        m_input_shuffler_dst_bufs.push_back(
-            std::unique_ptr<InputType>(
-                static_cast<InputType*>(dc::util::aligned_malloc(shuffler_dst_size))));
-      }
+      size_t shuffler_src_size = TensorShuffler::get_buf_size(m_input_view);
+      size_t shuffler_dst_size = TensorShuffler::get_buf_size(m_input_tensor);
+      m_input_shuffler_src_buf =
+          std::unique_ptr<InputType>(
+              static_cast<InputType*>(dc::util::aligned_malloc(shuffler_src_size)));
+      m_input_shuffler_dst_buf =
+          std::unique_ptr<InputType>(
+              static_cast<InputType*>(dc::util::aligned_malloc(shuffler_dst_size)));
     }
 
     // Layer::setup_activations_tensor does not work as it assumes
@@ -994,8 +978,6 @@ class generic_input_layer : public io_layer {
 
  protected:
 
-  const bool m_background_shuffle = false;
-
 #ifdef LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
   // Cosmoflow samples are kept stored in int16
   using InputType = short;
@@ -1011,29 +993,28 @@ class generic_input_layer : public io_layer {
 
   // 3 last-MB shufflers for training/validation/testing
   std::array<std::unique_ptr<TensorShuffler>, 3> m_input_shuffler_last_mb;
-  std::vector<dc::TensorHost<InputType>> m_input_views;
-  std::vector<dc::TensorHost<InputType>> m_input_tensors;
-  std::vector<std::unique_ptr<TensorShuffler>> m_input_shufflers;
-  std::vector<std::unique_ptr<InputType>> m_input_shuffler_src_bufs;
-  std::vector<std::unique_ptr<InputType>> m_input_shuffler_dst_bufs;
+  dc::TensorHost<InputType> m_input_view;
+  dc::TensorHost<InputType> m_input_tensor;
+  std::unique_ptr<TensorShuffler> m_input_shuffler;
+  std::unique_ptr<InputType> m_input_shuffler_src_buf;
+  std::unique_ptr<InputType> m_input_shuffler_dst_buf;
 
   TensorDevInput m_input_dev;
 
   InputType *m_copy_pinned_buffer;
 
   TensorShuffler &get_shuffler(const TensorHost &src,
-                               const TensorHost &dst,
-                               int bg_idx=0) {
+                               const TensorHost &dst) {
     size_t cur_mb_size = src.get_shape()[dc::get_sample_dim()];
     if (cur_mb_size == this->get_model()->get_max_mini_batch_size()) {
-      auto &shfl = m_input_shufflers.at(bg_idx);
+      auto &shfl = m_input_shuffler;
       if (shfl == nullptr) {
         dc::MPIPrintStreamDebug() << "Creating host shuffler: "
                                   << src << " -> " << dst;
         shfl.reset(new TensorShuffler(
             src, dst,
-            m_input_shuffler_src_bufs.at(bg_idx).get(),
-            m_input_shuffler_dst_bufs.at(bg_idx).get()));
+            m_input_shuffler_src_buf.get(),
+            m_input_shuffler_dst_buf.get()));
       }
       return *shfl;
     } else {
@@ -1048,48 +1029,26 @@ class generic_input_layer : public io_layer {
                                   << src << " -> " << dst;
         shfl.reset(new TensorShuffler(
             src, dst,
-            m_input_shuffler_src_bufs.at(bg_idx).get(),
-            m_input_shuffler_dst_bufs.at(bg_idx).get()));
+            m_input_shuffler_src_buf.get(),
+            m_input_shuffler_dst_buf.get()));
       }
       return *shfl;
     }
   }
 
-  void fp_compute_distconv(int active_buffer) {
+  void fp_compute_distconv() {
     if (!distconv_enabled()) return;
-
-    // No need to use separate tensors when the shuffle is not done
-    // background
-    if (!m_background_shuffle) {
-      active_buffer = 0;
-    }
 
     // Note that the mini-batch size of the data reader is not
     // actually the one for the current mini-batch as the mini-batch
     // index is already updated by fp_compute.
     const int mb_size = static_cast<sgd_execution_context&>(
         m_model->get_execution_context()).get_current_mini_batch_size();
-    auto &input_view = m_input_views.at(active_buffer);
-    auto &input_tensor = m_input_tensors.at(active_buffer);
+    auto &input_view = m_input_view;
+    auto &input_tensor = m_input_tensor;
 
     m_activations_t.set_outermost_dimension(mb_size);
     m_input_dev.set_outermost_dimension(mb_size);
-
-    if (m_background_shuffle) {
-      dc::MPIPrintStreamDebug() << this->get_name()
-                                << ": Copy the host tensor to device tensor"
-                                << ", mb_size: " << mb_size;
-      assert_eq(mb_size, input_tensor.get_shape()[dc::get_sample_dim()]);
-      prof_region_begin("copy-to-device", prof_colors[1], false);
-      assert0(dc::tensor::Copy(m_input_dev, input_tensor,
-                               dc::get_stream()));
-      prof_region_end("copy-to-device", false);
-      prof_region_begin("cast-from-int16", prof_colors[1], false);
-      dc::tensor::Cast(m_activations_t, m_input_dev,
-                       dc::get_stream());
-      prof_region_end("copy-from-int16", false);
-      return;
-    }
 
     assert_eq(mb_size * dc::get_number_of_io_partitions(), get_activations().Width());
     input_view.set_outermost_dimension(mb_size);
@@ -1114,9 +1073,7 @@ class generic_input_layer : public io_layer {
     } else {
       dc::MPIPrintStreamDebug()
           << this->get_name()
-          << ": Shuffle the input LBANN tensor to Distconv tensor with buf: "
-          << active_buffer;
-
+          << ": Shuffle the input LBANN tensor to Distconv tensor";
       get_shuffler(input_view, input_tensor).shuffle_forward(
           input_view.get_const_base_ptr(),
           input_tensor.get_base_ptr());
@@ -1181,51 +1138,6 @@ class generic_input_layer : public io_layer {
     }
     // Note: no copy out for activation is necessary as the original
     // LBANN tensor is valid.
-  }
-
-  void fp_compute_distconv_background(int active_buffer, execution_mode mode) {
-    if (!distconv_enabled()) return;
-
-    // Assumes partitioned_io_buffer
-    partitioned_io_buffer *io_buffer =
-        dynamic_cast<partitioned_io_buffer*>(m_io_buffers[active_buffer]);
-    assert_always(io_buffer != nullptr);
-    auto buf = io_buffer->get_data_buffer(mode);
-    assert_always(buf != nullptr);
-
-    dc::MPIPrintStreamDebug()
-        << __FUNCTION__ << "; active bufer: "
-        << active_buffer << ", mode: " << (int)mode
-        << ", input shape: " << buf->m_input_buffers[0]->LocalHeight()
-        << "x" << buf->m_input_buffers[0]->LocalWidth();
-
-    auto &input_view = m_input_views.at(active_buffer);
-    auto &input_tensor = m_input_tensors.at(active_buffer);
-
-    const int mb_size = buf->m_input_buffers[0]->Width();
-    input_view.set_outermost_dimension(mb_size);
-    input_tensor.set_outermost_dimension(mb_size);
-
-    // Setup view
-#ifdef LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
-    assert0(dc::tensor::View(
-        input_view,
-        reinterpret_cast<const InputType*>(
-            buf->m_input_buffers[0]->LockedBuffer())));
-#else
-    assert0(dc::tensor::View(
-        input_view,
-        buf->m_input_buffers[0]->LockedBuffer()));
-#endif // LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
-
-    dc::MPIPrintStreamDebug()
-        << this->get_name()
-        << ": Shuffle the input LBANN tensor to Distconv tensor (bg)"
-        << "tid: " << std::this_thread::get_id();
-
-    auto &shuffler = get_shuffler(input_view, input_tensor, active_buffer);
-    shuffler.shuffle_forward(
-        input_view.get_const_base_ptr(), input_tensor.get_base_ptr());
   }
 #endif // LBANN_HAS_DISTCONV
 };
