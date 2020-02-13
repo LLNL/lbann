@@ -5,7 +5,7 @@ import sys
 import numpy as np
 import torch
 import torch.nn
-import torchnlp.datasets
+import torchnlp.metrics
 
 # Local imports
 current_file = os.path.realpath(__file__)
@@ -32,37 +32,28 @@ dropout = 0.1
 vocab_size = dataset.vocab_size()
 sequence_length = dataset.sequence_length
 pad_index = dataset.pad_index
-num_samples = dataset.num_train_samples() # TODO: validation set
+num_samples = dataset.num_val_samples()
 
 # ----------------------------------------------
 # Evaluation data
 # ----------------------------------------------
 
-def get_sample(indices):
-    """Get a data sample from the evaluation dataset."""
+def get_batch(indices):
+    """Get a batch of samples from the evaluation dataset.
 
-    # Get tokens for each data sample
+    The sequences are padded to the length of the longest sequence in
+    the batch.
+
+    """
+
+    # Get data samples
     indices = utils.make_iterable(indices)
     tokens_list_en = []
     tokens_list_de = []
     for index in indices:
-
-        # Get text data
-        # TODO: Use dev split
-        # TODO: <EOS>, <GO>
-        text = dataset.dataset_train[index]
-        text_en = text['en'].split(' ')
-        text_de = text['de'].split(' ')
-
-        # Convert text to token indices
-        tokens_list_en.append([
-            dataset.token_indices.get(token, pad_index)
-            for token in text_en
-        ])
-        tokens_list_de.append([
-            dataset.token_indices.get(token, pad_index)
-            for token in text_de
-        ])
+        tokens_en, tokens_de = dataset.get_val_sample(index)
+        tokens_list_en.append(tokens_en)
+        tokens_list_de.append(tokens_de)
 
     # Convert tokens to PyTorch tensors
     tokens_en = np.full(
@@ -97,7 +88,7 @@ def load_parameter(weight_file):
 
 def load_embedding_layer(weights_prefix):
     """Create a PyTorch embedding layer with weights from LBANN."""
-    weight_file = f'{weights_prefix}-embedding_weights-Weights.txt'
+    weight_file = f'{weights_prefix}-embeddings-Weights.txt'
     weight = load_parameter(weight_file).transpose(1,0)
     return torch.nn.Embedding(
         num_embeddings=vocab_size,
@@ -128,7 +119,7 @@ def load_transformer(weights_prefix):
         # Load weights for self-attention
         attention = layer.self_attn
         attention._qkv_same_embed_dim = False
-        prefix = f'{weights_prefix}-transformer1_encoder{i}_attention'
+        prefix = f'{weights_prefix}-transformer_encoder{i}_attention'
         attention.q_proj_weight = load_parameter(f'{prefix}_query_matrix-Weights.txt')
         attention.q_proj_bias = load_parameter(f'{prefix}_query_bias-Weights.txt')
         attention.k_proj_weight = load_parameter(f'{prefix}_key_matrix-Weights.txt')
@@ -139,7 +130,7 @@ def load_transformer(weights_prefix):
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias-Weights.txt')
 
         # Load weights for feedforward network
-        prefix = f'{weights_prefix}-transformer1_encoder{i}'
+        prefix = f'{weights_prefix}-transformer_encoder{i}'
         layer.linear1.weight = load_parameter(f'{prefix}_fc1_matrix-Weights.txt')
         layer.linear1.bias = load_parameter(f'{prefix}_fc1_bias-Weights.txt')
         layer.linear2.weight = load_parameter(f'{prefix}_fc2_matrix-Weights.txt')
@@ -151,7 +142,7 @@ def load_transformer(weights_prefix):
         # Load weights for self-attention
         attention = layer.self_attn
         attention._qkv_same_embed_dim = False
-        prefix = f'{weights_prefix}-transformer1_decoder{i}_attention1'
+        prefix = f'{weights_prefix}-transformer_decoder{i}_attention1'
         attention.q_proj_weight = load_parameter(f'{prefix}_query_matrix-Weights.txt')
         attention.q_proj_bias = load_parameter(f'{prefix}_query_bias-Weights.txt')
         attention.k_proj_weight = load_parameter(f'{prefix}_key_matrix-Weights.txt')
@@ -164,7 +155,7 @@ def load_transformer(weights_prefix):
         # Load weights for attention with memory
         attention = layer.multihead_attn
         attention._qkv_same_embed_dim = False
-        prefix = f'{weights_prefix}-transformer1_decoder{i}_attention2'
+        prefix = f'{weights_prefix}-transformer_decoder{i}_attention2'
         attention.q_proj_weight = load_parameter(f'{prefix}_query_matrix-Weights.txt')
         attention.q_proj_bias = load_parameter(f'{prefix}_query_bias-Weights.txt')
         attention.k_proj_weight = load_parameter(f'{prefix}_key_matrix-Weights.txt')
@@ -175,7 +166,7 @@ def load_transformer(weights_prefix):
         attention.out_proj_bias = load_parameter(f'{prefix}_output_bias-Weights.txt')
 
         # Load weights for feedforward network
-        prefix = f'{weights_prefix}-transformer1_decoder{i}'
+        prefix = f'{weights_prefix}-transformer_decoder{i}'
         layer.linear1.weight = load_parameter(f'{prefix}_fc1_matrix-Weights.txt')
         layer.linear1.bias = load_parameter(f'{prefix}_fc1_bias-Weights.txt')
         layer.linear2.weight = load_parameter(f'{prefix}_fc2_matrix-Weights.txt')
@@ -189,12 +180,15 @@ def load_transformer(weights_prefix):
 
 def add_positional_encoding(x):
     """Add positional encoding for transformer model."""
-    shape = x.shape
-    encoding = np.zeros(shape, dtype=np.float32)
-    for i in range((shape[2]+1) // 2):
-        encoding[:,:,2*i] = np.sin(np.arange(shape[0])).reshape(-1,1,)
-    for i in range(shape[2] // 2):
-        encoding[:,:,2*i+1] = np.cos(np.arange(shape[0])).reshape(-1,1,)
+    sequence_length = x.shape[0]
+    embed_dim = x.shape[2]
+    encoding = np.zeros(x.shape, dtype=np.float32)
+    for i in range((embed_dim+1) // 2):
+        pos = np.arange(sequence_length).reshape(-1,1)
+        encoding[:,:,2*i] = np.sin(pos / 10000**(2*i/embed_dim))
+    for i in range(embed_dim // 2):
+        pos = np.arange(sequence_length).reshape(-1,1)
+        encoding[:,:,2*i+1] = np.cos(pos / 10000**(2*i/embed_dim))
     return x + torch.from_numpy(encoding)
 
 def evaluate_transformer(weights_prefix):
@@ -206,50 +200,54 @@ def evaluate_transformer(weights_prefix):
     transformer = load_transformer(weights_prefix)
     classifier = torch.nn.Linear(embed_dim, vocab_size)
     classifier.weight = load_parameter(
-        f'{weights_prefix}-classifier_matrix_weights-Weights.txt'
+        f'{weights_prefix}-classifier_matrix-Weights.txt'
     )
     classifier.bias = load_parameter(
-        f'{weights_prefix}-classifier_bias_weights-Weights.txt'
+        f'{weights_prefix}-classifier_bias-Weights.txt'
     )
 
     # Evaluate model
     # TODO: Greedy decoding
-    accs = []
+    bleu_scores = []
     for batch, index_start in enumerate(range(0, num_samples, mini_batch_size)):
         index_end = min(index_start+mini_batch_size, num_samples)
 
         # Get embeddings
         indices = list(range(index_start, index_end))
-        tokens_en, tokens_de = get_sample(indices)
-        shifted_tokens_de = torch.cat(
-            (
-                torch.full((1, tokens_de.shape[1]), pad_index, dtype=int),
-                tokens_de[:-1,:],
-            ),
-            dim=0,
-        )
+        tokens_en, tokens_de = get_batch(indices)
         embeddings_en = embedding_layer(tokens_en)
-        embeddings_de = embedding_layer(shifted_tokens_de)
+        embeddings_de = embedding_layer(tokens_de[:-1,:])
 
         # Apply transformer
-        pred = transformer(
+        preds = transformer(
             add_positional_encoding(embeddings_en),
             add_positional_encoding(embeddings_de),
             tgt_mask=transformer.generate_square_subsequent_mask(embeddings_de.shape[0]),
         )
 
         # Predict outputs
-        pred = classifier(pred).argmax(dim=2)
+        preds = classifier(preds)
+        preds = preds.argmax(dim=2)
 
-        # Accuracy
-        # TODO: Handle padding
-        correct = (pred == tokens_de).sum(dim=0)
-        length = embeddings_de.shape[0]
-        for i in range(correct.numel()):
-            accs.append(correct[i] / length)
+        # Compute BLEU score
+        for i in range(preds.shape[1]):
+            hypothesis = dataset.detokenize(preds[:,i].numpy())
+            reference = dataset.detokenize(tokens_de[:,i].numpy())
+            bleu_scores.append(
+                torchnlp.metrics.get_moses_multi_bleu(
+                    [hypothesis],
+                    [reference],
+                )
+            )
 
     # Print results
-    print(f'Accuracy = {np.mean(accs)}')
+    print(
+        f'BLEU score: '
+        f'mean={np.mean(bleu_scores)}, '
+        f'stdev={np.std(bleu_scores)}, '
+        f'min={np.min(bleu_scores)}, '
+        f'max={np.max(bleu_scores)}'
+    )
 
 if __name__ == "__main__":
 

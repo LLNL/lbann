@@ -14,8 +14,6 @@ root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
 import train
 import evaluate
-import dataset
-import model
 import utils.paths
 
 # ----------------------------------------------
@@ -45,70 +43,36 @@ args = parser.parse_args()
 # Hard-coded options
 label_smoothing = 0.1
 
-# Dataset properties
-vocab_size = dataset.vocab_size()
-
 # ----------------------------------------------
-# Shared objects for training and validation
+# Work directory
 # ----------------------------------------------
 
-# Directory for results
 timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
 work_dir = os.path.join(
     utils.paths.root_dir(),
     'experiments',
     f'{timestamp}_{args.job_name}',
 )
-
-# Embedding weights
-# Note: Glorot normal initialization
-var = 2 / (args.embed_dim + vocab_size)
-weights = {}
-weights['embedding'] = lbann.Weights(
-    name='embedding_weights',
-    initializer=lbann.NormalInitializer(standard_deviation=math.sqrt(var)),
-)
-
-# Classifier weights
-# TODO: Use embedding weights
-weights['classifier_matrix'] = lbann.Weights(
-    name='classifier_matrix_weights',
-    initializer=lbann.NormalInitializer(standard_deviation=math.sqrt(var)),
-)
-weights['classifier_bias'] = lbann.Weights(
-    name='classifier_bias_weights',
-)
-
-# Transformer model
-transformer = model.Transformer(
-    hidden_size=args.embed_dim,
-    num_heads=args.num_attention_heads,
-)
+os.makedirs(work_dir, exist_ok=True)
 
 # ----------------------------------------------
 # Train
 # ----------------------------------------------
 
-# Create work directory
-os.makedirs(work_dir, exist_ok=True)
-
-
-
 # Create batch script
-train_params = {
+model_params = {
     'mini_batch_size': args.mini_batch_size,
     'num_epochs': args.num_epochs,
     'embed_dim': args.embed_dim,
+    'num_heads': args.num_attention_heads,
     'label_smoothing': label_smoothing,
 }
-batch_params = lbann.contrib.args.get_scheduler_kwargs(args)
-batch_params['job_name'] = args.job_name
+script_params = lbann.contrib.args.get_scheduler_kwargs(args)
+script_params['work_dir'] = work_dir
+script_params['job_name'] = args.job_name
 train_script = train.make_batch_script(
-    transformer=transformer,
-    weights=weights,
-    work_dir=work_dir,
-    train_params=train_params,
-    batch_params=batch_params,
+    model_params=model_params,
+    script_params=script_params,
 )
 weights_prefix = os.path.join(
     work_dir,
