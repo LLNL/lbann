@@ -176,6 +176,7 @@ void ras_lipid_conduit_data_reader::load() {
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_global_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  resize_shuffled_indices();
 
   instantiate_data_store();
   select_subset_of_data();
