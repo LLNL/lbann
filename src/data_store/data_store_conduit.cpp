@@ -187,6 +187,10 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_seg_name = rhs.m_seg_name;
   m_image_offsets = rhs.m_image_offsets;
 
+  // This needs to be false, to ensure a carved out validation set
+  // check for sufficient samples
+  m_bcast_sample_size = true;
+
   m_spill = rhs.m_spill;
   m_is_spilled = rhs.m_is_spilled;
   m_spill_dir_base = rhs.m_spill_dir_base;
@@ -446,6 +450,16 @@ void data_store_conduit::build_node_for_sending(const conduit::Node &node_in, co
 void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
   if (! m_is_setup) {
     LBANN_ERROR("setup(mb_size) has not been called");
+  }
+
+  // The following is needed to deal with one-off cases where one or
+  // more ranks do not own any samples (i.e, m_data is empty).
+  // In this case those processors won't know the size of the compacted
+  // nodes, hence, cannot properly set up their recv buffers, hence,
+  // mpi throws errors.
+  if (m_bcast_sample_size && !m_node_sizes_vary) {
+    verify_sample_size();
+    m_bcast_sample_size = false;
   }
 
   double tm5 = get_time();
@@ -1922,7 +1936,23 @@ void data_store_conduit::check_query_flags() const {
 void data_store_conduit::clear_owner_map() { 
     m_owner_maps_were_exchanged = false;
     m_owner.clear(); 
+}
+
+void data_store_conduit::verify_sample_size() {
+  // Note: m_compacted_sample_size is set during calls to set_conduit_node() or 
+  //  set_preloaded_conduit_node(). Hence, if these are not called (i.e, the
+  //  rank does not own any data), m_compacted_sample_size will be zero.
+  //  This method ensures that all ranks know the sample size, whether or not
+  //  they own any samples
+  int max_samples = m_comm->trainer_allreduce<int>(m_compacted_sample_size, El::mpi::MAX);
+  if (max_samples <= 0) {
+    LBANN_ERROR("sample size, which is needed for data exchange, is invalid; should be > 0, but value is: ", max_samples, "; this indicates there is insufficient data. Role: ", m_reader->get_role());
   }
+  if (m_compacted_sample_size != 0 && max_samples != m_compacted_sample_size) {
+    LBANN_ERROR("m_compacted_sample_size = ", m_compacted_sample_size, " but max_samples = ", max_samples, "; values should be identical");
+  }
+  m_compacted_sample_size = max_samples;
+}
 
 }  // namespace lbann
 
