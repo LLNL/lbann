@@ -227,16 +227,10 @@ def evaluate_transformer(weights_prefix):
     """Evaluate transformer model with weights from LBANN."""
 
     # Load model weights from file
-    # TODO: Use embeddings for classifier
     embedding_layer = load_embedding_layer(weights_prefix)
     transformer = load_transformer(weights_prefix)
-    classifier = torch.nn.Linear(embed_dim, vocab_size)
-    classifier.weight = load_parameter(
-        f'{weights_prefix}-classifier_matrix-Weights.txt'
-    )
-    classifier.bias = load_parameter(
-        f'{weights_prefix}-classifier_bias-Weights.txt'
-    )
+    classifier = torch.nn.Linear(embed_dim, vocab_size, bias=False)
+    classifier.weight = embedding_layer.weight
 
     # Evaluate model
     bleu_scores = []

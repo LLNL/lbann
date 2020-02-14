@@ -30,17 +30,11 @@ def make_model(
 ):
 
     # Embedding weights
-    # TODO: Use embedding weights for classifier
     var = 2 / (embed_dim + vocab_size) # Glorot initialization
     embedding_weights = lbann.Weights(
         name='embeddings',
         initializer=lbann.NormalInitializer(standard_deviation=math.sqrt(var)),
     )
-    classifier_matrix_weights = lbann.Weights(
-        name='classifier_matrix',
-        initializer=lbann.NormalInitializer(standard_deviation=math.sqrt(var)),
-    )
-    classifier_bias_weights = lbann.Weights(name='classifier_bias')
 
     # Input is two sequences of token IDs
     input_ = lbann.Identity(lbann.Input())
@@ -85,11 +79,12 @@ def make_model(
     )
 
     # Reconstruct decoder input
-    # TODO: Use embedding weights
     preds = lbann.ChannelwiseFullyConnected(
         result,
-        weights=[classifier_matrix_weights, classifier_bias_weights],
+        weights=embedding_weights,
         output_channel_dims=[vocab_size],
+        bias=False,
+        transpose=True,
     )
     preds = lbann.ChannelwiseSoftmax(preds)
     preds = lbann.Slice(preds, axis=0, slice_points=str_list(range(sequence_length)))
@@ -121,8 +116,8 @@ def make_model(
         label = lbann.Reshape(label, dims=str_list([1, vocab_size]))
         if label_smoothing > 0:
             label = lbann.WeightedSum(
-                labels,
-                uniform_labels,
+                label,
+                uniform_label,
                 scaling_factors=str_list([1-label_smoothing, label_smoothing]),
             )
         loss.append(lbann.CrossEntropy(preds[i], label))
@@ -176,13 +171,24 @@ def make_batch_script(model_params, script_params):
     trainer = lbann.Trainer()
     model = make_model(**model_params)
     reader = make_data_reader()
-    opt = lbann.Adam(learn_rate=0.0004, beta1=0.9, beta2=0.98, eps=1e-9) # TODO: LR schedule
 
-    # Add callback to dump weights
+    # Optimizer with learning rate schedule
+    # Note: Rough approximation of
+    #   embed_dim^-0.5 * min(step^-0.5, step*warmup^-1.5)
+    # with embed_dim=512 and warmup=4000.
+    opt = lbann.Adam(learn_rate=0.0004, beta1=0.9, beta2=0.98, eps=1e-9)
+    model.callbacks.append(
+        lbann.CallbackDropFixedLearningRate(
+            drop_epoch=[1,2,4,8,12],
+            amt=0.7,
+        )
+    )
+
+    # Dump weights after every epoch
     model.callbacks.append(
         lbann.CallbackDumpWeights(
             basename=os.path.join(script_params['work_dir'], 'weights'),
-            epoch_interval=model_params['num_epochs'],
+            epoch_interval=1,
         )
     )
 
