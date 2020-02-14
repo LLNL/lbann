@@ -103,7 +103,7 @@ public:
     m_terminate_training = f;
   }
 
-  /** Get the execution environment */
+  /** Grab the trainer from the execiton context */
   const trainer& get_trainer() const {
     return m_trainer;
   }

@@ -47,6 +47,7 @@ void variable_minibatch::on_train_begin(model *m) {
   // Avoid issues with the train method being called multiple times.
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   if (c.get_epoch() != 0) { return; }
+  const auto& t = c.get_trainer();
 
   // Get first input layer in model
   generic_input_layer<DataType>* input = nullptr;
@@ -56,11 +57,11 @@ void variable_minibatch::on_train_begin(model *m) {
   }
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
 
-  if (m_starting_mbsize > m->get_max_mini_batch_size()) {
+  if (m_starting_mbsize > t.get_max_mini_batch_size()) {
     throw lbann_exception(
       "variable_minibatch: starting mini-batch size is larger than max");
   }
-  if (m_starting_mbsize == m->get_max_mini_batch_size()) {
+  if (m_starting_mbsize == t.get_max_mini_batch_size()) {
     if (m->get_comm()->am_world_master()) {
       std::cout << "WARNING: starting mini-batch size equals max mini-batch "
                 << "size and using variable-sized mini-batches" << std::endl;
@@ -72,6 +73,7 @@ void variable_minibatch::on_train_begin(model *m) {
 
 void variable_minibatch::on_epoch_end(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const auto& t = c.get_trainer();
 
   // Get first input layer in model
   generic_input_layer<DataType>* input = nullptr;
@@ -86,14 +88,14 @@ void variable_minibatch::on_epoch_end(model *m) {
   float new_lr = 0.0f;
   size_t ramp_time = 0;
   if (schedule(m, new_mbsize, new_lr, ramp_time)) {
-    if (new_mbsize > m->get_max_mini_batch_size()) {
+    if (new_mbsize > t.get_max_mini_batch_size()) {
       if (comm->am_trainer_master()) {
         std::cout << "Model " << comm->get_trainer_rank() << ": WARNING " <<
           "requested new mini-batch size " << new_mbsize <<
           " is greater than the model maximum mini-batch size " <<
-          m->get_max_mini_batch_size() << std::endl;
+          t.get_max_mini_batch_size() << std::endl;
       }
-      new_mbsize = m->get_max_mini_batch_size();
+      new_mbsize = t.get_max_mini_batch_size();
     }
     input->calculate_num_iterations_per_epoch_training_spans_models(new_mbsize);
     m_current_mini_batch_size = new_mbsize;

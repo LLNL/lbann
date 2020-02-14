@@ -65,15 +65,22 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
 
     thread_pool& io_thread_pool = trainer->get_io_thread_pool();
+    int training_dr_linearized_data_size = -1;
+    auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::training);
+    if(dr != nullptr) {
+      training_dr_linearized_data_size = dr->get_linearized_data_size();
+    }
+
     std::vector<std::unique_ptr<model>> models;
     for(auto&& pb_model : pbs) {
       models.emplace_back(
         build_model_from_prototext(argc, argv, pb_trainer, *pb_model,
                                    comm.get(), opts, io_thread_pool,
-                                   trainer->get_callbacks_with_ownership(), models.size() == 0));
+                                   trainer->get_callbacks_with_ownership(), training_dr_linearized_data_size,
+                                   models.size() == 0));
     }
 
     // Load layer weights from checkpoint if checkpoint directory given

@@ -59,10 +59,9 @@ instantiate_model(lbann_comm* comm,
 
   // Construct model
   const auto& type = proto_model.type();
-  const auto& mini_batch_size = proto_model.mini_batch_size();
   if (type.empty() || type == "directed_acyclic_graph_model") {
     return make_unique<directed_acyclic_graph_model>(
-      comm, mini_batch_size, obj.release(),
+      comm, obj.release(),
       make_unique<lbann_data::Optimizer>(proto_opt));
   }
 
@@ -237,12 +236,14 @@ void assign_weights_to_objective_function(
 
 std::unique_ptr<model> construct_model(
   lbann_comm* comm,
+  int training_dr_linearized_data_size,
   const lbann_data::Optimizer& proto_opt,
   const lbann_data::Trainer& proto_trainer,
   const lbann_data::Model& proto_model) {
 
   // Construct layer graph
   auto&& layer_list = construct_layer_graph(comm,
+                                            training_dr_linearized_data_size,
                                             proto_trainer,
                                             proto_model);
 
@@ -290,9 +291,10 @@ std::unique_ptr<model> construct_model(
   if (!name.empty()) {
     m->set_name(name);
   }
-  for (auto t : data_readers) {
-    t.second->set_model(m.get());
-  }
+  // BVE FIXME
+  // for (auto t : data_readers) {
+  //   t.second->set_model(m.get());
+  // }
   return m;
 
 }

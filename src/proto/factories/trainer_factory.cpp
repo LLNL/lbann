@@ -38,7 +38,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
                                            const lbann_data::Trainer& proto_trainer) {
 
   // Instantiate trainer
-  auto t = make_unique<trainer>(comm, data_readers);
+  auto t = make_unique<trainer>(comm, proto_trainer.mini_batch_size(), data_readers);
   const auto& name = proto_trainer.name();
   if (!name.empty()) {
     t->set_name(name);

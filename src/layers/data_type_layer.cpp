@@ -30,6 +30,7 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
@@ -465,7 +466,7 @@ void data_type_layer<TensorDataType>::setup_data() {
   Layer::setup_data();
 
   // Get mini-batch size
-  const auto& mini_batch_size = m_model->get_max_mini_batch_size();
+  const auto& mini_batch_size = m_model->get_execution_context().get_trainer().get_max_mini_batch_size();
 
   // Initialize input and output tensors
   fp_setup_inputs(mini_batch_size);

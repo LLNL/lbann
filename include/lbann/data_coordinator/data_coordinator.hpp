@@ -28,6 +28,12 @@
 #define LBANN_DATA_COORDINATOR_HPP
 
 #include "lbann/utils/dataset.hpp"
+#include <cereal/types/utility.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
+
 
 namespace lbann {
 

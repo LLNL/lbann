@@ -101,15 +101,16 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     }
     init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
 
+    // BVE FIXME
     // hack to prevent all data readers from loading identical data; instead,
     // share a single copy. See data_reader_jag_conduit_hdf5 for example
-    if (first_model) {
-      if (opts->has_string("share_data_reader_data")) {
-        for (auto&& t : data_readers) {
-          opts->set_ptr((void*)t.second);
-        }
-      }
-    }
+    // if (first_model) {
+    //   if (opts->has_string("share_data_reader_data")) {
+    //     for (auto&& t : data_readers) {
+    //       opts->set_ptr((void*)t.second);
+    //     }
+    //   }
+    // }
 
     // User feedback
     //    print_parameters(comm, pb);
@@ -146,7 +147,24 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
       }
     }
 
+    // Setup data readers
+    for(auto&& dr: data_readers) {
+      dr.second->setup(io_threads_per_process, io_thread_pool.get());
+      dr.second->set_rank(comm->get_rank_in_trainer());
+    }
+
     trainer->setup(std::move(io_thread_pool));
+
+    if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
+      bool master = comm->am_world_master();
+      if (master) {
+        std::cout << "\nUSING DATA STORE!\n\n";
+      }
+      for (auto&& r : data_readers) {
+        if (!r.second) continue;
+        r.second->setup_data_store(pb_trainer->mini_batch_size());
+      }
+    }
 
     if(opts->get_bool("disable_background_io_activity")) {
       trainer->allow_background_io_activity(false);
@@ -247,6 +265,7 @@ std::unique_ptr<model> build_model_from_prototext(
   options *opts,
   thread_pool& io_thread_pool,
   std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
+  int training_dr_linearized_data_size,
   bool first_model) {
 
   bool master = comm->am_world_master();
@@ -283,6 +302,7 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // Initalize model
   std::unique_ptr<model> ret_model = proto::construct_model(comm,
+                                                            training_dr_linearized_data_size,
                                                             pb.optimizer(),
                                                             pb.trainer(),
                                                             pb.model());

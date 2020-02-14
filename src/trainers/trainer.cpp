@@ -54,11 +54,15 @@ namespace lbann {
 // Constructors and destructor
 ////////////////////////////////////////////////////////////
 
-trainer::trainer(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers)
+trainer::trainer(lbann_comm *comm,
+                 size_t mini_batch_size,
+                 std::map<execution_mode,
+                 generic_data_reader *> data_readers)
   : m_comm(comm),
-    m_data_coordinator(data_readers),
+    m_max_mini_batch_size(mini_batch_size),
     m_io_thread_pool(),
-    m_background_io_allowed(true) {
+    m_background_io_allowed(true),
+    m_data_coordinator(data_readers) {
 
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
@@ -66,7 +70,9 @@ trainer::trainer(lbann_comm *comm, std::map<execution_mode, generic_data_reader 
 
 trainer::trainer(const trainer& other) :
   m_comm(other.m_comm),
-  m_background_io_allowed(other.m_background_io_allowed) {
+  m_max_mini_batch_size(other.m_max_mini_batch_size),
+  m_background_io_allowed(other.m_background_io_allowed),
+  m_data_coordinator(other.m_data_coordinator) {
 
   // Deep copies
   // m_io_thread_pool = (other.m_io_thread_pool ?
@@ -81,6 +87,7 @@ trainer& trainer::operator=(const trainer& other) {
 
   // Shallow copies
   m_comm = other.m_comm;
+  m_max_mini_batch_size = other.m_max_mini_batch_size;
   m_background_io_allowed = other.m_background_io_allowed;
 
   // Deep copies
@@ -145,7 +152,7 @@ trainer::execution_context_key_pair_t trainer::check_and_build_execution_context
     if(dynamic_cast<observer_ptr<sgd_training_algorithm>>(&alg) != nullptr) {
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
-      context = make_unique<sgd_execution_context>(*this, alg, m_comm, mode, model->get_max_mini_batch_size());
+      context = make_unique<sgd_execution_context>(*this, alg, m_comm, mode, get_max_mini_batch_size());
     }else {
       context = make_unique<execution_context>(*this, alg, m_comm, mode);
     }
@@ -163,7 +170,7 @@ trainer::execution_context_key_pair_t trainer::check_and_build_execution_context
     std::unique_ptr<execution_context> context;
     //    observer_ptr<training_algorithm> alg = const_cast
     if(dynamic_cast<observer_ptr</*const */sgd_execution_context>>(&c) != nullptr) {
-      context = make_unique<sgd_execution_context>(*this, c.get_training_algorithm(), m_comm, mode, model.get_max_mini_batch_size());
+      context = make_unique<sgd_execution_context>(*this, c.get_training_algorithm(), m_comm, mode, get_max_mini_batch_size());
     }else {
       context = make_unique<execution_context>(*this, c.get_training_algorithm(), m_comm, mode);
     }
@@ -335,4 +342,12 @@ bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c){
   }
   return true;
 }
+
+void trainer::write_proto(lbann_data::Trainer* proto) {
+  proto->Clear();
+  if (m_comm->am_world_master()) {
+    proto->set_mini_batch_size(m_max_mini_batch_size);
+  }
+}
+
 }  // namespace lbann

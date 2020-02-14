@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_python.hpp"
+#include "lbann/trainers/trainer.hpp"
 #ifdef LBANN_HAS_PYTHON
 #include <cstdio>
 #include <algorithm>
@@ -181,7 +182,7 @@ void python_reader::setup(int num_io_threads,
   /// @todo Figure out more robust way to get max mini-batch size
   const El::Int sample_size = get_linearized_data_size();
   const El::Int mini_batch_size
-    = generic_data_reader::get_model()->get_max_mini_batch_size();
+    = generic_data_reader::get_model()->get_execution_context().get_trainer().get_max_mini_batch_size();
   std::string datatype_typecode;
   switch (sizeof(DataType)) {
   case 4: datatype_typecode = "f"; break;

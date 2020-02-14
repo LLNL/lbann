@@ -46,15 +46,12 @@ namespace lbann {
 template <typename TensorDataType>
 class io_layer : public data_type_layer<TensorDataType> {
  protected:
-  bool m_data_set_spans_models;
   data_reader_target_mode m_data_reader_mode;
 
  public:
   io_layer(lbann_comm *comm,
-           bool data_set_spans_models = true,
            data_reader_target_mode data_reader_mode = data_reader_target_mode::CLASSIFICATION)
     : data_type_layer<TensorDataType>(comm),
-      m_data_set_spans_models(data_set_spans_models),
       m_data_reader_mode(data_reader_mode) {
   }
 

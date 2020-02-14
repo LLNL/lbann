@@ -54,9 +54,8 @@ class generic_input_layer : public io_layer<TensorDataType> {
  public:
   generic_input_layer(lbann_comm *comm,
               int num_parallel_readers,
-              bool data_set_spans_models = true,
               data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
-    : io_layer<TensorDataType>(comm, data_set_spans_models, dr_mode),
+    : io_layer<TensorDataType>(comm, dr_mode),
       m_io_buffers() {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
@@ -111,14 +110,14 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(/*CEREAL_NVP(m_io_buffer),
-       CEREAL_NVP(m_data_readers),
-       CEREAL_NVP(m_data_set_processed)*/);
+    // ar(/*CEREAL_NVP(m_io_buffer),
+    //    CEREAL_NVP(m_data_readers),
+    //    CEREAL_NVP(m_data_set_processed)*/);
   }
 
   template<typename T_io_buffer>
-  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-    m_io_buffers.push_back(new T_io_buffer(comm, num_parallel_readers, data_readers, this->m_expected_num_child_layers));
+  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers) {
+    m_io_buffers.push_back(new T_io_buffer(comm, num_parallel_readers, this->m_expected_num_child_layers));
   }
 
   std::string get_type() const override { return "generic_input"; }
@@ -140,7 +139,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
     io_layer<TensorDataType>::setup_data();
 
     // Resize output to maximum mini-batch size
-    const auto& max_mb_size = this->m_model->get_max_mini_batch_size();
+    const auto& max_mb_size = this->m_model->get_execution_context().get_trainer().get_max_mini_batch_size();
     for (int i = 0; i < this->get_num_children(); ++i) {
       auto& output = this->get_activations(i);
       output.Resize(output.Height(), max_mb_size);
@@ -148,9 +147,9 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
     /// @todo BVE FIXME
     // if(io_layer<TensorDataType>::m_data_set_spans_models) {
-      calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
+    //calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     // } else {
-    //   calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
+      calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
     // }
 
     for (auto& io_buffer : m_io_buffers) {
@@ -215,7 +214,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
   void fetch_data_in_background(int future_active_buffer, execution_mode mode) {
     int active_buffer = future_active_buffer % m_io_buffers.size();
     generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[active_buffer];
-    data_coordinator& dc = this->get_execution_context()->get_trainer()->get_data_coordinator();
+    data_coordinator& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
     std::lock_guard<std::mutex> guard(dc.dr_mutex);
     setup_next_io_buffer(io_buffer);
     io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
@@ -280,7 +279,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
       LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
     }
 
-    data_coordinator& dc = this->get_execution_context()->get_trainer()->get_data_coordinator();
+    data_coordinator& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
     dc.m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
 
     if(!dc.m_data_set_processed && this->m_model->get_execution_context().background_io_activity_allowed()) {

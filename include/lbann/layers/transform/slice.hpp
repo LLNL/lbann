@@ -29,6 +29,9 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 namespace lbann {
 
@@ -50,9 +53,7 @@ template <typename TensorDataType,
 class slice_layer : public data_type_layer<TensorDataType> {
 public:
 
-  slice_layer(lbann_comm *comm,
-              size_t slice_dim,
-              std::vector<size_t> slice_points);
+  slice_layer(lbann_comm *comm);
   slice_layer(const slice_layer& other) = default;
   slice_layer& operator=(const slice_layer& other) = default;
 
@@ -62,6 +63,20 @@ public:
   El::Device get_device_allocation() const override;
 
   description get_description() const override;
+
+  void setup_slice_points(size_t slice_dim,
+                          std::vector<size_t> slice_points) {
+    m_slice_dim = slice_dim;
+    m_slice_points = std::move(slice_points);
+  }
+
+  void setup_slice_points(size_t slice_dim,
+                          bool set_slice_points_from_data_reader,
+                          const std::string& var_category) {
+    m_slice_dim = slice_dim;
+    m_set_slice_points_from_data_reader = set_slice_points_from_data_reader;
+    m_var_category = var_category;
+  }
 
 protected:
 
@@ -78,6 +93,10 @@ private:
   size_t m_slice_dim;
   /** Slice points for each child layer. */
   std::vector<size_t> m_slice_points;
+  /** Slice points are automatically defined by the data reader */
+  bool m_set_slice_points_from_data_reader;
+  /** Category for retrieving slice points from data reader */
+  std::string m_var_category;
 
 #ifdef LBANN_HAS_GPU
   /** @brief Workspace buffer.
@@ -108,13 +127,10 @@ private:
 // =========================================================
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-slice_layer<TensorDataType,Layout,Device>::slice_layer(
-  lbann_comm *comm,
-  size_t slice_dim,
-  std::vector<size_t> slice_points)
+slice_layer<TensorDataType,Layout,Device>::slice_layer(lbann_comm *comm)
   : data_type_layer<TensorDataType>(comm),
-    m_slice_dim{slice_dim},
-    m_slice_points(std::move(slice_points)) {
+  m_set_slice_points_from_data_reader(false),
+  m_var_category() {
   this->m_expected_num_child_layers = -1; // No limit on children
 }
 
@@ -150,9 +166,57 @@ description slice_layer<TensorDataType,Layout,Device>::get_description() const {
   return desc;
 }
 
+namespace {
+/// Obtain the slice points from the data reader
+std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_generic,
+                                                  const std::string& var_category,
+                                                  bool& is_supported) {
+  std::vector<El::Int> slice_points;
+  is_supported = false;
+  // TODO: remove the dynamic cast when this feature gets merged into the base class
+  const auto dr = dynamic_cast<const data_reader_jag_conduit*>(dr_generic);
+
+  if (dr != nullptr) {
+    is_supported = true;
+    if (var_category == "independent") {
+      slice_points = dr->get_slice_points_independent();
+    } else if (var_category == "dependent") {
+      slice_points = dr->get_slice_points_independent();
+    } else {
+      LBANN_ERROR("Unknown variable category \"" + var_category \
+                  + "\". Must be either \"independent\" or \"dependent\".");
+    }
+  }
+  return slice_points;
+}
+} // namespace anonymous
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::setup_dims() {
   data_type_layer<TensorDataType>::setup_dims();
+
+  // Setup the slice points if they are to be established by the data reader
+  if(m_set_slice_points_from_data_reader) {
+    std::vector<size_t> slice_points;
+    bool is_supported = false;
+    std::string slice_point_method_name = "'get_slice_points_from_reader'";
+    auto& t = this->m_model->get_execution_context().get_trainer();
+    auto* dr_generic  = t.get_data_coordinator().get_data_reader(execution_mode::training);
+    for (const auto& slice_point
+           : get_slice_points_from_reader(dr_generic, m_var_category, is_supported)) {
+      slice_points.push_back(slice_point);
+    }
+
+    if (slice_points.size() < 2u) {
+      if (is_supported) {
+        LBANN_ERROR("Failed to get slice points via ", slice_point_method_name, '.');
+      } else {
+        LBANN_ERROR(slice_point_method_name, " is not supported by the reader.");
+      }
+      return;
+    }
+    m_slice_points = std::move(slice_points);
+  }
 
   // Check that slice parameters are valid
   const auto& input_dims = this->get_input_dims();

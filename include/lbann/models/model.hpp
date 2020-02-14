@@ -75,7 +75,6 @@ public:
   // ===========================================
 
   model(lbann_comm* comm,
-        size_t mini_batch_size,
         objective_function* obj_fn,
         std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
@@ -218,11 +217,6 @@ public:
       return proto::construct_optimizer<TensorDataType>(
         *m_default_optimizer_msg);
     return nullptr;
-  }
-
-  /** Get the trainer's maximum mini-batch size. */
-  inline size_t get_max_mini_batch_size() const {
-    return m_max_mini_batch_size;
   }
 
   /** @brief Set a flag that can be used to enable / disable the
@@ -441,12 +435,6 @@ private:
 
   /** @brief Trainable parameters. */
   std::vector<std::unique_ptr<weights>> m_weights;
-
-  /** @details Maximum possible minibatch size supported by layers in
-   *  this model.  Note that this is local to the particular model,
-   *  not across multiple models.
-   */
-  size_t m_max_mini_batch_size;
 
   /** @details If a layer needs to construct an optimizer during
    *  setup, it will make a copy of the default optimizer. This object

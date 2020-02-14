@@ -105,7 +105,7 @@ public:
  public:
   typedef std::map<execution_mode, data_buffer<IODataType> *> data_buffer_map_t;
  public:
-  partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
+  partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, int num_child_layers);
   partitioned_io_buffer(const partitioned_io_buffer& other);
   partitioned_io_buffer& operator=(const partitioned_io_buffer& other);
   ~partitioned_io_buffer();

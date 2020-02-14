@@ -52,7 +52,9 @@ class trainer {
 public:
 
   /** Constructor. */
-  trainer(lbann_comm *comm);
+  trainer(lbann_comm *comm,
+          size_t mini_batch_size,
+          std::map<execution_mode, generic_data_reader *> data_readers);
 
   /** Copy constructor. */
   trainer(const trainer& other);
@@ -62,8 +64,13 @@ public:
   ~trainer();
 
   /** Archive for checkpoint and restart */
+<<<<<<< 3dcc5bdd96b4d44d7ec3922f2e5d91922755a59e
   template <class Archive> void serialize(Archive & ar) {
     ar(CEREAL_NVP(m_persist));
+=======
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_max_mini_batch_size));
+>>>>>>> Moved the data reader out of the layer factories where they are
   }
 
   /** Set the trainer's name; this is an arbitrary string
@@ -155,6 +162,11 @@ public:
     return m_persist;
   }
 
+  /** Get the trainer's maximum mini-batch size. */
+  inline size_t get_max_mini_batch_size() const {
+    return m_max_mini_batch_size;
+  }
+
   /** Set a flag that can be used to enable / disable the background I/O activities */
   void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
 
@@ -175,6 +187,9 @@ public:
   bool load_from_checkpoint_distributed(persist& p);
   bool load_from_checkpoint_distributed(model& m, execution_context& c);
 
+  /** @brief Write model to proto file */
+  void write_proto(lbann_data::Trainer* proto);
+
 private:
 
   /** Give trainer a name. */
@@ -182,6 +197,12 @@ private:
 
   /** Communicator for the trainer. */
   lbann_comm *m_comm;
+
+  /** @details Maximum possible minibatch size supported by models and
+   *  layers in this trainer.  Note that this field will eventually be
+   *  local to the particular, instance of the training context..
+   */
+  size_t m_max_mini_batch_size;
 
   /** Threads available for I/O */
   std::unique_ptr<thread_pool> m_io_thread_pool;

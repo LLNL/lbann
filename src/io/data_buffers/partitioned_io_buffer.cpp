@@ -30,8 +30,8 @@
 namespace lbann {
 
 template <typename TensorDataType>
-partitioned_io_buffer<TensorDataType>::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
-  : generic_io_buffer<TensorDataType>(comm, num_parallel_readers, data_readers) {
+partitioned_io_buffer<TensorDataType>::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, int num_child_layers)
+  : generic_io_buffer<TensorDataType>(comm, num_parallel_readers) {
   m_data_buffers[execution_mode::training] = new data_buffer<IODataType>(comm, num_child_layers);
   m_data_buffers[execution_mode::validation] = new data_buffer<IODataType>(comm, num_child_layers);
   m_data_buffers[execution_mode::testing] = new data_buffer<IODataType>(comm, num_child_layers);

@@ -63,12 +63,10 @@ namespace lbann {
 // =============================================
 
 model::model(lbann_comm* comm,
-             size_t mini_batch_size,
              objective_function* obj_fn,
              std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg)
   : m_execution_context(nullptr),
     m_comm(comm),
-    m_max_mini_batch_size(mini_batch_size),
     m_default_optimizer_msg(std::move(default_optimizer_msg)),
     m_objective_function(obj_fn) {
 
@@ -1278,7 +1276,6 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 
 /* struct used to serialize mode fields in file and MPI transfer */
 struct lbann_model_header {
-  uint64_t max_mini_batch_size;
   uint32_t callback_type;
 };
 
@@ -1314,6 +1311,7 @@ bool model::load_from_checkpoint_shared(persist& p) {
   // Assume checkpoint reload from epoch end not step end
 
   load_from_shared_cereal_archive(*this, p, *get_comm(), "model.xml");
+  load_rng_from_checkpoint(p, m_comm);
 
   for (auto&& w : m_weights) {
     w->load_from_checkpoint_shared(p);
@@ -1370,6 +1368,7 @@ bool model::load_from_checkpoint_distributed(persist& p){
   p.open_restart(trainer_dir + '/' + get_name() + '/');
 
   read_cereal_archive(*this, p, "model.xml");
+  load_rng_from_checkpoint(p, m_comm);
 
   for (auto&& w : m_weights) {
     w->load_from_checkpoint_distributed(p);
@@ -1389,8 +1388,8 @@ bool model::load_from_checkpoint_distributed(persist& p){
 
 void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
-  if (m_comm->am_world_master())
-    proto->set_mini_batch_size(m_max_mini_batch_size);
+  // if (m_comm->am_world_master())
+  //   proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
 
