@@ -30,6 +30,7 @@
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
 
@@ -148,6 +149,11 @@ protected:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
+#ifdef LBANN_HAS_DISTCONV
+    if (!keep_original_output()) {
+      return;
+    }
+#endif
     const auto& num_inputs = get_num_parents();
     const auto& output_dims = get_output_dims();
 
@@ -208,6 +214,11 @@ protected:
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+#ifdef LBANN_HAS_DISTCONV
+    if (!keep_original_output()) {
+      return;
+    }
+#endif
     const auto& num_inputs = get_num_parents();
     const auto& output_dims = get_output_dims();
 
@@ -269,8 +280,22 @@ protected:
 
   }
 
-  void fp_compute() override {}
-  void bp_compute() override {}
+  void fp_compute() override {
+#ifdef LBANN_HAS_DISTCONV
+    if (distconv_enabled()) {
+      fp_compute_distconv();
+      return;
+    }
+#endif
+  }
+  void bp_compute() override {
+#ifdef LBANN_HAS_DISTCONV
+    if (distconv_enabled()) {
+      bp_compute_distconv();
+      return;
+    }
+#endif
+  }
 
 private:
 
@@ -283,6 +308,92 @@ private:
   std::unique_ptr<AbsDistMat> m_input_v;
   /** View into output tensor. */
   std::unique_ptr<AbsDistMat> m_output_v;
+
+#ifdef LBANN_HAS_DISTCONV
+ protected:
+  std::vector<dc::TensorDev> m_prev_activations_siblings;
+  std::vector<dc::TensorDev> m_error_signals_siblings;
+
+  dc::Shape get_activations_tensor_local_shape() const override {
+    auto shape = m_prev_activations_t.get_local_shape();
+    shape[-2] = get_output_tensor_shape()[-2];
+    return shape;
+  }
+
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
+    Layer::setup_tensors_fwd(dists);
+    if (!this->distconv_enabled()) return;
+
+    this->setup_prev_activations_tensor(dists);
+    this->setup_activations_tensor(dists);
+    this->setup_activations_copyout_tensor(dists);
+
+    // Setup views for other input layers. Assuming the parent
+    // layers are also distconv-enabled and using the same parallel
+    // strategy.
+    assert_always(!m_parent_shuffle_required &&
+                  !m_parent_copy_in_required);
+    m_prev_activations_siblings.reserve(get_num_parents() - 1);
+    for (int i = 0; i < get_num_parents() - 1; ++i) {
+      // TODO: Think about the parent has two output tensors (e.g., split).
+      m_prev_activations_siblings.emplace_back(
+          get_parent_layers()[i+1]->get_activations_t());
+    }
+  }
+
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
+    Layer::setup_tensors_bwd(dists);
+    if (!this->distconv_enabled()) return;
+
+    this->setup_prev_error_signals_tensor(dists);
+    this->setup_error_signals_tensor(dists);
+    this->setup_error_signals_copyout_tensor(dists);
+
+    m_error_signals_siblings.reserve(get_num_parents() - 1);
+    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+    for (int i = 0; i < get_num_parents() - 1; ++i) {
+      const auto &global_shape = m_prev_activations_siblings[i].get_shape();
+      const auto &local_shape = m_prev_activations_siblings[i].get_local_shape();
+      m_error_signals_siblings.emplace_back(
+          dc::TensorDev(global_shape, loc, dists[2], local_shape));
+      assert0(m_error_signals_siblings.back().allocate());
+      m_error_signals_siblings.back().zero(dc::get_stream());
+    }
+  }
+
+  // TODO: Make the layer class have multiple parents and children
+  const dc::TensorDev &get_error_signals_t(const Layer &parent) const {
+    const auto parents = get_parent_layers();
+    for (int i = 0; i < (int)parents.size(); ++i) {
+      if (parents[i] == &parent) {
+        if (i == 0) {
+          return m_error_signals_t;
+        } else {
+          return m_error_signals_siblings[i-1];
+        }
+      }
+    }
+    LBANN_ERROR("No such parent found");
+  }
+
+  void fp_compute_distconv() {
+    dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
+    assert_always(distconv_enabled());
+    assert_always(get_num_parents() == 2);
+    dc::tensor::Concatenate(m_activations_t, m_prev_activations_t,
+                            m_prev_activations_siblings[0],
+                            dc::get_stream());
+    copy_out_activations();
+  }
+
+  void bp_compute_distconv() {
+    dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
+    assert_always(distconv_enabled());
+    dc::tensor::Slice(m_error_signals_t, m_error_signals_siblings[0],
+                      m_prev_error_signals_t, dc::get_stream());
+    copy_out_error_signals();
+  }
+#endif // LBANN_HAS_DISTCONV
 
 };
 

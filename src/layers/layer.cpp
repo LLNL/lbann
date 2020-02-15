@@ -1590,6 +1590,7 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> 
                                                 sample_dist,
                                                 input_local_shape);
     } else {
+      // TODO: Think about the parent has two output tensors (e.g., split).
       m_prev_activations_const_view = get_parent_layers()[0]->get_activations_t();
     }
     m_prev_activations_t = TensorDev(input_tensor_shape, loc, dists[0]);
@@ -1601,6 +1602,7 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> 
       m_prev_activations_shuffler_last_mb[i] = nullptr;
     }
   } else {
+    // TODO: Think about the parent has two output tensors (e.g., split).
     m_prev_activations_t = get_parent_layers()[0]->get_activations_t();
     assert_always(m_prev_activations_t.get_distribution() == dists[0]);
   }
@@ -1668,7 +1670,7 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists
                                                   output_local_shape);
     } else {
       m_prev_error_signals_const_view =
-          get_child_layers()[0]->get_error_signals_t();
+          get_child_layers()[0]->get_error_signals_t(*this);
     }
     m_prev_error_signals_t = TensorDev(output_tensor_shape, loc,
                                        dists[3],
@@ -1681,7 +1683,7 @@ void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists
       m_prev_error_signals_shuffler_last_mb[i] = nullptr;
     }
   } else {
-    m_prev_error_signals_t = get_child_layers()[0]->get_error_signals_t();
+    m_prev_error_signals_t = get_child_layers()[0]->get_error_signals_t(*this);
     assert_always(m_prev_error_signals_t.get_distribution() ==
                   dists[3]);
   }
@@ -1731,6 +1733,11 @@ const TensorDev &Layer::get_activations_t() const {
 }
 
 const TensorDev &Layer::get_error_signals_t() const {
+  return m_error_signals_t;
+}
+
+const TensorDev &Layer::get_error_signals_t(const Layer &parent) const {
+  assert_always(get_num_parents() == 1);
   return m_error_signals_t;
 }
 

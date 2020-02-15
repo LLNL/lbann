@@ -113,6 +113,8 @@ using LeakyReLU = ::distconv::LeakyReLU<Backend>;
 using Convolution = ::distconv::Convolution<Backend, num_dims, DataType>;
 using Pooling = ::distconv::Pooling<Backend, num_dims, DataType>;
 using BatchNormalization = ::distconv::BatchNormalization<Backend, num_dims, DataType>;
+using Softmax = ::distconv::Softmax<Backend>;
+using CrossEntropy = ::distconv::CrossEntropy<Backend>;
 
 namespace tensor = ::distconv::tensor;
 namespace util = ::distconv::util;

@@ -29,6 +29,7 @@
 
 #include "lbann/layers/layer.hpp"
 #include "lbann/utils/cudnn.hpp"
+#include "lbann/utils/distconv.hpp"
 
 // Threshold outputs to a minimum value.
 // If enabled, the minimum output value is sqrt(min), where min is the
@@ -133,6 +134,54 @@ private:
   cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
+#ifdef LBANN_HAS_DISTCONV
+ protected:
+  dc::Softmax *m_softmax;
+
+  void fp_compute_distconv();
+  void bp_compute_distconv();
+
+ public:
+  void setup_tensor_distribution_init(
+      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::set<dc::Dist*> &updated,
+      std::set<dc::Dist*> &fixed) override {
+    Layer::setup_tensor_distribution_init(dists, invariants, updated, fixed);
+    if (!this->distconv_enabled()) return;
+
+    // No overlap supported yet
+    const dc::IntVector no_overlap(dc::num_dims, 0);
+    for (int i = 0; i < 4; ++i) {
+      auto &dist = dists[this][i];
+      dist.set_overlap(no_overlap);
+      updated.insert(&dist);
+      fixed.insert(&dist);
+    }
+  }
+
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists)
+      override {
+    Layer::setup_tensors_fwd(dists);
+    if (!distconv_enabled()) return;
+    setup_prev_activations_tensor(dists);
+    setup_activations_tensor(dists);
+    setup_activations_copyout_tensor(dists);
+  }
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists)
+      override {
+    Layer::setup_tensors_bwd(dists);
+    if (!distconv_enabled()) return;
+    setup_prev_error_signals_tensor(dists);
+    setup_error_signals_tensor(dists);
+    setup_error_signals_copyout_tensor(dists);
+    m_softmax = new dc::Softmax(dc::get_backend());
+    auto dc_softmax_mode = m_mode == softmax_mode::INSTANCE ?
+        ::distconv::SoftmaxMode::INSTANCE : ::distconv::SoftmaxMode::CHANNEL;
+    m_softmax->setup(m_prev_activations_t, dc_softmax_mode);
+  }
+
+#endif // LBANN_HAS_DISTCONV
 };
 
 #ifndef LBANN_SOFTMAX_LAYER_INSTANTIATE

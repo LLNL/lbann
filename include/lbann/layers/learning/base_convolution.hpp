@@ -37,6 +37,7 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
+#include "lbann/utils/distconv.hpp"
 
 #include <vector>
 #include <omp.h>
@@ -1230,6 +1231,172 @@ private:
 
 #endif // LBANN_HAS_CUDNN
 
+#ifdef LBANN_HAS_DISTCONV
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
+    using namespace dc;
+    Layer::setup_tensors_fwd(dists);
+    if (!this->distconv_enabled()) return;
+
+    const auto& kernel_dims = get_kernel_dims();
+    std::stringstream ss;
+    util::print_vector(ss, kernel_dims.begin(), kernel_dims.end());
+    MPIPrintStreamDebug()
+        << "m_kernel_dims: " << ss.str();
+
+    this->setup_prev_activations_tensor(dists);
+    this->setup_activations_tensor(dists);
+    this->setup_activations_copyout_tensor(dists);
+
+    // assumes no partitioning on channel/filter dimensions
+    assert_eq(dists[0].get_split_shape()[-2], 1);
+    auto shared_dist = dc::Dist::make_shared_distribution(
+        dists[0].get_locale_shape());
+
+    Shape kernel_shape(kernel_dims);
+    std::reverse(kernel_shape.begin(), kernel_shape.end());
+    const LocaleMPI loc(dc::get_mpi_comm(), false);
+    m_kernel_t = TensorDev(kernel_shape, loc, shared_dist);
+    assert0(tensor::View(
+        m_kernel_t, this->get_weights()[0]->get_values().LockedBuffer()));
+    m_kernel_gradient_e = TensorDev(kernel_shape, loc, shared_dist);
+    // Gradient buffer is needed for auto-tuning the bp filter algorithm
+    assert0(tensor::View(
+        m_kernel_gradient_e,
+        this->get_weights()[0]->get_optimizer()->get_gradient().Buffer()));
+
+    m_conv = new Convolution(dc::get_backend(),
+                             dc::get_halo_exchange_method());
+
+    // Bias tensor. Shared by all procs
+    if (this->m_bias_scaling_factor != DataType(0)) {
+      MPIPrintStreamDebug()
+          << "Bias desc: "
+          << dc::util::tostring(this->m_bias_cudnn_desc)
+          << ", bias factor: " << this->m_bias_scaling_factor;
+      std::vector<int> bias_shape_v(dc::num_dims, 1);
+      bias_shape_v[dc::num_spatial_dims] = this->get_output_dims()[0];
+      Shape bias_shape(bias_shape_v);
+      m_bias_t = TensorDev(bias_shape, loc, shared_dist);
+      assert0(tensor::View(m_bias_t,
+                           this->get_weights()[1]->get_values().LockedBuffer()));
+      MPIPrintStreamDebug() << "Bias tensor: " << m_bias_t;
+      m_conv->setup_bias(m_bias_t);
+
+      // Bias backprop
+      optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();
+      if (bias_optimizer != nullptr) {
+        m_bias_gradient_t = TensorDev(bias_shape, loc, shared_dist);
+        // setup_bias_gradients needs strides of the bias tensor,
+        // which is set when its view is set.
+        assert0(tensor::View(
+            m_bias_gradient_t,
+            this->get_weights()[1]->get_optimizer()->get_gradient().Buffer()));
+        m_conv->setup_bias_gradient(m_bias_gradient_t);
+      }
+    }
+  }
+
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
+    Layer::setup_tensors_bwd(dists);
+    if (!this->distconv_enabled()) return;
+
+    this->setup_prev_error_signals_tensor(dists);
+    this->setup_error_signals_tensor(dists);
+    this->setup_error_signals_copyout_tensor(dists);
+  }
+
+ protected:
+  dc::Convolution *m_conv;
+  dc::TensorDev m_kernel_t;
+  dc::TensorDev m_kernel_gradient_e;
+  dc::TensorDev m_bias_t;
+  dc::TensorDev m_bias_gradient_t;
+  std::string m_fwd_algo;
+  std::string m_bwd_data_algo;
+  std::string m_bwd_filter_algo;
+
+  void distconv_forward() {
+    assert0(dc::tensor::View(
+        this->m_kernel_t, this->get_weights()[0]->get_values().LockedBuffer()));
+    this->m_conv->forward(DataType(1.0), this->m_prev_activations_t, this->m_kernel_t,
+                          DataType(0.0), this->m_activations_t);
+    if (this->early_terminate_last_iteration()) {
+      this->dump_tensor(this->m_kernel_t, this->get_name() + "_weights");
+    }
+  }
+
+  void apply_bias_distconv() {
+    if (this->m_bias_scaling_factor == DataType(0)) return;
+    assert0(dc::tensor::View(
+        this->m_bias_t, this->get_weights()[1]->get_values().LockedBuffer()));
+    this->m_conv->apply_bias(this->m_bias_scaling_factor, this->m_bias_t,
+                             DataType(1), this->m_activations_t);
+  }
+
+  void distconv_backward_data() {
+    // input: m_prev_error_signals_d[0]
+    // kernel: m_weights[0]->get_values_gpu()
+    // output: m_error_signals_d[0]
+    assert0(dc::tensor::View(
+        this->m_kernel_t, this->get_weights()[0]->get_values().LockedBuffer()));
+    // TODO: Zeroing out and use of beta of 1.0 probably just
+    // inherited from LBANN and not necessary.
+    this->m_error_signals_t.zero(dc::get_backend().get_stream());
+    this->m_conv->backward_data(DataType(1.0), this->m_kernel_t,
+                                this->m_prev_error_signals_t,
+                                DataType(1.0), this->m_error_signals_t);
+    this->copy_out_error_signals();
+  }
+
+  void distconv_backward_filter() {
+    const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
+    const bool has_local_data = this->m_prev_activations_t.get_local_size() > 0 &&
+        this->m_prev_error_signals_t.get_local_size() > 0;
+
+    if (this->m_bias_scaling_factor != DataType(0)
+        && this->get_weights()[1]->get_optimizer() != nullptr) {
+      optimizer* bias_optimizer = this->get_weights()[1]->get_optimizer();
+       DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+          dst_scale, gradient_scale, true);
+      gradient_scale /= effective_mini_batch_size;
+      // For comparison with the original LBANN, bias gradients will
+      // be calculated again with the original LBANN. Do not accumulate the
+      // gradients here as it would be otherwise accumulated twice.
+      if (this->early_terminate_last_iteration()) {
+        gradient_scale = 0;
+      }
+      assert0(dc::tensor::View(this->m_bias_gradient_t,
+                               bias_gradient.Buffer()));
+      if (has_local_data) {
+        this->m_conv->backward_bias(gradient_scale, this->m_prev_error_signals_t,
+                                    dst_scale, this->m_bias_gradient_t, false);
+      } else {
+        this->m_bias_gradient_t.scale(dst_scale, dc::get_stream());
+      }
+    }
+
+    optimizer* kernel_optimizer = this->get_weights()[0]->get_optimizer();
+    if (kernel_optimizer == nullptr) return;
+
+    DataType dst_scale = DataType(0), gradient_scale = DataType(0);
+    auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+    gradient_scale /= effective_mini_batch_size;
+
+    assert0(dc::tensor::View(
+        this->m_kernel_gradient_e, kernel_gradient.Buffer()));
+    if (has_local_data) {
+      this->m_conv->backward_filter(gradient_scale, this->m_prev_activations_t,
+                                    this->m_prev_error_signals_t, dst_scale,
+                                    this->m_kernel_gradient_e, false);
+    } else {
+      this->m_kernel_gradient_e.scale(dst_scale, dc::get_stream());
+    }
+  }
+
+ #endif // LBANN_HAS_DISTCONV
 };
 
 #ifndef LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
