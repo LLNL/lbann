@@ -678,7 +678,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
   // reload state of IO from a checkpoint
   bool load_from_checkpoint_shared(persist& p) override {
     // save state of the input layer
-    data_reader_map_t::const_iterator it;
     if(p.get_cb_type() == callback_type::execution_context_only
        || p.get_cb_type() == callback_type::full_checkpoint){
 

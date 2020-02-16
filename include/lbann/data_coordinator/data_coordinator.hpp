@@ -43,7 +43,8 @@ class data_coordinator {
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
  public:
-  data_coordinator(std::map<execution_mode, generic_data_reader *> data_readers) :
+  data_coordinator(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
+    m_comm(comm),
     m_training_dataset(),
     m_testing_dataset(),
     m_validation_dataset(),
@@ -72,7 +73,8 @@ class data_coordinator {
 
   // Data Coordinators copy their data readers.
   data_coordinator(const data_coordinator& other)
-    : m_training_dataset(other.m_training_dataset),
+    : m_comm(other.m_comm),
+      m_training_dataset(other.m_training_dataset),
       m_testing_dataset(other.m_testing_dataset),
       m_validation_dataset(other.m_validation_dataset),
       m_data_readers(other.m_data_readers) {
@@ -209,7 +211,7 @@ class data_coordinator {
         (it->second)->save_to_checkpoint_shared(p, execution_mode::validation);
       }
 
-      if (this->get_comm()->am_trainer_master()) {
+      if (this->m_comm->am_trainer_master()) {
         write_cereal_archive<const data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
       }
     }
@@ -237,16 +239,16 @@ class data_coordinator {
       }
 
       std::string buf;
-      if (this->get_comm()->am_trainer_master()) {
+      if (this->m_comm->am_trainer_master()) {
         read_cereal_archive<data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
         buf = create_cereal_archive_binary_string<data_coordinator>(*this);
       }
 
       // TODO: this assumes homogeneous processors
       // broadcast state from rank 0
-      this->get_comm()->trainer_broadcast(0, buf);
+      this->m_comm->trainer_broadcast(0, buf);
 
-      if (!this->get_comm()->am_trainer_master()) {
+      if (!this->m_comm->am_trainer_master()) {
         unpack_cereal_archive_binary_string<data_coordinator>(*this, buf);
       }
     }
@@ -299,6 +301,9 @@ class data_coordinator {
   }
 
  protected:
+  /** Reference to LBANN communicator. */
+  lbann_comm *m_comm;
+
   dataset m_training_dataset;
   dataset m_testing_dataset;
   dataset m_validation_dataset;
@@ -309,7 +314,6 @@ class data_coordinator {
 public:  // @todo BVE FIXME
   bool m_data_set_processed;
   std::mutex dr_mutex;
-
 };
 
 } // namespace lbann

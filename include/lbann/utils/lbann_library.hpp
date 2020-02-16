@@ -36,6 +36,7 @@ const int lbann_default_random_seed = 42;
 
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                                            lbann_data::Trainer* pb_trainer,
+                                           lbann_data::LbannPB &pb,
                                            options *opts);
 
 std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts);

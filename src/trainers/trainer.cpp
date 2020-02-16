@@ -62,7 +62,7 @@ trainer::trainer(lbann_comm *comm,
     m_max_mini_batch_size(mini_batch_size),
     m_io_thread_pool(),
     m_background_io_allowed(true),
-    m_data_coordinator(data_readers) {
+    m_data_coordinator(comm, data_readers) {
 
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
