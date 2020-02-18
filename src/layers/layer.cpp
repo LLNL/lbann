@@ -1372,6 +1372,11 @@ void Layer::setup_inter_layer_adaptation() {
       m_child_shuffle_required |= ps != c->get_parallel_strategy();
     }
   }
+  // If this layer is the last layer, copy the distconv tensor back to
+  // LBANN.
+  if (get_num_children() == 0) {
+    m_child_copy_out_required = true;
+  }
   m_child_shuffle_required |= m_child_copy_out_required;
   MPIRootPrintStreamInfo() << "m_child_copy_out_required: "
                            << m_child_copy_out_required
