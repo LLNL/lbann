@@ -573,7 +573,7 @@ protected:
   virtual size_t estimate_memory_usage(const std::array<dc::Dist, dc::num_dists> &dists);
   /** Return Distconv-related shapes. */
   const dc::Shape get_input_tensor_shape() const;
-  const dc::Shape get_output_tensor_shape() const;
+  const dc::Shape get_output_tensor_shape(int output_index = 0) const;
   virtual void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) {}
   virtual void setup_prev_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
   virtual dc::Shape get_activations_tensor_local_shape() const;
@@ -587,7 +587,7 @@ protected:
   virtual void setup_error_signals_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
 
   // REFACTORING: returning non-const tensor should be protected
-  virtual const dc::TensorDev &get_activations_t() const;
+  virtual const dc::TensorDev &get_activations_t(const Layer &child) const;
   virtual const dc::TensorDev &get_error_signals_t() const;
   virtual const dc::TensorDev &get_error_signals_t(const Layer &parent) const;
   //virtual ConstTensorDev get_activations_const_view() const;

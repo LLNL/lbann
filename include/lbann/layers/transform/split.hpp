@@ -91,6 +91,11 @@ protected:
 
  public:
 
+  const dc::TensorDev &get_activations_t(const Layer &child) const {
+    // Pass the same tensor as a const reference to multiple child layers
+    return m_activations_t;
+  }
+
   void setup_tensor_distribution_init(
       std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,

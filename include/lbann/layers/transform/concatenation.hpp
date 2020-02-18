@@ -335,9 +335,8 @@ private:
                   !m_parent_copy_in_required);
     m_prev_activations_siblings.reserve(get_num_parents() - 1);
     for (int i = 0; i < get_num_parents() - 1; ++i) {
-      // TODO: Think about the parent has two output tensors (e.g., split).
       m_prev_activations_siblings.emplace_back(
-          get_parent_layers()[i+1]->get_activations_t());
+          get_parent_layers()[i+1]->get_activations_t(*this));
     }
   }
 

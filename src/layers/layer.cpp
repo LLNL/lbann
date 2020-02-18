@@ -1590,8 +1590,7 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> 
                                                 sample_dist,
                                                 input_local_shape);
     } else {
-      // TODO: Think about the parent has two output tensors (e.g., split).
-      m_prev_activations_const_view = get_parent_layers()[0]->get_activations_t();
+      m_prev_activations_const_view = get_parent_layers()[0]->get_activations_t(*this);
     }
     m_prev_activations_t = TensorDev(input_tensor_shape, loc, dists[0]);
     assert0(m_prev_activations_t.allocate());
@@ -1603,7 +1602,7 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> 
     }
   } else {
     // TODO: Think about the parent has two output tensors (e.g., split).
-    m_prev_activations_t = get_parent_layers()[0]->get_activations_t();
+    m_prev_activations_t = get_parent_layers()[0]->get_activations_t(*this);
     assert_always(m_prev_activations_t.get_distribution() == dists[0]);
   }
 
@@ -1728,7 +1727,8 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_di
   }
 }
 
-const TensorDev &Layer::get_activations_t() const {
+const TensorDev &Layer::get_activations_t(const Layer &child) const {
+  assert_always(get_num_children() == 1);
   return m_activations_t;
 }
 
@@ -1953,8 +1953,8 @@ const dc::Shape Layer::get_input_tensor_shape() const {
   input_tensor_shape_v.push_back(this->m_model->get_max_mini_batch_size());
   return dc::Shape(input_tensor_shape_v);
 }
-const dc::Shape Layer::get_output_tensor_shape() const {
-  const auto output_dims = get_output_dims();
+const dc::Shape Layer::get_output_tensor_shape(int output_index) const {
+  const auto output_dims = get_output_dims(output_index);
   std::vector<int> output_tensor_shape_v(output_dims.rbegin(), output_dims.rend());
   output_tensor_shape_v.push_back(this->m_model->get_max_mini_batch_size());
   return dc::Shape(output_tensor_shape_v);

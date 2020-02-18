@@ -249,7 +249,7 @@ private:
     setup_prev_activations_tensor(dists);
     setup_activations_tensor(dists);
     setup_activations_copyout_tensor(dists);
-    m_ground_truth_t = get_parent_layers()[1]->get_activations_t();
+    m_ground_truth_t = get_parent_layers()[1]->get_activations_t(*this);
   }
 
   void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists)
