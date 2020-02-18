@@ -249,7 +249,7 @@ public:
    *  assumed that pointers to parent/child layers have already been
    *  initialized.
    */
-  virtual void setup();
+  virtual void setup(size_t max_mini_batch_size);
   /** Check that the setup is reasonable. */
   virtual void check_setup();
 
@@ -463,7 +463,7 @@ protected:
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
    */
-  virtual void setup_data() {};
+  virtual void setup_data(size_t max_mini_batch_size) {};
   /** Setup GPU objects.
    *  Called by the 'setup' function if the layer is on GPUs.
    */

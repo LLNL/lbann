@@ -97,7 +97,7 @@ protected:
 
   void setup_matrices(const El::Grid& grid) override;
   void setup_dims() override;
-  void setup_data() override;
+  void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
   void bp_compute() override;
@@ -196,8 +196,8 @@ void embedding_layer<TensorDataType,Layout,Device>::setup_dims() {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void embedding_layer<TensorDataType,Layout,Device>::setup_data() {
-  data_type_layer<TensorDataType>::setup_data();
+void embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_mini_batch_size) {
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
   // Construct default weights if needed
   // Note: Randomly drawn from normal distribution with mean 0 and

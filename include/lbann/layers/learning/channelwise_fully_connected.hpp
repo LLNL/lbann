@@ -84,7 +84,7 @@ public:
 protected:
 
   void setup_dims() override;
-  void setup_data() override;
+  void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
   void bp_compute() override;

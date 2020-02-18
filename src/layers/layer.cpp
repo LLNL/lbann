@@ -365,14 +365,14 @@ bool Layer::is_frozen() const {
   return m_frozen;
 }
 
-void Layer::setup() {
+void Layer::setup(size_t max_mini_batch_size) {
   setup_pointers();
   setup_dims();
   setup_matrices(m_comm->get_trainer_grid());
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv();
 #endif // LBANN_HAS_DISTCONV
-  setup_data();
+  setup_data(max_mini_batch_size);
   if (using_gpus()) { setup_gpu(); }
 }
 

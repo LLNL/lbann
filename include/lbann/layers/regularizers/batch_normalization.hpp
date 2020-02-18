@@ -250,8 +250,8 @@ protected:
     this->set_output_dims(this->get_input_dims());
   }
 
-  void setup_data() override {
-    regularizer_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    regularizer_layer<TensorDataType>::setup_data(max_mini_batch_size);
     const auto& output_dims = this->get_output_dims();
     const auto& num_channels = output_dims[0];
 

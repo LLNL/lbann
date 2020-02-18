@@ -235,7 +235,7 @@ public:
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup();
+  virtual void setup(size_t max_mini_batch_size);
 
   virtual void make_data_store_preloaded(execution_mode mode);
 
@@ -332,7 +332,7 @@ protected:
    *
    *  Called in setup function.
    */
-  virtual void setup_layers();
+  virtual void setup_layers(size_t max_mini_batch_size);
   /** @brief Set up weights.
    *
    *  Called in setup function. All weights being used by layers or

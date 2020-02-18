@@ -221,7 +221,7 @@ void trainer::apply(training_algorithm& alg,
                     termination_criteria const& term_criteria) {
 
   auto key = check_and_build_execution_context(alg, model, mode);
-  alg.setup_models({model});
+  alg.setup_models({model}, get_max_mini_batch_size());
   /// Apply the training algorithm to train the model
   alg.apply(*(m_model_execution_context[key].get()), *model, mode, term_criteria);
 }
@@ -229,7 +229,7 @@ void trainer::apply(training_algorithm& alg,
 void trainer::train(observer_ptr<model> model, El::Int num_epochs, El::Int num_batches) {
   auto sgd = make_unique<sgd_training_algorithm>();
   auto key = check_and_build_execution_context(*sgd.get(), model, execution_mode::training);
-  sgd.get()->setup_models({model});
+  sgd.get()->setup_models({model}, get_max_mini_batch_size());
   /// Apply the training algorithm to train the model
   sgd.get()->train(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, num_epochs, num_batches);
 }
@@ -237,7 +237,7 @@ void trainer::train(observer_ptr<model> model, El::Int num_epochs, El::Int num_b
 void trainer::evaluate(observer_ptr<model> model, execution_mode mode, El::Int num_batches) {
   auto sgd = make_unique<sgd_training_algorithm>();
   auto key = check_and_build_execution_context(*sgd.get(), model, mode);
-  sgd.get()->setup_models({model});
+  sgd.get()->setup_models({model}, get_max_mini_batch_size());
   /// Apply the training algorithm to evaluate the model
   sgd.get()->evaluate(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, mode, num_batches);
 }

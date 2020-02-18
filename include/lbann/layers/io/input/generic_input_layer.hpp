@@ -135,21 +135,20 @@ class generic_input_layer : public io_layer<TensorDataType> {
     }
   }
 
-  void setup_data() override {
-    io_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    io_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Resize output to maximum mini-batch size
-    const auto& max_mb_size = this->m_model->get_execution_context().get_trainer().get_max_mini_batch_size();
     for (int i = 0; i < this->get_num_children(); ++i) {
       auto& output = this->get_activations(i);
-      output.Resize(output.Height(), max_mb_size);
+      output.Resize(output.Height(), max_mini_batch_size);
     }
 
     /// @todo BVE FIXME
     // if(io_layer<TensorDataType>::m_data_set_spans_models) {
     //calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
     // } else {
-      calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
+      calculate_num_iterations_per_epoch_training_unique_per_models(max_mini_batch_size);
     // }
 
     for (auto& io_buffer : m_io_buffers) {
@@ -170,7 +169,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
       }
       io_buffer->setup_data(this->get_output_size(0),
                             linearized_target_size,
-                            max_mb_size);
+                            max_mini_batch_size);
     }
   }
 

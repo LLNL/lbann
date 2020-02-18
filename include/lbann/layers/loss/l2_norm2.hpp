@@ -71,8 +71,8 @@ public:
     this->set_output_dims({1});
   }
 
-  void setup_data() override {
-    data_type_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize workspace
     auto dist = this->get_prev_activations().DistData();
