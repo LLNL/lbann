@@ -2,11 +2,11 @@ import math
 import os.path
 
 import lbann
+import lbann.models
 import lbann.contrib.lc.launcher
 from lbann.util import str_list
 
 import dataset
-import model
 
 # ----------------------------------------------
 # Options
@@ -68,10 +68,10 @@ def make_model(
     decoder_input = lbann.Identity(embeddings_slice)
 
     # Apply transformer model
-    transformer = model.Transformer(
+    transformer = lbann.models.Transformer(
         hidden_size=embed_dim,
         num_heads=num_heads,
-        name='transformer'
+        name='transformer',
     )
     result = transformer(
         encoder_input, sequence_length,
