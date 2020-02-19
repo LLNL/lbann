@@ -886,7 +886,15 @@ class generic_input_layer : public io_layer {
     // also enabled for distconv
     if (get_num_children() == 2 && get_child_layers()[1]->using_distconv()) {
       m_copy_labels_dc = true;
+      dc::MPIRootPrintStreamInfo() << "Copy label/response data to Distconv as well";
     }
+
+#if 0
+    auto mb_shape = get_output_dims(0);
+    dc::MPIRootPrintStreamInfo() << "Mini-batch shape: "
+                                 << dc::util::tostring(mb_shape.begin(),
+                                                       mb_shape.end());
+#endif
 
     const auto tensor_shape = get_output_tensor_shape();
     const Dist sample_dist = Layer::get_hydrogen_matrix_distribution();
@@ -1236,6 +1244,8 @@ class generic_input_layer : public io_layer {
     m_labels_dev = TensorDev(tensor_shape, loc, dist);
     assert0(m_labels_dev.allocate());
     m_labels_dev.zero(dc::get_stream());
+
+    dc::MPIRootPrintStreamInfo() << "label tensor: " << m_labels_dev;
   }
 
   void copy_label_distconv(int mb_size) {

@@ -1456,6 +1456,9 @@ void model::setup_distconv() {
         dc::MPIRootPrintStreamDebug() << "Invariant: " << *p << "\n";
         if (d->get_overlap() != p->get_overlap()) {
           if (fixed.find(p) != fixed.end()) {
+            dc::MPIRootPrintStreamError()
+                << "Incompatible distributions: "
+                << *d << " <=> " << *p;
             throw lbann_exception("Cannot satisfy the distconv constraints");
           }
           p->set_overlap(d->get_overlap());
