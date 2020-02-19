@@ -70,6 +70,12 @@ public:
     Layer::setup_dims();
     set_output_dims({1});
 
+#ifdef LBANN_HAS_DISTCONV
+    if (using_distconv()) {
+      return;
+    }
+#endif
+
     // Check that input dimensions match
     if (get_input_dims(0) != get_input_dims(1)) {
       const auto& parents = get_parent_layers();
@@ -224,6 +230,16 @@ private:
     Layer::setup_tensor_distribution_init(dists, invariants, updated, fixed);
     if (!this->distconv_enabled()) return;
 
+    // Output tensors share all dimensions except for the sample dimension
+    auto activations_split = dists[this][1].get_split_shape();
+    auto error_signals_split = dists[this][3].get_split_shape();
+    for (int i = 0; i < activations_split.length() - 1; ++i) {
+      activations_split[i] = 1;
+      error_signals_split[i] = 1;
+    }
+    dists[this][1].set_split_shape(activations_split);
+    dists[this][3].set_split_shape(error_signals_split);
+
     // No overlap supported yet
     const dc::IntVector no_overlap(dc::num_dims, 0);
     for (int i = 0; i < 4; ++i) {
@@ -240,6 +256,83 @@ private:
       input_shape[i] = 1;
     }
     return input_shape;
+  }
+
+  // NOTE: LBANN matrix is a 2-D matrix, while Distconv keeps the
+  // original spatial and channel dimensions, so
+  // get_output_tensor_shape() doesn't work here.
+  void setup_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists,
+                                bool allocate=true) override {
+    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+    auto output_tensor_shape = m_prev_activations_t.get_shape();
+    for (int i = 0; i < output_tensor_shape.length() - 1; ++i) {
+      output_tensor_shape[i] = 1;
+    }
+    const auto activations_local_shape =
+        get_activations_tensor_local_shape();
+    m_activations_t = dc::TensorDev(output_tensor_shape,
+                                    loc, dists[1], activations_local_shape);
+    if (allocate) {
+      assert0(m_activations_t.allocate());
+      m_activations_t.zero(dc::get_stream());
+    }
+  }
+
+  void setup_activations_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists)
+      override {
+    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+    const auto sample_dist = get_hydrogen_matrix_distribution();
+    const auto output_tensor_shape = m_activations_t.get_shape();
+    auto output_local_shape = output_tensor_shape;
+    // Set the sample dimension as 0 so that its actual value is
+    // calculated by Distconv
+    output_local_shape[-1] = 0;
+    m_activations_copyout = dc::TensorDev(output_tensor_shape, loc, sample_dist,
+                                          output_local_shape);
+    if (m_child_copy_out_required) {
+      m_activations_shuffler = dc::get_tensor_shuffler(
+          m_activations_t, m_activations_copyout);
+      for (int i = 0; i < 3; ++i) {
+        m_activations_shuffler_last_mb[i] = nullptr;
+      }
+    }
+  }
+
+  void setup_prev_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists)
+      override {
+    using namespace dc;
+    const LocaleMPI loc(dc::get_mpi_comm(), false);
+    const auto sample_dist = get_hydrogen_matrix_distribution();
+    const auto output_tensor_shape = m_activations_t.get_shape();
+    auto output_local_shape = output_tensor_shape;
+    // Set the sample dimension as 0 so that its actual value is
+    // calculated by Distconv
+    output_local_shape[-1] = 0;
+
+    if (m_child_copy_out_required || m_child_shuffle_required) {
+      if (m_child_copy_out_required) {
+        m_prev_error_signals_const_view = TensorDev(output_tensor_shape, loc,
+                                                    sample_dist,
+                                                    output_local_shape);
+      } else {
+        m_prev_error_signals_const_view =
+            get_child_layers()[0]->get_error_signals_t(*this);
+      }
+      m_prev_error_signals_t = TensorDev(output_tensor_shape, loc,
+                                         dists[3],
+                                         m_activations_t.get_local_shape());
+      assert0(m_prev_error_signals_t.allocate());
+      m_prev_error_signals_t.zero(dc::get_stream());
+      m_prev_error_signals_shuffler = get_tensor_shuffler(
+          m_prev_error_signals_const_view, m_prev_error_signals_t);
+      for (int i = 0; i < 3; ++i) {
+        m_prev_error_signals_shuffler_last_mb[i] = nullptr;
+      }
+    } else {
+      m_prev_error_signals_t = get_child_layers()[0]->get_error_signals_t(*this);
+      assert_always(m_prev_error_signals_t.get_distribution() ==
+                    dists[3]);
+    }
   }
 
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists)

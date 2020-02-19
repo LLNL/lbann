@@ -1192,10 +1192,23 @@ class generic_input_layer : public io_layer {
     copy_label_distconv(mb_size);
   }
 
+  // TODO: This is a temporary hack. The label tensor shape should
+  //be set based on the shape set by the data reader, but the data
+  //reader does not provide it. Using the shape shape as the data
+  //tensor works fine for the U-Net model.
+  dc::Shape get_unet_label_shape() const {
+    auto shape = get_output_tensor_shape(0);
+    auto label_size = get_output_tensor_shape(1).reduce_prod();
+    auto num_channels = label_size / shape.reduce_prod();
+    shape[-2] = num_channels;
+    return shape;
+  }
+
   void setup_label_tensors() {
     using namespace dc;
     assert_always(m_copy_labels_dc);
-    const auto tensor_shape = get_output_tensor_shape(1);
+    //const auto tensor_shape = get_output_tensor_shape(1);
+    const auto tensor_shape = get_unet_label_shape();
     const auto sample_dist = Layer::get_hydrogen_matrix_distribution();
     auto local_shape = tensor_shape;
     // calculated by Distconv

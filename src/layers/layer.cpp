@@ -31,6 +31,8 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
+#include "lbann/layers/io/input/generic_input_layer.hpp"
+
 #include <layers.pb.h>
 
 #include <sys/types.h>
@@ -1523,7 +1525,17 @@ void Layer::setup_tensor_distribution_add_adjacent_invariants(
   if (!distconv_enabled()) return;
   auto &layer_dists = dists[this];
   const auto &ps = get_parallel_strategy();
-  for (auto &child: get_child_layers()) {
+
+  // TEMPORARY HACK. Each tensor should be able to have its own
+  // distribution, however, the current design only allows for a
+  // single distribution for all output tensors in each layer,
+  // meaning the data and label tensors need to have the same
+  // distribution. The data tensor is likely to have halo as the
+  // next layer will be convolution, whereas the label won't need to
+  // have halo. For now, ignore the child layer for the label data.
+
+  if (dynamic_cast<const generic_input_layer*>(this)) {
+    auto &child =  get_child_layers()[0];
     if (child->distconv_enabled() &&
         child->get_parallel_strategy() == ps) {
       invariants[&layer_dists[1]].insert(
@@ -1531,8 +1543,26 @@ void Layer::setup_tensor_distribution_add_adjacent_invariants(
       invariants[&layer_dists[3]].insert(
           &dists[child][2]);
     }
+  } else {
+    for (auto &child: get_child_layers()) {
+      if (child->distconv_enabled() &&
+          child->get_parallel_strategy() == ps) {
+        invariants[&layer_dists[1]].insert(
+            &dists[child][0]);
+        invariants[&layer_dists[3]].insert(
+            &dists[child][2]);
+      }
+    }
   }
   for (auto &parent: get_parent_layers()) {
+    if (dynamic_cast<const generic_input_layer*>(parent)) {
+      const int child_index = std::find(
+          parent->get_child_layers().begin(),
+          parent->get_child_layers().end(),
+          this) - parent->get_child_layers().begin();
+      if (child_index == 1) continue;
+      assert_eq(child_index, 0);
+    }
     if (parent->distconv_enabled() &&
         parent->get_parallel_strategy() == ps) {
       invariants[&layer_dists[0]].insert(
@@ -1606,7 +1636,6 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> 
       m_prev_activations_shuffler_last_mb[i] = nullptr;
     }
   } else {
-    // TODO: Think about the parent has two output tensors (e.g., split).
     m_prev_activations_t = get_parent_layers()[0]->get_activations_t(*this);
     assert_always(m_prev_activations_t.get_distribution() == dists[0]);
   }
