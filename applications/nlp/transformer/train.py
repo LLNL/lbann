@@ -176,11 +176,17 @@ def make_batch_script(model_params, script_params):
     # Note: Rough approximation of
     #   embed_dim^-0.5 * min(step^-0.5, step*warmup^-1.5)
     # with embed_dim=512 and warmup=4000.
-    opt = lbann.Adam(learn_rate=0.0004, beta1=0.9, beta2=0.98, eps=1e-9)
+    opt = lbann.Adam(learn_rate=0.0001, beta1=0.9, beta2=0.98, eps=1e-9)
     model.callbacks.append(
         lbann.CallbackDropFixedLearningRate(
-            drop_epoch=[1,2,4,8,12],
-            amt=0.7,
+            drop_epoch=[1],
+            amt=2,
+        )
+    )
+    model.callbacks.append(
+        lbann.CallbackDropFixedLearningRate(
+            drop_epoch=[2,4,8,12],
+            amt=0.75,
         )
     )
 
