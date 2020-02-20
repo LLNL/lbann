@@ -204,6 +204,9 @@ void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapp
   double tm1 = lbann::get_time();
   const string mapping_fn = options::get()->get_string("mapping_fn");
   ifstream in(mapping_fn.c_str());
+  if (!in) {
+    LBANN_ERROR("failed to open ", mapping_fn, " for reading");
+  }
   string filename;
   string sample_id;
   string line;

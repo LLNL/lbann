@@ -1,25 +1,36 @@
-  packages:
+#!/bin/sh
+
+EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
-        mpi: [openmpi@4.0 arch=darwin-highsierra-skylake]
+        mpi: [openmpi@4.0 arch=darwin-mojave-skylake]
         blas: [veclibfort]
         lapack: [veclibfort]
       buildable: true
       version: []
       paths: {}
       modules: {}
-      compiler: [clang@9.0.0 arch=darwin-highsierra-skylake]
+EOF
+)
 
+EXTERNAL_PACKAGES=$(cat <<EOF
     cmake::
       buildable: True
       variants: ~openssl ~ncurses
-      version: [3.15.4]
+      version: [3.16.2]
       paths:
-        cmake@3.15.4 arch=darwin-highsierra-skylake: /usr/local/
+        cmake@3.16.2 arch=darwin-mojave-skylake:  /usr/local/
 
     hwloc::
       buildable: True
       version: [2.0.2]
+
+    llvm::
+       buildable: False
+       variants: +clang
+       version: [9.0.0]
+       paths:
+         llvm@9.0.0 arch=darwin-mojave-skylake: /usr/local/Cellar/llvm/9.0.0_1/
 
     opencv::
       buildable: true
@@ -30,19 +41,6 @@
       buildable: False
       version: [4.0]
       paths:
-        openmpi@4.0 arch=darwin-highsierra-skylake: /usr/local/
-
-  compilers:
-  - compiler:
-      environment: {}
-      extra_rpaths: []
-      flags: {}
-      modules: []
-      operating_system: highsierra
-      paths:
-        cc: /usr/local/Cellar/llvm/9.0.0/bin/clang
-        cxx: /usr/local/Cellar/llvm/9.0.0/bin/clang++
-        f77: /usr/local/bin/gfortran
-        fc: /usr/local/bin/gfortran
-      spec: clang@9.0.0
-      target: x86_64
+        openmpi@4.0 arch=darwin-mojave-skylake: /usr/local/
+EOF
+)

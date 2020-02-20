@@ -245,7 +245,7 @@ void exchange_models(lbann_comm& comm,
   // Synchronize with partner trainer
   comm.trainer_barrier();
   if (comm.am_trainer_master()) {
-    char send{0}, recv{0};
+    int send{0}, recv{0};
     comm.sendrecv(&send, 1, partner_trainer, 0,
                   &recv, 1, partner_trainer, 0,
                   El::SyncInfo<El::Device::CPU>{});

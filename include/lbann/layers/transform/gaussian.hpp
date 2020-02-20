@@ -33,27 +33,32 @@
 
 namespace lbann {
 
-/** @brief Random values with Gaussian distribution.
- *
- *  During validation and testing, outputs are all equal to the
- *  distribution mean.
- */
+/** @brief Random values from Gaussian/normal distribution. */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
 class gaussian_layer : public transform_layer<TensorDataType> {
 private:
-  /** Gaussian distribution mean. */
+  /** @brief Gaussian distribution mean. */
   TensorDataType m_mean;
-  /** Gaussian distribution standard deviation. */
+  /** @brief Gaussian distribution standard deviation. */
   TensorDataType m_stdev;
+  /** @brief Whether to have deterministic output when not training.
+   *
+   *  Applies to execution modes other than training, e.g. validation
+   *  and inference. If true, outputs are all equal to the
+   *  distribution mean when not training.
+   */
+  bool m_training_only;
 
 public:
   gaussian_layer(lbann_comm *comm,
                  const std::vector<int>& dims,
                  TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
-                 TensorDataType stdev = El::TypeTraits<TensorDataType>::One())
-    : transform_layer<TensorDataType>(comm), m_mean(mean), m_stdev(stdev) {
+                 TensorDataType stdev = El::TypeTraits<TensorDataType>::One(),
+                 bool training_only = false)
+    : transform_layer<TensorDataType>(comm),
+      m_mean(mean), m_stdev(stdev), m_training_only(training_only) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
@@ -66,6 +71,7 @@ public:
     auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("Mean", m_mean);
     desc.add("Standard deviation", m_stdev);
+    desc.add("Training only", m_training_only);
     return desc;
   }
 
@@ -73,10 +79,12 @@ protected:
 
   void fp_compute() override {
     auto& output = this->get_activations();
-    if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
-      gaussian_fill(output, output.Height(), output.Width(), m_mean, m_stdev);
-    } else {
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+    if (m_training_only && (mode != execution_mode::training)) {
       El::Fill(output, m_mean);
+    }
+    else {
+      gaussian_fill(output, output.Height(), output.Width(), m_mean, m_stdev);
     }
   }
 

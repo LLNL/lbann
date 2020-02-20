@@ -33,28 +33,33 @@
 
 namespace lbann {
 
-/** @brief Random values with uniform distribution.
- *
- *  During validation and testing, outputs are all equal to the
- *  distribution mean.
- */
+/** @brief Random values from uniform distribution. */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
 class uniform_layer : public transform_layer<TensorDataType> {
 private:
-  /** Uniform distribution mean. */
+  /** @brief Uniform distribution minimum. */
   TensorDataType m_min;
-  /** Uniform distribution standard deviation. */
+  /** @brief Uniform distribution maximum. */
   TensorDataType m_max;
+  /** @brief Whether to have deterministic output when not training.
+   *
+   *  Applies to execution modes other than training, e.g. validation
+   *  and inference. If true, outputs are all equal to the
+   *  distribution mean when not training.
+   */
+  bool m_training_only;
 
 public:
 
   uniform_layer(lbann_comm *comm,
                 std::vector<int> dims,
                 TensorDataType min = El::TypeTraits<TensorDataType>::Zero(),
-                TensorDataType max = El::TypeTraits<TensorDataType>::One())
-    : transform_layer<TensorDataType>(comm), m_min(min), m_max(max) {
+                TensorDataType max = El::TypeTraits<TensorDataType>::One(),
+                bool training_only = false)
+    : transform_layer<TensorDataType>(comm),
+      m_min(min), m_max(max), m_training_only(training_only) {
     this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
@@ -68,6 +73,7 @@ public:
     std::stringstream ss;
     ss << "[" << m_min << "," << m_max << ")";
     desc.add("Range", ss.str());
+    desc.add("Training only", m_training_only);
     return desc;
   }
 
@@ -77,10 +83,12 @@ protected:
     const auto& mean = (m_max + m_min) / El::To<TensorDataType>(2);
     const auto& radius = (m_max - m_min) / El::To<TensorDataType>(2);
     auto& output = this->get_activations();
-    if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
-      uniform_fill(output, output.Height(), output.Width(), mean, radius);
-    } else {
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+    if (m_training_only && (mode != execution_mode::training)) {
       El::Fill(output, mean);
+    }
+    else {
+      uniform_fill(output, output.Height(), output.Width(), mean, radius);
     }
   }
 

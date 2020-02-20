@@ -782,11 +782,11 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
 
   bool disable_cuda = m.disable_cuda();
 #ifndef LBANN_HAS_GPU
-  disable_cuda = false;
+  disable_cuda = true;
 #endif // LBANN_HAS_GPU
   bool disable_cudnn = disable_cuda;
 #ifndef LBANN_HAS_CUDNN
-  disable_cudnn = false;
+  disable_cudnn = true;
 #endif // LBANN_HAS_CUDNN
 
   std::cout << std::endl
