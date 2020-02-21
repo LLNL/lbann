@@ -991,12 +991,12 @@ class generic_input_layer : public io_layer {
     InputType, ::distconv::tensor::LocaleMPI,
     ::distconv::tensor::CUDAAllocator>;
 
-  // 3 last-MB shufflers for training/validation/testing
   dc::TensorHost<InputType> m_input_host_view;
   dc::TensorHost<InputType> m_input_host_tensor;
   TensorDevInput m_input_dev;
   // shufflers for the input data
   std::unique_ptr<TensorShuffler> m_input_shuffler;
+  // 3 last-MB shufflers for training/validation/testing
   std::array<std::unique_ptr<TensorShuffler>, 3> m_input_shuffler_last_mb;
   std::unique_ptr<InputType> m_shuffler_src_buf;
   size_t m_shuffler_src_buf_size = 0;
