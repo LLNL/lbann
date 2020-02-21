@@ -32,6 +32,7 @@
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/save_model.hpp"
+#include "lbann/callbacks/load_model.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -305,7 +306,7 @@ std::unique_ptr<model> build_model_from_prototext(
 #endif
 
   if (opts && opts->has_string("restart_dir")) {
-    bool loaded = callback::save_model::load_model_weights(
+    bool loaded = callback::load_model::load_model_weights(
       opts->get_string("restart_dir"),
       ret_model.get(),
       opts->get_bool("restart_dir_is_fullpath"));
