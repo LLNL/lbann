@@ -175,6 +175,7 @@
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/save_model.hpp"
+#include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/save_topk_models.hpp"
 #include "lbann/callbacks/summary.hpp"
 #include "lbann/callbacks/sync_layers.hpp"
