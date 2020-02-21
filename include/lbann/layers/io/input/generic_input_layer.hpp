@@ -889,13 +889,6 @@ class generic_input_layer : public io_layer {
       dc::MPIRootPrintStreamInfo() << "Copy label/response data to Distconv as well";
     }
 
-#if 0
-    auto mb_shape = get_output_dims(0);
-    dc::MPIRootPrintStreamInfo() << "Mini-batch shape: "
-                                 << dc::util::tostring(mb_shape.begin(),
-                                                       mb_shape.end());
-#endif
-
     const auto tensor_shape = get_output_tensor_shape();
     const Dist sample_dist = Layer::get_hydrogen_matrix_distribution();
     auto local_shape = tensor_shape;
