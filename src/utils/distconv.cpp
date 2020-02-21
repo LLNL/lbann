@@ -26,6 +26,7 @@
 
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/cudnn.hpp"
+#include "lbann/layers/layer.hpp"
 #include <cstdlib>
 
 #ifdef LBANN_HAS_DISTCONV

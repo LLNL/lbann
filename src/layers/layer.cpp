@@ -1399,108 +1399,100 @@ void Layer::setup_tensor_distribution_init(
     std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
     std::set<dc::Dist*> &updated,
     std::set<dc::Dist*> &fixed) {
+  if (!distconv_enabled()) return;
+  const int num_dims = get_num_dims();
   auto &ps = get_parallel_strategy();
   MPIRootPrintStreamInfo() << "Parallel Strategy for layer " << get_name()
                            << ": " << ps;
   int n = ps.sample_groups;
   int c = ps.channel_groups;
   int f = ps.filter_groups;
-#ifdef LBANN_DISTCONV_HAS_DEPTH
-  int d = ps.depth_groups;
-#endif // LBANN_DISTCONV_HAS_DEPTH
+  int d = get_num_spatial_dims() == 3 ? ps.depth_groups : 1;
   int h = ps.height_groups;
   int w = ps.width_groups;
   int np = m_comm->get_procs_per_trainer();
 
-#ifdef LBANN_DISTCONV_HAS_DEPTH
   const int spatial_prod = d * h * w;
-#else
-  const int spatial_prod = h * w;
-#endif // LBANN_DISTCONV_HAS_DEPTH
 
   // if only one process is used, do not parallelize
   if (np == 1) {
-    n = c = f = h = w = 1;
-#ifdef LBANN_DISTCONV_HAS_DEPTH
-      d = 1;
-#endif // LBANN_DISTCONV_HAS_DEPTH
-  }
-  if (distconv_enabled()) {
-    if (c != f) {
-      MPIRootPrintStreamError() << "The numbers of channel and filter decomposition should be the same.";
-      throw lbann_exception();
-    }
-    if (c != 1 || f != 1) {
-      MPIRootPrintStreamError() << "Distconv does not support channel/filter parallelization yet. Layer: " << get_name() << ", ps: " << ps;
-      throw lbann_exception();
-    }
-    if (n * c * spatial_prod > np) {
-      MPIRootPrintStreamError()
-          << "The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: " << ps;
-      throw lbann_exception();
-    }
-    // Put the remaining factor into the outer-most process dimension
-    float rem = np / (float) (n * c * spatial_prod);
-    n *= rem;
-    ps.sample_splits *= rem;
-    if (n * c * spatial_prod != np) {
-      MPIRootPrintStreamError()
-          << "Can't determine factorization of the number of MPI ranks for parallel strategy: " << ps;
-      throw lbann_exception();
-    }
-    std::string xd_array, xd_array_names;
-#ifdef LBANN_DISTCONV_HAS_DEPTH
-    xd_array = dc::util::join_xd_array(std::vector<int>({n, c, d, h, w}));
-    xd_array_names = "NxCxDxHxW";
-#else
-    xd_array = dc::util::join_xd_array(std::vector<int>({n, c, h, w}));
-    xd_array_names = "NxCxHxW";
-#endif // LBANN_DISTCONV_HAS_DEPTH
-    MPIRootPrintStreamInfo() << "Process grid of " << xd_array_names << ": "
-                             << xd_array;
+    n = c = f = h = w = d = 1;
   }
 
-  assert_always(!distconv_enabled() || (
-      spatial_prod * n * c == np && spatial_prod * n * f == np));
+  if (c != f) {
+    LBANN_ERROR("The numbers of channel and filter decomposition should be the same.");
+  }
+  if (c != 1 || f != 1) {
+    LBANN_ERROR("Distconv does not support channel/filter parallelization yet. Layer: ",
+                get_name(), ", ps: ", ps);
+  }
+  if (n * c * spatial_prod > np) {
+    LBANN_ERROR("The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: ", ps);
+  }
+  // Put the remaining factor into the outer-most process dimension
+  float rem = np / (float) (n * c * spatial_prod);
+  n *= rem;
+  ps.sample_splits *= rem;
+  if (n * c * spatial_prod != np) {
+    LBANN_ERROR("Can't determine factorization of the number of MPI ranks for parallel strategy: ",
+                ps);
+  }
+  std::string xd_array, xd_array_names;
+  if (num_dims == 5) {
+    xd_array = dc::util::join_xd_array(std::vector<int>({n, c, d, h, w}));
+    xd_array_names = "NxCxDxHxW";
+  } else {
+    assert_eq(num_dims, 4);
+    xd_array = dc::util::join_xd_array(std::vector<int>({n, c, h, w}));
+    xd_array_names = "NxCxHxW";
+  }
+  MPIRootPrintStreamInfo() << "Process grid of " << xd_array_names << ": "
+                           << xd_array;
+
+  assert_always(spatial_prod * n * c == np && spatial_prod * n * f == np);
 
   ps.sample_groups = n;
   ps.channel_groups = c;
   ps.filter_groups = f;
-#ifdef LBANN_DISTCONV_HAS_DEPTH
   ps.depth_groups = d;
-#endif
   ps.height_groups = h;
   ps.width_groups = w;
   // If splits are not set, set them to be equal to the group numbers
   if (ps.sample_splits == 0) ps.sample_splits = n;
   if (ps.channel_splits == 0) ps.channel_splits = c;
   if (ps.filter_splits == 0) ps.filter_splits = f;
-#ifdef LBANN_DISTCONV_HAS_DEPTH
-    if (ps.depth_splits == 0) ps.depth_splits = d;
-#endif
+  if (ps.depth_splits == 0) ps.depth_splits = d;
   if (ps.height_splits == 0) ps.height_splits = h;
   if (ps.width_splits == 0) ps.width_splits = w;
 
-  Shape input_locale_shape;
-  Shape input_split_shape;
-  Shape output_locale_shape;
-  Shape output_split_shape;
+  Shape input_locale_shape(num_dims);
+  Shape input_split_shape(num_dims);
+  Shape output_locale_shape(num_dims);
+  Shape output_split_shape(num_dims);
 
-#ifdef LBANN_DISTCONV_HAS_DEPTH
-  input_locale_shape = Shape({w, h, d, c, n});
-  input_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
-                             ps.channel_splits, ps.sample_splits});
-  output_locale_shape = Shape({w, h, d, f, n});
-  output_split_shape = Shape({ps.width_splits, ps.height_splits, ps.depth_splits,
-                              ps.filter_splits, ps.sample_splits});
-#else
-  input_locale_shape = Shape({w, h, c, n});
-  input_split_shape = Shape({ps.width_splits, ps.height_splits,
-                             ps.channel_splits, ps.sample_splits});
-  output_locale_shape = Shape({w, h, f, n});
-  output_split_shape = Shape({ps.width_splits, ps.height_splits,
-                              ps.filter_splits, ps.sample_splits});
-#endif
+  input_locale_shape[dc::get_sample_dim()] = n;
+  input_locale_shape[dc::get_channel_dim()] = c;
+  input_locale_shape[0] = w;
+  input_locale_shape[1] = h;
+  if (num_dims == 5)  input_locale_shape[2] = d;
+
+  input_split_shape[dc::get_sample_dim()] = ps.sample_splits;
+  input_split_shape[dc::get_channel_dim()] = ps.channel_splits;
+  input_split_shape[0] = ps.width_splits;
+  input_split_shape[1] = ps.height_splits;
+  if (num_dims == 5)  input_split_shape[2] = ps.depth_splits;
+
+  output_locale_shape[dc::get_sample_dim()] = n;
+  output_locale_shape[dc::get_channel_dim()] = f;
+  output_locale_shape[0] = w;
+  output_locale_shape[1] = h;
+  if (num_dims == 5)  output_locale_shape[2] = d;
+
+  output_split_shape[dc::get_sample_dim()] = ps.sample_splits;
+  output_split_shape[dc::get_channel_dim()] = ps.filter_splits;
+  output_split_shape[0] = ps.width_splits;
+  output_split_shape[1] = ps.height_splits;
+  if (num_dims == 5)  output_split_shape[2] = ps.depth_splits;
 
   auto prev_activations_dist =  Dist::make_shared_distribution(
       input_locale_shape, input_split_shape);
@@ -1573,7 +1565,7 @@ void Layer::setup_tensor_distribution_add_adjacent_invariants(
   }
 }
 
-Dist Layer::get_hydrogen_matrix_distribution() {
+Dist Layer::get_hydrogen_matrix_distribution(int num_dims) {
   using ::distconv::index_t;
   // When rank stride is 1, the distribution is just sample
   // distribution. When it's greater than 1, multiple consecutive
@@ -1581,7 +1573,7 @@ Dist Layer::get_hydrogen_matrix_distribution() {
   // dimension. It is assumed that LBANN uses only the
   // NUM_RANKS/STRIDE ranks in a data-parallel input layer to read
   // training data.
-  Shape sample_locale_shape(dc::num_dims, 1);
+  Shape sample_locale_shape(num_dims, 1);
   sample_locale_shape[0] = static_cast<index_t>(dc::get_rank_stride());
   sample_locale_shape[-1] = static_cast<index_t>(dc::get_mpi_num_ranks() / dc::get_rank_stride());
   auto sample_split_shape = sample_locale_shape;
@@ -1613,7 +1605,7 @@ size_t Layer::estimate_memory_usage(const std::array<Dist, dc::num_dists> &dists
 void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const auto input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const Dist sample_dist = get_hydrogen_matrix_distribution();
+  const Dist sample_dist = get_hydrogen_matrix_distribution(get_num_dims());
   auto input_local_shape = input_tensor_shape;
   // Set the sample dimension as 0 so that its actual value is
   // calculated by Distconv
@@ -1664,7 +1656,7 @@ void Layer::setup_activations_tensor(const std::array<Dist, dc::num_dists> &dist
 
 void Layer::setup_activations_copyout_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const Dist sample_dist = get_hydrogen_matrix_distribution();
+  const Dist sample_dist = get_hydrogen_matrix_distribution(get_num_dims());
   const Shape output_tensor_shape = get_output_tensor_shape();
   auto output_local_shape = output_tensor_shape;
   // Set the sample dimension as 0 so that its actual value is
@@ -1689,7 +1681,7 @@ void Layer::setup_distconv_post(size_t) {}
 
 void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const Dist sample_dist = get_hydrogen_matrix_distribution();
+  const Dist sample_dist = get_hydrogen_matrix_distribution(get_num_dims());
   const Shape output_tensor_shape = get_output_tensor_shape();
   auto output_local_shape = output_tensor_shape;
   // Set the sample dimension as 0 so that its actual value is
@@ -1744,7 +1736,7 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &di
 void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const Shape input_tensor_shape = get_input_tensor_shape();
   const LocaleMPI loc(dc::get_mpi_comm(), false);
-  const Dist sample_dist = get_hydrogen_matrix_distribution();
+  const Dist sample_dist = get_hydrogen_matrix_distribution(get_num_dims());
   auto input_local_shape = input_tensor_shape;
   // Set the sample dimension as 0 so that its actual value is
   // calculated by Distconv
@@ -1773,6 +1765,18 @@ const TensorDev &Layer::get_error_signals_t() const {
 const TensorDev &Layer::get_error_signals_t(const Layer &parent) const {
   assert_always(get_num_parents() == 1);
   return m_error_signals_t;
+}
+
+int Layer::get_num_dims() const {
+  auto nd = get_input_dims().size() + 1;
+  if (!(nd == 4 || nd == 5)) {
+    LBANN_ERROR(get_name(), ": Invalid number of dimensions: ", nd);
+  }
+  return nd;
+}
+
+int Layer::get_num_spatial_dims() const {
+  return get_num_dims() - 2;
 }
 
 void Layer::fp_setup_distconv(int mini_batch_size) {

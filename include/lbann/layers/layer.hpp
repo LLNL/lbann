@@ -62,12 +62,10 @@ struct ParallelStrategy {
   int sample_groups = 0;
   /** Number of groups the sample dimension is split over. */
   int sample_splits = 0;
-#ifdef LBANN_DISTCONV_HAS_DEPTH
   /** Number of process groups the depth dimension is split over. */
   int depth_groups = 0;
   /** Number of groups the depth dimension is split over. */
   int depth_splits = 0;
-#endif
   /** Number of process groups the height dimension is split over. */
   int height_groups = 0;
   /** Number of groups the height dimension is split over. */
@@ -89,10 +87,8 @@ struct ParallelStrategy {
   bool operator==(const ParallelStrategy &ps) const {
     return sample_groups == ps.sample_groups &&
         sample_splits == ps.sample_splits &&
-#ifdef LBANN_DISTCONV_HAS_DEPTH
         depth_groups == ps.depth_groups &&
         depth_splits == ps.depth_splits &&
-#endif
         height_groups == ps.height_groups &&
         height_splits == ps.height_splits &&
         width_groups == ps.width_groups &&
@@ -112,10 +108,8 @@ inline std::ostream &operator<<(std::ostream &os,
                                 const ParallelStrategy &ps) {
   os << "{" << ps.sample_groups
      << "/" << ps.sample_splits
-#ifdef LBANN_DISTCONV_HAS_DEPTH
      << ", " << ps.depth_groups
      << "/" << ps.depth_splits
-#endif
      << ", " << ps.height_groups
      << "/" << ps.height_splits
      << ", " << ps.width_groups
@@ -561,7 +555,7 @@ protected:
   void setup_inter_layer_adaptation();
   void setup_early_termination();
   void setup_keep_original_tensors();
-  static dc::Dist get_hydrogen_matrix_distribution();
+  static dc::Dist get_hydrogen_matrix_distribution(int num_dims);
   virtual void setup_tensor_distribution_init(
       std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
@@ -601,6 +595,9 @@ protected:
   }
 
   bool skip_first_layer_bp() const;
+
+  virtual int get_num_dims() const;
+  virtual int get_num_spatial_dims() const;
 
  protected:
   virtual bool keep_original_input() const { return m_keep_original_input; }

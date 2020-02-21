@@ -876,6 +876,10 @@ class generic_input_layer : public io_layer {
 
 #ifdef LBANN_HAS_DISTCONV
  public:
+  int get_num_dims() const {
+    return get_output_dims().size() + 1;
+  }
+
   void setup_tensors_fwd(
       const std::array<dc::Dist, dc::num_dists> &dists) override {
     using namespace dc;
@@ -890,7 +894,7 @@ class generic_input_layer : public io_layer {
     }
 
     const auto tensor_shape = get_output_tensor_shape();
-    const Dist sample_dist = Layer::get_hydrogen_matrix_distribution();
+    const Dist sample_dist = Layer::get_hydrogen_matrix_distribution(get_num_dims());
     auto local_shape = tensor_shape;
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
@@ -1202,7 +1206,7 @@ class generic_input_layer : public io_layer {
     assert_always(m_copy_labels_dc);
     //const auto tensor_shape = get_output_tensor_shape(1);
     const auto tensor_shape = get_unet_label_shape();
-    const auto sample_dist = Layer::get_hydrogen_matrix_distribution();
+    const auto sample_dist = Layer::get_hydrogen_matrix_distribution(get_num_dims());
     auto local_shape = tensor_shape;
     // calculated by Distconv
     local_shape[dc::get_sample_dim()] = 0;

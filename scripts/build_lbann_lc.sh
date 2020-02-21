@@ -72,7 +72,6 @@ AVOID_CUDA_AWARE_MPI=OFF
 WITH_DISTCONV=OFF
 DIHYDROGEN_URL=https://github.com/llnl/dihydrogen
 DIHYDROGEN_TAG=master
-LBANN_DISTCONV_NUM_DIMS=4
 WITH_P2P=OFF
 WITH_TBINF=OFF
 RECONFIGURE=0
@@ -290,8 +289,8 @@ while :; do
             shift
             ;;
         --distconv-num-dims)
-            LBANN_DISTCONV_NUM_DIMS=$2
-            shift
+            echo "Error: do not pass --distconv-num-dims as it is no longer used"
+            exit 1
             ;;
         --distconv-cosmoflow-int16)
             LBANN_DISTCONV_COSMOFLOW_KEEP_INT16=ON
@@ -846,7 +845,6 @@ cmake \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
 -D DIHYDROGEN_URL=${DIHYDROGEN_URL} \
 -D DIHYDROGEN_TAG=${DIHYDROGEN_TAG} \
--D LBANN_DISTCONV_NUM_DIMS=${LBANN_DISTCONV_NUM_DIMS} \
 -D LBANN_DISTCONV_COSMOFLOW_KEEP_INT16=${LBANN_DISTCONV_COSMOFLOW_KEEP_INT16} \
 -D LBANN_SB_BUILD_P2P=${WITH_P2P} \
 -D LBANN_WITH_P2P=${WITH_P2P} \
