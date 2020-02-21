@@ -365,9 +365,9 @@ bool Layer::is_frozen() const {
   return m_frozen;
 }
 
-void Layer::setup(size_t max_mini_batch_size) {
+  void Layer::setup(size_t max_mini_batch_size, TargetModeDimMap& data_dimensions_map) {
   setup_pointers();
-  setup_dims();
+  setup_dims(data_dimensions_map);
   setup_matrices(m_comm->get_trainer_grid());
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv();
@@ -453,7 +453,7 @@ void Layer::setup_pointers() {
 
 }
 
-void Layer::setup_dims() {
+void Layer::setup_dims(TargetModeDimMap& data_dimensions_map) {
   m_output_dims_list.resize(get_num_children());
   if (m_hint_layer != nullptr) {
     const auto& hint_dims = m_hint_layer->get_output_dims();

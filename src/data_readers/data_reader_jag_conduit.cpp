@@ -118,9 +118,12 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
   if (m_io_buffer_type == "partitioned") {
+#if 0
+    // @todo BVE FIXME - Why are we doing this here
     set_num_parallel_readers(partitioned_io_buffer<DataType>::compute_max_num_parallel_readers(
                              0, get_mini_batch_size(),
                              get_num_parallel_readers(), get_comm()));
+#endif
     set_sample_stride(get_num_parallel_readers());
     set_iteration_stride(1);
   } else {

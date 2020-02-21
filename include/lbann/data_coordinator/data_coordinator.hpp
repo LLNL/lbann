@@ -100,6 +100,8 @@ class data_coordinator {
        CEREAL_NVP(m_data_set_processed)*/);
   }
 
+  void setup(int max_mini_batch_size);
+
   //************************************************************************
   // Helper functions to access the data readers
   //************************************************************************
@@ -121,6 +123,27 @@ class data_coordinator {
       LBANN_ERROR("generic data distribution: invalid execution phase");
     }
     return data_reader;
+  }
+
+  /**
+   * Get the dimensions of the underlying data.
+   */
+  TargetModeDimMap get_data_dims() {
+    TargetModeDimMap map;
+    generic_data_reader *dr;
+    for(execution_mode mode : execution_mode_iterator()) {
+      dr = get_data_reader(mode);
+      if (dr != nullptr) {
+        map[data_reader_target_mode::INPUT] = dr->get_data_dims();
+        map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, dr->get_num_labels());
+        map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, dr->get_num_responses());
+        map[data_reader_target_mode::RECONSTRUCTION] = dr->get_data_dims();
+        map[data_reader_target_mode::NA] = std::vector<int>(1, 0);
+        return map;
+      }
+    }
+    LBANN_ERROR("get_data_dims: no available data readers");
+    return {};
   }
 
   //************************************************************************
@@ -186,6 +209,19 @@ class data_coordinator {
   long get_total_num_testing_samples() const {
     return m_testing_dataset.get_total_samples();
   }
+
+  //************************************************************************
+  //
+  //************************************************************************
+
+  void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader);
+  void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader);
+
+  void calculate_num_iterations_per_epoch_training_spans_models(int mini_batch_size);
+  void calculate_num_iterations_per_epoch_training_unique_per_models(int mini_batch_size);
+
+  int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const;
+  static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
 
   //************************************************************************
   //

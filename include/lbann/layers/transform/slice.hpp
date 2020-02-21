@@ -80,7 +80,7 @@ public:
 
 protected:
 
-  void setup_dims() override;
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override;
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
@@ -192,8 +192,8 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_
 } // namespace anonymous
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::setup_dims() {
-  data_type_layer<TensorDataType>::setup_dims();
+void slice_layer<TensorDataType,Layout,Device>::setup_dims(TargetModeDimMap& data_dimensions_map) {
+  data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
 
   // Setup the slice points if they are to be established by the data reader
   if(m_set_slice_points_from_data_reader) {

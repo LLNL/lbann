@@ -91,7 +91,7 @@ class io_layer : public data_type_layer<TensorDataType> {
   /**
    * Get the dimensions of the underlying data.
    */
-  virtual const std::vector<int> get_data_dims(int child_index = 0) const = 0;
+  virtual const std::vector<int> get_data_dims(TargetModeDimMap& data_dimensions_map, int child_index = 0) const = 0;
 
   /**
    * Get the linearized size of the underlying data.

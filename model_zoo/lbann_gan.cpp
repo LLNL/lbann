@@ -72,14 +72,19 @@ int main(int argc, char *argv[]) {
     if(dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     }
+    TargetModeDimMap data_dimensions_map = trainer->get_data_coordinator().get_data_dims();
 
     auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]), comm.get(), opts, io_thread_pool,
-                                              trainer->get_callbacks_with_ownership(), training_dr_linearized_data_size, true); //discriminator
+                                              trainer->get_callbacks_with_ownership(),
+                                              training_dr_linearized_data_size,
+                                              data_dimensions_map, true); //discriminator
                                                                                     //model
     std::unique_ptr<model> model_2 = nullptr; //adversarial model
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]), comm.get(), opts, io_thread_pool,
-                                           trainer->get_callbacks_with_ownership(), training_dr_linearized_data_size, false);
+                                           trainer->get_callbacks_with_ownership(),
+                                           training_dr_linearized_data_size,
+                                           data_dimensions_map, false);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();

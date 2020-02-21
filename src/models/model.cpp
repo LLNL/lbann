@@ -571,7 +571,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // Setup
 // =============================================
 
-void model::setup(size_t max_mini_batch_size) {
+  void model::setup(size_t max_mini_batch_size, TargetModeDimMap& data_dimensions_map) {
 
   // Bail out if the model is already setup
   if(m_model_is_setup) { return; }
@@ -579,7 +579,7 @@ void model::setup(size_t max_mini_batch_size) {
   // Setup layers
   setup_layer_topology();
   setup_layer_execution_order();
-  setup_layers(max_mini_batch_size);
+  setup_layers(max_mini_batch_size, data_dimensions_map);
 
   // Setup weights
   setup_weights();
@@ -680,11 +680,11 @@ void model::setup_layer_execution_order() {
 
 }
 
-void model::setup_layers(size_t max_mini_batch_size) {
+void model::setup_layers(size_t max_mini_batch_size, TargetModeDimMap& data_dimensions_map) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.set_model(this);
-    l.setup(max_mini_batch_size);
+    l.setup(max_mini_batch_size, data_dimensions_map);
     l.check_setup();
   }
 }

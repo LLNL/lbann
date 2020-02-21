@@ -110,9 +110,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::setup_dims()
+::setup_dims(TargetModeDimMap& data_dimensions_map)
 {
-  data_type_layer<TensorDataType>::setup_dims();
+  data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
 
   // Make sure input and output dimensions are valid
   const auto& input_dims = this->get_input_dims();

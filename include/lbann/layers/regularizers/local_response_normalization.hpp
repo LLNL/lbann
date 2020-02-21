@@ -139,8 +139,8 @@ public:
 
 protected:
 
-  void setup_dims() override {
-    regularizer_layer<TensorDataType>::setup_dims();
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override {
+    regularizer_layer<TensorDataType>::setup_dims(data_dimensions_map);
     this->set_output_dims(this->get_input_dims());
   }
 

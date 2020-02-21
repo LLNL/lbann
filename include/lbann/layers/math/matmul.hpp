@@ -65,7 +65,7 @@ public:
 
 protected:
 
-  void setup_dims() override;
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override;
   void fp_compute() override;
   void bp_compute() override;
 
@@ -125,8 +125,8 @@ description matmul_layer<TensorDataType,Layout,Device>::get_description() const 
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void matmul_layer<TensorDataType,Layout,Device>::setup_dims() {
-  data_type_layer<TensorDataType>::setup_dims();
+void matmul_layer<TensorDataType,Layout,Device>::setup_dims(TargetModeDimMap& data_dimensions_map) {
+  data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
 
   // Input dimensions
   const auto& input0_dims = this->get_input_dims(0);

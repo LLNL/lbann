@@ -67,7 +67,7 @@ void variable_minibatch::on_train_begin(model *m) {
                 << "size and using variable-sized mini-batches" << std::endl;
     }
   }
-  input->calculate_num_iterations_per_epoch_training_spans_models(
+  m->get_execution_context().get_trainer().get_data_coordinator().calculate_num_iterations_per_epoch_training_spans_models(
     m_starting_mbsize);
 }
 
@@ -97,7 +97,7 @@ void variable_minibatch::on_epoch_end(model *m) {
       }
       new_mbsize = t.get_max_mini_batch_size();
     }
-    input->calculate_num_iterations_per_epoch_training_spans_models(new_mbsize);
+    m->get_execution_context().get_trainer().get_data_coordinator().calculate_num_iterations_per_epoch_training_spans_models(new_mbsize);
     m_current_mini_batch_size = new_mbsize;
     m_ramp_count = ramp_time;
     if (new_lr != 0.0f) {

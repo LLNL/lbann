@@ -69,7 +69,7 @@ public:
 
 protected:
 
-  void setup_dims() override;
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override;
 
   void fp_compute() override;
   void bp_compute() override;
@@ -126,8 +126,8 @@ description instance_norm_layer<TensorDataType,Layout,Device>::get_description()
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void instance_norm_layer<TensorDataType,Layout,Device>::setup_dims() {
-  data_type_layer<TensorDataType>::setup_dims();
+void instance_norm_layer<TensorDataType,Layout,Device>::setup_dims(TargetModeDimMap& data_dimensions_map) {
+  data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
   this->set_output_dims(this->get_input_dims());
 }
 

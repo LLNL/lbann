@@ -61,8 +61,8 @@ public:
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 protected:
-  void setup_dims() override {
-    data_type_layer<TensorDataType>::setup_dims();
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override {
+    data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
     this->set_output_dims(this->get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override {

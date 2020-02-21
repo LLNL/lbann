@@ -83,7 +83,7 @@ public:
 
 protected:
 
-  void setup_dims() override;
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;

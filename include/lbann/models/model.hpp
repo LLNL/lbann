@@ -235,7 +235,7 @@ public:
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup(size_t max_mini_batch_size);
+  virtual void setup(size_t max_mini_batch_size, TargetModeDimMap& data_dimensions_map);
 
   virtual void make_data_store_preloaded(execution_mode mode);
 
@@ -332,7 +332,7 @@ protected:
    *
    *  Called in setup function.
    */
-  virtual void setup_layers(size_t max_mini_batch_size);
+  virtual void setup_layers(size_t max_mini_batch_size, TargetModeDimMap& data_dimensions_map);
   /** @brief Set up weights.
    *
    *  Called in setup function. All weights being used by layers or

@@ -57,8 +57,8 @@ public:
 
 protected:
 
-  void setup_dims() override {
-    data_type_layer<TensorDataType>::setup_dims();
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override {
+    data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
 
     // Get input dimensions
     auto dims = this->get_input_dims();

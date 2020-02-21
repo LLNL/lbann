@@ -249,7 +249,7 @@ public:
    *  assumed that pointers to parent/child layers have already been
    *  initialized.
    */
-  virtual void setup(size_t max_mini_batch_size);
+  virtual void setup(size_t max_mini_batch_size, TargetModeDimMap& data_dimensions_map);
   /** Check that the setup is reasonable. */
   virtual void check_setup();
 
@@ -450,7 +450,7 @@ protected:
    *  the base method sets all uninitialized output tensor dimensions
    *  equal to the first input tensor dimensions.
    */
-  virtual void setup_dims();
+  virtual void setup_dims(TargetModeDimMap& data_dimensions_map);
   /** Setup distributed matrices.
    *  Called by the 'setup' function. Each column of these distributed
    *  matrices is interpreted as the flattened tensor for a mini-batch

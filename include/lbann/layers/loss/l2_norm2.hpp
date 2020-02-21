@@ -66,8 +66,8 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
-  void setup_dims() override {
-    data_type_layer<TensorDataType>::setup_dims();
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override {
+    data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
     this->set_output_dims({1});
   }
 

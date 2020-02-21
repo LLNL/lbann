@@ -128,10 +128,10 @@ class generic_input_layer : public io_layer<TensorDataType> {
     return desc;
   }
 
-  void setup_dims() override {
-    io_layer<TensorDataType>::setup_dims();
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override {
+    io_layer<TensorDataType>::setup_dims(data_dimensions_map);
     for (int i = 0; i < this->get_num_children(); ++i) {
-      this->set_output_dims(get_data_dims(i), i);
+      this->set_output_dims(get_data_dims(data_dimensions_map, i), i);
     }
   }
 
@@ -144,27 +144,11 @@ class generic_input_layer : public io_layer<TensorDataType> {
       output.Resize(output.Height(), max_mini_batch_size);
     }
 
-    /// @todo BVE FIXME
-    // if(io_layer<TensorDataType>::m_data_set_spans_models) {
-    //calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
-    // } else {
-      calculate_num_iterations_per_epoch_training_unique_per_models(max_mini_batch_size);
-    // }
-
     for (auto& io_buffer : m_io_buffers) {
       int linearized_target_size;
-      switch(this->m_data_reader_mode) {
-      case data_reader_target_mode::REGRESSION:
-        linearized_target_size = get_linearized_response_size();
-        break;
-      case data_reader_target_mode::RECONSTRUCTION:
-        linearized_target_size = get_linearized_data_size();
-        break;
-      case data_reader_target_mode::CLASSIFICATION:
-        linearized_target_size = get_linearized_label_size();
-        break;
-      case data_reader_target_mode::NA:
-      default:
+      if(this->get_num_children() > 1) {
+        linearized_target_size = this->get_output_size(1);
+      }else {
         linearized_target_size = 0;
       }
       io_buffer->setup_data(this->get_output_size(0),
@@ -405,52 +389,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
     return get_current_world_master_mini_batch_adjustment(this->m_model->get_execution_context().get_execution_mode(), model_rank);
   }
 
-  /** Calculate how many iterations are required for training, testing,
-   *  and validation given a specified mini-batch size and that the
-   *  training data set is spanning all of the models.
-   */
-  void calculate_num_iterations_per_epoch_training_spans_models(int mini_batch_size) {
-
-    generic_data_reader *dr = get_data_reader(execution_mode::training);
-    if(dr != nullptr) {
-      /// Setup the training data set so that it spans all models
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_spanning_models(mini_batch_size, dr);
-    }
-
-    dr = get_data_reader(execution_mode::validation);
-    if(dr != nullptr) {
-      /// Each model uses the entire validation and testing data sets
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
-    }
-
-    dr = get_data_reader(execution_mode::testing);
-    if(dr != nullptr) {
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
-    }
-
-  }
-
-  void calculate_num_iterations_per_epoch_training_unique_per_models(int mini_batch_size) {
-
-    generic_data_reader *dr = get_data_reader(execution_mode::training);
-    if(dr != nullptr) {
-      /// Setup the training data set so that it spans all models
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
-    }
-
-    dr = get_data_reader(execution_mode::validation);
-    if(dr != nullptr) {
-      /// Each model uses the entire validation and testing data sets
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
-    }
-
-    dr = get_data_reader(execution_mode::testing);
-    if(dr != nullptr) {
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
-    }
-
-  }
-
   //************************************************************************
   // Helper functions to access the dataset statistics
   //************************************************************************
@@ -504,32 +442,13 @@ class generic_input_layer : public io_layer<TensorDataType> {
   /**
    * Get the dimensions of the underlying data.
    */
-  const std::vector<int> get_data_dims(int child_index = 0) const override {
-    // Check the training and testing execution modes for data dimensions
-    const generic_data_reader *dr = get_data_reader(execution_mode::training);
-    // If there isn't a training data reader, use the testing data reader
-    if(dr == nullptr) {
-      dr = get_data_reader(execution_mode::testing);
-    }
-    if(dr == nullptr) { LBANN_ERROR("unable to call get_data_dims -- no valid execution mode"); }
-    //    dataset* ds = select_first_valid_dataset();
-    if (dr) {
-      if(child_index == 0) {
-        return dr->get_data_dims();
-      }else if(child_index == 1) {
-        switch(this->m_data_reader_mode) {
-        case data_reader_target_mode::REGRESSION:
-          return std::vector<int>(1, dr->get_num_responses());
-        case data_reader_target_mode::RECONSTRUCTION:
-          return dr->get_data_dims();
-        case data_reader_target_mode::CLASSIFICATION:
-        default:
-          return std::vector<int>(1, dr->get_num_labels());
-        }
-        //        the correct value based on initialization
-      }else {
-        LBANN_ERROR("get_data_dims: Invalid child index");
-      }
+  const std::vector<int> get_data_dims(TargetModeDimMap& data_dimensions_map, int child_index = 0) const override {
+    if(child_index == 0) {
+      return data_dimensions_map[data_reader_target_mode::INPUT];
+    }else if(child_index == 1) {
+      return data_dimensions_map[this->m_data_reader_mode];
+    }else {
+      LBANN_ERROR("get_data_dims: Invalid child index");
     }
     return std::vector<int>(1, 0);
   }

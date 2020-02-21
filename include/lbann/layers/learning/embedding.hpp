@@ -96,7 +96,7 @@ public:
 protected:
 
   void setup_matrices(const El::Grid& grid) override;
-  void setup_dims() override;
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override;
   void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
@@ -188,8 +188,8 @@ description embedding_layer<TensorDataType,Layout,Device>::get_description() con
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void embedding_layer<TensorDataType,Layout,Device>::setup_dims() {
-  data_type_layer<TensorDataType>::setup_dims();
+void embedding_layer<TensorDataType,Layout,Device>::setup_dims(TargetModeDimMap& data_dimensions_map) {
+  data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
   auto dims = this->get_input_dims();
   dims.push_back(static_cast<int>(m_embedding_dim));
   this->set_output_dims(dims);

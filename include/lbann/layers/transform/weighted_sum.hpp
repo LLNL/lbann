@@ -85,8 +85,8 @@ protected:
     }
   }
 
-  void setup_dims() override {
-    transform_layer<TensorDataType>::setup_dims();
+  void setup_dims(TargetModeDimMap& data_dimensions_map) override {
+    transform_layer<TensorDataType>::setup_dims(data_dimensions_map);
     this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match
