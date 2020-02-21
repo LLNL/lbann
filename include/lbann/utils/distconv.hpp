@@ -40,11 +40,6 @@
 
 #define DISTCONV_HAS_CUDNN
 
-//#define DISTCONV_ZERO_OUT_ERROR_SIGNALS
-// temporary workaround
-#define DISTCONV_USE_SAME_RELU_CALL_AS_LBANN
-
-
 #include "distconv/distconv.hpp"
 #include "distconv/tensor/tensor_mpi_cuda.hpp"
 #include "distconv/tensor/shuffle_mpi.hpp"
