@@ -190,6 +190,14 @@ def make_batch_script(model_params, script_params):
         )
     )
 
+    # Checkpoint after every epoch
+    model.callbacks.append(
+        lbann.CallbackCheckpoint(
+            checkpoint_dir=os.path.join(script_params['work_dir'], 'checkpoint'),
+            checkpoint_epochs=1,
+        )
+    )
+
     # Dump weights after every epoch
     model.callbacks.append(
         lbann.CallbackDumpWeights(
@@ -205,7 +213,7 @@ def make_batch_script(model_params, script_params):
         trainer=trainer,
         model=model,
         data_reader=reader,
-        optimizer=opt
+        optimizer=opt,
     )
 
     # Create batch script
