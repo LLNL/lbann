@@ -269,7 +269,7 @@ protected:
     if (!this->distconv_enabled()) return;
 
     if (dc::is_deterministic()) {
-      dc::MPIRootPrintStreamInfo() << "Using deterministic convolution algorithms";
+      dc::MPIRootPrintStreamDebug() << "Using deterministic convolution algorithms";
       // Same algorithm as LBANN
       this->m_fwd_algo = "IMPLICIT_GEMM";
       // Deterministic algorithm

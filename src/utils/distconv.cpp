@@ -202,14 +202,14 @@ TensorDev::data_type *get_shuffler_src_buf(const TensorDev &tensor) {
   // Allocate if null
   if (shuffler_src_buf == nullptr) {
     shuffler_src_buf_size = TensorShuffler::get_buf_size(tensor);
-    MPIPrintStreamInfo() << "Allocating shared shuffler buffer of size "
-                         << shuffler_src_buf_size;
+    MPIPrintStreamDebug() << "Allocating shared shuffler buffer of size "
+                          << shuffler_src_buf_size;
     DISTCONV_CUDA_MALLOC(&shuffler_src_buf, shuffler_src_buf_size);
   }
   // Returns the pre-allocated memory if it's large enough
   size_t required_size = TensorShuffler::get_buf_size(tensor);
   if (required_size <= shuffler_src_buf_size) {
-    MPIPrintStreamInfo() << "Using shared shuffler buffer";
+    MPIPrintStreamDebug() << "Using shared shuffler buffer";
     return static_cast<TensorDev::data_type*>(shuffler_src_buf);
   } else {
     return nullptr;
@@ -219,14 +219,14 @@ TensorDev::data_type *get_shuffler_dst_buf(const TensorDev &tensor) {
   // Allocate if null
   if (shuffler_dst_buf == nullptr) {
     shuffler_dst_buf_size = TensorShuffler::get_buf_size(tensor);
-    MPIPrintStreamInfo() << "Allocating shared shuffler buffer of size "
-                         << shuffler_src_buf_size;
+    MPIPrintStreamDebug() << "Allocating shared shuffler buffer of size "
+                          << shuffler_src_buf_size;
     DISTCONV_CUDA_MALLOC(&shuffler_dst_buf, shuffler_dst_buf_size);
   }
   size_t required_size = TensorShuffler::get_buf_size(tensor);
   // Returns the pre-allocated memory if it's large enough
   if (required_size <= shuffler_dst_buf_size) {
-    MPIPrintStreamInfo() << "Using shared shuffler buffer";
+    MPIPrintStreamDebug() << "Using shared shuffler buffer";
     return static_cast<TensorDev::data_type*>(shuffler_dst_buf);
   } else {
     return nullptr;

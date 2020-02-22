@@ -1272,7 +1272,7 @@ bool Layer::using_distconv() const {
   const auto &ps = get_parallel_strategy();
   ParallelStrategy default_zero_ps;
   if (ps == default_zero_ps) {
-    MPIRootPrintStreamInfo()
+    MPIRootPrintStreamDebug()
         << "Disable " << get_name()
         << " as it does not have a parallel strategy.";
     return false;
@@ -1346,7 +1346,6 @@ bool Layer::early_terminate_last_iteration() const {
 void Layer::setup_inter_layer_adaptation() {
   if (!distconv_enabled()) return;
 
-  MPIRootPrintStreamInfo() << get_name() << ": setup_copyin_copyout";
   const auto &ps = get_parallel_strategy();
   m_parent_copy_in_required = false;
   m_parent_shuffle_required = false;
@@ -1359,10 +1358,6 @@ void Layer::setup_inter_layer_adaptation() {
     }
   }
   m_parent_shuffle_required |= m_parent_copy_in_required;
-  MPIRootPrintStreamInfo() << "m_parent_copy_in_required: "
-                           << m_parent_copy_in_required
-                           << ", m_parent_shuffle_required: "
-                           << m_parent_shuffle_required;
 
   m_child_copy_out_required = false;
   m_child_shuffle_required = false;
@@ -1380,10 +1375,23 @@ void Layer::setup_inter_layer_adaptation() {
     m_child_copy_out_required = true;
   }
   m_child_shuffle_required |= m_child_copy_out_required;
-  MPIRootPrintStreamInfo() << "m_child_copy_out_required: "
-                           << m_child_copy_out_required
-                           << ", m_child_shuffle_required: "
-                           << m_child_shuffle_required;
+
+  std::stringstream ss;
+  if (m_parent_copy_in_required) {
+    ss << " parent copyin required;";
+  }
+  if (m_parent_shuffle_required) {
+    ss << " parent shuffle required;";
+  }
+  if (m_child_copy_out_required) {
+    ss << " child copyout required;";
+  }
+  if (m_child_shuffle_required) {
+    ss << " child shuffle required;";
+  }
+  if (ss.str().size() > 0) {
+    MPIRootPrintStreamInfo() << get_name() << ":" << ss.str();
+  }
 }
 
 void Layer::setup_keep_original_tensors() {
@@ -1402,8 +1410,8 @@ void Layer::setup_tensor_distribution_init(
   if (!distconv_enabled()) return;
   const int num_dims = get_num_dims();
   auto &ps = get_parallel_strategy();
-  MPIRootPrintStreamInfo() << "Parallel Strategy for layer " << get_name()
-                           << ": " << ps;
+  MPIRootPrintStreamDebug() << "Parallel Strategy for layer " << get_name()
+                            << ": " << ps;
   int n = ps.sample_groups;
   int c = ps.channel_groups;
   int f = ps.filter_groups;
@@ -1446,8 +1454,8 @@ void Layer::setup_tensor_distribution_init(
     xd_array = dc::util::join_xd_array(std::vector<int>({n, c, h, w}));
     xd_array_names = "NxCxHxW";
   }
-  MPIRootPrintStreamInfo() << "Process grid of " << xd_array_names << ": "
-                           << xd_array;
+  MPIRootPrintStreamDebug() << "Process grid of " << xd_array_names << ": "
+                            << xd_array;
 
   assert_always(spatial_prod * n * c == np && spatial_prod * n * f == np);
 
@@ -1723,7 +1731,7 @@ void Layer::setup_error_signals_tensor(const std::array<Dist, dc::num_dists> &di
                                 dists[2],
                                 m_prev_activations_t.get_local_shape());
   if (skip_first_layer_bp()) {
-    MPIPrintStreamInfo()
+    MPIPrintStreamDebug()
         << get_name() << ": skipping allocation of error signals";
   } else {
     assert0(m_error_signals_t.allocate());

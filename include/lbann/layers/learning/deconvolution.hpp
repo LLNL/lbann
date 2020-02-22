@@ -265,7 +265,7 @@ protected:
     if (!this->distconv_enabled()) return;
 
     if (dc::is_deterministic()) {
-      dc::MPIRootPrintStreamInfo() << "Using deterministic convolution algorithms";
+      dc::MPIRootPrintStreamDebug() << "Using deterministic convolution algorithms";
       this->m_fwd_algo = "DETERMINISTIC";
       this->m_bwd_data_algo = "DETERMINISTIC";
       this->m_bwd_filter_algo = "DETERMINISTIC";
