@@ -1,4 +1,4 @@
-"""Basic transformer model with multi-head self-attention.
+"""Basic Transformer model with multi-head self-attention.
 
 See:
 
@@ -16,7 +16,7 @@ import lbann.modules
 from lbann.util import str_list
 
 class TransformerEncoderLayer(lbann.modules.Module):
-    """Building block for encoder in transformer model.
+    """Building block for encoder in Transformer model.
 
     Comprised of multi-head attention and a fully-connected
     feedforward network, each with a residual connection.
@@ -76,7 +76,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
         ]
 
     def forward(self, x, mask=None):
-        """Apply transformer encoder layer.
+        """Apply Transformer encoder layer.
 
         Args:
             x (lbann.Layer): Sequence of input vectors.
@@ -132,7 +132,7 @@ class TransformerEncoderLayer(lbann.modules.Module):
         return z
 
 class TransformerDecoderLayer(lbann.modules.Module):
-    """Building block for decoder in transformer model.
+    """Building block for decoder in Transformer model.
 
     Comprised of two multi-head attention modules and a
     fully-connected feedforward network, each with a residual
@@ -198,12 +198,12 @@ class TransformerDecoderLayer(lbann.modules.Module):
         ]
 
     def forward(self, x, memory, src_mask=None, tgt_mask=None):
-        """Apply transformer decoder layer.
+        """Apply Transformer decoder layer.
 
         Args:
             x (lbann.Layer): Sequence of input vectors.
             memory (lbann.Layer): Sequence of vectors produced by
-                transformer encoder stack.
+                Transformer encoder stack.
             src_mask (lbann.Layer, optional): Attention mask for
                 second attention module (attends to both `x` and
                 `memory`).
@@ -403,7 +403,7 @@ class Transformer(lbann.modules.Module):
         return self._subsequent_mask_cache[size]
 
     def forward(self, source, source_length, target, target_length):
-        """Apply transformer.
+        """Apply Transformer.
 
         The input and output tensors are interpreted as sequences of
         vectors, where the first tensor dimension is the sequence

@@ -1,3 +1,4 @@
+"""Configure LBANN experiment with Transformer model."""
 import math
 import os.path
 

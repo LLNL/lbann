@@ -1,3 +1,4 @@
+"""Driver script for training Transformer example."""
 import argparse
 import datetime
 import math

@@ -1,3 +1,13 @@
+"""Evaluate Transformer example.
+
+The LBANN Transformer model is assumed to have saved its weights to
+weight files with the "dump weights" callback. These weights are
+loaded into a PyTorch model and English-German translation is
+performed with greedy decoding on the WMT 2014 validation dataset.
+BLEU scores are computed for the predicted translations.
+
+"""
+
 import argparse
 import os.path
 import sys
@@ -19,8 +29,11 @@ import utils.paths
 # Options
 # ----------------------------------------------
 
-# Hard-coded
-mini_batch_size = 64
+# Evaluation options
+mini_batch_size = 64    # Doesn't need to match training
+
+# Hard-coded model parameters
+# Note: Must match parameters from training.
 embed_dim = 512
 num_heads = 8
 num_encoder_layers = 6
@@ -81,7 +94,12 @@ def get_batch(indices):
 # ----------------------------------------------
 
 def load_parameter(weight_file):
-    """Create a PyTorch Parameter object with weights from LBANN."""
+    """Create a PyTorch Parameter object with weights from LBANN.
+
+    Weight file is assumed to have been created by the "dump weights"
+    callback in LBANN.
+
+    """
     data = np.loadtxt(weight_file, dtype=np.float32)
     return torch.nn.Parameter(
         data=torch.from_numpy(data),
@@ -89,7 +107,13 @@ def load_parameter(weight_file):
     )
 
 def load_embedding_layer(weights_prefix):
-    """Create a PyTorch embedding layer with weights from LBANN."""
+    """Create a PyTorch embedding layer with weights from LBANN.
+
+    Weight files are assumed to have been created by the "dump
+    weights" callback in LBANN. They should be in the form
+    <weights_prefix>-embeddings-Weights.txt.
+
+    """
     weight_file = f'{weights_prefix}-embeddings-Weights.txt'
     weight = load_parameter(weight_file).transpose(1,0)
     return torch.nn.Embedding(
@@ -100,7 +124,13 @@ def load_embedding_layer(weights_prefix):
     )
 
 def load_transformer(weights_prefix):
-    """Create a PyTorch transformer with weights from LBANN."""
+    """Create a PyTorch transformer with weights from LBANN.
+
+    Weight files are assumed to have been created by the "dump
+    weights" callback in LBANN. They should be in the form
+    <weights_prefix>-<weight_name>-Weights.txt.
+
+    """
 
     # PyTorch transformer model
     transformer = torch.nn.Transformer(
@@ -224,7 +254,13 @@ def greedy_decode(tokens_en, embedding_layer, transformer, classifier):
     return tokens_de
 
 def evaluate_transformer(weights_prefix):
-    """Evaluate transformer model with weights from LBANN."""
+    """Evaluate transformer model with weights from LBANN.
+
+    Weight files are assumed to have been created by the "dump
+    weights" callback in LBANN. They should be in the form
+    <weights_prefix>-<weight_name>-Weights.txt.
+
+    """
 
     # Load model weights from file
     embedding_layer = load_embedding_layer(weights_prefix)
@@ -268,6 +304,10 @@ def evaluate_transformer(weights_prefix):
         f'min={np.min(bleu_scores)}, '
         f'max={np.max(bleu_scores)}'
     )
+
+# ----------------------------------------------
+# Command-line options if run as script
+# ----------------------------------------------
 
 if __name__ == "__main__":
 
