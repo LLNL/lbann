@@ -58,10 +58,6 @@
 #define LBANN_HAS_DISTCONV
 #endif
 
-#ifdef LBANN_HAS_DISTCONV
-#cmakedefine LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
-#endif // LBANN_HAS_DISTCONV
-
 // Define the LBANN datatype
 namespace lbann
 {

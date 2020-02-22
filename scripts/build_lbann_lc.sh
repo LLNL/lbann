@@ -293,7 +293,8 @@ while :; do
             exit 1
             ;;
         --distconv-cosmoflow-int16)
-            LBANN_DISTCONV_COSMOFLOW_KEEP_INT16=ON
+            echo "Error: do not pass --distconv-cosmoflow-int16 as it is no longer used"
+            exit 1
             ;;
         --with-p2p)
             WITH_P2P=ON
@@ -845,7 +846,6 @@ cmake \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
 -D DIHYDROGEN_URL=${DIHYDROGEN_URL} \
 -D DIHYDROGEN_TAG=${DIHYDROGEN_TAG} \
--D LBANN_DISTCONV_COSMOFLOW_KEEP_INT16=${LBANN_DISTCONV_COSMOFLOW_KEEP_INT16} \
 -D LBANN_SB_BUILD_P2P=${WITH_P2P} \
 -D LBANN_WITH_P2P=${WITH_P2P} \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_AVOID_CUDA_AWARE_MPI=${AVOID_CUDA_AWARE_MPI} \

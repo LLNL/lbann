@@ -39,6 +39,7 @@
 #include "lbann/layers/image/bilinear_resize.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input/input_layer_distconv.hpp"
 #include "lbann/layers/io/io_layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
@@ -112,6 +113,37 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr,
                                                   bool& is_supported);
 
 template <data_layout Layout, El::Device Device>
+std::unique_ptr<Layer> construct_input_layer(
+    lbann_comm* comm,
+    const std::map<execution_mode, generic_data_reader*>& data_readers,
+    int num_parallel_readers,
+    bool data_set_per_model,
+    data_reader_target_mode target_mode,
+    const std::string &type_name) {
+#ifdef LBANN_HAS_DISTCONV
+  if (type_name == "int16") {
+    return lbann::make_unique<input_layer_distconv<
+      partitioned_io_buffer,Layout,Device,int16_t>>(
+          comm, num_parallel_readers, data_readers, !data_set_per_model,
+          target_mode);
+  } else if (type_name.empty()) {
+    return lbann::make_unique<input_layer_distconv<
+      partitioned_io_buffer,Layout,Device,DataType>>(
+          comm, num_parallel_readers, data_readers, !data_set_per_model,
+          target_mode);
+  } else {
+    LBANN_ERROR("Invalid type name for input_layer data type:",
+                type_name);
+  }
+#else
+  return lbann::make_unique<input_layer<
+    partitioned_io_buffer,Layout,Device>>(
+        comm, num_parallel_readers, data_readers, !data_set_per_model,
+        target_mode);
+#endif
+}
+
+template <data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> construct_layer(
   lbann_comm* comm,
   const std::map<execution_mode, generic_data_reader*>& data_readers,
@@ -132,18 +164,17 @@ std::unique_ptr<Layer> construct_layer(
     const auto& params = proto_layer.input();
     const auto& io_buffer = params.io_buffer();
     const auto& mode_str = params.target_mode();
+    const auto& data_type_str = params.data_type();
     data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION;
     if (mode_str.empty() || mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
     if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
     if (mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
     if (io_buffer == "partitioned" || io_buffer.empty()) {
-      return lbann::make_unique<input_layer<partitioned_io_buffer,Layout,Device>>(
-               comm,
-               num_parallel_readers,
-               data_readers,
-               !params.data_set_per_model(),
-               target_mode);
+      return construct_input_layer<Layout, Device>(
+          comm, data_readers, num_parallel_readers,
+          params.data_set_per_model(), target_mode,
+          data_type_str);
     } else {
       LBANN_ERROR("invalid IO buffer type (" + io_buffer + ")");
     }

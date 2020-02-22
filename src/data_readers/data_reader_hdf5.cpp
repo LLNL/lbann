@@ -56,9 +56,6 @@ const std::string hdf5_reader::HDF5_KEY_RESPONSES = "unitPar";
 hdf5_reader::hdf5_reader(const bool shuffle)
     : generic_data_reader(shuffle),
       m_use_data_store(options::get()->get_bool("use_data_store")) {
-#ifndef LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
-  LBANN_ERROR("HDF5 reader requires LBANN_DISTCONV_COSMOFLOW_KEEP_INT16 to be defined. Use the --distconv-cosmoflow-int16 option of build_lbann_lc.sh");
-#endif
 }
 
 hdf5_reader::hdf5_reader(const hdf5_reader& rhs)  : generic_data_reader(rhs) {

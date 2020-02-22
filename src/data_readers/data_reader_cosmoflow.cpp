@@ -146,18 +146,10 @@ bool cosmoflow_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
 
   Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx+1));
 
-  // Convert int16 to DataType.
   const short *data = data_npy.data<short>() + (size_t) offset * m_num_features;
   DataType *dest = X_v.Buffer();
-
-#ifdef LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
   std::memcpy(dest, data, sizeof(short) * m_num_features);
-#else
-  // OPTIMIZE
-  LBANN_OMP_PARALLEL_FOR
-      for(int j = 0; j < m_num_features; j++)
-        dest[j] = data[j] * m_scaling_factor_int16;
-#endif // LBANN_DISTCONV_COSMOFLOW_KEEP_INT16
+
   prof_region_end("fetch_datum", false);
   return true;
 }
