@@ -84,6 +84,7 @@ message Callback {
     bool low_score_wins = 4;
     string communication_algorithm = 5;   // default: "sendrecv_weights"
     bool exchange_hyperparameters = 6;
+    string checkpoint_basedir = 7;
   }
 
   message CallbackStepLearningRate {
