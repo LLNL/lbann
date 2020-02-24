@@ -38,8 +38,8 @@ def construct_model():
     z_dim = 20  #Latent space dim
 
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
-    d1_real, d1_fake, d_adv, pred_y  = jag_models.WAE(z_dim,y_dim)(z,gt_y) 
-    
+    d1_real, d1_fake, d_adv, pred_y  = jag_models.WAE(z_dim,y_dim)(z,gt_y)
+
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')
     d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
@@ -72,12 +72,10 @@ def construct_model():
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
                                       batch_interval=2)]
-                                            
+
     # Construct model
-    mini_batch_size = 128
     num_epochs = 100
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        weights=weights,
                        layers=layers,
                        metrics=metrics,
@@ -87,8 +85,17 @@ def construct_model():
 
 if __name__ == '__main__':
     import lbann
-    
-    trainer = lbann.Trainer()
+
+    # Command-line arguments
+    desc = ('Construct and run a WAE on JAG data. ')
+    parser = argparse.ArgumentParser(description=desc)
+    lbann.contrib.args.add_scheduler_arguments(parser)
+    parser.add_argument(
+        '--mini-batch-size', action='store', default=128, type=int,
+        help='mini-batch size (default: 128)', metavar='NUM')
+    args = parser.parse_args()
+
+    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
@@ -103,6 +110,6 @@ if __name__ == '__main__':
                        nodes=1,
                        procs_per_node=1,
                        time_limit=360,
-                       setup_only=True, 
+                       setup_only=True,
                        job_name='jag_wae')
     print(status)

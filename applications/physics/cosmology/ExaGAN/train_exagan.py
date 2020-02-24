@@ -66,10 +66,8 @@ def construct_model():
                                       batch_interval=2)]
 
     # Construct model
-    mini_batch_size = 64
     num_epochs = 20
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        weights=weights,
                        layers=layers,
                        metrics=metrics,
@@ -110,7 +108,16 @@ def construct_data_reader():
 if __name__ == '__main__':
     import lbann
 
-    trainer = lbann.Trainer()
+    # Command-line arguments
+    desc = ('Construct and run ExaGAN on Cosmology data. ')
+    parser = argparse.ArgumentParser(description=desc)
+    lbann.contrib.args.add_scheduler_arguments(parser)
+    parser.add_argument(
+        '--mini-batch-size', action='store', default=64, type=int,
+        help='mini-batch size (default: 64)', metavar='NUM')
+    args = parser.parse_args()
+
+    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0002,beta1=0.5,beta2=0.99,eps=1e-8)

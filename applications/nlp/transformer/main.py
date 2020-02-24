@@ -85,8 +85,19 @@ train_script.add_command(
 )
 train_script.run(overwrite=True)
 
+# Create LBANN objects
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
+metrics = []
+callbacks = [lbann.CallbackPrint(),
+             lbann.CallbackTimer()]
+model = lbann.Model(args.num_epochs,
+                    layers=lbann.traverse_layer_graph(input_),
+                    objective_function=loss,
+                    metrics=metrics,
+                    callbacks=callbacks)
+opt = lbann.Adam(learn_rate=0.0004, beta1=0.9, beta2=0.98, eps=1e-9) # TODO: LR schedule
+
 # ----------------------------------------------
 # Evaluate
 # ----------------------------------------------
-
 evaluate.evaluate_transformer(weights_prefix)
