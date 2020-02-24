@@ -28,7 +28,7 @@
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/image.hpp"
@@ -1483,7 +1483,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 }
 
 bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
-  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);

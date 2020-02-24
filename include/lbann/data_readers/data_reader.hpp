@@ -56,7 +56,7 @@
 namespace lbann {
 
 class data_store_conduit;
-class model;
+class trainer;
 
 /**
  * A data reader manages reading in data in a particular format.
@@ -101,7 +101,7 @@ class generic_data_reader {
     m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
-    m_model(nullptr),
+    m_trainer(nullptr),
     m_issue_warning(true)
   {}
   generic_data_reader(const generic_data_reader&) = default;
@@ -623,7 +623,7 @@ class generic_data_reader {
 
   void instantiate_data_store();
 
-  virtual void preload_data_store(); 
+  virtual void preload_data_store();
 
   void set_gan_labelling(bool has_gan_labelling) {
      m_gan_labelling = has_gan_labelling;
@@ -637,9 +637,9 @@ class generic_data_reader {
 
   virtual bool priming_data_store() const;
 
-  void set_model(model *m) { m_model = m; }
+  void set_trainer(trainer *t) { m_trainer = t; }
 
-  model * get_model() const { return m_model; }
+  trainer *get_trainer() const { return m_trainer; }
 
   /// experimental; used to ensure all readers for jag_conduit_hdf5
   /// have identical shuffled indices
@@ -844,8 +844,7 @@ private:
   /// this sets various member variables (num_iterations, m_reset_mini_batch_index,
   /// etc.
   void set_jag_variables(int mb_size);
-  model *m_model;
-
+  trainer *m_trainer;
 
   /** Transform pipeline for preprocessing data. */
   transform::transform_pipeline m_transform_pipeline;

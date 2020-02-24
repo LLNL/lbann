@@ -291,10 +291,6 @@ std::unique_ptr<model> construct_model(
   if (!name.empty()) {
     m->set_name(name);
   }
-  // BVE FIXME
-  // for (auto t : data_readers) {
-  //   t.second->set_model(m.get());
-  // }
   return m;
 
 }

@@ -44,6 +44,10 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
     t->set_name(name);
   }
 
+  for (auto d : data_readers) {
+    d.second->set_trainer(t.get());
+  }
+
   // Construct callbacks
   for (int i=0; i<proto_trainer.callback_size(); i++) {
     t->add_callback(construct_callback(proto_trainer.callback(i)));

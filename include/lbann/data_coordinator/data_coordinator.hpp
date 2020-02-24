@@ -28,6 +28,7 @@
 #define LBANN_DATA_COORDINATOR_HPP
 
 #include "lbann/utils/dataset.hpp"
+#include "lbann/execution_contexts/execution_context.hpp"
 #include <cereal/types/utility.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
@@ -49,7 +50,8 @@ class data_coordinator {
     m_testing_dataset(),
     m_validation_dataset(),
     m_data_readers(data_readers),
-    m_data_set_processed(false) {
+    m_data_set_processed(false),
+    m_execution_context(nullptr) {
 
     if(m_data_readers[execution_mode::training] != nullptr) {
       this->m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
@@ -77,7 +79,8 @@ class data_coordinator {
       m_training_dataset(other.m_training_dataset),
       m_testing_dataset(other.m_testing_dataset),
       m_validation_dataset(other.m_validation_dataset),
-      m_data_readers(other.m_data_readers) {
+      m_data_readers(other.m_data_readers),
+      m_execution_context(other.m_execution_context) {
     for (auto& dr : m_data_readers) {
       dr.second = dr.second ? dr.second->copy() : nullptr;
     }
@@ -101,6 +104,24 @@ class data_coordinator {
   }
 
   void setup(int max_mini_batch_size);
+
+  /** Check to see if there is a valid training context for the data coordinator */
+  bool has_valid_execution_context() const {
+    return (m_execution_context != nullptr);
+  }
+
+  /** Grab the training context of the data coordinator */
+  const execution_context& get_execution_context() const {
+    if(m_execution_context == nullptr) {
+      LBANN_ERROR("execution context is not set");
+    }
+    return *m_execution_context;
+  }
+
+  /** Grab the training context of the data coordinator */
+  execution_context& get_execution_context() {
+    return const_cast<execution_context&>(static_cast<const data_coordinator&>(*this).get_execution_context());
+  }
 
   //************************************************************************
   // Helper functions to access the data readers
@@ -144,6 +165,12 @@ class data_coordinator {
     }
     LBANN_ERROR("get_data_dims: no available data readers");
     return {};
+  }
+
+  // At the start of the epoch, set the execution mode and make sure
+  // that each layer points to this model
+  void reset_mode(execution_context& context) {
+    m_execution_context = static_cast<observer_ptr<execution_context>>(&context);
   }
 
   //************************************************************************
@@ -350,6 +377,9 @@ class data_coordinator {
 public:  // @todo BVE FIXME
   bool m_data_set_processed;
   std::mutex dr_mutex;
+
+  /** Pointer to the execution context object used for training or evaluating this model */
+  observer_ptr<execution_context> m_execution_context;
 };
 
 } // namespace lbann
