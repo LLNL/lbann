@@ -5,6 +5,8 @@ model {
   data_layout: "data_parallel"
   num_epochs: 20
   disable_cuda: true
+  num_epochs: 3
+
   ###################################################
   # Objective function
   ###################################################
