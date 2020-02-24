@@ -1,3 +1,5 @@
+import functools
+import operator
 import os
 import os.path
 import sys
@@ -16,11 +18,15 @@ import tools
 # the functions below to ingest data.
 
 # Data
-np.random.seed(20190708)
-_num_samples = 23
-_sample_size = 7
-_samples = np.random.normal(size=(_num_samples,_sample_size))
-_samples = _samples.astype(np.float32)
+np.random.seed(20190911)
+_num_samples = 31
+_sample_dims = (11,)
+_sample_size = functools.reduce(operator.mul, _sample_dims)
+_samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
+_samples[1,:] = 0.5
+_samples[15,:] = -1.0
+_samples[15,3] = -0.5
+_samples[15,5] = -0.5
 
 # Sample access functions
 def get_sample(index):
@@ -55,19 +61,33 @@ def construct_model(lbann):
 
     """
 
-    # Layer graph
-    x = lbann.Input()
-    obj = lbann.L2Norm2(x)
-    layers = list(lbann.traverse_layer_graph(x))
-    metric = lbann.Metric(obj, name='obj')
+    # Convenience function to convert list to a space-separated string
+    def str_list(it):
+        return ' '.join([str(i) for i in it])
+
+    # Convenience function to compute L2 norm squared with NumPy
+    def l2_norm2(x):
+        x = x.reshape(-1)
+        return np.inner(x, x)
+
+    # LBANN implementation
+    x = lbann.Reshape(lbann.Input(), dims=str_list(_sample_dims))
+    y = lbann.Argmax(x, device='cpu')
+    z = lbann.L2Norm2(y)
+
+    # Objects for LBANN model
+    obj = z
+    metric = lbann.Metric(z, name='obj')
+    layers = list(lbann.traverse_layer_graph(z))
     callbacks = []
 
-    # Compute expected value with NumPy
+    # Get expected metric value from NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)
-        obj = np.inner(x, x)
-        vals.append(obj)
+        x = get_sample(i).reshape(_sample_dims)
+        y = np.argmax(x)
+        z = l2_norm2(y)
+        vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
@@ -78,12 +98,13 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # Construct model
-    mini_batch_size = 5
+    mini_batch_size = 17
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,
                        layers=layers,
-                       metrics=[metric],
+                       objective_function=obj,
+                       metrics=metric,
                        callbacks=callbacks)
 
 def construct_data_reader(lbann):

@@ -136,6 +136,7 @@ void check_error(bool force_error) {
 
     // Clean up and throw exception
     PyErr_Restore(type.release(), value.release(), traceback.release());
+    PyErr_Clear();
     LBANN_ERROR(err.str());
 
   }
@@ -219,6 +220,41 @@ PyObject* object::release() noexcept {
   auto old_ptr = m_ptr;
   m_ptr = nullptr;
   return old_ptr;
+}
+
+object::operator std::string() {
+  global_interpreter_lock gil;
+  if (m_ptr == nullptr) {
+    LBANN_ERROR("Attempted to convert Python object to std::string, "
+                "but it has not been set");
+  }
+  object python_str = PyObject_Str(m_ptr);
+  std::ostringstream ss;
+  ss << PyUnicode_AsUTF8(python_str);
+  check_error();
+  return ss.str();
+}
+
+object::operator long() {
+  global_interpreter_lock gil;
+  if (m_ptr == nullptr) {
+    LBANN_ERROR("Attempted to convert Python object to long, "
+                "but it has not been set");
+  }
+  auto val = PyLong_AsLong(m_ptr);
+  check_error();
+  return val;
+}
+
+object::operator double() {
+  global_interpreter_lock gil;
+  if (m_ptr == nullptr) {
+    LBANN_ERROR("Attempted to convert Python object to double, "
+                "but it has not been set");
+  }
+  auto val = PyFloat_AsDouble(m_ptr);
+  check_error();
+  return val;
 }
 
 } // namespace python

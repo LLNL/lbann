@@ -1,7 +1,6 @@
 # LBANN implementation of MNIST VAE in Doersch's autoencoder tutorial
 # See https://github.com/cdoersch/vae_tutorial/blob/master/mnist_vae.prototxt
 trainer {
-  block_size: 256
 }
 model {
   data_layout: "data_parallel"
