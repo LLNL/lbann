@@ -706,7 +706,7 @@ def create_tests(setup_func,
         test_name (str, optional): Descriptive name (default: test
             file name with '.py' removed).
         **kwargs: Keyword arguments to pass into
-            `lbann.contrib.lc.launcher.run`.
+            `lbann.contrib.launcher.run`.
 
     Returns:
         Iterable of function: Tests that can interact with PyTest.
@@ -751,7 +751,7 @@ def create_tests(setup_func,
                                             'site-packages')
         sys.path.append(python_frontend_path)
         import lbann
-        import lbann.contrib.lc.launcher
+        import lbann.contrib.launcher
 
         # Setup LBANN experiment
         trainer, model, data_reader, optimizer = setup_func(lbann)
@@ -771,7 +771,7 @@ def create_tests(setup_func,
         experiment_dir = _kwargs['experiment_dir']
         stdout_log_file = os.path.join(experiment_dir, 'out.log')
         stderr_log_file = os.path.join(experiment_dir, 'err.log')
-        return_code = lbann.contrib.lc.launcher.run(
+        return_code = lbann.contrib.launcher.run(
             trainer=trainer,
             model=model,
             data_reader=data_reader,

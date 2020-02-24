@@ -3,7 +3,7 @@ import argparse
 import os.path
 
 import lbann
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 import lbann.contrib.args
 
 import dataset
@@ -142,8 +142,8 @@ model = lbann.Model(args.mini_batch_size,
 
 # Run LBANN
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.lc.launcher.run(trainer, model, reader, opt,
-                              job_name=args.job_name,
-                              experiment_dir=args.experiment_dir,
-                              overwrite_script=True,
-                              **kwargs)
+lbann.contrib.launcher.run(trainer, model, reader, opt,
+                           job_name=args.job_name,
+                           experiment_dir=args.experiment_dir,
+                           overwrite_script=True,
+                           **kwargs)
