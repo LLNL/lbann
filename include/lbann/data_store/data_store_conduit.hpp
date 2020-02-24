@@ -212,7 +212,6 @@ protected :
   /// convenience handle
   const std::vector<int> *m_shuffled_indices;
 
-  void exchange_data_by_super_node(size_t current_pos, size_t mb_size);
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
 
   /// Contains the list of data IDs that will be received
