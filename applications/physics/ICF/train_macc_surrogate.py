@@ -106,7 +106,7 @@ def construct_model():
                lbann.Metric(L_cyc_x, name='param cycle loss')]
 
     callbacks = [lbann.CallbackPrint(),
-                 #lbann.CallbackLoadModel(dir=str(pre_trained_dir)),
+                 lbann.CallbackLoadModel(dir=str(pre_trained_dir)),
                  lbann.CallbackTimer()]
                                             
     # Construct model
