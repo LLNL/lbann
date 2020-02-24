@@ -1483,20 +1483,21 @@ void model::setup_distconv() {
     dc::MPIRootPrintStreamDebug()
         << layer.get_name() << "; " << names.str();
   }
+  std::stringstream ss;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     const auto& layer = get_layer(i);
     if (layer.distconv_enabled()) {
-      dc::MPIRootPrintStreamInfo()
-          << layer.get_name()
-          << "; prev_activations_dist: " << dists[&layer][0]
-          << ", activations_dist: " << dists[&layer][1]
-          << ", error_signals_dist: " << dists[&layer][2]
-          << ", prev_error_signals_dist: " << dists[&layer][3];
+      ss << layer.get_name()  << " disributions: "
+         << "prev_activations: " << dists[&layer][0]
+         << ", activations: " << dists[&layer][1]
+         << ", error_signals: " << dists[&layer][2]
+         << ", prev_error_signals: " << dists[&layer][3]
+         << "\n";
     } else {
-      dc::MPIRootPrintStreamInfo()
-          << layer.get_name() << "; distconv disabled";
+      ss << layer.get_name() << ": distconv disabled" << "\n";
     }
   }
+  dc::MPIRootPrintStreamInfo() << ss.str();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto &layer = get_layer(i);
     layer.setup_tensors_fwd(dists[&layer]);

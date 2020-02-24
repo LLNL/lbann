@@ -574,27 +574,26 @@ private:
     Layer::setup_tensor_distribution_init(
         dists, invariants, updated, fixed);
     if (distconv_enabled()) {
-      dc::IntVector overlap(dc::num_dims, 0);
-      for(int i = 0; i < dc::num_spatial_dims; i++) {
-#ifdef LBANN_DISTCONV_HAS_DEPTH
-        const int splits = std::vector<int>(
-            {this->get_parallel_strategy().depth_splits,
-             this->get_parallel_strategy().height_splits,
-             this->get_parallel_strategy().width_splits})[i];
-#else
-        const int splits = std::vector<int>(
-            {this->get_parallel_strategy().height_splits,
-             this->get_parallel_strategy().width_splits})[i];
-#endif // LBANN_DISTCONV_HAS_DEPTH
+      dc::IntVector overlap(this->get_num_dims(), 0);
+      const auto &ps = this->get_parallel_strategy();
+      auto pool_dims = this->m_pool_dims;
+      std::reverse(pool_dims.begin(), pool_dims.end());
+      for(int i = 0; i < this->get_num_spatial_dims(); i++) {
+        int splits = 0;
+        switch (i) {
+          case 0: splits = ps.width_splits; break;
+          case 1: splits = ps.height_splits; break;
+          case 2: splits = ps.depth_splits; break;
+        }
         if(splits == 1) continue;
         int ov = 0;
-        if (this->m_pool_dims[i] % 2) {
-          ov = (this->m_pool_dims[i] - 1) / 2;
+        if (pool_dims[i] % 2) {
+          ov = (pool_dims[i] - 1) / 2;
         } else {
           // no halo dependency is assumed for now
           ov = 0;
         }
-        overlap[dc::num_spatial_dims - 1 - i] = ov;
+        overlap[i] = ov;
       }
       auto &prev_activations_dist = dists[this][0];
       auto &activations_dist = dists[this][1];
@@ -621,7 +620,7 @@ private:
   dc::Shape get_activations_tensor_local_shape() const override {
     const std::vector<int> filter_dims(m_pool_dims.rbegin(), m_pool_dims.rend());
     const std::vector<int> strides(m_strides.rbegin(), m_strides.rend());
-    const std::vector<int> dilations(dc::num_spatial_dims, 1);
+    const std::vector<int> dilations(this->get_num_spatial_dims(), 1);
     bool use_padding = m_pads[0] != 0;
     auto output_spatial_local_shape =
         ::distconv::get_pooling_output_local_tensor_shape(
@@ -655,6 +654,7 @@ private:
 
     // Init the dc::Pooling layer
     m_pooling = new dc::Pooling(dc::get_backend(),
+                                this->get_num_dims(),
                                 dc::get_halo_exchange_method());
 
     std::string mode;
@@ -702,7 +702,7 @@ private:
     if (!Layer::using_distconv()) return false;
 
     bool cond = true;
-    for(int i = 0; i < dc::num_spatial_dims; i++) {
+    for(int i = 0; i < this->get_num_spatial_dims(); i++) {
       cond &= (m_pool_dims[i] % 2 != 0) ||
           (m_pool_dims[i] == m_strides[i]);
     }
@@ -712,7 +712,7 @@ private:
       return false;
     }
 
-    for (int i = 0; i < dc::num_spatial_dims; i++) {
+    for (int i = 0; i < this->get_num_spatial_dims(); i++) {
       bool odd = m_pool_dims[i] % 2;
       if (odd) {
         int stencil = (m_pool_dims[i] - 1) / 2;

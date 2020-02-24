@@ -40,11 +40,6 @@
 
 #define DISTCONV_HAS_CUDNN
 
-//#define DISTCONV_ZERO_OUT_ERROR_SIGNALS
-// temporary workaround
-#define DISTCONV_USE_SAME_RELU_CALL_AS_LBANN
-
-
 #include "distconv/distconv.hpp"
 #include "distconv/tensor/tensor_mpi_cuda.hpp"
 #include "distconv/tensor/shuffle_mpi.hpp"
@@ -59,10 +54,10 @@
 #endif // LBANN_HAS_P2P
 
 namespace lbann {
-namespace dc {
 
-static constexpr int num_dims = LBANN_DISTCONV_NUM_DIMS;
-static constexpr int num_spatial_dims = num_dims - 2;
+class Layer;
+
+namespace dc {
 
 ////////////////////////////////////////////////////////////
 // Helper type aliases
@@ -110,9 +105,9 @@ using MPIRootPrintStreamWaning = ::distconv::util::MPIRootPrintStreamWarning;
 using Backend = ::distconv::cudnn::BackendCUDNN;
 using ReLU = ::distconv::ReLU<Backend>;
 using LeakyReLU = ::distconv::LeakyReLU<Backend>;
-using Convolution = ::distconv::Convolution<Backend, num_dims, DataType>;
-using Pooling = ::distconv::Pooling<Backend, num_dims, DataType>;
-using BatchNormalization = ::distconv::BatchNormalization<Backend, num_dims, DataType>;
+using Convolution = ::distconv::Convolution<Backend, DataType>;
+using Pooling = ::distconv::Pooling<Backend, DataType>;
+using BatchNormalization = ::distconv::BatchNormalization<Backend, DataType>;
 using Softmax = ::distconv::Softmax<Backend>;
 using CrossEntropy = ::distconv::CrossEntropy<Backend>;
 
@@ -120,6 +115,7 @@ namespace tensor = ::distconv::tensor;
 namespace util = ::distconv::util;
 
 using ::distconv::get_sample_dim;
+using ::distconv::get_channel_dim;
 
 int get_strided_mpi_rank(MPI_Comm comm);
 MPI_Comm get_strided_mpi_comm(MPI_Comm comm);

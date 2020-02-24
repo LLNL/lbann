@@ -213,37 +213,40 @@ protected:
       std::set<dc::Dist*> &fixed) override {
     Layer::setup_tensor_distribution_init(
         dists, invariants, updated, fixed);
-    if (this->distconv_enabled()) {
-      dc::IntVector overlap(dc::num_dims, 0);
-      for(int i = 0; i < dc::num_spatial_dims; i++) {
-#ifdef LBANN_DISTCONV_HAS_DEPTH
-        const int splits = std::vector<int>(
-            {this->get_parallel_strategy().depth_splits,
-             this->get_parallel_strategy().height_splits,
-             this->get_parallel_strategy().width_splits})[i];
-#else
-        const int splits = std::vector<int>(
-            {this->get_parallel_strategy().height_splits,
-             this->get_parallel_strategy().width_splits})[i];
-#endif // LBANN_DISTCONV_HAS_DEPTH
-        if(splits > 1)
-          overlap[dc::num_spatial_dims - 1 - i] = (get_kernel_dims()[2 + i] - 1) / 2 * this->m_dilations[i];
+    if (!this->distconv_enabled()) return;
+
+    auto kernel_dims = get_kernel_dims();
+    std::reverse(kernel_dims.begin(), kernel_dims.end());
+    auto dilations = this->m_dilations;
+    std::reverse(dilations.begin(), dilations.end());
+    dc::IntVector overlap(this->get_num_dims(), 0);
+    const auto &ps = this->get_parallel_strategy();
+    // i=0 -> width; i=1 -> height; i=2: -> depth;
+    for(int i = 0; i < this->get_num_spatial_dims(); i++) {
+      int splits = 0;
+      switch (i) {
+        case 0: splits = ps.width_splits; break;
+        case 1: splits = ps.height_splits; break;
+        case 2: splits = ps.depth_splits; break;
       }
-      auto &prev_activations_dist = dists[this][0];
-      prev_activations_dist.set_overlap(overlap);
-      updated.insert(&prev_activations_dist);
-      fixed.insert(&prev_activations_dist);
-      auto &prev_error_signals_dist = dists[this][3];
-      prev_error_signals_dist.set_overlap(overlap);
-      updated.insert(&prev_error_signals_dist);
-      fixed.insert(&prev_error_signals_dist);
-      // To deal with strides, error signals must have the same size
-      // of overlap
-      auto &error_signals_dist = dists[this][2];
-      error_signals_dist.set_overlap(overlap);
-      updated.insert(&error_signals_dist);
-      fixed.insert(&error_signals_dist);
+      if (splits > 1) {
+        overlap[i] = (kernel_dims[i] - 1) / 2 * dilations[i];
+      }
     }
+    auto &prev_activations_dist = dists[this][0];
+    prev_activations_dist.set_overlap(overlap);
+    updated.insert(&prev_activations_dist);
+    fixed.insert(&prev_activations_dist);
+    auto &prev_error_signals_dist = dists[this][3];
+    prev_error_signals_dist.set_overlap(overlap);
+    updated.insert(&prev_error_signals_dist);
+    fixed.insert(&prev_error_signals_dist);
+    // To deal with strides, error signals must have the same size
+    // of overlap
+    auto &error_signals_dist = dists[this][2];
+    error_signals_dist.set_overlap(overlap);
+    updated.insert(&error_signals_dist);
+    fixed.insert(&error_signals_dist);
   }
 
   dc::Shape get_activations_tensor_local_shape() const override {
@@ -266,7 +269,7 @@ protected:
     if (!this->distconv_enabled()) return;
 
     if (dc::is_deterministic()) {
-      dc::MPIRootPrintStreamInfo() << "Using deterministic convolution algorithms";
+      dc::MPIRootPrintStreamDebug() << "Using deterministic convolution algorithms";
       // Same algorithm as LBANN
       this->m_fwd_algo = "IMPLICIT_GEMM";
       // Deterministic algorithm
@@ -301,7 +304,7 @@ protected:
 
     bool cond = true;
     const auto& kernel_dims = get_kernel_dims();
-    for(int i = 0; i < dc::num_spatial_dims; i++) {
+    for(int i = 0; i < this->get_num_spatial_dims(); i++) {
       cond &= kernel_dims[2 + i] == kernel_dims[2];
       cond &= kernel_dims[2 + i] == this->m_pads[i] / this->m_dilations[i] * 2 + 1;
     }

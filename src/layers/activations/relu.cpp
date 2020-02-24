@@ -89,15 +89,6 @@ void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::setup_tensor_distr
       dists, invariants, updated, fixed);
   if (!distconv_enabled()) return;
   auto &layer_dists = dists[this];
-#ifdef DISTCONV_USE_SAME_RELU_CALL_AS_LBANN
-  // This isn't necessary for cuDNN, but necessary to make it work
-  // with the ordering of ReLU parameters used in LBANN
-  // x == y
-  invariants[&layer_dists[0]].insert(
-      &layer_dists[1]);
-  invariants[&layer_dists[1]].insert(
-      &layer_dists[0]);
-#endif
   // x == dx
   invariants[&layer_dists[0]].insert(
       &layer_dists[2]);

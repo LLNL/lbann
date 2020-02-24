@@ -1264,7 +1264,7 @@ private:
         m_kernel_gradient_e,
         this->get_weights()[0]->get_optimizer()->get_gradient().Buffer()));
 
-    m_conv = new Convolution(dc::get_backend(),
+    m_conv = new Convolution(dc::get_backend(), this->get_num_dims(),
                              dc::get_halo_exchange_method());
 
     // Bias tensor. Shared by all procs
@@ -1273,8 +1273,8 @@ private:
           << "Bias desc: "
           << dc::util::tostring(this->m_bias_cudnn_desc)
           << ", bias factor: " << this->m_bias_scaling_factor;
-      std::vector<int> bias_shape_v(dc::num_dims, 1);
-      bias_shape_v[dc::num_spatial_dims] = this->get_output_dims()[0];
+      std::vector<int> bias_shape_v(this->get_num_dims(), 1);
+      bias_shape_v[dc::get_channel_dim()] = this->get_output_dims()[0];
       Shape bias_shape(bias_shape_v);
       m_bias_t = TensorDev(bias_shape, loc, shared_dist);
       assert0(tensor::View(m_bias_t,

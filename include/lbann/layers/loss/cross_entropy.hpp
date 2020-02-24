@@ -241,7 +241,7 @@ private:
     dists[this][3].set_split_shape(error_signals_split);
 
     // No overlap supported yet
-    const dc::IntVector no_overlap(dc::num_dims, 0);
+    const dc::IntVector no_overlap(this->get_num_dims(), 0);
     for (int i = 0; i < 4; ++i) {
       auto &dist = dists[this][i];
       dist.set_overlap(no_overlap);
@@ -281,7 +281,8 @@ private:
   void setup_activations_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists)
       override {
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-    const auto sample_dist = get_hydrogen_matrix_distribution();
+    const auto sample_dist = get_hydrogen_matrix_distribution(
+        this->get_num_dims());
     const auto output_tensor_shape = m_activations_t.get_shape();
     auto output_local_shape = output_tensor_shape;
     // Set the sample dimension as 0 so that its actual value is
@@ -302,7 +303,8 @@ private:
       override {
     using namespace dc;
     const LocaleMPI loc(dc::get_mpi_comm(), false);
-    const auto sample_dist = get_hydrogen_matrix_distribution();
+    const auto sample_dist = get_hydrogen_matrix_distribution(
+        this->get_num_dims());
     const auto output_tensor_shape = m_activations_t.get_shape();
     auto output_local_shape = output_tensor_shape;
     // Set the sample dimension as 0 so that its actual value is

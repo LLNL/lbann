@@ -151,7 +151,7 @@ private:
     if (!this->distconv_enabled()) return;
 
     // No overlap supported yet
-    const dc::IntVector no_overlap(dc::num_dims, 0);
+    const dc::IntVector no_overlap(this->get_num_dims(), 0);
     for (int i = 0; i < 4; ++i) {
       auto &dist = dists[this][i];
       dist.set_overlap(no_overlap);

@@ -377,8 +377,8 @@ protected:
               m_mean_and_var->Matrix().Height(),
               num_channels * 2);
 
-    dc::Shape per_channel_stat_shape(dc::num_dims, 1);
-    per_channel_stat_shape[dc::num_spatial_dims] = num_channels;
+    dc::Shape per_channel_stat_shape(this->get_num_dims(), 1);
+    per_channel_stat_shape[dc::get_channel_dim()] = num_channels;
     auto shared_dist = dc::Dist::make_distribution(dists[0].get_locale_shape());
     auto split_shape = dists[0].get_split_shape();
     // set all dimensions to be 1 except for the channel dimension
@@ -439,7 +439,7 @@ protected:
     }
 
     m_bn = new dc::BatchNormalization(
-        dc::get_backend(), m_decay, m_epsilon, global_stats);
+        dc::get_backend(), this->get_num_dims(), m_decay, m_epsilon, global_stats);
 
     dc::MPIPrintStreamDebug()
         << "BN prev_error_signals: " << m_prev_error_signals_t

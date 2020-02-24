@@ -226,7 +226,7 @@ protected:
     auto &error_signals_dist = dists[this][2];
     auto &prev_error_signals_dist = dists[this][3];
     // Assumes zero halo all tensor for now
-    const dc::IntVector overlap(dc::num_dims, 0);
+    const dc::IntVector overlap(this->get_num_dims(), 0);
     // prev activations
     prev_activations_dist.set_overlap(overlap);
     updated.insert(&prev_activations_dist);
@@ -265,7 +265,7 @@ protected:
     if (!this->distconv_enabled()) return;
 
     if (dc::is_deterministic()) {
-      dc::MPIRootPrintStreamInfo() << "Using deterministic convolution algorithms";
+      dc::MPIRootPrintStreamDebug() << "Using deterministic convolution algorithms";
       this->m_fwd_algo = "DETERMINISTIC";
       this->m_bwd_data_algo = "DETERMINISTIC";
       this->m_bwd_filter_algo = "DETERMINISTIC";
@@ -297,7 +297,7 @@ protected:
     if (!Layer::using_distconv()) return false;
 
     const auto& kernel_dims = get_kernel_dims();
-    for(int i = 0; i < dc::num_spatial_dims; i++) {
+    for(int i = 0; i < this->get_num_spatial_dims(); i++) {
       auto pad = this->m_pads[i];
       if (pad != 0) {
         dc::MPIPrintStreamDebug() << this->get_name()
