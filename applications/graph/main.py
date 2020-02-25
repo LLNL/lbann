@@ -33,8 +33,8 @@ parser.add_argument(
     '--learning-rate', action='store', default=-1, type=float,
     help='learning rate (default: 0.025*mbsize)', metavar='VAL')
 parser.add_argument(
-    '--experiment-dir', action='store', default=None, type=str,
-    help='directory for experiment artifacts', metavar='DIR')
+    '--work-dir', action='store', default=None, type=str,
+    help='working directory', metavar='DIR')
 args = parser.parse_args()
 
 # ----------------------------------
@@ -144,6 +144,6 @@ model = lbann.Model(args.mini_batch_size,
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.launcher.run(trainer, model, reader, opt,
                            job_name=args.job_name,
-                           experiment_dir=args.experiment_dir,
+                           work_dir=args.work_dir,
                            overwrite_script=True,
                            **kwargs)

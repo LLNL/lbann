@@ -758,19 +758,19 @@ def create_tests(setup_func,
 
         # Configure kwargs to LBANN launcher
         _kwargs = copy.deepcopy(kwargs)
-        if 'experiment_dir' not in _kwargs:
-            _kwargs['experiment_dir'] = os.path.join(os.path.dirname(test_file),
-                                                    'experiments',
-                                                    test_name)
+        if 'work_dir' not in _kwargs:
+            _kwargs['work_dir'] = os.path.join(os.path.dirname(test_file),
+                                               'experiments',
+                                               test_name)
         if 'job_name' not in _kwargs:
             _kwargs['job_name'] = f'lbann_{test_name}'
         if 'overwrite_script' not in _kwargs:
             _kwargs['overwrite_script'] = True
 
         # Run LBANN
-        experiment_dir = _kwargs['experiment_dir']
-        stdout_log_file = os.path.join(experiment_dir, 'out.log')
-        stderr_log_file = os.path.join(experiment_dir, 'err.log')
+        work_dir = _kwargs['work_dir']
+        stdout_log_file = os.path.join(work_dir, 'out.log')
+        stderr_log_file = os.path.join(work_dir, 'err.log')
         return_code = lbann.contrib.launcher.run(
             trainer=trainer,
             model=model,
@@ -781,7 +781,7 @@ def create_tests(setup_func,
         assert_success(return_code, stderr_log_file)
         return {
             'return_code': return_code,
-            'experiment_dir': experiment_dir,
+            'work_dir': work_dir,
             'stdout_log_file': stdout_log_file,
             'stderr_log_file': stderr_log_file,
         }
