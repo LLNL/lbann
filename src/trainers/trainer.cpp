@@ -70,6 +70,10 @@ trainer::trainer(const trainer& other) :
   // Deep copies
   // m_io_thread_pool = (other.m_io_thread_pool ?
   //                     other.m_io_thread_pool->copy() : nullptr);
+  m_callbacks = other.m_callbacks;
+  for (auto& cb : m_callbacks) {
+    cb.reset(cb->copy());
+  }
 }
 
 trainer& trainer::operator=(const trainer& other) {
@@ -81,6 +85,10 @@ trainer& trainer::operator=(const trainer& other) {
   // Deep copies
   // m_io_thread_pool = (other.m_io_thread_pool ?
   //                     other.m_io_thread_pool->copy() : nullptr);
+  m_callbacks = other.m_callbacks;
+  for (auto& cb : m_callbacks) {
+    cb.reset(cb->copy());
+  }
 
   return *this;
 }
@@ -115,6 +123,11 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool) {
   // Setup I/O threads - set up before setting up the layers (input
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
+
+  // Set up callbacks
+  for (const auto& cb : m_callbacks) {
+    cb->setup(this);
+  }
 }
 
 /// Check if there is already an execution context for the model in this mode, if not create one

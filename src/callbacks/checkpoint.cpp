@@ -44,6 +44,11 @@ void checkpoint::setup(model *m) {
   reload_model(m);
 }
 
+void checkpoint::setup(trainer *t) {
+  p.set_cb_type(callback_type::invalid);
+  //  reload_trainer(t);
+}
+
 // Restoring the execution context from checkpoint occurs during just
 // before execution phase
 void checkpoint::on_train_begin(model *m) {
@@ -498,16 +503,16 @@ bool checkpoint::restart(model *m) {
 
 std::unique_ptr<callback_base>
 build_checkpoint_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+  const google::protobuf::Message& proto_msg) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackCheckpoint&>(proto_msg);
   return make_unique<checkpoint>(params.checkpoint_dir(),
-                                                params.checkpoint_epochs(),
-                                                params.checkpoint_steps(),
-                                                params.checkpoint_secs(),
-                                                params.per_rank_dir(),
-                                                params.ckpt_dist_epochs(),
-                                                params.ckpt_dist_steps());
+                                 params.checkpoint_epochs(),
+                                 params.checkpoint_steps(),
+                                 params.checkpoint_secs(),
+                                 params.per_rank_dir(),
+                                 params.ckpt_dist_epochs(),
+                                 params.ckpt_dist_steps());
 }
 
 } // namespace callback

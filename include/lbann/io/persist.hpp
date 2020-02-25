@@ -220,13 +220,18 @@ public:
 };
 
 template <typename C>
-void write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
-  std::ofstream os(p.get_filename(pt) + suffix);
+void write_cereal_archive(C& obj, const std::string& filename) {
+  std::ofstream os(filename);
   if(!os.is_open()) {
-    throw NonexistentArchiveFile(p.get_filename(pt) + suffix);
+    throw NonexistentArchiveFile(filename);
   }
   cereal::XMLOutputArchive archive(os);
   archive(obj);
+}
+
+template <typename C>
+void write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
+  write_cereal_archive<C>(obj, p.get_filename(pt) + suffix);
 }
 
 template <typename C>
@@ -236,13 +241,18 @@ void write_cereal_archive(C& obj, persist& p, execution_mode mode, const std::st
 }
 
 template <typename C>
-void read_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
-  std::ifstream is(p.get_filename(pt) + suffix);
+void read_cereal_archive(C& obj, const std::string& filename) {
+  std::ifstream is(filename);
   if(!is.is_open()) {
-    throw NonexistentArchiveFile(p.get_filename(pt) + suffix);
+    throw NonexistentArchiveFile(filename);
   }
   cereal::XMLInputArchive archive(is);
   archive(obj);
+}
+
+template <typename C>
+void read_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
+  read_cereal_archive(obj, p.get_filename(pt) + suffix);
 }
 
 template <typename C>

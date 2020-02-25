@@ -77,6 +77,18 @@ public:
   /** Human-readable description. */
   description get_description() const;
 
+  /** @brief Get the list of callbacks for the trainer. */
+  std::vector<std::shared_ptr<callback_base>>& get_callbacks() {
+    return m_callbacks;
+  }
+
+  void add_callback(std::shared_ptr<callback_base> cb) {
+    if (cb == nullptr) {
+      throw lbann_exception("model: Attempted to add null pointer as a callback.");
+    }
+    m_callbacks.push_back(std::move(cb));
+  }
+
   /** Set up the trainer. */
   void setup(std::unique_ptr<thread_pool> io_thread_pool);
 
@@ -151,6 +163,9 @@ private:
   std::unordered_map<std::pair<observer_ptr<model>, execution_mode>,
                      std::unique_ptr<execution_context>,
                      model_execution_context_hash_t> m_model_execution_context;
+
+  /** @brief Current callbacks to process. */
+  std::vector<std::shared_ptr<callback_base>> m_callbacks;
 };
 
 }  // namespace lbann

@@ -149,6 +149,7 @@ std::unique_ptr<model> build_model_from_prototext(
   lbann_comm *comm,
   options *opts,
   thread_pool& io_thread_pool,
+  std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
   bool first_model) {
 
   int random_seed = lbann_default_random_seed;
@@ -240,26 +241,31 @@ std::unique_ptr<model> build_model_from_prototext(
                                                             pb.trainer(),
                                                             pb.model());
 
+  // Add the trainer's callbacks to the model
+  for (auto&& c : shared_callbacks) {
+    ret_model->add_callback(c);
+  }
+
   // If the checkpoint directory has been overridden reset it before
   // setting up the model
   if (opts->has_string("ckpt_dir")) {
     for (auto&& c : ret_model->get_callbacks()) {
       {
-        auto* cb = dynamic_cast<callback::checkpoint*>(c);
+        auto* cb = dynamic_cast<callback::checkpoint*>(c.get());
         if(cb != nullptr) {
           cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
           std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
         }
       }
       {
-        auto* cb = dynamic_cast<callback::dump_weights*>(c);
+        auto* cb = dynamic_cast<callback::dump_weights*>(c.get());
         if(cb != nullptr) {
           cb->set_target_dir(opts->get_string("ckpt_dir"));
           std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
         }
       }
       {
-        auto* cb = dynamic_cast<callback::save_model*>(c);
+        auto* cb = dynamic_cast<callback::save_model*>(c.get());
         if(cb != nullptr) {
           cb->set_target_dir(opts->get_string("ckpt_dir"));
           std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;

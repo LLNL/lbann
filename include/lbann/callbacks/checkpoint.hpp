@@ -79,6 +79,7 @@ class checkpoint : public callback_base {
   checkpoint& operator=(const checkpoint&) = default;
   checkpoint* copy() const override { return new checkpoint(*this); }
   void setup(model *m) override;
+  void setup(trainer *t) override;
   void on_train_begin(model *m) override;
   void on_epoch_end(model *m) override;
   void on_batch_end(model *m) override;
@@ -234,7 +235,7 @@ inline bool read_latest(std::string filename, execution_mode *mode, size_t *epoc
 // Builder function
 std::unique_ptr<callback_base>
 build_checkpoint_callback_from_pbuf(
-  const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&);
+  const google::protobuf::Message&);
 
 } // namespace callback
 } // namespace lbann
