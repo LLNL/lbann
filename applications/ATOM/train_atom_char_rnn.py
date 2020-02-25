@@ -7,7 +7,7 @@ samples = np.load(data_dir, allow_pickle=True)
 dims = len(samples[0])
 
 
-pad_indx = 28 
+pad_indx = 28
 # Sample access functions
 def get_sample(index):
     sample = samples[index]
@@ -109,7 +109,7 @@ def construct_model():
       weights.update(l.weights)
     obj = lbann.ObjectiveFunction(loss)
 
-    
+
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer(),
                  lbann.CallbackStepLearningRate(step=10, amt=0.5),
@@ -157,12 +157,12 @@ def construct_data_reader():
 
 if __name__ == '__main__':
     import lbann
-    import lbann.contrib.lc.launcher
+    import lbann.contrib.launcher
     trainer = lbann.Trainer()
     model = construct_model()
     opt = lbann.Adam(learn_rate=0.001,beta1=0.9,beta2=0.99,eps=1e-8)
     data_reader = construct_data_reader()
-    status = lbann.contrib.lc.launcher.run(
+    status = lbann.contrib.launcher.run(
         trainer, model, data_reader, opt,
         account='hpcdl',
         scheduler='slurm',

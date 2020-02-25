@@ -24,6 +24,7 @@ def run(trainer, model, data_reader, optimizer,
         launcher_args=[],
         lbann_args=[],
         environment={},
+        overwrite_script=False,
         setup_only=False):
     """Run LBANN.
 
@@ -59,6 +60,8 @@ def run(trainer, model, data_reader, optimizer,
             executable.
         environment (dict of {str: str}, optional): Environment
             variables.
+        overwrite_script (bool, optional): Whether to overwrite script
+            file if it already exists.
         setup_only (bool, optional): If true, the experiment is not
             run after the experiment directory is initialized.
 
@@ -113,11 +116,11 @@ def run(trainer, model, data_reader, optimizer,
     # Write, run, or submit batch script
     status = 0
     if setup_only:
-        script.write()
+        script.write(overwrite=overwrite_script)
     elif has_allocation:
-        status = script.run()
+        status = script.run(overwrite=overwrite_script)
     else:
-        status = script.submit()
+        status = script.submit(overwrite=overwrite_script)
     return status
 
 def make_batch_script(script_file=None,
