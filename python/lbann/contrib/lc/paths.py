@@ -10,6 +10,8 @@ def parallel_file_system_path(system = system()):
     """Base path to parallel file system."""
     if system in ('lassen', 'sierra'):
         return '/p/gpfs1/'
+    elif system == 'ray':
+        return '/p/gscratchr/'
     else:
         return '/p/lustre2/'
 

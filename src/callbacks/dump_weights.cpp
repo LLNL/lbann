@@ -46,6 +46,9 @@ void dump_weights::on_epoch_end(model *m) {
 
 void dump_weights::do_dump_weights(model *m, std::string s) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  
+  if(c.get_epoch() % m_epoch_interval != 0)  return;
+
   makedir(m_basename.c_str());
   for (weights *w : m->get_weights()) {
     std::string epoch = "-epoch" + std::to_string(c.get_epoch()-1);
@@ -67,7 +70,7 @@ build_dump_weights_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDumpWeights&>(proto_msg);
-  return make_unique<dump_weights>(params.basename());
+  return make_unique<dump_weights>(params.basename(), params.epoch_interval());
 }
 
 } // namespace callback
