@@ -1,15 +1,20 @@
 """Utility functions to generate classes from Protobuf messages."""
 import google.protobuf.descriptor
+import google.protobuf.wrappers_pb2
 from lbann import lbann_pb2, callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, weights_pb2
+from lbann.util import make_iterable
 
-# Map from Protobuf label enums to strings
-_proto_label_to_str = {
+# Each field in a Protobuf message is labeled as 'optional',
+# 'required', or 'repeated'
+# Note: 'optional' is not used in Protobuf 3.
+_protobuf_field_label_names = {
     google.protobuf.descriptor.FieldDescriptor.LABEL_OPTIONAL: 'optional',
     google.protobuf.descriptor.FieldDescriptor.LABEL_REQUIRED: 'required',
     google.protobuf.descriptor.FieldDescriptor.LABEL_REPEATED: 'repeated'
 }
-# Map from Protobuf type enums to strings
-_proto_type_to_str = {
+
+# Each field in a Protobuf message has a type, e.g. float, int64
+_protobuf_field_type_names = {
     google.protobuf.descriptor.FieldDescriptor.TYPE_BOOL: 'bool',
     google.protobuf.descriptor.FieldDescriptor.TYPE_BYTES: 'bytes',
     google.protobuf.descriptor.FieldDescriptor.TYPE_DOUBLE: 'double',
@@ -29,6 +34,25 @@ _proto_type_to_str = {
     google.protobuf.descriptor.FieldDescriptor.TYPE_UINT32: 'uint32',
     google.protobuf.descriptor.FieldDescriptor.TYPE_UINT64: 'uint64'
 }
+
+# Wrapper Protobuf messages for primitive types
+# Note: Protobuf 3 does not support optional message fields with
+# primitive types. If a primitive field is not set, its value is
+# "zero" (false for bool, empty string for string, etc). We need to
+# use these wrapper messages to distinguish between values that are
+# "zero" and values that are not set.
+_protobuf_type_wrappers = (
+    google.protobuf.wrappers_pb2.DoubleValue.DESCRIPTOR,
+    google.protobuf.wrappers_pb2.FloatValue.DESCRIPTOR,
+    google.protobuf.wrappers_pb2.Int64Value.DESCRIPTOR,
+    google.protobuf.wrappers_pb2.Int64Value.DESCRIPTOR,
+    google.protobuf.wrappers_pb2.UInt64Value.DESCRIPTOR,
+    google.protobuf.wrappers_pb2.Int32Value.DESCRIPTOR,
+    google.protobuf.wrappers_pb2.UInt32Value.DESCRIPTOR,
+    google.protobuf.wrappers_pb2.BoolValue.DESCRIPTOR,
+    google.protobuf.wrappers_pb2.StringValue.DESCRIPTOR,
+    google.protobuf.wrappers_pb2.BytesValue.DESCRIPTOR
+)
 
 def _generate_class(message_descriptor,
                     base_field_name,
@@ -58,7 +82,8 @@ def _generate_class(message_descriptor,
 
     # Names of Protobuf message and its fields
     message_name = message_descriptor.name
-    field_names = message_descriptor.fields_by_name.keys()
+    field_descriptors = message_descriptor.fields_by_name
+    field_names = field_descriptors.keys()
 
     # Make sure fields in generated and base classes are distinct
     for arg in base_kwargs:
@@ -111,13 +136,24 @@ def _generate_class(message_descriptor,
             message = proto
 
         # Set message
-        for field in field_names:
-            val = getattr(self, field)
+        for field_name in field_names:
+            val = getattr(self, field_name)
             if val is not None:
-                if type(val) is list:
-                    getattr(message, field).extend(val)
-                else:
-                    setattr(message, field, val)
+                try:
+                    field = getattr(message, field_name)
+                    field_descriptor = field_descriptors[field_name]
+                    if field_descriptor.message_type in _protobuf_type_wrappers:
+                        field.SetInParent()
+                        field.value = val
+                    elif field_descriptor.label == google.protobuf.descriptor.FieldDescriptor.LABEL_REPEATED:
+                        field.extend(make_iterable(val))
+                    else:
+                        setattr(message, field_name, val)
+                except:
+                    raise TypeError('{} is invalid type for {}.{}'
+                                    .format(type(val).__name__,
+                                            self.__class__.__name__,
+                                            field_name))
 
         # Return Protobuf message
         return proto
@@ -132,8 +168,8 @@ def _generate_class(message_descriptor,
         for field in message_descriptor.fields:
             doc += '    {0} ({1} {2})\n'.format(
                 field.name,
-                _proto_label_to_str.get(field.label, 'unknown'),
-                _proto_type_to_str.get(field.type, 'unknown'))
+                _protobuf_field_label_names.get(field.label, 'unknown'),
+                _protobuf_field_type_names.get(field.type, 'unknown'))
     else:
         doc = 'Fields: none\n'
 
