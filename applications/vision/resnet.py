@@ -4,7 +4,7 @@ import lbann.models
 import lbann.models.resnet
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 import data.imagenet
 
 # Command-line arguments
@@ -149,6 +149,6 @@ trainer = lbann.Trainer()
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.lc.launcher.run(trainer, model, data_reader, opt,
-                              job_name=args.job_name,
-                              **kwargs)
+lbann.contrib.launcher.run(trainer, model, data_reader, opt,
+                           job_name=args.job_name,
+                           **kwargs)
