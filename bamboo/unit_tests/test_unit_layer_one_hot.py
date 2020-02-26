@@ -86,7 +86,7 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # Construct model
-    mini_batch_size = 19
+    mini_batch_size = num_samples() // 2
     num_epochs = 0
     return lbann.Model(mini_batch_size,
                        num_epochs,

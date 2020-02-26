@@ -250,7 +250,13 @@ message Layer {
     double negative_slope = 1; //default: 0.01
   }
   message LogSigmoid {}
+
+  /** @brief Logarithm of softmax function.
+   *
+   *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
+   */
   message LogSoftmax {}
+
   message Relu {}
   message Selu {}
   message Sigmoid {}
