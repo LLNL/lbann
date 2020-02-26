@@ -7,6 +7,6 @@ experiments directory, as well as utility / helper code to pre- or
 post-process data.
 
 These are some of applications that leverage LBANN:
-- [Atom](atom/README.md): Accelerating Therapeutics for Opportunities
+- [Atom](ATOM/README.md): Accelerating Therapeutics for Opportunities
   in Medicine (ATOM) - Networks for predicting molecular compounds
   that are optimized for multiple objectives

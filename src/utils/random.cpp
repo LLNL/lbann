@@ -99,7 +99,7 @@ fast_rng_gen& get_fast_io_generator() {
   return ::fast_io_generator;
 }
 
-bool save_rng_to_checkpoint(persist& p, lbann_comm* comm) {
+bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
   std::string rank_in_trainer;
   std::string rng_name;
@@ -109,13 +109,13 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm) {
     makedir(dirname.c_str());
   } else {
     rank_in_trainer = std::to_string(comm->get_rank_in_trainer());
-    if (comm->am_trainer_master()) {
+    if (comm->am_trainer_master() || is_distributed) {
       makedir(dirname.c_str());
     }
     comm->trainer_barrier();
   }
 
-  if (comm == nullptr || comm->am_trainer_master()) {
+  if (comm == nullptr || comm->am_trainer_master() || is_distributed) {
     /// @todo - Note that the RNG with thread local data is not correct
     rng_name = dirname + "/rng_seq_generator";
     std::ofstream rng_seq(rng_name);
@@ -178,6 +178,14 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm) {
 #endif
 
    return true;
+}
+
+bool save_rng_to_checkpoint_shared(persist& p, lbann_comm* comm) {
+  return save_rng_to_checkpoint(p, comm, false);
+}
+
+bool save_rng_to_checkpoint_distributed(persist& p, lbann_comm* comm) {
+  return save_rng_to_checkpoint(p, comm, true);
 }
 
 bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {

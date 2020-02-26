@@ -1305,7 +1305,7 @@ bool model::save_to_checkpoint_shared(persist& p) {
       LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
     }
   }
-  save_rng_to_checkpoint(p, m_comm);
+  save_rng_to_checkpoint_shared(p, m_comm);
   for (const auto& m : m_metrics) {
     m->save_to_checkpoint_shared(p);
   }
@@ -1366,7 +1366,7 @@ bool model::save_to_checkpoint_distributed(persist& p){
       LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
     }
   }
-  save_rng_to_checkpoint(p, m_comm);
+  save_rng_to_checkpoint_distributed(p, m_comm);
   for (const auto& m : m_metrics) {
     m->save_to_checkpoint_distributed(p);
   }
