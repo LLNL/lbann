@@ -276,7 +276,7 @@ std::unique_ptr<model> build_model_from_prototext(
   // Setup models
   ret_model->setup();
 
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }

@@ -944,19 +944,25 @@ void model::collect_background_data_fetch(execution_mode mode) {
   }
 }
 
+// only used in callbacks/ltfb.cpp; from that file:
+// "Note that this is a temporary fix
+// for the current use of the tournament"
 void model::make_data_store_preloaded(execution_mode mode) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
     if (input != nullptr) {
       auto *data_store = input->get_data_reader(mode)->get_data_store_ptr();
       if(data_store != nullptr && !data_store->is_preloaded()) {
-        input->get_data_reader(mode)->get_data_store_ptr()->set_preload();
+        input->get_data_reader(mode)->get_data_store_ptr()->set_is_preloaded();
         input->get_data_reader(mode)->get_data_store_ptr()->set_explicit_loading(false);
       }
     }
   }
 }
 
+// only used in callbacks/ltfb.cpp; from that file:
+// "Note that this is a temporary fix
+// for the current use of the tournament"
 void model::mark_data_store_explicitly_loading(execution_mode mode) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto *input = dynamic_cast<generic_input_layer*>(&get_layer(i));
