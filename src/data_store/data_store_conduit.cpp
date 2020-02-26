@@ -409,7 +409,8 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
       {
     //    std::lock_guard<std::mutex> lock(m_mutex);
         LBANN_ERROR("NOT YET IMPLEMENTED");
-        m_owner[data_id] = m_rank_in_trainer;
+        auto key = std::make_pair(data_id, m_offset_in_partition);
+        m_owner[key] = m_rank_in_trainer;
         m_sample_sizes[data_id] = n2.total_bytes_compact();
         spill_conduit_node(node, data_id);
         m_spilled_nodes[data_id] = m_cur_spill_dir_integer;
@@ -418,7 +419,7 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
 
     else {
       m_mutex.lock();
-      DEBUG("set_conduit_node : rank_in_trainer=", m_rank_in_trainer, " and partition_in_trainer=", m_partition_in_trainer, " offset in partition=", m_offset_in_partition, " with num_partitions=", m_num_partitions_in_trainer, std::endl);
+      DEBUG("set_conduit_node : rank_in_trainer=", m_rank_in_trainer, " and partition_in_trainer=", m_partition_in_trainer, " offset in partition=", m_offset_in_partition, " with num_partitions=", m_num_partitions_in_trainer);
       auto key = std::make_pair(data_id, m_offset_in_partition);
       m_owner[key] = m_rank_in_trainer;
       build_node_for_sending(node, m_data[data_id]);
@@ -1248,7 +1249,7 @@ void data_store_conduit::exchange_owner_maps() {
   if (m_reader->get_role() == "validate" && m_debug) {
     (*m_debug) << "\nmy owner map:\n";
     for (auto t : m_owner) {
-      (*m_debug) << "  " << t.first << " is owned by " << t.second << std::endl;
+      DEBUG("  ", t.first.first, ":", t.first.second, " is owned by ", t.second);
     }
   }
 
@@ -1262,7 +1263,7 @@ void data_store_conduit::exchange_owner_maps() {
   for (auto t : m_owner) {
     auto slab_id = std::make_pair(t.first.first, t.first.second);
     nodes_i_own[j++] = slab_id;
-    DEBUG("I am building the size vector from the owner map for ", t.first.first, ".", t.first.second, " and ", t.second, std::endl);
+    DEBUG("I am building the size vector from the owner map for ", t.first.first, ".", t.first.second, " and ", t.second);
   }
 
   std::vector<std::pair<size_t,size_t>> other_ranks_nodes;
@@ -1273,7 +1274,7 @@ void data_store_conduit::exchange_owner_maps() {
       if(m_debug) {
         int c = 0;
         for(auto i : nodes_i_own) {
-          DEBUG("k=", k,  ": nodes_i_own[", c, "]=", i.first, ".", i.second, std::endl);
+          DEBUG("k=", k,  ": nodes_i_own[", c, "]=", i.first, ".", i.second);
           c++;
         }
       }
@@ -1282,7 +1283,7 @@ void data_store_conduit::exchange_owner_maps() {
       if(m_debug) {
         int c = 0;
         for(auto i : other_ranks_nodes) {
-          DEBUG("k=", k,  ": other_ranks_nodes[", c, "]=", i.first, ".", i.second, std::endl);
+          DEBUG("k=", k,  ": other_ranks_nodes[", c, "]=", i.first, ".", i.second);
           c++;
         }
       }
@@ -1294,7 +1295,7 @@ void data_store_conduit::exchange_owner_maps() {
           if (m_debug) {
             auto slab_id = other_ranks_nodes[i];
             DEBUG("data_store_conduit::exchange_owner_maps, duplicate data_id: ", slab_id.first, ".", slab_id.second, "; k= ", k, "\nm_owner:\n");
-            for (auto t : m_owner) DEBUG("data_id: ", t.first.first, " / ", t.first.second, " owner: ", t.second, std::endl);
+            for (auto t : m_owner) DEBUG("data_id: ", t.first.first, " / ", t.first.second, " owner: ", t.second);
             DEBUG("\nother_ranks_nodes[k]: ");
             for (auto t : other_ranks_nodes) DEBUG(t.first, ".", t.second, " ");
             DEBUG();
@@ -1460,9 +1461,9 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
   //check that the owner map was correctly loaded
   for (auto t : m_owner) {
     if (sanity.find(t.first) == sanity.end()) {
-      LBANN_ERROR("sanity.find(t.first) == sanity.end() for t.first= ", t.first);
+      LBANN_ERROR("sanity.find(t.first) == sanity.end() for t.first= ", t.first.first, ":", t.first.second);
     } else if (sanity[t.first] != m_owner[t.first]) {
-      LBANN_ERROR("sanity[t.first] != m_owner[t.first] for t.first= ", t.first, " and m_owner[t.first]= ", m_owner[t.first]);
+      LBANN_ERROR("sanity[t.first] != m_owner[t.first] for t.first= ", t.first.first, ":", t.first.second, " and m_owner[t.first]= ", m_owner[t.first]);
     }
   }
 
@@ -1729,13 +1730,13 @@ void data_store_conduit::open_informational_files() {
 
 void data_store_conduit::print_partial_owner_map(int n) {
    std::cerr << "\nHere is part of the owner map; m_owner.size(): " << m_owner.size() << std::endl;
-  std::map<int,int> m;
+   std::map<std::pair<size_t,size_t>, int> m;
   for (auto t : m_owner) {
     m[t.first] = t.second;
   }
   int j = 0;
   for (auto t : m) {
-    std::cerr << "  sample_id: " << t.first << " owner: " << t.second << std::endl;
+    std::cerr << "  sample_id: " << t.first.first << ":" << t.first.second << " owner: " << t.second << std::endl;
     if (j++ >= 10) break;
   }
 }
