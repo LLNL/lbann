@@ -41,8 +41,6 @@ class image_data_reader : public generic_data_reader {
 
   image_data_reader(bool shuffle = true);
   image_data_reader(const image_data_reader&);
-  image_data_reader(const image_data_reader&, const std::vector<int>& ds_sample_move_list);
-  image_data_reader(const image_data_reader&, const std::vector<int>& ds_sample_move_list, std::string role);
   image_data_reader& operator=(const image_data_reader&);
 
   /** Set up imagenet specific input parameters
@@ -99,7 +97,7 @@ class image_data_reader : public generic_data_reader {
   void preload_data_store() override;
 
  protected:
-   void copy_members(const image_data_reader &rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
+   void copy_members(const image_data_reader &rhs);
 
   /// Set the default values for the width, the height, the number of channels, and the number of labels of an image
   virtual void set_defaults();

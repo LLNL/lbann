@@ -153,7 +153,7 @@ class data_store_conduit {
   int get_data_size() { return m_data.size(); }
 
   /// made public for debugging during development
-  void copy_members(const data_store_conduit& rhs, const std::vector<int>& = std::vector<int>());
+  void copy_members(const data_store_conduit& rhs);
 
   /** @brief Closes then reopens the debug logging file
    *

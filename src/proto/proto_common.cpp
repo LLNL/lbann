@@ -442,7 +442,7 @@ void init_data_readers(
       } else if (name == "numpy_npz_conduit_reader") {
         reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
       } else if (name == "imagenet") {
-        reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader), reader->get_unused_indices());
+        reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
       } else if (name == "multihead_siamese") {
   	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
       } else if (name == "jag") {
@@ -470,7 +470,7 @@ void init_data_readers(
             reader_jag_conduit->set_leading_reader(leader);
           }
         } else {
-          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader), reader->get_unused_indices());
+          reader_validation = new data_reader_jag_conduit(*dynamic_cast<const data_reader_jag_conduit*>(reader));
           const std::string role = "validate";
           auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader_validation);
           reader_jag_conduit->set_leading_reader(reader_jag_conduit);
@@ -520,12 +520,6 @@ void init_data_readers(
       if (store != nullptr) {
         store->set_data_reader_ptr(reader_validation);
         reader_validation->get_data_store_ptr()->compact_nodes();
-      }
-
-      /// At this point clean up any unused samples from the main data store
-      if(reader->get_data_store_ptr() != nullptr) {
-        auto&& data_store = reader->get_data_store_ptr();
-        data_store->purge_unused_samples(reader->get_unused_indices());
       }
 
       if (master) {
