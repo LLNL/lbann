@@ -418,14 +418,14 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
     }
 
     else {
-      m_mutex.lock();
+      //      m_mutex.lock();
       DEBUG("set_conduit_node : rank_in_trainer=", m_rank_in_trainer, " and partition_in_trainer=", m_partition_in_trainer, " offset in partition=", m_offset_in_partition, " with num_partitions=", m_num_partitions_in_trainer);
       auto key = std::make_pair(data_id, m_offset_in_partition);
       m_owner[key] = m_rank_in_trainer;
       build_node_for_sending(node, m_data[data_id]);
       error_check_compacted_node(m_data[data_id], data_id);
       m_sample_sizes[data_id] = m_data[data_id].total_bytes_compact();
-      m_mutex.unlock();
+      //      m_mutex.unlock();
     }
   }
 }
