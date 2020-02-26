@@ -641,6 +641,7 @@ int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) 
 }
 
 void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes) {
+  PROFILE("starting data_store_conduit::build_preloaded_owner_map");
   m_owner.clear();
   int owning_rank = 0;
   size_t per_rank_list_range_start = 0;
@@ -679,21 +680,6 @@ conduit::Node & data_store_conduit::get_empty_node(int data_id) {
     LBANN_ERROR("we already have a node with data_id= ", data_id);
   }
   return m_data[data_id];
-}
-
-void data_store_conduit::purge_unused_samples(const std::vector<int>& indices) {
-  DEBUG(" starting purge_unused_samples; indices.size(): ", indices.size(), " data.size(): ", m_data.size());
-  /// Remove unused indices from the data and owner maps
-  for(auto&& i : indices) {
-    if(m_data.find(i) != m_data.end()){
-      m_data.erase(i);
-    }
-    auto key = std::make_pair(i, m_offset_in_partition);
-    if(m_owner.find(key) != m_owner.end()) {
-      m_owner.erase(key);
-    }
-  }
-  DEBUG("leaving  purge_unused_samples; indices.size(): ", indices.size(), " data.size(): ", m_data.size());
 }
 
 void data_store_conduit::compact_nodes() {

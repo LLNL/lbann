@@ -152,25 +152,8 @@ void image_data_reader::load() {
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
 
-  std::vector<int> local_list_sizes;
-  if (opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
-    int np = m_comm->get_procs_per_trainer();
-    int base_files_per_rank = m_shuffled_indices.size() / np;
-    int extra = m_shuffled_indices.size() - (base_files_per_rank*np);
-    if (extra > np) {
-      LBANN_ERROR("extra > np");
-    }
-    local_list_sizes.resize(np, 0);
-    for (int j=0; j<np; j++) {
-      local_list_sizes[j] = base_files_per_rank;
-      if (j < extra) {
-        local_list_sizes[j] += 1;
-      }
-    }
-  }
-
   opts->set_option("node_sizes_vary", 1);
-  instantiate_data_store(local_list_sizes);
+  instantiate_data_store();
 
   select_subset_of_data();
 }
@@ -190,10 +173,9 @@ void read_raw_data(const std::string &filename, std::vector<char> &data) {
 }
 
 
-void image_data_reader::preload_data_store() {
+void image_data_reader::do_preload_data_store() {
   options *opts = options::get();
 
-  if (is_master()) std::cout << "Starting image_data_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
   int rank = m_comm->get_rank_in_trainer();
 
   bool threaded = ! options::get()->get_bool("data_store_no_thread");

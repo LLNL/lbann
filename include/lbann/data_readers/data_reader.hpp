@@ -621,17 +621,9 @@ class generic_data_reader {
   /// until later.
   void setup_data_store(int mini_batch_size);
 
-  void instantiate_data_store(const std::vector<int>& local_list_sizes = std::vector<int>());
+  void instantiate_data_store();
 
-  // note: don't want to make this virtual, since then all derived classes
-  //       would have to override. But, this should only be called from within
-  //       derived classes where it makes sense to do so.
-  //       Once the sample_list class and file formats are generalized and
-  //       finalized, it should (may?) be possible to code a single
-  //       preload_data_store method.
-  virtual void preload_data_store() {
-    LBANN_ERROR("you should not be here");
-  }
+  virtual void preload_data_store(); 
 
   void set_gan_labelling(bool has_gan_labelling) {
      m_gan_labelling = has_gan_labelling;
@@ -800,6 +792,12 @@ class generic_data_reader {
 
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
+
+private:
+
+  virtual void do_preload_data_store() {
+    LBANN_ERROR("Not implemented.");
+  }
 
  protected :
   //var to support GAN

@@ -228,7 +228,7 @@ void hdf5_reader::load() {
 #endif
   }
   if (m_use_data_store) {
-    instantiate_data_store(local_list_sizes);
+    instantiate_data_store();
   }
 
   select_subset_of_data();
