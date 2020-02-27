@@ -27,7 +27,7 @@
 #include <omp.h>
 #define LBANN_RANDOM_INSTANTIATE
 #include "lbann/utils/random.hpp"
-#include "lbann/io/file_io.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/hash.hpp"
 #include <thread>
 
@@ -101,19 +101,20 @@ fast_rng_gen& get_fast_io_generator() {
 }
 
 bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
-  std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
+  std::string dirname = add_delimiter(std::string(p.m_checkpoint_dir)) + "rng_state";
   std::string rank_in_trainer;
   std::string rng_name;
 
   if (comm == nullptr) {
     rank_in_trainer = std::to_string(El::mpi::Rank(El::mpi::COMM_WORLD));
-    makedir(dirname.c_str());
   } else {
     rank_in_trainer = std::to_string(comm->get_rank_in_trainer());
-    if (comm->am_trainer_master() || is_distributed) {
-      makedir(dirname.c_str());
-    }
-    comm->trainer_barrier();
+  }
+
+  if (comm == nullptr || is_distributed) {
+    lbann::file::make_directory(dirname);
+  } else {
+    lbann::file::make_directory_for_trainer(dirname, comm);
   }
 
   if (comm == nullptr || comm->am_trainer_master() || is_distributed) {

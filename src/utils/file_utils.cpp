@@ -245,6 +245,23 @@ void make_directory(const std::string& path) {
 
 }
 
+void make_directory_for_trainer(const std::string& path, lbann_comm* comm) {
+  if (comm == nullptr) {
+    LBANN_ERROR("Invalid communicator pointer");
+    return;
+  }
+
+  if (path.empty() || path == "." || path == "/") {
+    return;
+  }
+
+  if (comm->am_trainer_master()) {
+    // only master checks to see if the directory exists and creates if not.
+    make_directory(path);
+  }
+  comm->trainer_barrier();
+}
+
 } // namespace file
 
 } // namespace lbann

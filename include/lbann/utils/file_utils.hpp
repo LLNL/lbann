@@ -37,6 +37,9 @@
 
 namespace lbann {
 
+// Forward-declaration.
+class lbann_comm;
+
 struct path_delimiter {
   static const std::string characters;
   static std::string preferred() {
@@ -117,6 +120,9 @@ bool directory_exists(const std::string& path);
  *  mkdir is thread-safe).
  */
 void make_directory(const std::string& path);
+
+/// Only the trainer master creates the directory to avoid race condition
+void make_directory_for_trainer(const std::string& path, lbann_comm* comm);
 
 } // namespace file
 
