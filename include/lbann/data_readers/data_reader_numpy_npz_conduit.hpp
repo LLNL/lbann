@@ -75,7 +75,7 @@ class numpy_npz_conduit_reader : public generic_data_reader {
   const std::vector<int> get_data_dims() const override { return m_data_dims; }
 
   protected:
-    void preload_data_store() override;
+    void do_preload_data_store() override;
 
     bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
     bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;

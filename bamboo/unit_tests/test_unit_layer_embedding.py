@@ -5,7 +5,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -58,15 +58,6 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
-    # Convenience function to compute L2 norm squared with NumPy
-    def l2_norm2(x):
-        x = x.reshape(-1)
-        return np.inner(x, x)
-
     # Input data
     x = lbann.Identity(lbann.Input())
     x_lbann = x
@@ -88,7 +79,7 @@ def construct_model(lbann):
     # LBANN implementation
     embedding_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=str_list(np.nditer(embeddings)))
+        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(embeddings)))
     )
     x = x_lbann
     y = lbann.Embedding(x,
@@ -105,7 +96,7 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i)[0]
         y = embeddings[x]
-        z = l2_norm2(y)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps
@@ -131,7 +122,7 @@ def construct_model(lbann):
     # is set. Avoid gradient checking by not using an optimizer.
     embedding_weights = lbann.Weights(
         optimizer=None,
-        initializer=lbann.ValueInitializer(values=str_list(np.nditer(embeddings)))
+        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(embeddings)))
     )
     x = x_lbann
     y = lbann.Embedding(x,
@@ -149,10 +140,10 @@ def construct_model(lbann):
     for i in range(num_samples()):
         x = get_sample(i)[0]
         if x == padding_idx:
-            y = np.zeros(shape=embedding_dim, dtype=np.float32)
+            y = np.zeros(shape=embedding_dim)
         else:
             y = embeddings[x]
-        z = l2_norm2(y)
+        z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
     tol = 8 * val * np.finfo(np.float32).eps

@@ -5,7 +5,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -57,23 +57,19 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
     # Input data
     # Note: We want to use gradient checking to verify that error
     # signals are correct. To do this, we zero-initialize a weights
     # object, construct a zero-valued tensor, and add it to the
     # input. To make sure that batchnorm is non-trivial, we multiply
     # the zero-valued tensor by the mini-batch index.
-    x = lbann.Reshape(lbann.Input(), dims=str_list(_sample_dims))
+    x = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
     x_weights = lbann.Weights(optimizer=lbann.SGD(),
                               initializer=lbann.ConstantInitializer(value=0.0))
     x0 = lbann.WeightsLayer(weights=x_weights,
-                            dims=str_list(_sample_dims))
+                            dims=tools.str_list(_sample_dims))
     x1 = lbann.Divide([lbann.MiniBatchIndex(), lbann.MiniBatchSize()])
-    x1 = lbann.Tessellate(lbann.Reshape(x1, dims='1 1 1'), dims=str_list(_sample_dims))
+    x1 = lbann.Tessellate(lbann.Reshape(x1, dims='1 1 1'), dims=tools.str_list(_sample_dims))
     x = lbann.Sum([x, lbann.Multiply([x0, x1])])
     x_lbann = x
 
@@ -96,7 +92,7 @@ def construct_model(lbann):
                                           data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel output'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout'))
 
     # ------------------------------------------
     # Model-parallel layout
@@ -112,7 +108,7 @@ def construct_model(lbann):
                                           data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='model-parallel output'))
+    metrics.append(lbann.Metric(z, name='model-parallel layout'))
 
     # ------------------------------------------
     # Gradient checking

@@ -86,11 +86,6 @@ Comments:
 Model components
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. warning:: `A major refactor of core model infrastructure
-             <https://github.com/LLNL/lbann/pull/916>`_ is
-             pending. This documentation will be updated once it is
-             merged and the interface stabilized.
-
 + Layer: A tensor operation, arranged within a directed acyclic graph.
 
   - During evaluation ("forward prop"), a layer receives input tensors
@@ -114,6 +109,10 @@ Model components
     ambiguity. In such cases (common with input and slice layers), it
     is recommended to manually insert identity layers so that the
     parent/child relationships are absolutely unambiguous.
+
+  - See `lbann/src/proto/layers.proto
+    <https://github.com/LLNL/lbann/blob/develop/src/proto/layers.proto>`_
+    for a full list of supported layers.
 
 + Weights: A tensor consisting of trainable parameters, typically
   associated with one or more layers. A weight tensor owns an
@@ -197,25 +196,22 @@ reader's work is IO-bound or if the computation is largely on GPUs.
           identity layers as children of the input layer.
 
 Note that layers within a model treat the data for a mini-batch as a
-single tensor where the leading dimension is the mini-batch
-size. Thus, corresponding tensors in all data samples must have the
-same dimensions. The data dimensions must be known from the beginning
-of the experiment and can not change. However, real data is rarely so
-consistent and some preprocessing is typically required.
-
-.. warning:: `A major refactor of the preprocessing pipeline
-             <https://github.com/LLNL/lbann/pull/1014>`_ is
-             pending. This documentation will be updated once it is
-             merged and the interface stabilized.
+single tensor where the leading dimension is the mini-batch size.
+Thus, corresponding tensors in all data samples must have the same
+dimensions. The data dimensions must be known from the beginning of
+the experiment and can not change. However, real data is rarely so
+consistent and some preprocessing is typically required. See
+`lbann/src/proto/transforms.proto
+<https://github.com/LLNL/lbann/blob/develop/src/proto/transforms.proto>`_
+for a list of available preprocessing transforms.
 
 ------------------------------------------------
 Python frontend
 ------------------------------------------------
 
 LBANN provides a Python frontend with syntax reminiscent of `PyTorch
-<https://pytorch.org/>`_. See the `model zoo implementation of LeNet
-<https://github.com/LLNL/lbann/blob/develop/model_zoo/vision/lenet.py>`_
-for a simple example.
+<https://pytorch.org/>`_. See `a simple implementation of LeNet
+<https://github.com/LLNL/lbann/blob/develop/applications/vision/lenet.py>`_.
 
 Comments:
 
@@ -279,27 +275,31 @@ Basic usage
 
 A typical workflow involves the following steps:
 
-1. Configuring LBANN model components (like the graph of
+1. Configuring a :python:`Trainer`.
+
+2. Configuring LBANN model components (like the graph of
    :python:`Layer` s) and creating a :python:`Model`.
 
   + Classes for model components are automatically generated from the
-    LBANN Protobuf specification at `src/proto/lbann.proto
-    <https://github.com/LLNL/lbann/blob/develop/src/proto/lbann.proto>`_.
-    This file is currently the best source of documentation. Message
+    LBANN Protobuf specifications in `lbann/src/proto
+    <https://github.com/LLNL/lbann/blob/develop/src/proto>`_. These
+    files are currently the best source of documentation. Message
     fields in the Protobuf specification are optional keyword
-    arguments for the corresponding Python class constructor.
+    arguments for the corresponding Python class constructor. If a
+    keyword argument is not provided, it is logically zero (e.g. false
+    for Boolean fields and empty for string fields)
 
-2. Configuring the default :python:`Optimizer` to be used by the
-   :python:`Weights` es.
+3. Configuring the default :python:`Optimizer` to be used by the
+   :python:`Weights` objects.
 
-3. Loading in a Protobuf text file describing the data reader.
+4. Loading in a Protobuf text file describing the data reader.
 
    + The Python frontend currently does not have good support for
      specifying data readers. If any data reader properties need to be
      set programmatically, the user must do it directly via the
      Protobuf Python API.
 
-4. Launching LBANN by calling :python:`run`.
+5. Launching LBANN by calling :python:`run`.
 
    + :python:`lbann.run` will detect whether the user is currently on
      a login node or a compute node. If on a login node, a batch job
@@ -345,6 +345,9 @@ A simple example
     # Setup experiment
     # ----------------------------------
 
+    # Setup trainer
+    trainer = lbann.Trainer()
+
     # Setup model
     mini_batch_size = 64
     num_epochs = 5
@@ -359,17 +362,17 @@ A simple example
     opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 
     # Load data reader from prototext
-    import google.protobuf.text_format as txtf
+    import google.protobuf.text_format
     data_reader_proto = lbann.lbann_pb2.LbannPB()
-    with open('path/to/lbann/model_zoo/data_readers/data_reader.prototext', 'r') as f:
-        txtf.Merge(f.read(), data_reader_proto)
+    with open('path/to/lbann/model_zoo/data_readers/data_reader_mnist.prototext', 'r') as f:
+        google.protobuf.text_format.Merge(f.read(), data_reader_proto)
     data_reader_proto = data_reader_proto.data_reader
 
     # ----------------------------------
     # Run experiment
     # ----------------------------------
 
-    lbann.run(model, data_reader_proto, opt)
+    lbann.run(trainer, model, data_reader_proto, opt)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Useful submodules

@@ -6,7 +6,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -70,15 +70,21 @@ def pytorch_convolution(data,
 
     """
 
-    # Convert input data to PyTorch tensors
+    # Convert input data to PyTorch tensors with 64-bit floats
     import torch
     import torch.nn.functional
     if type(data) is np.ndarray:
-        data = torch.from_numpy(data.astype(np.float64))
+        data = torch.from_numpy(data)
     if type(kernel) is np.ndarray:
-        kernel = torch.from_numpy(kernel.astype(np.float64))
+        kernel = torch.from_numpy(kernel)
     if type(bias) is np.ndarray:
-        bias = torch.from_numpy(bias.astype(np.float64))
+        bias = torch.from_numpy(bias)
+    if data.dtype is not torch.float64:
+        data = data.astype(torch.float64)
+    if kernel.dtype is not torch.float64:
+        kernel = kernel.astype(torch.float64)
+    if bias.dtype is not torch.float64:
+        bias = bias.astype(torch.float64)
 
     # Perform convolution with PyTorch
     output = None
@@ -125,15 +131,6 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
-    # Convenience function to compute L2 norm squared with NumPy
-    def l2_norm2(x):
-        x = x.reshape(-1).astype(np.float64)
-        return np.inner(x, x)
-
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
@@ -141,8 +138,8 @@ def construct_model(lbann):
                               initializer=lbann.ConstantInitializer(value=0.0),
                               name='input_weights')
     x0 = lbann.WeightsLayer(weights=x_weights,
-                            dims=str_list(_sample_dims))
-    x1 = lbann.Reshape(lbann.Input(), dims=str_list(_sample_dims))
+                            dims=tools.str_list(_sample_dims))
+    x1 = lbann.Reshape(lbann.Input(), dims=tools.str_list(_sample_dims))
     x = lbann.Sum([x0, x1])
     x_lbann = x
 
@@ -167,12 +164,12 @@ def construct_model(lbann):
     # Apply convolution
     kernel_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=str_list(np.nditer(kernel))),
+        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
         name='kernel1'
     )
     bias_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=str_list(np.nditer(bias))),
+        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(bias))),
         name='bias1'
     )
     x = x_lbann
@@ -181,10 +178,10 @@ def construct_model(lbann):
                           num_dims=3,
                           num_output_channels=kernel_dims[0],
                           has_vectors=True,
-                          conv_dims=str_list(kernel_dims[2:]),
-                          conv_strides=str_list(strides),
-                          conv_pads=str_list(pads),
-                          conv_dilations=str_list(dilations),
+                          conv_dims=tools.str_list(kernel_dims[2:]),
+                          conv_strides=tools.str_list(strides),
+                          conv_pads=tools.str_list(pads),
+                          conv_dilations=tools.str_list(dilations),
                           has_bias=True)
     z = lbann.L2Norm2(y)
     obj.append(z)
@@ -197,7 +194,7 @@ def construct_model(lbann):
             x, kernel, bias=bias,
             stride=strides, padding=pads, dilation=dilations
         )
-        z = l2_norm2(y) / _num_samples
+        z = tools.numpy_l2norm2(y) / _num_samples
         val = z
     except:
         # Precomputed value
@@ -225,7 +222,7 @@ def construct_model(lbann):
     # Apply convolution
     kernel_weights = lbann.Weights(
         optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=str_list(np.nditer(kernel))),
+        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(kernel))),
         name='kernel2'
     )
     x = x_lbann
@@ -234,10 +231,10 @@ def construct_model(lbann):
                           num_dims=3,
                           num_output_channels=kernel_dims[0],
                           has_vectors=True,
-                          conv_dims=str_list(kernel_dims[2:]),
-                          conv_strides=str_list(strides),
-                          conv_pads=str_list(pads),
-                          conv_dilations=str_list(dilations),
+                          conv_dims=tools.str_list(kernel_dims[2:]),
+                          conv_strides=tools.str_list(strides),
+                          conv_pads=tools.str_list(pads),
+                          conv_dilations=tools.str_list(dilations),
                           num_groups=num_groups,
                           has_bias=False)
     z = lbann.L2Norm2(y)
@@ -252,7 +249,7 @@ def construct_model(lbann):
             stride=strides, padding=pads,
             dilation=dilations, groups=num_groups
         )
-        z = l2_norm2(y) / _num_samples
+        z = tools.numpy_l2norm2(y) / _num_samples
         val = z
     except:
         # Precomputed value

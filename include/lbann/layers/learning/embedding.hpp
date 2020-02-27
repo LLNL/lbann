@@ -41,7 +41,7 @@ namespace lbann {
  *  output is a vector of zeros.
  *
  *  The embedding vectors are stored in an
- *  @f$ \text{embedding_dim} \times \text{num_embeddings} @f$
+ *  @f$ \text{embedding\_dim} \times \text{num\_embeddings} @f$
  *  weights matrix. Note that this is the transpose of the weights in
  *  the PyTorch embedding layer.
  */

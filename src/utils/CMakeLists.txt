@@ -1,9 +1,11 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  argument_parser.cpp
   cnpy_utils.cpp
   cublas.cpp
   cudnn.cpp
   description.cpp
+  environment_variable.cpp
   exception.cpp
   file_utils.cpp
   graph.cpp

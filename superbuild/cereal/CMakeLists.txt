@@ -13,7 +13,7 @@ else ()
     CACHE STRING "The URL from which to clone CEREAL.")
 endif ()
 
-set(CEREAL_TAG "master" CACHE STRING "The git tag or hash to checkout for CEREAL")
+set(CEREAL_TAG "v1.3.0" CACHE STRING "The git tag or hash to checkout for CEREAL")
 
 # Where to install CEREAL
 set(CEREAL_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"

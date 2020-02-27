@@ -5,7 +5,7 @@ import os.path
 import sys
 import numpy as np
 
-# Local files
+# Bamboo utilities
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
@@ -57,10 +57,6 @@ def construct_model(lbann):
 
     """
 
-    # Convenience function to convert list to a space-separated string
-    def str_list(it):
-        return ' '.join([str(i) for i in it])
-
     # Input data
     # Note: Sum with a weights layer so that gradient checking will
     # verify that error signals are correct.
@@ -80,25 +76,20 @@ def construct_model(lbann):
     # Compute expected metric values with NumPy
     # ------------------------------------------
 
-    # Convenience function to compute L2 norm squared with NumPy
-    def l2_norm2(x):
-        x = x.reshape(-1)
-        return np.inner(x, x)
-
     # Weight values
     linearity = np.random.normal(size=(_output_size,_input_size)).astype(np.float32)
     bias = np.random.normal(size=(_output_size,1)).astype(np.float32)
 
     # With bias
-    x = _samples.transpose()
-    y = np.matmul(linearity, x) + bias
-    z = l2_norm2(y) / _num_samples
+    x = _samples.transpose().astype(np.float64)
+    y = np.matmul(linearity.astype(np.float64), x) + bias.astype(np.float64)
+    z = tools.numpy_l2norm2(y) / _num_samples
     val_with_bias = z
 
     # Without bias
-    x = _samples.transpose()
-    y = np.matmul(linearity, x)
-    z = l2_norm2(y) / _num_samples
+    x = _samples.transpose().astype(np.float64)
+    y = np.matmul(linearity.astype(np.float64), x)
+    z = tools.numpy_l2norm2(y) / _num_samples
     val_without_bias = z
 
     # ------------------------------------------
@@ -109,13 +100,13 @@ def construct_model(lbann):
     linearity_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=str_list(np.nditer(linearity, order='F'))
+            values=tools.str_list(np.nditer(linearity, order='F'))
         )
     )
     bias_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=str_list(np.nditer(bias))
+            values=tools.str_list(np.nditer(bias))
         )
     )
     x = x_lbann
@@ -147,13 +138,13 @@ def construct_model(lbann):
     linearity_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=str_list(np.nditer(linearity, order='F'))
+            values=tools.str_list(np.nditer(linearity, order='F'))
         )
     )
     bias_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=str_list(np.nditer(bias))
+            values=tools.str_list(np.nditer(bias))
         )
     )
     x = x_lbann
@@ -185,7 +176,7 @@ def construct_model(lbann):
     linearity_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=str_list(np.nditer(linearity, order='C'))
+            values=tools.str_list(np.nditer(linearity, order='C'))
         )
     )
     x = x_lbann
@@ -217,7 +208,7 @@ def construct_model(lbann):
     linearity_weights = lbann.Weights(
         optimizer=lbann.SGD(),
         initializer=lbann.ValueInitializer(
-            values=str_list(np.nditer(linearity, order='C'))
+            values=tools.str_list(np.nditer(linearity, order='C'))
         )
     )
     x = x_lbann
