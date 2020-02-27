@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/file_utils.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
 #include <callbacks.pb.h>
@@ -50,7 +51,7 @@ void dump_weights::do_dump_weights(model *m, std::string s) {
 
   if(c.get_epoch() % m_epoch_interval != 0)  return;
 
-  makedir(m_basename.c_str());
+  lbann::file::make_directory_for_trainer(m_basename, m->get_comm());
   for (weights *w : m->get_weights()) {
     std::string epoch = "-epoch" + std::to_string(c.get_epoch()-1);
     if(s != "") {

@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
+#include "lbann/utils/file_utils.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -110,7 +111,7 @@ bool save_model::do_save_model_weights(model *m) {
   }
 
   // Shared checkpoint, logic identical to Distributed.i
-  makedir(m_dir.c_str());
+  lbann::file::make_directory_for_trainer(m_dir, comm);
   std::string epochdir = get_shared_checkpoint_dirname(m, m_dir.c_str(), c.get_execution_mode(), epoch, step);
   if (comm->am_trainer_master()) {
     p.open_checkpoint(epochdir.c_str());
