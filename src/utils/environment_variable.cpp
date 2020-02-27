@@ -24,38 +24,25 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-syntax = "proto3";
+#include "lbann/utils/environment_variable.hpp"
 
-package lbann_data;
+#include <stdlib.h>
 
-message Trainer {
+namespace lbann
+{
+namespace utils
+{
 
-  // Unique identifier
-  string name = 1;
-
-  // Parallel processes per trainer
-  //
-  // The number of processes per trainer must evenly divide the total
-  // number of MPI ranks. The number of resulting trainers is
-  // num_procs / procs_per_trainer.
-  //
-  // If procs_per_trainer is not provided, then all MPI ranks are
-  // assigned to one trainer.
-  int64 procs_per_trainer = 2;
-
-  // I/O threads per parallel process
-  //
-  // These threads are typically used to perform data ingestion in the
-  // background.
-  int64 num_parallel_readers = 3;
-
-  // -------------------------------
-  // Advanced options
-  // -------------------------------
-
-  // If false, trainers will have their trainer rank mixed into their random seed.
-  bool random_init_trainers_identically = 4;
-
-  // Algorithmic block size for Hydrogen
-  int64 hydrogen_block_size = 100;
+std::string GetEnvAccessor::get(std::string const& var_name) const
+{
+#if _GNU_SOURCE
+  // If GNU, secure_getenv might be better??
+  char const* env = secure_getenv(var_name.c_str());
+#else
+  char const* env = std::getenv(var_name.c_str());
+#endif // _GNU_SOURCE
+  return std::string(env ? env : "");
 }
+
+}// namespace utils
+}// namespace lbann

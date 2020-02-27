@@ -24,38 +24,52 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-syntax = "proto3";
+#ifndef LBANN_UTILS_STUBS_PRESET_ENV_ACCESSOR_HPP_INCLUDED
+#define LBANN_UTILS_STUBS_PRESET_ENV_ACCESSOR_HPP_INCLUDED
 
-package lbann_data;
+#include <string>
+#include <unordered_map>
 
-message Trainer {
+namespace lbann {
+namespace utils {
+namespace stubs {
 
-  // Unique identifier
-  string name = 1;
+class PresetEnvAccessor
+{
+public:
+  std::string get(std::string const&) const;
+private:
+  static void populate_vars();
+private:
+  static std::unordered_map<std::string, std::string> vars_;
+};
 
-  // Parallel processes per trainer
-  //
-  // The number of processes per trainer must evenly divide the total
-  // number of MPI ranks. The number of resulting trainers is
-  // num_procs / procs_per_trainer.
-  //
-  // If procs_per_trainer is not provided, then all MPI ranks are
-  // assigned to one trainer.
-  int64 procs_per_trainer = 2;
+inline std::string PresetEnvAccessor::get(std::string const& var_name) const
+{
+  if (vars_.size() == 0UL) populate_vars();
 
-  // I/O threads per parallel process
-  //
-  // These threads are typically used to perform data ingestion in the
-  // background.
-  int64 num_parallel_readers = 3;
+  auto it = vars_.find(var_name);
+  if (it == vars_.end())
+    return "";
 
-  // -------------------------------
-  // Advanced options
-  // -------------------------------
-
-  // If false, trainers will have their trainer rank mixed into their random seed.
-  bool random_init_trainers_identically = 4;
-
-  // Algorithmic block size for Hydrogen
-  int64 hydrogen_block_size = 100;
+  return it->second;
 }
+
+inline void PresetEnvAccessor::populate_vars()
+{
+  vars_ = {
+    {"APPLE", "3.14"}, // float
+    {"ICE_CREAM_SCOOPS", "3"}, // int
+    {"PIZZA", "pepperoni"}, // string
+    {"VALUE_IS_TRUE", "true"}, // true as string
+    {"VALUE_IS_ONE", "1"}, // true as int
+    {"VALUE_IS_FALSE", "false"}, // false as string
+    {"VALUE_IS_ZERO", "0"}, // false as int
+  };
+}
+
+}// namespace stubs
+}// namespace utils
+}// namespace lbann
+
+#endif /* LBANN_UTILS_STUBS_PRESET_ENV_ACCESSOR_HPP_INCLUDED */
