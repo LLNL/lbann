@@ -1,4 +1,8 @@
-import math, os, re
+import math
+import os
+import re
+import sys
+import pytest
 
 
 def check_list(substrings, strings):
@@ -451,9 +455,8 @@ def get_command(cluster,
                 # General:
                 # 'mini_batch_size',
                 # 'num_epochs',
-                'block_size',
+                'hydrogen_block_size',
                 'procs_per_trainer',
-                'num_gpus',
                 'num_parallel_readers',
                 'num_io_threads',
                 'serialize_io',
@@ -471,7 +474,7 @@ def get_command(cluster,
                 'ckpt_dir',
                 #'restart_dir',
                 'restart_dir_is_fullpath',
-                
+
                 # DataReaders:
                 # 'data_filedir',
                 # 'data_filedir_train',
@@ -657,3 +660,174 @@ def assert_failure(return_code, expected_error, error_file_name):
         'return_code={rc}\nFailed with error different than expected.\nactual_error={ae}\nexpected_error={ee}\nSee {efn}'.format(
             rc=return_code, ae=actual_error, ee=expected_error,
             efn=error_file_name))
+
+
+def create_tests(setup_func,
+                 test_file,
+                 test_name_base=None,
+                 nodes=1,
+                 procs_per_node=None):
+    """Create functions that can interact with PyTest.
+
+    This function creates tests that involve running an LBANN
+    experiment with the Python frontend. `setup_func` should be a
+    function that takes in the LBANN Python module and outputs objects
+    for an LBANN experiment. A test succeeds if LBANN runs and exits
+    with an exit code of 0, and fails otherwise.
+
+    PyTest detects tests by loading in a Python script and looking for
+    functions prefixed with 'test_'. After you call this function
+    within a script to generate test functions, make sure to add the
+    test functions to the script's scope. For example:
+
+        _test_funcs = tools.create_tests(setup_func, __file__)
+        for t in _test_funcs:
+            globals()[t.__name__] = t
+
+    Args:
+        setup_func (function): Sets up an LBANN experiment using the
+            Python frontend. It takes in the LBANN Python module as
+            input and returns a `(lbann.Trainer, lbann.Model,
+            lbann.reader_pb2.DataReader, lbann.Optimizer)`.
+        test_file (str): Python script being run by PyTest. In most
+            cases, use `__file__`.
+        test_name (str, optional): Descriptive name (default: test
+            file name with '.py' removed).
+        nodes (int, optional): Number of compute nodes (default: 1).
+        procs_per_node (int, optional): Number of parallel processes
+            per compute node (default: system-specific default,
+            usually number of GPUs per node).
+
+    Returns:
+        Iterable of function: Tests that can interact with PyTest.
+            Each function returns a dict containing log files and
+            other output data.
+
+    """
+
+    # Make sure test name is valid
+    test_file = os.path.realpath(test_file)
+    if not test_name_base:
+        # Create test name by removing '.py' from file name
+        test_name_base = os.path.splitext(os.path.basename(test_file))[0]
+    if not re.match('^test_.', test_name_base):
+        # Make sure test name is prefixed with 'test_'
+        test_name_base = 'test_' + test_name_base
+
+    # Basic test function
+    def test_func(cluster, executables, dir_name, compiler_name):
+        process_executable(test_name_base, compiler_name, executables)
+        test_name = '{}_{}'.format(test_name_base, compiler_name)
+
+        # Load LBANN Python frontend
+        build_names = {
+            'clang6': 'clang.Release.{}.llnl.gov'.format(cluster),
+            'clang6_debug': 'clang.Debug.{}.llnl.gov'.format(cluster),
+            'gcc7': 'gnu.Release.{}.llnl.gov'.format(cluster),
+            'gcc7_debug': 'gnu.Debug.{}.llnl.gov'.format(cluster),
+            'intel19': 'intel.Release.{}.llnl.gov'.format(cluster),
+            'intel19_debug': 'intel.Debug.{}.llnl.gov'.format(cluster),
+        }
+        python_frontend_path = os.path.join(dir_name,
+                                            'build',
+                                            build_names[compiler_name],
+                                            'install',
+                                            'lib',
+                                            'python3.7',
+                                            'site-packages')
+        sys.path.append(python_frontend_path)
+        import lbann
+        import lbann.contrib.lc.launcher
+
+        # Setup LBANN experiment
+        trainer, model, data_reader, optimizer = setup_func(lbann)
+
+        # Run LBANN experiment
+        experiment_dir = os.path.join(os.path.dirname(test_file),
+                                      'experiments',
+                                      test_name)
+        stdout_log_file = os.path.join(experiment_dir, 'out.log')
+        stderr_log_file = os.path.join(experiment_dir, 'err.log')
+        kwargs = {}
+        if procs_per_node:
+            kwargs['procs_per_node'] = procs_per_node
+        return_code = lbann.contrib.lc.launcher.run(
+            trainer=trainer,
+            model=model,
+            data_reader=data_reader,
+            optimizer=optimizer,
+            experiment_dir=experiment_dir,
+            job_name='lbann_{}'.format(test_name),
+            nodes=nodes,
+            overwrite_script=True,
+            **kwargs)
+        assert_success(return_code, stderr_log_file)
+        return {
+            'return_code': return_code,
+            'experiment_dir': experiment_dir,
+            'stdout_log_file': stdout_log_file,
+            'stderr_log_file': stderr_log_file,
+        }
+
+    # Specific test functions for different build configurations
+    def test_func_clang6(cluster, exes, dirname):
+        return test_func(cluster, exes, dirname, 'clang6')
+    def test_func_gcc7(cluster, exes, dirname):
+        return test_func(cluster, exes, dirname, 'gcc7')
+    def test_func_intel19(cluster, exes, dirname):
+        return test_func(cluster, exes, dirname, 'intel19')
+    test_func_clang6.__name__ = '{}_clang6'.format(test_name_base)
+    test_func_gcc7.__name__ = '{}_gcc7'.format(test_name_base)
+    test_func_intel19.__name__ = '{}_intel19'.format(test_name_base)
+
+    return (
+        test_func_gcc7,
+        test_func_clang6,
+        test_func_intel19,
+    )
+
+
+def create_python_data_reader(lbann,
+                              file_name,
+                              sample_function_name,
+                              num_samples_function_name,
+                              sample_dims_function_name,
+                              execution_mode):
+    """Create protobuf message for Python data reader.
+
+    A Python data reader gets data by importing a Python module and
+    calling functions in its scope.
+
+    Args:
+        lbann (module): Module for LBANN Python frontend.
+        file_name (str): Python file.
+        sample_function_name (str): Function to get a data sample. It
+            takes one integer argument for the sample index and
+            returns an `Iterator` of `float`s.
+        sample_dims_function_name (str): Function to get dimensions of
+            a data sample. It takes no arguments and returns a
+            `(int,)`.
+        num_samples_function_name (str): Function to get number of
+            data samples in data set. It takes no arguments and
+            returns an `int`.
+        execution_mode (str): 'train', 'validation', or 'test'
+
+    """
+
+    # Extract paths
+    file_name = os.path.realpath(file_name)
+    dir_name = os.path.dirname(file_name)
+    module_name = os.path.splitext(os.path.basename(file_name))[0]
+
+    # Construct protobuf message for data reader
+    reader = lbann.reader_pb2.Reader()
+    reader.name = 'python'
+    reader.role = execution_mode
+    reader.percent_of_data_to_use = 1.0
+    reader.python.module = module_name
+    reader.python.module_dir = dir_name
+    reader.python.sample_function = sample_function_name
+    reader.python.num_samples_function = num_samples_function_name
+    reader.python.sample_dims_function = sample_dims_function_name
+
+    return reader

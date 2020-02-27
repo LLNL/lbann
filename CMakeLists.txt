@@ -197,6 +197,12 @@ endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
+# Not the ideal fix, but should be fine for now.
+if (Aluminum_FOUND)
+  message(STATUS "Aluminum found in Hydrogen. Using Aluminum.")
+  set(LBANN_WITH_ALUMINUM ON CACHE BOOL "Use aluminum." FORCE)
+endif ()
+
 include(SetupOpenMP)
 include(SetupMPI)
 include(SetupProtobuf)
@@ -526,10 +532,6 @@ target_include_directories(lbann PUBLIC
   $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}>)
 
-if (LBANN_HAS_PYTHON)
-  target_include_directories(lbann PUBLIC ${Python_INCLUDE_DIRS})
-endif ()
-
 # Use the IMPORTED targets when possible.
 target_link_libraries(lbann PUBLIC LbannProto)
 target_link_libraries(lbann PUBLIC Threads::Threads)
@@ -570,7 +572,7 @@ if (LBANN_HAS_VTUNE)
 endif ()
 
 if (LBANN_HAS_PYTHON)
-  target_link_libraries(lbann PUBLIC ${Python_LIBRARIES})
+  target_link_libraries(lbann PUBLIC Python::Python)
 endif ()
 
 if (TARGET LBANN_CXX_FLAGS_werror)
@@ -578,6 +580,29 @@ if (TARGET LBANN_CXX_FLAGS_werror)
 endif ()
 
 target_link_libraries(lbann PUBLIC ${DL_LIBRARY})
+
+# Fix the -g issue with Clang on OSX
+if (APPLE)
+  # Remove -g from the options
+  string(REPLACE  "-g" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  string(REPLACE  "-g" "" CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG}")
+
+  # Get all the sources and add "-g" to all of them.
+  get_target_property(_LBANN_SRCS lbann SOURCES)
+  set_source_files_properties(${_LBANN_SRCS}
+    PROPERTIES COMPILE_OPTIONS "-g")
+
+  # Cleanup bad files
+  list(APPEND BAD_FILES
+    "${CMAKE_SOURCE_DIR}/src/layers/loss/cross_entropy.cpp")
+  foreach (bad_file IN LISTS BAD_FILES)
+    get_source_file_property(
+      _SRC_COMPILE_OPTS "${bad_file}" COMPILE_OPTIONS)
+    string(REPLACE "-g" "" _SRC_COMPILE_OPTS "${COMPILE_OPTIONS}")
+    set_source_files_properties(
+      "${bad_file}" PROPERTIES COMPILE_OPTIONS "${_SRC_COMPILE_OPTS}")
+  endforeach ()
+endif ()
 
 # Clean things up
 include(LBANNDebugUtilities)

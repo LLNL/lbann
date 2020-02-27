@@ -1,5 +1,6 @@
 #include "mpi.h"
 #include "lbann/utils/options.hpp"
+#include "lbann/utils/exception.hpp"
 #include <ctime>
 #include <dirent.h>
 #include <iostream>
@@ -135,11 +136,7 @@ int options::get_int(std::string option)
 {
   int result;
   if (!m_test_int(option, result)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: options::get_int() - failed to find option: " << option
-        << ", or to convert to int";
-    throw std::runtime_error(err.str());
+    LBANN_ERROR("options::get_int() - failed to find option: ", option, ", or to convert to int");
   }
   return result;
 }
@@ -157,11 +154,7 @@ double options::get_double(std::string option)
 {
   double result;
   if (!m_test_double(option, result)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: options::get_double() - failed to find option: " << option
-        << ", or to convert the value to double";
-    throw std::runtime_error(err.str());
+    LBANN_ERROR("options::get_double() - failed to find option: ", option,  ", or to convert the value to double");
   }
   return result;
 }
@@ -179,10 +172,7 @@ std::string options::get_string(std::string option)
 {
   std::string result;
   if (!m_test_string(option, result)) {
-    std::stringstream err;
-    err << __FILE__ << " " << __LINE__
-        << " :: options::get_string() - failed to find option: " << option;
-    throw std::runtime_error(err.str());
+    LBANN_ERROR("options::get_string() - failed to find option: ", option);
   }
   return result;
 }
@@ -286,10 +276,7 @@ void options::m_parse_file(std::string fn)
   std::ifstream in(fn.c_str());
   if (!in.is_open()) {
     if (!m_rank) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__
-          << " :: failed to open file for reading: " << fn;
-      throw std::runtime_error(err.str());
+      LBANN_ERROR("failed to open file for reading: ", fn);
     }
   }
 

@@ -702,7 +702,7 @@ double generic_data_reader::get_use_percent() const {
 void generic_data_reader::instantiate_data_store(const std::vector<int>& local_list_sizes) {
   double tm1 = get_time();
   options *opts = options::get();
-  if (! (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache"))) {
+  if (! (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill"))) {
     if (m_data_store != nullptr) {
       delete m_data_store;
       m_data_store = nullptr;
@@ -738,11 +738,12 @@ void generic_data_reader::instantiate_data_store(const std::vector<int>& local_l
       m_data_store->build_preloaded_owner_map(local_list_sizes);
     }
     preload_data_store();
+    m_data_store->set_is_preloaded();
     if(is_master()) {
      std::cout << "Preload complete; time: " << get_time() - tm2 << std::endl;
     }
 
-    size_t n = m_data_store->get_num_indices();
+    size_t n = m_data_store->get_num_global_indices();
     if (n != m_shuffled_indices.size()) {
       LBANN_ERROR("num samples loaded: ", n, " != shuffled-indices.size(): ", m_shuffled_indices.size());
     }

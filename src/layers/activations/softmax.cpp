@@ -31,12 +31,10 @@ namespace lbann {
 
 namespace {
 
-// Minimum output value to avoid denormalized floats
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-const DataType min_output = std::sqrt(std::numeric_limits<DataType>::min());
-#else
-const DataType min_output = 0;
-#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
+#ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
+/** Minimum output value to avoid denormalized floats */
+const DataType threshold_val = std::sqrt(std::numeric_limits<DataType>::min());
+#endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 void fp(lbann_comm& comm,
         const AbsDistMat& input,
@@ -91,7 +89,10 @@ void fp(lbann_comm& comm,
     const auto& scale = 1 / local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
       auto& y = local_output(row, col);
-      y = std::max(scale * y, min_output);
+      y = scale * y;
+#ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
+      y = std::max(y, threshold_val);
+#endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
     }
   }
 
@@ -137,7 +138,7 @@ void bp(lbann_comm& comm,
       const auto& y = local_output(row, col);
       const auto& dy = local_gradient_wrt_output(row, col);
       auto& dx = local_gradient_wrt_input(row, col);
-      dx = (y > min_output) ? y * (dy - y_dot_dy) : DataType(0);
+      dx = y * (dy - y_dot_dy);
     }
   }
 

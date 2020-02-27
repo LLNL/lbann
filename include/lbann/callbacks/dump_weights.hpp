@@ -38,7 +38,7 @@ namespace callback {
 
 /**
  * Dump weight matrices to files.
- * This will dump each hidden layer's weight/bias matrix after each epoch.
+ * This will dump each hidden layer's weight/bias matrix after specified epoch interval.
  * The matrices are written to files using Elemental's simple ASCII format. This
  * is not meant for checkpointing, but for exporting weight matrices for
  * analysis that isn't easily done in LBANN.
@@ -48,8 +48,9 @@ class dump_weights : public callback_base {
   /**
    * @param basename The basename for writing files.
    */
-  dump_weights(std::string basename) :
-    callback_base(), m_basename(std::move(basename)) {}
+  dump_weights(std::string basename, El::Int epoch_interval=1) :
+    callback_base(), m_basename(std::move(basename)),
+    m_epoch_interval(std::max(El::Int(1),epoch_interval)) {}
   dump_weights(const dump_weights&) = default;
   dump_weights& operator=(
     const dump_weights&) = default;
@@ -64,6 +65,8 @@ class dump_weights : public callback_base {
  private:
   /** Basename for writing files. */
   std::string m_basename;
+  /** Interval at which to dump weights */
+  El::Int m_epoch_interval;
   /// Dump weights from learning layers.
   void do_dump_weights(model *m, std::string s = "");
 };
