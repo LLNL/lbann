@@ -16,7 +16,7 @@ else ()
     CACHE STRING "The URL from which to clone LIBJPEG-TURBO")
 endif ()
 
-set(JPEG-TURBO_TAG "master"
+set(JPEG-TURBO_TAG "2.0.3"
   CACHE STRING "The git tag to checkout for LIBJPEG-TURBO")
 
 # Where to install LIBJPEG-TURBO
