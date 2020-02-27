@@ -103,41 +103,6 @@ void init_data_readers(
                (name == "multihead_siamese")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_transform_pipeline = false;
-    } else if (name == "jag") {
-      auto* reader_jag = new data_reader_jag(shuffle);
-
-      const lbann_data::DataSetMetaData::Schema& pb_schema = pb_metadata.schema();
-
-      using var_t = data_reader_jag::variable_t;
-
-      // composite independent variable
-      std::vector<std::vector<var_t>> independent_type(pb_schema.independent_size());
-
-      for (int i=0; i < pb_schema.independent_size(); ++i) {
-        const lbann_data::DataSetMetaData::Schema::JAGDataSlice& slice = pb_schema.independent(i);
-        const int slice_size = slice.pieces_size();
-        for (int k=0; k < slice_size; ++k) {
-          const auto var_type = static_cast<var_t>(slice.pieces(k));
-          independent_type[i].push_back(var_type);
-        }
-      }
-
-      reader_jag->set_independent_variable_type(independent_type);
-
-      // composite dependent variable
-      std::vector<std::vector<var_t>> dependent_type(pb_schema.dependent_size());
-
-      for (int i=0; i < pb_schema.dependent_size(); ++i) {
-        const lbann_data::DataSetMetaData::Schema::JAGDataSlice& slice = pb_schema.dependent(i);
-        const int slice_size = slice.pieces_size();
-        for (int k=0; k < slice_size; ++k) {
-          const auto var_type = static_cast<var_t>(slice.pieces(k));
-          dependent_type[i].push_back(var_type);
-        }
-      }
-
-      reader_jag->set_dependent_variable_type(dependent_type);
-      reader = reader_jag;
     } else if (name == "jag_conduit") {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_transform_pipeline = false;
@@ -179,6 +144,10 @@ void init_data_readers(
       set_transform_pipeline = false;
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
+    } else if (name == "ras_lipid") {
+      auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
+      ras_lipid->set_num_labels(readme.num_labels());
+      reader = ras_lipid;
     } else if (name == "csv") {
       auto* reader_csv = new csv_reader(shuffle);
       reader_csv->set_label_col(readme.label_col());
@@ -425,9 +394,6 @@ void init_data_readers(
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
       } else if (name == "multihead_siamese") {
   	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
-      } else if (name == "jag") {
-        reader_validation = new data_reader_jag(shuffle);
-        *dynamic_cast<data_reader_jag*>(reader_validation) = *dynamic_cast<const data_reader_jag*>(reader);
       } else if (name == "jag_conduit") {
         /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
         /// is also shared
@@ -457,6 +423,11 @@ void init_data_readers(
           reader_jag_conduit->set_role(role);
           leading_reader_jag_conduit[role] = reader_jag_conduit;
         }
+      } else if (name == "ras_lipid") {
+        auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
+        ras_lipid->set_num_labels(readme.num_labels());
+        reader_validation = ras_lipid;
+        (*(ras_lipid_conduit_data_reader *)reader_validation) = (*(ras_lipid_conduit_data_reader *)reader);
       } else if (name == "nci") {
         reader_validation = new data_reader_nci(shuffle);
         (*(data_reader_nci *)reader_validation) = (*(data_reader_nci *)reader);
@@ -500,6 +471,11 @@ void init_data_readers(
       if (store != nullptr) {
         store->set_data_reader_ptr(reader_validation);
         reader_validation->get_data_store_ptr()->compact_nodes();
+      }
+
+      size_t ntrain = reader->get_num_data();
+      if (ntrain == 0) {
+        LBANN_ERROR("num train samples = 0; something is wrong");
       }
 
       if (master) {
@@ -806,11 +782,11 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
 
   bool disable_cuda = m.disable_cuda();
 #ifndef LBANN_HAS_GPU
-  disable_cuda = false;
+  disable_cuda = true;
 #endif // LBANN_HAS_GPU
   bool disable_cudnn = disable_cuda;
 #ifndef LBANN_HAS_CUDNN
-  disable_cudnn = false;
+  disable_cudnn = true;
 #endif // LBANN_HAS_CUDNN
 
   std::cout << std::endl

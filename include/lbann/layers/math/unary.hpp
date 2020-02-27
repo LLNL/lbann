@@ -27,58 +27,62 @@
 #ifndef LBANN_LAYERS_MATH_UNARY_HPP_INCLUDED
 #define LBANN_LAYERS_MATH_UNARY_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
-
-#define LBANN_DECLARE_ENTRYWISE_UNARY_LAYER(LAYER_NAME, LAYER_STRING)   \
-  template <data_layout Layout, El::Device Device>                      \
-  class LAYER_NAME : public Layer {                                     \
-  public:                                                               \
-  LAYER_NAME(lbann_comm *comm) : Layer(comm) {}                         \
-    LAYER_NAME* copy() const override {                                 \
-      return new LAYER_NAME<Layout,Device>(*this);                      \
-    }                                                                   \
-    std::string get_type() const override { return LAYER_STRING; }      \
-    data_layout get_data_layout() const override { return Layout; }     \
-    El::Device get_device_allocation() const override { return Device; } \
-  protected:                                                            \
-    void setup_dims() override {                                        \
-      Layer::setup_dims();                                              \
-      set_output_dims(get_input_dims());                                \
-    }                                                                   \
-    void fp_compute() override;                                         \
-    void bp_compute() override;                                         \
+#define LBANN_DECLARE_ENTRYWISE_UNARY_LAYER(LAYER_NAME, LAYER_STRING)       \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  class LAYER_NAME : public data_type_layer<TensorDataType> {               \
+  public:                                                                   \
+  LAYER_NAME(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}   \
+    LAYER_NAME* copy() const override {                                     \
+      return new LAYER_NAME<TensorDataType,Layout,Device>(*this);           \
+    }                                                                       \
+    std::string get_type() const override { return LAYER_STRING; }          \
+    data_layout get_data_layout() const override { return Layout; }         \
+    El::Device get_device_allocation() const override { return Device; }    \
+  protected:                                                                \
+    void setup_dims() override {                                            \
+      data_type_layer<TensorDataType>::setup_dims();                        \
+      this->set_output_dims(this->get_input_dims());                        \
+    }                                                                       \
+    void fp_compute() override;                                             \
+    void bp_compute() override;                                             \
   }
 
 // Convenience macros for ETI decls for unary layers
 
 #ifndef LBANN_UNARY_LAYER_INSTANTIATE
-#define UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, DEVICE)                    \
-  extern template class LAYER_NAME<data_layout::DATA_PARALLEL, DEVICE>; \
-  extern template class LAYER_NAME<data_layout::MODEL_PARALLEL, DEVICE>
+#define UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, DEVICE)                   \
+  extern template class LAYER_NAME<T, data_layout::DATA_PARALLEL, DEVICE>; \
+  extern template class LAYER_NAME<T, data_layout::MODEL_PARALLEL, DEVICE>
 #else
 #define UNARY_ETI_DECL_MACRO_DEV(...)
 #endif // LBANN_UNARY_LAYER_INSTANTIATE
 
-#define UNARY_ETI_INST_MACRO_DEV(LAYER_NAME, DEVICE)               \
-  template class LAYER_NAME<data_layout::DATA_PARALLEL, DEVICE>;   \
-  template class LAYER_NAME<data_layout::MODEL_PARALLEL, DEVICE>
+#define UNARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, T, DEVICE)          \
+  template class LAYER_NAME<T, data_layout::DATA_PARALLEL, DEVICE>; \
+  template class LAYER_NAME<T, data_layout::MODEL_PARALLEL, DEVICE>
+
+#define UNARY_ETI_INST_MACRO_DEV(LAYER_NAME, DEVICE)      \
+  UNARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, float, DEVICE); \
+  UNARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, double, DEVICE)
 
 #ifdef LBANN_HAS_GPU
-#define UNARY_ETI_DECL_MACRO(LAYER_NAME)                       \
-  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU);       \
-  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::GPU)
+#define UNARY_ETI_DECL_MACRO(LAYER_NAME, T)                      \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::CPU);       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::GPU)
 #else
-#define UNARY_ETI_DECL_MACRO(LAYER_NAME)                       \
-  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU)
+#define UNARY_ETI_DECL_MACRO(LAYER_NAME, T)               \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::CPU)
 #endif // LBANN_HAS_GPU
 
 // Convenience macro to define an entry-wise unary layer class
 #define DEFINE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string)    \
-  LBANN_DECLARE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string);        \
-  UNARY_ETI_DECL_MACRO(layer_name)
+  LBANN_DECLARE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string);  \
+  UNARY_ETI_DECL_MACRO(layer_name, float);                        \
+  UNARY_ETI_DECL_MACRO(layer_name, double)
 
 // Logical operations
 DEFINE_ENTRYWISE_UNARY_LAYER(logical_not_layer, "logical not");

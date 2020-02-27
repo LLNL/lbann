@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_ACTIVATIONS_IDENTITY_HPP_INCLUDED
 #define LBANN_LAYERS_ACTIVATIONS_IDENTITY_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -36,40 +36,36 @@ namespace lbann {
  *  Forward and backward prop simply involve setting up tensor views,
  *  and hence are very cheap.
  */
-template <data_layout Layout, El::Device Device>
-class identity_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class identity_layer : public data_type_layer<TensorDataType> {
 public:
-  identity_layer(lbann_comm *comm) : Layer(comm) {}
+  identity_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
   identity_layer* copy() const override { return new identity_layer(*this); }
   std::string get_type() const override { return "identity"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 protected:
   void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
+    data_type_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    El::LockedView(get_activations(), get_prev_activations());
+    El::LockedView(this->get_activations(), this->get_prev_activations());
   }
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    El::LockedView(get_error_signals(), get_prev_error_signals());
+    El::LockedView(this->get_error_signals(), this->get_prev_error_signals());
   }
   void fp_compute() override {}
   void bp_compute() override {}
 };
 
 #ifndef LBANN_IDENTITY_LAYER_INSTANTIATE
-extern template class identity_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class identity_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class identity_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class identity_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class identity_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class identity_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_IDENTITY_LAYER_INSTANTIATE
 
 } // namespace lbann

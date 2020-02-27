@@ -104,6 +104,13 @@ option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
+option(LBANN_WITH_DIHYDROGEN "Build with DiHydrogen support" OFF)
+if (LBANN_WITH_DIHYDROGEN)
+  message(WARNING "DiHydrogen support is currently expermimental. "
+    "There is no stable interface. "
+    "Use caution before using any features.")
+endif (LBANN_WITH_DIHYDROGEN)
+
 option(LBANN_WITH_HWLOC
   "Enable topology-aware optimizations" ON)
 
@@ -177,15 +184,28 @@ set(LBANN_HAS_CEREAL ${CEREAL_FOUND})
 # The imported target is just called "cereal". Super.
 
 # Setup the linear algebra library
-find_package(Hydrogen 1.2.0 NO_MODULE QUIET
+find_package(Hydrogen 1.3.3 NO_MODULE QUIET
   HINTS ${Hydrogen_DIR} ${HYDROGEN_DIR} $ENV{Hydrogen_DIR} $ENV{HYDROGEN_DIR}
   PATH_SUFFIXES lib/cmake/hydrogen
   NO_DEFAULT_PATH)
 if (NOT Hydrogen_FOUND)
-  find_package(Hydrogen 1.2.0 NO_MODULE QUIET REQUIRED)
+  find_package(Hydrogen 1.3.3 NO_MODULE QUIET REQUIRED)
 endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
+
+if (LBANN_WITH_DIHYDROGEN)
+  find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
+    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+    ${H2_DIR} $ENV{H2_DIR}
+    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+    NO_DEFAULT_PATH)
+  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
+  set(LBANN_HAS_DIHYDROGEN TRUE)
+endif ()
+
+# Inherit half-precision stuff from Hydrogen
+set(LBANN_HAS_HALF ${HYDROGEN_HAVE_HALF}) # This is CPU-only
 
 # Not the ideal fix, but should be fine for now.
 if (Aluminum_FOUND)
@@ -212,6 +232,11 @@ set(LBANN_HAS_OPENCV ${OpenCV_FOUND})
 set(LBANN_HAS_CUDA ${_HYDROGEN_HAVE_CUDA})
 set(LBANN_WITH_CUDA ${LBANN_HAS_CUDA})
 
+# Only used if have GPU and have CPU half.
+if (LBANN_HAS_CUDA AND LBANN_HAS_HALF)
+  set(LBANN_HAS_GPU_FP16 ${HYDROGEN_GPU_USE_FP16})
+endif ()
+
 if (LBANN_HAS_CUDA)
   enable_language(CUDA)
 
@@ -225,13 +250,15 @@ endif ()
 if (LBANN_WITH_ALUMINUM)
   # Aluminum may have already been found by Hydrogen
   if (NOT Aluminum_FOUND)
-    find_package(Aluminum 0.2.0 NO_MODULE QUIET
+    message(WARNING
+      "Using Aluminum without Hydrogen support may not be well-supported.")
+    find_package(Aluminum 0.3.0 NO_MODULE QUIET
       HINTS ${Aluminum_DIR} ${ALUMINUM_DIR} ${AL_DIR}
       $ENV{Aluminum_DIR} $ENV{ALUMINUM_DIR} $ENV{AL_DIR}
       PATH_SUFFIXES lib64/cmake/aluminum lib/cmake/aluminum
       NO_DEFAULT_PATH)
     if (NOT Aluminum_FOUND)
-      find_package(Aluminum 0.2.0 NO_MODULE QUIET)
+      find_package(Aluminum 0.3.0 NO_MODULE QUIET)
     endif ()
   endif ()
   set(LBANN_HAS_ALUMINUM ${Aluminum_FOUND})
@@ -274,6 +301,11 @@ if (LBANN_HAS_CUDA)
   endif ()
 
   include(SetupCUDAToolkit)
+
+  if (LBANN_HAS_GPU_FP16)
+    set_property(TARGET cuda::toolkit PROPERTY
+      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_60>)
+  endif (LBANN_HAS_GPU_FP16)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
 
@@ -509,6 +541,11 @@ target_link_libraries(lbann PUBLIC ${HYDROGEN_LIBRARIES})
 target_link_libraries(lbann PUBLIC ${OpenCV_LIBRARIES})
 target_link_libraries(lbann PUBLIC ${CONDUIT_LIBRARIES})
 
+target_link_libraries(lbann PUBLIC
+  $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
+  $<TARGET_NAME_IF_EXISTS:H2::H2Patterns>
+  )
+
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
 endif ()
@@ -550,10 +587,8 @@ if (APPLE)
   set_source_files_properties(${_LBANN_SRCS}
     PROPERTIES COMPILE_OPTIONS "-g")
 
-  # Cleanup bad files
-  list(APPEND BAD_FILES
-    "${CMAKE_SOURCE_DIR}/src/layers/loss/cross_entropy.cpp")
-  foreach (bad_file IN LISTS BAD_FILES)
+  # Cleanup source files
+  foreach (bad_file IN LISTS _LBANN_SRCS)
     get_source_file_property(
       _SRC_COMPILE_OPTS "${bad_file}" COMPILE_OPTIONS)
     string(REPLACE "-g" "" _SRC_COMPILE_OPTS "${COMPILE_OPTIONS}")
@@ -580,6 +615,7 @@ endif ()
 add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/jag_utils)
+add_subdirectory(applications/CANDLE/pilot2/tools)
 add_subdirectory(tests)
 add_subdirectory(scripts)
 
@@ -774,6 +810,7 @@ string(APPEND _str "\n")
 #Print the true/false guys
 append_str_tf(_str
   LBANN_GNU_LINUX
+  LBANN_HAS_DIHYDROGEN
   LBANN_HAS_HYDROGEN
   LBANN_HAS_OPENCV
   LBANN_HAS_CEREAL
@@ -814,6 +851,13 @@ configure_file(
   "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.lua.in"
   "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   @ONLY)
+configure_file(
+  "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.tcl.in"
+  "${CMAKE_BINARY_DIR}/lbann_module.tcl.install")
+
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   RENAME "${LBANN_MODULEFILE_NAME}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles")
+install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
+  RENAME "${LBANN_VERSION}"
+  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")

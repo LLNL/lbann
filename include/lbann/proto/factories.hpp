@@ -27,18 +27,18 @@
 #ifndef LBANN_PROTO_FACTORIES_HPP_INCLUDED
 #define LBANN_PROTO_FACTORIES_HPP_INCLUDED
 
-#include "lbann/callbacks/callback.hpp"
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/models/model.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/transforms/transform.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
-#include "lbann/trainers/trainer.hpp"
+
+#include <google/protobuf/message.h>
 
 #include <map>
 #include <memory>
 
 namespace lbann_data {
+class Layer;
 class Model;
 class ObjectiveFunction;
 class Optimizer;
@@ -48,6 +48,17 @@ class Weights;
 }// namespace lbann_data
 
 namespace lbann {
+
+// Forward declarations
+class callback_base;
+class Layer;
+class lbann_summary;
+class model;
+class objective_function;
+class optimizer;
+class trainer;
+class weights;
+
 namespace proto {
 
 /** Construct a trainer specified with a prototext. */
@@ -70,7 +81,7 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
   const lbann_data::Model& proto_model);
 
 /** Construct a layer specified with prototext. */
-template <data_layout layout, El::Device Dev>
+template <typename TensorDataType, data_layout layout, El::Device Dev>
 std::unique_ptr<Layer> construct_layer(
   lbann_comm* comm,
   const std::map<execution_mode, generic_data_reader*>& data_readers,
@@ -96,6 +107,7 @@ std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
                                                     const lbann_data::Model& m);
 
 /** Construct an optimizer specified with prototext. */
+template <typename T>
 std::unique_ptr<optimizer> construct_optimizer(
   const lbann_data::Optimizer& proto_opt);
 

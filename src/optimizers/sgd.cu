@@ -30,15 +30,16 @@ namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 __global__ void momentum_noncontiguous_kernel(size_t height,
                                               size_t width,
-                                              DataType learning_rate,
-                                              DataType momentum,
-                                              DataType * __restrict__ values,
+                                              TensorDataType learning_rate,
+                                              TensorDataType momentum,
+                                              TensorDataType * __restrict__ values,
                                               size_t values_ldim,
-                                              const DataType * __restrict__ gradient,
+                                              const TensorDataType * __restrict__ gradient,
                                               size_t gradient_ldim,
-                                              DataType * __restrict__ velocity,
+                                              TensorDataType * __restrict__ velocity,
                                               size_t velocity_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < height * width) {
@@ -52,12 +53,13 @@ __global__ void momentum_noncontiguous_kernel(size_t height,
   }
 }
 
+template <typename TensorDataType>
 __global__ void momentum_contiguous_kernel(size_t size,
-                                           DataType learning_rate,
-                                           DataType momentum,
-                                           DataType * __restrict__ values,
-                                           const DataType * __restrict__ gradient,
-                                           DataType * __restrict__ velocity) {
+                                           TensorDataType learning_rate,
+                                           TensorDataType momentum,
+                                           TensorDataType * __restrict__ values,
+                                           const TensorDataType * __restrict__ gradient,
+                                           TensorDataType * __restrict__ velocity) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid < size) {
     const auto& g = gradient[gid];
@@ -68,15 +70,16 @@ __global__ void momentum_contiguous_kernel(size_t size,
   }
 }
 
+template <typename TensorDataType>
 __global__ void nesterov_kernel(size_t height,
                                 size_t width,
-                                DataType learning_rate,
-                                DataType momentum,
-                                DataType * __restrict__ values,
+                                TensorDataType learning_rate,
+                                TensorDataType momentum,
+                                TensorDataType * __restrict__ values,
                                 size_t values_ldim,
-                                const DataType * __restrict__ gradient,
+                                const TensorDataType * __restrict__ gradient,
                                 size_t gradient_ldim,
-                                DataType * __restrict__ velocity,
+                                TensorDataType * __restrict__ velocity,
                                 size_t velocity_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = gridDim.x * blockDim.x;
@@ -93,7 +96,9 @@ __global__ void nesterov_kernel(size_t height,
 
 } // namespace
 
-void sgd::momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
+template <typename TensorDataType>
+void sgd<TensorDataType>::momentum_step_gpu(AbsDistMatrixType& values,
+                                            const AbsDistMatrixType& gradient) {
 
   // Get matrix dimensions
   const size_t local_height = values.LocalHeight();
@@ -106,7 +111,7 @@ void sgd::momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
   const size_t grid_size = (local_size + block_size - 1) / block_size;
   auto&& stream = El::GPUManager::Stream();
   if (m_nesterov) {
-    nesterov_kernel<<<grid_size, block_size, 0, stream>>>(
+    nesterov_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
       local_height, local_width,
       this->get_learning_rate(), m_momentum,
       values.Buffer(), values.LDim(),
@@ -115,11 +120,11 @@ void sgd::momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
   } else {
     if (values.Contiguous() && gradient.Contiguous()
         && m_velocity->Contiguous()) {
-      momentum_contiguous_kernel<<<grid_size, block_size, 0, stream>>>(
+      momentum_contiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
         local_size, this->get_learning_rate(), m_momentum,
         values.Buffer(), gradient.LockedBuffer(), m_velocity->Buffer());
     } else {
-      momentum_noncontiguous_kernel<<<grid_size, block_size, 0, stream>>>(
+      momentum_noncontiguous_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
         local_height, local_width,
         this->get_learning_rate(), m_momentum,
         values.Buffer(), values.LDim(),
@@ -130,4 +135,19 @@ void sgd::momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient) {
 
 }
 
+#ifdef LBANN_HAS_HALF
+template <>
+void sgd<cpu_fp16>::momentum_step_gpu(AbsDistMatrixType&,
+                                      const AbsDistMatrixType&) {
+  LBANN_ERROR("Can't call this function with cpu_fp16!");
+}
+#endif // LBANN_HAS_HALF
+
+#define PROTO(T)                            \
+  template void sgd<T>::momentum_step_gpu(  \
+    El::AbstractDistMatrix<T>&,             \
+    const El::AbstractDistMatrix<T>&)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 } // namespace lbann

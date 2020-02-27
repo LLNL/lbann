@@ -2,7 +2,7 @@ import argparse
 import lbann
 import lbann.models
 import lbann.contrib.args
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 import data.imagenet
 
 # Command-line arguments
@@ -33,15 +33,15 @@ args = parser.parse_args()
 imagenet_labels = 1000
 
 # Construct layer graph
-input = lbann.Input()
-images = lbann.Identity(input)
-labels = lbann.Identity(input)
+input_ = lbann.Input()
+images = lbann.Identity(input_)
+labels = lbann.Identity(input_)
 preds = lbann.models.AlexNet(imagenet_labels)(images)
 probs = lbann.Softmax(preds)
-cross_entropy = lbann.CrossEntropy([probs, labels])
-top1 = lbann.CategoricalAccuracy([probs, labels])
-top5 = lbann.TopKCategoricalAccuracy([probs, labels], k=5)
-layers = list(lbann.traverse_layer_graph(input))
+cross_entropy = lbann.CrossEntropy(probs, labels)
+top1 = lbann.CategoricalAccuracy(probs, labels)
+top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
+layers = list(lbann.traverse_layer_graph(input_))
 
 # Setup objective function
 weights = set()
@@ -76,7 +76,7 @@ trainer = lbann.Trainer()
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.lc.launcher.run(trainer, model, data_reader, opt,
-                              job_name=args.job_name,
-                              setup_only=args.setup_only,
-                              **kwargs)
+lbann.contrib.launcher.run(trainer, model, data_reader, opt,
+                           job_name=args.job_name,
+                           setup_only=args.setup_only,
+                           **kwargs)

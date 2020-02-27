@@ -22,8 +22,10 @@ set_full_path(THIS_DIR_SOURCES
   stack_trace.cpp
   statistics.cpp
   summary.cpp
+  system_info.cpp
   lbann_library.cpp
   jag_common.cpp
+  commify.cpp
 )
 
 if (LBANN_HAS_CUDA)

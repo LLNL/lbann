@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_SOURCES
   unary.cpp
   binary.cpp
   clamp.cpp
+  matmul.cpp
   )
 
 if (LBANN_HAS_CUDA)

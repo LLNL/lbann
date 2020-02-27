@@ -1,4 +1,4 @@
-set_full_path(_DIR_LBANN_CATCH2_TEST_FILES
+set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
   center_crop_test.cpp
   colorize_test.cpp
   grayscale_test.cpp
@@ -14,5 +14,7 @@ set_full_path(_DIR_LBANN_CATCH2_TEST_FILES
   vertical_flip_test.cpp
   )
 
-set(LBANN_CATCH2_TEST_FILES
-  "${LBANN_CATCH2_TEST_FILES}" "${_DIR_LBANN_CATCH2_TEST_FILES}" PARENT_SCOPE)
+set(LBANN_SEQ_CATCH2_TEST_FILES
+  "${LBANN_SEQ_CATCH2_TEST_FILES}"
+  "${THIS_DIR_SEQ_CATCH2_TEST_FILES}"
+  PARENT_SCOPE)

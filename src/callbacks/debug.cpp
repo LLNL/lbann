@@ -26,8 +26,9 @@
 
 #include "lbann/callbacks/debug.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/proto/factories.hpp"
+#include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 
 #include "callbacks.pb.h"
 
@@ -53,7 +54,8 @@ std::string layer_string(const Layer& l) {
 }
 
 /** Get human-readable string describing weights and optimizer. */
-std::string weights_string(const weights& w) {
+template <typename TensorDataType>
+std::string weights_string(const data_type_weights<TensorDataType>& w) {
   std::stringstream msg;
   msg << "weights \"" << w.get_name() << "\" (";
   const auto* opt = w.get_optimizer();
@@ -65,7 +67,8 @@ std::string weights_string(const weights& w) {
 
 /** Get human-readable string describing current batch step. */
 std::string batch_step_string(const model& m) {
-  const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+  const auto& c =
+    dynamic_cast<const sgd_execution_context&>(m.get_execution_context());
   std::stringstream msg;
   const auto& mode = c.get_execution_mode();
   msg << to_string(mode) << " batch " << c.get_step();
@@ -151,15 +154,17 @@ void debug::on_evaluate_forward_prop_end(model *m, Layer *l) {
 
 // Status updates for optimization step
 void debug::on_optimize_begin(model *m, weights *w) {
+  auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
   std::stringstream msg;
-  msg << rank_string(*m->get_comm()) << ": " << weights_string(*w)
+  msg << rank_string(*m->get_comm()) << ": " << weights_string(dtw)
       << " is starting optimization step for " << batch_step_string(*m)
       << std::endl;
   std::cerr << msg.str();
 }
 void debug::on_optimize_end(model *m, weights *w) {
+  auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
   std::stringstream msg;
-  msg << rank_string(*m->get_comm()) << ": " << weights_string(*w)
+  msg << rank_string(*m->get_comm()) << ": " << weights_string(dtw)
       << " is   ending optimization step for " << batch_step_string(*m)
       << std::endl;
   std::cerr << msg.str();

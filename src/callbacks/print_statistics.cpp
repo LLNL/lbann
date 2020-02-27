@@ -58,9 +58,9 @@ void print_statistics::on_epoch_begin(model *m) {
   if (comm->am_world_master()) {
 
     // Get first input layer in model
-    generic_input_layer* input = nullptr;
+    generic_input_layer<DataType>* input = nullptr;
     for (auto&& l : m->get_layers()) {
-      input = dynamic_cast<generic_input_layer*>(l);
+      input = dynamic_cast<generic_input_layer<DataType>*>(l);
       if (input != nullptr) { break; }
     }
     if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
@@ -229,7 +229,7 @@ void print_statistics::report_results(model *m) {
             scores_stdev += diff * diff;
           }
           scores_stdev /= score_list.size() - 1;
-          scores_stdev = std::sqrt(std::max(scores_stdev, EvalType(0)));
+          scores_stdev = El::Sqrt(std::max(scores_stdev, EvalType(0)));
           std::cout << m->get_name() << " (global average) "  << mode_string << " "
                     << met->name() << " : "
                     << avg_score << met->get_unit()

@@ -54,16 +54,31 @@ enum class batch_normalization_stats_aggregation {
  *  Shift." In International Conference on Machine Learning,
  *  pp. 448-456. 2015.
  */
-template <data_layout T_layout, El::Device Dev>
-class batch_normalization_layer : public regularizer_layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class batch_normalization_layer : public regularizer_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "batch normalization only supports DATA_PARALLEL");
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  /** @brief The concrete optimizer type used by this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
+  ///@}
+
 private:
 
   /** Decay rate for the running statistics. */
-  DataType m_decay;
+  TensorDataType m_decay;
   /** Small number to avoid division by zero. */
-  DataType m_epsilon;
+  TensorDataType m_epsilon;
   /** @brief Size of group to aggregate statistics over.
    *
    * If this is 1, the group consists of one process and aggregation
@@ -80,24 +95,24 @@ private:
    *
    * These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<AbsDistMat> m_mean_and_var;
+  std::unique_ptr<AbsDistMatrixType> m_mean_and_var;
   /** View of current mini-batch means. */
-  std::unique_ptr<AbsDistMat> m_mean_v;
+  std::unique_ptr<AbsDistMatrixType> m_mean_v;
   /** View of current mini-batch standard deviations. */
-  std::unique_ptr<AbsDistMat> m_var_v;
+  std::unique_ptr<AbsDistMatrixType> m_var_v;
   /** @brief Gradients w.r.t. means and standard deviations.
    *
    * These are fused for performance when doing non-local batchnorm.
    */
-  std::unique_ptr<AbsDistMat> m_mean_and_var_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_mean_and_var_gradient;
   /** View of gradient w.r.t. means. */
-  std::unique_ptr<AbsDistMat> m_mean_gradient_v;
+  std::unique_ptr<AbsDistMatrixType> m_mean_gradient_v;
   /** View of gradient w.r.t. standard deviations. */
-  std::unique_ptr<AbsDistMat> m_var_gradient_v;
+  std::unique_ptr<AbsDistMatrixType> m_var_gradient_v;
   /** Gradient w.r.t. scaling terms. */
-  std::unique_ptr<AbsDistMat> m_scale_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_scale_gradient;
   /** Gradient w.r.t. bias terms. */
-  std::unique_ptr<AbsDistMat> m_bias_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_bias_gradient;
 
 public:
   /** @brief Set up batch normalization.
@@ -110,10 +125,10 @@ public:
    *         statistics over. Defaults to 1 (i.e. local aggregation).
    */
   batch_normalization_layer(lbann_comm *comm,
-                            DataType decay=0.9,
-                            DataType epsilon=1e-5,
+                            TensorDataType decay=0.9,
+                            TensorDataType epsilon=1e-5,
                             int statistics_group_size=1)
-    : regularizer_layer(comm),
+    : regularizer_layer<TensorDataType>(comm),
       m_decay(decay),
       m_epsilon(epsilon),
       m_statistics_group_size(statistics_group_size) {
@@ -124,7 +139,7 @@ public:
   }
 
   batch_normalization_layer(const batch_normalization_layer& other)
-    : regularizer_layer(other),
+    : regularizer_layer<TensorDataType>(other),
       m_decay(other.m_decay),
       m_epsilon(other.m_epsilon),
       m_statistics_group_size(other.m_statistics_group_size),
@@ -145,7 +160,7 @@ public:
                       other.m_bias_gradient->Copy() : nullptr) {}
 
   batch_normalization_layer& operator=(const batch_normalization_layer& other) {
-    regularizer_layer::operator=(other);
+    regularizer_layer<TensorDataType>::operator=(other);
     m_decay = other.m_decay;
     m_epsilon = other.m_epsilon;
     m_statistics_group_size = other.m_statistics_group_size;
@@ -178,7 +193,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = regularizer_layer::get_description();
+    auto desc = regularizer_layer<TensorDataType>::get_description();
     desc.add("Decay", m_decay);
     desc.add("Epsilon", m_epsilon);
     desc.add("Statistics group size", m_statistics_group_size);
@@ -188,36 +203,36 @@ public:
 protected:
 
   void setup_matrices(const El::Grid& grid) override {
-    regularizer_layer::setup_matrices(grid);
-    m_mean_and_var.reset(new StarMat<Dev>(grid));
-    m_mean_v.reset(new StarMat<Dev>(grid));
-    m_var_v.reset(new StarMat<Dev>(grid));
-    m_mean_and_var_gradient.reset(new StarMat<Dev>(grid));
-    m_mean_gradient_v.reset(new StarMat<Dev>(grid));
-    m_var_gradient_v.reset(new StarMat<Dev>(grid));
-    m_scale_gradient.reset(new StarMat<Dev>(grid));
-    m_bias_gradient.reset(new StarMat<Dev>(grid));
+    regularizer_layer<TensorDataType>::setup_matrices(grid);
+    m_mean_and_var.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_mean_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_var_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_mean_and_var_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_mean_gradient_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_var_gradient_v.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_scale_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
+    m_bias_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
   }
 
   void setup_dims() override {
-    regularizer_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    regularizer_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
 
   void setup_data() override {
-    regularizer_layer::setup_data();
-    const auto& output_dims = get_output_dims();
+    regularizer_layer<TensorDataType>::setup_data();
+    const auto& output_dims = this->get_output_dims();
     const auto& num_channels = output_dims[0];
 
     // Display warning if mini-batch size is small
-    const auto& output = get_activations();
+    const auto& output = this->get_activations();
     const auto& mini_batch_size = output.Width();
     const auto& local_mini_batch_size = mini_batch_size / output.DistSize();
     if (m_statistics_group_size == 0 && mini_batch_size <= 4) {
       if (output.DistRank() == 0) {
         std::stringstream err;
         err << "LBANN warning: "
-            << get_type() << " layer \"" << get_name() << "\" "
+            << get_type() << " layer \"" << this->get_name() << "\" "
             << "is using global statistics and "
             << "the mini-batch size (" << mini_batch_size << ") "
             << "may be too small to get good statistics";
@@ -230,7 +245,7 @@ protected:
       if (output.DistRank() == 0) {
         std::stringstream err;
       err << "LBANN warning: "
-          << get_type() << " layer \"" << get_name() << "\" "
+          << get_type() << " layer \"" << this->get_name() << "\" "
           << "is aggregating statistics over "
           << m_statistics_group_size
           << "processors and the aggregated mini-batch size ("
@@ -241,55 +256,55 @@ protected:
     }
 
     // Initialize default weights if none are provided
-    if (this->m_weights.size() > 4) {
+    if (this->num_weights() > 4) {
       std::stringstream err;
-      err << "attempted to setup layer \"" << m_name << "\" "
+      err << "attempted to setup layer \"" << this->m_name << "\" "
           << "with an invalid number of weights";
       LBANN_ERROR(err.str());
     }
-    this->m_weights.resize(4, nullptr);
-    if (this->m_weights[0] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType(1));
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_scale");
+    this->set_num_data_type_weights(4);
+    if (!this->has_data_type_weights(0)) {
+      auto w = make_unique<WeightsType>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+      w->set_name(this->get_name() + "_scale");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_weights[0] = w.get();
+      this->set_data_type_weights(0, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights[1] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType(0));
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_bias");
+    if (!this->has_data_type_weights(1)) {
+      auto w = make_unique<WeightsType>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+      w->set_name(this->get_name() + "_bias");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_weights[1] = w.get();
+      this->set_data_type_weights(1, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights[2] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType(0));
-      w->set_name(get_name() + "_running_mean");
+    if (!this->has_data_type_weights(2)) {
+      auto w = make_unique<WeightsType>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
+      w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
-      this->m_weights[2] = w.get();
+      this->set_data_type_weights(2, w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights[3] == nullptr) {
-      auto w = make_unique<weights>(get_comm());
-      auto init = make_unique<constant_initializer>(DataType(1));
-      w->set_name(get_name() + "_running_variance");
+    if (!this->has_data_type_weights(3)) {
+      auto w = make_unique<WeightsType>(this->get_comm());
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
+      w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
-      this->m_weights[3] = w.get();
+      this->set_data_type_weights(3, w.get());
       this->m_model->add_weights(std::move(w));
     }
 
     // Setup weights
-    auto dist = get_prev_activations().DistData();
+    auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
-    for (auto* w : this->m_weights) {
+    for (auto* w : this->get_data_type_weights()) {
       w->set_dims(num_channels);
       w->set_matrix_distribution(dist);
     }
@@ -309,18 +324,18 @@ protected:
              El::ALL, El::IR(1, 2));
 
     // Initialize freeze state
-    for (auto&& w : this->m_weights) {
-      if (m_frozen) {
+    for (auto&& w : this->get_data_type_weights()) {
+      if (this->m_frozen) {
         w->freeze();
       } else {
         w->unfreeze();
       }
     }
-    for (auto&& w : this->m_weights) {
-      if (w->is_frozen() != m_frozen) {
+    for (auto&& w : this->get_data_type_weights()) {
+      if (w->is_frozen() != this->m_frozen) {
         std::stringstream err;
-        err << (m_frozen ? "" : "un") << "frozen "
-            << "layer \"" << get_name() << "\" has "
+        err << (this->m_frozen ? "" : "un") << "frozen "
+            << "layer \"" << this->get_name() << "\" has "
             << (w->is_frozen() ? "" : "un") << "frozen "
             << "weights \"" << w->get_name() << "\"";
         LBANN_ERROR(err.str());
@@ -335,12 +350,11 @@ protected:
 };
 
 #ifndef LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
-extern template class batch_normalization_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class batch_normalization_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class batch_normalization_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 
 } // namespace lbann

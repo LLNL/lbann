@@ -86,7 +86,7 @@ class layer_metric : public metric {
   Layer* m_layer;
 
   /** Get corresponding evaluation layer. */
-  abstract_evaluation_layer& get_evaluation_layer();
+  /*abstract_evaluation_*/Layer& get_evaluation_layer();
 
 };
 

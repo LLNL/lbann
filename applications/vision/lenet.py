@@ -21,9 +21,9 @@ args = parser.parse_args()
 # ----------------------------------
 
 # Input data
-input = lbann.Input()
-images = lbann.Identity(input)
-labels = lbann.Identity(input)
+input_ = lbann.Input()
+images = lbann.Identity(input_)
+labels = lbann.Identity(input_)
 
 # LeNet
 x = lbann.Convolution(images,
@@ -62,8 +62,8 @@ x = lbann.FullyConnected(x, num_neurons = 10, has_bias = True)
 probs = lbann.Softmax(x)
 
 # Loss function and accuracy
-loss = lbann.CrossEntropy([probs, labels])
-acc = lbann.CategoricalAccuracy([probs, labels])
+loss = lbann.CrossEntropy(probs, labels)
+acc = lbann.CategoricalAccuracy(probs, labels)
 
 # ----------------------------------
 # Setup experiment
@@ -74,7 +74,7 @@ mini_batch_size = 64
 num_epochs = 20
 model = lbann.Model(mini_batch_size,
                     num_epochs,
-                    layers=lbann.traverse_layer_graph(input),
+                    layers=lbann.traverse_layer_graph(input_),
                     objective_function=loss,
                     metrics=[lbann.Metric(acc, name='accuracy', unit='%')],
                     callbacks=[lbann.CallbackPrintModelDescription(),
@@ -93,8 +93,8 @@ trainer = lbann.Trainer()
 # ----------------------------------
 # Run experiment
 # ----------------------------------
-# Note: Use `lbann.contrib.lc.launcher.run` instead for optimized
-# defaults on LC systems.
+# Note: Use `lbann.contrib.launcher.run` instead for optimized
+# defaults.
 
 kwargs = {}
 if args.partition: kwargs['partition'] = args.partition

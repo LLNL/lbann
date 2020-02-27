@@ -5,7 +5,6 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_csv.cpp
   data_reader_image.cpp
   data_reader_imagenet.cpp
-  data_reader_jag.cpp
   data_reader_jag_conduit.cpp
   data_reader_merge_features.cpp
   data_reader_merge_samples.cpp
@@ -21,6 +20,7 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_python.cpp
   offline_patches_npz.cpp
   data_reader_numpy_npz_conduit.cpp
+  data_reader_npz_ras_lipid.cpp
   )
 
 # Propagate the files up the tree

@@ -25,35 +25,56 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/check_small.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 namespace lbann {
 namespace callback {
+namespace {
+template <typename TensorDataType>
+bool is_good(const El::AbstractDistMatrix<TensorDataType>& m) {
+  static const TensorDataType threshold
+    = El::Sqrt(std::numeric_limits<TensorDataType>::min());
+
+  const auto& local_mat = m.LockedMatrix();
+  const El::Int height = local_mat.Height();
+  const El::Int width = local_mat.Width();
+  for (El::Int col = 0; col < width; ++col) {
+    for (El::Int row = 0; row < height; ++row) {
+      const auto val = std::abs(local_mat(row, col));
+      if (val > TensorDataType(0) && val <= threshold) {
+        std::cout << "Found small value " << val
+                  << " at (" << row << "," << col << ")!" << std::endl;
+        return false;
+      }
+    }
+  }
+  return true;
+}
+}// namespace <anon>
 
 void check_small::on_forward_prop_end(model *m, Layer *l) {
   const auto& c = m->get_execution_context();
-  const AbsDistMat& acts = l->get_activations();
+  auto& dtl = dynamic_cast<data_type_layer<DataType>&>(*l);
+  const auto& acts = dtl.get_activations();
   if (!is_good(acts)) {
-    std::stringstream ss;
-    ss << name() << ": "
-       << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
-       << "error in activations of " << l->get_name() << " "
-       << "(step=" << std::to_string(c.get_step()) << ")";
-    throw lbann_exception(ss.str());
+    LBANN_ERROR(name(), ": "
+                "[", std::to_string(m->get_comm()->get_rank_in_world()), "]: "
+                "error in activations of ", l->get_name(), " "
+                "(step=", std::to_string(c.get_step()), ")");
   }
 }
 
 void check_small::on_backward_prop_end(model *m) {
   const auto& c = m->get_execution_context();
   for (weights *w : m->get_weights()) {
-    optimizer *opt = w->get_optimizer();
+    auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
+    auto* opt = dtw.get_optimizer();
     if (opt != nullptr && !is_good(opt->get_gradient())) {
-      std::stringstream ss;
-      ss << name() << ": "
-         << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
-         << "error in weights gradient of " << w->get_name() << " "
-         << "(step=" << std::to_string(c.get_step()) << ")";
-      throw lbann_exception(ss.str());
+      LBANN_ERROR(name(), ": "
+                  "[", std::to_string(m->get_comm()->get_rank_in_world()), "]: "
+                  "error in weights gradient of ", dtw.get_name(), " "
+                  "(step=", std::to_string(c.get_step()), ")");
     }
   }
 }
@@ -61,36 +82,16 @@ void check_small::on_backward_prop_end(model *m) {
 void check_small::on_batch_end(model *m) {
   const auto& c = m->get_execution_context();
   for (weights *w : m->get_weights()) {
-    if (!is_good(w->get_values())) {
-      std::stringstream ss;
-      ss << name() << ": "
-         << "[" << std::to_string(m->get_comm()->get_rank_in_world()) << "]: "
-         << "error in weights of " << w->get_name() << " "
-         << "(step=" << std::to_string(c.get_step()-1) << ")";
-      throw lbann_exception(ss.str());
+    auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
+    if (!is_good(dtw.get_values())) {
+      LBANN_ERROR(name(), ": "
+                  "[", std::to_string(m->get_comm()->get_rank_in_world()), "]: "
+                  "error in weights of ", w->get_name(), " "
+                  "(step=", std::to_string(c.get_step()-1), ")");
     }
   }
 }
 
-bool check_small::is_good(const AbsDistMat& m) {
-  const AbsMat& local_mat = m.LockedMatrix();
-  const El::Int height = local_mat.Height();
-  const El::Int width = local_mat.Width();
-  for (El::Int col = 0; col < width; ++col) {
-    for (El::Int row = 0; row < height; ++row) {
-      const DataType val = std::abs(local_mat(row, col));
-      if (val > 0 && val <= m_threshold) {
-        std::cout << "Found small value " << val << " "
-                  << "at (" << row << "," << col << ")!" << std::endl;
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
-const DataType check_small::m_threshold
-  = std::sqrt(std::numeric_limits<DataType>::min());
 
 } // namespace callback
 } // namespace lbann

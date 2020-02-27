@@ -1,4 +1,5 @@
 import collections.abc
+import copy
 import math
 import os
 import re
@@ -238,11 +239,19 @@ def get_command(cluster,
                 option_gpu_per_resource = ' -g 4'
                 option_launch_distribution = ' -d packed'
                 # Avoid `nrs (32) should not be greater than rs_per_host (1) * number of servers available (16).`
-                if num_processes > 16:
-                    num_processes = 16
-                option_num_processes = ' -n {n}'.format(n=num_processes)
+                if num_nodes is None:
+                    num_nodes = 1
+                # The "option_num_processes" is a misnomer for the LSF case. Rather than
+                # changing the rest of the code, set it to be the number of nodes. Within
+                # JSRUN, the correct number of processes will be obtained when combined
+                # with "option_tasks_per_resource".
+                option_num_processes = ' -n {n}'.format(n=num_nodes)
                 option_resources_per_host = ' -r 1'
-                option_tasks_per_resource = ' -a 4'
+                option_tasks_per_resource = ' -a %d' % (num_processes/num_nodes)
+                if (num_processes%num_nodes) is not 0:
+                    raise Exception('num_processes %s, is not divisible by num_nodes %d'
+                                    % (num_processes, num_nodes))
+
             else:
                 # -np => Run this many copies of the program on the given nodes.
                 option_num_processes = ' -np %d' % num_processes
@@ -339,8 +348,8 @@ def get_command(cluster,
         elif cluster == 'ray':
             option_data_filedir = ' --data_filedir=%s' % re.sub(
                 '[a-z]scratch[a-z]', 'gscratchr', data_filedir_default)
-    elif None not in data_file_parameters:
-        # Everything in data_file_parameters has a non-None value.
+    elif not data_file_parameters == [None, None, None, None]:
+        # Any of the data_file_parameters has a non-None value.
         if cluster in ['catalyst', 'corona', 'pascal']:
             # option_data_filedir_train = data_filedir_train_default
             # option_data_filename_train = data_filename_train_default
@@ -348,20 +357,22 @@ def get_command(cluster,
             # option_data_filename_train = data_filename_test_default
             pass  # No need to pass in a parameter
         elif cluster == 'lassen':
-            filename_train = re.sub(
-                '[a-z]scratch[a-z]', 'gpfs1', data_filename_train_default)
-            filename_train = re.sub(
-                'labels', 'original/labels', filename_train)
-            print('filename_train={f}'.format(f=filename_train))
-            filename_test = re.sub(
-                '[a-z]scratch[a-z]', 'gpfs1', data_filename_test_default)
-            filename_test = re.sub(
-                'labels', 'original/labels', filename_test)
-            print('filename_test={f}'.format(f=filename_test))
-            option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_train_default)
-            option_data_filename_train = ' --data_filename_train=%s' % filename_train
-            option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_test_default)
-            option_data_filename_test  = ' --data_filename_test=%s'  % filename_test
+            if data_filedir_train_default is not None:
+                option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_train_default)
+            if data_filename_train_default is not None:
+                filename_train = re.sub(
+                    '[a-z]scratch[a-z]', 'gpfs1', data_filename_train_default)
+                filename_train = re.sub(
+                    'labels', 'original/labels', filename_train)
+                option_data_filename_train = ' --data_filename_train=%s' % filename_train
+            if data_filedir_test_default is not None:
+                option_data_filedir_test   = ' --data_filedir_test=%s'   % re.sub('[a-z]scratch[a-z]', 'gpfs1', data_filedir_test_default)
+            if data_filename_test_default is not None:
+                filename_test = re.sub(
+                    '[a-z]scratch[a-z]', 'gpfs1', data_filename_test_default)
+                filename_test = re.sub(
+                    'labels', 'original/labels', filename_test)
+                option_data_filename_test  = ' --data_filename_test=%s'  % filename_test
         elif cluster == 'ray':
             option_data_filedir_train  = ' --data_filedir_train=%s'  % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filedir_train_default)
             option_data_filename_train = ' --data_filename_train=%s' % re.sub('[a-z]scratch[a-z]', 'gscratchr', data_filename_train_default)
@@ -667,8 +678,7 @@ def assert_failure(return_code, expected_error, error_file_name):
 def create_tests(setup_func,
                  test_file,
                  test_name_base=None,
-                 nodes=1,
-                 procs_per_node=None):
+                 **kwargs):
     """Create functions that can interact with PyTest
 
     This function creates tests that involve running an LBANN
@@ -695,10 +705,8 @@ def create_tests(setup_func,
             cases, use `__file__`.
         test_name (str, optional): Descriptive name (default: test
             file name with '.py' removed).
-        nodes (int, optional): Number of compute nodes (default: 1).
-        procs_per_node (int, optional): Number of parallel processes
-            per compute node (default: system-specific default,
-            usually number of GPUs per node).
+        **kwargs: Keyword arguments to pass into
+            `lbann.contrib.launcher.run`.
 
     Returns:
         Iterable of function: Tests that can interact with PyTest.
@@ -716,8 +724,12 @@ def create_tests(setup_func,
         # Make sure test name is prefixed with 'test_'
         test_name_base = 'test_' + test_name_base
 
-    # Basic test function
     def test_func(cluster, executables, dir_name, compiler_name):
+        """Function that can interact with PyTest.
+
+        Returns a dict containing log files and other output data.
+
+        """
         process_executable(test_name_base, compiler_name, executables)
         test_name = '{}_{}'.format(test_name_base, compiler_name)
 
@@ -739,34 +751,37 @@ def create_tests(setup_func,
                                             'site-packages')
         sys.path.append(python_frontend_path)
         import lbann
-        import lbann.contrib.lc.launcher
+        import lbann.contrib.launcher
 
         # Setup LBANN experiment
         trainer, model, data_reader, optimizer = setup_func(lbann)
 
-        # Run LBANN experiment
-        experiment_dir = os.path.join(os.path.dirname(test_file),
-                                      'experiments',
-                                      test_name)
-        stdout_log_file = os.path.join(experiment_dir, 'out.log')
-        stderr_log_file = os.path.join(experiment_dir, 'err.log')
-        kwargs = {}
-        if procs_per_node:
-            kwargs['procs_per_node'] = procs_per_node
-        return_code = lbann.contrib.lc.launcher.run(
+        # Configure kwargs to LBANN launcher
+        _kwargs = copy.deepcopy(kwargs)
+        if 'work_dir' not in _kwargs:
+            _kwargs['work_dir'] = os.path.join(os.path.dirname(test_file),
+                                               'experiments',
+                                               test_name)
+        if 'job_name' not in _kwargs:
+            _kwargs['job_name'] = f'lbann_{test_name}'
+        if 'overwrite_script' not in _kwargs:
+            _kwargs['overwrite_script'] = True
+
+        # Run LBANN
+        work_dir = _kwargs['work_dir']
+        stdout_log_file = os.path.join(work_dir, 'out.log')
+        stderr_log_file = os.path.join(work_dir, 'err.log')
+        return_code = lbann.contrib.launcher.run(
             trainer=trainer,
             model=model,
             data_reader=data_reader,
             optimizer=optimizer,
-            experiment_dir=experiment_dir,
-            job_name='lbann_{}'.format(test_name),
-            nodes=nodes,
-            overwrite_script=True,
-            **kwargs)
+            **_kwargs,
+        )
         assert_success(return_code, stderr_log_file)
         return {
             'return_code': return_code,
-            'experiment_dir': experiment_dir,
+            'work_dir': work_dir,
             'stdout_log_file': stdout_log_file,
             'stderr_log_file': stderr_log_file,
         }

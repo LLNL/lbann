@@ -27,13 +27,18 @@
 #define LBANN_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/sum.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <lbann.pb.h>
+
 namespace lbann {
 
-template class sum_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class sum_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class sum_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class sum_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+LBANN_LAYER_DEFAULT_BUILDER(sum)
+
+#define PROTO_DEVICE(T, Device)                                    \
+  template class sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  template class sum_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(sum, T, Device)
+
+#include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

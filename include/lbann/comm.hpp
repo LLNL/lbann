@@ -41,6 +41,11 @@
 
 namespace lbann {
 
+#ifdef LBANN_HAS_ALUMINUM
+/** Convert an MPI_Op to an Aluminum reduction operator. */
+::Al::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
+#endif
+
 namespace Al {
 
 /** Dummy Aluminum backend. */
@@ -702,18 +707,21 @@ class lbann_comm {
     bytes_received += count * sizeof(T) * (size_c - 1);
   }
   /** Matrix allreduce. */
-  void allreduce(AbsMat& m,
+  template <typename TensorDataType>
+  void allreduce(El::AbstractMatrix<TensorDataType>& m,
                  const El::mpi::Comm& c,
                  El::mpi::Op op = El::mpi::SUM);
   /** Matrix allreduce. */
-  void allreduce(AbsDistMat& m,
+  template <typename TensorDataType>
+  void allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                  const El::mpi::Comm& c,
                  El::mpi::Op op = El::mpi::SUM);
   /** Non-blocking matrix allreduce.
    *  If LBANN has not been built with Aluminum, then this calls a
    *  blocking matrix allreduce.
    */
-  void nb_allreduce(AbsMat& m,
+  template <typename TensorDataType>
+  void nb_allreduce(El::AbstractMatrix<TensorDataType>& m,
                     const El::mpi::Comm& c,
                     Al::request& req,
                     El::mpi::Op op = El::mpi::SUM);
@@ -721,7 +729,8 @@ class lbann_comm {
    *  If LBANN has not been built with Aluminum, then this calls a
    *  blocking matrix allreduce.
    */
-  void nb_allreduce(AbsDistMat& m,
+  template <typename TensorDataType>
+  void nb_allreduce(El::AbstractDistMatrix<TensorDataType>& m,
                     const El::mpi::Comm& c,
                     Al::request& req,
                     El::mpi::Op op = El::mpi::SUM);
@@ -1052,11 +1061,6 @@ class lbann_comm {
    */
   int threads_per_proc;
 
-#ifdef LBANN_HAS_ALUMINUM
-  /** Convert an MPI_Op to an Aluminum reduction operator. */
-  ::Al::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
-#endif
-
   // Various statistics counters.
   size_t num_trainer_barriers;
   size_t num_intertrainer_barriers;
@@ -1123,6 +1127,25 @@ void lbann_comm::broadcast<std::string>(const int root, std::string& str, const 
  *  has been finalized. In either case it returns a negative value.
  */
 int get_rank_in_world();
+
+#ifndef LBANN_COMM_INSTANTIATE
+#define PROTO(T)                                                                             \
+  extern template void lbann_comm::allreduce<T>(                                             \
+    El::AbstractMatrix<T>& m, const El::mpi::Comm& c, El::mpi::Op op);                       \
+  extern template void lbann_comm::allreduce<T>(                                             \
+    El::AbstractDistMatrix<T>& m, const El::mpi::Comm& c, El::mpi::Op op);                   \
+  extern template void lbann_comm::nb_allreduce<T>(                                          \
+    El::AbstractMatrix<T>& m, const El::mpi::Comm& c, Al::request& req, El::mpi::Op op);     \
+  extern template void lbann_comm::nb_allreduce<T>(                                          \
+    El::AbstractDistMatrix<T>& m, const El::mpi::Comm& c, Al::request& req, El::mpi::Op op)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_COMM_INSTANTIATE
 
 } // namespace lbann
 

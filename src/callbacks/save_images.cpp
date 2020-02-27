@@ -25,7 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/save_images.hpp"
-#include "lbann/proto/factories.hpp"
+#include "lbann/layers/data_type_layer.hpp"
+
+#include "lbann/proto/proto_common.hpp"
 
 #include <callbacks.pb.h>
 
@@ -52,8 +54,9 @@ void save_image(std::string prefix,
       continue;
     }
 
+    auto const* dtl = dynamic_cast<data_type_layer<DataType> const*>(l);
     // Check that tensor dimensions are valid for images
-    const auto& dims = l->get_output_dims();
+    const auto& dims = dtl->get_output_dims();
     El::Int num_channels(0), height(0), width(0);
     if (dims.size() == 2) {
       num_channels = 1;
@@ -78,8 +81,8 @@ void save_image(std::string prefix,
     }
 
     // Get tensor data
-    const auto& raw_data = l->get_activations();
-    std::unique_ptr<AbsDistMat> raw_data_v(raw_data.Construct(raw_data.Grid(), raw_data.Root()));
+    const auto& raw_data = dtl->get_activations();
+    std::unique_ptr<El::AbstractDistMatrix<DataType>> raw_data_v(raw_data.Construct(raw_data.Grid(), raw_data.Root()));
     El::LockedView(*raw_data_v, raw_data, El::ALL, El::IR(0));
     CircMat<El::Device::CPU> circ_data(raw_data_v->Grid(), raw_data_v->Root());
     circ_data = *raw_data_v;
@@ -132,8 +135,8 @@ void save_image(std::string prefix,
 } // namespace
 
 save_images::save_images(std::vector<std::string> layer_names,
-                                                       std::string image_format,
-                                                       std::string image_prefix)
+                                         std::string image_format,
+                                         std::string image_prefix)
   : callback_base(),
     m_layer_names(std::move(layer_names)),
     m_image_format(image_format.empty() ? "jpg" : image_format),
@@ -145,14 +148,14 @@ save_images::save_images(std::vector<std::string> layer_names,
 
 void save_images::on_epoch_end(model *m) {
   const auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
-  save_image(m_image_prefix + "epoch" + std::to_string(c.get_epoch()),
+  save_image(build_string(m_image_prefix, "epoch", c.get_epoch()),
              m_image_format,
              m->get_layers(),
              m_layer_names);
 }
 
 void save_images::on_test_end(model *m) {
-  save_image(m_image_prefix + "test",
+  save_image(build_string(m_image_prefix, "test"),
              m_image_format,
              m->get_layers(),
              m_layer_names);
@@ -160,7 +163,8 @@ void save_images::on_test_end(model *m) {
 
 std::unique_ptr<callback_base>
 build_save_images_callback_from_pbuf(
-  const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
+  const google::protobuf::Message& proto_msg,
+  const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSaveImages&>(proto_msg);
   return make_unique<save_images>(

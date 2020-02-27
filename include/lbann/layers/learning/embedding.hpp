@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_LEARNING_EMBEDDING_HPP_INCLUDED
 #define LBANN_LAYERS_LEARNING_EMBEDDING_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -35,22 +35,37 @@ namespace lbann {
 
 /** @brief Lookup table to vectors of fixed size.
  *
- *  Takes a scalar input, interprets it as an index, and outputs the
- *  corresponding vector. The number of embedding vectors and the size
- *  of vectors are fixed. If the index is out-of-range, then the
- *  output is a vector of zeros.
+ *  Each input value is interpreted as an index and the corresponding
+ *  embedding vector is output. Thus, given an input vector of length
+ *  @f$ \text{sequence\_length} @f$, the output is a
+ *  @f$ \text{sequence\_length} \times \text{embedding\_dim} @f$ tensor.
+ *  If an index is out-of-range, then corresponding output is a vector
+ *  of zeros.
  *
  *  The embedding vectors are stored in an
  *  @f$ \text{embedding\_dim} \times \text{num\_embeddings} @f$
  *  weights matrix. Note that this is the transpose of the weights in
  *  the PyTorch embedding layer.
  */
-template <data_layout Layout, El::Device Device>
-class embedding_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class embedding_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "embedding layer only supports data parallel layout");
-  static_assert(Device == El::Device::CPU,
-                "embedding layer only supports CPU");
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  /** @brief The concrete optimizer type used by this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
+  ///@}
+
 public:
 
   /**
@@ -65,23 +80,16 @@ public:
   embedding_layer(lbann_comm* comm,
                   size_t num_embeddings,
                   size_t embedding_dim,
-                  El::Int padding_idx=-1)
-    : Layer(comm),
-      m_num_embeddings{num_embeddings},
-      m_embedding_dim{embedding_dim},
-      m_padding_idx{padding_idx} {}
+                  El::Int padding_idx=-1);
 
-  embedding_layer(const embedding_layer& other) = default;
-  embedding_layer& operator=(const embedding_layer& other) = default;
+  embedding_layer(const embedding_layer& other);
+  embedding_layer& operator=(const embedding_layer& other);
   ~embedding_layer() = default;
 
-  embedding_layer* copy() const override {
-    return new embedding_layer(*this);
-  }
-
-  std::string get_type() const override { return "embedding"; }
-  data_layout get_data_layout() const override { return Layout; }
-  El::Device get_device_allocation() const override { return Device; }
+  embedding_layer* copy() const override;
+  std::string get_type() const override;
+  data_layout get_data_layout() const override;
+  El::Device get_device_allocation() const override;
 
   description get_description() const override;
 
@@ -107,7 +115,7 @@ private:
   El::Int m_padding_idx;
 
   /** Gradient w.r.t. embedding weights. */
-  StarMat<El::Device::CPU> m_dictionary_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_embeddings_grad;
 
 };
 
@@ -115,88 +123,139 @@ private:
 // Implementation
 // =========================================================
 
-template <data_layout Layout, El::Device Device>
-description embedding_layer<Layout,Device>::get_description() const {
-  auto desc = Layer::get_description();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+embedding_layer<TensorDataType,Layout,Device>::embedding_layer(
+  lbann_comm* comm,
+  size_t num_embeddings,
+  size_t embedding_dim,
+  El::Int padding_idx)
+  : data_type_layer<TensorDataType>(comm),
+    m_num_embeddings{num_embeddings},
+    m_embedding_dim{embedding_dim},
+    m_padding_idx{padding_idx} {}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+embedding_layer<TensorDataType,Layout,Device>::embedding_layer(
+ const embedding_layer<TensorDataType,Layout,Device>& other)
+  : data_type_layer<TensorDataType>(other),
+    m_num_embeddings{other.m_num_embeddings},
+    m_embedding_dim{other.m_embedding_dim},
+    m_padding_idx{other.m_padding_idx},
+    m_embeddings_grad(other.m_embeddings_grad
+                      ? other.m_embeddings_grad->Copy()
+                      : nullptr) {}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+embedding_layer<TensorDataType,Layout,Device>& embedding_layer<TensorDataType,Layout,Device>::operator=(
+  const embedding_layer<TensorDataType,Layout,Device>& other) {
+  data_type_layer<TensorDataType>::operator=(other);
+  m_num_embeddings = other.m_num_embeddings;
+  m_embedding_dim = other.m_embedding_dim;
+  m_padding_idx = other.m_padding_idx;
+  m_embeddings_grad.reset(other.m_embeddings_grad
+                          ? other.m_embeddings_grad->Copy()
+                          : nullptr);
+  return *this;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+embedding_layer<TensorDataType,Layout,Device>* embedding_layer<TensorDataType,Layout,Device>::copy() const {
+  return new embedding_layer(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::string embedding_layer<TensorDataType,Layout,Device>::get_type() const {
+  return "embedding";
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+data_layout embedding_layer<TensorDataType,Layout,Device>::get_data_layout() const {
+  return Layout;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+El::Device embedding_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
+  return Device;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+description embedding_layer<TensorDataType,Layout,Device>::get_description() const {
+  auto desc = data_type_layer<TensorDataType>::get_description();
   desc.add("Num embeddings", m_num_embeddings);
   desc.add("Embedding dim", m_embedding_dim);
   desc.add("Padding index", m_padding_idx);
   return desc;
 }
 
-template <data_layout Layout, El::Device Device>
-void embedding_layer<Layout,Device>::setup_dims() {
-  Layer::setup_dims();
-
-  // Make sure input dimensions are valid
-  if (this->get_input_size() != 1) {
-    const auto& dims = this->get_input_dims();
-    std::ostringstream dims_ss;
-    for (size_t i = 0; i < dims.size(); ++i) {
-      dims_ss << (i > 0 ? "x" : "") << dims[i];
-    }
-    LBANN_ERROR(this->get_type()," layer \"",this->get_name(),"\" ",
-                "recieved an input tensor with invalid dimensions "
-                "(expected 1, got ",dims_ss.str(),")");
-  }
-
-  // Output is size of embedding vector
-  this->set_output_dims({static_cast<int>(m_embedding_dim)});
-
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void embedding_layer<TensorDataType,Layout,Device>::setup_dims() {
+  data_type_layer<TensorDataType>::setup_dims();
+  auto dims = this->get_input_dims();
+  dims.push_back(static_cast<int>(m_embedding_dim));
+  this->set_output_dims(dims);
 }
 
-template <data_layout Layout, El::Device Device>
-void embedding_layer<Layout,Device>::setup_data() {
-  Layer::setup_data();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void embedding_layer<TensorDataType,Layout,Device>::setup_data() {
+  data_type_layer<TensorDataType>::setup_data();
 
   // Construct default weights if needed
   // Note: Randomly drawn from normal distribution with mean 0 and
   // standard deviation 1.
-  if (this->m_weights.empty()) {
-    auto w = make_unique<weights>(get_comm());
-    auto init = make_unique<normal_initializer>(0,1);
-    auto opt = std::unique_ptr<optimizer>(m_model->create_optimizer());
+  if (!this->has_weights()) {
+    auto w = make_unique<WeightsType>(this->get_comm());
+    auto init = make_unique<normal_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero(),
+                                                                El::TypeTraits<TensorDataType>::One());
+    auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_weights");
     w->set_initializer(std::move(init));
     w->set_optimizer(std::move(opt));
-    this->m_weights.push_back(w.get());
+    this->add_weights(w.get());
     this->m_model->add_weights(std::move(w));
   }
-  if (this->m_weights.size() != 1) {
+  if (this->num_weights() != 1) {
     LBANN_ERROR("attempted to setup ",
                 this->get_type()," layer \"",this->get_name(),"\" ",
                 "with an invalid number of weights ",
-                "(expected 1, found ",this->m_weights.size(),")");
+                "(expected 1, found ",this->num_weights(),")");
   }
 
   // Initialize dictionary
-  auto& dict = *m_weights[0];
-  auto matrix_dist = get_prev_activations().DistData();
+  auto& embeddings = this->get_data_type_weights(0);
+  auto matrix_dist = this->get_prev_activations().DistData();
   matrix_dist.colDist = El::STAR;
   matrix_dist.rowDist = El::STAR;
-  dict.set_dims({static_cast<int>(m_embedding_dim)},
-                {static_cast<int>(m_num_embeddings)});
-  dict.set_matrix_distribution(matrix_dist);
-  dict.setup();
+  embeddings.set_dims({static_cast<int>(m_embedding_dim)},
+                      {static_cast<int>(m_num_embeddings)});
+  embeddings.set_matrix_distribution(matrix_dist);
+  embeddings.setup();
 
   // Zero out embedding vector for padding index
   if (0 <= m_padding_idx
       && m_padding_idx < static_cast<El::Int>(m_embedding_dim)) {
-    auto& dict_values = dict.get_values();
-    std::unique_ptr<AbsDistMat> pad_embedding(dict_values.Construct(dict_values.Grid(),
-                                                                    dict_values.Root()));
-    El::View(*pad_embedding, dict_values, El::ALL, El::IR(m_padding_idx));
+    auto& embedding_values = embeddings.get_values();
+    std::unique_ptr<AbsDistMatrixType> pad_embedding(
+      embedding_values.Construct(embedding_values.Grid(),
+                                 embedding_values.Root()));
+    El::View(*pad_embedding, embedding_values, El::ALL, El::IR(m_padding_idx));
     El::Zero(*pad_embedding);
   }
 
-  // Initialize gradient w.r.t. dictionary
-  m_dictionary_gradient.Resize(m_embedding_dim, m_num_embeddings);
+  // Initialize gradient w.r.t. embeddings
+  m_embeddings_grad->Resize(m_embedding_dim, m_num_embeddings);
 
 }
 
+LBANN_DEFINE_LAYER_BUILDER(embedding);
+
 #ifndef LBANN_EMBEDDING_LAYER_INSTANTIATE
-extern template class embedding_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+
+#define PROTO_DEVICE(T, Device) \
+  extern template class embedding_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
 #endif // LBANN_EMBEDDING_LAYER_INSTANTIATE
 
 } // namespace lbann

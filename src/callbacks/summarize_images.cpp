@@ -101,10 +101,12 @@ categorical_accuracy_strategy::get_image_indices(model const& m) const {
 
   auto const& cat_accuracy_layer = get_layer_by_name(m, m_cat_accuracy_layer_name);
 
-  const AbsDistMat& categorized_correctly_dist = cat_accuracy_layer.get_activations();
+  const BaseDistMat& categorized_correctly_dist =
+    cat_accuracy_layer.get_activations(*(cat_accuracy_layer.get_child_layers().front()));
+  auto const& distdata = categorized_correctly_dist.DistData();
   CircMat<El::Device::CPU> categorized_correctly(
-    categorized_correctly_dist.Grid(), categorized_correctly_dist.Root());
-  categorized_correctly = categorized_correctly_dist;
+    *(distdata.grid), distdata.root);
+  El::Copy(categorized_correctly_dist, categorized_correctly);
 
 //FIXME: Should width of img_layer and accuracy_layer activations be tested here?
 
@@ -186,7 +188,7 @@ std::vector<std::pair<size_t, El::Int>>
 autoencoder_strategy::get_image_indices(model const& m) const {
 
   // Find the input layer
-  auto const& input_layer = dynamic_cast<generic_input_layer const&>(
+  auto const& input_layer = dynamic_cast<generic_input_layer<DataType> const&>(
     get_layer_by_name(m, m_input_layer_name));
 
   // Grab the data reader
@@ -220,7 +222,7 @@ autoencoder_strategy::get_image_indices(model const& m) const {
     std::min(minibatch_start_index + mb_size, shuffled_indices.size());
 
   auto* sample_indices =
-    const_cast<generic_input_layer&>(input_layer).get_sample_indices_per_mb();
+    const_cast<generic_input_layer<DataType>&>(input_layer).get_sample_indices_per_mb();
   if (sample_indices == nullptr)
     LBANN_ERROR("Sample indices is NULL.");
 
@@ -298,12 +300,13 @@ void summarize_images::dump_images_to_summary(model const& m) const {
 
   auto img_indices = m_strategy->get_image_indices(m);
 
-  auto const& layer = get_layer_by_name(m, m_img_source_layer_name);
-  const AbsDistMat& layer_activations = layer.get_activations();
-
+  const auto& layer = get_layer_by_name(m, m_img_source_layer_name);
+  const auto& layer_activations =
+    layer.get_activations(*(layer.get_child_layers().front()));
+  const auto& layer_distdata = layer_activations.DistData();
   CircMat<El::Device::CPU> all_images(
-    layer_activations.Grid(), layer_activations.Root());
-  all_images = layer_activations;
+    *(layer_distdata.grid), layer_distdata.root);
+  El::Copy(layer_activations, all_images);
 
   if (all_images.CrossRank() == all_images.Root()) {
     auto const& local_images = all_images.LockedMatrix();

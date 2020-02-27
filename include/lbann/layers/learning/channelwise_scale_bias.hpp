@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYER_LEARNING_CHANNELWISE_SCALE_BIAS_HPP_INCLUDED
 #define LBANN_LAYER_LEARNING_CHANNELWISE_SCALE_BIAS_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/exception.hpp"
 
@@ -52,24 +52,39 @@ namespace lbann {
  *  column correspond to scale terms and the second column to bias
  *  terms.
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL,
           El::Device Device = El::Device::CPU>
-class channelwise_scale_bias_layer : public Layer {
+class channelwise_scale_bias_layer : public data_type_layer<TensorDataType> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "channelwise_mean_layer only supports "
                 "data-parallel data layout");
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  /** @brief The concrete optimizer type used by this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
+  ///@}
+
+public:
 
   channelwise_scale_bias_layer(lbann_comm *comm)
-    : Layer(comm) {
+    : data_type_layer<TensorDataType>(comm) {
   }
 
   channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other)
-    : Layer(other),
+    : data_type_layer<TensorDataType>(other),
       m_weights_gradient(other.m_weights_gradient ?
                          other.m_weights_gradient->Copy() : nullptr) {}
   channelwise_scale_bias_layer& operator=(const channelwise_scale_bias_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_weights_gradient.reset(other.m_weights_gradient ?
                              other.m_weights_gradient->Copy() :
                              nullptr);
@@ -84,42 +99,42 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
-    m_weights_gradient.reset(new StarMat<Device>(grid));
+    data_type_layer<TensorDataType>::setup_matrices(grid);
+    m_weights_gradient.reset(new StarMatDT<TensorDataType, Device>(grid));
   }
 
   void setup_data() override {
-    Layer::setup_data();
-    const El::Int num_channels = get_output_dims()[0];
+    data_type_layer<TensorDataType>::setup_data();
+    const El::Int num_channels = this->get_output_dims()[0];
 
     // Construct default weights if needed
     // Note: Scale is initialized to 1 and bias to 0
-    if (this->m_weights.empty()) {
-      auto w = make_unique<weights>(get_comm());
-      std::vector<DataType> vals(2*num_channels, DataType{0});
-      std::fill(vals.begin(), vals.begin()+num_channels, DataType{1});
-      auto init = make_unique<value_initializer>(vals);
-      std::unique_ptr<optimizer> opt(m_model->create_optimizer());
-      w->set_name(get_name() + "_weights");
+    if (!this->has_weights()) {
+      auto w = make_unique<WeightsType>(this->get_comm());
+      std::vector<TensorDataType> vals(2*num_channels, El::TypeTraits<TensorDataType>::Zero());
+      std::fill(vals.begin(), vals.begin()+num_channels, El::TypeTraits<TensorDataType>::One());
+      auto init = make_unique<value_initializer<TensorDataType>>(vals);
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+      w->set_name(this->get_name() + "_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
-      this->m_weights.push_back(w.get());
+      this->add_weights(w.get());
       this->m_model->add_weights(std::move(w));
     }
-    if (this->m_weights.size() != 1) {
+    if (this->num_weights() != 1) {
       LBANN_ERROR("attempted to setup ",
                   this->get_type()," layer \"",this->get_name(),"\" ",
                   "with an invalid number of weights ",
-                  "(expected 1, found ",this->m_weights.size(),")");
+                  "(expected 1, found ",this->num_weights(),")");
     }
 
     // Setup weights
-    auto dist = get_prev_activations().DistData();
+    auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
     dist.rowDist = El::STAR;
-    m_weights[0]->set_dims({static_cast<int>(num_channels)},
-                           {static_cast<int>(2)});
-    m_weights[0]->set_matrix_distribution(dist);
+    this->get_data_type_weights(0).set_dims({static_cast<int>(num_channels)},
+                           {2});
+    this->get_data_type_weights(0).set_matrix_distribution(dist);
 
     // Setup gradient w.r.t. weights
     m_weights_gradient->AlignWith(dist);
@@ -134,18 +149,22 @@ protected:
 private:
 
   /** Objective function gradient w.r.t. weights. */
-  std::unique_ptr<AbsDistMat> m_weights_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_weights_gradient;
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(channelwise_scale_bias);
+
 #ifndef LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
-extern template class channelwise_scale_bias_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class channelwise_scale_bias_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device) \
+  extern template class channelwise_scale_bias_layer<T, data_layout::DATA_PARALLEL, Device>;
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
 #endif // LBANN_CHANNELWISE_SCALE_BIAS_LAYER_INSTANTIATE
+
 
 } // namespace lbann
 
