@@ -721,15 +721,11 @@ void generic_data_reader::instantiate_data_store() {
     m_data_store->set_node_sizes_vary();
   }
 
-  //a call to m_data_store->check_mem_capacity(...) should go here, but
-  //at the moment that depends on the sample_list class, which it shouldn't
-  //TODO: revisit
-
   m_data_store->set_shuffled_indices(&m_shuffled_indices);
 
-  if (is_master()) {
-    std::cout << "generic_data_reader::instantiate_data_store time: : " << (get_time() - tm1) << std::endl;
-  }
+  std::stringstream s;
+  s << "generic_data_reader::instantiate_data_store time: : " << (get_time() - tm1);
+  m_data_store->set_profile_msg(s.str());
 }
 
 void generic_data_reader::setup_data_store(int mini_batch_size) {
@@ -737,28 +733,25 @@ void generic_data_reader::setup_data_store(int mini_batch_size) {
     LBANN_ERROR("m_data_store == nullptr; you shouldn't be here");
   }
   // optionally preload the data store
-  options *opts = options::get();
- 
-  if (opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache")) {
-    if(is_master()) {
-      std::cerr << "generic_data_reader::instantiate_data_store - Starting the preload" << std::endl;
-    }
+  if (m_data_store->is_preloading()) {
+    m_data_store->set_profile_msg("generic_data_reader::instantiate_data_store - Starting the preload");
     double tm2 = get_time();
     preload_data_store();
-    if(is_master()) {
-     std::cout << "Preload complete; time: " << get_time() - tm2 << std::endl;
-    }
+    std::stringstream s;
+    s << "Preload complete; time: " << get_time() - tm2;
+    m_data_store->set_profile_msg(s.str());
 
     size_t n = m_data_store->get_num_global_indices();
     if (n != m_shuffled_indices.size()) {
       LBANN_ERROR("num samples loaded: ", n, " != shuffled-indices.size(): ", m_shuffled_indices.size());
     }
   }
+
   m_data_store->setup(mini_batch_size);
 }
 
 bool generic_data_reader::data_store_active() const {
-  if (m_data_store != nullptr && m_data_store->is_preloaded()) {
+  if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return true;
   }
 
@@ -774,7 +767,7 @@ bool generic_data_reader::data_store_active() const {
 
 bool generic_data_reader::priming_data_store() const {
   const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
-  if (m_data_store != nullptr && m_data_store->is_preloaded()) {
+  if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }
 
@@ -826,8 +819,11 @@ void generic_data_reader::set_role(std::string role) {
 
 void generic_data_reader::preload_data_store() {
   if (m_data_store->is_local_cache()) {
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling m_data_store->preload_local_cache()");
     m_data_store->preload_local_cache();
-  } else {
+  } 
+  
+  else {
     std::vector<int> local_list_sizes;
     int np = m_comm->get_procs_per_trainer();
     int base_files_per_rank = m_shuffled_indices.size() / np;
@@ -842,11 +838,13 @@ void generic_data_reader::preload_data_store() {
         local_list_sizes[j] += 1;
       }
     }
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling m_data_store->build_preloaded_owner_map()");
     m_data_store->build_preloaded_owner_map(local_list_sizes);
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling do_preload_data_store()");
+    do_preload_data_store();
+    m_data_store->set_loading_is_complete();
   }
 
-  do_preload_data_store();
-  m_data_store->set_is_preloaded();
 }
 
 
