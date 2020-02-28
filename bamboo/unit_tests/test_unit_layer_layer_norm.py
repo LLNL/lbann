@@ -18,20 +18,29 @@ import tools
 # the functions below to ingest data.
 
 # Data
-_num_samples = 41
-_num_embeddings = 7
+np.random.seed(20191114)
+_num_samples = 31
+_sample_size = 31
+_samples = np.random.normal(size=(_num_samples,_sample_size)).astype(np.float32)
 
 # Sample access functions
 def get_sample(index):
-    np.random.seed(2019101500+index)
-    i = np.random.randint(_num_embeddings)
-    if index in (1,2,4,7,17,31):
-        i = 0
-    return [i]
+    return _samples[index,:]
 def num_samples():
-    return 41
+    return _num_samples
 def sample_dims():
-    return (1,)
+    return (_sample_size,)
+
+# ==============================================
+# NumPy softmax
+# ==============================================
+
+def numpy_layer_norm(x, epsilon=1e-5):
+    if x.dtype is not np.float64:
+        x = x.astype(np.float64)
+    mean = np.mean(x)
+    var = np.var(x, ddof=1)
+    return (x - mean) / np.sqrt(var + epsilon)
 
 # ==============================================
 # Setup LBANN experiment
@@ -59,7 +68,15 @@ def construct_model(lbann):
     """
 
     # Input data
-    x = lbann.Identity(lbann.Input())
+    # Note: Sum with a weights layer so that gradient checking will
+    # verify that error signals are correct.
+    x_weights = lbann.Weights(optimizer=lbann.SGD(),
+                              initializer=lbann.ConstantInitializer(value=0.0),
+                              name='input_weights')
+    x = lbann.Sum(lbann.Reshape(lbann.Input(),
+                                dims=tools.str_list(_sample_size)),
+                  lbann.WeightsLayer(weights=x_weights,
+                                     dims=tools.str_list(_sample_size)))
     x_lbann = x
 
     # Objects for LBANN model
@@ -68,33 +85,21 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # No padding index
+    # Data-parallel layout
     # ------------------------------------------
 
-    # Embeddings
-    np.random.seed(20191015)
-    embedding_dim = 5
-    embeddings = np.random.normal(size=(_num_embeddings,embedding_dim))
-
     # LBANN implementation
-    embedding_weights = lbann.Weights(
-        optimizer=lbann.SGD(),
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(embeddings)))
-    )
     x = x_lbann
-    y = lbann.Embedding(x,
-                        weights=embedding_weights,
-                        num_embeddings=_num_embeddings,
-                        embedding_dim=embedding_dim)
+    y = lbann.LayerNorm(x, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='no padding index'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)[0]
-        y = embeddings[x]
+        x = get_sample(i).astype(np.float64)
+        y = numpy_layer_norm(x)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -107,40 +112,22 @@ def construct_model(lbann):
         execution_modes='test'))
 
     # ------------------------------------------
-    # Padding index 0
+    # Model-parallel layout
     # ------------------------------------------
 
-    # Embeddings
-    np.random.seed(201910152)
-    embedding_dim = 3
-    padding_idx = 0
-    embeddings = np.random.normal(size=(_num_embeddings,embedding_dim))
-
     # LBANN implementation
-    # Note: Embedding layer gradients are not exact if a padding index
-    # is set. Avoid gradient checking by not using an optimizer.
-    embedding_weights = lbann.Weights(
-        optimizer=None,
-        initializer=lbann.ValueInitializer(values=tools.str_list(np.nditer(embeddings)))
-    )
+    epsilon = 0.0123
     x = x_lbann
-    y = lbann.Embedding(x,
-                        weights=embedding_weights,
-                        num_embeddings=_num_embeddings,
-                        embedding_dim=embedding_dim,
-                        padding_idx=padding_idx)
+    y = lbann.LayerNorm(x, data_layout='model_parallel', epsilon=epsilon)
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='padding index = 0'))
+    metrics.append(lbann.Metric(z, name='model-parallel layout'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)[0]
-        if x == padding_idx:
-            y = np.zeros(shape=embedding_dim)
-        else:
-            y = embeddings[x]
+        x = get_sample(i).astype(np.float64)
+        y = numpy_layer_norm(x, epsilon)
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -162,7 +149,6 @@ def construct_model(lbann):
     # Construct model
     # ------------------------------------------
 
-    # Construct model
     mini_batch_size = num_samples() // 2
     num_epochs = 0
     return lbann.Model(mini_batch_size,

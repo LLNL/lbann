@@ -75,6 +75,7 @@
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
+#include "lbann/layers/regularizers/layer_norm.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/categorical_random.hpp"
 #include "lbann/layers/transform/concatenation.hpp"
@@ -282,13 +283,12 @@ std::unique_ptr<Layer> construct_layer(
     const size_t embedding_dim = params.embedding_dim();
     const El::Int padding_idx = (params.has_padding_idx() ?
                                  params.padding_idx().value() : -1);
-    if (Layout == data_layout::DATA_PARALLEL
-        && Device == El::Device::CPU) {
-      return lbann::make_unique<embedding_layer<data_layout::DATA_PARALLEL,El::Device::CPU>>(
+    if (Layout == data_layout::DATA_PARALLEL) {
+      return lbann::make_unique<embedding_layer<data_layout::DATA_PARALLEL,Device>>(
         comm, num_embeddings, embedding_dim, padding_idx);
     } else {
       LBANN_ERROR("embedding layer is only supported with "
-                  "data-parallel data layout and on CPU");
+                  "data-parallel data layout");
     }
   }
   if (proto_layer.has_channelwise_scale_bias()) {
@@ -585,6 +585,13 @@ std::unique_ptr<Layer> construct_layer(
   if (proto_layer.has_entrywise_batch_normalization()) {
     const auto& params = proto_layer.entrywise_batch_normalization();
     return lbann::make_unique<entrywise_batch_normalization_layer<Layout, Device>>(comm, params.decay(), params.epsilon());
+  }
+  if (proto_layer.has_layer_norm()) {
+    const auto& params = proto_layer.layer_norm();
+    const double epsilon = (params.has_epsilon()
+                            ? params.epsilon().value()
+                            : 1e-5);
+    return lbann::make_unique<layer_norm_layer<Layout, Device>>(comm, epsilon);
   }
 
   // Math layers

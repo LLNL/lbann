@@ -49,8 +49,6 @@ template <data_layout Layout, El::Device Device>
 class embedding_layer : public Layer {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "embedding layer only supports data parallel layout");
-  static_assert(Device == El::Device::CPU,
-                "embedding layer only supports CPU");
 public:
 
   /**
@@ -65,14 +63,10 @@ public:
   embedding_layer(lbann_comm* comm,
                   size_t num_embeddings,
                   size_t embedding_dim,
-                  El::Int padding_idx=-1)
-    : Layer(comm),
-      m_num_embeddings{num_embeddings},
-      m_embedding_dim{embedding_dim},
-      m_padding_idx{padding_idx} {}
+                  El::Int padding_idx=-1);
 
-  embedding_layer(const embedding_layer& other) = default;
-  embedding_layer& operator=(const embedding_layer& other) = default;
+  embedding_layer(const embedding_layer& other);
+  embedding_layer& operator=(const embedding_layer& other);
   ~embedding_layer() = default;
 
   embedding_layer* copy() const override {
@@ -107,13 +101,48 @@ private:
   El::Int m_padding_idx;
 
   /** Gradient w.r.t. embedding weights. */
-  StarMat<El::Device::CPU> m_dictionary_gradient;
+  std::unique_ptr<AbsDistMat> m_gradient_wrt_embeddings;
 
 };
 
 // =========================================================
 // Implementation
 // =========================================================
+
+template <data_layout Layout, El::Device Device>
+embedding_layer<Layout,Device>::embedding_layer(
+  lbann_comm* comm,
+  size_t num_embeddings,
+  size_t embedding_dim,
+  El::Int padding_idx)
+  : Layer(comm),
+    m_num_embeddings{num_embeddings},
+    m_embedding_dim{embedding_dim},
+    m_padding_idx{padding_idx} {}
+
+template <data_layout Layout, El::Device Device>
+embedding_layer<Layout,Device>::embedding_layer(
+  const embedding_layer<Layout,Device>& other)
+  : Layer(other),
+    m_num_embeddings{other.m_num_embeddings},
+    m_embedding_dim{other.m_embedding_dim},
+    m_padding_idx{other.m_padding_idx},
+    m_gradient_wrt_embeddings(other.m_gradient_wrt_embeddings
+                              ? other.m_gradient_wrt_embeddings->Copy()
+                              : nullptr) {}
+
+template <data_layout Layout, El::Device Device>
+embedding_layer<Layout,Device>& embedding_layer<Layout,Device>::operator=(
+  const embedding_layer<Layout,Device>& other) {
+  Layer::operator=(other);
+  m_num_embeddings = other.m_num_embeddings;
+  m_embedding_dim = other.m_embedding_dim;
+  m_padding_idx = other.m_padding_idx;
+  m_gradient_wrt_embeddings.reset(other.m_gradient_wrt_embeddings
+                                  ? other.m_gradient_wrt_embeddings->Copy()
+                                  : nullptr);
+  return *this;
+}
 
 template <data_layout Layout, El::Device Device>
 description embedding_layer<Layout,Device>::get_description() const {
@@ -170,33 +199,38 @@ void embedding_layer<Layout,Device>::setup_data() {
   }
 
   // Initialize dictionary
-  auto& dict = *m_weights[0];
+  auto& embeddings = *m_weights[0];
   auto matrix_dist = get_prev_activations().DistData();
   matrix_dist.colDist = El::STAR;
   matrix_dist.rowDist = El::STAR;
-  dict.set_dims({static_cast<int>(m_embedding_dim)},
-                {static_cast<int>(m_num_embeddings)});
-  dict.set_matrix_distribution(matrix_dist);
-  dict.setup();
+  embeddings.set_dims({static_cast<int>(m_embedding_dim)},
+                      {static_cast<int>(m_num_embeddings)});
+  embeddings.set_matrix_distribution(matrix_dist);
+  embeddings.setup();
 
   // Zero out embedding vector for padding index
   if (0 <= m_padding_idx
       && m_padding_idx < static_cast<El::Int>(m_embedding_dim)) {
-    auto& dict_values = dict.get_values();
-    std::unique_ptr<AbsDistMat> pad_embedding(dict_values.Construct(dict_values.Grid(),
-                                                                    dict_values.Root()));
-    El::View(*pad_embedding, dict_values, El::ALL, El::IR(m_padding_idx));
+    auto& embedding_values = embeddings.get_values();
+    std::unique_ptr<AbsDistMat> pad_embedding(
+      embedding_values.Construct(embedding_values.Grid(),
+                                 embedding_values.Root()));
+    El::View(*pad_embedding, embedding_values, El::ALL, El::IR(m_padding_idx));
     El::Zero(*pad_embedding);
   }
 
-  // Initialize gradient w.r.t. dictionary
-  m_dictionary_gradient.Resize(m_embedding_dim, m_num_embeddings);
+  // Initialize gradient w.r.t. embeddings
+  m_gradient_wrt_embeddings->Resize(m_embedding_dim, m_num_embeddings);
 
 }
 
 #ifndef LBANN_EMBEDDING_LAYER_INSTANTIATE
 extern template class embedding_layer<
   data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
+extern template class embedding_layer<
+  data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
 #endif // LBANN_EMBEDDING_LAYER_INSTANTIATE
 
 } // namespace lbann
