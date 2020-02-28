@@ -54,10 +54,12 @@ namespace lbann {
 
 hdf5_reader::hdf5_reader(const bool shuffle,
                          const std::string key_data,
+                         const std::string key_labels,
                          const std::string key_responses)
     : generic_data_reader(shuffle),
       m_use_data_store(options::get()->get_bool("use_data_store")),
       m_key_data(key_data),
+      m_key_labels(key_labels),
       m_key_responses(key_responses) {
 }
 
@@ -90,6 +92,7 @@ void hdf5_reader::copy_members(const hdf5_reader &rhs) {
   m_file_paths = rhs.m_file_paths;
   m_use_data_store = rhs.m_use_data_store;
   m_key_data = rhs.m_key_data;
+  m_key_labels = rhs.m_key_labels;
   m_key_responses = rhs.m_key_responses;
 
   for(size_t i = 0; i < m_num_response_features; i++) {
@@ -226,6 +229,10 @@ void hdf5_reader::load() {
 }
 
 bool hdf5_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
+  if(!m_has_labels) {
+    return generic_data_reader::fetch_label(Y, data_id, mb_idx);
+  }
+
   return true;
 }
 
@@ -281,6 +288,10 @@ void hdf5_reader::fetch_datum_conduit(Mat& X, int data_id) {
 
 //get from a cached response
 bool hdf5_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
+  if(!m_has_responses) {
+    return generic_data_reader::fetch_response(Y, data_id, mb_idx);
+  }
+
   prof_region_begin("fetch_response", prof_colors[0], false);
   assert_eq(Y.Height(), m_num_response_features);
   float *buf = nullptr;
