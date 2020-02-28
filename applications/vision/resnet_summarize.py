@@ -116,13 +116,13 @@ else:
         width=args.width)
 
 # Construct layer graph
-input_ = lbann.Input()
-images = lbann.Identity(input_)
-labels = lbann.Identity(input_)
+input_ = lbann.Input(name='input')
+images = lbann.Identity(input_, name='images')
+labels = lbann.Identity(input_, name='labels')
 preds = resnet(images)
 probs = lbann.Softmax(preds)
 cross_entropy = lbann.CrossEntropy(probs, labels)
-top1 = lbann.CategoricalAccuracy(probs, labels)
+top1 = lbann.CategoricalAccuracy(probs, labels, name='louise')
 top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
 layers = list(lbann.traverse_layer_graph(input_))
 
