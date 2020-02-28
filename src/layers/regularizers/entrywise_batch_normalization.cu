@@ -27,7 +27,6 @@
 #define LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 #include "lbann/utils/cuda.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -565,11 +564,11 @@ void bp_impl(lbann_comm& comm,
 // Template instantiation
 template <>
 void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto mode = this->m_model->get_execution_context().get_execution_mode();
   fp_impl(*get_comm(),
           m_decay,
           m_epsilon,
-          c.get_execution_mode() == execution_mode::training,
+          mode == execution_mode::training,
           get_prev_activations(),
           get_activations(),
           *m_batch_statistics,
@@ -578,11 +577,11 @@ void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device:
 }
 template <>
 void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto mode = this->m_model->get_execution_context().get_execution_mode();
   fp_impl(*get_comm(),
           m_decay,
           m_epsilon,
-          c.get_execution_mode() == execution_mode::training,
+          mode == execution_mode::training,
           get_prev_activations(),
           get_activations(),
           *m_batch_statistics,
@@ -591,10 +590,10 @@ void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device
 }
 template <>
 void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto mode = this->m_model->get_execution_context().get_execution_mode();
   bp_impl(*get_comm(),
           m_epsilon,
-          c.get_execution_mode() == execution_mode::training,
+          mode == execution_mode::training,
           get_prev_activations(),
           get_prev_error_signals(),
           get_error_signals(),
@@ -604,10 +603,10 @@ void entrywise_batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device:
 }
 template <>
 void entrywise_batch_normalization_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto mode = this->m_model->get_execution_context().get_execution_mode();
   bp_impl(*get_comm(),
           m_epsilon,
-          c.get_execution_mode() == execution_mode::training,
+          mode == execution_mode::training,
           get_prev_activations(),
           get_prev_error_signals(),
           get_error_signals(),

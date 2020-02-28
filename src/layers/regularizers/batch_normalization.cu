@@ -27,7 +27,6 @@
 #define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/utils/cuda.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -98,7 +97,6 @@ __global__ void compute_statistics_kernel(
   DataType * __restrict__ global_var,
   DataType * __restrict__ global_running_mean,
   DataType * __restrict__ global_running_var) {
-  constexpr DataType one = 1;
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
   for (El::Int i = gid; i < num_sums; i += num_threads) {
@@ -114,8 +112,8 @@ __global__ void compute_statistics_kernel(
     // Compute running statistics
     auto& running_mean = global_running_mean[gid];
     auto& running_var = global_running_var[gid];
-    running_mean = decay * running_mean + (one - decay) * mean;
-    running_var = decay * running_var + (one - decay) * var;
+    running_mean = decay * running_mean + (DataType{1} - decay) * mean;
+    running_var = decay * running_var + (DataType{1} - decay) * var;
 
   }
 
@@ -304,13 +302,6 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
 
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
-  if (keep_original_input()) {
-    const auto& c = static_cast<sgd_execution_context&>(
-        this->m_model->get_execution_context());
-    const auto& mini_batch_size = c.get_current_mini_batch_size();
-    assert_eq(mini_batch_size, get_prev_activations().Width());
-  }
-
   assert0(dc::tensor::View(
       m_scale_t, get_weights()[0]->get_values().LockedBuffer()));
   assert0(dc::tensor::View(
@@ -355,8 +346,6 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   // Check execution mode
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
   assert_always(is_training);
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
-  const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
 
   assert0(dc::tensor::View(
       m_scale_t, get_weights()[0]->get_values().LockedBuffer()));
@@ -381,17 +370,11 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
 
   optimizer* scale_optimizer = m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(
-        *m_scale_gradient,
-        DataType(1) / effective_mini_batch_size,
-        true);
+    scale_optimizer->add_to_gradient(*m_scale_gradient, DataType{1}, true);
   }
   optimizer* bias_optimizer = m_weights[1]->get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(
-        *m_bias_gradient,
-        DataType(1) / effective_mini_batch_size,
-        true);
+    bias_optimizer->add_to_gradient(*m_bias_gradient, DataType{1}, true);
   }
 
   m_bn->backward_stage2(m_prev_activations_t,
@@ -415,7 +398,6 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
     }
   }
 #endif // LBANN_HAS_DISTCONV
-  constexpr DataType one = 1;
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
@@ -484,7 +466,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_
 
     // Compute minibatch statistics
     if (num_per_sum <= 1) {
-      El::Fill(local_var, one);
+      El::Fill(local_var, DataType{1});
     } else if (num_channels > 0) {
       const El::Int block_dim = 256;
       const El::Int grid_dim = (num_channels + block_dim - 1) / block_dim;
@@ -541,7 +523,6 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
     m_error_signals_copyout.zero(dc::get_stream());
   }
 #endif // LBANN_HAS_DISTCONV
-  constexpr DataType one = 1;
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // CUDA objects
@@ -566,8 +547,6 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   auto& local_bias_gradient = m_bias_gradient->Matrix();
 
   // Matrix parameters
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
-  const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();
   const auto& output_dims = get_output_dims();
@@ -616,15 +595,11 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_
   }
   optimizer* scale_optimizer = m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(*m_scale_gradient,
-                                     one / effective_mini_batch_size,
-                                     true);
+    scale_optimizer->add_to_gradient(*m_scale_gradient, DataType{1}, true);
   }
   optimizer* bias_optimizer = m_weights[1]->get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(*m_bias_gradient,
-                                    one / effective_mini_batch_size,
-                                    true);
+    bias_optimizer->add_to_gradient(*m_bias_gradient, DataType{1}, true);
   }
 
   // Compute error signal
