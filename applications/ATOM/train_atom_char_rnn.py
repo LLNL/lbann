@@ -52,6 +52,7 @@ def construct_lc_launcher_args():
         help="number of data reader instances",
     )
 
+
     # these are the bits and pieces required for loading the model in the moses library...may be useful for evaluation tasks/continuing training/etc
     parser.add_argument("--gamma", type=float, default=0.5, help="")
     parser.add_argument(
@@ -69,6 +70,17 @@ def construct_lc_launcher_args():
     parser.add_argument(
         "--step-size", type=int, default=10, help="learning rate decay step size"
     )
+=======
+pad_indx = 28
+# Sample access functions
+def get_sample(index):
+    sample = samples[index]
+    if len(sample) < dims:
+        sample = np.concatenate((sample, np.full(dims-len(sample), pad_indx)))
+    else:
+        sample = np.resize(sample, dims)
+    return sample
+>>>>>>> d67f4fbea212560f976e096e1757207ccbe7873a
 
     # this is just for compatiblity with the moses code
     parser.add_argument("--dropout", type=float, default=0.5, help="")
@@ -240,6 +252,7 @@ if __name__ == "__main__":
     print(run_args)
     import os
     import lbann
+
     import lbann.contrib.lc.launcher
 
     trainer = lbann.Trainer(

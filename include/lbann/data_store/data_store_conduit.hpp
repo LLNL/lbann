@@ -266,6 +266,8 @@ class data_store_conduit {
 
 private :
 
+  bool m_bcast_sample_size = true;
+
   // if not null, 'm_other' points from a train to a validation
   // data store; this permits communication which is needed in
   // special cases (e.g, see: data_reader_npz_ras_lipid.cpp)
@@ -583,6 +585,8 @@ private :
 
   std::string get_lassen_spill_dir();
 
+  void verify_sample_size();
+
   //=========================================================================
   // functions and templates for optional profiling and debug files follow
   //=========================================================================
@@ -608,7 +612,7 @@ private :
     flush_profile_file();
   }
 
-  void DEBUG() { 
+  void DEBUG_DS() { 
     if (!m_debug) {
       return;
     }
@@ -617,15 +621,14 @@ private :
   }
 
   template <typename T, typename... Types>
-  void DEBUG(T var1, Types... var2) {
+  void DEBUG_DS(T var1, Types... var2) {
     if (!m_debug) {
       return;
     }
     (*m_debug) << var1 << " ";
-    DEBUG(var2...) ;
+    DEBUG_DS(var2...) ;
     flush_debug_file();
   }
-
 };
 
 }  // namespace lbann
