@@ -5,6 +5,7 @@ import lbann.models.resnet
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
 import lbann.contrib.launcher
+import data.cifar10
 import data.imagenet
 
 # Command-line arguments
