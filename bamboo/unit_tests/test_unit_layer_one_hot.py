@@ -60,7 +60,7 @@ def construct_model(lbann):
     y1 = lbann.OneHot(x, size=one_hot_size)
     y2 = lbann.Concatenation([lbann.Constant(value=i+1, num_neurons='1')
                               for i in range(one_hot_size)])
-    y = lbann.Multiply([y1, y2])
+    y = lbann.Multiply(y1, y2)
     z = lbann.L2Norm2(y)
 
     # Objects for LBANN model

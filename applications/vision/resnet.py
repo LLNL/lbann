@@ -104,15 +104,15 @@ else:
         width=args.width)
 
 # Construct layer graph
-input = lbann.Input()
-images = lbann.Identity(input)
-labels = lbann.Identity(input)
+input_ = lbann.Input()
+images = lbann.Identity(input_)
+labels = lbann.Identity(input_)
 preds = resnet(images)
 probs = lbann.Softmax(preds)
-cross_entropy = lbann.CrossEntropy([probs, labels])
-top1 = lbann.CategoricalAccuracy([probs, labels])
-top5 = lbann.TopKCategoricalAccuracy([probs, labels], k=5)
-layers = list(lbann.traverse_layer_graph(input))
+cross_entropy = lbann.CrossEntropy(probs, labels)
+top1 = lbann.CategoricalAccuracy(probs, labels)
+top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
+layers = list(lbann.traverse_layer_graph(input_))
 
 # Setup objective function
 l2_reg_weights = set()
