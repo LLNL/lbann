@@ -26,6 +26,10 @@ def mnist_dir(system = system()):
     """
     return parallel_file_system_path(system) + 'brainusr/datasets/MNIST'
 
+def cifar10_dir(system = system()):
+    """CIFAR10 directory on LC systems."""
+    return parallel_file_system_path(system) + 'brainusr/datasets/cifar10-bin'
+
 def imagenet_dir(system = system(), data_set = 'training',
                  num_classes = 1000):
     """ImageNet directory on LC system.
