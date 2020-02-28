@@ -50,12 +50,26 @@ parser.add_argument(
 parser.add_argument(
     '--random-seed', action='store', default=0, type=int,
     help='random seed for LBANN RNGs', metavar='NUM')
+parser.add_argument(
+    '--dataset', action='store', default='imagenet', type=str,
+    help='dataset to use; \"cifar10\" or \"imagenet\"')
+parser.add_argument(
+    '--data-reader-percent', action='store',
+    default=1.0, type=float,
+    help='the percent of the data to use (default: 1.0)', metavar='NUM')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
 # Due to a data reader limitation, the actual model realization must be
-# hardcoded to 1000 labels for ImageNet.
-imagenet_labels = 1000
+# hardcoded to 1000 labels for ImageNet; 10 for CIFAR10.
+dataset = args.dataset;
+if dataset == 'imagenet':
+    num_labels=1000
+elif dataset == 'cifar10':
+    num_labels=10
+else:
+    print("Dataset must be cifar10 or imagenet. Try again.")
+    exit()
 
 # Choose ResNet variant
 resnet_variant_dict = {18: lbann.models.ResNet18,
@@ -76,7 +90,7 @@ if args.block_type and args.blocks and args.block_channels:
     # Build custom ResNet.
     resnet = lbann.models.ResNet(
         block_variant_dict[args.block_type],
-        imagenet_labels,
+        num_labels,
         list(map(int, args.blocks.split(','))),
         list(map(int, args.block_channels.split(','))),
         zero_init_residual=True,
@@ -86,17 +100,17 @@ if args.block_type and args.blocks and args.block_channels:
 elif args.width == 1:
     # Vanilla ResNet.
     resnet = resnet_variant_dict[args.resnet](
-        imagenet_labels,
+        num_labels,
         bn_statistics_group_size=args.bn_statistics_group_size)
 elif args.width == 2 and args.resnet == 50:
     # Use pre-defined WRN-50-2.
     resnet = wide_resnet_variant_dict[args.resnet](
-        imagenet_labels,
+        num_labels,
         bn_statistics_group_size=args.bn_statistics_group_size)
 else:
     # Some other Wide ResNet.
     resnet = resnet_variant_dict[args.resnet](
-        imagenet_labels,
+        num_labels,
         bn_statistics_group_size=args.bn_statistics_group_size,
         width=args.width)
 
@@ -158,13 +172,19 @@ model = lbann.Model(args.mini_batch_size,
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
-data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
+num_classes=min(args.num_classes, num_labels)
+
+if dataset == "cifar10":
+    data_reader = data.cifar10.make_data_reader(num_classes=num_classes)
+else:
+    data_reader = data.imagenet.make_data_reader(num_classes=num_classes)
 
 # Setup trainer
 trainer = lbann.Trainer()
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
+kwargs['lbann_args'] = '--data_reader_percent='+str(args.data_reader_percent)
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
                            **kwargs)
