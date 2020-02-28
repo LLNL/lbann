@@ -51,9 +51,6 @@ parser.add_argument(
     '--random-seed', action='store', default=0, type=int,
     help='random seed for LBANN RNGs', metavar='NUM')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
-parser.add_argument(
-    '--setup_only', action='store_true',
-    help='setup LBANN experiment without running it')
 args = parser.parse_args()
 
 # Due to a data reader limitation, the actual model realization must be
@@ -104,15 +101,15 @@ else:
         width=args.width)
 
 # Construct layer graph
-input = lbann.Input()
-images = lbann.Identity(input)
-labels = lbann.Identity(input)
+input_ = lbann.Input()
+images = lbann.Identity(input_)
+labels = lbann.Identity(input_)
 preds = resnet(images)
 probs = lbann.Softmax(preds)
-cross_entropy = lbann.CrossEntropy([probs, labels])
-top1 = lbann.CategoricalAccuracy([probs, labels])
-top5 = lbann.TopKCategoricalAccuracy([probs, labels], k=5)
-layers = list(lbann.traverse_layer_graph(input))
+cross_entropy = lbann.CrossEntropy(probs, labels)
+top1 = lbann.CategoricalAccuracy(probs, labels)
+top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
+layers = list(lbann.traverse_layer_graph(input_))
 
 # Setup objective function
 l2_reg_weights = set()
@@ -154,5 +151,4 @@ trainer = lbann.Trainer()
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.lc.launcher.run(trainer, model, data_reader, opt,
                               job_name=args.job_name,
-                              setup_only=args.setup_only,
                               **kwargs)

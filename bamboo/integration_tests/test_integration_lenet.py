@@ -71,8 +71,8 @@ def construct_model(lbann):
     labels = lbann.Identity(input_)
     x = lbann.models.LeNet(10)(images)
     probs = lbann.Softmax(x)
-    loss = lbann.CrossEntropy([probs, labels])
-    acc = lbann.CategoricalAccuracy([probs, labels])
+    loss = lbann.CrossEntropy(probs, labels)
+    acc = lbann.CategoricalAccuracy(probs, labels)
 
     # Objects for LBANN model
     callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]

@@ -155,7 +155,18 @@ void geam(cublasHandle_t const& handle,
           DataType beta,
           DataType const * B, int ldb,
           DataType * C, int ldc);
-
+void gemm_strided_batched(cublasHandle_t const& handle,
+                          cublasOperation_t transa, cublasOperation_t transb,
+                          int m, int n, int k,
+                          DataType alpha,
+                          DataType const * A, int lda,
+                          long long int strideA,
+                          DataType const * B, int ldb,
+                          long long int strideB,
+                          DataType beta,
+                          DataType * C, int ldc,
+                          long long int strideC,
+                          int batchCount);
 } // namespace cublas
 } // namespace lbann
 

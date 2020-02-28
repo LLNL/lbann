@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_HEADERS
   unary.hpp
   binary.hpp
   clamp.hpp
+  matmul.hpp
   )
 
 # Propagate the files up the tree

@@ -2,14 +2,30 @@
 import abc
 from lbann import layers_pb2
 from lbann.util import make_iterable
-import lbann.util.class_generator
+import lbann.core.util
 
 class Layer(abc.ABC):
-    """Neural network tensor operation."""
+    """Neural network tensor operation.
+
+    Args:
+        *args (Layer): Parent layers, i.e. sources of input tensors.
+        parents (Iterable of Layer, optional): Sources of input
+            tensors.
+        children (Iterable of Layer, optional): Destinations of output
+            tensors.
+        weights (Iterable of Weights, optional): Trainable parameters.
+        name (str, optional): Unique identifier (default is
+            'layer<index>').
+        device (str, optional): Device to use, e.g. CPU or GPU.
+        data_layout (str, optional): Data distribution scheme.
+        hint_layer (Layer, optional): Hint for output dimensions.
+
+    """
 
     global_count = 0  # Static counter, used for default names
 
     def __init__(self,
+                 *args,
                  parents=[],
                  children=[],
                  weights=[],
@@ -18,23 +34,6 @@ class Layer(abc.ABC):
                  data_layout=None,
                  hint_layer=None,
                  parallel_strategy={}):
-        """Constructor.
-
-        Args:
-            parents (Iterable of Layer, optional): Sources of input
-                tensors.
-            children (Iterable of Layer, optional): Destinations of
-                output tensors.
-            weights (Iterable of Weights, optional): Trainable
-                parameters.
-            name (str, optional): Unique identifier (default is
-                'layer<index>').
-            device (str, optional): Device to use, e.g. CPU or GPU.
-            data_layout (str, optional): Data distribution scheme.
-            hint_layer (Layer, optional): Hint for output dimensions.
-            parallel_storategy (Map of str, optional): Parallel strategy.
-
-        """
         Layer.global_count += 1
         self.parents = []
         self.children = []
@@ -46,12 +45,11 @@ class Layer(abc.ABC):
         self.parallel_strategy = parallel_strategy
 
         # Initialize parents, children, and weights
-        for l in make_iterable(parents):
-            self.add_parent(l)
-        for l in make_iterable(children):
-            self.add_child(l)
-        for w in make_iterable(weights):
-            self.add_weights(w)
+        for arg in args:
+            self.add_parent(arg)
+        self.add_parent(parents)
+        self.add_child(children)
+        self.add_weights(weights)
 
     def export_proto(self):
         """Construct and return a protobuf message."""
@@ -98,7 +96,7 @@ class Layer(abc.ABC):
 # Generate Layer sub-classes from lbann.proto
 # Note: The list of skip fields must be updated if any new fields are
 # added to the Layer message in lbann.proto
-classes = lbann.util.class_generator.generate_classes_from_protobuf_message(
+classes = lbann.core.util.generate_classes_from_protobuf_message(
     layers_pb2.Layer,
     skip_fields = set([
         'name', 'parents', 'children', 'data_layout', 'device_allocation',

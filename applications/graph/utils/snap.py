@@ -91,6 +91,11 @@ def node2vec_walk(graph_file,
             .format(node2vec_exe)
         )
 
+    # Make sure output directory exists
+    output_dir = os.path.dirname(os.path.realpath(walk_file))
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
+
     # Construct invocation
     command = [
         node2vec_exe,
