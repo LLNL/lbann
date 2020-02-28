@@ -156,15 +156,20 @@ obj = lbann.ObjectiveFunction([cross_entropy, l2_reg])
 metrics = [lbann.Metric(top1, name='top-1 accuracy', unit='%'),
            lbann.Metric(top5, name='top-3 accuracy', unit='%')]
 
+img_strategy = lbann.CategoricalAccuracyStrategy(
+    accuracy_layer_name='louise',
+    match_type=lbann.CategoricalAccuracyStrategy.MatchType.NOMATCH,
+    num_images_per_epoch=10)
+
 img_dump_cb = lbann.CallbackSummarizeImages(
-    cat_accuracy_layer="louise",
-    image_layer="images",
-    criterion=callbacks_pb2.Callback.CallbackSummarizeImages.NOMATCH,
-    interval=5)
+    selection_strategy=img_strategy,
+    image_source_layer_name='images',
+    input_layer_name='input',
+    epoch_interval=5)
 
 callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer(),
-             lbann.CallbackSummary(dir = ".", batch_interval = 2,
+             lbann.CallbackSummary(batch_interval = 2,
                                    mat_interval = 3),
              lbann.CallbackDropFixedLearningRate(
                  drop_epoch=[30, 60, 80], amt=0.1),
@@ -183,6 +188,8 @@ model = lbann.Model(args.mini_batch_size,
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)
+
+trainer = lbann.Trainer(name="Steve")
 
 # Load data reader from prototext
 data_reader_proto = lbann.lbann_pb2.LbannPB()

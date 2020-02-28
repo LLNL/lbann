@@ -87,6 +87,7 @@ def _generate_class(message_descriptor,
 
     # Names of Protobuf message and its fields
     message_name = message_descriptor.name
+    field_descriptors = message_descriptor.fields_by_name
     field_names = field_descriptors.keys()
     enums = message_descriptor.enum_types_by_name
         # Handle "enum" type data.
@@ -171,13 +172,19 @@ def _generate_class(message_descriptor,
                         field.value = val
                     elif field_descriptor.label == google.protobuf.descriptor.FieldDescriptor.LABEL_REPEATED:
                         field.extend(make_iterable(val))
+                    elif isinstance(val, google.protobuf.message.Message):
+                        getattr(message, field_name).MergeFrom(val)
+                    elif callable(getattr(val, "export_proto", None)):
+                        # 'val' is (hopefully) an LBANN class
+                        # representation of a protobuf message.
+                        getattr(message, field_name).MergeFrom(val.export_proto())
                     else:
                         setattr(message, field_name, val)
                 except:
                     raise TypeError('{} is invalid type for {}.{}'
                                     .format(type(val).__name__,
                                             self.__class__.__name__,
-                                            field_name))xs
+                                            field_name))
 
         # Return Protobuf message
         return proto

@@ -34,7 +34,7 @@ class ImageSelectionStrategy(abc.ABC):
         return callbacks_pb2.Callback.CallbackSummarizeImages.SelectionStrategy()
 
 # Build all subclasses
-classes = lbann.util.class_generator.generate_classes_from_protobuf_message(
+classes = lbann.core.util.generate_classes_from_protobuf_message(
     callbacks_pb2.Callback.CallbackSummarizeImages.SelectionStrategy,
     base_class = ImageSelectionStrategy,
     base_has_export_proto = True)
