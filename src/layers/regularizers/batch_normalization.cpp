@@ -26,7 +26,6 @@
 
 #define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/batch_normalization.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -158,7 +157,6 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
 
 template <>
 void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  constexpr DataType one = 1;
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
@@ -179,8 +177,6 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
   auto& local_bias_gradient = m_bias_gradient->Matrix();
 
   // Matrix parameters
-  const auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
-  const auto effective_mini_batch_size = c.get_effective_mini_batch_size();
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();
   const auto& output_dims = get_output_dims();
@@ -243,15 +239,11 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
   }
   optimizer* scale_optimizer = m_weights[0]->get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(*m_scale_gradient,
-                                     one / effective_mini_batch_size,
-                                     true);
+    scale_optimizer->add_to_gradient(*m_scale_gradient, DataType{1}, true);
   }
   optimizer* bias_optimizer = m_weights[1]->get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(*m_bias_gradient,
-                                    one / effective_mini_batch_size,
-                                    true);
+    bias_optimizer->add_to_gradient(*m_bias_gradient, DataType{1}, true);
   }
 
   // Compute error signal

@@ -26,6 +26,8 @@
 
 #define LBANN_EVALUATION_LAYER_INSTANTIATE
 #include "lbann/layers/transform/evaluation.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/exception.hpp"
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/cublas.hpp"
@@ -211,7 +213,9 @@ void abstract_evaluation_layer::fp_compute() {
 }
 
 void abstract_evaluation_layer::bp_compute() {
-  El::Fill(get_error_signals(), DataType(m_scale));
+  const auto& context = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+  const auto mini_batch_size = context.get_effective_mini_batch_size();
+  El::Fill(get_error_signals(), DataType(m_scale / mini_batch_size));
 }
 
 abstract_evaluation_layer*

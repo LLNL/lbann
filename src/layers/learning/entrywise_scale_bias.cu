@@ -26,7 +26,6 @@
 
 #define LBANN_ENTRYWISE_SCALE_BIAS_LAYER_INSTANTIATE
 #include "lbann/layers/learning/entrywise_scale_bias.hpp"
-#include "lbann/execution_contexts/sgd_execution_context.hpp"
 
 namespace lbann {
 
@@ -132,8 +131,7 @@ void bp_impl(const GPUMat& local_input,
              const GPUMat& local_gradient_wrt_output,
              GPUMat& local_gradient_wrt_input,
              weights& scale_bias,
-             AbsDistMat& gradient_wrt_scale_bias,
-             El::Int mini_batch_size) {
+             AbsDistMat& gradient_wrt_scale_bias) {
 
   // Local matrices
   const auto& local_scale_bias
@@ -170,9 +168,7 @@ void bp_impl(const GPUMat& local_input,
   // Update optimizer with gradient
   auto* opt = scale_bias.get_optimizer();
   if (opt != nullptr) {
-    opt->add_to_gradient(gradient_wrt_scale_bias,
-                         DataType{1} / mini_batch_size,
-                         true);
+    opt->add_to_gradient(gradient_wrt_scale_bias, DataType{1}, true);
   }
 
 }
@@ -197,24 +193,20 @@ void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::GPU>
 template <>
 void entrywise_scale_bias_layer<data_layout::DATA_PARALLEL,El::Device::GPU>
      ::bp_compute() {
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   bp_impl(dynamic_cast<const GPUMat&>(get_local_prev_activations()),
           dynamic_cast<const GPUMat&>(get_local_prev_error_signals()),
           dynamic_cast<GPUMat&>(get_local_error_signals()),
           *this->m_weights[0],
-          *m_weights_gradient,
-          c.get_effective_mini_batch_size());
+          *m_weights_gradient);
 }
 template <>
 void entrywise_scale_bias_layer<data_layout::MODEL_PARALLEL,El::Device::GPU>
      ::bp_compute() {
-  const auto& c = static_cast<const sgd_execution_context&>(this->m_model->get_execution_context());
   bp_impl(dynamic_cast<const GPUMat&>(get_local_prev_activations()),
           dynamic_cast<const GPUMat&>(get_local_prev_error_signals()),
           dynamic_cast<GPUMat&>(get_local_error_signals()),
           *this->m_weights[0],
-          *m_weights_gradient,
-          c.get_effective_mini_batch_size());
+          *m_weights_gradient);
 }
 
 template class entrywise_scale_bias_layer<
