@@ -34,6 +34,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/commify.hpp"
 #include <unordered_set>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -52,8 +53,6 @@
 #include <cstdlib>
 
 namespace lbann {
-
-std::string commify(size_t n);
 
 data_store_conduit::data_store_conduit(
   generic_data_reader *reader) :
@@ -180,7 +179,6 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_is_local_cache = rhs.m_is_local_cache;
   m_node_sizes_vary = rhs.m_node_sizes_vary;
   m_have_sample_sizes = rhs.m_have_sample_sizes;
-  //m_reader = rhs.m_reader;
   m_comm = rhs.m_comm;
   m_world_master = rhs.m_world_master;
   m_trainer_master = rhs.m_trainer_master;
@@ -223,7 +221,7 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
 }
 
 void data_store_conduit::setup(int mini_batch_size) {
-  PROFILE("starting setup()");
+  PROFILE("starting setup(); m_owner.size(): ", m_owner.size());
   m_owner_map_mb_size = mini_batch_size;
   m_is_setup = true;
 }
@@ -322,6 +320,10 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 //n.b. Do not put any PROFILE or DEBUG statements in this method,
 //     since the threading from the data_reader will cause you grief
 void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool already_have) {
+
+DEBUG("starting set_conduit_node; m_data.size: ", m_data.size(), " data_id: ", data_id, " already_have: ", already_have);
+
+
   std::lock_guard<std::mutex> lock(m_mutex);
   // TODO: test whether having multiple mutexes below is better (faster) than
   //       locking this entire call with a single mutex. For now I'm
@@ -335,6 +337,7 @@ void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool
   {
     //std::lock_guard<std::mutex> lock(m_mutex);
     if (already_have == false && m_data.find(data_id) != m_data.end()) {
+      DEBUG("m_data.size: ", m_data.size(), " ERROR: duplicate data_id: ", data_id);
       LBANN_ERROR("duplicate data_id: ", data_id, " in data_store_conduit::set_conduit_node; role: ", m_reader->get_role());
     }
   }
@@ -650,6 +653,7 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
     auto key = std::make_pair((*m_shuffled_indices)[i], m_offset_in_partition);
     m_owner[key] = owning_rank;
   }
+  m_owner_maps_were_exchanged = true;
 }
 
 const conduit::Node & data_store_conduit::get_random_node() const {
@@ -672,6 +676,7 @@ const conduit::Node & data_store_conduit::get_random_node(const std::string &fie
 }
 
 conduit::Node & data_store_conduit::get_empty_node(int data_id) {
+  std::lock_guard<std::mutex> lock(m_mutex);
   if (m_data.find(data_id) != m_data.end()) {
     LBANN_ERROR("we already have a node with data_id= ", data_id);
   }
@@ -1036,8 +1041,8 @@ void data_store_conduit::allocate_shared_segment(map_is_t &sizes, std::vector<st
   std::stringstream msg;
   PROFILE(
     "  Shared Memory segment statistics:\n",
-    "   size of required shared memory segment: ", commify(m_mem_seg_length), "\n",
-    "   available mem: ", commify(avail_mem), "\n",
+    "   size of required shared memory segment: ", utils::commify(m_mem_seg_length), "\n",
+    "   available mem: ", utils::commify(avail_mem), "\n",
     "   required size is ", percent, " percent of available");
 
   if (m_mem_seg_length >= avail_mem) {
@@ -1110,7 +1115,6 @@ void data_store_conduit::preload_local_cache() {
 
 void data_store_conduit::exchange_local_caches() {
   PROFILE("Starting exchange_local_caches");
-  PROFILE("  At new epoch; m_cur_epoch: ", m_cur_epoch);
   PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
   PROFILE("  is_preloading(): ", is_preloading());
   PROFILE("  is_local_cache(): ", is_local_cache());
@@ -1204,7 +1208,7 @@ void data_store_conduit::build_conduit_nodes(map_is_t &sizes) {
 }
 
 void data_store_conduit::fillin_shared_images(char* images, size_t size, size_t offset) {
-  PROFILE("  fillin_shared_images; size: ", commify(size), " offset: ", commify(offset));
+  PROFILE("  fillin_shared_images; size: ", utils::commify(size), " offset: ", utils::commify(offset));
   memcpy(reinterpret_cast<void*>(m_mem_seg+offset), reinterpret_cast<const void*>(images), size);
 }
 
@@ -1251,7 +1255,7 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
     for (auto idx : indices[p]) {
       bytes += image_sizes[idx];
     }
-    //PROFILE("  \nP_", p, " has ", commify(bytes), " bytes to bcast");
+    //PROFILE("  \nP_", p, " has ", utils::commify(bytes), " bytes to bcast");
 
     // Set up the rounds; due to MPI yuckiness, can bcast at most INT_MAX bytes
     // in a single broadcast
@@ -1277,7 +1281,7 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
     int work_vector_offset = 0;
     for (size_t i=0; i<rounds.size(); i++) {
       int sz = rounds[i];
-      //PROFILE("  bcasting ", commify(sz), " bytes");
+      //PROFILE("  bcasting ", utils::commify(sz), " bytes");
       if (m_rank_in_trainer == p) {
         m_comm->trainer_broadcast<char>(p, work.data()+work_vector_offset, sz);
         if (node_rank == 0) {
@@ -1366,10 +1370,15 @@ void data_store_conduit::exchange_owner_maps() {
   }
   PROFILE("leaving data_store_conduit::exchange_owner_maps\n",
           "my owner map size: ", m_owner.size());
+  m_owner_maps_were_exchanged = true;
+  set_loading_is_complete();
 }
 
 void data_store_conduit::profile_timing() {
-  if (m_cur_epoch > 0) {
+  if (m_exchange_time == 0) {
+    return;
+  }
+  if (m_exchange_time > 0.) {
     PROFILE(
         "\n",
         "Exchange Data Timing:\n",
@@ -1426,10 +1435,13 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
     return;
   }
 
+  if (m_reader->at_new_epoch() && is_local_cache() && is_explicitly_loading()) {
+    exchange_local_caches();
+    return;
+  }
+
   if (m_reader->at_new_epoch()) {
-    ++m_cur_epoch;
-    PROFILE("Starting exchange_mini_batch_data");
-    PROFILE("  At new epoch; m_cur_epoch: ", m_cur_epoch);
+    PROFILE("\nExchange_mini_batch_data");
     PROFILE("  is_explicitly_loading(): ", is_explicitly_loading());
     PROFILE("  is_local_cache(): ", is_local_cache());
     PROFILE("  is_fully_loaded: ", is_fully_loaded());
@@ -1438,17 +1450,15 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
     }
   }
 
-  if (m_reader->at_new_epoch() && is_local_cache() && is_explicitly_loading()) {
-    exchange_local_caches();
-    return;
-  }
-
   double tm1 = get_time();
 
   // when not running in preload mode, exchange owner maps after the 1st epoch
-  if (m_reader->at_new_epoch() && ! is_preloading() && !is_local_cache() && m_cur_epoch == 1) {
+  if (m_reader->at_new_epoch() && ! is_preloading() && !is_local_cache()) {
     PROFILE("calling exchange_owner_maps");
-    exchange_owner_maps();
+    if (!m_owner_maps_were_exchanged) {
+      exchange_owner_maps();
+    }  
+    m_owner_maps_were_exchanged = true;
     /*
      * TODO
     if (m_spill) {
@@ -1480,7 +1490,8 @@ void data_store_conduit::flush_profile_file() const {
 }
 
 size_t data_store_conduit::get_num_global_indices() const {
-  return m_comm->trainer_allreduce<size_t>(m_my_num_indices);
+  size_t n = m_comm->trainer_allreduce<size_t>(m_my_num_indices);
+  return n;
 }
 
 void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
@@ -1499,7 +1510,6 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
   m_owner.clear();
   m_sample_sizes.clear();
   m_data.clear();
-  m_cur_epoch = -1;
 
   m_is_setup = false;
   m_preloading = false;
@@ -1611,7 +1621,7 @@ void data_store_conduit::save_state() {
   {
   cereal::XMLOutputArchive archive(os);
     archive(CEREAL_NVP(m_my_num_indices),
-            CEREAL_NVP(m_cur_epoch),
+            CEREAL_NVP(m_owner_maps_were_exchanged), 
             CEREAL_NVP(m_is_setup),
             CEREAL_NVP(m_preloading),
             CEREAL_NVP(m_loading_is_complete),
@@ -1651,7 +1661,7 @@ void data_store_conduit::load_checkpoint(std::string dir_name, generic_data_read
   }
   cereal::XMLInputArchive iarchive(in);
   iarchive(CEREAL_NVP(m_my_num_indices),
-           m_cur_epoch, m_is_setup,
+           m_owner_maps_were_exchanged, m_is_setup,
            m_preloading, m_loading_is_complete,
            m_explicitly_loading, m_owner_map_mb_size,
            m_compacted_sample_size, m_is_local_cache,
@@ -1704,8 +1714,7 @@ void data_store_conduit::print_variables() {
   if (!m_world_master) {
     return;
   }
-  std::cerr << "m_cur_epoch: " << m_cur_epoch << std::endl
-            << "m_is_setup: " << m_is_setup << std::endl
+  std::cerr << "m_is_setup: " << m_is_setup << std::endl
             << "m_preloading: " << m_preloading << std::endl
             << "m_explicitly_loading: " << m_explicitly_loading << std::endl
             << "m_owner_map_mb_size: " << m_owner_map_mb_size << std::endl
@@ -1839,12 +1848,12 @@ void data_store_conduit::test_imagenet_node(int index, bool dereference) {
     LBANN_ERROR("failed to find data_id ", data_id, " in the image_sizes map");
   }
   size_t szz = m_sample_sizes[data_id];
-  PROFILE("test_imagenet_node() for data_id: ", commify(data_id), " at offset: ", commify(m_image_offsets[data_id]), " image size: ", commify(szz));
+  PROFILE("test_imagenet_node() for data_id: ", utils::commify(data_id), " at offset: ", utils::commify(m_image_offsets[data_id]), " image size: ", utils::commify(szz));
   if (m_image_offsets[data_id] >= INT_MAX) {
     PROFILE("    WARNING: offset is >= INT_MAX!");
   }
 
-  std::cerr << "testing sample_id: "<< commify(data_id)<< " stored at offset: "<< commify(m_image_offsets[data_id]);
+  std::cerr << "testing sample_id: "<< utils::commify(data_id)<< " stored at offset: "<< utils::commify(m_image_offsets[data_id]);
   if (m_image_offsets[data_id] >= INT_MAX) {
     std::cerr << "; (>= INT_MAX)\n";
   } else {
@@ -1926,25 +1935,6 @@ bool data_store_conduit::test_local_cache_imagenet(int n) {
   return true;
 }
 
-std::string commify(size_t n) {
-  std::string s = std::to_string(n);
-  std::stringstream s2;
-  int c = 0;
-  for (int j = (int)s.size()-1; j>=0; j--) {
-    s2 << s[j];
-    ++c;
-    if (c == 3) {
-      if (j > 0) {
-        s2 << ",";
-        c = 0;
-      }
-    }
-  }
-  std::string r = s2.str();
-  std::reverse(r.begin(), r.end());
-  return r;
-}
-
 void data_store_conduit::check_query_flags() const {
   if (m_explicitly_loading && m_preloading) {
     LBANN_ERROR("is_explicitly_loading() && is_preloading() are both true, but should not be");
@@ -1957,4 +1947,8 @@ void data_store_conduit::check_query_flags() const {
   }
 }
 
+void data_store_conduit::clear_owner_map() { 
+    m_owner_maps_were_exchanged = false;
+    m_owner.clear(); 
+  }
 }  // namespace lbann

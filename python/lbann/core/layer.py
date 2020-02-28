@@ -32,7 +32,8 @@ class Layer(abc.ABC):
                  name=None,
                  device=None,
                  data_layout=None,
-                 hint_layer=None):
+                 hint_layer=None,
+                 parallel_strategy={}):
         Layer.global_count += 1
         self.parents = []
         self.children = []

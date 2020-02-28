@@ -25,6 +25,7 @@ set_full_path(THIS_DIR_SOURCES
   system_info.cpp
   lbann_library.cpp
   jag_common.cpp
+  commify.cpp
 )
 
 if (LBANN_HAS_CUDA)
