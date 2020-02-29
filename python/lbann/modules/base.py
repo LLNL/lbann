@@ -214,7 +214,8 @@ class ConvolutionModule(Module):
                               conv_strides_i=self.stride,
                               conv_dilations_i=self.dilation,
                               num_groups=self.groups,
-                              has_bias=self.bias)
+                              has_bias=self.bias,
+                              parallel_strategy=self.parallel_strategy)
         else:
           y = lbann.Convolution(x,
                               weights=self.weights,
