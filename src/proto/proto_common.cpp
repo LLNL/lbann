@@ -187,6 +187,8 @@ void init_data_readers(
                                                 key_data,
                                                 key_labels,
                                                 key_responses);
+      reader_cosmo_hdf5->set_has_labels(!readme.disable_labels());
+      reader_cosmo_hdf5->set_has_responses(!readme.disable_responses());
       auto filedir = readme.data_filedir();
       if(!endsWith(filedir, "/")) {
         filedir = filedir + "/";
