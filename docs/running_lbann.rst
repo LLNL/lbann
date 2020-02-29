@@ -312,9 +312,10 @@ A typical workflow involves the following steps:
 
    + Supported job managers are Slurm and LSF.
 
-   + LLNL users may prefer to use :python:`lbann.contrib.lc.launcher.run`.
-     This is a wrapper around :python:`lbann.run`, with defaults and
-     optimizations specifically for LC systems.
+   + LLNL users and collaborators may prefer to use
+     :python:`lbann.contrib.launcher.run`. This is similar to
+     :python:`lbann.run`, with defaults and optimizations for certain
+     systems.
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A simple example

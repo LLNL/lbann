@@ -60,7 +60,7 @@ def construct_model():
     pred = lbann.Softmax(fc3(x))
     gt_label  = lbann.OneHot(ylabel, size=num_classes)
     loss = lbann.CrossEntropy([pred,gt_label],name='loss')
-    acc = lbann.CategoricalAccuracy([pred, gt_label]) 
+    acc = lbann.CategoricalAccuracy([pred, gt_label])
 
 
     layers = list(lbann.traverse_layer_graph(input))
@@ -70,7 +70,7 @@ def construct_model():
       weights.update(l.weights)
     obj = lbann.ObjectiveFunction(loss)
 
-    
+
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer()]
 
@@ -117,12 +117,12 @@ def construct_data_reader():
 
 if __name__ == '__main__':
     import lbann
-    import lbann.contrib.lc.launcher
+    import lbann.contrib.launcher
     trainer = lbann.Trainer()
     model = construct_model()
     opt = lbann.Adam(learn_rate=0.001,beta1=0.9,beta2=0.99,eps=1e-8)
     data_reader = construct_data_reader()
-    status = lbann.contrib.lc.launcher.run(
+    status = lbann.contrib.launcher.run(
         trainer, model, data_reader, opt,
         account='hpcdl',
         scheduler='slurm',

@@ -12,7 +12,7 @@ from lbann.util import make_iterable
 # ==============================================
 
 def run(trainer, model, data_reader, optimizer,
-        experiment_dir=None,
+        work_dir=None,
         nodes=1,
         procs_per_node=1,
         time_limit=None,
@@ -24,7 +24,9 @@ def run(trainer, model, data_reader, optimizer,
         launcher_args=[],
         lbann_args=[],
         environment={},
-        setup_only=False):
+        overwrite_script=False,
+        setup_only=False,
+        experiment_dir=None):
     """Run LBANN.
 
     This is intended to interface with job schedulers on HPC
@@ -43,7 +45,7 @@ def run(trainer, model, data_reader, optimizer,
         data_reader (lbann.reader_pb2.DataReader): Data reader.
         optimizer (lbann.model.Optimizer): Default optimizer for
             model.
-        experiment_dir (str, optional): Experiment directory.
+        work_dir (str, optional): Working directory.
         nodes (int, optional): Number of compute nodes.
         procs_per_node (int, optional): Number of processes per compute
             node.
@@ -59,8 +61,11 @@ def run(trainer, model, data_reader, optimizer,
             executable.
         environment (dict of {str: str}, optional): Environment
             variables.
+        overwrite_script (bool, optional): Whether to overwrite script
+            file if it already exists.
         setup_only (bool, optional): If true, the experiment is not
             run after the experiment directory is initialized.
+        experiment_dir (str, optional, deprecated): See `work_dir`.
 
     Returns:
         int: Exit status from scheduler. This is really only
@@ -71,7 +76,9 @@ def run(trainer, model, data_reader, optimizer,
     """
 
     # Create batch script generator
-    script = make_batch_script(work_dir=experiment_dir,
+    if not work_dir:
+        work_dir = experiment_dir
+    script = make_batch_script(work_dir=work_dir,
                                nodes=nodes,
                                procs_per_node=procs_per_node,
                                time_limit=time_limit,
@@ -113,11 +120,11 @@ def run(trainer, model, data_reader, optimizer,
     # Write, run, or submit batch script
     status = 0
     if setup_only:
-        script.write()
+        script.write(overwrite=overwrite_script)
     elif has_allocation:
-        status = script.run()
+        status = script.run(overwrite=overwrite_script)
     else:
-        status = script.submit()
+        status = script.submit(overwrite=overwrite_script)
     return status
 
 def make_batch_script(script_file=None,
@@ -131,7 +138,8 @@ def make_batch_script(script_file=None,
                       account=None,
                       reservation=None,
                       launcher_args=[],
-                      environment={}):
+                      environment={},
+                      experiment_dir=None):
     """Construct batch script manager.
 
     Attempts to detect a scheduler if one is not provided.
@@ -160,6 +168,7 @@ def make_batch_script(script_file=None,
             Command-line arguments to parallel command launcher.
         environment (`dict` of `{str: str}`, optional): Environment
             variables.
+        experiment_dir (str, optional, deprecated): See `work_dir`.
 
     Returns:
         `lbann.launcher.batch_script.BatchScript`
@@ -187,6 +196,8 @@ def make_batch_script(script_file=None,
         raise RuntimeError('could not detect job scheduler')
 
     # Create work directory if not provided
+    if not work_dir:
+       work_dir = experiment_dir
     if not work_dir:
         if 'LBANN_EXPERIMENT_DIR' in os.environ:
             work_dir = os.environ['LBANN_EXPERIMENT_DIR']
