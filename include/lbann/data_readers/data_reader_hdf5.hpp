@@ -42,6 +42,9 @@ class hdf5_reader : public generic_data_reader {
   void load() override;
   void set_hdf5_paths(const std::vector<std::string> hdf5_paths) {m_file_paths = hdf5_paths;}
 
+  void set_has_labels(bool b) { m_has_labels = b; }
+  void set_has_responses(bool b) { m_has_responses = b; }
+
   int get_num_labels() const override {
     if(!m_has_labels) {
       return generic_data_reader::get_num_labels();
@@ -83,9 +86,9 @@ class hdf5_reader : public generic_data_reader {
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
   void gather_responses(float *responses);
   /// Whether to fetch a label from the last column.
-  bool m_has_labels = true; // FIXME: Make this configurable
+  bool m_has_labels = false;
   /// Whether to fetch a response from the last column.
-  bool m_has_responses = false; // FIXME: Make this configurable
+  bool m_has_responses = false;
   int m_image_depth=0;
   size_t m_num_features;
   size_t m_num_labels = 3; // TODO: Exclude this LiTS-specific parameter.
