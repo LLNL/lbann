@@ -218,7 +218,7 @@ def construct_data_reader(run_args):
     module_file = os.path.abspath(run_args.data_module_file)
     os.environ["DATA_CONFIG"] = os.path.abspath(run_args.data_config)
 
-    # TODO: here is where I can on the fly switch datasets..probelm is that each one needs their own module but whatever..
+    # TODO: here is where I can on the fly switch datasets with the caveat that each one needs their own module
     module_name = os.path.splitext(os.path.basename(module_file))[0]
     module_dir = os.path.dirname(module_file)
 

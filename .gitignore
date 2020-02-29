@@ -13,3 +13,11 @@ data.prototext*
 # Can also ignore all directories and files in a directory.
 # tmp/**/* 
 build
+spack_environments/users/
+
+# can ignore experiment/data directories
+applications/ATOM/charvae_data
+applications/ATOM/charvae_experiments
+
+# can ignore the moses repo
+applications/ATOM/moses/
