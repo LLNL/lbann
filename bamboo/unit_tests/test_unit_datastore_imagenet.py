@@ -184,12 +184,37 @@ baseline_tests = tools.create_tests(
     test_name_base='test_unit_datastore_imagenet_nodatastore',
     nodes=num_nodes
 )
+
+datastore_tests = []
+'''
+datastore_tests.append(tools.create_tests(
+    setup_experiment,
+    __file__,
+    nodes=num_nodes,
+    test_name_base='test_unit_datastore_imagenet_data_store_cache',
+    lbann_args=['--preload_data_store']
+))
+'''
+#datastore_tests.append(tools.create_tests(
 datastore_tests = tools.create_tests(
     setup_experiment,
     __file__,
     nodes=num_nodes,
+    test_name_base='test_unit_datastore_imagenet_use_data_store',
     lbann_args=['--use_data_store']
 )
+'''
+datastore_tests.append(tools.create_tests(
+    setup_experiment,
+    __file__,
+    nodes=num_nodes,
+    test_name_base='test_unit_datastore_imagenet_preload_data_store',
+    lbann_args=['--preload_data_store']
+))
+'''
+
 for i in range(len(datastore_tests)):
-    _test_func = create_test_func(baseline_tests[i], datastore_tests[i])
-    globals()[_test_func.__name__] = _test_func
+    print("i: " + str(i) + " ___________________________________")
+    for j in range(len(baseline_tests)) :
+        print("j: " + str(j) + " ___________________________________")
+        _test_func = create_test_func(baseline_tests[j], datastore_tests[i][j])
