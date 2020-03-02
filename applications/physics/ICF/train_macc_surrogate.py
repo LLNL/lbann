@@ -1,4 +1,4 @@
-import macc_models
+import macc_models 
 from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
 
@@ -7,23 +7,24 @@ import google.protobuf.text_format as txtf
 # ==============================================
 
 # Default data reader
-model_zoo_dir = dirname(dirname(abspath(__file__)))
-data_reader_prototext = join(model_zoo_dir,
+cur_dir = dirname(abspath(__file__))
+data_reader_prototext = join(dirname(cur_dir),
                              'data',
                              'jag_100Kdata.prototext')
 
+model_dir=''
 #Load at least pretrained WAE model
-pre_trained_dir=''
-
-assert pre_trained_dir, 'pre_trained_dir should not be empty'
+assert model_dir, 'pre_trained_dir should not be empty'
+#Assume pre_trained model is in current directory, change path if not
+pre_trained_dir=join(cur_dir,model_dir) 
 
 def list2str(l):
     return ' '.join(l)
 
 def construct_model():
-    """Construct LBANN model.
+    """Construct MACC surrogate model.
 
-    MACC surrogate model
+    See https://arxiv.org/pdf/1912.08113.pdf model architecture and other details
 
     """
     import lbann
