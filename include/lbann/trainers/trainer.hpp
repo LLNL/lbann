@@ -139,6 +139,20 @@ public:
   /** Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
 
+  // ===========================================
+  // Checkpointing
+  // ===========================================
+
+  /** @brief Checkpoint model to given file descriptor, return number of bytes written */
+  bool save_to_checkpoint_shared(persist& p);
+  /** @brief Restore model by reading checkpoint from given file descriptor, return number of bytes read */
+  bool load_from_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(persist& p, model& m, execution_context& c);
+
+  bool save_to_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p, model& m, execution_context& c);
+
 private:
 
   /** Give trainer a name. */

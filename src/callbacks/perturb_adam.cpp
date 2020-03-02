@@ -56,7 +56,7 @@ perturb_adam::perturb_adam(DataType learning_rate_factor,
     m_perturb_during_training(perturb_during_training),
     m_weights_names(std::move(weights_names)) {}
 
-void perturb_adam::setup(model* m) {
+void perturb_adam::setup(model* m, const std::string& trainer_name) {
   perturb(*m);
 }
 

@@ -79,7 +79,7 @@ public:
   perturb_adam* copy() const override { return new perturb_adam(*this); }
   std::string name() const override { return "perturb Adam"; }
 
-  void setup(model* m) override;
+  void setup(model* m, const std::string& trainer_name) override;
   void on_batch_begin(model* m) override;
 
 private:

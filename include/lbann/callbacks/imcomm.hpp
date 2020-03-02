@@ -76,7 +76,7 @@ class imcomm : public callback_base {
   void set_weights_comm(weights *w, comm_type ct);
 
   /** @brief Do initialization for this model. */
-  void setup(model *m) override;
+  void setup(model *m, const std::string& trainer_name) override;
 
   /** @brief Make sure all models have the same weights. */
   void on_train_begin(model *m) override;

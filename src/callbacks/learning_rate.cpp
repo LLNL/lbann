@@ -55,7 +55,7 @@ learning_rate::learning_rate(
   std::vector<std::string> weights_names)
   : m_weights_names(std::move(weights_names)) {}
 
-void learning_rate::setup(model *m) {
+void learning_rate::setup(model *m, const std::string& trainer_name) {
 
   // Add all weights if list of weights is not initialized
   std::vector<weights*> weights_list =
@@ -220,8 +220,8 @@ linear_growth_learning_rate::linear_growth_learning_rate(
   m_target(target), m_inc(0),
   m_num_epochs(num_epochs), m_delay(delay) {}
 
-void linear_growth_learning_rate::setup(model *m) {
-  learning_rate::setup(m);
+void linear_growth_learning_rate::setup(model *m, const std::string& trainer_name) {
+  learning_rate::setup(m, trainer_name);
   // Compute the learning rate increase.
   if (!this->get_weights().empty()) {
     // Assumes all optimizers have the same initial learning rate.
@@ -266,8 +266,8 @@ poly_learning_rate::poly_learning_rate(
  * Check if the maximum number of iterations is set. If not, compute it by the
  * number of epochs and the number of iterations per epoch.
  */
-void poly_learning_rate::setup(model *m) {
-  learning_rate::setup(m);
+void poly_learning_rate::setup(model *m, const std::string& trainer_name) {
+    learning_rate::setup(m, trainer_name);
   if (m_max_iter == 0ull) {
     m_max_iter = m_num_epochs * m->get_num_iterations_per_epoch(execution_mode::training);
   }

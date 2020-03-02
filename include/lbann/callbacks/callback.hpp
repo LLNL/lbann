@@ -91,7 +91,7 @@ public:
   /** @brief Called once to set up the callback on the model
    *         (after all layers are set up).
    */
-  virtual void setup(model *m) {};
+  virtual void setup(model *m, const std::string& trainer_name) {};
 
   ///@}
   /** @name Callback hooks */

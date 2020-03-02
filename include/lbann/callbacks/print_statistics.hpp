@@ -46,7 +46,7 @@ class print_statistics : public callback_base {
   print_statistics(const print_statistics&) = default;
   print_statistics& operator=(const print_statistics&) = default;
   print_statistics* copy() const override { return new print_statistics(*this); }
-  void setup(model *m) override;
+  void setup(model *m, const std::string& trainer_name) override;
   void on_epoch_begin(model *m) override;
   void on_epoch_end(model *m) override;
   void on_validation_end(model *m) override;

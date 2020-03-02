@@ -148,6 +148,7 @@ std::unique_ptr<model> build_model_from_prototext(
   lbann_data::LbannPB &pb,
   lbann_comm *comm,
   options *opts,
+  const std::string& trainer_name,
   thread_pool& io_thread_pool,
   std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
   bool first_model) {
@@ -281,7 +282,7 @@ std::unique_ptr<model> build_model_from_prototext(
   }
 
   // Setup models
-  ret_model->setup();
+  ret_model->setup(trainer_name);
 
   if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
     if (master) {

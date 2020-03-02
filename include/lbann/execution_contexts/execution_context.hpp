@@ -96,9 +96,13 @@ public:
   }
 
   /** Get the execution environment */
-  trainer& get_trainer() {
+  const trainer& get_trainer() const {
     if (!m_trainer) { LBANN_ERROR("m_trainer is null"); }
     return *m_trainer;
+  }
+
+  trainer& get_trainer() {
+    return const_cast<trainer&>(static_cast<const execution_context&>(*this).get_trainer());
   }
 
   thread_pool& get_io_thread_pool() const;
