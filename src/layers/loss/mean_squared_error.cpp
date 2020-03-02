@@ -24,16 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_MEAN_SQUARED_ERROR_LAYER_INSTANTIATE
 #include "lbann/layers/loss/mean_squared_error.hpp"
 
 namespace lbann {
 
 namespace {
 
+template <typename TensorDataType>
 void local_fp_cpu(El::Int height,
-                  const AbsMat& local_prediction,
-                  const AbsMat& local_ground_truth,
-                  AbsMat& local_contribution) {
+                  const El::AbstractMatrix<TensorDataType>& local_prediction,
+                  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                  El::AbstractMatrix<TensorDataType>& local_contribution) {
 
   // Useful constants
   const auto& local_height = local_prediction.Height();
@@ -42,7 +44,7 @@ void local_fp_cpu(El::Int height,
   // Compute local contribution to mean squared error
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    DataType sum = 0;
+    TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& err = (local_prediction(row, col)
                          - local_ground_truth(row, col));
@@ -53,15 +55,16 @@ void local_fp_cpu(El::Int height,
 
 }
 
+template <typename TensorDataType>
 void local_bp_cpu(El::Int height,
-                  const AbsMat& local_prediction,
-                  const AbsMat& local_ground_truth,
-                  const AbsMat& local_gradient_wrt_output,
-                  AbsMat& local_gradient_wrt_prediction,
-                  AbsMat& local_gradient_wrt_ground_truth) {
+                  const El::AbstractMatrix<TensorDataType>& local_prediction,
+                  const El::AbstractMatrix<TensorDataType>& local_ground_truth,
+                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_prediction,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
 
   // Useful constants
-  const DataType scale = DataType(2) / height;
+  const TensorDataType scale = static_cast<TensorDataType>(TensorDataType(2) / height);
   const El::Int local_height = local_prediction.Height();
   const El::Int local_width = local_prediction.Width();
 
@@ -81,56 +84,31 @@ void local_bp_cpu(El::Int height,
 
 } // namespace
 
-template <>
-void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(El::Int height,
-                        const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        AbsMat& local_contribution) {
-  local_fp_cpu(height, local_prediction, local_ground_truth,
-               local_contribution);
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void mean_squared_error_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+  local_fp_cpu(this->get_input_size(),
+               this->get_local_prev_activations(0),
+               this->get_local_prev_activations(1),
+               this->m_workspace->Matrix());
 }
 
-template <>
-void mean_squared_error_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(El::Int height,
-                        const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_prediction,
-                        AbsMat& local_gradient_wrt_ground_truth) {
-  local_bp_cpu(height,
-               local_prediction,
-               local_ground_truth,
-               local_gradient_wrt_output,
-               local_gradient_wrt_prediction,
-               local_gradient_wrt_ground_truth);
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void mean_squared_error_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+  local_bp_cpu(this->get_input_size(),
+               this->get_local_prev_activations(0),
+               this->get_local_prev_activations(1),
+               this->m_workspace->LockedMatrix(),
+               this->get_local_error_signals(0),
+               this->get_local_error_signals(1));
 }
 
-template <>
-void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(El::Int height,
-                        const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        AbsMat& local_contribution) {
-  local_fp_cpu(height, local_prediction, local_ground_truth,
-               local_contribution);
-}
+#define PROTO(T)                                      \
+  template class mean_squared_error_layer<            \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
+  template class mean_squared_error_layer<            \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
-template <>
-void mean_squared_error_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(El::Int height,
-                        const AbsMat& local_prediction,
-                        const AbsMat& local_ground_truth,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_prediction,
-                        AbsMat& local_gradient_wrt_ground_truth) {
-  local_bp_cpu(height,
-               local_prediction,
-               local_ground_truth,
-               local_gradient_wrt_output,
-               local_gradient_wrt_prediction,
-               local_gradient_wrt_ground_truth);
-}
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

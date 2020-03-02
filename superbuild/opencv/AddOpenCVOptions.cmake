@@ -2,7 +2,7 @@
 option(OPENCV_BUILD_opencv_core "OpenCV: Enable core module" ON)
 option(OPENCV_BUILD_opencv_flann "OpenCV: Enable flann module" OFF)
 option(OPENCV_BUILD_opencv_imgproc "OpenCV: Enable imgproc module" ON)
-option(OPENCV_BUILD_opencv_highgui "OpenCV: Enable highgui module" ON)
+option(OPENCV_BUILD_opencv_highgui "OpenCV: Enable highgui module" OFF)
 option(OPENCV_BUILD_opencv_features2d "OpenCV: Enable features2d module" OFF)
 option(OPENCV_BUILD_opencv_calib3d "OpenCV: Enable calib3d module" OFF)
 option(OPENCV_BUILD_opencv_ml "OpenCV: Enable ml module" OFF)

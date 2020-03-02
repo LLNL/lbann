@@ -28,30 +28,38 @@
 #define LBANN_LAYER_GAUSSIAN_HPP_INCLUDED
 
 #include "lbann/layers/transform/transform.hpp"
+#include "lbann/models/model.hpp"
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
 
-/** @brief Random values with Gaussian distribution.
- *
- *  During validation and testing, outputs are all equal to the
- *  distribution mean.
- */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class gaussian_layer : public transform_layer {
+/** @brief Random values from Gaussian/normal distribution. */
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
+class gaussian_layer : public transform_layer<TensorDataType> {
 private:
-  /** Gaussian distribution mean. */
-  DataType m_mean;
-  /** Gaussian distribution standard deviation. */
-  DataType m_stdev;
+  /** @brief Gaussian distribution mean. */
+  TensorDataType m_mean;
+  /** @brief Gaussian distribution standard deviation. */
+  TensorDataType m_stdev;
+  /** @brief Whether to have deterministic output when not training.
+   *
+   *  Applies to execution modes other than training, e.g. validation
+   *  and inference. If true, outputs are all equal to the
+   *  distribution mean when not training.
+   */
+  bool m_training_only;
 
 public:
   gaussian_layer(lbann_comm *comm,
                  const std::vector<int>& dims,
-                 DataType mean = DataType(0),
-                 DataType stdev = DataType(1))
-    : transform_layer(comm), m_mean(mean), m_stdev(stdev) {
-    set_output_dims(dims);
+                 TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
+                 TensorDataType stdev = El::TypeTraits<TensorDataType>::One(),
+                 bool training_only = false)
+    : transform_layer<TensorDataType>(comm),
+      m_mean(mean), m_stdev(stdev), m_training_only(training_only) {
+    this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
   gaussian_layer* copy() const override { return new gaussian_layer(*this); }
@@ -60,24 +68,36 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto&& desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("Mean", m_mean);
     desc.add("Standard deviation", m_stdev);
+    desc.add("Training only", m_training_only);
     return desc;
   }
 
 protected:
 
   void fp_compute() override {
-    auto& output = get_activations();
-    if (this->m_model->get_execution_mode() == execution_mode::training) {
-      gaussian_fill(output, output.Height(), output.Width(), m_mean, m_stdev);
-    } else {
+    auto& output = this->get_activations();
+    const auto& mode = this->m_model->get_execution_context().get_execution_mode();
+    if (m_training_only && (mode != execution_mode::training)) {
       El::Fill(output, m_mean);
+    }
+    else {
+      gaussian_fill(output, output.Height(), output.Width(), m_mean, m_stdev);
     }
   }
 
 };
+
+#ifndef LBANN_GAUSSIAN_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class gaussian_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class gaussian_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_GAUSSIAN_LAYER_INSTANTIATE
 
 } // namespace lbann
 

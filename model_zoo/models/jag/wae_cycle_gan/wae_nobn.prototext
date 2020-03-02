@@ -1,5 +1,7 @@
+trainer {
+  random_init_trainers_identically: false
+}
 model {
-  random_init_models_differently: true
   name: "wae_model"
   serialize_io: true
   objective_function {
@@ -575,9 +577,8 @@ model {
     name: "decode0"
     weights: "decode0linearity decode0bias"
     data_layout: "data_parallel"
+    hint_layer: "image_data_dummy"
     fully_connected {
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
   }
@@ -586,29 +587,39 @@ model {
   ###@todo : delete not used, LTFB uses encodefc*linearity_weights instead
   weights {
     name: "encodefc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "encodefc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "encodefc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "encodefc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
 
   #Decoder weights here to be used in WAE+cyclic model
   weights {
     name: "decode0linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -616,7 +627,9 @@ model {
   }
   weights {
     name: "decode1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -624,7 +637,9 @@ model {
   }
   weights {
     name: "decode2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -632,18 +647,22 @@ model {
   }
   weights {
     name: "decode3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "decode3bias"
   }
 
-  
+
   #Discriminator (shared)
   weights {
     name: "wae_d1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -651,7 +670,9 @@ model {
   }
   weights {
     name: "wae_d1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -659,7 +680,9 @@ model {
   }
   weights {
     name: "wae_d1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -667,7 +690,9 @@ model {
   }
   weights {
     name: "wae_d1fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -675,7 +700,9 @@ model {
   }
   weights {
     name: "wae_d1fc5linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -708,6 +735,5 @@ model {
 
  # }
   #callback { save_model { dir: "model" } }
-  block_size: 256
-  procs_per_model:0 
+  procs_per_model:0
 }

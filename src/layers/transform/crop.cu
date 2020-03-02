@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CROP_LAYER_INSTANTIATE
 #include "lbann/layers/transform/crop.hpp"
 #include "lbann/utils/cuda.hpp"
 
@@ -37,13 +38,14 @@ namespace {
  *  - Output - width x output_dimz x output_dimy x output_dimx
  *  - Crop position - width x 3 (i.e. a 3 x width matrix)
  */
+template <typename TensorDataType>
 __global__ void fp_compute_3d_kernel(
   El::Int input_dimx, El::Int input_dimy, El::Int input_dimz,
   El::Int output_dimx, El::Int output_dimy, El::Int output_dimz,
   El::Int width,
-  const DataType * __restrict__ input, int input_ldim,
-        DataType * __restrict__ output, int output_ldim,
-  const DataType * __restrict__ crop_pos, int crop_pos_ldim) {
+  const TensorDataType * __restrict__ input, int input_ldim,
+        TensorDataType * __restrict__ output, int output_ldim,
+  const TensorDataType * __restrict__ crop_pos, int crop_pos_ldim) {
 
   // Indices
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -60,9 +62,9 @@ __global__ void fp_compute_3d_kernel(
   for (El::Int col = bidy; col < width; col += num_blocks_y) {
 
     // Crop offsets
-    El::Int offz = num_offsets_z * crop_pos[col*crop_pos_ldim];
-    El::Int offy = num_offsets_y * crop_pos[col*crop_pos_ldim+1];
-    El::Int offx = num_offsets_x * crop_pos[col*crop_pos_ldim+2];
+    El::Int offz = num_offsets_z * static_cast<El::Int>(crop_pos[col*crop_pos_ldim]);
+    El::Int offy = num_offsets_y * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+1]);
+    El::Int offx = num_offsets_x * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+2]);
     offz = min(max(offz, El::Int(0)), num_offsets_z - 1);
     offy = min(max(offy, El::Int(0)), num_offsets_y - 1);
     offx = min(max(offx, El::Int(0)), num_offsets_x - 1);
@@ -101,13 +103,14 @@ __global__ void fp_compute_3d_kernel(
  *  - Gradient w.r.t. input - width x input_dimz x input_dimy x input_dimx
  *  - Crop position - width x 3 (i.e. a 3 x width matrix)
  */
+template <typename TensorDataType>
 __global__ void bp_compute_3d_kernel(
   El::Int input_dimx, El::Int input_dimy, El::Int input_dimz,
   El::Int output_dimx, El::Int output_dimy, El::Int output_dimz,
   El::Int width,
-  const DataType * __restrict__ gradient_wrt_output, int gradient_wrt_output_ldim,
-        DataType * __restrict__ gradient_wrt_input, int gradient_wrt_input_ldim,
-  const DataType * __restrict__ crop_pos, int crop_pos_ldim) {
+  const TensorDataType * __restrict__ gradient_wrt_output, int gradient_wrt_output_ldim,
+        TensorDataType * __restrict__ gradient_wrt_input, int gradient_wrt_input_ldim,
+  const TensorDataType * __restrict__ crop_pos, int crop_pos_ldim) {
 
   // Indices
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
@@ -124,9 +127,9 @@ __global__ void bp_compute_3d_kernel(
   for (El::Int col = bidy; col < width; col += num_blocks_y) {
 
     // Crop offsets
-    El::Int offz = num_offsets_z * crop_pos[col*crop_pos_ldim];
-    El::Int offy = num_offsets_y * crop_pos[col*crop_pos_ldim+1];
-    El::Int offx = num_offsets_x * crop_pos[col*crop_pos_ldim+2];
+    El::Int offz = num_offsets_z * static_cast<El::Int>(crop_pos[col*crop_pos_ldim]);
+    El::Int offy = num_offsets_y * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+1]);
+    El::Int offx = num_offsets_x * static_cast<El::Int>(crop_pos[col*crop_pos_ldim+2]);
     offz = min(max(offz, El::Int(0)), num_offsets_z - 1);
     offy = min(max(offy, El::Int(0)), num_offsets_y - 1);
     offx = min(max(offx, El::Int(0)), num_offsets_x - 1);
@@ -161,19 +164,19 @@ __global__ void bp_compute_3d_kernel(
 
 } // namespace
 
-template <>
-void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_3d() {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void crop_layer<TensorDataType, T_layout, Dev>::fp_compute_3d() {
 
   // Local matrices
-  const auto& local_input = get_local_prev_activations(0);
-  const auto& local_crop_pos = get_local_prev_activations(1);
-  auto& local_output = get_local_activations();
+  const auto& local_input = this->get_local_prev_activations(0);
+  const auto& local_crop_pos = this->get_local_prev_activations(1);
+  auto& local_output = this->get_local_activations();
 
   // Tensor dimensions
   const auto& local_width = local_input.Width();
-  const auto input_dims = get_input_dims();
-  const auto output_dims = get_output_dims();
-  const auto& output_size = get_output_size();
+  const auto input_dims = this->get_input_dims();
+  const auto output_dims = this->get_output_dims();
+  const auto& output_size = this->get_output_size();
 
   // Launch CUDA kernel
   if (!local_output.IsEmpty()) {
@@ -193,23 +196,23 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute_3d() {
 
 }
 
-template <>
-void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void crop_layer<TensorDataType, T_layout, Dev>::bp_compute_3d() {
 
   // Clear error signals
-  El::Zero(get_error_signals(0));
-  El::Zero(get_error_signals(1));
+  El::Zero(this->get_error_signals(0));
+  El::Zero(this->get_error_signals(1));
 
   // Local matrices
-  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-  const auto& local_crop_pos = get_local_prev_activations(1);
-  auto& local_gradient_wrt_input = get_local_error_signals(0);
+  const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+  const auto& local_crop_pos = this->get_local_prev_activations(1);
+  auto& local_gradient_wrt_input = this->get_local_error_signals(0);
 
   // Tensor dimensions
   const auto& local_width = local_gradient_wrt_input.Width();
-  const auto input_dims = get_input_dims();
-  const auto output_dims = get_output_dims();
-  const auto& output_size = get_output_size();
+  const auto input_dims = this->get_input_dims();
+  const auto output_dims = this->get_output_dims();
+  const auto& output_size = this->get_output_size();
 
   // Launch CUDA kernel
   if (!local_gradient_wrt_output.IsEmpty()) {
@@ -228,5 +231,11 @@ void crop_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute_3d() {
   }
 
 }
+
+#define PROTO(T)                                      \
+  template class crop_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -110,6 +110,40 @@ namespace cuda {
 template <typename T> __device__ __forceinline__
 T atomic_add(T* address, T val);
 
+/** @brief Sum over threads in CUDA block
+ *
+ *  Every thread in a CUDA block must enter this function. The sum is
+ *  returned on thread 0.
+ *
+ *  @tparam bdimx   x-dimension of CUDA block
+ *  @tparam bdimy   y-dimension of CUDA block
+ *  @tparam bdimz   z-dimension of CUDA block
+ *  @tparam T       Data type
+ *  @param  val     Contribution from thread
+ *  @returns On thread 0, the sum. Not meaningful on other threads.
+ */
+template <size_t bdimx, size_t bdimy, size_t bdimz, class T>
+__device__ __forceinline__
+T block_reduce(T val);
+
+/** @brief Reduction over threads in CUDA block
+ *
+ *  Every thread in a CUDA block must enter this function. The reduced
+ *  value is returned on thread 0.
+ *
+ *  @tparam bdimx   x-dimension of CUDA block
+ *  @tparam bdimy   y-dimension of CUDA block
+ *  @tparam bdimz   z-dimension of CUDA block
+ *  @tparam T       Data type
+ *  @tparam Op      Functor for reduction operation
+ *  @param  val     Contribution from each thread
+ *  @returns On thread 0, the reduced value. Not meaningful on other
+ *  threads.
+ */
+template <size_t bdimx, size_t bdimy, size_t bdimz, class T, class Op>
+__device__ __forceinline__
+T block_reduce(T val);
+
 // Unary math functions
 template <typename T> __device__ __forceinline__ T abs(const T& x);
 template <typename T> __device__ __forceinline__ T round(const T& x);
@@ -145,6 +179,15 @@ template <typename T> constexpr __device__ __forceinline__ T min();
 template <typename T> constexpr __device__ __forceinline__ T max();
 template <typename T> constexpr __device__ __forceinline__ T epsilon();
 template <typename T> __device__ __forceinline__ T infinity();
+
+/** @brief Array with fixed type and size. */
+template <typename T, size_t N>
+struct array {
+  T vals[N];
+  __host__ __device__ __forceinline__ size_t size() const;
+  __host__ __device__ __forceinline__ T& operator[](size_t i);
+  __host__ __device__ __forceinline__ const T& operator[](size_t i) const;
+};
 
 #endif // __CUDACC__
 
@@ -187,36 +230,40 @@ private:
  *  The input and output data must be on GPU and must have the same
  *  dimensions.
  */
-template <typename UnaryOperator>
-void apply_entrywise_unary_operator(const AbsMat& input,
-                                    AbsMat& output);
+template <template <typename> class UnaryOperator, typename TensorDataType>
+void apply_entrywise_unary_operator(
+  const El::AbstractMatrix<TensorDataType>& input,
+  El::AbstractMatrix<TensorDataType>& output);
 
 /** Apply an entry-wise binary operator to GPU data.
  *  The input and output data must be on GPU and must have the same
  *  dimensions.
  */
-template <typename BinaryOperator>
-void apply_entrywise_binary_operator(const AbsMat& input1,
-                                     const AbsMat& input2,
-                                     AbsMat& output);
+template <template <typename> class BinaryOperator, typename TensorDataType>
+void apply_entrywise_binary_operator(
+  const El::AbstractMatrix<TensorDataType>& input1,
+  const El::AbstractMatrix<TensorDataType>& input2,
+  El::AbstractMatrix<TensorDataType>& output);
 
 
 /** Apply an entry-wise unary operator to GPU data.
  *  The input and output data must be on GPU, have the same
  *  dimensions, and be aligned.
  */
-template <typename UnaryOperator>
-void apply_entrywise_unary_operator(const AbsDistMat& input,
-                                    AbsDistMat& output);
+template <template <typename> class UnaryOperator, typename TensorDataType>
+void apply_entrywise_unary_operator(
+  const El::AbstractDistMatrix<TensorDataType>& input,
+  El::AbstractDistMatrix<TensorDataType>& output);
 
 /** Apply an entry-wise binary operator to GPU data.
  *  The input and output data must be on GPU, have the same
  *  dimensions, and be aligned.
  */
-template <typename BinaryOperator>
-void apply_entrywise_binary_operator(const AbsDistMat& input1,
-                                     const AbsDistMat& input2,
-                                     AbsDistMat& output);
+template <template <typename> class BinaryOperator, typename TensorDataType>
+void apply_entrywise_binary_operator(
+  const El::AbstractDistMatrix<TensorDataType>& input1,
+  const El::AbstractDistMatrix<TensorDataType>& input2,
+  El::AbstractDistMatrix<TensorDataType>& output);
 
 #endif // __CUDACC__
 

@@ -1,3 +1,4 @@
+
 # Parallel Tests
 add_executable( lbann-bin lbann.cpp )
 target_link_libraries(lbann-bin lbann )
@@ -40,5 +41,5 @@ install(
 
 # Install the relevant prototext
 install(FILES README.md DESTINATION ${CMAKE_INSTALL_DATADIR}/model_zoo)
-install(DIRECTORY data_readers models optimizers tests vision
+install(DIRECTORY data_readers models optimizers tests
   DESTINATION ${CMAKE_INSTALL_DATADIR}/model_zoo)

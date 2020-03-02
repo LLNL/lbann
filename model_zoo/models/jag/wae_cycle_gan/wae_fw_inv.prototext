@@ -1,14 +1,13 @@
 #Augumented version of ae_cyc.prototext so we can we ae_loss, fw_latent_loss and fw_out_loss all in the same file instead of 3 files, a request from MLSI ML team. This augmentation involves replicating blocks for fw_model from cycle gan and encode from autoencoder.
+trainer {
+}
 model {
   name: "wae_fw_inv_model"
-  shareable_training_data_reader:false 
+  shareable_training_data_reader:false
   serialize_io: true
   data_layout: "data_parallel"
-  mini_batch_size: 16384 
-  block_size: 256
+  mini_batch_size: 16384
   num_epochs: 1
-  num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -208,10 +207,12 @@ model {
     weights: "gen1fc4linearity gen1fc4bias"
     parents: "gen1leaky_relu3_1"
   }
-  
+
   weights {
     name: "gen1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -219,7 +220,9 @@ model {
   }
   weights {
     name: "gen1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -227,7 +230,9 @@ model {
   }
   weights {
     name: "gen1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -235,7 +240,9 @@ model {
   }
   weights {
     name: "gen1fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -349,7 +356,7 @@ model {
     data_layout: "data_parallel"
     identity {}
   }
-  ####output of encoder goes to decoder and cycGAN duplicates 
+  ####output of encoder goes to decoder and cycGAN duplicates
   ######################
   # Decoder for foward output loss
 
@@ -438,10 +445,9 @@ model {
     name: "decode0"
     data_layout: "data_parallel"
     weights: "decode0linearity decode0bias"
+    hint_layer: "image_data_id"
     fully_connected {
       #num_neurons: 16384
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
   }
@@ -484,7 +490,9 @@ model {
   ####Decoder weights
   weights {
     name: "decode0linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -493,7 +501,9 @@ model {
 
   weights {
     name: "decode1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -501,7 +511,9 @@ model {
   }
   weights {
     name: "decode2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -509,7 +521,9 @@ model {
   }
   weights {
     name: "decode3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -524,7 +538,7 @@ model {
     data_layout: "data_parallel"
     weights: "decode3linearity decode3bias"
     fully_connected {
-      num_neurons: 32 
+      num_neurons: 32
       has_bias: true
     }
   }
@@ -602,10 +616,9 @@ model {
     name: "ae_decode0"
     data_layout: "data_parallel"
     weights: "decode0linearity decode0bias"
+    hint_layer: "image_data_id"
     fully_connected {
       #num_neurons: 16384
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
   }
@@ -711,7 +724,7 @@ model {
     weights: "gen1fc4linearity gen1fc4bias"
     parents: "latent_gen1leaky_relu3_1"
   }
-  
+
   #layer {
   #  name: "gsample_minus_latentsample"
   #  data_layout: "data_parallel"
@@ -729,7 +742,7 @@ model {
     #parents: "gsample_minus_latentsample"
     parents: "latent_gen1fc4 image_data_dummy"
   }
-  
+
   #####Inverse loss from cycle GAN
   #### latent space (image_data_dummy) -> pred X'(gen2fc4)
   layer {
@@ -786,16 +799,15 @@ model {
   layer {
     fully_connected {
       #num_neurons: 11
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4"
     data_layout: "data_parallel"
     weights: "gen2fc4linearity gen2fc4bias"
     parents: "gen2leaky_relu3"
+    hint_layer: "param_data_id"
   }
-  
+
 
   #layer {
   #  name: "gsample2_minus_x"
@@ -882,14 +894,13 @@ model {
   layer {
     fully_connected {
       #num_neurons: 11
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 2 ]
       has_bias: true
     }
     name: "gen2fc4_cyclic"
     data_layout: "data_parallel"
     weights: "gen2fc4linearity gen2fc4bias"
     parents: "gen2leaky_relu3_cyclic"
+    hint_layer: "param_data_id"
   }
   layer {
     name: "L_cyc_x"
@@ -924,22 +935,30 @@ model {
   }
   weights {
     name: "gen2fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen2fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {

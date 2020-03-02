@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 #include "lbann/layers/loss/categorical_accuracy.hpp"
 #include "lbann/utils/cuda.hpp"
 
@@ -35,8 +36,9 @@ namespace {
  *  Indices are equivalent to the global row indices of the input
  *  matrix.
  */
-__global__ void fill_indices_kernel(El::Int local_height,
-                                    El::Int local_width,
+template <typename TensorDataType>
+__global__ void fill_indices_kernel(El::Int const local_height,
+                                    El::Int const local_width,
                                     El::Int col_shift,
                                     El::Int col_stride,
                                     El::Int* __restrict__ indices) {
@@ -55,15 +57,15 @@ __global__ void fill_indices_kernel(El::Int local_height,
  *  sample and it finds the largest entry. Results are output to
  *  nblocksx x width matrices.
  */
-template <El::Int block_size>
+template <El::Int block_size, typename TensorDataType>
 __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
-                                          const DataType* __restrict__ values,
+                                          const TensorDataType* __restrict__ values,
                                           El::Int values_row_stride,
                                           El::Int values_col_stride,
                                           const El::Int* __restrict__ indices,
                                           El::Int indices_row_stride,
                                           El::Int indices_col_stride,
-                                          DataType* __restrict__ max_values,
+                                          TensorDataType* __restrict__ max_values,
                                           El::Int* __restrict__ max_indices) {
 
   // Indices
@@ -78,7 +80,7 @@ __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
   for (El::Int col = bidy; col < width; col += gridDim.y) {
 
     // Find largest entry for each thread
-    DataType private_max_val = -cuda::infinity<DataType>();
+    TensorDataType private_max_val = -cuda::infinity<TensorDataType>();
     El::Int private_max_ind = cuda::max<El::Int>();
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       const auto& val = values[row * values_row_stride
@@ -93,7 +95,7 @@ __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
     }
 
     // Shared memory reduction to get largest entry for each block
-    __shared__ DataType shared_max_vals[block_size];
+    __shared__ TensorDataType shared_max_vals[block_size];
     __shared__ El::Int shared_max_inds[block_size];
     shared_max_vals[tid] = private_max_val;
     shared_max_inds[tid] = private_max_ind;
@@ -122,10 +124,11 @@ __global__ void reduce_max_entries_kernel(El::Int height, El::Int width,
  *  Outputs one if the prediction and label indices match and
  *  otherwise outputs zero.
  */
+template <typename TensorDataType>
 __global__ void compute_accuracy_kernel(El::Int local_width,
                                         const El::Int* __restrict__ prediction_indices,
                                         const El::Int* __restrict__ label_indices,
-                                        DataType* __restrict__ loss,
+                                        TensorDataType* __restrict__ loss,
                                         El::Int loss_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int nthreads = blockDim.x * gridDim.x;
@@ -134,15 +137,16 @@ __global__ void compute_accuracy_kernel(El::Int local_width,
     const auto& prediction = prediction_indices[col];
     const auto& label = label_indices[col];
     loss[col*loss_ldim] = (prediction == label && prediction < max_ind ?
-                           DataType(1) : DataType(0));
+                           TensorDataType(1.0) : TensorDataType(0.0));
   }
 }
 
 /** GPU implementation of categorical accuracy layer forward prop. */
+template <typename TensorDataType>
 void fp_gpu(lbann_comm& comm,
-            const AbsDistMat& predictions,
-            const AbsDistMat& labels,
-            AbsDistMat& loss) {
+            const El::AbstractDistMatrix<TensorDataType>& predictions,
+            const El::AbstractDistMatrix<TensorDataType>& labels,
+            El::AbstractDistMatrix<TensorDataType>& loss) {
 
   // Local matrices
   const auto& local_predictions = predictions.LockedMatrix();
@@ -178,16 +182,18 @@ void fp_gpu(lbann_comm& comm,
   cuda::thrust::vector<El::Int> full_inds(local_height * local_width);
   if (full_inds.size() > 0) {
     const El::Int grid_size = (full_inds.size() + block_size - 1) / block_size;
-    fill_indices_kernel<<<grid_size, block_size, 0, stream>>>(
+    fill_indices_kernel<TensorDataType>
+        <<<grid_size, block_size, 0, stream>>>(
       local_height, local_width,
-      predictions.ColShift(), predictions.ColStride(),
+      predictions.ColShift(),
+      predictions.ColStride(),
       full_inds.data().get());
   }
 
   // Find largest prediction entries in local data
   grid_dims.x = (local_height + block_size - 1) / block_size;
   if (grid_dims.x < 1) { grid_dims.x = 1; }
-  cuda::thrust::vector<DataType> prediction_vals(grid_dims.x * local_width);
+  cuda::thrust::vector<TensorDataType> prediction_vals(grid_dims.x * local_width);
   cuda::thrust::vector<El::Int> prediction_inds(grid_dims.x * local_width);
   reduce_max_entries_kernel<block_size>
     <<<grid_dims, block_dims, 0, stream>>>(
@@ -199,7 +205,7 @@ void fp_gpu(lbann_comm& comm,
   while (grid_dims.x > 1) {
     const El::Int prev_height = grid_dims.x;
     grid_dims.x = (prev_height + block_size - 1) / block_size;
-    cuda::thrust::vector<DataType> prev_vals(std::move(prediction_vals));
+    cuda::thrust::vector<TensorDataType> prev_vals(std::move(prediction_vals));
     cuda::thrust::vector<El::Int> prev_inds(std::move(prediction_inds));
     prediction_vals.resize(grid_dims.x * local_width);
     prediction_inds.resize(grid_dims.x * local_width);
@@ -215,7 +221,7 @@ void fp_gpu(lbann_comm& comm,
   // Gather large prediction entries
   /// @todo Non-blocking gather
   Al::request prediction_vals_req, prediction_inds_req;
-  cuda::thrust::vector<DataType> gathered_prediction_vals;
+  cuda::thrust::vector<TensorDataType> gathered_prediction_vals;
   cuda::thrust::vector<El::Int> gathered_prediction_inds;
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
@@ -238,7 +244,7 @@ void fp_gpu(lbann_comm& comm,
   // Find largest label entries in local data
   grid_dims.x = (local_height + block_size - 1) / block_size;
   if (grid_dims.x < 1) { grid_dims.x = 1; }
-  cuda::thrust::vector<DataType> label_vals(grid_dims.x * local_width);
+  cuda::thrust::vector<TensorDataType> label_vals(grid_dims.x * local_width);
   cuda::thrust::vector<El::Int> label_inds(grid_dims.x * local_width);
   reduce_max_entries_kernel<block_size>
     <<<grid_dims, block_dims, 0, stream>>>(
@@ -250,7 +256,7 @@ void fp_gpu(lbann_comm& comm,
   while (grid_dims.x > 1) {
     const El::Int prev_height = grid_dims.x;
     grid_dims.x = (prev_height + block_size - 1) / block_size;
-    cuda::thrust::vector<DataType> prev_vals(std::move(label_vals));
+    cuda::thrust::vector<TensorDataType> prev_vals(std::move(label_vals));
     cuda::thrust::vector<El::Int> prev_inds(std::move(label_inds));
     label_vals.resize(grid_dims.x * local_width);
     label_inds.resize(grid_dims.x * local_width);
@@ -266,7 +272,7 @@ void fp_gpu(lbann_comm& comm,
   // Gather large label entries
   /// @todo Non-blocking gather
   Al::request label_vals_req, label_inds_req;
-  cuda::thrust::vector<DataType> gathered_label_vals;
+  cuda::thrust::vector<TensorDataType> gathered_label_vals;
   cuda::thrust::vector<El::Int> gathered_label_inds;
   if (col_comm_size > 1) {
     if (col_comm_rank != col_comm_root) {
@@ -307,7 +313,7 @@ void fp_gpu(lbann_comm& comm,
     while (grid_dims.x > 1) {
       const El::Int prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<DataType> prev_vals(std::move(prediction_vals));
+      cuda::thrust::vector<TensorDataType> prev_vals(std::move(prediction_vals));
       cuda::thrust::vector<El::Int> prev_inds(std::move(prediction_inds));
       prediction_vals.resize(grid_dims.x * local_width);
       prediction_inds.resize(grid_dims.x * local_width);
@@ -339,7 +345,7 @@ void fp_gpu(lbann_comm& comm,
     while (grid_dims.x > 1) {
       const El::Int prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<DataType> prev_vals(std::move(label_vals));
+      cuda::thrust::vector<TensorDataType> prev_vals(std::move(label_vals));
       cuda::thrust::vector<El::Int> prev_inds(std::move(label_inds));
       label_vals.resize(grid_dims.x * local_width);
       label_inds.resize(grid_dims.x * local_width);
@@ -366,21 +372,21 @@ void fp_gpu(lbann_comm& comm,
 
 } // namespace
 
-template <>
-void categorical_accuracy_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(*get_comm(),
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations());
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_gpu(*this->get_comm(),
+         this->get_prev_activations(0),
+         this->get_prev_activations(1),
+         this->get_activations());
 }
-template <>
-void categorical_accuracy_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(*get_comm(),
-         get_prev_activations(0),
-         get_prev_activations(1),
-         get_activations());
-}
+
+#define PROTO(T)                                      \
+  template class categorical_accuracy_layer<          \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>;  \
+  template class categorical_accuracy_layer<          \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

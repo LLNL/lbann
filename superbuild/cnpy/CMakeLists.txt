@@ -19,8 +19,9 @@ else ()
     CACHE STRING "The URL from which to clone CNPY")
 endif ()
 
+
 # ... then the tag.
-set(CNPY_TAG "f19917f6c442885dcf171de485ba8b17bd178da6"
+set(CNPY_TAG "4e8810b1a8637695171ed346ce68f6984e585ef4"
   CACHE STRING "The git tag or hash to checkout for CNPY")
 
 # Where to install CNPY
@@ -31,16 +32,28 @@ set(CNPY_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
 set(CNPY_CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}"
   CACHE STRING "The build type for CNPY.")
 
+if (CNPY_CUSTOM_SOURCE_DIR)
+  set(CNPY_SOURCE_DIR "${CNPY_CUSTOM_SOURCE_DIR}")
+  set(CNPY_URL "")
+  set(CNPY_TAG "")
+  set(_GIT_REPOSITORY_TAG)
+  set(_GIT_TAG_TAG)
+  message(STATUS "Using CNPY source in: ${CNPY_SOURCE_DIR}")
+else ()
+  set(CNPY_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/src")
+  set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
+  set(_GIT_TAG_TAG "GIT_TAG")
+endif ()
+
 # Now add the external project
 include(ExternalProject)
-
 ExternalProject_Add(CNPY
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
-  GIT_REPOSITORY ${CNPY_URL}
-  GIT_TAG ${CNPY_TAG}
-  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
+  ${_GIT_REPOSITORY_TAG} ${CNPY_URL}
+  ${_GIT_TAG_TAG} ${CNPY_TAG}
+  SOURCE_DIR ${CNPY_SOURCE_DIR}
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${CNPY_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1

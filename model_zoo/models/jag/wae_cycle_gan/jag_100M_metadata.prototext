@@ -1,0 +1,119 @@
+########################################################################
+# The JAG normalization values were computed over the 10M + 1MA + 1MB random
+# pulls from the 100M data set.  The image normalization values were updated
+# on 1/30/2019 using the per-channel average of the pixel values
+# across all views.
+# They are valid for the directories:
+# /p/lustre2/brainusr/datasets/10MJAG/ (10M | 1M_A | 1M_B)
+# /p/lustre2/brainusr/datasets/10MJAG_balanced_1K/ (1M_A | 1M_B)
+# /p/gpfs1/brainusr/datasets/10MJAG/10M | 1M_A | 1M_B
+# /p/gpfs1/brainusr/datasets/10MJAG_balanced_1K/ (1M_A | 1M_B)
+########################################################################
+
+data_set_metadata {
+  schema {
+    split_jag_image_channels: true
+
+    # JAG_Image, JAG_Scalar, JAG_Input
+    independent: [ { pieces: [ JAG_Image, JAG_Scalar ] }, { pieces: [ JAG_Input ] } ]
+    dependent: [ { pieces: [ JAG_Input ] } ]
+
+    image_prefix: "/outputs/images/"
+
+    image_width: 64
+    image_height: 64
+    image_num_channels: 4
+
+    jag_image_keys: ["(0.0, 0.0)/0.0/emi", "(90.0, 0.0)/0.0/emi", "(90.0, 78.0)/0.0/emi"]
+
+    scalar_prefix: "/outputs/scalars/"
+
+    # An empty list indicates to use all
+    # The commented out variables are not on the Jim's original list but used in the numpy-based format
+    jag_scalar_keys:
+      [ "BWx",
+        "BT",
+        "tMAXt",        # absent in Jim's list
+        "BWn",
+        "MAXpressure",
+        #"BAte",
+        #"MAXtion",
+        "tMAXpressure",
+        "BAt",          # absent in Jim's list
+        "Yn",
+        "Ye",
+        "Yx",
+        #"tMAXte",       # absent in Jim's list
+        #"BAtion",
+        #"MAXte",
+        #"tMAXtion",     # absent in Jim's list
+        "BTx",
+        "MAXt",         # absent in Jim's list
+        #"BTn",
+        "BApressure",
+        "tMINradius",
+        "MINradius"     # absent in Jim's list
+      ]
+
+    # When using all the keys without explicit selection, key filters can be used
+    # to explicitly exclude the particular variables with keys that matches a filter.
+    # 'jag_scalar_filters' and 'jag_input_filters' rely on exact key string matching.
+    # 'jag_scalar_prefix_filters' and 'jag_input_prefix_filters' define a filter as
+    # the pair of a prefix substring and the minimum key length.
+    # For example, with the example below, any key that has a length no shorter
+    # than 26 and starts with the substring "image_(" is excluded.
+
+    jag_scalar_prefix_filters: [ { key_prefix: "image_(" min_len: 26} ]
+    jag_scalar_filters: [ "iBT" ]
+
+    input_prefix: "/inputs/"
+
+    jag_input_keys: ["shape_model_initial_modes:(4,3)",
+                     "betti_prl15_trans_u",
+                     "betti_prl15_trans_v",
+                     "shape_model_initial_modes:(2,1)",
+                     "shape_model_initial_modes:(1,0)"];
+  }
+
+  normalization {
+    jag_scalar_normalization_params: [
+      { scale: 7.610738e+00  bias: -4.075375e-01 },   #BWx
+      { scale: 1.459875e+00  bias: -3.427656e+00 },   #BT
+      { scale: 1.490713e+00  bias: -3.495498e+00 },   #tMAXt
+      { scale: 4.375123e+01  bias: -1.593477e+00 },   #BWn
+      { scale: 1.685576e-06  bias: -5.330971e-01 },   #MAXpressure
+      #{ scale: 2.636422e-01  bias: -9.762907e-01 },   #BAte
+      #{ scale: 2.419509e-01  bias: -9.853402e-01 },   #MAXtion
+      { scale: 1.430615e+00  bias: -3.351173e+00 },   #tMAXpressure
+      { scale: 2.636422e-01  bias: -9.762907e-01 },   #BAt
+      { scale: 7.154074e-18  bias: -1.864709e-02 },   #Yn
+      { scale: 3.166824e-03  bias: -1.864709e-02 },   #Ye
+      { scale: 2.102178e-02  bias: -3.071955e-01 },   #Yx
+      #{ scale: 1.490713e+00  bias: -3.495498e+00 },   #tMAXte
+      #{ scale: 2.636422e-01  bias: -9.762907e-01 },   #BAtion
+      #{ scale: 2.419509e-01  bias: -9.853402e-01 },   #MAXte
+      #{ scale: 1.490713e+00  bias: -3.495498e+00 },   #tMAXtion
+      { scale: 1.346439e+00  bias: -3.118446e+00 },   #BTx
+      { scale: 2.419509e-01  bias: -9.853402e-01 },   #MAXt
+      #{ scale: 1.459875e+00  bias: -3.427656e+00 },   #BTn
+      { scale: 2.061877e-06  bias: -5.213394e-01 },   #BApressure
+      { scale: 1.392544e+00  bias: -3.239921e+00 },   #tMINradius
+      { scale: 6.266253e-02  bias: -1.384504e+00 }   #MINradius
+    ]
+
+    jag_input_normalization_params: [
+      { scale: 1.666672e+00  bias: 5.000000e-01 },   #shape_model_initial_modes:(4,3)
+      { scale: 1.000002e+00  bias: -1.603483e-07 },   #betti_prl15_trans_u
+      { scale: 1.000001e+00  bias: -1.406672e-06 },   #betti_prl15_trans_v
+      { scale: 1.666675e+00  bias: 4.999992e-01 },   #shape_model_initial_modes:(2,1)
+      { scale: 1.666669e+00  bias: 5.000008e-01 }   #shape_model_initial_modes:(1,0)
+    ]
+
+    jag_image_normalization_params: [
+      { scale: 2.9258502e+01 bias: 0.0e+00 },   # avg = 0.0341781
+      { scale: 8.5826596e+02 bias: 0.0e+00 },   # avg = 0.00116514
+      { scale: 1.0004872e+05 bias: 0.0e+00 },   # avg = 9.99513e-06
+      { scale: 4.8072070e+06 bias: 0.0e+00 }    # avg = 2.08021e-07
+    ]
+  }
+}

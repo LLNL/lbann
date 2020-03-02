@@ -1,130 +1,167 @@
 """Utility functions for LSF."""
 
 import os
-import os.path
 import subprocess
 from lbann.util import make_iterable
+from .batch_script import BatchScript
 
-def run(command,
-        experiment_dir=os.getcwd(),
-        nodes=1,
-        procs_per_node=1,
-        time_limit=-1,
-        job_name=None,
-        partition=None,
-        account=None,
-        reservation=None,
-        jsrun_args='',
-        environment={},
-        setup_only=False):
-    """Run executable with LSF.
+class LSFBatchScript(BatchScript):
+    """Utility class to write LSF batch scripts."""
 
-    Creates an LSF batch script in the experiment directory. If a LSF
-    job allocation is detected, the script is run directly. Otherwise,
-    the script is submitted to bsub.
+    def __init__(self,
+                 script_file=None,
+                 work_dir=os.getcwd(),
+                 nodes=1,
+                 procs_per_node=1,
+                 time_limit=None,
+                 job_name=None,
+                 partition=None,
+                 account=None,
+                 reservation=None,
+                 launcher='jsrun',
+                 launcher_args=[],
+                 interpreter='/bin/bash'):
+        """Construct LSF batch script manager.
 
-    Args:
-        command (str): Program to run under LSF, i.e. an executable and
-            its command-line arguments.
-        experiment_dir (str, optional): Experiment directory.
-        nodes (int, optional): Number of compute nodes.
-        procs_per_node (int, optional): Number of processes per compute
-            node.
-        time_limit (int, optional): Job time limit, in minutes. A
-            negative value implies the system-default time limit.
-        job_name (str, optional): Batch job name.
-        partition (str, optional): Scheduler partition.
-        account (str, optional): Scheduler account.
-        reservation (str, optional): Scheduler reservation name.
-        jsrun_args (str, optional): Command-line arguments to jsrun.
-        environment (dict of {str: str}, optional): Environment
-            variables.
-        setup_only (bool, optional): If true, the experiment is not
-            run after the batch script is created.
+        Args:
+            script_file (str): Script file.
+            work_dir (str, optional): Working directory
+                (default: current working directory).
+            nodes (int, optional): Number of compute nodes
+                (default: 1).
+            procs_per_node (int, optional): Parallel processes per
+                compute node (default: 1).
+            time_limit (int, optional): Job time limit, in minutes
+                (default: none).
+            job_name (str, optional): Job name (default: none).
+            partition (str, optional): Scheduler partition
+                (default: none).
+            account (str, optional): Scheduler account
+                (default: none).
+            reservation (str, optional): Scheduler advance reservation
+                (default: none).
+            launcher (str, optional): Parallel command launcher
+                (default: jsrun).
+            launcher_args (`Iterable` of `str`, optional):
+                Command-line arguments to jsrun.
+            interpreter (str, optional): Script interpreter
+                (default: /bin/bash).
 
-    """
-    # Check for an existing job allocation.
-    # Note: Settings for existing allocations take precedence.
-    has_allocation = 'LSB_JOBID' in os.environ
-    if has_allocation:
-        job_name = os.environ['LSB_JOBNAME']
-        partition = os.environ['LSB_QUEUE']
-        # LSF does not provide a way to get the account via env vars.
-        time_limit = -1
+        """
+        super().__init__(script_file=script_file,
+                         work_dir=work_dir,
+                         interpreter=interpreter)
+        self.nodes = nodes
+        self.procs_per_node = procs_per_node
+        self.launcher = launcher
+        self.launcher_args = launcher_args
 
-    # Experiment directory
-    experiment_dir = os.path.abspath(experiment_dir)
-    os.makedirs(experiment_dir, exist_ok=True)
-    batch_file = os.path.join(experiment_dir, 'batch.sh')
-    out_file = os.path.join(experiment_dir, 'out.log')
-    err_file = os.path.join(experiment_dir, 'err.log')
-    nodes_file = os.path.join(experiment_dir, 'nodes.txt')
+        # Configure header with LSF job options
+        self._construct_header(job_name=job_name,
+                               nodes=self.nodes,
+                               time_limit=time_limit,
+                               partition=partition,
+                               account=account,
+                               reservation=reservation)
 
-    # Create batch script.
-    s = '#!/bin/sh\n'
-    if job_name:
-        s += '#BSUB -J {}\n'.format(job_name)
-    s += '#BSUB -nnodes {}\n'.format(nodes)
-    if partition:
-        s += '#BSUB -q {}\n'.format(partition)
-    if account:
-        s += '#BSUB -G {}\n'.format(account)
-    else:
-        raise ValueError('LSF requires an account')
-    if reservation:
-        s += '#BSUB -U {}\n'.format(reservation)
-    s += '#BSUB -cwd {}\n'.format(experiment_dir)
-    s += '#BSUB -o {}\n'.format(out_file)
-    s += '#BSUB -e {}\n'.format(err_file)
-    if time_limit >= 0:
-        s += '#BSUB -W {}\n'.format(time_limit)
+    def _construct_header(self,
+                          job_name=None,
+                          nodes=1,
+                          time_limit=None,
+                          partition=None,
+                          account=None,
+                          reservation=None):
+        """Construct script header with options for bsub."""
+        if job_name:
+            self.add_header_line('#BSUB -J {}'.format(job_name))
+        if partition:
+            self.add_header_line('#BSUB -q {}'.format(partition))
+        self.add_header_line('#BSUB -nnodes {}'.format(nodes))
+        if time_limit:
+            hours, minutes = divmod(int(time_limit), 60)
+            self.add_header_line('#BSUB -W {}:{:02d}'.format(hours, minutes))
+        self.add_header_line('#BSUB -cwd {}'.format(self.work_dir))
+        self.add_header_line('#BSUB -o {}'.format(self.out_log_file))
+        self.add_header_line('#BSUB -e {}'.format(self.err_log_file))
+        if account:
+            self.add_header_line('#BSUB -G {}'.format(account))
+        if reservation:
+            self.add_header_line('#BSUB -U {}'.format(reservation))
 
-    # Set environment variables.
-    if environment:
-        s += '\n# ==== Environment ====\n'
-        for variable, value in environment.items():
-            s += 'export {}={}\n'.format(variable, value)
+    def add_parallel_command(self,
+                             command,
+                             launcher=None,
+                             launcher_args=None,
+                             nodes=None,
+                             procs_per_node=None):
+        """Add command to be executed in parallel.
 
-    # Time and node list.
-    s += '\n# ==== Useful info ====\n'
-    s += 'date\n'
-    s += 'jsrun -n {} -a 1 hostname > {}\n'.format(nodes, nodes_file)
-    s += 'sort --unique --output={0} {0}\n'.format(nodes_file)
+        The command is launched with jsrun. Parallel processes are
+        distributed evenly amongst the compute nodes.
 
-    # Run experiment.
-    s += '\n# ==== Experiment ====\n'
-    for cmd in make_iterable(command):
-        s += 'jsrun -n {} -a {} {} {}\n'.format(
-            nodes, procs_per_node, jsrun_args, cmd)
+        Args:
+            command (`str` or `Iterable` of `str`s): Command to be
+                executed in parallel.
+            launcher (str, optional): jsrun executable.
+            launcher_args (`Iterable` of `str`s, optional):
+                Command-line arguments to jsrun.
+            nodes (int, optional): Number of compute nodes.
+            procs_per_node (int, optional): Number of parallel
+                processes per compute node.
 
-    with open(batch_file, 'w') as f:
-        f.write(s)
+        """
+        if launcher is None:
+            launcher = self.launcher
+        if launcher_args is None:
+            launcher_args = self.launcher_args
+        if nodes is None:
+            nodes = self.nodes
+        if procs_per_node is None:
+            procs_per_node = self.procs_per_node
+        args = [launcher]
+        args.extend(make_iterable(launcher_args))
+        args.extend([
+            '--nrs {}'.format(nodes),
+            '--rs_per_host 1',
+            '--tasks_per_rs {}'.format(procs_per_node),
+            '--launch_distribution packed',
+            '--cpu_per_rs ALL_CPUS',
+            '--gpu_per_rs ALL_GPUS',
+        ])
+        args.extend(make_iterable(command))
+        self.add_command(args)
 
-    # Make batch script executable.
-    os.chmod(batch_file, 0o755)
+    def submit(self, overwrite=False):
+        """Submit batch job to LSF with bsub.
 
-    # Launch if needed.
-    if not setup_only:
-        if has_allocation:
-            run_proc = subprocess.Popen(['sh', batch_file],
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        cwd=experiment_dir)
-        else:
-            # bsub requires the batch script be read from its stdin.
-            run_proc = subprocess.Popen('bsub < {}'.format(batch_file),
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.PIPE,
-                                        cwd=experiment_dir,
-                                        shell=True)
-        out_proc = subprocess.Popen(['tee', out_file],
+        The script file is written before being submitted.
+
+        Args:
+            overwrite (bool): Whether to overwrite script file if it
+                already exists (default: false).
+
+        Returns:
+            int: Exit status from bsub.
+
+        """
+
+        # Construct script file
+        self.write(overwrite=overwrite)
+
+        # Submit batch script and pipe output to log files
+        run_proc = subprocess.Popen(['bsub', self.script_file],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.PIPE,
+                                    cwd=self.work_dir)
+        out_proc = subprocess.Popen(['tee', self.out_log_file],
                                     stdin=run_proc.stdout,
-                                    cwd=experiment_dir)
-        err_proc = subprocess.Popen(['tee', err_file],
+                                    cwd=self.work_dir)
+        err_proc = subprocess.Popen(['tee', self.err_log_file],
                                     stdin=run_proc.stderr,
-                                    cwd=experiment_dir)
+                                    cwd=self.work_dir)
         run_proc.stdout.close()
         run_proc.stderr.close()
         run_proc.wait()
         out_proc.wait()
         err_proc.wait()
+        return run_proc.returncode

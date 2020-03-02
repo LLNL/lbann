@@ -63,6 +63,15 @@ if (TARGET ALUMINUM)
     list(APPEND _LBANN_DEPENDS ALUMINUM)
   endif (LBANN_WITH_ALUMINUM)
 endif (TARGET ALUMINUM)
+
+if (TARGET CATCH2)
+  option(LBANN_WITH_UNIT_TESTING "Build catch2 unit tests in LBANN" ON)
+  if (LBANN_WITH_UNIT_TESTING)
+    set(LBANN_SB_FWD_LBANN_CATCH2_DIR ${CATCH2_DIR})
+    list(APPEND _LBANN_DEPENDS CATCH2)
+  endif ()
+endif (TARGET CATCH2)
+
 if (TARGET CEREAL)
   list(APPEND _LBANN_DEPENDS CEREAL)
   set(LBANN_SB_FWD_LBANN_CEREAL_DIR "${CEREAL_DIR}")
@@ -177,6 +186,15 @@ ExternalProject_Add(LBANN
   -DCMAKE_CXX_FLAGS=${CMAKE_CXX_FLAGS}
   ${LBANN_CMAKE_ARGS}
   )
+
+# Ensure the JAG utils are built
+ExternalProject_Add_Step(LBANN build-jag-utils
+  COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target jag-utils
+  COMMENT "Performing building of JAG utils for 'LBANN'"
+  DEPENDEES build
+  DEPENDERS install
+  LOG 1
+  USES_TERMINAL 1)
 
 set(LBANN_DIR ${LBANN_CMAKE_INSTALL_PREFIX}
   CACHE INTERNAL "The install prefix of LBANN.")

@@ -28,7 +28,6 @@ runpy.run_path("BuildRSTDocs.py")
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-
 # -- Project information -----------------------------------------------------
 
 project = 'LBANN'
@@ -83,6 +82,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
+html_static_path = ['_static']
 
 # -- Options for HTML output -------------------------------------------------
 

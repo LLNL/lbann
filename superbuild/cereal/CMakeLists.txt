@@ -13,11 +13,24 @@ else ()
     CACHE STRING "The URL from which to clone CEREAL.")
 endif ()
 
-set(CEREAL_TAG "master" CACHE STRING "The git tag or hash to checkout for CEREAL")
+set(CEREAL_TAG "v1.3.0" CACHE STRING "The git tag or hash to checkout for CEREAL")
 
 # Where to install CEREAL
 set(CEREAL_CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}"
   CACHE PATH "The installation location of CEREAL.")
+
+if (CEREAL_CUSTOM_SOURCE_DIR)
+  set(CEREAL_SOURCE_DIR "${CEREAL_CUSTOM_SOURCE_DIR}")
+  set(CEREAL_URL "")
+  set(CEREAL_TAG "")
+  set(_GIT_REPOSITORY_TAG)
+  set(_GIT_TAG_TAG)
+  message(STATUS "Using CEREAL source in: ${CEREAL_SOURCE_DIR}")
+else ()
+  set(CEREAL_SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/src")
+  set(_GIT_REPOSITORY_TAG "GIT_REPOSITORY")
+  set(_GIT_TAG_TAG "GIT_TAG")
+endif ()
 
 # Handle the install of CEREAL
 include(ExternalProject)
@@ -26,9 +39,9 @@ ExternalProject_Add(CEREAL
   PREFIX ${CMAKE_CURRENT_BINARY_DIR}
   TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp
   STAMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/stamp
-  GIT_REPOSITORY ${CEREAL_URL}
-  GIT_TAG ${CEREAL_TAG}
-  SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/src
+  ${_GIT_REPOSITORY_TAG} ${CEREAL_URL}
+  ${_GIT_TAG_TAG} ${CEREAL_TAG}
+  SOURCE_DIR ${CEREAL_SOURCE_DIR}
   BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/build
   INSTALL_DIR ${CEREAL_CMAKE_INSTALL_PREFIX}
   USES_TERMINAL_BUILD 1

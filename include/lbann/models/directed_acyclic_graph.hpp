@@ -30,6 +30,8 @@
 #include "lbann/models/model.hpp"
 #include "lbann/layers/layer.hpp"
 
+#include <optimizers.pb.h>
+
 namespace lbann {
 
 /** Neural network model with a DAG layer graph. */
@@ -39,11 +41,11 @@ public:
   directed_acyclic_graph_model(lbann_comm *comm,
                                El::Int max_mini_batch_size,
                                objective_function *obj_fn,
-                               optimizer *default_optimizer);
+                               std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg);
   directed_acyclic_graph_model(const directed_acyclic_graph_model& other) = default;
   directed_acyclic_graph_model& operator=(const directed_acyclic_graph_model& other) = default;
   ~directed_acyclic_graph_model() override = default;
-  directed_acyclic_graph_model* copy() const override { return new directed_acyclic_graph_model(*this); }
+  std::unique_ptr<model> copy_model() const override { return make_unique<directed_acyclic_graph_model>(*this); }
   std::string get_type() const override { return "directed acyclic graph"; }
 
 protected:

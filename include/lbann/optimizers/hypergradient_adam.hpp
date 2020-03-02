@@ -27,7 +27,9 @@
 #ifndef LBANN_OPTIMIZERS_HYPERGRADIENT_ADAM_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_HYPERGRADIENT_ADAM_HPP_INCLUDED
 
-#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/io/persist.hpp"
+#include <optimizers.pb.h>
 
 namespace lbann {
 
@@ -39,7 +41,23 @@ namespace lbann {
  *  Baydin et al. "Online Learning Rate Adaptation with Hypergradient
  *  Descent", 2017.
  */
-class hypergradient_adam : public optimizer {
+template <typename TensorDataType>
+class hypergradient_adam : public data_type_optimizer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  /** @brief The base optimizer type for this class. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
+  ///@}
+
 public:
 
   /** @brief Construct a Hypergradient Adam optimizer object
@@ -55,12 +73,11 @@ public:
    *  @param eps                    Small factor to avoid division by
    *                                zero.
    */
-  hypergradient_adam(lbann_comm *comm,
-                     DataType init_learning_rate = 1e-3,
-                     DataType hyper_learning_rate = 1e-7,
-                     DataType beta1 = 0.9,
-                     DataType beta2 = 0.99,
-                     DataType eps = 1e-8);
+  hypergradient_adam(TensorDataType init_learning_rate = 1e-3,
+                     TensorDataType hyper_learning_rate = 1e-7,
+                     TensorDataType beta1 = 0.9,
+                     TensorDataType beta2 = 0.99,
+                     TensorDataType eps = 1e-8);
   hypergradient_adam(const hypergradient_adam& other);
   hypergradient_adam& operator=(const hypergradient_adam& other);
   ~hypergradient_adam() override = default;
@@ -71,33 +88,33 @@ public:
   /** @brief Human-readable description. */
   description get_description() const override;
 
-  void setup(weights* w = nullptr) override;
+  void setup(WeightsType* w = nullptr) override;
 
 protected:
 
   /** @brief Computation for an optimization step. */
-  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+  void step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) override;
 
 private:
 
   /** @brief Hypergradient learning rate. */
-  DataType m_hyper_learning_rate;
+  TensorDataType m_hyper_learning_rate;
   /** @brief Update factor for first moment estimate. */
-  DataType m_beta1;
+  TensorDataType m_beta1;
   /** @brief Update factor for second moment estimate. */
-  DataType m_beta2;
+  TensorDataType m_beta2;
   /** @brief Small factor to avoid division by zero. */
-  DataType m_eps;
+  TensorDataType m_eps;
   /** @brief beta1 ^ iteration. */
-  DataType m_current_beta1;
+  TensorDataType m_current_beta1;
   /** @brief beta2 ^ iteration. */
-  DataType m_current_beta2;
+  TensorDataType m_current_beta2;
   /** @brief First moment estimates. */
-  std::unique_ptr<AbsDistMat> m_moment1;
+  std::unique_ptr<AbsDistMatrixType> m_moment1;
   /** @brief Second moment estimates. */
-  std::unique_ptr<AbsDistMat> m_moment2;
+  std::unique_ptr<AbsDistMatrixType> m_moment2;
   /** @brief Gradient estimate from the prior step (for hypergradient). */
-  std::unique_ptr<AbsDistMat> m_old_gradient;
+  std::unique_ptr<AbsDistMatrixType> m_old_gradient;
 
   // ===========================================
   // Checkpointing
@@ -107,12 +124,12 @@ private:
    *  @brief Used to serialize mode fields in file and MPI transfer
    */
   struct packing_header {
-    DataType hyper_learning_rate;
-    DataType beta1;
-    DataType beta2;
-    DataType eps;
-    DataType current_beta1;
-    DataType current_beta2;
+    TensorDataType hyper_learning_rate;
+    TensorDataType beta1;
+    TensorDataType beta2;
+    TensorDataType eps;
+    TensorDataType current_beta1;
+    TensorDataType current_beta2;
   };
 
   bool pack_scalars(persist& p) {
@@ -160,6 +177,11 @@ private:
   bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 
 };
+
+template <typename TensorDataType>
+std::unique_ptr<optimizer>
+build_hypergradient_adam_optimizer_from_pbuf(
+  google::protobuf::Message const&);
 
 } // namespace lbann
 

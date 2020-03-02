@@ -32,7 +32,11 @@
 namespace lbann {
 
 /** @brief Interface with objective function and metrics. */
-class abstract_evaluation_layer : public transform_layer {
+template <typename TensorDataType>
+class abstract_evaluation_layer : public transform_layer<TensorDataType> {
+public:
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+
 public:
 
   /** Get scaling factor. */
@@ -63,7 +67,7 @@ private:
   /** Evaluated value.
    *  The value may be stored in pinned memory.
    */
-  CPUMat m_value;
+  CPUMatType m_value;
   /** Non-blocking allreduce request. */
   Al::request m_allreduce_req;
 #ifdef LBANN_HAS_GPU
@@ -77,15 +81,38 @@ private:
  *  Computes the average value across a mini-batch. If the input
  *  tensor has multiple neurons, their values are added together.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class evaluation_layer : public abstract_evaluation_layer {
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
+class evaluation_layer : public abstract_evaluation_layer<TensorDataType> {
 public:
-  evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer(comm) {}
+  evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer<TensorDataType>(comm) {}
   evaluation_layer* copy() const override { return new evaluation_layer(*this); }
   std::string get_type() const override { return "evaluation"; }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 };
+
+LBANN_DEFINE_LAYER_BUILDER(evaluation);
+
+#ifndef LBANN_EVALUATION_LAYER_INSTANTIATE
+#define PROTO(T)                           \
+  extern template class abstract_evaluation_layer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+
+#define PROTO_DEVICE(T, Device)                                         \
+  extern template class evaluation_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_EVALUATION_LAYER_INSTANTIATE
 
 } // namespace lbann
 

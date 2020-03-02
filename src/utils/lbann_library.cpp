@@ -25,15 +25,102 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/callbacks/callback_checkpoint.hpp"
+
+#include "lbann/proto/factories.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
+#include "lbann/callbacks/dump_weights.hpp"
+#include "lbann/callbacks/save_model.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
 
 namespace lbann {
 
+/// Construct a trainer that contains a lbann comm object and threadpool
+std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
+                                             lbann_data::Trainer* pb_trainer,
+                                             options *opts) {
+  try {
+    int procs_per_trainer = 0;
+    if(pb_trainer->procs_per_trainer() > 0) {
+      procs_per_trainer = pb_trainer->procs_per_trainer();
+    }
+    if (procs_per_trainer == 0) {
+      procs_per_trainer = comm->get_procs_in_world();
+    }
+
+    // Set up the communicator and split the grid if necessary
+    comm->split_trainers(procs_per_trainer);
+    if (pb_trainer->num_parallel_readers() > procs_per_trainer) {
+      pb_trainer->set_num_parallel_readers(procs_per_trainer);
+    }
+
+    // Adjust the number of parallel readers; this may be adjusted
+    // after calling split_trainers()
+    // set_num_parallel_readers(*comm, pb);
+
+    // Initalize a per-trainer I/O thread pool
+    std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, opts);
+
+    // Setup I/O threads
+    auto io_threads_per_process = io_thread_pool->get_num_threads();
+    auto io_threads_offset = io_thread_pool->get_threads_offset();
+
+    // Set algorithmic blocksize in Hydrogen
+    if (pb_trainer->hydrogen_block_size() > 0) {
+      El::SetBlocksize(pb_trainer->hydrogen_block_size());
+    }
+
+    // Set up the communicator and get the grid based on the trainers' spec.
+    // We do not currently support splitting different trainers in different ways,
+    // as this implies different grids.
+    if (procs_per_trainer != comm->get_procs_per_trainer()) {
+      comm->split_trainers(procs_per_trainer);
+    }
+
+    // Display how the OpenMP threads are provisioned
+    // if (opts->has_string("print_affinity")) {
+    //   display_omp_setup();
+    // }
+
+    // User feedback
+    //    print_parameters(comm, pb);
+
+    // Initalize trainer
+    std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, *pb_trainer);
+
+    trainer->setup(std::move(io_thread_pool));
+
+    if(opts->get_bool("disable_background_io_activity")) {
+      trainer->allow_background_io_activity(false);
+    }
+
+    // Report useful information
+    if (comm->am_world_master()) {
+      print_lbann_configuration(comm,
+                                io_threads_per_process,
+                                io_threads_offset);
+      std::cout << "\n"
+                << trainer->get_description()
+                << std::endl;
+    }
+
+    return trainer;
+
+  } catch (lbann_exception& e) {
+    El::mpi::Abort(El::mpi::COMM_WORLD, 1);
+  } catch (std::exception& e) {
+    El::ReportException(e);  // Elemental exceptions
+  }
+  return nullptr;
+}
+
 /// Setup I/O thread pool that is shared across all models
-std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm) {
+std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts) {
   int num_io_threads = num_free_cores_per_process(comm);
 
-  options *opts = options::get();
   if(opts->has_int("num_io_threads")) {
     int requested_io_threads = opts->get_int("num_io_threads");
     if(requested_io_threads > 0 && requested_io_threads < num_io_threads) {
@@ -56,9 +143,11 @@ std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm) {
 
 std::unique_ptr<model> build_model_from_prototext(
   int argc, char **argv,
+  const lbann_data::Trainer* pb_trainer,
   lbann_data::LbannPB &pb,
   lbann_comm *comm,
-  std::shared_ptr<thread_pool> io_thread_pool,
+  options *opts,
+  thread_pool& io_thread_pool,
   bool first_model) {
 
   int random_seed = lbann_default_random_seed;
@@ -68,36 +157,21 @@ std::unique_ptr<model> build_model_from_prototext(
   }
 
   std::ostringstream err;
-  options *opts = options::get();
-
-  // Optionally over-ride some values in prototext
-  get_cmdline_overrides(*comm, pb);
 
   lbann_data::Model *pb_model = pb.mutable_model();
 
-  // Adjust the number of parallel readers; this may be adjusted
-  // after calling split_trainers()
-  set_num_parallel_readers(*comm, pb);
-
   // Check to see if the model wants to reduce the I/O parallelism
-  if(pb_model->serialize_io() && io_thread_pool->get_num_threads() != 1) {
+  if(pb_model->serialize_io() && io_thread_pool.get_num_threads() != 1) {
     if(master) {
       std::cout << "Model " << pb_model->name() << " serialized the I/O threads" << std::endl;
     }
-    io_thread_pool->relaunch_pinned_threads(1);
+    io_thread_pool.relaunch_pinned_threads(1);
   }
 
-  // Setup I/O threads
-  auto io_threads_per_process = io_thread_pool->get_num_threads();
-  auto io_threads_offset = io_thread_pool->get_threads_offset();
+  // Get I/O thread details
+  auto io_threads_per_process = io_thread_pool.get_num_threads();
 
-  // Set algorithmic blocksize
-  if (pb_model->block_size() == 0 and master) {
-    err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
-    LBANN_ERROR(err.str());
-  }
-  El::SetBlocksize(pb_model->block_size());
-
+  /// @todo BVE FIXME should this be in the trainer
   // Change random seed if needed.
   if (pb_model->random_seed() > 0) {
     random_seed = pb_model->random_seed();
@@ -105,34 +179,19 @@ std::unique_ptr<model> build_model_from_prototext(
     init_random(random_seed);
     init_data_seq_random(random_seed);
   }
-  // Set up the communicator and get the grid based on the first model's spec.
-  // We do not currently support splitting different models in different ways,
-  // as this implies different grids.
-  int procs_per_trainer = pb_model->procs_per_trainer();
-  if (procs_per_trainer == 0) {
-    procs_per_trainer = comm->get_procs_in_world();
-  }
-  if (first_model) {
-    comm->split_trainers(procs_per_trainer);
-    if (pb_model->num_parallel_readers() > procs_per_trainer) {
-      pb_model->set_num_parallel_readers(procs_per_trainer);
-    }
-  } else if (procs_per_trainer != comm->get_procs_per_trainer()) {
-    LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
-  }
 
   // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
-  if (pb_model->random_init_models_differently()) {
-    random_seed = random_seed + comm->get_trainer_rank();
+  if (!pb_trainer->random_init_trainers_identically()) {
+    hash_combine(random_seed, comm->get_trainer_rank());
     // Reseed here so that setup is done with this new seed.
     init_random(random_seed);
     init_data_seq_random(random_seed);
   }
 #else
-  if (pb_model->random_init_models_differently()) {
+  if (!pb_trainer->random_init_trainers_identically()) {
     if (master) {
-      std::cout << "WARNING: Ignoring random_init_models_differently " <<
+      std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
         "due to sequential consistency" << std::endl;
     }
   }
@@ -141,11 +200,6 @@ std::unique_ptr<model> build_model_from_prototext(
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
   save_session(*comm, argc, argv, pb);
-
-  // Report useful information
-  if (master) {
-    print_lbann_configuration(pb_model, comm, io_threads_per_process, io_threads_offset);
-  }
 
   // Display how the OpenMP threads are provisioned
   if (opts->has_string("print_affinity")) {
@@ -179,19 +233,50 @@ std::unique_ptr<model> build_model_from_prototext(
   print_parameters(*comm, pb);
 
   // Initalize model
-  std::unique_ptr<model> ret_model{
-    proto::construct_model(comm,
-                           data_readers,
-                           pb.optimizer(),
-                           pb.model())
-  };
-  ret_model->setup(std::move(io_thread_pool));
+  std::unique_ptr<model> ret_model = proto::construct_model(comm,
+                                                            data_readers,
+                                                            pb.optimizer(),
+                                                            pb.trainer(),
+                                                            pb.model());
 
-  if(opts->get_bool("disable_background_io_activity")) {
-    ret_model->allow_background_io_activity(false);
+  // If the checkpoint directory has been overridden reset it before
+  // setting up the model
+  if (opts->has_string("ckpt_dir")) {
+    for (auto&& c : ret_model->get_callbacks()) {
+      {
+        auto* cb = dynamic_cast<callback::checkpoint*>(c);
+        if(cb != nullptr) {
+          cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
+          std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
+        }
+      }
+      {
+        auto* cb = dynamic_cast<callback::dump_weights*>(c);
+        if(cb != nullptr) {
+          cb->set_target_dir(opts->get_string("ckpt_dir"));
+          std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+        }
+      }
+      {
+        auto* cb = dynamic_cast<callback::save_model*>(c);
+        if(cb != nullptr) {
+          cb->set_target_dir(opts->get_string("ckpt_dir"));
+          std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+        }
+      }
+    }
   }
 
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
+  // Setup data readers
+  for(auto&& dr: data_readers) {
+    dr.second->setup(io_threads_per_process, &io_thread_pool);
+    dr.second->set_rank(comm->get_rank_in_trainer());
+  }
+
+  // Setup models
+  ret_model->setup();
+
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
     if (master) {
       std::cout << "\nUSING DATA STORE!\n\n";
     }
@@ -204,15 +289,6 @@ std::unique_ptr<model> build_model_from_prototext(
   // restart model from checkpoint if we have one
   //@todo
   //model->restartShared();
-
-  if (comm->am_world_master()) {
-    std::cout << "\n"
-              << ret_model->get_description()
-              << "Callbacks:" << std::endl;
-    for (lbann_callback *cb : ret_model->get_callbacks()) {
-      std::cout << cb->name() << std::endl;
-    }
-  }
 
 #ifndef LBANN_DETERMINISTIC
   // Under normal conditions, reinitialize the random number generator so
@@ -227,10 +303,22 @@ std::unique_ptr<model> build_model_from_prototext(
       "--------------------------------------------------------------------------------\n";
   }
 #endif
+
+  if (opts && opts->has_string("restart_dir")) {
+    bool loaded = callback::save_model::load_model_weights(
+      opts->get_string("restart_dir"),
+      ret_model.get(),
+      opts->get_bool("restart_dir_is_fullpath"));
+    if(!loaded) {
+      LBANN_ERROR("Unable to reload model from given restart directory: ",
+                  opts->get_string("restart_dir"));
+    }
+  }
+
   return ret_model;
 }
 
-void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, int io_threads_per_process, int io_threads_offset) {
+void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int io_threads_offset) {
   // Report hardware settings
   std::cout << "Hardware properties (for master process)" << std::endl
             << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
@@ -275,22 +363,6 @@ void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, in
 #else
   std::cout << "NOT detected" << std::endl;
 #endif // HYDROGEN_HAVE_CUB
-  std::cout << std::endl;
-
-  // Report device settings
-  std::cout << "GPU settings" << std::endl;
-  bool disable_cuda = pb_model->disable_cuda();
-#ifndef LBANN_HAS_GPU
-  disable_cuda = true;
-#endif // LBANN_HAS_GPU
-  std::cout << "  CUDA         : "
-            << (disable_cuda ? "disabled" : "enabled") << std::endl;
-  std::cout << "  cuDNN        : ";
-#ifdef LBANN_HAS_CUDNN
-  std::cout << (disable_cuda ? "disabled" : "enabled") << std::endl;
-#else
-  std::cout << "disabled" << std::endl;
-#endif // LBANN_HAS_CUDNN
   const auto* env = std::getenv("MV2_USE_CUDA");
   std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
   std::cout << std::endl;
@@ -308,10 +380,9 @@ void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, in
 
   // Report model settings
   const auto& grid = comm->get_trainer_grid();
-  int procs_per_trainer = pb_model->procs_per_trainer();
-  std::cout << "Model settings" << std::endl
-            << "  Models                : " << comm->get_num_trainers() << std::endl
-            << "  Processes per trainer : " << procs_per_trainer << std::endl
+  std::cout << "Trainer settings" << std::endl
+            << "  Trainers              : " << comm->get_num_trainers() << std::endl
+            << "  Processes per trainer : " << comm->get_procs_per_trainer() << std::endl
             << "  Grid dimensions       : " << grid.Height() << " x " << grid.Width() << std::endl;
   std::cout << std::endl;
 }

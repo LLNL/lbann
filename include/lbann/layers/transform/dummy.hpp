@@ -36,10 +36,12 @@ namespace lbann {
  *  Does no computation and is primarily intended as a placeholder for
  *  unused layer outputs.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class dummy_layer : public transform_layer {
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
+class dummy_layer : public transform_layer<TensorDataType> {
 public:
-  dummy_layer(lbann_comm *comm) : transform_layer(comm) {
+  dummy_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {
     this->m_expected_num_child_layers = 0;
   }
   dummy_layer* copy() const override { return new dummy_layer(*this); }
@@ -49,6 +51,17 @@ public:
 protected:
   void fp_compute() override {}
 };
+
+LBANN_DEFINE_LAYER_BUILDER(dummy);
+
+#ifndef LBANN_DUMMY_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class dummy_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class dummy_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_DUMMY_LAYER_INSTANTIATE
 
 } // namespace lbann
 

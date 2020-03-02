@@ -1,10 +1,9 @@
+trainer {
+}
 model {
   data_layout: "model_parallel"
   mini_batch_size: 50
-  block_size: 256
   num_epochs: 20
-  num_parallel_readers: 0
-  procs_per_trainer: 0
 
   ###################################################
   # Objective function
@@ -67,7 +66,9 @@ model {
 
   weights {
     name: "w1"
-    glorot_uniform_initializer {}
+    initializer {
+      glorot_uniform_initializer {}
+    }
   }
 
   layer {

@@ -24,19 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_ELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/elu.hpp"
 
 namespace lbann {
 
 namespace {
 
-// Useful constants
-constexpr DataType zero = 0;
-
 /** Local forward prop computation. */
-void local_fp(DataType alpha,
-              const AbsMat& input,
-              AbsMat& output) {
+template <typename TensorDataType>
+void local_fp(TensorDataType alpha,
+              const El::AbstractMatrix<TensorDataType>& input,
+              El::AbstractMatrix<TensorDataType>& output) {
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -44,16 +43,17 @@ void local_fp(DataType alpha,
     for (El::Int row = 0; row < height; ++row) {
       const auto& x = input(row, col);
       auto& y = output(row, col);
-      y = (x > zero) ? x : alpha * std::expm1(x);
+      y = (x > El::TypeTraits<TensorDataType>::Zero()) ? x : alpha * std::expm1(x);
     }
   }
 }
 
 /** Local backprop computation. */
-void local_bp(DataType alpha,
-              const AbsMat& input,
-              const AbsMat& gradient_wrt_output,
-              AbsMat& gradient_wrt_input) {
+template <typename TensorDataType>
+void local_bp(TensorDataType alpha,
+              const El::AbstractMatrix<TensorDataType>& input,
+              const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
+              El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -62,42 +62,33 @@ void local_bp(DataType alpha,
       const auto& x = input(row, col);
       const auto& dy = gradient_wrt_output(row, col);
       auto& dx = gradient_wrt_input(row, col);
-      dx = (x > zero) ? dy : dy * alpha * std::exp(x);
+      dx = (x > El::TypeTraits<TensorDataType>::Zero()) ? dy : dy * alpha * std::exp(x);
     }
   }
 }
 
 } // namespace
 
-template <>
-void elu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-       ::fp_compute() {
-  local_fp(m_alpha,
-           get_local_prev_activations(),
-           get_local_activations());
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void elu_layer<TensorDataType, Layout, Device>::fp_compute() {
+  local_fp(this->m_alpha,
+           this->get_local_prev_activations(),
+           this->get_local_activations());
 }
-template <>
-void elu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  local_bp(m_alpha,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void elu_layer<TensorDataType, Layout, Device>::bp_compute() {
+  local_bp(this->m_alpha,
+           this->get_local_prev_activations(),
+           this->get_local_prev_error_signals(),
+           this->get_local_error_signals());
 }
-template <>
-void elu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-       ::fp_compute() {
-  local_fp(m_alpha,
-           get_local_prev_activations(),
-           get_local_activations());
-}
-template <>
-void elu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  local_bp(m_alpha,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
-}
+
+#define PROTO(T)                                      \
+  template class elu_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class elu_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

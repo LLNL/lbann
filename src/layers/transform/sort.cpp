@@ -24,18 +24,18 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_SORT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/sort.hpp"
 
 namespace lbann {
 
-template <>
-void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void sort_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
   // Local matrices
-  const auto& local_input = get_local_prev_activations();
-  auto& local_output = get_local_activations();
-  auto& local_indices = *m_indices;
+  const auto& local_input = this->get_local_prev_activations();
+  auto& local_output = this->get_local_activations();
+  auto& local_indices = *this->m_indices;
   const auto& local_height = local_input.Height();
   const auto& local_width = local_input.Width();
 
@@ -46,7 +46,7 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
     for (El::Int row = 0; row < local_height; ++row) {
       sorted_list.emplace(local_input(row, col), row);
     }
-    if (m_descending) {
+    if (this->m_descending) {
       auto&& it = sorted_list.rbegin();
       for (El::Int row = 0; row < local_height; ++row, ++it) {
         local_output(row, col) = it->first;
@@ -63,14 +63,13 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
 
 }
 
-template <>
-void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void sort_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 
   // Local matrices
-  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-  auto& local_gradient_wrt_input = get_local_error_signals();
-  const auto& local_indices = *m_indices;
+  const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = this->get_local_error_signals();
+  const auto& local_indices = *this->m_indices;
   const auto& local_height = local_gradient_wrt_input.Height();
   const auto& local_width = local_gradient_wrt_input.Width();
 
@@ -85,5 +84,11 @@ void sort_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   }
 
 }
+
+#define PROTO(T)                                      \
+  template class sort_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

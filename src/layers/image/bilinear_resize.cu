@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
 #include "lbann/layers/image/bilinear_resize.hpp"
 #include "lbann/utils/cuda.hpp"
 
@@ -31,27 +32,27 @@ namespace lbann {
 
 namespace {
 
-template <int block_size>
+template <int block_size, typename TensorDataType>
 __global__ void fp_kernel(El::Int num_samples,
                           El::Int num_channels,
                           El::Int input_height,
                           El::Int input_width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
                           El::Int output_height,
                           El::Int output_width,
-                          DataType* __restrict__ output,
+                          TensorDataType* __restrict__ output,
                           El::Int output_ldim) {
 
   // Useful constants
-  constexpr DataType half = 0.5;
-  constexpr DataType one = 1;
+  const TensorDataType half = 0.5;
+  const TensorDataType one = 1.;
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
 
   // Stride between interpolation points
-  const auto& x_stride = static_cast<DataType>(input_width) / output_width;
-  const auto& y_stride = static_cast<DataType>(input_height) / output_height;
+  const auto& x_stride = TensorDataType(input_width) / TensorDataType(output_width);
+  const auto& y_stride = TensorDataType(input_height) / TensorDataType(output_height);
 
   const auto& size = (num_samples * num_channels
                       * output_height * output_width);
@@ -64,8 +65,8 @@ __global__ void fp_kernel(El::Int num_samples,
     const auto& output_col = pos % output_width;
 
     // Interpolation point
-    const auto& x = (output_col + half) * x_stride;
-    const auto& y = (output_row + half) * y_stride;
+    const auto& x = (TensorDataType(output_col) + half) * x_stride;
+    const auto& y = (TensorDataType(output_row) + half) * y_stride;
 
     // Find input pixels near interpolation point
     const auto input_col = static_cast<El::Int>(cuda::floor(x - half));
@@ -76,8 +77,8 @@ __global__ void fp_kernel(El::Int num_samples,
     const auto& input_row1 = cuda::min(input_row+1, input_height-1);
 
     // Interpolation point relative to input pixel centers
-    const auto& unit_x = x - (input_col + half);
-    const auto& unit_y = y - (input_row + half);
+    const auto& unit_x = x - (TensorDataType(input_col) + half);
+    const auto& unit_y = y - (TensorDataType(input_row) + half);
 
     // Input and output pixels
     const auto& pixel00 = input[sample * input_ldim
@@ -114,15 +115,15 @@ __global__ void fp_kernel(El::Int num_samples,
 }
 
 
-template <>
-void bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void bilinear_resize_layer<TensorDataType, Layout, Device>::fp_compute() {
 
   // Matrices
-  const auto& local_input = get_local_prev_activations();
-  auto& local_output = get_local_activations();
+  const auto& local_input = this->get_local_prev_activations();
+  auto& local_output = this->get_local_activations();
 
   // Dimensions
-  const auto& input_dims = get_input_dims();
+  const auto& input_dims = this->get_input_dims();
   const auto& num_dims = input_dims.size();
   const auto& num_samples = local_input.Width();
   const El::Int num_channels = std::accumulate(input_dims.begin(),
@@ -150,10 +151,16 @@ void bilinear_resize_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_comp
         num_samples, num_channels,
         input_height, input_width,
         local_input.LockedBuffer(), local_input.LDim(),
-        m_height, m_width,
+        this->m_height, this->m_width,
         local_output.Buffer(), local_output.LDim());
   }
 
 }
+
+#define PROTO(T)                                      \
+  template class bilinear_resize_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

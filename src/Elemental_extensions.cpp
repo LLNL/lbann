@@ -28,6 +28,7 @@
 
 #include "El.hpp"
 
+#include <lbann_config.hpp>
 #include "lbann/Elemental_extensions.hpp"
 
 namespace El {
@@ -171,5 +172,12 @@ void RowSum(const AbstractDistMatrix<F>& A, AbstractDistMatrix<F>& sums) {
 
 LBANN_PROTO_FLOAT
 LBANN_PROTO_DOUBLE
+
+#ifdef LBANN_HAS_HALF
+LBANN_PROTO(El::cpu_half_type)
+#endif
+#ifdef LBANN_HAS_GPU_FP16
+LBANN_PROTO(El::gpu_half_type)
+#endif
 
 } // namespace El

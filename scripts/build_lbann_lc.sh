@@ -13,7 +13,6 @@ CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
 COMPILER=gnu
 if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
     module load gcc/7.3.0
-    module load opt cudatoolkit/9.2
 elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
     module load gcc/7.3.1
 fi
@@ -43,8 +42,6 @@ if [ "${ARCH}" == "x86_64" ]; then
 fi
 
 
-ELEMENTAL_MATH_LIBS=
-PATCH_OPENBLAS=ON
 C_FLAGS=
 CXX_FLAGS=-DLBANN_SET_EL_RNG
 Fortran_FLAGS=
@@ -313,7 +310,7 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    module load cmake/3.12.1
+    module load cmake/3.14.5
 else
     use git
 fi
@@ -408,8 +405,8 @@ fi
 # Add compiler optimization flags
 if [ "${BUILD_TYPE}" == "Release" ]; then
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -O3 ${INSTRUMENT}"
-        CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT}"
+        C_FLAGS="${C_FLAGS} -O3 ${INSTRUMENT} -fno-omit-frame-pointer"
+        CXX_FLAGS="${CXX_FLAGS} -O3 ${INSTRUMENT} -fno-omit-frame-pointer"
         Fortran_FLAGS="${Fortran_FLAGS} -O3"
         if [ "${CLUSTER}" == "catalyst" ]; then
             C_FLAGS="${C_FLAGS} -march=ivybridge -mtune=ivybridge"
@@ -435,8 +432,8 @@ if [ "${BUILD_TYPE}" == "Release" ]; then
     fi
 else
     if [ "${COMPILER}" == "gnu" ]; then
-        C_FLAGS="${C_FLAGS} -g ${INSTRUMENT}"
-        CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT}"
+        C_FLAGS="${C_FLAGS} -g ${INSTRUMENT} -fno-omit-frame-pointer"
+        CXX_FLAGS="${CXX_FLAGS} -g ${INSTRUMENT} -fno-omit-frame-pointer"
         Fortran_FLAGS="${Fortran_FLAGS} -g"
     fi
 fi
@@ -564,16 +561,12 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
-    WITH_CUB=ON
-    ELEMENTAL_USE_CUBLAS=OFF
+    WITH_CUB=${WITH_CUB:-ON}
     WITH_ALUMINUM=${WITH_ALUMINUM:-ON}
     ALUMINUM_WITH_NCCL=${ALUMINUM_WITH_NCCL:-ON}
 	if [[ ${CORAL} -eq 1 ]]; then
-		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.4.2-1+cuda9.2_ppc64le
 		module del cuda
-		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/9.2.148}
-	else
-		export NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_2.4.2-1+cuda9.2_x86_64
+		CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/10.1.243}
 	fi
 
     # Hack for surface
@@ -583,8 +576,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
 		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
 		    ;;
 		pascal)
-                    module load opt
-		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+		    CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/10.1.168}
 		    ;;
 	esac
 fi
@@ -613,23 +605,35 @@ if [ "${WITH_CUDA}" == "ON" ]; then
 	CUDA_TOOLKIT_VERSION=$(${CUDA_TOOLKIT_ROOT_DIR}/bin/nvcc --version | grep -oE "V[0-9]+\.[0-9]+" | sed 's/V//')
 
 	# CUDNN
-	if [ -z "${CUDNN_DIR}" ]; then
-		if [ "${CUDA_TOOLKIT_VERSION}" == "9.2" ]; then
-			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.5.1/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
-		elif [ "${CUDA_TOOLKIT_VERSION}" == "9.1" ]; then
-			CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-7.1.3/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
-		fi
+	if [[ -z $CUDNN_DIR ]]; then
+        CUDNN_VER=${CUDNN_VER:-7.6.4}
+		CUDNN_DIR=/usr/workspace/wsb/brain/cudnn/cudnn-${CUDNN_VER}/cuda-${CUDA_TOOLKIT_VERSION}_${ARCH}
 	fi
-	if [ ! -d "${CUDNN_DIR}" ]; then
+	if [[ ! -d $CUDNN_DIR ]]; then
 		echo "Could not find cuDNN at $CUDNN_DIR"
 		exit 1
 	fi
 	export CUDNN_DIR
+
+    # NCCL
+    if [[ -z $NCCL_DIR ]]; then
+        # Subsequent 2.4.X versions are known to have a performance
+        # regression. See the release notes.
+        NCCL_VER=${NCCL_VER:-2.4.2-1}
+        NCCL_DIR=/usr/workspace/wsb/brain/nccl2/nccl_${NCCL_VER}+cuda${CUDA_TOOLKIT_VERSION}_${ARCH}
+    fi
+    if [[ ! -d $NCCL_DIR ]]; then
+        echo "Could not find NCCL at $NCCL_DIR"
+        exit 1
+    fi
+    export NCCL_DIR
 else
     HAS_GPU=0
     WITH_CUDA=${WITH_CUDA:-OFF}
     WITH_CUDNN=OFF
-    ELEMENTAL_USE_CUBLAS=OFF
+    WITH_CUB=OFF
+    ALUMINUM_WITH_NCCL=OFF
+    ALUMINUM_WITH_MPI_CUDA=OFF
 fi
 
 ################################################################
@@ -708,9 +712,6 @@ if [ ${VERBOSE} -ne 0 ]; then
     print_variable WITH_CUDA
     print_variable WITH_CUDNN
     print_variable WITH_NVPROF
-    print_variable ELEMENTAL_USE_CUBLAS
-    print_variable ELEMENTAL_MATH_LIBS
-    print_variable PATCH_OPENBLAS
     print_variable DETERMINISTIC
     print_variable CLEAN_BUILD
     print_variable VERBOSE
@@ -764,6 +765,7 @@ cmake \
 -D CMAKE_INSTALL_MESSAGE=${CMAKE_INSTALL_MESSAGE} \
 -D CMAKE_INSTALL_PREFIX=${INSTALL_DIR} \
 -D LBANN_SB_BUILD_CEREAL=ON \
+-D LBANN_SB_BUILD_CLARA=ON \
 -D LBANN_SB_BUILD_CNPY=ON \
 -D LBANN_SB_BUILD_HYDROGEN=ON \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_ENABLE_CUDA=${WITH_CUDA} \
@@ -791,6 +793,7 @@ cmake \
 -D LBANN_DATATYPE=${DATATYPE} \
 -D LBANN_DETERMINISTIC=${DETERMINISTIC} \
 -D LBANN_WITH_ALUMINUM=${WITH_ALUMINUM} \
+-D LBANN_SB_BUILD_CATCH2=ON \
 -D LBANN_NO_OMP_FOR_DATA_READERS=${NO_OMP_FOR_DATA_READERS} \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \

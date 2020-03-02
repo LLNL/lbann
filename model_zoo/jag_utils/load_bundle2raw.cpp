@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
@@ -256,5 +254,3 @@ void get_scalar_names(std::vector<std::string> &s) {
   s.push_back("MINradius");
 }
 
-
-#endif //#ifdef LBANN_HAS_CONDUIT

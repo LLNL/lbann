@@ -57,9 +57,11 @@ bool mnist_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   }
 
   auto pixel_col = X(El::IR(0, X.Height()), El::IR(mb_idx, mb_idx + 1));
-  augment(pixel_col, m_image_height, m_image_width, 1);
-  normalize(pixel_col, 1);
-  pixel_noise(pixel_col); //add noise to image, disable by default
+  std::vector<size_t> dims = {
+    1ull,
+    static_cast<size_t>(m_image_height),
+    static_cast<size_t>(m_image_width)};
+  m_transform_pipeline.apply(pixel_col, dims);
   return true;
 }
 
@@ -174,6 +176,7 @@ void mnist_reader::load() {
     std::cerr << "calling select_subset_of_data; m_shuffled_indices.size: " <<
       m_shuffled_indices.size() << std::endl;
   }
+  resize_shuffled_indices();
   select_subset_of_data();
 }
 

@@ -1,6 +1,7 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   layer.hpp
+  data_type_layer.hpp
   )
 
 # Add the subdirectories

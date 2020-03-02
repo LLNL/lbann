@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
 #define LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -46,35 +46,44 @@ namespace lbann {
  *  nonlinearities improve neural network acoustic models." In
  *  Proc. ICML, vol. 30, no. 1, p. 3. 2013.
  */
-template <data_layout Layout, El::Device Device>
-class leaky_relu_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class leaky_relu_layer : public data_type_layer<TensorDataType> {
 public:
-  leaky_relu_layer(lbann_comm *comm, DataType negative_slope = 0.01)
-    : Layer(comm), m_negative_slope(negative_slope) {}
+  leaky_relu_layer(lbann_comm *comm, TensorDataType negative_slope = 0.01)
+    : data_type_layer<TensorDataType>(comm), m_negative_slope(negative_slope) {}
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
   std::string get_type() const override { return "leaky ReLU"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description() const override {
-    auto&& desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Negative slope", m_negative_slope);
     return desc;
   }
 
 protected:
   void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
+    data_type_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
   void fp_compute() override;
   void bp_compute() override;
 
 private:
   /** Function slope in negative region. */
-  DataType m_negative_slope;
+  TensorDataType m_negative_slope;
 
 };
+
+#ifndef LBANN_LEAKY_RELU_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class leaky_relu_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class leaky_relu_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_LEAKY_RELU_LAYER_INSTANTIATE
 
 } // namespace lbann
 

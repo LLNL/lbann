@@ -1,5 +1,7 @@
+trainer {
+  random_init_trainers_identically: false
+}
 model {
-  random_init_models_differently: true
   serialize_io: true
   objective_function {
     l2_weight_regularization {
@@ -468,9 +470,8 @@ model {
     parents: "decode1_dropout"
     name: "decode0"
     data_layout: "data_parallel"
+    hint_layer: "image_data_dummy"
     fully_connected {
-      get_slice_points_from_reader: "independent"
-      get_num_neurons_of_slice_from_reader: [ 1 ]
       has_bias: true
     }
   }
@@ -479,27 +480,37 @@ model {
 
   weights {
     name: "gen1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "gen1fc4linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
     name: "d1fc1linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -507,7 +518,9 @@ model {
   }
   weights {
     name: "d1fc2linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -515,7 +528,9 @@ model {
   }
   weights {
     name: "d1fc3linearity"
-    he_normal_initializer {
+    initializer {
+      he_normal_initializer {
+      }
     }
   }
   weights {
@@ -556,6 +571,4 @@ model {
   #    }
 
  # }
-  block_size: 256
-  procs_per_trainer:0
 }

@@ -27,8 +27,6 @@
 
 #include "lbann_config.hpp"
 
-#ifdef LBANN_HAS_CONDUIT
-
 #include "conduit/conduit.hpp"
 #include "conduit/conduit_relay.hpp"
 #include "conduit/conduit_relay_io_hdf5.hpp"
@@ -99,7 +97,7 @@ int main(int argc, char *argv[]) {
       std::vector<std::string> cnames;
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (std::exception e) {
+      } catch (const std::exception&) {
         throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: hdf5_group_list_child_names failed; " + files[j]);
       }
 
@@ -139,10 +137,7 @@ int main(int argc, char *argv[]) {
         testme.insert(the_test);
       }
     }
-  } catch (exception const &e) {
-    El::ReportException(e);
-    return EXIT_FAILURE;
-  } catch (std::exception const &e) {
+  } catch (const std::exception& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
   }
@@ -158,5 +153,3 @@ void get_input_names(std::unordered_set<std::string> &s) {
   s.insert("shape_model_initial_modes:(2,1)");
   s.insert("shape_model_initial_modes:(1,0)");
 }
-
-#endif //#ifdef LBANN_HAS_CONDUIT

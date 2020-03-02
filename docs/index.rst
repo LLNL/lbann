@@ -11,7 +11,7 @@ LBANN provides model-parallel acceleration through domain
 decomposition to optimize for strong scaling of network training.  It
 also allows for composition of model-parallelism with both data
 parallelism and ensemble training methods for training large neural
-networks with massive amounts of data.  LBANN is able to advantage of
+networks with massive amounts of data.  LBANN is able to take advantage of
 tightly-coupled accelerators, low-latency high-bandwidth networking,
 and high-bandwidth parallel file systems.
 
@@ -22,6 +22,8 @@ recurrent neural networks via back propagation through time (BPTT)
 training, transfer learning, and multi-model and ensemble training
 methods.
 
+Users are advised to view `the Doxygen API Documentation
+<_static/doxygen/html/index.html>`_ for API information.
 
 .. toctree::
    :maxdepth: 2
@@ -40,8 +42,11 @@ methods.
    :maxdepth: 2
    :caption: Developer Documentation
 
+   lbann
    lbann/lbann
    style_guide
+   continuous_integration
+   documentation_building
 
 ==================
 

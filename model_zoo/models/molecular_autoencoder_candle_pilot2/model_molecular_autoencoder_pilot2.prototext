@@ -1,9 +1,9 @@
+trainer {
+  num_parallel_readers: 1
+}
 model {
   mini_batch_size: 512
-  block_size: 256
   num_epochs: 4
-  num_parallel_readers: 1
-  procs_per_trainer: 0
 
   ##############################################
   # Objective function
@@ -76,7 +76,9 @@ model {
 
   weights {
     name: "decode1_fc_matrix"
-    glorot_uniform_initializer {}
+    initializer {
+      glorot_uniform_initializer {}
+    }
   }
   layer {
     parents: "encode1"

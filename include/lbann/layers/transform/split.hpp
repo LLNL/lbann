@@ -34,11 +34,13 @@
 namespace lbann {
 
 /** @brief Present input tensor to multiple outputs. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class split_layer : public transform_layer {
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
+class split_layer : public transform_layer<TensorDataType> {
 public:
 
-  split_layer(lbann_comm *comm) : transform_layer(comm) {
+  split_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {
     this->m_expected_num_child_layers = -1; // No limit on children
   }
 
@@ -50,35 +52,46 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
-    for (int i = 0; i < get_num_children(); ++i) {
-      set_output_dims(get_input_dims(), i);
+    data_type_layer<TensorDataType>::setup_dims();
+    for (int i = 0; i < this->get_num_children(); ++i) {
+      this->set_output_dims(this->get_input_dims(), i);
     }
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    const auto& input = get_prev_activations();
-    for (int i = 0; i < get_num_children(); ++i) {
-      El::LockedView(get_activations(i), input);
+    const auto& input = this->get_prev_activations();
+    for (int i = 0; i < this->get_num_children(); ++i) {
+      El::LockedView(this->get_activations(i), input);
     }
   }
 
   void fp_compute() override {}
 
   void bp_compute() override {
-    auto& gradient_wrt_input = get_error_signals();
-    if (get_num_children() > 0) {
-      El::Copy(get_prev_error_signals(0), gradient_wrt_input);
+    auto& gradient_wrt_input = this->get_error_signals();
+    if (this->get_num_children() > 0) {
+      El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
     } else {
       El::Zero(gradient_wrt_input);
     }
-    for (int i = 1; i < get_num_children(); ++i) {
-      El::Axpy(DataType(1), get_prev_error_signals(i),
+    for (int i = 1; i < this->get_num_children(); ++i) {
+      El::Axpy(DataType(1), this->get_prev_error_signals(i),
                gradient_wrt_input);
     }
   }
 
 };
+
+LBANN_DEFINE_LAYER_BUILDER(split);
+
+#ifndef LBANN_SPLIT_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class split_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class split_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_SPLIT_LAYER_INSTANTIATE
 
 } // namespace lbann
 

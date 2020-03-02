@@ -30,6 +30,7 @@
 #define LBANN_DATA_READER_NUMPY_NPZ_CONDUIT_HPP
 
 #include "lbann/data_readers/data_reader.hpp"
+#include "conduit/conduit.hpp"
 #include <cnpy.h>
 
 namespace lbann {
@@ -37,7 +38,8 @@ namespace lbann {
    * Data reader for data stored in numpy (.npz) files that are encapsulated .
    * in conduit::Nodes
    */
-  class numpy_npz_conduit_reader : public generic_data_reader {
+class numpy_npz_conduit_reader : public generic_data_reader {
+
  public:
   numpy_npz_conduit_reader(const bool shuffle);
   // These need to be explicit because of some issue with the cnpy copy
@@ -73,7 +75,7 @@ namespace lbann {
   const std::vector<int> get_data_dims() const override { return m_data_dims; }
 
   protected:
-    void preload_data_store();
+    void do_preload_data_store() override;
 
     bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
     bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
@@ -105,7 +107,16 @@ namespace lbann {
     void fill_in_metadata();
 
     std::vector<std::string> m_filenames;
-  };
+
+    bool load_numpy_npz_from_file(const std::unordered_set<int> &data_ids, std::unordered_set<int>& label_classes); 
+
+    void load_conduit_node(const std::string filename, int data_id, conduit::Node &output, bool reset = true);
+
+    std::unordered_map<int, std::map<std::string, cnpy::NpyArray>> m_npz_cache;
+
+    void load_npz(const std::string filename, int data_id, conduit::Node &node);
+
+};
 
 }  // namespace lbann
 
