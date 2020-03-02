@@ -16,7 +16,8 @@ import tools
 # ==============================================
 
 # Training options
-num_epochs = 5
+num_epochs = 2
+#XX num_epochs = 5
 mini_batch_size = 256
 num_nodes = 2
 imagenet_fraction = 0.0031971 # Train with 4096 out of 1.28M samples
@@ -115,7 +116,7 @@ def construct_data_reader(lbann):
 # Setup PyTest
 # ==============================================
 
-def create_test_func(baseline_test_func, datastore_test_func):
+def create_test_func(baseline_test_func, datastore_test_func, profile_tests=[]):
     """Augment test function to parse log files.
 
     `tools.create_tests` creates functions that run an LBANN
@@ -173,48 +174,42 @@ def create_test_func(baseline_test_func, datastore_test_func):
             assert abs(x-xhat) < max(8*eps*x, 1.5*10**(ceillogx-6)), \
                 'found large discrepancy in metrics for baseline and data store experiments'
 
+        # Check if the output 'data_store_profile_train.txt' file
+        # contains the entries specified in the 'profile_tests' input param
+        #
+        # TODO:
+
     # Return test function from factory function
     func.__name__ = test_name
     return func
 
+
 # Create test functions that can interact with PyTest
-baseline_tests = tools.create_tests(
-    setup_experiment,
-    __file__,
-    test_name_base='test_unit_datastore_imagenet_nodatastore',
-    nodes=num_nodes
-)
+def make_test(name, args=[]) :
+  return (tools.create_tests(
+            setup_experiment,
+            __file__,
+            nodes=num_nodes,
+            test_name_base='test_unit_datastore_imagenet_' + name,
+            lbann_args=args))
+
+baseline_tests = make_test('nodatastore')
 
 datastore_tests = []
-'''
-datastore_tests.append(tools.create_tests(
-    setup_experiment,
-    __file__,
-    nodes=num_nodes,
-    test_name_base='test_unit_datastore_imagenet_data_store_cache',
-    lbann_args=['--preload_data_store']
-))
-'''
-#datastore_tests.append(tools.create_tests(
-datastore_tests = tools.create_tests(
-    setup_experiment,
-    __file__,
-    nodes=num_nodes,
-    test_name_base='test_unit_datastore_imagenet_use_data_store',
-    lbann_args=['--use_data_store']
-)
-'''
-datastore_tests.append(tools.create_tests(
-    setup_experiment,
-    __file__,
-    nodes=num_nodes,
-    test_name_base='test_unit_datastore_imagenet_preload_data_store',
-    lbann_args=['--preload_data_store']
-))
-'''
+
+#local cache with explicit loading
+datastore_tests.append(make_test('data_store_cache_explicit', ['--data_store_cache', '--data_store_profile']))
+
+#local cache with preloading
+datastore_tests.append(make_test('data_store_cache_preloading', ['--data_store_cache', '--preload_data_store', '--data_store_profile']))
+
+#explicit loading
+datastore_tests.append(make_test('use_data_store', ['--use_data_store', '--data_store_profile']))
+
+#preloading
+datastore_tests.append(make_test('preload_data_store', ['--preload_data_store', '--data_store_profile']))
 
 for i in range(len(datastore_tests)):
-    print("i: " + str(i) + " ___________________________________")
     for j in range(len(baseline_tests)) :
-        print("j: " + str(j) + " ___________________________________")
         _test_func = create_test_func(baseline_tests[j], datastore_tests[i][j])
+        globals()[_test_func.__name__] = _test_func
