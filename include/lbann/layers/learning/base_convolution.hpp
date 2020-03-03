@@ -1264,9 +1264,8 @@ private:
           << "Bias desc: "
           << dc::util::tostring(this->m_bias_cudnn_desc)
           << ", bias factor: " << this->m_bias_scaling_factor;
-      std::vector<int> bias_shape_v(this->get_num_dims(), 1);
-      bias_shape_v[dc::get_channel_dim()] = this->get_output_dims()[0];
-      Shape bias_shape(bias_shape_v);
+      Shape bias_shape(this->get_num_dims(), 1);
+      bias_shape[dc::get_channel_dim()] = this->get_output_dims()[0];
       m_bias_t = TensorDev(bias_shape, loc, shared_dist);
       assert0(tensor::View(m_bias_t,
                            this->get_weights()[1]->get_values().LockedBuffer()));
