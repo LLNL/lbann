@@ -1,6 +1,7 @@
 import macc_models 
 from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
+import lbann.contrib.lc.launcher
 
 # ==============================================
 # Setup and launch experiment
@@ -135,7 +136,7 @@ if __name__ == '__main__':
       txtf.Merge(f.read(), data_reader_proto)
     data_reader_proto = data_reader_proto.data_reader
 
-    status = lbann.run(trainer,model, data_reader_proto, opt,
+    status = lbann.contrib.lc.launcher.run(trainer,model, data_reader_proto, opt,
                        scheduler='slurm',
                        nodes=1,
                        procs_per_node=1,
