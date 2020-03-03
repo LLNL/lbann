@@ -612,7 +612,7 @@ private :
     flush_profile_file();
   }
 
-  void DEBUG() { 
+  void DEBUG_DS() { 
     if (!m_debug) {
       return;
     }
@@ -621,12 +621,12 @@ private :
   }
 
   template <typename T, typename... Types>
-  void DEBUG(T var1, Types... var2) {
+  void DEBUG_DS(T var1, Types... var2) {
     if (!m_debug) {
       return;
     }
     (*m_debug) << var1 << " ";
-    DEBUG(var2...) ;
+    DEBUG_DS(var2...) ;
     flush_debug_file();
   }
 };

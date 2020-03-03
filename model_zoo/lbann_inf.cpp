@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
       for(auto&& m : models) {
-        bool loaded = callback::save_model::load_model_weights(
+        bool loaded = callback::load_model::load_model_weights(
           opts->get_string("ckpt_dir"),
           m.get(),
           opts->get_bool("ckptdir_is_fullpath"));

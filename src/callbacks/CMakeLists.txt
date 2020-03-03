@@ -39,6 +39,7 @@ set_full_path(THIS_DIR_SOURCES
   timeline.cpp
   timer.cpp
   variable_minibatch.cpp
+  load_model.cpp
 )
 
 # Propagate the files up the tree
