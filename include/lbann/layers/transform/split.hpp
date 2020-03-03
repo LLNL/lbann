@@ -130,13 +130,11 @@ protected:
     this->setup_error_signals_tensor(dists);
     this->setup_error_signals_copyout_tensor(dists);
 
-    // Setup copy views for other child layers. Assuming the child
-    // layers are also distconv-enabled and using the same parallel
-    // strategy.
-    assert_always(!m_child_shuffle_required &&
-                  !m_child_copy_out_required);
     m_prev_error_signals_siblings.reserve(get_num_children() - 1);
     for (int i = 1; i < get_num_children(); ++i) {
+      if (m_child_shuffle_required[i] || m_child_copy_out_required[i]) {
+        LBANN_ERROR("Copyout non-first tensor not supported");
+      }
       m_prev_error_signals_siblings.emplace_back(
           get_child_layers()[i]->get_error_signals_t(*this));
     }

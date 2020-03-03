@@ -600,10 +600,20 @@ protected:
   virtual int get_num_spatial_dims() const;
 
  protected:
-  virtual bool keep_original_input() const { return m_keep_original_input; }
-  virtual bool keep_original_output() const { return m_keep_original_output; }
+  virtual bool keep_original_input(int input_index) const {
+    return m_keep_original_input[input_index];
+  }
+  virtual bool keep_original_output(int output_index) const {
+    return m_keep_original_output[output_index];
+  }
   virtual bool keep_original() const {
-    return keep_original_input() && keep_original_output();
+    for (int i = 0; i < get_num_parents(); ++i) {
+      if (!keep_original_input(i)) return false;
+    }
+    for (int i = 0; i < get_num_children(); ++i) {
+      if (!keep_original_output(i)) return false;
+    }
+    return true;
   }
   virtual void fp_setup_distconv(int mini_batch_size);
   virtual void bp_setup_distconv(int mini_batch_size);
@@ -650,10 +660,10 @@ protected:
                 get_name() + "_error_signals_original");
   }
 
-  bool m_parent_copy_in_required = false;
-  bool m_parent_shuffle_required = false;
-  bool m_child_copy_out_required = false;
-  bool m_child_shuffle_required = false;
+  std::vector<bool> m_parent_copy_in_required;
+  std::vector<bool> m_parent_shuffle_required;
+  std::vector<bool> m_child_copy_out_required;
+  std::vector<bool> m_child_shuffle_required;
   /** Previous activation tensor */
   dc::TensorDev m_prev_activations_t;
   /** View to Elemental matrix of previous activations */
@@ -680,8 +690,8 @@ protected:
   dc::TensorShuffler *m_error_signals_shuffler_last_mb[3];
  private:
   bool m_distconv_enabled = false;
-  bool m_keep_original_input = true;
-  bool m_keep_original_output = true;
+  std::vector<bool> m_keep_original_input;
+  std::vector<bool> m_keep_original_output;
 #endif // LBANN_HAS_DISTCONV
 
 private:

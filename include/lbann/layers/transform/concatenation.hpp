@@ -149,23 +149,20 @@ protected:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-#ifdef LBANN_HAS_DISTCONV
-    if (!keep_original_output()) {
-      return;
-    }
-#endif
     const auto& num_inputs = get_num_parents();
     const auto& output_dims = get_output_dims();
 
     // Initialize output tensor
-    auto& output = get_activations();
-    output.Empty(false);
-    if (num_inputs > 1) {
-      output.AlignWith(get_prev_activations());
-      output.Resize(get_output_size(), mini_batch_size);
-    } else {
-      El::LockedView(output, get_prev_activations());
-      return;
+    if (keep_original_output(0)) {
+      auto& output = get_activations();
+      output.Empty(false);
+      if (num_inputs > 1) {
+        output.AlignWith(get_prev_activations());
+        output.Resize(get_output_size(), mini_batch_size);
+      } else {
+        El::LockedView(output, get_prev_activations());
+        return;
+      }
     }
 
     // Divide output tensor into unit slices along concat dimension
@@ -185,6 +182,9 @@ protected:
 
     // Populate slices of output tensor with input tensors
     for (int i = 0; i < num_inputs; ++i) {
+      if (!keep_original_output(i)) continue;
+      if (i != 0) LBANN_ERROR("Copyout non-first tensor not supported");
+      auto& output = get_activations();
       const auto& input_dims = get_input_dims(i);
       auto& input = get_prev_activations(i);
 
@@ -215,9 +215,9 @@ protected:
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
 #ifdef LBANN_HAS_DISTCONV
-    if (!keep_original_output()) {
-      return;
-    }
+  if (skip_first_layer_bp()) {
+    return;
+  }
 #endif
     const auto& num_inputs = get_num_parents();
     const auto& output_dims = get_output_dims();
@@ -240,6 +240,9 @@ protected:
     // Populate gradient w.r.t. input tensors
     const auto& gradient_wrt_output = get_prev_error_signals();
     for (int i = 0; i < num_inputs; ++i) {
+#ifdef LBANN_HAS_DISTCONV
+      if (!keep_original_input(i)) continue;
+#endif
       const auto& input_dims = get_input_dims(i);
       const auto& input_size = get_input_size(i);
       auto& gradient_wrt_input = get_error_signals(i);
@@ -328,13 +331,12 @@ private:
     this->setup_activations_tensor(dists);
     this->setup_activations_copyout_tensor(dists);
 
-    // Setup views for other input layers. Assuming the parent
-    // layers are also distconv-enabled and using the same parallel
-    // strategy.
-    assert_always(!m_parent_shuffle_required &&
-                  !m_parent_copy_in_required);
     m_prev_activations_siblings.reserve(get_num_parents() - 1);
     for (int i = 0; i < get_num_parents() - 1; ++i) {
+      if (m_parent_shuffle_required[i] ||
+          m_parent_copy_in_required[i]) {
+        LBANN_ERROR("Copyin non-first tensor not supported");
+      }
       m_prev_activations_siblings.emplace_back(
           get_parent_layers()[i+1]->get_activations_t(*this));
     }
