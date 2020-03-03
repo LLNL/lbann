@@ -844,8 +844,8 @@ void Layer::setup_data() {
     }
   }
 #else
-  if (keep_original_output()) {
-    for (int i = 0; i < get_num_children(); ++i) {
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (!distconv_enabled() || keep_original_output(i)) {
       const auto& child = *m_child_layers[i];
       const auto& output = get_activations(i);
       auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
@@ -1011,19 +1011,15 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
 void Layer::fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
-#ifdef LBANN_HAS_DISTCONV
-  if (!keep_original_input()) {
-    return;
-  }
-#endif
-
   // Determine distributed matrix alignment
   const auto& alignment_dist
     = m_parent_layers.front()->get_activations(*this).DistData();
 
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
-
+#ifdef LBANN_HAS_DISTCONV
+    if (distconv_enabled() && !keep_original_input(i)) continue;
+#endif
     // Initialize input tensor
     const auto& parent = *m_parent_layers[i];
     const auto& parent_output = parent.get_activations(*this);
@@ -1070,20 +1066,20 @@ void Layer::fp_setup_inputs(El::Int mini_batch_size) {
 void Layer::fp_setup_outputs(El::Int mini_batch_size) {
   if (get_num_children() < 1) { return; }
 
-#ifdef LBANN_HAS_DISTCONV
-  if (!keep_original_output()) {
-    return;
-  }
-#endif
-
+  //dc::MPIRootPrintStreamInfo() << get_name() << ": fp_setup_outputs";
   // Determine distributed matrix alignment
   const bool align_outputs = get_num_parents() > 0;
   const auto& alignment_dist = (align_outputs ?
                                 get_prev_activations().DistData() :
                                 get_activations().DistData());
 
+  //dc::MPIRootPrintStreamInfo() << get_name() << ": fp_setup_outputs1";
+
   // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {
+#ifdef LBANN_HAS_DISTCONV
+    if (distconv_enabled() && !keep_original_output(i)) continue;
+#endif
     auto& output = get_activations(i);
     output.Empty(false);
     if (align_outputs) { output.AlignWith(alignment_dist); }
@@ -1093,14 +1089,10 @@ void Layer::fp_setup_outputs(El::Int mini_batch_size) {
 }
 
 void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
-#ifdef LBANN_HAS_DISTCONV
-  if (!keep_original_output()) {
-    return;
-  }
-#endif
-
   for (int i = 0; i < get_num_children(); ++i) {
-
+#ifdef LBANN_HAS_DISTCONV
+    if (distconv_enabled() && !keep_original_output(i)) continue;
+#endif
     // Initialize gradient w.r.t. output tensor
     const auto& child = *m_child_layers[i];
     const auto& child_gradient_wrt_input = child.get_error_signals(*this);
@@ -1148,12 +1140,13 @@ void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
 
 void Layer::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
-  if (!keep_original_input() || skip_first_layer_bp()) {
+  if (skip_first_layer_bp()) {
     return;
   }
 #endif
 
   for (int i = 0; i < get_num_parents(); ++i) {
+    if (distconv_enabled() && !keep_original_input(i)) continue;
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
     gradient_wrt_input.AlignWith(get_prev_activations(i));
@@ -1347,47 +1340,52 @@ void Layer::setup_inter_layer_adaptation() {
   if (!distconv_enabled()) return;
 
   const auto &ps = get_parallel_strategy();
-  m_parent_copy_in_required = false;
-  m_parent_shuffle_required = false;
   for (const auto &p: get_parent_layers()) {
-    if (!p->distconv_enabled()) {
-      m_parent_copy_in_required = true;
-      break;
-    } else {
-      m_parent_shuffle_required |= ps != p->get_parallel_strategy();
-    }
+    m_parent_copy_in_required.push_back(!p->distconv_enabled());
+    m_parent_shuffle_required.push_back(
+        (!p->distconv_enabled()) ||
+        (ps != p->get_parallel_strategy()));
   }
-  m_parent_shuffle_required |= m_parent_copy_in_required;
 
-  m_child_copy_out_required = false;
-  m_child_shuffle_required = false;
   for (const auto &c: get_child_layers()) {
-    if (!c->distconv_enabled()) {
-      m_child_copy_out_required = true;
-      break;
-    } else {
-      m_child_shuffle_required |= ps != c->get_parallel_strategy();
-    }
+    m_child_copy_out_required.push_back(!c->distconv_enabled());
+    m_child_shuffle_required.push_back(
+        (!c->distconv_enabled()) ||
+        (ps != c->get_parallel_strategy()));
   }
-  // If this layer is the last layer, copy the distconv tensor back to
-  // LBANN.
-  if (get_num_children() == 0) {
-    m_child_copy_out_required = true;
-  }
-  m_child_shuffle_required |= m_child_copy_out_required;
 
   std::stringstream ss;
-  if (m_parent_copy_in_required) {
-    ss << " parent copyin required;";
+  std::stringstream parent_copyin_ss;
+  std::stringstream parent_shuffle_ss;
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_parent_copy_in_required[i]) {
+      parent_copyin_ss << " " << i;
+    }
+    if (m_parent_shuffle_required[i]) {
+      parent_shuffle_ss << " " << i;
+    }
   }
-  if (m_parent_shuffle_required) {
-    ss << " parent shuffle required;";
+  std::stringstream child_copyout_ss;
+  std::stringstream child_shuffle_ss;
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (m_child_copy_out_required[i]) {
+      child_copyout_ss << " " << i;
+    }
+    if (m_child_shuffle_required[i]) {
+      child_shuffle_ss << " " << i;
+    }
   }
-  if (m_child_copy_out_required) {
-    ss << " child copyout required;";
+  if (!parent_copyin_ss.str().empty()) {
+    ss << " parent copyin:" << parent_copyin_ss.str() << ",";
   }
-  if (m_child_shuffle_required) {
-    ss << " child shuffle required;";
+  if (!parent_shuffle_ss.str().empty()) {
+    ss << " parent shuffle:" << parent_shuffle_ss.str() << ",";
+  }
+  if (!child_copyout_ss.str().empty()) {
+    ss << " child copyout:" << child_copyout_ss.str() << ",";
+  }
+  if (!child_shuffle_ss.str().empty()) {
+    ss << " child shuffle:" << child_shuffle_ss.str();
   }
   if (ss.str().size() > 0) {
     MPIRootPrintStreamInfo() << get_name() << ":" << ss.str();
@@ -1397,8 +1395,12 @@ void Layer::setup_inter_layer_adaptation() {
 void Layer::setup_keep_original_tensors() {
   if (!using_distconv()) return;
   bool env_set = getenv("DISTCONV_KEEP_ORIGINAL_TENSORS");
-  m_keep_original_input = env_set || m_parent_copy_in_required;
-  m_keep_original_output = env_set || m_child_copy_out_required;
+  for (auto b: m_parent_copy_in_required) {
+    m_keep_original_input.push_back(env_set || b);
+  }
+  for (auto b: m_child_copy_out_required) {
+    m_keep_original_output.push_back(env_set || b);
+  }
   return;
 }
 
@@ -1598,13 +1600,17 @@ size_t Layer::estimate_memory_usage(const std::array<Dist, dc::num_dists> &dists
   auto max_mb = this->m_model->get_max_mini_batch_size();
   size_t usage = 0;
   // fp
-  if (m_parent_copy_in_required || m_parent_shuffle_required) {
-    usage += get_input_size() * max_mb / dists[0].get_split_shape().size();
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_parent_copy_in_required[i] || m_parent_shuffle_required[i]) {
+      usage += get_input_size(i) * max_mb / dists[0].get_split_shape().size();
+    }
   }
   usage += get_output_size() * max_mb / dists[1].get_split_shape().size();
   // bp
-  if (m_child_copy_out_required || m_child_shuffle_required) {
-    usage += get_output_size() * max_mb / dists[3].get_split_shape().size();
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (m_child_copy_out_required[i] || m_child_shuffle_required[i]) {
+      usage += get_output_size(i) * max_mb / dists[3].get_split_shape().size();
+    }
   }
   usage += get_input_size() * max_mb / dists[2].get_split_shape().size();
   return usage * sizeof(DataType);
@@ -1619,25 +1625,31 @@ void Layer::setup_prev_activations_tensor(const std::array<Dist, dc::num_dists> 
   // calculated by Distconv
   input_local_shape[-1] = 0;
 
-  if (m_parent_copy_in_required || m_parent_shuffle_required) {
-    if (m_parent_copy_in_required) {
-      m_prev_activations_const_view = TensorDev(input_tensor_shape, loc,
-                                                sample_dist,
-                                                input_local_shape);
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_parent_copy_in_required[i] || m_parent_shuffle_required[i]) {
+      if (i != 0) LBANN_ERROR("Copyin of non-first tensor not supported yet");
+      if (m_parent_copy_in_required[i]) {
+        m_prev_activations_const_view = TensorDev(input_tensor_shape, loc,
+                                                  sample_dist,
+                                                  input_local_shape);
+      } else {
+        m_prev_activations_const_view = get_parent_layers()[i]->get_activations_t(*this);
+      }
+      m_prev_activations_t = TensorDev(input_tensor_shape, loc, dists[0]);
+      assert0(m_prev_activations_t.allocate());
+      m_prev_activations_t.zero(dc::get_stream());
+      m_prev_activations_shuffler = get_tensor_shuffler(
+          m_prev_activations_const_view, m_prev_activations_t);
+      for (int mode = 0; mode < 3; ++mode) {
+        m_prev_activations_shuffler_last_mb[mode] = nullptr;
+      }
     } else {
-      m_prev_activations_const_view = get_parent_layers()[0]->get_activations_t(*this);
+      // TODO: Only setup the first input. Needs to make
+      // m_activations_t a vector as well.
+      if (i != 0) continue;
+      m_prev_activations_t = get_parent_layers()[i]->get_activations_t(*this);
+      assert_always(m_prev_activations_t.get_distribution() == dists[0]);
     }
-    m_prev_activations_t = TensorDev(input_tensor_shape, loc, dists[0]);
-    assert0(m_prev_activations_t.allocate());
-    m_prev_activations_t.zero(dc::get_stream());
-    m_prev_activations_shuffler = get_tensor_shuffler(
-        m_prev_activations_const_view, m_prev_activations_t);
-    for (int i = 0; i < 3; ++i) {
-      m_prev_activations_shuffler_last_mb[i] = nullptr;
-    }
-  } else {
-    m_prev_activations_t = get_parent_layers()[0]->get_activations_t(*this);
-    assert_always(m_prev_activations_t.get_distribution() == dists[0]);
   }
 
   MPIPrintStreamDebug() << get_name() << "; "
@@ -1665,18 +1677,24 @@ void Layer::setup_activations_tensor(const std::array<Dist, dc::num_dists> &dist
 void Layer::setup_activations_copyout_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Dist sample_dist = get_hydrogen_matrix_distribution(get_num_dims());
-  const Shape output_tensor_shape = get_output_tensor_shape();
+  const Shape output_tensor_shape = m_activations_t.get_shape();
+  assert_always(!output_tensor_shape.is_empty());
   auto output_local_shape = output_tensor_shape;
   // Set the sample dimension as 0 so that its actual value is
   // calculated by Distconv
   output_local_shape[-1] = 0;
   m_activations_copyout = TensorDev(output_tensor_shape, loc, sample_dist,
                                     output_local_shape);
-  if (m_child_copy_out_required) {
-    m_activations_shuffler = get_tensor_shuffler(
-        m_activations_t, m_activations_copyout);
-    for (int i = 0; i < 3; ++i) {
-      m_activations_shuffler_last_mb[i] = nullptr;
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (m_child_copy_out_required[i]) {
+      if (i != 0) {
+        LBANN_ERROR("Copyout of non-first tensor not supported yet");
+      }
+      m_activations_shuffler = get_tensor_shuffler(
+          m_activations_t, m_activations_copyout);
+      for (int mode = 0; mode < 3; ++mode) {
+        m_activations_shuffler_last_mb[mode] = nullptr;
+      }
     }
   }
   MPIPrintStreamDebug() << get_name() << "; "
@@ -1690,35 +1708,42 @@ void Layer::setup_distconv_post(size_t) {}
 void Layer::setup_prev_error_signals_tensor(const std::array<Dist, dc::num_dists> &dists) {
   const LocaleMPI loc(dc::get_mpi_comm(), false);
   const Dist sample_dist = get_hydrogen_matrix_distribution(get_num_dims());
-  const Shape output_tensor_shape = get_output_tensor_shape();
+  const Shape output_tensor_shape = m_activations_t.get_shape();
+  assert_always(!output_tensor_shape.is_empty());
   auto output_local_shape = output_tensor_shape;
   // Set the sample dimension as 0 so that its actual value is
   // calculated by Distconv
   output_local_shape[-1] = 0;
 
-  if (m_child_copy_out_required || m_child_shuffle_required) {
-    if (m_child_copy_out_required) {
-      m_prev_error_signals_const_view = TensorDev(output_tensor_shape, loc,
-                                                  sample_dist,
-                                                  output_local_shape);
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (m_child_copy_out_required[i] || m_child_shuffle_required[i]) {
+      if (i != 0) LBANN_ERROR("Copyout of non-first tensor not supported yet");
+      if (m_child_copy_out_required[i]) {
+        m_prev_error_signals_const_view = TensorDev(output_tensor_shape, loc,
+                                                    sample_dist,
+                                                    output_local_shape);
+      } else {
+        m_prev_error_signals_const_view =
+            get_child_layers()[i]->get_error_signals_t(*this);
+      }
+      m_prev_error_signals_t = TensorDev(output_tensor_shape, loc,
+                                         dists[3],
+                                         m_activations_t.get_local_shape());
+      assert0(m_prev_error_signals_t.allocate());
+      m_prev_error_signals_t.zero(dc::get_stream());
+      m_prev_error_signals_shuffler = get_tensor_shuffler(
+          m_prev_error_signals_const_view, m_prev_error_signals_t);
+      for (int mode = 0; mode < 3; ++mode) {
+        m_prev_error_signals_shuffler_last_mb[mode] = nullptr;
+      }
     } else {
-      m_prev_error_signals_const_view =
-          get_child_layers()[0]->get_error_signals_t(*this);
+      // TODO: Only setup the first input. Needs to make
+      // m_prev_error_signals_t a vector as well.
+      if (i != 0) continue;
+      m_prev_error_signals_t = get_child_layers()[i]->get_error_signals_t(*this);
+      assert_always(m_prev_error_signals_t.get_distribution() ==
+                    dists[3]);
     }
-    m_prev_error_signals_t = TensorDev(output_tensor_shape, loc,
-                                       dists[3],
-                                       m_activations_t.get_local_shape());
-    assert0(m_prev_error_signals_t.allocate());
-    m_prev_error_signals_t.zero(dc::get_stream());
-    m_prev_error_signals_shuffler = get_tensor_shuffler(
-        m_prev_error_signals_const_view, m_prev_error_signals_t);
-    for (int i = 0; i < 3; ++i) {
-      m_prev_error_signals_shuffler_last_mb[i] = nullptr;
-    }
-  } else {
-    m_prev_error_signals_t = get_child_layers()[0]->get_error_signals_t(*this);
-    assert_always(m_prev_error_signals_t.get_distribution() ==
-                  dists[3]);
   }
   MPIPrintStreamDebug() << get_name() << "; "
                         << "prev error signals: " << m_prev_error_signals_t;
@@ -1750,9 +1775,10 @@ void Layer::setup_error_signals_copyout_tensor(const std::array<Dist, dc::num_di
   // calculated by Distconv
   input_local_shape[-1] = 0;
 
+  // TODO: Only the first error signal tensor is handled
   m_error_signals_copyout = TensorDev(input_tensor_shape, loc, sample_dist,
                                       input_local_shape);
-  if (m_parent_copy_in_required && !skip_first_layer_bp()) {
+  if (m_parent_copy_in_required[0] && !skip_first_layer_bp()) {
     m_error_signals_shuffler = get_tensor_shuffler(
         m_error_signals_t, m_error_signals_copyout);
     for (int i = 0; i < 3; ++i) {
@@ -1797,21 +1823,26 @@ void Layer::fp_setup_distconv(int mini_batch_size) {
   m_prev_activations_t.set_outermost_dimension(mini_batch_size);
   assert_eq((int)m_prev_activations_t.get_shape()[-1],
             mini_batch_size);
-  if (m_parent_copy_in_required || m_parent_shuffle_required) {
-    m_prev_activations_const_view.set_outermost_dimension(
-        mini_batch_size);
-    assert_eq((int)m_prev_activations_const_view.get_shape()[-1],
-              mini_batch_size);
-    if (m_parent_copy_in_required) {
-      // then, parent is assumed to be data parallel, so the local
-      // size of the sample dimension should be equal to
-      // the local width of previous activations. The check only
-      // matters for split root processes as the rest just hold
-      // invalid copy of the root data.
-      if (m_prev_activations_const_view.is_split_root()) {
-        assert_eq(
-            (int)m_prev_activations_const_view.get_local_shape()[-1],
-            get_prev_activations().LocalWidth());
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (m_parent_copy_in_required[i] || m_parent_shuffle_required[i]) {
+      if (i != 0) {
+        LBANN_ERROR("Copyin non-first tensor not supported");
+      }
+      m_prev_activations_const_view.set_outermost_dimension(
+          mini_batch_size);
+      assert_eq((int)m_prev_activations_const_view.get_shape()[-1],
+                mini_batch_size);
+      if (m_parent_copy_in_required[i]) {
+        // then, parent is assumed to be data parallel, so the local
+        // size of the sample dimension should be equal to
+        // the local width of previous activations. The check only
+        // matters for split root processes as the rest just hold
+        // invalid copy of the root data.
+        if (m_prev_activations_const_view.is_split_root()) {
+          assert_eq(
+              (int)m_prev_activations_const_view.get_local_shape()[-1],
+              get_prev_activations().LocalWidth());
+        }
       }
     }
   }
@@ -1821,7 +1852,8 @@ void Layer::fp_setup_distconv(int mini_batch_size) {
   m_activations_copyout.set_outermost_dimension(mini_batch_size);
   assert_eq((int)m_activations_copyout.get_shape()[-1],
             mini_batch_size);
-  if (keep_original_output() && m_activations_copyout.is_split_root()) {
+  // TODO: Needs to check other output tensors
+  if (keep_original_output(0) && m_activations_copyout.is_split_root()) {
     assert_eq((int)m_activations_copyout.get_local_shape()[-1],
               get_activations().LocalWidth());
   }
@@ -1838,29 +1870,36 @@ void Layer::bp_setup_distconv(int mini_batch_size) {
   m_prev_error_signals_t.set_outermost_dimension(mini_batch_size);
   assert_always((int)m_prev_error_signals_t.get_shape()[-1] ==
                 mini_batch_size);
-  if (m_child_copy_out_required || m_child_shuffle_required) {
-    m_prev_error_signals_const_view.set_outermost_dimension(mini_batch_size);
-    assert_eq((int)m_prev_error_signals_const_view.get_shape()[-1],
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (m_child_copy_out_required[i] || m_child_shuffle_required[i]) {
+      if (i != 0) {
+        LBANN_ERROR("Copyout non-first tensor not supported");
+      }
+      m_prev_error_signals_const_view.set_outermost_dimension(mini_batch_size);
+      assert_eq((int)m_prev_error_signals_const_view.get_shape()[-1],
+                mini_batch_size);
+      if (m_child_copy_out_required[i] &&
+          m_prev_error_signals_const_view.is_split_root()) {
+        assert_eq(
+            (int)m_prev_error_signals_const_view.get_local_shape()[-1],
+            get_prev_error_signals().LocalWidth());
+      }
+    }
+    m_error_signals_t.set_outermost_dimension(mini_batch_size);
+    assert_eq((int)m_error_signals_t.get_shape()[-1],
               mini_batch_size);
-    if (m_child_copy_out_required &&
-        m_prev_error_signals_const_view.is_split_root()) {
-      assert_eq(
-          (int)m_prev_error_signals_const_view.get_local_shape()[-1],
-          get_prev_error_signals().LocalWidth());
+    m_error_signals_copyout.set_outermost_dimension(mini_batch_size);
+    assert_eq((int)m_error_signals_copyout.get_shape()[-1],
+              mini_batch_size);
+    // TODO: Check other input tensors
+    if (i == 0) {
+      if (keep_original_input(i) && !skip_first_layer_bp()
+          && m_error_signals_copyout.is_split_root()) {
+        assert_eq((int)m_error_signals_copyout.get_local_shape()[-1],
+                  get_error_signals().LocalWidth());
+      }
     }
   }
-  m_error_signals_t.set_outermost_dimension(mini_batch_size);
-  assert_eq((int)m_error_signals_t.get_shape()[-1],
-            mini_batch_size);
-  m_error_signals_copyout.set_outermost_dimension(mini_batch_size);
-  assert_eq((int)m_error_signals_copyout.get_shape()[-1],
-            mini_batch_size);
-  if (keep_original_input() && !skip_first_layer_bp()
-      && m_error_signals_copyout.is_split_root()) {
-    assert_eq((int)m_error_signals_copyout.get_local_shape()[-1],
-              get_error_signals().LocalWidth());
-  }
-
   ensure_prev_error_signals();
 }
 
@@ -1892,81 +1931,87 @@ TensorShuffler *get_shuffler(Layer *layer,
 }
 
 void Layer::ensure_prev_activations() {
-  if (!(m_parent_copy_in_required || m_parent_shuffle_required)) {
-    return;
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (!(m_parent_copy_in_required[i] || m_parent_shuffle_required[i])) {
+      continue;
+    }
+    if (i != 0) {
+      LBANN_ERROR("Distconv assumes non-first tensors are available as distconv tensors");
+    }
+    if (m_parent_copy_in_required[i]) {
+      MPIPrintStreamDebug()
+          << "Copying previous activations from sample decomposition";
+      assert0(dc::tensor::View(
+          m_prev_activations_const_view,
+          get_prev_activations().LockedBuffer()));
+    }
+    TensorShuffler *shuffler =
+        get_shuffler(this, m_prev_activations_shuffler,
+                     m_prev_activations_shuffler_last_mb,
+                     m_prev_activations_const_view,
+                     m_prev_activations_t);
+    assert_always(shuffler != nullptr);
+    shuffler->shuffle_forward(
+        m_prev_activations_const_view.get_const_base_ptr(),
+        m_prev_activations_t.get_base_ptr(),
+        El::GPUManager::Stream());
   }
-
-  if (m_parent_copy_in_required) {
-    MPIPrintStreamDebug()
-        << "Copying previous activations from sample decomposition";
-    assert0(dc::tensor::View(
-        m_prev_activations_const_view,
-        get_prev_activations().LockedBuffer()));
-  } else {
-    assert_always(m_parent_shuffle_required);
-  }
-  TensorShuffler *shuffler =
-      get_shuffler(this, m_prev_activations_shuffler,
-                   m_prev_activations_shuffler_last_mb,
-                   m_prev_activations_const_view,
-                   m_prev_activations_t);
-  assert_always(shuffler != nullptr);
-  shuffler->shuffle_forward(
-      m_prev_activations_const_view.get_const_base_ptr(),
-      m_prev_activations_t.get_base_ptr(),
-      El::GPUManager::Stream());
   this->m_model->clock_start();
 }
 
 void Layer::copy_out_activations() {
-  if (!m_child_copy_out_required) return;
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (!m_child_copy_out_required[i]) continue;
 
-  this->m_model->clock_end();
+    if (i != 0) LBANN_ERROR("Copyout of non-first tensor not supported");
 
-  MPIPrintStreamDebug()
-      << "Copying activations back to sample decomposition";
-  assert0(dc::tensor::View(
-      m_activations_copyout, get_activations().Buffer()));
-  TensorShuffler *shuffler =
-      get_shuffler(this, m_activations_shuffler,
-                   m_activations_shuffler_last_mb,
-                   m_activations_t, m_activations_copyout);
-  assert_always(shuffler != nullptr);
-  shuffler->shuffle_forward(
-      m_activations_t.get_const_base_ptr(),
-      m_activations_copyout.get_base_ptr(),
-      El::GPUManager::Stream());
+    this->m_model->clock_end();
+
+    MPIPrintStreamDebug()
+        << "Copying activations back to sample decomposition";
+    assert0(dc::tensor::View(
+        m_activations_copyout, get_activations().Buffer()));
+    TensorShuffler *shuffler =
+        get_shuffler(this, m_activations_shuffler,
+                     m_activations_shuffler_last_mb,
+                     m_activations_t, m_activations_copyout);
+    assert_always(shuffler != nullptr);
+    shuffler->shuffle_forward(
+        m_activations_t.get_const_base_ptr(),
+        m_activations_copyout.get_base_ptr(),
+        El::GPUManager::Stream());
+  }
 }
 
 void Layer::ensure_prev_error_signals() {
-  if (!(m_child_copy_out_required || m_child_shuffle_required)) {
-    return;
-  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (!(m_child_copy_out_required[i] || m_child_shuffle_required[i])) {
+      continue;
+    }
 
-  if (m_child_copy_out_required) {
-    MPIPrintStreamDebug()
-        << "Copying previous error signals from sample decomposition";
-    assert0(dc::tensor::View(
-        m_prev_error_signals_const_view,
-        get_prev_error_signals().LockedBuffer()));
-  } else {
-    assert_always(m_child_shuffle_required);
+    if (i != 0) LBANN_ERROR("Copyin non-first tensor not supported");
+
+    if (m_child_copy_out_required[i]) {
+      MPIPrintStreamDebug()
+          << "Copying previous error signals from sample decomposition";
+      assert0(dc::tensor::View(
+          m_prev_error_signals_const_view,
+          get_prev_error_signals().LockedBuffer()));
+    }
+    TensorShuffler *shuffler =
+        get_shuffler(this, m_prev_error_signals_shuffler,
+                     m_prev_error_signals_shuffler_last_mb,
+                     m_prev_error_signals_const_view,
+                     m_prev_error_signals_t);
+    assert_always(shuffler != nullptr);
+    shuffler->shuffle_forward(
+        m_prev_error_signals_const_view.get_const_base_ptr(),
+        m_prev_error_signals_t.get_base_ptr(),
+        El::GPUManager::Stream());
   }
-  TensorShuffler *shuffler =
-      get_shuffler(this, m_prev_error_signals_shuffler,
-                   m_prev_error_signals_shuffler_last_mb,
-                   m_prev_error_signals_const_view,
-                   m_prev_error_signals_t);
-  assert_always(shuffler != nullptr);
-  shuffler->shuffle_forward(
-      m_prev_error_signals_const_view.get_const_base_ptr(),
-      m_prev_error_signals_t.get_base_ptr(),
-      El::GPUManager::Stream());
 }
 
 void Layer::copy_out_error_signals() {
-  if (!m_parent_copy_in_required) return;
-
   if (skip_first_layer_bp()) {
     // No need to copy back when the parent is an input layer
     MPIPrintStreamDebug()
@@ -1978,19 +2023,25 @@ void Layer::copy_out_error_signals() {
   // will be called
   if (m_exit_count == 0) return;
 
-  MPIPrintStreamDebug()
-      << "Copying error signals back to sample decomposition";
-  assert0(dc::tensor::View(
-      m_error_signals_copyout, get_error_signals().Buffer()));
-  TensorShuffler *shuffler =
-      get_shuffler(this, m_error_signals_shuffler,
-                   m_error_signals_shuffler_last_mb,
-                   m_error_signals_t, m_error_signals_copyout);
-  assert_always(shuffler != nullptr);
-  shuffler->shuffle_forward(
-      m_error_signals_t.get_const_base_ptr(),
-      m_error_signals_copyout.get_base_ptr(),
-      El::GPUManager::Stream());
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (!m_parent_copy_in_required[i]) continue;
+
+    if (i != 0) LBANN_ERROR("Copyout non-first tensor not supported");
+
+    MPIPrintStreamDebug()
+        << "Copying error signals back to sample decomposition";
+    assert0(dc::tensor::View(
+        m_error_signals_copyout, get_error_signals().Buffer()));
+    TensorShuffler *shuffler =
+        get_shuffler(this, m_error_signals_shuffler,
+                     m_error_signals_shuffler_last_mb,
+                     m_error_signals_t, m_error_signals_copyout);
+    assert_always(shuffler != nullptr);
+    shuffler->shuffle_forward(
+        m_error_signals_t.get_const_base_ptr(),
+        m_error_signals_copyout.get_base_ptr(),
+        El::GPUManager::Stream());
+  }
 }
 
 const dc::Shape Layer::get_input_tensor_shape() const {
