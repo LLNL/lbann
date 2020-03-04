@@ -102,10 +102,7 @@ trainer::~trainer() {
 
 void trainer::set_name(std::string const& name) {
   if (name.empty()) {
-    std::ostringstream err;
-    err << "attempted to rename trainer \"" << get_name() << "\" "
-        << "with empty string";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("attempted to rename trainer \"", get_name(), "\" with empty string");
   }
   m_name = name;
 }
