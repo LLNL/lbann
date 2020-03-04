@@ -267,7 +267,7 @@ poly_learning_rate::poly_learning_rate(
  * number of epochs and the number of iterations per epoch.
  */
 void poly_learning_rate::setup(model *m) {
-    learning_rate::setup(m);
+  learning_rate::setup(m);
   if (m_max_iter == 0ull) {
     m_max_iter = m_num_epochs * m->get_num_iterations_per_epoch(execution_mode::training);
   }
