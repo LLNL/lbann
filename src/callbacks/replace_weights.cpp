@@ -38,7 +38,7 @@
 namespace lbann {
 namespace callback {
 
-void replace_weights::setup(model *m, const std::string&) {
+void replace_weights::setup(model *m) {
   auto const layers = m->get_layers();
   m_src_layers = select_things_by_name(layers, m_src_layer_names);
   m_dst_layers = select_things_by_name(layers, m_dst_layer_names);

@@ -59,7 +59,7 @@ void imcomm::set_weights_comm(weights *w, comm_type ct) {
   m_weights_params[w].ct = ct;
 }
 
-void imcomm::setup(model *m, const std::string&) {
+void imcomm::setup(model *m) {
   for (weights *w : m->get_weights()) {
 
     // Add weights if not already in list

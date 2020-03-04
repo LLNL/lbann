@@ -78,7 +78,7 @@ class checkpoint : public callback_base {
   checkpoint(const checkpoint&) = default;
   checkpoint& operator=(const checkpoint&) = default;
   checkpoint* copy() const override { return new checkpoint(*this); }
-  void setup(model *m, const std::string& trainer_name) override;
+  void setup(model *m) override;
   void setup(trainer *t) override;
   void on_train_begin(model *m) override;
   void on_epoch_end(model *m) override;
@@ -86,11 +86,19 @@ class checkpoint : public callback_base {
   void on_validation_end(model *m) override;
 
   inline void set_checkpoint_dir(const std::string& dir){
-    m_checkpoint_dir= dir;
+    m_checkpoint_dir = dir;
   }
 
   inline const std::string& get_checkpoint_dir(){
     return m_checkpoint_dir;
+  }
+
+  inline void set_active_trainer_name(const std::string& trainer_name){
+    m_active_trainer_name = trainer_name;
+  }
+
+  inline const std::string& get_active_trainer_name(){
+    return m_active_trainer_name;
   }
 
   inline void set_checkpoint_epochs(int epochs){
@@ -149,6 +157,7 @@ class checkpoint : public callback_base {
   bool do_checkpoint(model *m);
  private:
   std::string m_checkpoint_dir;
+  std::string m_active_trainer_name;
   int m_checkpoint_epochs;
   int m_checkpoint_steps;
   EvalType m_checkpoint_secs;
@@ -175,11 +184,7 @@ inline std::string get_trainer_checkpoint_dirname(const std::string& trainer_nam
 }
 
 inline std::string get_last_shared_checkpoint_filename(model *m, const std::string& dir) {
-  std::ostringstream ss;
-  ss << dir;
-  ss << m->get_name().c_str();
-  ss << ".last.shared.checkpoint";
-  return ss.str();
+  return build_string(dir, m->get_name(), ".last.shared.checkpoint");
 }
 
 inline std::string get_last_shared_checkpoint_filename(const std::string& trainer_name, model *m, const std::string& dir) {

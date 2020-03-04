@@ -51,7 +51,7 @@ class hang : public callback_base {
   hang& operator=(const hang&) = default;
   hang* copy() const override { return new hang(*this); }
 
-  void setup(model* m, const std::string& trainer_name) override;
+  void setup(model* m) override;
 
   /// Hang on train begin.
   void on_train_begin(model* m) override {

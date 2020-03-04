@@ -51,7 +51,7 @@ class learning_rate : public callback_base {
   /** Only apply to specific weights. */
   learning_rate(std::vector<std::string> weights_names);
   /** Do some initialization. */
-  void setup(model *m, const std::string& trainer_name) override;
+  void setup(model *m) override;
   /** Apply global learning rate schedules. */
   void on_epoch_end(model *m) override;
 
@@ -243,7 +243,7 @@ class linear_growth_learning_rate : public learning_rate {
     const linear_growth_learning_rate&) = default;
   linear_growth_learning_rate* copy() const override {
     return new linear_growth_learning_rate(*this); }
-  void setup(model *m, const std::string& trainer_name) override;
+  void setup(model *m) override;
   std::string name() const override { return "linear growth learning rate"; }
  protected:
   float global_schedule(model *m) override;
@@ -283,7 +283,7 @@ class poly_learning_rate : public learning_rate {
   poly_learning_rate* copy() const override {
     return new poly_learning_rate(*this);
   }
-  void setup(model *m, const std::string& trainer_name) override;
+  void setup(model *m) override;
   std::string name() const override { return "poly learning rate"; }
  protected:
   float global_schedule(model *m) override;

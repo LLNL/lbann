@@ -61,7 +61,7 @@ class replace_weights : public callback_base {
   replace_weights* copy() const override {
     return new replace_weights(*this);
   }
-  void setup(model *m, const std::string& trainer_name) override;
+  void setup(model *m) override;
   void on_batch_end(model *m) override;
 
   std::string name() const override { return "replace weights"; }

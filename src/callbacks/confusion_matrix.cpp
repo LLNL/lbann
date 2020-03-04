@@ -82,8 +82,8 @@ confusion_matrix& confusion_matrix::operator=(const confusion_matrix& other) {
 // Setup
 // ---------------------------------------------------------
 
-void confusion_matrix::setup(model* m, const std::string& trainer_name) {
-  callback_base::setup(m, trainer_name);
+void confusion_matrix::setup(model* m) {
+  callback_base::setup(m);
 
   // Initialize matrix views/copies
   const auto& predictions = get_predictions(*m);

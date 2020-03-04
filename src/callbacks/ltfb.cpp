@@ -403,7 +403,7 @@ ltfb& ltfb::operator=(const ltfb& other) {
   return *this;
 }
 
-void ltfb::setup(model *m, const std::string&) {
+void ltfb::setup(model *m) {
 
   // Create workspace objects
   const auto& model_weights = m->get_weights();

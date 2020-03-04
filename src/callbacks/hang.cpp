@@ -31,7 +31,7 @@
 namespace lbann {
 namespace callback {
 
-void hang::setup(model* m, const std::string&)
+void hang::setup(model* m)
 {
   if (m->get_comm()->am_world_master()) {
     if (m_rank_to_hang == -1) {

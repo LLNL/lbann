@@ -566,7 +566,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // Setup
 // =============================================
 
-void model::setup(const std::string& trainer_name) {
+void model::setup() {
 
   // Setup layers
   setup_layer_topology();
@@ -583,7 +583,7 @@ void model::setup(const std::string& trainer_name) {
 
   // Set up callbacks
   for (const auto& cb : m_callbacks) {
-    cb->setup(this, trainer_name);
+    cb->setup(this);
   }
 
   // Callback hooks at end of setup

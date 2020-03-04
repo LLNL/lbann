@@ -56,7 +56,7 @@ public:
   }
   std::string name() const override { return "confusion matrix"; }
 
-  void setup(model *m, const std::string& trainer_name) override;
+  void setup(model *m) override;
 
   void on_epoch_begin(model *m) override      { reset_counts(*m); }
   void on_epoch_end(model *m) override        { save_confusion_matrix(*m); }

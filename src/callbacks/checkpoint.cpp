@@ -39,13 +39,14 @@
 namespace lbann {
 namespace callback {
 // Load from checkpoint occurs during setup callbacks
-void checkpoint::setup(model *m, const std::string& trainer_name) {
+void checkpoint::setup(model *m) {
   p.set_cb_type(callback_type::invalid);
-  reload_model(trainer_name, m);
+  reload_model(get_active_trainer_name(), m);
 }
 
 void checkpoint::setup(trainer *t) {
   p.set_cb_type(callback_type::invalid);
+  set_active_trainer_name(t->get_name());
   reload_trainer(t);
 }
 

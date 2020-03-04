@@ -226,7 +226,7 @@ public:
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup(const std::string& trainer_name);
+  virtual void setup();
 
   virtual void make_data_store_preloaded(execution_mode mode);
 

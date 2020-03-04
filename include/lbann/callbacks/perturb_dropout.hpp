@@ -53,7 +53,7 @@ public:
   perturb_dropout* copy() const override { return new perturb_dropout(*this); }
   std::string name() const override { return "perturb dropout"; }
 
-  void setup(model* m, const std::string& trainer_name) override;
+  void setup(model* m) override;
 
 private:
 
