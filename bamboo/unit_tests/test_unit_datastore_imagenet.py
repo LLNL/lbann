@@ -22,7 +22,6 @@ mini_batch_size = 256
 num_nodes = 2
 imagenet_fraction = 0.0031971 # Train with 4096 out of 1.28M samples
 random_seed = 20191206
-base_test_name='test_unit_datastore_imagenet_'
 
 # ==============================================
 # Setup LBANN experiment
@@ -129,19 +128,23 @@ def create_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirna
     # Check if metrics are same in baseline and data store experiments
     # Note: "Print statistics" callback will print up to 6 digits
     # of metric values.
-    if len(baseline_metrics) == len(datastore_metrics) :
+    if len(baseline_metrics) != len(datastore_metrics) :
         r[0] = 'FAILED'
-        r.append('baseline and data store experiments did not run for same number of epochs')
-        return r
+        r.append('baseline and data store experiments did not run for same number of epochs; num baseline: ' + str(len(baseline_metrics)) + '; num ds: ' + str(len(datastore_metrics)))
 
     for i in range(len(datastore_metrics)):
         x = baseline_metrics[i]
         xhat = datastore_metrics[i]
         eps = np.finfo(np.float32).eps
         ceillogx = int(math.ceil(math.log10(x)))
-        if abs(x-xhat) < max(8*eps*x, 1.5*10**(ceillogx-6)) :
+        if abs(x-xhat) >= max(8*eps*x, 1.5*10**(ceillogx-6)) :
             r[0] = 'FAILED'
-            r.append(test_func.__name__, ' :: found large discrepancy in metrics for baseline and data store experiments')
+            r.append('found large discrepancy in metrics for baseline and data store experiments')
+
+    # only for use during development
+    if test_func.__name__.find('failure') != -1 :
+      r[0] = 'FAILED'
+      r.append('dev_test_failure')
 
     # TODO:
     # Check if the output 'data_store_profile_train.txt' file
@@ -195,13 +198,15 @@ def create_test_func(baseline_test_func, datastore_test_funcs) :
               num_failed += 1
 
 
-        if num_failed :
-          s = []
-          for x in results :
-            s.append(' :: '.join(x))
-        assert num_failed == 0, '\n' + '\n'.join(s)
-        #assert num_failed == 0, 'num tests failed: ' + str(num_failed)
-    #assert all_tests_passed, '\n' + ' '.join(results)
+        work = []
+        for x in results :
+            work.append(' :: '.join(x))
+        result_string = '\n'.join(work)
+        assert num_failed == 0, '\n' + result_string
+        print('\n===============================================')
+        print('data_store test synopsis:')
+        print(result_string)
+        print('===============================================\n')
 
     # Return test function from factory function
     func.__name__ = test_name
@@ -224,15 +229,21 @@ def make_test(name, test_by_platform_list=[], args=[]) :
 baseline_tests = make_test('nodatastore')
 datastore_tests = [[] for j in range(len(baseline_tests))]
 
+# explicit loading
+ds = make_test('data_store_explicit', datastore_tests, ['--use_data_store', '--data_store_profile'])
+
+# preloading
+ds = make_test('data_store_explicit', datastore_tests, ['--preload_data_store', '--data_store_profile'])
+
 #local cache with explicit loading
 ds = make_test('data_store_cache_explicit', datastore_tests, ['--data_store_cache', '--data_store_profile'])
 
 #local cache with preloading
 ds = make_test('data_store_cache_preloading', datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile'])
 
-#local cache with preloading -- this will fail; only for use
-#during test development
-##ds = make_test('data_store_cache_preloading', datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile', '--data_store_fail'])
+# Only for use during development: should be commented out prior to merging
+# with develop
+##ds = make_test('data_store_cache_preloading_failure', datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile'])
 
 for i in range(len(datastore_tests)):
     _test_func = create_test_func(baseline_tests[i], datastore_tests[i])
