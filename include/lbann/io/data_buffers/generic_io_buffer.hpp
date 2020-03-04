@@ -55,6 +55,7 @@ class fetch_data_functor {
     case data_reader_target_mode::NA:
        throw lbann_exception("Invalid data reader target mode");
     case data_reader_target_mode::CLASSIFICATION:
+    case data_reader_target_mode::LABEL_RECONSTRUCTION:
     default:
       num_responses_fetched = data_reader->fetch_labels(responses);
     }
@@ -73,6 +74,7 @@ class fetch_data_functor {
     case data_reader_target_mode::REGRESSION:
     case data_reader_target_mode::RECONSTRUCTION:
     case data_reader_target_mode::CLASSIFICATION:
+    case data_reader_target_mode::LABEL_RECONSTRUCTION:
     default:
       throw lbann_exception("Invalid data reader target mode");
     }
