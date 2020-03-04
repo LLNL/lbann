@@ -39,7 +39,7 @@ perturb_dropout::perturb_dropout(EvalType keep_prob_factor,
     m_keep_prob_factor(keep_prob_factor),
     m_layer_names(std::move(layer_names)) {}
 
-void perturb_dropout::setup(model* m, const std::string& trainer_name) {
+void perturb_dropout::setup(model* m, const std::string&) {
   perturb(*m);
 }
 
