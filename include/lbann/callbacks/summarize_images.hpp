@@ -66,10 +66,11 @@ public:
   /** @brief summarize_images Constructor.
    *  @param cat_accuracy_layer_name Name of categorical accuracy layer
    *  @param match_type Criteria for dumping images (MATCH, NOMATCH, or ALL)
+   *  @param num_images Number of images to summarize per epoch
    */
   categorical_accuracy_strategy(std::string const& cat_accuracy_layer_name,
                                 MatchType match_type,
-                                size_t num_images)
+                                size_t num_images=10)
     : m_cat_accuracy_layer_name(cat_accuracy_layer_name),
       m_match_type(match_type),
       m_num_images(num_images) {}

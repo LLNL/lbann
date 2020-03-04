@@ -151,8 +151,8 @@ img_dump_cb = lbann.CallbackSummarizeImages(
 
 callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer(),
-             lbann.CallbackSummary(batch_interval = 2,
-                                   mat_interval = 3),
+#             lbann.CallbackSummary(batch_interval = 2,
+#                                   mat_interval = 3),
              lbann.CallbackDropFixedLearningRate(
                  drop_epoch=[30, 60, 80], amt=0.1),
              img_dump_cb]
@@ -167,7 +167,7 @@ model = lbann.Model(args.mini_batch_size,
                     metrics=metrics,
                     callbacks=callbacks,
                     random_seed=args.random_seed,
-                    summary_dir=".")
+                    summary_dir="/g/g13/graham63/workspace/code/lbann")
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)

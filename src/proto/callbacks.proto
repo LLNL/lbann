@@ -76,6 +76,7 @@ message Callback {
     CallbackTimeline timeline = 44;
     CallbackPrintModelDescription print_model_description = 45;
     CallbackLoadModel load_model = 46;
+    CallbackSummarizeImages summarize_images = 47;
   }
 
   message CallbackLTFB {
