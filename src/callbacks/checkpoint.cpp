@@ -292,7 +292,7 @@ std::string checkpoint::find_latest_checkpoint(const std::string& trainer_name, 
   // TODO: we would want to prepend dir with the model name and model rank:
   // m->get_name() + '.' + std::to_string(comm->get_trainer_rank()) + '.'
   header_t<max_len_dirname> header;
-  bzero(&header, sizeof(header_t<max_len_dirname>));
+  std::memset(&header, 0x0, sizeof(header_t<max_len_dirname>));
 
   if (comm->am_trainer_master()) {
     header.mode = mode;
