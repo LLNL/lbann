@@ -16,12 +16,13 @@ import tools
 # ==============================================
 
 # Training options
-num_epochs = 2
+num_epochs = 1
 #XX num_epochs = 5
 mini_batch_size = 256
 num_nodes = 2
 imagenet_fraction = 0.0031971 # Train with 4096 out of 1.28M samples
 random_seed = 20191206
+base_test_name='test_unit_datastore_imagenet_'
 
 # ==============================================
 # Setup LBANN experiment
@@ -115,8 +116,37 @@ def construct_data_reader(lbann):
 # ==============================================
 # Setup PyTest
 # ==============================================
+def create_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname) :
+    r = ''
+    datastore_test_output = test_func(cluster, exes, dirname)
+    datastore_metrics = []
+    with open(datastore_test_output['stdout_log_file']) as f:
+        for line in f:
+            match = re.search('training epoch [0-9]+ metric : ([0-9.]+)', line)
+            if match:
+                datastore_metrics.append(float(match.group(1)))
 
-def create_test_func(baseline_test_func, datastore_test_func, profile_tests=[]):
+    # Check if metrics are same in baseline and data store experiments
+    # Note: "Print statistics" callback will print up to 6 digits
+    # of metric values.
+    if len(baseline_metrics) == len(datastore_metrics) :
+        return(test_func.__name__ + ' :: baseline and data store experiments did not run for same number of epochs')
+
+    for i in range(len(datastore_metrics)):
+        x = baseline_metrics[i]
+        xhat = datastore_metrics[i]
+        eps = np.finfo(np.float32).eps
+        ceillogx = int(math.ceil(math.log10(x)))
+        if abs(x-xhat) < max(8*eps*x, 1.5*10**(ceillogx-6)) :
+            return(test_func.__name__, ' :: found large discrepancy in metrics for baseline and data store experiments')
+
+    # TODO:
+    # Check if the output 'data_store_profile_train.txt' file
+    # contains the entries specified in the 'profile_tests' input param
+
+    return r
+
+def create_test_func(baseline_test_func, datastore_test_funcs) :
     """Augment test function to parse log files.
 
     `tools.create_tests` creates functions that run an LBANN
@@ -138,10 +168,12 @@ def create_test_func(baseline_test_func, datastore_test_func, profile_tests=[]):
         function: Test that can interact with PyTest.
 
     """
-    test_name = datastore_test_func.__name__
+    test_name = baseline_test_func.__name__
 
     # Define test function
     def func(cluster, exes, dirname, weekly):
+        #all_tests_passed = True
+        results = []
 
         # Run LBANN experiment without data store
         baseline_test_output = baseline_test_func(cluster, exes, dirname)
@@ -152,64 +184,44 @@ def create_test_func(baseline_test_func, datastore_test_func, profile_tests=[]):
                 if match:
                     baseline_metrics.append(float(match.group(1)))
 
-        # Run LBANN experiment with data store
-        datastore_test_output = datastore_test_func(cluster, exes, dirname)
-        datastore_metrics = []
-        with open(datastore_test_output['stdout_log_file']) as f:
-            for line in f:
-                match = re.search('training epoch [0-9]+ metric : ([0-9.]+)', line)
-                if match:
-                    datastore_metrics.append(float(match.group(1)))
+        # Run LBANN experiments with data store
+        for i in range(len(datastore_test_funcs)) :
+            r = create_datastore_test_func(datastore_test_funcs[i], baseline_metrics, cluster, exes, dirname)
+            assert len(r) == 0, r
 
-        # Check if metrics are same in baseline and data store experiments
-        # Note: "Print statistics" callback will print up to 6 digits
-        # of metric values.
-        assert len(baseline_metrics) == len(datastore_metrics), \
-            'baseline and data store experiments did not run for same number of epochs'
-        for i in range(len(datastore_metrics)):
-            x = baseline_metrics[i]
-            xhat = datastore_metrics[i]
-            eps = np.finfo(np.float32).eps
-            ceillogx = int(math.ceil(math.log10(x)))
-            assert abs(x-xhat) < max(8*eps*x, 1.5*10**(ceillogx-6)), \
-                'found large discrepancy in metrics for baseline and data store experiments'
-
-        # Check if the output 'data_store_profile_train.txt' file
-        # contains the entries specified in the 'profile_tests' input param
-        #
-        # TODO:
+        #assert all_tests_passed, '\n' + ' '.join(results)
 
     # Return test function from factory function
     func.__name__ = test_name
     return func
-
-
+ 
 # Create test functions that can interact with PyTest
-def make_test(name, args=[]) :
-  return (tools.create_tests(
+def make_test(name, test_by_platform_list=[], args=[]) :
+    test_list = tools.create_tests(
             setup_experiment,
             __file__,
             nodes=num_nodes,
             test_name_base='test_unit_datastore_imagenet_' + name,
-            lbann_args=args))
+            lbann_args=args)
+    if test_by_platform_list != [] :
+        for i in range(len(test_list)) :
+          test_by_platform_list[i].append(test_list[i])
+    else :
+      return test_list
 
 baseline_tests = make_test('nodatastore')
-
-datastore_tests = []
+datastore_tests = [[] for j in range(len(baseline_tests))]
 
 #local cache with explicit loading
-datastore_tests.append(make_test('data_store_cache_explicit', ['--data_store_cache', '--data_store_profile']))
+ds = make_test('data_store_cache_explicit', datastore_tests, ['--data_store_cache', '--data_store_profile'])
 
 #local cache with preloading
-datastore_tests.append(make_test('data_store_cache_preloading', ['--data_store_cache', '--preload_data_store', '--data_store_profile']))
+ds = make_test('data_store_cache_preloading', datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile'])
 
-#explicit loading
-datastore_tests.append(make_test('use_data_store', ['--use_data_store', '--data_store_profile']))
-
-#preloading
-datastore_tests.append(make_test('preload_data_store', ['--preload_data_store', '--data_store_profile']))
+#local cache with preloading -- this will fail; only for use
+#during test development
+##ds = make_test('data_store_cache_preloading', datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile', '--data_store_fail'])
 
 for i in range(len(datastore_tests)):
-    for j in range(len(baseline_tests)) :
-        _test_func = create_test_func(baseline_tests[j], datastore_tests[i][j])
-        globals()[_test_func.__name__] = _test_func
+    _test_func = create_test_func(baseline_tests[i], datastore_tests[i])
+    globals()[_test_func.__name__] = _test_func
