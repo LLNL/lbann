@@ -68,6 +68,7 @@ class checkpoint : public callback_base {
              int ckpt_dist_epochs,
              int ckpt_dist_steps) :
     callback_base(),
+    m_active_trainer(nullptr),
     m_checkpoint_dir(checkpoint_dir),
     m_checkpoint_epochs(checkpoint_epochs),
     m_checkpoint_steps(checkpoint_steps),
@@ -97,8 +98,11 @@ class checkpoint : public callback_base {
     m_active_trainer = t;
   }
 
-  inline trainer* get_active_trainer(){
-    return m_active_trainer;
+  inline trainer& get_active_trainer(){
+    if(m_active_trainer == nullptr) {
+      LBANN_ERROR("No active trainer for the checkpoint callback");
+    }
+    return *m_active_trainer;
   }
 
   inline void set_checkpoint_epochs(int epochs){
