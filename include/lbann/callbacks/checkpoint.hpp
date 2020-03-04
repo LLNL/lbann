@@ -200,10 +200,7 @@ inline std::string get_shared_checkpoint_dirname(const std::string& trainer_name
 
 inline std::string get_last_distributed_checkpoint_filename(model *m, const std::string& dir) {
   std::ostringstream ss;
-  ss << dir;
-  ss << m->get_name().c_str();
-  ss << ".last.distributed.checkpoint";
-  return ss.str();
+  return build_string(dir, m->get_name(), ".last.distributed.checkpoint");
 }
 
 inline std::string get_last_distributed_checkpoint_filename(const std::string& trainer_name, model *m, const std::string& dir) {
