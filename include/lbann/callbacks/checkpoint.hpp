@@ -209,7 +209,6 @@ inline std::string get_last_distributed_checkpoint_filename(const std::string& t
 
 inline std::string get_distributed_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
   lbann_comm *comm = m->get_comm();
-  std::ostringstream ss;
   return build_string(dir,
     m->get_name(),
     ".rank.", comm->get_rank_in_trainer(),
