@@ -117,7 +117,7 @@ def construct_data_reader(lbann):
 # Setup PyTest
 # ==============================================
 def create_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname) :
-    r = [test_func.__name__]
+    r = ['passed', test_func.__name__]
     datastore_test_output = test_func(cluster, exes, dirname)
     datastore_metrics = []
     with open(datastore_test_output['stdout_log_file']) as f:
@@ -130,7 +130,8 @@ def create_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirna
     # Note: "Print statistics" callback will print up to 6 digits
     # of metric values.
     if len(baseline_metrics) == len(datastore_metrics) :
-        r.append(test_func.__name__ + ' :: baseline and data store experiments did not run for same number of epochs')
+        r[0] = 'FAILED'
+        r.append('baseline and data store experiments did not run for same number of epochs')
         return r
 
     for i in range(len(datastore_metrics)):
@@ -139,7 +140,8 @@ def create_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirna
         eps = np.finfo(np.float32).eps
         ceillogx = int(math.ceil(math.log10(x)))
         if abs(x-xhat) < max(8*eps*x, 1.5*10**(ceillogx-6)) :
-            return(test_func.__name__, ' :: found large discrepancy in metrics for baseline and data store experiments')
+            r[0] = 'FAILED'
+            r.append(test_func.__name__, ' :: found large discrepancy in metrics for baseline and data store experiments')
 
     # TODO:
     # Check if the output 'data_store_profile_train.txt' file
@@ -189,11 +191,16 @@ def create_test_func(baseline_test_func, datastore_test_funcs) :
         for i in range(len(datastore_test_funcs)) :
             r = create_datastore_test_func(datastore_test_funcs[i], baseline_metrics, cluster, exes, dirname)
             results.append(r)
-            if len(r) > 1 :
+            if len(r) > 2 :
               num_failed += 1
 
 
-        assert num_failed == 0, 'num tests failed: ' + str(num_failed)
+        if num_failed :
+          s = []
+          for x in results :
+            s.append(' :: '.join(x))
+        assert num_failed == 0, '\n' + '\n'.join(s)
+        #assert num_failed == 0, 'num tests failed: ' + str(num_failed)
     #assert all_tests_passed, '\n' + ' '.join(results)
 
     # Return test function from factory function
@@ -206,7 +213,7 @@ def make_test(name, test_by_platform_list=[], args=[]) :
             setup_experiment,
             __file__,
             nodes=num_nodes,
-            test_name_base='test_unit_datastore_imagenet_' + name,
+            test_name_base=name,
             lbann_args=args)
     if test_by_platform_list != [] :
         for i in range(len(test_list)) :
