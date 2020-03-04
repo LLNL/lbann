@@ -191,12 +191,7 @@ inline std::string get_last_shared_checkpoint_filename(const std::string& traine
 
 inline std::string get_shared_checkpoint_dirname(model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
   std::ostringstream ss;
-  ss << dir;
-  ss << m->get_name().c_str();
-  ss << ".shared." << to_string(mode);
-  ss << ".epoch." << epoch;
-  ss << ".step."<< step << "/";
-  return ss.str();
+  return build_string(dir, m->get_name(), ".shared.", to_string(mode), ".epoch.", epoch, ".step.", step, '/');
 }
 
 inline std::string get_shared_checkpoint_dirname(const std::string& trainer_name, model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
