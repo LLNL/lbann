@@ -36,7 +36,6 @@ void initialize(MPI_Comm comm) {
   attr.mpi_comm = &comm;
   auto status = nvshmemx_init_attr(NVSHMEMX_INIT_WITH_MPI_COMM, &attr);
   if (status != 0) {
-    nvshmem_finalize();
     LBANN_ERROR("failed to initialize NVSHMEM (status ",status,")");
   }
 }
