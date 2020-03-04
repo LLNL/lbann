@@ -171,8 +171,6 @@ class checkpoint : public callback_base {
 };
 
 inline std::string get_trainer_checkpoint_dirname(const std::string& trainer_name, const std::string& dir) {
-  std::ostringstream ss;
-  ss << dir << "/";
   ss << trainer_name.c_str() << "/";
   return ss.str();
 }
