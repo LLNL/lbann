@@ -55,7 +55,7 @@ learning_rate::learning_rate(
   std::vector<std::string> weights_names)
   : m_weights_names(std::move(weights_names)) {}
 
-void learning_rate::setup(model *m, const std::string& trainer_name) {
+void learning_rate::setup(model *m, const std::string&) {
 
   // Add all weights if list of weights is not initialized
   std::vector<weights*> weights_list =
