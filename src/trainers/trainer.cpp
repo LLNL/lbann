@@ -128,7 +128,7 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool) {
   m_io_thread_pool = std::move(io_thread_pool);
 
   // Set up callbacks
-  for (const auto& cb : m_callbacks) {
+  for (auto& cb : m_callbacks) {
     cb->setup(this);
   }
 }

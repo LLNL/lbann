@@ -93,12 +93,12 @@ class checkpoint : public callback_base {
     return m_checkpoint_dir;
   }
 
-  inline void set_active_trainer_name(const std::string& trainer_name){
-    m_active_trainer_name = trainer_name;
+  inline void set_active_trainer(trainer* t){
+    m_active_trainer = t;
   }
 
-  inline const std::string& get_active_trainer_name(){
-    return m_active_trainer_name;
+  inline trainer* get_active_trainer(){
+    return m_active_trainer;
   }
 
   inline void set_checkpoint_epochs(int epochs){
@@ -154,8 +154,8 @@ class checkpoint : public callback_base {
  protected:
   bool do_checkpoint(model *m);
  private:
+  trainer* m_active_trainer;
   std::string m_checkpoint_dir;
-  std::string m_active_trainer_name;
   int m_checkpoint_epochs;
   int m_checkpoint_steps;
   EvalType m_checkpoint_secs;

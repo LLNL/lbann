@@ -46,7 +46,7 @@ void checkpoint::setup(model *m) {
 
 void checkpoint::setup(trainer *t) {
   p.set_cb_type(callback_type::invalid);
-  set_active_trainer_name(t->get_name());
+  set_active_trainer(t);
   reload_trainer(t);
 }
 
@@ -265,12 +265,12 @@ std::string checkpoint::find_latest_checkpoint(model *m, std::string& latest_fil
   if (comm->am_trainer_master()) {
     if(m_per_rank_dir.length()){
       dir = get_distributed_checkpoint_rootdir();
-      latest_file = get_last_distributed_checkpoint_filename(get_active_trainer_name(), m, dir);
+      latest_file = get_last_distributed_checkpoint_filename(get_active_trainer()->get_name(), m, dir);
       read_latest(latest_file, &mode, &epoch_dist, &step_dist);
     }
     if(m_checkpoint_dir.length()){
       dir = get_shared_checkpoint_rootdir();
-      latest_file = get_last_shared_checkpoint_filename(get_active_trainer_name(), m, dir);
+      latest_file = get_last_shared_checkpoint_filename(get_active_trainer()->get_name(), m, dir);
       read_latest(latest_file, &mode, &epoch, &step);
     }
 
@@ -353,13 +353,13 @@ bool checkpoint::open_latest_checkpoint(
   std::string epochdir;
   // Create dir to restart from based off last recorded checkpoint (or overriden values in last.shared[distributed].checkpoint
   if(!shared){
-    epochdir = get_distributed_checkpoint_dirname(get_active_trainer_name(), m, dir, mode, epoch, step);
+    epochdir = get_distributed_checkpoint_dirname(get_active_trainer()->get_name(), m, dir, mode, epoch, step);
     p.open_restart(epochdir.c_str());
     reload_distributed_ckpt(p);
     p.close_restart();
   }
   else {
-    epochdir = get_shared_checkpoint_dirname(get_active_trainer_name(), m, dir, mode, epoch, step);
+    epochdir = get_shared_checkpoint_dirname(get_active_trainer()->get_name(), m, dir, mode, epoch, step);
     // if (comm->am_trainer_master()) {
     /// @todo For the moment let all ranks open the checkpoint files
     p.open_restart(epochdir.c_str());
@@ -383,7 +383,7 @@ bool checkpoint::open_latest_checkpoint(
     if (secs > 0.0) {
       bw = EvalType(bytes_count) / (secs * 1024.0 * 1024.0);
     }
-    std::cout << "[" << get_active_trainer_name()
+    std::cout << "[" << get_active_trainer()->get_name()
               << "." << m->get_name()
               << "] " << task_label
               << " from " << m_checkpoint_dir
