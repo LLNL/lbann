@@ -85,9 +85,9 @@ trainer& trainer::operator=(const trainer& other) {
   // Deep copies
   // m_io_thread_pool = (other.m_io_thread_pool ?
   //                     other.m_io_thread_pool->copy() : nullptr);
-  m_callbacks = other.m_callbacks;
-  for (auto& cb : m_callbacks) {
-    cb.reset(cb->copy());
+  m_callbacks.reserve(other.m_callbacks.size());
+  for (auto const& cb : other.m_callbacks) {
+    m_callbacks.emplace_back(cb->copy());
   }
 
   return *this;
