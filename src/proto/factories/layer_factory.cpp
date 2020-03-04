@@ -303,6 +303,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
     if (mode_str.empty() || mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
     if (mode_str == "reconstruction")                     { target_mode = data_reader_target_mode::RECONSTRUCTION; }
+    if (mode_str == "label_reconstruction")               { target_mode = data_reader_target_mode::LABEL_RECONSTRUCTION; }
     if (mode_str == "na" || mode_str == "NA" || mode_str == "N/A") { target_mode = data_reader_target_mode::NA; }
     if (Layout != data_layout::DATA_PARALLEL) {
       LBANN_ERROR("input layer is only supported with "

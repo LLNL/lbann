@@ -49,7 +49,7 @@ class hdf5_reader : public generic_data_reader {
     if(!m_has_labels) {
       return generic_data_reader::get_num_labels();
     }
-    return m_num_labels;
+    return m_num_features; // TODO: Exclude this LiTS-specific hack.
   }
   int get_num_responses() const override {
     if(!m_has_responses) {

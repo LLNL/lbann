@@ -197,6 +197,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
       case data_reader_target_mode::RECONSTRUCTION:
         linearized_target_size = get_linearized_data_size();
         break;
+      case data_reader_target_mode::LABEL_RECONSTRUCTION:
       case data_reader_target_mode::CLASSIFICATION:
         linearized_target_size = get_linearized_label_size();
         break;
@@ -602,8 +603,10 @@ class generic_input_layer : public io_layer<TensorDataType> {
         case data_reader_target_mode::REGRESSION:
           return std::vector<int>(1, dr->get_num_responses());
         case data_reader_target_mode::RECONSTRUCTION:
+        case data_reader_target_mode::LABEL_RECONSTRUCTION:
           return dr->get_data_dims();
         case data_reader_target_mode::CLASSIFICATION:
+          return dr->get_data_dims();
         default:
           return std::vector<int>(1, dr->get_num_labels());
         }
