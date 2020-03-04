@@ -117,7 +117,7 @@ def construct_data_reader(lbann):
 # Setup PyTest
 # ==============================================
 def create_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname) :
-    r = ''
+    r = [test_func.__name__]
     datastore_test_output = test_func(cluster, exes, dirname)
     datastore_metrics = []
     with open(datastore_test_output['stdout_log_file']) as f:
@@ -130,7 +130,8 @@ def create_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirna
     # Note: "Print statistics" callback will print up to 6 digits
     # of metric values.
     if len(baseline_metrics) == len(datastore_metrics) :
-        return(test_func.__name__ + ' :: baseline and data store experiments did not run for same number of epochs')
+        r.append(test_func.__name__ + ' :: baseline and data store experiments did not run for same number of epochs')
+        return r
 
     for i in range(len(datastore_metrics)):
         x = baseline_metrics[i]
@@ -172,7 +173,7 @@ def create_test_func(baseline_test_func, datastore_test_funcs) :
 
     # Define test function
     def func(cluster, exes, dirname, weekly):
-        #all_tests_passed = True
+        num_failed = 0
         results = []
 
         # Run LBANN experiment without data store
@@ -187,9 +188,13 @@ def create_test_func(baseline_test_func, datastore_test_funcs) :
         # Run LBANN experiments with data store
         for i in range(len(datastore_test_funcs)) :
             r = create_datastore_test_func(datastore_test_funcs[i], baseline_metrics, cluster, exes, dirname)
-            assert len(r) == 0, r
+            results.append(r)
+            if len(r) > 1 :
+              num_failed += 1
 
-        #assert all_tests_passed, '\n' + ' '.join(results)
+
+        assert num_failed == 0, 'num tests failed: ' + str(num_failed)
+    #assert all_tests_passed, '\n' + ' '.join(results)
 
     # Return test function from factory function
     func.__name__ = test_name
