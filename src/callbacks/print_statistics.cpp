@@ -42,7 +42,7 @@
 namespace lbann {
 namespace callback {
 
-void print_statistics::setup(model *m, const std::string& trainer_name) {
+void print_statistics::setup(model *m, const std::string&) {
 #ifdef LBANN_VERSION
   lbann_comm *comm = m->get_comm();
   if (comm->am_world_master()) {
