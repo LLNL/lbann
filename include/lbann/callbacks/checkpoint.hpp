@@ -171,8 +171,7 @@ class checkpoint : public callback_base {
 };
 
 inline std::string get_trainer_checkpoint_dirname(const std::string& trainer_name, const std::string& dir) {
-  ss << trainer_name.c_str() << "/";
-  return ss.str();
+  return build_string(dir, '/', trainer_name, '/');
 }
 
 inline std::string get_last_shared_checkpoint_filename(model *m, const std::string& dir) {
