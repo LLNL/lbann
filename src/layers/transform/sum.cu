@@ -38,16 +38,16 @@ namespace lbann {
 #ifdef LBANN_HAS_DISTCONV
 namespace {
 
-template <typename DataType>
+template <typename TensorDataType>
 struct accumulate {
-  __device__ void operator()(DataType &x, DataType &y) const {
+  __device__ void operator()(TensorDataType &x, TensorDataType &y) const {
     x += y;
   }
 };
 
-template <typename DataType>
+template <typename TensorDataType>
 struct accumulate2 {
-  __device__ void operator()(DataType &x, DataType &y, DataType &z) const {
+  __device__ void operator()(TensorDataType &x, TensorDataType &y, TensorDataType &z) const {
     x = y + z;
   }
 };
@@ -56,6 +56,7 @@ void fp_compute_distconv(dc::TensorDev &activations,
                          dc::TensorDev &prev_activations,
                          std::vector<dc::TensorDev> &prev_activations_siblings,
                          int num_parents) {
+  using TensorDataType = dc::TensorDev::data_type;
   switch (num_parents) {
     case 0:
       dc::MPIPrintStreamDebug() << "No parent for sum layer";
@@ -72,14 +73,14 @@ void fp_compute_distconv(dc::TensorDev &activations,
           activations.get_shape()[-1]);
       dc::tensor::Transform(activations, prev_activations,
                             prev_activations_siblings.at(0),
-                            accumulate2<DataType>(),
+                            accumulate2<TensorDataType>(),
                             dc::get_backend().get_stream());
       break;
     default:
       dc::tensor::Copy(activations, prev_activations, dc::get_stream());
       for (auto &p: prev_activations_siblings) {
         p.set_outermost_dimension(activations.get_shape()[-1]);
-        distconv::tensor::Transform(activations, p, accumulate<DataType>(),
+        distconv::tensor::Transform(activations, p, accumulate<TensorDataType>(),
                                     dc::get_backend().get_stream());
       }
   }
@@ -87,28 +88,27 @@ void fp_compute_distconv(dc::TensorDev &activations,
 } // namespace
 #endif // LBANN_HAS_DISTCONV
 
-template <>
-void sum_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void sum_layer<TensorDataType, Layout, Dev>::fp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    fp_compute_distconv(m_activations_t, m_prev_activations_t,
-                        m_prev_activations_siblings, get_num_parents());
-    copy_out_activations();
-    if (!early_terminate_last_iteration()) {
+    fp_compute_distconv(this->get_activations_t(),
+                        this->get_prev_activations_t(),
+                        m_prev_activations_siblings, this->get_num_parents());
+    this->copy_out_activations();
+    if (!this->early_terminate_last_iteration()) {
       return;
     }
   }
 #endif
-  // Same as the generic fp_compute
-  auto& output = get_activations();
-  if (get_num_parents() < 1) {
-    El::Zero(output);
-  } else {
-    El::Copy(get_prev_activations(0), output);
-    for (int i = 1; i < get_num_parents(); ++i) {
-      El::Axpy(DataType(1), get_prev_activations(i), output);
-    }
+  auto& output = this->get_activations();
+  El::Copy(this->get_prev_activations(0), output);
+  for (int i = 1; i < this->get_num_parents(); ++i) {
+    El::Axpy(TensorDataType{1}, this->get_prev_activations(i), output);
   }
 }
+
+template class sum_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class sum_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

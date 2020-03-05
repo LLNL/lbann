@@ -38,12 +38,13 @@
 namespace lbann {
 
 /** @brief Present input tensor to multiple outputs. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class split_layer : public transform_layer {
+class split_layer : public transform_layer<TensorDataType> {
 public:
 
-  split_layer(lbann_comm *comm) : transform_layer(comm) {
+  split_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {
     this->m_expected_num_child_layers = -1; // No limit on children
   }
 
@@ -55,33 +56,22 @@ public:
 protected:
 
   void setup_dims() override {
-    Layer::setup_dims();
-    for (int i = 0; i < get_num_children(); ++i) {
-      set_output_dims(get_input_dims(), i);
+    data_type_layer<TensorDataType>::setup_dims();
+    for (int i = 0; i < this->get_num_children(); ++i) {
+      this->set_output_dims(this->get_input_dims(), i);
     }
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    const auto& input = get_prev_activations();
-    for (int i = 0; i < get_num_children(); ++i) {
-      El::LockedView(get_activations(i), input);
+    const auto& input = this->get_prev_activations();
+    for (int i = 0; i < this->get_num_children(); ++i) {
+      El::LockedView(this->get_activations(i), input);
     }
   }
 
   void fp_compute() override {}
 
-  void bp_compute() override {
-    auto& gradient_wrt_input = get_error_signals();
-    if (get_num_children() > 0) {
-      El::Copy(get_prev_error_signals(0), gradient_wrt_input);
-    } else {
-      El::Zero(gradient_wrt_input);
-    }
-    for (int i = 1; i < get_num_children(); ++i) {
-      El::Axpy(DataType(1), get_prev_error_signals(i),
-               gradient_wrt_input);
-    }
-  }
+  void bp_compute() override;
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
@@ -91,19 +81,21 @@ protected:
 
  public:
 
+  using data_type_layer<TensorDataType>::get_activations_t;
+
   const dc::TensorDev &get_activations_t(const Layer &child) const {
     // Pass the same tensor as a const reference to multiple child layers
-    return m_activations_t;
+    return this->get_activations_t();
   }
 
-  void setup_tensor_distribution_init(
+  void init_distribution(
       std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &fixed) {
-    Layer::setup_tensor_distribution_init(
+      std::set<dc::Dist*> &fixed) override {
+    data_type_layer<TensorDataType>::init_distribution(
         dists, invariants, updated, fixed);
-    if (!distconv_enabled()) return;
+    if (!this->distconv_enabled()) return;
     auto &layer_dists = dists[this];
     // x == y
     invariants[&layer_dists[0]].insert(&layer_dists[1]);
@@ -114,46 +106,42 @@ protected:
   }
 
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_fwd(dists);
+    data_type_layer<TensorDataType>::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
     this->setup_prev_activations_tensor(dists);
     // activation is just a copy of prev activation
-    m_activations_t = m_prev_activations_t;
+    get_activations_t() = this->get_prev_activations_t();
     this->setup_activations_copyout_tensor(dists);
   }
 
   void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_bwd(dists);
+    data_type_layer<TensorDataType>::setup_tensors_bwd(dists);
     if (!this->distconv_enabled()) return;
 
     this->setup_prev_error_signals_tensor(dists);
     this->setup_error_signals_tensor(dists);
     this->setup_error_signals_copyout_tensor(dists);
 
-    m_prev_error_signals_siblings.reserve(get_num_children() - 1);
-    for (int i = 1; i < get_num_children(); ++i) {
-      if (m_child_shuffle_required[i] || m_child_copy_out_required[i]) {
+    m_prev_error_signals_siblings.reserve(this->get_num_children() - 1);
+    for (int i = 1; i < this->get_num_children(); ++i) {
+      if (this->child_shuffle_required(i) || this->child_copy_out_required(i)) {
         LBANN_ERROR("Copyout non-first tensor not supported");
       }
       m_prev_error_signals_siblings.emplace_back(
-          get_child_layers()[i]->get_error_signals_t(*this));
+          dynamic_cast<const data_type_layer<TensorDataType>*>(
+              this->get_child_layers()[i])->get_error_signals_t(*this));
     }
   }
 #endif
 
 };
 
-#ifdef LBANN_HAS_DISTCONV
-template <>
-void split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute();
-#endif // LBANN_HAS_DISTCONV
-
 #ifndef LBANN_SPLIT_LAYER_INSTANTIATE
-extern template class split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+extern template class split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-extern template class split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+extern template class split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SPLIT_LAYER_INSTANTIATE
 

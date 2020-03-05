@@ -38,20 +38,22 @@ namespace lbann {
 #ifdef LBANN_HAS_DISTCONV
 namespace {
 
-template <typename DataType>
+template <typename TensorDataType>
 struct accumulate {
-  __device__ void operator()(DataType &x, DataType &y) const {
+  __device__ void operator()(TensorDataType &x, const TensorDataType &y) const {
     x += y;
   }
 };
 
-template <typename DataType>
+template <typename TensorDataType>
 struct accumulate2 {
-  __device__ void operator()(DataType &x, DataType &y, DataType &z) const {
+  __device__ void operator()(TensorDataType &x, const TensorDataType &y,
+                             const TensorDataType &z) const {
     x = y + z;
   }
 };
 
+template <typename TensorDataType>
 void bp_compute_distconv(dc::TensorDev &error_signals,
                          dc::TensorDev &prev_error_signals,
                          std::vector<dc::TensorDev> &prev_error_signals_siblings,
@@ -70,7 +72,7 @@ void bp_compute_distconv(dc::TensorDev &error_signals,
           error_signals.get_shape()[-1]);
       dc::tensor::Transform(error_signals, prev_error_signals,
                             prev_error_signals_siblings.at(0),
-                            accumulate2<DataType>(),
+                            accumulate2<TensorDataType>(),
                             dc::get_backend().get_stream());
       break;
     default:
@@ -78,7 +80,7 @@ void bp_compute_distconv(dc::TensorDev &error_signals,
                        dc::get_stream());
       for (auto &child: prev_error_signals_siblings) {
         child.set_outermost_dimension(error_signals.get_shape()[-1]);
-        dc::tensor::Transform(error_signals, child, accumulate<DataType>(),
+        dc::tensor::Transform(error_signals, child, accumulate<TensorDataType>(),
                               dc::get_backend().get_stream());
       }
   }
@@ -86,29 +88,34 @@ void bp_compute_distconv(dc::TensorDev &error_signals,
 } // namespace
 #endif // LBANN_HAS_DISTCONV
 
-template <>
-void split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void split_layer<TensorDataType, Layout, Dev>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    bp_compute_distconv(m_error_signals_t, m_prev_error_signals_t,
-                        m_prev_error_signals_siblings,
-                        get_num_children());
-    copy_out_error_signals();
-    if (!early_terminate_last_iteration()) {
+    assert_always(Layout == data_layout::DATA_PARALLEL);
+    bp_compute_distconv<TensorDataType>(this->get_error_signals_t(),
+                                        this->get_prev_error_signals_t(),
+                                        m_prev_error_signals_siblings,
+                                        this->get_num_children());
+    this->copy_out_error_signals();
+    if (!this->early_terminate_last_iteration()) {
       return;
     }
   }
-#endif
-  auto& gradient_wrt_input = get_error_signals();
-  if (get_num_children() > 0) {
-    El::Copy(get_prev_error_signals(0), gradient_wrt_input);
+#endif // LBANN_HAS_DISTCONV
+  auto& gradient_wrt_input = this->get_error_signals();
+  if (this->get_num_children() > 0) {
+    El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
   } else {
     El::Zero(gradient_wrt_input);
   }
-  for (int i = 1; i < get_num_children(); ++i) {
-    El::Axpy(DataType(1), get_prev_error_signals(i),
+  for (int i = 1; i < this->get_num_children(); ++i) {
+    El::Axpy(TensorDataType{1}, this->get_prev_error_signals(i),
              gradient_wrt_input);
   }
 }
+
+template class split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

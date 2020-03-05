@@ -39,12 +39,13 @@
 namespace lbann {
 
 // Forward declaration
-template <data_layout T_layout, El::Device Dev>
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class unpooling_layer;
 
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class pooling_layer : public transform_layer {
+class pooling_layer : public transform_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "pooling only supports DATA_PARALLEL");
 private:
@@ -72,10 +73,10 @@ private:
   /** Pooling descriptor. */
   cudnnPoolingDescriptor_t m_pooling_cudnn_desc;
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
 
-  friend class unpooling_layer<T_layout, Dev>;
+  friend class unpooling_layer<TensorDataType, T_layout, Dev>;
 
 public:
 
@@ -98,7 +99,7 @@ public:
                 std::vector<int> pads,
                 std::vector<int> strides,
                 pool_mode mode)
-    : transform_layer(comm),
+    : transform_layer<TensorDataType>(comm),
       m_pool_mode(mode),
       m_pool_dims(pool_dims),
       m_pads(pads),
@@ -117,7 +118,7 @@ public:
   }
 
   pooling_layer(const pooling_layer& other)
-    : transform_layer(other),
+    : transform_layer<TensorDataType>(other),
       m_pool_mode(other.m_pool_mode),
       m_pool_dims(other.m_pool_dims),
       m_pool_size(other.m_pool_size),
@@ -136,7 +137,7 @@ public:
   }
 
   pooling_layer& operator=(const pooling_layer& other){
-    transform_layer::operator=(other);
+    transform_layer<TensorDataType>::operator=(other);
     m_pool_mode = other.m_pool_mode;
     m_pool_dims = other.m_pool_dims;
     m_pool_size = other.m_pool_size;
@@ -165,7 +166,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     std::stringstream ss;
 
     // Pool mode
@@ -213,20 +214,20 @@ public:
 protected:
 
   void setup_dims() override {
-    transform_layer::setup_dims();
-    const auto& input_dims = get_input_dims();
+    transform_layer<TensorDataType>::setup_dims();
+    const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
     for(size_t i = 0; i < output_dims.size() - 1; ++i) {
       const int effective_dim = (input_dims[i+1] + 2 * m_pads[i]
                                  - m_pool_dims[i] + 1);
       output_dims[i+1] = (effective_dim + m_strides[i] - 1) / m_strides[i];
     }
-    set_output_dims(output_dims);
+    this->set_output_dims(output_dims);
   }
 
   /// Initialize GPU objects
   void setup_gpu() override {
-    transform_layer::setup_gpu();
+    transform_layer<TensorDataType>::setup_gpu();
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
@@ -271,11 +272,11 @@ protected:
   void fp_compute() override {
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
-      if (distconv_enabled()) {
+      if (this->distconv_enabled()) {
         fp_compute_distconv();
-        if (early_terminate_last_iteration() && keep_original()) {
+        if (this->early_terminate_last_iteration() && this->keep_original()) {
           fp_compute_cudnn();
-          dump_reference_activations();
+          this->dump_reference_activations();
         }
       } else {
         fp_compute_cudnn();
@@ -291,11 +292,11 @@ protected:
   void bp_compute() override {
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
-      if (distconv_enabled()) {
+      if (this->distconv_enabled()) {
         bp_compute_distconv();
-        if (early_terminate_last_iteration() && keep_original()) {
+        if (this->early_terminate_last_iteration() && this->keep_original()) {
           bp_compute_cudnn();
-          dump_reference_error_signals();
+          this->dump_reference_error_signals();
         }
       } else {
         bp_compute_cudnn();
@@ -315,11 +316,11 @@ private:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    const auto& local_input = get_local_prev_activations();
-    auto& local_output = get_local_activations();
+    const auto& local_input = this->get_local_prev_activations();
+    auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const DataType zero = DataType(0);
-      const DataType one = DataType(1);
+      const TensorDataType zero = TensorDataType(0);
+      const TensorDataType one = TensorDataType(1);
       CHECK_CUDNN(cudnnPoolingForward(cudnn::get_handle(),
                                       m_pooling_cudnn_desc,
                                       &one,
@@ -337,15 +338,15 @@ private:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
-    const auto& local_input = get_local_prev_activations();
-    const auto& local_output = get_local_activations();
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = get_local_error_signals();
+    const auto& local_input = this->get_local_prev_activations();
+    const auto& local_output = this->get_local_activations();
+    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = this->get_local_error_signals();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
 
       // Useful constants
-      const DataType one = DataType(1);
-      const DataType zero = DataType(0);
+      const TensorDataType one = TensorDataType(1);
+      const TensorDataType zero = TensorDataType(0);
 
       // Perform backprop on GPU
       CHECK_CUDNN(cudnnPoolingBackward(cudnn::get_handle(),
@@ -372,18 +373,18 @@ private:
     }
 
     // Local matrices
-    const auto& local_input = get_local_prev_activations();
-    auto& local_output = get_local_activations();
+    const auto& local_input = this->get_local_prev_activations();
+    auto& local_output = this->get_local_activations();
 
     // Pool parameters
     const int local_width = local_input.Width();
-    const auto& input_dims = get_input_dims();
+    const auto& input_dims = this->get_input_dims();
     const int num_channels = input_dims[0];
-    const int num_per_output_channel = get_output_size() / num_channels;
+    const int num_per_output_channel = this->get_output_size() / num_channels;
 
     // Initialize max pool indices if needed
     if(m_pool_mode == pool_mode::max) {
-      m_max_pool_indices.assign(get_output_size() * local_width, 0);
+      m_max_pool_indices.assign(this->get_output_size() * local_width, 0);
     }
 
     // Initialize matrices
@@ -407,16 +408,16 @@ private:
 
       if(m_pool_mode == pool_mode::max) {
         // Apply max pooling
-        DataType *output_buffer = local_output.Buffer(0, sample);
-        int *indices_buffer = &m_max_pool_indices[sample * get_output_size()];
+        TensorDataType *output_buffer = local_output.Buffer(0, sample);
+        int *indices_buffer = &m_max_pool_indices[sample * this->get_output_size()];
         LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
-            DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
-            DataType max_entry = im2col_buffer[0];
+            TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
+            TensorDataType max_entry = im2col_buffer[0];
             int max_index = 0;
             for(int i = 1; i < m_pool_size; ++i) {
-              const DataType current_entry = im2col_buffer[i];
+              const TensorDataType current_entry = im2col_buffer[i];
               if(current_entry > max_entry) {
                 max_entry = current_entry;
                 max_index = i;
@@ -431,13 +432,13 @@ private:
 
       if(m_pool_mode == pool_mode::average) {
         // Apply average pooling
-        DataType *output_buffer = local_output.Buffer(0, sample);
+        TensorDataType *output_buffer = local_output.Buffer(0, sample);
         LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_output_channel; ++j) {
-            const DataType *im2col_buffer
+            const TensorDataType *im2col_buffer
               = im2col_mat.LockedBuffer(channel*m_pool_size, j);
-            DataType output_entry = 0;
+            TensorDataType output_entry = 0;
             for(int i = 0; i < m_pool_size; ++i) {
               output_entry += im2col_buffer[i];
             }
@@ -454,23 +455,24 @@ private:
 
   /// Pooling forward propagation with im2col
   void bp_compute_im2col() {
+    using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
     if(m_pool_mode != pool_mode::max && m_pool_mode != pool_mode::average) {
       LBANN_ERROR("CPU pooling layer only supports max and average pooling");
     }
 
     // Local matrices
-    const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-    auto& local_gradient_wrt_input = get_local_error_signals();
+    const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+    auto& local_gradient_wrt_input = this->get_local_error_signals();
 
     // Pool parameters
     const int local_width = local_gradient_wrt_output.Width();
-    const auto& input_dims = get_input_dims();
+    const auto& input_dims = this->get_input_dims();
     const int num_channels = input_dims[0];
-    const int num_per_input_channel = get_output_size() / num_channels;
+    const int num_per_input_channel = this->get_output_size() / num_channels;
 
     // Initialize matrices
-    CPUMat im2col_mat(m_pool_size * num_channels, num_per_input_channel);
-    CPUMat gradient_wrt_input_col;
+    CPUMatType im2col_mat(m_pool_size * num_channels, num_per_input_channel);
+    CPUMatType gradient_wrt_input_col;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
@@ -483,16 +485,16 @@ private:
 
         // Copy previous error signal to im2col matrix entries
         // corresponding to max
-        const DataType *gradient_wrt_output_buffer
+        const TensorDataType *gradient_wrt_output_buffer
           = local_gradient_wrt_output.LockedBuffer(0, sample);
         const int *indices_buffer
-          = &m_max_pool_indices[sample * get_output_size()];
+          = &m_max_pool_indices[sample * this->get_output_size()];
         LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {
             const int input_index = j + channel * num_per_input_channel;
             const int max_index = indices_buffer[input_index];
-            DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
+            TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
             im2col_buffer[max_index]
               = gradient_wrt_output_buffer[input_index];
           }
@@ -502,14 +504,14 @@ private:
 
       // Compute gradient w.r.t. im2col matrix for average pooling
       if(m_pool_mode == pool_mode::average) {
-        const DataType *gradient_wrt_output_buffer
+        const TensorDataType *gradient_wrt_output_buffer
           = local_gradient_wrt_output.LockedBuffer(0, sample);
         LBANN_OMP_PARALLEL_FOR
         for(int channel = 0; channel < num_channels; ++channel) {
           for(int j = 0; j < num_per_input_channel; ++j) {
-            DataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
+            TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
             const int input_index = j + channel * num_per_input_channel;
-            const DataType output_entry
+            const TensorDataType output_entry
               = gradient_wrt_output_buffer[input_index] / m_pool_size;
             for(int i = 0; i < m_pool_size; ++i) {
               im2col_buffer[i] = output_entry;
@@ -538,42 +540,38 @@ private:
 
   void fp_compute_distconv() {
 #ifndef LBANN_HAS_DISTCONV
-    throw lbann_exception("pooling_layer: DISTCONV not detected");
+    LBANN_ERROR("pooling_layer: DISTCONV not detected");
 #else
-    dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
-    assert_always(distconv_enabled());
-
-    m_pooling->forward(DataType(1.0), m_prev_activations_t,
-                       DataType(0.0), m_activations_t);
-
-    copy_out_activations();
+    assert_always(this->distconv_enabled());
+    m_pooling->forward(TensorDataType{1}, this->get_prev_activations_t(),
+                       TensorDataType{0}, this->get_activations_t());
+    this->copy_out_activations();
 #endif
   }
 
   void bp_compute_distconv() {
 #ifndef LBANN_HAS_DISTCONV
-    throw lbann_exception("pooling_layer: DISTCONV not detected");
+    LBANN_ERROR("pooling_layer: DISTCONV not detected");
 #else
-    dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
-    assert_always(distconv_enabled());
-
-    m_pooling->backward(DataType(1.0), m_activations_t, m_prev_error_signals_t,
-                        m_prev_activations_t, DataType(0.0), m_error_signals_t);
-    copy_out_error_signals();
+    assert_always(this->distconv_enabled());
+    m_pooling->backward(TensorDataType{1}, this->get_activations_t(),
+                        this->get_prev_error_signals_t(),
+                        this->get_prev_activations_t(), TensorDataType{0},
+                        this->get_error_signals_t());
+    this->copy_out_error_signals();
 #endif
   }
 
 #ifdef LBANN_HAS_DISTCONV
  public:
-
-  void setup_tensor_distribution_init(
+  void init_distribution(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed) override {
-    Layer::setup_tensor_distribution_init(
+    data_type_layer<TensorDataType>::init_distribution(
         dists, invariants, updated, fixed);
-    if (distconv_enabled()) {
+    if (this->distconv_enabled()) {
       dc::IntVector overlap(this->get_num_dims(), 0);
       const auto &ps = this->get_parallel_strategy();
       auto pool_dims = this->m_pool_dims;
@@ -624,14 +622,14 @@ private:
     bool use_padding = m_pads[0] != 0;
     auto output_spatial_local_shape =
         ::distconv::get_pooling_output_local_tensor_shape(
-            m_prev_activations_t,
+            this->get_prev_activations_t(),
             filter_dims, strides, use_padding, dilations);
     return output_spatial_local_shape;
   }
 
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_fwd(dists);
-    if (!distconv_enabled()) return;
+    data_type_layer<TensorDataType>::setup_tensors_fwd(dists);
+    if (!this->distconv_enabled()) return;
 
     dc::MPIPrintStreamDebug()
         << "pooling: setup_tensors."
@@ -639,18 +637,18 @@ private:
         << ", pool_dims: " << dc::util::join_xd_array(m_pool_dims)
         << ", m_strides: " << dc::util::join_xd_array(m_strides);
 
-    setup_prev_activations_tensor(dists);
-    setup_activations_tensor(dists);
-    setup_activations_copyout_tensor(dists);
+    this->setup_prev_activations_tensor(dists);
+    this->setup_activations_tensor(dists);
+    this->setup_activations_copyout_tensor(dists);
   }
 
   void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_bwd(dists);
-    if (!distconv_enabled()) return;
+    data_type_layer<TensorDataType>::setup_tensors_bwd(dists);
+    if (!this->distconv_enabled()) return;
 
-    setup_prev_error_signals_tensor(dists);
-    setup_error_signals_tensor(dists);
-    setup_error_signals_copyout_tensor(dists);
+    this->setup_prev_error_signals_tensor(dists);
+    this->setup_error_signals_tensor(dists);
+    this->setup_error_signals_copyout_tensor(dists);
 
     // Init the dc::Pooling layer
     m_pooling = new dc::Pooling(dc::get_backend(),
@@ -677,20 +675,20 @@ private:
     std::reverse(strides.begin(), strides.end());
 
     dc::MPIPrintStreamDebug()
-        << "Pooling (" << get_name() << "): "
-        << "prev_activations_const_view: " << m_prev_activations_const_view
-        << ", prev_activations_t: " << m_prev_activations_t
-        << ", activations_copyout: " << m_activations_copyout
-        << ", activations_t: " << m_activations_t
-        << ", prev_error_signals_const_view: " << m_prev_error_signals_const_view
-        << ", prev_error_signals_t: " << m_prev_error_signals_t
-        << ", error_signals_copyout: " << m_error_signals_copyout
-        << ", error_signals_t: " << m_error_signals_t;
+        << "Pooling (" << this->get_name() << "): "
+        << "prev_activations_const_view: " << this->get_prev_activations_const_view()
+        << ", prev_activations_t: " << this->get_prev_activations_t()
+        << ", activations_copyout: " << this->get_activations_copyout()
+        << ", activations_t: " << this->get_activations_t()
+        << ", prev_error_signals_const_view: " << this->get_prev_error_signals_const_view()
+        << ", prev_error_signals_t: " << this->get_prev_error_signals_t()
+        << ", error_signals_copyout: " << this->get_error_signals_copyout()
+        << ", error_signals_t: " << this->get_error_signals_t();
 
-    m_pooling->setup(m_prev_activations_t,
-                     m_activations_t,
-                     m_error_signals_t,
-                     m_prev_error_signals_t,
+    m_pooling->setup(this->get_prev_activations_t(),
+                     this->get_activations_t(),
+                     this->get_error_signals_t(),
+                     this->get_prev_error_signals_t(),
                      pool_dims, pads, strides,
                      mode);
   }
@@ -699,7 +697,7 @@ private:
   dc::Pooling *m_pooling;
 
   bool using_distconv() const override {
-    if (!Layer::using_distconv()) return false;
+    if (!transform_layer<TensorDataType>::using_distconv()) return false;
 
     bool cond = true;
     for(int i = 0; i < this->get_num_spatial_dims(); i++) {
@@ -731,17 +729,10 @@ private:
       }
     }
 
-    char *env = getenv("DISTCONV_DISABLE");
-    if (env) {
-      std::string s(env);
-      if (s.find(get_name()) != std::string::npos) {
-        return false;
-      }
-    }
     return true;
   }
 
-#endif
+#endif // LBANN_HAS_DISTCONV
 
 #ifdef LBANN_HAS_CUDNN
   /** Copy pooling cuDNN descriptor. */
@@ -795,10 +786,10 @@ private:
 
 #ifndef LBANN_POOLING_LAYER_INSTANTIATE
 extern template class pooling_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class pooling_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_POOLING_LAYER_INSTANTIATE
 

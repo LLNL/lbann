@@ -47,8 +47,8 @@ public:
    *  @param image_prefix Prefix for image file names.
    */
   save_images(std::vector<std::string> layer_names,
-                             std::string image_format = "jpg",
-                             std::string image_prefix = "");
+              std::string image_format = "jpg",
+              std::string image_prefix = "");
   save_images(const save_images&) = default;
   save_images& operator=(
     const save_images&) = default;

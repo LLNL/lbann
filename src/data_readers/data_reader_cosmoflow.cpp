@@ -147,7 +147,7 @@ bool cosmoflow_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   Mat X_v = El::View(X, El::IR(0, X.Height()), El::IR(mb_idx, mb_idx+1));
 
   const short *data = data_npy.data<short>() + (size_t) offset * m_num_features;
-  DataType *dest = X_v.Buffer();
+  auto *dest = X_v.Buffer();
   std::memcpy(dest, data, sizeof(short) * m_num_features);
 
   prof_region_end("fetch_datum", false);

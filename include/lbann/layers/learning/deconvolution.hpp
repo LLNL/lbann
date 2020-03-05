@@ -39,8 +39,8 @@ class imcomm;
 }
 
 /** @brief Transpose of the convolution layer. */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
-class deconvolution_layer : public base_convolution_layer<Device> {
+template <typename TensorDataType, data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
+class deconvolution_layer : public base_convolution_layer<TensorDataType, Device> {
   static_assert(Layout == data_layout::DATA_PARALLEL,
                 "deconvolution layer only supports DATA_PARALLEL");
 private:
@@ -77,7 +77,7 @@ public:
                       std::vector<int> dilations,
                       int groups,
                       bool has_bias = true)
-    : base_convolution_layer<Device>(
+    : base_convolution_layer<TensorDataType, Device>(
         comm,
         num_data_dims,
         num_output_channels,
@@ -98,7 +98,7 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   void setup_dims() override {
-    base_convolution_layer<Device>::setup_dims();
+    base_convolution_layer<TensorDataType, Device>::setup_dims();
     std::stringstream err;
 
     // Get tensor dimensions
@@ -163,18 +163,18 @@ protected:
         this->copy_out_activations();
         if (this->early_terminate_last_iteration() &&
             this->keep_original()) {
-          base_convolution_layer<Device>::apply_transposed_convolution_cudnn(true);
-          base_convolution_layer<Device>::apply_bias_cudnn();
+          base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_cudnn(true);
+          base_convolution_layer<TensorDataType, Device>::apply_bias_cudnn();
           this->dump_reference_activations();
         }
         return;
       }
-#endif
-      base_convolution_layer<Device>::apply_transposed_convolution_cudnn(true);
-      base_convolution_layer<Device>::apply_bias_cudnn();
+#endif // LBANN_HAS_DISTCONV
+      base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_cudnn(true);
+      base_convolution_layer<TensorDataType, Device>::apply_bias_cudnn();
     } else {
-      base_convolution_layer<Device>::apply_transposed_convolution_im2col(true);
-      base_convolution_layer<Device>::apply_bias_cpu();
+      base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_im2col(true);
+      base_convolution_layer<TensorDataType, Device>::apply_bias_cpu();
     }
   }
 
@@ -190,35 +190,35 @@ protected:
           return;
         }
         if (this->m_conv->is_overlap_bwd_halo_exchange_enabled()) {
-          this->m_conv->backward_data_exchange_halo(this->m_prev_error_signals_t);
+          this->m_conv->backward_data_exchange_halo(this->get_prev_error_signals_t());
         }
         this->distconv_backward_filter();
         this->distconv_backward_data();
         if (this->early_terminate_last_iteration() &&
             this->keep_original()) {
-          base_convolution_layer<Device>::compute_gradients_cudnn(true);
-          base_convolution_layer<Device>::apply_convolution_cudnn(false);
+          base_convolution_layer<TensorDataType, Device>::compute_gradients_cudnn(true);
+          base_convolution_layer<TensorDataType, Device>::apply_convolution_cudnn(false);
           this->dump_reference_error_signals();
         }
         return;
       }
-#endif
-      base_convolution_layer<Device>::compute_gradients_cudnn(true);
-      base_convolution_layer<Device>::apply_convolution_cudnn(false);
+#endif // LBANN_HAS_DISTCONV
+      base_convolution_layer<TensorDataType, Device>::compute_gradients_cudnn(true);
+      base_convolution_layer<TensorDataType, Device>::apply_convolution_cudnn(false);
     } else {
-      base_convolution_layer<Device>::compute_gradients_im2col(true);
-      base_convolution_layer<Device>::apply_convolution_im2col(false);
+      base_convolution_layer<TensorDataType, Device>::compute_gradients_im2col(true);
+      base_convolution_layer<TensorDataType, Device>::apply_convolution_im2col(false);
     }
   }
 
 #ifdef LBANN_HAS_DISTCONV
  public:
-  void setup_tensor_distribution_init(
+  void init_distribution(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed) override {
-    Layer::setup_tensor_distribution_init(
+    base_convolution_layer<TensorDataType, Device>::init_distribution(
         dists, invariants, updated, fixed);
     if (!this->distconv_enabled()) return;
     auto &prev_activations_dist = dists[this][0];
@@ -254,14 +254,14 @@ protected:
     std::reverse(dilations.begin(), dilations.end());
     const auto output_spatial_local_shape =
         ::distconv::get_deconvolution_output_local_tensor_shape(
-            this->m_prev_activations_t,
+            this->get_prev_activations_t(),
             filter_dims, strides, false, dilations,
             this->m_groups);
     return output_spatial_local_shape;
   }
 
   void setup_distconv_post(size_t ws_size) override {
-    Layer::setup_distconv_post(ws_size);
+    base_convolution_layer<TensorDataType, Device>::setup_distconv_post(ws_size);
     if (!this->distconv_enabled()) return;
 
     if (dc::is_deterministic()) {
@@ -282,10 +282,10 @@ protected:
     std::vector<int> dilations = this->m_dilations;
     std::reverse(dilations.begin(), dilations.end());
 
-    this->m_conv->setup(this->m_prev_activations_t,
-                        this->m_kernel_t, this->m_activations_t,
-                        this->m_error_signals_t, this->m_kernel_gradient_e,
-                        this->m_prev_error_signals_t,
+    this->m_conv->setup(this->get_prev_activations_t(),
+                        this->m_kernel_t, this->get_activations_t(),
+                        this->get_error_signals_t(), this->m_kernel_gradient_e,
+                        this->get_prev_error_signals_t(),
                         pads, strides, dilations, this->m_groups,
                         this->m_fwd_algo, this->m_bwd_data_algo,
                         this->m_bwd_filter_algo,
@@ -294,7 +294,7 @@ protected:
 
  protected:
   bool using_distconv() const override {
-    if (!Layer::using_distconv()) return false;
+    if (!base_convolution_layer<TensorDataType, Device>::using_distconv()) return false;
 
     const auto& kernel_dims = get_kernel_dims();
     for(int i = 0; i < this->get_num_spatial_dims(); i++) {
@@ -319,10 +319,10 @@ protected:
 
 #ifndef LBANN_DECONVOLUTION_LAYER_INSTANTIATE
 extern template class deconvolution_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class deconvolution_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_DECONVOLUTION_LAYER_INSTANTIATE
 

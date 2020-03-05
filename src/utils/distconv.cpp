@@ -469,6 +469,24 @@ int get_input_rank(const lbann_comm &comm) {
   }
 }
 
+Dist get_hydrogen_data_parallel_distribution(int num_dims) {
+  using ::distconv::index_t;
+  // When rank stride is 1, the distribution is just sample
+  // distribution. When it's greater than 1, multiple consecutive
+  // ranks of length rank stride share a split in the first
+  // dimension. It is assumed that LBANN uses only the
+  // NUM_RANKS/STRIDE ranks in a data-parallel input layer to read
+  // training data.
+  dc::Shape sample_locale_shape(num_dims, 1);
+  sample_locale_shape[0] = static_cast<index_t>(dc::get_rank_stride());
+  sample_locale_shape[-1] = static_cast<index_t>(dc::get_mpi_num_ranks() / dc::get_rank_stride());
+  auto sample_split_shape = sample_locale_shape;
+  sample_split_shape[0] = 1;
+  auto sample_dist = dc::Dist::make_shared_distribution
+      (sample_locale_shape, sample_split_shape);
+  return sample_dist;
+}
+
 } // namespace dc
 } // namespace lbann
 

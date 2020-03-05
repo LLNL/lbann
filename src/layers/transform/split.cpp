@@ -29,11 +29,21 @@
 
 namespace lbann {
 
-template class split_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class split_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class split_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class split_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void split_layer<TensorDataType, Layout, Dev>::bp_compute() {
+  auto& gradient_wrt_input = this->get_error_signals();
+  if (this->get_num_children() > 0) {
+    El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
+  } else {
+    El::Zero(gradient_wrt_input);
+  }
+  for (int i = 1; i < this->get_num_children(); ++i) {
+    El::Axpy(TensorDataType{1}, this->get_prev_error_signals(i),
+             gradient_wrt_input);
+  }
+}
+
+template class split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 }// namespace lbann

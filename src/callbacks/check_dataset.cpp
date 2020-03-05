@@ -34,7 +34,7 @@ namespace lbann {
 namespace callback {
 
 void check_dataset::add_to_set(model *m, Layer *l, int64_t step, std::set<long>& set) {
-  if (!dynamic_cast<io_layer*>(l)) {
+  if (!dynamic_cast<io_layer<DataType>*>(l)) {
     return;
   }
 
@@ -83,9 +83,9 @@ void check_dataset::on_epoch_end(model *m) {
     "] : I have processed " << training_set.size() << " elements" << std::endl;
 
   // Get first input layer in model
-  generic_input_layer* input = nullptr;
+  generic_input_layer<DataType>* input = nullptr;
   for (auto&& l : m->get_layers()) {
-    input = dynamic_cast<generic_input_layer*>(l);
+    input = dynamic_cast<generic_input_layer<DataType>*>(l);
     if (input != nullptr) { break; }
   }
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }

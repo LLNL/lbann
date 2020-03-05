@@ -29,11 +29,16 @@
 
 namespace lbann {
 
-template class sum_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class sum_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class sum_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class sum_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void sum_layer<TensorDataType, Layout, Dev>::fp_compute() {
+  auto& output = this->get_activations();
+  El::Copy(this->get_prev_activations(0), output);
+  for (int i = 1; i < this->get_num_parents(); ++i) {
+    El::Axpy(DataType(1), this->get_prev_activations(i), output);
+  }
+}
+
+template class sum_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class sum_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 }// namespace lbann

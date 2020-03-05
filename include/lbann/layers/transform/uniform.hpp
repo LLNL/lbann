@@ -38,23 +38,24 @@ namespace lbann {
  *  During validation and testing, outputs are all equal to the
  *  distribution mean.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class uniform_layer : public transform_layer {
+class uniform_layer : public transform_layer<TensorDataType> {
 private:
   /** Uniform distribution mean. */
-  DataType m_min;
+  TensorDataType m_min;
   /** Uniform distribution standard deviation. */
-  DataType m_max;
+  TensorDataType m_max;
 
 public:
 
   uniform_layer(lbann_comm *comm,
                 std::vector<int> dims,
-                DataType min = DataType(0),
-                DataType max = DataType(1))
-    : transform_layer(comm), m_min(min), m_max(max) {
-    set_output_dims(dims);
+                TensorDataType min = TensorDataType(0),
+                TensorDataType max = TensorDataType(1))
+    : transform_layer<TensorDataType>(comm), m_min(min), m_max(max) {
+    this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
   uniform_layer* copy() const override { return new uniform_layer(*this); }
@@ -63,7 +64,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     std::stringstream ss;
     ss << "[" << m_min << "," << m_max << ")";
     desc.add("Range", ss.str());
@@ -75,7 +76,7 @@ protected:
   void fp_compute() override {
     const auto& mean = (m_max + m_min) / 2;
     const auto& radius = (m_max - m_min) / 2;
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     if (this->m_model->get_execution_context().get_execution_mode() == execution_mode::training) {
       uniform_fill(output, output.Height(), output.Width(), mean, radius);
     } else {
@@ -87,14 +88,14 @@ protected:
 
 #ifndef LBANN_UNIFORM_LAYER_INSTANTIATE
 extern template class uniform_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class uniform_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class uniform_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class uniform_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_UNIFORM_LAYER_INSTANTIATE
 

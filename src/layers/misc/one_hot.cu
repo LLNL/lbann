@@ -38,32 +38,35 @@ namespace {
  *
  *  Grid dimensions: (width / bsize) x 1 x 1
  */
+template <typename TensorDataType>
 __global__ void fp_kernel(size_t height,
                           size_t width,
-                          const DataType* __restrict__ indices,
+                          const TensorDataType* __restrict__ indices,
                           size_t indices_stride,
-                          DataType* __restrict__ output,
+                          TensorDataType* __restrict__ output,
                           size_t output_ldim) {
   const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t nthreads = blockDim.x * gridDim.x;
   for (size_t col = gid; col < width; col += nthreads) {
     const auto& ind = indices[col*indices_stride];
-    if (DataType{0} <= ind && ind < DataType(height)) {
+    if (TensorDataType{0} <= ind && ind < TensorDataType(height)) {
       const size_t row = static_cast<size_t>(ind);
-      output[row+col*output_ldim] = DataType{1};
+      output[row+col*output_ldim] = TensorDataType{1};
     }
   }
 }
 
 } // namespace <anon>
 
-template <>
-void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
+
+  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const GPUMat&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<GPUMat&>(get_local_activations());
+  const auto& local_input =
+    dynamic_cast<const GPUMatType&>(this->get_local_prev_activations());
+  auto& local_output = dynamic_cast<GPUMatType&>(this->get_local_activations());
 
   // Populate one-hot vectors
   El::Zero(local_output);
@@ -72,8 +75,7 @@ void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
     const size_t local_width = local_output.Width();
     constexpr size_t block_size = 64;
     const size_t grid_size = (local_width + block_size - 1) / block_size;
-    fp_kernel
-      <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
+    fp_kernel<<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
         local_height,
         local_width,
         local_input.LockedBuffer(),
@@ -85,6 +87,6 @@ void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
 }
 
 template class one_hot_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

@@ -29,8 +29,6 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/weights/initializer.hpp"
-#include "lbann/optimizers/optimizer.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/description.hpp"
 
@@ -45,6 +43,7 @@ class WeightsData;
 namespace lbann {
 
 // Forward declaration
+class weights_initializer;
 class optimizer;
 
 /** Neural network weights.
@@ -62,7 +61,6 @@ class optimizer;
  *  Caffe parameters.
  */
 class weights {
-  friend class optimizer;
 private:
   weights();
   // -----------------------------------------------
@@ -75,6 +73,7 @@ public:
   weights(lbann_comm* comm);
   weights(const weights& other);
   weights& operator=(const weights& other);
+  virtual ~weights() = default;
 
   /** Set weights name.
    *  Each set of weights in a model should have a unique,
@@ -94,10 +93,12 @@ public:
    *  instance and instantiates a copy. The caller is responsible for
    *  deallocating the instance.
    */
-  weights* copy() const { return new weights(*this); }
+  virtual weights* copy() const = 0;
 
   /** Human-readable description. */
-  description get_description() const;
+  virtual description get_description() const;
+
+  virtual bool has_optimizer() const = 0;
 
   // -----------------------------------------------
   // Dimension accessors
@@ -138,38 +139,10 @@ public:
   /** Set weight tensor dimensions.
    *  See the 'get_dims' function for an explanation of the notation.
    */
-  void set_dims(std::vector<int> matrix_height_dims,
-                std::vector<int> matrix_width_dims = std::vector<int>());
+  virtual void set_dims(std::vector<int> matrix_height_dims,
+                        std::vector<int> matrix_width_dims = std::vector<int>());
   /** Set weight tensor dimensions as a 1D tensor. */
-  void set_dims(int size) { set_dims({size}, {}); }
-
-  // -----------------------------------------------
-  // Initializer accessors
-  // -----------------------------------------------
-  /** Get weights initializer. */
-  weights_initializer* get_initializer();
-  /** Get weights initializer (const). */
-  const weights_initializer* get_initializer() const;
-  /** Set weights initializer.
-   *  The contents of 'init' are moved to a class member.
-   */
-  void set_initializer(std::unique_ptr<weights_initializer>&& init);
-
-  // -----------------------------------------------
-  // Optimizer accessors
-  // -----------------------------------------------
-  /** Get weights optimizer.
-   *  Returns a null pointer if the weights are frozen.
-   */
-  optimizer* get_optimizer();
-  /** Get weights optimizer.
-   *  Returns a null pointer if the weights are frozen.
-   */
-  const optimizer* get_optimizer() const;
-  /** Set weights optimizer.
-   *  The contents of opt are moved to a class member.
-   */
-  void set_optimizer(std::unique_ptr<optimizer>&& opt);
+  virtual void set_dims(int size) { set_dims({size}, {}); }
 
   // -----------------------------------------------
   // Matrix distribution accessors
@@ -178,38 +151,37 @@ public:
   void set_matrix_distribution(El::DistData dist);
 
   // -----------------------------------------------
+  // Initializer accessors
+  // -----------------------------------------------
+  /** Get weights initializer. */
+  virtual weights_initializer* get_initializer() = 0;
+  /** Get weights initializer (const). */
+  virtual const weights_initializer* get_initializer() const = 0;
+  /** Set weights initializer.
+   *  The contents of 'init' are moved to a class member.
+   */
+  virtual void set_initializer(std::unique_ptr<weights_initializer>&& init) = 0;
+
+  // -----------------------------------------------
+  // Optimizer accessors
+  // -----------------------------------------------
+  /** Get weights optimizer.
+   *  Returns a null pointer if the weights are frozen.
+   */
+  virtual optimizer* get_optimizer() = 0;
+  /** Get weights optimizer.
+   *  Returns a null pointer if the weights are frozen.
+   */
+  virtual const optimizer* get_optimizer() const = 0;
+  /** Set weights optimizer.
+   *  The contents of opt are moved to a class member.
+   */
+  virtual void set_optimizer(std::unique_ptr<optimizer>&& opt) = 0;
+
+  // -----------------------------------------------
   // Setup
   // -----------------------------------------------
-  void setup();
-
-  // -----------------------------------------------
-  // Weight matrix accessors
-  // -----------------------------------------------
-
-  /** Get the weight matrix. */
-  AbsDistMat& get_values();
-  /** Get the weight matrix. */
-  const AbsDistMat& get_values() const;
-  /** Set the weight matrix. */
-  void set_values(const AbsDistMat& values);
-
-  /** Set a weight value. */
-  void set_value(DataType value, int index);
-  /** Set an entry in the weight tensor. */
-  void set_value(DataType value, std::vector<int> pos);
-  /** Set an entry in the weight matrix. */
-  void set_value(DataType value, int row, int col);
-
-  /** Reconcile weight values.
-   *  If weight values are duplicated across multiple processes, they
-   *  are set to the average across the processes.
-   */
-  void reconcile_values();
-  /** Asynchronously reconcile weight values.
-   *  If weight values are duplicated across multiple processes, they
-   *  are set to the average across the processes.
-   */
-  void reconcile_values(Al::request& req);
+  virtual void setup();
 
   // -----------------------------------------------
   // Freezing
@@ -224,14 +196,14 @@ public:
   // -----------------------------------------------
   // Checkpointing
   // -----------------------------------------------
-  bool save_to_checkpoint_shared(persist& p);
-  bool load_from_checkpoint_shared(persist& p);
-  bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list);
-  bool save_to_checkpoint_distributed(persist& p);
-  bool load_from_checkpoint_distributed(persist& p);
+  virtual bool save_to_checkpoint_shared(persist& p) = 0;
+  virtual bool load_from_checkpoint_shared(persist& p) = 0;
+  virtual bool load_from_save(std::string const& ckpt_dir, std::vector<std::string> const& weight_list) = 0;
+  virtual bool save_to_checkpoint_distributed(persist& p) = 0;
+  virtual bool load_from_checkpoint_distributed(persist& p) = 0;
 
   /** Write weights to proto file */
-  void write_proto(lbann_data::WeightsData* proto) const;
+  virtual void write_proto(lbann_data::WeightsData* proto) const = 0;
 
 private:
 
@@ -257,18 +229,6 @@ private:
 
   /** Whether weight optimization is disabled. */
   bool m_frozen;
-
-  /** Weight matrix. */
-  std::unique_ptr<AbsDistMat> m_values;
-
-  /** Weights initializer.
-   *  Default is nullptr, which corresponds to zero initialization.
-   */
-  std::unique_ptr<weights_initializer> m_initializer;
-  /** Weights optimizer.
-   *  Default is nullptr, which corresponds to no optimizer.
-   */
-  std::unique_ptr<optimizer> m_optimizer;
 
 };
 
