@@ -16,7 +16,8 @@ import tools
 # ==============================================
 
 # Training options
-num_epochs = 5
+num_epochs = 1
+#XX
 mini_batch_size = 256
 num_nodes = 2
 imagenet_fraction = 0.0031971 # Train with 4096 out of 1.28M samples
@@ -114,7 +115,20 @@ def construct_data_reader(lbann):
 # ==============================================
 # Setup PyTest
 # ==============================================
-def create_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname) :
+def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname) :
+    '''Executes the input test function  
+
+    Args:
+        test_func (function): test function 
+        baseline_metrics: list of metrics against which the output of
+                          the test function will be compared
+
+    Returns:
+        list of errors, if any. Each entry in the list is of the form:
+          ['passed'|'FAILED', <test function name>, <error>]
+        If no error is detected:
+          ['passed'|'FAILED', <test function name>]
+    '''
     r = ['passed', test_func.__name__]
     datastore_test_output = test_func(cluster, exes, dirname)
     datastore_metrics = []
@@ -140,16 +154,30 @@ def create_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirna
             r[0] = 'FAILED'
             r.append('found large discrepancy in metrics for baseline and data store experiments')
 
-    # only for use during development
-    if test_func.__name__.find('failure') != -1 :
-      r[0] = 'FAILED'
-      r.append('dev_test_failure')
-
     # TODO:
     # Check if the output 'data_store_profile_train.txt' file
     # contains the entries specified in the 'profile_tests' input param
 
     return r
+
+def run_baseline_test_func(baseline_test_func, cluster, exes, dirname) :
+    '''Executes the input test function
+
+    Args:
+        baseline_test_func (function): test function 
+
+    Returns:
+        list of metrics that are parsed from the function's
+        output log          
+    '''
+    baseline_test_output = baseline_test_func(cluster, exes, dirname)
+    baseline_metrics = []
+    with open(baseline_test_output['stdout_log_file']) as f:
+        for line in f:
+            match = re.search('training epoch [0-9]+ metric : ([0-9.]+)', line)
+            if match:
+                baseline_metrics.append(float(match.group(1)))
+    return baseline_metrics
 
 def create_test_func(baseline_test_func, datastore_test_funcs) :
     """Augment test function to parse log files.
@@ -173,29 +201,19 @@ def create_test_func(baseline_test_func, datastore_test_funcs) :
         function: Test that can interact with PyTest.
 
     """
-    test_name = baseline_test_func.__name__
-
     # Define test function
     def func(cluster, exes, dirname, weekly):
-        num_failed = 0
-        results = []
-
         # Run LBANN experiment without data store
-        baseline_test_output = baseline_test_func(cluster, exes, dirname)
-        baseline_metrics = []
-        with open(baseline_test_output['stdout_log_file']) as f:
-            for line in f:
-                match = re.search('training epoch [0-9]+ metric : ([0-9.]+)', line)
-                if match:
-                    baseline_metrics.append(float(match.group(1)))
+        baseline_metrics = run_baseline_test_func(baseline_test_func, cluster, exes, dirname)
 
         # Run LBANN experiments with data store
+        num_failed = 0
+        results = []
         for i in range(len(datastore_test_funcs)) :
-            r = create_datastore_test_func(datastore_test_funcs[i], baseline_metrics, cluster, exes, dirname)
+            r = run_datastore_test_func(datastore_test_funcs[i], baseline_metrics, cluster, exes, dirname)
             results.append(r)
             if len(r) > 2 :
               num_failed += 1
-
 
         work = []
         for x in results :
@@ -209,7 +227,7 @@ def create_test_func(baseline_test_func, datastore_test_funcs) :
         print('===============================================\n')
 
     # Return test function from factory function
-    func.__name__ = test_name
+    func.__name__ = baseline_test_func.__name__
     return func
  
 # Create test functions that can interact with PyTest
@@ -228,10 +246,6 @@ def make_test(name, test_by_platform_list=[], args=[]) :
 
 baseline_tests = make_test('nodatastore')
 datastore_tests = [[] for j in range(len(baseline_tests))]
-
-# Only for use during development: should be commented out prior to merging
-# with develop
-#ds = make_test('data_store_cache_preloading_failure', datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile'])
 
 # explicit loading
 ds = make_test('data_store_explicit', datastore_tests, ['--use_data_store', '--data_store_profile'])
