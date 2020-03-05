@@ -77,6 +77,27 @@ public:
   /** Human-readable description. */
   description get_description() const;
 
+  /** @brief Get the list of callbacks for the trainer. */
+  std::vector<observer_ptr<callback_base>> get_callbacks() {
+    std::vector<observer_ptr<callback_base>> callback_list;
+    callback_list.reserve(m_callbacks.size());
+    for (const auto& ptr : m_callbacks) {
+      callback_list.push_back(ptr.get());
+    }
+    return callback_list;
+  }
+
+  void add_callback(std::shared_ptr<callback_base> cb) {
+    if (cb == nullptr) {
+      throw lbann_exception("model: Attempted to add null pointer as a callback.");
+    }
+    m_callbacks.push_back(std::move(cb));
+  }
+
+  std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
+    return m_callbacks;
+  }
+
   /** Set up the trainer. */
   void setup(std::unique_ptr<thread_pool> io_thread_pool);
 
@@ -127,6 +148,20 @@ public:
   /** Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
 
+  // ===========================================
+  // Checkpointing
+  // ===========================================
+
+  /** @brief Checkpoint model to given file descriptor, return number of bytes written */
+  bool save_to_checkpoint_shared(persist& p);
+  /** @brief Restore model by reading checkpoint from given file descriptor, return number of bytes read */
+  bool load_from_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(persist& p, model& m, execution_context& c);
+
+  bool save_to_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p, model& m, execution_context& c);
+
 private:
 
   /** Give trainer a name. */
@@ -151,6 +186,9 @@ private:
   std::unordered_map<std::pair<observer_ptr<model>, execution_mode>,
                      std::unique_ptr<execution_context>,
                      model_execution_context_hash_t> m_model_execution_context;
+
+  /** @brief Current callbacks to process. */
+  std::vector<std::shared_ptr<callback_base>> m_callbacks;
 };
 
 }  // namespace lbann

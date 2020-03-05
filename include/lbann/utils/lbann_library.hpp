@@ -47,6 +47,7 @@ std::unique_ptr<model> build_model_from_prototext(
     lbann_comm *comm,
     options *opts,
     thread_pool& io_thread_pool,
+    std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
     bool first_model);
 
 void print_lbann_configuration(lbann_comm *comm,

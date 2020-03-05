@@ -149,6 +149,7 @@ std::unique_ptr<model> build_model_from_prototext(
   lbann_comm *comm,
   options *opts,
   thread_pool& io_thread_pool,
+  std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
   bool first_model) {
 
   int random_seed = lbann_default_random_seed;
@@ -239,6 +240,11 @@ std::unique_ptr<model> build_model_from_prototext(
                                                             pb.optimizer(),
                                                             pb.trainer(),
                                                             pb.model());
+
+  // Add the trainer's callbacks to the model
+  for (auto&& c : shared_callbacks) {
+    ret_model->add_callback(c);
+  }
 
   // If the checkpoint directory has been overridden reset it before
   // setting up the model
