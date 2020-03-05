@@ -16,8 +16,7 @@ import tools
 # ==============================================
 
 # Training options
-num_epochs = 1
-#XX num_epochs = 5
+num_epochs = 5
 mini_batch_size = 256
 num_nodes = 2
 imagenet_fraction = 0.0031971 # Train with 4096 out of 1.28M samples
@@ -203,6 +202,7 @@ def create_test_func(baseline_test_func, datastore_test_funcs) :
             work.append(' :: '.join(x))
         result_string = '\n'.join(work)
         assert num_failed == 0, '\n' + result_string
+
         print('\n===============================================')
         print('data_store test synopsis:')
         print(result_string)
@@ -229,21 +229,25 @@ def make_test(name, test_by_platform_list=[], args=[]) :
 baseline_tests = make_test('nodatastore')
 datastore_tests = [[] for j in range(len(baseline_tests))]
 
+# Only for use during development: should be commented out prior to merging
+# with develop
+#ds = make_test('data_store_cache_preloading_failure', datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile'])
+
 # explicit loading
 ds = make_test('data_store_explicit', datastore_tests, ['--use_data_store', '--data_store_profile'])
 
 # preloading
 ds = make_test('data_store_explicit', datastore_tests, ['--preload_data_store', '--data_store_profile'])
 
-#local cache with explicit loading
+#local cache with explicit loading (internally, this should run identically
+#with the flag: --preload_data_store 
 ds = make_test('data_store_cache_explicit', datastore_tests, ['--data_store_cache', '--data_store_profile'])
 
 #local cache with preloading
 ds = make_test('data_store_cache_preloading', datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile'])
 
-# Only for use during development: should be commented out prior to merging
-# with develop
-##ds = make_test('data_store_cache_preloading_failure', datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile'])
+#test local cache
+ds = make_test('data_store_test_cache', datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_test_cache', '--data_store_profile'])
 
 for i in range(len(datastore_tests)):
     _test_func = create_test_func(baseline_tests[i], datastore_tests[i])
