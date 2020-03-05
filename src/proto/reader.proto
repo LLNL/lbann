@@ -97,6 +97,7 @@ message Reader {
   string hdf5_key_data      = 700;
   string hdf5_key_labels    = 701;
   string hdf5_key_responses = 702;
+  bool hdf5_hyperslab_labels = 703;
   //------------- end of only for HDF5 data reader ------------------
 
 }
