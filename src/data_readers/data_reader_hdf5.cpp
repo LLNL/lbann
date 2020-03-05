@@ -55,12 +55,14 @@ namespace lbann {
 hdf5_reader::hdf5_reader(const bool shuffle,
                          const std::string key_data,
                          const std::string key_labels,
-                         const std::string key_responses)
+                         const std::string key_responses,
+                         const bool hyperslab_labels)
     : generic_data_reader(shuffle),
       m_use_data_store(options::get()->get_bool("use_data_store")),
       m_key_data(key_data),
       m_key_labels(key_labels),
-      m_key_responses(key_responses) {
+      m_key_responses(key_responses),
+      m_hyperslab_labels(hyperslab_labels) {
 }
 
 hdf5_reader::hdf5_reader(const hdf5_reader& rhs)  : generic_data_reader(rhs) {
@@ -94,6 +96,7 @@ void hdf5_reader::copy_members(const hdf5_reader &rhs) {
   m_key_data = rhs.m_key_data;
   m_key_labels = rhs.m_key_labels;
   m_key_responses = rhs.m_key_responses;
+  m_hyperslab_labels = rhs.m_hyperslab_labels;
 
   for(size_t i = 0; i < m_num_response_features; i++) {
     m_all_responses[i] = rhs.m_all_responses[i];
@@ -131,7 +134,8 @@ void hdf5_reader::read_hdf5_hyperslab(hsize_t h_data, hsize_t filespace,
   prof_region_end("read_hdf5_hyperslab", false);
 }
 
-void hdf5_reader::read_hdf5_sample(int data_id, short *sample) {
+void hdf5_reader::read_hdf5_sample(int data_id, short *sample,
+                                   short *labels) {
   int world_rank = get_comm()->get_rank_in_trainer();
   auto file = m_file_paths[data_id];
   hid_t h_file = CHECK_HDF5(H5Fopen(file.c_str(), H5F_ACC_RDONLY, m_fapl));
@@ -150,7 +154,14 @@ void hdf5_reader::read_hdf5_sample(int data_id, short *sample) {
   //close data set
   CHECK_HDF5(H5Dclose(h_data));
 
-  if (m_has_responses) {
+  if (m_has_labels && labels != nullptr) {
+    assert_always(m_hyperslab_labels);
+    hid_t h_labels = CHECK_HDF5(H5Dopen(h_file, m_key_labels.c_str(), H5P_DEFAULT));
+    hid_t filespace_labels = CHECK_HDF5(H5Dget_space(h_labels));
+    read_hdf5_hyperslab(h_labels, filespace_labels, world_rank, labels);
+    CHECK_HDF5(H5Dclose(h_labels));
+  } else if (m_has_responses) {
+    assert_always(labels == nullptr);
     h_data = CHECK_HDF5(H5Dopen(h_file, m_key_responses.c_str(), H5P_DEFAULT));
     CHECK_HDF5(H5Dread(h_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, m_all_responses));
     CHECK_HDF5(H5Dclose(h_data));
@@ -198,7 +209,6 @@ void hdf5_reader::load() {
                                    (size_t) 1,
                                    std::multiplies<size_t>());
 
-
   for (auto i: m_data_dims) {
     m_hyperslab_dims.push_back(i);
   }
@@ -233,6 +243,19 @@ bool hdf5_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
     return generic_data_reader::fetch_label(Y, data_id, mb_idx);
   }
 
+  prof_region_begin("fetch_label", prof_colors[0], false);
+  assert_always(m_hyperslab_labels);
+  assert_always(m_use_data_store);
+  short *buf = nullptr;
+  // REVIEW: should be divided by dc::get_number_of_io_partitions()?
+  assert_eq(Y.Height(), m_num_features);
+  conduit::Node node;
+  const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
+  node.set_external(ds_node);
+  const std::string conduit_obj = LBANN_DATA_ID_STR(data_id);
+  buf = node[conduit_obj+"/labels_slab"].value();
+  std::memcpy(Y.Buffer(), buf, m_num_features/dc::get_number_of_io_partitions()*sizeof(DataType));
+  prof_region_end("fetch_label", false);
   return true;
 }
 
@@ -249,7 +272,7 @@ bool hdf5_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   if (m_use_data_store) {
     fetch_datum_conduit(X, data_id);
   } else {
-    read_hdf5_sample(data_id, (short*)X.Buffer());
+    read_hdf5_sample(data_id, (short*)X.Buffer(), nullptr);
   }
   prof_region_end("fetch_datum", false);
   return true;
@@ -269,8 +292,18 @@ void hdf5_reader::fetch_datum_conduit(Mat& X, int data_id) {
     conduit_obj.set(conduit::DataType::int16(
         m_num_features / dc::get_number_of_io_partitions()));
     short *sample_buf = conduit_obj.value();
-    read_hdf5_sample(data_id, sample_buf);
-    node[conduit_key + "/responses"].set(m_all_responses, 4);
+    short *labels_buf = nullptr;
+    if(m_has_labels) {
+      assert_always(m_hyperslab_labels);
+      auto &conduit_labels_obj = node[conduit_key + "/labels_slab"];
+      conduit_labels_obj.set(conduit::DataType::int16(
+          m_num_features / dc::get_number_of_io_partitions()));
+      labels_buf = conduit_labels_obj.value();
+    }
+    read_hdf5_sample(data_id, sample_buf, labels_buf);
+    if(m_has_responses) {
+      node[conduit_key + "/responses"].set(m_all_responses, 4);
+    }
     if (priming_data_store()) {
       // Once the node has been populated save it in the data store
       m_data_store->set_conduit_node(data_id, node);
@@ -293,20 +326,35 @@ bool hdf5_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
   }
 
   prof_region_begin("fetch_response", prof_colors[0], false);
-  assert_eq(Y.Height(), m_num_response_features);
   float *buf = nullptr;
-  if (data_store_active()) {
+  if(!m_hyperslab_labels) {
+    assert_eq(Y.Height(), m_num_features);
+    const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
     conduit::Node node;
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
-    const std::string conduit_obj = LBANN_DATA_ID_STR(data_id);
-    buf = node[conduit_obj+"/responses"].value();
-  }else {
-    buf = m_all_responses;
+    conduit::Node slab;
+    slab.set_external(node[conduit_key + "/responses_slab"]);
+    prof_region_end("set_external", false);
+    buf = slab.value();
+    std::memcpy(Y.Buffer(), buf, m_num_features*sizeof(short));
+  } else {
+    assert_eq(Y.Height(), m_num_response_features);
+    if (data_store_active()) {
+      conduit::Node node;
+      const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
+      node.set_external(ds_node);
+      const std::string conduit_obj = LBANN_DATA_ID_STR(data_id);
+      buf = node[conduit_obj+"/responses"].value();
+    }else {
+      buf = m_all_responses;
+    }
+    std::memcpy(Y.Buffer(), buf,
+                m_num_response_features*sizeof(DataType));
+    if (dc::get_rank_stride() == 1) {
+      gather_responses(Y.Buffer());
+    }
   }
-  std::memcpy(Y.Buffer(), buf,
-              m_num_response_features*sizeof(DataType));
-  gather_responses(Y.Buffer());
   prof_region_end("fetch_response", false);
   return true;
 }

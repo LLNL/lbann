@@ -26,7 +26,8 @@ class hdf5_reader : public generic_data_reader {
   hdf5_reader(const bool shuffle,
               const std::string key_data,
               const std::string key_label,
-              const std::string key_responses);
+              const std::string key_responses,
+              const bool hyperslab_labels);
   hdf5_reader(const hdf5_reader&);
   hdf5_reader& operator=(const hdf5_reader&);
   ~hdf5_reader() override {}
@@ -78,7 +79,7 @@ class hdf5_reader : public generic_data_reader {
  protected:
   void read_hdf5_hyperslab(hsize_t h_data, hsize_t filespace, int rank,
                            short *sample);
-  void read_hdf5_sample(int data_id, short *sample);
+  void read_hdf5_sample(int data_id, short *sample, short *labels);
   //void set_defaults() override;
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   void fetch_datum_conduit(Mat& X, int data_id);
@@ -91,7 +92,6 @@ class hdf5_reader : public generic_data_reader {
   bool m_has_responses = false;
   int m_image_depth=0;
   size_t m_num_features;
-  size_t m_num_labels = 3; // TODO: Exclude this LiTS-specific parameter.
   static constexpr int m_num_response_features = 4; // TODO: Exclude this CosmoFlow-specific parameter.
   float m_all_responses[m_num_response_features];
   std::vector<std::string> m_file_paths;
@@ -103,6 +103,8 @@ class hdf5_reader : public generic_data_reader {
   MPI_Comm m_response_gather_comm;
   bool m_use_data_store;
   std::string m_key_data, m_key_labels, m_key_responses;
+  bool m_hyperslab_labels;
+
  private:
   static const std::string HDF5_KEY_DATA, HDF5_KEY_LABELS, HDF5_KEY_RESPONSES;
 };

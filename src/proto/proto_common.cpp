@@ -192,10 +192,11 @@ void init_data_readers(
       const auto key_data = readme.hdf5_key_data();
       const auto key_labels = readme.hdf5_key_labels();
       const auto key_responses = readme.hdf5_key_responses();
-      auto* reader_cosmo_hdf5 = new hdf5_reader(shuffle,
-                                                key_data,
+      const auto hyperslab_labels = readme.hdf5_hyperslab_labels();
+      auto* reader_cosmo_hdf5 = new hdf5_reader(shuffle, key_data,
                                                 key_labels,
-                                                key_responses);
+                                                key_responses,
+                                                hyperslab_labels);
       reader_cosmo_hdf5->set_has_labels(!readme.disable_labels());
       reader_cosmo_hdf5->set_has_responses(!readme.disable_responses());
       auto filedir = readme.data_filedir();
