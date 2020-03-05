@@ -78,8 +78,13 @@ public:
   description get_description() const;
 
   /** @brief Get the list of callbacks for the trainer. */
-  std::vector<std::shared_ptr<callback_base>>& get_callbacks() {
-    return m_callbacks;
+  std::vector<observer_ptr<callback_base>> get_callbacks() {
+    std::vector<observer_ptr<callback_base>> callback_list;
+    callback_list.reserve(m_callbacks.size());
+    for (const auto& ptr : m_callbacks) {
+      callback_list.push_back(ptr.get());
+    }
+    return callback_list;
   }
 
   void add_callback(std::shared_ptr<callback_base> cb) {
