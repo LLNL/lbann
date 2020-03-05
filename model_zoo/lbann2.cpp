@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
 
     auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
                                               comm.get(), opts, io_thread_pool,
-                                              trainer->get_callbacks(), true);
+                                              trainer->get_callbacks_with_ownership(), true);
 
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
       init_data_seq_random(random_seed);
       model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]),
                                            comm.get(), opts, io_thread_pool,
-                                           trainer->get_callbacks(), false);
+                                           trainer->get_callbacks_with_ownership(), false);
 
     }
     if (model_2 != nullptr) {

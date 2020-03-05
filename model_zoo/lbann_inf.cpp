@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
       models.emplace_back(
         build_model_from_prototext(argc, argv, pb_trainer, *pb_model,
                                    comm.get(), opts, io_thread_pool,
-                                   trainer->get_callbacks(), models.size() == 0));
+                                   trainer->get_callbacks_with_ownership(), models.size() == 0));
     }
 
     // Load layer weights from checkpoint if checkpoint directory given

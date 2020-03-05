@@ -251,21 +251,21 @@ std::unique_ptr<model> build_model_from_prototext(
   if (opts->has_string("ckpt_dir")) {
     for (auto&& c : ret_model->get_callbacks()) {
       {
-        auto* cb = dynamic_cast<callback::checkpoint*>(c.get());
+        auto* cb = dynamic_cast<callback::checkpoint*>(c);
         if(cb != nullptr) {
           cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
           std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
         }
       }
       {
-        auto* cb = dynamic_cast<callback::dump_weights*>(c.get());
+        auto* cb = dynamic_cast<callback::dump_weights*>(c);
         if(cb != nullptr) {
           cb->set_target_dir(opts->get_string("ckpt_dir"));
           std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
         }
       }
       {
-        auto* cb = dynamic_cast<callback::save_model*>(c.get());
+        auto* cb = dynamic_cast<callback::save_model*>(c);
         if(cb != nullptr) {
           cb->set_target_dir(opts->get_string("ckpt_dir"));
           std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;

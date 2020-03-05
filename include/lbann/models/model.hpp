@@ -136,7 +136,16 @@ public:
   std::vector<weights*> get_weights();
 
   /** @brief Get the list of callbacks for the model. */
-  virtual std::vector<std::shared_ptr<callback_base>>& get_callbacks() {
+  virtual std::vector<observer_ptr<callback_base>> get_callbacks() {
+    std::vector<observer_ptr<callback_base>> callback_list;
+    callback_list.reserve(m_callbacks.size());
+    for (const auto& ptr : m_callbacks) {
+      callback_list.push_back(ptr.get());
+    }
+    return callback_list;
+  }
+
+  virtual std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
     return m_callbacks;
   }
 

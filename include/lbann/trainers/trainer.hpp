@@ -94,6 +94,10 @@ public:
     m_callbacks.push_back(std::move(cb));
   }
 
+  std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
+    return m_callbacks;
+  }
+
   /** Set up the trainer. */
   void setup(std::unique_ptr<thread_pool> io_thread_pool);
 

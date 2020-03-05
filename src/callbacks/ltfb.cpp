@@ -415,7 +415,7 @@ void ltfb::setup(model *m) {
 
   // Make sure model does not have inter-trainer communication callback
   for (auto&& cb : m->get_callbacks()) {
-    if (dynamic_cast<imcomm*>(cb.get()) != nullptr) {
+    if (dynamic_cast<imcomm*>(cb) != nullptr) {
       LBANN_ERROR("Detected both LTFB and imcomm callbacks. ");
     }
   }
