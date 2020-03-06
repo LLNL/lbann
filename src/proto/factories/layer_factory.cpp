@@ -658,7 +658,11 @@ std::unique_ptr<Layer> construct_layer(
   }
   if (proto_layer.has_matmul()) {
     if (Layout == data_layout::DATA_PARALLEL) {
-      return lbann::make_unique<matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,Device>>(comm);
+      const auto& params = proto_layer.matmul();
+      return lbann::make_unique<matmul_layer<TensorDataType, data_layout::DATA_PARALLEL,Device>>(
+               comm,
+               params.transpose_a(),
+               params.transpose_b());
     } else {
       LBANN_ERROR("matrix multiply layer is only supported with "
                   "a data-parallel layout");
