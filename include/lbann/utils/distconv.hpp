@@ -226,10 +226,6 @@ cudaStream_t get_stream();
 template <typename TensorDataType>
 TensorShuffler<TensorDataType> *get_tensor_shuffler(const TensorDev<TensorDataType> &src,
                                                     const TensorDev<TensorDataType> &dst);
-#ifndef LBANN_UTILS_DISTCONV_INSTANTIATE
-extern template TensorShuffler<DataType> *get_tensor_shuffler<DataType>(
-    const TensorDev<DataType> &, const TensorDev<DataType> &);
-#endif // LBANN_UTILS_DISTCONV_INSTANTIATE
 
 MPI_Comm get_input_comm(const lbann_comm &comm);
 /** Return the MPI rank when reading input dataset
@@ -248,6 +244,19 @@ void dump_tensor(bool early_terminate, const Tensor &t, const std::string &path)
     distconv::dump_tensor(t, path, true);
   }
 }
+
+#ifndef LBANN_UTILS_DISTCONV_INSTANTIATE
+#define PROTO(T)                                                \
+  extern template TensorShuffler<T> *get_tensor_shuffler<T>(    \
+      const TensorDev<T> &, const TensorDev<T> &);
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_UTILS_DISTCONV_INSTANTIATE
 
 } // namespace dc
 } // namespace lbann

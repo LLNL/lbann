@@ -40,7 +40,7 @@ namespace lbann {
 //template <typename TensorDataType>
 //class data_type_weights;
 
-using supported_layer_data_type = El::TypeList<DataType, float/*, double*/>;
+using supported_layer_data_type = El::TypeList<float, double>;
 
 template <typename T, typename List> struct IsElement;
 
@@ -63,6 +63,10 @@ public:
 
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The proxy tensor type expected in this object. */
+  template <El::Device D>
+  using AbsDistMatReadProxyType = El::AbstractDistMatrixReadDeviceProxy<TensorDataType, D>;
 
   /** @brief The local tensor type expected in this object. */
   using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
@@ -415,7 +419,15 @@ private:
 };
 
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
-extern template class data_type_layer<DataType>;
+#define PROTO(T)                           \
+  extern template class data_type_layer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
 
 } // namespace lbann

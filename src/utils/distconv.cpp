@@ -460,9 +460,6 @@ TensorShuffler<TensorDataType> *get_tensor_shuffler(const TensorDev<TensorDataTy
   return new TensorShuffler<TensorDataType>(src, dst);
 }
 
-template TensorShuffler<DataType> *get_tensor_shuffler<DataType>(
-    const TensorDev<DataType> &, const TensorDev<DataType> &);
-
 MPI_Comm get_input_comm(const lbann_comm &comm) {
   if (!is_cosmoflow_parallel_io_enabled() || get_rank_stride() == 1) {
     return comm.get_trainer_comm().GetMPIComm();
@@ -496,6 +493,14 @@ Dist get_hydrogen_data_parallel_distribution(int num_dims) {
       (sample_locale_shape, sample_split_shape);
   return sample_dist;
 }
+
+#define PROTO(T)                                                \
+  template TensorShuffler<T> *get_tensor_shuffler<T>(           \
+      const TensorDev<T> &, const TensorDev<T> &);
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace dc
 } // namespace lbann

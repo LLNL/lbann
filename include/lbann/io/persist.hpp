@@ -147,11 +147,15 @@ class persist {
     }
   }
 
-  bool write_rank_distmat(persist_type type, const char *name, const AbsDistMat& M);
-  bool read_rank_distmat(persist_type type, const char *name, AbsDistMat& M);
+  template <typename TensorDataType>
+  bool write_rank_distmat(persist_type type, const char *name, const El::AbstractDistMatrix<TensorDataType>& M);
+  template <typename TensorDataType>
+  bool read_rank_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType>& M);
 
-  bool write_distmat(persist_type type, const char *name, AbsDistMat *M);
-  bool read_distmat (persist_type type, const char *name, AbsDistMat *M);
+  template <typename TensorDataType>
+  bool write_distmat(persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M);
+  template <typename TensorDataType>
+  bool read_distmat (persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M);
 
   bool write_bytes(persist_type type, const char *name, const void *buf, size_t size);
   bool read_bytes(persist_type type, const char *name, void *buf, size_t size);
@@ -174,16 +178,20 @@ class persist {
   bool write_double(persist_type type, const char *name, double  val);
   bool read_double (persist_type type, const char *name, double *val);
 
-  bool write_datatype(persist_type type, const char *name, DataType  val);
-  bool read_datatype (persist_type type, const char *name, DataType *val);
+  template <typename TensorDataType>
+  bool write_datatype(persist_type type, const char *name, TensorDataType  val);
+  template <typename TensorDataType>
+  bool read_datatype (persist_type type, const char *name, TensorDataType *val);
 
   std::string get_filename(persist_type type) const;
  private:
   int get_fd(persist_type type) const;
 };
 
-bool write_distmat(int fd, const char *name, DistMat *M, uint64_t *bytes);
-bool read_distmat (int fd, const char *name, DistMat *M, uint64_t *bytes);
+template <typename TensorDataType>
+bool write_distmat(int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes);
+template <typename TensorDataType>
+bool read_distmat (int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes);
 
 bool write_bytes(int fd, const char *name, const void *buf, size_t size);
 bool read_bytes(int fd, const char *name, void *buf, size_t size);
@@ -294,6 +302,33 @@ void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
   const persist_type pt = execution_mode_to_persist_type(mode);
   load_from_shared_cereal_archive<C>(obj, p, pt, comm, suffix);
 }
+
+#ifndef LBANN_PERSIST_INSTANTIATE
+#define PROTO(T)                                                            \
+  extern template bool persist::write_rank_distmat<T>(                      \
+  persist_type type, const char *name, const El::AbstractDistMatrix<T>& M); \
+  extern template bool persist::read_rank_distmat<T>(                       \
+  persist_type type, const char *name, El::AbstractDistMatrix<T>& M);       \
+  extern template bool persist::write_distmat<T>(                           \
+  persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
+  extern template bool persist::read_distmat<T>(                            \
+  persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
+  extern template bool persist::write_datatype<T>(                          \
+    persist_type type, const char *name, T val);                            \
+  extern template bool persist::read_datatype<T>(                           \
+    persist_type type, const char *name, T *val);                           \
+  extern template bool write_distmat<T>(                                    \
+    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);            \
+  extern template bool read_distmat<T>(                                     \
+    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_PERSIST_INSTANTIATE
 
 } // namespace lbann
 

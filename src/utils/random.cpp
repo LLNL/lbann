@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <omp.h>
+#define LBANN_RANDOM_INSTANTIATE
 #include "lbann/utils/random.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/utils/hash.hpp"
@@ -329,8 +330,9 @@ void init_io_random(int seed) {
   ::fast_io_generator_inited = false;
 }
 
-void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
-                   DataType stddev) {
+template <typename TensorDataType>
+void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                   TensorDataType mean, TensorDataType stddev) {
 #ifndef LBANN_DETERMINISTIC
   El::Gaussian(mat, m, n, mean, stddev);
 #else
@@ -338,7 +340,8 @@ void gaussian_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
 #endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
-void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p) {
+template <typename TensorDataType>
+void bernoulli_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p) {
 #ifndef LBANN_DETERMINISTIC
   El::Bernoulli(mat, m, n, p);
 #else
@@ -346,8 +349,9 @@ void bernoulli_fill(AbsDistMat& mat, El::Int m, El::Int n, double p) {
 #endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
-void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
-                  DataType radius) {
+template <typename TensorDataType>
+void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                  TensorDataType center, TensorDataType radius) {
 #ifndef LBANN_DETERMINISTIC
   El::Uniform(mat, m, n, center, radius);
 #else
@@ -355,13 +359,14 @@ void uniform_fill(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
 #endif  // LBANN_PARALLEL_DETERMINISTIC
 }
 
-void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
-                           DataType stddev) {
-  CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
+template <typename TensorDataType>
+void gaussian_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                           TensorDataType mean, TensorDataType stddev) {
+  CircMatDT<TensorDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
-    std::normal_distribution<DataType> dist(mean, stddev);
+    std::normal_distribution<TensorDataType> dist(mean, stddev);
     for (El::Int col = 0; col < local_vals.Width(); ++col) {
       for (El::Int row = 0; row < local_vals.Height(); ++row) {
         local_vals(row, col) = dist(gen);
@@ -371,8 +376,9 @@ void gaussian_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType mean,
   El::Copy(vals, mat);
 }
 
-void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p) {
-  CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
+template <typename TensorDataType>
+void bernoulli_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n, double p) {
+  CircMatDT<TensorDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
@@ -386,13 +392,14 @@ void bernoulli_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, double p) {
   El::Copy(vals, mat);
 }
 
-void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType center,
-                          DataType radius) {
-  CircMat<El::Device::CPU> vals(m, n, mat.Grid(), 0);
+template <typename TensorDataType>
+void uniform_fill_procdet(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::Int n,
+                          TensorDataType center, TensorDataType radius) {
+  CircMatDT<TensorDataType, El::Device::CPU> vals(m, n, mat.Grid(), 0);
   if (vals.Participating()) {
     auto& local_vals = vals.Matrix();
     auto& gen = get_generator();
-    std::uniform_real_distribution<DataType> dist(center - radius,
+    std::uniform_real_distribution<TensorDataType> dist(center - radius,
                                                   center + radius);
     for (El::Int col = 0; col < local_vals.Width(); ++col) {
       for (El::Int row = 0; row < local_vals.Height(); ++row) {
@@ -402,5 +409,16 @@ void uniform_fill_procdet(AbsDistMat& mat, El::Int m, El::Int n, DataType center
   }
   El::Copy(vals, mat);
 }
+
+#define PROTO(T)                                                                                                  \
+  template void gaussian_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev);         \
+  template void bernoulli_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);                \
+  template void uniform_fill<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius);        \
+  template void gaussian_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T mean, T stddev); \
+  template void bernoulli_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, double p);        \
+  template void uniform_fill_procdet<T>(El::AbstractDistMatrix<T>& mat, El::Int m, El::Int n, T center, T radius)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann
