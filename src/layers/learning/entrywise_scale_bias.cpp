@@ -143,9 +143,13 @@ void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
           *this->m_weights_gradient);
 }
 
-template class entrywise_scale_bias_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class entrywise_scale_bias_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                     \
+  template class entrywise_scale_bias_layer<         \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class entrywise_scale_bias_layer<         \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

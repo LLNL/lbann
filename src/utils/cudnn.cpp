@@ -880,9 +880,13 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   }
 }
 
-template class layer_tensor_manager<DataType>;
-template class data_parallel_layer_tensor_manager<DataType>;
-template class entrywise_layer_tensor_manager<DataType>;
+#define PROTO(T)                                       \
+  template class layer_tensor_manager<T>;               \
+  template class data_parallel_layer_tensor_manager<T>; \
+  template class entrywise_layer_tensor_manager<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace cudnn
 } // namespace lbann

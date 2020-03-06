@@ -397,7 +397,7 @@ private:
       // Construct im2col matrix from input
       El::LockedView(input_mat, local_input,
                      El::ALL, El::IR(sample));
-      im2col(input_mat,
+      im2col<TensorDataType>(input_mat,
              im2col_mat,
              num_channels,
              input_dims.size() - 1,
@@ -524,7 +524,7 @@ private:
       // Compute error signal (i.e. gradient w.r.t. input)
       El::View(gradient_wrt_input_col, local_gradient_wrt_input,
                El::ALL, El::IR(sample));
-      col2im(im2col_mat,
+      col2im<TensorDataType>(im2col_mat,
              gradient_wrt_input_col,
              num_channels,
              input_dims.size() - 1,
