@@ -37,8 +37,12 @@
 namespace lbann {
 
 // Forward declarations
-//template <typename TensorDataType>
-//class data_type_weights;
+namespace cudnn {
+template <typename U>
+class data_parallel_layer_tensor_manager;
+template <typename U>
+class entrywise_layer_tensor_manager;
+}
 
 using supported_layer_data_type = El::TypeList<float, double>;
 
@@ -122,33 +126,47 @@ public:
   void replace_weights(Layer* other_layer) override;
 
   // ===========================================================
-  // Tensor access functions
+  // Public Tensor access functions
   // ===========================================================
+
+  /** Get activation tensor corresponding to child layer. */
+  const BaseDistMat& get_activations(const Layer& child) const override;
+  /** Get error signal tensor corresponding to parent layer. */
+  const BaseDistMat& get_error_signals(const Layer& parent) const override;
 
   /** Get activation tensor. */
   AbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
   AbsDistMatrixType& get_error_signals(int parent_index = 0);
-  /** Get previous activation tensor. */
-  const AbsDistMatrixType& get_prev_activations(int parent_index = 0) const;
   /** Get activation tensor. */
   const AbsDistMatrixType& get_activations(int child_index = 0) const;
-  /** Get previous error signal tensor. */
-  const AbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
   /** Get error signal tensor. */
   const AbsDistMatrixType& get_error_signals(int parent_index = 0) const;
+
   /** Get local portion of activation tensor. */
   AbsMatrixType& get_local_activations(int child_index = 0);
   /** Get local portion of error signal tensor. */
   AbsMatrixType& get_local_error_signals(int parent_index = 0);
-  /** Get local portion of previous activation tensor. */
-  const AbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
   /** Get local portion of activation tensor. */
   const AbsMatrixType& get_local_activations(int child_index = 0) const;
-  /** Get local portion of previous error signal tensor. */
-  const AbsMatrixType& get_local_prev_error_signals(int child_index = 0) const;
   /** Get local portion of error signal tensor. */
   const AbsMatrixType& get_local_error_signals(int parent_index = 0) const;
+
+protected:
+
+  // ===========================================================
+  // Protected Tensor access functions
+  // ===========================================================
+
+  /** Get previous activation tensor. */
+  const AbsDistMatrixType& get_prev_activations(int parent_index = 0) const;
+  /** Get previous error signal tensor. */
+  const AbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
+
+  /** Get local portion of previous activation tensor. */
+  const AbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
+  /** Get local portion of previous error signal tensor. */
+  const AbsMatrixType& get_local_prev_error_signals(int child_index = 0) const;
 
 protected:
 
@@ -271,11 +289,6 @@ private:
   std::vector<weights const*> get_weights() const override {
     return std::vector<weights const*>(begin(m_weights), end(m_weights));
   }
-
-  /** Get activation tensor corresponding to child layer. */
-  const AbsDistMatrixType& get_activations(const data_type_layer& child) const;
-  /** Get error signal tensor corresponding to parent layer. */
-  const AbsDistMatrixType& get_error_signals(const data_type_layer& parent) const;
 
   // ===========================================================
   // Private class members
@@ -416,6 +429,13 @@ private:
   void setup_keep_original_tensors();
   void setup_inter_layer_adaptation();
 #endif // LBANN_HAS_DISTCONV
+
+#ifdef LBANN_HAS_CUDA
+  template <typename U>
+  friend class cudnn::data_parallel_layer_tensor_manager;
+  template <typename U>
+  friend class cudnn::entrywise_layer_tensor_manager;
+#endif // LBANN_HAS_CUDA
 };
 
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
