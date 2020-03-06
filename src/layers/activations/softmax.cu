@@ -34,9 +34,10 @@ namespace {
 
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
 /** Functor to ensure values are above threshold value */
+template <typename TensorDataType>
 struct threshold_op {
-  __forceinline__ __device__ DataType operator()(const DataType& y) const {
-    return cuda::max(y, cuda::sqrt(cuda::min<DataType>()));
+  __forceinline__ __device__ TensorDataType operator()(const TensorDataType& y) const {
+    return cuda::max(y, cuda::sqrt(cuda::min<TensorDataType>()));
   }
 };
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
@@ -63,12 +64,12 @@ struct max_op {
  *  @param values       (height x width) matrix
  *  @param max_values   (nblocksx x width) matrix
  */
-template <size_t bsize>
+template <size_t bsize, typename TensorDataType>
 __global__ void reduce_max_kernel(size_t height,
                                   size_t width,
-                                  const DataType* __restrict__ values,
+                                  const TensorDataType* __restrict__ values,
                                   size_t values_ldim,
-                                  DataType* __restrict__ max_values) {
+                                  TensorDataType* __restrict__ max_values) {
 
   // Indices
   const size_t tid = threadIdx.x;
@@ -82,14 +83,14 @@ __global__ void reduce_max_kernel(size_t height,
   for (size_t col = bidy; col < width; col += nblocksy) {
 
     // Find largest value for each thread
-    DataType thread_max_val{-cuda::infinity<DataType>()};
+    TensorDataType thread_max_val{-cuda::infinity<DataType>()};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& val = values[row+col*values_ldim];
       thread_max_val = cuda::max(thread_max_val, val);
     }
 
     // Find largest value for each block
-    const DataType block_max_val
+    const TensorDataType block_max_val
       = cuda::block_reduce<bsize,1,1,DataType,max_op<DataType>>(thread_max_val);
     if (tid == 0) {
       max_values[bidx+col*nblocksx] = block_max_val;
@@ -107,15 +108,15 @@ __global__ void reduce_max_kernel(size_t height,
  *
  *  Grid dimension: (height / bsize) x width x 1
  */
-template <size_t bsize>
+template <size_t bsize, typename TensorDataType>
 __global__ void fp_exp_kernel(size_t height,
                               size_t width,
-                              const DataType* __restrict__ input,
+                              const TensorDataType* __restrict__ input,
                               size_t input_ldim,
-                              DataType* __restrict__ output,
+                              TensorDataType* __restrict__ output,
                               size_t output_ldim,
-                              const DataType* __restrict__ shifts,
-                              DataType* __restrict__ sums) {
+                              const TensorDataType* __restrict__ shifts,
+                              TensorDataType* __restrict__ sums) {
 
   // Indices
   const size_t tid = threadIdx.x;
@@ -128,7 +129,7 @@ __global__ void fp_exp_kernel(size_t height,
     const auto& shift = shifts[col];
 
     // Exponentiate inputs and compute sum for each thread
-    DataType thread_sum{0};
+    TensorDataType thread_sum{0};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& x = input[row+col*input_ldim];
       auto& y = output[row+col*output_ldim];
@@ -161,11 +162,12 @@ __global__ void fp_exp_kernel(size_t height,
  *                  contains the layer output.
  *  @param sums     sum(exp(x-shift)) for each column
  */
+template <typename TensorDataType>
 __global__ void fp_output_kernel(size_t height,
                                  size_t width,
-                                 DataType* __restrict__ output,
+                                 TensorDataType* __restrict__ output,
                                  size_t output_ldim,
-                                 const DataType* __restrict__ sums) {
+                                 const TensorDataType* __restrict__ sums) {
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
   const size_t nthreadsx = blockDim.x * gridDim.x;
@@ -188,14 +190,15 @@ __global__ void fp_output_kernel(size_t height,
  *
  *  Grid dimension: (height / bsize) x width x 1
  */
-template <size_t bsize>
-__global__ void bp_dot_product_kernel(size_t height,
-                                      size_t width,
-                                      const DataType* __restrict__ output,
-                                      size_t output_ldim,
-                                      const DataType* __restrict__ gradient_wrt_output,
-                                      size_t gradient_wrt_output_ldim,
-                                      DataType* __restrict__ dot_products) {
+template <size_t bsize, typename TensorDataType>
+__global__ void bp_dot_product_kernel(
+  size_t height,
+  size_t width,
+  const TensorDataType* __restrict__ output,
+  size_t output_ldim,
+  const TensorDataType* __restrict__ gradient_wrt_output,
+  size_t gradient_wrt_output_ldim,
+  TensorDataType* __restrict__ dot_products) {
 
   // Indices
   const size_t tid = threadIdx.x;
@@ -207,7 +210,7 @@ __global__ void bp_dot_product_kernel(size_t height,
   for (size_t col = bidy; col < width; col += nblocksy) {
 
     // Compute dot product contribution for each thread
-    DataType thread_dot_product{0};
+    TensorDataType thread_dot_product{0};
     for (size_t row = gidx; row < height; row += nthreadsx) {
       const auto& y = output[row+col*output_ldim];
       const auto& dy = gradient_wrt_output[row+col*gradient_wrt_output_ldim];
@@ -235,15 +238,15 @@ __global__ void bp_dot_product_kernel(size_t height,
  *
  *  @param dot_products dot(y,dy) for each matrix column
  */
-template <size_t bsize>
+template <size_t bsize, typename TensorDataType>
 __global__ void bp_kernel(size_t height,
                           size_t width,
-                          const DataType* __restrict__ output,
+                          const TensorDataType* __restrict__ output,
                           size_t output_ldim,
-                          const DataType* __restrict__ gradient_wrt_output,
+                          const TensorDataType* __restrict__ gradient_wrt_output,
                           size_t gradient_wrt_output_ldim,
-                          const DataType* __restrict__ dot_products,
-                          DataType* __restrict__ gradient_wrt_input,
+                          const TensorDataType* __restrict__ dot_products,
+                          TensorDataType* __restrict__ gradient_wrt_input,
                           size_t gradient_wrt_input_ldim) {
   const size_t gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const size_t gidy = threadIdx.y + blockIdx.y * blockDim.y;
@@ -263,44 +266,44 @@ __global__ void bp_kernel(size_t height,
 } // namespace
 
 #ifdef LBANN_HAS_DISTCONV
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-fp_compute_distconv() {
-  dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
-  assert_always(distconv_enabled());
-  m_softmax->forward(m_prev_activations_t, m_activations_t);
-  copy_out_activations();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::fp_compute_distconv() {
+  assert_always(this->distconv_enabled());
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  m_softmax->forward(this->get_prev_activations_t(), this->get_activations_t());
+  this->copy_out_activations();
 }
 
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-bp_compute_distconv() {
-  dc::MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
-  assert_always(distconv_enabled());
-  m_softmax->backward(m_activations_t, m_prev_error_signals_t,
-                      m_error_signals_t);
-  copy_out_error_signals();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::bp_compute_distconv() {
+  assert_always(this->distconv_enabled());
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  m_softmax->backward(this->get_activations_t(),
+                      this->get_prev_error_signals_t(),
+                      this->get_error_signals_t());
+  this->copy_out_error_signals();
 }
 #endif // LBANN_HAS_DISTCONV
 
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
+template <typename TensorDataType>
+void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) {
-    fp_compute_distconv();
-    if (!early_terminate_last_iteration()) {
+  if (l.distconv_enabled()) {
+    l.fp_compute_distconv();
+    if (!l.early_terminate_last_iteration()) {
       return;
     }
     // fall through the normal code path to obtain reference results
   }
-#endif
-  constexpr DataType zero = 0;
-  constexpr DataType one = 1;
-  const auto& local_input = dynamic_cast<const GPUMat&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<GPUMat&>(get_local_activations());
+#endif // LBANN_HAS_DISTCONV
+
+  constexpr TensorDataType zero = 0;
+  constexpr TensorDataType one = 1;
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
+  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
 
   cudnnSoftmaxMode_t cudnn_softmax_mode;
-  switch(m_mode) {
+  switch(l.m_mode) {
     case softmax_mode::INSTANCE:
       cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_INSTANCE;
       break;
@@ -316,10 +319,10 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
                                     CUDNN_SOFTMAX_ACCURATE,
                                     cudnn_softmax_mode,
                                     &one,
-                                    m_tensors_cudnn_desc.get_prev_activations(),
+                                    l.m_tensors_cudnn_desc.get_prev_activations(),
                                     local_input.LockedBuffer(),
                                     &zero,
-                                    m_tensors_cudnn_desc.get_activations(),
+                                    l.m_tensors_cudnn_desc.get_activations(),
                                     local_output.Buffer()));
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
     cuda::apply_entrywise_unary_operator<threshold_op>(local_output,
@@ -327,31 +330,32 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute() {
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
   }
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled() && early_terminate_last_iteration() &&
-      keep_original()) {
-    dump_reference_activations();
+  if (l.distconv_enabled() && l.early_terminate_last_iteration() &&
+      l.keep_original()) {
+    l.dump_reference_activations();
   }
 #endif // LBANN_HAS_DISTCONV
 }
 
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) {
-    bp_compute_distconv();
-    if (!early_terminate_last_iteration()) {
+  if (l.distconv_enabled()) {
+    l.bp_compute_distconv();
+    if (!l.early_terminate_last_iteration()) {
       return;
     }
   }
 #endif // LBANN_HAS_DISTCONV
-  constexpr DataType zero = 0;
-  constexpr DataType one = 1;
-  const auto& local_output = dynamic_cast<const GPUMat&>(get_local_activations());
-  const auto& local_gradient_wrt_output = dynamic_cast<const GPUMat&>(get_local_prev_error_signals());
-  auto& local_gradient_wrt_input = dynamic_cast<GPUMat&>(get_local_error_signals());
+
+  constexpr TensorDataType zero{0};
+  constexpr TensorDataType one{1};
+  const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
+  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals());
+  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals());
 
   cudnnSoftmaxMode_t cudnn_softmax_mode;
-  switch(m_mode) {
+  switch(l.m_mode) {
     case softmax_mode::INSTANCE:
       cudnn_softmax_mode = CUDNN_SOFTMAX_MODE_INSTANCE;
       break;
@@ -367,33 +371,33 @@ void softmax_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::bp_compute() {
                                      CUDNN_SOFTMAX_ACCURATE,
                                      cudnn_softmax_mode,
                                      &one,
-                                     m_tensors_cudnn_desc.get_activations(),
+                                     l.m_tensors_cudnn_desc.get_activations(),
                                      local_output.LockedBuffer(),
-                                     m_tensors_cudnn_desc.get_prev_error_signals(),
+                                     l.m_tensors_cudnn_desc.get_prev_error_signals(),
                                      local_gradient_wrt_output.LockedBuffer(),
                                      &zero,
-                                     m_tensors_cudnn_desc.get_error_signals(),
+                                     l.m_tensors_cudnn_desc.get_error_signals(),
                                      local_gradient_wrt_input.Buffer()));
   }
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled() && early_terminate_last_iteration() &&
-      keep_original()) {
-    dump_reference_error_signals();
+  if (l.distconv_enabled() && l.early_terminate_last_iteration() &&
+      l.keep_original()) {
+    l.dump_reference_error_signals();
   }
 #endif // LBANN_HAS_DISTCONV
 }
 
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
+template <typename TensorDataType>
+void fp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
 
-  if(m_mode != softmax_mode::INSTANCE) {
+  if(l.m_mode != softmax_mode::INSTANCE) {
     LBANN_ERROR("Unsupported softmax mode");
   }
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const GPUMat&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<GPUMat&>(get_local_activations());
-  auto& local_workspace = dynamic_cast<GPUMat&>(m_workspace->Matrix());
+  const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
+  auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
+  auto& local_workspace = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.m_workspace->Matrix());
   const size_t local_height = local_input.Height();
   const size_t local_width = local_input.Width();
 
@@ -403,10 +407,10 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
   El::SyncInfo<El::Device::GPU> sync_info{stream, event};
 
   // Find max value in each column
-  cuda::thrust::vector<DataType> max_vals;
+  cuda::thrust::vector<TensorDataType> max_vals;
   if (local_output.IsEmpty()) {
     max_vals.resize(local_width,
-                    -std::numeric_limits<DataType>::infinity());
+                    -std::numeric_limits<TensorDataType>::infinity());
   }
   else {
     constexpr size_t block_size = 256;
@@ -431,11 +435,11 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
     }
   }
   El::mpi::AllReduce(max_vals.data().get(), max_vals.size(),
-                     El::mpi::MAX, m_workspace->RedundantComm(),
+                     El::mpi::MAX, l.m_workspace->RedundantComm(),
                      sync_info);
 
   // Compute exp(x-max_val) and sum(exp(x-max_val))
-  El::Zero(*m_workspace);
+  El::Zero(*l.m_workspace);
   if (!local_output.IsEmpty()) {
     constexpr size_t block_size = 256;
     dim3 block_dims, grid_dims;
@@ -449,7 +453,7 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
       max_vals.data().get(),
       local_workspace.Buffer());
   }
-  El::AllReduce(*m_workspace, m_workspace->RedundantComm());
+  El::AllReduce(*l.m_workspace, l.m_workspace->RedundantComm());
 
   // Compute output
   // Note: y = exp(x-max_val) / sum(exp(x-max_val))
@@ -467,20 +471,20 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::fp_compute() {
 
 }
 
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
+template <typename TensorDataType>
+void bp_compute_impl(softmax_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
 
-  if(m_mode != softmax_mode::INSTANCE) {
+  if(l.m_mode != softmax_mode::INSTANCE) {
     LBANN_ERROR("Unsupported softmax mode");
   }
 
   // Local matrices
-  const auto& local_output = dynamic_cast<const GPUMat&>(get_local_activations());
-  const auto& local_gradient_wrt_output = dynamic_cast<const GPUMat&>(get_local_prev_error_signals());
-  auto& local_gradient_wrt_input = dynamic_cast<GPUMat&>(get_local_error_signals());
-  auto& local_workspace = dynamic_cast<GPUMat&>(m_workspace->Matrix());
-  const size_t local_height = local_output.Height();
-  const size_t local_width = local_output.Width();
+  const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
+  const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals());
+  auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals());
+  auto& local_workspace = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.m_workspace->Matrix());
+  const auto& local_height = local_output.Height();
+  const auto& local_width = local_output.Width();
 
   // GPU objects
   auto&& stream = El::GPUManager::Stream();
@@ -504,7 +508,7 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
         local_gradient_wrt_output.LDim(),
         local_workspace.Buffer());
   }
-  El::AllReduce(*m_workspace, m_workspace->RedundantComm());
+  El::AllReduce(*l.m_workspace, l.m_workspace->RedundantComm());
 
   // Compute gradient w.r.t. input
   if (!local_output.IsEmpty()) {
@@ -526,10 +530,19 @@ void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>::bp_compute() {
 
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_compute_impl(*this);
+}
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_compute_impl(*this);
+}
+
 // Template instantiation
 template class softmax_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class softmax_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

@@ -27,10 +27,8 @@
 #ifndef LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
 #define LBANN_LAYERS_ACTIVATIONS_LEAKY_RELU_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
-#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
-#endif
 
 namespace lbann {
 
@@ -49,33 +47,33 @@ namespace lbann {
  *  nonlinearities improve neural network acoustic models." In
  *  Proc. ICML, vol. 30, no. 1, p. 3. 2013.
  */
-template <data_layout Layout, El::Device Device>
-class leaky_relu_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class leaky_relu_layer : public data_type_layer<TensorDataType> {
 public:
-  leaky_relu_layer(lbann_comm *comm, DataType negative_slope = 0.01)
-    : Layer(comm), m_negative_slope(negative_slope) {}
+  leaky_relu_layer(lbann_comm *comm, TensorDataType negative_slope = 0.01)
+    : data_type_layer<TensorDataType>(comm), m_negative_slope(negative_slope) {}
   leaky_relu_layer* copy() const override { return new leaky_relu_layer(*this); }
   std::string get_type() const override { return "leaky ReLU"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description() const override {
-    auto desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("Negative slope", m_negative_slope);
     return desc;
   }
 
 protected:
   void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
+    data_type_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
   void fp_compute() override;
   void bp_compute() override;
 
 private:
   /** Function slope in negative region. */
-  DataType m_negative_slope;
+  TensorDataType m_negative_slope;
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
@@ -83,32 +81,26 @@ private:
   void fp_compute_distconv();
   void bp_compute_distconv();
  public:
-  void setup_tensor_distribution_init(
+  void init_distribution(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &fixed) override {
-    Layer::setup_tensor_distribution_init(dists, invariants, updated, fixed);
-  }
-  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_fwd(dists);
-  }
-  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_bwd(dists);
-  }
+      std::set<dc::Dist*> &fixed) override;
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override;
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override;
 #endif // LBANN_HAS_DISTCONV
 };
 
 #ifndef LBANN_LEAKY_RELU_LAYER_INSTANTIATE
 extern template class leaky_relu_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class leaky_relu_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class leaky_relu_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class leaky_relu_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_LEAKY_RELU_LAYER_INSTANTIATE
 

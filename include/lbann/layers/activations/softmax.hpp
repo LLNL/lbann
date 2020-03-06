@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 #define LBANN_LAYERS_ACTIVATIONS_SOFTMAX_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/distconv.hpp"
 
@@ -48,13 +48,22 @@ enum class softmax_mode {INVALID, INSTANCE, CHANNEL};
  *
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
  */
-template <data_layout Layout, El::Device Device>
-class softmax_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class softmax_layer : public data_type_layer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
 public:
 
   softmax_layer(lbann_comm *comm,
                 softmax_mode mode)
-    : Layer(comm), m_mode(mode)
+      : data_type_layer<TensorDataType>(comm), m_mode(mode)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
@@ -65,7 +74,7 @@ public:
   }
 
   softmax_layer(const softmax_layer& other)
-    : Layer(other), m_mode(other.m_mode),
+    : data_type_layer<TensorDataType>(other), m_mode(other.m_mode),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
@@ -78,7 +87,7 @@ public:
   }
 
   softmax_layer& operator=(const softmax_layer& other) {
-    Layer::operator=(other);
+    data_type_layer<TensorDataType>::operator=(other);
     m_workspace.reset(other.m_workspace ?
                       other.m_workspace->Copy() : nullptr);
 #ifdef LBANN_HAS_CUDNN
@@ -96,15 +105,15 @@ public:
   El::Device get_device_allocation() const override { return Device; }
 
   void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
+    data_type_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
   }
 
   void setup_matrices(const El::Grid& grid) override {
-    Layer::setup_matrices(grid);
-    auto dist = get_prev_activations().DistData();
+    data_type_layer<TensorDataType>::setup_matrices(grid);
+    auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
-    m_workspace.reset(AbsDistMat::Instantiate(dist));
+    m_workspace.reset(AbsDistMatrixType::Instantiate(dist));
 #ifdef HYDROGEN_HAVE_CUB
     if (m_workspace->GetLocalDevice() == El::Device::GPU) {
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
@@ -113,8 +122,8 @@ public:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
-    Layer::fp_setup_outputs(mini_batch_size);
-    const auto& dist_data = get_prev_activations().DistData();
+    data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+    const auto& dist_data = this->get_prev_activations().DistData();
     m_workspace->Empty(false);
     m_workspace->AlignWith(dist_data);
     m_workspace->Resize(1, mini_batch_size);
@@ -123,18 +132,30 @@ public:
   void fp_compute() override;
   void bp_compute() override;
 
+  template <typename U>
+  friend void fp_compute_impl(softmax_layer<U, Layout, Device>& l);
+  template <typename U>
+  friend void bp_compute_impl(softmax_layer<U, Layout, Device>& l);
+
 private:
 
   /** Softmax mode. */
   const softmax_mode m_mode;
 
   /** Workspace for column-wise reductions. */
-  std::unique_ptr<AbsDistMat> m_workspace;
+  std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 #ifdef LBANN_HAS_CUDNN
   /** Tensor cuDNN descriptors. */
-  cudnn::data_parallel_layer_tensor_manager m_tensors_cudnn_desc;
+  cudnn::data_parallel_layer_tensor_manager<TensorDataType> m_tensors_cudnn_desc;
 #endif // LBANN_HAS_CUDNN
+
+// Minimum output value to avoid denormalized floats
+#ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
+  const TensorDataType threshold_val = std::sqrt(std::numeric_limits<TensorDataType>::min());
+#else
+  const TensorDataType threshold_val = 0;
+#endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
@@ -144,12 +165,13 @@ private:
   void bp_compute_distconv();
 
  public:
-  void setup_tensor_distribution_init(
+  void init_distribution(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
       std::set<dc::Dist*> &fixed) override {
-    Layer::setup_tensor_distribution_init(dists, invariants, updated, fixed);
+    data_type_layer<TensorDataType>::init_distribution(
+        dists, invariants, updated, fixed);
     if (!this->distconv_enabled()) return;
 
     // No overlap supported yet
@@ -164,38 +186,37 @@ private:
 
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists)
       override {
-    Layer::setup_tensors_fwd(dists);
-    if (!distconv_enabled()) return;
-    setup_prev_activations_tensor(dists);
-    setup_activations_tensor(dists);
-    setup_activations_copyout_tensor(dists);
+    data_type_layer<TensorDataType>::setup_tensors_fwd(dists);
+    if (!this->distconv_enabled()) return;
+    this->setup_prev_activations_tensor(dists);
+    this->setup_activations_tensor(dists);
+    this->setup_activations_copyout_tensor(dists);
   }
   void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists)
       override {
-    Layer::setup_tensors_bwd(dists);
-    if (!distconv_enabled()) return;
-    setup_prev_error_signals_tensor(dists);
-    setup_error_signals_tensor(dists);
-    setup_error_signals_copyout_tensor(dists);
+    data_type_layer<TensorDataType>::setup_tensors_bwd(dists);
+    if (!this->distconv_enabled()) return;
+    this->setup_prev_error_signals_tensor(dists);
+    this->setup_error_signals_tensor(dists);
+    this->setup_error_signals_copyout_tensor(dists);
     m_softmax = new dc::Softmax(dc::get_backend());
     auto dc_softmax_mode = m_mode == softmax_mode::INSTANCE ?
         ::distconv::SoftmaxMode::INSTANCE : ::distconv::SoftmaxMode::CHANNEL;
-    m_softmax->setup(m_prev_activations_t, dc_softmax_mode);
+    m_softmax->setup(this->get_prev_activations_t(), dc_softmax_mode);
   }
-
 #endif // LBANN_HAS_DISTCONV
 };
 
 #ifndef LBANN_SOFTMAX_LAYER_INSTANTIATE
 extern template class softmax_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class softmax_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class softmax_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class softmax_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SOFTMAX_LAYER_INSTANTIATE
 

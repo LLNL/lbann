@@ -38,9 +38,6 @@
 #include "lbann/utils/distconv.hpp"
 #include <string>
 #include <vector>
-#include <set>
-#include <map>
-#include <array>
 
 // Forward-declare protobuf classes
 namespace lbann_data {
@@ -56,6 +53,7 @@ namespace callback {
 class sync_layers;
 } // namespace callback
 
+#ifdef LBANN_HAS_DISTCONV
 /** Represents a parallel strategy for a layer. */
 struct ParallelStrategy {
   /** Number of process groups the sample dimension is split over. */
@@ -122,6 +120,7 @@ inline std::ostream &operator<<(std::ostream &os,
      << "}";
   return os;
 }
+#endif // LBANN_HAS_DISTCONV
 
 /**
  * @brief Neural network tensor operation.
@@ -180,14 +179,14 @@ public:
    *  Apply a mathematical operation to input tensors to obtain output
    *  tensors.
    */
-  virtual void forward_prop();
+  virtual void forward_prop() {};
   /** Backward propagation step.
    *  Given the objective function gradients w.r.t. the output
    *  tensors, compute the gradients w.r.t. the input tensors and
    *  w.r.t. the weights. This is essentially an application of the
    *  chain rule.
    */
-  virtual void back_prop();
+  virtual void back_prop() {};
   /** Update step.
    *  Update the layer's internal members. Note that the optimization
    *  step for the weights happens elsewhere.
@@ -195,7 +194,7 @@ public:
   virtual bool update();
 
   virtual void summarize_stats(lbann_summary& summarizer, int step);
-  virtual void summarize_matrices(lbann_summary& summarizer, int step);
+  virtual void summarize_matrices(lbann_summary& summarizer, int step) = 0;
 
   /** Setup layer members.
    *  This calls the 'setup_pointers', 'setup_dims', 'setup_matrices',
@@ -274,6 +273,11 @@ public:
   /** Get child layers. (const) */
   inline const std::vector<const Layer*>& get_child_layers() const { return m_child_layers; }
 
+  inline int find_layer_index(const Layer* l) const {
+    return (std::find(m_child_layers.begin(),
+                      m_child_layers.end(),
+                      l) - m_child_layers.begin()); }
+
   /** Get number of parent layers. */
   inline int get_num_parents() const { return get_parent_layers().size(); }
   /** Get number of child layers. */
@@ -317,14 +321,10 @@ public:
   // Weights access functions
   // ===========================================================
 
-  /** Get references to weights. */
-  inline std::vector<weights*>& get_weights() { return m_weights; }
-  /** Get references to weights. (const) */
-  inline const std::vector<weights*>& get_weights() const { return m_weights; }
   /** Set list of pointers to weights. */
-  inline void set_weights(std::vector<weights*> w) { get_weights() = w; }
+  virtual void set_weights(std::vector<weights*>& w) = 0;
   /** Replace weights with another Layer's weights*/
-  void replace_weights(Layer* other_layer);
+  virtual void replace_weights(Layer* other_layer) = 0;
 
   // ===========================================================
   // Tensor dimension access functions
@@ -333,43 +333,15 @@ public:
   /** Get input tensor dimensions. */
   std::vector<int> get_input_dims(int input_index = 0) const;
   /** Get input tensor size. */
-  El::Int get_input_size(int input_index = 0) const;
+  int get_input_size(int input_index = 0) const;
   /** Get output tensor dimensions. */
   std::vector<int> get_output_dims(int output_index = 0) const;
   /** Get output tensor size. */
-  El::Int get_output_size(int output_index = 0) const;
+  int get_output_size(int output_index = 0) const;
 
   /** Set output tensor dimensions. */
   void set_output_dims(std::vector<int> dims, int output_index = 0);
 
-  // ===========================================================
-  // Tensor access functions
-  // ===========================================================
-
-  /** Get activation tensor. */
-  AbsDistMat& get_activations(int child_index = 0);
-  /** Get error signal tensor. */
-  AbsDistMat& get_error_signals(int parent_index = 0);
-  /** Get previous activation tensor. */
-  const AbsDistMat& get_prev_activations(int parent_index = 0) const;
-  /** Get activation tensor. */
-  const AbsDistMat& get_activations(int child_index = 0) const;
-  /** Get previous error signal tensor. */
-  const AbsDistMat& get_prev_error_signals(int child_index = 0) const;
-  /** Get error signal tensor. */
-  const AbsDistMat& get_error_signals(int parent_index = 0) const;
-  /** Get local portion of activation tensor. */
-  AbsMat& get_local_activations(int child_index = 0);
-  /** Get local portion of error signal tensor. */
-  AbsMat& get_local_error_signals(int parent_index = 0);
-  /** Get local portion of previous activation tensor. */
-  const AbsMat& get_local_prev_activations(int parent_index = 0) const;
-  /** Get local portion of activation tensor. */
-  const AbsMat& get_local_activations(int child_index = 0) const;
-  /** Get local portion of previous error signal tensor. */
-  const AbsMat& get_local_prev_error_signals(int child_index = 0) const;
-  /** Get local portion of error signal tensor. */
-  const AbsMat& get_local_error_signals(int parent_index = 0) const;
 
   /** Get reference to LBANN communicator. */
   lbann_comm* get_comm() const { return m_comm; }
@@ -396,10 +368,6 @@ public:
   void unfreeze();
   bool is_frozen() const;
 
-  /** Get the parallel strategy for the layer. */
-  ParallelStrategy& get_parallel_strategy() { return m_parallel_strategy; }
-  const ParallelStrategy& get_parallel_strategy() const { return m_parallel_strategy; }
-
 protected:
 
   // ===========================================================
@@ -424,20 +392,12 @@ protected:
    *  'construct_matrix' function. If any matrices have already been
    *  setup, they are destroyed and reinstantiated.
    */
-  virtual void setup_matrices(const El::Grid& grid);
-  /** Construct distributed matrix.
-   *  Called by the 'setup_matrices' function. 'type' is one of the
-   *  following: "input", "output", "gradient_wrt_output",
-   *  "gradient_wrt_input".
-   */
-  virtual std::unique_ptr<AbsDistMat> construct_matrix(const El::Grid& grid,
-                                                       std::string type,
-                                                       El::Int index);
+  virtual void setup_matrices(const El::Grid& grid) = 0;
   /** Setup layer data.
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
    */
-  virtual void setup_data();
+  virtual void setup_data() {};
   /** Setup GPU objects.
    *  Called by the 'setup' function if the layer is on GPUs.
    */
@@ -452,12 +412,12 @@ protected:
    *  setup as a view or copy of the corresponding parent layer's
    *  output tensor.
    */
-  virtual void fp_setup_inputs(El::Int mini_batch_size);
+  virtual void fp_setup_inputs(El::Int mini_batch_size) = 0;
   /** Setup output tensors.
    *  Called by the 'forward_prop' function. Each output tensor is
    *  resized to match the mini-batch size.
    */
-  virtual void fp_setup_outputs(El::Int mini_batch_size);
+  virtual void fp_setup_outputs(El::Int mini_batch_size) = 0;
   /** Apply layer operation.
    *  Called by the 'forward_prop' function. Given the input tensors,
    *  the output tensors are populated with computed values.
@@ -473,19 +433,19 @@ protected:
    *  tensor is setup as a view or copy of the corresponding child
    *  layer's gradient w.r.t. input tensor.
    */
-  virtual void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size);
+  virtual void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) = 0;
   /** Setup gradient w.r.t. input tensors.
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
    */
-  virtual void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size);
+  virtual void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) = 0;
   /** Compute objective funciton gradients.
    *  Called by the 'back_prop' function. Given the input, output, and
    *  gradient w.r.t. output tensors, the gradient w.r.t. input
    *  tensors are populated with the computed values and the gradients
    *  w.r.t. the weights are sent to the appropriate optimizers.
    */
-  virtual void bp_compute();
+  virtual void bp_compute() {};
 
   // ===========================================================
   // Update step helper functions
@@ -502,9 +462,6 @@ protected:
 
   /** Reference to LBANN communicator. */
   lbann_comm *m_comm;
-
-  /** References to layer weights. */
-  std::vector<weights*> m_weights;
 
   /** References to parent layers. */
   std::vector<const Layer*> m_parent_layers;
@@ -543,167 +500,15 @@ protected:
    */
   std::string m_name;
 
-
-  /** Parallel strategy for the layer. */
-  ParallelStrategy m_parallel_strategy;
-
-#ifdef LBANN_HAS_DISTCONV
- public:
-  virtual bool using_distconv() const;
-  void enable_distconv();
-  void setup_distconv();
-  void setup_inter_layer_adaptation();
-  void setup_early_termination();
-  void setup_keep_original_tensors();
-  static dc::Dist get_hydrogen_matrix_distribution(int num_dims);
-  virtual void setup_tensor_distribution_init(
-      std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
-      std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &fixed);
-  virtual void setup_tensor_distribution_add_adjacent_invariants(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants);
-  virtual size_t estimate_memory_usage(const std::array<dc::Dist, dc::num_dists> &dists);
-  /** Return Distconv-related shapes. */
-  const dc::Shape get_input_tensor_shape() const;
-  const dc::Shape get_output_tensor_shape(int output_index = 0) const;
-  virtual void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) {}
-  virtual void setup_prev_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-  virtual dc::Shape get_activations_tensor_local_shape() const;
-  virtual void setup_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists,
-                                        bool allocate=true);
-  virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-  virtual void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists);
-  virtual void setup_distconv_post(size_t ws_size);
-  virtual void setup_prev_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-  virtual void setup_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-  virtual void setup_error_signals_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-
-  // REFACTORING: returning non-const tensor should be protected
-  virtual const dc::TensorDev &get_activations_t(const Layer &child) const;
-  virtual const dc::TensorDev &get_error_signals_t() const;
-  virtual const dc::TensorDev &get_error_signals_t(const Layer &parent) const;
-  //virtual ConstTensorDev get_activations_const_view() const;
-  //virtual ConstTensorDev get_prev_activations_const_view() const;
-
-  bool distconv_enabled() const {
-    return m_distconv_enabled;
-  }
-  void disable_distconv() {
-    m_distconv_enabled = false;
-  }
-
-  bool skip_first_layer_bp() const;
-
-  virtual int get_num_dims() const;
-  virtual int get_num_spatial_dims() const;
-
- protected:
-  virtual bool keep_original_input(int input_index) const {
-    return m_keep_original_input[input_index];
-  }
-  virtual bool keep_original_output(int output_index) const {
-    return m_keep_original_output[output_index];
-  }
-  virtual bool keep_original() const {
-    for (int i = 0; i < get_num_parents(); ++i) {
-      if (!keep_original_input(i)) return false;
-    }
-    for (int i = 0; i < get_num_children(); ++i) {
-      if (!keep_original_output(i)) return false;
-    }
-    return true;
-  }
-  virtual void fp_setup_distconv(int mini_batch_size);
-  virtual void bp_setup_distconv(int mini_batch_size);
-
-  // Copis and converts input or output tensors when necessary
-  void ensure_prev_activations();
-  void copy_out_activations();
-  void ensure_prev_error_signals();
-  void copy_out_error_signals();
-
-  // negative value disables early termination. DISTCONV_EARLY_TERMINATE
-  // environment value will override if set.
-  int m_exit_count = -1;
-  void early_terminate();
-  bool early_terminate_last_iteration() const;
-
-  template <typename Tensor>
-  void dump_tensor(const Tensor &t, const std::string &path) const {
-    if (getenv("DISTCONV_DUMP")) {
-      if (early_terminate_last_iteration()) {
-        dc::MPIPrintStreamDebug() << "Dumping tensor to "
-                                  << path << "\n";
-        cudaDeviceSynchronize();
-        distconv::dump_tensor(t, path, true);
-      }
-    }
-  }
-  void dump_activations() const {
-    dump_tensor(m_activations_t, get_name() + "_activations");
-  }
-  void dump_reference_activations() {
-    assert0(dc::tensor::View(
-        m_activations_copyout, get_activations().LockedBuffer()));
-    dump_tensor(m_activations_copyout,
-                get_name() + "_activations_original");
-  }
-  void dump_error_signals() const {
-    dump_tensor(m_error_signals_t, get_name() + "_error_signals");
-  }
-  void dump_reference_error_signals() {
-    assert0(dc::tensor::View(
-        m_error_signals_copyout, get_error_signals().LockedBuffer()));
-    dump_tensor(m_error_signals_copyout,
-                get_name() + "_error_signals_original");
-  }
-
-  std::vector<bool> m_parent_copy_in_required;
-  std::vector<bool> m_parent_shuffle_required;
-  std::vector<bool> m_child_copy_out_required;
-  std::vector<bool> m_child_shuffle_required;
-  /** Previous activation tensor */
-  dc::TensorDev m_prev_activations_t;
-  /** View to Elemental matrix of previous activations */
-  dc::TensorDev m_prev_activations_const_view;
-  /** Activation tensor */
-  dc::TensorDev m_activations_t;
-  /** Elemental-format activation matrix */
-  dc::TensorDev m_activations_copyout;
-  dc::TensorShuffler *m_prev_activations_shuffler = nullptr;
-  dc::TensorShuffler *m_prev_activations_shuffler_last_mb[3];
-  dc::TensorShuffler *m_activations_shuffler = nullptr;
-  dc::TensorShuffler *m_activations_shuffler_last_mb[3];
-  /** Previous error signal tensor */
-  dc::TensorDev m_prev_error_signals_t;
-  /** View to Elemental matrix */
-  dc::TensorDev m_prev_error_signals_const_view;
-  /** Error signal tensor */
-  dc::TensorDev m_error_signals_t;
-  /** Elemental-format matrix */
-  dc::TensorDev m_error_signals_copyout;
-  dc::TensorShuffler *m_prev_error_signals_shuffler = nullptr;
-  dc::TensorShuffler *m_prev_error_signals_shuffler_last_mb[3];
-  dc::TensorShuffler *m_error_signals_shuffler = nullptr;
-  dc::TensorShuffler *m_error_signals_shuffler_last_mb[3];
- private:
-  bool m_distconv_enabled = false;
-  std::vector<bool> m_keep_original_input;
-  std::vector<bool> m_keep_original_output;
-#endif // LBANN_HAS_DISTCONV
-
 private:
 
   // ===========================================================
   // Private access functions
   // ===========================================================
-
-  /** Get activation tensor corresponding to child layer. */
-  const AbsDistMat& get_activations(const Layer& child) const;
-  /** Get error signal tensor corresponding to parent layer. */
-  const AbsDistMat& get_error_signals(const Layer& parent) const;
+  /** Get references to weights. */
+  virtual std::vector<weights*> get_weights() = 0;
+  /** Get references to weights. (const) */
+  virtual std::vector<weights const*> get_weights() const = 0;
 
   // ===========================================================
   // Private class members
@@ -712,23 +517,6 @@ private:
   /** Dimensions of output tensors. */
   std::vector<std::vector<int>> m_output_dims_list;
 
-  /** Input tensors.
-   *  Each matrix column corresponds to a flattened mini-batch sample.
-   */
-  std::vector<std::unique_ptr<AbsDistMat>> m_inputs;
-  /** Output tensors.
-   *  Each matrix column corresponds to a flattened mini-batch sample.
-   */
-  std::vector<std::unique_ptr<AbsDistMat>> m_outputs;
-  /** Objective function gradients w.r.t. the output tensors.
-   *  Each matrix column corresponds to a flattened mini-batch sample.
-   */
-  std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_outputs;
-  /** Objective function gradients w.r.t. the input tensors.
-   *  Each matrix column corresponds to a flattened mini-batch sample.
-   */
-  std::vector<std::unique_ptr<AbsDistMat>> m_gradient_wrt_inputs;
-
   /** Hint layer.
    *  During setup, the output tensor dimensions are set to match the
    *  first output tensor of the hint layer. Derived classes may do
@@ -736,7 +524,64 @@ private:
    */
   const Layer* m_hint_layer = nullptr;
 
+private:
+  friend std::vector<const weights*> extract_weights(Layer const& l);
+  friend std::vector<weights*> extract_weights(Layer& l);
+
+#ifdef LBANN_HAS_DISTCONV
+ public:
+  /** Indicate whether distconv should be enabled in this layer. */
+  virtual bool using_distconv() const = 0;
+  void enable_distconv();
+  virtual void setup_distconv() = 0;
+  /** Indicate whether distconv is enabled in this layer. */
+  bool distconv_enabled() const { return m_distconv_enabled; }
+  /** Get the parallel strategy for the layer. */
+  ParallelStrategy& get_parallel_strategy() { return m_parallel_strategy; }
+  const ParallelStrategy& get_parallel_strategy() const { return m_parallel_strategy; }
+
+  virtual void init_distribution(
+      std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::set<dc::Dist*> &updated,
+      std::set<dc::Dist*> &fixed) = 0;
+  virtual void setup_tensor_distribution_add_adjacent_invariants(
+      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants) = 0;
+
+  virtual void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) = 0;
+  virtual void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) = 0;
+  virtual void setup_distconv_post(size_t ws_size) = 0;
+
+ protected:
+  virtual void fp_setup_distconv(El::Int mini_batch_size) = 0;
+  virtual void bp_setup_distconv(El::Int mini_batch_size) = 0;
+
+  void setup_early_termination();
+  void early_terminate();
+  bool early_terminate_last_iteration() const;
+  int get_exit_count() const;
+
+  /** Indicate whether backprop can be safely skipped. */
+  bool skip_first_layer_bp() const;
+
+ private:
+  bool m_distconv_enabled = false;
+  // Negative value disables early termination. DISTCONV_EARLY_TERMINATE
+  // environment value will override if set.
+  int m_exit_count = -1;
+  /** Parallel strategy for the layer. */
+  ParallelStrategy m_parallel_strategy;
+#endif // LBANN_HAS_DISTCONV
 };
+
+inline std::vector<weights*> extract_weights(Layer& l) {
+  return l.get_weights();
+}
+
+inline std::vector<const weights*> extract_weights(Layer const& l) {
+  return l.get_weights();
+}
 
 } // namespace lbann
 

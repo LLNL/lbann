@@ -32,12 +32,13 @@ namespace lbann {
 namespace {
 
 /** CUDA kernel for forward prop computation. */
-__global__ void fp_kernel(DataType negative_slope,
+template <typename TensorDataType>
+__global__ void fp_kernel(TensorDataType negative_slope,
                           El::Int height,
                           El::Int width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
-                          DataType* __restrict__ output,
+                          TensorDataType* __restrict__ output,
                           El::Int output_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
@@ -47,19 +48,20 @@ __global__ void fp_kernel(DataType negative_slope,
     const auto& col = pos / height;
     const auto& x = input[row + col * input_ldim];
     auto& y = output[row + col * output_ldim];
-    y = (x > DataType(0)) ? x : negative_slope * x;
+    y = (x > TensorDataType(0)) ? x : negative_slope * x;
   }
 }
 
 /** CUDA kernel for backprop computation. */
-__global__ void bp_kernel(DataType negative_slope,
+template <typename TensorDataType>
+__global__ void bp_kernel(TensorDataType negative_slope,
                           El::Int height,
                           El::Int width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
-                          const DataType* __restrict__ gradient_wrt_output,
+                          const TensorDataType* __restrict__ gradient_wrt_output,
                           El::Int gradient_wrt_output_ldim,
-                          DataType* __restrict__ gradient_wrt_input,
+                          TensorDataType* __restrict__ gradient_wrt_input,
                           El::Int gradient_wrt_input_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
@@ -70,14 +72,15 @@ __global__ void bp_kernel(DataType negative_slope,
     const auto& x = input[row + col * input_ldim];
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-    dx = (x > DataType(0)) ? dy : dy * negative_slope;
+    dx = (x > TensorDataType(0)) ? dy : dy * negative_slope;
   }
 }
 
 /** Local forward prop computation. */
-void local_fp(DataType negative_slope,
-              const AbsMat& input,
-              AbsMat& output) {
+template <typename TensorDataType>
+void local_fp(TensorDataType negative_slope,
+              const El::AbstractMatrix<TensorDataType>& input,
+              El::AbstractMatrix<TensorDataType>& output) {
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -102,10 +105,11 @@ void local_fp(DataType negative_slope,
 }
 
 /** Local backprop computation. */
-void local_bp(DataType negative_slope,
-              const AbsMat& input,
-              const AbsMat& gradient_wrt_output,
-              AbsMat& gradient_wrt_input) {
+template <typename TensorDataType>
+void local_bp(TensorDataType negative_slope,
+              const El::AbstractMatrix<TensorDataType>& input,
+              const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
+              El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -132,69 +136,123 @@ void local_bp(DataType negative_slope,
 
 } // namespace
 
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-       ::fp_compute() {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute() {
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) {
+  if (this->distconv_enabled()) {
+    assert_always(Layout == data_layout::DATA_PARALLEL);
     fp_compute_distconv();
-    if (!early_terminate_last_iteration()) {
+    if (!this->early_terminate_last_iteration()) {
       return;
     }
     // fall through the normal code path to obtain reference results
   }
 #endif
-  local_fp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_activations());
+  local_fp(this->m_negative_slope,
+           this->get_local_prev_activations(),
+           this->get_local_activations());
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled() && early_terminate_last_iteration() &&
-      keep_original()) {
-    dump_reference_activations();
+  if (this->distconv_enabled() && this->early_terminate_last_iteration() &&
+      this->keep_original()) {
+    this->dump_reference_activations();
   }
 #endif // LBANN_HAS_DISTCONV
 }
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) {
+  if (this->distconv_enabled()) {
+    assert_always(Layout == data_layout::DATA_PARALLEL);
     bp_compute_distconv();
-    if (!early_terminate_last_iteration()) {
+    if (!this->early_terminate_last_iteration()) {
       return;
     }
   }
 #endif // LBANN_HAS_DISTCONV
-  local_bp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+  local_bp(this->m_negative_slope,
+           this->get_local_prev_activations(),
+           this->get_local_prev_error_signals(),
+           this->get_local_error_signals());
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled() && early_terminate_last_iteration() &&
-      keep_original()) {
-    dump_reference_error_signals();
+  if (this->distconv_enabled() && this->early_terminate_last_iteration() &&
+      this->keep_original()) {
+    this->dump_reference_error_signals();
   }
 #endif // LBANN_HAS_DISTCONV
 }
-template <>
-void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-       ::fp_compute() {
-  local_fp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_activations());
-}
-template <>
-void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  local_bp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::init_distribution(
+    std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
+    std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+    std::set<dc::Dist*> &updated,
+    std::set<dc::Dist*> &fixed)  {
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  data_type_layer<TensorDataType>::init_distribution(
+      dists, invariants, updated, fixed);
+  if (!this->distconv_enabled()) return;
+  auto &layer_dists = dists[this];
+  // x == y
+  invariants[&layer_dists[0]].insert(&layer_dists[1]);
+  invariants[&layer_dists[1]].insert(&layer_dists[0]);
+  // x == dx
+  invariants[&layer_dists[0]].insert(&layer_dists[2]);
+  invariants[&layer_dists[2]].insert(&layer_dists[0]);
+  // dx == dy
+  invariants[&layer_dists[2]].insert(&layer_dists[3]);
+  invariants[&layer_dists[3]].insert(&layer_dists[2]);
 }
 
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::
+setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) {
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  data_type_layer<TensorDataType>::setup_tensors_fwd(dists);
+  if (!this->distconv_enabled()) return;
+  this->setup_prev_activations_tensor(dists);
+  this->setup_activations_tensor(dists);
+  this->setup_activations_copyout_tensor(dists);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::
+setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists)  {
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  data_type_layer<TensorDataType>::setup_tensors_bwd(dists);
+  if (!this->distconv_enabled()) return;
+  this->setup_prev_error_signals_tensor(dists);
+  this->setup_error_signals_tensor(dists);
+  this->setup_error_signals_copyout_tensor(dists);
+  m_leaky_relu = new dc::LeakyReLU(dc::get_backend());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::
+fp_compute_distconv() {
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  assert_always(this->distconv_enabled());
+  m_leaky_relu->forward(this->get_prev_activations_t(), m_negative_slope,
+                        this->get_activations_t());
+  this->copy_out_activations();
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::
+bp_compute_distconv() {
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  assert_always(this->distconv_enabled());
+  m_leaky_relu->backward(this->get_prev_activations_t(),
+                         this->get_prev_error_signals_t(),
+                         m_negative_slope,
+                         this->get_error_signals_t());
+  this->copy_out_error_signals();
+}
+#endif // LBANN_HAS_DISTCONV
+
 template class leaky_relu_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 template class leaky_relu_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann

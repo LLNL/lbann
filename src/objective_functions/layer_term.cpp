@@ -49,9 +49,9 @@ const Layer& layer_term::get_layer() const {
   return *layer_pointers.front();
 }
 
-abstract_evaluation_layer& layer_term::get_evaluation_layer() {
+/*abstract_evaluation_*/Layer& layer_term::get_evaluation_layer() {
   auto& l = get_layer();
-  auto* eval = dynamic_cast<abstract_evaluation_layer*>(&l);
+  auto* eval = dynamic_cast<abstract_evaluation_layer<DataType>*>(&l);
   if (eval == nullptr) {
     std::stringstream err;
     err << "attempted to get the evaluation layer corresponding to "
@@ -65,20 +65,24 @@ abstract_evaluation_layer& layer_term::get_evaluation_layer() {
 
 void layer_term::setup(model& m) {
   objective_function_term::setup(m);
-  get_evaluation_layer().set_scale(m_scale_factor);
+  auto& eval = dynamic_cast<abstract_evaluation_layer<DataType>&>(get_evaluation_layer());
+  eval.set_scale(m_scale_factor);
+  //get_evaluation_layer().set_scale(m_scale_factor);
 }
 
 void layer_term::start_evaluation() {}
 
 EvalType layer_term::finish_evaluation() {
   if (m_scale_factor == EvalType(0)) { return EvalType(0); }
-  auto& eval = get_evaluation_layer();
+  auto& eval = dynamic_cast<abstract_evaluation_layer<DataType>&>(get_evaluation_layer());
   eval.set_scale(m_scale_factor);
   return eval.get_value();
 }
 
 void layer_term::differentiate() {
-  get_evaluation_layer().set_scale(m_scale_factor);
+  auto& eval = dynamic_cast<abstract_evaluation_layer<DataType>&>(get_evaluation_layer());
+  eval.set_scale(m_scale_factor);
+  // get_evaluation_layer().set_scale(m_scale_factor);
 }
 
 }  // namespace lbann

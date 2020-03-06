@@ -28,19 +28,18 @@
 #define LBANN_LAYERS_INPUT_LAYER_DISTCONV_HPP_INCLUDED
 
 #include "lbann/layers/io/input/input_layer.hpp"
-
-#ifdef LBANN_HAS_DISTCONV
 #include "lbann/utils/distconv.hpp"
-#endif
+#include <cstdint>
 
 namespace lbann {
 
 /** @brief Interface with data reader. */
-template <typename T_io_buffer,
+template <typename TensorDataType,
+          typename T_io_buffer,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU,
-          typename InputType = DataType>
-class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
+          typename InputType = TensorDataType>
+class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_layout, Dev> {
  public:
 
   /// @todo make the map and vector references
@@ -48,13 +47,13 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
                        std::map<execution_mode, generic_data_reader *> data_readers,
                        bool data_set_spans_models = true,
                        data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION)
-      : input_layer<T_io_buffer, T_layout, Dev>(
+      : input_layer<TensorDataType, T_io_buffer, T_layout, Dev>(
           comm, num_parallel_readers, data_readers,
           data_set_spans_models, target_mode) {
   }
 
   void fp_compute() override {
-    input_layer<T_io_buffer, T_layout, Dev>::fp_compute();
+    input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::fp_compute();
 #ifdef LBANN_HAS_DISTCONV
     // When enabled, shuffle the input samples and copy them to a device tensor
     if (this->distconv_enabled()) {
@@ -65,14 +64,15 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
 
 #ifdef LBANN_HAS_DISTCONV
  public:
+  using TensorDevType = typename input_layer_distconv::TensorDevType;
+
   int get_num_dims() const {
     return this->get_output_dims().size() + 1;
   }
 
-  void setup_tensors_fwd(
-      const std::array<dc::Dist, dc::num_dists> &dists) override {
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     using namespace dc;
-    Layer::setup_tensors_fwd(dists);
+    input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
 
     // copies the label data as well when the second child layer is
@@ -84,7 +84,7 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
     }
 
     const auto tensor_shape = this->get_output_tensor_shape();
-    const Dist sample_dist = Layer::get_hydrogen_matrix_distribution(get_num_dims());
+    const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(get_num_dims());
     auto local_shape = tensor_shape;
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
@@ -135,9 +135,9 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
     // prev_activations_tensor is already
     // setup. prev_activations_tensor is not necessary for input.
     //const LocaleMPI loc(dc::get_mpi_comm(), false);
-    this->m_activations_t = TensorDev(tensor_shape, loc, dist);
-    assert0(this->m_activations_t.allocate());
-    this->m_activations_t.zero(dc::get_stream());
+    this->get_activations_t() = TensorDevType(tensor_shape, loc, dist);
+    assert0(this->get_activations_t().allocate());
+    this->get_activations_t().zero(dc::get_stream());
 
     // Keeps the same input type and convert to float on GPU
     m_input_dev = TensorDevInput(tensor_shape, loc, dist);
@@ -157,13 +157,13 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
 
   void setup_tensors_bwd(
       const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_bwd(dists);
+    input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::setup_tensors_bwd(dists);
     if (!this->distconv_enabled()) return;
 
     // Nothing to do as this is an input layer
   }
 
-  void fp_setup_distconv(int mini_batch_size) {
+  void fp_setup_distconv(El::Int mini_batch_size) override {
     if (!this->distconv_enabled()) return;
     // Nothing to do here as everything is done in fp_compute_distconv.
   }
@@ -192,7 +192,7 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
 
   dc::TensorHost<InputType> m_labels_host_view;
   dc::TensorHost<InputType> m_labels_host_tensor;
-  dc::TensorDev m_labels_dev;
+  TensorDevType m_labels_dev;
   TensorDevInput m_labels_input_type;
   // shufflers for the labels
   std::unique_ptr<TensorShuffler> m_label_shuffler;
@@ -200,7 +200,9 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
 
   InputType *m_copy_pinned_buffer = nullptr;
 
-  const dc::TensorDev &get_activations_t(const Layer &child) const override {
+  using input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::get_activations_t;
+
+  const TensorDevType &get_activations_t(const Layer &child) const override {
     const int child_index = std::find(this->get_child_layers().begin(),
                                       this->get_child_layers().end(),
                                       &child) - this->get_child_layers().begin();
@@ -208,7 +210,7 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
       LBANN_ERROR("Invalid child layer");
     }
     if (child_index == 0) {
-      return this->m_activations_t;
+      return this->get_activations_t();
     } else {
       assert_eq(child_index, 1);
       return m_labels_dev;
@@ -275,7 +277,7 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
     auto &input_view = m_input_host_view;
     auto &input_tensor = m_input_host_tensor;
 
-    this->m_activations_t.set_outermost_dimension(mb_size);
+    this->get_activations_t().set_outermost_dimension(mb_size);
     m_input_dev.set_outermost_dimension(mb_size);
 
     assert_eq(mb_size * dc::get_number_of_io_partitions(),
@@ -348,15 +350,15 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
         const auto norm_alpha = std::stod(norm_alpha_p);
         const auto norm_beta = std::stod(norm_beta_p);
         prof_region_begin("cast-scale-bias-from-int16", prof_colors[1], false);
-        dc::tensor::CastScaleBias(this->m_activations_t,
+        dc::tensor::CastScaleBias(this->get_activations_t(),
                                   m_input_dev,
-                                  (DataType) norm_alpha,
-                                  (DataType) norm_beta,
+                                  (TensorDataType) norm_alpha,
+                                  (TensorDataType) norm_beta,
                                   dc::get_stream());
         prof_region_end("cast-scale-bias-from-int16", false);
       } else {
         prof_region_begin("cast-from-int16", prof_colors[1], false);
-        dc::tensor::Cast(this->m_activations_t, m_input_dev, dc::get_stream());
+        dc::tensor::Cast(this->get_activations_t(), m_input_dev, dc::get_stream());
         prof_region_end("cast-from-int16", false);
       }
     }
@@ -384,11 +386,11 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
     assert_always(m_copy_labels_dc);
     //const auto tensor_shape = get_output_tensor_shape(1);
     const auto tensor_shape = get_unet_label_shape();
-    const auto sample_dist = Layer::get_hydrogen_matrix_distribution(get_num_dims());
+    const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(get_num_dims());
     auto local_shape = tensor_shape;
     // calculated by Distconv
     local_shape[dc::get_sample_dim()] = 0;
-    auto dist = this->m_activations_t.get_distribution();
+    auto dist = this->get_activations_t().get_distribution();
     // Assumes no halo required.
     dist.clear_overlap();
 
@@ -429,7 +431,7 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
     m_labels_input_type.zero(dc::get_stream());
 
     // The final label tensor
-    m_labels_dev = TensorDev(tensor_shape, loc, dist);
+    m_labels_dev = TensorDevType(tensor_shape, loc, dist);
     assert0(m_labels_dev.allocate());
     m_labels_dev.zero(dc::get_stream());
 
@@ -487,6 +489,28 @@ class input_layer_distconv : public input_layer<T_io_buffer, T_layout, Dev> {
   }
 #endif // LBANN_HAS_DISTCONV
 };
+
+#ifndef LBANN_INPUT_LAYER_DISTCONV_INSTANTIATE
+extern template class input_layer_distconv<
+  DataType, partitioned_io_buffer<DataType>,
+  data_layout::DATA_PARALLEL, El::Device::CPU,
+  DataType>;
+extern template class input_layer_distconv<
+  DataType, partitioned_io_buffer<DataType>,
+  data_layout::DATA_PARALLEL, El::Device::CPU,
+  int16_t>;
+#ifdef LBANN_HAS_GPU
+extern template class input_layer_distconv<
+  DataType, partitioned_io_buffer<DataType>,
+  data_layout::DATA_PARALLEL, El::Device::GPU,
+  DataType>;
+extern template class input_layer_distconv<
+  DataType, partitioned_io_buffer<DataType>,
+  data_layout::DATA_PARALLEL, El::Device::GPU,
+  int16_t>;
+#endif // LBANN_HAS_GPU
+#endif // LBANN_INPUT_LAYER_INSTANTIATE
+
 
 } // namespace lbann
 

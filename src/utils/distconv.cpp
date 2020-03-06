@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_UTILS_DISTCONV_INSTANTIATE
 #include "lbann/utils/distconv.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/layers/layer.hpp"
@@ -166,7 +167,8 @@ int get_number_of_local_ranks(MPI_Comm comm) {
 }
 
 // P2P is only supported intra-node shuffling.
-bool is_p2p_shuffle_feasible(const TensorDev &tensor) {
+template <typename Tensor>
+bool is_p2p_shuffle_feasible(const Tensor &tensor) {
   const auto &dist = tensor.get_distribution();
   auto sample_proc_groups = dist.get_locale_shape()[dc::get_sample_dim()];
   auto sample_size = tensor.get_shape().back();
@@ -198,36 +200,40 @@ void *shuffler_src_buf = nullptr;
 size_t shuffler_src_buf_size = 0;
 void *shuffler_dst_buf = nullptr;
 size_t shuffler_dst_buf_size = 0;
-TensorDev::data_type *get_shuffler_src_buf(const TensorDev &tensor) {
+
+template <typename TensorDataType>
+TensorDataType *get_shuffler_src_buf(const TensorDev<TensorDataType> &tensor) {
   // Allocate if null
   if (shuffler_src_buf == nullptr) {
-    shuffler_src_buf_size = TensorShuffler::get_buf_size(tensor);
+    shuffler_src_buf_size = TensorShuffler<TensorDataType>::get_buf_size(tensor);
     MPIPrintStreamDebug() << "Allocating shared shuffler buffer of size "
                           << shuffler_src_buf_size;
     DISTCONV_CUDA_MALLOC(&shuffler_src_buf, shuffler_src_buf_size);
   }
   // Returns the pre-allocated memory if it's large enough
-  size_t required_size = TensorShuffler::get_buf_size(tensor);
+  size_t required_size = TensorShuffler<TensorDataType>::get_buf_size(tensor);
   if (required_size <= shuffler_src_buf_size) {
     MPIPrintStreamDebug() << "Using shared shuffler buffer";
-    return static_cast<TensorDev::data_type*>(shuffler_src_buf);
+    return static_cast<TensorDataType*>(shuffler_src_buf);
   } else {
     return nullptr;
   }
 }
-TensorDev::data_type *get_shuffler_dst_buf(const TensorDev &tensor) {
+
+template <typename TensorDataType>
+TensorDataType *get_shuffler_dst_buf(const TensorDev<TensorDataType> &tensor) {
   // Allocate if null
   if (shuffler_dst_buf == nullptr) {
-    shuffler_dst_buf_size = TensorShuffler::get_buf_size(tensor);
+    shuffler_dst_buf_size = TensorShuffler<TensorDataType>::get_buf_size(tensor);
     MPIPrintStreamDebug() << "Allocating shared shuffler buffer of size "
                           << shuffler_src_buf_size;
     DISTCONV_CUDA_MALLOC(&shuffler_dst_buf, shuffler_dst_buf_size);
   }
-  size_t required_size = TensorShuffler::get_buf_size(tensor);
+  size_t required_size = TensorShuffler<TensorDataType>::get_buf_size(tensor);
   // Returns the pre-allocated memory if it's large enough
   if (required_size <= shuffler_dst_buf_size) {
     MPIPrintStreamDebug() << "Using shared shuffler buffer";
-    return static_cast<TensorDev::data_type*>(shuffler_dst_buf);
+    return static_cast<TensorDataType*>(shuffler_dst_buf);
   } else {
     return nullptr;
   }
@@ -414,19 +420,20 @@ HaloExchangeMethod get_halo_exchange_method() {
   }
 }
 
-TensorShuffler *get_tensor_shuffler(const TensorDev &src,
-                                    const TensorDev &dst) {
+template <typename TensorDataType>
+TensorShuffler<TensorDataType> *get_tensor_shuffler(const TensorDev<TensorDataType> &src,
+                                                    const TensorDev<TensorDataType> &dst) {
   dc::MPIPrintStreamDebug()
       << "Available memory: " <<
       cuda::get_available_memory_capacity() / 1024.0 / 1024.0
       << " MB";
   if (opt_tensor_shuffler == "AL") {
-    return new TensorShufflerAL(src, dst, get_mpicuda());
+    return new TensorShufflerAL<TensorDataType>(src, dst, get_mpicuda());
 #ifdef LBANN_HAS_P2P
   } else if (opt_tensor_shuffler == "HYBRID") {
-    return new TensorShufflerHybrid(src, dst, get_p2p(), get_mpicuda(),
-                                    get_shuffler_src_buf(src),
-                                    get_shuffler_dst_buf(dst));
+    return new TensorShufflerHybrid<TensorDataType>(src, dst, get_p2p(), get_mpicuda(),
+                                                    get_shuffler_src_buf(src),
+                                                    get_shuffler_dst_buf(dst));
   } else if (opt_tensor_shuffler == "P2P") {
     bool src_feasible = is_p2p_shuffle_feasible(src);
     bool dst_feasible = is_p2p_shuffle_feasible(dst);
@@ -440,9 +447,9 @@ TensorShuffler *get_tensor_shuffler(const TensorDev &src,
     }
     if (src_feasible && dst_feasible) {
       MPIRootPrintStreamInfo() << "Using P2P shuffler";
-      return new TensorShufflerP2P(src, dst, get_p2p(),
-                                   get_shuffler_src_buf(src),
-                                   get_shuffler_dst_buf(dst));
+      return new TensorShufflerP2P<TensorDataType>(src, dst, get_p2p(),
+                                                   get_shuffler_src_buf(src),
+                                                   get_shuffler_dst_buf(dst));
     } else {
       MPIRootPrintStreamInfo() << "P2P shuffler requested but not possible as inter-node communication is required";
     }
@@ -450,8 +457,11 @@ TensorShuffler *get_tensor_shuffler(const TensorDev &src,
   }
   // Fall-back default
   MPIRootPrintStreamInfo() << "Using MPI-based shuffler";
-  return new TensorShuffler(src, dst);
+  return new TensorShuffler<TensorDataType>(src, dst);
 }
+
+template TensorShuffler<DataType> *get_tensor_shuffler<DataType>(
+    const TensorDev<DataType> &, const TensorDev<DataType> &);
 
 MPI_Comm get_input_comm(const lbann_comm &comm) {
   if (!is_cosmoflow_parallel_io_enabled() || get_rank_stride() == 1) {
@@ -467,6 +477,24 @@ int get_input_rank(const lbann_comm &comm) {
   } else {
     return get_mpi_rank();
   }
+}
+
+Dist get_hydrogen_data_parallel_distribution(int num_dims) {
+  using ::distconv::index_t;
+  // When rank stride is 1, the distribution is just sample
+  // distribution. When it's greater than 1, multiple consecutive
+  // ranks of length rank stride share a split in the first
+  // dimension. It is assumed that LBANN uses only the
+  // NUM_RANKS/STRIDE ranks in a data-parallel input layer to read
+  // training data.
+  dc::Shape sample_locale_shape(num_dims, 1);
+  sample_locale_shape[0] = static_cast<index_t>(dc::get_rank_stride());
+  sample_locale_shape[-1] = static_cast<index_t>(dc::get_mpi_num_ranks() / dc::get_rank_stride());
+  auto sample_split_shape = sample_locale_shape;
+  sample_split_shape[0] = 1;
+  auto sample_dist = dc::Dist::make_shared_distribution
+      (sample_locale_shape, sample_split_shape);
+  return sample_dist;
 }
 
 } // namespace dc

@@ -27,10 +27,8 @@
 #ifndef LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
 #define LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
-#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
-#endif
 
 namespace lbann {
 
@@ -38,10 +36,10 @@ namespace lbann {
  *  \f[ ReLU(x) = \text{max}(x, 0) \f]
  *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
  */
-template <data_layout T_layout, El::Device Dev>
-class relu_layer : public Layer {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class relu_layer : public data_type_layer<TensorDataType> {
 public:
-  relu_layer(lbann_comm *comm) : Layer(comm) {}
+  relu_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm) {}
   relu_layer* copy() const override { return new relu_layer(*this); }
   std::string get_type() const override { return "ReLU"; }
   data_layout get_data_layout() const override { return T_layout; }
@@ -58,22 +56,13 @@ protected:
   void bp_compute_distconv();
 
  public:
-  void setup_tensor_distribution_init(
+  void init_distribution(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
       std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &fixed) override {
-    Layer::setup_tensor_distribution_init(
-        dists, invariants, updated, fixed);
-  }
-
-  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_fwd(dists);
-  }
-
-  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_bwd(dists);
-  }
+      std::set<dc::Dist*> &fixed) override;
+  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override;
+  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override;
 
 #endif // LBANN_HAS_DISTCONV
 };

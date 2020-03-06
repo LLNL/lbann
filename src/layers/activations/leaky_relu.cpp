@@ -31,13 +31,11 @@ namespace lbann {
 
 namespace {
 
-// Useful constants
-constexpr DataType zero = 0;
-
 /** Local forward prop computation. */
-void local_fp(DataType negative_slope,
-              const AbsMat& input,
-              AbsMat& output) {
+template <typename TensorDataType>
+void local_fp(TensorDataType negative_slope,
+              const El::AbstractMatrix<TensorDataType>& input,
+              El::AbstractMatrix<TensorDataType>& output) {
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -45,16 +43,17 @@ void local_fp(DataType negative_slope,
     for (El::Int row = 0; row < height; ++row) {
       const auto& x = input(row, col);
       auto& y = output(row, col);
-      y = (x > zero) ? x : negative_slope * x;
+      y = (x > TensorDataType(0)) ? x : negative_slope * x;
     }
   }
 }
 
 /** Local backprop computation. */
-void local_bp(DataType negative_slope,
-              const AbsMat& input,
-              const AbsMat& gradient_wrt_output,
-              AbsMat& gradient_wrt_input) {
+template <typename TensorDataType>
+void local_bp(TensorDataType negative_slope,
+              const El::AbstractMatrix<TensorDataType>& input,
+              const El::AbstractMatrix<TensorDataType>& gradient_wrt_output,
+              El::AbstractMatrix<TensorDataType>& gradient_wrt_input) {
   const auto& height = input.Height();
   const auto& width = input.Width();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
@@ -63,112 +62,64 @@ void local_bp(DataType negative_slope,
       const auto& x = input(row, col);
       const auto& dy = gradient_wrt_output(row, col);
       auto& dx = gradient_wrt_input(row, col);
-      dx = (x > zero) ? dy : negative_slope * dy;
+      dx = (x > TensorDataType(0)) ? dy : negative_slope * dy;
     }
   }
 }
 
 } // namespace
 
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-       ::fp_compute() {
-  local_fp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_activations());
-}
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  local_bp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
-}
-template <>
-void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-       ::fp_compute() {
-  local_fp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_activations());
-}
-template <>
-void leaky_relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::bp_compute() {
-  local_bp(m_negative_slope,
-           get_local_prev_activations(),
-           get_local_prev_error_signals(),
-           get_local_error_signals());
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute() {
+  local_fp(this->m_negative_slope,
+           this->get_local_prev_activations(),
+           this->get_local_activations());
 }
 
-template class leaky_relu_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class leaky_relu_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
+  local_bp<TensorDataType>(this->m_negative_slope,
+                           this->get_local_prev_activations(),
+                           this->get_local_prev_error_signals(),
+                           this->get_local_error_signals());
+}
 
 #ifdef LBANN_HAS_DISTCONV
-using namespace dc;
-
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::setup_tensor_distribution_init(
-    std::map<const Layer*, std::array<Dist, dc::num_dists>> &dists,
-    std::map<Dist*, std::set<Dist*>> &invariants,
-    std::set<Dist*> &updated,
-    std::set<Dist*> &fixed)  {
-  Layer::setup_tensor_distribution_init(dists, invariants, updated, fixed);
-  if (!distconv_enabled()) return;
-  auto &layer_dists = dists[this];
-  // x == y
-  invariants[&layer_dists[0]].insert(&layer_dists[1]);
-  invariants[&layer_dists[1]].insert(&layer_dists[0]);
-  // x == dx
-  invariants[&layer_dists[0]].insert(&layer_dists[2]);
-  invariants[&layer_dists[2]].insert(&layer_dists[0]);
-  // dx == dy
-  invariants[&layer_dists[2]].insert(&layer_dists[3]);
-  invariants[&layer_dists[3]].insert(&layer_dists[2]);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::init_distribution(
+    std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
+    std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+    std::set<dc::Dist*> &updated,
+    std::set<dc::Dist*> &fixed) {
+  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
 }
 
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-setup_tensors_fwd(const std::array<Dist, dc::num_dists> &dists) {
-  Layer::setup_tensors_fwd(dists);
-  if (!distconv_enabled()) return;
-  setup_prev_activations_tensor(dists);
-  setup_activations_tensor(dists);
-  setup_activations_copyout_tensor(dists);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::setup_tensors_fwd(
+    const std::array<dc::Dist, dc::num_dists> &dists) {
+  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
 }
 
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-setup_tensors_bwd(const std::array<Dist, dc::num_dists> &dists)  {
-  Layer::setup_tensors_bwd(dists);
-  if (!distconv_enabled()) return;
-  setup_prev_error_signals_tensor(dists);
-  setup_error_signals_tensor(dists);
-  setup_error_signals_copyout_tensor(dists);
-  m_leaky_relu = new LeakyReLU(get_backend());
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::setup_tensors_bwd(
+    const std::array<dc::Dist, dc::num_dists> &dists)  {
+  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
 }
 
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-fp_compute_distconv() {
-  MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
-  assert_always(distconv_enabled());
-  m_leaky_relu->forward(m_prev_activations_t, m_negative_slope, m_activations_t);
-  copy_out_activations();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute_distconv() {
+  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
 }
 
-template <>
-void leaky_relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-bp_compute_distconv() {
-  MPIPrintStreamDebug() << get_name() << ": " << __FUNCTION__;
-  assert_always(distconv_enabled());
-  m_leaky_relu->backward(m_prev_activations_t, m_prev_error_signals_t,
-                         m_negative_slope, m_error_signals_t);
-  copy_out_error_signals();
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute_distconv() {
+  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
 }
-
 #endif // LBANN_HAS_DISTCONV
+
+template class leaky_relu_layer<
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class leaky_relu_layer<
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

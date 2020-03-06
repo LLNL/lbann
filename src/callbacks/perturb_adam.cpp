@@ -42,12 +42,12 @@ namespace lbann {
 namespace callback {
 
 perturb_adam::perturb_adam(DataType learning_rate_factor,
-                                                         DataType beta1_factor,
-                                                         DataType beta2_factor,
-                                                         DataType eps_factor,
-                                                         bool perturb_during_training,
-                                                         El::Int batch_interval,
-                                                         std::set<std::string> weights_names)
+                           DataType beta1_factor,
+                           DataType beta2_factor,
+                           DataType eps_factor,
+                           bool perturb_during_training,
+                           El::Int batch_interval,
+                           std::set<std::string> weights_names)
   : callback_base(batch_interval),
     m_learning_rate_factor(learning_rate_factor),
     m_beta1_factor(beta1_factor),
@@ -71,32 +71,25 @@ void perturb_adam::perturb(model& m) const {
   auto* comm = m.get_comm();
   for (auto* w : m.get_weights()) {
     if (w == nullptr) {
-      std::stringstream err;
-      err << "callback \"" << name() << "\" "
-          << "got a weights pointer that is a null pointer";
-      LBANN_ERROR(err.str());
+      LBANN_ERROR("callback \"", name(), "\" "
+                  "got a weights pointer that is a null pointer");
     }
     if (m_weights_names.empty()
         || m_weights_names.count(w->get_name()) > 0) {
 
       // Check if weights has Adam optimizer
-      auto* opt = dynamic_cast<adam*>(w->get_optimizer());
+      auto* opt = dynamic_cast<adam<DataType>*>(w->get_optimizer());
       if (!m_weights_names.empty() && opt == nullptr) {
         auto* opt_ = w->get_optimizer();
-        std::stringstream err;
-        err << "callback \"" << name() << "\" "
-            << "expected weights \"" << w->get_name() << "\" "
-            << "to have an Adam optimizer, but found ";
-        if (opt_ == nullptr) {
-          err << "no optimizer";
-        } else {
-          err << opt_->get_type();
-        }
-        LBANN_ERROR(err.str());
+        LBANN_ERROR(
+          "callback \"", name(), "\" "
+          "expected weights \"", w->get_name(), "\" "
+          "to have an Adam optimizer, but found ",
+          (opt_ ? opt_->get_type() : "no optimizer"));
       }
 
       // Perturb Adam optimizer
-      if (opt != nullptr) {
+      if (opt) {
         perturb(*comm, *opt);
       }
 
@@ -104,7 +97,7 @@ void perturb_adam::perturb(model& m) const {
   }
 }
 
-void perturb_adam::perturb(lbann_comm& comm, adam& opt) const {
+void perturb_adam::perturb(lbann_comm& comm, adam<DataType>& opt) const {
 
   // Perturb hyperparameters on master process
   std::vector<DataType> hyperparameters(4);

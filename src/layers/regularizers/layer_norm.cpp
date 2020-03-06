@@ -32,16 +32,18 @@ namespace lbann {
 namespace {
 
 /** @brief Forward prop */
+template <typename TensorDataType>
 void fp_impl(lbann_comm& comm,
-             DataType epsilon,
-             const AbsDistMat& input,
-             AbsDistMat& output,
-             AbsDistMat& statistics) {
+             TensorDataType epsilon,
+             const El::AbstractDistMatrix<TensorDataType>& input,
+             El::AbstractDistMatrix<TensorDataType>& output,
+             El::AbstractDistMatrix<TensorDataType>& statistics) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
-  auto& local_output = dynamic_cast<CPUMat&>(output.Matrix());
-  auto& local_statistics = dynamic_cast<CPUMat&>(statistics.Matrix());
+  const auto& local_input = dynamic_cast<const CPUMatType&>(input.LockedMatrix());
+  auto& local_output = dynamic_cast<CPUMatType&>(output.Matrix());
+  auto& local_statistics = dynamic_cast<CPUMatType&>(statistics.Matrix());
   auto local_means = El::LockedView(local_statistics, El::IR(0), El::ALL);
   auto local_vars = El::LockedView(local_statistics, El::IR(1), El::ALL);
 
@@ -100,22 +102,24 @@ void fp_impl(lbann_comm& comm,
 }
 
 /** @brief Backprop */
+template <typename TensorDataType>
 void bp_impl(lbann_comm& comm,
-             DataType epsilon,
-             const AbsDistMat& input,
-             const AbsDistMat& output_grad,
-             AbsDistMat& input_grad,
-             const AbsDistMat& statistics,
-             AbsDistMat& statistics_grad) {
+             TensorDataType epsilon,
+             const El::AbstractDistMatrix<TensorDataType>& input,
+             const El::AbstractDistMatrix<TensorDataType>& output_grad,
+             El::AbstractDistMatrix<TensorDataType>& input_grad,
+             const El::AbstractDistMatrix<TensorDataType>& statistics,
+             El::AbstractDistMatrix<TensorDataType>& statistics_grad) {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMat&>(input.LockedMatrix());
-  const auto& local_output_grad = dynamic_cast<const CPUMat&>(output_grad.LockedMatrix());
-  auto& local_input_grad = dynamic_cast<CPUMat&>(input_grad.Matrix());
-  const auto& local_statistics = dynamic_cast<const CPUMat&>(statistics.LockedMatrix());
+  const auto& local_input = dynamic_cast<const CPUMatType&>(input.LockedMatrix());
+  const auto& local_output_grad = dynamic_cast<const CPUMatType&>(output_grad.LockedMatrix());
+  auto& local_input_grad = dynamic_cast<CPUMatType&>(input_grad.Matrix());
+  const auto& local_statistics = dynamic_cast<const CPUMatType&>(statistics.LockedMatrix());
   const auto local_means = El::LockedView(local_statistics, El::IR(0), El::ALL);
   const auto local_vars = El::LockedView(local_statistics, El::IR(1), El::ALL);
-  auto& local_statistics_grad = dynamic_cast<CPUMat&>(statistics_grad.Matrix());
+  auto& local_statistics_grad = dynamic_cast<CPUMatType&>(statistics_grad.Matrix());
   auto local_means_grad = El::View(local_statistics_grad, El::IR(0), El::ALL);
   auto local_vars_grad = El::View(local_statistics_grad, El::IR(1), El::ALL);
 
@@ -181,46 +185,29 @@ void bp_impl(lbann_comm& comm,
 } // namespace <anon>
 
 // Template instantiation
-template <>
-void layer_norm_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  fp_impl(*get_comm(),
-          m_epsilon,
-          get_prev_activations(),
-          get_activations(),
-          *m_statistics);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_impl(*this->get_comm(),
+          this->m_epsilon,
+          this->get_prev_activations(),
+          this->get_activations(),
+          *this->m_statistics);
 }
-template <>
-void layer_norm_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  fp_impl(*get_comm(),
-          m_epsilon,
-          get_prev_activations(),
-          get_activations(),
-          *m_statistics);
-}
-template <>
-void layer_norm_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  bp_impl(*get_comm(),
-          m_epsilon,
-          get_prev_activations(),
-          get_prev_error_signals(),
-          get_error_signals(),
-          *m_statistics,
-          *m_statistics_gradient);
-}
-template <>
-void layer_norm_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  bp_impl(*get_comm(),
-          m_epsilon,
-          get_prev_activations(),
-          get_prev_error_signals(),
-          get_error_signals(),
-          *m_statistics,
-          *m_statistics_gradient);
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void layer_norm_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_impl(*this->get_comm(),
+          this->m_epsilon,
+          this->get_prev_activations(),
+          this->get_prev_error_signals(),
+          this->get_error_signals(),
+          *this->m_statistics,
+          *this->m_statistics_gradient);
 }
 
 template class layer_norm_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 template class layer_norm_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

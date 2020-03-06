@@ -30,14 +30,10 @@
 namespace lbann {
 
 template class input_layer<
-  partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class input_layer<
-  partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, partitioned_io_buffer<DataType>, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 template class input_layer<
-  partitioned_io_buffer, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class input_layer<
-  partitioned_io_buffer, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, partitioned_io_buffer<DataType>, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 
 }// namespace lbann

@@ -29,13 +29,14 @@
 
 namespace lbann {
 
-template <>
-void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_input = dynamic_cast<const CPUMat&>(get_local_prev_activations());
-  auto& local_output = dynamic_cast<CPUMat&>(get_local_activations());
+  const auto& local_input =
+    dynamic_cast<const CPUMatType&>(this->get_local_prev_activations());
+  auto& local_output = dynamic_cast<CPUMatType&>(this->get_local_activations());
   const El::Int local_height = local_output.Height();
   const El::Int local_width = local_output.Width();
 
@@ -44,15 +45,15 @@ void one_hot_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& ind = local_input(0, col);
-    if (DataType{0} <= ind && ind < DataType(local_height)) {
+    if (TensorDataType{0} <= ind && ind < TensorDataType(local_height)) {
       const El::Int row = static_cast<El::Int>(ind);
-      local_output(row, col) = DataType{1};
+      local_output(row, col) = TensorDataType{1};
     }
   }
 
 }
 
 template class one_hot_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann

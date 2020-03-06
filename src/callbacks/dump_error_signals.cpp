@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/dump_error_signals.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 #include <callbacks.pb.h>
 
@@ -48,7 +49,8 @@ void dump_error_signals::on_backward_prop_end(model *m, Layer *l) {
     if (l->get_num_parents() > 1) { file << i; }
 
     // Write activations to file
-    El::Write(l->get_error_signals(i), file.str(), El::ASCII);
+    auto& dtl = dynamic_cast<data_type_layer<DataType>&>(*l);
+    El::Write(dtl.get_error_signals(i), file.str(), El::ASCII);
 
   }
 

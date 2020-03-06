@@ -26,6 +26,7 @@
 
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/proto/proto_common.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 #include "callback_helpers.hpp"
 
@@ -52,7 +53,8 @@ void replace_weights::on_batch_end(model *m) {
   const auto& step = c.get_step();
   if(step % m_batch_interval == 0) {
     for(size_t i = 0; i < m_src_layers.size(); i++) {
-      m_dst_layers[i]->replace_weights(m_src_layers[i]);
+      auto* dtl = dynamic_cast<data_type_layer<DataType>*>(m_dst_layers[i]);
+      dtl->replace_weights(dynamic_cast<data_type_layer<DataType>*>(m_src_layers[i]));
     }
   }
 }

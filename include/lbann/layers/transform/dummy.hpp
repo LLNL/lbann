@@ -36,11 +36,12 @@ namespace lbann {
  *  Does no computation and is primarily intended as a placeholder for
  *  unused layer outputs.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class dummy_layer : public transform_layer {
+class dummy_layer : public transform_layer<TensorDataType> {
 public:
-  dummy_layer(lbann_comm *comm) : transform_layer(comm) {
+  dummy_layer(lbann_comm *comm) : transform_layer<TensorDataType>(comm) {
     this->m_expected_num_child_layers = 0;
   }
   dummy_layer* copy() const override { return new dummy_layer(*this); }
@@ -53,14 +54,14 @@ protected:
 
 #ifndef LBANN_DUMMY_LAYER_INSTANTIATE
 extern template class dummy_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class dummy_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class dummy_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class dummy_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_DUMMY_LAYER_INSTANTIATE
 

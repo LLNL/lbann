@@ -32,16 +32,17 @@
 namespace lbann {
 
 /** @brief Constant output. */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class constant_layer : public transform_layer {
+class constant_layer : public transform_layer<TensorDataType> {
 public:
 
   constant_layer(lbann_comm *comm,
-                 DataType value,
+                 TensorDataType value,
                  std::vector<int> dims)
-    : transform_layer(comm), m_value(value) {
-    set_output_dims(dims);
+    : transform_layer<TensorDataType>(comm), m_value(value) {
+    this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 0;
   }
 
@@ -51,7 +52,7 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   description get_description() const override {
-    auto desc = transform_layer::get_description();
+    auto desc = transform_layer<TensorDataType>::get_description();
     desc.add("Value", m_value);
     return desc;
   }
@@ -60,29 +61,29 @@ protected:
 
   void fp_compute() override {
     if (m_value == EvalType(0)) {
-      El::Zero(get_activations());
+      El::Zero(this->get_activations());
     } else {
-      El::Fill(get_activations(), m_value);
+      El::Fill(this->get_activations(), m_value);
     }
   }
 
 private:
 
   /** Constant value. */
-  DataType m_value;
+  TensorDataType m_value;
 
 };
 
 #ifndef LBANN_CONSTANT_LAYER_INSTANTIATE
 extern template class constant_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class constant_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class constant_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class constant_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_CONSTANT_LAYER_INSTANTIATE
 

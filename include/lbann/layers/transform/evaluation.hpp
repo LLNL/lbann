@@ -32,7 +32,11 @@
 namespace lbann {
 
 /** @brief Interface with objective function and metrics. */
-class abstract_evaluation_layer : public transform_layer {
+template <typename TensorDataType>
+class abstract_evaluation_layer : public transform_layer<TensorDataType> {
+public:
+  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+
 public:
 
   /** Get scaling factor. */
@@ -63,7 +67,7 @@ private:
   /** Evaluated value.
    *  The value may be stored in pinned memory.
    */
-  CPUMat m_value;
+  CPUMatType m_value;
   /** Non-blocking allreduce request. */
   Al::request m_allreduce_req;
 #ifdef LBANN_HAS_GPU
@@ -77,11 +81,12 @@ private:
  *  Computes the average value across a mini-batch. If the input
  *  tensor has multiple neurons, their values are added together.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class evaluation_layer : public abstract_evaluation_layer {
+class evaluation_layer : public abstract_evaluation_layer<TensorDataType> {
 public:
-  evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer(comm) {}
+  evaluation_layer(lbann_comm *comm) : abstract_evaluation_layer<TensorDataType>(comm) {}
   evaluation_layer* copy() const override { return new evaluation_layer(*this); }
   std::string get_type() const override { return "evaluation"; }
   data_layout get_data_layout() const override { return T_layout; }
@@ -89,15 +94,17 @@ public:
 };
 
 #ifndef LBANN_EVALUATION_LAYER_INSTANTIATE
+extern template class abstract_evaluation_layer<DataType>;
+
 extern template class evaluation_layer<
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
 extern template class evaluation_layer<
-  data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
 extern template class evaluation_layer<
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
 extern template class evaluation_layer<
-  data_layout::MODEL_PARALLEL, El::Device::GPU>;
+  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_EVALUATION_LAYER_INSTANTIATE
 

@@ -36,13 +36,14 @@
 
 namespace lbann {
 
-template <data_layout T_layout = data_layout::DATA_PARALLEL,
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class sum_layer : public transform_layer {
+class sum_layer : public transform_layer<TensorDataType> {
 public:
 
   sum_layer(lbann_comm *comm)
-    : transform_layer(comm) {
+    : transform_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
@@ -54,29 +55,29 @@ public:
 protected:
 
   void setup_pointers() override {
-    transform_layer::setup_pointers();
-    if (get_num_parents() < 1) {
+    transform_layer<TensorDataType>::setup_pointers();
+    if (this->get_num_parents() < 1) {
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has no parent layers";
       LBANN_ERROR(err.str());
     }
   }
 
   void setup_dims() override {
-    transform_layer::setup_dims();
-    set_output_dims(get_input_dims());
+    transform_layer<TensorDataType>::setup_dims();
+    this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match
-    const auto& output_dims = get_output_dims();
-    for (int i = 0; i < get_num_parents(); ++i) {
-      if (get_input_dims(i) != output_dims) {
-        const auto& parents = get_parent_layers();
+    const auto& output_dims = this->get_output_dims();
+    for (int i = 0; i < this->get_num_parents(); ++i) {
+      if (this->get_input_dims(i) != output_dims) {
+        const auto& parents = this->get_parent_layers();
         std::stringstream err;
-        err << get_type() << " layer \"" << get_name() << "\" "
+        err << get_type() << " layer \"" << this->get_name() << "\" "
             << "has input tensors with incompatible dimensions (";
-        for (int j = 0; j < get_num_parents(); ++j) {
-          const auto& dims = get_input_dims(j);
+        for (int j = 0; j < this->get_num_parents(); ++j) {
+          const auto& dims = this->get_input_dims(j);
           err << (j > 0 ? ", " : "")
               << "layer \"" << parents[j]->get_name() << "\" outputs ";
           for (size_t k = 0; k < dims.size(); ++k) {
@@ -90,18 +91,12 @@ protected:
 
   }
 
-  void fp_compute() override {
-    auto& output = get_activations();
-    El::Copy(get_prev_activations(0), output);
-    for (int i = 1; i < get_num_parents(); ++i) {
-      El::Axpy(DataType(1), get_prev_activations(i), output);
-    }
-  }
+  void fp_compute() override;
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    const auto& gradient_wrt_output = get_prev_error_signals();
-    for (int i = 0; i < get_num_parents(); ++i) {
-      El::LockedView(get_error_signals(i), gradient_wrt_output);
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
+    for (int i = 0; i < this->get_num_parents(); ++i) {
+      El::LockedView(this->get_error_signals(i), gradient_wrt_output);
     }
   }
 
@@ -109,19 +104,20 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  std::vector<dc::TensorDev> m_prev_activations_siblings;
-  std::vector<dc::TensorDev> m_error_signals_siblings;
+  using TensorDevType = typename sum_layer::TensorDevType;
+  std::vector<TensorDevType> m_prev_activations_siblings;
+  std::vector<TensorDevType> m_error_signals_siblings;
 
  public:
 
-  using Layer::get_error_signals_t;
+  using transform_layer<TensorDataType>::get_error_signals_t;
 
-  const dc::TensorDev &get_error_signals_t(const Layer &parent) const {
-    const auto parents = get_parent_layers();
+  const TensorDevType &get_error_signals_t(const Layer &parent) const {
+    const auto parents = this->get_parent_layers();
     for (int i = 0; i < (int)parents.size(); ++i) {
       if (parents[i] == &parent) {
         if (i == 0) {
-          return m_error_signals_t;
+          return this->get_error_signals_t();
         } else {
           return m_error_signals_siblings[i-1];
         }
@@ -131,51 +127,46 @@ protected:
   }
 
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_fwd(dists);
+    transform_layer<TensorDataType>::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
     this->setup_prev_activations_tensor(dists);
     this->setup_activations_tensor(dists);
     this->setup_activations_copyout_tensor(dists);
 
-    m_prev_activations_siblings.reserve(get_num_parents() - 1);
-    for (int i = 1; i < get_num_parents(); ++i) {
-      if (m_parent_shuffle_required[i] ||
-          m_parent_copy_in_required[i]) {
+    m_prev_activations_siblings.reserve(this->get_num_parents() - 1);
+    for (int i = 1; i < this->get_num_parents(); ++i) {
+      if (this->parent_shuffle_required(i) ||
+          this->parent_copy_in_required(i)) {
         LBANN_ERROR("Copyin non-first tensor not supported");
       }
       m_prev_activations_siblings.emplace_back(
-          get_parent_layers()[i]->get_activations_t(*this));
+          dynamic_cast<const data_type_layer<TensorDataType>*>(
+              this->get_parent_layers()[i])->get_activations_t(*this));
     }
   }
 
   void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    Layer::setup_tensors_bwd(dists);
+    transform_layer<TensorDataType>::setup_tensors_bwd(dists);
     if (!this->distconv_enabled()) return;
 
     this->setup_prev_error_signals_tensor(dists);
-    m_error_signals_t = m_prev_error_signals_t;
-    for (int i = 1; i < get_num_parents(); ++i) {
+    this->get_error_signals_t() = this->get_prev_error_signals_t();
+    for (int i = 1; i < this->get_num_parents(); ++i) {
       m_error_signals_siblings.emplace_back(
-          m_prev_error_signals_t);
+          this->get_prev_error_signals_t());
     }
     this->setup_error_signals_copyout_tensor(dists);
   }
-
 #endif // LBANN_HAS_DISTCONV
 
 };
 
-#ifdef LBANN_HAS_DISTCONV
-template <>
-void sum_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::fp_compute();
-#endif // LBANN_HAS_DISTCONV
-
 #ifndef LBANN_SUM_LAYER_INSTANTIATE
-extern template class sum_layer<data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class sum_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>;
+extern template class sum_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+extern template class sum_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 #ifdef LBANN_HAS_GPU
-extern template class sum_layer<data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class sum_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>;
+extern template class sum_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class sum_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 #endif // LBANN_SUM_LAYER_INSTANTIATE
 

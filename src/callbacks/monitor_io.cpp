@@ -43,7 +43,7 @@ void monitor_io::on_epoch_end(model *m) {
   for (Layer *layer : m->get_layers()) {
     if(m_layers.size() == 0
        || m_layers.find(layer->get_name()) != m_layers.end()) {
-      auto *input = dynamic_cast<generic_input_layer *> (layer);
+      auto *input = dynamic_cast<generic_input_layer<DataType> *> (layer);
       if(input != nullptr) {
         std::cout << "Rank " << comm->get_trainer_rank() << "."
                   << comm->get_rank_in_trainer() << " processed "
@@ -61,7 +61,7 @@ void monitor_io::on_test_end(model *m) {
   for (Layer *layer : m->get_layers()) {
     if(m_layers.size() == 0
        || m_layers.find(layer->get_name()) != m_layers.end()) {
-      auto *input = dynamic_cast<generic_input_layer *> (layer);
+      auto *input = dynamic_cast<generic_input_layer<DataType> *> (layer);
       if(input != nullptr) {
         std::cout << "Rank " << comm->get_trainer_rank() << "."
                   << comm->get_rank_in_trainer() << " processed "

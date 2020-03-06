@@ -32,9 +32,10 @@ namespace lbann {
 namespace {
 
 /** Entry-wise operator. */
+template <typename TensorDataType>
 struct op {
-  inline DataType operator()(DataType x) const {
-    return x > DataType(0) ? x : DataType(0);
+  inline TensorDataType operator()(const TensorDataType &x) const {
+    return std::max(x, El::TypeTraits<TensorDataType>::Zero());
   }
 };
 
@@ -43,118 +44,55 @@ struct op {
  *  backward propagation step computes
  *  \f$ \frac{dL}{dx} = \frac{dL}{dy} f'(x) \f$.
  */
+template <typename TensorDataType>
 struct op_backprop {
-  inline DataType operator()(DataType x, DataType dy) const {
-    return x > DataType(0) ? dy : DataType(0);
+  inline TensorDataType operator()(const TensorDataType &x, const TensorDataType &dy) const {
+    return x > El::TypeTraits<TensorDataType>::Zero() ? dy : El::TypeTraits<TensorDataType>::Zero();
   }
 };
 
 } // namespace
 
 // Template instantiation
-template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  apply_entrywise_unary_operator<op>(get_prev_activations(),
-                                     get_activations());
-}
-template <>
-void relu_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  apply_entrywise_binary_operator<op_backprop>(get_prev_activations(),
-                                               get_prev_error_signals(),
-                                               get_error_signals());
-}
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  apply_entrywise_unary_operator<op>(get_prev_activations(),
-                                     get_activations());
-}
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  apply_entrywise_binary_operator<op_backprop>(get_prev_activations(),
-                                               get_prev_error_signals(),
-                                               get_error_signals());
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void relu_layer<TensorDataType, Layout, Device>::fp_compute() {
+  apply_entrywise_unary_operator<op, TensorDataType>(
+      this->get_prev_activations(), this->get_activations());
 }
 
-#ifdef LBANN_HAS_GPU
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
+  apply_entrywise_binary_operator<op_backprop, TensorDataType>(
+      this->get_prev_activations(), this->get_prev_error_signals(),
+      this->get_error_signals());
+}
+
 #ifdef LBANN_HAS_DISTCONV
-using namespace dc;
-
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::setup_tensor_distribution_init(
-    std::map<const Layer*, std::array<Dist, dc::num_dists>> &dists,
-    std::map<Dist*, std::set<Dist*>> &invariants,
-    std::set<Dist*> &updated,
-    std::set<Dist*> &fixed)  {
-  Layer::setup_tensor_distribution_init(
-      dists, invariants, updated, fixed);
-  if (!distconv_enabled()) return;
-  auto &layer_dists = dists[this];
-  // x == dx
-  invariants[&layer_dists[0]].insert(
-      &layer_dists[2]);
-  invariants[&layer_dists[2]].insert(
-      &layer_dists[0]);
-  //y == dy
-  invariants[&layer_dists[1]].insert(
-      &layer_dists[3]);
-  invariants[&layer_dists[3]].insert(
-      &layer_dists[1]);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void relu_layer<TensorDataType, Layout, Device>::init_distribution(
+    std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
+    std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+    std::set<dc::Dist*> &updated,
+    std::set<dc::Dist*> &fixed)  {
+  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
 }
 
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-setup_tensors_fwd(const std::array<Dist, dc::num_dists> &dists) {
-  Layer::setup_tensors_fwd(dists);
-  if (!distconv_enabled()) return;
-  setup_prev_activations_tensor(dists);
-  setup_activations_tensor(dists);
-  setup_activations_copyout_tensor(dists);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void relu_layer<TensorDataType, Layout, Device>::
+setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) {
+  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
 }
 
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-setup_tensors_bwd(const std::array<Dist, dc::num_dists> &dists)  {
-  Layer::setup_tensors_bwd(dists);
-  if (!distconv_enabled()) return;
-  setup_prev_error_signals_tensor(dists);
-  setup_error_signals_tensor(dists);
-  setup_error_signals_copyout_tensor(dists);
-  // Init the dc::Pooling layer
-  m_relu = new ReLU(get_backend());
-  m_relu->setup(m_prev_activations_t, m_activations_t,
-                m_error_signals_t, m_prev_error_signals_t);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void relu_layer<TensorDataType, Layout, Device>::
+setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists)  {
+  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
 }
-
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-fp_compute_distconv() {
-  MPIPrintStreamDebug()
-      << get_name() << ": " << __FUNCTION__;
-  assert_always(distconv_enabled());
-
-  // Useful constants
-  const DataType one = 1;
-  const DataType zero = 0;
-
-  m_relu->forward(one, m_prev_activations_t, zero, m_activations_t);
-
-  copy_out_activations();
-}
-
-template <>
-void relu_layer<data_layout::DATA_PARALLEL, El::Device::GPU>::
-bp_compute_distconv() {
-  MPIPrintStreamDebug()
-      << get_name() << ": " << __FUNCTION__;
-  assert_always(distconv_enabled());
-  const DataType one = 1;
-
-  m_relu->backward(one, m_activations_t, m_prev_error_signals_t,
-                   m_prev_activations_t, DataType(0), m_error_signals_t);
-  copy_out_error_signals();
-}
-
 #endif // LBANN_HAS_DISTCONV
-#endif // LBANN_HAS_GPU
+
+template class relu_layer<
+  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class relu_layer<
+  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
 
 } // namespace lbann
