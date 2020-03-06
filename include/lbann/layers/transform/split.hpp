@@ -75,7 +75,8 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  std::vector<dc::TensorDev> m_prev_error_signals_siblings;
+  using TensorDevType = typename split_layer::TensorDevType;
+  std::vector<TensorDevType> m_prev_error_signals_siblings;
 
   void fp_compute_distconv() {}
 
@@ -83,7 +84,7 @@ protected:
 
   using data_type_layer<TensorDataType>::get_activations_t;
 
-  const dc::TensorDev &get_activations_t(const Layer &child) const {
+  const TensorDevType &get_activations_t(const Layer &child) const {
     // Pass the same tensor as a const reference to multiple child layers
     return this->get_activations_t();
   }

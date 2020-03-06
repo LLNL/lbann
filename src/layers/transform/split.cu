@@ -53,11 +53,12 @@ struct accumulate2 {
   }
 };
 
-template <typename TensorDataType>
-void bp_compute_distconv(dc::TensorDev &error_signals,
-                         dc::TensorDev &prev_error_signals,
-                         std::vector<dc::TensorDev> &prev_error_signals_siblings,
+template <typename Tensor>
+void bp_compute_distconv(Tensor &error_signals,
+                         Tensor &prev_error_signals,
+                         std::vector<Tensor> &prev_error_signals_siblings,
                          int num_children) {
+  using TensorDataType = typename Tensor::data_type;
   switch (num_children) {
     case 0:
       dc::MPIPrintStreamInfo() << "No parent for this sum layer";
@@ -93,10 +94,10 @@ void split_layer<TensorDataType, Layout, Dev>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     assert_always(Layout == data_layout::DATA_PARALLEL);
-    bp_compute_distconv<TensorDataType>(this->get_error_signals_t(),
-                                        this->get_prev_error_signals_t(),
-                                        m_prev_error_signals_siblings,
-                                        this->get_num_children());
+    bp_compute_distconv(this->get_error_signals_t(),
+                        this->get_prev_error_signals_t(),
+                        m_prev_error_signals_siblings,
+                        this->get_num_children());
     this->copy_out_error_signals();
     if (!this->early_terminate_last_iteration()) {
       return;

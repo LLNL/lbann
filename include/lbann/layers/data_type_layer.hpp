@@ -299,6 +299,10 @@ private:
 
 #ifdef LBANN_HAS_DISTCONV
  public:
+
+  using TensorDevType = dc::TensorDev<TensorDataType>;
+  using TensorShufflerType = dc::TensorShuffler<TensorDataType>;
+
   void init_distribution(
       std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
       std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
@@ -312,21 +316,21 @@ private:
   void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {}
   void setup_distconv_post(size_t ws_size) override {}
 
-  virtual const dc::TensorDev &get_prev_activations_t() const;
-  virtual dc::TensorDev &get_prev_activations_t();
-  virtual const dc::TensorDev &get_prev_activations_const_view() const;
-  virtual const dc::TensorDev &get_activations_t() const;
-  virtual dc::TensorDev &get_activations_t();
-  virtual const dc::TensorDev &get_activations_t(const Layer &child) const;
-  virtual dc::TensorDev &get_activations_copyout();
+  virtual const TensorDevType &get_prev_activations_t() const;
+  virtual TensorDevType &get_prev_activations_t();
+  virtual const TensorDevType &get_prev_activations_const_view() const;
+  virtual const TensorDevType &get_activations_t() const;
+  virtual TensorDevType &get_activations_t();
+  virtual const TensorDevType &get_activations_t(const Layer &child) const;
+  virtual TensorDevType &get_activations_copyout();
 
-  virtual const dc::TensorDev &get_prev_error_signals_t() const;
-  virtual dc::TensorDev &get_prev_error_signals_t();
-  virtual const dc::TensorDev &get_prev_error_signals_const_view() const;
-  virtual const dc::TensorDev &get_error_signals_t() const;
-  virtual const dc::TensorDev &get_error_signals_t(const Layer &parent) const;
-  virtual dc::TensorDev &get_error_signals_t();
-  virtual dc::TensorDev &get_error_signals_copyout();
+  virtual const TensorDevType &get_prev_error_signals_t() const;
+  virtual TensorDevType &get_prev_error_signals_t();
+  virtual const TensorDevType &get_prev_error_signals_const_view() const;
+  virtual const TensorDevType &get_error_signals_t() const;
+  virtual const TensorDevType &get_error_signals_t(const Layer &parent) const;
+  virtual TensorDevType &get_error_signals_t();
+  virtual TensorDevType &get_error_signals_copyout();
 
  protected:
   bool using_distconv() const override;
@@ -375,33 +379,33 @@ private:
 
  private:
   /** Previous activation tensor */
-  dc::TensorDev m_prev_activations_t;
+  TensorDevType m_prev_activations_t;
   /** View to Elemental matrix of previous activations */
-  dc::TensorDev m_prev_activations_const_view;
+  TensorDevType m_prev_activations_const_view;
   /** Activation tensor */
-  dc::TensorDev m_activations_t;
+  TensorDevType m_activations_t;
   /** Elemental-format activation matrix */
-  dc::TensorDev m_activations_copyout;
+  TensorDevType m_activations_copyout;
   /** Previous error signal tensor */
-  dc::TensorDev m_prev_error_signals_t;
+  TensorDevType m_prev_error_signals_t;
   /** View to Elemental matrix */
-  dc::TensorDev m_prev_error_signals_const_view;
+  TensorDevType m_prev_error_signals_const_view;
   /** Error signal tensor */
-  dc::TensorDev m_error_signals_t;
+  TensorDevType m_error_signals_t;
   /** Elemental-format matrix */
-  dc::TensorDev m_error_signals_copyout;
+  TensorDevType m_error_signals_copyout;
   std::vector<bool> m_parent_copy_in_required;
   std::vector<bool> m_parent_shuffle_required;
   std::vector<bool> m_child_copy_out_required;
   std::vector<bool> m_child_shuffle_required;
-  dc::TensorShuffler *m_prev_activations_shuffler = nullptr;
-  dc::TensorShuffler *m_prev_activations_shuffler_last_mb[3];
-  dc::TensorShuffler *m_activations_shuffler = nullptr;
-  dc::TensorShuffler *m_activations_shuffler_last_mb[3];
-  dc::TensorShuffler *m_prev_error_signals_shuffler = nullptr;
-  dc::TensorShuffler *m_prev_error_signals_shuffler_last_mb[3];
-  dc::TensorShuffler *m_error_signals_shuffler = nullptr;
-  dc::TensorShuffler *m_error_signals_shuffler_last_mb[3];
+  TensorShufflerType *m_prev_activations_shuffler = nullptr;
+  TensorShufflerType *m_prev_activations_shuffler_last_mb[3];
+  TensorShufflerType *m_activations_shuffler = nullptr;
+  TensorShufflerType *m_activations_shuffler_last_mb[3];
+  TensorShufflerType *m_prev_error_signals_shuffler = nullptr;
+  TensorShufflerType *m_prev_error_signals_shuffler_last_mb[3];
+  TensorShufflerType *m_error_signals_shuffler = nullptr;
+  TensorShufflerType *m_error_signals_shuffler_last_mb[3];
   std::vector<bool> m_keep_original_input;
   std::vector<bool> m_keep_original_output;
 

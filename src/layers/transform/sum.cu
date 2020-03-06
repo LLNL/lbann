@@ -52,11 +52,12 @@ struct accumulate2 {
   }
 };
 
-void fp_compute_distconv(dc::TensorDev &activations,
-                         dc::TensorDev &prev_activations,
-                         std::vector<dc::TensorDev> &prev_activations_siblings,
+template <typename Tensor>
+void fp_compute_distconv(Tensor &activations,
+                         Tensor &prev_activations,
+                         std::vector<Tensor> &prev_activations_siblings,
                          int num_parents) {
-  using TensorDataType = dc::TensorDev::data_type;
+  using TensorDataType = typename Tensor::data_type;
   switch (num_parents) {
     case 0:
       dc::MPIPrintStreamDebug() << "No parent for sum layer";

@@ -64,6 +64,8 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
 
 #ifdef LBANN_HAS_DISTCONV
  public:
+  using TensorDevType = typename input_layer_distconv::TensorDevType;
+
   int get_num_dims() const {
     return this->get_output_dims().size() + 1;
   }
@@ -133,7 +135,7 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
     // prev_activations_tensor is already
     // setup. prev_activations_tensor is not necessary for input.
     //const LocaleMPI loc(dc::get_mpi_comm(), false);
-    this->get_activations_t() = TensorDev(tensor_shape, loc, dist);
+    this->get_activations_t() = TensorDevType(tensor_shape, loc, dist);
     assert0(this->get_activations_t().allocate());
     this->get_activations_t().zero(dc::get_stream());
 
@@ -190,7 +192,7 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
 
   dc::TensorHost<InputType> m_labels_host_view;
   dc::TensorHost<InputType> m_labels_host_tensor;
-  dc::TensorDev m_labels_dev;
+  TensorDevType m_labels_dev;
   TensorDevInput m_labels_input_type;
   // shufflers for the labels
   std::unique_ptr<TensorShuffler> m_label_shuffler;
@@ -200,7 +202,7 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
 
   using input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::get_activations_t;
 
-  const dc::TensorDev &get_activations_t(const Layer &child) const override {
+  const TensorDevType &get_activations_t(const Layer &child) const override {
     const int child_index = std::find(this->get_child_layers().begin(),
                                       this->get_child_layers().end(),
                                       &child) - this->get_child_layers().begin();
@@ -429,7 +431,7 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
     m_labels_input_type.zero(dc::get_stream());
 
     // The final label tensor
-    m_labels_dev = TensorDev(tensor_shape, loc, dist);
+    m_labels_dev = TensorDevType(tensor_shape, loc, dist);
     assert0(m_labels_dev.allocate());
     m_labels_dev.zero(dc::get_stream());
 

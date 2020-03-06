@@ -199,9 +199,10 @@ private:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
+  using TensorDevType = typename cross_entropy_layer::TensorDevType;
   dc::CrossEntropy *m_cross_entropy;
-  dc::TensorDev m_ground_truth_t;
-  dc::TensorDev m_d_ground_truth_t;
+  TensorDevType m_ground_truth_t;
+  TensorDevType m_d_ground_truth_t;
 
   void fp_compute_distconv() {
     assert_always(this->distconv_enabled());
@@ -269,7 +270,7 @@ private:
     }
     const auto activations_local_shape =
         this->get_activations_tensor_local_shape();
-    this->get_activations_t() = dc::TensorDev(output_tensor_shape,
+    this->get_activations_t() = TensorDevType(output_tensor_shape,
                                               loc, dists[1],
                                               activations_local_shape);
     if (allocate) {
@@ -300,7 +301,7 @@ private:
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
     const auto &global_shape = m_ground_truth_t.get_shape();
     const auto &local_shape = m_ground_truth_t.get_local_shape();
-    m_d_ground_truth_t = dc::TensorDev(
+    m_d_ground_truth_t = TensorDevType(
         global_shape, loc, dists[2], local_shape);
     assert0(m_d_ground_truth_t.allocate());
     m_d_ground_truth_t.zero(dc::get_stream());
@@ -312,7 +313,7 @@ private:
 
   using data_type_layer<TensorDataType>::get_error_signals_t;
 
-  const dc::TensorDev &get_error_signals_t(const Layer &parent) const {
+  const TensorDevType &get_error_signals_t(const Layer &parent) const {
     const auto parents = this->get_parent_layers();
     assert_always(parents.size() == 2);
     for (int i = 0; i < (int)parents.size(); ++i) {

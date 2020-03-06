@@ -651,9 +651,9 @@ private:
     this->setup_error_signals_copyout_tensor(dists);
 
     // Init the dc::Pooling layer
-    m_pooling = new dc::Pooling(dc::get_backend(),
-                                this->get_num_dims(),
-                                dc::get_halo_exchange_method());
+    m_pooling = new dc::Pooling<TensorDataType>(dc::get_backend(),
+                                                this->get_num_dims(),
+                                                dc::get_halo_exchange_method());
 
     std::string mode;
     switch(m_pool_mode) {
@@ -694,7 +694,7 @@ private:
   }
 
  protected:
-  dc::Pooling *m_pooling;
+  dc::Pooling<TensorDataType> *m_pooling;
 
   bool using_distconv() const override {
     if (!transform_layer<TensorDataType>::using_distconv()) return false;

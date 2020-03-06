@@ -358,20 +358,21 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
+  using TensorDevType = typename batch_normalization_layer::TensorDevType;
   void fp_compute_distconv();
   void bp_compute_distconv();
 
-  dc::BatchNormalization *m_bn;
-  dc::TensorDev m_mean_t;
-  dc::TensorDev m_var_t;
-  dc::TensorDev m_scale_t;
-  dc::TensorDev m_bias_t;
-  dc::TensorDev m_running_mean_t;
-  dc::TensorDev m_running_var_t;
-  dc::TensorDev m_mean_gradient_t;
-  dc::TensorDev m_var_gradient_t;
-  dc::TensorDev m_scale_gradient_t;
-  dc::TensorDev m_bias_gradient_t;
+  dc::BatchNormalization<TensorDataType> *m_bn;
+  TensorDevType m_mean_t;
+  TensorDevType m_var_t;
+  TensorDevType m_scale_t;
+  TensorDevType m_bias_t;
+  TensorDevType m_running_mean_t;
+  TensorDevType m_running_var_t;
+  TensorDevType m_mean_gradient_t;
+  TensorDevType m_var_gradient_t;
+  TensorDevType m_scale_gradient_t;
+  TensorDevType m_bias_gradient_t;
 
   dc::LocaleMPI m_spatial_loc;
 
@@ -403,33 +404,33 @@ protected:
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
 
     // mean
-    m_mean_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    m_mean_t = TensorDevType(per_channel_stat_shape, loc, shared_dist);
     assert0(dc::tensor::View(m_mean_t, this->m_mean_v->Buffer()));
     // var
-    m_var_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    m_var_t = TensorDevType(per_channel_stat_shape, loc, shared_dist);
     assert0(dc::tensor::View(m_var_t, this->m_var_v->Buffer()));
     // scale: view to weights[0]
-    m_scale_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    m_scale_t = TensorDevType(per_channel_stat_shape, loc, shared_dist);
     // bias: view to weights[1]
-    m_bias_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    m_bias_t = TensorDevType(per_channel_stat_shape, loc, shared_dist);
     // running_mean: view to weights[2]
-    m_running_mean_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    m_running_mean_t = TensorDevType(per_channel_stat_shape, loc, shared_dist);
     // running_var: view to weights[3]
-    m_running_var_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    m_running_var_t = TensorDevType(per_channel_stat_shape, loc, shared_dist);
     // scale_gradient
-    m_scale_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    m_scale_gradient_t = TensorDevType(per_channel_stat_shape, loc, shared_dist);
     assert0(dc::tensor::View(
         m_scale_gradient_t, this->m_scale_gradient->Buffer()));
     // bias_gradient
-    m_bias_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    m_bias_gradient_t = TensorDevType(per_channel_stat_shape, loc, shared_dist);
     assert0(dc::tensor::View(
         m_bias_gradient_t, this->m_bias_gradient->Buffer()));
     // mean_gradient
-    m_mean_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    m_mean_gradient_t = TensorDevType(per_channel_stat_shape, loc, shared_dist);
     assert0(dc::tensor::View(
         m_mean_gradient_t, this->m_mean_gradient_v->Buffer()));
     // var_gradient
-    m_var_gradient_t = dc::TensorDev(per_channel_stat_shape, loc, shared_dist);
+    m_var_gradient_t = TensorDevType(per_channel_stat_shape, loc, shared_dist);
     assert0(dc::tensor::View(
         m_var_gradient_t, this->m_var_gradient_v->Buffer()));
   }
@@ -451,7 +452,7 @@ protected:
       LBANN_ERROR("statistics_group_size must be either 0 or 1 for now.");
     }
 
-    m_bn = new dc::BatchNormalization(
+    m_bn = new dc::BatchNormalization<TensorDataType>(
         dc::get_backend(), this->get_num_dims(), m_decay, m_epsilon, global_stats);
   }
 #endif

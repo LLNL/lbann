@@ -104,14 +104,15 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  std::vector<dc::TensorDev> m_prev_activations_siblings;
-  std::vector<dc::TensorDev> m_error_signals_siblings;
+  using TensorDevType = typename sum_layer::TensorDevType;
+  std::vector<TensorDevType> m_prev_activations_siblings;
+  std::vector<TensorDevType> m_error_signals_siblings;
 
  public:
 
-  using data_type_layer<TensorDataType>::get_error_signals_t;
+  using transform_layer<TensorDataType>::get_error_signals_t;
 
-  const dc::TensorDev &get_error_signals_t(const Layer &parent) const {
+  const TensorDevType &get_error_signals_t(const Layer &parent) const {
     const auto parents = this->get_parent_layers();
     for (int i = 0; i < (int)parents.size(); ++i) {
       if (parents[i] == &parent) {
@@ -126,7 +127,7 @@ protected:
   }
 
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    data_type_layer<TensorDataType>::setup_tensors_fwd(dists);
+    transform_layer<TensorDataType>::setup_tensors_fwd(dists);
     if (!this->distconv_enabled()) return;
     this->setup_prev_activations_tensor(dists);
     this->setup_activations_tensor(dists);
@@ -145,7 +146,7 @@ protected:
   }
 
   void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    data_type_layer<TensorDataType>::setup_tensors_bwd(dists);
+    transform_layer<TensorDataType>::setup_tensors_bwd(dists);
     if (!this->distconv_enabled()) return;
 
     this->setup_prev_error_signals_tensor(dists);

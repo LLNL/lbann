@@ -330,8 +330,9 @@ private:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  std::vector<dc::TensorDev> m_prev_activations_siblings;
-  std::vector<dc::TensorDev> m_error_signals_siblings;
+  using TensorDevType = typename concatenation_layer::TensorDevType;
+  std::vector<TensorDevType> m_prev_activations_siblings;
+  std::vector<TensorDevType> m_error_signals_siblings;
 
   dc::Shape get_activations_tensor_local_shape() const override {
     auto shape = this->get_prev_activations_t().get_local_shape();
@@ -373,7 +374,7 @@ private:
       const auto &global_shape = m_prev_activations_siblings[i].get_shape();
       const auto &local_shape = m_prev_activations_siblings[i].get_local_shape();
       m_error_signals_siblings.emplace_back(
-          dc::TensorDev(global_shape, loc, dists[2], local_shape));
+          TensorDevType(global_shape, loc, dists[2], local_shape));
       assert0(m_error_signals_siblings.back().allocate());
       m_error_signals_siblings.back().zero(dc::get_stream());
     }
@@ -382,7 +383,7 @@ private:
   using data_type_layer<TensorDataType>::get_error_signals_t;
 
   // TODO: Make the layer class have multiple parents and children
-  const dc::TensorDev &get_error_signals_t(const Layer &parent) const {
+  const TensorDevType &get_error_signals_t(const Layer &parent) const {
     const auto parents = this->get_parent_layers();
     for (int i = 0; i < (int)parents.size(); ++i) {
       if (parents[i] == &parent) {

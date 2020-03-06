@@ -997,78 +997,79 @@ int data_type_layer<TensorDataType>::get_num_spatial_dims() const {
 }
 
 template <typename TensorDataType>
-const dc::TensorDev &data_type_layer<TensorDataType>::get_prev_activations_t() const {
+const typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::
+get_prev_activations_t() const {
   return m_prev_activations_t;
 }
 
 template <typename TensorDataType>
-dc::TensorDev &data_type_layer<TensorDataType>::get_prev_activations_t() {
+typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_prev_activations_t() {
   return m_prev_activations_t;
 }
 
 template <typename TensorDataType>
-const dc::TensorDev &data_type_layer<TensorDataType>::get_prev_activations_const_view() const {
+const typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_prev_activations_const_view() const {
   return m_prev_activations_const_view;
 }
 
 template <typename TensorDataType>
-const dc::TensorDev &data_type_layer<TensorDataType>::get_activations_t() const {
+const typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_activations_t() const {
   return m_activations_t;
 }
 
 template <typename TensorDataType>
-const dc::TensorDev &data_type_layer<TensorDataType>::get_activations_t(
+const typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_activations_t(
     const Layer &child) const {
   assert_always(get_num_children() == 1);
   return m_activations_t;
 }
 
 template <typename TensorDataType>
-dc::TensorDev &data_type_layer<TensorDataType>::get_activations_t() {
+typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_activations_t() {
   return m_activations_t;
 }
 
 template <typename TensorDataType>
-dc::TensorDev &data_type_layer<TensorDataType>::get_activations_copyout() {
+typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_activations_copyout() {
   return m_activations_copyout;
 }
 
 template <typename TensorDataType>
-const dc::TensorDev &data_type_layer<TensorDataType>::
+const typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::
 get_prev_error_signals_t() const {
   return m_prev_error_signals_t;
 }
 
 template <typename TensorDataType>
-dc::TensorDev &data_type_layer<TensorDataType>::get_prev_error_signals_t() {
+typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_prev_error_signals_t() {
   return m_prev_error_signals_t;
 }
 
 template <typename TensorDataType>
-const dc::TensorDev &data_type_layer<TensorDataType>::
+const typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::
 get_prev_error_signals_const_view() const {
   return m_prev_error_signals_const_view;
 }
 
 template <typename TensorDataType>
-const dc::TensorDev &data_type_layer<TensorDataType>::get_error_signals_t() const {
+const typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_error_signals_t() const {
   return m_error_signals_t;
 }
 
 template <typename TensorDataType>
-const dc::TensorDev &data_type_layer<TensorDataType>::get_error_signals_t(
+const typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_error_signals_t(
     const Layer &parent) const {
   assert_always(get_num_parents() == 1);
   return m_error_signals_t;
 }
 
 template <typename TensorDataType>
-dc::TensorDev &data_type_layer<TensorDataType>::get_error_signals_t() {
+typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_error_signals_t() {
   return m_error_signals_t;
 }
 
 template <typename TensorDataType>
-dc::TensorDev &data_type_layer<TensorDataType>::get_error_signals_copyout() {
+typename data_type_layer<TensorDataType>::TensorDevType &data_type_layer<TensorDataType>::get_error_signals_copyout() {
   return m_error_signals_copyout;
 }
 
@@ -1104,14 +1105,14 @@ void data_type_layer<TensorDataType>::setup_prev_activations_tensor(
     if (m_parent_copy_in_required[i] || m_parent_shuffle_required[i]) {
       if (i != 0) LBANN_ERROR("Copyin of non-first tensor not supported yet");
       if (m_parent_copy_in_required[i]) {
-        m_prev_activations_const_view = dc::TensorDev(input_tensor_shape, loc,
+        m_prev_activations_const_view = TensorDevType(input_tensor_shape, loc,
                                                       sample_dist,
                                                       input_local_shape);
       } else {
         m_prev_activations_const_view = dynamic_cast<
           const data_type_layer<TensorDataType>*>(get_parent_layers()[i])->get_activations_t(*this);
       }
-      m_prev_activations_t = dc::TensorDev(input_tensor_shape, loc, dists[0]);
+      m_prev_activations_t = TensorDevType(input_tensor_shape, loc, dists[0]);
       assert0(m_prev_activations_t.allocate());
       m_prev_activations_t.zero(dc::get_stream());
       m_prev_activations_shuffler = dc::get_tensor_shuffler(
@@ -1143,7 +1144,7 @@ void data_type_layer<TensorDataType>::setup_activations_tensor(
   const dc::Shape output_tensor_shape = get_output_tensor_shape();
   const auto activations_local_shape =
       get_activations_tensor_local_shape();
-  m_activations_t = dc::TensorDev(output_tensor_shape,
+  m_activations_t = TensorDevType(output_tensor_shape,
                                   loc, dists[1], activations_local_shape);
   if (allocate) {
     assert0(m_activations_t.allocate());
@@ -1162,7 +1163,7 @@ void data_type_layer<TensorDataType>::setup_activations_copyout_tensor(
   // Set the sample dimension as 0 so that its actual value is
   // calculated by Distconv
   output_local_shape[-1] = 0;
-  m_activations_copyout = dc::TensorDev(output_tensor_shape, loc, sample_dist,
+  m_activations_copyout = TensorDevType(output_tensor_shape, loc, sample_dist,
                                         output_local_shape);
   for (int i = 0; i < get_num_children(); ++i) {
     if (m_child_copy_out_required[i]) {
@@ -1196,7 +1197,7 @@ void data_type_layer<TensorDataType>::setup_prev_error_signals_tensor(
     if (m_child_copy_out_required[i] || m_child_shuffle_required[i]) {
       if (i != 0) LBANN_ERROR("Copyout of non-first tensor not supported yet");
       if (m_child_copy_out_required[i]) {
-        m_prev_error_signals_const_view = dc::TensorDev(output_tensor_shape, loc,
+        m_prev_error_signals_const_view = TensorDevType(output_tensor_shape, loc,
                                                         sample_dist,
                                                         output_local_shape);
       } else {
@@ -1204,7 +1205,7 @@ void data_type_layer<TensorDataType>::setup_prev_error_signals_tensor(
             dynamic_cast<const data_type_layer<TensorDataType>*>(
                 get_child_layers()[i])->get_error_signals_t(*this);
       }
-      m_prev_error_signals_t = dc::TensorDev(output_tensor_shape, loc,
+      m_prev_error_signals_t = TensorDevType(output_tensor_shape, loc,
                                              dists[3],
                                              m_activations_t.get_local_shape());
       assert0(m_prev_error_signals_t.allocate());
@@ -1234,7 +1235,7 @@ void data_type_layer<TensorDataType>::setup_error_signals_tensor(
     const std::array<dc::Dist, dc::num_dists> &dists) {
   const auto input_tensor_shape = get_input_tensor_shape();
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  m_error_signals_t = dc::TensorDev(input_tensor_shape, loc,
+  m_error_signals_t = TensorDevType(input_tensor_shape, loc,
                                     dists[2],
                                     m_prev_activations_t.get_local_shape());
   if (skip_first_layer_bp()) {
@@ -1260,7 +1261,7 @@ void data_type_layer<TensorDataType>::setup_error_signals_copyout_tensor(
   input_local_shape[-1] = 0;
 
   // TODO: Only the first error signal tensor is handled
-  m_error_signals_copyout = dc::TensorDev(input_tensor_shape, loc, sample_dist,
+  m_error_signals_copyout = TensorDevType(input_tensor_shape, loc, sample_dist,
                                           input_local_shape);
   if (m_parent_copy_in_required[0] && !skip_first_layer_bp()) {
     m_error_signals_shuffler = dc::get_tensor_shuffler(
@@ -1272,12 +1273,13 @@ void data_type_layer<TensorDataType>::setup_error_signals_copyout_tensor(
 }
 
 namespace {
-dc::TensorShuffler *get_shuffler(Layer *layer,
-                                 dc::TensorShuffler *main_shuffler,
-                                 dc::TensorShuffler **last_mb_shufflers,
-                                 const dc::TensorDev &src,
-                                 const dc::TensorDev &dst) {
-  dc::TensorShuffler *shuffler = nullptr;
+template <typename TensorDataType>
+dc::TensorShuffler<TensorDataType> *get_shuffler(Layer *layer,
+                                                 dc::TensorShuffler<TensorDataType> *main_shuffler,
+                                                 dc::TensorShuffler<TensorDataType> **last_mb_shufflers,
+                                                 const dc::TensorDev<TensorDataType> &src,
+                                                 const dc::TensorDev<TensorDataType> &dst) {
+  dc::TensorShuffler<TensorDataType> *shuffler = nullptr;
   const auto& c = static_cast<sgd_execution_context&>(
       layer->get_model()->get_execution_context());
   const auto& mini_batch_size = c.get_current_mini_batch_size();

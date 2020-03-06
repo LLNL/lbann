@@ -1237,6 +1237,8 @@ private:
 #endif // LBANN_HAS_CUDNN
 
 #ifdef LBANN_HAS_DISTCONV
+  using TensorDevType = typename base_convolution_layer::TensorDevType;
+
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     using namespace dc;
     data_type_layer<TensorDataType>::setup_tensors_fwd(dists);
@@ -1260,17 +1262,17 @@ private:
     dc::Shape kernel_shape(kernel_dims);
     std::reverse(kernel_shape.begin(), kernel_shape.end());
     const LocaleMPI loc(dc::get_mpi_comm(), false);
-    m_kernel_t = TensorDev(kernel_shape, loc, shared_dist);
+    m_kernel_t = TensorDevType(kernel_shape, loc, shared_dist);
     assert0(tensor::View(
         m_kernel_t, this->get_data_type_weights(0).get_values().LockedBuffer()));
-    m_kernel_gradient_e = dc::TensorDev(kernel_shape, loc, shared_dist);
+    m_kernel_gradient_e = TensorDevType(kernel_shape, loc, shared_dist);
     // Gradient buffer is needed for auto-tuning the bp filter algorithm
     assert0(tensor::View(
         m_kernel_gradient_e,
         this->get_data_type_weights(0).get_optimizer()->get_gradient().Buffer()));
 
-    m_conv = new dc::Convolution(dc::get_backend(), this->get_num_dims(),
-                                 dc::get_halo_exchange_method());
+    m_conv = new dc::Convolution<TensorDataType>(dc::get_backend(), this->get_num_dims(),
+                                                 dc::get_halo_exchange_method());
 
     // Bias tensor. Shared by all procs
     if (this->m_bias_scaling_factor != TensorDataType(0)) {
@@ -1280,7 +1282,7 @@ private:
           << ", bias factor: " << this->m_bias_scaling_factor;
       dc::Shape bias_shape(this->get_num_dims(), 1);
       bias_shape[dc::get_channel_dim()] = this->get_output_dims()[0];
-      m_bias_t = dc::TensorDev(bias_shape, loc, shared_dist);
+      m_bias_t = TensorDevType(bias_shape, loc, shared_dist);
       assert0(tensor::View(
           m_bias_t, this->get_data_type_weights(1).get_values().LockedBuffer()));
       dc::MPIPrintStreamDebug() << "Bias tensor: " << m_bias_t;
@@ -1289,7 +1291,7 @@ private:
       // Bias backprop
       auto* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
       if (bias_optimizer != nullptr) {
-        m_bias_gradient_t = dc::TensorDev(bias_shape, loc, shared_dist);
+        m_bias_gradient_t = TensorDevType(bias_shape, loc, shared_dist);
         // setup_bias_gradients needs strides of the bias tensor,
         // which is set when its view is set.
         assert0(tensor::View(
@@ -1310,11 +1312,11 @@ private:
   }
 
  protected:
-  dc::Convolution *m_conv;
-  dc::TensorDev m_kernel_t;
-  dc::TensorDev m_kernel_gradient_e;
-  dc::TensorDev m_bias_t;
-  dc::TensorDev m_bias_gradient_t;
+  dc::Convolution<TensorDataType> *m_conv;
+  TensorDevType m_kernel_t;
+  TensorDevType m_kernel_gradient_e;
+  TensorDevType m_bias_t;
+  TensorDevType m_bias_gradient_t;
   std::string m_fwd_algo;
   std::string m_bwd_data_algo;
   std::string m_bwd_filter_algo;
