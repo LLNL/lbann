@@ -16,11 +16,11 @@ import tools
 # ==============================================
 
 # Training options
-num_epochs = 1
-#XX
+num_epochs = 5
 mini_batch_size = 256
 num_nodes = 2
 imagenet_fraction = 0.0031971 # Train with 4096 out of 1.28M samples
+validation_percent = 0.1
 random_seed = 20191206
 
 # ==============================================
@@ -96,6 +96,7 @@ def construct_data_reader(lbann):
     reader.data_filedir = lbann.contrib.lc.paths.imagenet_dir(data_set='train')
     reader.data_filename = lbann.contrib.lc.paths.imagenet_labels(data_set='train')
     reader.percent_of_data_to_use = imagenet_fraction
+    reader.validation_percent = validation_percent
     reader.num_labels = 1000
     reader.shuffle = True
 
@@ -134,7 +135,7 @@ def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname)
     datastore_metrics = []
     with open(datastore_test_output['stdout_log_file']) as f:
         for line in f:
-            match = re.search('training epoch [0-9]+ metric : ([0-9.]+)', line)
+            match = re.search('validation metric : ([0-9.]+)', line)
             if match:
                 datastore_metrics.append(float(match.group(1)))
 
@@ -150,6 +151,7 @@ def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname)
         xhat = datastore_metrics[i]
         eps = np.finfo(np.float32).eps
         ceillogx = int(math.ceil(math.log10(x)))
+        print('>>> ' + str(datastore_metrics[i]) + ' :: ' + str(abs(x-xhat)) + " :: " + str(max(8*eps*x, 1.5*10**(ceillogx-6))))
         if abs(x-xhat) >= max(8*eps*x, 1.5*10**(ceillogx-6)) :
             r[0] = 'FAILED'
             r.append('found large discrepancy in metrics for baseline and data store experiments')
@@ -174,9 +176,11 @@ def run_baseline_test_func(baseline_test_func, cluster, exes, dirname) :
     baseline_metrics = []
     with open(baseline_test_output['stdout_log_file']) as f:
         for line in f:
-            match = re.search('training epoch [0-9]+ metric : ([0-9.]+)', line)
+            match = re.search('validation metric : ([0-9.]+)', line)
             if match:
                 baseline_metrics.append(float(match.group(1)))
+    
+    assert len(baseline_metrics) > 0, 'failed to parse baseline_metrics; len: ' + str(len(baseline_metrics))
     return baseline_metrics
 
 def create_test_func(baseline_test_func, datastore_test_funcs) :
@@ -247,11 +251,17 @@ def make_test(name, test_by_platform_list=[], args=[]) :
 baseline_tests = make_test('nodatastore')
 datastore_tests = [[] for j in range(len(baseline_tests))]
 
+# test checkpoint, preload
+ds = make_test('data_store_checkpoint_preload', datastore_tests, ['--preload_data_store', '--data_store_test_checkpoint=CHECKPOINT', '--data_store_profile'])
+
+# test checkpoint, explicit
+ds = make_test('data_store_checkpoint_explicit', datastore_tests, ['--use_data_store', '--data_store_test_checkpoint=CHECKPOINT', '--data_store_profile'])
+
 # explicit loading
 ds = make_test('data_store_explicit', datastore_tests, ['--use_data_store', '--data_store_profile'])
 
 # preloading
-ds = make_test('data_store_explicit', datastore_tests, ['--preload_data_store', '--data_store_profile'])
+ds = make_test('data_store_preload', datastore_tests, ['--preload_data_store', '--data_store_profile'])
 
 #local cache with explicit loading (internally, this should run identically
 #with the flag: --preload_data_store 
