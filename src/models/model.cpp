@@ -571,7 +571,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // Setup
 // =============================================
 
-  void model::setup(size_t max_mini_batch_size, TargetModeDimMap& data_dimensions_map) {
+void model::setup(size_t max_mini_batch_size, TargetModeDimMap& data_dimensions_map) {
 
   // Bail out if the model is already setup
   if(m_model_is_setup) { return; }
