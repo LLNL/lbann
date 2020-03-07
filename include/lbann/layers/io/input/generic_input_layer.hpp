@@ -251,7 +251,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
   void fetch_data_in_background(int future_active_buffer, execution_mode mode) {
     int active_buffer = future_active_buffer % m_io_buffers.size();
-    generic_io_buffer* io_buffer = m_io_buffers[active_buffer];
+    generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[active_buffer];
     std::lock_guard<std::mutex> guard(dr_mutex);
     setup_next_io_buffer(io_buffer);
     prof_region_begin("fetch_sample", prof_colors[0], false);
@@ -275,7 +275,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
     increment_active_buffer_idx(mode);
 
-    generic_io_buffer* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
+    generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
 
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
@@ -324,14 +324,14 @@ class generic_input_layer : public io_layer<TensorDataType> {
       int next_active_buffer = get_active_buffer_idx(mode) + 1;
       std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool().submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, mode));
-      generic_io_buffer* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
+      generic_io_buffer<TensorDataType>* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
       next_io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
       next_io_buffer->set_fetch_data_in_background(true, mode);
     }
 
   }
 
-  void setup_next_io_buffer(generic_io_buffer* io_buffer) {
+  void setup_next_io_buffer(generic_io_buffer<TensorDataType>* io_buffer) {
     int mini_batch_size = get_current_mini_batch_size();
     for (int i = 0; i < this->get_num_children(); ++i) {
       io_buffer->fp_setup_data(mini_batch_size, i);
@@ -583,7 +583,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
    */
   El::Matrix<El::Int>* get_sample_indices_per_mb() override {
     execution_mode mode = this->m_model->get_execution_context().get_execution_mode();
-    generic_io_buffer* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
+    generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
     return io_buffer->get_sample_indices_fetched_per_mb(this->m_model->get_execution_context().get_execution_mode());
   }
 
@@ -854,7 +854,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
   }
 
  protected:
-  std::vector<generic_io_buffer*> m_io_buffers;
+  std::vector<generic_io_buffer<TensorDataType>*> m_io_buffers;
   io_buffer_map_t m_active_buffer;
 
   dataset m_training_dataset;
