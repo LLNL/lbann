@@ -120,8 +120,8 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr,
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> construct_input_layer(
     lbann_comm* comm,
-    const std::map<execution_mode, generic_data_reader*>& data_readers,
     int num_parallel_readers,
+    const std::map<execution_mode, generic_data_reader*>& data_readers,
     bool data_set_per_model,
     data_reader_target_mode target_mode,
     const std::string &type_name) {
@@ -142,190 +142,124 @@ std::unique_ptr<Layer> construct_input_layer(
 }
 #endif // LBANN_HAS_DISTCONV
 
-std::string get_layer_datatype_from_pbuf(const lbann_data::Layer& proto_layer) {
-  // Get parameters from prototext
-  auto datatype_str = proto_layer.datatype();
-  if(datatype_str.empty()) {
-    datatype_str = TypeName<DataType>();
-  }
-  return datatype_str;
-}
-
-data_layout get_layer_data_layout_from_pbuf(const lbann_data::Layer& proto_layer) {
-  // Get parameters from prototext
-  const auto& layout_str = proto_layer.data_layout();
-  if (layout_str.empty())             { return data_layout::DATA_PARALLEL; }
-  if (layout_str == "data_parallel")  { return data_layout::DATA_PARALLEL; }
-  if (layout_str == "model_parallel") { return data_layout::MODEL_PARALLEL; }
-  return data_layout::invalid;
-}
-
-El::Device get_layer_device_from_pbuf(const lbann_data::Layer& proto_layer,
-                                      bool GPUs_disabled) {
-  // Get parameters from prototext
-#ifdef LBANN_HAS_GPU
-  const auto& device_str = proto_layer.device_allocation();
-  if (!GPUs_disabled) {
-    if (device_str == "gpu" || device_str.empty()) {
-      return El::Device::GPU;
-    }
-    if (device_str == "cpu") { return El::Device::CPU; }
-    if (proto_layer.has_input()) {
-      // Input layers must be on CPU
-      return El::Device::CPU;
-    }
-  }
-#endif // LBANN_HAS_GPU
-  return El::Device::CPU;
-}
-
-std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
-  lbann_comm* comm,
-  const lbann_data::Layer& proto_layer,
-  bool GPUs_disabled) {
-  auto datatype = get_layer_datatype_from_pbuf(proto_layer);
-  auto layout = get_layer_data_layout_from_pbuf(proto_layer);
-  auto device = get_layer_device_from_pbuf(proto_layer, GPUs_disabled);
-  const auto& params = proto_layer.fully_connected();
-#define TEMPLATE_INSTANTIATION(T_datatype, T_layout, T_device)                            \
-    do {                                                                                  \
-      if (datatype == #T_datatype && layout == T_layout && device == T_device) {          \
-        return lbann::make_unique<fully_connected_layer<T_datatype, T_layout, T_device>>( \
-          comm,                                                                           \
-          params.num_neurons(),                                                           \
-          params.transpose(),                                                             \
-          nullptr,                                                                        \
-          params.has_bias());                                                             \
-      }                                                                                   \
-    } while (0)
-
-#define PROTO_DEVICE(T, Device) \
-    TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \
-    TEMPLATE_INSTANTIATION(T, data_layout::MODEL_PARALLEL, Device)
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate_device.hpp"
-
-#undef TEMPLATE_INSTANTIATION
-#undef PROTO_DEVICE
-  // Throw exception if layer has not been constructed
-  LBANN_ERROR("could not construct layer ", proto_layer.name());
-  return nullptr;
-}
-
-std::unique_ptr<Layer> build_convolution_layer_from_pbuf(
-  lbann_comm* comm,
-  const lbann_data::Layer& proto_layer,
-  bool GPUs_disabled) {
-
-  auto datatype = get_layer_datatype_from_pbuf(proto_layer);
-  auto layout = get_layer_data_layout_from_pbuf(proto_layer);
-  auto device = get_layer_device_from_pbuf(proto_layer, GPUs_disabled);
-
-  const auto& params = proto_layer.convolution();
-  const auto& num_output_channels = params.num_output_channels();
-  const auto& bias = params.has_bias();
-  int num_groups = params.num_groups();
-  if (num_groups == 0) {
-    num_groups = 1;
-  }
-  if (layout != data_layout::DATA_PARALLEL) {
-    LBANN_ERROR("convolution layer is only supported with "
-                "a data-parallel layout");
-  }
-  if (params.has_vectors()) {
-    const auto& dims = parse_list<int>(params.conv_dims());
-    const auto& pads = parse_list<int>(params.conv_pads());
-    const auto& strides = parse_list<int>(params.conv_strides());
-    std::vector<int> dilations = parse_list<int>(params.conv_dilations());
-    if (dilations.empty()) {
-      dilations.resize(dims.size(), 1);
-    }
-#define TEMPLATE_INSTANTIATION(T_datatype, T_layout, T_device)                         \
-    do {                                                                               \
-      if (datatype == #T_datatype && layout == T_layout && device == T_device) {       \
-        return lbann::make_unique<convolution_layer<T_datatype, T_layout, T_device>>(  \
-          comm, dims.size(), num_output_channels,                                      \
-          dims, pads, strides, dilations, num_groups, bias);                           \
-      }                                                                                \
-    } while (0)
-
-#define PROTO_DEVICE(T, Device) \
-    TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device)
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate_device.hpp"
-
-#undef TEMPLATE_INSTANTIATION
-#undef PROTO_DEVICE
-  } else {
-    const auto& num_dims = params.num_dims();
-    const auto& dim = params.conv_dims_i();
-    const auto& pad = params.conv_pads_i();
-    const auto& stride = params.conv_strides_i();
-    int dilation = params.conv_dilations_i();
-    if (dilation == 0) {
-      dilation = 1;
-    }
-#define TEMPLATE_INSTANTIATION(T_datatype, T_layout, T_device)                         \
-    do {                                                                               \
-      if (datatype == #T_datatype && layout == T_layout && device == T_device) {       \
-        return lbann::make_unique<convolution_layer<T_datatype, T_layout, T_device>>(  \
-          comm, num_dims, num_output_channels,                                         \
-          dim, pad, stride, dilation, num_groups, bias);                               \
-      }                                                                                \
-    } while (0)
-
-#define PROTO_DEVICE(T, Device) \
-    TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device)
-
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate_device.hpp"
-
-#undef TEMPLATE_INSTANTIATION
-#undef PROTO_DEVICE
-  }
-  // Throw exception if layer has not been constructed
-  LBANN_ERROR("could not construct layer ", proto_layer.name());
-  return nullptr;
-}
-
 namespace {
+
 // Define the factory type.
 using factory_type = lbann::generic_factory<
   lbann::Layer,
   std::string,
   generate_builder_type<lbann::Layer,
                         lbann_comm*,
-                        const lbann_data::Layer&,
-                        bool>,
+                        const lbann_data::Layer&>,
   nullptr_key_error_policy>;
 
-void register_default_builders(factory_type& factory)
+/** @brief Singleton holder for a factory.
+ *
+ *  @note This design requires that the builder function be valid for
+ *  every combination of T, L, and D. That is, layer types for which a
+ *  combination is invalid must handle that error inside their builder
+ *  function.
+ */
+template <typename T, data_layout L, El::Device D>
+class factory_manager
 {
-  factory.register_builder("FullyConnected",
-                           build_fully_connected_layer_from_pbuf);
-  factory.register_builder("Convolution",
-                           build_convolution_layer_from_pbuf);
-}
+public:
 
-// Manage a global factory
-struct factory_manager
-{
-    factory_type factory_;
+  factory_manager() { register_default_builders(); }
+  factory_type const& get() const noexcept { return factory_; }
 
-    factory_manager() {
-        register_default_builders(factory_);
-    }
-};
+private:
 
-factory_manager factory_mgr_;
+  // This macro simplifies the process of adding default builders
+#define LBANN_REGISTER_DEFAULT_BUILDER(KEY, LAYER_NAME)                 \
+    factory_.register_builder(                                          \
+      #KEY,                                                             \
+      [](lbann_comm* comm,                                              \
+         lbann_data::Layer const&){                                     \
+        return lbann::make_unique<LAYER_NAME##_layer<T,L,D>>(comm);     \
+      })
+
+  // Builder registration happens here
+  void register_default_builders() {
+
+    factory_.register_builder("FullyConnected",
+                              build_fully_connected_layer_from_pbuf<T,L,D>);
+    factory_.register_builder("Convolution",
+                              build_convolution_layer_from_pbuf<T,L,D>);
+
+    // Math layers
+    LBANN_REGISTER_DEFAULT_BUILDER(Abs, abs);
+    LBANN_REGISTER_DEFAULT_BUILDER(Acos, acos);
+    LBANN_REGISTER_DEFAULT_BUILDER(Acosh, acosh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Add, add);
+    LBANN_REGISTER_DEFAULT_BUILDER(Asin, asin);
+    LBANN_REGISTER_DEFAULT_BUILDER(Asinh, asinh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Atan, atan);
+    LBANN_REGISTER_DEFAULT_BUILDER(Atanh, atanh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Ceil, ceil);
+    LBANN_REGISTER_DEFAULT_BUILDER(Cos, cos);
+    LBANN_REGISTER_DEFAULT_BUILDER(Cosh, cosh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Divide, divide);
+    LBANN_REGISTER_DEFAULT_BUILDER(Equal, equal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Exp, exp);
+    LBANN_REGISTER_DEFAULT_BUILDER(Expm1, expm1);
+    LBANN_REGISTER_DEFAULT_BUILDER(Floor, floor);
+    LBANN_REGISTER_DEFAULT_BUILDER(Greater, greater);
+    LBANN_REGISTER_DEFAULT_BUILDER(GreaterEqual, greater_equal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Less, less);
+    LBANN_REGISTER_DEFAULT_BUILDER(LessEqual, less_equal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Log, log);
+    LBANN_REGISTER_DEFAULT_BUILDER(Log1p, log1p);
+    LBANN_REGISTER_DEFAULT_BUILDER(LogicalAnd, logical_and);
+    LBANN_REGISTER_DEFAULT_BUILDER(LogicalNot, logical_not);
+    LBANN_REGISTER_DEFAULT_BUILDER(LogicalOr, logical_or);
+    LBANN_REGISTER_DEFAULT_BUILDER(LogicalXor, logical_xor);
+    LBANN_REGISTER_DEFAULT_BUILDER(Max, max);
+    LBANN_REGISTER_DEFAULT_BUILDER(Min, min);
+    LBANN_REGISTER_DEFAULT_BUILDER(Mod, mod);
+    LBANN_REGISTER_DEFAULT_BUILDER(Multiply, multiply);
+    LBANN_REGISTER_DEFAULT_BUILDER(Negative, negative);
+    LBANN_REGISTER_DEFAULT_BUILDER(Not_Equal, not_equal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Pow, pow);
+    LBANN_REGISTER_DEFAULT_BUILDER(Reciprocal, reciprocal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Round, round);
+    LBANN_REGISTER_DEFAULT_BUILDER(Rsqrt, rsqrt);
+    LBANN_REGISTER_DEFAULT_BUILDER(SafeDivide, safe_divide);
+    LBANN_REGISTER_DEFAULT_BUILDER(SafeReciprocal, safe_reciprocal);
+    LBANN_REGISTER_DEFAULT_BUILDER(Sign, sign);
+    LBANN_REGISTER_DEFAULT_BUILDER(Sin, sin);
+    LBANN_REGISTER_DEFAULT_BUILDER(Sinh, sinh);
+    LBANN_REGISTER_DEFAULT_BUILDER(Sqrt, sqrt);
+    LBANN_REGISTER_DEFAULT_BUILDER(Square, square);
+    LBANN_REGISTER_DEFAULT_BUILDER(SquaredDifference, squared_difference);
+    LBANN_REGISTER_DEFAULT_BUILDER(Subtract, subtract);
+    LBANN_REGISTER_DEFAULT_BUILDER(Tan, tan);
+    LBANN_REGISTER_DEFAULT_BUILDER(Tanh, tanh);
+
+    // Transform layers
+    LBANN_REGISTER_DEFAULT_BUILDER(Dummy, dummy);
+    LBANN_REGISTER_DEFAULT_BUILDER(Evaluation, evaluation);
+    LBANN_REGISTER_DEFAULT_BUILDER(Hadamard, hadamard);
+    LBANN_REGISTER_DEFAULT_BUILDER(Split, split);
+    LBANN_REGISTER_DEFAULT_BUILDER(StopGradient, stop_gradient);
+    LBANN_REGISTER_DEFAULT_BUILDER(Sum, sum);
+
+    // Activations
+    LBANN_REGISTER_DEFAULT_BUILDER(Identity, identity);
+  }
+
+  // Just to be clear/safe.
+#undef LBANN_REGISTER_DEFAULT_BUILDER
+
+private:
+  factory_type factory_;
+}; // class factory_manager
+
+template <typename T, data_layout L, El::Device D>
 factory_type const& get_layer_factory() noexcept
 {
-  return factory_mgr_.factory_;
+  static factory_manager<T,L,D> factory_mgr_;
+  return factory_mgr_.get();
 }
 
 } // namespace
@@ -365,33 +299,34 @@ std::unique_ptr<Layer> construct_layer_legacy(
       /// @todo Question for Tim Moon and Tom Benson, I had to change this line from Layout to
       /// data_layout::DATA_PARALLEL to make it compile with clang on OS X, but it seems like
       /// this is not related to this PR.
+      if ((typeid(TensorDataType) == typeid(DataType))
+          && (Layout == data_layout::DATA_PARALLEL)) {
 #ifdef LBANN_HAS_DISTCONV
-      return construct_input_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>(
-          comm, data_readers, num_parallel_readers,
-          params.data_set_per_model(), target_mode,
-          data_type_str);
+        return construct_input_layer<DataType, data_layout::DATA_PARALLEL, Device>(
+            comm, num_parallel_readers, data_readers,
+            params.data_set_per_model(), target_mode,
+            data_type_str);
 #else
-      return lbann::make_unique<input_layer<TensorDataType,partitioned_io_buffer<TensorDataType>,data_layout::DATA_PARALLEL,Device>>(
-          comm,
-          num_parallel_readers,
-          data_readers,
-          !params.data_set_per_model(),
-          target_mode);
+        return lbann::make_unique<input_layer<DataType,
+                                              partitioned_io_buffer<DataType>,
+                                              data_layout::DATA_PARALLEL,
+                                              Device>>(
+                                                comm,
+                                                num_parallel_readers,
+                                                data_readers,
+                                                !params.data_set_per_model(),
+                                                target_mode);
 #endif // LBANN_HAS_DISTCONV
+      }
+      else {
+        LBANN_ERROR("Input layers are only valid with "
+                    "TensorDataType == DataType and Layout == DATA_PARALLEL");
+      }
     } else {
       LBANN_ERROR("invalid IO buffer type (" + io_buffer + ")");
     }
   }
 
-  // Fully connected layer
-  if (proto_layer.has_fully_connected()) {
-    LBANN_ERROR("Should have encountered the new layer factory");
-  }
-
-  // Convolution and deconvolution layer
-  if (proto_layer.has_convolution()) {
-    LBANN_ERROR("Should have encountered the new layer factory");
-  }
   if (proto_layer.has_deconvolution()) {
     const auto& params = proto_layer.deconvolution();
     const auto& bias = params.has_bias();
@@ -481,16 +416,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
     }
     return lbann::make_unique<reshape_layer<TensorDataType, Layout, Device>>(comm, dims);
   }
-  if (proto_layer.has_sum()) {
-    return lbann::make_unique<sum_layer<TensorDataType, Layout, Device>>(comm);
-  }
   if (proto_layer.has_weighted_sum()) {
     const auto& params = proto_layer.weighted_sum();
     const auto& scaling_factors = parse_list<DataType>(params.scaling_factors());
     return lbann::make_unique<weighted_sum_layer<TensorDataType, Layout, Device>>(comm, scaling_factors);
-  }
-  if (proto_layer.has_split()) {
-    return lbann::make_unique<split_layer<TensorDataType, Layout, Device>>(comm);
   }
   if (proto_layer.has_concatenation()) {
     const auto& axis = proto_layer.concatenation().axis();
@@ -523,9 +452,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     }
     return lbann::make_unique<slice_layer<TensorDataType, Layout, Device>>(
              comm, params.axis(), slice_points);
-  }
-  if (proto_layer.has_hadamard()) {
-    return lbann::make_unique<hadamard_layer<TensorDataType, Layout, Device>>(comm);
   }
   if (proto_layer.has_constant()) {
     const auto& params = proto_layer.constant();
@@ -607,9 +533,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
                   "a data-parallel layout");
     }
   }
-  if (proto_layer.has_evaluation()) {
-    return lbann::make_unique<evaluation_layer<TensorDataType, Layout, Device>>(comm);
-  }
   if (proto_layer.has_crop()) {
     const auto& params = proto_layer.crop();
     const auto& dims = parse_list<int>(params.dims());
@@ -639,12 +562,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     } else {
       LBANN_ERROR("discrete random layer is only supported on CPU");
     }
-  }
-  if (proto_layer.has_dummy()) {
-    return lbann::make_unique<dummy_layer<TensorDataType, Layout, Device>>(comm);
-  }
-  if (proto_layer.has_stop_gradient()) {
-    return lbann::make_unique<stop_gradient_layer<TensorDataType, Layout, Device>>(comm);
   }
   if (proto_layer.has_in_top_k()) {
     const auto& params = proto_layer.in_top_k();
@@ -755,54 +672,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     return lbann::make_unique<layer_norm_layer<TensorDataType, Layout, Device>>(comm, epsilon);
   }
 
-  // Math layers
-  CONSTRUCT_LAYER(logical_not);
-  CONSTRUCT_LAYER(abs);
-  CONSTRUCT_LAYER(negative);
-  CONSTRUCT_LAYER(sign);
-  CONSTRUCT_LAYER(round);
-  CONSTRUCT_LAYER(ceil);
-  CONSTRUCT_LAYER(floor);
-  CONSTRUCT_LAYER(reciprocal);
-  CONSTRUCT_LAYER(square);
-  CONSTRUCT_LAYER(sqrt);
-  CONSTRUCT_LAYER(rsqrt);
-  CONSTRUCT_LAYER(safe_reciprocal);
-  CONSTRUCT_LAYER(exp);
-  CONSTRUCT_LAYER(expm1);
-  CONSTRUCT_LAYER(log);
-  CONSTRUCT_LAYER(log1p);
-  CONSTRUCT_LAYER(cos);
-  CONSTRUCT_LAYER(sin);
-  CONSTRUCT_LAYER(tan);
-  CONSTRUCT_LAYER(acos);
-  CONSTRUCT_LAYER(asin);
-  CONSTRUCT_LAYER(atan);
-  CONSTRUCT_LAYER(cosh);
-  CONSTRUCT_LAYER(sinh);
-  CONSTRUCT_LAYER(tanh);
-  CONSTRUCT_LAYER(acosh);
-  CONSTRUCT_LAYER(asinh);
-  CONSTRUCT_LAYER(atanh);
-  CONSTRUCT_LAYER(add);
-  CONSTRUCT_LAYER(subtract);
-  CONSTRUCT_LAYER(multiply);
-  CONSTRUCT_LAYER(divide);
-  CONSTRUCT_LAYER(mod);
-  CONSTRUCT_LAYER(pow);
-  CONSTRUCT_LAYER(safe_divide);
-  CONSTRUCT_LAYER(squared_difference);
-  CONSTRUCT_LAYER(max);
-  CONSTRUCT_LAYER(min);
-  CONSTRUCT_LAYER(equal);
-  CONSTRUCT_LAYER(not_equal);
-  CONSTRUCT_LAYER(less);
-  CONSTRUCT_LAYER(less_equal);
-  CONSTRUCT_LAYER(greater);
-  CONSTRUCT_LAYER(greater_equal);
-  CONSTRUCT_LAYER(logical_and);
-  CONSTRUCT_LAYER(logical_or);
-  CONSTRUCT_LAYER(logical_xor);
   if (proto_layer.has_clamp()) {
     const auto& params = proto_layer.clamp();
     return lbann::make_unique<clamp_layer<TensorDataType, Layout, Device>>(comm, params.min(), params.max());
@@ -830,7 +699,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
       return lbann::make_unique<elu_layer<TensorDataType, Layout, Device>>(comm);
     }
   }
-  CONSTRUCT_LAYER(identity);
   if (proto_layer.has_leaky_relu()) {
     const auto& params = proto_layer.leaky_relu();
     const auto& negative_slope = params.negative_slope();
@@ -937,28 +805,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
 
 }
 
-// Template instantiation
-#define PROTO_DEVICE(T, Device) \
-  template std::unique_ptr<Layer> construct_layer<T, data_layout::DATA_PARALLEL, Device>(  \
-    lbann_comm* comm,                                                                      \
-    const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
-    int num_parallel_readers,                                                              \
-    bool GPUs_disabled,                                                                    \
-    const lbann_data::Layer& proto_layer                                                   \
-  );                                                                                       \
-  template std::unique_ptr<Layer> construct_layer<T, data_layout::MODEL_PARALLEL, Device>( \
-    lbann_comm* comm,                                                                      \
-    const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
-    int num_parallel_readers,                                                              \
-    bool GPUs_disabled,                                                                    \
-    const lbann_data::Layer& proto_layer                                                   \
-  )
-
-#define LBANN_INSTANTIATE_FLOAT_ONLY
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
-#include "lbann/macros/instantiate_device.hpp"
-
 /// Obtain the slice points from the data reader
 std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_generic,
                                                   const std::string& var_category,
@@ -987,21 +833,44 @@ std::unique_ptr<Layer> construct_layer(
   lbann_comm* comm,
   const std::map<execution_mode, generic_data_reader*>& data_readers,
   int num_parallel_readers,
-  bool GPUs_disabled,
   const lbann_data::Layer& proto_layer) {
 
-  auto const& factory = get_layer_factory();// Register FC and CONV layers here
+  auto const& factory = get_layer_factory<TensorDataType, Layout, Device>();
   auto const& msg =
     helpers::get_oneof_message(proto_layer, "layer_type");
 
   std::unique_ptr<Layer> l = factory.create_object(
-    msg.GetDescriptor()->name(), comm, proto_layer, GPUs_disabled);
+    msg.GetDescriptor()->name(), comm, proto_layer);
   if(!l) {
-    l = construct_layer_legacy<TensorDataType, Layout, Device>(
-      comm, data_readers, num_parallel_readers, proto_layer);
+    if (typeid(TensorDataType) == typeid(DataType))
+      l = construct_layer_legacy<DataType, Layout, Device>(
+        comm, data_readers, num_parallel_readers, proto_layer);
+    else
+      LBANN_ERROR("Currently, layers of type \"", msg.GetDescriptor()->name(),
+                  "\" are not constructible with any type other than the "
+                  "default DataType.");
   }
   return l;
 }
+
+// Template instantiation
+#define PROTO_DEVICE(T, Device) \
+  template std::unique_ptr<Layer> construct_layer<T, data_layout::DATA_PARALLEL, Device>(  \
+    lbann_comm* comm,                                                                      \
+    const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
+    int num_parallel_readers,                                                              \
+    const lbann_data::Layer& proto_layer                                                   \
+  );                                                                                       \
+  template std::unique_ptr<Layer> construct_layer<T, data_layout::MODEL_PARALLEL, Device>( \
+    lbann_comm* comm,                                                                      \
+    const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
+    int num_parallel_readers,                                                              \
+    const lbann_data::Layer& proto_layer                                                   \
+  )
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
 
 } // namespace proto
 } // namespace lbann

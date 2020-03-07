@@ -149,6 +149,50 @@ matrix_format data_layout_to_matrix_format(data_layout layout) {
   return format;
 }
 
+std::string to_string(data_layout const& dl) {
+  switch (dl) {
+  case data_layout::DATA_PARALLEL:
+    return "data_parallel";
+  case data_layout::MODEL_PARALLEL:
+    return "model_parallel";
+  case data_layout::invalid:
+    return "invalid";
+  }
+  return "invalid data_layout";
+}
+
+data_layout data_layout_from_string(std::string const& str) {
+  if (str == "data_parallel" || str == "DATA_PARALLEL")
+    return data_layout::DATA_PARALLEL;
+  if (str == "model_parallel" || str == "MODEL_PARALLEL")
+    return data_layout::MODEL_PARALLEL;
+  if (str == "invalid" || str == "INVALID")
+    return data_layout::invalid; // Why is this a thing?
+  LBANN_ERROR("Unable to convert \"", str, "\" to lbann::data_layout.");
+}
+
+std::string to_string(El::Device const& d) {
+  switch (d) {
+  case El::Device::CPU:
+    return "CPU";
+#ifdef HYDROGEN_HAVE_GPU
+  case El::Device::GPU:
+    return "GPU";
+#endif // HYDROGEN_HAVE_GPU
+  }
+  return "invalid El::Device";
+}
+
+El::Device device_from_string(std::string const& str) {
+  if (str == "cpu" || str == "CPU")
+    return El::Device::CPU;
+#ifdef HYDROGEN_HAVE_GPU
+  if (str == "gpu" || str == "GPU")
+    return El::Device::GPU;
+#endif
+  LBANN_ERROR("Unable to convert \"", str, "\" to El::Device.");
+}
+
 std::string to_string(execution_mode m) {
   switch(m) {
   case execution_mode::training:

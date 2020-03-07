@@ -314,6 +314,9 @@ protected:
 #endif // LBANN_HAS_DISTCONV
 };
 
+// Builder function
+LBANN_DEFINE_LAYER_BUILDER(convolution);
+
 #ifndef LBANN_CONVOLUTION_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device) \

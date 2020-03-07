@@ -42,9 +42,10 @@
 
 /** @brief A utility macro for easily defining default-constructed sub-class
  *  builders.*/
-#define LBANN_DEFINE_LAYER_BUILDER(Class, FunctionName)   \
-  std::unique_ptr<Layer> FunctionName(lbann_comm*, \
-    const google::protobuf::Message&, bool)
+#define LBANN_DEFINE_LAYER_BUILDER(LAYER_NAME)                          \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  std::unique_ptr<Layer> build_##LAYER_NAME##_layer_from_pbuf( \
+    lbann_comm*, lbann_data::Layer const&)
 
 // Forward-declare protobuf classes
 namespace lbann_data {
