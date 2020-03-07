@@ -192,6 +192,7 @@ load_prototext(
 void verify_prototext(
   const bool master,
   const std::vector<std::unique_ptr<lbann_data::LbannPB>> &models) {
+  std::stringstream err;
   if (master) {
     std::cout << "protobuf_utils::verify_prototext; starting verify for " << models.size() << " models\n";
   }
@@ -200,47 +201,24 @@ void verify_prototext(
     lbann_data::LbannPB *t = models[j].get();
     if (! t->has_data_reader()) {
       is_good = false;
-      if (master) {
-        std::cerr << "model #" << j << " is missing data_reader\n";
-      }
+      err << "model #" << j << " is missing data_reader\n";
     } else {
       if (t->data_reader().requires_data_set_metadata() && (! t->has_data_set_metadata())) {
         is_good = false;
-        if (master) {
-          std::cerr << "model #" << j << " is missing data_set_metadata\n";
-        }
-      }
-      if (!t->data_reader().requires_data_set_metadata() && t->has_data_set_metadata()) {
-        is_good = false;
-        if (master) {
-          std::stringstream err;
-          err << "model #" << j << " is has data_set_metadata but does not require it\n"
-              << " please check your command line\n";
-          LBANN_ERROR(err.str());
-        }
+        err << "model #" << j << " is missing metadata (cmd line flag: --metadata=<sting>)\n";
       }
     }
     if (! t->has_model()) {
       is_good = false;
-      if (master) {
-        std::cerr << "model #" << j << " is missing model\n";
-      }
+      err << "model #" << j << " is missing model\n";
     }
     if (! t->has_optimizer()) {
       is_good = false;
-      if (master) {
-        std::cerr << "model #" << j << " is missing optimizer\n";
-      }
+      err << "model #" << j << " is missing optimizer\n";
     }
 
     if (! is_good) {
-      if (master) {
-        std::stringstream err;
-        err << __FILE__ << __LINE__ << " :: "
-            << " prototext is missing reader, metadata, optimizer, and/or model;\n"
-            << " please check your command line\n";
-        throw lbann_exception(err.str());
-      }
+      LBANN_ERROR("please check your command line and/or prototext files:\n", err.str());
     }
   }
 }
