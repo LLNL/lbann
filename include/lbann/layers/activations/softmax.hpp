@@ -44,8 +44,8 @@ namespace lbann {
 
 enum class softmax_mode {INVALID, INSTANCE, CHANNEL};
 
-/** @brief
- *
+/**
+>>>>>>> bc1c6f45a8e0afa896c6961bd0a28ee19dfd3f82
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -63,7 +63,8 @@ public:
 
   softmax_layer(lbann_comm *comm,
                 softmax_mode mode)
-      : data_type_layer<TensorDataType>(comm), m_mode(mode)
+    : data_type_layer<TensorDataType>(comm),
+      m_mode(mode)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
@@ -74,7 +75,8 @@ public:
   }
 
   softmax_layer(const softmax_layer& other)
-    : data_type_layer<TensorDataType>(other), m_mode(other.m_mode),
+    : data_type_layer<TensorDataType>(other),
+      m_mode(other.m_mode),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
@@ -84,17 +86,6 @@ public:
 #ifdef LBANN_HAS_CUDNN
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
-  }
-
-  softmax_layer& operator=(const softmax_layer& other) {
-    data_type_layer<TensorDataType>::operator=(other);
-    m_workspace.reset(other.m_workspace ?
-                      other.m_workspace->Copy() : nullptr);
-#ifdef LBANN_HAS_CUDNN
-    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
-    m_tensors_cudnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
-    return *this;
   }
 
   ~softmax_layer() = default;
