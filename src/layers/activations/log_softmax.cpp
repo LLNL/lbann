@@ -142,9 +142,11 @@ void log_softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
      *this->m_workspace);
 }
 
-template class log_softmax_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class log_softmax_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class log_softmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class log_softmax_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>; \
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
