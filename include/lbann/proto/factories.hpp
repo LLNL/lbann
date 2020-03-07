@@ -96,6 +96,10 @@ std::unique_ptr<weights> construct_weights(
 
 /** Construct a callback specified with prototext. */
 std::unique_ptr<callback_base>
+construct_callback(const google::protobuf::Message& proto_cb);
+
+/** Construct a callback specified with prototext. */
+std::unique_ptr<callback_base>
 construct_callback(const google::protobuf::Message& proto_cb,
                    std::shared_ptr<lbann_summary> const& summarizer);
 

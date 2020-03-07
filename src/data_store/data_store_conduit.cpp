@@ -1340,9 +1340,6 @@ void data_store_conduit::exchange_owner_maps() {
       }
     }
 
-std::cerr << m_comm->get_rank_in_node() << "  FINISHED bcast from: " << k << std::endl;
-
-
   }
   PROFILE("leaving data_store_conduit::exchange_owner_maps\n",
           "my owner map size: ", m_owner.size());

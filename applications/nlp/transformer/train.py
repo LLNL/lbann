@@ -192,7 +192,7 @@ def make_batch_script(model_params, script_params):
     )
 
     # Checkpoint after every epoch
-    model.callbacks.append(
+    trainer.callbacks.append(
         lbann.CallbackCheckpoint(
             checkpoint_dir=os.path.join(script_params['work_dir'], 'checkpoint'),
             checkpoint_epochs=1,

@@ -3,7 +3,8 @@ sys.path.insert(0, '../common_python')
 import tools
 import pytest
 import os
-
+import glob
+from shutil import rmtree
 
 def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name,
                            weekly, data_reader_percent):
@@ -19,7 +20,7 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name,
 
     if data_reader_percent is None:
         data_reader_percent=0.005
-        
+
     # No checkpointing, printing weights to files.
     model_path = '{../../model_zoo/tests/model_lenet_mnist_ckpt.prototext,../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext}'
     output_file_name = '%s/bamboo/unit_tests/output/lbann2_no_checkpoint_%s_output.txt' % (dir_name, compiler_name)
@@ -84,14 +85,26 @@ def skeleton_lbann2_reload(cluster, executables, dir_name, compiler_name,
         model_path='../../model_zoo/tests/model_lenet_mnist_lbann2ckpt.prototext',
         num_epochs=2,
         optimizer_name='sgd',
-        restart_dir=ckpt_dir,
+        restart_dir=ckpt_dir + "/trainer0/",
         output_file_name=output_file_name,
         error_file_name=error_file_name,
         weekly=weekly)
     return_code_ckpt_2 = os.system(command)
     tools.assert_success(return_code_ckpt_2, error_file_name)
-#    os.system('rm lbann2_ckpt/model0-epoch*')
-#    os.system('rm lbann2_nockpt/model0-epoch*')
+    # Delete the checkpoint from the second model it confuses the test
+    fileList = glob.glob('{no_ckpt}/trainer0/model1.*'.format(no_ckpt=no_ckpt_dir))
+    # Iterate over the list of filepaths & remove each file.
+    for filePath in fileList:
+        if os.path.isfile(filePath):
+            try:
+                os.remove(filePath)
+            except:
+                print("Error while deleting file : ", filePath)
+        else:
+            try:
+                rmtree(filePath)
+            except:
+                print("Error while deleting directory : ", filePath)
 
     diff_result = os.system('diff -rq {ckpt} {no_ckpt}'.format(
         ckpt=ckpt_dir, no_ckpt=no_ckpt_dir))

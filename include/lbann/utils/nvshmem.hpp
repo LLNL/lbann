@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// Copyright (c) 2014-2016, Lawrence Livermore National Security, LLC.
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
 // Produced at the Lawrence Livermore National Laboratory.
 // Written by the LBANN Research Team (B. Van Essen, et al.) listed in
 // the CONTRIBUTORS file. <lbann-dev@llnl.gov>
@@ -24,32 +24,27 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/proto/factories.hpp"
-#include "lbann/trainers/trainer.hpp"
-#include "lbann/callbacks/callback.hpp"
+#ifndef LBANN_UTILS_NVSHMEM_HPP_INCLUDED
+#define LBANN_UTILS_NVSHMEM_HPP_INCLUDED
 
-#include <trainer.pb.h>
+#include "lbann/base.hpp"
+#ifdef LBANN_HAS_NVSHMEM
+#include "nvshmem.h"
+#include "nvshmemx.h"
+
+#include "lbann/comm.hpp"
 
 namespace lbann {
-namespace proto {
+namespace nvshmem {
 
-std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
-                                           const lbann_data::Trainer& proto_trainer) {
+/// Initialize NVSHMEM library
+void initialize(MPI_Comm comm);
+/// Finalize NVSHMEM library
+void finalize();
 
-  // Instantiate trainer
-  auto t = make_unique<trainer>(comm);
-  const auto& name = proto_trainer.name();
-  if (!name.empty()) {
-    t->set_name(name);
-  }
-
-  // Construct callbacks
-  for (int i=0; i<proto_trainer.callback_size(); i++) {
-    t->add_callback(construct_callback(proto_trainer.callback(i)));
-  }
-
-  return t;
-}
-
-} // namespace proto
+} // namespace nvshmem
 } // namespace lbann
+
+#endif // LBANN_HAS_NVSHMEM
+
+#endif // LBANN_UTILS_NVSHMEM_HPP_INCLUDED

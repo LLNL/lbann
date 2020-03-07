@@ -32,6 +32,7 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/summary.hpp"
@@ -83,8 +84,12 @@ public:
   /** @name Modifiers */
   ///@{
 
-  /** @brief Called once to set up the callback (after all layers are
-   *         set up).
+  /** @brief Called once to set up the callback on the trainer
+   */
+  virtual void setup(trainer *t) {};
+
+  /** @brief Called once to set up the callback on the model
+   *         (after all layers are set up).
    */
   virtual void setup(model *m) {};
 
