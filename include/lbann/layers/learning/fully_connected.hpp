@@ -258,6 +258,10 @@ private:
   friend void bp_compute_impl(fully_connected_layer<U, T_layout, Dev>& l);
 };
 
+// Builder function
+// LBANN_DEFINE_LAYER_BUILDER(
+//   fully_connected_layer, build_fully_connected_layer_from_pbuf);
+
 #ifndef LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 
 #define PROTO_DEVICE(T, Device) \
