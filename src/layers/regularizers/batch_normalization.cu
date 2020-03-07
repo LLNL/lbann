@@ -114,8 +114,8 @@ __global__ void compute_statistics_kernel(
     // Compute running statistics
     auto& running_mean = global_running_mean[gid];
     auto& running_var = global_running_var[gid];
-    running_mean = decay * running_mean + (DataType{1} - decay) * mean;
-    running_var = decay * running_var + (DataType{1} - decay) * var;
+    running_mean = decay * running_mean + (TensorDataType{1} - decay) * mean;
+    running_var = decay * running_var + (TensorDataType{1} - decay) * var;
 
   }
 
@@ -474,7 +474,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
     // Compute minibatch statistics
     if (num_per_sum <= 1) {
-      El::Fill(local_var, DataType{1});
+      El::Fill(local_var, TensorDataType{1});
     } else if (num_channels > 0) {
       const El::Int block_dim = 256;
       const El::Int grid_dim = (num_channels + block_dim - 1) / block_dim;
@@ -647,7 +647,10 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 #endif // LBANN_HAS_DISTCONV
 }
 
-template class batch_normalization_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class batch_normalization_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
