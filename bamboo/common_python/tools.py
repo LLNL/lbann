@@ -1,4 +1,5 @@
 import collections.abc
+import copy
 import math
 import os
 import re
@@ -667,8 +668,7 @@ def assert_failure(return_code, expected_error, error_file_name):
 def create_tests(setup_func,
                  test_file,
                  test_name_base=None,
-                 nodes=1,
-                 procs_per_node=None):
+                 **kwargs):
     """Create functions that can interact with PyTest
 
     This function creates tests that involve running an LBANN
@@ -695,10 +695,8 @@ def create_tests(setup_func,
             cases, use `__file__`.
         test_name (str, optional): Descriptive name (default: test
             file name with '.py' removed).
-        nodes (int, optional): Number of compute nodes (default: 1).
-        procs_per_node (int, optional): Number of parallel processes
-            per compute node (default: system-specific default,
-            usually number of GPUs per node).
+        **kwargs: Keyword arguments to pass into
+            `lbann.contrib.lc.launcher.run`.
 
     Returns:
         Iterable of function: Tests that can interact with PyTest.
@@ -716,8 +714,12 @@ def create_tests(setup_func,
         # Make sure test name is prefixed with 'test_'
         test_name_base = 'test_' + test_name_base
 
-    # Basic test function
     def test_func(cluster, executables, dir_name, compiler_name):
+        """Function that can interact with PyTest.
+
+        Returns a dict containing log files and other output data.
+
+        """
         process_executable(test_name_base, compiler_name, executables)
         test_name = '{}_{}'.format(test_name_base, compiler_name)
 
@@ -744,25 +746,28 @@ def create_tests(setup_func,
         # Setup LBANN experiment
         trainer, model, data_reader, optimizer = setup_func(lbann)
 
-        # Run LBANN experiment
-        experiment_dir = os.path.join(os.path.dirname(test_file),
-                                      'experiments',
-                                      test_name)
+        # Configure kwargs to LBANN launcher
+        _kwargs = copy.deepcopy(kwargs)
+        if 'experiment_dir' not in _kwargs:
+            _kwargs['experiment_dir'] = os.path.join(os.path.dirname(test_file),
+                                                    'experiments',
+                                                    test_name)
+        if 'job_name' not in _kwargs:
+            _kwargs['job_name'] = f'lbann_{test_name}'
+        if 'overwrite_script' not in _kwargs:
+            _kwargs['overwrite_script'] = True
+
+        # Run LBANN
+        experiment_dir = _kwargs['experiment_dir']
         stdout_log_file = os.path.join(experiment_dir, 'out.log')
         stderr_log_file = os.path.join(experiment_dir, 'err.log')
-        kwargs = {}
-        if procs_per_node:
-            kwargs['procs_per_node'] = procs_per_node
         return_code = lbann.contrib.lc.launcher.run(
             trainer=trainer,
             model=model,
             data_reader=data_reader,
             optimizer=optimizer,
-            experiment_dir=experiment_dir,
-            job_name='lbann_{}'.format(test_name),
-            nodes=nodes,
-            overwrite_script=True,
-            **kwargs)
+            **_kwargs,
+        )
         assert_success(return_code, stderr_log_file)
         return {
             'return_code': return_code,
