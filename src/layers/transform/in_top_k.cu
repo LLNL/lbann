@@ -299,7 +299,13 @@ void in_top_k_layer<TensorDataType, T_layout, Dev>::fp_compute() {
          this->get_activations());
 }
 
-template class in_top_k_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class in_top_k_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                     \
+  template class in_top_k_layer<                     \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class in_top_k_layer<                     \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

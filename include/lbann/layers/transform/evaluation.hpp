@@ -94,18 +94,26 @@ public:
 };
 
 #ifndef LBANN_EVALUATION_LAYER_INSTANTIATE
-extern template class abstract_evaluation_layer<DataType>;
+#define PROTO(T)                           \
+  extern template class abstract_evaluation_layer<T>
 
-extern template class evaluation_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class evaluation_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class evaluation_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class evaluation_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+
+#define PROTO_DEVICE(T, Device)                                         \
+  extern template class evaluation_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class evaluation_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_EVALUATION_LAYER_INSTANTIATE
 
 } // namespace lbann

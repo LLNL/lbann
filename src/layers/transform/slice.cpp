@@ -29,11 +29,12 @@
 
 namespace lbann {
 
-template class slice_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class slice_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class slice_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class slice_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  template class slice_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  template class slice_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

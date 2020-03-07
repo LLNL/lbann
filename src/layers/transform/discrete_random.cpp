@@ -29,7 +29,11 @@
 
 namespace lbann {
 
-template class discrete_random_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                    \
+  template class discrete_random_layer<             \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 }// namespace lbann

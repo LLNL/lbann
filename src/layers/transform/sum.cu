@@ -109,7 +109,11 @@ void sum_layer<TensorDataType, Layout, Dev>::fp_compute() {
   }
 }
 
-template class sum_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class sum_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                                        \
+  template class sum_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class sum_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

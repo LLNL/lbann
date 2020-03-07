@@ -388,8 +388,8 @@ private:
     }
 
     // Initialize matrices
-    DMat<Dev> im2col_mat(m_pool_size * num_channels, num_per_output_channel);
-    DMat<Dev> input_mat;
+    El::Matrix<TensorDataType, Dev> im2col_mat(m_pool_size * num_channels, num_per_output_channel);
+    El::Matrix<TensorDataType, Dev> input_mat;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
@@ -785,12 +785,15 @@ private:
 };
 
 #ifndef LBANN_POOLING_LAYER_INSTANTIATE
-extern template class pooling_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class pooling_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class pooling_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
 #endif // LBANN_POOLING_LAYER_INSTANTIATE
 
 } // namespace lbann
