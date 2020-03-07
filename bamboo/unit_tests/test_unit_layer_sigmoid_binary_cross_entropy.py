@@ -18,11 +18,11 @@ import tools
 # the functions below to ingest data.
 
 # Data
-# Note: MAE is not differentiable when the two inputs match, so we
-# make sure inputs have separated values.
-np.random.seed(201910248)
-_samples = np.random.uniform(-0.25, 0.25, size=(27,2,7)).astype(np.float32)
-_samples[:,1,:] += np.random.choice([-1.0,1.0], size=(27,7))
+# Note: Sigmoid cross entropy is not differentiable w.r.t. ground
+# truth at 0 and 1.
+np.random.seed(20191218)
+_samples = np.random.normal(size=(11,2,13)).astype(np.float32)
+_samples[:,1,:] = np.clip(_samples[:,1,:], 0.1, 0.9)
 
 # Sample access functions
 def get_sample(index):
@@ -88,7 +88,7 @@ def construct_model(lbann):
     # LBANN implementation
     x0 = x0_lbann
     x1 = x1_lbann
-    y = lbann.MeanAbsoluteError(x0, x1, data_layout='data_parallel')
+    y = lbann.SigmoidBinaryCrossEntropy(x0, x1, data_layout='data_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -99,7 +99,7 @@ def construct_model(lbann):
         x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = np.linalg.norm(x1-x0, 1) / slice_size
+        y = -x1 * np.log1p(np.exp(-x0)) - (1-x1) * np.log1p(np.exp(x0))
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -118,7 +118,7 @@ def construct_model(lbann):
     # LBANN implementation
     x0 = x0_lbann
     x1 = x1_lbann
-    y = lbann.MeanAbsoluteError(x0, x1, data_layout='model_parallel')
+    y = lbann.SigmoidBinaryCrossEntropy(x0, x1, data_layout='model_parallel')
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel layout'))
@@ -129,7 +129,7 @@ def construct_model(lbann):
         x = get_sample(i).astype(np.float64)
         x0 = x[:slice_size]
         x1 = x[slice_size:]
-        y = np.linalg.norm(x1-x0, 1) / slice_size
+        y = -x1 * np.log1p(np.exp(-x0)) - (1-x1) * np.log1p(np.exp(x0))
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
