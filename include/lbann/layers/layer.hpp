@@ -233,12 +233,6 @@ public:
    *  should override this function to return its template parameter.
    */
   virtual El::Device get_device_allocation() const = 0;
-  /** Get a human-readable description of the data_layout */
-  std::string get_data_layout_string(data_layout d) const;
-  /** Get a human-readable description of the device allocation */
-  std::string get_device_allocation_string(El::Device dev) const;
-  /** Get a short human-readable description of the device allocation */
-  std::string get_device_allocation_string_short(El::Device dev) const;
 
   /** Reset layer stat counters. */
   virtual void reset_counters();

@@ -543,43 +543,6 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   }
 }
 
-std::string Layer::get_data_layout_string(data_layout d) const {
-  switch(d) {
-  case data_layout::DATA_PARALLEL:
-    return "data_parallel";
-  case data_layout::MODEL_PARALLEL:
-    return "model_parallel";
-  default:
-    LBANN_ERROR("invalid data layout");
-  }
-}
-
-std::string Layer::get_device_allocation_string(El::Device dev) const {
-  switch(dev) {
-  case El::Device::CPU:
-    return "cpu";
-#ifdef LBANN_HAS_GPU
-  case El::Device::GPU:
-    return "gpu";
-#endif // LBANN_HAS_GPU
-  default:
-    LBANN_ERROR("invalid device allocation");
-  }
-}
-
-std::string Layer::get_device_allocation_string_short(El::Device dev) const {
-  switch(dev) {
-  case El::Device::CPU:
-    return "C";
-#ifdef LBANN_HAS_GPU
-  case El::Device::GPU:
-    return "G";
-#endif // LBANN_HAS_GPU
-  default:
-    LBANN_ERROR("invalid device allocation");
-  }
-}
-
 std::string Layer::get_layer_names(const std::vector<const Layer*>& list) {
   std::string layer_names = ((list.size()==0u || !list[0])? "" : list[0]->get_name());
 
