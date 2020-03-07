@@ -194,8 +194,11 @@ class data_store_conduit {
   /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
   void clear_owner_map();
 
-  /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
+  /** @brief Special handling for ras_lipid_conduit_data_reader; may go away in the future */
   void add_owner(int data_id, int owner) { m_owner[std::make_pair(data_id, m_offset_in_partition)] = owner; }
+
+  /** @brief Special handling for ras_lipid_conduit_data_reader; may go away in the future */
+  void set_finished_building_map() { m_owner_maps_were_exchanged = true; }
 
   /// Recompact the nodes because they are not copied properly when instantiating
   /// using the copy constructor
