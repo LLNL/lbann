@@ -207,7 +207,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    const auto& scale = TensorDataType(1) / height;
+    const auto& scale = El::TypeTraits<TensorDataType>::One() / TensorDataType(height);
     mean_contribution_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
@@ -227,7 +227,7 @@ void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    const auto& scale = TensorDataType(1) / (biased ? height : height - 1);
+    const auto& scale = El::TypeTraits<TensorDataType>::One() / (biased ? TensorDataType(height) : TensorDataType(height - 1));
     covariance_contribution_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
@@ -271,7 +271,7 @@ void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input0,
   El::Copy(gradient_wrt_output, workspace);
 
   // Compute gradients w.r.t. input
-  const TensorDataType scale = TensorDataType(1) / (biased ? height : height - 1);
+  const TensorDataType scale = El::TypeTraits<TensorDataType>::One() / (biased ? TensorDataType(height) : TensorDataType(height - 1));
   constexpr El::Int block_size = 256;
   El::Int grid_size = (local_height * local_width + block_size - 1) / block_size;
   if (grid_size > 0) {
@@ -312,9 +312,11 @@ void covariance_layer<TensorDataType, Layout, Device>::bp_compute() {
          this->m_biased);
 }
 
-template class covariance_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class covariance_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                     \
+  template class covariance_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class covariance_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

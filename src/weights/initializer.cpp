@@ -51,7 +51,7 @@ description constant_initializer<TensorDataType>::get_description() const {
 
 template <typename TensorDataType>
 void constant_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
-  if (m_value == TensorDataType(0)) {
+  if (m_value == TensorDataType(0.)) {
     El::Zero(matrix);
   } else {
     El::Fill(matrix, m_value);
@@ -113,7 +113,8 @@ description uniform_initializer<TensorDataType>::get_description() const {
 template <typename TensorDataType>
 void uniform_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
   uniform_fill(matrix, matrix.Height(), matrix.Width(),
-               (m_max + m_min) / 2, (m_max - m_min) / 2);
+               (m_max + m_min) / El::To<TensorDataType>(2),
+               (m_max - m_min) / El::To<TensorDataType>(2));
 }
 
 template <typename TensorDataType>
@@ -134,55 +135,68 @@ void normal_initializer<TensorDataType>::fill(AbsDistMatrixType& matrix) {
 // Builder functions
 //
 
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_constant_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ConstantInitializer const&>(msg);
-  return make_unique<constant_initializer<DataType>>(params.value());
+  return make_unique<constant_initializer<TensorDataType>>(El::To<TensorDataType>(params.value()));
 }
 
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_value_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::ValueInitializer const&>(msg);
-  return make_unique<value_initializer<DataType>>(parse_list<DataType>(params.values()));
+  return make_unique<value_initializer<TensorDataType>>(parse_list<TensorDataType>(params.values()));
 }
 
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_uniform_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::UniformInitializer const&>(msg);
-  const auto& min = params.min();
-  const auto& max = params.max();
+  const auto& min = El::To<TensorDataType>(params.min());
+  const auto& max = El::To<TensorDataType>(params.max());
   if (min != 0.0 || max != 0.0) {
-    return make_unique<uniform_initializer<DataType>>(min, max);
+    return make_unique<uniform_initializer<TensorDataType>>(min, max);
   } else {
-    return make_unique<uniform_initializer<DataType>>();
+    return make_unique<uniform_initializer<TensorDataType>>();
   }
 }
 
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_normal_initializer_from_pbuf(google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Initializer::NormalInitializer const&>(msg);
-  const auto& mean = params.mean();
-  const auto& standard_deviation = params.standard_deviation();
+  const auto& mean = El::To<TensorDataType>(params.mean());
+  const auto& standard_deviation = El::To<TensorDataType>(params.standard_deviation());
   if (mean != 0.0 || standard_deviation != 0.0) {
-    return make_unique<normal_initializer<DataType>>(mean, standard_deviation);
+    return make_unique<normal_initializer<TensorDataType>>(mean, standard_deviation);
   } else {
-    return make_unique<normal_initializer<DataType>>();
+    return make_unique<normal_initializer<TensorDataType>>();
   }
 }
 
 
-#define PROTO(T)                                   \
-  template class data_type_weights_initializer<T>; \
-  template class constant_initializer<T>;          \
-  template class value_initializer<T>;             \
-  template class uniform_initializer<T>;           \
-  template class normal_initializer<T>
+#define PROTO(T)                                                             \
+  template class data_type_weights_initializer<T>;                           \
+  template class constant_initializer<T>;                                    \
+  template class value_initializer<T>;                                       \
+  template class uniform_initializer<T>;                                     \
+  template class normal_initializer<T>;                                      \
+  template std::unique_ptr<weights_initializer>                              \
+  build_constant_initializer_from_pbuf<T>(google::protobuf::Message const&); \
+  template std::unique_ptr<weights_initializer>                              \
+  build_value_initializer_from_pbuf<T>(google::protobuf::Message const&);    \
+  template std::unique_ptr<weights_initializer>                              \
+  build_uniform_initializer_from_pbuf<T>(google::protobuf::Message const&);  \
+  template std::unique_ptr<weights_initializer>                              \
+  build_normal_initializer_from_pbuf<T>(google::protobuf::Message const&)
 
 #define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

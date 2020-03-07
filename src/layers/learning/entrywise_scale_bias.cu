@@ -172,7 +172,7 @@ void bp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
   // Update optimizer with gradient
   auto* opt = scale_bias.get_optimizer();
   if (opt != nullptr) {
-    opt->add_to_gradient(gradient_wrt_scale_bias, DataType{1}, true);
+    opt->add_to_gradient(gradient_wrt_scale_bias, TensorDataType{1}, true);
   }
 
 }
@@ -205,7 +205,7 @@ void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
   template class entrywise_scale_bias_layer<         \
     T, data_layout::MODEL_PARALLEL, El::Device::GPU>
 
-#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

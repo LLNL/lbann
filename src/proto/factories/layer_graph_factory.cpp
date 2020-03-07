@@ -25,12 +25,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/proto/factories.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
 
 #include "lbann/layers/learning/fully_connected.hpp"
 #include "lbann/layers/transform/pooling.hpp"
 #include "lbann/layers/transform/unpooling.hpp"
 
 #include <model.pb.h>
+#include <trainer.pb.h>
 
 #include <string>
 #include <unordered_map>
@@ -40,21 +42,6 @@ namespace lbann {
 namespace proto {
 
 namespace {
-
-template <typename T>
-struct TypeToProtoDataType;
-
-template <>
-struct TypeToProtoDataType<float>
-{
-  static constexpr auto value = lbann_data::FLOAT;
-};
-
-template <>
-struct TypeToProtoDataType<double>
-{
-  static constexpr auto value = lbann_data::DOUBLE;
-};
 
 /** Setup parent/child relationships between layers. */
 void setup_parents_and_children(
@@ -225,8 +212,6 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
     TEMPLATE_INSTANTIATION(T, data_layout::DATA_PARALLEL, Device); \
     TEMPLATE_INSTANTIATION(T, data_layout::MODEL_PARALLEL, Device)
 
-#define LBANN_INSTANTIATE_CPU_HALF
-#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate_device.hpp"
 
 #undef TEMPLATE_INSTANTIATION

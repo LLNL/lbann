@@ -39,19 +39,19 @@ namespace {
  *  Grid dimensions: (width / bsize) x 1 x 1
  */
 template <typename TensorDataType>
-__global__ void fp_kernel(size_t height,
-                          size_t width,
+__global__ void fp_kernel(unsigned long long height,
+                          unsigned long long width,
                           const TensorDataType* __restrict__ indices,
-                          size_t indices_stride,
+                          unsigned long long indices_stride,
                           TensorDataType* __restrict__ output,
-                          size_t output_ldim) {
-  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
-  const size_t nthreads = blockDim.x * gridDim.x;
-  for (size_t col = gid; col < width; col += nthreads) {
+                          unsigned long long output_ldim) {
+  const unsigned long long gid = threadIdx.x + blockIdx.x * blockDim.x;
+  const unsigned long long nthreads = blockDim.x * gridDim.x;
+  for (unsigned long long col = gid; col < width; col += nthreads) {
     const auto& ind = indices[col*indices_stride];
-    if (TensorDataType{0} <= ind && ind < TensorDataType(height)) {
-      const size_t row = static_cast<size_t>(ind);
-      output[row+col*output_ldim] = TensorDataType{1};
+    if (TensorDataType(0.f) <= ind && ind < TensorDataType(height)) {
+      const unsigned long long row = static_cast<unsigned long long>(ind);
+      output[row+col*output_ldim] = TensorDataType(1.f);
     }
   }
 }
@@ -86,7 +86,10 @@ void one_hot_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 }
 
-template class one_hot_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                     \
+  template class one_hot_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

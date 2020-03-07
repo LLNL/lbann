@@ -41,6 +41,11 @@
 
 namespace lbann {
 
+#ifdef LBANN_HAS_ALUMINUM
+/** Convert an MPI_Op to an Aluminum reduction operator. */
+::Al::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
+#endif
+
 namespace Al {
 
 /** Dummy Aluminum backend. */
@@ -1055,11 +1060,6 @@ class lbann_comm {
    *  num_threads directive has not been provided.
    */
   int threads_per_proc;
-
-#ifdef LBANN_HAS_ALUMINUM
-  /** Convert an MPI_Op to an Aluminum reduction operator. */
-  ::Al::ReductionOperator mpi_op_to_al_op(El::mpi::Op op);
-#endif
 
   // Various statistics counters.
   size_t num_trainer_barriers;

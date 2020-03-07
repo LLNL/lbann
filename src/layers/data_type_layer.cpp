@@ -1638,6 +1638,7 @@ void data_type_layer<TensorDataType>::dump_reference_error_signals() {
   template class data_type_layer<T>
 
 #define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

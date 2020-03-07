@@ -229,7 +229,7 @@ void print_statistics::report_results(model *m) {
             scores_stdev += diff * diff;
           }
           scores_stdev /= score_list.size() - 1;
-          scores_stdev = std::sqrt(std::max(scores_stdev, EvalType(0)));
+          scores_stdev = El::Sqrt(std::max(scores_stdev, EvalType(0)));
           std::cout << m->get_name() << " (global average) "  << mode_string << " "
                     << met->name() << " : "
                     << avg_score << met->get_unit()
