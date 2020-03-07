@@ -174,6 +174,7 @@ DEFINE_COMPUTE_OPS(softsign_layer, softsign_op)
   UNARY_ETI_INST_MACRO_DEV_DT(softplus_layer, T, El::Device::GPU);    \
   UNARY_ETI_INST_MACRO_DEV_DT(softsign_layer, T, El::Device::GPU)
 #else
+#define PROTO(T) \
   UNARY_ETI_INST_MACRO_DEV_DT(log_sigmoid_layer, T, El::Device::GPU); \
   UNARY_ETI_INST_MACRO_DEV_DT(selu_layer, T, El::Device::GPU);        \
   UNARY_ETI_INST_MACRO_DEV_DT(sigmoid_layer, T, El::Device::GPU);     \
