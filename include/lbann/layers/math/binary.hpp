@@ -73,30 +73,37 @@ namespace lbann {
 // Convenience macros for ETI decls for binary layers
 
 #ifndef LBANN_BINARY_LAYER_INSTANTIATE
-#define BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, DEVICE)                          \
-  extern template class LAYER_NAME<DataType, data_layout::DATA_PARALLEL, DEVICE>; \
-  extern template class LAYER_NAME<DataType, data_layout::MODEL_PARALLEL, DEVICE>
+#define BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, DEVICE)                   \
+  extern template class LAYER_NAME<T, data_layout::DATA_PARALLEL, DEVICE>; \
+  extern template class LAYER_NAME<T, data_layout::MODEL_PARALLEL, DEVICE>
 #else
 #define BINARY_ETI_DECL_MACRO_DEV(...)
 #endif // LBANN_BINARY_LAYER_INSTANTIATE
 
-#define BINARY_ETI_INST_MACRO_DEV(LAYER_NAME, DEVICE)                    \
-  template class LAYER_NAME<DataType, data_layout::DATA_PARALLEL, DEVICE>;  \
-  template class LAYER_NAME<DataType, data_layout::MODEL_PARALLEL, DEVICE>
+// Instnatiate both data and model parallel layers
+#define BINARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, T, DEVICE)             \
+  template class LAYER_NAME<T, data_layout::DATA_PARALLEL, DEVICE>;  \
+  template class LAYER_NAME<T, data_layout::MODEL_PARALLEL, DEVICE>
+
+// Instantiate a DEVICE for each allowed tensor data type
+#define BINARY_ETI_INST_MACRO_DEV(LAYER_NAME, DEVICE)      \
+  BINARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, float, DEVICE); \
+  BINARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, double, DEVICE)
 
 #ifdef LBANN_HAS_GPU
-#define BINARY_ETI_DECL_MACRO(LAYER_NAME)                       \
-  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU);       \
-  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::GPU)
+#define BINARY_ETI_DECL_MACRO(LAYER_NAME, T)                 \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::CPU); \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::GPU)
 #else
-#define BINARY_ETI_DECL_MACRO(LAYER_NAME)                       \
-  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU)
+#define BINARY_ETI_DECL_MACRO(LAYER_NAME, T)                 \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::CPU)
 #endif // LBANN_HAS_GPU
 
 // Convenience macro to define an entry-wise binary layer class
 #define DEFINE_ENTRYWISE_BINARY_LAYER(layer_name, layer_string)         \
   LBANN_DECLARE_ENTRYWISE_BINARY_LAYER(layer_name, layer_string);       \
-  BINARY_ETI_DECL_MACRO(layer_name)
+  BINARY_ETI_DECL_MACRO(layer_name, float);                             \
+  BINARY_ETI_DECL_MACRO(layer_name, double)
 
 // Arithmetic operations
 DEFINE_ENTRYWISE_BINARY_LAYER(add_layer,                "add");

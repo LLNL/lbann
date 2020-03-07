@@ -87,9 +87,13 @@ void clamp_layer<TensorDataType, Layout, Device>::bp_compute() {
            this->get_local_error_signals());
 }
 
-template class clamp_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class clamp_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                     \
+  template class clamp_layer<                        \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class clamp_layer<                        \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
