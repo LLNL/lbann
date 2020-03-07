@@ -198,6 +198,8 @@ private:
 #endif // LBANN_HAS_DISTCONV
 };
 
+LBANN_DEFINE_LAYER_BUILDER(softmax);
+
 #ifndef LBANN_SOFTMAX_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class softmax_layer<T, data_layout::DATA_PARALLEL, Device>; \

@@ -226,6 +226,8 @@ public:
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(weights);
+
 #ifndef LBANN_WEIGHTS_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class weights_layer<T, data_layout::DATA_PARALLEL, Device>; \

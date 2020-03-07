@@ -106,6 +106,7 @@ void embedding_layer<TensorDataType, Layout, Device>::bp_compute() {
 
 }
 
+
 // Explicit instantiation
 #define PROTO(T)                                                        \
   template class embedding_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>

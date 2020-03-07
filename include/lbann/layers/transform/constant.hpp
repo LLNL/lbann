@@ -74,6 +74,8 @@ private:
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(constant);
+
 #ifndef LBANN_CONSTANT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class constant_layer<T, data_layout::DATA_PARALLEL, Device>; \

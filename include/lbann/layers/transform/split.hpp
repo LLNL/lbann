@@ -137,6 +137,8 @@ protected:
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(split);
+
 #ifndef LBANN_SPLIT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class split_layer<T, data_layout::DATA_PARALLEL, Device>; \

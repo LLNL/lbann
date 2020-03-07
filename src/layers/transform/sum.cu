@@ -24,9 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
 #include "distconv/tensor/algorithms_cuda.hpp"
@@ -109,9 +111,12 @@ void sum_layer<TensorDataType, Layout, Dev>::fp_compute() {
   }
 }
 
+LBANN_LAYER_DEFAULT_BUILDER(sum)
+
 #define PROTO(T)                                                        \
   template class sum_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
-  template class sum_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+  template class sum_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>; \
+  LBANN_LAYER_BUILDER_ETI(sum, T, El::Device::GPU)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

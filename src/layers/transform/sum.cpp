@@ -27,6 +27,9 @@
 #define LBANN_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/sum.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <lbann.pb.h>
+
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
@@ -38,10 +41,13 @@ void sum_layer<TensorDataType, Layout, Dev>::fp_compute() {
   }
 }
 
+LBANN_LAYER_DEFAULT_BUILDER(sum)
+
 #define PROTO(T)                                                        \
   template class sum_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class sum_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
-
+  template class sum_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>; \
+  LBANN_LAYER_BUILDER_ETI(sum, T, El::Device::CPU)
+    
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 

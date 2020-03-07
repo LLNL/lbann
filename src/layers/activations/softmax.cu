@@ -309,8 +309,8 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
       LBANN_ERROR("Unsupported softmax mode");
   }
 
-  const TensorDataType zero = 0.;
-  const TensorDataType one = 1.;
+  const cudnn::ScalingParamType<TensorDataType> zero = 0.;
+  const cudnn::ScalingParamType<TensorDataType> one = 1.;
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
 
@@ -360,8 +360,8 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
       LBANN_ERROR("Unsupported softmax mode");
   }
 
-  const TensorDataType zero = 0.;
-  const TensorDataType one = 1.;
+  const cudnn::ScalingParamType<TensorDataType> zero = 0.;
+  const cudnn::ScalingParamType<TensorDataType> one = 1.;
   const auto& local_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
   const auto& local_gradient_wrt_output = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_error_signals());
   auto& local_gradient_wrt_input = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_error_signals());

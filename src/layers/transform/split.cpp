@@ -27,6 +27,9 @@
 #define LBANN_SPLIT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/split.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <lbann.pb.h>
+
 namespace lbann {
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
@@ -43,9 +46,12 @@ void split_layer<TensorDataType, Layout, Dev>::bp_compute() {
   }
 }
 
+LBANN_LAYER_DEFAULT_BUILDER(split)
+
 #define PROTO(T)                                                        \
   template class split_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class split_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+  template class split_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>; \
+  LBANN_LAYER_BUILDER_ETI(split, T, El::Device::CPU)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"

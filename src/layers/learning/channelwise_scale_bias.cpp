@@ -138,5 +138,4 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
-
 } // namespace lbann
