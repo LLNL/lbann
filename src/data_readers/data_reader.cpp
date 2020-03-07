@@ -507,18 +507,22 @@ void generic_data_reader::select_subset_of_data_partitioned() {
   }
 }
 
-double generic_data_reader::get_percent_to_use() {
+size_t generic_data_reader::get_num_indices_to_use() const {
   error_check_counts();
+  //note: exactly one of the following is guaranteed to be non-zero
   size_t count = get_absolute_sample_count();
   double use_percent = get_use_percent();
-  double r = 0.;
 
-  if (count != 0) {
-    r = count / get_num_data();
-  }
-
-  if (use_percent) {
-    r = (use_percent*get_num_data()) / get_num_data();
+  size_t r = 0.;
+  if (count) {
+    r = count;
+  } else if (use_percent) {
+    r = use_percent*get_num_data();
+    if (r == 0) {
+      LBANN_ERROR("get_num_indices_to_use() computed zero indices; probably: percent_of_data_to_use is too small WRT num_data");
+    }
+  } else {
+    LBANN_ERROR("it's impossible to be here");
   }
 
   return r;
@@ -531,9 +535,9 @@ void generic_data_reader::resize_shuffled_indices() {
     m_shuffled_indices.resize(n);
   }
 
-  double use_percent = get_percent_to_use();
+  size_t num_indices = get_num_indices_to_use();
   shuffle_indices();
-  m_shuffled_indices.resize(use_percent * get_num_data());
+  m_shuffled_indices.resize(num_indices);
 }
 
 void generic_data_reader::select_subset_of_data() {
@@ -543,7 +547,14 @@ void generic_data_reader::select_subset_of_data() {
     return ;
   }
 
+  if (get_validation_percent() == 0.) {
+    return;
+  }
+
   long unused = get_validation_percent()*get_num_data();
+  if (unused == 0) {
+    LBANN_ERROR("validation % of ", get_validation_percent(), " was requested, but the number of validation indices was computed as zero. Probably: % validation requested is too small wrt num_indices (aka, num samples)");
+  }
   long use_me = get_num_data() - unused;
   if (unused > 0) {
       m_unused_indices=std::vector<int>(m_shuffled_indices.begin() + use_me, m_shuffled_indices.end());
@@ -845,5 +856,29 @@ void generic_data_reader::preload_data_store() {
   }
 
 }
+
+void generic_data_reader::print_get_methods(const std::string filename) {
+  if (!is_master()) {
+    return;
+  }
+  std::ofstream out(filename.c_str());
+  if (!out) {
+    LBANN_ERROR("failed to open ", filename, " for writing");
+  }
+
+  out << "get_file_dir " << get_file_dir() << std::endl;
+  out << "get_local_file_dir " << get_local_file_dir() << std::endl;
+  out << "get_data_index_list " << get_data_index_list() << std::endl;
+  out << "get_data_filename " << get_data_filename()  << std::endl;
+  out << "get_label_filename " << get_label_filename() << std::endl;
+  out << "get_role " << get_role() << std::endl;
+  out << "get_type " << get_type() << std::endl;
+  out << "get_num_data " << get_num_data() << std::endl;
+  out << "get_absolute_sample_count" << get_absolute_sample_count() << std::endl;
+  out << "get_use_percent " << get_use_percent() << std::endl;
+  out << "get_validation_percent " << get_validation_percent() << std::endl;
+  out.close();
+}
+
 
 }  // namespace lbann

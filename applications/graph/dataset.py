@@ -67,6 +67,9 @@ else:
     np.save(unigram_distribution_file, unigram_distribution)
     np.save(noise_distribution_cdf_file, noise_distribution_cdf)
 
+# Need to reseed RNG after forking processes
+need_to_seed_rng = True
+
 def get_sample(index):
     """Get a single data sample.
 
@@ -74,6 +77,12 @@ def get_sample(index):
     samples.
 
     """
+
+    # Check if RNG needs to be reseeded
+    global need_to_seed_rng
+    if need_to_seed_rng:
+        np.random.seed()
+        need_to_seed_rng = False
 
     # Get context window from random walk
     contexts_per_walk = walk_length - walk_context_length + 1
@@ -86,7 +95,7 @@ def get_sample(index):
                                        np.random.rand(num_negative_samples))
 
     # Return concatenated arrays
-    return np.concatenate((walk_context, negative_samples))
+    return np.concatenate((negative_samples, walk_context))
 
 def num_samples():
     """Number of samples in dataset."""
