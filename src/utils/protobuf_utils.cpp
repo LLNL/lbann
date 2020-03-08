@@ -205,7 +205,7 @@ void verify_prototext(
     } else {
       if (t->data_reader().requires_data_set_metadata() && (! t->has_data_set_metadata())) {
         is_good = false;
-        err << "model #" << j << " is missing metadata (cmd line flag: --metadata=<sting>)\n";
+        err << "model #" << j << " is missing metadata (cmd line flag: --metadata=<string>)\n";
       }
     }
     if (! t->has_model()) {
