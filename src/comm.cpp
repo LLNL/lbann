@@ -274,28 +274,6 @@ template <typename T>
 void allreduce_impl(El::Matrix<T, El::Device::GPU>& m,
                     El::mpi::Comm const& c,
                     El::mpi::Op const& op) {
-  if (m.Width() > 1 && m.Height() != m.LDim()) {
-    // Aluminum doesn't do allreduces on strided matrices
-    return El::AllReduce(m, c, op);
-  }
-
-  // Go down this road if we have AL_HAS_MPI_CUDA
-#ifdef AL_HAS_MPI_CUDA
-  auto const local_size = m.LDim() * m.Width();
-  if ((El::mpi::Size(c) >= 64 && local_size <= 4096) ||
-      (El::mpi::Size(c) >= 128 && local_size <= 8192) ||
-      (El::mpi::Size(c) >= 256 && local_size <= 32768) ||
-      (El::mpi::Size(c) >= 512 && local_size <= 65536) ||
-      (El::mpi::Size(c) >= 2048 && local_size <= 262144)) {
-    // Attempt to dispatch to the MPICUDA backend
-    return allreduce_aluminum(
-      m, c, op,
-      BackendTag<::Al::MPICUDABackend>{},
-      ::Al::MPICUDABackend::allreduce_algo_type::host_transfer);
-  }
-#endif
-
-  // At this point just call Elemental again
   return El::AllReduce(m, c, op);
 }
 
@@ -308,22 +286,6 @@ void nb_allreduce_impl(El::Matrix<T, El::Device::GPU>& m,
     // Aluminum doesn't do allreduces on strided matrices
     return El::AllReduce(m, c, op);
   }
-
-  // Go down this road if we have AL_HAS_MPI_CUDA
-#ifdef AL_HAS_MPI_CUDA
-  auto const local_size = m.LDim() * m.Width();
-  if ((El::mpi::Size(c) >= 64 && local_size <= 4096) ||
-      (El::mpi::Size(c) >= 128 && local_size <= 8192) ||
-      (El::mpi::Size(c) >= 256 && local_size <= 32768) ||
-      (El::mpi::Size(c) >= 512 && local_size <= 65536) ||
-      (El::mpi::Size(c) >= 2048 && local_size <= 262144)) {
-    // Attempt to dispatch to the MPICUDA backend
-    return nb_allreduce_aluminum(
-      m, c, req, op,
-      BackendTag<::Al::MPICUDABackend>{},
-      ::Al::MPICUDABackend::allreduce_algo_type::host_transfer);
-  }
-#endif
 
 #if defined(AL_HAS_NCCL)
   return nb_allreduce_aluminum(
