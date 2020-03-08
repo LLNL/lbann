@@ -16,8 +16,7 @@ import tools
 # ==============================================
 
 # Training options
-num_epochs = 3
-#XXnum_epochs = 5
+num_epochs = 5
 mini_batch_size = 256
 num_nodes = 2
 imagenet_fraction = 0.0031971 # Train with 4096 out of 1.28M samples
@@ -124,12 +123,15 @@ def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname,
         run_datastore_test_func (function): test function 
         baseline_metrics: list of metrics against which the output of
                           the test function will be compared
+        profile_data: dictionary of key, value pairs for testing
+                      entries in the output file: data_store_profile_train.txt
 
     Returns:
-        list of errors, if any. Each entry in the list is of the form:
-          ['passed'|'FAILED', <test function name>, <error>]
-        If no error is detected:
-          ['passed'|'FAILED', <test function name>]
+        list containg test name, pass/fail, etc.
+        On error, this will have the form:
+          ['FAILED', <test function name>, <error>]
+        on success:
+          ['passed', <test function name>]
     '''
     datastore_test_output = test_func(cluster, exes, dirname)
 
@@ -158,7 +160,7 @@ def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname,
             r[0] = 'FAILED'
             r.append('found large discrepancy in metrics for baseline and data store experiments')
 
-    # Check if all entries profile_data exist, and have the correct values
+    # Check if entries profile_data exist and have correct values
     d = None
     for key in profile_data.keys() :
       if test_name.find(key) != -1 :
@@ -273,8 +275,8 @@ baseline_tests = make_test('nodatastore')
 
 datastore_tests = [[] for j in range(len(baseline_tests))]
 
-
-#dictionary of dictionaries; each key in a dictionary is a string
+# Dictionary of dictionaries; this will contain data for testing
+# the output file: data_store_profile_train.txt
 profile_data = {}
 
 # handles for entries in the profile_data dictionaries
