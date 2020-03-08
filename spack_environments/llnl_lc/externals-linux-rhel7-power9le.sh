@@ -1,4 +1,6 @@
-  packages:
+#!/bin/sh
+
+EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
         mpi: [spectrum-mpi@rolling-release arch=linux-rhel7-power9le]
@@ -8,21 +10,25 @@
       version: []
       paths: {}
       modules: {}
-      compiler: [gcc@7.3.1 arch=linux-rhel7-power9le]
+EOF
+)
 
+EXTERNAL_PACKAGES=$(cat <<EOF
     cmake::
+      buildable: True
       variants: ~openssl ~ncurses
       version: [3.12.1]
       paths:
-        cmake@3.12.1 arch=linux-rhel7-power9le: /usr/tce/packages/cmake/cmake-3.12.1
+        cmake@3.12.1 arch=linux-rhel7-power9le:   /usr/tce/packages/cmake/cmake-3.12.1
 
     cuda::
       buildable: False
-      version: [9.2.88, 10.1.105, 10.1.168]
+      version: [9.2.88, 10.1.105, 10.1.168, 10.1.243]
       paths:
         cuda@9.2.88 arch=linux-rhel7-power9le: /usr/tce/packages/cuda/cuda-9.2.88/
         cuda@10.1.105 arch=linux-rhel7-power9le: /usr/tce/packages/cuda/cuda-10.1.105
         cuda@10.1.168 arch=linux-rhel7-power9le: /usr/tce/packages/cuda/cuda-10.1.168
+        cuda@10.1.243 arch=linux-rhel7-power9le: /usr/tce/packages/cuda/cuda-10.1.243
 
     cudnn::
       buildable: true
@@ -30,6 +36,12 @@
       paths:
         cudnn@7.5.1 arch=linux-rhel7-power9le: /usr/workspace/wsb/brain/cudnn/cudnn-7.5.1/cuda-10.1_ppc64le/
         cudnn@7.4.2 arch=linux-rhel7-power9le: /usr/workspace/wsb/brain/cudnn/cudnn-7.4.2/cuda-9.2_ppc64le/
+
+    gcc::
+       buildable: False
+       version: [7.3.1]
+       modules:
+         gcc@7.3.1 arch=linux-rhel7-power9le: gcc/7.3.1
 
     hwloc::
       buildable: False
@@ -52,18 +64,5 @@
       version: [rolling-release]
       paths:
         spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel7-power9le: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
-
-  compilers:
-  - compiler:
-      environment: {}
-      extra_rpaths: []
-      flags: {}
-      modules: []
-      operating_system: rhel7
-      paths:
-        cc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gcc
-        cxx: /usr/tce/packages/gcc/gcc-7.3.1/bin/g++
-        f77: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
-        fc: /usr/tce/packages/gcc/gcc-7.3.1/bin/gfortran
-      spec: gcc@7.3.1
-      target: power9le
+EOF
+)

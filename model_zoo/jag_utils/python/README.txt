@@ -3,3 +3,17 @@ sanity.py
   contain unique indices.
 
   usage: sanity.py id_mapping_fn bar_fn t0_fn [t1_fn, ...]
+
+partition_jag.py
+  Partitions the 100M JAG set as follows:
+  from 100M:
+    set A = 10M random samples
+    set B = remaining (90M)
+
+  from set B:
+    for j in range 0..9 :
+      extract 256 sets (C_j_0, C_j_1, ..., c_j_255)
+
+  Note: each C_j_i has ~90M / 256 samples
+  Note: also permute the lines in the sample lists for the C sets
+

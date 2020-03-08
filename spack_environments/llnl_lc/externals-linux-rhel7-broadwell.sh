@@ -1,4 +1,6 @@
-  packages:
+#!/bin/sh
+
+EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
         mpi: [mvapich2@2.3 arch=linux-rhel7-broadwell]
@@ -8,9 +10,12 @@
       version: []
       paths: {}
       modules: {}
-      compiler: [gcc@7.3.0 arch=linux-rhel7-broadwell]
+EOF
+)
 
+EXTERNAL_PACKAGES=$(cat <<EOF
     cmake::
+      buildable: True
       variants: ~openssl ~ncurses
       version: [3.12.1]
       paths:
@@ -25,7 +30,13 @@
 
     cudnn::
       buildable: true
-      version: [7.6.3-10.1-broadwell]
+      version: [7.6.3.30-10.1-linux-x64, 7.6.5.32-10.1-linux-x64]
+
+    gcc::
+       buildable: False
+       version: [7.3.0]
+       modules:
+         gcc@7.3.0 arch=linux-rhel7-broadwell: gcc/7.3.0
 
     hwloc::
       buildable: False
@@ -48,18 +59,5 @@
       buildable: true
       variants: build_type=RelWithDebInfo ~calib3d+core~cuda~dnn~eigen+fast-math~features2d~flann~gtk+highgui+imgproc~ipp~ipp_iw~jasper~java+jpeg~lapack~ml~opencl~opencl_svm~openclamdblas~openclamdfft~openmp+png~powerpc~pthreads_pf~python~qt+shared~stitching~superres+tiff~ts~video~videoio~videostab~vsx~vtk+zlib
       version: [4.1.0]
-
-  compilers:
-  - compiler:
-      environment: {}
-      extra_rpaths: []
-      flags: {}
-      modules: []
-      operating_system: rhel7
-      paths:
-        cc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gcc
-        cxx: /usr/tce/packages/gcc/gcc-7.3.0/bin/g++
-        f77: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
-        fc: /usr/tce/packages/gcc/gcc-7.3.0/bin/gfortran
-      spec: gcc@7.3.0
-      target: broadwell
+EOF
+)

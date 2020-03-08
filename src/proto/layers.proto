@@ -465,6 +465,7 @@ message Layer {
     double mean = 1;
     double stdev = 2;
     string neuron_dims = 3;
+    bool training_only = 4;
   }
 
   message Bernoulli {
@@ -476,6 +477,7 @@ message Layer {
     double min = 1;
     double max = 2;
     string neuron_dims = 3;
+    bool training_only = 4;
   }
 
 
