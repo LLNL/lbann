@@ -75,7 +75,7 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  using TensorDevType = typename split_layer::TensorDevType;
+  using TensorDevType = typename data_type_layer<TensorDataType>::TensorDevType;
   std::vector<TensorDevType> m_prev_error_signals_siblings;
 
   void fp_compute_distconv() {}

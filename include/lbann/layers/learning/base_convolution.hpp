@@ -1250,7 +1250,7 @@ private:
 #endif // LBANN_HAS_CUDNN
 
 #ifdef LBANN_HAS_DISTCONV
-  using TensorDevType = typename base_convolution_layer::TensorDevType;
+  using TensorDevType = typename data_type_layer<TensorDataType>::TensorDevType;
 
   void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
     using namespace dc;

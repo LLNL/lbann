@@ -104,7 +104,7 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  using TensorDevType = typename sum_layer::TensorDevType;
+  using TensorDevType = typename data_type_layer<TensorDataType>::TensorDevType;
   std::vector<TensorDevType> m_prev_activations_siblings;
   std::vector<TensorDevType> m_error_signals_siblings;
 

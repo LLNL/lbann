@@ -64,7 +64,7 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
 
 #ifdef LBANN_HAS_DISTCONV
  public:
-  using TensorDevType = typename input_layer_distconv::TensorDevType;
+  using TensorDevType = typename data_type_layer<TensorDataType>::TensorDevType;
 
   int get_num_dims() const {
     return this->get_output_dims().size() + 1;

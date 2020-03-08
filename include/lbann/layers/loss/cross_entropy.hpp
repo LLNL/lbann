@@ -201,7 +201,7 @@ private:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  using TensorDevType = typename cross_entropy_layer::TensorDevType;
+  using TensorDevType = typename data_type_layer<TensorDataType>::TensorDevType;
   dc::CrossEntropy *m_cross_entropy;
   TensorDevType m_ground_truth_t;
   TensorDevType m_d_ground_truth_t;
