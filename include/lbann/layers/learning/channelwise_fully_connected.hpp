@@ -54,6 +54,18 @@ class channelwise_fully_connected_layer
                 "only supports data parallel layout");
 
 public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The local tensor type expected in this object. */
+  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  ///@}
+
+public:
 
   /** @param comm                   LBANN communicator.
    *  @param output_channel_dims    Output tensor dimensions,

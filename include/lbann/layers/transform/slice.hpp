@@ -227,15 +227,10 @@ void fp_setup_outputs_impl(
 
   const size_t num_outputs = l.get_num_children();
   const auto& input = l.get_prev_activations();
-  if (num_outputs == 1) {
-    El::LockedView(l.get_activations(0), input);
-  }
-  else {
-    for (size_t j=0; j<num_outputs; ++j) {
-      auto& output = l.get_activations(j);
-      output.AlignWith(input);
-      output.Resize(l.get_output_size(j), input.Width());
-    }
+  for (size_t j=0; j<num_outputs; ++j) {
+    auto& output = l.get_activations(j);
+    output.AlignWith(input);
+    output.Resize(l.get_output_size(j), input.Width());
   }
 
 }
@@ -255,28 +250,13 @@ void slice_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El:
   const auto& output0_grad = this->get_prev_error_signals(0);
   auto& input_grad = this->get_error_signals();
   input_grad.Empty(false);
-  if (this->get_num_children() == 1) {
-    El::LockedView(input_grad, output0_grad);
-  }
-  else {
-    input_grad.AlignWith(output0_grad);
-    El::Zeros(input_grad, this->get_input_size(), output0_grad.Width());
-  }
+  input_grad.AlignWith(output0_grad);
+  El::Zeros(input_grad, this->get_input_size(), output0_grad.Width());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::bp_compute() {
-
-  // Just make a view if there is one input
-  if (this->get_num_children() == 1) {
-    // Tensor views have already been setup in
-    // bp_setup_gradient_wrt_inputs
-    return;
-  }
-
-  // Perform concatenation
   bp_compute_impl(*this);
-
 }
 
 #ifndef LBANN_SLICE_LAYER_INSTANTIATE
