@@ -45,6 +45,7 @@
 #include "lbann/layers/io/input/input_layer_distconv.hpp"
 #include "lbann/layers/io/io_layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
+#include "lbann/layers/learning/channelwise_fully_connected.hpp"
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 #include "lbann/layers/learning/deconvolution.hpp"
@@ -188,6 +189,7 @@ private:
 
     // Learning layers
     LBANN_REGISTER_BUILDER(Convolution, convolution);
+    LBANN_REGISTER_BUILDER(ChannelwiseFullyConnected, channelwise_fully_connected);
     LBANN_REGISTER_BUILDER(ChannelwiseScaleBias, channelwise_scale_bias);
     LBANN_REGISTER_BUILDER(Embedding, embedding);
     LBANN_REGISTER_BUILDER(EntrywiseScaleBias, entrywise_scale_bias);
