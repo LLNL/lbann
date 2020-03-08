@@ -66,6 +66,7 @@
 #include "lbann/layers/math/matmul.hpp"
 #include "lbann/layers/math/unary.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
+#include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
@@ -288,6 +289,7 @@ private:
     LBANN_REGISTER_BUILDER(InstanceNorm, instance_norm);
 
     // Miscellaneous layers
+    LBANN_REGISTER_BUILDER(ChannelwiseSoftmax, channelwise_softmax);
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchIndex, mini_batch_index);
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchSize, mini_batch_size);
 
