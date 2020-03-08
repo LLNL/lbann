@@ -96,9 +96,14 @@ add_executable(convert_npz_to_conduit
 target_link_libraries(convert_npz_to_conduit lbann)
 add_dependencies(jag-utils convert_npz_to_conduit)
 
+add_executable(test_ras_lipid_data_files_for_errors
+  EXCLUDE_FROM_ALL test_ras_lipid_data_files_for_errors.cpp)
+target_link_libraries(test_ras_lipid_data_files_for_errors lbann)
+add_dependencies(jag-utils test_ras_lipid_data_files_for_errors)
+
 # Install the binaries
 install(
-  TARGETS select_samples build_sample_id_mapping build_index compute_pilot2_normalization convert_npz_to_conduit
+  TARGETS select_samples build_sample_id_mapping build_index compute_pilot2_normalization convert_npz_to_conduit test_ras_lipid_data_files_for_errors
   OPTIONAL
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
