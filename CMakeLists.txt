@@ -497,11 +497,9 @@ endif (LBANN_WITH_CONDUIT)
 
 if (LBANN_WITH_DISTCONV)
   message(STATUS "DISTCONV requested")
-  find_package(DIHYDROGEN REQUIRED)
-  set(LBANN_HAS_DIHYDROGEN ${DIHYDROGEN_FOUND})
-  # Temporary set this for incremental migration
-  set(LBANN_HAS_DISTCONV ${DIHYDROGEN_FOUND})
-  message(STATUS "Found DiHydrogen: ${DIHYDROGEN_DIR}")
+  find_package(DISTCONV REQUIRED)
+  set(LBANN_HAS_DISTCONV ${DISTCONV_FOUND})
+  message(STATUS "Found Distconv: ${DISTCONV_DIR}")
 endif (LBANN_WITH_DISTCONV)
 
 if (LBANN_WITH_P2P)
@@ -599,7 +597,7 @@ if (LBANN_HAS_ALUMINUM)
 endif ()
 
 if (LBANN_HAS_DISTCONV)
-  target_link_libraries(lbann PUBLIC DIHYDROGEN::DIHYDROGEN)
+  target_link_libraries(lbann PUBLIC DISTCONV::DISTCONV)
 endif ()
 
 if (LBANN_HAS_P2P)
