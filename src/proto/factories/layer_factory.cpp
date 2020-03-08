@@ -79,6 +79,7 @@
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 #include "lbann/layers/regularizers/layer_norm.hpp"
+#include "lbann/layers/regularizers/instance_norm.hpp"
 #include "lbann/layers/transform/bernoulli.hpp"
 #include "lbann/layers/transform/categorical_random.hpp"
 #include "lbann/layers/transform/concatenate.hpp"
@@ -280,6 +281,9 @@ private:
     LBANN_REGISTER_DEFAULT_BUILDER(MeanAbsoluteError, mean_absolute_error);
     LBANN_REGISTER_DEFAULT_BUILDER(MeanSquaredError, mean_squared_error);
     LBANN_REGISTER_DEFAULT_BUILDER(SigmoidBinaryCrossEntropy, sigmoid_binary_cross_entropy);
+
+    // Regularizer layers
+    LBANN_REGISTER_BUILDER(InstanceNorm, instance_norm);
 
     // Miscellaneous layers
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchIndex, mini_batch_index);
