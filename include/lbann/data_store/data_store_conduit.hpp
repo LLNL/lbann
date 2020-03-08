@@ -110,7 +110,7 @@ class data_store_conduit {
    * if 'already_have = true' then the passed 'node' was obtained by a call to
    * get_empty_node(); note, we do this to prevent copying the node
    */
-  void set_conduit_node(int data_id, conduit::Node &node, bool already_have = false);
+  void set_conduit_node(int data_id, const conduit::Node &node, bool already_have = false);
 
   void set_preloaded_conduit_node(int data_id, const conduit::Node &node);
 
@@ -187,12 +187,28 @@ class data_store_conduit {
   //=================================================================
   // END methods for setting and querying the data store's mode
   //=================================================================
+//XX   void { m_owner_maps_were_exchanged = false; }
+  /// fills in m_owner, which maps index -> owning processor
+  void exchange_owner_maps();
 
   /// fills in m_owner, which maps index -> owning processor
   void build_preloaded_owner_map(const std::vector<int>& per_rank_list_sizes);
 
+  /// fills in m_owner, which maps index -> owning processor
+  void set_preloaded_owner_map(const std::unordered_map<int,int> &owner) {
+    // TODO: needs slab extension
+    // m_owner = owner;
+    LBANN_ERROR("Slab-extension missing");    
+  }
+
   /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
   void clear_owner_map();
+
+  void set_owner_map(const std::unordered_map<int, int> &m) {
+    // TODO: needs slab extension
+    // m_owner = m;
+    LBANN_ERROR("Slab-extension missing");
+  }
 
   /** @brief Special handling for ras_lipid_conduit_data_reader; may go away in the future */
   void add_owner(int data_id, int owner) { m_owner[std::make_pair(data_id, m_offset_in_partition)] = owner; }
@@ -240,7 +256,6 @@ class data_store_conduit {
    */
   void flush_debug_file();
 
-
   /** @brief Closes then reopens the profile logging file
    *
    * Profile logging is enabled on P_0 via the cmd line flag: --data_store_profile
@@ -270,6 +285,11 @@ class data_store_conduit {
   void test_imagenet_node(int sample_id, bool dereference = true);
 
 private :
+
+  // if not null, 'm_other' points from a train to a validation
+  // data store; this permits communication which is needed in
+  // special cases (e.g, see: data_reader_npz_ras_lipid.cpp)
+  data_store_conduit *m_other = nullptr;
 
   bool m_owner_maps_were_exchanged = false;
 
@@ -491,7 +511,7 @@ private :
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 
   /// fills in m_owner, which maps index -> owning processor
-  void exchange_owner_maps();
+//XX  void exchange_owner_maps();
 
   /// for use when conduit Nodes have non-uniform size, e.g, imagenet
   void exchange_sample_sizes();
