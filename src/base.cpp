@@ -59,6 +59,8 @@
 
 namespace lbann {
 
+MPI_Errhandler err_handle;
+
 world_comm_ptr initialize(int& argc, char**& argv, int seed) {
   // Initialize Elemental.
   El::Initialize(argc, argv);
@@ -69,6 +71,10 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed) {
   lbann_mpi_comm = dc::get_strided_mpi_comm(MPI_COMM_WORLD);
 #endif
   auto comm = world_comm_ptr{new lbann_comm(0, lbann_mpi_comm), &lbann::finalize };
+
+  // Install MPI error handler
+  MPI_Comm_create_errhandler(lbann_mpi_err_handler, &err_handle);
+  MPI_Comm_set_errhandler(MPI_COMM_WORLD, err_handle);
 
 #if defined(LBANN_TOPO_AWARE)
   // Determine the number of NUMA nodes present.
@@ -107,6 +113,7 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed) {
 }
 
 void finalize(lbann_comm* comm) {
+  MPI_Errhandler_free( &err_handle );
 #ifdef LBANN_HAS_DISTCONV
   dc::finalize();
 #endif
@@ -249,6 +256,13 @@ void print_matrix_dims(AbsDistMat *m, const char *name) {
 void print_local_matrix_dims(AbsMat *m, const char *name) {
   std::cout << "DISPLAY MATRIX: " << name << " = "
             << m->Height() << " x " << m->Width() << std::endl;
+}
+
+void lbann_mpi_err_handler(MPI_Comm *comm, int *err_code, ... ) {
+  char err_string[MPI_MAX_ERROR_STRING];
+  int err_string_length;
+  MPI_Error_string(*err_code, &err_string[0], &err_string_length);
+  LBANN_ERROR("MPI threw this error: ", err_string);
 }
 
 } // namespace lbann

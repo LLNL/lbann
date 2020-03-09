@@ -203,6 +203,8 @@ void print_local_matrix_dims(AbsMat *m, const char *name);
 #define LBANN_MAKE_STR_(x) #x
 #define LBANN_MAKE_STR(x) LBANN_MAKE_STR_(x)
 
+void lbann_mpi_err_handler(MPI_Comm *comm, int *err_code, ... );
+
 } // namespace lbann
 
 #endif // LBANN_BASE_HPP_INCLUDED
