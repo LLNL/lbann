@@ -39,9 +39,9 @@ namespace dc {
 namespace {
 bool initialized = false;
 MPI_Comm mpi_comm = MPI_COMM_NULL;
-#ifdef LBANN_HAS_P2P
+#ifdef DISTCONV_HAS_P2P
 p2p::P2P *p2p_instance = nullptr;
-#endif // LBANN_HAS_P2P
+#endif // DISTCONV_HAS_P2P
 Al::mpicuda_backend::comm_type *mpicuda_comm_instance = nullptr;
 Backend *backend_instance = nullptr;
 std::shared_ptr<El::mpi::Comm> spatial_comm;
@@ -286,9 +286,9 @@ void initialize(MPI_Comm comm) {
   assert_always(!initialized);
   set_options();
   mpi_comm = comm;
-#ifdef LBANN_HAS_P2P
+#ifdef DISTCONV_HAS_P2P
   p2p_instance = new p2p::P2P(mpi_comm);
-#endif // LBANN_HAS_P2P
+#endif // DISTCONV_HAS_P2P
   auto &cudnn_h = lbann::cudnn::get_handle();
   cudaStream_t s;
   CHECK_CUDNN(cudnnGetStream(cudnn_h, &s));
@@ -302,10 +302,10 @@ void initialize(MPI_Comm comm) {
 
 void finalize() {
   if (initialized) {
-#ifdef LBANN_HAS_P2P
+#ifdef DISTCONV_HAS_P2P
     delete p2p_instance;
     p2p_instance = nullptr;
-#endif // LBANN_HAS_P2P
+#endif // DISTCONV_HAS_P2P
     delete backend_instance;
     backend_instance = nullptr;
     initialized = false;
@@ -386,11 +386,11 @@ bool is_cosmoflow_parallel_io_enabled() {
   return opt_cosmoflow_parallel_io;
 }
 
-#ifdef LBANN_HAS_P2P
+#ifdef DISTCONV_HAS_P2P
 p2p::P2P &get_p2p() {
   return *p2p_instance;
 }
-#endif // LBANN_HAS_P2P
+#endif // DISTCONV_HAS_P2P
 
 Al::mpicuda_backend::comm_type &get_mpicuda() {
   return *mpicuda_comm_instance;
@@ -409,12 +409,12 @@ HaloExchangeMethod get_halo_exchange_method() {
     return HaloExchangeMethod::AL;
   } else if (opt_halo_exchange == "MPI") {
     return HaloExchangeMethod::MPI;
-#ifdef LBANN_HAS_P2P
+#ifdef DISTCONV_HAS_P2P
   } else if (opt_halo_exchange == "P2P") {
     return HaloExchangeMethod::P2P;
   } else if (opt_halo_exchange == "HYBRID") {
     return HaloExchangeMethod::HYBRID;
-#endif // LBANN_HAS_P2P
+#endif // DISTCONV_HAS_P2P
   } else {
     LBANN_ERROR("Unknown value of option opt_halo_exchange");
   }
@@ -429,7 +429,7 @@ TensorShuffler<TensorDataType> *get_tensor_shuffler(const TensorDev<TensorDataTy
       << " MB";
   if (opt_tensor_shuffler == "AL") {
     return new TensorShufflerAL<TensorDataType>(src, dst, get_mpicuda());
-#ifdef LBANN_HAS_P2P
+#ifdef DISTCONV_HAS_P2P
   } else if (opt_tensor_shuffler == "HYBRID") {
     return new TensorShufflerHybrid<TensorDataType>(src, dst, get_p2p(), get_mpicuda(),
                                                     get_shuffler_src_buf(src),
@@ -453,7 +453,7 @@ TensorShuffler<TensorDataType> *get_tensor_shuffler(const TensorDev<TensorDataTy
     } else {
       MPIRootPrintStreamInfo() << "P2P shuffler requested but not possible as inter-node communication is required";
     }
-#endif // LBANN_HAS_P2P
+#endif // DISTCONV_HAS_P2P
   }
   // Fall-back default
   MPIRootPrintStreamInfo() << "Using MPI-based shuffler";

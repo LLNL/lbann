@@ -72,7 +72,7 @@ AVOID_CUDA_AWARE_MPI=OFF
 WITH_DISTCONV=OFF
 DIHYDROGEN_URL=https://github.com/llnl/dihydrogen
 DIHYDROGEN_TAG=master
-WITH_P2P=OFF
+WITH_P2P=ON
 WITH_TBINF=OFF
 RECONFIGURE=0
 USE_NINJA=0
@@ -296,8 +296,8 @@ while :; do
             echo "Error: do not pass --distconv-cosmoflow-int16 as it is no longer used"
             exit 1
             ;;
-        --with-p2p)
-            WITH_P2P=ON
+        --disable-p2p)
+            WITH_P2P=OFF
             ;;
         --instrument)
             INSTRUMENT="-finstrument-functions -ldl"
@@ -844,11 +844,10 @@ cmake \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
 -D LBANN_SB_BUILD_DIHYDROGEN=${WITH_DISTCONV} \
+-D LBANN_SB_FWD_DIHYDROGEN_H2_ENABLE_P2P=${WITH_P2P} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
 -D DIHYDROGEN_URL=${DIHYDROGEN_URL} \
 -D DIHYDROGEN_TAG=${DIHYDROGEN_TAG} \
--D LBANN_SB_BUILD_P2P=${WITH_P2P} \
--D LBANN_WITH_P2P=${WITH_P2P} \
 -D LBANN_SB_FWD_HYDROGEN_Hydrogen_AVOID_CUDA_AWARE_MPI=${AVOID_CUDA_AWARE_MPI} \
 -D LBANN_SB_FWD_ALUMINUM_ALUMINUM_ENABLE_STREAM_MEM_OPS=OFF \
 -D LBANN_SB_FWD_ALUMINUM_ALUMINUM_HT_USE_PASSTHROUGH=OFF \
