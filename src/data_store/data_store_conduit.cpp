@@ -322,7 +322,7 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 }
 
 
-//n.b. Do not put any PROFILE or DEBUG statements in this method,
+//n.b. Do not put any PROFILE or DEBUG_DS statements in this method,
 //     since the threading from the data_reader will cause you grief
 void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node, bool already_have) {
 
@@ -339,7 +339,7 @@ void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node
   {
     //std::lock_guard<std::mutex> lock(m_mutex);
     if (already_have == false && m_data.find(data_id) != m_data.end()) {
-      DEBUG("m_data.size: ", m_data.size(), " ERROR: duplicate data_id: ", data_id);
+      DEBUG_DS("m_data.size: ", m_data.size(), " ERROR: duplicate data_id: ", data_id);
       LBANN_ERROR("duplicate data_id: ", data_id, " in data_store_conduit::set_conduit_node; role: ", m_reader->get_role());
     }
   }
@@ -626,7 +626,7 @@ int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) 
   m_indices_to_send.clear();
   m_indices_to_send.resize(m_np_in_trainer);
   int k = 0;
-  DEBUG("build_indices_i_will_send; cur pos: ", current_pos, " mb_size: ", mb_size, " m_data.size: ", m_data.size());
+  DEBUG_DS("build_indices_i_will_send; cur pos: ", current_pos, " mb_size: ", mb_size, " m_data.size: ", m_data.size());
   for (int i = current_pos; i < current_pos + mb_size; i++) {
     auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the (i%m_np)'th rank
@@ -875,14 +875,14 @@ void data_store_conduit::set_shuffled_indices(const std::vector<int> *indices) {
 }
 
 void data_store_conduit::exchange_sample_sizes() {
-  DEBUG("starting data_store_conduit::exchange_sample_sizes");
+  DEBUG_DS("starting data_store_conduit::exchange_sample_sizes");
   int my_count = m_sample_sizes.size();
   std::vector<int> all_counts(m_np_in_trainer);
   m_comm->all_gather(&my_count, 1, all_counts.data(), 1,  m_comm->get_trainer_comm());
 
   if (m_debug) {
     for (size_t h=0; h<all_counts.size(); h++) {
-      DEBUG("num samples owned by P_", h, " is ", all_counts[h]);
+      DEBUG_DS("num samples owned by P_", h, " is ", all_counts[h]);
     }
   }
 
@@ -895,7 +895,7 @@ void data_store_conduit::exchange_sample_sizes() {
 
   std::vector<size_t> others;
   for (int k=0; k<m_np_in_trainer; k++) {
-    DEBUG("sample sizes for P_", k);
+    DEBUG_DS("sample sizes for P_", k);
     others.resize(all_counts[k]*2);
     if (m_rank_in_trainer == k) {
       m_comm->broadcast<size_t>(k, my_sizes.data(), all_counts[k]*2,  m_comm->get_trainer_comm());
@@ -905,9 +905,9 @@ void data_store_conduit::exchange_sample_sizes() {
       for (size_t i=0; i<others.size(); i += 2) {
         if (m_sample_sizes.find(others[i]) != m_sample_sizes.end()) {
           if (m_debug) {
-            DEBUG("SAMPLE SIZES for P_", k);
+            DEBUG_DS("SAMPLE SIZES for P_", k);
             for (size_t h=0; h<others.size(); h += 2) {
-              DEBUG(others[h], " SIZE: ", others[h+1]);
+              DEBUG_DS(others[h], " SIZE: ", others[h+1]);
             }
           }
           LBANN_ERROR("m_sample_sizes.find(others[i]) != m_sample_sizes.end() for data_id: ", others[i]);
@@ -1317,7 +1317,7 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
 void data_store_conduit::exchange_owner_maps() {
   PROFILE("starting exchange_owner_maps;",
           "my owner map size: ", m_owner.size());
-  DEBUG("starting exchange_owner_maps;",
+  DEBUG_DS("starting exchange_owner_maps;",
         "size: ", m_owner.size());
 
   int my_count = m_my_num_indices;
@@ -1361,11 +1361,10 @@ void data_store_conduit::exchange_owner_maps() {
 
           if (m_debug) {
             auto slab_id = other_ranks_nodes[i];
-            DEBUG("data_store_conduit::exchange_owner_maps, duplicate data_id: ", slab_id.first, ".", slab_id.second, "; k= ", k, "\nm_owner:\n");
-            for (auto t : m_owner) DEBUG("data_id: ", t.first.first, " / ", t.first.second, " owner: ", t.second);
-            DEBUG("\nother_ranks_nodes[k]: ");
-            for (auto t : other_ranks_nodes) DEBUG(t.first, ".", t.second, " ");
-            DEBUG();
+            DEBUG_DS("data_store_conduit::exchange_owner_maps, duplicate data_id: ", slab_id.first, ".", slab_id.second, "; k= ", k, "\nm_owner:\n");
+            for (auto t : m_owner) DEBUG_DS("data_id: ", t.first.first, " / ", t.first.second, " owner: ", t.second);
+            DEBUG_DS("\nother_ranks_nodes[k]: ");
+            for (auto t : other_ranks_nodes) DEBUG_DS(t.first, ".", t.second, " ");
           }
 
           LBANN_ERROR("duplicate data_id: ", other_ranks_nodes[i].first, ".",
@@ -1623,7 +1622,7 @@ void data_store_conduit::write_checkpoint(std::string dir_name) {
 
   // save conduit Nodes
   m_metadata << get_conduit_dir() << "\n";
-  DEBUG("m_data.size: ", m_data.size());
+  DEBUG_DS("m_data.size: ", m_data.size());
   for (auto t : m_data) {
     spill_conduit_node(t.second["data"], t.first);
   }
@@ -1762,9 +1761,9 @@ void data_store_conduit::open_next_conduit_spill_directory() {
   m_num_files_in_cur_spill_dir = 0;
   m_cur_spill_dir_integer += 1;
   m_cur_spill_dir = get_conduit_dir() + "/" + to_string(m_cur_spill_dir_integer);
-  DEBUG("calling file::directory_exists(", m_cur_spill_dir, ")");
+  DEBUG_DS("calling file::directory_exists(", m_cur_spill_dir, ")");
   bool exists = file::directory_exists(m_cur_spill_dir);
-  DEBUG("exists? ", exists);
+  DEBUG_DS("exists? ", exists);
   if (!exists) {
     file::make_directory(m_cur_spill_dir);
   }
