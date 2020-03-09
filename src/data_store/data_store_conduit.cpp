@@ -384,7 +384,7 @@ void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node
 
     else {
       //      m_mutex.lock();
-      DEBUG("set_conduit_node : rank_in_trainer=", m_rank_in_trainer, " and partition_in_trainer=", m_partition_in_trainer, " offset in partition=", m_offset_in_partition, " with num_partitions=", m_num_partitions_in_trainer);
+      DEBUG_DS("set_conduit_node : rank_in_trainer=", m_rank_in_trainer, " and partition_in_trainer=", m_partition_in_trainer, " offset in partition=", m_offset_in_partition, " with num_partitions=", m_num_partitions_in_trainer);
       auto key = std::make_pair(data_id, m_offset_in_partition);
       m_owner[key] = m_rank_in_trainer;
       build_node_for_sending(node, m_data[data_id]);
@@ -1330,7 +1330,7 @@ void data_store_conduit::exchange_owner_maps() {
   for (auto t : m_owner) {
     auto slab_id = std::make_pair(t.first.first, t.first.second);
     nodes_i_own[j++] = slab_id;
-    DEBUG("I am building the size vector from the owner map for ", t.first.first, ".", t.first.second, " and ", t.second);
+    DEBUG_DS("I am building the size vector from the owner map for ", t.first.first, ".", t.first.second, " and ", t.second);
   }
 
   std::vector<std::pair<size_t,size_t>> other_ranks_nodes;
@@ -1341,7 +1341,7 @@ void data_store_conduit::exchange_owner_maps() {
       if(m_debug) {
         int c = 0;
         for(auto i : nodes_i_own) {
-          DEBUG("k=", k,  ": nodes_i_own[", c, "]=", i.first, ".", i.second);
+          DEBUG_DS("k=", k,  ": nodes_i_own[", c, "]=", i.first, ".", i.second);
           c++;
         }
       }
@@ -1350,7 +1350,7 @@ void data_store_conduit::exchange_owner_maps() {
       if(m_debug) {
         int c = 0;
         for(auto i : other_ranks_nodes) {
-          DEBUG("k=", k,  ": other_ranks_nodes[", c, "]=", i.first, ".", i.second);
+          DEBUG_DS("k=", k,  ": other_ranks_nodes[", c, "]=", i.first, ".", i.second);
           c++;
         }
       }
