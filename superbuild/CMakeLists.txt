@@ -137,10 +137,6 @@ if (LBANN_SB_BUILD_PROTOBUF)
 endif ()
 
 # Distconv
-if (LBANN_SB_BUILD_P2P)
-  add_subdirectory(p2p)
-  list(APPEND _BUILD_PKGS P2P)
-endif ()
 if (LBANN_SB_BUILD_DIHYDROGEN)
   add_subdirectory(dihydrogen)
   list(APPEND _BUILD_PKGS DIHYDROGEN)
