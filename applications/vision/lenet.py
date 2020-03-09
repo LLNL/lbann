@@ -93,8 +93,8 @@ trainer = lbann.Trainer()
 # ----------------------------------
 # Run experiment
 # ----------------------------------
-# Note: Use `lbann.contrib.lc.launcher.run` instead for optimized
-# defaults on LC systems.
+# Note: Use `lbann.contrib.launcher.run` instead for optimized
+# defaults.
 
 kwargs = {}
 if args.partition: kwargs['partition'] = args.partition

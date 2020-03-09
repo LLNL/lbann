@@ -5,7 +5,7 @@ import sys
 
 import lbann
 import lbann.modules
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 import lbann.contrib.args
 
 # Local imports
@@ -113,6 +113,6 @@ opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 
 # Run LBANN
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.lc.launcher.run(trainer, model, reader, opt,
-                              job_name=args.job_name,
-                              **kwargs)
+lbann.contrib.launcher.run(trainer, model, reader, opt,
+                           job_name=args.job_name,
+                           **kwargs)

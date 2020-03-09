@@ -4,7 +4,7 @@ import os.path
 
 import lbann
 import lbann.models
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 from lbann.util import str_list
 
 import dataset
@@ -218,7 +218,7 @@ def make_batch_script(model_params, script_params):
     )
 
     # Create batch script
-    script = lbann.contrib.lc.launcher.make_batch_script(
+    script = lbann.contrib.launcher.make_batch_script(
         **script_params,
     )
     script.add_command('echo "Started training at $(date)"')
