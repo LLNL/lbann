@@ -57,6 +57,7 @@
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/callbacks/save_model.hpp"
+#include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/save_topk_models.hpp"
 #include "lbann/callbacks/summary.hpp"
 #include "lbann/callbacks/sync_layers.hpp"
@@ -168,6 +169,8 @@ void register_default_builders(factory_type& factory)
                            build_save_images_callback_from_pbuf);
   factory.register_builder("CallbackSaveModel",
                            build_save_model_callback_from_pbuf);
+  factory.register_builder("CallbackLoadModel",
+                           build_load_model_callback_from_pbuf);
   factory.register_builder("CallbackSaveTopKModels",
                            build_save_topk_models_callback_from_pbuf);
   factory.register_builder("CallbackStepLearningRate",
