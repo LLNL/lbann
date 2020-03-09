@@ -52,7 +52,6 @@
 // API support for non-portable pthread functionality.
 #cmakedefine LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
 
-#cmakedefine LBANN_HAS_P2P
 #cmakedefine LBANN_HAS_DISTCONV
 
 // Define the LBANN datatype

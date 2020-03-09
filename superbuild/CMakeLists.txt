@@ -60,7 +60,6 @@ option(LBANN_SB_BUILD_PROTOBUF "Pull and build Google Protobuf from Github" OFF)
 option(LBANN_SB_BUILD_LBANN "Pull and build LBANN from Github" OFF)
 
 # Distconv packages
-option(LBANN_SB_BUILD_P2P "Pull and build P2P from Github" OFF)
 option(LBANN_SB_BUILD_DIHYDROGEN "Pull and build DiHydrogen from Github" OFF)
 
 #

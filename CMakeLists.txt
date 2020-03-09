@@ -152,9 +152,6 @@ mark_as_advanced(LBANN_WARNINGS_AS_ERRORS)
 option(LBANN_WITH_DISTCONV
   "Enable Distconv distributed convolution" OFF)
 
-option(LBANN_WITH_P2P
-  "Enable P2P library" OFF)
-
 # FIXME what if "fp16"?
 set(LBANN_DATATYPE "float"
   CACHE STRING "The datatype to use in LBANN")
@@ -497,20 +494,6 @@ if (LBANN_WITH_DISTCONV)
   message(STATUS "Found Distconv: ${DISTCONV_DIR}")
 endif (LBANN_WITH_DISTCONV)
 
-if (LBANN_WITH_P2P)
-  message(STATUS "P2P requested")
-  find_package(P2P)
-  set(LBANN_HAS_P2P ${P2P_FOUND})
-  if (NOT LBANN_HAS_P2P)
-    message(WARNING
-      "Requested LBANN_WITH_P2P but P2P not found. "
-      "P2P is now disabled. "
-      "Try specifying P2P_DIR as the root of a P2P install. "
-      "Alternatively, build with LBANN_WITH_P2P=OFF.")
-    set(LBANN_WITH_P2P OFF)
-  endif ()
-endif ()
-
 if (LBANN_WITH_UNIT_TESTING)
   find_package(Catch2 2.0.0 CONFIG QUIET
     HINTS ${CATCH2_DIR} $ENV{CATCH2_DIR} ${CATCH_DIR} $ENV{CATCH_DIR}
@@ -593,10 +576,6 @@ endif ()
 
 if (LBANN_HAS_DISTCONV)
   target_link_libraries(lbann PUBLIC DISTCONV::DISTCONV)
-endif ()
-
-if (LBANN_HAS_P2P)
-  target_link_libraries(lbann PUBLIC P2P::P2P)
 endif ()
 
 if (LBANN_HAS_VTUNE)

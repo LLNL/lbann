@@ -47,11 +47,11 @@
 #include "distconv/tensor/shuffle_mpi_cuda_al.hpp"
 #include "distconv/tensor/algorithms.hpp"
 #include "distconv/util/util.hpp"
-#ifdef LBANN_HAS_P2P
+#ifdef DISTCONV_HAS_P2P
 #include "p2p/p2p.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda_p2p.hpp"
 #include "distconv/tensor/shuffle_mpi_cuda_hybrid.hpp"
-#endif // LBANN_HAS_P2P
+#endif // DISTCONV_HAS_P2P
 
 namespace lbann {
 
@@ -86,12 +86,12 @@ template <typename TensorDataType>
 using TensorShuffler = ::distconv::tensor::TensorMPICUDAShuffler<TensorDataType>;
 template <typename TensorDataType>
 using TensorShufflerAL = ::distconv::tensor::TensorMPICUDAShufflerAL<TensorDataType>;
-#ifdef LBANN_HAS_P2P
+#ifdef DISTCONV_HAS_P2P
 template <typename TensorDataType>
 using TensorShufflerP2P = ::distconv::tensor::TensorMPICUDAShufflerP2P<TensorDataType>;
 template <typename TensorDataType>
 using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<TensorDataType>;
-#endif // LBANN_HAS_P2P
+#endif // DISTCONV_HAS_P2P
 
 using Dist = ::distconv::tensor::Distribution;
 static constexpr int num_dists = 4;
@@ -203,11 +203,11 @@ int get_number_of_io_partitions();
  */
 bool is_cosmoflow_parallel_io_enabled();
 
-#ifdef LBANN_HAS_P2P
+#ifdef DISTCONV_HAS_P2P
 /** Get p2p handle
  */
 p2p::P2P &get_p2p();
-#endif // LBANN_HAS_P2P
+#endif // DISTCONV_HAS_P2P
 
 /** Get Aluminum MPI-CUDA backend
  */
