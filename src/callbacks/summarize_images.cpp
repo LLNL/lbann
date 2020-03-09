@@ -89,7 +89,7 @@ construct_strategy(google::protobuf::Message const& proto_msg) {
 // categorical_accuracy_strategy
 std::vector<std::pair<size_t, El::Int>>
 categorical_accuracy_strategy::get_image_indices(model const& m) const {
-
+//std::cout << "Test block 1 MORE VISIBLE TEXT AND STUFF" << std::endl;
   static size_t img_counter = 0;
   static size_t epoch_counter = 0;
   auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(m.get_execution_context());
@@ -121,18 +121,19 @@ categorical_accuracy_strategy::get_image_indices(model const& m) const {
       auto const& correctness_value = categorized_correctly.LockedMatrix()(0, sample);
 
       if ((correctness_value != DataType(0))
-          && (correctness_value != DataType(1)))
+          && (correctness_value != DataType(1))) {
         LBANN_ERROR("Invalid data from ", cat_accuracy_layer.get_name(),
                     ". Received ", correctness_value, ", expected 0 or 1.");
-
-      if(img_indices.size() > static_cast<size_t>(num_samples) || img_counter >= m_num_images)
-        break;
-
-      if (meets_criteria(correctness_value)){
-        img_indices.push_back(std::make_pair(sample, El::Int(0)));
-        img_counter++;
       }
 
+      if(img_indices.size() > static_cast<size_t>(num_samples) || img_counter >= m_num_images){
+        std::cout << "I should print " << m_num_images << " images." << std::endl;
+        break;
+      }
+
+      if (meets_criteria(correctness_value)){
+        img_indices.push_back(std::make_pair(sample, El::Int(++img_counter)));
+      }
     }
   }
 
@@ -186,6 +187,8 @@ std::ostream& operator<<(std::ostream& os, std::vector<T> const& v)
 
 std::vector<std::pair<size_t, El::Int>>
 autoencoder_strategy::get_image_indices(model const& m) const {
+
+std::cout << "Test block 2 MORE VISIBLE TEXT AND STUFF" << std::endl;
 
   // Find the input layer
   auto const& input_layer = dynamic_cast<generic_input_layer<DataType> const&>(
@@ -242,6 +245,8 @@ autoencoder_strategy::get_image_indices(model const& m) const {
         img_indices.push_back(std::make_pair(ii, sample_index));
       }
       else if(m_tracked_images.size() < m_num_images) {
+ std::cout << "Test block 3 MORE VISIBLE TEXT AND STUFF (num_images is "
+           << m_num_images << ")" << std::endl;
         m_tracked_images.insert(sample_index);
         img_indices.push_back(std::make_pair(ii, sample_index));
         //std::cout << "Adding to tracked indices Idx = " << sample_index << "\n";
@@ -284,6 +289,8 @@ summarize_images::summarize_images(std::shared_ptr<lbann_summary> const& summari
 
 void summarize_images::on_batch_evaluate_end(model* m) {
 
+std::cout << "Test block 4 MORE VISIBLE TEXT AND STUFF" << std::endl;
+
   auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(m->get_execution_context());
   if (exe_ctx.get_epoch() % m_epoch_interval != 0)
     return;
@@ -297,6 +304,7 @@ void summarize_images::on_batch_evaluate_end(model* m) {
 }
 
 void summarize_images::dump_images_to_summary(model const& m) const {
+std::cout << "Test block 5 MORE VISIBLE TEXT AND STUFF" << std::endl;
 
   auto img_indices = m_strategy->get_image_indices(m);
 
@@ -309,8 +317,13 @@ void summarize_images::dump_images_to_summary(model const& m) const {
   El::Copy(layer_activations, all_images);
 
   if (all_images.CrossRank() == all_images.Root()) {
+    std::cout << "IMG_INDICES={";
+    for (auto const& i : img_indices)
+      std::cout << " " << i.first;
+    std::cout << " }" << std::endl;
     auto const& local_images = all_images.LockedMatrix();
     auto dims = layer.get_output_dims();
+
 
     for (const auto& img_id : img_indices) {
       auto const& col_index = img_id.first;

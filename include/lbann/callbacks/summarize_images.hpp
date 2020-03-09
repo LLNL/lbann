@@ -148,11 +148,9 @@ class summarize_images : public callback_base {
 
 public:
   /** @brief summarize_images Constructor.
-   *  @param strategy Pointer to image image_output_strategy
    *  @param summarizer Pointer to lbann_summary object
+   *  @param strategy Pointer to image image_output_strategy
    *  @param img_source_layer_name Name of image layer
-   *  @param input_layer_name Name of input layer
-   *  @param num_images Max number of images to dump per epoch
    *  @param interval Interval of epochs to dump images
    *  @param img_format Image file format (e.g. .jpg, .png, .pgm)
    */

@@ -34,6 +34,7 @@ data_reader {
   reader {
     name: "imagenet"
     role: "validate"
+    shuffle: true
     data_filedir: "path/to/ILSVRC2012/val"
     data_filename: "path/to/ILSVRC2012/labels/val.txt"
     percent_of_data_to_use: 1.0
