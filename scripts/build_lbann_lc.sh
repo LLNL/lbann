@@ -46,6 +46,7 @@ fi
 
 C_FLAGS=
 CXX_FLAGS=-DLBANN_SET_EL_RNG
+CUDA_FLAGS=
 Fortran_FLAGS=
 CLEAN_BUILD=0
 DATATYPE=float
@@ -82,6 +83,8 @@ USE_NINJA=0
 # by enabling LIBJPEG_TURBO_DIR
 WITH_LIBJPEG_TURBO=ON
 #LIBJPEG_TURBO_DIR="/p/lscratchh/brainusr/libjpeg-turbo-1.5.2"
+WITH_NVSHMEM=0
+NVSHMEM_DIR=
 
 function version_gt() { test "$(printf '%s\n' "$@" | sort -V | head -n 1)" != "$1"; }
 
@@ -134,6 +137,7 @@ Options:
   ${C}--with-conduit              Build with conduit interface
   ${C}--ninja                     Generate ninja files instead of makefiles
   ${C}--ninja-processes${N} <val> Number of parallel processes for ninja.
+  ${C}--nvshmem${N}               Enable NVSHMEM
 EOF
 }
 
@@ -304,6 +308,9 @@ while :; do
             ;;
         --reconfigure)
             RECONFIGURE=1
+            ;;
+        --nvshmem)
+            WITH_NVSHMEM=1
             ;;
         -?*)
             # Unknown option
@@ -477,6 +484,16 @@ fi
 CXX_FLAGS="${CXX_FLAGS} -ldl"
 C_FLAGS="${CXX_FLAGS}"
 
+# Hacks to build with NVSHMEM
+if [ ${WITH_NVSHMEM} -ne 0 ]; then
+    if [ "${CLUSTER}" == "lassen" ]; then
+        NVSHMEM_DIR=/usr/workspace/wsb/brain/nvshmem/nvshmem_0.3.3/cuda-10.1_ppc64le
+        CUDA_FLAGS="-gencode=arch=compute_70,code=sm_70"
+    else
+        echo "NVSHMEM is currently only supported on Lassen"
+        exit 1
+    fi
+fi
 
 # Set environment variables
 CC=${C_COMPILER}
@@ -827,6 +844,7 @@ cmake \
 -D LBANN_SB_BUILD_LBANN=ON \
 -D CMAKE_CXX_FLAGS="${CXX_FLAGS}" \
 -D CMAKE_C_FLAGS="${C_FLAGS}" \
+-D CMAKE_CUDA_FLAGS="${CUDA_FLAGS}" \
 -D CMAKE_C_COMPILER=${C_COMPILER} \
 -D CMAKE_CXX_COMPILER=${CXX_COMPILER} \
 -D CMAKE_Fortran_COMPILER=${Fortran_COMPILER} \
@@ -843,6 +861,8 @@ cmake \
 -D LBANN_CONDUIT_DIR=${CONDUIT_DIR} \
 -D LBANN_BUILT_WITH_SPECTRUM=${WITH_SPECTRUM} \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
+-D LBANN_WITH_NVSHMEM=${WITH_NVSHMEM} \
+-D LBANN_SB_FWD_LBANN_NVSHMEM_DIR=${NVSHMEM_DIR} \
 -D LBANN_SB_BUILD_DIHYDROGEN=${WITH_DISTCONV} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
 -D DIHYDROGEN_URL=${DIHYDROGEN_URL} \

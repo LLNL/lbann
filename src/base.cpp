@@ -48,6 +48,9 @@
 #ifdef LBANN_HAS_PYTHON
 #include "lbann/utils/python.hpp"
 #endif
+#ifdef LBANN_HAS_NVSHMEM
+#include "lbann/utils/nvshmem.hpp"
+#endif
 
 #include <iostream>
 #include <string>
@@ -101,18 +104,30 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed) {
   }
   hwloc_topology_destroy(topo);
 #endif
+
   // Initialize local random number generators.
   init_random(seed);
   init_data_seq_random(seed);
 
+#ifdef LBANN_HAS_NVSHMEM
+  // Initialize NVSHMEM
+  // tym (3/3/20): I get an error when initializing NVSHMEM with
+  // anything other than MPI_COMM_WORLD.
+  // nvshmem::initialize(comm->get_trainer_comm().GetMPIComm()); /// @todo Restore
+  nvshmem::initialize(MPI_COMM_WORLD);
+#endif // LBANN_HAS_NVSHMEM
+
 #ifdef LBANN_HAS_DISTCONV
   dc::initialize(MPI_COMM_WORLD);
-#endif
+#endif // LBANN_HAS_DISTCONV
 
   return comm;
 }
 
 void finalize(lbann_comm* comm) {
+#ifdef LBANN_HAS_NVSHMEM
+  nvshmem::finalize();
+#endif // LBANN_HAS_NVSHMEM
   MPI_Errhandler_free( &err_handle );
 #ifdef LBANN_HAS_DISTCONV
   dc::finalize();
