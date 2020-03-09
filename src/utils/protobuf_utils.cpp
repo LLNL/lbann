@@ -51,15 +51,11 @@ parse_prototext_filenames_from_command_line(
   for (int k=1; k<argc; k++) {
     std::string s(argv[k]);
     if (s[0] != '-' or s[1] != '-') {
-      std::cerr << "badly formed cmd line param; must begin with '--': " << s << std::endl;
-      exit(1);
+      LBANN_ERROR("badly formed cmd line param; must begin with '--': ", s);
     }
     if (s.find(',') != std::string::npos) {
-      std::stringstream err;
-      err << __FILE__ << __LINE__ << " :: "
-          << " badly formed param; contains ','; " << s << "\n"
-          << "possibly you left out '{' or '}' or both ??\n";
-      throw lbann_exception(err.str());
+      LBANN_ERROR(" badly formed param; contains ','; ", s, 
+          "; possibly you left out '{' or '}' or both");
     }
 
     size_t equal_sign = s.find("=");
@@ -88,29 +84,23 @@ parse_prototext_filenames_from_command_line(
   if(!single_file_load) {
     size_t n = models.size();
     if (! (optimizers.size() == 1 || optimizers.size() == n)) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << " you specified " << n << " model filenames, and " << optimizers.size()
-          << " optimizer filenames; you must specify either one or "<< n
-          << " optimizer filenames";
-      throw lbann_exception(err.str());
+      LBANN_ERROR(
+        "you specified ", n, " model filenames, and ", optimizers.size(), 
+        " optimizer filenames; you must specify either one or ", 
+       n, " optimizer filenames");
     }
     if (! (readers.size() == 1 || readers.size() == n)) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << " you specified " << n << " model filenames, and " << readers.size()
-          << " reader filenames; you must specify either one or "<< n
-          << " reader filenames";
-      throw lbann_exception(err.str());
+      LBANN_ERROR(
+        "you specified ", n, " model filenames, and ", readers.size(),
+        " reader filenames; you must specify either one or ", n,
+        " reader filenames");
     }
 
     if (! (data_set_metadata.size() == 0 || data_set_metadata.size() == 1 || data_set_metadata.size() == n)) {
-      std::stringstream err;
-      err << __FILE__ << " " << __LINE__ << " :: "
-          << " you specified " << n << " model filenames, and " << data_set_metadata.size()
-          << " data set metadata filenames; you must specify either zero, one, or "<< n
-          << " data set metadata filenames";
-      throw lbann_exception(err.str());
+      LBANN_ERROR(
+        "you specified ", n, " model filenames, and ", data_set_metadata.size(),
+        " data set metadata filenames; you must specify either zero, one, or ",
+        n, " data set metadata filenames");
     }
   }
 
