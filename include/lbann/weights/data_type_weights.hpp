@@ -157,12 +157,12 @@ public:
    *  If weight values are duplicated across multiple processes, they
    *  are set to the average across the processes.
    */
-  void reconcile_values();
+  void reconcile_values() override;
   /** Asynchronously reconcile weight values.
    *  If weight values are duplicated across multiple processes, they
    *  are set to the average across the processes.
    */
-  void reconcile_values(Al::request& req);
+  void reconcile_values(Al::request& req) override;
 
   // -----------------------------------------------
   // Checkpointing
@@ -192,6 +192,18 @@ private:
 
   friend class data_type_optimizer<TensorDataType>;
 };
+
+#ifndef LBANN_DATA_TYPE_WEIGHTS_INSTANTIATE
+#define PROTO(T)                           \
+  extern template class data_type_weights<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_DATA_TYPE_WEIGHTS_INSTANTIATE
 
 } // namespace lbann
 

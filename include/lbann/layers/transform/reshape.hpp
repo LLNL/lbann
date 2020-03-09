@@ -103,16 +103,12 @@ protected:
 };
 
 #ifndef LBANN_RESHAPE_LAYER_INSTANTIATE
-extern template class reshape_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class reshape_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class reshape_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class reshape_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class reshape_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class reshape_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_RESHAPE_LAYER_INSTANTIATE
 
 } // namespace lbann

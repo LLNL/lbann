@@ -29,11 +29,10 @@
 
 namespace lbann {
 
-template class dropout<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class dropout<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class dropout<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class dropout<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  template class dropout<T, data_layout::DATA_PARALLEL, Device>; \
+  template class dropout<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

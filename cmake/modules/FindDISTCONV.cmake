@@ -9,7 +9,7 @@ message(STATUS "DISTCONV_DIR: ${DISTCONV_DIR}")
 
 # Find the header
 find_path(DISTCONV_INCLUDE_DIRS distconv/distconv.hpp
-  HINTS ${DISTCONV_DIR} $ENV{DISTCONV_DIR}
+  HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
   PATH_SUFFIXES include
   NO_DEFAULT_PATH
   DOC "Directory with DISTCONV header.")
@@ -17,7 +17,7 @@ find_path(DISTCONV_INCLUDE_DIRS distconv.hpp)
 
 # Find the library
 find_library(DISTCONV_LIBRARY distconv
-  HINTS ${DISTCONV_DIR} $ENV{DISTCONV_DIR}
+  HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
   PATH_SUFFIXES lib64 lib
   NO_DEFAULT_PATH
   DOC "The DISTCONV library.")

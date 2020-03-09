@@ -27,13 +27,18 @@
 #define LBANN_HADAMARD_LAYER_INSTANTIATE
 #include "lbann/layers/transform/hadamard.hpp"
 
+#include <lbann/proto/proto_common.hpp>
+#include <lbann.pb.h>
+
 namespace lbann {
 
-template class hadamard_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class hadamard_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-template class hadamard_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class hadamard_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+LBANN_LAYER_DEFAULT_BUILDER(hadamard)
+
+#define PROTO_DEVICE(T, Device)                                         \
+  template class hadamard_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  template class hadamard_layer<T, data_layout::MODEL_PARALLEL, Device>; \
+  LBANN_LAYER_BUILDER_ETI(hadamard, T, Device)
+
+#include "lbann/macros/instantiate_device.hpp"
 
 }// namespace lbann

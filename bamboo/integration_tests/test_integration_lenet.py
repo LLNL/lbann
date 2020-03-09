@@ -29,7 +29,7 @@ expected_test_accuracy_range = (98, 99)
 
 # Average mini-batch time (in sec) for each LC system
 expected_mini_batch_times = {
-    'pascal':   0.0040,
+    'pascal':   0.0012,
     'catalyst': 0.0055,
     'lassen':   0.0020,
     'ray':      0.0025,

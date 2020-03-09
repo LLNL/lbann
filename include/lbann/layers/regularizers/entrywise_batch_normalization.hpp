@@ -131,7 +131,7 @@ protected:
     this->set_num_data_type_weights(2);
     if (!this->has_data_type_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType{0});
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::Zero());
       w->set_name(this->get_name() + "_running_mean");
       w->set_initializer(std::move(init));
       this->set_data_type_weights(0, w.get());
@@ -139,7 +139,7 @@ protected:
     }
     if (!this->has_data_type_weights(1)) {
       auto w = make_unique<WeightsType>(this->get_comm());
-      auto init = make_unique<constant_initializer<TensorDataType>>(TensorDataType{1});
+      auto init = make_unique<constant_initializer<TensorDataType>>(El::TypeTraits<TensorDataType>::One());
       w->set_name(this->get_name() + "_running_variance");
       w->set_initializer(std::move(init));
       this->set_data_type_weights(1, w.get());
@@ -232,16 +232,14 @@ private:
 };
 
 #ifndef LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
-extern template class entrywise_batch_normalization_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class entrywise_batch_normalization_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class entrywise_batch_normalization_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class entrywise_batch_normalization_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class entrywise_batch_normalization_layer< \
+    T, data_layout::DATA_PARALLEL, Device>;                  \
+  extern template class entrywise_batch_normalization_layer< \
+    T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 
 } // namespace lbann

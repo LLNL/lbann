@@ -76,7 +76,7 @@ __global__ void bp_kernel(TensorDataType min,
     const auto& x = input[row + col * input_ldim];
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-    dx = (x <= min || x >= max) ? TensorDataType(0) : dy;
+    dx = (x <= min || x >= max) ? TensorDataType(0.f) : dy;
   }
 }
 
@@ -156,9 +156,13 @@ void clamp_layer<TensorDataType, Layout, Device>::bp_compute() {
            this->get_local_error_signals());
 }
 
-template class clamp_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class clamp_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                     \
+  template class clamp_layer<                        \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class clamp_layer<                        \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

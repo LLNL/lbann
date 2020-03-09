@@ -48,7 +48,7 @@ __global__ void fp_kernel(TensorDataType alpha,
     const auto& col = pos / height;
     const auto& x = input[row + col * input_ldim];
     auto& y = output[row + col * output_ldim];
-    y = (x > TensorDataType(0)) ? x : alpha * cuda::expm1(x);
+    y = (x > TensorDataType(0.0)) ? x : alpha * cuda::expm1(x);
   }
 }
 
@@ -72,7 +72,7 @@ __global__ void bp_kernel(TensorDataType alpha,
     const auto& x = input[row + col * input_ldim];
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-    dx = (x > TensorDataType(0)) ? dy : dy * alpha * cuda::exp(x);
+    dx = (x > TensorDataType(0.0)) ? dy : dy * alpha * cuda::exp(x);
   }
 }
 
@@ -150,7 +150,11 @@ void elu_layer<TensorDataType, Layout, Device>::bp_compute() {
            this->get_local_error_signals());
 }
 
-template class elu_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class elu_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class elu_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class elu_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

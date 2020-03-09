@@ -190,7 +190,7 @@ void fp_cpu(lbann_comm& comm,
     LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
       local_loss(0, col) = (prediction_inds[col] == label_inds[col] ?
-                            TensorDataType(1) : TensorDataType(0));
+                            El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero());
     }
   }
 
@@ -206,9 +206,13 @@ void categorical_accuracy_layer<TensorDataType, T_layout, Dev>::fp_compute() {
          this->get_activations());
 }
 
-template class categorical_accuracy_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class categorical_accuracy_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class categorical_accuracy_layer<          \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
+  template class categorical_accuracy_layer<          \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -86,16 +86,16 @@ public:
 };
 
 #ifndef LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
-extern template class categorical_accuracy_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class categorical_accuracy_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class categorical_accuracy_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class categorical_accuracy_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device)                     \
+  extern template class categorical_accuracy_layer< \
+    T, data_layout::DATA_PARALLEL, Device>;         \
+  extern template class categorical_accuracy_layer< \
+    T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
 #endif // LBANN_CATEGORICAL_ACCURACY_LAYER_INSTANTIATE
 
 } // namespace lbann

@@ -170,6 +170,7 @@ void data_store_conduit::set_data_reader_ptr(generic_data_reader *reader) {
 }
 
 void data_store_conduit::copy_members(const data_store_conduit& rhs) {
+  m_other = rhs.m_other;
   m_is_setup = rhs.m_is_setup;
   m_preloading = rhs.m_preloading;
   m_loading_is_complete = rhs.m_loading_is_complete;
@@ -191,6 +192,10 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_mem_seg_length = rhs.m_mem_seg_length;
   m_seg_name = rhs.m_seg_name;
   m_image_offsets = rhs.m_image_offsets;
+
+  // This needs to be false, to ensure a carved out validation set
+  // check for sufficient samples
+  m_bcast_sample_size = true;
 
   m_spill = rhs.m_spill;
   m_is_spilled = rhs.m_is_spilled;
@@ -319,10 +324,7 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 
 //n.b. Do not put any PROFILE or DEBUG statements in this method,
 //     since the threading from the data_reader will cause you grief
-void data_store_conduit::set_conduit_node(int data_id, conduit::Node &node, bool already_have) {
-
-DEBUG("starting set_conduit_node; m_data.size: ", m_data.size(), " data_id: ", data_id, " already_have: ", already_have);
-
+void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node, bool already_have) {
 
   std::lock_guard<std::mutex> lock(m_mutex);
   // TODO: test whether having multiple mutexes below is better (faster) than
@@ -455,6 +457,16 @@ void data_store_conduit::build_node_for_sending(const conduit::Node &node_in, co
 void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
   if (! m_is_setup) {
     LBANN_ERROR("setup(mb_size) has not been called");
+  }
+
+  // The following is needed to deal with one-off cases where one or
+  // more ranks do not own any samples (i.e, m_data is empty).
+  // In this case those processors won't know the size of the compacted
+  // nodes, hence, cannot properly set up their recv buffers, hence,
+  // mpi throws errors.
+  if (m_bcast_sample_size && !m_node_sizes_vary) {
+    verify_sample_size();
+    m_bcast_sample_size = false;
   }
 
   double tm5 = get_time();
@@ -653,6 +665,7 @@ void data_store_conduit::build_preloaded_owner_map(const std::vector<int>& per_r
     auto key = std::make_pair((*m_shuffled_indices)[i], m_offset_in_partition);
     m_owner[key] = owning_rank;
   }
+PROFILE("build_preloaded_owner_map; m_owner_maps_were_exchanged = true");
   m_owner_maps_were_exchanged = true;
 }
 
@@ -1306,12 +1319,6 @@ void data_store_conduit::exchange_owner_maps() {
           "my owner map size: ", m_owner.size());
   DEBUG("starting exchange_owner_maps;",
         "size: ", m_owner.size());
-  if (m_reader->get_role() == "validate" && m_debug) {
-    (*m_debug) << "\nmy owner map:\n";
-    for (auto t : m_owner) {
-      DEBUG("  ", t.first.first, ":", t.first.second, " is owned by ", t.second);
-    }
-  }
 
   int my_count = m_my_num_indices;
   std::vector<int> all_counts(m_np_in_trainer);
@@ -1367,11 +1374,19 @@ void data_store_conduit::exchange_owner_maps() {
         m_owner[key] = k;
       }
     }
+
+std::cerr << m_comm->get_rank_in_node() << "  FINISHED bcast from: " << k << std::endl;
+
+
   }
   PROFILE("leaving data_store_conduit::exchange_owner_maps\n",
           "my owner map size: ", m_owner.size());
   m_owner_maps_were_exchanged = true;
+PROFILE("exchange_owner_maps; m_owner_maps_were_exchanged = true");
   set_loading_is_complete();
+
+  PROFILE("LEAVING exchange_owner_maps;",
+          "my owner map size: ", m_owner.size());
 }
 
 void data_store_conduit::profile_timing() {
@@ -1457,8 +1472,13 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
     PROFILE("calling exchange_owner_maps");
     if (!m_owner_maps_were_exchanged) {
       exchange_owner_maps();
+    } 
+
+    else {  
+      PROFILE("  owner_maps were already exchanged; returning");
     }  
     m_owner_maps_were_exchanged = true;
+PROFILE("exchange_mini_batch_data; m_owner_maps_were_exchanged = true");
     /*
      * TODO
     if (m_spill) {
@@ -1490,7 +1510,8 @@ void data_store_conduit::flush_profile_file() const {
 }
 
 size_t data_store_conduit::get_num_global_indices() const {
-  size_t n = m_comm->trainer_allreduce<size_t>(m_my_num_indices);
+  size_t n = m_comm->trainer_allreduce<size_t>(m_data.size());
+  //size_t n = m_comm->trainer_allreduce<size_t>(m_my_num_indices);
   return n;
 }
 
@@ -1950,5 +1971,23 @@ void data_store_conduit::check_query_flags() const {
 void data_store_conduit::clear_owner_map() { 
     m_owner_maps_were_exchanged = false;
     m_owner.clear(); 
+}
+
+void data_store_conduit::verify_sample_size() {
+  // Note: m_compacted_sample_size is set during calls to set_conduit_node() or 
+  //  set_preloaded_conduit_node(). Hence, if these are not called (i.e, the
+  //  rank does not own any data), m_compacted_sample_size will be zero.
+  //  This method ensures that all ranks know the sample size, whether or not
+  //  they own any samples
+  int max_samples = m_comm->trainer_allreduce<int>(m_compacted_sample_size, El::mpi::MAX);
+  if (max_samples <= 0) {
+    LBANN_ERROR("sample size, which is needed for data exchange, is invalid; should be > 0, but value is: ", max_samples, "; this indicates there is insufficient data. Role: ", m_reader->get_role());
   }
+  if (m_compacted_sample_size != 0 && max_samples != m_compacted_sample_size) {
+    LBANN_ERROR("m_compacted_sample_size = ", m_compacted_sample_size, " but max_samples = ", max_samples, "; values should be identical");
+  }
+  m_compacted_sample_size = max_samples;
+}
+
 }  // namespace lbann
+

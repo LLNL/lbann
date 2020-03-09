@@ -6,6 +6,7 @@ set_full_path(THIS_DIR_SOURCES
   leaky_relu.cpp
   log_softmax.cpp
   softmax.cpp
+  softmax_builder.cpp
   )
 
 if (LBANN_HAS_CUDA)

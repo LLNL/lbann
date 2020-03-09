@@ -108,7 +108,7 @@ __global__ void bp_kernel(El::Int local_height, El::Int local_width,
     for (El::Int row = gidx; row < local_height; row += nthreadsx) {
       const auto& x = input[row + col * input_ldim];
       auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-      dx = 2 * x * dy;
+      dx = TensorDataType(2) * x * dy;
     }
   }
 }
@@ -151,9 +151,13 @@ void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
                this->get_local_error_signals());
 }
 
-template class l2_norm2_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class l2_norm2_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class l2_norm2_layer<                      \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>;  \
+  template class l2_norm2_layer<                      \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

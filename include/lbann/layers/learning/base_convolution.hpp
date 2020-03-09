@@ -58,6 +58,15 @@ public:
   /** @brief The concrete optimizer type used by this object. */
   using OptimizerType = data_type_optimizer<TensorDataType>;
 
+  template <El::Device D>
+  using DMatDT = El::Matrix<TensorDataType, D>;
+
+#ifdef LBANN_HAS_CUDNN
+  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
+#else
+  using ScalingType = TensorDataType;
+#endif // LBANN_HAS_CUDNN
+
   ///@}
 
 protected:
@@ -83,7 +92,7 @@ protected:
   /** Scaling factor for bias term.
    *  If the scaling factor is zero, bias is not applied.
    */
-  TensorDataType m_bias_scaling_factor;
+  ScalingType m_bias_scaling_factor;
 
 #ifdef LBANN_HAS_CUDNN
 
@@ -122,7 +131,9 @@ public:
       m_strides(std::move(strides)),
       m_dilations(std::move(dilations)),
       m_groups(groups),
-      m_bias_scaling_factor(has_bias ? 1 : 0)
+      m_bias_scaling_factor(has_bias ?
+                            El::TypeTraits<ScalingType>::One() :
+                            El::TypeTraits<ScalingType>::Zero())
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
@@ -149,7 +160,7 @@ public:
                            m_kernel_cudnn_desc);
     copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
                                 m_convolution_cudnn_desc);
-    if (other.m_bias_scaling_factor != TensorDataType(0)) {
+    if (other.m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
       cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
                               m_bias_cudnn_desc);
     }
@@ -173,7 +184,7 @@ public:
                            m_kernel_cudnn_desc);
     copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
                                 m_convolution_cudnn_desc);
-    if (other.m_bias_scaling_factor != TensorDataType(0)) {
+    if (other.m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
       cudnn::copy_tensor_desc(other.m_bias_cudnn_desc,
                               m_bias_cudnn_desc);
     }
@@ -243,7 +254,7 @@ public:
     // Bias
     ss.str(std::string{});
     ss.clear();
-    ss << (m_bias_scaling_factor == TensorDataType(0) ?
+    ss << (m_bias_scaling_factor == El::TypeTraits<ScalingType>::Zero() ?
            "disabled" : "enabled");
     desc.add("Bias", ss.str());
 
@@ -359,7 +370,7 @@ public:
           << "found " << this->num_weights() << ")";
       LBANN_ERROR(err.str());
     }
-    if (m_bias_scaling_factor != TensorDataType(0)) {
+    if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
       this->set_num_data_type_weights(2);
     } else {
       this->set_num_data_type_weights(1);
@@ -367,8 +378,8 @@ public:
     if (!this->has_data_type_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
-      auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                                 this->m_model->create_optimizer()));
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+
       w->set_name(this->get_name() + "_kernel");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -393,11 +404,10 @@ public:
     kernel_weights.set_matrix_distribution(dist);
 
     // Set up bias if needed.
-    if (m_bias_scaling_factor != TensorDataType(0)) {
+    if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
       if (!this->has_data_type_weights(1)) {
         auto w = make_unique<WeightsType>(this->get_comm());
-        auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                                   this->m_model->create_optimizer()));
+        auto opt = this->m_model->template create_optimizer<TensorDataType>();
         w->set_name(this->get_name() + "_bias");
         w->set_optimizer(std::move(opt));
         this->set_data_type_weights(1, w.get());
@@ -442,7 +452,7 @@ public:
     // Set kernel descriptor
     CHECK_CUDNN(cudnnCreateFilterDescriptor(&m_kernel_cudnn_desc));
     CHECK_CUDNN(cudnnSetFilterNdDescriptor(m_kernel_cudnn_desc,
-                                           cudnn::get_data_type(),
+                                           cudnn::get_data_type<TensorDataType>(),
                                            CUDNN_TENSOR_NCHW,
                                            kernel_dims.size(),
                                            kernel_dims.data()));
@@ -455,15 +465,15 @@ public:
                                                 m_strides.data(),
                                                 m_dilations.data(),
                                                 CUDNN_CROSS_CORRELATION,
-                                                cudnn::get_data_type()));
+                                                cudnn::get_data_type<TensorDataType>()));
     CHECK_CUDNN(cudnnSetConvolutionGroupCount(m_convolution_cudnn_desc,
                                               m_groups));
 
     // Set bias tensor descriptor
-    if (m_bias_scaling_factor != TensorDataType(0)) {
+    if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
       std::vector<int> bias_dims(output_dims.size() + 1, 1);
       bias_dims[1] = output_dims[0];
-      cudnn::set_tensor_desc(m_bias_cudnn_desc, bias_dims);
+      cudnn::set_tensor_desc<TensorDataType>(m_bias_cudnn_desc, bias_dims);
     }
 
 #endif // LBANN_HAS_CUDNN
@@ -481,8 +491,8 @@ protected:
 #else
 
     // Useful constants
-    const TensorDataType zero = TensorDataType(0);
-    const TensorDataType one = TensorDataType(1);
+    const auto zero = El::TypeTraits<ScalingType>::Zero();
+    const auto one = El::TypeTraits<ScalingType>::One();
 
     // Matrices
     const auto& kernel = this->get_data_type_weights(0).get_values();
@@ -505,8 +515,8 @@ protected:
     workspace.SetMemoryMode(1);
 #endif // HYDROGEN_HAVE_CUB
     size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-    workspace.Resize(workspace_size / sizeof(DataType), 1);
-    workspace_size = workspace.Height() * sizeof(DataType);
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+    workspace_size = workspace.Height() * sizeof(TensorDataType);
 
     // Convolution parameters
     std::vector<int> input_dims, output_dims;
@@ -558,8 +568,8 @@ protected:
 #else
 
     // Useful constants
-    const TensorDataType zero = TensorDataType(0);
-    const TensorDataType one = TensorDataType(1);
+    const auto zero = El::TypeTraits<ScalingType>::Zero();
+    const auto one = El::TypeTraits<ScalingType>::One();
 
     // GPU data
     const auto& kernel = this->get_data_type_weights(0).get_values();
@@ -583,8 +593,8 @@ protected:
     workspace.SetMemoryMode(1);
 #endif // HYDROGEN_HAVE_CUB
     size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-    workspace.Resize(workspace_size / sizeof(DataType), 1);
-    workspace_size = workspace.Height() * sizeof(DataType);
+    workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+    workspace_size = workspace.Height() * sizeof(TensorDataType);
 
     // Convolution transpose parameters
     std::vector<int> input_dims, output_dims;
@@ -635,10 +645,10 @@ protected:
     LBANN_ERROR("cuDNN not detected");
 #else
     auto& local_output = this->get_local_activations();
-    if (m_bias_scaling_factor != TensorDataType(0)
+    if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()
         && local_output.Height() > 0
         && local_output.Width() > 0) {
-      const TensorDataType one = 1;
+      const auto one = El::TypeTraits<ScalingType>::One();
       const auto& bias = this->get_data_type_weights(1).get_values();
       CHECK_CUDNN(cudnnAddTensor(cudnn::get_handle(),
                                  &m_bias_scaling_factor,
@@ -666,13 +676,14 @@ protected:
                                  && local_gradient_wrt_output.Width() > 0);
 
     // Compute bias gradient
-    if (m_bias_scaling_factor != TensorDataType(0)
+    if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()
         && this->get_data_type_weights(1).get_optimizer() != nullptr) {
       OptimizerType* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
-      TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
+      auto dst_scale_dt = El::TypeTraits<TensorDataType>::Zero(), gradient_scale_dt = El::TypeTraits<TensorDataType>::Zero();
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
-        dst_scale, gradient_scale, true);
+        dst_scale_dt, gradient_scale_dt, true);
       if (has_local_data) {
+        auto dst_scale = ScalingType(dst_scale_dt), gradient_scale = ScalingType(gradient_scale_dt);
         CHECK_CUDNN(cudnnConvolutionBackwardBias(
                       cudnn::get_handle(),
                       &gradient_scale,
@@ -682,16 +693,16 @@ protected:
                       m_bias_cudnn_desc,
                       bias_gradient.Buffer()));
       } else {
-        El::Scale(dst_scale, bias_gradient);
+        El::Scale(dst_scale_dt, bias_gradient);
       }
     }
 
     // Compute kernel gradient
     OptimizerType* kernel_optimizer = this->get_data_type_weights(0).get_optimizer();
     if (kernel_optimizer != nullptr) {
-      TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
+      auto dst_scale_dt = El::TypeTraits<TensorDataType>::Zero(), gradient_scale_dt = El::TypeTraits<TensorDataType>::Zero();
       auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
-        dst_scale, gradient_scale, true);
+        dst_scale_dt, gradient_scale_dt, true);
       if (has_local_data) {
         // Initialize GPU workspace
         El::Matrix<TensorDataType, El::Device::GPU> workspace;
@@ -699,12 +710,14 @@ protected:
         workspace.SetMemoryMode(1); // CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
         size_t workspace_size = 1 << 30; /// @todo Allocate largest free block
-        workspace.Resize(workspace_size / sizeof(DataType), 1);
-        workspace_size = workspace.Height() * sizeof(DataType);
+        workspace.Resize(workspace_size / sizeof(TensorDataType), 1);
+        workspace_size = workspace.Height() * sizeof(TensorDataType);
 
         // Initialize cuDNN objects
         auto&& input_desc = m_tensors_cudnn_desc.get_prev_activations();
         auto&& gradient_wrt_output_desc = m_tensors_cudnn_desc.get_prev_error_signals();
+
+        auto dst_scale = ScalingType(dst_scale_dt), gradient_scale = ScalingType(gradient_scale_dt);
 
         // Determine algorithm and compute kernel gradient
         if (using_transposed_convolution) {
@@ -755,7 +768,7 @@ protected:
                         kernel_gradient.Buffer()));
         }
       } else {
-        El::Scale(dst_scale, kernel_gradient);
+        El::Scale(dst_scale_dt, kernel_gradient);
       }
     }
 
@@ -795,16 +808,16 @@ protected:
     const int m = output_size / output_dims[0];
     const int n = output_dims[0];
     const int k = kernel_size / output_dims[0];
-    DMat<Device> input_col, output_col;
-    DMat<Device> im2col_matrix(k, m);
-    const DMat<Device> kernel_matrix(k, n, local_kernel.LockedBuffer(), k);
+    DMatDT<Device> input_col, output_col;
+    DMatDT<Device> im2col_matrix(k, m);
+    const DMatDT<Device> kernel_matrix(k, n, local_kernel.LockedBuffer(), k);
 
     // Iterate through input columns
     for (El::Int col = 0; col < local_width; ++col) {
 
       // Construct im2col matrix from current input column
       El::LockedView(input_col, local_input, El::ALL, El::IR(col));
-      im2col(input_col,
+      im2col<TensorDataType>(input_col,
              im2col_matrix,
              input_dims[0],
              input_dims.size() - 1,
@@ -816,8 +829,8 @@ protected:
       // Apply convolution to current input column
       output_col.Attach(m, n, local_output.Buffer(0, col), m);
       El::Gemm(El::TRANSPOSE, El::NORMAL,
-               TensorDataType(1), im2col_matrix, kernel_matrix,
-               TensorDataType(0), output_col);
+               El::TypeTraits<TensorDataType>::One(), im2col_matrix, kernel_matrix,
+               El::TypeTraits<TensorDataType>::Zero(), output_col);
 
     }
 
@@ -831,7 +844,7 @@ protected:
     const auto& local_input = (during_forward_prop ?
                                this->get_local_prev_activations() :
                                this->get_local_prev_error_signals());
-    DMat<Device>& local_output = (during_forward_prop ?
+    DMatDT<Device>& local_output = (during_forward_prop ?
                                   this->get_local_activations() :
                                   this->get_local_error_signals());
 
@@ -856,9 +869,9 @@ protected:
     const int m = kernel_size / input_dims[0];
     const int n = input_size / input_dims[0];
     const int k = input_dims[0];
-    DMat<Device> input_col, output_col;
-    DMat<Device> im2col_matrix(m, n);
-    const DMat<Device> kernel_matrix(m, k, local_kernel.LockedBuffer(), m);
+    DMatDT<Device> input_col, output_col;
+    DMatDT<Device> im2col_matrix(m, n);
+    const DMatDT<Device> kernel_matrix(m, k, local_kernel.LockedBuffer(), m);
 
     // Iterate through input columns
     for (El::Int col = 0; col < local_width; ++col) {
@@ -866,13 +879,13 @@ protected:
       // Apply transposed convolution to current input column
       input_col.LockedAttach(n, k, local_input.LockedBuffer(0, col), n);
       El::Gemm(El::NORMAL, El::TRANSPOSE,
-               TensorDataType(1), kernel_matrix, input_col,
-               TensorDataType(0), im2col_matrix);
+               El::TypeTraits<TensorDataType>::One(), kernel_matrix, input_col,
+               El::TypeTraits<TensorDataType>::Zero(), im2col_matrix);
 
       // Perform col2im to accumulate contributions from each kernel
       // position
       El::View(output_col, local_output, El::ALL, El::IR(col));
-      col2im(im2col_matrix,
+      col2im<TensorDataType>(im2col_matrix,
              output_col,
              output_dims[0],
              output_dims.size() - 1,
@@ -888,7 +901,7 @@ protected:
   void apply_bias_cpu() {
 
     // Return immediately if there is no bias
-    if (m_bias_scaling_factor == TensorDataType(0)) return;
+    if (m_bias_scaling_factor == El::TypeTraits<ScalingType>::Zero()) return;
 
     // Local matrices
     const auto& local_bias = this->get_data_type_weights(1).get_values().LockedMatrix();
@@ -905,7 +918,7 @@ protected:
     for (El::Int channel = 0; channel < num_output_channels; ++channel) {
       const El::Int row_start = channel * num_per_output_channel;
       const El::Int row_end = (channel+1) * num_per_output_channel;
-      const TensorDataType bias_term = m_bias_scaling_factor * local_bias(channel, 0);
+      const TensorDataType bias_term = TensorDataType(m_bias_scaling_factor) * local_bias(channel, 0);
       for (El::Int col = 0; col < local_width; ++col) {
         for (El::Int row = row_start; row < row_end; ++row) {
           local_output(row, col) += bias_term;
@@ -918,8 +931,8 @@ protected:
   void compute_gradients_im2col(bool using_transposed_convolution) {
 
     // Local matrices
-    const DMat<Device>& local_input = this->get_local_prev_activations();
-    const DMat<Device>& local_gradient_wrt_output = this->get_local_prev_error_signals();
+    const DMatDT<Device>& local_input = this->get_local_prev_activations();
+    const DMatDT<Device>& local_gradient_wrt_output = this->get_local_prev_error_signals();
     const bool has_local_data = (!local_input.IsEmpty()
                                  && !local_gradient_wrt_output.IsEmpty());
 
@@ -937,10 +950,10 @@ protected:
 
     // Compute bias gradient
     // Note: Sum is computed with Kahan summation
-    if (m_bias_scaling_factor != TensorDataType(0)
+    if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()
         && this->get_data_type_weights(1).get_optimizer() != nullptr) {
       OptimizerType* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
-      TensorDataType dst_scale = TensorDataType(0), gradient_scale = TensorDataType(0);
+      TensorDataType dst_scale = El::TypeTraits<TensorDataType>::Zero(), gradient_scale = El::TypeTraits<TensorDataType>::Zero();
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
       if (has_local_data) {
@@ -949,8 +962,8 @@ protected:
         for (int channel = 0; channel < num_output_channels; ++channel) {
           const El::Int row_start = channel * num_per_output_channel;
           const El::Int row_end = (channel+1) * num_per_output_channel;
-          TensorDataType sum = 0;
-          TensorDataType correction = 0;
+          auto sum = El::TypeTraits<TensorDataType>::Zero();
+          auto correction = El::TypeTraits<TensorDataType>::Zero();
           for (El::Int col = 0; col < local_width; ++col) {
             for (El::Int row = row_start; row < row_end; ++row) {
               TensorDataType term = local_gradient_wrt_output(row, col);
@@ -982,36 +995,36 @@ protected:
     const int k = (using_transposed_convolution ?
                    this->get_input_size() / num_input_channels :
                    this->get_output_size() / num_output_channels);
-    TensorDataType dst_scale = 0, gradient_scale = 0;
+    auto dst_scale = El::TypeTraits<TensorDataType>::Zero(), gradient_scale = El::TypeTraits<TensorDataType>::Zero();
     auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
     El::Scale(dst_scale, kernel_gradient);
-    DMat<Device> im2col_matrix(m, k);
-    DMat<Device> kernel_gradient_matrix(m, n, kernel_gradient.Buffer(), m);
+    DMatDT<Device> im2col_matrix(m, k);
+    DMatDT<Device> kernel_gradient_matrix(m, n, kernel_gradient.Buffer(), m);
 
     // Compute kernel gradient contributions from each data sample
     for (El::Int col = 0; col < local_width; ++col) {
       if (using_transposed_convolution) {
-        const DMat<Device> input_col(k, n, local_input.LockedBuffer(0,col), k);
-        const DMat<Device> gradient_wrt_output_col =
+        const DMatDT<Device> input_col(k, n, local_input.LockedBuffer(0,col), k);
+        const DMatDT<Device> gradient_wrt_output_col =
           El::LockedView(local_gradient_wrt_output, El::ALL, El::IR(col));
-        im2col(gradient_wrt_output_col,
-               im2col_matrix,
-               num_output_channels,
-               output_dims.size() - 1,
-               &output_dims[1],
-               m_pads.data(),
-               &kernel_dims[2],
-               m_strides.data());
+        im2col<TensorDataType>(gradient_wrt_output_col,
+                               im2col_matrix,
+                               num_output_channels,
+                               output_dims.size() - 1,
+                               &output_dims[1],
+                               m_pads.data(),
+                               &kernel_dims[2],
+                               m_strides.data());
         El::Gemm(El::NORMAL, El::NORMAL,
                  gradient_scale, im2col_matrix, input_col,
-                 TensorDataType(1), kernel_gradient_matrix);
+                 El::TypeTraits<TensorDataType>::One(), kernel_gradient_matrix);
       }
       else {
-        const DMat<Device> input_col
+        const DMatDT<Device> input_col
           = El::LockedView(local_input, El::ALL, El::IR(col));
-        const DMat<Device> gradient_wrt_output_col(k, n, local_gradient_wrt_output.LockedBuffer(0,col), k);
-        im2col(input_col,
+        const DMatDT<Device> gradient_wrt_output_col(k, n, local_gradient_wrt_output.LockedBuffer(0,col), k);
+        im2col<TensorDataType>(input_col,
                im2col_matrix,
                num_input_channels,
                input_dims.size() - 1,
@@ -1021,7 +1034,7 @@ protected:
                m_strides.data());
         El::Gemm(El::NORMAL, El::NORMAL,
                  gradient_scale, im2col_matrix, gradient_wrt_output_col,
-                 TensorDataType(1), kernel_gradient_matrix);
+                 El::TypeTraits<TensorDataType>::One(), kernel_gradient_matrix);
       }
     }
 
@@ -1403,10 +1416,13 @@ private:
 };
 
 #ifndef LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
-extern template class base_convolution_layer<DataType, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class base_convolution_layer<DataType, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device) \
+  extern template class base_convolution_layer<T, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
 #endif // LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
 
 } // namespace lbann

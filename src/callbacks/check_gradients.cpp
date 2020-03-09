@@ -30,6 +30,8 @@
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
 
+#include "lbann/utils/h2_tmp.hpp"
+
 #include <callbacks.pb.h>
 
 #include <cmath>
@@ -45,7 +47,7 @@ namespace {
 /** @details Forward prop is applied to all layers, except input
  *  layers. It is assumed that input layers have already loaded data.
  */
-DataType compute_objective_function(model& m) {
+EvalType compute_objective_function(model& m) {
   const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
 
   // Forward prop, skipping input layers
@@ -63,6 +65,116 @@ DataType compute_objective_function(model& m) {
   return obj->finish_evaluation(mode, mini_batch_size);
 
 }
+
+struct DefaultErrorReporter
+{
+  template <typename... Ts>
+  void DispatchError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to dispatch functor.");
+  }
+
+  template <typename... Ts>
+  void DeductionError(Ts&&...)
+  {
+    LBANN_ERROR("Unable to deduce an argument type.");
+  }
+};
+
+struct CheckWeightsFunctor : DefaultErrorReporter
+{
+  model &m;
+  sgd_execution_context const& c;
+  EvalType epsilon;
+  EvalType step_size;
+  EvalType expected_error;
+  bool verbose;
+  bool error_on_failure;
+
+  CheckWeightsFunctor(model& arg_m, sgd_execution_context const& arg_c,
+                      EvalType arg_epsilon, EvalType arg_step_size, EvalType arg_expected_error,
+                      bool arg_verbose, bool arg_error_on_failure)
+    : m(arg_m), c(arg_c),
+      epsilon(arg_epsilon), step_size(arg_step_size), expected_error(arg_expected_error),
+      verbose(arg_verbose), error_on_failure(arg_error_on_failure)
+  {}
+
+  template <typename TensorDataType>
+  void operator()(data_type_weights<TensorDataType>& dtw) {
+    // Get weights matrix and gradient
+    const El::AbstractDistMatrix<TensorDataType>& weights_matrix = dtw.get_values();
+    const El::AbstractDistMatrix<TensorDataType>& gradient = dtw.get_optimizer()->get_gradient();
+
+    // Iterate through weights matrix entries
+    for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
+      for (El::Int row = 0; row < weights_matrix.Height(); ++row) {
+        const bool weight_is_local = weights_matrix.IsLocal(row, col);
+        const El::Int local_row = (weight_is_local ?
+                                   weights_matrix.LocalRow(row) :
+                                   0);
+        const El::Int local_col = (weight_is_local ?
+                                   weights_matrix.LocalCol(col) :
+                                   0);
+        const TensorDataType initial_weight = (weight_is_local ?
+                                         weights_matrix.GetLocal(local_row,
+                                                                 local_col) :
+                                         TensorDataType(0.));
+
+        // Compute objective function values
+        // Note: matrix entry is reset after computing objective
+        // function values
+        dtw.set_value(initial_weight + El::To<TensorDataType>(2 * step_size), row, col);
+        const EvalType f_2h = compute_objective_function(m);
+        dtw.set_value(initial_weight + El::To<TensorDataType>(step_size), row, col);
+        const EvalType f_h = compute_objective_function(m);
+        dtw.set_value(initial_weight - El::To<TensorDataType>(step_size), row, col);
+        const EvalType f_nh = compute_objective_function(m);
+        dtw.set_value(initial_weight - El::To<TensorDataType>(2 * step_size), row, col);
+        const EvalType f_n2h = compute_objective_function(m);
+        dtw.set_value(initial_weight, row, col);
+
+        // Compute relative error in gradient.
+        // Note: only weight owner participates
+        if (weight_is_local && weights_matrix.RedundantRank() == 0) {
+          const EvalType analytical_gradient
+            = gradient.GetLocal(local_row, local_col);
+          const EvalType numerical_gradient
+            = (- f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
+          const EvalType error = std::fabs(analytical_gradient - numerical_gradient);
+          auto relative_error = EvalType(0.);
+          if (error != EvalType(0.)) {
+            relative_error = error / std::max(std::fabs(analytical_gradient),
+                                              std::fabs(numerical_gradient));
+          }
+
+          // Print warning if relative error is large
+          if (error > expected_error || std::isnan(error) || std::isinf(error)) {
+            std::cout << "  GRADIENT ERROR: " << dtw.get_name() << ", "
+                      << "entry (" << row << "," << col << ")" << std::endl;
+            std::cout << "    Weight              = " << initial_weight << std::endl
+                      << "    Analytical gradient = " << analytical_gradient << std::endl
+                      << "    Numerical gradient  = " << numerical_gradient << std::endl
+                      << "    Error               = " << error << std::endl
+                      << "    Relative error      = " << relative_error << std::endl;
+            if (error_on_failure) {
+              LBANN_ERROR("gradient checking found large difference between "
+                          "analytical and numerical gradients");
+            }
+          } else if (verbose) {
+            std::cout << "  " << dtw.get_name() << ", "
+                      << "entry (" << row << "," << col << ")" << std::endl;
+            std::cout << "    Weight              = " << initial_weight << std::endl
+                      << "    Analytical gradient = " << analytical_gradient << std::endl
+                      << "    Numerical gradient  = " << numerical_gradient << std::endl
+                      << "    Error               = " << error << std::endl
+                      << "    Relative error      = " << relative_error << std::endl;
+          }
+        }
+      }
+    }
+    return;
+  }
+}; // struct CheckWeightsFunctor
 
 } // namespace
 
@@ -104,7 +216,7 @@ void check_gradients::do_check_gradients(model& m) const {
   }
 
   // Compute objective function
-  const DataType objective = compute_objective_function(m);
+  const EvalType objective = compute_objective_function(m);
 
   // Choose finite difference step
   // Note: Consider a central difference scheme:
@@ -116,11 +228,13 @@ void check_gradients::do_check_gradients(model& m) const {
   // For simplicity, we assume f(chi) ~ f(x), and | f'''''(xi) | ~ 1.
   // If step size is not specified, then we choose h so that
   //   E_fl <= sqrt(epsilon)
-  const DataType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.9);
-  const DataType step_size = (m_step_size > DataType{0} ?
+  // For the integrity of the test, the current implementation uses an
+  // epsilon based on the minimum step size of the float data type
+  const EvalType epsilon = std::pow(std::numeric_limits<DataType>::epsilon(), 0.9);
+  const EvalType step_size = (m_step_size > EvalType{0} ?
                               m_step_size :
-                              std::fabs(objective) * std::sqrt(epsilon));
-  DataType expected_error = (epsilon * objective / step_size
+                              std::fabs(objective) * El::Sqrt(epsilon));
+  EvalType expected_error = (epsilon * objective / step_size
                              + std::pow(step_size, 4) / 18);
   expected_error = std::pow(expected_error, 0.9);
 
@@ -148,81 +262,13 @@ void check_gradients::do_check_gradients(model& m) const {
       std::cout << "Checking " << w->get_name() << std::endl;
     }
 
-    auto& dtw = dynamic_cast<data_type_weights<DataType>&>(*w);
-
-    // Get weights matrix and gradient
-    const El::AbstractDistMatrix<DataType>& weights_matrix = dtw.get_values();
-    const El::AbstractDistMatrix<DataType>& gradient = dtw.get_optimizer()->get_gradient();
-
-    // Iterate through weights matrix entries
-    for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
-      for (El::Int row = 0; row < weights_matrix.Height(); ++row) {
-        const bool weight_is_local = weights_matrix.IsLocal(row, col);
-        const El::Int local_row = (weight_is_local ?
-                                   weights_matrix.LocalRow(row) :
-                                   0);
-        const El::Int local_col = (weight_is_local ?
-                                   weights_matrix.LocalCol(col) :
-                                   0);
-        const DataType initial_weight = (weight_is_local ?
-                                         weights_matrix.GetLocal(local_row,
-                                                                 local_col) :
-                                         DataType(0));
-
-        // Compute objective function values
-        // Note: matrix entry is reset after computing objective
-        // function values
-        dtw.set_value(initial_weight + 2 * step_size, row, col);
-        const DataType f_2h = compute_objective_function(m);
-        dtw.set_value(initial_weight + step_size, row, col);
-        const DataType f_h = compute_objective_function(m);
-        dtw.set_value(initial_weight - step_size, row, col);
-        const DataType f_nh = compute_objective_function(m);
-        dtw.set_value(initial_weight - 2 * step_size, row, col);
-        const DataType f_n2h = compute_objective_function(m);
-        dtw.set_value(initial_weight, row, col);
-
-        // Compute relative error in gradient.
-        // Note: only weight owner participates
-        if (weight_is_local && weights_matrix.RedundantRank() == 0) {
-          const DataType analytical_gradient
-            = gradient.GetLocal(local_row, local_col);
-          const DataType numerical_gradient
-            = (- f_2h + 8 * f_h - 8 * f_nh + f_n2h) / (12 * step_size);
-          const DataType error = std::fabs(analytical_gradient - numerical_gradient);
-          auto relative_error = DataType(0);
-          if (error != DataType(0)) {
-            relative_error = error / std::max(std::fabs(analytical_gradient),
-                                              std::fabs(numerical_gradient));
-          }
-
-          // Print warning if relative error is large
-          if (error > expected_error || std::isnan(error) || std::isinf(error)) {
-            std::cout << "  GRADIENT ERROR: " << dtw.get_name() << ", "
-                      << "entry (" << row << "," << col << ")" << std::endl;
-            std::cout << "    Weight              = " << initial_weight << std::endl
-                      << "    Analytical gradient = " << analytical_gradient << std::endl
-                      << "    Numerical gradient  = " << numerical_gradient << std::endl
-                      << "    Error               = " << error << std::endl
-                      << "    Relative error      = " << relative_error << std::endl;
-            if (m_error_on_failure) {
-              LBANN_ERROR("gradient checking found large difference between "
-                          "analytical and numerical gradients");
-            }
-          } else if (m_verbose) {
-            std::cout << "  " << dtw.get_name() << ", "
-                      << "entry (" << row << "," << col << ")" << std::endl;
-            std::cout << "    Weight              = " << initial_weight << std::endl
-                      << "    Analytical gradient = " << analytical_gradient << std::endl
-                      << "    Numerical gradient  = " << numerical_gradient << std::endl
-                      << "    Error               = " << error << std::endl
-                      << "    Relative error      = " << relative_error << std::endl;
-          }
-        }
-
-      }
-    }
-
+    using WeightsTypes =
+      h2::meta::tlist::ExpandTL<data_type_weights, supported_layer_data_type>;
+    using Dispatcher = h2::multimethods::SwitchDispatcher<CheckWeightsFunctor,
+                                                          void,
+                                                          weights,
+                                                          WeightsTypes>;
+    Dispatcher::Exec(CheckWeightsFunctor(m, c, epsilon, step_size, expected_error, m_verbose, m_error_on_failure), *w);
   }
   if (comm.am_world_master()) {
     std::cout << "----------------------------------------------------------------\n";

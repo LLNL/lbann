@@ -54,30 +54,35 @@ namespace lbann {
 // Convenience macros for ETI decls for unary layers
 
 #ifndef LBANN_UNARY_LAYER_INSTANTIATE
-#define UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, DEVICE)                           \
-  extern template class LAYER_NAME<DataType, data_layout::DATA_PARALLEL, DEVICE>; \
-  extern template class LAYER_NAME<DataType, data_layout::MODEL_PARALLEL, DEVICE>
+#define UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, DEVICE)                   \
+  extern template class LAYER_NAME<T, data_layout::DATA_PARALLEL, DEVICE>; \
+  extern template class LAYER_NAME<T, data_layout::MODEL_PARALLEL, DEVICE>
 #else
 #define UNARY_ETI_DECL_MACRO_DEV(...)
 #endif // LBANN_UNARY_LAYER_INSTANTIATE
 
-#define UNARY_ETI_INST_MACRO_DEV(LAYER_NAME, DEVICE)                    \
-  template class LAYER_NAME<DataType, data_layout::DATA_PARALLEL, DEVICE>; \
-  template class LAYER_NAME<DataType, data_layout::MODEL_PARALLEL, DEVICE>
+#define UNARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, T, DEVICE)          \
+  template class LAYER_NAME<T, data_layout::DATA_PARALLEL, DEVICE>; \
+  template class LAYER_NAME<T, data_layout::MODEL_PARALLEL, DEVICE>
+
+#define UNARY_ETI_INST_MACRO_DEV(LAYER_NAME, DEVICE)      \
+  UNARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, float, DEVICE); \
+  UNARY_ETI_INST_MACRO_DEV_DT(LAYER_NAME, double, DEVICE)
 
 #ifdef LBANN_HAS_GPU
-#define UNARY_ETI_DECL_MACRO(LAYER_NAME)                       \
-  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU);       \
-  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::GPU)
+#define UNARY_ETI_DECL_MACRO(LAYER_NAME, T)                      \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::CPU);       \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::GPU)
 #else
-#define UNARY_ETI_DECL_MACRO(LAYER_NAME)                       \
-  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, El::Device::CPU)
+#define UNARY_ETI_DECL_MACRO(LAYER_NAME, T)               \
+  UNARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::CPU)
 #endif // LBANN_HAS_GPU
 
 // Convenience macro to define an entry-wise unary layer class
 #define DEFINE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string)    \
   LBANN_DECLARE_ENTRYWISE_UNARY_LAYER(layer_name, layer_string);  \
-  UNARY_ETI_DECL_MACRO(layer_name)
+  UNARY_ETI_DECL_MACRO(layer_name, float);                        \
+  UNARY_ETI_DECL_MACRO(layer_name, double)
 
 // Logical operations
 DEFINE_ENTRYWISE_UNARY_LAYER(logical_not_layer, "logical not");

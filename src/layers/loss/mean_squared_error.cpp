@@ -44,7 +44,7 @@ void local_fp_cpu(El::Int height,
   // Compute local contribution to mean squared error
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    TensorDataType sum = 0;
+    TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& err = (local_prediction(row, col)
                          - local_ground_truth(row, col));
@@ -64,7 +64,7 @@ void local_bp_cpu(El::Int height,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_ground_truth) {
 
   // Useful constants
-  const TensorDataType scale = TensorDataType(2) / height;
+  const TensorDataType scale = static_cast<TensorDataType>(TensorDataType(2) / height);
   const El::Int local_height = local_prediction.Height();
   const El::Int local_width = local_prediction.Width();
 
@@ -102,9 +102,13 @@ void mean_squared_error_layer<TensorDataType, T_layout, Dev>::local_bp_compute()
                this->get_local_error_signals(1));
 }
 
-template class mean_squared_error_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class mean_squared_error_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class mean_squared_error_layer<            \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
+  template class mean_squared_error_layer<            \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

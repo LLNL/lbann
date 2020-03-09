@@ -19,19 +19,17 @@ import tools
 
 # Data
 _num_samples = 41
-_num_embeddings = 7
+_num_embeddings = 11
+_sequence_length = 3
 
 # Sample access functions
 def get_sample(index):
     np.random.seed(2019101500+index)
-    i = np.random.randint(_num_embeddings)
-    if index in (1,2,4,7,17,31):
-        i = 0
-    return [i]
+    return np.random.randint(_num_embeddings, size=_sequence_length)
 def num_samples():
-    return 41
+    return _num_samples
 def sample_dims():
-    return (1,)
+    return (_sequence_length,)
 
 # ==============================================
 # Setup LBANN experiment
@@ -93,8 +91,8 @@ def construct_model(lbann):
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)[0]
-        y = embeddings[x]
+        x = get_sample(i)
+        y = embeddings[x,:]
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)
@@ -112,7 +110,7 @@ def construct_model(lbann):
 
     # Embeddings
     np.random.seed(201910152)
-    embedding_dim = 3
+    embedding_dim = 7
     padding_idx = 0
     embeddings = np.random.normal(size=(_num_embeddings,embedding_dim))
 
@@ -130,17 +128,13 @@ def construct_model(lbann):
                         embedding_dim=embedding_dim,
                         padding_idx=padding_idx)
     z = lbann.L2Norm2(y)
-    obj.append(z)
     metrics.append(lbann.Metric(z, name='padding index = 0'))
 
     # NumPy implementation
     vals = []
     for i in range(num_samples()):
-        x = get_sample(i)[0]
-        if x == padding_idx:
-            y = np.zeros(shape=embedding_dim)
-        else:
-            y = embeddings[x]
+        x = get_sample(i)
+        y = np.where((x==padding_idx).reshape((-1,1)), 0, embeddings[x,:])
         z = tools.numpy_l2norm2(y)
         vals.append(z)
     val = np.mean(vals)

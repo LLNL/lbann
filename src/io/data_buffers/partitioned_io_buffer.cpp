@@ -33,10 +33,10 @@ namespace lbann {
 
 template <typename TensorDataType>
 partitioned_io_buffer<TensorDataType>::partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers)
-  : generic_io_buffer(comm, num_parallel_readers, data_readers) {
-  m_data_buffers[execution_mode::training] = new data_buffer<TensorDataType>(comm, num_child_layers);
-  m_data_buffers[execution_mode::validation] = new data_buffer<TensorDataType>(comm, num_child_layers);
-  m_data_buffers[execution_mode::testing] = new data_buffer<TensorDataType>(comm, num_child_layers);
+  : generic_io_buffer<TensorDataType>(comm, num_parallel_readers, data_readers) {
+  m_data_buffers[execution_mode::training] = new data_buffer<IODataType>(comm, num_child_layers);
+  m_data_buffers[execution_mode::validation] = new data_buffer<IODataType>(comm, num_child_layers);
+  m_data_buffers[execution_mode::testing] = new data_buffer<IODataType>(comm, num_child_layers);
 }
 
 template <typename TensorDataType>
@@ -48,7 +48,7 @@ partitioned_io_buffer<TensorDataType>::~partitioned_io_buffer() {
 
 template <typename TensorDataType>
 partitioned_io_buffer<TensorDataType>::partitioned_io_buffer(const partitioned_io_buffer& other)
-  : generic_io_buffer(other) {
+  : generic_io_buffer<TensorDataType>(other) {
   for (const auto& buf : other.m_data_buffers) {
     m_data_buffers[buf.first] = buf.second->copy();
   }
@@ -61,7 +61,7 @@ partitioned_io_buffer<TensorDataType>* partitioned_io_buffer<TensorDataType>::co
 
 template <typename TensorDataType>
 partitioned_io_buffer<TensorDataType>& partitioned_io_buffer<TensorDataType>::operator=(const partitioned_io_buffer& other) {
-  generic_io_buffer::operator=(other);
+  generic_io_buffer<TensorDataType>::operator=(other);
   for (auto& buf : m_data_buffers) {
     if (buf.second) delete buf.second;
     buf.second = buf.second->copy();
@@ -88,17 +88,17 @@ void partitioned_io_buffer<TensorDataType>::setup_data(El::Int num_neurons, El::
     max_mini_batch_size *= dc::get_number_of_io_partitions();
   }
 #endif
-  El::Int local_mini_batch_size = max_mini_batch_size / m_comm->get_procs_per_trainer();
-  El::Int partial_mini_batch_size = max_mini_batch_size % m_comm->get_procs_per_trainer();
+  El::Int local_mini_batch_size = max_mini_batch_size / this->m_comm->get_procs_per_trainer();
+  El::Int partial_mini_batch_size = max_mini_batch_size % this->m_comm->get_procs_per_trainer();
   if (dc::is_cosmoflow_parallel_io_enabled()) {
     assert_eq(local_mini_batch_size, 1);
     assert_eq(partial_mini_batch_size, 0);
   }
-  if(partial_mini_batch_size > 0 && m_comm->get_rank_in_trainer() < partial_mini_batch_size) {
+  if(partial_mini_batch_size > 0 && this->m_comm->get_rank_in_trainer() < partial_mini_batch_size) {
     local_mini_batch_size++;
   }
   for (const auto& it : m_data_buffers) {
-    data_buffer<TensorDataType> *data_buffer = it.second;
+    data_buffer<IODataType> *data_buffer = it.second;
     int i = 0;
     for (const auto& buf : data_buffer->m_input_buffers) {
       if(i == 0) {
@@ -123,9 +123,9 @@ int partitioned_io_buffer<TensorDataType>::fetch_to_local_matrix(generic_data_re
   prof_region_begin("fetch_to_local_matrix", prof_colors[2], false);
   /// Coordinate all available readers so that the perform I/O in the same step
   /// Check to make sure that the local matrix has space for data
-  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
+  data_buffer<IODataType> *buf = get_data_buffer(mode);
   buf->m_num_samples_fetched = 0;
-  if (m_comm->get_rank_in_trainer() < num_parallel_readers && (buf->m_input_buffers[0]->Height() != 0 && buf->m_input_buffers[0]->Width() != 0)) {
+  if (this->m_comm->get_rank_in_trainer() < num_parallel_readers && (buf->m_input_buffers[0]->Height() != 0 && buf->m_input_buffers[0]->Width() != 0)) {
 #ifndef LBANN_IO_DISABLE_ZEROS
     prof_region_begin("fetch_to_local_matrix_zeros", prof_colors[3], false);
     for(auto& m : buf->m_input_buffers) {
@@ -137,9 +137,9 @@ int partitioned_io_buffer<TensorDataType>::fetch_to_local_matrix(generic_data_re
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
     if(buf->m_input_buffers.size() == 2) {
-      buf->m_num_samples_fetched = (*fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_input_buffers[1]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
+      buf->m_num_samples_fetched = (*this->fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_input_buffers[1]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
     }else {
-      buf->m_num_samples_fetched = (*fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
+      buf->m_num_samples_fetched = (*this->fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
     }
     bool data_valid = (buf->m_num_samples_fetched > 0);
     if(data_valid) {
@@ -153,7 +153,7 @@ int partitioned_io_buffer<TensorDataType>::fetch_to_local_matrix(generic_data_re
 template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response) {
   prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
-  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
+  data_buffer<IODataType> *buf = get_data_buffer(mode);
   Copy(*buf->m_input_buffers[0], sample);
   Copy(*buf->m_input_buffers[1], response);
 #ifdef LBANN_HAS_DISTCONV
@@ -169,7 +169,7 @@ void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic
 
 template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample) {
-  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
+  data_buffer<IODataType> *buf = get_data_buffer(mode);
   Copy(*buf->m_input_buffers[0], sample);
   buf->m_num_samples_fetched = 0;
   return;
@@ -180,7 +180,7 @@ bool partitioned_io_buffer<TensorDataType>::update_data_set(generic_data_reader 
   int num_iterations_per_epoch = data_reader->get_num_iterations_per_epoch();
   int current_step_in_epoch = data_reader->get_current_step_in_epoch(); // Get the current step before the update function increments it
 
-  (*update_data_reader_fn)(true, data_reader);
+  (*this->update_data_reader_fn)(true, data_reader);
 
   if(current_step_in_epoch == (num_iterations_per_epoch - 1)) {
     return true;
@@ -191,13 +191,13 @@ bool partitioned_io_buffer<TensorDataType>::update_data_set(generic_data_reader 
 
 template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::set_fetch_data_in_background(bool flag, execution_mode mode) {
-  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
+  data_buffer<IODataType> *buf = get_data_buffer(mode);
   buf->m_fetch_data_in_background = flag;
 }
 
 template <typename TensorDataType>
 bool partitioned_io_buffer<TensorDataType>::is_data_fetched_in_background(execution_mode mode) {
-  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
+  data_buffer<IODataType> *buf = get_data_buffer(mode);
   return buf->m_fetch_data_in_background;
 }
 
@@ -206,31 +206,31 @@ bool partitioned_io_buffer<TensorDataType>::is_data_fetched_in_background(execut
  */
 template <typename TensorDataType>
 El::Matrix<El::Int>* partitioned_io_buffer<TensorDataType>::get_sample_indices_fetched_per_mb(execution_mode mode) {
-  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
+  data_buffer<IODataType> *buf = get_data_buffer(mode);
   return &(buf->m_indices_fetched_per_mb);
 }
 
 template <typename TensorDataType>
 int partitioned_io_buffer<TensorDataType>::num_samples_ready(execution_mode mode) {
-  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
+  data_buffer<IODataType> *buf = get_data_buffer(mode);
   return buf->m_num_samples_fetched;
 }
 
 template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::set_data_fetch_future(std::future<void> future, execution_mode mode) {
-  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
+  data_buffer<IODataType> *buf = get_data_buffer(mode);
   buf->m_data_fetch_future = std::move(future);
 }
 
 template <typename TensorDataType>
 std::future<void> partitioned_io_buffer<TensorDataType>::get_data_fetch_future(execution_mode mode) {
-  data_buffer<TensorDataType> *buf = get_data_buffer(mode);
+  data_buffer<IODataType> *buf = get_data_buffer(mode);
   return std::move(buf->m_data_fetch_future);
 }
 
 template <typename TensorDataType>
 int partitioned_io_buffer<TensorDataType>::compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const {
-  return partitioned_io_buffer<TensorDataType>::compute_max_num_parallel_readers(data_set_size, mini_batch_size, requested_num_parallel_readers, m_comm);
+  return partitioned_io_buffer<TensorDataType>::compute_max_num_parallel_readers(data_set_size, mini_batch_size, requested_num_parallel_readers, this->m_comm);
 }
 
 template <typename TensorDataType>
@@ -279,30 +279,30 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
   bool apportioned = data_reader->is_partitioned();
 
   /// Check to make sure that there is enough data for all of the parallel readers
-  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_comm->get_procs_per_trainer());
+  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, this->m_comm->get_procs_per_trainer());
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
   if(num_parallel_readers_per_model == 0
-     || (num_parallel_readers_per_model != m_comm->get_procs_per_trainer() && num_parallel_readers_per_model != max_mini_batch_size)) {
+     || (num_parallel_readers_per_model != this->m_comm->get_procs_per_trainer() && num_parallel_readers_per_model != max_mini_batch_size)) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__)
       + " :: partitioned_io_buffer: number of parallel readers is " + std::to_string(num_parallel_readers_per_model)
-      + " and there are " + std::to_string(m_comm->get_procs_per_trainer()) + " processes in the model");
+      + " and there are " + std::to_string(this->m_comm->get_procs_per_trainer()) + " processes in the model");
   }
 
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled()) {
     // #trainers is assumed to be 1.
-    assert_eq(m_comm->get_num_trainers(), 1);
+    assert_eq(this->m_comm->get_num_trainers(), 1);
   }
 #endif
 
   /// Set the basic parameters for stride and offset of the data reader
-  int batch_stride = m_comm->get_num_trainers() * max_mini_batch_size;
-  int base_offset  = m_comm->get_rank_in_trainer();
+  int batch_stride = this->m_comm->get_num_trainers() * max_mini_batch_size;
+  int base_offset  = this->m_comm->get_rank_in_trainer();
 #ifdef LBANN_HAS_DISTCONV
-  base_offset  = dc::get_input_rank(*m_comm) / dc::get_number_of_io_partitions();
+  base_offset  = dc::get_input_rank(*(this->m_comm)) / dc::get_number_of_io_partitions();
 #endif
-  int model_offset = m_comm->get_trainer_rank() * max_mini_batch_size;
+  int model_offset = this->m_comm->get_trainer_rank() * max_mini_batch_size;
 
   if (apportioned) {
     batch_stride = max_mini_batch_size;
@@ -323,7 +323,7 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
   data_reader->set_model_offset(model_offset);
   data_reader->set_initial_position();
 
-  int min_stride_across_models = max_mini_batch_size * m_comm->get_num_trainers();  /// Given that each model has to have at least one reader, what is the minimum stride
+  int min_stride_across_models = max_mini_batch_size * this->m_comm->get_num_trainers();  /// Given that each model has to have at least one reader, what is the minimum stride
   if (apportioned) {
     min_stride_across_models = max_mini_batch_size;
   }
@@ -335,7 +335,7 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
 
   int num_whole_mini_batches_per_model = floor(data_reader->get_num_data() / min_stride_across_models);
   int global_partial_mini_batch_size = data_reader->get_num_data() - (num_whole_mini_batches_per_model * min_stride_across_models);
-  int per_model_partial_mini_batch_size = global_partial_mini_batch_size / m_comm->get_num_trainers();
+  int per_model_partial_mini_batch_size = global_partial_mini_batch_size / this->m_comm->get_num_trainers();
   int world_master_remainder_data = 0;
 
   // Compute how many full "parallel" mini-batches are available
@@ -343,8 +343,8 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
 
   int world_master_remainder_adjustment = data_reader->get_num_data()
                                           - (num_whole_mini_batches_per_model * min_stride_across_models)
-                                          - (per_model_partial_mini_batch_size * m_comm->get_num_trainers());
-  if(m_comm->get_trainer_rank() == 0) {
+                                          - (per_model_partial_mini_batch_size * this->m_comm->get_num_trainers());
+  if(this->m_comm->get_trainer_rank() == 0) {
     world_master_remainder_data = world_master_remainder_adjustment;
     world_master_remainder_adjustment = 0;
   }
@@ -378,9 +378,9 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
   ///  The last mini-batch may be partial and thus may have a smaller stride
   if(per_model_partial_mini_batch_size > 0 || world_master_remainder_adjustment > 0) {
 #ifdef LBANN_HAS_DISTCONV
-    data_reader->set_stride_to_last_mini_batch((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + m_comm->get_trainer_rank() * per_model_partial_mini_batch_size + dc::get_input_rank(*m_comm) / dc::get_number_of_io_partitions());
+    data_reader->set_stride_to_last_mini_batch((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + this->m_comm->get_trainer_rank() * per_model_partial_mini_batch_size + dc::get_input_rank(*(this->m_comm)) / dc::get_number_of_io_partitions());
 #else
-    data_reader->set_stride_to_last_mini_batch((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + m_comm->get_trainer_rank() * per_model_partial_mini_batch_size + m_comm->get_rank_in_trainer());
+    data_reader->set_stride_to_last_mini_batch((last_mini_batch_threshold - data_reader->get_base_offset() - data_reader->get_model_offset() - last_mini_batch_offset) + this->m_comm->get_trainer_rank() * per_model_partial_mini_batch_size + this->m_comm->get_rank_in_trainer());
 #endif
   }
 
@@ -400,10 +400,10 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
   }
 
   /// Check to make sure that there is enough data for all of the parallel readers
-  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, m_comm->get_procs_per_trainer());
+  int num_parallel_readers_per_model = compute_max_num_parallel_readers(data_reader->get_num_data(), max_mini_batch_size, this->m_comm->get_procs_per_trainer());
   data_reader->set_num_parallel_readers(num_parallel_readers_per_model);
   if(num_parallel_readers_per_model == 0
-     || (num_parallel_readers_per_model != m_comm->get_procs_per_trainer() && num_parallel_readers_per_model != max_mini_batch_size)) {
+     || (num_parallel_readers_per_model != this->m_comm->get_procs_per_trainer() && num_parallel_readers_per_model != max_mini_batch_size)) {
     throw lbann_exception(
       std::string{} + __FILE__ + " " + std::to_string(__LINE__) +
       " :: generic_data_distribution: number of parallel readers is zero");
@@ -411,9 +411,9 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
 
   /// Set the basic parameters for stride and offset of the data reader
   int batch_stride = max_mini_batch_size;
-  int base_offset  = m_comm->get_rank_in_trainer();
+  int base_offset  = this->m_comm->get_rank_in_trainer();
 #ifdef LBANN_HAS_DISTCONV
-  base_offset  = dc::get_input_rank(*m_comm) / dc::get_number_of_io_partitions();
+  base_offset  = dc::get_input_rank(*(this->m_comm)) / dc::get_number_of_io_partitions();
 #endif
   /// Set mini-batch size and stride
   data_reader->set_mini_batch_size(max_mini_batch_size);
@@ -444,6 +444,11 @@ void partitioned_io_buffer<TensorDataType>::calculate_num_iterations_per_epoch_s
   return;
 }
 
-template class partitioned_io_buffer<DataType>;
+#define PROTO(T)                          \
+  template class partitioned_io_buffer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

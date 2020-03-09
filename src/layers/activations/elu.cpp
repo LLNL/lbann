@@ -43,7 +43,7 @@ void local_fp(TensorDataType alpha,
     for (El::Int row = 0; row < height; ++row) {
       const auto& x = input(row, col);
       auto& y = output(row, col);
-      y = (x > TensorDataType(0)) ? x : alpha * std::expm1(x);
+      y = (x > El::TypeTraits<TensorDataType>::Zero()) ? x : alpha * std::expm1(x);
     }
   }
 }
@@ -62,7 +62,7 @@ void local_bp(TensorDataType alpha,
       const auto& x = input(row, col);
       const auto& dy = gradient_wrt_output(row, col);
       auto& dx = gradient_wrt_input(row, col);
-      dx = (x > TensorDataType(0)) ? dy : dy * alpha * std::exp(x);
+      dx = (x > El::TypeTraits<TensorDataType>::Zero()) ? dy : dy * alpha * std::exp(x);
     }
   }
 }
@@ -84,7 +84,11 @@ void elu_layer<TensorDataType, Layout, Device>::bp_compute() {
            this->get_local_error_signals());
 }
 
-template class elu_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class elu_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class elu_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class elu_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

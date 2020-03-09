@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/utils/timer.hpp"
@@ -155,9 +156,10 @@ void data_type_optimizer<TensorDataType>::add_to_gradient(const AbsDistMatrixTyp
   case optimizer_gradient_status::allreduce_needed:
     {
       // Properly scale data that does not need to be allreduced.
-      const auto& scale_ = (allreduce_needed ?
-                            scale :
-                            scale / m_gradient->RedundantSize());
+      const auto& scale_ =
+        (allreduce_needed ?
+         scale :
+         scale / El::To<TensorDataType>(m_gradient->RedundantSize()));
       El::Axpy(scale_, *m_gradient_v, *m_gradient);
     }
     break;
@@ -349,6 +351,11 @@ bool data_type_optimizer<TensorDataType>::load_from_checkpoint_distributed(persi
   return true;
 }
 
-template class data_type_optimizer<DataType>;
+#define PROTO(T)                         \
+  template class data_type_optimizer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

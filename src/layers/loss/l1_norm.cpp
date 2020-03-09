@@ -36,7 +36,7 @@ void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
                   El::AbstractMatrix<TensorDataType>& local_contribution) {
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_input.Width(); ++col) {
-    TensorDataType sum = 0;
+    TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_input.Height(); ++row) {
       const auto& x = local_input(row, col);
       sum += std::fabs(x);
@@ -49,7 +49,7 @@ template <typename TensorDataType>
 void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
                   const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
                   El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
-  constexpr TensorDataType zero = 0;
+  const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_input.Width(); ++col) {
     for (El::Int row = 0; row < local_input.Height(); ++row) {
@@ -82,9 +82,13 @@ void l1_norm_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
                this->get_local_error_signals());
 }
 
-template class l1_norm_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class l1_norm_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class l1_norm_layer<                       \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
+  template class l1_norm_layer<                       \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

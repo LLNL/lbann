@@ -121,7 +121,7 @@ __global__ void reduce_sum_kernel(size_t height,
     }
 
     // Compute sum for each block
-    const DataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
+    const TensorDataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
     if (tid == 0) {
       cuda::atomic_add(&sums[col], block_sum);
     }
@@ -166,7 +166,7 @@ __global__ void fp_sumexp_kernel(size_t height,
     }
 
     // Compute sum for each block
-    const DataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
+    const TensorDataType block_sum = cuda::block_reduce<bsize,1,1>(thread_sum);
     if (tid == 0) {
       cuda::atomic_add(&sums[col], block_sum);
     }
@@ -249,8 +249,8 @@ __global__ void bp_kernel(size_t height,
 
 template <typename TensorDataType>
 void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
-  constexpr TensorDataType zero = 0;
-  constexpr TensorDataType one = 1;
+  const TensorDataType zero = 0;
+  const TensorDataType one = 1;
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
   if (!local_input.IsEmpty()) {
@@ -269,8 +269,8 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLE
 template <typename TensorDataType>
 void bp_compute_impl(log_softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
   using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
-  constexpr TensorDataType zero = 0;
-  constexpr TensorDataType one = 1;
+  const TensorDataType zero = 0;
+  const TensorDataType one = 1;
   const auto& local_output = dynamic_cast<const GPUMatType&>(l.get_local_activations());
   const auto& local_gradient_wrt_output = dynamic_cast<const GPUMatType&>(l.get_local_prev_error_signals());
   auto& local_gradient_wrt_input = dynamic_cast<GPUMatType&>(l.get_local_error_signals());
@@ -325,7 +325,7 @@ void fp_compute_impl(log_softmax_layer<TensorDataType, data_layout::MODEL_PARALL
     while (grid_dims.x > 1) {
       const size_t prev_height = grid_dims.x;
       grid_dims.x = (prev_height + block_size - 1) / block_size;
-      cuda::thrust::vector<DataType> prev_vals(std::move(max_vals));
+      cuda::thrust::vector<TensorDataType> prev_vals(std::move(max_vals));
       max_vals.resize(grid_dims.x * local_width);
       reduce_max_kernel<block_size><<<grid_dims, block_dims, 0, stream>>>(
         prev_height, local_width,
@@ -434,9 +434,11 @@ void log_softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
 }
 
 // Template instantiation
-template class log_softmax_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class log_softmax_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class log_softmax_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class log_softmax_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>; \
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

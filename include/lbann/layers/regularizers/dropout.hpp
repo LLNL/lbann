@@ -98,7 +98,7 @@ public:
   dropout& operator=(const dropout& other) {
     regularizer_layer<TensorDataType>::operator=(other);
     m_keep_prob = other.m_keep_prob;
-    m_mask = other.m_mask ? std::unique_ptr<AbsDistMat>(other.m_mask->Copy()) : nullptr;
+    m_mask = other.m_mask ? std::unique_ptr<AbsDistMatrixType>(other.m_mask->Copy()) : nullptr;
 #ifdef LBANN_HAS_CUDNN
     m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
     m_tensors_cudnn_desc.set_layer(this);
@@ -197,7 +197,7 @@ protected:
     }
 
     // Construct mask matrix
-    const TensorDataType scale = 1 / m_keep_prob;
+    const TensorDataType scale = static_cast<TensorDataType>(1 / m_keep_prob);
     const auto& height = input.Height();
     const auto& width = input.Width();
     m_mask->Resize(height, width);
@@ -206,11 +206,11 @@ protected:
     El::Scale(scale, *m_mask);
 #else
     El::EntrywiseMap(*m_mask,
-                     (std::function<DataType(const TensorDataType&)>)
-                     ([this,scale](const TensorDataType& z)->DataType {
+                     (std::function<TensorDataType(const TensorDataType&)>)
+                     ([this,scale](const TensorDataType& z)->TensorDataType {
                        auto& gen = get_fast_generator();
                        std::bernoulli_distribution dist(m_keep_prob);
-                       return dist(gen) ? scale : TensorDataType(0);
+                       return dist(gen) ? scale : El::TypeTraits<TensorDataType>::Zero();
                      }));
 #endif // LBANN_DETERMINISTIC
 
@@ -348,12 +348,12 @@ protected:
 };
 
 #ifndef LBANN_DROPOUT_LAYER_INSTANTIATE
-extern template class dropout<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class dropout<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class dropout<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class dropout<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class dropout<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class dropout<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_DROPOUT_LAYER_INSTANTIATE
 
 } // namespace lbann

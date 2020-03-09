@@ -103,7 +103,11 @@ void tessellate_layer<TensorDataType, T_layout, Dev>
 
 }
 
-template class tessellate_layer<DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class tessellate_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class tessellate_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class tessellate_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -46,6 +46,14 @@ class input_layer : public generic_input_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "input layer only supports DATA_PARALLEL data layout");
  public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The local tensor type expected for IO in this object. */
+  using IODataType = DataType;
+
+  ///@}
+ public:
 
   /// @todo make the map and vector references
   input_layer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode,
@@ -56,7 +64,7 @@ class input_layer : public generic_input_layer<TensorDataType> {
     initialize_io_buffer(comm, std::min(num_parallel_readers, data_type_layer<TensorDataType>::m_comm->get_procs_per_trainer()), data_readers);
     initialize_io_buffer(comm, std::min(num_parallel_readers, data_type_layer<TensorDataType>::m_comm->get_procs_per_trainer()), data_readers);
     for (auto io_buffer : this->m_io_buffers) {
-      io_buffer->fetch_data_fn = new fetch_data_functor(target_mode);
+      io_buffer->fetch_data_fn = new fetch_data_functor<IODataType>(target_mode);
       io_buffer->update_data_reader_fn = new update_data_reader_functor();
     }
   }
@@ -77,14 +85,15 @@ class input_layer : public generic_input_layer<TensorDataType> {
 };
 
 #ifndef LBANN_INPUT_LAYER_INSTANTIATE
-extern template class input_layer<
-  DataType, partitioned_io_buffer<DataType>,
-  data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class input_layer<
-  DataType, partitioned_io_buffer<DataType>,
-  data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device)         \
+  extern template class input_layer<    \
+    T, partitioned_io_buffer<T>,        \
+    data_layout::DATA_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
 #endif // LBANN_INPUT_LAYER_INSTANTIATE
 
 } // namespace lbann

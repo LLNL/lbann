@@ -90,9 +90,11 @@ setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists)  {
 }
 #endif // LBANN_HAS_DISTCONV
 
-template class relu_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class relu_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                                        \
+  template class relu_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class relu_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

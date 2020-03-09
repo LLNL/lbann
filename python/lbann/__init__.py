@@ -20,6 +20,17 @@ if os.path.isfile(_config_file):
     except:
         pass
 import lbann_pb2, callbacks_pb2, layers_pb2, metrics_pb2, model_pb2, objective_functions_pb2, optimizers_pb2, reader_pb2, weights_pb2, trainer_pb2, training_algorithm_pb2
+
+# Import enums
+enums = layers_pb2.DESCRIPTOR.enum_types_by_name
+
+for enum_name, enum_desc in enums.items():
+    enum_val_to_num = {}
+    enum_val_descs = enum_desc.values_by_name
+    for val_name, val_desc in enum_val_descs.items():
+        enum_val_to_num[val_name] = val_desc.number
+    globals()[enum_name] = type(enum_name, (), enum_val_to_num)
+
 def lbann_exe():
     """LBANN executable."""
     return _lbann_exe if _lbann_exe else 'lbann'

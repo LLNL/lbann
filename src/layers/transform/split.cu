@@ -24,9 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_SPLIT_LAYER_INSTANTIATE
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
 #include "distconv/tensor/algorithms_cuda.hpp"
@@ -116,7 +118,14 @@ void split_layer<TensorDataType, Layout, Dev>::bp_compute() {
   }
 }
 
-template class split_layer<DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class split_layer<DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+LBANN_LAYER_DEFAULT_BUILDER(split)
+
+#define PROTO(T)                                                        \
+  template class split_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class split_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>; \
+  LBANN_LAYER_BUILDER_ETI(split, T, El::Device::GPU)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

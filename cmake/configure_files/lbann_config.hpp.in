@@ -24,6 +24,7 @@
 #cmakedefine LBANN_GNU_LINUX
 
 #cmakedefine LBANN_HAS_CEREAL
+#cmakedefine LBANN_HAS_DIHYDROGEN
 #cmakedefine LBANN_HAS_OPENCV
 #cmakedefine LBANN_HAS_TBINF
 #cmakedefine LBANN_HAS_CNPY
@@ -37,6 +38,9 @@
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
 
+#cmakedefine LBANN_HAS_HALF
+#cmakedefine LBANN_HAS_GPU_FP16
+
 #cmakedefine LBANN_VTUNE
 #cmakedefine LBANN_NVPROF
 
@@ -48,15 +52,8 @@
 // API support for non-portable pthread functionality.
 #cmakedefine LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
 
-/* Defined if LBANN has Distconv */
 #cmakedefine LBANN_HAS_P2P
-#cmakedefine LBANN_HAS_DIHYDROGEN
-// Temporarily define LBANN_HAS_DISTCONV until Distconv is fully
-// merged. The macro has been used to enable Distconv and should be
-// removed once it's fully merged.
-#ifdef LBANN_HAS_DIHYDROGEN
-#define LBANN_HAS_DISTCONV
-#endif
+#cmakedefine LBANN_HAS_DISTCONV
 
 // Define the LBANN datatype
 namespace lbann

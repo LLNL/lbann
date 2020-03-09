@@ -31,6 +31,9 @@
 #include "lbann/models/model.hpp"
 #include "lbann/weights/initializer.hpp"
 #include "lbann/weights/variance_scaling_initializers.hpp"
+
+#include <layers.pb.h>
+
 #include <string>
 #include <sstream>
 
@@ -82,7 +85,7 @@ public:
     this->set_output_dims({output_size});
 
     // Initialize bias
-    m_bias_scaling_factor = has_bias ? TensorDataType(1) : TensorDataType(0);
+    m_bias_scaling_factor = has_bias ? El::TypeTraits<TensorDataType>::One() : El::TypeTraits<TensorDataType>::Zero();
 
   }
 
@@ -128,7 +131,7 @@ public:
 
   description get_description() const override {
     auto desc = learning_layer<TensorDataType>::get_description();
-    const auto& bias_str = (m_bias_scaling_factor == TensorDataType(0) ?
+    const auto& bias_str = (m_bias_scaling_factor == El::TypeTraits<TensorDataType>::Zero() ?
                             "disabled" : "enabled");
     desc.add("Bias", bias_str);
     return desc;
@@ -145,7 +148,7 @@ protected:
     if (this->num_weights() > 2) {
       LBANN_ERROR("attempted to setup ", this->get_name(), " with an invalid number of weights");
     }
-    if (m_bias_scaling_factor != TensorDataType(0)) {
+    if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
       this->set_num_data_type_weights(2);
     } else {
       this->set_num_data_type_weights(1);
@@ -153,8 +156,7 @@ protected:
     if (!this->has_data_type_weights(0)) {
       auto w = make_unique<WeightsType>(this->get_comm());
       auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
-      auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                                 this->get_model()->create_optimizer()));
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_linearity_weights");
       w->set_initializer(std::move(init));
       w->set_optimizer(std::move(opt));
@@ -186,11 +188,10 @@ protected:
     linearity_weights.set_matrix_distribution(linearity_dist);
 
     // Set up bias if needed.
-    if (m_bias_scaling_factor != TensorDataType(0)) {
+    if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
       if (!this->has_data_type_weights(1)) {
         auto w = make_unique<WeightsType>(this->get_comm());
-        auto opt = to_unique_ptr(dynamic_cast<OptimizerType*>(
-                                   this->get_model()->create_optimizer()));
+        auto opt = this->m_model->template create_optimizer<TensorDataType>();
         w->set_name(this->get_name() + "_bias_weights");
         w->set_optimizer(std::move(opt));
         this->set_data_type_weights(1, w.get());
@@ -258,17 +259,18 @@ private:
   friend void bp_compute_impl(fully_connected_layer<U, T_layout, Dev>& l);
 };
 
+// Builder function
+LBANN_DEFINE_LAYER_BUILDER(fully_connected);
+
 #ifndef LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
-extern template class fully_connected_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class fully_connected_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class fully_connected_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class fully_connected_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+
+#define PROTO_DEVICE(T, Device) \
+  extern template class fully_connected_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class fully_connected_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+
 #endif // LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 
 } // namespace lbann

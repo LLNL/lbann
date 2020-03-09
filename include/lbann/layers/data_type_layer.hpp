@@ -30,30 +30,32 @@
 #include "lbann/layers/layer.hpp"
 #include "lbann/weights/data_type_weights.hpp"
 
+#include "lbann/utils/h2_tmp.hpp"
+
+#ifdef LBANN_HAS_DISTCONV
 #include <set>
 #include <map>
 #include <array>
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
 // Forward declarations
-//template <typename TensorDataType>
-//class data_type_weights;
+namespace cudnn {
+template <typename U>
+class data_parallel_layer_tensor_manager;
+template <typename U>
+class entrywise_layer_tensor_manager;
+}
 
-using supported_layer_data_type = El::TypeList<DataType, float/*, double*/>;
-
-template <typename T, typename List> struct IsElement;
-
-template <typename Head, typename... Tail>
-struct IsElement<Head, El::TypeList<Head,Tail...>> : std::true_type {};
-
-template <typename T, typename Head, typename... Tail>
-struct IsElement<T, El::TypeList<Head,Tail...>> : IsElement<T, El::TypeList<Tail...>> {};
-
-template <typename T>
-struct IsElement<T, El::TypeList<>> : std::false_type {};
-
-template <typename T> using is_supported_layer_data_type = IsElement<T, supported_layer_data_type>;
+using supported_layer_data_type = h2::meta::TL<
+#ifdef LBANN_HAS_GPU_FP16
+  fp16,
+#endif
+#ifdef LBANN_HAS_HALF
+  cpu_fp16,
+#endif
+  float, double>;
 
 template <typename TensorDataType>
 class data_type_layer : public Layer {
@@ -64,6 +66,10 @@ public:
   /** @brief The tensor type expected in this object. */
   using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
 
+  /** @brief The proxy tensor type expected in this object. */
+  template <El::Device D>
+  using AbsDistMatReadProxyType = El::AbstractDistMatrixReadDeviceProxy<TensorDataType, D>;
+
   /** @brief The local tensor type expected in this object. */
   using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
 
@@ -73,13 +79,20 @@ public:
   ///@}
 
 public:
-  static_assert(is_supported_layer_data_type<TensorDataType>::value,
-                "Must use a supported type.");
+  static_assert(
+    h2::meta::tlist::MemberV<TensorDataType, supported_layer_data_type>(),
+    "Must use a supported type.");
 
   data_type_layer(lbann_comm *comm) : Layer(comm) {}
   data_type_layer(const data_type_layer<TensorDataType>& other);
   data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
   virtual ~data_type_layer() = default;
+
+  /** Get a string representing the layer datatype
+   */
+  std::string get_datatype_name() const override {
+    return TypeName<TensorDataType>();
+  };
 
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
@@ -118,33 +131,47 @@ public:
   void replace_weights(Layer* other_layer) override;
 
   // ===========================================================
-  // Tensor access functions
+  // Public Tensor access functions
   // ===========================================================
+
+  /** Get activation tensor corresponding to child layer. */
+  const BaseDistMat& get_activations(const Layer& child) const override;
+  /** Get error signal tensor corresponding to parent layer. */
+  const BaseDistMat& get_error_signals(const Layer& parent) const override;
 
   /** Get activation tensor. */
   AbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
   AbsDistMatrixType& get_error_signals(int parent_index = 0);
-  /** Get previous activation tensor. */
-  const AbsDistMatrixType& get_prev_activations(int parent_index = 0) const;
   /** Get activation tensor. */
   const AbsDistMatrixType& get_activations(int child_index = 0) const;
-  /** Get previous error signal tensor. */
-  const AbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
   /** Get error signal tensor. */
   const AbsDistMatrixType& get_error_signals(int parent_index = 0) const;
+
   /** Get local portion of activation tensor. */
   AbsMatrixType& get_local_activations(int child_index = 0);
   /** Get local portion of error signal tensor. */
   AbsMatrixType& get_local_error_signals(int parent_index = 0);
-  /** Get local portion of previous activation tensor. */
-  const AbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
   /** Get local portion of activation tensor. */
   const AbsMatrixType& get_local_activations(int child_index = 0) const;
-  /** Get local portion of previous error signal tensor. */
-  const AbsMatrixType& get_local_prev_error_signals(int child_index = 0) const;
   /** Get local portion of error signal tensor. */
   const AbsMatrixType& get_local_error_signals(int parent_index = 0) const;
+
+protected:
+
+  // ===========================================================
+  // Protected Tensor access functions
+  // ===========================================================
+
+  /** Get previous activation tensor. */
+  const AbsDistMatrixType& get_prev_activations(int parent_index = 0) const;
+  /** Get previous error signal tensor. */
+  const AbsDistMatrixType& get_prev_error_signals(int child_index = 0) const;
+
+  /** Get local portion of previous activation tensor. */
+  const AbsMatrixType& get_local_prev_activations(int parent_index = 0) const;
+  /** Get local portion of previous error signal tensor. */
+  const AbsMatrixType& get_local_prev_error_signals(int child_index = 0) const;
 
 protected:
 
@@ -267,11 +294,6 @@ private:
   std::vector<weights const*> get_weights() const override {
     return std::vector<weights const*>(begin(m_weights), end(m_weights));
   }
-
-  /** Get activation tensor corresponding to child layer. */
-  const AbsDistMatrixType& get_activations(const data_type_layer& child) const;
-  /** Get error signal tensor corresponding to parent layer. */
-  const AbsDistMatrixType& get_error_signals(const data_type_layer& parent) const;
 
   // ===========================================================
   // Private class members
@@ -412,10 +434,26 @@ private:
   void setup_keep_original_tensors();
   void setup_inter_layer_adaptation();
 #endif // LBANN_HAS_DISTCONV
+
+#ifdef LBANN_HAS_CUDA
+  template <typename U>
+  friend class cudnn::data_parallel_layer_tensor_manager;
+  template <typename U>
+  friend class cudnn::entrywise_layer_tensor_manager;
+#endif // LBANN_HAS_CUDA
 };
 
 #ifndef LBANN_DATA_TYPE_LAYER_INSTANTIATE
-extern template class data_type_layer<DataType>;
+#define PROTO(T)                           \
+  extern template class data_type_layer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+
 #endif // LBANN_DATA_TYPE_LAYER_INSTANTIATE
 
 } // namespace lbann

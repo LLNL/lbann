@@ -32,8 +32,8 @@ namespace lbann {
 directed_acyclic_graph_model::directed_acyclic_graph_model(lbann_comm *comm,
                                                            El::Int mini_batch_size,
                                                            objective_function *obj_fn,
-                                                           optimizer* default_optimizer)
-  : model(comm, mini_batch_size, obj_fn, default_optimizer) {}
+                                                           std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg)
+  : model(comm, mini_batch_size, obj_fn, std::move(default_optimizer_msg)) {}
 
 void directed_acyclic_graph_model::setup_layer_execution_order() {
 

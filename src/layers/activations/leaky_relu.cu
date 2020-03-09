@@ -48,7 +48,7 @@ __global__ void fp_kernel(TensorDataType negative_slope,
     const auto& col = pos / height;
     const auto& x = input[row + col * input_ldim];
     auto& y = output[row + col * output_ldim];
-    y = (x > TensorDataType(0)) ? x : negative_slope * x;
+    y = (x > TensorDataType(0.)) ? x : negative_slope * x;
   }
 }
 
@@ -72,7 +72,7 @@ __global__ void bp_kernel(TensorDataType negative_slope,
     const auto& x = input[row + col * input_ldim];
     const auto& dy = gradient_wrt_output[row + col * gradient_wrt_output_ldim];
     auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-    dx = (x > TensorDataType(0)) ? dy : dy * negative_slope;
+    dx = (x > TensorDataType(0.)) ? dy : dy * negative_slope;
   }
 }
 
@@ -250,9 +250,11 @@ bp_compute_distconv() {
 }
 #endif // LBANN_HAS_DISTCONV
 
-template class leaky_relu_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class leaky_relu_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class leaky_relu_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class leaky_relu_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

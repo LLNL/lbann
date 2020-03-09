@@ -183,9 +183,11 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute_distconv() {
 }
 #endif // LBANN_HAS_DISTCONV
 
-template class relu_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-template class relu_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                                        \
+  template class relu_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class relu_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>;
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

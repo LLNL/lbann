@@ -42,10 +42,30 @@
 
 namespace lbann {
 
-enum class softmax_mode {INVALID, INSTANCE, CHANNEL};
+/** @brief Which tensor dimensions to apply softmax over. */
+enum class softmax_mode {
+  INVALID,
+  /** @brief Sample-wise softmax.
+   *
+   *  Slice tensor along the sample dimension (assuming data in NCHW
+   *  format) and apply softmax independently to each slice (once per
+   *  sample).
+   */
+  INSTANCE,
+  /** @brief Position-wise softmax.
+   *
+   *  Split tensor along all but the channel dimension (assuming data
+   *  in NCHW format) and apply softmax independently to each piece
+   *  (once per spatial position per sample).
+   *
+   *  This is not to be confused with @c channelwise_softmax, which
+   *  slices along the sample and channel dimensions.
+   */
+  CHANNEL
+};
 
-/** @brief
- *
+/**
+>>>>>>> bc1c6f45a8e0afa896c6961bd0a28ee19dfd3f82
  *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -63,7 +83,8 @@ public:
 
   softmax_layer(lbann_comm *comm,
                 softmax_mode mode)
-      : data_type_layer<TensorDataType>(comm), m_mode(mode)
+    : data_type_layer<TensorDataType>(comm),
+      m_mode(mode)
 #ifdef LBANN_HAS_CUDNN
     , m_tensors_cudnn_desc(this)
 #endif // LBANN_HAS_CUDNN
@@ -74,7 +95,8 @@ public:
   }
 
   softmax_layer(const softmax_layer& other)
-    : data_type_layer<TensorDataType>(other), m_mode(other.m_mode),
+    : data_type_layer<TensorDataType>(other),
+      m_mode(other.m_mode),
       m_workspace(other.m_workspace ?
                   other.m_workspace->Copy() : nullptr)
 #ifdef LBANN_HAS_CUDNN
@@ -84,17 +106,6 @@ public:
 #ifdef LBANN_HAS_CUDNN
     m_tensors_cudnn_desc.set_layer(this);
 #endif // LBANN_HAS_CUDNN
-  }
-
-  softmax_layer& operator=(const softmax_layer& other) {
-    data_type_layer<TensorDataType>::operator=(other);
-    m_workspace.reset(other.m_workspace ?
-                      other.m_workspace->Copy() : nullptr);
-#ifdef LBANN_HAS_CUDNN
-    m_tensors_cudnn_desc = other.m_tensors_cudnn_desc;
-    m_tensors_cudnn_desc.set_layer(this);
-#endif // LBANN_HAS_CUDNN
-    return *this;
   }
 
   ~softmax_layer() = default;
@@ -152,9 +163,9 @@ private:
 
 // Minimum output value to avoid denormalized floats
 #ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
-  const TensorDataType threshold_val = std::sqrt(std::numeric_limits<TensorDataType>::min());
+  const TensorDataType threshold_val = static_cast<TensorDataType>(El::Sqrt(std::numeric_limits<TensorDataType>::min()));
 #else
-  const TensorDataType threshold_val = 0;
+  const TensorDataType threshold_val = El::TypeTraits<TensorDataType>::Zero();
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
 
 #ifdef LBANN_HAS_DISTCONV
@@ -207,17 +218,15 @@ private:
 #endif // LBANN_HAS_DISTCONV
 };
 
+LBANN_DEFINE_LAYER_BUILDER(softmax);
+
 #ifndef LBANN_SOFTMAX_LAYER_INSTANTIATE
-extern template class softmax_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class softmax_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class softmax_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class softmax_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class softmax_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class softmax_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_SOFTMAX_LAYER_INSTANTIATE
 
 } // namespace lbann

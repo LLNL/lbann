@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_DATA_TYPE_WEIGHTS_INSTANTIATE
 #include "lbann/weights/data_type_weights.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
@@ -339,7 +340,7 @@ template <typename TensorDataType>
 void data_type_weights<TensorDataType>::reconcile_values() {
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
-    El::Scale(DataType(1) / values.RedundantSize(), values);
+    El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     get_comm().allreduce(values, values.RedundantComm());
   }
 }
@@ -348,7 +349,7 @@ template <typename TensorDataType>
 void data_type_weights<TensorDataType>::reconcile_values(Al::request& req) {
   auto& values = get_values();
   if (values.RedundantSize() > 1) {
-    El::Scale(DataType(1) / values.RedundantSize(), values);
+    El::Scale(TensorDataType(1. / values.RedundantSize()), values);
     get_comm().nb_allreduce(values, values.RedundantComm(), req);
   }
 }
@@ -386,7 +387,7 @@ void data_type_weights<TensorDataType>::write_proto(lbann_data::WeightsData* pro
   proto->set_width(get_matrix_width());
 
   // Write weight values to prototext on world master process
-  CircMat<El::Device::CPU> values = *m_values; /// @todo What if weights are on GPU?
+  CircMatDT<TensorDataType, El::Device::CPU> values = *m_values; /// @todo What if weights are on GPU?
   values.SetRoot(0); /// @todo What if world master is not process 0?
   if (get_comm().am_world_master()) {
     const auto& local_values = values.LockedMatrix();
@@ -474,6 +475,11 @@ bool data_type_weights<TensorDataType>::load_from_checkpoint_distributed(lbann::
   return true;
 }
 
-template class data_type_weights<DataType>;
+#define PROTO(T)                     \
+  template class data_type_weights<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 }  // namespace lbann

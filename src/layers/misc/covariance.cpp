@@ -62,7 +62,8 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input0,
   means.Resize(2, width);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    TensorDataType sum0 = 0, sum1 = 0;
+    TensorDataType sum0 = El::TypeTraits<TensorDataType>::Zero(),
+      sum1 = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_height; ++row) {
       sum0 += local_input0(row, col);
       sum1 += local_input1(row, col);
@@ -80,7 +81,7 @@ void fp_cpu(const El::AbstractDistMatrix<TensorDataType>& input0,
   for (El::Int col = 0; col < local_width; ++col) {
     const auto& mean0 = local_means(0, col);
     const auto& mean1 = local_means(1, col);
-    TensorDataType sum = 0;
+    TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x0 = local_input0(row, col);
       const auto& x1 = local_input1(row, col);
@@ -124,7 +125,7 @@ void bp_cpu(const El::AbstractDistMatrix<TensorDataType>& input0,
   El::Copy(gradient_wrt_output, workspace);
 
   // Compute gradients w.r.t. input
-  const TensorDataType scale = TensorDataType(1) / (biased? height : height - 1);
+  const TensorDataType scale = El::TypeTraits<TensorDataType>::One() / El::To<TensorDataType>(biased ? height : height - 1);
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_width; ++col) {
     for (El::Int row = 0; row < local_height; ++row) {
@@ -166,9 +167,11 @@ void covariance_layer<TensorDataType, Layout, Device>::bp_compute() {
          this->m_biased);
 }
 
-template class covariance_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class covariance_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                     \
+  template class covariance_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class covariance_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

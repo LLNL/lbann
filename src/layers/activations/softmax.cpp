@@ -67,7 +67,7 @@ void fp(lbann_comm& comm,
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto shift = local_workspace(0, col);
-    TensorDataType sum = 0;
+    TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x = local_input(row, col);
       auto& y = local_output(row, col);
@@ -166,9 +166,11 @@ void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
      this->m_mode);
 }
 
-template class softmax_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class softmax_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class softmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class softmax_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

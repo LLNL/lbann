@@ -91,7 +91,7 @@ protected:
   void fp_compute() override {
     auto& output = this->get_activations();
     switch (this->get_num_parents()) {
-    case 0: El::Fill(output, TensorDataType(1)); break;
+    case 0: El::Fill(output, El::TypeTraits<TensorDataType>::One()); break;
     case 1: El::LockedView(output, this->get_prev_activations()); break;
     default:
       El::Hadamard(this->get_prev_activations(0),
@@ -128,17 +128,15 @@ protected:
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(hadamard);
+
 #ifndef LBANN_HADAMARD_LAYER_INSTANTIATE
-extern template class hadamard_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-extern template class hadamard_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class hadamard_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-extern template class hadamard_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class hadamard_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class hadamard_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_HADAMARD_LAYER_INSTANTIATE
 
 } // namespace lbann

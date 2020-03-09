@@ -81,7 +81,7 @@
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/slice.hpp"
-#include "lbann/layers/transform/concatenation.hpp"
+#include "lbann/layers/transform/concatenate.hpp"
 #include "lbann/layers/transform/constant.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/hadamard.hpp"
@@ -105,6 +105,8 @@
 #include "lbann/layers/regularizers/selu_dropout.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
+#include "lbann/layers/regularizers/layer_norm.hpp"
+#include "lbann/layers/regularizers/instance_norm.hpp"
 
 /// Input layer
 #include "lbann/layers/io/input/input_layer.hpp"
@@ -113,6 +115,7 @@
 #include "lbann/layers/misc/covariance.hpp"
 #include "lbann/layers/misc/variance.hpp"
 #include "lbann/layers/misc/channelwise_mean.hpp"
+#include "lbann/layers/misc/channelwise_softmax.hpp"
 #include "lbann/layers/misc/mini_batch_index.hpp"
 #include "lbann/layers/misc/mini_batch_size.hpp"
 #include "lbann/layers/misc/argmax.hpp"
@@ -128,7 +131,6 @@
 #include "lbann/data_readers/data_reader_multi_images.hpp"
 #include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
-#include "lbann/data_readers/data_reader_jag.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
 #include "lbann/data_readers/data_reader_numpy.hpp"

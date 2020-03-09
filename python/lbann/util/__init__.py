@@ -15,3 +15,16 @@ def make_iterable(obj):
 def str_list(it, sep=' '):
     """Convert an iterable object to a string."""
     return sep.join(str(i) for i in make_iterable(it))
+
+def make_nd_array(*dims):
+    """Create a multi-dimensional array with given dimensions.
+
+    The multi-dimensional array is a nested list initialized with
+    `None`s.
+
+    """
+    if dims:
+        head, *tail = dims
+        return [make_nd_array(*tail) for _ in range(head)]
+    else:
+        return None

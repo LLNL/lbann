@@ -186,7 +186,7 @@ void data_type_layer<TensorDataType>::summarize_matrices(lbann_summary& summariz
   // Summarize activation matrices
   const int num_children = get_num_children();
   for (int i = 0; i < num_children; ++i) {
-    AbsDistMatReadProxy<El::Device::CPU> acts(*m_outputs[i]);
+    AbsDistMatReadProxyType<El::Device::CPU> acts(*m_outputs[i]);
     std::string prefix = m_name + "/activations";
     if (num_children > 1) { prefix += std::to_string(i); }
     summarizer.reduce_mean(prefix + "/mean", acts.GetLocked(), step);
@@ -199,7 +199,7 @@ void data_type_layer<TensorDataType>::summarize_matrices(lbann_summary& summariz
   // Summarize error signal matrices
   const int num_parents = get_num_parents();
   for (int i = 0; i < num_parents; ++i) {
-    AbsDistMatReadProxy<El::Device::CPU> error_signals(*m_gradient_wrt_inputs[i]);
+    AbsDistMatReadProxyType<El::Device::CPU> error_signals(*m_gradient_wrt_inputs[i]);
     std::string prefix = m_name + "/error_signals";
     if (num_parents > 1) { prefix += std::to_string(i); }
     summarizer.reduce_mean(prefix + "/mean", error_signals.GetLocked(), step);
@@ -309,11 +309,11 @@ auto data_type_layer<TensorDataType>::get_local_error_signals(int parent_index) 
 
 // Accessing matrices corresponding to parent/child layer
 template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_activations(const data_type_layer<TensorDataType>& child) const -> const AbsDistMatrixType& {
-  const int child_index = (std::find(m_child_layers.begin(),
-                                     m_child_layers.end(),
-                                     &child)
-                           - m_child_layers.begin());
+auto data_type_layer<TensorDataType>::get_activations(const Layer& child) const -> const BaseDistMat& {
+  if(m_child_layers.empty()) {
+    LBANN_ERROR("This layer has no children");
+  }
+  const int child_index = find_child_layer_index(&child);
   if (child_index >= get_num_children()) {
     std::stringstream err;
     err << "attempted to get activation tensor of "
@@ -325,11 +325,8 @@ auto data_type_layer<TensorDataType>::get_activations(const data_type_layer<Tens
   return get_activations(child_index);
 }
 template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::get_error_signals(const data_type_layer<TensorDataType>& parent) const -> const AbsDistMatrixType& {
-  const int parent_index = (std::find(m_parent_layers.begin(),
-                                      m_parent_layers.end(),
-                                      &parent)
-                           - m_parent_layers.begin());
+auto data_type_layer<TensorDataType>::get_error_signals(const Layer& parent) const -> const BaseDistMat& {
+  const int parent_index = find_parent_layer_index(&parent);
   if (parent_index >= get_num_parents()) {
     std::stringstream err;
     err << "attempted to get error signal tensor of "
@@ -535,8 +532,7 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
   // Determine distributed matrix alignment
-  const auto& alignment_dist
-    = dynamic_cast<const data_type_layer<TensorDataType>*>(m_parent_layers.front())->get_activations(*this).DistData();
+  const auto& alignment_dist = m_parent_layers.front()->get_activations(*this).DistData();
 
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
@@ -544,13 +540,13 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
     if (distconv_enabled() && !keep_original_input(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     // Initialize input tensor
-    const auto& parent = dynamic_cast<const data_type_layer<TensorDataType>&>(*m_parent_layers[i]);
+    const auto& parent = *m_parent_layers[i];
     const auto& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
     input.Empty(false);
     input.AlignWith(alignment_dist);
     if (parent_output.DistData() == input.DistData()) {
-      El::LockedView(input, parent_output);
+      El::LockedView(input, dynamic_cast<const AbsDistMatrixType&>(parent_output));
     } else {
       bool async_copy = false;
 #if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
@@ -616,14 +612,14 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_outputs(El::Int mini
     if (distconv_enabled() && !keep_original_output(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     // Initialize gradient w.r.t. output tensor
-    const auto& child = dynamic_cast<const data_type_layer<TensorDataType>&>(*m_child_layers[i]);
+    const auto& child = *m_child_layers[i];
     const auto& child_gradient_wrt_input = child.get_error_signals(*this);
     auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
     gradient_wrt_output.Empty(false);
     gradient_wrt_output.AlignWith(get_activations(i));
     if (child_gradient_wrt_input.DistData()
         == gradient_wrt_output.DistData()) {
-      El::LockedView(gradient_wrt_output, child_gradient_wrt_input);
+      El::LockedView(gradient_wrt_output, dynamic_cast<const AbsDistMatrixType&>(child_gradient_wrt_input));
     } else {
       bool async_copy = false;
 #if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
@@ -1638,6 +1634,11 @@ void data_type_layer<TensorDataType>::dump_reference_error_signals() {
 
 #endif // LBANN_HAS_DISTCONV
 
-template class data_type_layer<DataType>;
+#define PROTO(T)                     \
+  template class data_type_layer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

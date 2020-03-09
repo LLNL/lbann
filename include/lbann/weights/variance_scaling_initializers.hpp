@@ -122,12 +122,29 @@ protected:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
 
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg);
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_he_initializer_from_pbuf(google::protobuf::Message const& msg);
+template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_lecun_initializer_from_pbuf(google::protobuf::Message const& msg);
+
+#ifndef LBANN_VARIANCE_SCALING_INITIALIZER_INSTANTIATE
+#define PROTO(T)                               \
+  extern template class glorot_initializer<T>; \
+  extern template class he_initializer<T>;     \
+  extern template class lecun_initializer<T>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#undef LBANN_INSTANTIATE_CPU_HALF
+#undef LBANN_INSTANTIATE_GPU_HALF
+#endif // LBANN_VARIANCE_SCALING_INITIALIZER_INSTANTIATE
 
 } // namespace lbann
 

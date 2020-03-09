@@ -84,6 +84,23 @@ class Layer;
 
 namespace cudnn {
 
+template <typename T>
+struct ScalingParameterT
+{
+  using type = T;
+};
+
+template <typename T>
+using ScalingParamType = typename ScalingParameterT<T>::type;
+
+#ifdef LBANN_HAS_GPU_FP16
+template <>
+struct ScalingParameterT<fp16>
+{
+  using type = float;
+};
+#endif // LBANN_USE_GPU_FP16
+
 ////////////////////////////////////////////////////////////
 // Global cuDNN objects
 ////////////////////////////////////////////////////////////
@@ -103,11 +120,13 @@ cudnnHandle_t& get_handle();
 ////////////////////////////////////////////////////////////
 
 /** Get cuDNN data type associated with DataType. */
+template <typename TensorDataType>
 cudnnDataType_t get_data_type();
 
 /** Set cuDNN tensor descriptor.
  *  desc is created if necessary.
  */
+template <typename TensorDataType>
 void set_tensor_desc(cudnnTensorDescriptor_t& desc,
                      std::vector<int> dims,
                      std::vector<int> strides = {});

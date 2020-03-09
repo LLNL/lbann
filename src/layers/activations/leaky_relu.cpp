@@ -43,7 +43,7 @@ void local_fp(TensorDataType negative_slope,
     for (El::Int row = 0; row < height; ++row) {
       const auto& x = input(row, col);
       auto& y = output(row, col);
-      y = (x > TensorDataType(0)) ? x : negative_slope * x;
+      y = (x > El::TypeTraits<TensorDataType>::Zero()) ? x : negative_slope * x;
     }
   }
 }
@@ -62,7 +62,7 @@ void local_bp(TensorDataType negative_slope,
       const auto& x = input(row, col);
       const auto& dy = gradient_wrt_output(row, col);
       auto& dx = gradient_wrt_input(row, col);
-      dx = (x > TensorDataType(0)) ? dy : negative_slope * dy;
+      dx = (x > El::TypeTraits<TensorDataType>::Zero()) ? dy : negative_slope * dy;
     }
   }
 }
@@ -117,9 +117,11 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute_distconv() {
 }
 #endif // LBANN_HAS_DISTCONV
 
-template class leaky_relu_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-template class leaky_relu_layer<
-  DataType, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+#define PROTO(T)                                      \
+  template class leaky_relu_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class leaky_relu_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

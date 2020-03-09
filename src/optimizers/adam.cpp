@@ -113,10 +113,19 @@ void adam<TensorDataType>::setup(WeightsType* w) {
 template <typename TensorDataType>
 void adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
                                         const AbsDistMatrixType& gradient) {
+  static const auto one = TensorDataType(1.);
+
+  // Precompute the bias correction and learning rate.
+  m_current_beta1 *= m_beta1;
+  m_current_beta2 *= m_beta2;
+  const TensorDataType correction = this->get_learning_rate() *
+                              (El::Sqrt(one - m_current_beta2)
+                               / (one - m_current_beta1));
+
   switch (values.GetLocalDevice()) {
-  case El::Device::CPU: step_compute_cpu(values, gradient); break;
+  case El::Device::CPU: step_compute_cpu(values, gradient, correction); break;
 #ifdef LBANN_HAS_CUDA
-  case El::Device::GPU: step_compute_gpu(values, gradient); break;
+  case El::Device::GPU: step_compute_gpu(values, gradient, correction); break;
 #endif // LBANN_HAS_CUDA
   default:
     std::ostringstream err;
@@ -128,15 +137,9 @@ void adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
 
 template <typename TensorDataType>
 void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
-                                            const AbsDistMatrixType& gradient) {
-  constexpr TensorDataType one = 1;
-
-  // Precompute the bias correction and learning rate.
-  m_current_beta1 *= m_beta1;
-  m_current_beta2 *= m_beta2;
-  const TensorDataType correction = this->get_learning_rate() *
-                              (std::sqrt(one - m_current_beta2)
-                               / (one - m_current_beta1));
+                                            const AbsDistMatrixType& gradient,
+                                            const TensorDataType& correction) {
+  static const auto one = TensorDataType(1.);
 
   // Get local matrix data
   const size_t local_height = values.LocalHeight();
@@ -159,7 +162,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
       auto& m2 = moment2_buffer[i];
       m1 = m_beta1 * m1 + (one - m_beta1) * g;
       m2 = m_beta2 * m2 + (one - m_beta2) * g * g;
-      x -= correction * m1 / (std::sqrt(m2) + m_eps);
+      x -= correction * m1 / (El::Sqrt(m2) + m_eps);
     }
 
   } else {
@@ -178,7 +181,7 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
         auto& m2 = moment2_buffer[row+col*moment2_ldim];
         m1 = m_beta1 * m1 + (one - m_beta1) * g;
         m2 = m_beta2 * m2 + (one - m_beta2) * g * g;
-        x -= correction * m1 / (std::sqrt(m2) + m_eps);
+        x -= correction * m1 / (El::Sqrt(m2) + m_eps);
       }
     }
 
@@ -262,17 +265,26 @@ bool adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::str
   return true;
 }
 
+template <typename TensorDataType>
 std::unique_ptr<optimizer>
 build_adam_optimizer_from_pbuf(
   google::protobuf::Message const& msg) {
   const auto& params =
     dynamic_cast<lbann_data::Optimizer::Adam const&>(msg);
-  return make_unique<adam<DataType>>(params.learn_rate(),
-                                     params.beta1(),
-                                     params.beta2(),
-                                     params.eps());
+  return make_unique<adam<TensorDataType>>(TensorDataType(params.learn_rate()),
+                                           TensorDataType(params.beta1()),
+                                           TensorDataType(params.beta2()),
+                                           TensorDataType(params.eps()));
 }
 
-template class adam<DataType>;
+#define PROTO(T)                                    \
+  template class adam<T>;                           \
+  template std::unique_ptr<optimizer>               \
+  build_adam_optimizer_from_pbuf<T>(                \
+    google::protobuf::Message const&)
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

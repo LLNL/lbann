@@ -43,7 +43,7 @@ template <typename TensorDataType>
 __global__ void fp_kernel(size_t num_channels,
                           size_t channel_size,
                           size_t width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           size_t input_ldim,
                           TensorDataType* __restrict__ output,
                           size_t output_ldim,
@@ -267,12 +267,16 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   // Update optimizer with gradient
   auto* opt = this->get_data_type_weights(0).get_optimizer();
   if (opt != nullptr) {
-    opt->add_to_gradient(*this->m_weights_gradient, TensorDataType{1}, true);
+    opt->add_to_gradient(*this->m_weights_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
 
 }
 
-template class channelwise_scale_bias_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#define PROTO(T)                                      \
+  template class channelwise_scale_bias_layer<        \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

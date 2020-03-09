@@ -316,11 +316,12 @@ private:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
+    using ScalingType = cudnn::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const TensorDataType zero = TensorDataType(0);
-      const TensorDataType one = TensorDataType(1);
+      const auto zero = El::TypeTraits<ScalingType>::Zero();
+      const auto one = El::TypeTraits<ScalingType>::One();
       CHECK_CUDNN(cudnnPoolingForward(cudnn::get_handle(),
                                       m_pooling_cudnn_desc,
                                       &one,
@@ -338,6 +339,7 @@ private:
 #ifndef LBANN_HAS_CUDNN
     LBANN_ERROR("cuDNN not detected");
 #else
+    using ScalingType = cudnn::ScalingParamType<TensorDataType>;
     const auto& local_input = this->get_local_prev_activations();
     const auto& local_output = this->get_local_activations();
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
@@ -345,8 +347,8 @@ private:
     if (local_input.Height() > 0 && local_input.Width() > 0) {
 
       // Useful constants
-      const TensorDataType one = TensorDataType(1);
-      const TensorDataType zero = TensorDataType(0);
+      const auto one = El::TypeTraits<ScalingType>::One();
+      const auto zero = El::TypeTraits<ScalingType>::Zero();
 
       // Perform backprop on GPU
       CHECK_CUDNN(cudnnPoolingBackward(cudnn::get_handle(),
@@ -388,8 +390,8 @@ private:
     }
 
     // Initialize matrices
-    DMat<Dev> im2col_mat(m_pool_size * num_channels, num_per_output_channel);
-    DMat<Dev> input_mat;
+    El::Matrix<TensorDataType, Dev> im2col_mat(m_pool_size * num_channels, num_per_output_channel);
+    El::Matrix<TensorDataType, Dev> input_mat;
 
     // Iterate through data samples
     for(int sample = 0; sample < local_width; ++sample) {
@@ -397,7 +399,7 @@ private:
       // Construct im2col matrix from input
       El::LockedView(input_mat, local_input,
                      El::ALL, El::IR(sample));
-      im2col(input_mat,
+      im2col<TensorDataType>(input_mat,
              im2col_mat,
              num_channels,
              input_dims.size() - 1,
@@ -438,7 +440,7 @@ private:
           for(int j = 0; j < num_per_output_channel; ++j) {
             const TensorDataType *im2col_buffer
               = im2col_mat.LockedBuffer(channel*m_pool_size, j);
-            TensorDataType output_entry = 0;
+            TensorDataType output_entry = El::TypeTraits<TensorDataType>::Zero();
             for(int i = 0; i < m_pool_size; ++i) {
               output_entry += im2col_buffer[i];
             }
@@ -512,7 +514,7 @@ private:
             TensorDataType *im2col_buffer = im2col_mat.Buffer(channel*m_pool_size, j);
             const int input_index = j + channel * num_per_input_channel;
             const TensorDataType output_entry
-              = gradient_wrt_output_buffer[input_index] / m_pool_size;
+              = gradient_wrt_output_buffer[input_index] / El::To<TensorDataType>(m_pool_size);
             for(int i = 0; i < m_pool_size; ++i) {
               im2col_buffer[i] = output_entry;
             }
@@ -524,7 +526,7 @@ private:
       // Compute error signal (i.e. gradient w.r.t. input)
       El::View(gradient_wrt_input_col, local_gradient_wrt_input,
                El::ALL, El::IR(sample));
-      col2im(im2col_mat,
+      col2im<TensorDataType>(im2col_mat,
              gradient_wrt_input_col,
              num_channels,
              input_dims.size() - 1,
@@ -784,13 +786,14 @@ private:
 
 };
 
+LBANN_DEFINE_LAYER_BUILDER(pooling);
+
 #ifndef LBANN_POOLING_LAYER_INSTANTIATE
-extern template class pooling_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
-extern template class pooling_layer<
-  DataType, data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#define PROTO_DEVICE(T, Device) \
+  extern template class pooling_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
 #endif // LBANN_POOLING_LAYER_INSTANTIATE
 
 } // namespace lbann
