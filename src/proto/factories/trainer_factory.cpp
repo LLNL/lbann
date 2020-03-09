@@ -26,6 +26,7 @@
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/trainers/trainer.hpp"
+#include "lbann/callbacks/callback.hpp"
 
 #include <trainer.pb.h>
 
@@ -41,6 +42,12 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
   if (!name.empty()) {
     t->set_name(name);
   }
+
+  // Construct callbacks
+  for (int i=0; i<proto_trainer.callback_size(); i++) {
+    t->add_callback(construct_callback(proto_trainer.callback(i)));
+  }
+
   return t;
 }
 
