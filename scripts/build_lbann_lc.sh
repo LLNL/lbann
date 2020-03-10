@@ -1,6 +1,4 @@
-#!/usr/bin/env bash
-
-. /usr/share/lmod/lmod/init/bash
+#!/bin/bash
 
 # Detect system parameters
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
