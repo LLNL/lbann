@@ -111,6 +111,13 @@ if (LBANN_WITH_DIHYDROGEN)
     "Use caution before using any features.")
 endif (LBANN_WITH_DIHYDROGEN)
 
+option(LBANN_WITH_DISTCONV "Enable DiHydrogen's Distconv" OFF)
+if (LBANN_WITH_DISTCONV)
+  message(WARNING "Distconv support is currently expermimental. "
+    "There is no stable interface. "
+    "Use caution before using any features.")
+endif (LBANN_WITH_DISTCONV)
+
 option(LBANN_WITH_HWLOC
   "Enable topology-aware optimizations" ON)
 
@@ -194,13 +201,28 @@ endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
+# DiHydrogen and Distconv
+if (LBANN_WITH_DISTCONV AND NOT LBANN_WITH_DIHYDROGEN)
+  message(FATAL_ERROR "Distconv requires DiHydrogen. Enable DiHydrogen to use Distconv.")
+endif ()
+
 if (LBANN_WITH_DIHYDROGEN)
-  find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
-    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-    ${H2_DIR} $ENV{H2_DIR}
-    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-    NO_DEFAULT_PATH)
-  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
+  if (LBANN_WITH_DISTCONV)
+    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns DistConv
+      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+      ${H2_DIR} $ENV{H2_DIR}
+      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+      NO_DEFAULT_PATH)
+    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
+    set(LBANN_HAS_DISTCONV TRUE)
+  else ()
+    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
+      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+      ${H2_DIR} $ENV{H2_DIR}
+      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+      NO_DEFAULT_PATH)
+    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
+  endif ()
   set(LBANN_HAS_DIHYDROGEN TRUE)
 endif ()
 
@@ -555,6 +577,10 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:H2::H2Meta>
   $<TARGET_NAME_IF_EXISTS:H2::H2Patterns>
   )
+
+if (LBANN_WITH_DISTCONV)
+  target_link_libraries(lbann PUBLIC H2::H2DistConv)
+endif ()
 
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
