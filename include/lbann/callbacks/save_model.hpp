@@ -67,14 +67,6 @@ class save_model : public callback_base {
     return new save_model(*this);
   }
   void on_train_end(model *m) override;
-  /* ckptdir_is_fullpath flag if true
- * allow user to specify full path to model weights to load
- * and allow system to ignore appending trainer id, num of epochs/steps
- * to default ckpt_dir*/
-  static bool load_model_weights(std::string ckpt_dir,
-                                 model *m,
-                                 bool ckptdir_is_fullpath=false);
-
   std::string name() const override { return "save model"; }
   void set_target_dir(const std::string& dir) { m_dir = dir; }
   const std::string& get_target_dir() { return m_dir; }

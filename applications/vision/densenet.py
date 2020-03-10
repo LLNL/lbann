@@ -1,7 +1,7 @@
 import argparse
 import lbann
 import lbann.contrib.args
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 import data.imagenet
 
 LOG = True
@@ -428,9 +428,9 @@ def run_experiment(args,
                    optimizer):
     # Note: Use `lbann.run` instead for non-LC systems.
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-    lbann.contrib.lc.launcher.run(trainer, model, data_reader, optimizer,
-                                  job_name=args.job_name,
-                                  **kwargs)
+    lbann.contrib.launcher.run(trainer, model, data_reader, optimizer,
+                               job_name=args.job_name,
+                               **kwargs)
 
 
 # Main function ################################################################

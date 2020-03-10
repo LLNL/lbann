@@ -626,15 +626,24 @@ message Layer {
    *  row-vector convention:
    *    @f[ y(i,*) = \text{vec}( x(i,*) ) W^T + b @f]
    *
-   *  Two weights are required: the linearity and the bias. If weights
-   *  aren't provided, the linearity weights are initialized with He
-   *  normal initialization and the bias weights are initialized to
-   *  zero.
+   *  Two weights are required if bias is applied: the linearity and the
+   *  bias. Only the linearity weights are required if bias is not
+   *  applied. If weights aren't provided, the linearity weights are
+   *  initialized with He normal initialization and the bias weights are
+   *  initialized to zero.
    *
    */
   message ChannelwiseFullyConnected {
-    /// Output tensor dimensions, excluding the first dimension
+    /// Output tensor dimensions, excluding the first dimension.
     repeated uint64 output_channel_dims = 1;
+    /** @brief Whether to apply bias.
+     *  @details Default: true
+     */
+    google.protobuf.BoolValue bias = 2;
+    /** @brief Whether to apply transpose of weights matrix.
+     *  @details Default: false
+     */
+    google.protobuf.BoolValue transpose = 3;
   }
 
   //////////////////
