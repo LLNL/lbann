@@ -51,6 +51,8 @@ option(LBANN_SB_BUILD_HDF5 "Pull and build HDF5 from the internet (not github)" 
 
 option(LBANN_SB_BUILD_HYDROGEN "Pull and build Hydrogen from Github" OFF)
 
+option(LBANN_SB_BUILD_DIHYDROGEN "Pull and build DiHydrogen from Github" OFF)
+
 option(LBANN_SB_BUILD_JPEG_TURBO "Download and build JPEG turbo" OFF)
 
 option(LBANN_SB_BUILD_OPENCV "Pull and build OpenCV from Github" OFF)
@@ -116,6 +118,11 @@ if (LBANN_SB_BUILD_HYDROGEN)
 
   add_subdirectory(hydrogen)
   list(APPEND _BUILD_PKGS HYDROGEN)
+endif ()
+
+if (LBANN_SB_BUILD_DIHYDROGEN)
+  add_subdirectory(dihydrogen)
+  list(APPEND _BUILD_PKGS DIHYDROGEN)
 endif ()
 
 if (LBANN_SB_BUILD_JPEG_TURBO)

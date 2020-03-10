@@ -70,6 +70,8 @@ ALUMINUM_WITH_MPI_CUDA=OFF
 ALUMINUM_WITH_NCCL=
 WITH_CONDUIT=ON
 WITH_TBINF=OFF
+WITH_DIHYDROGEN=OFF
+WITH_DISTCONV=OFF
 RECONFIGURE=0
 USE_NINJA=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
@@ -278,6 +280,15 @@ while :; do
             ;;
         --nvshmem)
             WITH_NVSHMEM=1
+            ;;
+        --with-dihydrogen)
+            WITH_DIHYDROGEN=ON
+            ;;
+        --with-distconv)
+            WITH_DISTCONV=ON
+            WITH_DIHYDROGEN=ON
+            # MPI-CUDA backend is required for Distconv
+            ALUMINUM_WITH_MPI_CUDA=ON
             ;;
         -?*)
             # Unknown option
@@ -820,6 +831,10 @@ cmake \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
 -D LBANN_WITH_NVSHMEM=${WITH_NVSHMEM} \
 -D LBANN_SB_FWD_LBANN_NVSHMEM_DIR=${NVSHMEM_DIR} \
+-D LBANN_SB_BUILD_DIHYDROGEN=${WITH_DIHYDROGEN} \
+-D DIHYDROGEN_ENABLE_DISTCONV_LEGACY=${WITH_DISTCONV} \
+-D LBANN_WITH_DIHYDROGEN=${WITH_DIHYDROGEN} \
+-D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
 ${SUPERBUILD_DIR}
 EOF
 )
