@@ -254,7 +254,7 @@ bool hdf5_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
   node.set_external(ds_node);
   const std::string conduit_obj = LBANN_DATA_ID_STR(data_id);
   buf = node[conduit_obj+"/labels_slab"].value();
-  std::memcpy(Y.Buffer(), buf, m_num_features/dc::get_number_of_io_partitions()*sizeof(DataType));
+  std::memcpy(Y.Buffer(), buf, m_num_features/dc::get_number_of_io_partitions()*sizeof(short));
   prof_region_end("fetch_label", false);
   return true;
 }
