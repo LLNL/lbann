@@ -13,7 +13,9 @@ CORAL=$([[ $(hostname) =~ (sierra|lassen|ray) ]] && echo 1 || echo 0)
 COMPILER=gnu
 if [ "${CLUSTER}" == "surface" -o "${CLUSTER}" == "pascal" ]; then
     module load gcc/7.3.0
-elif [ "${CLUSTER}" == "sierra" -o "${CLUSTER}" == "lassen" ]; then
+elif [ "${CORAL}" -eq 1 ]; then
+    # Make sure module commands available
+    . /usr/share/lmod/lmod/init/bash
     module load gcc/7.3.1
 fi
 if [ "${ARCH}" == "x86_64" ]; then
