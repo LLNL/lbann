@@ -292,15 +292,16 @@ void hdf5_reader::fetch_datum_conduit(Mat& X, int data_id) {
     conduit_obj.set(conduit::DataType::int16(
         m_num_features / dc::get_number_of_io_partitions()));
     short *sample_buf = conduit_obj.value();
-    short *labels_buf = nullptr;
     if(m_has_labels) {
       assert_always(m_hyperslab_labels);
       auto &conduit_labels_obj = node[conduit_key + "/labels_slab"];
       conduit_labels_obj.set(conduit::DataType::int16(
           m_num_features / dc::get_number_of_io_partitions()));
-      labels_buf = conduit_labels_obj.value();
+      short *labels_buf = conduit_labels_obj.value();
+      read_hdf5_sample(data_id, sample_buf, labels_buf);
+    } else {
+      read_hdf5_sample(data_id, sample_buf, nullptr);
     }
-    read_hdf5_sample(data_id, sample_buf, labels_buf);
     if(m_has_responses) {
       node[conduit_key + "/responses"].set(m_all_responses, 4);
     }
