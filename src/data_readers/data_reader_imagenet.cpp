@@ -54,7 +54,10 @@ CPUMat imagenet_reader::create_datum_view(CPUMat& X, const int mb_idx) const {
 bool imagenet_reader::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   El::Matrix<uint8_t> image;
   std::vector<size_t> dims;
-  const std::string image_path = get_file_dir() + m_image_list[data_id].first;
+  const auto file_id = m_sample_list[data_id].first;
+  const std::string filename = m_sample_list.get_samples_filename(file_id);
+  const std::string image_path = get_file_dir() + filename;
+
   if (m_data_store != nullptr) {
     bool have_node = true;
     conduit::Node node;

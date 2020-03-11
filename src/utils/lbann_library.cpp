@@ -208,8 +208,8 @@ std::unique_ptr<model> build_model_from_prototext(
     display_omp_setup();
   }
 
-  // Update the index lists to accomodate multi-trainer / multi-model specification
-  customize_data_readers_index_list(*comm, pb);
+  // Update the sample lists to accomodate multi-trainer / multi-model specification
+  customize_data_readers_sample_list(*comm, pb);
 
   // Initialize data readers
   //@todo: code not in place for correctly handling image preprocessing

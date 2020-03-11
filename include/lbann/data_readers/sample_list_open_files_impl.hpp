@@ -561,7 +561,37 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     }
   }
 
+  if (this->m_keep_order) {
+    reorder();
+  }
+
   return;
+}
+
+template <typename sample_name_t, typename file_handle_t>
+inline void sample_list_open_files<sample_name_t, file_handle_t>
+::reorder() {
+  if (this->m_stride > 1ul) {
+    // undo interleaving
+    const size_t sz = m_sample_list.size();
+    const size_t s = sz/(this->m_stride);
+    const size_t s_more = (sz + this->m_stride - 1ul)/(this->m_stride);
+    const size_t n_more = sz - s * (this->m_stride);
+
+    samples_t tmp_sample_list;
+    tmp_sample_list.reserve(s_more * (this->m_stride));
+
+    for (size_t i = 0ul; i < s_more; ++i) {
+      for (size_t j = i, k = 0ul; j < sz; ++k) {
+        tmp_sample_list.push_back(m_sample_list[j]);
+        // if (tmp_sample_list.size() == sz) break;
+        j += ((k < n_more)? s_more : s);
+      }
+    }
+    tmp_sample_list.resize(sz);
+    std::swap(m_sample_list, tmp_sample_list);
+    this->m_stride = 1ul;
+  }
 }
 
 template <typename sample_name_t, typename file_handle_t>

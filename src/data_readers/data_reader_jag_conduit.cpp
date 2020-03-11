@@ -784,22 +784,15 @@ void data_reader_jag_conduit::load() {
     std::cout << "data_reader_jag_conduit - starting load" << std::endl;
   }
   const std::string data_dir = add_delimiter(get_file_dir());
-  const std::string sample_list_file = data_dir + get_data_index_list();
+  const std::string sample_list_file = data_dir + get_data_sample_list();
 
   options *opts = options::get();
   bool check_data = opts->get_bool("check_data");
 
   /// The use of these flags need to be updated to properly separate
-  /// how index lists are used between trainers and models
+  /// how sample lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
-  double tm2 = get_time();
-  load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
-  if(is_master()) {
-      std::cout << "Finished loading sample list; time: " << get_time() - tm2 << std::endl;
-    if (!check_data) {
-      std::cout << "Skipping check data" << std::endl;
-    }
-  }
+  load_list_of_samples(sample_list_file, true);
 
   /// Check the data that each rank loaded
   if (!m_is_data_loaded && !m_sample_list.empty()) {
@@ -829,11 +822,15 @@ void data_reader_jag_conduit::load() {
     m_sample_list.close_if_done_samples_file_handle(0);
   }
   if(is_master()) {
-    std::cout << "Done with data checking" << std::endl;
+    if (!check_data) {
+      std::cout << "Skip data checking" << std::endl;
+    } else {
+      std::cout << "Done with data checking" << std::endl;
+    }
   }
 
   /// Merge all of the sample lists
-  tm2 = get_time();
+  double tm2 = get_time();
   m_sample_list.all_gather_packed_lists(*m_comm);
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
     {
@@ -923,14 +920,23 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
 }
 
-void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {
+void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, bool load_interleave) {
   // load the sample list
   double tm1 = get_time();
-  m_sample_list.load(sample_list_file, stride, offset);
+  if (load_interleave) {
+    // data_reader_jag_conduit does use any label. Thus, the information in
+    // sample list is self-contained and does not require maintaining the
+    // original sample order.
+    m_sample_list.keep_sample_order(false);
+    m_sample_list.load(sample_list_file, *(this->m_comm));
+  } else {
+    m_sample_list.load(sample_list_file);
+  }
   double tm2 = get_time();
 
   if (is_master()) {
-    std::cout << "Time to load sample list: " << tm2 - tm1 << std::endl;
+    std::cout << "Finished loading sample list; time: "
+              << tm2 - tm1 << " (sec)" << std::endl;
   }
 }
 

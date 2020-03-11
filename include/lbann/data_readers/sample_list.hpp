@@ -18,28 +18,46 @@
 
 namespace lbann {
 
-static const std::string sample_exclusion_list = "CONDUIT_HDF5_EXCLUSION";
-static const std::string sample_inclusion_list = "CONDUIT_HDF5_INCLUSION";
+static const std::string multi_sample_exclusion = "MULTI-SAMPLE_EXCLUSION";
+static const std::string multi_sample_inclusion = "MULTI-SAMPLE_INCLUSION";
+static const std::string single_sample = "SINGLE-SAMPLE";
 
 struct sample_list_header {
+  /// Whether each data file includes multiple samples
+  bool m_is_multi_sample;
+  /// Whether to list the IDs of samples to exclude or to include
   bool m_is_exclusive;
   /// Number of included samples
   size_t m_included_sample_count;
   /// Number of excluded samples
   size_t m_excluded_sample_count;
   size_t m_num_files;
+  /// whether file_dir is overriden, and not to be read from a file header
+  bool m_is_file_dir_overriden;
   std::string m_file_dir;
   std::string m_sample_list_filename;
+  std::string m_label_filename;
 
   sample_list_header();
 
+  void set_sample_list_type(const std::string& line1);
+  void set_sample_count(const std::string& line2);
+  void override_file_dir(const std::string& fdir);
+  void set_data_file_dir(const std::string& line3);
+  void set_label_filename(const std::string& line4);
+
+  bool is_multi_sample() const;
   bool is_exclusive() const;
   size_t get_sample_count() const;
   size_t get_num_files() const;
-  const std::string& get_sample_list_filename() const;
   const std::string& get_file_dir() const;
+  const std::string& get_sample_list_filename() const;
+  const std::string& get_label_filename() const;
   template <class Archive> void serialize( Archive & ar ) {
-    ar(m_is_exclusive, m_included_sample_count, m_excluded_sample_count, m_num_files, m_file_dir, m_sample_list_filename);
+    ar(m_is_multi_sample, m_is_exclusive,
+       m_included_sample_count, m_excluded_sample_count,
+       m_num_files, m_file_dir,
+       m_sample_list_filename, m_label_filename);
   }
 };
 
@@ -66,6 +84,11 @@ class sample_list {
 
   /// Load a sample list file
   void load(const std::string& samplelist_file, size_t stride=1, size_t offset=0);
+
+  /** Load a sample list file using the stride as the number of processes per
+   *  trainer and the offset as the current rank within the trainer.
+   */
+  void load(const std::string& samplelist_file, const lbann_comm& comm);
 
   /// Load the header of a sample list file
   sample_list_header load_header(const std::string& samplelist_file) const;
@@ -102,13 +125,18 @@ class sample_list {
 
   virtual const std::string& get_samples_filename(sample_file_id_t id) const;
 
+  void override_samples_dirname(const std::string& fdir);
   const std::string& get_samples_dirname() const;
+  const std::string& get_label_filename() const;
 
   void all_gather_archive(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
   void all_gather_archive_new(const std::string &archive, std::vector<std::string>& gathered_archive, lbann_comm& comm);
 
   template<typename T> size_t all_gather_field(T data, std::vector<T>& gathered_data, lbann_comm& comm);
   virtual void all_gather_packed_lists(lbann_comm& comm);
+
+  /// Set to maintain the original sample order as listed in the file
+  void keep_sample_order(bool keep);
 
  protected:
 
@@ -135,9 +163,18 @@ class sample_list {
 
   virtual void set_samples_filename(sample_file_id_t id, const std::string& filename);
 
+  /// Reorder the sample list to its initial order
+  virtual void reorder();
+
  protected:
   /// header info of sample list
   sample_list_header m_header;
+
+  /// The stride used in loading sample list file
+  size_t m_stride;
+
+  /// maintain the original sample order as listed in the file
+  bool m_keep_order;
 
  private:
   /// List of all samples with a file identifier and sample name for each sample
