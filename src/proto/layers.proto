@@ -303,7 +303,9 @@ message Layer {
   ///////////////////////
   // Loss layers //
   ///////////////////////
-  message CrossEntropy {}
+  message CrossEntropy {
+    bool use_labels = 1; //default: false
+  }
   message MeanSquaredError {}
   message MeanAbsoluteError {}
   message CategoricalAccuracy {}
