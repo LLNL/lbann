@@ -1,5 +1,5 @@
 import os, os.path
-from lbann import lbann_exe
+import lbann
 import lbann.launcher
 import lbann.contrib.lc.launcher
 import lbann.contrib.lc.systems
@@ -10,6 +10,7 @@ def run(
     model,
     data_reader,
     optimizer,
+    lbann_exe=lbann.lbann_exe(),
     lbann_args=[],
     overwrite_script=False,
     setup_only=False,
@@ -38,7 +39,7 @@ def run(
     script.add_command('echo "Started at $(date)"')
 
     # Batch script invokes LBANN
-    lbann_command = [lbann.lbann_exe()]
+    lbann_command = [lbann_exe]
     lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
