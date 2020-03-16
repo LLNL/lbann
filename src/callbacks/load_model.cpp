@@ -46,7 +46,8 @@ namespace callback {
 
 void load_model::on_train_begin(model *m) {
   for (const auto& d : m_dirs) {
-    load_model_weights(d, m, true);
+    bool loaded = load_model_weights(d, m, true);
+    if(!loaded)  LBANN_ERROR("Unable to reload model");
   }
 }
 
