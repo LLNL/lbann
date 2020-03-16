@@ -115,11 +115,22 @@ class SlurmBatchScript(BatchScript):
             nodes = self.nodes
         if procs_per_node is None:
             procs_per_node = self.procs_per_node
+
+        # srun invocation
+        # Note: When running within a salloc allocation, some srun
+        # arguments are overloaded by the salloc arguments. We add
+        # some redundant arguments to make sure srun launches
+        # correctly.
         args = [launcher]
         args.extend(make_iterable(launcher_args))
         args.append('--nodes={}'.format(nodes))
         args.append('--ntasks={}'.format(nodes * procs_per_node))
+        args.append('--ntasks-per-node={}'.format(procs_per_node))
+
+        # LBANN invocation
         args.extend(make_iterable(command))
+
+        # Add to batch script
         self.add_command(args)
 
     def submit(self, overwrite=False):
