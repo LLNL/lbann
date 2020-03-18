@@ -209,7 +209,7 @@ for a list of available preprocessing transforms.
              that doesn't interact with Infiniband all that well by
              default. Users may encounter hangs on clusters that use
              Infiniband. To avoid this, ensure that
-             :code:`IBV_FORK_SAFE=1` is exported into the environment
+             :bash:`IBV_FORK_SAFE=1` is exported into the environment
              when running LBANN.
 
 ------------------------------------------------
