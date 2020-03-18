@@ -261,6 +261,6 @@ ninja install
 
 echo "To rebuild the environment:"
 echo "    ${SPACK_ENV_CMD}"
-echo "    cd ${LBANN_BUILD_DIR}/lbann/build"
+echo "    cd ${LBANN_BUILD_DIR}"
 echo "    unset CPATH"
 echo "    ninja install"
