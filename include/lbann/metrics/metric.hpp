@@ -151,12 +151,12 @@ class metric {
   }
 
   /** Save metric state to checkpoint. */
-  virtual bool save_to_checkpoint_shared(persist& p);
+  virtual bool save_to_checkpoint_shared(persist& p) = 0;
   /** Load metric state from checkpoint. */
-  virtual bool load_from_checkpoint_shared(persist& p);
+  virtual bool load_from_checkpoint_shared(persist& p) = 0;
 
-  virtual bool save_to_checkpoint_distributed(persist& p);
-  virtual bool load_from_checkpoint_distributed(persist& p);
+  virtual bool save_to_checkpoint_distributed(persist& p) = 0;
+  virtual bool load_from_checkpoint_distributed(persist& p) = 0;
 
  protected:
 
