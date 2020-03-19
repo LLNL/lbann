@@ -109,7 +109,7 @@ public:
                                     execution_mode mode);
 
   execution_context_key_pair_t
-  check_and_build_execution_context(const execution_context& c,
+  check_and_build_execution_context(/*const */execution_context& c,
                                     model& model,
                                     execution_mode mode);
 

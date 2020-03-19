@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
+#include "lbann/training_algorithms/training_algorithm.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -111,7 +112,9 @@ bool save_model::do_save_model_weights(model *m) {
 
   // Shared checkpoint, logic identical to Distributed.i
   makedir(m_dir.c_str());
-  std::string epochdir = get_shared_checkpoint_dirname(c.get_trainer().get_name(), m, m_dir.c_str(), c.get_execution_mode(), epoch, step);
+  std::string epochdir = get_shared_checkpoint_dirname(c.get_trainer().get_name(),
+                                                       c.get_training_algorithm().get_name(),
+                                                       m, m_dir.c_str(), c.get_execution_mode(), epoch, step);
   if (comm->am_trainer_master()) {
     p.open_checkpoint(epochdir.c_str());
   }else {
@@ -122,7 +125,9 @@ bool save_model::do_save_model_weights(model *m) {
   // close our checkpoint
   p.close_checkpoint();
   if (comm->am_trainer_master()) {
-    std::string latest_file = get_last_shared_checkpoint_filename(c.get_trainer().get_name(), m, m_dir.c_str());
+    std::string latest_file = get_last_shared_checkpoint_filename(c.get_trainer().get_name(),
+                                                                  c.get_training_algorithm().get_name(),
+                                                                  m_dir.c_str());
     write_latest(latest_file, c.get_execution_mode(), epoch, step);
   }
 

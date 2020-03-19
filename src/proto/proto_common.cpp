@@ -763,7 +763,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     model->set_disable_cuda(opts->get_bool("disable_cuda"));
   }
   if (opts->has_int("random_seed")) {
-    model->set_random_seed(opts->get_int("random_seed"));
+    trainer->set_random_seed(opts->get_int("random_seed"));
   }
   if(opts->get_bool("serialize_io")) {
     model->set_serialize_io(opts->get_bool("serialize_io"));
@@ -801,7 +801,7 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
             << "  serialize_io:            " << m.serialize_io()  << std::endl
             << "  cuda:                    " << (disable_cuda ? "disabled" : "enabled") << std::endl
             << "  cudnn:                   " << (disable_cudnn ? "disabled" : "enabled") << std::endl
-            << "  random_seed:             " << m.random_seed() << std::endl
+            << "  random_seed:             " << t.random_seed() << std::endl
             << "  data_layout:             " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n";
 }

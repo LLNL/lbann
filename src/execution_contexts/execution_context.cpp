@@ -48,8 +48,12 @@ namespace lbann {
 // Execution context
 //******************************************************************************
 
-execution_context::execution_context(observer_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode)
+execution_context::execution_context(observer_ptr<trainer> trainer,
+                                     observer_ptr<training_algorithm> training_algorithm,
+                                     lbann_comm *comm,
+                                     execution_mode mode)
   : m_trainer(trainer),
+    m_training_algorithm(training_algorithm),
     m_comm(comm),
     m_execution_mode(mode),
     m_terminate_training(false) {}

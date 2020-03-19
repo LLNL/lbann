@@ -63,6 +63,7 @@ model::model(lbann_comm* comm,
              std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg)
   : m_execution_context(nullptr),
     m_comm(comm),
+    m_model_setup(false),
     m_max_mini_batch_size(mini_batch_size),
     m_default_optimizer_msg(std::move(default_optimizer_msg)),
     m_objective_function(obj_fn) {
@@ -78,6 +79,7 @@ model::model(const model& other) :
   m_execution_context(other.m_execution_context),
   m_comm(other.m_comm),
   m_name(other.m_name),
+  m_model_setup(other.m_model_setup),
   m_max_mini_batch_size(other.m_max_mini_batch_size) {
 
   // Deep copies
@@ -136,6 +138,7 @@ model& model::operator=(const model& other) {
   // Shallow copies
   m_comm = other.m_comm;
   m_name = other.m_name;
+  m_model_setup = other.m_model_setup;
   m_max_mini_batch_size = other.m_max_mini_batch_size;
 
   // Deep copies
@@ -568,6 +571,9 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 
 void model::setup() {
 
+  // Bail out if the model is already setup
+  if(m_model_setup) { return; }
+
   // Setup layers
   setup_layer_topology();
   setup_layer_execution_order();
@@ -589,6 +595,7 @@ void model::setup() {
   // Callback hooks at end of setup
   do_setup_end_cbs();
 
+  m_model_setup = true;
 }
 
 void model::setup_layer_topology() {
@@ -1313,11 +1320,13 @@ bool model::load_from_checkpoint_shared(persist& p) {
       LBANN_ERROR("Unable to load layer[",i,"]=", get_layer(i).get_name());
     }
   }
-  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
+  /// @todo FIXME BVE why are we only reloading the metrics if there
+  //  has been validation iterations?
+  //  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
     for (const auto& m : m_metrics) {
       m->load_from_checkpoint_shared(p);
     }
-  }
+    //  }
 #ifdef LBANN_HAS_GPU
   El::GPUManager::SynchronizeDevice();
 #endif // LBANN_HAS_GPU

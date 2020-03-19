@@ -51,6 +51,8 @@ public:
   /** Copy training_algorithm. */
   //  virtual sgd_training_algorithm* copy() const = default;
 
+  std::string get_name() const { return "sgd"; }
+
   // ===========================================
   // Execution
   // ===========================================

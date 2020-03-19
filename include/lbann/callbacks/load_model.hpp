@@ -63,12 +63,18 @@ class load_model : public callback_base {
   load_model* copy() const override {
     return new load_model(*this);
   }
+
+  inline void add_dir(const std::string& dir){
+    m_dirs.emplace_back(dir);
+  }
+
   void on_train_begin(model *m) override;
   /* ckptdir_is_fullpath flag if true
  * allow user to specify full path to model weights to load
  * and allow system to ignore appending trainer id, num of epochs/steps
  * to default ckpt_dir*/
   static bool load_model_weights(std::string ckpt_dir,
+                                 std::string alg_name,
                                  model *m,
                                  bool ckptdir_is_fullpath=false);
 

@@ -183,6 +183,8 @@ class persist {
   template <typename TensorDataType>
   bool read_datatype (persist_type type, const char *name, TensorDataType *val);
 
+  const std::string get_checkpoint_dir() const { return m_checkpoint_dir; }
+
   std::string get_filename(persist_type type) const;
  private:
   int get_fd(persist_type type) const;
@@ -230,6 +232,11 @@ void write_cereal_archive(C& obj, const std::string& filename) {
 }
 
 template <typename C>
+void write_cereal_archive(C& obj, persist& p, const std::string& filename) {
+  write_cereal_archive<C>(obj, p.get_checkpoint_dir() + filename);
+}
+
+template <typename C>
 void write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
   write_cereal_archive<C>(obj, p.get_filename(pt) + suffix);
 }
@@ -248,6 +255,11 @@ void read_cereal_archive(C& obj, const std::string& filename) {
   }
   cereal::XMLInputArchive archive(is);
   archive(obj);
+}
+
+template <typename C>
+void read_cereal_archive(C& obj, persist& p, const std::string& filename) {
+  read_cereal_archive(obj, p.get_checkpoint_dir() + filename);
 }
 
 template <typename C>
