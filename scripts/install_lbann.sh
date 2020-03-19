@@ -81,7 +81,7 @@ Options:
   ${C}-d | -deps-only)${N}     Only install the lbann dependencies
   ${C}-e | --env${N}           Build and install LBANN in the spack environment provided.
   ${C}--disable-gpus${N}       Disable GPUS
-  ${C}-s | --superbuild${N}    Superbuild LBANN with hydrogen and aluminum
+  ${C}-s | --superbuild${N}    Superbuild LBANN with dihydrogen, hydrogen, and aluminum
 EOF
 }
 
@@ -147,6 +147,7 @@ fi
 
 BUILD_SPECS=
 HYDROGEN_VARIANTS="variants: +shared +int64 +al"
+DIHYDROGEN_VARIANTS="variants: +shared +al +openmp"
 if [[ ${DEPS_ONLY} = "TRUE" ]]; then
     if [[ ${SYS} != "Darwin" ]]; then
         HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +openmp_blas"
@@ -177,6 +178,7 @@ EOF
         SUPERBUILD_SPECS=$(cat <<EOF
   - aluminum
   - hydrogen
+  - dihydrogen
 EOF
 )
     fi
@@ -219,6 +221,7 @@ AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
     AL_VARIANTS="variants: +gpu+nccl~mpi_cuda"
     HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
+    DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy"
 fi
 
 SPACK_ENV=$(cat <<EOF
@@ -247,6 +250,15 @@ ${STD_PACKAGES}
       buildable: true
       version: [develop]
       ${HYDROGEN_VARIANTS}
+      providers: {}
+      paths: {}
+      modules: {}
+      compiler: []
+      target: []
+    dihydrogen:
+      buildable: true
+      version: [master]
+      ${DIHYDROGEN_VARIANTS}
       providers: {}
       paths: {}
       modules: {}
