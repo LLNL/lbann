@@ -111,6 +111,13 @@ if (LBANN_WITH_DIHYDROGEN)
     "Use caution before using any features.")
 endif (LBANN_WITH_DIHYDROGEN)
 
+option(LBANN_WITH_DISTCONV "Enable DiHydrogen's Distconv" OFF)
+if (LBANN_WITH_DISTCONV)
+  message(WARNING "Distconv support is currently expermimental. "
+    "There is no stable interface. "
+    "Use caution before using any features.")
+endif (LBANN_WITH_DISTCONV)
+
 option(LBANN_WITH_HWLOC
   "Enable topology-aware optimizations" ON)
 
@@ -148,9 +155,6 @@ mark_as_advanced(LBANN_WARNINGS_AS_ERRORS)
 #
 # The datatype option is not binary
 #
-
-option(LBANN_WITH_DISTCONV
-  "Enable Distconv distributed convolution" OFF)
 
 # FIXME what if "fp16"?
 set(LBANN_DATATYPE "float"
@@ -199,13 +203,28 @@ endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
+# DiHydrogen and Distconv
+if (LBANN_WITH_DISTCONV AND NOT LBANN_WITH_DIHYDROGEN)
+  message(FATAL_ERROR "Distconv requires DiHydrogen. Enable DiHydrogen to use Distconv.")
+endif ()
+
 if (LBANN_WITH_DIHYDROGEN)
-  find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
-    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-    ${H2_DIR} $ENV{H2_DIR}
-    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-    NO_DEFAULT_PATH)
-  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
+  if (LBANN_WITH_DISTCONV)
+    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns DistConv
+      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+      ${H2_DIR} $ENV{H2_DIR}
+      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+      NO_DEFAULT_PATH)
+    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
+    set(LBANN_HAS_DISTCONV TRUE)
+  else ()
+    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
+      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+      ${H2_DIR} $ENV{H2_DIR}
+      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+      NO_DEFAULT_PATH)
+    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
+  endif ()
   set(LBANN_HAS_DIHYDROGEN TRUE)
 endif ()
 
@@ -497,13 +516,6 @@ if (LBANN_WITH_CONDUIT)
   set(CONDUIT_LIBRARIES conduit::conduit)
 endif (LBANN_WITH_CONDUIT)
 
-if (LBANN_WITH_DISTCONV)
-  message(STATUS "DISTCONV requested")
-  find_package(DISTCONV REQUIRED)
-  set(LBANN_HAS_DISTCONV ${DISTCONV_FOUND})
-  message(STATUS "Found Distconv: ${DISTCONV_DIR}")
-endif (LBANN_WITH_DISTCONV)
-
 if (LBANN_WITH_UNIT_TESTING)
   find_package(Catch2 2.0.0 CONFIG QUIET
     HINTS ${CATCH2_DIR} $ENV{CATCH2_DIR} ${CATCH_DIR} $ENV{CATCH_DIR}
@@ -568,6 +580,10 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:H2::H2Patterns>
   )
 
+if (LBANN_WITH_DISTCONV)
+  target_link_libraries(lbann PUBLIC H2::H2DistConv)
+endif ()
+
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
 endif ()
@@ -582,10 +598,6 @@ endif ()
 
 if (LBANN_HAS_ALUMINUM)
   target_link_libraries(lbann PUBLIC ${Aluminum_LIBRARIES})
-endif ()
-
-if (LBANN_HAS_DISTCONV)
-  target_link_libraries(lbann PUBLIC DISTCONV::DISTCONV)
 endif ()
 
 if (LBANN_HAS_VTUNE)
@@ -856,8 +868,7 @@ append_str_tf(_str
   LBANN_HAS_DOXYGEN
   LBANN_HAS_LBANN_PROTO
   LBANN_HAS_ALUMINUM
-  LBANN_HAS_PYTHON
-  LBANN_HAS_DISTCONV)
+  LBANN_HAS_PYTHON)
 string(APPEND _str
   "\n== End LBANN Configuration Summary ==\n")
 

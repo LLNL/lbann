@@ -600,9 +600,6 @@ private:
   /** Indicate whether distconv is enabled. */
   bool distconv_enabled() const;
   virtual void setup_distconv() = 0;
-  /** Get the parallel strategy for the layer. */
-  ParallelStrategy& get_parallel_strategy() { return m_parallel_strategy; }
-  const ParallelStrategy& get_parallel_strategy() const { return m_parallel_strategy; }
 
   virtual distconv_adapter& dc() { return *m_dc; }
   virtual const distconv_adapter& dc() const { return *m_dc; }
@@ -637,9 +634,6 @@ private:
   // Negative value disables early termination. DISTCONV_EARLY_TERMINATE
   // environment value will override if set.
   int m_exit_count = -1;
-  /** Parallel strategy for the layer. */
-  ParallelStrategy m_parallel_strategy;
-
   std::unique_ptr<distconv_adapter> m_dc;
 #endif // LBANN_HAS_DISTCONV
 };
