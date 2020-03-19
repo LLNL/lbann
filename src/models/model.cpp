@@ -685,6 +685,7 @@ void model::setup_layers() {
 #endif
   }
 #ifdef LBANN_HAS_DISTCONV
+  // First, enable distconv. This needs to be done before calling setup_distconv.
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.enable_distconv();
@@ -1436,29 +1437,57 @@ bool model::save_model() {
 void model::setup_distconv() {
   // Dist[dc::num_dists]: {x, y, dx, dy}
   std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> dists;
-  std::map<dc::Dist*, std::set<dc::Dist*>> invariants;
+  find_valid_tensor_overlap(dists);
+  print_layer_distributions(dists);
+  // Setup fp tensors
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto &layer = get_layer(i);
+    if (!layer.distconv_enabled()) continue;
+    layer.dc().setup_fp_tensors(dists[&layer][0], dists[&layer][1]);
+  }
+  // Setup bp tensors in an reverse order
+  for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
+    auto &layer = get_layer(i);
+    if (!layer.distconv_enabled()) continue;
+    layer.dc().setup_bp_tensors(dists[&layer][3], dists[&layer][2]);
+  }
+  // Final setup.
+  auto workspace_capacity = get_workspace_capacity();
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto &layer = get_layer(i);
+    if (!layer.distconv_enabled()) continue;
+    layer.dc().setup_layer(workspace_capacity);
+  }
+}
+
+void model::find_valid_tensor_overlap(
+    std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists) {
+  // Dist[dc::num_dists]: {x, y, dx, dy}
+  std::map<dc::Dist*, std::set<dc::Dist*>> equivalents;
   std::set<dc::Dist*> updated;
-  std::set<dc::Dist*> fixed;
+  std::set<dc::Dist*> invariants;
+  // Initialize the distributions and constraints
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    get_layer(i).init_distribution(dists, invariants, updated, fixed);
+    get_layer(i).init_distribution(dists, equivalents, updated, invariants);
   }
+  // Add equivalence constraints
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    get_layer(i).setup_tensor_distribution_add_adjacent_invariants(
-        dists, invariants);
+    get_layer(i).setup_tensor_distribution_add_adjacent_equivalence(
+        dists, equivalents);
   }
+  // Solve the constraints
   while (updated.size() > 0) {
-    dc::MPIRootPrintStreamDebug() << "# of updated dists: " << updated.size() << "\n";
+    dc::MPIRootPrintStreamDebug() << "# of updated dists: " << updated.size();
     std::set<dc::Dist*> updated_new;
     for (const auto d: updated) {
-      dc::MPIRootPrintStreamDebug() << "Updated: " << *d << "\n";
-      for (auto p: invariants[d]) {
-        dc::MPIRootPrintStreamDebug() << "Invariant: " << *p << "\n";
+      dc::MPIRootPrintStreamDebug() << "Updated: " << *d;
+      for (auto p: equivalents[d]) {
+        dc::MPIRootPrintStreamDebug() << "Equivalent dist: " << *p;
         if (d->get_overlap() != p->get_overlap()) {
-          if (fixed.find(p) != fixed.end()) {
-            dc::MPIRootPrintStreamError()
-                << "Incompatible distributions: "
-                << *d << " <=> " << *p;
-            throw lbann_exception("Cannot satisfy the distconv constraints");
+          // p must have equal dist as d but is different.
+          if (invariants.find(p) != invariants.end()) {
+            // p can't be changed, so we can't solve the constraint.
+            LBANN_ERROR("Incompatible distributions: ", *d, " <=> ", *p);
           }
           p->set_overlap(d->get_overlap());
           updated_new.insert(p);
@@ -1467,21 +1496,10 @@ void model::setup_distconv() {
     }
     updated = std::move(updated_new);
   }
-  // displays parent and child layer names for debugging
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    const auto& layer = get_layer(i);
-    std::stringstream names;
-    names << "parents:";
-    for (const auto &parent: layer.get_parent_layers()) {
-      names << " " << parent->get_name();
-    }
-    names << "; children:";
-    for (const auto &child: layer.get_child_layers()) {
-      names << " " << child->get_name();
-    }
-    dc::MPIRootPrintStreamDebug()
-        << layer.get_name() << "; " << names.str();
-  }
+}
+
+void model::print_layer_distributions(
+    std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists) const {
   std::stringstream ss;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     const auto& layer = get_layer(i);
@@ -1497,26 +1515,19 @@ void model::setup_distconv() {
     }
   }
   dc::MPIRootPrintStreamInfo() << ss.str();
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto &layer = get_layer(i);
-    layer.setup_tensors_fwd(dists[&layer]);
-  }
-  for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
-    auto &layer = get_layer(i);
-    layer.setup_tensors_bwd(dists[&layer]);
-  }
+}
+
+size_t model::get_workspace_capacity() const {
   size_t available = cuda::get_available_memory_capacity();
-  size_t workspace_memory = available;
+  size_t workspace_capacity = available;
   // set aside some space for shuffling, halo exchange, etc.
-  workspace_memory -= 1 << 28;
+  workspace_capacity -= 1 << 28;
   dc::MPIRootPrintStreamInfo()
       << "Current available memory: " << available << " (" << int(available / 1024.0 / 1024.0)
-      << " MB), workspace: " << workspace_memory
-      << " (" << int(workspace_memory / 1024.0 / 1024.0)
+      << " MB), workspace: " << workspace_capacity
+      << " (" << int(workspace_capacity / 1024.0 / 1024.0)
       << " MB)";
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    get_layer(i).setup_distconv_post(workspace_memory);
-  }
+  return workspace_capacity;
 }
 
 #endif // LBANN_HAS_DISTCONV

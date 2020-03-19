@@ -38,6 +38,19 @@ namespace callback {
 class imcomm;
 }
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class convolution_adapter: public base_convolution_adapter<TensorDataType, Device> {
+ public:
+  using TensorDevType = typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
+
+  convolution_adapter(Layer& layer): base_convolution_adapter<TensorDataType, Device>(layer) {}
+
+  dc::Shape get_activations_local_shape(int index=0) const override;
+  void setup_layer(size_t workspace_capacity) override;
+};
+#endif // LBANN_HAS_DISTCONV
+
 /** @brief Standard deep learning convolution.
  *
  *  Applies convolution (more precisely, cross-correlation) to input
@@ -148,12 +161,12 @@ protected:
       if (this->distconv_enabled()) {
         this->distconv_forward();
         this->apply_bias_distconv();
-        this->copy_out_activations();
+        this->dc().copy_out_activations();
         if (this->early_terminate_last_iteration() &&
-            this->keep_original()) {
+            this->dc().keep_original()) {
           base_convolution_layer<TensorDataType, Device>::apply_convolution_cudnn(true);
           base_convolution_layer<TensorDataType, Device>::apply_bias_cudnn();
-          this->dump_reference_activations();
+          this->dc().dump_original_activations();
         }
       }
 #else
@@ -177,16 +190,17 @@ protected:
           this->distconv_backward_filter();
           return;
         }
-        if (this->m_conv->is_overlap_bwd_halo_exchange_enabled()) {
-          this->m_conv->backward_data_exchange_halo(this->get_prev_error_signals_t());
+        if (this->dc().m_conv->is_overlap_bwd_halo_exchange_enabled()) {
+          this->dc().m_conv->backward_data_exchange_halo(
+              this->dc().get_prev_error_signals());
         }
         this->distconv_backward_filter();
         this->distconv_backward_data();
         if (this->early_terminate_last_iteration() &&
-            this->keep_original()) {
+            this->dc().keep_original()) {
           base_convolution_layer<TensorDataType, Device>::compute_gradients_cudnn(false);
           base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_cudnn(false);
-          this->dump_reference_error_signals();
+          this->dc().dump_original_error_signals();
         }
       }
 #else
@@ -200,14 +214,20 @@ protected:
   }
 
 #ifdef LBANN_HAS_DISTCONV
+  friend class convolution_adapter<TensorDataType, Layout, Device>;
  public:
+  void setup_distconv_adapter() override {
+    this->get_dc() = make_unique<
+      convolution_adapter<TensorDataType, Layout, Device>>(*this);
+  }
+
   void init_distribution(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
       std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &fixed) override {
+      std::set<dc::Dist*> &invariants) override {
     base_convolution_layer<TensorDataType, Device>::init_distribution(
-        dists, invariants, updated, fixed);
+        dists, equivalents, updated, invariants);
     if (!this->distconv_enabled()) return;
 
     auto kernel_dims = get_kernel_dims();
@@ -231,71 +251,22 @@ protected:
     auto &prev_activations_dist = dists[this][0];
     prev_activations_dist.set_overlap(overlap);
     updated.insert(&prev_activations_dist);
-    fixed.insert(&prev_activations_dist);
+    invariants.insert(&prev_activations_dist);
     auto &prev_error_signals_dist = dists[this][3];
     prev_error_signals_dist.set_overlap(overlap);
     updated.insert(&prev_error_signals_dist);
-    fixed.insert(&prev_error_signals_dist);
+    invariants.insert(&prev_error_signals_dist);
     // To deal with strides, error signals must have the same size
     // of overlap
     auto &error_signals_dist = dists[this][2];
     error_signals_dist.set_overlap(overlap);
     updated.insert(&error_signals_dist);
-    fixed.insert(&error_signals_dist);
-  }
-
-  dc::Shape get_activations_tensor_local_shape() const override {
-    std::vector<int> filter_dims = get_kernel_dims();
-    std::reverse(filter_dims.begin(), filter_dims.end());
-    std::vector<int> strides = this->m_strides;
-    std::reverse(strides.begin(), strides.end());
-    std::vector<int> dilations = this->m_dilations;
-    std::reverse(dilations.begin(), dilations.end());
-    const auto output_spatial_local_shape =
-        ::distconv::get_convolution_output_local_tensor_shape(
-            this->get_prev_activations_t(),
-            filter_dims, strides, true, dilations,
-            this->m_groups);
-    return output_spatial_local_shape;
-  }
-
-  void setup_distconv_post(size_t ws_size) override {
-    base_convolution_layer<TensorDataType, Device>::setup_distconv_post(ws_size);
-    if (!this->distconv_enabled()) return;
-
-    if (dc::is_deterministic()) {
-      dc::MPIRootPrintStreamDebug() << "Using deterministic convolution algorithms";
-      // Same algorithm as LBANN
-      this->m_fwd_algo = "IMPLICIT_GEMM";
-      // Deterministic algorithm
-      this->m_bwd_data_algo = "ALGO_1";
-      this->m_bwd_filter_algo = "ALGO_1";
-    } else {
-      this->m_fwd_algo = dc::get_convolution_fwd_algorithm();
-      this->m_bwd_data_algo = dc::get_convolution_bwd_data_algorithm();
-      this->m_bwd_filter_algo = dc::get_convolution_bwd_filter_algorithm();
-    }
-
-    std::vector<int> pads = this->m_pads;
-    std::reverse(pads.begin(), pads.end());
-    std::vector<int> strides = this->m_strides;
-    std::reverse(strides.begin(), strides.end());
-    std::vector<int> dilations = this->m_dilations;
-    std::reverse(dilations.begin(), dilations.end());
-
-    this->m_conv->setup(this->get_prev_activations_t(),
-                        this->m_kernel_t, this->get_activations_t(),
-                        this->get_error_signals_t(), this->m_kernel_gradient_e,
-                        this->get_prev_error_signals_t(),
-                        pads, strides, dilations, this->m_groups,
-                        this->m_fwd_algo, this->m_bwd_data_algo,
-                        this->m_bwd_filter_algo,
-                        ws_size, this->skip_first_layer_bp());
+    invariants.insert(&error_signals_dist);
   }
 
  protected:
-  bool using_distconv() const override {
-    if (!base_convolution_layer<TensorDataType, Device>::using_distconv()) return false;
+  bool is_distconv_supported() const override {
+    if (!base_convolution_layer<TensorDataType, Device>::is_distconv_supported()) return false;
 
     bool cond = true;
     const auto& kernel_dims = get_kernel_dims();
@@ -313,6 +284,65 @@ protected:
 
 #endif // LBANN_HAS_DISTCONV
 };
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+dc::Shape convolution_adapter<TensorDataType, Layout, Device>::
+get_activations_local_shape(int index) const {
+  assert_eq(index, 0);
+  const auto &layer = dynamic_cast<const convolution_layer<
+    TensorDataType, Layout, Device>&>(this->layer());
+  auto filter_dims = layer.get_kernel_dims();
+  std::reverse(std::begin(filter_dims), std::end(filter_dims));
+  auto strides = layer.m_strides;
+  std::reverse(std::begin(strides), std::end(strides));
+  auto dilations = layer.m_dilations;
+  std::reverse(std::begin(dilations), std::end(dilations));
+  const auto output_spatial_local_shape =
+      ::distconv::get_convolution_output_local_tensor_shape(
+          this->get_prev_activations(),
+          filter_dims, strides, true, dilations,
+          layer.m_groups);
+  return output_spatial_local_shape;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void convolution_adapter<TensorDataType, Layout, Device>::setup_layer(
+    size_t workspace_capacity) {
+  base_convolution_adapter<TensorDataType, Device>::setup_layer(
+      workspace_capacity);
+  auto &layer = dynamic_cast<convolution_layer<
+    TensorDataType, Layout, Device>&>(this->layer());
+
+  if (dc::is_deterministic()) {
+    dc::MPIRootPrintStreamDebug() << "Using deterministic convolution algorithms";
+    // Same algorithm as LBANN
+    this->m_fwd_algo = "IMPLICIT_GEMM";
+    // Deterministic algorithm
+    this->m_bwd_data_algo = "ALGO_1";
+    this->m_bwd_filter_algo = "ALGO_1";
+  } else {
+    this->m_fwd_algo = dc::get_convolution_fwd_algorithm();
+    this->m_bwd_data_algo = dc::get_convolution_bwd_data_algorithm();
+    this->m_bwd_filter_algo = dc::get_convolution_bwd_filter_algorithm();
+  }
+
+  std::vector<int> pads = layer.m_pads;
+  std::reverse(pads.begin(), pads.end());
+  std::vector<int> strides = layer.m_strides;
+  std::reverse(strides.begin(), strides.end());
+  std::vector<int> dilations = layer.m_dilations;
+  std::reverse(dilations.begin(), dilations.end());
+
+  this->m_conv->setup(this->get_prev_activations(),
+                      *(this->m_kernel), this->get_activations(),
+                      this->get_error_signals(),
+                      *this->m_kernel_gradient,
+                      this->get_prev_error_signals(),
+                      pads, strides, dilations, layer.m_groups,
+                      this->m_fwd_algo, this->m_bwd_data_algo,
+                      this->m_bwd_filter_algo,
+                      workspace_capacity, layer.skip_first_layer_bp());
+}
 
 // Builder function
 LBANN_DEFINE_LAYER_BUILDER(convolution);

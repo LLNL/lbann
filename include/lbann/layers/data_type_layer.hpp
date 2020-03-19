@@ -33,6 +33,7 @@
 #include "lbann/utils/h2_tmp.hpp"
 
 #ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
 #include <set>
 #include <map>
 #include <array>
@@ -320,119 +321,30 @@ private:
   std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
 
 #ifdef LBANN_HAS_DISTCONV
+  friend class data_type_distconv_adapter<TensorDataType>;
  public:
-
   using TensorDevType = dc::TensorDev<TensorDataType>;
-  using TensorShufflerType = dc::TensorShuffler<TensorDataType>;
+
+  data_type_distconv_adapter<TensorDataType>& dc() override;
+  const data_type_distconv_adapter<TensorDataType>& dc() const override;
 
   void init_distribution(
       std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
       std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &fixed) override;
-  void setup_tensor_distribution_add_adjacent_invariants(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants) override;
-
-  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {}
-  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {}
-  void setup_distconv_post(size_t ws_size) override {}
-
-  virtual const TensorDevType &get_prev_activations_t() const;
-  virtual TensorDevType &get_prev_activations_t();
-  virtual const TensorDevType &get_prev_activations_const_view() const;
-  virtual const TensorDevType &get_activations_t() const;
-  virtual TensorDevType &get_activations_t();
-  virtual const TensorDevType &get_activations_t(const Layer &child) const;
-  virtual TensorDevType &get_activations_copyout();
-
-  virtual const TensorDevType &get_prev_error_signals_t() const;
-  virtual TensorDevType &get_prev_error_signals_t();
-  virtual const TensorDevType &get_prev_error_signals_const_view() const;
-  virtual const TensorDevType &get_error_signals_t() const;
-  virtual const TensorDevType &get_error_signals_t(const Layer &parent) const;
-  virtual TensorDevType &get_error_signals_t();
-  virtual TensorDevType &get_error_signals_copyout();
+      std::set<dc::Dist*> &invariants) override;
 
  protected:
-  bool using_distconv() const override;
   void setup_distconv() override;
+  void setup_distconv_adapter() override;
 
   virtual int get_num_dims() const;
   virtual int get_num_spatial_dims() const;
-  /** Return Distconv-related shapes. */
-  const dc::Shape get_input_tensor_shape() const;
-  const dc::Shape get_output_tensor_shape(int output_index = 0) const;
-
-  // Copis and converts input or output tensors when necessary
-  void ensure_prev_activations();
-  void copy_out_activations();
-  void ensure_prev_error_signals();
-  void copy_out_error_signals();
-
-  bool parent_copy_in_required(size_t input_index) const;
-  bool parent_shuffle_required(size_t input_index) const;
-  bool child_copy_out_required(size_t output_index) const;
-  bool child_shuffle_required(size_t output_index) const;
-  bool keep_original_input(size_t input_index) const;
-  bool keep_original_output(size_t output_index) const;
-  bool keep_original() const;
-
-  /** Initialize distconv tensors */
-  virtual void setup_prev_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-  virtual dc::Shape get_activations_tensor_local_shape() const;
-  virtual void setup_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists,
-                                        bool allocate=true);
-  virtual void setup_activations_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-
-  virtual void setup_prev_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-  virtual void setup_error_signals_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
-  virtual void setup_error_signals_copyout_tensor(const std::array<dc::Dist, dc::num_dists> &dists);
 
   virtual void fp_setup_distconv(El::Int mini_batch_size) override;
   virtual void bp_setup_distconv(El::Int mini_batch_size) override;
 
   virtual size_t estimate_memory_usage(const std::array<dc::Dist, dc::num_dists> &dists);
-
-  void dump_activations() const;
-  void dump_reference_activations();
-  void dump_error_signals() const;
-  void dump_reference_error_signals();
-
- private:
-  /** Previous activation tensor */
-  TensorDevType m_prev_activations_t;
-  /** View to Elemental matrix of previous activations */
-  TensorDevType m_prev_activations_const_view;
-  /** Activation tensor */
-  TensorDevType m_activations_t;
-  /** Elemental-format activation matrix */
-  TensorDevType m_activations_copyout;
-  /** Previous error signal tensor */
-  TensorDevType m_prev_error_signals_t;
-  /** View to Elemental matrix */
-  TensorDevType m_prev_error_signals_const_view;
-  /** Error signal tensor */
-  TensorDevType m_error_signals_t;
-  /** Elemental-format matrix */
-  TensorDevType m_error_signals_copyout;
-  std::vector<bool> m_parent_copy_in_required;
-  std::vector<bool> m_parent_shuffle_required;
-  std::vector<bool> m_child_copy_out_required;
-  std::vector<bool> m_child_shuffle_required;
-  TensorShufflerType *m_prev_activations_shuffler = nullptr;
-  TensorShufflerType *m_prev_activations_shuffler_last_mb[3];
-  TensorShufflerType *m_activations_shuffler = nullptr;
-  TensorShufflerType *m_activations_shuffler_last_mb[3];
-  TensorShufflerType *m_prev_error_signals_shuffler = nullptr;
-  TensorShufflerType *m_prev_error_signals_shuffler_last_mb[3];
-  TensorShufflerType *m_error_signals_shuffler = nullptr;
-  TensorShufflerType *m_error_signals_shuffler_last_mb[3];
-  std::vector<bool> m_keep_original_input;
-  std::vector<bool> m_keep_original_output;
-
-  void setup_keep_original_tensors();
-  void setup_inter_layer_adaptation();
 #endif // LBANN_HAS_DISTCONV
 
 #ifdef LBANN_HAS_CUDA

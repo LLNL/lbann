@@ -29,6 +29,27 @@
 
 namespace lbann {
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, typename T_io_buffer,
+          data_layout T_layout, El::Device Dev, typename InputType>
+const input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>&
+input_layer_distconv<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::dc() const {
+  return dynamic_cast<const input_adapter<
+    TensorDataType, T_io_buffer, T_layout, Dev, InputType>&>(
+        data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, typename T_io_buffer,
+          data_layout T_layout, El::Device Dev, typename InputType>
+input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>&
+input_layer_distconv<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::dc() {
+  return const_cast<input_adapter<
+    TensorDataType, T_io_buffer, T_layout, Dev, InputType>&>(
+        static_cast<const input_layer_distconv<
+        TensorDataType, T_io_buffer, T_layout, Dev, InputType>&>(*this).dc());
+}
+#endif // LBANN_HAS_DISTCONV
+
 template class input_layer_distconv<
   DataType, partitioned_io_buffer<DataType>, data_layout::DATA_PARALLEL, El::Device::CPU,
   DataType>;

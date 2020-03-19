@@ -70,8 +70,8 @@ void relu_layer<TensorDataType, Layout, Device>::fp_compute() {
       this->get_activations());
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled() && this->early_terminate_last_iteration() &&
-      this->keep_original()) {
-    this->dump_reference_activations();
+      this->dc().keep_original()) {
+    this->dc().dump_original_activations();
   }
 #endif // LBANN_HAS_DISTCONV
 }
@@ -92,8 +92,8 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
       this->get_error_signals());
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled() && this->early_terminate_last_iteration() &&
-      this->keep_original()) {
-    this->dump_reference_error_signals();
+      this->dc().keep_original()) {
+    this->dc().dump_original_error_signals();
   }
 #endif // LBANN_HAS_DISTCONV
 }
@@ -125,34 +125,6 @@ void relu_layer<TensorDataType, Layout, Device>::init_distribution(
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void relu_layer<TensorDataType, Layout, Device>::
-setup_tensors_fwd(const std::array<Dist, dc::num_dists> &dists) {
-  assert_always(Layout == data_layout::DATA_PARALLEL);
-  data_type_layer<TensorDataType>::setup_tensors_fwd(dists);
-  if (!this->distconv_enabled()) return;
-  this->setup_prev_activations_tensor(dists);
-  this->setup_activations_tensor(dists);
-  this->setup_activations_copyout_tensor(dists);
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void relu_layer<TensorDataType, Layout, Device>::
-setup_tensors_bwd(const std::array<Dist, dc::num_dists> &dists)  {
-  assert_always(Layout == data_layout::DATA_PARALLEL);
-  data_type_layer<TensorDataType>::setup_tensors_bwd(dists);
-  if (!this->distconv_enabled()) return;
-  this->setup_prev_error_signals_tensor(dists);
-  this->setup_error_signals_tensor(dists);
-  this->setup_error_signals_copyout_tensor(dists);
-  // Init the dc::Pooling layer
-  m_relu = new dc::ReLU(dc::get_backend());
-  m_relu->setup(this->get_prev_activations_t(),
-                this->get_activations_t(),
-                this->get_error_signals_t(),
-                this->get_prev_error_signals_t());
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
 void relu_layer<TensorDataType, Layout, Device>::fp_compute_distconv() {
   assert_always(Layout == data_layout::DATA_PARALLEL);
   assert_always(this->distconv_enabled());
@@ -161,10 +133,10 @@ void relu_layer<TensorDataType, Layout, Device>::fp_compute_distconv() {
   const TensorDataType one{1};
   const TensorDataType zero{0};
 
-  m_relu->forward(one, this->get_prev_activations_t(),
-                  zero, this->get_activations_t());
+  dc().m_relu->forward(one, this->dc().get_prev_activations(),
+                       zero, this->dc().get_activations());
 
-  this->copy_out_activations();
+  dc().copy_out_activations();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -175,11 +147,11 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute_distconv() {
   const TensorDataType zero{0};
   const TensorDataType one{1};
 
-  m_relu->backward(one, this->get_activations_t(),
-                   this->get_prev_error_signals_t(),
-                   this->get_prev_activations_t(),
-                   zero, this->get_error_signals_t());
-  this->copy_out_error_signals();
+  dc().m_relu->backward(one, this->dc().get_activations(),
+                        this->dc().get_prev_error_signals(),
+                        this->dc().get_prev_activations(),
+                        zero, this->dc().get_error_signals());
+  dc().copy_out_error_signals();
 }
 #endif // LBANN_HAS_DISTCONV
 

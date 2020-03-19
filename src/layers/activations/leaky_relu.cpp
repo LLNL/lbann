@@ -88,21 +88,9 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::init_distribution(
     std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-    std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+    std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
     std::set<dc::Dist*> &updated,
-    std::set<dc::Dist*> &fixed) {
-  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void leaky_relu_layer<TensorDataType, Layout, Device>::setup_tensors_fwd(
-    const std::array<dc::Dist, dc::num_dists> &dists) {
-  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void leaky_relu_layer<TensorDataType, Layout, Device>::setup_tensors_bwd(
-    const std::array<dc::Dist, dc::num_dists> &dists)  {
+    std::set<dc::Dist*> &invariants) {
   LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
 }
 

@@ -55,35 +55,35 @@ struct accumulate2 {
   }
 };
 
-template <typename Tensor>
-void bp_compute_distconv(Tensor &error_signals,
-                         Tensor &prev_error_signals,
-                         std::vector<Tensor> &prev_error_signals_siblings,
-                         int num_children) {
-  using TensorDataType = typename Tensor::data_type;
+template <typename SplitAdapter>
+void bp_compute_distconv(SplitAdapter &dc, int num_children) {
+  using TensorDataType = typename SplitAdapter::TensorDevType::data_type;
+  auto &error_signals = dc.get_error_signals(0);
   switch (num_children) {
     case 0:
       dc::MPIPrintStreamInfo() << "No parent for this sum layer";
       error_signals.zero(dc::get_stream());
       break;
     case 1:
-      dc::tensor::Copy(error_signals, prev_error_signals,
+      dc::tensor::Copy(error_signals,
+                       dc.get_prev_error_signals(0),
                        dc::get_stream());
       break;
     case 2:
-      prev_error_signals_siblings.at(0).set_outermost_dimension(
-          error_signals.get_shape()[-1]);
-      dc::tensor::Transform(error_signals, prev_error_signals,
-                            prev_error_signals_siblings.at(0),
+      dc::tensor::Transform(error_signals,
+                            dc.get_prev_error_signals(0),
+                            dc.get_prev_error_signals(1),
                             accumulate2<TensorDataType>(),
                             dc::get_backend().get_stream());
       break;
     default:
-      dc::tensor::Copy(error_signals, prev_error_signals,
+      dc::tensor::Copy(error_signals,
+                       dc.get_prev_error_signals(1),
                        dc::get_stream());
-      for (auto &child: prev_error_signals_siblings) {
-        child.set_outermost_dimension(error_signals.get_shape()[-1]);
-        dc::tensor::Transform(error_signals, child, accumulate<TensorDataType>(),
+      for (int i = 1; i < num_children; ++i) {
+        const auto &prev_error = dc.get_prev_error_signals(i);
+        dc::tensor::Transform(error_signals, prev_error,
+                              accumulate<TensorDataType>(),
                               dc::get_backend().get_stream());
       }
   }
@@ -96,11 +96,8 @@ void split_layer<TensorDataType, Layout, Dev>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     assert_always(Layout == data_layout::DATA_PARALLEL);
-    bp_compute_distconv(this->get_error_signals_t(),
-                        this->get_prev_error_signals_t(),
-                        m_prev_error_signals_siblings,
-                        this->get_num_children());
-    this->copy_out_error_signals();
+    bp_compute_distconv(this->dc(), this->get_num_children());
+    this->dc().copy_out_error_signals();
     if (!this->early_terminate_last_iteration()) {
       return;
     }

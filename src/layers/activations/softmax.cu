@@ -270,18 +270,18 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::fp_compute_distconv() {
   assert_always(this->distconv_enabled());
   assert_always(Layout == data_layout::DATA_PARALLEL);
-  m_softmax->forward(this->get_prev_activations_t(), this->get_activations_t());
-  this->copy_out_activations();
+  dc().m_softmax->forward(dc().get_prev_activations(), dc().get_activations());
+  dc().copy_out_activations();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void softmax_layer<TensorDataType, Layout, Device>::bp_compute_distconv() {
   assert_always(this->distconv_enabled());
   assert_always(Layout == data_layout::DATA_PARALLEL);
-  m_softmax->backward(this->get_activations_t(),
-                      this->get_prev_error_signals_t(),
-                      this->get_error_signals_t());
-  this->copy_out_error_signals();
+  dc().m_softmax->backward(dc().get_activations(),
+                           dc().get_prev_error_signals(),
+                           dc().get_error_signals());
+  dc().copy_out_error_signals();
 }
 #endif // LBANN_HAS_DISTCONV
 
@@ -331,8 +331,8 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   }
 #ifdef LBANN_HAS_DISTCONV
   if (l.distconv_enabled() && l.early_terminate_last_iteration() &&
-      l.keep_original()) {
-    l.dump_reference_activations();
+      l.dc().keep_original()) {
+    l.dc().dump_original_activations();
   }
 #endif // LBANN_HAS_DISTCONV
 }
@@ -380,8 +380,8 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   }
 #ifdef LBANN_HAS_DISTCONV
   if (l.distconv_enabled() && l.early_terminate_last_iteration() &&
-      l.keep_original()) {
-    l.dump_reference_error_signals();
+      l.dc().keep_original()) {
+    l.dc().dump_original_error_signals();
   }
 #endif // LBANN_HAS_DISTCONV
 }

@@ -32,6 +32,42 @@
 
 namespace lbann {
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class cross_entropy_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
+ public:
+  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+
+  cross_entropy_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  virtual ~cross_entropy_distconv_adapter() = default;
+
+  // NOTE: LBANN matrix is a 2-D matrix, while Distconv keeps the
+  // original spatial and channel dimensions, so
+  // get_output_tensor_shape() doesn't work here.
+  dc::Shape get_activations_shape(int output_index=0) const override {
+    dc::Shape shape = this->get_prev_activations_shape(0);
+    assert_always(shape.num_dims() == 5);
+    for (int i = 0; i < shape.num_dims() - 1; ++i) {
+      shape[i] = 1;
+    }
+    return shape;
+  }
+
+  dc::Shape get_activations_local_shape(int index=0) const override {
+    assert_eq(index, 0);
+    auto input_shape = this->get_prev_activations().get_local_shape();
+    for (int i = 0; i < input_shape.length() - 1; ++i) {
+      input_shape[i] = 1;
+    }
+    return input_shape;
+  }
+  void setup_error_signals(const dc::Dist& dist) override;
+  void setup_layer(size_t workspace_capacity) override;
+
+  std::unique_ptr<dc::CrossEntropy> m_cross_entropy;
+};
+#endif // LBANN_HAS_DISTCONV
+
 /** @brief Cross entropy loss function.
  *
  *  Given a predicted distribution @f$y@f$ and ground truth
@@ -80,7 +116,18 @@ public:
     this->set_output_dims({1});
 
 #ifdef LBANN_HAS_DISTCONV
-    if (this->using_distconv()) {
+    // In the current implementation of cross entropy in Distconv, we
+    // do not use the reshape layer and just assumes both inputs have
+    // the matching shape. Therefore, the following check on the input
+    // dimensions would fail. We could address this by either 1)
+    // implementing the reshape layer, or 2) giving a proper shape to
+    // the ground-truth data.
+    //
+    // Furthermore, we need to call enable_distconv() here since it it
+    // isnot yet called at this point. It will be called again, but
+    // that won't be harmful.
+    this->enable_distconv();
+    if (this->distconv_enabled()) {
       return;
     }
 #endif
@@ -156,8 +203,8 @@ public:
 
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled() && this->early_terminate_last_iteration() &&
-        this->keep_original()) {
-      this->dump_reference_activations();
+        this->dc().keep_original()) {
+      this->dc().dump_original_activations();
     }
 #endif // LBANN_HAS_DISTCONV
   }
@@ -183,8 +230,8 @@ public:
 
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled() && this->early_terminate_last_iteration() &&
-        this->keep_original()) {
-      this->dump_reference_error_signals();
+        this->dc().keep_original()) {
+      this->dc().dump_original_error_signals();
     }
 #endif // LBANN_HAS_DISTCONV
   }
@@ -200,36 +247,42 @@ private:
   std::unique_ptr<AbsDistMatrixType> m_workspace;
 
 #ifdef LBANN_HAS_DISTCONV
+  friend class cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>;
  protected:
-  using TensorDevType = typename data_type_layer<TensorDataType>::TensorDevType;
-  dc::CrossEntropy *m_cross_entropy;
-  TensorDevType m_ground_truth_t;
-  TensorDevType m_d_ground_truth_t;
+  void setup_distconv_adapter() override {
+    this->get_dc() = make_unique<
+      cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
+  }
+
+  cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
+  const cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
 
   void fp_compute_distconv() {
     assert_always(this->distconv_enabled());
-    m_cross_entropy->forward(this->get_prev_activations_t(), m_ground_truth_t,
-                             this->get_activations_t());
-    this->copy_out_activations();
+    dc().m_cross_entropy->forward(this->dc().get_prev_activations(0),
+                                  this->dc().get_prev_activations(1),
+                                  this->dc().get_activations());
+    this->dc().copy_out_activations();
   }
 
   void bp_compute_distconv() {
     assert_always(this->distconv_enabled());
-    m_cross_entropy->backward(this->get_prev_activations_t(),
-                              m_ground_truth_t,
-                              this->get_prev_error_signals_t(),
-                              this->get_error_signals_t(), m_d_ground_truth_t);
-    this->copy_out_error_signals();
+    dc().m_cross_entropy->backward(this->dc().get_prev_activations(0),
+                                   this->dc().get_prev_activations(1),
+                                   this->dc().get_prev_error_signals(0),
+                                   this->dc().get_error_signals(0),
+                                   this->dc().get_error_signals(1));
+    this->dc().copy_out_error_signals();
   }
 
  public:
   void init_distribution(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
       std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &fixed) override {
+      std::set<dc::Dist*> &invariants) override {
     data_type_layer<TensorDataType>::init_distribution(
-        dists, invariants, updated, fixed);
+        dists, equivalents, updated, invariants);
     if (!this->distconv_enabled()) return;
 
     // Output tensors share all dimensions except for the sample dimension
@@ -248,89 +301,50 @@ private:
       auto &dist = dists[this][i];
       dist.set_overlap(no_overlap);
       updated.insert(&dist);
-      fixed.insert(&dist);
+      invariants.insert(&dist);
     }
-  }
-
-  dc::Shape get_activations_tensor_local_shape() const {
-    auto input_shape = this->get_prev_activations_t().get_local_shape();
-    for (int i = 0; i < input_shape.length() - 1; ++i) {
-      input_shape[i] = 1;
-    }
-    return input_shape;
-  }
-
-  // NOTE: LBANN matrix is a 2-D matrix, while Distconv keeps the
-  // original spatial and channel dimensions, so
-  // get_output_tensor_shape() doesn't work here.
-  void setup_activations_tensor(const std::array<dc::Dist, dc::num_dists> &dists,
-                                bool allocate=true) override {
-    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-    auto output_tensor_shape = this->get_prev_activations_t().get_shape();
-    for (int i = 0; i < output_tensor_shape.length() - 1; ++i) {
-      output_tensor_shape[i] = 1;
-    }
-    const auto activations_local_shape =
-        this->get_activations_tensor_local_shape();
-    this->get_activations_t() = TensorDevType(output_tensor_shape,
-                                              loc, dists[1],
-                                              activations_local_shape);
-    if (allocate) {
-      assert0(this->get_activations_t().allocate());
-      this->get_activations_t().zero(dc::get_stream());
-    }
-  }
-
-  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists)
-      override {
-    data_type_layer<TensorDataType>::setup_tensors_fwd(dists);
-    if (!this->distconv_enabled()) return;
-    this->setup_prev_activations_tensor(dists);
-    this->setup_activations_tensor(dists);
-    this->setup_activations_copyout_tensor(dists);
-    m_ground_truth_t = dynamic_cast<const data_type_layer<TensorDataType>*>(
-        this->get_parent_layers()[1])->get_activations_t(*this);
-  }
-
-  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists)
-      override {
-    data_type_layer<TensorDataType>::setup_tensors_bwd(dists);
-    if (!this->distconv_enabled()) return;
-    this->setup_prev_error_signals_tensor(dists);
-    this->setup_error_signals_tensor(dists);
-    this->setup_error_signals_copyout_tensor(dists);
-
-    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-    const auto &global_shape = m_ground_truth_t.get_shape();
-    const auto &local_shape = m_ground_truth_t.get_local_shape();
-    m_d_ground_truth_t = TensorDevType(
-        global_shape, loc, dists[2], local_shape);
-    assert0(m_d_ground_truth_t.allocate());
-    m_d_ground_truth_t.zero(dc::get_stream());
-
-    m_cross_entropy = new dc::CrossEntropy(dc::get_backend());
-    m_cross_entropy->setup(this->get_prev_activations_t(), m_ground_truth_t,
-                           this->get_activations_t());
-  }
-
-  using data_type_layer<TensorDataType>::get_error_signals_t;
-
-  const TensorDevType &get_error_signals_t(const Layer &parent) const {
-    const auto parents = this->get_parent_layers();
-    assert_always(parents.size() == 2);
-    for (int i = 0; i < (int)parents.size(); ++i) {
-      if (parents[i] == &parent) {
-        if (i == 0) {
-          return this->get_error_signals_t();
-        } else {
-          return m_d_ground_truth_t;
-        }
-      }
-    }
-    LBANN_ERROR("No such parent found");
   }
 #endif // LBANN_HAS_DISTCONV
 };
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+const cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&
+cross_entropy_layer<TensorDataType, T_layout, Dev>::dc() const {
+  return dynamic_cast<const cross_entropy_distconv_adapter<
+    TensorDataType, T_layout, Dev>&>(data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&
+cross_entropy_layer<TensorDataType, T_layout, Dev>::dc() {
+  return const_cast<cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      static_cast<const cross_entropy_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::setup_error_signals(
+    const dc::Dist& dist) {
+  data_type_distconv_adapter<TensorDataType>::setup_error_signals(dist);
+  assert_always(this->m_gradient_wrt_inputs.size() == 1);
+  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+  const auto &ground_truth_tensor = this->get_prev_activations(1);
+  const auto &global_shape = ground_truth_tensor.get_shape();
+  const auto &local_shape = ground_truth_tensor.get_local_shape();
+  this->m_gradient_wrt_inputs.emplace_back(make_unique<TensorDevType>(
+      global_shape, loc, dist, local_shape));
+  assert0(this->get_error_signals(1).allocate());
+  this->get_error_signals(1).zero(dc::get_stream());
+}
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
+    size_t workspace_capacity) {
+  m_cross_entropy = make_unique<dc::CrossEntropy>(dc::get_backend());
+  m_cross_entropy->setup(this->get_prev_activations(0),
+                         this->get_prev_activations(1),
+                         this->get_activations(0));
+}
+#endif // LBANN_HAS_DISTCONV
 
 #ifndef LBANN_CROSS_ENTROPY_LAYER_INSTANTIATE
 

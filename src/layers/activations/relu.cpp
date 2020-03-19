@@ -76,18 +76,6 @@ void relu_layer<TensorDataType, Layout, Device>::init_distribution(
     std::set<dc::Dist*> &fixed)  {
   LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
 }
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void relu_layer<TensorDataType, Layout, Device>::
-setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) {
-  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void relu_layer<TensorDataType, Layout, Device>::
-setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists)  {
-  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
-}
 #endif // LBANN_HAS_DISTCONV
 
 #define PROTO(T)                                                        \

@@ -53,6 +53,10 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << std::endl;
   }
 
+  if (std::getenv("DEBUGGER_ATTACH")) {
+    sleep(60);
+  }
+
   try {
     // Initialize options db (this parses the command line)
     options *opts = options::get();

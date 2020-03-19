@@ -54,40 +54,44 @@ struct accumulate2 {
   }
 };
 
-template <typename Tensor>
-void fp_compute_distconv(Tensor &activations,
-                         Tensor &prev_activations,
-                         std::vector<Tensor> &prev_activations_siblings,
-                         int num_parents) {
-  using TensorDataType = typename Tensor::data_type;
+template <typename TensorDataType, template<typename> class SumDistConvLayer>
+void fp_compute_distconv(int num_parents, SumDistConvLayer<TensorDataType> &dc) {
+  auto activations = dc.get_activations();
   switch (num_parents) {
     case 0:
-      dc::MPIPrintStreamDebug() << "No parent for sum layer";
       activations.zero(dc::get_stream());
       break;
     case 1:
-      dc::MPIPrintStreamDebug() << "Just one parent for sum layer";
-      dc::tensor::Copy(activations, prev_activations, dc::get_stream());
+      dc::tensor::Copy(activations, dc.get_prev_activations(),
+                       dc::get_stream());
       break;
     case 2:
       // Optimization for layers with 2 parents (e.g.,
       // Resnet50). Avoids loading destination tensors multiple times
-      prev_activations_siblings.at(0).set_outermost_dimension(
+      dc.get_prev_activations(1).set_outermost_dimension(
           activations.get_shape()[-1]);
-      dc::tensor::Transform(activations, prev_activations,
-                            prev_activations_siblings.at(0),
+      dc::tensor::Transform(activations,
+                            dc.get_prev_activations(0),
+                            dc.get_prev_activations(1),
                             accumulate2<TensorDataType>(),
                             dc::get_backend().get_stream());
       break;
     default:
-      dc::tensor::Copy(activations, prev_activations, dc::get_stream());
-      for (auto &p: prev_activations_siblings) {
-        p.set_outermost_dimension(activations.get_shape()[-1]);
-        distconv::tensor::Transform(activations, p, accumulate<TensorDataType>(),
-                                    dc::get_backend().get_stream());
+      for (int i = 0; i < num_parents; ++i) {
+        auto &prev_activations = dc.get_prev_activations(i);
+        prev_activations.set_outermost_dimension(activations.get_shape()[-1]);
+        if (i == 0) {
+          dc::tensor::Copy(activations, prev_activations,
+                           dc::get_stream());
+        } else {
+          distconv::tensor::Transform(activations, prev_activations,
+                                      accumulate<TensorDataType>(),
+                                      dc::get_backend().get_stream());
+        }
       }
   }
 }
+
 } // namespace
 #endif // LBANN_HAS_DISTCONV
 
@@ -95,10 +99,9 @@ template <typename TensorDataType, data_layout Layout, El::Device Dev>
 void sum_layer<TensorDataType, Layout, Dev>::fp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    fp_compute_distconv(this->get_activations_t(),
-                        this->get_prev_activations_t(),
-                        m_prev_activations_siblings, this->get_num_parents());
-    this->copy_out_activations();
+     fp_compute_distconv(
+        this->get_num_parents(), this->dc());
+     this->dc().copy_out_activations();
     if (!this->early_terminate_last_iteration()) {
       return;
     }

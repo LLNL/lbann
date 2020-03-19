@@ -37,6 +37,30 @@
 
 namespace lbann {
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class split_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
+ public:
+  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+
+  split_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  virtual ~split_distconv_adapter() = default;
+
+  dc::Shape get_activations_local_shape(int index) const override {
+    return data_type_distconv_adapter<TensorDataType>::get_activations_local_shape(0);
+  }
+
+  void setup_activations(const dc::Dist& dist) override {
+    const auto &parent_activations =
+        dynamic_cast<const TensorDevType&>(
+            this->layer().get_parent_layers()[0]->dc().get_activations(this->layer()));
+    for (int i = 0; i < this->layer().get_num_children(); ++i) {
+      this->m_outputs.emplace_back(make_unique<TensorDevType>(parent_activations));
+    }
+  }
+};
+#endif // LBANN_HAS_DISTCONV
+
 /** @brief Present input tensor to multiple outputs. */
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
@@ -75,67 +99,53 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  using TensorDevType = typename data_type_layer<TensorDataType>::TensorDevType;
-  std::vector<TensorDevType> m_prev_error_signals_siblings;
+  void setup_distconv_adapter() override {
+    this->get_dc() = make_unique<split_distconv_adapter<
+      TensorDataType, T_layout, Dev>>(*this);
+  }
+
+  split_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
+  const split_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
 
   void fp_compute_distconv() {}
 
  public:
 
-  using data_type_layer<TensorDataType>::get_activations_t;
-
-  const TensorDevType &get_activations_t(const Layer &child) const {
-    // Pass the same tensor as a const reference to multiple child layers
-    return this->get_activations_t();
-  }
-
   void init_distribution(
       std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
       std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &fixed) override {
+      std::set<dc::Dist*> &invariants) override {
     data_type_layer<TensorDataType>::init_distribution(
-        dists, invariants, updated, fixed);
+        dists, equivalents, updated, invariants);
     if (!this->distconv_enabled()) return;
     auto &layer_dists = dists[this];
     // x == y
-    invariants[&layer_dists[0]].insert(&layer_dists[1]);
-    invariants[&layer_dists[1]].insert(&layer_dists[0]);
+    equivalents[&layer_dists[0]].insert(&layer_dists[1]);
+    equivalents[&layer_dists[1]].insert(&layer_dists[0]);
     // dx == dy
-    invariants[&layer_dists[2]].insert(&layer_dists[3]);
-    invariants[&layer_dists[3]].insert(&layer_dists[2]);
+    equivalents[&layer_dists[2]].insert(&layer_dists[3]);
+    equivalents[&layer_dists[3]].insert(&layer_dists[2]);
   }
-
-  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    data_type_layer<TensorDataType>::setup_tensors_fwd(dists);
-    if (!this->distconv_enabled()) return;
-    this->setup_prev_activations_tensor(dists);
-    // activation is just a copy of prev activation
-    get_activations_t() = this->get_prev_activations_t();
-    this->setup_activations_copyout_tensor(dists);
-  }
-
-  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override {
-    data_type_layer<TensorDataType>::setup_tensors_bwd(dists);
-    if (!this->distconv_enabled()) return;
-
-    this->setup_prev_error_signals_tensor(dists);
-    this->setup_error_signals_tensor(dists);
-    this->setup_error_signals_copyout_tensor(dists);
-
-    m_prev_error_signals_siblings.reserve(this->get_num_children() - 1);
-    for (int i = 1; i < this->get_num_children(); ++i) {
-      if (this->child_shuffle_required(i) || this->child_copy_out_required(i)) {
-        LBANN_ERROR("Copyout non-first tensor not supported");
-      }
-      m_prev_error_signals_siblings.emplace_back(
-          dynamic_cast<const data_type_layer<TensorDataType>*>(
-              this->get_child_layers()[i])->get_error_signals_t(*this));
-    }
-  }
-#endif
+#endif // LBANN_HAS_DISTCONV
 
 };
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+split_distconv_adapter<TensorDataType, T_layout, Dev>&
+split_layer<TensorDataType, T_layout, Dev>::dc() {
+  return const_cast<split_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      static_cast<const split_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+const split_distconv_adapter<TensorDataType, T_layout, Dev>&
+split_layer<TensorDataType, T_layout, Dev>::dc() const {
+  return dynamic_cast<const split_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      data_type_layer<TensorDataType>::dc());
+}
+#endif // LBANN_HAS_DISTCONV
 
 LBANN_DEFINE_LAYER_BUILDER(split);
 

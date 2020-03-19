@@ -32,6 +32,21 @@
 
 namespace lbann {
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class relu_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
+ public:
+  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+
+  relu_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  virtual ~relu_distconv_adapter() = default;
+
+  void setup_layer(size_t workspace_capacity) override;
+
+  std::unique_ptr<dc::ReLU> m_relu;
+};
+#endif // LBANN_HAS_DISTCONV
+
 /** Rectified linear unit activation function layer.
  *  \f[ ReLU(x) = \text{max}(x, 0) \f]
  *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks)
@@ -51,21 +66,52 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  dc::ReLU *m_relu;
+  void setup_distconv_adapter() override {
+    this->get_dc() = make_unique<relu_distconv_adapter<
+      TensorDataType, T_layout, Dev>>(*this);
+  }
+
+  relu_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
+  const relu_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
+
   void fp_compute_distconv();
   void bp_compute_distconv();
 
  public:
   void init_distribution(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
       std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &fixed) override;
-  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override;
-  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override;
+      std::set<dc::Dist*> &invariants) override;
 
 #endif // LBANN_HAS_DISTCONV
 };
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+relu_distconv_adapter<TensorDataType, T_layout, Dev>&
+relu_layer<TensorDataType, T_layout, Dev>::dc() {
+  return const_cast<relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      static_cast<const relu_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+const relu_distconv_adapter<TensorDataType, T_layout, Dev>&
+relu_layer<TensorDataType, T_layout, Dev>::dc() const {
+  return dynamic_cast<const relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
+    size_t workspace_capacity) {
+  m_relu = make_unique<dc::ReLU>(dc::get_backend());
+  m_relu->setup(this->get_prev_activations(),
+                this->get_activations(),
+                this->get_error_signals(),
+                this->get_prev_error_signals());
+}
+#endif // LBANN_HAS_DISTCONV
 
 } // namespace lbann
 

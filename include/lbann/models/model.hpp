@@ -505,29 +505,10 @@ private:
   void add_split_layers(std::unordered_set<std::string>& layer_names);
 
 #ifdef LBANN_HAS_DISTCONV
- public:
-  CUDAClock m_clk_start;
-  CUDAClock m_clk_end;
-  float m_elapsed = 0;
-  int m_num_iterations = 0;
-  void clock_start() {
-    if (dc::is_profiling_enabled()) {
-      m_clk_start.record();
-    }
-  }
-  void clock_end() {
-    if (dc::is_profiling_enabled()) {
-      m_clk_end.record();
-      m_elapsed += m_clk_end.get_elapsed_time_since(m_clk_start);
-      ++m_num_iterations;
-    }
-  }
-  void clock_clear() {
-    m_elapsed = 0.0;
-    m_num_iterations = 0;
-  }
-
   void setup_distconv();
+  void find_valid_tensor_overlap(std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists);
+  void print_layer_distributions(std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists) const;
+  size_t get_workspace_capacity() const;
 #endif
 };
 

@@ -32,6 +32,21 @@
 
 namespace lbann {
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class leaky_relu_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
+ public:
+  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+
+  leaky_relu_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  virtual ~leaky_relu_distconv_adapter() = default;
+
+  void setup_layer(size_t workspace_capacity) override;
+
+  std::unique_ptr<dc::LeakyReLU> m_leaky_relu;
+};
+#endif // LBANN_HAS_DISTCONV
+
 /** @brief
  *
  *  @f[
@@ -77,19 +92,47 @@ private:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  dc::LeakyReLU *m_leaky_relu;
+  void setup_distconv_adapter() override {
+    this->get_dc() = make_unique<leaky_relu_distconv_adapter<
+      TensorDataType, Layout, Device>>(*this);
+  }
+
+  leaky_relu_distconv_adapter<TensorDataType, Layout, Device>& dc() override;
+  const leaky_relu_distconv_adapter<TensorDataType, Layout, Device>& dc() const override;
+
   void fp_compute_distconv();
   void bp_compute_distconv();
  public:
   void init_distribution(
       std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
       std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &fixed) override;
-  void setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) override;
-  void setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists) override;
+      std::set<dc::Dist*> &invariants) override;
 #endif // LBANN_HAS_DISTCONV
 };
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>&
+leaky_relu_layer<TensorDataType, T_layout, Dev>::dc() {
+  return const_cast<leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      static_cast<const leaky_relu_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+const leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>&
+leaky_relu_layer<TensorDataType, T_layout, Dev>::dc() const {
+  return dynamic_cast<const leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
+    size_t workspace_capacity) {
+  m_leaky_relu = make_unique<dc::LeakyReLU>(dc::get_backend());
+}
+#endif // LBANN_HAS_DISTCONV
+
 
 #ifndef LBANN_LEAKY_RELU_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

@@ -153,8 +153,8 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute() {
            this->get_local_activations());
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled() && this->early_terminate_last_iteration() &&
-      this->keep_original()) {
-    this->dump_reference_activations();
+      this->dc().keep_original()) {
+    this->dc().dump_original_activations();
   }
 #endif // LBANN_HAS_DISTCONV
 }
@@ -175,8 +175,8 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
            this->get_local_error_signals());
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled() && this->early_terminate_last_iteration() &&
-      this->keep_original()) {
-    this->dump_reference_error_signals();
+      this->dc().keep_original()) {
+    this->dc().dump_original_error_signals();
   }
 #endif // LBANN_HAS_DISTCONV
 }
@@ -185,46 +185,23 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::init_distribution(
     std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-    std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
+    std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
     std::set<dc::Dist*> &updated,
-    std::set<dc::Dist*> &fixed)  {
+    std::set<dc::Dist*> &invariants)  {
   assert_always(Layout == data_layout::DATA_PARALLEL);
   data_type_layer<TensorDataType>::init_distribution(
-      dists, invariants, updated, fixed);
+      dists, equivalents, updated, invariants);
   if (!this->distconv_enabled()) return;
   auto &layer_dists = dists[this];
   // x == y
-  invariants[&layer_dists[0]].insert(&layer_dists[1]);
-  invariants[&layer_dists[1]].insert(&layer_dists[0]);
+  equivalents[&layer_dists[0]].insert(&layer_dists[1]);
+  equivalents[&layer_dists[1]].insert(&layer_dists[0]);
   // x == dx
-  invariants[&layer_dists[0]].insert(&layer_dists[2]);
-  invariants[&layer_dists[2]].insert(&layer_dists[0]);
+  equivalents[&layer_dists[0]].insert(&layer_dists[2]);
+  equivalents[&layer_dists[2]].insert(&layer_dists[0]);
   // dx == dy
-  invariants[&layer_dists[2]].insert(&layer_dists[3]);
-  invariants[&layer_dists[3]].insert(&layer_dists[2]);
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void leaky_relu_layer<TensorDataType, Layout, Device>::
-setup_tensors_fwd(const std::array<dc::Dist, dc::num_dists> &dists) {
-  assert_always(Layout == data_layout::DATA_PARALLEL);
-  data_type_layer<TensorDataType>::setup_tensors_fwd(dists);
-  if (!this->distconv_enabled()) return;
-  this->setup_prev_activations_tensor(dists);
-  this->setup_activations_tensor(dists);
-  this->setup_activations_copyout_tensor(dists);
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void leaky_relu_layer<TensorDataType, Layout, Device>::
-setup_tensors_bwd(const std::array<dc::Dist, dc::num_dists> &dists)  {
-  assert_always(Layout == data_layout::DATA_PARALLEL);
-  data_type_layer<TensorDataType>::setup_tensors_bwd(dists);
-  if (!this->distconv_enabled()) return;
-  this->setup_prev_error_signals_tensor(dists);
-  this->setup_error_signals_tensor(dists);
-  this->setup_error_signals_copyout_tensor(dists);
-  m_leaky_relu = new dc::LeakyReLU(dc::get_backend());
+  equivalents[&layer_dists[2]].insert(&layer_dists[3]);
+  equivalents[&layer_dists[3]].insert(&layer_dists[2]);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -232,9 +209,9 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::
 fp_compute_distconv() {
   assert_always(Layout == data_layout::DATA_PARALLEL);
   assert_always(this->distconv_enabled());
-  m_leaky_relu->forward(this->get_prev_activations_t(), m_negative_slope,
-                        this->get_activations_t());
-  this->copy_out_activations();
+  dc().m_leaky_relu->forward(dc().get_prev_activations(), m_negative_slope,
+                             dc().get_activations());
+  dc().copy_out_activations();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -242,11 +219,11 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::
 bp_compute_distconv() {
   assert_always(Layout == data_layout::DATA_PARALLEL);
   assert_always(this->distconv_enabled());
-  m_leaky_relu->backward(this->get_prev_activations_t(),
-                         this->get_prev_error_signals_t(),
-                         m_negative_slope,
-                         this->get_error_signals_t());
-  this->copy_out_error_signals();
+  dc().m_leaky_relu->backward(dc().get_prev_activations(),
+                              dc().get_prev_error_signals(),
+                              m_negative_slope,
+                              dc().get_error_signals());
+  dc().copy_out_error_signals();
 }
 #endif // LBANN_HAS_DISTCONV
 

@@ -68,6 +68,8 @@ using IntVector = ::distconv::IntVector;
 using IndexVector = ::distconv::IndexVector;
 using Shape = ::distconv::tensor::Shape;
 
+using AbsTensor = ::distconv::tensor::AbstractTensor;
+
 template <typename TensorDataType>
 using TensorHost = ::distconv::tensor::Tensor<
   TensorDataType, ::distconv::tensor::LocaleMPI,
