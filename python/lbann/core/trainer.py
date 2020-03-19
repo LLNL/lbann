@@ -14,6 +14,7 @@ class Trainer:
         self.name = name
         self.procs_per_trainer = procs_per_trainer
         self.num_parallel_readers = num_parallel_readers
+        self.random_seed = random_seed
         self.hydrogen_block_size = None
         # Callbacks
         self.callbacks = make_iterable(callbacks)
