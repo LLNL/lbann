@@ -4,11 +4,11 @@ Scripts in this directory are surrogate deep learning models bridging simulation
 
 ### Pre-train Wasserstein autoencoder (WAE)
 ```bash
-run python3 pre_train_jag_wae.py
+python3 pre_train_jag_wae.py
 ```
 ### Train surrogate model using pre-trained WAE
 ```bash
-run python3 train_macc_surrogate.py
+python3 train_macc_surrogate.py
 ```
 Expected output of pre-training WAE in LBANN (90K training, 10K validation dataset, on a single LLNL Pascal GPU) is shown:
 ```

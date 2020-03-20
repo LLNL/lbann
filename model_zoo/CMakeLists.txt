@@ -31,7 +31,7 @@ set_target_properties(lbann-inf-bin PROPERTIES OUTPUT_NAME lbann_inf)
 # Install the binaries
 install(
   TARGETS lbann-bin lbann-bin2 lbann-gan-bin lbann-cycgan-bin lbann-aecycgan-bin
-  lbann-help
+  lbann-help lbann-inf-bin
   EXPORT LBANNTargets
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
