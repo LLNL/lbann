@@ -205,6 +205,13 @@ consistent and some preprocessing is typically required. See
 <https://github.com/LLNL/lbann/blob/develop/src/proto/transforms.proto>`_
 for a list of available preprocessing transforms.
 
+.. warning:: The Python data reader will trigger some process forking
+             that doesn't interact with InfiniBand all that well by
+             default. Users may encounter hangs on clusters that use
+             InfiniBand. To avoid this, ensure that
+             :bash:`IBV_FORK_SAFE=1` is exported into the environment
+             when running LBANN.
+
 ------------------------------------------------
 Python frontend
 ------------------------------------------------

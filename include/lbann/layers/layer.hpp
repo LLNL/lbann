@@ -87,7 +87,6 @@ namespace callback {
 class sync_layers;
 } // namespace callback
 
-#ifdef LBANN_HAS_DISTCONV
 /** Represents a parallel strategy for a layer. */
 struct ParallelStrategy {
   /** Number of process groups the sample dimension is split over. */
@@ -154,7 +153,6 @@ inline std::ostream &operator<<(std::ostream &os,
      << "}";
   return os;
 }
-#endif // LBANN_HAS_DISTCONV
 
 /**
  * @brief Neural network tensor operation.
@@ -213,6 +211,15 @@ public:
 
   /** Human-readable description. */
   virtual description get_description() const;
+
+  /** Get the parallel strategy for the layer. */
+  inline ParallelStrategy& get_parallel_strategy() {
+    return m_parallel_strategy;
+  }
+  /** Get the parallel strategy for the layer. */
+  const ParallelStrategy& get_parallel_strategy() const {
+    return m_parallel_strategy;
+  }
 
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
@@ -575,6 +582,9 @@ private:
    */
   const Layer* m_hint_layer = nullptr;
 
+  /** Parallel strategy for the layer. */
+  ParallelStrategy m_parallel_strategy;
+
 private:
   friend std::vector<const weights*> extract_weights(Layer const& l);
   friend std::vector<weights*> extract_weights(Layer& l);
@@ -590,9 +600,6 @@ private:
   /** Indicate whether distconv is enabled. */
   bool distconv_enabled() const;
   virtual void setup_distconv() = 0;
-  /** Get the parallel strategy for the layer. */
-  ParallelStrategy& get_parallel_strategy() { return m_parallel_strategy; }
-  const ParallelStrategy& get_parallel_strategy() const { return m_parallel_strategy; }
 
   virtual distconv_adapter& dc() { return *m_dc; }
   virtual const distconv_adapter& dc() const { return *m_dc; }
@@ -627,9 +634,6 @@ private:
   // Negative value disables early termination. DISTCONV_EARLY_TERMINATE
   // environment value will override if set.
   int m_exit_count = -1;
-  /** Parallel strategy for the layer. */
-  ParallelStrategy m_parallel_strategy;
-
   std::unique_ptr<distconv_adapter> m_dc;
 #endif // LBANN_HAS_DISTCONV
 };

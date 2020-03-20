@@ -51,6 +51,8 @@ option(LBANN_SB_BUILD_HDF5 "Pull and build HDF5 from the internet (not github)" 
 
 option(LBANN_SB_BUILD_HYDROGEN "Pull and build Hydrogen from Github" OFF)
 
+option(LBANN_SB_BUILD_DIHYDROGEN "Pull and build DiHydrogen from Github" OFF)
+
 option(LBANN_SB_BUILD_JPEG_TURBO "Download and build JPEG turbo" OFF)
 
 option(LBANN_SB_BUILD_OPENCV "Pull and build OpenCV from Github" OFF)
@@ -58,9 +60,6 @@ option(LBANN_SB_BUILD_OPENCV "Pull and build OpenCV from Github" OFF)
 option(LBANN_SB_BUILD_PROTOBUF "Pull and build Google Protobuf from Github" OFF)
 
 option(LBANN_SB_BUILD_LBANN "Pull and build LBANN from Github" OFF)
-
-# Distconv packages
-option(LBANN_SB_BUILD_DIHYDROGEN "Pull and build DiHydrogen from Github" OFF)
 
 #
 # Add the TPL subdirectories
@@ -121,6 +120,11 @@ if (LBANN_SB_BUILD_HYDROGEN)
   list(APPEND _BUILD_PKGS HYDROGEN)
 endif ()
 
+if (LBANN_SB_BUILD_DIHYDROGEN)
+  add_subdirectory(dihydrogen)
+  list(APPEND _BUILD_PKGS DIHYDROGEN)
+endif ()
+
 if (LBANN_SB_BUILD_JPEG_TURBO)
   add_subdirectory(jpeg-turbo)
   list(APPEND _BUILD_PKGS JPEG-TURBO)
@@ -134,12 +138,6 @@ endif ()
 if (LBANN_SB_BUILD_PROTOBUF)
   add_subdirectory(protobuf)
   list(APPEND _BUILD_PKGS PROTOBUF)
-endif ()
-
-# Distconv
-if (LBANN_SB_BUILD_DIHYDROGEN)
-  add_subdirectory(dihydrogen)
-  list(APPEND _BUILD_PKGS DIHYDROGEN)
 endif ()
 
 #

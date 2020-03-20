@@ -67,6 +67,7 @@ class FullyConnectedModule(Module):
                 initialization and the bias with zeros.
             name (str): Default name is in the form 'fcmodule<index>'.
             data_layout (str): Data layout.
+            parallel_strategy (dict): Data partitioning scheme.
 
         """
         super().__init__()
@@ -118,7 +119,7 @@ class FullyConnectedModule(Module):
                                  data_layout=self.data_layout,
                                  num_neurons=self.size,
                                  has_bias=self.bias,
-                                 transpose=self.transpose,                                 
+                                 transpose=self.transpose,
                                  parallel_strategy=self.parallel_strategy)
         if self.activation:
             return self.activation(y,
@@ -163,6 +164,8 @@ class ConvolutionModule(Module):
             name (str): Default name is in the form 'convmodule<index>'.
             transpose (bool): If true call deconvolution (or convolution
                          transpose)
+            parallel_strategy dict): Data partitioning scheme.
+
         """
         super().__init__()
         ConvolutionModule.global_count += 1

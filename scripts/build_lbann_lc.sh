@@ -75,6 +75,8 @@ DIHYDROGEN_URL=https://github.com/llnl/dihydrogen
 DIHYDROGEN_TAG=master
 WITH_P2P=ON
 WITH_TBINF=OFF
+WITH_DIHYDROGEN=OFF
+WITH_DISTCONV=OFF
 RECONFIGURE=0
 USE_NINJA=0
 # In case that autoconf fails during on-demand buid on surface, try the newer
@@ -279,11 +281,6 @@ while :; do
         --with-conduit)
             WITH_CONDUIT=ON
             ;;
-        --with-distconv)
-            WITH_DISTCONV=ON
-            # MPI-CUDA backend is required for Distconv
-            ALUMINUM_WITH_MPI_CUDA=ON
-            ;;
         --dihydrogen-url)
             DIHYDROGEN_URL=$2
             shift
@@ -311,6 +308,15 @@ while :; do
             ;;
         --nvshmem)
             WITH_NVSHMEM=1
+            ;;
+        --with-dihydrogen)
+            WITH_DIHYDROGEN=ON
+            ;;
+        --with-distconv)
+            WITH_DISTCONV=ON
+            WITH_DIHYDROGEN=ON
+            # MPI-CUDA backend is required for Distconv
+            ALUMINUM_WITH_MPI_CUDA=ON
             ;;
         -?*)
             # Unknown option
@@ -863,8 +869,10 @@ cmake \
 -D OPENBLAS_ARCH_COMMAND=${OPENBLAS_ARCH} \
 -D LBANN_WITH_NVSHMEM=${WITH_NVSHMEM} \
 -D LBANN_SB_FWD_LBANN_NVSHMEM_DIR=${NVSHMEM_DIR} \
--D LBANN_SB_BUILD_DIHYDROGEN=${WITH_DISTCONV} \
+-D LBANN_SB_BUILD_DIHYDROGEN=${WITH_DIHYDROGEN} \
 -D LBANN_SB_FWD_DIHYDROGEN_H2_ENABLE_P2P=${WITH_P2P} \
+-D DIHYDROGEN_ENABLE_DISTCONV_LEGACY=${WITH_DISTCONV} \
+-D LBANN_WITH_DIHYDROGEN=${WITH_DIHYDROGEN} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
 -D DIHYDROGEN_URL=${DIHYDROGEN_URL} \
 -D DIHYDROGEN_TAG=${DIHYDROGEN_TAG} \
