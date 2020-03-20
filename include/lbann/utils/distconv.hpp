@@ -28,17 +28,16 @@
 #define LBANN_UTILS_DISTCONV_HPP
 
 #include "lbann_config.hpp"
+
+#ifdef LBANN_HAS_DISTCONV
+
 #include "El.hpp"
 #include "lbann/comm.hpp"
 #include <vector>
 
-#ifdef LBANN_HAS_DISTCONV
-
 #ifdef LBANN_DEBUG
 #define DISTCONV_DEBUG
 #endif
-
-#define DISTCONV_HAS_CUDNN
 
 #include "distconv/distconv.hpp"
 #include "distconv/tensor/tensor_mpi_cuda.hpp"
@@ -59,26 +58,29 @@ class Layer;
 
 namespace dc {
 
+namespace tensor = ::distconv::tensor;
+namespace util = ::distconv::util;
+
 ////////////////////////////////////////////////////////////
 // Helper type aliases
 ////////////////////////////////////////////////////////////
-template <typename DataType>
-using Vector = ::distconv::Vector<DataType>;
 using IntVector = ::distconv::IntVector;
 using IndexVector = ::distconv::IndexVector;
 using Shape = ::distconv::tensor::Shape;
+
+using Dist = ::distconv::tensor::Distribution;
+
+using LocaleMPI = ::distconv::tensor::LocaleMPI;
 
 using AbsTensor = ::distconv::tensor::AbstractTensor;
 
 template <typename TensorDataType>
 using TensorHost = ::distconv::tensor::Tensor<
-  TensorDataType, ::distconv::tensor::LocaleMPI,
-  ::distconv::tensor::BaseAllocator>;
+  TensorDataType, LocaleMPI, ::distconv::tensor::BaseAllocator>;
 
 template <typename TensorDataType>
 using TensorDev = ::distconv::tensor::Tensor<
-  TensorDataType, ::distconv::tensor::LocaleMPI,
-  ::distconv::tensor::CUDAAllocator>;
+  TensorDataType, LocaleMPI, ::distconv::tensor::CUDAAllocator>;
 
 template <typename TensorDataType>
 using TensorHostShuffler = ::distconv::tensor::TensorMPIShuffler<
@@ -95,11 +97,7 @@ template <typename TensorDataType>
 using TensorShufflerHybrid = ::distconv::tensor::TensorMPICUDAShufflerHybrid<TensorDataType>;
 #endif // DISTCONV_HAS_P2P
 
-using Dist = ::distconv::tensor::Distribution;
-static constexpr int num_dists = 4;
-
-using LocaleMPI = ::distconv::tensor::LocaleMPI;
-
+// Debug printing functions
 using MPIPrintStreamDebug = ::distconv::util::MPIPrintStreamDebug;
 using MPIPrintStreamError = ::distconv::util::MPIPrintStreamError;
 using MPIPrintStreamInfo = ::distconv::util::MPIPrintStreamInfo;
@@ -109,6 +107,7 @@ using MPIRootPrintStreamError = ::distconv::util::MPIRootPrintStreamError;
 using MPIRootPrintStreamInfo = ::distconv::util::MPIRootPrintStreamInfo;
 using MPIRootPrintStreamWaning = ::distconv::util::MPIRootPrintStreamWarning;
 
+// Distconv layer classes
 using Backend = ::distconv::cudnn::BackendCUDNN;
 using ReLU = ::distconv::ReLU<Backend>;
 using LeakyReLU = ::distconv::LeakyReLU<Backend>;
@@ -121,11 +120,10 @@ using BatchNormalization = ::distconv::BatchNormalization<Backend, TensorDataTyp
 using Softmax = ::distconv::Softmax<Backend>;
 using CrossEntropy = ::distconv::CrossEntropy<Backend>;
 
-namespace tensor = ::distconv::tensor;
-namespace util = ::distconv::util;
-
 using ::distconv::get_sample_dim;
 using ::distconv::get_channel_dim;
+
+static constexpr int num_dists = 4;
 
 int get_strided_mpi_rank(MPI_Comm comm);
 MPI_Comm get_strided_mpi_comm(MPI_Comm comm);
@@ -218,9 +216,11 @@ Al::mpicuda_backend::comm_type &get_mpicuda();
 /** Get Distconv backend handle.
  */
 Backend &get_backend();
+
 /** Get Distconv stream.
  */
 cudaStream_t get_stream();
+
 /** Return a HaloExchangeMethod
  */
 ::distconv::HaloExchangeMethod get_halo_exchange_method();
@@ -230,6 +230,7 @@ TensorShuffler<TensorDataType> *get_tensor_shuffler(const TensorDev<TensorDataTy
                                                     const TensorDev<TensorDataType> &dst);
 
 MPI_Comm get_input_comm(const lbann_comm &comm);
+
 /** Return the MPI rank when reading input dataset
  */
 int get_input_rank(const lbann_comm &comm);

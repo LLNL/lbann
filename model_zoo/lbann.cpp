@@ -39,7 +39,6 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-  std::cerr << "Starting LBANN" << std::endl;
   int random_seed = lbann_default_random_seed;
   world_comm_ptr comm = initialize(argc, argv, random_seed);
   const bool master = comm->am_world_master();
@@ -51,10 +50,6 @@ int main(int argc, char *argv[]) {
       std::cout << argv[j] << " ";
     }
     std::cout << std::endl << std::endl;
-  }
-
-  if (std::getenv("DEBUGGER_ATTACH")) {
-    sleep(60);
   }
 
   try {
