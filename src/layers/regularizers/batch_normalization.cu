@@ -401,9 +401,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     fp_compute_distconv();
-    if (!this->early_terminate_last_iteration() || !this->dc().keep_original()) {
-      return;
-    }
+    return;
   }
 #endif // LBANN_HAS_DISTCONV
 
@@ -522,13 +520,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     bp_compute_distconv();
-    if (!this->early_terminate_last_iteration() || !this->dc().keep_original()) {
-      return;
-    }
-    assert0(dc::tensor::View(
-        this->dc().get_original_error_signals(),
-        this->get_error_signals().Buffer()));
-    this->dc().get_original_error_signals().zero(dc::get_stream());
+    return;
   }
 #endif // LBANN_HAS_DISTCONV
 

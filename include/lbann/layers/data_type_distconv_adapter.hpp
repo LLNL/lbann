@@ -83,15 +83,15 @@ public:
   TensorDevType& get_original_prev_error_signals(int child_index = 0);
 
   // Setup fp tensors
-  void setup_prev_activations(const dc::Dist& dist) override;
+  void setup_prev_activations() override;
   void setup_original_prev_activations() override;
-  void setup_activations(const dc::Dist& dist) override;
+  void setup_activations() override;
   void setup_original_activations() override;
 
   // Setup bp tensors
-  void setup_prev_error_signals(const dc::Dist& dist) override;
+  void setup_prev_error_signals() override;
   void setup_original_prev_error_signals() override;
-  void setup_error_signals(const dc::Dist& dist) override;
+  void setup_error_signals() override;
   void setup_original_error_signals() override;
 
   void set_original_activations_outermost_dimension(size_t dim);
@@ -101,6 +101,9 @@ public:
   std::vector<std::unique_ptr<TensorDevType>> &get_outputs() {
     return m_outputs;
   }
+
+  void fp_setup(El::Int mini_batch_size) override;
+  void bp_setup(El::Int mini_batch_size) override;
 
   TensorShufflerType& get_prev_activations_shuffler(
       const TensorDevType &src, const TensorDevType &dst);

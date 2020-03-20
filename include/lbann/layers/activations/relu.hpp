@@ -41,6 +41,9 @@ class relu_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
   relu_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~relu_distconv_adapter() = default;
 
+  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                           std::set<dc::Dist*> &updated,
+                           std::set<dc::Dist*> &invariants) override;
   void setup_layer(size_t workspace_capacity) override;
 
   std::unique_ptr<dc::ReLU> m_relu;
@@ -76,14 +79,6 @@ protected:
 
   void fp_compute_distconv();
   void bp_compute_distconv();
-
- public:
-  void init_distribution(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-      std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &invariants) override;
-
 #endif // LBANN_HAS_DISTCONV
 };
 
@@ -100,6 +95,27 @@ const relu_distconv_adapter<TensorDataType, T_layout, Dev>&
 relu_layer<TensorDataType, T_layout, Dev>::dc() const {
   return dynamic_cast<const relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
       data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void relu_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                    std::set<dc::Dist*> &updated,
+                    std::set<dc::Dist*> &invariants) {
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(
+      equivalents, updated, invariants);
+
+  auto &x = this->get_prev_activations_dist();
+  auto &y = this->get_activations_dist();
+  auto &dx = this->get_error_signals_dist();
+  auto &dy = this->get_prev_error_signals_dist();
+
+  // x == dx
+  equivalents[&x].insert(&dx);
+  equivalents[&dx].insert(&x);
+  // y == dy
+  equivalents[&y].insert(&dy);
+  equivalents[&dy].insert(&y);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

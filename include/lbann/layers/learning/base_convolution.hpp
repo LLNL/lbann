@@ -53,10 +53,8 @@ class base_convolution_adapter: public data_type_distconv_adapter<TensorDataType
   base_convolution_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~base_convolution_adapter() = default;
 
-  void setup_fp_tensors(const dc::Dist &input_dist,
-                        const dc::Dist &output_dist) override;
-  void setup_bp_tensors(const dc::Dist &prev_error_signals_dist,
-                        const dc::Dist &error_signals_dist) override;
+  void setup_fp_tensors() override;
+  void setup_bp_tensors() override;
   void setup_layer(size_t workspace_capacity) override;
 
   std::unique_ptr<dc::Convolution<TensorDataType>> m_conv;
@@ -1293,10 +1291,6 @@ private:
     this->dc().m_conv->forward(TensorDataType{1}, this->dc().get_prev_activations(),
                                *(this->dc().m_kernel),
                                TensorDataType{0}, this->dc().get_activations());
-    if (this->early_terminate_last_iteration()) {
-      dc::dump_tensor(this->early_terminate_last_iteration(),
-                      *(this->dc().m_kernel), this->get_name() + "_weights");
-    }
   }
 
   void apply_bias_distconv() {
@@ -1330,12 +1324,6 @@ private:
       TensorDataType dst_scale{0}, gradient_scale{0};
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
           dst_scale, gradient_scale, true);
-      // For comparison with the original LBANN, bias gradients will
-      // be calculated again with the original LBANN. Do not accumulate the
-      // gradients here as it would be otherwise accumulated twice.
-      if (this->early_terminate_last_iteration()) {
-        gradient_scale = TensorDataType{0};
-      }
       assert0(dc::tensor::View(*dc().m_bias_gradient,
                                bias_gradient.Buffer()));
       if (has_local_data) {
@@ -1385,12 +1373,11 @@ base_convolution_layer<TensorDataType, Device>::dc() {
 }
 
 template <typename TensorDataType, El::Device Device>
-void base_convolution_adapter<TensorDataType, Device>::setup_fp_tensors(
-    const dc::Dist &input_dist, const dc::Dist &output_dist) {
-  data_type_distconv_adapter<TensorDataType>::setup_fp_tensors(
-      input_dist, output_dist);
+void base_convolution_adapter<TensorDataType, Device>::setup_fp_tensors() {
+  data_type_distconv_adapter<TensorDataType>::setup_fp_tensors();
   auto &layer = dynamic_cast<
     base_convolution_layer<TensorDataType, Device>&>(this->layer());
+  const auto &input_dist = this->get_prev_activations_dist();
 
   const auto& kernel_dims = layer.get_kernel_dims();
   std::stringstream ss;
@@ -1425,16 +1412,13 @@ void base_convolution_adapter<TensorDataType, Device>::setup_fp_tensors(
 }
 
 template <typename TensorDataType, El::Device Device>
-void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors(
-    const dc::Dist &prev_error_signal_dist,
-    const dc::Dist &error_signal_dist) {
-  data_type_distconv_adapter<TensorDataType>::setup_bp_tensors(
-      prev_error_signal_dist, error_signal_dist);
+void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors() {
+  data_type_distconv_adapter<TensorDataType>::setup_bp_tensors();
   auto &l = dynamic_cast<
     base_convolution_layer<TensorDataType, Device>&>(this->layer());
 
   const auto shared_dist = dc::Dist::make_shared_distribution(
-      prev_error_signal_dist.get_locale_shape());
+      this->get_prev_error_signals_dist().get_locale_shape());
   dc::Shape kernel_shape(l.get_kernel_dims());
   std::reverse(kernel_shape.begin(), kernel_shape.end());
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);

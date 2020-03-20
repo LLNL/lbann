@@ -323,28 +323,14 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class data_type_distconv_adapter<TensorDataType>;
  public:
-  using TensorDevType = dc::TensorDev<TensorDataType>;
-
   data_type_distconv_adapter<TensorDataType>& dc() override;
   const data_type_distconv_adapter<TensorDataType>& dc() const override;
 
-  void init_distribution(
-      std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-      std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &invariants) override;
-
  protected:
-  void setup_distconv() override;
   void setup_distconv_adapter() override;
 
-  virtual int get_num_dims() const;
-  virtual int get_num_spatial_dims() const;
-
-  virtual void fp_setup_distconv(El::Int mini_batch_size) override;
-  virtual void bp_setup_distconv(El::Int mini_batch_size) override;
-
-  virtual size_t estimate_memory_usage(const std::array<dc::Dist, dc::num_dists> &dists);
+  //virtual void fp_setup_distconv(El::Int mini_batch_size) override;
+  //virtual void bp_setup_distconv(El::Int mini_batch_size) override;
 #endif // LBANN_HAS_DISTCONV
 
 #ifdef LBANN_HAS_CUDA

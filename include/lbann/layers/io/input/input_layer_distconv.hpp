@@ -92,8 +92,8 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
     return *shfl;
   }
 
-  void setup_fp_tensors(const dc::Dist &input_dist,
-                        const dc::Dist &output_dist) override {
+  void setup_fp_tensors() override {
+    const auto &output_dist = this->get_activations_dist();
     const auto tensor_shape = this->get_activations_shape();
     const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(
         this->get_num_dims());
@@ -143,7 +143,7 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
       setup_shuffler_buffers(m_input_host_view, m_input_host_tensor);
     }
 
-    this->setup_activations(output_dist);
+    this->setup_activations();
 
     // Keeps the same input type and convert to float on GPU
     m_input_dev = TensorDevInput(tensor_shape, loc, output_dist);
@@ -266,9 +266,10 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
   void setup_original_prev_error_signals() {}
   void setup_error_signals(const dc::Dist& dist) {}
   void setup_original_error_signals() {}
-  void setup_bp_tensors(const dc::Dist &prev_error_signal_dist,
-                        const dc::Dist &error_signal_dist) {}
+  void setup_bp_tensors() override {}
 
+  // Nothing to do here as everything is done in fp_compute_distconv.
+  void fp_setup(El::Int mini_batch_size) override {}
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -310,11 +311,6 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<
       input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>>(*this);
-  }
-
-  void fp_setup_distconv(El::Int mini_batch_size) override {
-    if (!this->distconv_enabled()) return;
-    // Nothing to do here as everything is done in fp_compute_distconv.
   }
 
   void fp_compute_distconv() {

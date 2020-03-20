@@ -46,11 +46,15 @@ class split_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   split_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~split_distconv_adapter() = default;
 
+  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                           std::set<dc::Dist*> &updated,
+                           std::set<dc::Dist*> &invariants) override;
+
   dc::Shape get_activations_local_shape(int index) const override {
     return data_type_distconv_adapter<TensorDataType>::get_activations_local_shape(0);
   }
 
-  void setup_activations(const dc::Dist& dist) override {
+  void setup_activations() override {
     const auto &parent_activations =
         dynamic_cast<const TensorDevType&>(
             this->layer().get_parent_layers()[0]->dc().get_activations(this->layer()));
@@ -108,25 +112,6 @@ protected:
   const split_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
 
   void fp_compute_distconv() {}
-
- public:
-
-  void init_distribution(
-      std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-      std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &invariants) override {
-    data_type_layer<TensorDataType>::init_distribution(
-        dists, equivalents, updated, invariants);
-    if (!this->distconv_enabled()) return;
-    auto &layer_dists = dists[this];
-    // x == y
-    equivalents[&layer_dists[0]].insert(&layer_dists[1]);
-    equivalents[&layer_dists[1]].insert(&layer_dists[0]);
-    // dx == dy
-    equivalents[&layer_dists[2]].insert(&layer_dists[3]);
-    equivalents[&layer_dists[3]].insert(&layer_dists[2]);
-  }
 #endif // LBANN_HAS_DISTCONV
 
 };
@@ -144,6 +129,27 @@ const split_distconv_adapter<TensorDataType, T_layout, Dev>&
 split_layer<TensorDataType, T_layout, Dev>::dc() const {
   return dynamic_cast<const split_distconv_adapter<TensorDataType, T_layout, Dev>&>(
       data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void split_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                    std::set<dc::Dist*> &updated,
+                    std::set<dc::Dist*> &invariants) {
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(
+      equivalents, updated, invariants);
+
+  auto &x = this->get_prev_activations_dist();
+  auto &y = this->get_activations_dist();
+  auto &dx = this->get_error_signals_dist();
+  auto &dy = this->get_prev_error_signals_dist();
+
+  // x == y
+  equivalents[&x].insert(&y);
+  equivalents[&y].insert(&x);
+  // dx == dy
+  equivalents[&dx].insert(&dy);
+  equivalents[&dy].insert(&dx);
 }
 #endif // LBANN_HAS_DISTCONV
 

@@ -108,19 +108,13 @@ void data_type_layer<TensorDataType>::forward_prop() {
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
 #ifdef LBANN_HAS_DISTCONV
-  fp_setup_distconv(mini_batch_size);
+  if (distconv_enabled()) dc().fp_setup(mini_batch_size);
 #endif // LBANN_HAS_DISTCONV
 
   // Apply layer's compute function
   const auto fp_compute_start = get_time();
   fp_compute();
   m_fp_compute_time += get_time() - fp_compute_start;
-
-#ifdef LBANN_HAS_DISTCONV
-  if (early_terminate_last_iteration()) {
-    dc().dump_activations();
-  }
-#endif // LBANN_HAS_DISTCONV
 
   // Add this layer as a gradient source for weight optimizers
   for (auto&& w : get_data_type_weights()) {
@@ -152,19 +146,13 @@ void data_type_layer<TensorDataType>::back_prop() {
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
 #ifdef LBANN_HAS_DISTCONV
-  bp_setup_distconv(mini_batch_size);
+  if (distconv_enabled()) dc().bp_setup(mini_batch_size);
 #endif // LBANN_HAS_DISTCONV
 
   // Backprop the compute function.
   const auto bp_compute_start = get_time();
   bp_compute();
   m_bp_compute_time += get_time() - bp_compute_start;
-
-#ifdef LBANN_HAS_DISTCONV
-  if (early_terminate_last_iteration()) {
-    dc().dump_error_signals();
-  }
-#endif // LBANN_HAS_DISTCONV
 
   // Remove this layer as a gradient source for weight optimizers
   for (auto&& w : get_data_type_weights()) {
@@ -677,18 +665,6 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(El::Int mini_
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType>
-void data_type_layer<TensorDataType>::setup_distconv() {
-  // enable_distconv() is assumed to have beeen done already.
-  setup_early_termination();
-  if (distconv_enabled()) {
-    dc().setup_inter_layer_adaptation();
-    dc().setup_keep_original_tensors();
-  }
-  setup_data();
-  if (using_gpus()) { setup_gpu(); }
-}
-
-template <typename TensorDataType>
 void data_type_layer<TensorDataType>::setup_distconv_adapter() {
   this->get_dc() = make_unique<data_type_distconv_adapter<TensorDataType>>(*this);
 }
@@ -704,146 +680,10 @@ const data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType
   return dynamic_cast<const data_type_distconv_adapter<TensorDataType>&>(*get_dc());
 }
 
-template <typename TensorDataType>
-void data_type_layer<TensorDataType>::init_distribution(
-    std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-    std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-    std::set<dc::Dist*> &updated,
-    std::set<dc::Dist*> &invariants) {
-  if (!distconv_enabled()) return;
-  const int num_dims = get_num_dims();
-  auto &ps = get_parallel_strategy();
-  dc::MPIRootPrintStreamDebug() << "Parallel Strategy for layer "
-                                << get_name() << ": " << ps;
-  int n = ps.sample_groups;
-  int c = ps.channel_groups;
-  int f = ps.filter_groups;
-  int d = get_num_spatial_dims() == 3 ? ps.depth_groups : 1;
-  int h = ps.height_groups;
-  int w = ps.width_groups;
-  int np = m_comm->get_procs_per_trainer();
-
-  const int spatial_prod = d * h * w;
-
-  // if only one process is used, do not parallelize
-  if (np == 1) {
-    n = c = f = h = w = d = 1;
-  }
-
-  if (c != f) {
-    LBANN_ERROR("The numbers of channel and filter decomposition should be the same.");
-  }
-  if (c != 1 || f != 1) {
-    LBANN_ERROR("Distconv does not support channel/filter parallelization yet. Layer: ",
-                get_name(), ", ps: ", ps);
-  }
-  if (n * c * spatial_prod > np) {
-    LBANN_ERROR("The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: ", ps);
-  }
-  // Put the remaining factor into the outer-most process dimension
-  float rem = np / (float) (n * c * spatial_prod);
-  n *= rem;
-  ps.sample_splits *= rem;
-  if (n * c * spatial_prod != np) {
-    LBANN_ERROR("Can't determine factorization of the number of MPI ranks for parallel strategy: ",
-                ps);
-  }
-  std::string xd_array, xd_array_names;
-  if (num_dims == 5) {
-    xd_array = dc::util::join_xd_array(std::vector<int>({n, c, d, h, w}));
-    xd_array_names = "NxCxDxHxW";
-  } else {
-    assert_eq(num_dims, 4);
-    xd_array = dc::util::join_xd_array(std::vector<int>({n, c, h, w}));
-    xd_array_names = "NxCxHxW";
-  }
-  dc::MPIRootPrintStreamDebug() << "Process grid of " << xd_array_names << ": "
-                                << xd_array;
-
-  assert_always(spatial_prod * n * c == np && spatial_prod * n * f == np);
-
-  ps.sample_groups = n;
-  ps.channel_groups = c;
-  ps.filter_groups = f;
-  ps.depth_groups = d;
-  ps.height_groups = h;
-  ps.width_groups = w;
-  // If splits are not set, set them to be equal to the group numbers
-  if (ps.sample_splits == 0) ps.sample_splits = n;
-  if (ps.channel_splits == 0) ps.channel_splits = c;
-  if (ps.filter_splits == 0) ps.filter_splits = f;
-  if (ps.depth_splits == 0) ps.depth_splits = d;
-  if (ps.height_splits == 0) ps.height_splits = h;
-  if (ps.width_splits == 0) ps.width_splits = w;
-
-  dc::Shape input_locale_shape(num_dims);
-  dc::Shape input_split_shape(num_dims);
-  dc::Shape output_locale_shape(num_dims);
-  dc::Shape output_split_shape(num_dims);
-
-  input_locale_shape[dc::get_sample_dim()] = n;
-  input_locale_shape[dc::get_channel_dim()] = c;
-  input_locale_shape[0] = w;
-  input_locale_shape[1] = h;
-  if (num_dims == 5)  input_locale_shape[2] = d;
-
-  input_split_shape[dc::get_sample_dim()] = ps.sample_splits;
-  input_split_shape[dc::get_channel_dim()] = ps.channel_splits;
-  input_split_shape[0] = ps.width_splits;
-  input_split_shape[1] = ps.height_splits;
-  if (num_dims == 5)  input_split_shape[2] = ps.depth_splits;
-
-  output_locale_shape[dc::get_sample_dim()] = n;
-  output_locale_shape[dc::get_channel_dim()] = f;
-  output_locale_shape[0] = w;
-  output_locale_shape[1] = h;
-  if (num_dims == 5)  output_locale_shape[2] = d;
-
-  output_split_shape[dc::get_sample_dim()] = ps.sample_splits;
-  output_split_shape[dc::get_channel_dim()] = ps.filter_splits;
-  output_split_shape[0] = ps.width_splits;
-  output_split_shape[1] = ps.height_splits;
-  if (num_dims == 5)  output_split_shape[2] = ps.depth_splits;
-
-  auto prev_activations_dist =  dc::Dist::make_shared_distribution(
-      input_locale_shape, input_split_shape);
-  auto activations_dist = dc::Dist::make_shared_distribution(
-      output_locale_shape, output_split_shape);
-  auto prev_error_signals_dist = activations_dist;
-  auto error_signals_dist = prev_activations_dist;
-  std::array<dc::Dist, dc::num_dists> layer_dists = {prev_activations_dist,
-                                                     activations_dist,
-                                                     error_signals_dist,
-                                                     prev_error_signals_dist};
-  dists.insert(std::make_pair(this, layer_dists));
-  equivalents.insert(std::make_pair(&dists[this][0], std::set<dc::Dist*>()));
-  equivalents.insert(std::make_pair(&dists[this][1], std::set<dc::Dist*>()));
-  equivalents.insert(std::make_pair(&dists[this][2], std::set<dc::Dist*>()));
-  equivalents.insert(std::make_pair(&dists[this][3], std::set<dc::Dist*>()));
-}
-
-template <typename TensorDataType>
-int data_type_layer<TensorDataType>::get_num_dims() const {
-  // Use the dimension of either input or output data.
-  auto nd = get_num_parents() > 0 ? get_input_dims().size() :
-      get_output_dims().size();
-  nd += 1; // input and output dimensions do not have the sample dimension.
-  if (!(nd == 4 || nd == 5)) {
-    LBANN_ERROR(get_name(), ": Invalid number of dimensions: ", nd);
-  }
-  return nd;
-}
-
-template <typename TensorDataType>
-int data_type_layer<TensorDataType>::get_num_spatial_dims() const {
-  return get_num_dims() - 2;
-}
-
+#if 0
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::fp_setup_distconv(El::Int mini_batch_size) {
   if (!distconv_enabled()) return;
-
-  early_terminate();
 
   // Reconfigure the sample dimension as the mini batch size may vary
   // at the end of epoch
@@ -851,7 +691,7 @@ void data_type_layer<TensorDataType>::fp_setup_distconv(El::Int mini_batch_size)
   assert_eq((int)dc().get_prev_activations().get_shape()[-1],
             mini_batch_size);
   for (int i = 0; i < get_num_parents(); ++i) {
-    if (dc().parent_copy_in_required(i) || dc().parent_shuffle_required(i)) {
+    if (dc().parent_copy_required(i) || dc().parent_shuffle_required(i)) {
       if (i != 0) {
         LBANN_ERROR("Copyin non-first tensor not supported");
       }
@@ -859,7 +699,7 @@ void data_type_layer<TensorDataType>::fp_setup_distconv(El::Int mini_batch_size)
           mini_batch_size);
       assert_eq((int)dc().get_original_prev_activations().get_shape()[-1],
                 mini_batch_size);
-      if (dc().parent_copy_in_required(i)) {
+      if (dc().parent_copy_required(i)) {
         // then, parent is assumed to be data parallel, so the local
         // size of the sample dimension should be equal to
         // the local width of previous activations. The check only
@@ -885,7 +725,6 @@ void data_type_layer<TensorDataType>::fp_setup_distconv(El::Int mini_batch_size)
 
   dc().ensure_prev_activations();
 }
-
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::bp_setup_distconv(El::Int mini_batch_size) {
   if (!distconv_enabled()) return;
@@ -896,7 +735,7 @@ void data_type_layer<TensorDataType>::bp_setup_distconv(El::Int mini_batch_size)
     dc().get_prev_error_signals(i).set_outermost_dimension(mini_batch_size);
     assert_always((int)dc().get_prev_error_signals(i).get_shape()[-1] ==
                   mini_batch_size);
-    if (dc().child_copy_out_required(i) || dc().child_shuffle_required(i)) {
+    if (dc().child_copy_required(i) || dc().child_shuffle_required(i)) {
       auto &original_input = dc().get_original_prev_error_signals(i);
       if (i != 0) {
         LBANN_ERROR("Copyout non-first tensor not supported");
@@ -904,7 +743,7 @@ void data_type_layer<TensorDataType>::bp_setup_distconv(El::Int mini_batch_size)
       original_input.set_outermost_dimension(mini_batch_size);
       assert_eq((int)original_input.get_shape()[-1],
                 mini_batch_size);
-      if (dc().child_copy_out_required(i) &&
+      if (dc().child_copy_required(i) &&
           original_input.is_split_root()) {
         assert_eq(
             (int)original_input.get_local_shape()[-1],
@@ -928,31 +767,7 @@ void data_type_layer<TensorDataType>::bp_setup_distconv(El::Int mini_batch_size)
   }
   dc().ensure_prev_error_signals();
 }
-
-template <typename TensorDataType>
-size_t data_type_layer<TensorDataType>::estimate_memory_usage(
-    const std::array<dc::Dist, dc::num_dists> &dists) {
-  if (!distconv_enabled()) {
-    return 0;
-  }
-  auto max_mb = this->m_model->get_max_mini_batch_size();
-  size_t usage = 0;
-  // fp
-  for (int i = 0; i < get_num_parents(); ++i) {
-    if (dc().parent_copy_in_required(i) || dc().parent_shuffle_required(i)) {
-      usage += get_input_size(i) * max_mb / dists[0].get_split_shape().size();
-    }
-  }
-  usage += get_output_size() * max_mb / dists[1].get_split_shape().size();
-  // bp
-  for (int i = 0; i < get_num_children(); ++i) {
-    if (dc().child_copy_out_required(i) || dc().child_shuffle_required(i)) {
-      usage += get_output_size(i) * max_mb / dists[3].get_split_shape().size();
-    }
-  }
-  usage += get_input_size() * max_mb / dists[2].get_split_shape().size();
-  return usage * sizeof(TensorDataType);
-}
+#endif
 #endif // LBANN_HAS_DISTCONV
 
 #define PROTO(T)                     \

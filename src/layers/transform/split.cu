@@ -98,9 +98,7 @@ void split_layer<TensorDataType, Layout, Dev>::bp_compute() {
     assert_always(Layout == data_layout::DATA_PARALLEL);
     bp_compute_distconv(this->dc(), this->get_num_children());
     this->dc().copy_out_error_signals();
-    if (!this->early_terminate_last_iteration()) {
-      return;
-    }
+    return;
   }
 #endif // LBANN_HAS_DISTCONV
   auto& gradient_wrt_input = this->get_error_signals();

@@ -53,7 +53,7 @@ class concatenate_distconv_adapter : public data_type_distconv_adapter<TensorDat
     return shape;
   }
 
-  void setup_error_signals(const dc::Dist& dist) override;
+  void setup_error_signals() override;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -115,8 +115,6 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class concatenate_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
-  using TensorDevType = typename data_type_layer<TensorDataType>::TensorDevType;
-
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<
       concatenate_distconv_adapter<TensorDataType, Layout, Device>>(*this);
@@ -378,10 +376,11 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
 template <typename TensorDataType, data_layout Layout,
           El::Device Device>
 void concatenate_distconv_adapter<TensorDataType, Layout, Device>::
-setup_error_signals(const dc::Dist& dist) {
-  data_type_distconv_adapter<TensorDataType>::setup_error_signals(dist);
+setup_error_signals() {
+  data_type_distconv_adapter<TensorDataType>::setup_error_signals();
   assert_always(this->m_gradient_wrt_inputs.size() == 1);
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+  const auto &dist = this->get_error_signals_dist();
   for (int i = 1; i < this->layer().get_num_parents(); ++i) {
     const auto &shape = this->get_error_signals_shape(i);
     const auto &local_shape = this->get_error_signals_local_shape(i);

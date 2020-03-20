@@ -41,6 +41,9 @@ class leaky_relu_distconv_adapter: public data_type_distconv_adapter<TensorDataT
   leaky_relu_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~leaky_relu_distconv_adapter() = default;
 
+  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                           std::set<dc::Dist*> &updated,
+                           std::set<dc::Dist*> &invariants) override;
   void setup_layer(size_t workspace_capacity) override;
 
   std::unique_ptr<dc::LeakyReLU> m_leaky_relu;
@@ -102,12 +105,6 @@ private:
 
   void fp_compute_distconv();
   void bp_compute_distconv();
- public:
-  void init_distribution(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-      std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &invariants) override;
 #endif // LBANN_HAS_DISTCONV
 };
 
@@ -124,6 +121,30 @@ const leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>&
 leaky_relu_layer<TensorDataType, T_layout, Dev>::dc() const {
   return dynamic_cast<const leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
       data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                    std::set<dc::Dist*> &updated,
+                    std::set<dc::Dist*> &invariants) {
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(
+      equivalents, updated, invariants);
+
+  auto &x = this->get_prev_activations_dist();
+  auto &y = this->get_activations_dist();
+  auto &dx = this->get_error_signals_dist();
+  auto &dy = this->get_prev_error_signals_dist();
+
+  // x == y
+  equivalents[&x].insert(&y);
+  equivalents[&y].insert(&x);
+  // x == dx
+  equivalents[&x].insert(&dx);
+  equivalents[&dx].insert(&x);
+  // dx == dy
+  equivalents[&dx].insert(&dy);
+  equivalents[&dy].insert(&dx);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

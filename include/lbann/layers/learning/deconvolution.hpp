@@ -40,15 +40,17 @@ class imcomm;
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class deconvolution_adapter: public base_convolution_adapter<TensorDataType, Device> {
+class deconvolution_distconv_adapter: public base_convolution_adapter<TensorDataType, Device> {
  public:
   using TensorDevType = typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
 
-  deconvolution_adapter(Layer& layer): base_convolution_adapter<TensorDataType, Device>(layer) {}
-  virtual ~deconvolution_adapter() = default;
+  deconvolution_distconv_adapter(Layer& layer): base_convolution_adapter<TensorDataType, Device>(layer) {}
+  virtual ~deconvolution_distconv_adapter() = default;
 
+  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                           std::set<dc::Dist*> &updated,
+                           std::set<dc::Dist*> &invariants) override;
   void setup_layer(size_t workspace_capacity) override;
-
   dc::Shape get_activations_local_shape(int index=0) const override;
 };
 #endif // LBANN_HAS_DISTCONV
@@ -176,12 +178,6 @@ protected:
         this->distconv_forward();
         this->apply_bias_distconv();
         this->dc().copy_out_activations();
-        if (this->early_terminate_last_iteration() &&
-            this->dc().keep_original()) {
-          base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_cudnn(true);
-          base_convolution_layer<TensorDataType, Device>::apply_bias_cudnn();
-          this->dc().dump_original_activations();
-        }
         return;
       }
 #endif // LBANN_HAS_DISTCONV
@@ -210,12 +206,6 @@ protected:
         }
         this->distconv_backward_filter();
         this->distconv_backward_data();
-        if (this->early_terminate_last_iteration() &&
-            this->dc().keep_original()) {
-          base_convolution_layer<TensorDataType, Device>::compute_gradients_cudnn(true);
-          base_convolution_layer<TensorDataType, Device>::apply_convolution_cudnn(false);
-          this->dc().dump_original_error_signals();
-        }
         return;
       }
 #endif // LBANN_HAS_DISTCONV
@@ -228,46 +218,13 @@ protected:
   }
 
 #ifdef LBANN_HAS_DISTCONV
-  friend class deconvolution_adapter<TensorDataType, Layout, Device>;
- public:
+  friend class deconvolution_distconv_adapter<TensorDataType, Layout, Device>;
+ protected:
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<
-      deconvolution_adapter<TensorDataType, Layout, Device>>(*this);
+      deconvolution_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
 
-  void init_distribution(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-      std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &invariants) override {
-    base_convolution_layer<TensorDataType, Device>::init_distribution(
-        dists, equivalents, updated, invariants);
-    if (!this->distconv_enabled()) return;
-    auto &prev_activations_dist = dists[this][0];
-    auto &activations_dist = dists[this][1];
-    auto &error_signals_dist = dists[this][2];
-    auto &prev_error_signals_dist = dists[this][3];
-    // Assumes zero halo all tensor for now
-    const dc::IntVector overlap(this->get_num_dims(), 0);
-    // prev activations
-    prev_activations_dist.set_overlap(overlap);
-    updated.insert(&prev_activations_dist);
-    invariants.insert(&prev_activations_dist);
-    // activations
-    activations_dist.set_overlap(overlap);
-    updated.insert(&activations_dist);
-    invariants.insert(&activations_dist);
-    // prev error signals
-    prev_error_signals_dist.set_overlap(overlap);
-    updated.insert(&prev_error_signals_dist);
-    invariants.insert(&prev_error_signals_dist);
-    // error signals
-    error_signals_dist.set_overlap(overlap);
-    updated.insert(&error_signals_dist);
-    invariants.insert(&error_signals_dist);
-  }
-
- protected:
   bool is_distconv_supported() const override {
     if (!base_convolution_layer<TensorDataType, Device>::is_distconv_supported()) return false;
 
@@ -292,8 +249,41 @@ protected:
 #endif // LBANN_HAS_DISTCONV
 };
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void deconvolution_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                    std::set<dc::Dist*> &updated,
+                    std::set<dc::Dist*> &invariants) {
+  base_convolution_adapter<TensorDataType, Dev>::setup_distributions(
+      equivalents, updated, invariants);
+
+  // Assumes zero halo all tensor for now
+  // prev activations
+  for (auto &d: this->m_prev_activations_dists) {
+    d.clear_overlap();
+    updated.insert(&d);
+    invariants.insert(&d);
+  }
+  for (auto &d: this->m_activations_dists) {
+    d.clear_overlap();
+    updated.insert(&d);
+    invariants.insert(&d);
+  }
+  for (auto &d: this->m_prev_error_signals_dists) {
+    d.clear_overlap();
+    updated.insert(&d);
+    invariants.insert(&d);
+  }
+  for (auto &d: this->m_error_signals_dists) {
+    d.clear_overlap();
+    updated.insert(&d);
+    invariants.insert(&d);
+  }
+}
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-dc::Shape deconvolution_adapter<TensorDataType, Layout, Device>::
+dc::Shape deconvolution_distconv_adapter<TensorDataType, Layout, Device>::
 get_activations_local_shape(int index) const {
   assert_eq(index, 0);
   const auto &layer = dynamic_cast<const deconvolution_layer<
@@ -313,7 +303,7 @@ get_activations_local_shape(int index) const {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void deconvolution_adapter<TensorDataType, Layout, Device>::setup_layer(
+void deconvolution_distconv_adapter<TensorDataType, Layout, Device>::setup_layer(
     size_t workspace_capacity) {
   base_convolution_adapter<TensorDataType, Device>::setup_layer(
       workspace_capacity);
@@ -347,6 +337,7 @@ void deconvolution_adapter<TensorDataType, Layout, Device>::setup_layer(
                       this->m_bwd_filter_algo,
                       workspace_capacity, layer.skip_first_layer_bp(), true);
 }
+#endif // LBANN_HAS_DISTCONV
 
 #ifndef LBANN_DECONVOLUTION_LAYER_INSTANTIATE
 

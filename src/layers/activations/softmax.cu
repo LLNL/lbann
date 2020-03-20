@@ -290,10 +290,7 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
 #ifdef LBANN_HAS_DISTCONV
   if (l.distconv_enabled()) {
     l.fp_compute_distconv();
-    if (!l.early_terminate_last_iteration()) {
-      return;
-    }
-    // fall through the normal code path to obtain reference results
+    return;
   }
 #endif // LBANN_HAS_DISTCONV
 
@@ -329,12 +326,6 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
                                                        local_output);
 #endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
   }
-#ifdef LBANN_HAS_DISTCONV
-  if (l.distconv_enabled() && l.early_terminate_last_iteration() &&
-      l.dc().keep_original()) {
-    l.dc().dump_original_activations();
-  }
-#endif // LBANN_HAS_DISTCONV
 }
 
 template <typename TensorDataType>
@@ -342,9 +333,7 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
 #ifdef LBANN_HAS_DISTCONV
   if (l.distconv_enabled()) {
     l.bp_compute_distconv();
-    if (!l.early_terminate_last_iteration()) {
-      return;
-    }
+    return;
   }
 #endif // LBANN_HAS_DISTCONV
 
@@ -378,12 +367,6 @@ void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
                                      l.m_tensors_cudnn_desc.get_error_signals(),
                                      local_gradient_wrt_input.Buffer()));
   }
-#ifdef LBANN_HAS_DISTCONV
-  if (l.distconv_enabled() && l.early_terminate_last_iteration() &&
-      l.dc().keep_original()) {
-    l.dc().dump_original_error_signals();
-  }
-#endif // LBANN_HAS_DISTCONV
 }
 
 template <typename TensorDataType>

@@ -43,7 +43,7 @@ class sum_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
   sum_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~sum_distconv_adapter() = default;
-  void setup_error_signals(const dc::Dist& dist) override;
+  void setup_error_signals() override;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -125,8 +125,7 @@ protected:
 };
 
 template <typename TensorDataType>
-void sum_distconv_adapter<TensorDataType>::setup_error_signals(
-    const dc::Dist& dist) {
+void sum_distconv_adapter<TensorDataType>::setup_error_signals() {
   this->m_gradient_wrt_inputs.clear();
   this->m_gradient_wrt_inputs.resize(this->layer().get_num_parents());
   for (int i = 0; i < this->layer().get_num_parents(); ++i) {

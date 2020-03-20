@@ -67,17 +67,6 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
       this->get_error_signals());
 }
 
-#ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void relu_layer<TensorDataType, Layout, Device>::init_distribution(
-    std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-    std::map<dc::Dist*, std::set<dc::Dist*>> &invariants,
-    std::set<dc::Dist*> &updated,
-    std::set<dc::Dist*> &fixed)  {
-  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
-}
-#endif // LBANN_HAS_DISTCONV
-
 #define PROTO(T)                                                        \
   template class relu_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
   template class relu_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>;

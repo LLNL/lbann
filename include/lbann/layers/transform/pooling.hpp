@@ -49,6 +49,10 @@ class pooling_distconv_adapter : public data_type_distconv_adapter<TensorDataTyp
   pooling_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~pooling_distconv_adapter() = default;
 
+  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                           std::set<dc::Dist*> &updated,
+                           std::set<dc::Dist*> &invariants) override;
+
   dc::Shape get_activations_local_shape(int index=0) const override;
   void setup_layer(size_t workspace_capacity) override;
 
@@ -292,10 +296,6 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
       if (this->distconv_enabled()) {
         fp_compute_distconv();
-        if (this->early_terminate_last_iteration() && this->dc().keep_original()) {
-          fp_compute_cudnn();
-          this->dc().dump_original_activations();
-        }
       } else {
         fp_compute_cudnn();
       }
@@ -312,10 +312,6 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
       if (this->distconv_enabled()) {
         bp_compute_distconv();
-        if (this->early_terminate_last_iteration() && this->dc().keep_original()) {
-          bp_compute_cudnn();
-          this->dc().dump_original_error_signals();
-        }
       } else {
         bp_compute_cudnn();
       }
@@ -593,57 +589,6 @@ private:
   pooling_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
   const pooling_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
 
-  void init_distribution(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-      std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &invariants) override {
-    data_type_layer<TensorDataType>::init_distribution(
-        dists, equivalents, updated, invariants);
-    if (this->distconv_enabled()) {
-      dc::IntVector overlap(this->get_num_dims(), 0);
-      const auto &ps = this->get_parallel_strategy();
-      auto pool_dims = this->m_pool_dims;
-      std::reverse(pool_dims.begin(), pool_dims.end());
-      for(int i = 0; i < this->get_num_spatial_dims(); i++) {
-        int splits = 0;
-        switch (i) {
-          case 0: splits = ps.width_splits; break;
-          case 1: splits = ps.height_splits; break;
-          case 2: splits = ps.depth_splits; break;
-        }
-        if(splits == 1) continue;
-        int ov = 0;
-        if (pool_dims[i] % 2) {
-          ov = (pool_dims[i] - 1) / 2;
-        } else {
-          // no halo dependency is assumed for now
-          ov = 0;
-        }
-        overlap[i] = ov;
-      }
-      auto &prev_activations_dist = dists[this][0];
-      auto &activations_dist = dists[this][1];
-      auto &error_signals_dist = dists[this][2];
-      auto &prev_error_signals_dist = dists[this][3];
-      prev_activations_dist.set_overlap(overlap);
-      updated.insert(&prev_activations_dist);
-      invariants.insert(&prev_activations_dist);
-      // cudnnPoolingBackward requires activations and
-      // prev_error_signals must have the same stride
-      equivalents[&activations_dist].insert(
-          &prev_error_signals_dist);
-      equivalents[&prev_error_signals_dist].insert(
-          &activations_dist);
-      // cudnnPoolingBackward requires prev_activations and
-      // error_signals must have the same stride
-      equivalents[&error_signals_dist].insert(
-          &prev_activations_dist);
-      equivalents[&prev_activations_dist].insert(
-          &error_signals_dist);
-    }
-  }
-
  protected:
   bool is_distconv_supported() const override {
     if (!transform_layer<TensorDataType>::is_distconv_supported()) return false;
@@ -746,6 +691,57 @@ const pooling_distconv_adapter<TensorDataType, T_layout, Dev>&
 pooling_layer<TensorDataType, T_layout, Dev>::dc() const {
   return dynamic_cast<const pooling_distconv_adapter<TensorDataType, T_layout, Dev>&>(
       data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void pooling_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                    std::set<dc::Dist*> &updated,
+                    std::set<dc::Dist*> &invariants) {
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(
+      equivalents, updated, invariants);
+  const auto &l = dynamic_cast<const pooling_layer<TensorDataType, T_layout, Dev>&>(
+      this->layer());
+  dc::IntVector overlap(this->get_num_dims(), 0);
+  const auto &ps = l.get_parallel_strategy();
+  auto pool_dims = l.m_pool_dims;
+  std::reverse(pool_dims.begin(), pool_dims.end());
+  for(int i = 0; i < this->get_num_spatial_dims(); i++) {
+    int splits = 0;
+    switch (i) {
+      case 0: splits = ps.width_splits; break;
+      case 1: splits = ps.height_splits; break;
+      case 2: splits = ps.depth_splits; break;
+    }
+    if(splits == 1) continue;
+    int ov = 0;
+    if (pool_dims[i] % 2) {
+      ov = (pool_dims[i] - 1) / 2;
+    } else {
+      // no halo dependency is assumed for now
+      ov = 0;
+    }
+    overlap[i] = ov;
+  }
+  auto &prev_activations_dist = this->get_prev_activations_dist();
+  auto &activations_dist = this->get_activations_dist();
+  auto &error_signals_dist = this->get_error_signals_dist();
+  auto &prev_error_signals_dist = this->get_prev_error_signals_dist();
+  prev_activations_dist.set_overlap(overlap);
+  updated.insert(&prev_activations_dist);
+  invariants.insert(&prev_activations_dist);
+  // cudnnPoolingBackward requires activations and
+  // prev_error_signals must have the same stride
+  equivalents[&activations_dist].insert(
+      &prev_error_signals_dist);
+  equivalents[&prev_error_signals_dist].insert(
+      &activations_dist);
+  // cudnnPoolingBackward requires prev_activations and
+  // error_signals must have the same stride
+  equivalents[&error_signals_dist].insert(
+      &prev_activations_dist);
+  equivalents[&prev_activations_dist].insert(
+      &error_signals_dist);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

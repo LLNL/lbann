@@ -41,42 +41,85 @@ std::string distconv_adapter::get_name() const {
 }
 
 int distconv_adapter::get_num_dims() const {
-  // Use the dimension of either input or output data.
-  auto nd = layer().get_num_parents() > 0 ? layer().get_input_dims().size() :
-      layer().get_output_dims().size();
-  nd += 1; // input and output dimensions do not have the sample dimension.
-  if (!(nd == 4 || nd == 5)) {
-    LBANN_ERROR(get_name(), ": Unsupported number of dimensions: ", nd);
-  }
-  return nd;
+  return layer().get_num_dims();
 }
 
 int distconv_adapter::get_num_spatial_dims() const {
-  return get_num_dims() - 2;
+  return layer().get_num_spatial_dims();
 }
 
-void distconv_adapter::setup_fp_tensors(const dc::Dist &input_dist,
-                                      const dc::Dist &output_dist) {
+dc::Dist &distconv_adapter::get_prev_activations_dist() {
+  return const_cast<dc::Dist&>(static_cast<const distconv_adapter&>(
+      *this).get_prev_activations_dist());
+}
+
+const dc::Dist &distconv_adapter::get_prev_activations_dist() const {
+  size_t idx = 0;
+  if (idx >= m_prev_activations_dists.size()) {
+    LBANN_ERROR("Invalid access to previous activations distributions");
+  }
+  return m_prev_activations_dists[idx];
+}
+
+dc::Dist &distconv_adapter::get_activations_dist() {
+  return const_cast<dc::Dist&>(static_cast<const distconv_adapter&>(
+      *this).get_activations_dist());
+}
+
+const dc::Dist &distconv_adapter::get_activations_dist() const {
+  size_t idx = 0;
+  if (idx >= m_activations_dists.size()) {
+    LBANN_ERROR("Invalid access to activations distributions");
+  }
+  return m_activations_dists[idx];
+}
+
+dc::Dist &distconv_adapter::get_prev_error_signals_dist() {
+  return const_cast<dc::Dist&>(static_cast<const distconv_adapter&>(
+      *this).get_prev_error_signals_dist());
+}
+
+const dc::Dist &distconv_adapter::get_prev_error_signals_dist() const {
+  size_t idx = 0;
+  if (idx >= m_prev_error_signals_dists.size()) {
+    LBANN_ERROR("Invalid access to previous error signals distributions");
+  }
+  return m_prev_error_signals_dists[idx];
+}
+
+dc::Dist &distconv_adapter::get_error_signals_dist() {
+  return const_cast<dc::Dist&>(static_cast<const distconv_adapter&>(
+      *this).get_error_signals_dist());
+}
+
+const dc::Dist &distconv_adapter::get_error_signals_dist() const {
+  size_t idx = 0;
+  if (idx >= m_error_signals_dists.size()) {
+    LBANN_ERROR("Invalid access to error signals distributions");
+  }
+  return m_error_signals_dists[idx];
+}
+
+void distconv_adapter::setup_fp_tensors() {
   setup_original_prev_activations();
-  setup_prev_activations(input_dist);
-  setup_activations(output_dist);
+  setup_prev_activations();
+  setup_activations();
   setup_original_activations();
 }
 
-void distconv_adapter::setup_bp_tensors(const dc::Dist &prev_error_signals_dist,
-                                        const dc::Dist &error_signals_dist) {
+void distconv_adapter::setup_bp_tensors() {
   setup_original_prev_error_signals();
-  setup_prev_error_signals(prev_error_signals_dist);
-  setup_error_signals(error_signals_dist);
+  setup_prev_error_signals();
+  setup_error_signals();
   setup_original_error_signals();
 }
 
-bool distconv_adapter::parent_copy_in_required(size_t input_index) const {
-  if (input_index < m_parent_copy_in_required.size()) {
-    return m_parent_copy_in_required.at(input_index);
+bool distconv_adapter::parent_copy_required(size_t input_index) const {
+  if (input_index < m_parent_copy_required.size()) {
+    return m_parent_copy_required.at(input_index);
   } else {
-    LBANN_ERROR("Out of range error! parent_copy_in_required size: ",
-                m_parent_copy_in_required.size(),
+    LBANN_ERROR("Out of range error! parent_copy_required size: ",
+                m_parent_copy_required.size(),
                 ", index: ", input_index);
   }
 }
@@ -91,12 +134,12 @@ bool distconv_adapter::parent_shuffle_required(size_t input_index) const {
   }
 }
 
-bool distconv_adapter::child_copy_out_required(size_t output_index) const {
-  if (output_index < m_child_copy_out_required.size()) {
-    return m_child_copy_out_required.at(output_index);
+bool distconv_adapter::child_copy_required(size_t output_index) const {
+  if (output_index < m_child_copy_required.size()) {
+    return m_child_copy_required.at(output_index);
   } else {
-    LBANN_ERROR("Out of range error! child_copy_out_required size: ",
-                m_child_copy_out_required.size(),
+    LBANN_ERROR("Out of range error! child_copy_required size: ",
+                m_child_copy_required.size(),
                 ", index: ", output_index);
   }
 }
@@ -116,14 +159,14 @@ void distconv_adapter::setup_inter_layer_adaptation() {
 
   const auto &ps = layer().get_parallel_strategy();
   for (const auto &p: layer().get_parent_layers()) {
-    m_parent_copy_in_required.push_back(!p->distconv_enabled());
+    m_parent_copy_required.push_back(!p->distconv_enabled());
     m_parent_shuffle_required.push_back(
         (!p->distconv_enabled()) ||
         (ps != p->get_parallel_strategy()));
   }
 
   for (const auto &c: layer().get_child_layers()) {
-    m_child_copy_out_required.push_back(!c->distconv_enabled());
+    m_child_copy_required.push_back(!c->distconv_enabled());
     m_child_shuffle_required.push_back(
         (!c->distconv_enabled()) ||
         (ps != c->get_parallel_strategy()));
@@ -133,7 +176,7 @@ void distconv_adapter::setup_inter_layer_adaptation() {
   std::stringstream parent_copyin_ss;
   std::stringstream parent_shuffle_ss;
   for (int i = 0; i < layer().get_num_parents(); ++i) {
-    if (m_parent_copy_in_required[i]) {
+    if (m_parent_copy_required[i]) {
       parent_copyin_ss << " " << i;
     }
     if (m_parent_shuffle_required[i]) {
@@ -143,7 +186,7 @@ void distconv_adapter::setup_inter_layer_adaptation() {
   std::stringstream child_copyout_ss;
   std::stringstream child_shuffle_ss;
   for (int i = 0; i < layer().get_num_children(); ++i) {
-    if (m_child_copy_out_required[i]) {
+    if (m_child_copy_required[i]) {
       child_copyout_ss << " " << i;
     }
     if (m_child_shuffle_required[i]) {
@@ -170,10 +213,10 @@ void distconv_adapter::setup_inter_layer_adaptation() {
 void distconv_adapter::setup_keep_original_tensors() {
   assert_always(layer().distconv_enabled());
   bool env_set = std::getenv("DISTCONV_KEEP_ORIGINAL_TENSORS") != nullptr;
-  for (auto b: m_parent_copy_in_required) {
+  for (auto b: m_parent_copy_required) {
     m_keep_original_input.push_back(env_set || b);
   }
-  for (auto b: m_child_copy_out_required) {
+  for (auto b: m_child_copy_required) {
     m_keep_original_output.push_back(env_set || b);
   }
   return;
@@ -207,6 +250,182 @@ bool distconv_adapter::keep_original() const {
     if (!keep_original_output(i)) return false;
   }
   return true;
+}
+
+void distconv_adapter::setup_distributions(
+    std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+    std::set<dc::Dist*> &updated,
+    std::set<dc::Dist*> &invariants) {
+  auto &l = layer();
+  const int num_dims = get_num_dims();
+  auto &ps = l.get_parallel_strategy();
+  dc::MPIRootPrintStreamDebug() << "Parallel Strategy for layer "
+                                << get_name() << ": " << ps;
+  int n = ps.sample_groups;
+  int c = ps.channel_groups;
+  int f = ps.filter_groups;
+  int d = get_num_spatial_dims() == 3 ? ps.depth_groups : 1;
+  int h = ps.height_groups;
+  int w = ps.width_groups;
+  int np = l.m_comm->get_procs_per_trainer();
+
+  const int spatial_prod = d * h * w;
+
+  // if only one process is used, do not parallelize
+  if (np == 1) {
+    n = c = f = h = w = d = 1;
+  }
+
+  if (c != f) {
+    LBANN_ERROR("The numbers of channel and filter decomposition should be the same.");
+  }
+  if (c != 1 || f != 1) {
+    LBANN_ERROR("Distconv does not support channel/filter parallelization yet. Layer: ",
+                get_name(), ", ps: ", ps);
+  }
+  if (n * c * spatial_prod > np) {
+    LBANN_ERROR("The number of MPI ranks must be at least as large as the number of processes implied by parallel strategy: ", ps);
+  }
+  // Put the remaining factor into the outer-most process dimension
+  float rem = np / (float) (n * c * spatial_prod);
+  n *= rem;
+  ps.sample_splits *= rem;
+  if (n * c * spatial_prod != np) {
+    LBANN_ERROR("Can't determine factorization of the number of MPI ranks for parallel strategy: ",
+                ps);
+  }
+  std::string xd_array, xd_array_names;
+  if (num_dims == 5) {
+    xd_array = dc::util::join_xd_array(std::vector<int>({n, c, d, h, w}));
+    xd_array_names = "NxCxDxHxW";
+  } else {
+    assert_eq(num_dims, 4);
+    xd_array = dc::util::join_xd_array(std::vector<int>({n, c, h, w}));
+    xd_array_names = "NxCxHxW";
+  }
+  dc::MPIRootPrintStreamDebug() << "Process grid of " << xd_array_names << ": "
+                                << xd_array;
+
+  assert_always(spatial_prod * n * c == np && spatial_prod * n * f == np);
+
+  ps.sample_groups = n;
+  ps.channel_groups = c;
+  ps.filter_groups = f;
+  ps.depth_groups = d;
+  ps.height_groups = h;
+  ps.width_groups = w;
+  // If splits are not set, set them to be equal to the group numbers
+  if (ps.sample_splits == 0) ps.sample_splits = n;
+  if (ps.channel_splits == 0) ps.channel_splits = c;
+  if (ps.filter_splits == 0) ps.filter_splits = f;
+  if (ps.depth_splits == 0) ps.depth_splits = d;
+  if (ps.height_splits == 0) ps.height_splits = h;
+  if (ps.width_splits == 0) ps.width_splits = w;
+
+  dc::Shape input_locale_shape(num_dims);
+  dc::Shape input_split_shape(num_dims);
+  dc::Shape output_locale_shape(num_dims);
+  dc::Shape output_split_shape(num_dims);
+
+  input_locale_shape[dc::get_sample_dim()] = n;
+  input_locale_shape[dc::get_channel_dim()] = c;
+  input_locale_shape[0] = w;
+  input_locale_shape[1] = h;
+  if (num_dims == 5)  input_locale_shape[2] = d;
+
+  input_split_shape[dc::get_sample_dim()] = ps.sample_splits;
+  input_split_shape[dc::get_channel_dim()] = ps.channel_splits;
+  input_split_shape[0] = ps.width_splits;
+  input_split_shape[1] = ps.height_splits;
+  if (num_dims == 5)  input_split_shape[2] = ps.depth_splits;
+
+  output_locale_shape[dc::get_sample_dim()] = n;
+  output_locale_shape[dc::get_channel_dim()] = f;
+  output_locale_shape[0] = w;
+  output_locale_shape[1] = h;
+  if (num_dims == 5)  output_locale_shape[2] = d;
+
+  output_split_shape[dc::get_sample_dim()] = ps.sample_splits;
+  output_split_shape[dc::get_channel_dim()] = ps.filter_splits;
+  output_split_shape[0] = ps.width_splits;
+  output_split_shape[1] = ps.height_splits;
+  if (num_dims == 5)  output_split_shape[2] = ps.depth_splits;
+
+  auto prev_activations_dist = dc::Dist::make_shared_distribution(
+      input_locale_shape, input_split_shape);
+  auto activations_dist = dc::Dist::make_shared_distribution(
+      output_locale_shape, output_split_shape);
+  auto prev_error_signals_dist = activations_dist;
+  auto error_signals_dist = prev_activations_dist;
+
+  m_prev_activations_dists.emplace_back(prev_activations_dist);
+  m_activations_dists.emplace_back(activations_dist);
+  m_prev_error_signals_dists.emplace_back(prev_error_signals_dist);
+  m_error_signals_dists.emplace_back(error_signals_dist);
+
+  equivalents.insert(std::make_pair(&get_prev_activations_dist(), std::set<dc::Dist*>()));
+  equivalents.insert(std::make_pair(&get_activations_dist(), std::set<dc::Dist*>()));
+  equivalents.insert(std::make_pair(&get_prev_error_signals_dist(), std::set<dc::Dist*>()));
+  equivalents.insert(std::make_pair(&get_error_signals_dist(), std::set<dc::Dist*>()));
+}
+
+void distconv_adapter::impose_adjacent_distribution_constraints(
+    std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents) {
+  const auto &l = layer();
+  const auto &ps = l.get_parallel_strategy();
+
+  auto &x = get_prev_activations_dist();
+  auto &y = get_activations_dist();
+  auto &dx = get_error_signals_dist();
+  auto &dy = get_prev_error_signals_dist();
+
+  // TEMPORARY HACK. Each tensor should be able to have its own
+  // distribution, however, the current design only allows for a
+  // single distribution for all output tensors in each layer,
+  // meaning the data and label tensors need to have the same
+  // distribution. The data tensor is likely to have halo as the
+  // next layer will be convolution, whereas the label won't need to
+  // have halo. For now, ignore the child layer for the label data.
+
+  if (l.get_type() == "input") {
+    Layer *child = const_cast<Layer*>(l.get_child_layers()[0]);
+    if (child->distconv_enabled() &&
+        child->get_parallel_strategy() == ps) {
+      auto &child_x = child->dc().get_prev_activations_dist();
+      auto &child_dx = child->dc().get_error_signals_dist();
+      equivalents[&y].insert(&child_x);
+      equivalents[&dy].insert(&child_dx);
+    }
+  } else {
+    for (auto &child: l.get_child_layers()) {
+      if (child->distconv_enabled() &&
+          child->get_parallel_strategy() == ps) {
+        auto &child_x = const_cast<dc::Dist&>(
+            child->dc().get_prev_activations_dist());
+        auto &child_dx = const_cast<dc::Dist&>(
+            child->dc().get_error_signals_dist());
+        equivalents[&y].insert(&child_x);
+        equivalents[&dy].insert(&child_dx);
+      }
+    }
+  }
+  for (auto &parent: l.get_parent_layers()) {
+    if (parent->get_type() == "input") {
+      const int child_index =
+          parent->find_child_layer_index(&l);
+      if (child_index == 1) continue;
+      assert_eq(child_index, 0);
+    }
+    if (parent->distconv_enabled() &&
+        parent->get_parallel_strategy() == ps) {
+      auto &parent_y = const_cast<dc::Dist&>(
+          parent->dc().get_activations_dist());
+      auto &parent_dy = const_cast<dc::Dist&>(
+          parent->dc().get_prev_error_signals_dist());
+      equivalents[&x].insert(&parent_y);
+      equivalents[&dx].insert(&parent_dy);
+    }
+  }
 }
 
 }  // namespace lbann

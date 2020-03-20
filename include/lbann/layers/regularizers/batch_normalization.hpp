@@ -56,10 +56,8 @@ class batch_normalization_distconv_adapter: public data_type_distconv_adapter<Te
 
   batch_normalization_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~batch_normalization_distconv_adapter() = default;
-  void setup_fp_tensors(const dc::Dist &input_dist,
-                        const dc::Dist &output_dist) override;
-  void setup_bp_tensors(const dc::Dist &prev_error_signal_dist,
-                        const dc::Dist &error_signal_dist) override;
+  void setup_fp_tensors() override;
+  void setup_bp_tensors() override;
 
   dc::Shape get_per_channel_stat_shape() const;
   dc::Dist get_per_channel_stat_dist(const dc::Dist &input_dist) const;
@@ -452,12 +450,12 @@ get_per_channel_stat_dist(const dc::Dist &input_dist) const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_fp_tensors(const dc::Dist &input_dist, const dc::Dist &output_dist) {
-  data_type_distconv_adapter<TensorDataType>::setup_fp_tensors(
-      input_dist, output_dist);
+setup_fp_tensors() {
+  data_type_distconv_adapter<TensorDataType>::setup_fp_tensors();
 
   auto &l = static_cast<batch_normalization_layer<
     TensorDataType, T_layout, Dev>&>(this->layer());
+  const auto &input_dist = this->get_prev_activations_dist();
 
   const auto per_channel_stat_shape = get_per_channel_stat_shape();
   const auto shared_dist = get_per_channel_stat_dist(input_dist);
@@ -482,11 +480,10 @@ setup_fp_tensors(const dc::Dist &input_dist, const dc::Dist &output_dist) {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_bp_tensors(const dc::Dist &prev_error_signal_dist,
-                 const dc::Dist &error_signal_dist) {
-  data_type_distconv_adapter<TensorDataType>::setup_bp_tensors(
-      prev_error_signal_dist, error_signal_dist);
+setup_bp_tensors() {
+  data_type_distconv_adapter<TensorDataType>::setup_bp_tensors();
 
+  const auto &prev_error_signal_dist = this->get_prev_error_signals_dist();
   auto &l = static_cast<batch_normalization_layer<
     TensorDataType, T_layout, Dev>&>(this->layer());
 

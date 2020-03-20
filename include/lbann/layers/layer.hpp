@@ -591,49 +591,30 @@ private:
 
 #ifdef LBANN_HAS_DISTCONV
   friend class distconv_adapter;
-
  public:
-  /** Indicate whether distconv is supported. */
-  virtual bool is_distconv_supported() const { return true; }
-  /** Enables distconv. */
-  void enable_distconv();
+  int get_num_dims() const;
+  int get_num_spatial_dims() const;
   /** Indicate whether distconv is enabled. */
   bool distconv_enabled() const;
-  virtual void setup_distconv() = 0;
-
-  virtual distconv_adapter& dc() { return *m_dc; }
+  /** Retrievs distconv adapter. */
   virtual const distconv_adapter& dc() const { return *m_dc; }
-
-  virtual void init_distribution(
-      std::map<const Layer*, std::array<lbann::dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-      std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &invariants) = 0;
-  virtual void setup_tensor_distribution_add_adjacent_equivalence(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents);
-
- protected:
-  virtual void setup_distconv_adapter() = 0;
-  std::unique_ptr<distconv_adapter>& get_dc() { return m_dc; };
-  const std::unique_ptr<distconv_adapter>& get_dc() const { return m_dc; };
-  virtual void fp_setup_distconv(El::Int mini_batch_size) = 0;
-  virtual void bp_setup_distconv(El::Int mini_batch_size) = 0;
-
-  void setup_early_termination();
-  void early_terminate();
-  bool early_terminate_last_iteration() const;
-  int get_exit_count() const;
-
- public:
+  /** Retrievs distconv adapter. */
+  virtual distconv_adapter& dc() { return *m_dc; }
   /** Indicate whether backprop can be safely skipped. */
   bool skip_first_layer_bp() const;
 
+ protected:
+  /** Indicate whether distconv is supported. */
+  virtual bool is_distconv_supported() const { return true; }
+  /** Pre-initialize distconv attributes needed for setup_data(). */
+  void prepare_distconv();
+  virtual void setup_distconv_adapter() = 0;
+  std::unique_ptr<distconv_adapter>& get_dc() { return m_dc; };
+  const std::unique_ptr<distconv_adapter>& get_dc() const { return m_dc; };
+
  private:
-  bool m_distconv_enabled = false;
-  // Negative value disables early termination. DISTCONV_EARLY_TERMINATE
-  // environment value will override if set.
-  int m_exit_count = -1;
+  mutable bool m_distconv_enabled = false;
+  mutable bool m_distconv_enabled_set = false;
   std::unique_ptr<distconv_adapter> m_dc;
 #endif // LBANN_HAS_DISTCONV
 };

@@ -44,23 +44,38 @@ public:
   /** Get error signal tensor corresponding to parent layer. */
   virtual const dc::AbsTensor& get_error_signals(const Layer& parent) const = 0;
 
+  virtual void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                                   std::set<dc::Dist*> &updated,
+                                   std::set<dc::Dist*> &invariants);
+  void impose_adjacent_distribution_constraints(
+      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents);
+  dc::Dist &get_prev_activations_dist();
+  const dc::Dist &get_prev_activations_dist() const;
+  dc::Dist &get_activations_dist();
+  const dc::Dist &get_activations_dist() const;
+  dc::Dist &get_prev_error_signals_dist();
+  const dc::Dist &get_prev_error_signals_dist() const;
+  dc::Dist &get_error_signals_dist();
+  const dc::Dist &get_error_signals_dist() const;
+
   // Setup fp tensors
-  virtual void setup_prev_activations(const dc::Dist& dist) = 0;
+  virtual void setup_prev_activations() = 0;
   virtual void setup_original_prev_activations() = 0;
-  virtual void setup_activations(const dc::Dist& dist) = 0;
+  virtual void setup_activations() = 0;
   virtual void setup_original_activations() = 0;
-  virtual void setup_fp_tensors(const dc::Dist &input_dist,
-                                const dc::Dist &output_dist);
+  virtual void setup_fp_tensors();
 
   // Setup bp tensors
-  virtual void setup_prev_error_signals(const dc::Dist& dist) = 0;
+  virtual void setup_prev_error_signals() = 0;
   virtual void setup_original_prev_error_signals() = 0;
-  virtual void setup_error_signals(const dc::Dist& dist) = 0;
+  virtual void setup_error_signals() = 0;
   virtual void setup_original_error_signals() = 0;
-  virtual void setup_bp_tensors(const dc::Dist &prev_error_signal_dist,
-                                const dc::Dist &error_signal_dist);
+  virtual void setup_bp_tensors();
 
   virtual void setup_layer(size_t workspace_capacity) {}
+
+  virtual void fp_setup(El::Int mini_batch_size) = 0;
+  virtual void bp_setup(El::Int mini_batch_size) = 0;
 
   virtual void ensure_prev_activations() = 0;
   virtual void copy_out_activations() = 0;
@@ -70,9 +85,9 @@ public:
   void setup_inter_layer_adaptation();
   void setup_keep_original_tensors();
 
-  bool parent_copy_in_required(size_t input_index) const;
+  bool parent_copy_required(size_t input_index) const;
   bool parent_shuffle_required(size_t input_index) const;
-  bool child_copy_out_required(size_t output_index) const;
+  bool child_copy_required(size_t output_index) const;
   bool child_shuffle_required(size_t output_index) const;
 
   bool keep_original_input(size_t input_index) const;
@@ -91,9 +106,14 @@ public:
   int get_num_dims() const;
   int get_num_spatial_dims() const;
 
-  std::vector<bool> m_parent_copy_in_required;
+  std::vector<dc::Dist> m_prev_activations_dists;
+  std::vector<dc::Dist> m_activations_dists;
+  std::vector<dc::Dist> m_prev_error_signals_dists;
+  std::vector<dc::Dist> m_error_signals_dists;
+
+  std::vector<bool> m_parent_copy_required;
   std::vector<bool> m_parent_shuffle_required;
-  std::vector<bool> m_child_copy_out_required;
+  std::vector<bool> m_child_copy_required;
   std::vector<bool> m_child_shuffle_required;
 
   std::vector<bool> m_keep_original_input;

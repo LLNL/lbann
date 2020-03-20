@@ -368,12 +368,11 @@ void Layer::setup() {
   setup_pointers();
   setup_dims();
   setup_matrices(m_comm->get_trainer_grid());
-  // setup_data and setup_gpu are called from setup_distconv when
-  // distconv is used
-#ifndef LBANN_HAS_DISTCONV
+#ifdef LBANN_HAS_DISTCONV
+  prepare_distconv();
+#endif // LBANN_HAS_DISTCONV
   setup_data();
   if (using_gpus()) { setup_gpu(); }
-#endif // LBANN_HAS_DISTCONV
 }
 
 void Layer::setup_pointers() {
@@ -607,94 +606,53 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
 }
 
 #ifdef LBANN_HAS_DISTCONV
-void Layer::enable_distconv() {
-  // Distconv is disabled if no parallel strategy is defined. When no
-  // strategy is defined, the layer has the default strategy of all
-  // zeros, which is invalid, thus should not be used when distconv is
-  // used.
-  const auto &ps = get_parallel_strategy();
-  ParallelStrategy default_zero_ps;
-  if (ps == default_zero_ps) {
-    dc::MPIRootPrintStreamDebug()
-        << "Disable " << get_name()
-        << " as it does not have a parallel strategy.";
-    m_distconv_enabled = false;
-    return;
+int Layer::get_num_dims() const {
+  // Use the dimension of either input or output data.
+  auto nd = get_num_parents() > 0 ? get_input_dims().size() :
+      get_output_dims().size();
+  nd += 1; // input and output dimensions do not have the sample dimension.
+  if (!(nd == 4 || nd == 5)) {
+    LBANN_ERROR(get_name(), ": Invalid number of dimensions: ", nd);
   }
+  return nd;
+}
 
-  // When DISTCONV_ENABLE is defined, all layers included in the
-  // variable string are enabled.
-  auto *env = std::getenv("DISTCONV_ENABLE");
-  if (env) {
-    std::string s(env);
-    auto layer_names = dc::util::split(s, ',');
-    for (const auto &name: layer_names) {
-      if (get_name() != name) continue;
-      m_distconv_enabled = true;
-      setup_distconv_adapter();
-      return;
-    }
-    dc::MPIRootPrintStreamInfo()
-        << "Disable " << get_name()
-        << " as its name is not found in DISTCONV_ENABLE";
-    m_distconv_enabled = false;
-    return;
-  }
+int Layer::get_num_spatial_dims() const {
+  return get_num_dims() - 2;
+}
 
-  // It is also disabled when the layer name is included in
-  // environment variable DISTCONV_DISABLE.
-  env = std::getenv("DISTCONV_DISABLE");
-  if (env) {
-    std::string s(env);
-    auto layer_names = dc::util::split(s, ',');
-    for (const auto &name: layer_names) {
-      if (get_name() != name) continue;
-      dc::MPIRootPrintStreamInfo()
-          << "Disable " << get_name()
-          << " as its name found in DISTCONV_DISABLE";
-      m_distconv_enabled = false;
-      return;
-    }
-  }
-
-  // Finally, check whether a layer is supported by distconv.
-  m_distconv_enabled = is_distconv_supported();
-
-  if (m_distconv_enabled) {
+void Layer::prepare_distconv() {
+  if (distconv_enabled()) {
     setup_distconv_adapter();
+    dc().setup_inter_layer_adaptation();
+    dc().setup_keep_original_tensors();
   }
 }
 
 bool Layer::distconv_enabled() const {
+  if (!m_distconv_enabled_set) {
+    // Distconv is disabled if no parallel strategy is defined. When no
+    // strategy is defined, the layer has the default strategy of all
+    // zeros, which is invalid, thus should not be used when distconv is
+    // used.
+    const auto &ps = get_parallel_strategy();
+    ParallelStrategy default_zero_ps;
+    if (ps == default_zero_ps) {
+      dc::MPIRootPrintStreamDebug()
+          << "Disable " << get_name()
+          << " as it does not have a parallel strategy.";
+      m_distconv_enabled = false;
+      m_distconv_enabled_set = true;
+    }
+  }
+
+  if (!m_distconv_enabled_set) {
+    // Finally, check whether a layer is supported by distconv.
+    m_distconv_enabled = is_distconv_supported();
+    m_distconv_enabled_set = true;
+  }
+
   return m_distconv_enabled;
-}
-
-void Layer::setup_early_termination() {
-  char *count_str = std::getenv("DISTCONV_EARLY_TERMINATE");
-  if (count_str) {
-    m_exit_count = atoi(count_str);
-    dc::MPIRootPrintStreamInfo()
-        << "Exiting after " << m_exit_count << " iterations";
-  }
-}
-
-void Layer::early_terminate() {
-  if (m_exit_count == 0) {
-    dc::MPIPrintStreamDebug() << "Early terminate";
-    MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Finalize();
-    cudaDeviceReset();
-    exit(0);
-  }
-  if (m_exit_count > 0) --m_exit_count;
-}
-
-bool Layer::early_terminate_last_iteration() const {
-  return get_exit_count() == 0;
-}
-
-int Layer::get_exit_count() const {
-  return m_exit_count;
 }
 
 // TODO: Needs more robust implementation
@@ -715,61 +673,6 @@ bool Layer::skip_first_layer_bp() const {
   }
   return false;
 }
-
-void Layer::setup_tensor_distribution_add_adjacent_equivalence(
-    std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-    std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents) {
-  if (!distconv_enabled()) return;
-  auto &layer_dists = dists[this];
-  const auto &ps = get_parallel_strategy();
-
-  // TEMPORARY HACK. Each tensor should be able to have its own
-  // distribution, however, the current design only allows for a
-  // single distribution for all output tensors in each layer,
-  // meaning the data and label tensors need to have the same
-  // distribution. The data tensor is likely to have halo as the
-  // next layer will be convolution, whereas the label won't need to
-  // have halo. For now, ignore the child layer for the label data.
-
-  if (this->get_type() == "input") {
-    const auto &child =  get_child_layers()[0];
-    if (child->distconv_enabled() &&
-        child->get_parallel_strategy() == ps) {
-      equivalents[&layer_dists[1]].insert(
-          &dists[child][0]);
-      equivalents[&layer_dists[3]].insert(
-          &dists[child][2]);
-    }
-  } else {
-    for (auto &child: get_child_layers()) {
-      if (child->distconv_enabled() &&
-          child->get_parallel_strategy() == ps) {
-        equivalents[&layer_dists[1]].insert(
-            &dists[child][0]);
-        equivalents[&layer_dists[3]].insert(
-            &dists[child][2]);
-      }
-    }
-  }
-  for (auto &parent: get_parent_layers()) {
-    if (parent->get_type() == "input") {
-      const int child_index = std::find(
-          parent->get_child_layers().begin(),
-          parent->get_child_layers().end(),
-          this) - parent->get_child_layers().begin();
-      if (child_index == 1) continue;
-      assert_eq(child_index, 0);
-    }
-    if (parent->distconv_enabled() &&
-        parent->get_parallel_strategy() == ps) {
-      equivalents[&layer_dists[0]].insert(
-          &dists[parent][1]);
-      equivalents[&layer_dists[2]].insert(
-          &dists[parent][3]);
-    }
-  }
-}
-
 #endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann

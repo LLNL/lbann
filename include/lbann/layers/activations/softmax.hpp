@@ -73,6 +73,9 @@ class softmax_distconv_adapter: public data_type_distconv_adapter<TensorDataType
   softmax_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~softmax_distconv_adapter() = default;
 
+  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                           std::set<dc::Dist*> &updated,
+                           std::set<dc::Dist*> &invariants) override;
   void setup_layer(size_t workspace_capacity) override;
 
   std::unique_ptr<dc::Softmax> m_softmax;
@@ -196,26 +199,6 @@ private:
 
   void fp_compute_distconv();
   void bp_compute_distconv();
-
- public:
-  void init_distribution(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-      std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &invariants) override {
-    data_type_layer<TensorDataType>::init_distribution(
-        dists, equivalents, updated, invariants);
-    if (!this->distconv_enabled()) return;
-
-    // No overlap supported yet
-    const dc::IntVector no_overlap(this->get_num_dims(), 0);
-    for (int i = 0; i < 4; ++i) {
-      auto &dist = dists[this][i];
-      dist.set_overlap(no_overlap);
-      updated.insert(&dist);
-      invariants.insert(&dist);
-    }
-  }
 #endif // LBANN_HAS_DISTCONV
 };
 
@@ -232,6 +215,36 @@ const softmax_distconv_adapter<TensorDataType, T_layout, Dev>&
 softmax_layer<TensorDataType, T_layout, Dev>::dc() const {
   return dynamic_cast<const softmax_distconv_adapter<TensorDataType, T_layout, Dev>&>(
       data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void softmax_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                    std::set<dc::Dist*> &updated,
+                    std::set<dc::Dist*> &invariants) {
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(
+      equivalents, updated, invariants);
+  // No overlap supported yet
+  for (auto &d: this->m_prev_activations_dists) {
+    d.clear_overlap();
+    updated.insert(&d);
+    invariants.insert(&d);
+  }
+  for (auto &d: this->m_activations_dists) {
+    d.clear_overlap();
+    updated.insert(&d);
+    invariants.insert(&d);
+  }
+  for (auto &d: this->m_prev_error_signals_dists) {
+    d.clear_overlap();
+    updated.insert(&d);
+    invariants.insert(&d);
+  }
+  for (auto &d: this->m_error_signals_dists) {
+    d.clear_overlap();
+    updated.insert(&d);
+    invariants.insert(&d);
+  }
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

@@ -40,14 +40,18 @@ class imcomm;
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-class convolution_adapter: public base_convolution_adapter<TensorDataType, Device> {
+class convolution_distconv_adapter: public base_convolution_adapter<TensorDataType, Device> {
  public:
   using TensorDevType = typename base_convolution_adapter<TensorDataType, Device>::TensorDevType;
 
-  convolution_adapter(Layer& layer): base_convolution_adapter<TensorDataType, Device>(layer) {}
+  convolution_distconv_adapter(Layer& layer): base_convolution_adapter<TensorDataType, Device>(layer) {}
+  virtual ~convolution_distconv_adapter() = default;
 
-  dc::Shape get_activations_local_shape(int index=0) const override;
+  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                           std::set<dc::Dist*> &updated,
+                           std::set<dc::Dist*> &invariants) override;
   void setup_layer(size_t workspace_capacity) override;
+  dc::Shape get_activations_local_shape(int index=0) const override;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -162,12 +166,6 @@ protected:
         this->distconv_forward();
         this->apply_bias_distconv();
         this->dc().copy_out_activations();
-        if (this->early_terminate_last_iteration() &&
-            this->dc().keep_original()) {
-          base_convolution_layer<TensorDataType, Device>::apply_convolution_cudnn(true);
-          base_convolution_layer<TensorDataType, Device>::apply_bias_cudnn();
-          this->dc().dump_original_activations();
-        }
       }
 #else
       base_convolution_layer<TensorDataType, Device>::apply_convolution_cudnn(true);
@@ -196,12 +194,6 @@ protected:
         }
         this->distconv_backward_filter();
         this->distconv_backward_data();
-        if (this->early_terminate_last_iteration() &&
-            this->dc().keep_original()) {
-          base_convolution_layer<TensorDataType, Device>::compute_gradients_cudnn(false);
-          base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_cudnn(false);
-          this->dc().dump_original_error_signals();
-        }
       }
 #else
       base_convolution_layer<TensorDataType, Device>::compute_gradients_cudnn(false);
@@ -214,54 +206,11 @@ protected:
   }
 
 #ifdef LBANN_HAS_DISTCONV
-  friend class convolution_adapter<TensorDataType, Layout, Device>;
+  friend class convolution_distconv_adapter<TensorDataType, Layout, Device>;
  public:
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<
-      convolution_adapter<TensorDataType, Layout, Device>>(*this);
-  }
-
-  void init_distribution(
-      std::map<const Layer*, std::array<dc::Dist, dc::num_dists>> &dists,
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-      std::set<dc::Dist*> &updated,
-      std::set<dc::Dist*> &invariants) override {
-    base_convolution_layer<TensorDataType, Device>::init_distribution(
-        dists, equivalents, updated, invariants);
-    if (!this->distconv_enabled()) return;
-
-    auto kernel_dims = get_kernel_dims();
-    std::reverse(kernel_dims.begin(), kernel_dims.end());
-    auto dilations = this->m_dilations;
-    std::reverse(dilations.begin(), dilations.end());
-    dc::IntVector overlap(this->get_num_dims(), 0);
-    const auto &ps = this->get_parallel_strategy();
-    // i=0 -> width; i=1 -> height; i=2: -> depth;
-    for(int i = 0; i < this->get_num_spatial_dims(); i++) {
-      int splits = 0;
-      switch (i) {
-        case 0: splits = ps.width_splits; break;
-        case 1: splits = ps.height_splits; break;
-        case 2: splits = ps.depth_splits; break;
-      }
-      if (splits > 1) {
-        overlap[i] = (kernel_dims[i] - 1) / 2 * dilations[i];
-      }
-    }
-    auto &prev_activations_dist = dists[this][0];
-    prev_activations_dist.set_overlap(overlap);
-    updated.insert(&prev_activations_dist);
-    invariants.insert(&prev_activations_dist);
-    auto &prev_error_signals_dist = dists[this][3];
-    prev_error_signals_dist.set_overlap(overlap);
-    updated.insert(&prev_error_signals_dist);
-    invariants.insert(&prev_error_signals_dist);
-    // To deal with strides, error signals must have the same size
-    // of overlap
-    auto &error_signals_dist = dists[this][2];
-    error_signals_dist.set_overlap(overlap);
-    updated.insert(&error_signals_dist);
-    invariants.insert(&error_signals_dist);
+      convolution_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
 
  protected:
@@ -281,12 +230,55 @@ protected:
     }
     return true;
   }
-
 #endif // LBANN_HAS_DISTCONV
 };
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void convolution_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                    std::set<dc::Dist*> &updated,
+                    std::set<dc::Dist*> &invariants) {
+  base_convolution_adapter<TensorDataType, Dev>::setup_distributions(
+      equivalents, updated, invariants);
+  auto &l = dynamic_cast<convolution_layer<
+    TensorDataType, T_layout, Dev>&>(this->layer());
+  auto kernel_dims = l.get_kernel_dims();
+  std::reverse(kernel_dims.begin(), kernel_dims.end());
+  auto dilations = l.m_dilations;
+  std::reverse(dilations.begin(), dilations.end());
+  dc::IntVector overlap(this->get_num_dims(), 0);
+  const auto &ps = l.get_parallel_strategy();
+  // i=0 -> width; i=1 -> height; i=2: -> depth;
+  for(int i = 0; i < this->get_num_spatial_dims(); i++) {
+    int splits = 0;
+    switch (i) {
+      case 0: splits = ps.width_splits; break;
+      case 1: splits = ps.height_splits; break;
+      case 2: splits = ps.depth_splits; break;
+    }
+    if (splits > 1) {
+      overlap[i] = (kernel_dims[i] - 1) / 2 * dilations[i];
+    }
+  }
+  auto &prev_activations_dist = this->get_prev_activations_dist();
+  prev_activations_dist.set_overlap(overlap);
+  updated.insert(&prev_activations_dist);
+  invariants.insert(&prev_activations_dist);
+  auto &prev_error_signals_dist = this->get_prev_error_signals_dist();
+  prev_error_signals_dist.set_overlap(overlap);
+  updated.insert(&prev_error_signals_dist);
+  invariants.insert(&prev_error_signals_dist);
+  // To deal with strides, error signals must have the same size
+  // of overlap
+  auto &error_signals_dist = this->get_error_signals_dist();
+  error_signals_dist.set_overlap(overlap);
+  updated.insert(&error_signals_dist);
+  invariants.insert(&error_signals_dist);
+}
+
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-dc::Shape convolution_adapter<TensorDataType, Layout, Device>::
+dc::Shape convolution_distconv_adapter<TensorDataType, Layout, Device>::
 get_activations_local_shape(int index) const {
   assert_eq(index, 0);
   const auto &layer = dynamic_cast<const convolution_layer<
@@ -306,7 +298,7 @@ get_activations_local_shape(int index) const {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void convolution_adapter<TensorDataType, Layout, Device>::setup_layer(
+void convolution_distconv_adapter<TensorDataType, Layout, Device>::setup_layer(
     size_t workspace_capacity) {
   base_convolution_adapter<TensorDataType, Device>::setup_layer(
       workspace_capacity);
@@ -343,6 +335,7 @@ void convolution_adapter<TensorDataType, Layout, Device>::setup_layer(
                       this->m_bwd_filter_algo,
                       workspace_capacity, layer.skip_first_layer_bp());
 }
+#endif // LBANN_HAS_DISTCONV
 
 // Builder function
 LBANN_DEFINE_LAYER_BUILDER(convolution);
