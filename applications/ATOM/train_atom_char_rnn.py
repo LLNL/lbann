@@ -1,6 +1,6 @@
 import sys
 import numpy as np
-from utils import str_list
+from lbann.util import str_list
 
 
 def construct_lc_launcher_args():
@@ -70,17 +70,6 @@ def construct_lc_launcher_args():
     parser.add_argument(
         "--step-size", type=int, default=10, help="learning rate decay step size"
     )
-=======
-pad_indx = 28
-# Sample access functions
-def get_sample(index):
-    sample = samples[index]
-    if len(sample) < dims:
-        sample = np.concatenate((sample, np.full(dims-len(sample), pad_indx)))
-    else:
-        sample = np.resize(sample, dims)
-    return sample
->>>>>>> d67f4fbea212560f976e096e1757207ccbe7873a
 
     # this is just for compatiblity with the moses code
     parser.add_argument("--dropout", type=float, default=0.5, help="")

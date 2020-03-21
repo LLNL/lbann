@@ -21,3 +21,6 @@ applications/ATOM/charvae_experiments
 
 # can ignore the moses repo
 applications/ATOM/moses/
+
+# we don't want to collect slurm output
+**/slurm-*.out
