@@ -313,9 +313,6 @@ public:
 void image_data_reader::load_list_of_samples(const std::string sample_list_file) {
   // load the sample list
   double tm1 = get_time();
-  if (! get_file_dir().empty()) {
-    m_sample_list.override_samples_dirname(get_file_dir());
-  }
 
   options *opts = options::get();
 
