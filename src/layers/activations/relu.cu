@@ -93,8 +93,6 @@ void relu_layer<TensorDataType, Layout, Device>::fp_compute_distconv() {
 
   dc().m_relu->forward(one, this->dc().get_prev_activations(),
                        zero, this->dc().get_activations());
-
-  dc().copy_out_activations();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -109,7 +107,6 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute_distconv() {
                         this->dc().get_prev_error_signals(),
                         this->dc().get_prev_activations(),
                         zero, this->dc().get_error_signals());
-  dc().copy_out_error_signals();
 }
 #endif // LBANN_HAS_DISTCONV
 

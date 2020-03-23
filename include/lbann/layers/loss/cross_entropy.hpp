@@ -243,7 +243,6 @@ private:
     dc().m_cross_entropy->forward(this->dc().get_prev_activations(0),
                                   this->dc().get_prev_activations(1),
                                   this->dc().get_activations());
-    this->dc().copy_out_activations();
   }
 
   void bp_compute_distconv() {
@@ -253,7 +252,6 @@ private:
                                    this->dc().get_prev_error_signals(0),
                                    this->dc().get_error_signals(0),
                                    this->dc().get_error_signals(1));
-    this->dc().copy_out_error_signals();
   }
 #endif // LBANN_HAS_DISTCONV
 };

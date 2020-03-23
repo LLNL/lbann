@@ -103,7 +103,9 @@ public:
   }
 
   void fp_setup(El::Int mini_batch_size) override;
+  void fp_postprocess() override;
   void bp_setup(El::Int mini_batch_size) override;
+  void bp_postprocess() override;
 
   TensorShufflerType& get_prev_activations_shuffler(
       const TensorDevType &src, const TensorDevType &dst);

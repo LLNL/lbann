@@ -75,7 +75,9 @@ public:
   virtual void setup_layer(size_t workspace_capacity) {}
 
   virtual void fp_setup(El::Int mini_batch_size) = 0;
+  virtual void fp_postprocess() = 0;
   virtual void bp_setup(El::Int mini_batch_size) = 0;
+  virtual void bp_postprocess() = 0;
 
   virtual void ensure_prev_activations() = 0;
   virtual void copy_out_activations() = 0;

@@ -165,7 +165,6 @@ protected:
       if (this->distconv_enabled()) {
         this->distconv_forward();
         this->apply_bias_distconv();
-        this->dc().copy_out_activations();
         return;
       }
 #endif // LBANN_HAS_DISTCONV

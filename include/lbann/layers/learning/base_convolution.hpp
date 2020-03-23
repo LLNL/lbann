@@ -1311,7 +1311,6 @@ private:
     this->dc().m_conv->backward_data(TensorDataType{1}, *(this->dc().m_kernel),
                                      this->dc().get_prev_error_signals(),
                                      TensorDataType{0}, this->dc().get_error_signals());
-    this->dc().copy_out_error_signals();
   }
 
   void distconv_backward_filter() {

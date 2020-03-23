@@ -341,8 +341,6 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute_distco
                             this->dc().m_bias,
                             this->dc().get_activations(),
                             is_training);
-
-  this->dc().copy_out_activations();
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
@@ -390,8 +388,6 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute_distco
                              dc().m_mean, dc().m_var, dc().m_scale,
                              dc().m_mean_gradient, dc().m_var_gradient,
                              dc().get_error_signals());
-
-  dc().copy_out_error_signals();
 }
 
 #endif // LBANN_HAS_DISTCONV

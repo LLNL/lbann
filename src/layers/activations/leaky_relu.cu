@@ -172,7 +172,6 @@ fp_compute_distconv() {
   assert_always(this->distconv_enabled());
   dc().m_leaky_relu->forward(dc().get_prev_activations(), m_negative_slope,
                              dc().get_activations());
-  dc().copy_out_activations();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -184,7 +183,6 @@ bp_compute_distconv() {
                               dc().get_prev_error_signals(),
                               m_negative_slope,
                               dc().get_error_signals());
-  dc().copy_out_error_signals();
 }
 #endif // LBANN_HAS_DISTCONV
 

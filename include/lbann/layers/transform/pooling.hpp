@@ -561,7 +561,6 @@ private:
     assert_always(this->distconv_enabled());
     dc().m_pooling->forward(TensorDataType{1}, this->dc().get_prev_activations(),
                             TensorDataType{0}, this->dc().get_activations());
-    dc().copy_out_activations();
 #endif
   }
 
@@ -574,7 +573,6 @@ private:
                              this->dc().get_prev_error_signals(),
                              this->dc().get_prev_activations(), TensorDataType{0},
                              this->dc().get_error_signals());
-    dc().copy_out_error_signals();
 #endif
   }
 

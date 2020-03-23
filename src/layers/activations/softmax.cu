@@ -271,7 +271,6 @@ void softmax_layer<TensorDataType, Layout, Device>::fp_compute_distconv() {
   assert_always(this->distconv_enabled());
   assert_always(Layout == data_layout::DATA_PARALLEL);
   dc().m_softmax->forward(dc().get_prev_activations(), dc().get_activations());
-  dc().copy_out_activations();
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -281,7 +280,6 @@ void softmax_layer<TensorDataType, Layout, Device>::bp_compute_distconv() {
   dc().m_softmax->backward(dc().get_activations(),
                            dc().get_prev_error_signals(),
                            dc().get_error_signals());
-  dc().copy_out_error_signals();
 }
 #endif // LBANN_HAS_DISTCONV
 

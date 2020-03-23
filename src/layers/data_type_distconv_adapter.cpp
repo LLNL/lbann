@@ -585,6 +585,11 @@ void data_type_distconv_adapter<TensorDataType>::fp_setup(El::Int mini_batch_siz
 }
 
 template <typename TensorDataType>
+void data_type_distconv_adapter<TensorDataType>::fp_postprocess() {
+  copy_out_activations();
+}
+
+template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::bp_setup(El::Int mini_batch_size) {
   auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
   // Reconfigure the sample dimension as the mini batch size may vary
@@ -624,6 +629,11 @@ void data_type_distconv_adapter<TensorDataType>::bp_setup(El::Int mini_batch_siz
     }
   }
   ensure_prev_error_signals();
+}
+
+template <typename TensorDataType>
+void data_type_distconv_adapter<TensorDataType>::bp_postprocess() {
+  copy_out_error_signals();
 }
 
 namespace {
