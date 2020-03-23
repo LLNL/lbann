@@ -93,7 +93,7 @@ model::model(const model& other) :
     m = m->copy();
   }
   for (auto& cb : m_callbacks) {
-    cb = cb->copy();
+    cb.reset(cb->copy());
   }
 
   // Copy layers
@@ -132,7 +132,6 @@ model& model::operator=(const model& other) {
   if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
   if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
-  for (const auto& cb : m_callbacks)   { delete cb; }
 
   // Shallow copies
   m_comm = other.m_comm;
@@ -151,7 +150,7 @@ model& model::operator=(const model& other) {
     m = m->copy();
   }
   for (auto& cb : m_callbacks) {
-    cb = cb->copy();
+    cb.reset(cb->copy());
   }
 
   // Copy layers
@@ -190,7 +189,6 @@ model& model::operator=(const model& other) {
 model::~model() {
   if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
-  for (const auto& cb : m_callbacks)   { delete cb; }
 }
 
 // =============================================
@@ -412,11 +410,11 @@ void model::add_weights(std::unique_ptr<weights> ptr) {
 
 }
 
-void model::add_callback(callback_base *cb) {
+void model::add_callback(std::shared_ptr<callback_base> cb) {
   if (cb == nullptr) {
     throw lbann_exception("model: Attempted to add null pointer as a callback.");
   }
-  m_callbacks.push_back(cb);
+  m_callbacks.push_back(std::move(cb));
 }
 
 void model::add_metric(metric *m) {
@@ -1398,8 +1396,8 @@ bool model::reload_weights(const std::string latest, const std::vector<std::stri
 }
 
 bool model::save_model() {
-  for (auto* c : m_callbacks) {
-    if (auto *cb = dynamic_cast<callback::save_model*>(c)) {
+  for (auto&& c : m_callbacks) {
+    if (auto *cb = dynamic_cast<callback::save_model*>(c.get())) {
       return cb->do_save_model(this);
     }
   }

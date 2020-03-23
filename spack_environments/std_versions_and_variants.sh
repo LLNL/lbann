@@ -17,7 +17,7 @@ STD_PACKAGES=$(cat <<EOF
 
     cub::
       buildable: true
-      version: [1.7.1]
+      version: [1.8.0]
 
     nccl::
       buildable: true

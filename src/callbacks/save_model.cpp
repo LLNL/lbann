@@ -111,7 +111,7 @@ bool save_model::do_save_model_weights(model *m) {
 
   // Shared checkpoint, logic identical to Distributed.i
   makedir(m_dir.c_str());
-  std::string epochdir = get_shared_checkpoint_dirname(m, m_dir.c_str(), c.get_execution_mode(), epoch, step);
+  std::string epochdir = get_shared_checkpoint_dirname(c.get_trainer().get_name(), m, m_dir.c_str(), c.get_execution_mode(), epoch, step);
   if (comm->am_trainer_master()) {
     p.open_checkpoint(epochdir.c_str());
   }
@@ -121,7 +121,7 @@ bool save_model::do_save_model_weights(model *m) {
   // close our checkpoint
   p.close_checkpoint();
   if (comm->am_trainer_master()) {
-    std::string latest_file = get_last_shared_checkpoint_filename(m, m_dir.c_str());
+    std::string latest_file = get_last_shared_checkpoint_filename(c.get_trainer().get_name(), m, m_dir.c_str());
     write_latest(latest_file, c.get_execution_mode(), epoch, step);
   }
 
@@ -138,48 +138,6 @@ bool save_model::do_save_model_weights(model *m) {
     fflush(stdout);
   }
   p.reset_bytes();
-  return true;
-}
-
-bool save_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdir_is_fullpath) {
-  std::vector<std::string> weight_list = std::vector<std::string>();
-  std::string active_ckpt_dir;
-  if(ckptdir_is_fullpath) {
-    active_ckpt_dir = ckpt_dir;
-  }else {
-    size_t epochLast = std::numeric_limits<size_t>::max();;
-    size_t stepLast = std::numeric_limits<size_t>::max();;
-    execution_mode mode = execution_mode::invalid;
-    active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
-
-    // get last epoch and step saved.
-    int success = read_latest(active_ckpt_dir, &mode, &epochLast, &stepLast);
-    if(!success) {
-      return false;
-    }
-    active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, mode, epochLast, stepLast);
-  }
-  lbann_comm *comm = m->get_comm();
-  if(comm->am_trainer_master()) {
-    std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;
-  }
-
-  DIR *weight_dir = opendir(active_ckpt_dir.c_str());
-  if(weight_dir == nullptr)
-  {
-    std::cout << "error opening " << active_ckpt_dir << "\n";
-    return false;
-  }
-  // Populate weight list
-  struct dirent *weight_file;
-  while ((weight_file = readdir(weight_dir)) != nullptr){
-    if(!strncmp(weight_file->d_name,"model_weights_",14))
-      weight_list.push_back(std::string(weight_file->d_name));
-  }
-  closedir(weight_dir);
-
-  // load weights that appear in weight list.
-  m->reload_weights(active_ckpt_dir, weight_list);
   return true;
 }
 

@@ -22,6 +22,7 @@ def run(trainer, model, data_reader, optimizer,
         account=None,
         reservation=None,
         launcher_args=[],
+        lbann_exe=lbann.lbann_exe(),
         lbann_args=[],
         environment={},
         overwrite_script=False,
@@ -57,6 +58,7 @@ def run(trainer, model, data_reader, optimizer,
         reservation (str, optional): Scheduler reservation name.
         launcher_args (str, optional): Command-line arguments to
             launcher.
+        lbann_exe (str, optional): LBANN executable.
         lbann_args (str, optional): Command-line arguments to LBANN
             executable.
         environment (dict of {str: str}, optional): Environment
@@ -101,7 +103,7 @@ def run(trainer, model, data_reader, optimizer,
     script.add_command('echo "Started at $(date)"')
 
     # Batch script invokes LBANN
-    lbann_command = [lbann.lbann_exe()]
+    lbann_command = [lbann_exe]
     lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,

@@ -257,7 +257,7 @@ fi
 
 source ${SPACK_ENV_DIR}/${SUPERBUILD}
 
-ninja
+ninja install
 
 echo "To rebuild the environment:"
 echo "    ${SPACK_ENV_CMD}"

@@ -70,6 +70,10 @@ trainer::trainer(const trainer& other) :
   // Deep copies
   // m_io_thread_pool = (other.m_io_thread_pool ?
   //                     other.m_io_thread_pool->copy() : nullptr);
+  m_callbacks.reserve(other.m_callbacks.size());
+  for (auto const& cb : other.m_callbacks) {
+    m_callbacks.emplace_back(cb->copy());
+  }
 }
 
 trainer& trainer::operator=(const trainer& other) {
@@ -81,6 +85,10 @@ trainer& trainer::operator=(const trainer& other) {
   // Deep copies
   // m_io_thread_pool = (other.m_io_thread_pool ?
   //                     other.m_io_thread_pool->copy() : nullptr);
+  m_callbacks.reserve(other.m_callbacks.size());
+  for (auto const& cb : other.m_callbacks) {
+    m_callbacks.emplace_back(cb->copy());
+  }
 
   return *this;
 }
@@ -93,6 +101,9 @@ trainer::~trainer() {
 ////////////////////////////////////////////////////////////
 
 void trainer::set_name(std::string const& name) {
+  if (name.empty()) {
+    LBANN_ERROR("attempted to rename trainer \"", get_name(), "\" with empty string");
+  }
   m_name = name;
 }
 
@@ -115,6 +126,11 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool) {
   // Setup I/O threads - set up before setting up the layers (input
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
+
+  // Set up callbacks
+  for (auto& cb : m_callbacks) {
+    cb->setup(this);
+  }
 }
 
 /// Check if there is already an execution context for the model in this mode, if not create one
@@ -175,6 +191,8 @@ void trainer::delete_execution_context(execution_context_key_pair_t key) {
   m_model_execution_context.erase(key);
 }
 
+  /// @todo BVE FIXME seems like there is a bug here about mapping
+  /// execution contexts to the right model
 void trainer::for_each_execution_context(std::function<void(observer_ptr<execution_context>)>fn) {
   for(auto&& c : m_model_execution_context) {
     // auto&& model = c.first.first;
@@ -213,4 +231,83 @@ void trainer::evaluate(observer_ptr<model> model, execution_mode mode, El::Int n
   sgd.get()->evaluate(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, mode, num_batches);
 }
 
+// =============================================
+// Checkpointing
+// =============================================
+
+bool trainer::save_to_checkpoint_shared(persist& p) {
+  auto save_checkpoint = [&p](observer_ptr<execution_context> ctx)
+    ->void { ctx->save_to_checkpoint_shared(p); };
+  for_each_execution_context(save_checkpoint);
+  return true;
+}
+
+bool trainer::load_from_checkpoint_shared(persist& p) {
+  return true;
+}
+bool trainer::load_from_checkpoint_shared(persist& p, model& m, execution_context& c) {
+  execution_mode current_mode = c.get_execution_mode();
+
+  for(execution_mode mode : execution_mode_iterator()) {
+    /// Restart should optionally load any other valid contexts
+    if(mode == execution_mode::invalid) { continue; }
+    trainer::execution_context_key_pair_t key;
+    try {
+      if(current_mode == mode) {
+        /// Restart has to be able to load the currently running execution context
+        c.load_from_checkpoint_shared(p);
+      }else {
+        key = check_and_build_execution_context(c, m, mode);
+        auto& evaluation_context = static_cast<sgd_execution_context&>(get_execution_context(key));
+        evaluation_context.load_from_checkpoint_shared(p);
+      }
+    }catch (NonexistentArchiveFile const&) {
+      // Ignore the exception if the file is not for the current execution mode
+      if(current_mode == mode) {
+        LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
+      }else {
+        delete_execution_context(key);
+      }
+    }
+  }
+  return true;
+}
+
+bool trainer::save_to_checkpoint_distributed(persist& p){
+  auto save_checkpoint = [&p](observer_ptr<execution_context> ctx)
+    ->void { ctx->save_to_checkpoint_distributed(p); };
+  for_each_execution_context(save_checkpoint);
+  return true;
+}
+
+bool trainer::load_from_checkpoint_distributed(persist& p){
+  return true;
+}
+bool trainer::load_from_checkpoint_distributed(persist& p, model& m, execution_context& c){
+  execution_mode current_mode = c.get_execution_mode();
+
+  for(execution_mode mode : execution_mode_iterator()) {
+    /// Restart should optionally load any other valid contexts
+    if(mode == execution_mode::invalid) { continue; }
+    trainer::execution_context_key_pair_t key;
+    try {
+      if(current_mode == mode) {
+        /// Restart has to be able to load the currently running  execution context
+        c.load_from_checkpoint_distributed(p);
+      }else {
+        key = check_and_build_execution_context(c, m, mode);
+        auto& evaluation_context = static_cast<sgd_execution_context&>(get_execution_context(key));
+        evaluation_context.load_from_checkpoint_distributed(p);
+      }
+    }catch (NonexistentArchiveFile const&) {
+      // Ignore the exception if the file is not for the current execution mode
+      if(current_mode == mode) {
+        LBANN_ERROR("Failed to restart model, invalid execution mode: " + to_string(current_mode));
+      }else {
+        delete_execution_context(key);
+      }
+    }
+  }
+  return true;
+}
 }  // namespace lbann

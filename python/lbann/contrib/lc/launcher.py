@@ -113,6 +113,10 @@ def make_batch_script(
         if 'PAMI_MAX_NUM_CACHED_PAGES' not in environment:
             environment['PAMI_MAX_NUM_CACHED_PAGES'] = 0
 
+        # Configure NVSHMEM to load Spectrum MPI
+        if 'NVSHMEM_MPI_LIB_NAME' not in environment:
+            environment['NVSHMEM_MPI_LIB_NAME'] = 'libmpi_ibm.so'
+
     return lbann.launcher.make_batch_script(
         procs_per_node=procs_per_node,
         scheduler=scheduler,
