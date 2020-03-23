@@ -194,11 +194,11 @@ protected:
         }
         this->distconv_backward_filter();
         this->distconv_backward_data();
+        return;
       }
-#else
+#endif // LBANN_HAS_DISTCONV
       base_convolution_layer<TensorDataType, Device>::compute_gradients_cudnn(false);
       base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_cudnn(false);
-#endif // LBANN_HAS_DISTCONV
     } else {
       base_convolution_layer<TensorDataType, Device>::compute_gradients_im2col(false);
       base_convolution_layer<TensorDataType, Device>::apply_transposed_convolution_im2col(false);
