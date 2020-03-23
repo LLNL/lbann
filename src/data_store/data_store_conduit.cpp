@@ -71,6 +71,11 @@ data_store_conduit::data_store_conduit(
 
   options *opts = options::get();
 
+  // For use in testing
+  if (opts->has_string("data_store_fail")) {
+    LBANN_ERROR("data_store_conduit is throwing a fake exception; this is for use during testing");
+  }
+
   if (opts->has_string("data_store_test_checkpoint")
       && opts->has_string("data_store_spill")) {
     LBANN_ERROR("you passed both --data_store_test_checkpoint and --data_store_spill; please use one or the other or none, but not both");
