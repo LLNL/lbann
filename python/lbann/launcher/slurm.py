@@ -99,12 +99,17 @@ class SlurmBatchScript(BatchScript):
         Args:
             command (`str` or `Iterable` of `str`s): Command to be
                 executed in parallel.
-            launcher (str, optional): srun executable.
-            launcher_args (`Iterable` of `str`s, optional):
-                Command-line arguments to srun.
             nodes (int, optional): Number of compute nodes.
             procs_per_node (int, optional): Number of parallel
                 processes per compute node.
+            time_limit (int, optional): Job time limit, in minutes.
+            job_name (str, optional): Job name.
+            partition (str, optional): Scheduler partition.
+            account (str, optional): Scheduler account.
+            work_dir (str, optional): Working directory.
+            launcher (str, optional): srun executable.
+            launcher_args (`Iterable` of `str`s, optional):
+                Command-line arguments to srun.
 
         """
 
@@ -128,7 +133,7 @@ class SlurmBatchScript(BatchScript):
         if launcher_args is None:
             launcher_args = self.launcher_args
 
-        # Construct invocation
+        # Construct srun invocation
         args = [launcher]
         args.extend(make_iterable(launcher_args))
         if job_name:

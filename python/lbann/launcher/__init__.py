@@ -68,13 +68,12 @@ def run(trainer, model, data_reader, optimizer,
             file if it already exists.
         setup_only (bool, optional): If true, the experiment is not
             run after the experiment directory is initialized.
+        batch_job (bool, optional): If true, the experiment is
+            submitted to the scheduler as a batch job.
         experiment_dir (str, optional, deprecated): See `work_dir`.
 
     Returns:
-        int: Exit status from scheduler. This is really only
-            meaningful if LBANN is run on an existing node
-            allocation. If a batch job is submitted, the scheduler
-            will probably return 0 trivially.
+        int: Exit status.
 
     """
 
@@ -113,7 +112,7 @@ def run(trainer, model, data_reader, optimizer,
     script.add_command('echo "Finished at $(date)"')
     script.add_command('exit ${status}')
 
-    # Write, run, or submit batch script
+    # Write, submit, or run batch script
     status = 0
     if setup_only:
         script.write(overwrite=overwrite_script)
