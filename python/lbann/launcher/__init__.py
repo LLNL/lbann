@@ -27,6 +27,7 @@ def run(trainer, model, data_reader, optimizer,
         environment={},
         overwrite_script=False,
         setup_only=False,
+        batch_job=False,
         experiment_dir=None):
     """Run LBANN.
 
@@ -92,13 +93,6 @@ def run(trainer, model, data_reader, optimizer,
                                launcher_args=launcher_args,
                                environment=environment)
 
-    # Check for an existing job allocation
-    has_allocation = False
-    if isinstance(script, lbann.launcher.slurm.SlurmBatchScript):
-        has_allocation = 'SLURM_JOB_ID' in os.environ
-    if isinstance(script, lbann.launcher.lsf.LSFBatchScript):
-        has_allocation = 'LSB_JOBID' in os.environ
-
     # Batch script prints start time
     script.add_command('echo "Started at $(date)"')
 
@@ -123,10 +117,10 @@ def run(trainer, model, data_reader, optimizer,
     status = 0
     if setup_only:
         script.write(overwrite=overwrite_script)
-    elif has_allocation:
-        status = script.run(overwrite=overwrite_script)
-    else:
+    elif batch_job:
         status = script.submit(overwrite=overwrite_script)
+    else:
+        status = script.run(overwrite=overwrite_script)
     return status
 
 def make_batch_script(script_file=None,

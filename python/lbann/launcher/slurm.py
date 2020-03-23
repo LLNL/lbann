@@ -50,47 +50,47 @@ class SlurmBatchScript(BatchScript):
                          interpreter=interpreter)
         self.nodes = nodes
         self.procs_per_node = procs_per_node
+        self.time_limit = time_limit
+        self.job_name = job_name
+        self.partition = partition
+        self.account = account
         self.launcher = launcher
         self.launcher_args = launcher_args
 
         # Configure header with Slurm job options
-        self._construct_header(job_name=job_name,
-                               nodes=self.nodes,
-                               time_limit=time_limit,
-                               partition=partition,
-                               account=account)
+        if self.job_name:
+            self.add_header_line(f'#SBATCH --job-name={self.job_name}')
+        self.add_header_line(f'#SBATCH --nodes={self.nodes}')
+        self.add_header_line(f'#SBATCH --ntasks={self.nodes * self.procs_per_node}')
+        if self.time_limit is not None:
+            self.add_header_line(f'#SBATCH --time={self._time_string(self.time_limit)}')
+        self.add_header_line(f'#SBATCH --chdir={self.work_dir}')
+        self.add_header_line(f'#SBATCH --output={self.out_log_file}')
+        self.add_header_line(f'#SBATCH --error={self.err_log_file}')
+        if self.partition:
+            self.add_header_line(f'#SBATCH --partition={self.partition}')
+        if self.account:
+            self.add_header_line(f'#SBATCH --account={self.account}')
 
-    def _construct_header(self,
-                          job_name=None,
-                          nodes=1,
-                          time_limit=None,
-                          partition=None,
-                          account=None):
-        """Construct script header with options for sbatch."""
-        if job_name:
-            self.add_header_line('#SBATCH --job-name={}'.format(job_name))
-        self.add_header_line('#SBATCH --nodes={}'.format(nodes))
-        if time_limit is not None:
-            time_limit = max(time_limit, 0)
-            seconds = int((time_limit % 1) * 60)
-            hours, minutes = divmod(int(time_limit), 60)
-            days, hours = divmod(hours, 24)
-            self.add_header_line('#SBATCH --time={}-{:02d}:{:02d}:{:02d}'
-                                 .format(days, hours, minutes, seconds))
-        self.add_header_line('#SBATCH --chdir={}'.format(self.work_dir))
-        self.add_header_line('#SBATCH --output={}'.format(self.out_log_file))
-        self.add_header_line('#SBATCH --error={}'.format(self.err_log_file))
-        if partition:
-            self.add_header_line('#SBATCH --partition={}'.format(partition))
-        if account:
-            self.add_header_line('#SBATCH --account={}'.format(account))
+    def _time_string(self, minutes):
+        """Time string in D-hh:mm:ss format."""
+        minutes = max(minutes, 0)
+        seconds = int(round((minutes % 1) * 60))
+        hours, minutes = divmod(int(minutes), 60)
+        days, hours = divmod(hours, 24)
+        return f'{days}-{hours:02}:{minutes:02}:{seconds:02}'
 
     def add_parallel_command(self,
                              command,
-                             launcher=None,
-                             launcher_args=None,
                              nodes=None,
-                             procs_per_node=None):
+                             procs_per_node=None,
+                             time_limit=None,
+                             job_name=None,
+                             partition=None,
+                             account=None,
+                             work_dir=None,
+                             launcher=None,
+                             launcher_args=None):
         """Add command to be executed in parallel.
 
         The command is launched with srun. Parallel processes are
@@ -107,18 +107,41 @@ class SlurmBatchScript(BatchScript):
                 processes per compute node.
 
         """
-        if launcher is None:
-            launcher = self.launcher
-        if launcher_args is None:
-            launcher_args = self.launcher_args
+
+        # Use default values if needed
         if nodes is None:
             nodes = self.nodes
         if procs_per_node is None:
             procs_per_node = self.procs_per_node
+        if time_limit is None:
+            time_limit = self.time_limit
+        if job_name is None:
+            job_name = self.job_name
+        if partition is None:
+            partition = self.partition
+        if account is None:
+            account = self.account
+        if work_dir is None:
+            work_dir = self.work_dir
+        if launcher is None:
+            launcher = self.launcher
+        if launcher_args is None:
+            launcher_args = self.launcher_args
+
+        # Construct invocation
         args = [launcher]
         args.extend(make_iterable(launcher_args))
-        args.append('--nodes={}'.format(nodes))
-        args.append('--ntasks={}'.format(nodes * procs_per_node))
+        if job_name:
+            args.append(f'--job-name={job_name}')
+        args.append(f'--nodes={nodes}')
+        args.append(f'--ntasks={nodes * procs_per_node}')
+        if time_limit is not None:
+            args.append(f'--time={self._time_string(time_limit)}')
+        args.append(f'--chdir={work_dir}')
+        if partition:
+            args.append(f'--partition={partition}')
+        if account:
+            args.append(f'--account={account}')
         args.extend(make_iterable(command))
         self.add_command(args)
 
