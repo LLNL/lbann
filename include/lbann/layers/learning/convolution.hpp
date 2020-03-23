@@ -166,11 +166,11 @@ protected:
         this->distconv_forward();
         this->apply_bias_distconv();
         this->dc().copy_out_activations();
+        return;
       }
-#else
+#endif // LBANN_HAS_DISTCONV
       base_convolution_layer<TensorDataType, Device>::apply_convolution_cudnn(true);
       base_convolution_layer<TensorDataType, Device>::apply_bias_cudnn();
-#endif // LBANN_HAS_DISTCONV
     } else {
       base_convolution_layer<TensorDataType, Device>::apply_convolution_im2col(true);
       base_convolution_layer<TensorDataType, Device>::apply_bias_cpu();
