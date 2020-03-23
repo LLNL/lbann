@@ -226,8 +226,6 @@ protected:
   }
 
   bool is_distconv_supported() const override {
-    if (!base_convolution_layer<TensorDataType, Device>::is_distconv_supported()) return false;
-
     const auto& kernel_dims = get_kernel_dims();
     for(int i = 0; i < this->get_num_spatial_dims(); i++) {
       auto pad = this->m_pads[i];

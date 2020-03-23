@@ -148,7 +148,7 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
     // Keeps the same input type and convert to float on GPU
     m_input_dev = TensorDevInput(tensor_shape, loc, output_dist);
     assert0(m_input_dev.allocate());
-    m_input_dev.zero(dc::get_stream());
+    m_input_dev.zero(El::GPUManager::Stream());
 
     // Allocate pinned memory buffer for copying input
     if (dc::is_cosmoflow_parallel_io_enabled()) {
@@ -249,14 +249,14 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
     // tensor with casting to DataType
     m_labels_input_type = TensorDevInput(tensor_shape, loc, label_dist);
     assert0(m_labels_input_type.allocate());
-    m_labels_input_type.zero(dc::get_stream());
+    m_labels_input_type.zero(El::GPUManager::Stream());
 
     // The final label tensor
     this->m_outputs.emplace_back(
         make_unique<TensorDevType>(tensor_shape, loc, label_dist));
     auto &label_tensor = *(this->m_outputs.back());
     assert0(label_tensor.allocate());
-    label_tensor.zero(dc::get_stream());
+    label_tensor.zero(El::GPUManager::Stream());
 
     dc::MPIRootPrintStreamInfo() << "label tensor: " << label_tensor;
   }
@@ -305,6 +305,8 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
 #ifdef LBANN_HAS_DISTCONV
   friend class input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>;
  protected:
+  bool is_distconv_supported() const override { return true; }
+
   input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>& dc() override;
   const input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>& dc() const override;
 
@@ -370,7 +372,7 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
     // now, avoid this with the manual copy below. Also, in the
     // Cosmoflow case, "input_tensor" is not a pinned buffer.
     if (!dc::is_cosmoflow_parallel_io_enabled()) {
-      assert0(dc::tensor::Copy(dc().m_input_dev, input_tensor, dc::get_stream()));
+      assert0(dc::tensor::Copy(dc().m_input_dev, input_tensor, El::GPUManager::Stream()));
     } else {
       int chan_dim = input_tensor.get_local_shape()[::distconv::get_channel_dim()];
       size_t block_size = input_tensor.get_local_size() / chan_dim;
@@ -386,7 +388,7 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
       CHECK_CUDA(cudaMemcpyAsync(
           dc().m_input_dev.get_buffer(),  dc().m_copy_pinned_buffer,
           dc().m_input_dev.get_local_real_size() * sizeof(InputType),
-          cudaMemcpyHostToDevice, dc::get_stream()));
+          cudaMemcpyHostToDevice, El::GPUManager::Stream()));
     }
     prof_region_end("copy-to-device", false);
 
@@ -401,11 +403,11 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
                                   dc().m_input_dev,
                                   (TensorDataType) norm_alpha,
                                   (TensorDataType) norm_beta,
-                                  dc::get_stream());
+                                  El::GPUManager::Stream());
         prof_region_end("cast-scale-bias-from-int16", false);
       } else {
         prof_region_begin("cast-from-int16", prof_colors[1], false);
-        dc::tensor::Cast(this->dc().get_activations(), dc().m_input_dev, dc::get_stream());
+        dc::tensor::Cast(this->dc().get_activations(), dc().m_input_dev, El::GPUManager::Stream());
         prof_region_end("cast-from-int16", false);
       }
     }
@@ -462,12 +464,12 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
     dc::MPIPrintStreamDebug() << "Copy the host label to device tensor";
     prof_region_begin("label-copy-to-device", prof_colors[1], false);
     assert0(dc::tensor::Copy(
-        dc().m_labels_input_type, dc().m_labels_host_tensor, dc::get_stream()));
+        dc().m_labels_input_type, dc().m_labels_host_tensor, El::GPUManager::Stream()));
     prof_region_end("label-copy-to-device", false);
 
     // Cast to DataType. Just a copy if both tensors are in the same type.
     prof_region_begin("label-cast-from-int16", prof_colors[1], false);
-    dc::tensor::Cast(labels_dev, dc().m_labels_input_type, dc::get_stream());
+    dc::tensor::Cast(labels_dev, dc().m_labels_input_type, El::GPUManager::Stream());
     prof_region_end("label-cast-from-int16", false);
   }
 #endif // LBANN_HAS_DISTCONV

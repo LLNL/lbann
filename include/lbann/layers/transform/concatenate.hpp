@@ -115,6 +115,8 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class concatenate_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
+  bool is_distconv_supported() const override { return true; }
+
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<
       concatenate_distconv_adapter<TensorDataType, Layout, Device>>(*this);
@@ -126,7 +128,7 @@ private:
     dc::tensor::Concatenate(this->dc().get_activations(0),
                             this->dc().get_prev_activations(0),
                             this->dc().get_prev_activations(1),
-                            dc::get_stream());
+                            El::GPUManager::Stream());
     this->dc().copy_out_activations();
   }
 
@@ -135,7 +137,7 @@ private:
     dc::tensor::Slice(this->dc().get_error_signals(0),
                       this->dc().get_error_signals(1),
                       this->dc().get_prev_error_signals(0),
-                      dc::get_stream());
+                      El::GPUManager::Stream());
     this->dc().copy_out_error_signals();
   }
 #endif // LBANN_HAS_DISTCONV
@@ -256,7 +258,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::setup_dims() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
-  if (this->distconv_enabled() && !this->dc().keep_original_output(0)) {
+  if (this->distconv_enabled() && !this->dc().child_copy_required(0)) {
     return;
   }
 #endif // LBANN_HAS_DISTCONV
@@ -325,14 +327,14 @@ void bp_setup_gradient_wrt_inputs_impl(
   const auto& output_grad = l.get_prev_error_signals();
   if (num_inputs == 1) {
 #ifdef LBANN_HAS_DISTCONV
-    if (l.distconv_enabled() && !l.dc().keep_original_input(0)) return;
+    if (l.distconv_enabled() && !l.dc().parent_copy_required(0)) return;
 #endif
     El::LockedView(l.get_error_signals(0), output_grad);
   }
   else {
     for (size_t j=0; j<num_inputs; ++j) {
 #ifdef LBANN_HAS_DISTCONV
-      if (l.distconv_enabled() && !l.dc().keep_original_input(j)) continue;
+      if (l.distconv_enabled() && !l.dc().parent_copy_required(j)) continue;
 #endif
       auto& input_grad = l.get_error_signals(j);
       input_grad.AlignWith(output_grad);
@@ -387,7 +389,7 @@ setup_error_signals() {
     this->m_gradient_wrt_inputs.emplace_back(
         make_unique<TensorDevType>(shape, loc, dist, local_shape));
     assert0(this->m_gradient_wrt_inputs.back()->allocate());
-    this->m_gradient_wrt_inputs.back()->zero(dc::get_stream());
+    this->m_gradient_wrt_inputs.back()->zero(El::GPUManager::Stream());
   }
 }
 #endif // LBANN_HAS_DISTCONV

@@ -591,8 +591,6 @@ private:
 
  protected:
   bool is_distconv_supported() const override {
-    if (!transform_layer<TensorDataType>::is_distconv_supported()) return false;
-
     bool cond = true;
     for(int i = 0; i < this->get_num_spatial_dims(); i++) {
       cond &= (m_pool_dims[i] % 2 != 0) ||

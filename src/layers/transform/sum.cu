@@ -59,11 +59,11 @@ void fp_compute_distconv(int num_parents, SumDistConvLayer<TensorDataType> &dc) 
   auto activations = dc.get_activations();
   switch (num_parents) {
     case 0:
-      activations.zero(dc::get_stream());
+      activations.zero(El::GPUManager::Stream());
       break;
     case 1:
       dc::tensor::Copy(activations, dc.get_prev_activations(),
-                       dc::get_stream());
+                       El::GPUManager::Stream());
       break;
     case 2:
       // Optimization for layers with 2 parents (e.g.,
@@ -82,7 +82,7 @@ void fp_compute_distconv(int num_parents, SumDistConvLayer<TensorDataType> &dc) 
         prev_activations.set_outermost_dimension(activations.get_shape()[-1]);
         if (i == 0) {
           dc::tensor::Copy(activations, prev_activations,
-                           dc::get_stream());
+                           El::GPUManager::Stream());
         } else {
           distconv::tensor::Transform(activations, prev_activations,
                                       accumulate<TensorDataType>(),

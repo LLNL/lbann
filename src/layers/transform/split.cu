@@ -62,12 +62,12 @@ void bp_compute_distconv(SplitAdapter &dc, int num_children) {
   switch (num_children) {
     case 0:
       dc::MPIPrintStreamInfo() << "No parent for this sum layer";
-      error_signals.zero(dc::get_stream());
+      error_signals.zero(El::GPUManager::Stream());
       break;
     case 1:
       dc::tensor::Copy(error_signals,
                        dc.get_prev_error_signals(0),
-                       dc::get_stream());
+                       El::GPUManager::Stream());
       break;
     case 2:
       dc::tensor::Transform(error_signals,
@@ -79,7 +79,7 @@ void bp_compute_distconv(SplitAdapter &dc, int num_children) {
     default:
       dc::tensor::Copy(error_signals,
                        dc.get_prev_error_signals(1),
-                       dc::get_stream());
+                       El::GPUManager::Stream());
       for (int i = 1; i < num_children; ++i) {
         const auto &prev_error = dc.get_prev_error_signals(i);
         dc::tensor::Transform(error_signals, prev_error,

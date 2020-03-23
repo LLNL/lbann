@@ -31,6 +31,7 @@ namespace lbann {
 
 distconv_adapter::distconv_adapter(Layer &layer)
     : m_layer(layer) {
+  setup_tensor_shuffle();
 }
 
 Layer& distconv_adapter::layer() { return m_layer; }
@@ -154,7 +155,7 @@ bool distconv_adapter::child_shuffle_required(size_t output_index) const {
   }
 }
 
-void distconv_adapter::setup_inter_layer_adaptation() {
+void distconv_adapter::setup_tensor_shuffle() {
   assert_always(layer().distconv_enabled());
 
   const auto &ps = layer().get_parallel_strategy();
@@ -208,48 +209,6 @@ void distconv_adapter::setup_inter_layer_adaptation() {
   if (ss.str().size() > 0) {
     dc::MPIRootPrintStreamInfo() << get_name() << ":" << ss.str();
   }
-}
-
-void distconv_adapter::setup_keep_original_tensors() {
-  assert_always(layer().distconv_enabled());
-  bool env_set = std::getenv("DISTCONV_KEEP_ORIGINAL_TENSORS") != nullptr;
-  for (auto b: m_parent_copy_required) {
-    m_keep_original_input.push_back(env_set || b);
-  }
-  for (auto b: m_child_copy_required) {
-    m_keep_original_output.push_back(env_set || b);
-  }
-  return;
-}
-
-bool distconv_adapter::keep_original_input(size_t input_index) const {
-  if (input_index < m_keep_original_input.size()) {
-    return m_keep_original_input.at(input_index);
-  } else {
-    LBANN_ERROR("Out of range error! m_keep_original_input size: ",
-                m_keep_original_input.size(),
-                ", index: ", input_index);
-  }
-}
-
-bool distconv_adapter::keep_original_output(size_t output_index) const {
-  if (output_index < m_keep_original_output.size()) {
-    return m_keep_original_output.at(output_index);
-  } else {
-    LBANN_ERROR("Out of range error! m_keep_original_output size: ",
-                m_keep_original_output.size(),
-                ", index: ", output_index);
-  }
-}
-
-bool distconv_adapter::keep_original() const {
-  for (int i = 0; i < layer().get_num_parents(); ++i) {
-    if (!keep_original_input(i)) return false;
-  }
-  for (int i = 0; i < layer().get_num_children(); ++i) {
-    if (!keep_original_output(i)) return false;
-  }
-  return true;
 }
 
 void distconv_adapter::setup_distributions(

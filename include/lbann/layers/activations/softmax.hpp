@@ -188,7 +188,8 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class softmax_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
- protected:
+  bool is_distconv_supported() const override { return true; }
+
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<softmax_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);

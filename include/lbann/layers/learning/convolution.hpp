@@ -207,16 +207,13 @@ protected:
 
 #ifdef LBANN_HAS_DISTCONV
   friend class convolution_distconv_adapter<TensorDataType, Layout, Device>;
- public:
+ protected:
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<
       convolution_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
 
- protected:
   bool is_distconv_supported() const override {
-    if (!base_convolution_layer<TensorDataType, Device>::is_distconv_supported()) return false;
-
     bool cond = true;
     const auto& kernel_dims = get_kernel_dims();
     for(int i = 0; i < this->get_num_spatial_dims(); i++) {

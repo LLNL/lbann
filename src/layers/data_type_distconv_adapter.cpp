@@ -314,7 +314,7 @@ void data_type_distconv_adapter<TensorDataType>::setup_prev_activations() {
       m_inputs.emplace_back(make_unique<TensorDevType>(
           shape, loc, dist, local_shape));
       assert0(m_inputs.back()->allocate());
-      m_inputs.back()->zero(dc::get_stream());
+      m_inputs.back()->zero(El::GPUManager::Stream());
     } else {
       // Create a shallow copy
       const auto &parent_activations =
@@ -406,7 +406,7 @@ void data_type_distconv_adapter<TensorDataType>::setup_activations() {
       output_tensor_shape,
       loc, dist, activations_local_shape));
   assert0(m_outputs.back()->allocate());
-  m_outputs.back()->zero(dc::get_stream());
+  m_outputs.back()->zero(El::GPUManager::Stream());
 }
 
 template <typename TensorDataType>
@@ -448,7 +448,7 @@ void data_type_distconv_adapter<TensorDataType>::setup_prev_error_signals() {
       m_gradient_wrt_outputs.emplace_back(make_unique<TensorDevType>(
           shape, loc, dist, local_shape));
       assert0(m_gradient_wrt_outputs.back()->allocate());
-      m_gradient_wrt_outputs.back()->zero(dc::get_stream());
+      m_gradient_wrt_outputs.back()->zero(El::GPUManager::Stream());
     } else {
       // Create a shallow copy
       const auto &child_error_signals =
@@ -509,7 +509,7 @@ void data_type_distconv_adapter<TensorDataType>::setup_error_signals() {
         << get_name() << ": skipping allocation of error signals";
   } else {
     assert0(m_gradient_wrt_inputs.back()->allocate());
-    m_gradient_wrt_inputs.back()->zero(dc::get_stream());
+    m_gradient_wrt_inputs.back()->zero(El::GPUManager::Stream());
   }
   dc::MPIPrintStreamDebug() << get_name() << "; "
                             << "error signals: " << get_error_signals();
@@ -577,7 +577,7 @@ void data_type_distconv_adapter<TensorDataType>::fp_setup(El::Int mini_batch_siz
             mini_batch_size);
   set_original_activations_outermost_dimension(mini_batch_size);
   // TODO: Needs to check other output tensors
-  if (keep_original_output(0) && get_original_activations().is_split_root()) {
+  if (child_copy_required(0) && get_original_activations().is_split_root()) {
     assert_eq((int)get_original_activations().get_local_shape()[-1],
               l.get_activations().LocalWidth());
   }
@@ -616,7 +616,7 @@ void data_type_distconv_adapter<TensorDataType>::bp_setup(El::Int mini_batch_siz
               mini_batch_size);
     // TODO: Check other input tensors
     if (i == 0) {
-      if (keep_original_input(i) && !l.skip_first_layer_bp()
+      if (parent_copy_required(i) && !l.skip_first_layer_bp()
           && get_original_error_signals().is_split_root()) {
         assert_eq((int)get_original_error_signals().get_local_shape()[-1],
                   l.get_error_signals().LocalWidth());

@@ -1331,7 +1331,7 @@ private:
                                    dc().get_prev_error_signals(),
                                    dst_scale, *dc().m_bias_gradient, false);
       } else {
-        dc().m_bias_gradient->scale(dst_scale, dc::get_stream());
+        dc().m_bias_gradient->scale(dst_scale, El::GPUManager::Stream());
       }
     }
 
@@ -1351,7 +1351,7 @@ private:
                                    dst_scale,
                                    *dc().m_kernel_gradient, false);
     } else {
-      dc().m_kernel_gradient->scale(dst_scale, dc::get_stream());
+      dc().m_kernel_gradient->scale(dst_scale, El::GPUManager::Stream());
     }
   }
  #endif // LBANN_HAS_DISTCONV

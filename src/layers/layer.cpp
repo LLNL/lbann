@@ -624,8 +624,6 @@ int Layer::get_num_spatial_dims() const {
 void Layer::prepare_distconv() {
   if (distconv_enabled()) {
     setup_distconv_adapter();
-    dc().setup_inter_layer_adaptation();
-    dc().setup_keep_original_tensors();
   }
 }
 
@@ -653,6 +651,19 @@ bool Layer::distconv_enabled() const {
   }
 
   return m_distconv_enabled;
+}
+
+distconv_adapter& Layer::dc() {
+  return const_cast<distconv_adapter&>(
+      static_cast<const Layer&>(*this).dc());
+}
+
+const distconv_adapter& Layer::dc() const {
+  if (m_dc == nullptr) {
+    LBANN_ERROR("Trying to access distconv adapter for layer, ",
+                get_name(), ", without setting up");
+  }
+  return *m_dc;
 }
 
 // TODO: Needs more robust implementation

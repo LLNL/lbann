@@ -324,7 +324,7 @@ void cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::setup_error_
   this->m_gradient_wrt_inputs.emplace_back(make_unique<TensorDevType>(
       global_shape, loc, dist, local_shape));
   assert0(this->get_error_signals(1).allocate());
-  this->get_error_signals(1).zero(dc::get_stream());
+  this->get_error_signals(1).zero(El::GPUManager::Stream());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

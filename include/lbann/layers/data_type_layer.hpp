@@ -328,9 +328,6 @@ private:
 
  protected:
   void setup_distconv_adapter() override;
-
-  //virtual void fp_setup_distconv(El::Int mini_batch_size) override;
-  //virtual void bp_setup_distconv(El::Int mini_batch_size) override;
 #endif // LBANN_HAS_DISTCONV
 
 #ifdef LBANN_HAS_CUDA

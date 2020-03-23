@@ -82,17 +82,11 @@ public:
   virtual void ensure_prev_error_signals() = 0;
   virtual void copy_out_error_signals() = 0;
 
-  void setup_inter_layer_adaptation();
-  void setup_keep_original_tensors();
 
   bool parent_copy_required(size_t input_index) const;
   bool parent_shuffle_required(size_t input_index) const;
   bool child_copy_required(size_t output_index) const;
   bool child_shuffle_required(size_t output_index) const;
-
-  bool keep_original_input(size_t input_index) const;
-  bool keep_original_output(size_t output_index) const;
-  bool keep_original() const;
 
   virtual void dump_activations() const = 0;
   virtual void dump_original_activations()= 0;
@@ -116,11 +110,10 @@ public:
   std::vector<bool> m_child_copy_required;
   std::vector<bool> m_child_shuffle_required;
 
-  std::vector<bool> m_keep_original_input;
-  std::vector<bool> m_keep_original_output;
-
  private:
   Layer& m_layer;
+
+  void setup_tensor_shuffle();
 };
 
 } // namespace lbann

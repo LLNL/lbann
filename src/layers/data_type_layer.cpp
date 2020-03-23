@@ -410,7 +410,7 @@ void data_type_layer<TensorDataType>::setup_data() {
   // memory, but there are some edge cases that are not handled.
   for (int i = 0; i < get_num_children(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
-    if (distconv_enabled() && !dc().keep_original_output(i)) {
+    if (distconv_enabled() && !dc().child_copy_required(i)) {
       // Avoids allocating unused matrices
       continue;
     }
@@ -525,7 +525,7 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
-    if (distconv_enabled() && !dc().keep_original_input(i)) continue;
+    if (distconv_enabled() && !dc().parent_copy_required(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     // Initialize input tensor
     const auto& parent = *m_parent_layers[i];
@@ -583,7 +583,7 @@ void data_type_layer<TensorDataType>::fp_setup_outputs(El::Int mini_batch_size) 
   // Initialize output tensors
   for (int i = 0; i < get_num_children(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
-    if (distconv_enabled() && !dc().keep_original_output(i)) continue;
+    if (distconv_enabled() && !dc().child_copy_required(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     auto& output = get_activations(i);
     output.Empty(false);
@@ -597,7 +597,7 @@ template <typename TensorDataType>
 void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
   for (int i = 0; i < get_num_children(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
-    if (distconv_enabled() && !dc().keep_original_output(i)) continue;
+    if (distconv_enabled() && !dc().child_copy_required(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     // Initialize gradient w.r.t. output tensor
     const auto& child = *m_child_layers[i];
@@ -654,7 +654,7 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(El::Int mini_
 
   for (int i = 0; i < get_num_parents(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
-    if (distconv_enabled() && !dc().keep_original_input(i)) continue;
+    if (distconv_enabled() && !dc().parent_copy_required(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
@@ -679,95 +679,6 @@ template <typename TensorDataType>
 const data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::dc() const {
   return dynamic_cast<const data_type_distconv_adapter<TensorDataType>&>(*get_dc());
 }
-
-#if 0
-template <typename TensorDataType>
-void data_type_layer<TensorDataType>::fp_setup_distconv(El::Int mini_batch_size) {
-  if (!distconv_enabled()) return;
-
-  // Reconfigure the sample dimension as the mini batch size may vary
-  // at the end of epoch
-  dc().get_prev_activations().set_outermost_dimension(mini_batch_size);
-  assert_eq((int)dc().get_prev_activations().get_shape()[-1],
-            mini_batch_size);
-  for (int i = 0; i < get_num_parents(); ++i) {
-    if (dc().parent_copy_required(i) || dc().parent_shuffle_required(i)) {
-      if (i != 0) {
-        LBANN_ERROR("Copyin non-first tensor not supported");
-      }
-      dc().get_original_prev_activations().set_outermost_dimension(
-          mini_batch_size);
-      assert_eq((int)dc().get_original_prev_activations().get_shape()[-1],
-                mini_batch_size);
-      if (dc().parent_copy_required(i)) {
-        // then, parent is assumed to be data parallel, so the local
-        // size of the sample dimension should be equal to
-        // the local width of previous activations. The check only
-        // matters for split root processes as the rest just hold
-        // invalid copy of the root data.
-        if (dc().get_original_prev_activations().is_split_root()) {
-          assert_eq(
-              (int)dc().get_original_prev_activations().get_local_shape()[-1],
-              get_prev_activations().LocalWidth());
-        }
-      }
-    }
-  }
-  dc().get_activations().set_outermost_dimension(mini_batch_size);
-  assert_eq((int)dc().get_activations().get_shape()[-1],
-            mini_batch_size);
-  dc().set_original_activations_outermost_dimension(mini_batch_size);
-  // TODO: Needs to check other output tensors
-  if (dc().keep_original_output(0) && dc().get_original_activations().is_split_root()) {
-    assert_eq((int)dc().get_original_activations().get_local_shape()[-1],
-              get_activations().LocalWidth());
-  }
-
-  dc().ensure_prev_activations();
-}
-template <typename TensorDataType>
-void data_type_layer<TensorDataType>::bp_setup_distconv(El::Int mini_batch_size) {
-  if (!distconv_enabled()) return;
-
-  // Reconfigure the sample dimension as the mini batch size may vary
-  // at the end of epoch
-  for (int i = 0; i < get_num_children(); ++i) {
-    dc().get_prev_error_signals(i).set_outermost_dimension(mini_batch_size);
-    assert_always((int)dc().get_prev_error_signals(i).get_shape()[-1] ==
-                  mini_batch_size);
-    if (dc().child_copy_required(i) || dc().child_shuffle_required(i)) {
-      auto &original_input = dc().get_original_prev_error_signals(i);
-      if (i != 0) {
-        LBANN_ERROR("Copyout non-first tensor not supported");
-      }
-      original_input.set_outermost_dimension(mini_batch_size);
-      assert_eq((int)original_input.get_shape()[-1],
-                mini_batch_size);
-      if (dc().child_copy_required(i) &&
-          original_input.is_split_root()) {
-        assert_eq(
-            (int)original_input.get_local_shape()[-1],
-            get_prev_error_signals().LocalWidth());
-      }
-    }
-    dc().get_error_signals().set_outermost_dimension(mini_batch_size);
-    assert_eq((int)dc().get_error_signals().get_shape()[-1],
-              mini_batch_size);
-    dc().get_original_error_signals().set_outermost_dimension(mini_batch_size);
-    assert_eq((int)dc().get_original_error_signals().get_shape()[-1],
-              mini_batch_size);
-    // TODO: Check other input tensors
-    if (i == 0) {
-      if (dc().keep_original_input(i) && !skip_first_layer_bp()
-          && dc().get_original_error_signals().is_split_root()) {
-        assert_eq((int)dc().get_original_error_signals().get_local_shape()[-1],
-                  get_error_signals().LocalWidth());
-      }
-    }
-  }
-  dc().ensure_prev_error_signals();
-}
-#endif
 #endif // LBANN_HAS_DISTCONV
 
 #define PROTO(T)                     \

@@ -141,10 +141,6 @@ void finalize();
  */
 MPI_Comm get_mpi_comm();
 
-/** Return a cached Elemental communicator for the spatial domain
- */
-std::shared_ptr<El::mpi::Comm> get_spatial_el_comm(const LocaleMPI &spatial_loc);
-
 /** Return the MPI rank
  */
 int get_mpi_rank();
@@ -160,10 +156,6 @@ bool is_mpi_root();
 /** Query rank stride
  */
 int get_rank_stride();
-
-/** Query profiling
- */
-bool is_profiling_enabled();
 
 /** Query if the execution is for performance evaluation
  */
@@ -214,10 +206,6 @@ Al::mpicuda_backend::comm_type &get_mpicuda();
 /** Get Distconv backend handle.
  */
 Backend &get_backend();
-
-/** Get Distconv stream.
- */
-cudaStream_t get_stream();
 
 /** Return a HaloExchangeMethod
  */
