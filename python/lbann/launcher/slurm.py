@@ -5,6 +5,14 @@ import subprocess
 from lbann.util import make_iterable
 from .batch_script import BatchScript
 
+def _time_string(minutes):
+    """Time D-hh:mm:ss format."""
+    minutes = max(minutes, 0)
+    seconds = int(round((minutes % 1) * 60))
+    hours, minutes = divmod(int(minutes), 60)
+    days, hours = divmod(hours, 24)
+    return f'{days}-{hours:02}:{minutes:02}:{seconds:02}'
+
 class SlurmBatchScript(BatchScript):
     """Utility class to write Slurm batch scripts."""
 
@@ -58,37 +66,29 @@ class SlurmBatchScript(BatchScript):
         self.launcher_args = launcher_args
 
         # Configure header with Slurm job options
-        if self.job_name:
-            self.add_header_line(f'#SBATCH --job-name={self.job_name}')
-        self.add_header_line(f'#SBATCH --nodes={self.nodes}')
-        self.add_header_line(f'#SBATCH --ntasks={self.nodes * self.procs_per_node}')
-        if self.time_limit is not None:
-            self.add_header_line(f'#SBATCH --time={self._time_string(self.time_limit)}')
         self.add_header_line(f'#SBATCH --chdir={self.work_dir}')
         self.add_header_line(f'#SBATCH --output={self.out_log_file}')
         self.add_header_line(f'#SBATCH --error={self.err_log_file}')
+        self.add_header_line(f'#SBATCH --nodes={self.nodes}')
+        self.add_header_line(f'#SBATCH --ntasks={self.nodes * self.procs_per_node}')
+        if self.time_limit is not None:
+            self.add_header_line(f'#SBATCH --time={_time_string(self.time_limit)}')
+        if self.job_name:
+            self.add_header_line(f'#SBATCH --job-name={self.job_name}')
         if self.partition:
             self.add_header_line(f'#SBATCH --partition={self.partition}')
         if self.account:
             self.add_header_line(f'#SBATCH --account={self.account}')
 
-    def _time_string(self, minutes):
-        """Time string in D-hh:mm:ss format."""
-        minutes = max(minutes, 0)
-        seconds = int(round((minutes % 1) * 60))
-        hours, minutes = divmod(int(minutes), 60)
-        days, hours = divmod(hours, 24)
-        return f'{days}-{hours:02}:{minutes:02}:{seconds:02}'
-
     def add_parallel_command(self,
                              command,
+                             work_dir=None,
                              nodes=None,
                              procs_per_node=None,
                              time_limit=None,
                              job_name=None,
                              partition=None,
                              account=None,
-                             work_dir=None,
                              launcher=None,
                              launcher_args=None):
         """Add command to be executed in parallel.
@@ -99,6 +99,7 @@ class SlurmBatchScript(BatchScript):
         Args:
             command (`str` or `Iterable` of `str`s): Command to be
                 executed in parallel.
+            work_dir (str, optional): Working directory.
             nodes (int, optional): Number of compute nodes.
             procs_per_node (int, optional): Number of parallel
                 processes per compute node.
@@ -106,7 +107,6 @@ class SlurmBatchScript(BatchScript):
             job_name (str, optional): Job name.
             partition (str, optional): Scheduler partition.
             account (str, optional): Scheduler account.
-            work_dir (str, optional): Working directory.
             launcher (str, optional): srun executable.
             launcher_args (`Iterable` of `str`s, optional):
                 Command-line arguments to srun.
@@ -114,6 +114,8 @@ class SlurmBatchScript(BatchScript):
         """
 
         # Use default values if needed
+        if work_dir is None:
+            work_dir = self.work_dir
         if nodes is None:
             nodes = self.nodes
         if procs_per_node is None:
@@ -126,8 +128,6 @@ class SlurmBatchScript(BatchScript):
             partition = self.partition
         if account is None:
             account = self.account
-        if work_dir is None:
-            work_dir = self.work_dir
         if launcher is None:
             launcher = self.launcher
         if launcher_args is None:
@@ -136,13 +136,13 @@ class SlurmBatchScript(BatchScript):
         # Construct srun invocation
         args = [launcher]
         args.extend(make_iterable(launcher_args))
-        if job_name:
-            args.append(f'--job-name={job_name}')
+        args.append(f'--chdir={work_dir}')
         args.append(f'--nodes={nodes}')
         args.append(f'--ntasks={nodes * procs_per_node}')
         if time_limit is not None:
-            args.append(f'--time={self._time_string(time_limit)}')
-        args.append(f'--chdir={work_dir}')
+            args.append(f'--time={_time_string(time_limit)}')
+        if job_name:
+            args.append(f'--job-name={job_name}')
         if partition:
             args.append(f'--partition={partition}')
         if account:
