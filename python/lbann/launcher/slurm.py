@@ -139,6 +139,7 @@ class SlurmBatchScript(BatchScript):
         args.append(f'--chdir={work_dir}')
         args.append(f'--nodes={nodes}')
         args.append(f'--ntasks={nodes * procs_per_node}')
+        args.append(f'--ntasks-per-node={procs_per_node}')
         if time_limit is not None:
             args.append(f'--time={_time_string(time_limit)}')
         if job_name:
