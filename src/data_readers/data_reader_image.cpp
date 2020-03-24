@@ -119,15 +119,13 @@ void image_data_reader::set_input_params(const int width, const int height, cons
 
 bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   const label_t label = m_image_list[data_id].second;
-  if (label >= 0 && label < m_num_labels) {
-    Y.Set(label, mb_idx, 1);
-  }
-  else {
+  if (label < label_t{0} || label >= static_cast<label_t>(m_num_labels)) {
     LBANN_ERROR(
       "\"",this->get_type(),"\" data reader ",
       "expects data with ",m_num_labels," labels, ",
       "but data sample ",data_id," has a label of ",label);
   }
+  Y.Set(label, mb_idx, 1);
   return true;
 }
 
