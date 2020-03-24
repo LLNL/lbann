@@ -32,11 +32,9 @@ namespace lbann {
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void identity_distconv_adapter<TensorDataType, Layout, Device>::
-setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                    std::set<dc::Dist*> &updated,
-                    std::set<dc::Dist*> &invariants) {
+setup_distributions(tensor_overlap_constraints &constraints) {
   data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      equivalents, updated, invariants);
+      constraints);
 
   auto &x = this->get_prev_activations_dist();
   auto &y = this->get_activations_dist();
@@ -44,11 +42,9 @@ setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
   auto &dy = this->get_prev_error_signals_dist();
 
   // x == y
-  equivalents[&x].insert(&y);
-  equivalents[&y].insert(&x);
+  constraints.mark_equivalent(x, y);
   // dx == dy
-  equivalents[&dx].insert(&dy);
-  equivalents[&dy].insert(&dx);
+  constraints.mark_equivalent(dx, dy);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

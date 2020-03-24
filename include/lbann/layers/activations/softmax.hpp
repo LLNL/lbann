@@ -73,9 +73,7 @@ class softmax_distconv_adapter: public data_type_distconv_adapter<TensorDataType
   softmax_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~softmax_distconv_adapter() = default;
 
-  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                           std::set<dc::Dist*> &updated,
-                           std::set<dc::Dist*> &invariants) override;
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
   void setup_layer(size_t workspace_capacity) override;
 
   std::unique_ptr<dc::Softmax> m_softmax;
@@ -220,31 +218,29 @@ softmax_layer<TensorDataType, T_layout, Dev>::dc() const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void softmax_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                    std::set<dc::Dist*> &updated,
-                    std::set<dc::Dist*> &invariants) {
+setup_distributions(tensor_overlap_constraints &constraints) {
   data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      equivalents, updated, invariants);
+      constraints);
   // No overlap supported yet
   for (auto &d: this->m_prev_activations_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
   for (auto &d: this->m_activations_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
   for (auto &d: this->m_prev_error_signals_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
   for (auto &d: this->m_error_signals_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
 }
 

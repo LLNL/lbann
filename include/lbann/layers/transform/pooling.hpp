@@ -49,9 +49,7 @@ class pooling_distconv_adapter : public data_type_distconv_adapter<TensorDataTyp
   pooling_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~pooling_distconv_adapter() = default;
 
-  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                           std::set<dc::Dist*> &updated,
-                           std::set<dc::Dist*> &invariants) override;
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
 
   dc::Shape get_activations_local_shape(int index=0) const override;
   void setup_layer(size_t workspace_capacity) override;
@@ -691,11 +689,9 @@ pooling_layer<TensorDataType, T_layout, Dev>::dc() const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void pooling_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                    std::set<dc::Dist*> &updated,
-                    std::set<dc::Dist*> &invariants) {
+setup_distributions(tensor_overlap_constraints &constraints) {
   data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      equivalents, updated, invariants);
+      constraints);
   const auto &l = dynamic_cast<const pooling_layer<TensorDataType, T_layout, Dev>&>(
       this->layer());
   dc::IntVector overlap(this->get_num_dims(), 0);
@@ -724,20 +720,14 @@ setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
   auto &error_signals_dist = this->get_error_signals_dist();
   auto &prev_error_signals_dist = this->get_prev_error_signals_dist();
   prev_activations_dist.set_overlap(overlap);
-  updated.insert(&prev_activations_dist);
-  invariants.insert(&prev_activations_dist);
+  constraints.mark_updated(prev_activations_dist);
+  constraints.mark_invariant(prev_activations_dist);
   // cudnnPoolingBackward requires activations and
   // prev_error_signals must have the same stride
-  equivalents[&activations_dist].insert(
-      &prev_error_signals_dist);
-  equivalents[&prev_error_signals_dist].insert(
-      &activations_dist);
+  constraints.mark_equivalent(activations_dist, prev_error_signals_dist);
   // cudnnPoolingBackward requires prev_activations and
   // error_signals must have the same stride
-  equivalents[&error_signals_dist].insert(
-      &prev_activations_dist);
-  equivalents[&prev_activations_dist].insert(
-      &error_signals_dist);
+  constraints.mark_equivalent(error_signals_dist, prev_activations_dist);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

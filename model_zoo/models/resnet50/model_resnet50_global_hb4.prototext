@@ -136,8 +136,23 @@ model {
       filter_groups: 1
     }
   }
+
   layer {
     parents: "conv1_relu"
+    name: "id1"
+    identity {
+    }
+    parallel_strategy {
+      sample_groups: 1
+      height_groups: 4
+      width_groups: 1
+      channel_groups: 1
+      filter_groups: 1
+    }
+  }
+
+  layer {
+    parents: "id1"
     name: "pool1"
     data_layout: "data_parallel"
     pooling {

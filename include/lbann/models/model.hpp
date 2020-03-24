@@ -506,8 +506,8 @@ private:
 
 #ifdef LBANN_HAS_DISTCONV
   void setup_distconv();
-  void find_valid_tensor_overlap();
-  void print_layer_distributions() const;
+  void setup_distributions();
+  void print_distributions() const;
   size_t get_workspace_capacity() const;
 #endif
 };

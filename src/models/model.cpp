@@ -1420,8 +1420,8 @@ bool model::save_model() {
 
 #ifdef LBANN_HAS_DISTCONV
 void model::setup_distconv() {
-  find_valid_tensor_overlap();
-  print_layer_distributions();
+  setup_distributions();
+  print_distributions();
   // Setup fp tensors
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto &layer = get_layer(i);
@@ -1443,41 +1443,23 @@ void model::setup_distconv() {
   }
 }
 
-void model::find_valid_tensor_overlap() {
-  std::map<dc::Dist*, std::set<dc::Dist*>> equivalents;
-  std::set<dc::Dist*> updated;
-  std::set<dc::Dist*> invariants;
+void model::setup_distributions() {
+  tensor_overlap_constraints constraints;
   // Initialize the distributions and constraints
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     if (!get_layer(i).distconv_enabled()) continue;
-    get_layer(i).dc().setup_distributions(equivalents, updated, invariants);
+    get_layer(i).dc().setup_distributions(constraints);
   }
   // Add inter-layer distribution constraints
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     if (!get_layer(i).distconv_enabled()) continue;
-    get_layer(i).dc().impose_adjacent_distribution_constraints(equivalents);
+
+    get_layer(i).dc().impose_adjacent_overlap_constraints(constraints);
   }
-  // Solve the constraints
-  while (updated.size() > 0) {
-    std::set<dc::Dist*> updated_new;
-    for (const auto d: updated) {
-      for (auto p: equivalents[d]) {
-        if (d->get_overlap() != p->get_overlap()) {
-          // p must have equal dist as d but is different.
-          if (invariants.find(p) != invariants.end()) {
-            // p can't be changed, so we can't solve the constraint.
-            LBANN_ERROR("Incompatible distributions: ", *d, " <=> ", *p);
-          }
-          p->set_overlap(d->get_overlap());
-          updated_new.insert(p);
-        }
-      }
-    }
-    updated = std::move(updated_new);
-  }
+  constraints.find_valid_overlap();
 }
 
-void model::print_layer_distributions() const {
+void model::print_distributions() const {
   std::stringstream ss;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     const auto& layer = get_layer(i);

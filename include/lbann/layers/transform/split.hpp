@@ -46,9 +46,7 @@ class split_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   split_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~split_distconv_adapter() = default;
 
-  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                           std::set<dc::Dist*> &updated,
-                           std::set<dc::Dist*> &invariants) override;
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
 
   dc::Shape get_activations_local_shape(int index) const override {
     return data_type_distconv_adapter<TensorDataType>::get_activations_local_shape(0);
@@ -135,23 +133,17 @@ split_layer<TensorDataType, T_layout, Dev>::dc() const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void split_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                    std::set<dc::Dist*> &updated,
-                    std::set<dc::Dist*> &invariants) {
+setup_distributions(tensor_overlap_constraints &constraints) {
   data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      equivalents, updated, invariants);
+      constraints);
 
   auto &x = this->get_prev_activations_dist();
   auto &y = this->get_activations_dist();
   auto &dx = this->get_error_signals_dist();
   auto &dy = this->get_prev_error_signals_dist();
 
-  // x == y
-  equivalents[&x].insert(&y);
-  equivalents[&y].insert(&x);
-  // dx == dy
-  equivalents[&dx].insert(&dy);
-  equivalents[&dy].insert(&dx);
+  constraints.mark_equivalent(x, y);
+  constraints.mark_equivalent(dx, dy);
 }
 #endif // LBANN_HAS_DISTCONV
 

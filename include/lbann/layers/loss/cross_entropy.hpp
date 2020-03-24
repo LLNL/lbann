@@ -41,9 +41,7 @@ class cross_entropy_distconv_adapter: public data_type_distconv_adapter<TensorDa
   cross_entropy_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~cross_entropy_distconv_adapter() = default;
 
-  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                           std::set<dc::Dist*> &updated,
-                           std::set<dc::Dist*> &invariants) override;
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
 
   // NOTE: LBANN matrix is a 2-D matrix, while Distconv keeps the
   // original spatial and channel dimensions, so
@@ -230,6 +228,8 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>;
  protected:
+  bool is_distconv_supported() const override { return true; }
+
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<
       cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
@@ -273,11 +273,9 @@ cross_entropy_layer<TensorDataType, T_layout, Dev>::dc() {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                    std::set<dc::Dist*> &updated,
-                    std::set<dc::Dist*> &invariants) {
+setup_distributions(tensor_overlap_constraints &constraints) {
   data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      equivalents, updated, invariants);
+      constraints);
   // Output tensors share all dimensions except for the sample dimension
   auto activations_split = this->get_activations_dist().get_split_shape();
   auto prev_error_signals_split = this->get_prev_error_signals_dist().get_split_shape();
@@ -290,23 +288,23 @@ setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
 
   for (auto &d: this->m_prev_activations_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
   for (auto &d: this->m_activations_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
   for (auto &d: this->m_prev_error_signals_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
   for (auto &d: this->m_error_signals_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
 }
 

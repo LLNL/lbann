@@ -47,9 +47,7 @@ class convolution_distconv_adapter: public base_convolution_adapter<TensorDataTy
   convolution_distconv_adapter(Layer& layer): base_convolution_adapter<TensorDataType, Device>(layer) {}
   virtual ~convolution_distconv_adapter() = default;
 
-  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                           std::set<dc::Dist*> &updated,
-                           std::set<dc::Dist*> &invariants) override;
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
   void setup_layer(size_t workspace_capacity) override;
   dc::Shape get_activations_local_shape(int index=0) const override;
 };
@@ -232,11 +230,9 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void convolution_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                    std::set<dc::Dist*> &updated,
-                    std::set<dc::Dist*> &invariants) {
+setup_distributions(tensor_overlap_constraints &constraints) {
   base_convolution_adapter<TensorDataType, Dev>::setup_distributions(
-      equivalents, updated, invariants);
+      constraints);
   auto &l = dynamic_cast<convolution_layer<
     TensorDataType, T_layout, Dev>&>(this->layer());
   auto kernel_dims = l.get_kernel_dims();
@@ -259,18 +255,18 @@ setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
   }
   auto &prev_activations_dist = this->get_prev_activations_dist();
   prev_activations_dist.set_overlap(overlap);
-  updated.insert(&prev_activations_dist);
-  invariants.insert(&prev_activations_dist);
+  constraints.mark_updated(prev_activations_dist);
+  constraints.mark_invariant(prev_activations_dist);
   auto &prev_error_signals_dist = this->get_prev_error_signals_dist();
   prev_error_signals_dist.set_overlap(overlap);
-  updated.insert(&prev_error_signals_dist);
-  invariants.insert(&prev_error_signals_dist);
+  constraints.mark_updated(prev_error_signals_dist);
+  constraints.mark_invariant(prev_error_signals_dist);
   // To deal with strides, error signals must have the same size
   // of overlap
   auto &error_signals_dist = this->get_error_signals_dist();
   error_signals_dist.set_overlap(overlap);
-  updated.insert(&error_signals_dist);
-  invariants.insert(&error_signals_dist);
+  constraints.mark_updated(error_signals_dist);
+  constraints.mark_invariant(error_signals_dist);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>

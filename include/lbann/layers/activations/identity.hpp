@@ -40,9 +40,7 @@ class identity_distconv_adapter: public data_type_distconv_adapter<TensorDataTyp
   identity_distconv_adapter(Layer &layer):
       data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~identity_distconv_adapter() = default;
-  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                           std::set<dc::Dist*> &updated,
-                           std::set<dc::Dist*> &invariants) override;
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
   void setup_activations() override;
   void setup_error_signals() override;
 };

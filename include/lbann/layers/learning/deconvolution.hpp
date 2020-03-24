@@ -47,9 +47,7 @@ class deconvolution_distconv_adapter: public base_convolution_adapter<TensorData
   deconvolution_distconv_adapter(Layer& layer): base_convolution_adapter<TensorDataType, Device>(layer) {}
   virtual ~deconvolution_distconv_adapter() = default;
 
-  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                           std::set<dc::Dist*> &updated,
-                           std::set<dc::Dist*> &invariants) override;
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
   void setup_layer(size_t workspace_capacity) override;
   dc::Shape get_activations_local_shape(int index=0) const override;
 };
@@ -249,33 +247,31 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void deconvolution_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                    std::set<dc::Dist*> &updated,
-                    std::set<dc::Dist*> &invariants) {
+setup_distributions(tensor_overlap_constraints &constraints) {
   base_convolution_adapter<TensorDataType, Dev>::setup_distributions(
-      equivalents, updated, invariants);
+      constraints);
 
   // Assumes zero halo all tensor for now
   // prev activations
   for (auto &d: this->m_prev_activations_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
   for (auto &d: this->m_activations_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
   for (auto &d: this->m_prev_error_signals_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
   for (auto &d: this->m_error_signals_dists) {
     d.clear_overlap();
-    updated.insert(&d);
-    invariants.insert(&d);
+    constraints.mark_updated(d);
+    constraints.mark_invariant(d);
   }
 }
 

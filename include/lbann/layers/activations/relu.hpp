@@ -41,9 +41,7 @@ class relu_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
   relu_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~relu_distconv_adapter() = default;
 
-  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                           std::set<dc::Dist*> &updated,
-                           std::set<dc::Dist*> &invariants) override;
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
   void setup_layer(size_t workspace_capacity) override;
 
   std::unique_ptr<dc::ReLU> m_relu;
@@ -101,11 +99,9 @@ relu_layer<TensorDataType, T_layout, Dev>::dc() const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void relu_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                    std::set<dc::Dist*> &updated,
-                    std::set<dc::Dist*> &invariants) {
+setup_distributions(tensor_overlap_constraints &constraints) {
   data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      equivalents, updated, invariants);
+      constraints);
 
   auto &x = this->get_prev_activations_dist();
   auto &y = this->get_activations_dist();
@@ -113,11 +109,9 @@ setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
   auto &dy = this->get_prev_error_signals_dist();
 
   // x == dx
-  equivalents[&x].insert(&dx);
-  equivalents[&dx].insert(&x);
+  constraints.mark_equivalent(x, dx);
   // y == dy
-  equivalents[&y].insert(&dy);
-  equivalents[&dy].insert(&y);
+  constraints.mark_equivalent(y, dy);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

@@ -29,13 +29,36 @@
 
 #include "lbann/utils/distconv.hpp"
 
+#include <unordered_map>
+#include <unordered_set>
+
 namespace lbann {
 
 class Layer;
 
+class tensor_overlap_constraints {
+ public:
+  using dist_set = std::unordered_set<dc::Dist*>;
+  using const_dist_set = std::unordered_set<const dc::Dist*>;
+
+  tensor_overlap_constraints() = default;
+  virtual ~tensor_overlap_constraints() = default;
+
+  void mark_equivalent(dc::Dist &d1, dc::Dist &d2);
+  void mark_updated(const dc::Dist &d);
+  void mark_invariant(const dc::Dist &d);
+
+  void find_valid_overlap();
+
+ private:
+  std::unordered_map<const dc::Dist*, dist_set> m_equivalents;
+  const_dist_set m_updated;
+  const_dist_set m_invariants;
+};
+
 class distconv_adapter {
   friend class Layer;
-public:
+ public:
   distconv_adapter(Layer& layer);
   virtual ~distconv_adapter() = default;
 
@@ -44,11 +67,10 @@ public:
   /** Get error signal tensor corresponding to parent layer. */
   virtual const dc::AbsTensor& get_error_signals(const Layer& parent) const = 0;
 
-  virtual void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                                   std::set<dc::Dist*> &updated,
-                                   std::set<dc::Dist*> &invariants);
-  void impose_adjacent_distribution_constraints(
-      std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents);
+  virtual void setup_distributions(tensor_overlap_constraints &constraints);
+  void impose_adjacent_overlap_constraints(
+      tensor_overlap_constraints &constraints);
+
   dc::Dist &get_prev_activations_dist();
   const dc::Dist &get_prev_activations_dist() const;
   dc::Dist &get_activations_dist();
@@ -84,7 +106,6 @@ public:
   virtual void ensure_prev_error_signals() = 0;
   virtual void copy_out_error_signals() = 0;
 
-
   bool parent_copy_required(size_t input_index) const;
   bool parent_shuffle_required(size_t input_index) const;
   bool child_copy_required(size_t output_index) const;
@@ -116,6 +137,7 @@ public:
   Layer& m_layer;
 
   void setup_tensor_shuffle();
+  void adjust_parallel_strategy();
 };
 
 } // namespace lbann

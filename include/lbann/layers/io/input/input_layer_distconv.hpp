@@ -62,7 +62,15 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
   TensorDevInput m_labels_input_type;
   std::array<std::unique_ptr<TensorHostShuffler>, 4> m_label_shufflers;
 
-  input_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  input_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {
+    // copies the label data as well when the second child layer is
+    // also enabled for distconv
+    if (layer.get_num_children() == 2 &&
+        layer.get_child_layers()[1]->distconv_enabled()) {
+      m_copy_labels = true;
+      dc::MPIRootPrintStreamInfo() << "Copy label/response data to Distconv as well";
+    }
+  }
   virtual ~input_adapter() = default;
 
   TensorHostShuffler &get_shuffler(const TensorHost &src, const TensorHost &dst,
@@ -156,12 +164,7 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
       CHECK_CUDA(cudaMallocHost(&m_copy_pinned_buffer, req_size));
     }
 
-    // copies the label data as well when the second child layer is
-    // also enabled for distconv
-    if (this->layer().get_num_children() == 2 &&
-        this->layer().get_child_layers()[1]->distconv_enabled()) {
-      m_copy_labels = true;
-      dc::MPIRootPrintStreamInfo() << "Copy label/response data to Distconv as well";
+    if (m_copy_labels) {
       setup_label_tensors(output_dist);
     }
   }
@@ -267,6 +270,13 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
   void setup_error_signals(const dc::Dist& dist) {}
   void setup_original_error_signals() {}
   void setup_bp_tensors() override {}
+
+  void copy_out_activations() {
+    if (!m_copy_labels) {
+      this->m_child_copy_required[1] = false;
+    }
+    data_type_distconv_adapter<TensorDataType>::copy_out_activations();
+  }
 
   // Nothing to do here as everything is done in fp_compute_distconv.
   void fp_setup(El::Int mini_batch_size) override {}

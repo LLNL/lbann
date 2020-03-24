@@ -41,9 +41,7 @@ class leaky_relu_distconv_adapter: public data_type_distconv_adapter<TensorDataT
   leaky_relu_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~leaky_relu_distconv_adapter() = default;
 
-  void setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                           std::set<dc::Dist*> &updated,
-                           std::set<dc::Dist*> &invariants) override;
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
   void setup_layer(size_t workspace_capacity) override;
 
   std::unique_ptr<dc::LeakyReLU> m_leaky_relu;
@@ -127,11 +125,9 @@ leaky_relu_layer<TensorDataType, T_layout, Dev>::dc() const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>::
-setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
-                    std::set<dc::Dist*> &updated,
-                    std::set<dc::Dist*> &invariants) {
+setup_distributions(tensor_overlap_constraints &constraints) {
   data_type_distconv_adapter<TensorDataType>::setup_distributions(
-      equivalents, updated, invariants);
+      constraints);
 
   auto &x = this->get_prev_activations_dist();
   auto &y = this->get_activations_dist();
@@ -139,14 +135,11 @@ setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
   auto &dy = this->get_prev_error_signals_dist();
 
   // x == y
-  equivalents[&x].insert(&y);
-  equivalents[&y].insert(&x);
+  constraints.mark_equivalent(x, y);
   // x == dx
-  equivalents[&x].insert(&dx);
-  equivalents[&dx].insert(&x);
+  constraints.mark_equivalent(x, dx);
   // dx == dy
-  equivalents[&dx].insert(&dy);
-  equivalents[&dy].insert(&dx);
+  constraints.mark_equivalent(dx, dy);
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
