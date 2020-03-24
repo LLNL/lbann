@@ -1,7 +1,10 @@
 import macc_models
+import argparse
 from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
+import lbann.contrib.args
+from lbann.util import str_list
 
 # ==============================================
 # Setup and launch experiment
@@ -11,7 +14,54 @@ import lbann.contrib.lc.launcher
 model_zoo_dir = dirname(dirname(abspath(__file__)))
 data_reader_prototext = join(model_zoo_dir,
                              'data',
-                             'jag_100Kdata.prototext')
+                             'data_reader_jag_conduit_lassen.prototext')
+metadata_prototext = join(model_zoo_dir,
+                             'data',
+                             'jag_100M_metadata.prototext')
+
+# Command-line arguments
+parser = argparse.ArgumentParser()
+lbann.contrib.args.add_scheduler_arguments(parser)
+parser.add_argument(
+    '--job-name', action='store', default='wae_macc_375K', type=str,
+    help='job name', metavar='NAME')
+parser.add_argument(
+    '--mini-batch-size', action='store', default=128, type=int,
+    help='mini-batch size (default: 128)', metavar='NUM')
+parser.add_argument(
+    '--num-epochs', action='store', default=100, type=int,
+    help='number of epochs (default: 100)', metavar='NUM')
+parser.add_argument(
+    '--num-nodes', action='store', default=4, type=int,
+    help='number of nodes (default: 4)', metavar='NUM')
+parser.add_argument(
+    '--ydim', action='store', default=16399, type=int,
+    help='image+scalar dim (default: 64*64*4+15=16399)', metavar='NUM')
+parser.add_argument(
+    '--zdim', action='store', default=20, type=int,
+    help='latent space dim (default: 20)', metavar='NUM')
+parser.add_argument(
+    '--useCNN', action='store', default=False, type=bool,
+    help='use CNN', metavar='BOOL')
+parser.add_argument(
+    '--data-filedir-train', action='store', default='/p/gpfs1/brainusr/datasets/10MJAG/1M_A/', type=str,
+    help='data filedir (default train dir is 10MJAG/1M_A)', metavar='NAME')
+parser.add_argument(
+    '--data-filedir-test', action='store', default='/p/gpfs1/brainusr/datasets/10MJAG/1M_B/', type=str,
+    help='data filedir (default test dir is 10MJAG/1M_B)', metavar='NAME')
+parser.add_argument(
+    '--index-list-train', action='store', default='index.txt', type=str,
+    help='index list (default index.txt)', metavar='NAME')
+parser.add_argument(
+    '--index-list-test', action='store', default='t0_sample_list_multi_10K.txt', type=str,
+    help='index list (default t0_sample_list_multi_10K.txt, 100 samples)', metavar='NAME')
+parser.add_argument(
+    '--dump-outputs', action='store', default='dump_outs', type=str,
+    help='dump outputs dir (default: jobdir/dump_outs)', metavar='NAME')
+parser.add_argument(
+    '--dump-models', action='store', default='dump_models', type=str,
+    help='dump models dir (default: jobdir/dump_models)', metavar='NAME')
+args = parser.parse_args()
 
 
 def list2str(l):
@@ -28,7 +78,8 @@ def construct_model():
     # Layer graph
     input = lbann.Input(target_mode='N/A',name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
-    inp_slice = lbann.Slice(input, axis=0, slice_points="0 16399 16404",name='inp_slice')
+    #inp_slice = lbann.Slice(input, axis=0, slice_points="0 16399 16404",name='inp_slice')
+    inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+5]),name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
     gt_x = lbann.Identity(inp_slice, name='gt_x') #param not used
 
@@ -39,7 +90,7 @@ def construct_model():
     z_dim = 20  #Latent space dim
 
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
-    model = macc_models.MACCWAE(z_dim,y_dim)
+    model = macc_models.MACCWAE(args.zdim,args.ydim,use_CNN=args.useCNN)
     d1_real, d1_fake, d_adv, pred_y  = model(z,gt_y) 
     
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
@@ -70,16 +121,14 @@ def construct_model():
     #pred_y = macc_models.MACCWAE.pred_y_name
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer(),
-                 lbann.CallbackSaveModel(dir="models"),
+                 lbann.CallbackSaveModel(dir=args.dump_models),
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
                                       batch_interval=2)]
                                             
     # Construct model
-    mini_batch_size = 128
-    num_epochs = 100
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(args.mini_batch_size,
+                       args.num_epochs,
                        weights=weights,
                        layers=layers,
                        metrics=metrics,
@@ -100,11 +149,24 @@ if __name__ == '__main__':
       txtf.Merge(f.read(), data_reader_proto)
     data_reader_proto = data_reader_proto.data_reader
 
-    status = lbann.contrib.lc.launcher.run(trainer,model, data_reader_proto, opt,
-                       scheduler='slurm',
-                       nodes=1,
-                       procs_per_node=1,
-                       time_limit=360,
+    kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
+    status = lbann.contrib.launcher.run(trainer,model, data_reader_proto, opt,
+                       #scheduler='slurm',
+                       account='lbpm',
+                       #account='cancer',
+                       scheduler='lsf',
+                       #reservation='dat_0318',
+                       partition='pdebug',
+                       nodes=args.num_nodes,
+                       procs_per_node=4,
+                       time_limit=30,
                        setup_only=False, 
-                       job_name='macc_wae')
+                       job_name=args.job_name,
+                       lbann_args=['--preload_data_store --use_data_store',
+                                   f'--metadata={metadata_prototext}',
+                                   f'--index_list_train={args.index_list_train}',
+                                   f'--index_list_test={args.index_list_test}',
+                                   f'--data_filedir_train={args.data_filedir_train}',
+                                   f'--data_filedir_test={args.data_filedir_test}'],
+                                   **kwargs)
     print(status)
