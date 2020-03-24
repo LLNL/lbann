@@ -308,10 +308,9 @@ A typical workflow involves the following steps:
 
 5. Launching LBANN by calling :python:`run`.
 
-   + :python:`lbann.run` will detect whether the user is currently on
-     a login node or a compute node. If on a login node, a batch job
-     will be submitted to the job scheduler. If on a compute node,
-     LBANN will be run directly on the allocated nodes.
+   + :python:`lbann.run` should be run from a compute node. If a node
+     allocation is not available, the :python:`batch_job` option can
+     be set to submit a batch job to the scheduler.
 
    + A timestamped work directory will be created each time LBANN is
      run. The default location of these work directories can be set
