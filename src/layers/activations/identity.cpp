@@ -29,6 +29,45 @@
 
 namespace lbann {
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void identity_distconv_adapter<TensorDataType, Layout, Device>::
+setup_distributions(std::map<dc::Dist*, std::set<dc::Dist*>> &equivalents,
+                    std::set<dc::Dist*> &updated,
+                    std::set<dc::Dist*> &invariants) {
+  data_type_distconv_adapter<TensorDataType>::setup_distributions(
+      equivalents, updated, invariants);
+
+  auto &x = this->get_prev_activations_dist();
+  auto &y = this->get_activations_dist();
+  auto &dx = this->get_error_signals_dist();
+  auto &dy = this->get_prev_error_signals_dist();
+
+  // x == y
+  equivalents[&x].insert(&y);
+  equivalents[&y].insert(&x);
+  // dx == dy
+  equivalents[&dx].insert(&dy);
+  equivalents[&dy].insert(&dx);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void identity_distconv_adapter<TensorDataType, Layout, Device>::
+setup_activations() {
+  const auto &prev_activations = this->get_prev_activations();
+  this->m_outputs.emplace_back(make_unique<TensorDevType>(
+      prev_activations));
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void identity_distconv_adapter<TensorDataType, Layout, Device>::
+setup_error_signals() {
+  const auto &prev_error_signals = this->get_prev_error_signals();
+  this->m_gradient_wrt_inputs.emplace_back(make_unique<TensorDevType>(
+      prev_error_signals));
+}
+#endif // LBANN_HAS_DISTCONV
+
 #define PROTO_DEVICE(T, Device) \
   template class identity_layer<T, data_layout::DATA_PARALLEL, Device>; \
   template class identity_layer<T, data_layout::MODEL_PARALLEL, Device>
