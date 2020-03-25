@@ -369,6 +369,10 @@ bool checkpoint::open_latest_checkpoint(
     epochdir = get_distributed_checkpoint_dirname(get_active_trainer().get_name(),
                                                   get_active_training_algorithm().get_name(),
                                                   m, dir, mode, epoch, step);
+    if(!file::directory_exists(epochdir)) {
+      LBANN_WARNING(epochdir + " does not exist");
+      return false;
+    }
     p.open_restart(epochdir.c_str());
     reload_distributed_ckpt(p);
     p.close_restart();
@@ -377,6 +381,11 @@ bool checkpoint::open_latest_checkpoint(
     epochdir = get_shared_checkpoint_dirname(get_active_trainer().get_name(),
                                              get_active_training_algorithm().get_name(),
                                              m, dir, mode, epoch, step);
+
+    if(!file::directory_exists(epochdir)) {
+      LBANN_WARNING(epochdir + " does not exist");
+      return false;
+    }
     // if (comm->am_trainer_master()) {
     /// @todo For the moment let all ranks open the checkpoint files
     p.open_restart(epochdir.c_str());
