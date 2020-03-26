@@ -21,8 +21,6 @@ def make_batch_script(
     system=system(),
     procs_per_node=procs_per_node(),
     scheduler=scheduler(),
-    partition=partition(),
-    account=account(),
     launcher_args=[],
     environment={},
     *args,
@@ -120,8 +118,6 @@ def make_batch_script(
     return lbann.launcher.make_batch_script(
         procs_per_node=procs_per_node,
         scheduler=scheduler,
-        partition=partition,
-        account=account,
         launcher_args=launcher_args,
         environment=environment,
         *args,
