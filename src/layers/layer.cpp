@@ -653,6 +653,22 @@ bool Layer::distconv_enabled() const {
   return m_distconv_enabled;
 }
 
+bool Layer::keep_original_inputs(int index) const {
+  return !(distconv_enabled() && !dc().parent_copy_required(index));
+}
+
+bool Layer::keep_original_outputs(int index) const {
+  return !(distconv_enabled() && !dc().child_copy_required(index));
+}
+
+bool Layer::keep_original_gradient_wrt_outputs(int index) const {
+  return keep_original_outputs(index);
+}
+
+bool Layer::keep_original_gradient_wrt_inputs(int index) const {
+  return keep_original_inputs(index);
+}
+
 distconv_adapter& Layer::dc() {
   return const_cast<distconv_adapter&>(
       static_cast<const Layer&>(*this).dc());

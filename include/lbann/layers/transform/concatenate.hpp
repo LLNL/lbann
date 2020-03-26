@@ -52,8 +52,6 @@ class concatenate_distconv_adapter : public data_type_distconv_adapter<TensorDat
     shape[-2] = this->get_activations_shape()[-2];
     return shape;
   }
-
-  void setup_error_signals() override;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -371,26 +369,6 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
   bp_compute_impl(*this, m_concat_dim);
 
 }
-
-#ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType, data_layout Layout,
-          El::Device Device>
-void concatenate_distconv_adapter<TensorDataType, Layout, Device>::
-setup_error_signals() {
-  data_type_distconv_adapter<TensorDataType>::setup_error_signals();
-  assert_always(this->m_gradient_wrt_inputs.size() == 1);
-  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  const auto &dist = this->get_error_signals_dist();
-  for (int i = 1; i < this->layer().get_num_parents(); ++i) {
-    const auto &shape = this->get_error_signals_shape(i);
-    const auto &local_shape = this->get_error_signals_local_shape(i);
-    this->m_gradient_wrt_inputs.emplace_back(
-        make_unique<TensorDevType>(shape, loc, dist, local_shape));
-    assert0(this->m_gradient_wrt_inputs.back()->allocate());
-    this->m_gradient_wrt_inputs.back()->zero(El::GPUManager::Stream());
-  }
-}
-#endif // LBANN_HAS_DISTCONV
 
 LBANN_DEFINE_LAYER_BUILDER(concatenate);
 

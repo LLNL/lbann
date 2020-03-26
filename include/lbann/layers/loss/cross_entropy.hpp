@@ -43,6 +43,11 @@ class cross_entropy_distconv_adapter: public data_type_distconv_adapter<TensorDa
 
   void setup_distributions(tensor_overlap_constraints &constraints) override;
 
+  dc::Shape get_prev_activations_shape(int index) const override {
+    // Assumes both of the two input tensors have the equal shape.
+    return data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape(0);
+  }
+
   // NOTE: LBANN matrix is a 2-D matrix, while Distconv keeps the
   // original spatial and channel dimensions, so
   // get_output_tensor_shape() doesn't work here.
@@ -63,7 +68,7 @@ class cross_entropy_distconv_adapter: public data_type_distconv_adapter<TensorDa
     }
     return input_shape;
   }
-  void setup_error_signals() override;
+
   void setup_layer(size_t workspace_capacity) override;
 
   std::unique_ptr<dc::CrossEntropy> m_cross_entropy;
@@ -306,21 +311,6 @@ setup_distributions(tensor_overlap_constraints &constraints) {
     constraints.mark_updated(d);
     constraints.mark_invariant(d);
   }
-}
-
-template <typename TensorDataType, data_layout T_layout, El::Device Dev>
-void cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::setup_error_signals() {
-  data_type_distconv_adapter<TensorDataType>::setup_error_signals();
-  assert_always(this->m_gradient_wrt_inputs.size() == 1);
-  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  const auto &ground_truth_tensor = this->get_prev_activations(1);
-  const auto &global_shape = ground_truth_tensor.get_shape();
-  const auto &local_shape = ground_truth_tensor.get_local_shape();
-  const auto &dist = this->get_error_signals_dist();
-  this->m_gradient_wrt_inputs.emplace_back(make_unique<TensorDevType>(
-      global_shape, loc, dist, local_shape));
-  assert0(this->get_error_signals(1).allocate());
-  this->get_error_signals(1).zero(El::GPUManager::Stream());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

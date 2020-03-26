@@ -596,6 +596,14 @@ private:
   int get_num_spatial_dims() const;
   /** Indicate whether distconv is enabled. */
   bool distconv_enabled() const;
+  /** Indicate whether original input matrices need to be set up. */
+  virtual bool keep_original_inputs(int index) const;
+  /** Indicate whether original output matrices need to be set up. */
+  virtual bool keep_original_outputs(int index) const;
+  /** Indicate whether original gradient wrt input matrices need to be set up. */
+  virtual bool keep_original_gradient_wrt_inputs(int index) const;
+  /** Indicate whether original gradient wrt output matrices need to be set up. */
+  virtual bool keep_original_gradient_wrt_outputs(int index) const;
   /** Retrievs distconv adapter. */
   virtual const distconv_adapter& dc() const;
   /** Retrievs distconv adapter. */

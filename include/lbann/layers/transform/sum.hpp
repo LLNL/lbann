@@ -43,7 +43,7 @@ class sum_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
   sum_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~sum_distconv_adapter() = default;
-  void setup_error_signals() override;
+  std::unique_ptr<TensorDevType> setup_error_signals_i(int index) const override;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -127,13 +127,9 @@ protected:
 };
 
 template <typename TensorDataType>
-void sum_distconv_adapter<TensorDataType>::setup_error_signals() {
-  this->m_gradient_wrt_inputs.clear();
-  this->m_gradient_wrt_inputs.resize(this->layer().get_num_parents());
-  for (int i = 0; i < this->layer().get_num_parents(); ++i) {
-    this->m_gradient_wrt_inputs[i]= make_unique<TensorDevType>(
-        this->get_prev_error_signals(0));
-  }
+std::unique_ptr<typename sum_distconv_adapter<TensorDataType>::TensorDevType>
+sum_distconv_adapter<TensorDataType>::setup_error_signals_i(int index) const {
+  return make_unique<TensorDevType>(this->get_prev_error_signals(0));
 }
 
 LBANN_DEFINE_LAYER_BUILDER(sum);

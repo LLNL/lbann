@@ -82,30 +82,51 @@ public:
   /** Get original previous error signal tensor. */
   TensorDevType& get_original_prev_error_signals(int child_index = 0);
 
-  // Setup fp tensors
-  void setup_prev_activations() override;
-  void setup_original_prev_activations() override;
-  void setup_activations() override;
-  void setup_original_activations() override;
-
-  // Setup bp tensors
-  void setup_prev_error_signals() override;
-  void setup_original_prev_error_signals() override;
-  void setup_error_signals() override;
-  void setup_original_error_signals() override;
-
-  void set_original_activations_outermost_dimension(size_t dim);
-
-  // TODO: REMOVE THIS. This is a temporary interface until
-  // distconv_adapter refactoring is completed.
-  std::vector<std::unique_ptr<TensorDevType>> &get_outputs() {
-    return m_outputs;
-  }
-
   void fp_setup(El::Int mini_batch_size) override;
   void fp_postprocess() override;
   void bp_setup(El::Int mini_batch_size) override;
   void bp_postprocess() override;
+
+  void dump_activations() const override;
+  void dump_original_activations() override;
+  void dump_error_signals() const override;
+  void dump_original_error_signals() override;
+
+ protected:
+  // Setup fp tensors
+  void setup_prev_activations() override;
+  virtual std::unique_ptr<TensorDevType> setup_prev_activations_i(int index) const;
+  void setup_original_prev_activations() override;
+  virtual std::unique_ptr<TensorDevType> setup_original_prev_activations_i(int index) const;
+  void setup_activations() override;
+  virtual std::unique_ptr<TensorDevType> setup_activations_i(int index) const;
+  void setup_original_activations() override;
+  virtual std::unique_ptr<TensorDevType> setup_original_activations_i(int index) const;
+
+  // Setup bp tensors
+  void setup_prev_error_signals() override;
+  virtual std::unique_ptr<TensorDevType> setup_prev_error_signals_i(int index) const;
+  void setup_original_prev_error_signals() override;
+  virtual std::unique_ptr<TensorDevType> setup_original_prev_error_signals_i(int index) const;
+  void setup_error_signals() override;
+  virtual std::unique_ptr<TensorDevType> setup_error_signals_i(int index) const;
+  void setup_original_error_signals() override;
+  virtual std::unique_ptr<TensorDevType> setup_original_error_signals_i(int index) const;
+
+  virtual dc::Shape get_prev_activations_shape(int input_index=0) const;
+  virtual dc::Shape get_prev_activations_local_shape(int input_index=0) const;
+  virtual dc::Shape get_activations_shape(int index=0) const;
+  virtual dc::Shape get_activations_local_shape(int index=0) const;
+
+  virtual dc::Shape get_prev_error_signals_shape(int index=0) const;
+  virtual dc::Shape get_prev_error_signals_local_shape(int index=0) const;
+  virtual dc::Shape get_error_signals_shape(int index=0) const;
+  virtual dc::Shape get_error_signals_local_shape(int index=0) const;
+
+  void ensure_prev_activations() override;
+  void copy_out_activations() override;
+  void ensure_prev_error_signals() override;
+  void copy_out_error_signals() override;
 
   TensorShufflerType& get_prev_activations_shuffler(
       const TensorDevType &src, const TensorDevType &dst);
@@ -116,17 +137,7 @@ public:
   TensorShufflerType& get_error_signals_shuffler(
       const TensorDevType &src, const TensorDevType &dst);
 
-  void ensure_prev_activations() override;
-  void copy_out_activations() override;
-  void ensure_prev_error_signals() override;
-  void copy_out_error_signals() override;
-
-  void dump_activations() const override;
-  void dump_original_activations() override;
-  void dump_error_signals() const override;
-  void dump_original_error_signals() override;
-
- protected:
+ private:
   std::vector<std::unique_ptr<TensorDevType>> m_inputs;
   std::vector<std::unique_ptr<TensorDevType>> m_original_inputs;
   std::vector<std::unique_ptr<TensorDevType>> m_outputs;
@@ -143,15 +154,8 @@ public:
   std::array<TensorShufflerType*, 4> m_prev_error_signals_shufflers{ {nullptr, nullptr, nullptr, nullptr} };
   std::array<TensorShufflerType*, 4> m_error_signals_shufflers{ {nullptr, nullptr, nullptr, nullptr} };
 
-  virtual dc::Shape get_prev_activations_shape(int input_index=0) const;
-  virtual dc::Shape get_prev_activations_local_shape(int input_index=0) const;
-  virtual dc::Shape get_activations_shape(int index=0) const;
-  virtual dc::Shape get_activations_local_shape(int index=0) const;
-
-  virtual dc::Shape get_prev_error_signals_shape(int index=0) const;
-  virtual dc::Shape get_prev_error_signals_local_shape(int index=0) const;
-  virtual dc::Shape get_error_signals_shape(int index=0) const;
-  virtual dc::Shape get_error_signals_local_shape(int index=0) const;
+  void set_activations_outermost_dimension(size_t dim);
+  void set_error_signals_outermost_dimension(size_t dim);
 };
 
 } // namespace lbann

@@ -102,7 +102,7 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
 
   void setup_fp_tensors() override {
     const auto &output_dist = this->get_activations_dist();
-    const auto tensor_shape = this->get_activations_shape();
+    const auto tensor_shape = this->get_activations_shape(0);
     const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(
         this->get_num_dims());
     auto local_shape = tensor_shape;
@@ -151,8 +151,6 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
       setup_shuffler_buffers(m_input_host_view, m_input_host_tensor);
     }
 
-    this->setup_activations();
-
     // Keeps the same input type and convert to float on GPU
     m_input_dev = TensorDevInput(tensor_shape, loc, output_dist);
     assert0(m_input_dev.allocate());
@@ -167,22 +165,30 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
     if (m_copy_labels) {
       setup_label_tensors(output_dist);
     }
+
+    this->setup_activations();
   }
 
-  void setup_shuffler_buffers(const TensorHost &src, const TensorHost &dst) {
-    auto shuffler_src_size = TensorHostShuffler::get_buf_size(src);
-    if (m_shuffler_src_buf_size < shuffler_src_size) {
-      m_shuffler_src_buf_size = shuffler_src_size;
-      m_shuffler_src_buf =
-          std::unique_ptr<InputType>(static_cast<InputType*>(
-              dc::util::aligned_malloc(m_shuffler_src_buf_size)));
-    }
-    auto shuffler_dst_size = TensorHostShuffler::get_buf_size(dst);
-    if (m_shuffler_dst_buf_size < shuffler_dst_size) {
-      m_shuffler_dst_buf_size = shuffler_dst_size;
-      m_shuffler_dst_buf =
-          std::unique_ptr<InputType>(static_cast<InputType*>(
-              dc::util::aligned_malloc(m_shuffler_dst_buf_size)));
+  std::unique_ptr<TensorDevType> setup_activations_i(int index) const override {
+    if (index == 0) {
+      return data_type_distconv_adapter<TensorDataType>::
+          setup_activations_i(index);
+    } else {
+      assert_eq(index, 1);
+      if (!m_copy_labels) return nullptr;
+      // Note: the default setup_activations_i can't be used because
+      // the distribution might need to be changed to remove
+      // overlap. This can be fixed by making each tensor hav a
+      // different distribution.
+      const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+      auto dist = this->get_activations_dist();
+      dist.clear_overlap();
+      const auto shape = get_activations_shape(index);
+      const auto local_shape = get_activations_local_shape(index);
+      auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+      assert0(t->allocate());
+      t->zero(El::GPUManager::Stream());
+      return t;
     }
   }
 
@@ -192,23 +198,29 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
     return dc::Shape(this->get_num_dims(), 0);
   }
 
-  // TODO: This is a temporary hack. The label tensor shape should
-  //be set based on the shape set by the data reader, but the data
-  //reader does not provide it. Using the shape shape as the data
-  //tensor works fine for the U-Net model.
-  dc::Shape get_unet_label_shape() const {
-    auto shape = this->get_activations_shape(0);
-    auto label_size = this->get_activations_shape(1).reduce_prod();
-    auto num_channels = label_size / shape.reduce_prod();
-    shape[-2] = num_channels;
-    return shape;
+  dc::Shape get_activations_shape(int index) const {
+    if (index == 0) {
+      return data_type_distconv_adapter<TensorDataType>::
+          get_activations_shape(index);
+    } else {
+      assert_eq(index, 1);
+      // TODO: This is a temporary hack. The label tensor shape should
+      //be set based on the shape set by the data reader, but the data
+      //reader does not provide it. Using the shape shape as the data
+      //tensor works fine for the U-Net model.
+      auto shape = this->get_activations_shape(0);
+      auto label_size = data_type_distconv_adapter<TensorDataType>::
+          get_activations_shape(1).reduce_prod();
+      auto num_channels = label_size / shape.reduce_prod();
+      shape[-2] = num_channels;
+      return shape;
+    }
   }
 
   void setup_label_tensors(const dc::Dist &output_dist) {
     using namespace dc;
     assert_always(m_copy_labels);
-    //const auto tensor_shape = get_output_tensor_shape(1);
-    const auto tensor_shape = get_unet_label_shape();
+    const auto tensor_shape = get_activations_shape(1);
     const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(
         this->get_num_dims());
     auto local_shape = tensor_shape;
@@ -253,29 +265,50 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
     m_labels_input_type = TensorDevInput(tensor_shape, loc, label_dist);
     assert0(m_labels_input_type.allocate());
     m_labels_input_type.zero(El::GPUManager::Stream());
+  }
 
-    // The final label tensor
-    this->m_outputs.emplace_back(
-        make_unique<TensorDevType>(tensor_shape, loc, label_dist));
-    auto &label_tensor = *(this->m_outputs.back());
-    assert0(label_tensor.allocate());
-    label_tensor.zero(El::GPUManager::Stream());
-
-    dc::MPIRootPrintStreamInfo() << "label tensor: " << label_tensor;
+  void setup_shuffler_buffers(const TensorHost &src, const TensorHost &dst) {
+    auto shuffler_src_size = TensorHostShuffler::get_buf_size(src);
+    if (m_shuffler_src_buf_size < shuffler_src_size) {
+      m_shuffler_src_buf_size = shuffler_src_size;
+      m_shuffler_src_buf =
+          std::unique_ptr<InputType>(static_cast<InputType*>(
+              dc::util::aligned_malloc(m_shuffler_src_buf_size)));
+    }
+    auto shuffler_dst_size = TensorHostShuffler::get_buf_size(dst);
+    if (m_shuffler_dst_buf_size < shuffler_dst_size) {
+      m_shuffler_dst_buf_size = shuffler_dst_size;
+      m_shuffler_dst_buf =
+          std::unique_ptr<InputType>(static_cast<InputType*>(
+              dc::util::aligned_malloc(m_shuffler_dst_buf_size)));
+    }
   }
 
   // No bp tensors needed for this layer.
-  void setup_prev_error_signals(const dc::Dist& dist) {}
-  void setup_original_prev_error_signals() {}
-  void setup_error_signals(const dc::Dist& dist) {}
-  void setup_original_error_signals() {}
+  void setup_prev_error_signals() override {}
+  void setup_original_prev_error_signals() override {}
+  void setup_error_signals() override {}
+  void setup_original_error_signals() override {}
   void setup_bp_tensors() override {}
 
-  void copy_out_activations() {
-    if (!m_copy_labels) {
-      this->m_child_copy_required[1] = false;
+  bool child_copy_required(size_t output_index) const override {
+    // Not required when label is not handled.
+    if (output_index == 1 && !m_copy_labels) {
+      return false;
+    } else {
+      return data_type_distconv_adapter<TensorDataType>::
+          child_copy_required(output_index);
     }
-    data_type_distconv_adapter<TensorDataType>::copy_out_activations();
+  }
+
+  bool child_shuffle_required(size_t output_index) const override {
+    // Not required when label is not handled.
+    if (output_index == 1 && !m_copy_labels) {
+      return false;
+    } else {
+      return data_type_distconv_adapter<TensorDataType>::
+          child_shuffle_required(output_index);
+    }
   }
 
   // Nothing to do here as everything is done in fp_compute_distconv.
@@ -316,6 +349,20 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
   friend class input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>;
  protected:
   bool is_distconv_supported() const override { return true; }
+
+  bool keep_original_outputs(int index) const override {
+    if (index == 0) {
+      return data_type_layer<TensorDataType>::keep_original_outputs(index);
+    } else {
+      assert_eq(index, 1);
+      if (this->distconv_enabled() &&
+          dc().m_copy_labels && !dc().child_copy_required(index)) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+  }
 
   input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>& dc() override;
   const input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>& dc() const override;

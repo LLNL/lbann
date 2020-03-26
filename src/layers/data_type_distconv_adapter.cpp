@@ -31,6 +31,11 @@
 
 namespace lbann {
 
+namespace {
+template <typename TensorDataType>
+using TensorDevPtr = std::unique_ptr<typename data_type_distconv_adapter<TensorDataType>::TensorDevType>;
+} // namespace
+
 template <typename TensorDataType>
 const typename data_type_distconv_adapter<TensorDataType>::TensorDevType&
 data_type_distconv_adapter<TensorDataType>::get_activations(const Layer& child) const {
@@ -270,66 +275,70 @@ data_type_distconv_adapter<TensorDataType>::get_original_prev_error_signals(int 
 
 template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::setup_original_prev_activations() {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
-  const auto input_tensor_shape = get_prev_activations_shape();
-  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(
-      l.get_num_dims());
-  auto input_local_shape = input_tensor_shape;
-  // Set the sample dimension as 0 so that its actual value is
-  // calculated by Distconv
-  input_local_shape[-1] = 0;
-
   m_original_inputs.clear();
-  m_original_inputs.resize(l.get_num_parents());
-
-  for (int i = 0; i < l.get_num_parents(); ++i) {
-    if (parent_copy_required(i)) {
-      m_original_inputs[i] = make_unique<TensorDevType>(
-          input_tensor_shape, loc, sample_dist, input_local_shape);
-    } else if (parent_shuffle_required(i)) {
-      // NOTE: previous activations are assumed to be of the same
-      // tensor data type.
-      // Create a shallow copy of the activations of the prev layer
-      const auto &parent_activations =
-          dynamic_cast<const TensorDevType&>(
-              l.get_parent_layers()[i]->dc().get_activations(l));
-      m_original_inputs[i] = make_unique<TensorDevType>(
-          parent_activations);
-    }
+  for (int i = 0; i < layer().get_num_parents(); ++i) {
+    m_original_inputs.emplace_back(setup_original_prev_activations_i(i));
   }
 }
 
 template <typename TensorDataType>
-void data_type_distconv_adapter<TensorDataType>::setup_prev_activations() {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
-  const auto shape = get_prev_activations_shape();
-  const auto local_shape = get_prev_activations_local_shape();
-  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  const auto &dist = this->get_prev_activations_dist();
-
-  for (int i = 0; i < l.get_num_parents(); ++i) {
-    if (parent_copy_required(i) || parent_shuffle_required(i)) {
-      if (i != 0) LBANN_ERROR("Copyin of non-first tensor not supported yet");
-      m_inputs.emplace_back(make_unique<TensorDevType>(
-          shape, loc, dist, local_shape));
-      assert0(m_inputs.back()->allocate());
-      m_inputs.back()->zero(El::GPUManager::Stream());
-    } else {
-      // Create a shallow copy
-      const auto &parent_activations =
-          dynamic_cast<const TensorDevType&>(
-              l.get_parent_layers()[i]->dc().get_activations(l));
-      // Sanity check
-      assert_always(parent_activations.get_distribution() == dist);
-      m_inputs.emplace_back(make_unique<TensorDevType>(parent_activations));
-    }
+TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+setup_original_prev_activations_i(int index) const {
+  TensorDevPtr<TensorDataType> t = nullptr;
+  if (parent_copy_required(index)) {
+    const auto shape = get_prev_activations_shape();
+    auto local_shape = shape;
+    // Set the sample dimension as 0 so that its actual value is
+    // calculated by Distconv
+    local_shape[-1] = 0;
+    const auto dist = dc::get_hydrogen_data_parallel_distribution(
+        layer().get_num_dims());
+    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+    t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+  } else if (parent_shuffle_required(index)) {
+    // NOTE: previous activations are assumed to be of the same
+    // tensor data type.
+    // Create a shallow copy of the activations of the prev layer
+    const auto &parent_activations =
+        dynamic_cast<const TensorDevType&>(
+            layer().get_parent_layers()[index]->dc().get_activations(layer()));
+    t = make_unique<TensorDevType>(parent_activations);
   }
-
-  dc::MPIPrintStreamDebug() << get_name() << "; "
-                            << "prev activations: " << get_prev_activations();
+  return t;
 }
 
+template <typename TensorDataType>
+void data_type_distconv_adapter<TensorDataType>::setup_prev_activations() {
+  m_inputs.clear();
+  for (int i = 0; i < layer().get_num_parents(); ++i) {
+    m_inputs.emplace_back(setup_prev_activations_i(i));
+  }
+}
+
+template <typename TensorDataType>
+TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+setup_prev_activations_i(int index) const {
+  const auto &dist = this->get_prev_activations_dist();
+  TensorDevPtr<TensorDataType> t = nullptr;
+  if (parent_copy_required(index) || parent_shuffle_required(index)) {
+    if (index != 0) LBANN_ERROR("Copyin of non-first tensor not supported yet");
+    const auto shape = get_prev_activations_shape(index);
+    const auto local_shape = get_prev_activations_local_shape(index);
+    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+    t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+    assert0(t->allocate());
+    t->zero(El::GPUManager::Stream());
+  } else {
+    // Create a shallow copy
+    const auto &parent_activations =
+        dynamic_cast<const TensorDevType&>(
+            layer().get_parent_layers()[index]->dc().get_activations(layer()));
+    // Sanity check
+    assert_always(parent_activations.get_distribution() == dist);
+    t = make_unique<TensorDevType>(parent_activations);
+  }
+  return t;
+}
 
 template <typename TensorDataType>
 dc::Shape data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape(
@@ -397,143 +406,194 @@ dc::Shape data_type_distconv_adapter<TensorDataType>::get_error_signals_local_sh
 
 template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::setup_activations() {
+  m_outputs.clear();
+  for (int i = 0; i < layer().get_num_children(); ++i) {
+    m_outputs.emplace_back(setup_activations_i(i));
+  }
+}
+
+template <typename TensorDataType>
+TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+setup_activations_i(int index) const {
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  const dc::Shape output_tensor_shape = get_activations_shape();
   const auto &dist = this->get_activations_dist();
-  const auto activations_local_shape =
-      get_activations_local_shape();
-  m_outputs.emplace_back(make_unique<TensorDevType>(
-      output_tensor_shape,
-      loc, dist, activations_local_shape));
-  assert0(m_outputs.back()->allocate());
-  m_outputs.back()->zero(El::GPUManager::Stream());
+  const auto shape = get_activations_shape(index);
+  const auto local_shape = get_activations_local_shape(index);
+  auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+  assert0(t->allocate());
+  t->zero(El::GPUManager::Stream());
+  return t;
 }
 
 template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::setup_original_activations() {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
-  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(l.get_num_dims());
-  const auto output_tensor_shape = get_activations_shape();
-  assert_always(!output_tensor_shape.is_empty());
-  auto output_local_shape = output_tensor_shape;
-  // Set the sample dimension as 0 so that its actual value is
-  // calculated by Distconv
-  output_local_shape[-1] = 0;
-
   m_original_outputs.clear();
-  m_original_outputs.resize(l.get_num_children());
+  for (int i = 0; i < layer().get_num_children(); ++i) {
+    m_original_outputs.emplace_back(setup_original_activations_i(i));
+  }
+}
 
+template <typename TensorDataType>
+TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+setup_original_activations_i(int index) const {
   // Create a original tensor only when copyout is needed. Note that
   // when the next layer is a distconv layer and has a different
   // distribution, tensor shuffling is necessary but is done at the
   // next layer.
-  for (int i = 0; i < l.get_num_children(); ++i) {
-    if (!child_copy_required(i)) continue;
-    m_original_outputs[i] = make_unique<TensorDevType>(
-        output_tensor_shape, loc, sample_dist, output_local_shape);
+  TensorDevPtr<TensorDataType> t = nullptr;
+  if (child_copy_required(index)) {
+    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+    const auto dist = dc::get_hydrogen_data_parallel_distribution(get_num_dims());
+    const auto shape = get_activations_shape(index);
+    assert_always(!shape.is_empty());
+    auto local_shape = shape;
+    // Set the sample dimension as 0 so that its actual value is
+    // calculated by Distconv
+    local_shape[-1] = 0;
+    t = make_unique<TensorDevType>(
+        shape, loc, dist, local_shape);
   }
+  return t;
 }
 
 template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::setup_prev_error_signals() {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
-  const auto shape = get_prev_error_signals_shape();
-  const auto local_shape = get_prev_error_signals_local_shape();
-  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  const auto &dist = this->get_prev_error_signals_dist();
-
-  for (int i = 0; i < l.get_num_children(); ++i) {
-    if (child_copy_required(i) || child_shuffle_required(i)) {
-      m_gradient_wrt_outputs.emplace_back(make_unique<TensorDevType>(
-          shape, loc, dist, local_shape));
-      assert0(m_gradient_wrt_outputs.back()->allocate());
-      m_gradient_wrt_outputs.back()->zero(El::GPUManager::Stream());
-    } else {
-      // Create a shallow copy
-      const auto &child_error_signals =
-          dynamic_cast<const TensorDevType&>(
-              l.get_child_layers()[i]->dc().get_error_signals(l));
-      // Just sanity check
-      assert_always(child_error_signals.get_distribution() == dist);
-      m_gradient_wrt_outputs.emplace_back(make_unique<TensorDevType>(
-          child_error_signals));
-    }
+  m_gradient_wrt_outputs.clear();
+  for (int i = 0; i < layer().get_num_children(); ++i) {
+    m_gradient_wrt_outputs.emplace_back(setup_prev_error_signals_i(i));
   }
-  dc::MPIPrintStreamDebug() << get_name() << "; "
-                            << "prev error signals: " << get_prev_error_signals();
+}
+
+template <typename TensorDataType>
+TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+setup_prev_error_signals_i(int index) const {
+  TensorDevPtr<TensorDataType> t = nullptr;
+  const auto &dist = this->get_prev_error_signals_dist();
+  if (child_copy_required(index) || child_shuffle_required(index)) {
+    const auto shape = get_prev_error_signals_shape(index);
+    const auto local_shape = get_prev_error_signals_local_shape(index);
+    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+    t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+    assert0(t->allocate());
+    t->zero(El::GPUManager::Stream());
+  } else {
+    // Create a shallow copy
+    const auto &child_error_signals =
+        dynamic_cast<const TensorDevType&>(
+            layer().get_child_layers()[index]->dc().get_error_signals(layer()));
+    // Just sanity check
+    assert_always(child_error_signals.get_distribution() == dist);
+    t = make_unique<TensorDevType>(child_error_signals);
+  }
+  return t;
 }
 
 template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::setup_original_prev_error_signals() {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
-  const auto shape = get_prev_error_signals_shape();
-  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  const auto dist = dc::get_hydrogen_data_parallel_distribution(
-      l.get_num_dims());
-  auto local_shape = shape;
-  // Set the sample dimension as 0 so that its actual value is
-  // calculated by Distconv
-  local_shape[-1] = 0;
+ m_original_gradient_wrt_outputs.clear();
+ for (int i = 0; i < layer().get_num_children(); ++i) {
+   m_original_gradient_wrt_outputs.emplace_back(
+       setup_original_prev_error_signals_i(i));
+ }
+}
 
-  m_original_gradient_wrt_outputs.clear();
-  m_original_gradient_wrt_outputs.resize(l.get_num_parents());
-
-  for (int i = 0; i < l.get_num_children(); ++i) {
-    if (this->child_copy_required(i)) {
-      m_original_gradient_wrt_outputs[i] = make_unique<TensorDevType>(
-          shape, loc, dist, local_shape);
-    } else if (this->child_shuffle_required(i)) {
-      // NOTE: previous activations are assumed to be of the same
-      // tensor data type.
-      // Create a shallow copy of the activations of the prev layer
-      const auto &child_error_signals =
-          dynamic_cast<const TensorDevType&>(
-              l.get_child_layers()[i]->dc().get_error_signals(l));
-      m_original_gradient_wrt_outputs[i] = make_unique<TensorDevType>(
-          child_error_signals);
-    }
+template <typename TensorDataType>
+TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+setup_original_prev_error_signals_i(int index) const {
+  TensorDevPtr<TensorDataType> t = nullptr;
+  if (this->child_copy_required(index)) {
+    const auto shape = get_prev_error_signals_shape(index);
+    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+    const auto dist = dc::get_hydrogen_data_parallel_distribution(
+        layer().get_num_dims());
+    auto local_shape = shape;
+    // Set the sample dimension as 0 so that its actual value is
+    // calculated by Distconv
+    local_shape[-1] = 0;
+    t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+  } else if (this->child_shuffle_required(index)) {
+    // NOTE: previous activations are assumed to be of the same
+    // tensor data type.
+    // Create a shallow copy of the activations of the prev layer
+    const auto &child_error_signals =
+        dynamic_cast<const TensorDevType&>(
+            layer().get_child_layers()[index]->dc().get_error_signals(layer()));
+    t = make_unique<TensorDevType>(child_error_signals);
   }
+  return t;
 }
 
 template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::setup_error_signals() {
-  const auto shape = get_error_signals_shape();
-  const auto local_shape = get_error_signals_local_shape();
+  m_gradient_wrt_inputs.clear();
+  for (int i = 0; i < layer().get_num_parents(); ++i) {
+    m_gradient_wrt_inputs.emplace_back(setup_error_signals_i(i));
+  }
+}
+
+template <typename TensorDataType>
+TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+setup_error_signals_i(int index) const {
   const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
   const auto &dist = this->get_error_signals_dist();
-  m_gradient_wrt_inputs.emplace_back(make_unique<TensorDevType>(
-      shape, loc, dist, local_shape));
+  const auto shape = get_error_signals_shape(index);
+  const auto local_shape = get_error_signals_local_shape(index);
+  auto t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
   if (layer().skip_first_layer_bp()) {
     dc::MPIPrintStreamDebug()
         << get_name() << ": skipping allocation of error signals";
   } else {
-    assert0(m_gradient_wrt_inputs.back()->allocate());
-    m_gradient_wrt_inputs.back()->zero(El::GPUManager::Stream());
+    assert0(t->allocate());
+    t->zero(El::GPUManager::Stream());
   }
-  dc::MPIPrintStreamDebug() << get_name() << "; "
-                            << "error signals: " << get_error_signals();
+  return t;
 }
 
 template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::setup_original_error_signals() {
-  const auto shape = get_error_signals_shape();
-  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-  const auto dist = dc::get_hydrogen_data_parallel_distribution(
-      get_num_dims());
-  auto local_shape = shape;
-  // Set the sample dimension as 0 so that its actual value is
-  // calculated by Distconv
-  local_shape[-1] = 0;
+  m_original_gradient_wrt_inputs.clear();
+  for (int i = 0; i < layer().get_num_parents(); ++i) {
+    m_original_gradient_wrt_inputs.emplace_back(
+        setup_original_error_signals_i(i));
+  }
+}
 
-  // TODO: Only the first error signal tensor is handled
-  m_original_gradient_wrt_inputs.emplace_back(make_unique<TensorDevType>(
-      shape, loc, dist, local_shape));
+template <typename TensorDataType>
+TensorDevPtr<TensorDataType> data_type_distconv_adapter<TensorDataType>::
+setup_original_error_signals_i(int index) const {
+  TensorDevPtr<TensorDataType> t = nullptr;
+  if (parent_copy_required(index)) {
+    const auto shape = get_error_signals_shape(index);
+    const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+    const auto dist = dc::get_hydrogen_data_parallel_distribution(
+        get_num_dims());
+    auto local_shape = shape;
+    // Set the sample dimension as 0 so that its actual value is
+    // calculated by Distconv
+    local_shape[-1] = 0;
+    t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
+  }
+  return t;
 }
 
 template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::
-set_original_activations_outermost_dimension(size_t dim) {
+set_activations_outermost_dimension(size_t dim) {
+  for (auto &t: m_inputs) {
+    if (t == nullptr) continue;
+    t->set_outermost_dimension(dim);
+    assert_eq(t->get_shape()[-1], dim);
+  }
+  for (auto &t: m_original_inputs) {
+    if (t == nullptr) continue;
+    t->set_outermost_dimension(dim);
+    assert_eq(t->get_shape()[-1], dim);
+  }
+  for (auto &t: m_outputs) {
+    if (t == nullptr) continue;
+    t->set_outermost_dimension(dim);
+    assert_eq(t->get_shape()[-1], dim);
+  }
   for (auto &t: m_original_outputs) {
     if (t == nullptr) continue;
     t->set_outermost_dimension(dim);
@@ -542,24 +602,43 @@ set_original_activations_outermost_dimension(size_t dim) {
 }
 
 template <typename TensorDataType>
+void data_type_distconv_adapter<TensorDataType>::
+set_error_signals_outermost_dimension(size_t dim) {
+  for (auto &t: m_gradient_wrt_outputs) {
+    if (t == nullptr) continue;
+    t->set_outermost_dimension(dim);
+    assert_eq(t->get_shape()[-1], dim);
+  }
+  for (auto &t: m_original_gradient_wrt_outputs) {
+    if (t == nullptr) continue;
+    t->set_outermost_dimension(dim);
+    assert_eq(t->get_shape()[-1], dim);
+  }
+  for (auto &t: m_gradient_wrt_inputs) {
+    if (t == nullptr) continue;
+    t->set_outermost_dimension(dim);
+    assert_eq(t->get_shape()[-1], dim);
+  }
+  for (auto &t: m_original_gradient_wrt_inputs) {
+    if (t == nullptr) continue;
+    t->set_outermost_dimension(dim);
+    assert_eq(t->get_shape()[-1], dim);
+  }
+}
+
+template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::fp_setup(El::Int mini_batch_size) {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
+  const auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
   // Reconfigure the sample dimension as the mini batch size may vary
   // at the end of epoch
-  get_prev_activations().set_outermost_dimension(mini_batch_size);
-  assert_eq((int)get_prev_activations().get_shape()[-1],
-            mini_batch_size);
+  set_activations_outermost_dimension(mini_batch_size);
   for (int i = 0; i < l.get_num_parents(); ++i) {
     if (parent_copy_required(i) || parent_shuffle_required(i)) {
       if (i != 0) {
         LBANN_ERROR("Copyin non-first tensor not supported");
       }
-      get_original_prev_activations().set_outermost_dimension(
-          mini_batch_size);
-      assert_eq((int)get_original_prev_activations().get_shape()[-1],
-                mini_batch_size);
       if (parent_copy_required(i)) {
-        // then, parent is assumed to be data parallel, so the local
+        // Parent is assumed to be data parallel, so the local
         // size of the sample dimension should be equal to
         // the local width of previous activations. The check only
         // matters for split root processes as the rest just hold
@@ -572,10 +651,6 @@ void data_type_distconv_adapter<TensorDataType>::fp_setup(El::Int mini_batch_siz
       }
     }
   }
-  get_activations().set_outermost_dimension(mini_batch_size);
-  assert_eq((int)get_activations().get_shape()[-1],
-            mini_batch_size);
-  set_original_activations_outermost_dimension(mini_batch_size);
   // TODO: Needs to check other output tensors
   if (child_copy_required(0) && get_original_activations().is_split_root()) {
     assert_eq((int)get_original_activations().get_local_shape()[-1],
@@ -591,34 +666,22 @@ void data_type_distconv_adapter<TensorDataType>::fp_postprocess() {
 
 template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::bp_setup(El::Int mini_batch_size) {
-  auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
+  const auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
   // Reconfigure the sample dimension as the mini batch size may vary
   // at the end of epoch
+  set_error_signals_outermost_dimension(mini_batch_size);
   for (int i = 0; i < l.get_num_children(); ++i) {
-    get_prev_error_signals(i).set_outermost_dimension(mini_batch_size);
-    assert_always((int)get_prev_error_signals(i).get_shape()[-1] ==
-                  mini_batch_size);
     if (child_copy_required(i) || child_shuffle_required(i)) {
       auto &original_input = get_original_prev_error_signals(i);
       if (i != 0) {
         LBANN_ERROR("Copyout non-first tensor not supported");
       }
-      original_input.set_outermost_dimension(mini_batch_size);
-      assert_eq((int)original_input.get_shape()[-1],
-                mini_batch_size);
-      if (child_copy_required(i) &&
-          original_input.is_split_root()) {
+      if (child_copy_required(i) && original_input.is_split_root()) {
         assert_eq(
             (int)original_input.get_local_shape()[-1],
             l.get_prev_error_signals().LocalWidth());
       }
     }
-    get_error_signals().set_outermost_dimension(mini_batch_size);
-    assert_eq((int)get_error_signals().get_shape()[-1],
-              mini_batch_size);
-    get_original_error_signals().set_outermost_dimension(mini_batch_size);
-    assert_eq((int)get_original_error_signals().get_shape()[-1],
-              mini_batch_size);
     // TODO: Check other input tensors
     if (i == 0) {
       if (parent_copy_required(i) && !l.skip_first_layer_bp()
@@ -701,7 +764,7 @@ void data_type_distconv_adapter<TensorDataType>::ensure_prev_activations() {
       continue;
     }
     if (i != 0) {
-      LBANN_ERROR("Distconv assumes non-first tensors are available as distconv tensors");
+      LBANN_ERROR(layer().get_name(), ": copyin of non-first tensor not supported");
     }
     if (parent_copy_required(i)) {
       dc::MPIPrintStreamDebug()
@@ -725,9 +788,9 @@ void data_type_distconv_adapter<TensorDataType>::copy_out_activations() {
   auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
   for (int i = 0; i < l.get_num_children(); ++i) {
     if (!child_copy_required(i)) continue;
-
-    if (i != 0) LBANN_ERROR("Copyout of non-first tensor not supported");
-
+    if (i != 0) {
+      LBANN_ERROR(layer().get_name(), ": Copyout of non-first tensor not supported");
+    }
     dc::MPIPrintStreamDebug()
         << "Copying activations back to sample decomposition";
     assert0(dc::tensor::View(
@@ -750,7 +813,7 @@ void data_type_distconv_adapter<TensorDataType>::ensure_prev_error_signals() {
       continue;
     }
     if (i != 0) {
-      LBANN_ERROR("Distconv assumes non-first tensors are available as distconv tensors");
+      LBANN_ERROR(layer().get_name(), ": copyin of non-first tensor not supported");
     }
     if (child_copy_required(i)) {
       dc::MPIPrintStreamDebug()
@@ -782,9 +845,9 @@ void data_type_distconv_adapter<TensorDataType>::copy_out_error_signals() {
 
   for (int i = 0; i < l.get_num_parents(); ++i) {
     if (!parent_copy_required(i)) continue;
-
-    if (i != 0) LBANN_ERROR("Copyout of non-first tensor not supported");
-
+    if (i != 0) {
+      LBANN_ERROR(layer().get_name(), ": Copyout of non-first tensor not supported");
+    }
     dc::MPIPrintStreamDebug()
         << "Copying error signals back to sample decomposition";
     assert0(dc::tensor::View(
