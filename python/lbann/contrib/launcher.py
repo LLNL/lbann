@@ -14,6 +14,7 @@ def run(
     lbann_args=[],
     overwrite_script=False,
     setup_only=False,
+    batch_job=False,
     *args,
     **kwargs,
 ):
@@ -27,13 +28,6 @@ def run(
 
     # Create batch script generator
     script = make_batch_script(*args, **kwargs)
-
-    # Check for an existing job allocation
-    has_allocation = False
-    if isinstance(script, lbann.launcher.slurm.SlurmBatchScript):
-        has_allocation = 'SLURM_JOB_ID' in os.environ
-    if isinstance(script, lbann.launcher.lsf.LSFBatchScript):
-        has_allocation = 'LSB_JOBID' in os.environ
 
     # Batch script prints start time
     script.add_command('echo "Started at $(date)"')
@@ -59,10 +53,10 @@ def run(
     status = 0
     if setup_only:
         script.write(overwrite=overwrite_script)
-    elif has_allocation:
-        status = script.run(overwrite=overwrite_script)
-    else:
+    elif batch_job:
         status = script.submit(overwrite=overwrite_script)
+    else:
+        status = script.run(overwrite=overwrite_script)
     return status
 
 def make_batch_script(*args, **kwargs):
