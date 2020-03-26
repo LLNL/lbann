@@ -39,7 +39,11 @@ namespace lbann {
 namespace {
 
 void fill_buffer(DataType *buf, size_t len) {
+#ifdef LBANN_HAS_DISTCONV
   auto randgen_method = dc::get_synthetic_data_reader_randgen();
+#else
+  std::string randgen_method = "MINSTD";
+#endif // LBANN_HAS_DISTCONV
   if (randgen_method == "ONE") {
     std::fill_n(buf, len, (DataType) 1);
     return;
@@ -81,7 +85,9 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
                                              int num_labels, bool shuffle)
   : generic_data_reader(shuffle), m_num_samples(num_samples),
     m_num_labels(num_labels), m_dimensions(dims) {
+#ifdef LBANN_HAS_DISTCONV
   pre_generate();
+#endif // LBANN_HAS_DISTCONV
 }
 
 data_reader_synthetic::data_reader_synthetic(int num_samples,
@@ -90,7 +96,9 @@ data_reader_synthetic::data_reader_synthetic(int num_samples,
                                              bool shuffle)
   : generic_data_reader(shuffle), m_num_samples(num_samples),
     m_num_labels(0), m_dimensions(dims), m_response_dimensions(response_dims) {
+#ifdef LBANN_HAS_DISTCONV
   pre_generate();
+#endif // LBANN_HAS_DISTCONV
 }
 
 bool data_reader_synthetic::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
@@ -124,6 +132,7 @@ void data_reader_synthetic::load() {
   select_subset_of_data();
 }
 
+#ifdef LBANN_HAS_DISTCONV
 void data_reader_synthetic::pre_generate() {
   m_num_pre_generated_data = dc::get_number_of_pre_generated_synthetic_data();
   if (m_num_pre_generated_data == 0) return;
@@ -146,6 +155,7 @@ void data_reader_synthetic::pre_generate() {
   fill_buffer(m_pre_generated_response.get(), len);
   m_pre_generated_response_idx = 0;
 }
+#endif // LBANN_HAS_DISTCONV
 
 DataType *data_reader_synthetic::get_next_pre_generated_datum() {
   if (m_num_pre_generated_data == 0) return nullptr;

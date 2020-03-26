@@ -87,13 +87,15 @@ void partitioned_io_buffer<TensorDataType>::setup_data(El::Int num_neurons, El::
     num_neurons /= sizeof(TensorDataType) / sizeof(short);
     max_mini_batch_size *= dc::get_number_of_io_partitions();
   }
-#endif
+#endif // LBANN_HAS_DISTCONV
   El::Int local_mini_batch_size = max_mini_batch_size / this->m_comm->get_procs_per_trainer();
   El::Int partial_mini_batch_size = max_mini_batch_size % this->m_comm->get_procs_per_trainer();
+#ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled()) {
     assert_eq(local_mini_batch_size, 1);
     assert_eq(partial_mini_batch_size, 0);
   }
+#endif // LBANN_HAS_DISTCONV
   if(partial_mini_batch_size > 0 && this->m_comm->get_rank_in_trainer() < partial_mini_batch_size) {
     local_mini_batch_size++;
   }

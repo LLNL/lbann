@@ -95,8 +95,12 @@ void hdf5_reader::copy_members(const hdf5_reader &rhs) {
 
 void hdf5_reader::read_hdf5_hyperslab(hsize_t h_data, hsize_t filespace,
                                       int rank, short *sample) {
+#ifndef LBANN_HAS_DISTCONV
+  LBANN_ERROR("HDF5 data reader requires Distconv");
+#else
   prof_region_begin("read_hdf5_hyperslab", prof_colors[0], false);
-  // this is the splits, right now it is hard coded to split along the z axis
+  // this is the splits, right now it is hard coded to split along the
+  // z axis
   int num_io_parts = dc::get_number_of_io_partitions();
 
   // how many times the pattern should repeat in the hyperslab
@@ -119,9 +123,13 @@ void hdf5_reader::read_hdf5_hyperslab(hsize_t h_data, hsize_t filespace,
 
   CHECK_HDF5(H5Dread(h_data, H5T_NATIVE_SHORT, memspace, filespace, m_dxpl, sample));
   prof_region_end("read_hdf5_hyperslab", false);
+#endif // LBANN_HAS_DISTCONV
 }
 
 void hdf5_reader::read_hdf5_sample(int data_id, short *sample) {
+#ifndef LBANN_HAS_DISTCONV
+  LBANN_ERROR("HDF5 data reader requires Distconv");
+#else
   int world_rank = dc::get_input_rank(*get_comm());
   auto file = m_file_paths[data_id];
   hid_t h_file = CHECK_HDF5(H5Fopen(file.c_str(), H5F_ACC_RDONLY, m_fapl));
@@ -147,9 +155,13 @@ void hdf5_reader::read_hdf5_sample(int data_id, short *sample) {
   }
   CHECK_HDF5(H5Fclose(h_file));
   return;
+#endif // LBANN_HAS_DISTCONV
 }
 
 void hdf5_reader::load() {
+#ifndef LBANN_HAS_DISTCONV
+  LBANN_ERROR("HDF5 data reader requires Distconv");
+#else
   lbann_comm* l_comm = get_comm();
   if(dc::get_rank_stride() != 1) {
     LBANN_ERROR("HDF5 MPI-IO data reader requires DistConv rank stride = 1");
@@ -235,6 +247,7 @@ void hdf5_reader::load() {
   if (dc::get_rank_stride() == 1) {
     MPI_Comm_dup(dc::get_mpi_comm(), &m_response_gather_comm);
   }
+#endif // LBANN_HAS_DISTCONV
 }
 
 bool hdf5_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
@@ -242,6 +255,9 @@ bool hdf5_reader::fetch_label(Mat& Y, int data_id, int mb_idx) {
 }
 
 bool hdf5_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
+#ifndef LBANN_HAS_DISTCONV
+  LBANN_ERROR("HDF5 data reader requires Distconv");
+#else
   prof_region_begin("fetch_datum", prof_colors[0], false);
 
   // In the Cosmoflow case, each minibatch should have only one
@@ -258,9 +274,13 @@ bool hdf5_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   }
   prof_region_end("fetch_datum", false);
   return true;
+#endif // LBANN_HAS_DISTCONV
 }
 
 void hdf5_reader::fetch_datum_conduit(Mat& X, int data_id) {
+#ifndef LBANN_HAS_DISTCONV
+  LBANN_ERROR("HDF5 data reader requires Distconv");
+#else
   const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
   // Create a node to hold all of the data
   conduit::Node node;
@@ -289,10 +309,14 @@ void hdf5_reader::fetch_datum_conduit(Mat& X, int data_id) {
   prof_region_begin("copy_to_buffer", prof_colors[0], false);
   std::memcpy(X.Buffer(), data, slab.dtype().number_of_elements()*slab.dtype().element_bytes());
   prof_region_end("copy_to_buffer", false);
+#endif // LBANN_HAS_DISTCONV
 }
 
 //get from a cached response
 bool hdf5_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
+#ifndef LBANN_HAS_DISTCONV
+  LBANN_ERROR("HDF5 data reader requires Distconv");
+#else
   prof_region_begin("fetch_response", prof_colors[0], false);
   assert_eq(Y.Height(), m_num_response_features);
   float *buf = nullptr;
@@ -312,12 +336,16 @@ bool hdf5_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
   }
   prof_region_end("fetch_response", false);
   return true;
+#endif // LBANN_HAS_DISTCONV
 }
 
 // Gather scattered responses to the first N ranks, where N is the
 // mini-batch size. This is not necessary when the rank reordering
 // is used.
 void hdf5_reader::gather_responses(float *responses) {
+#ifndef LBANN_HAS_DISTCONV
+  LBANN_ERROR("HDF5 data reader requires Distconv");
+#else
   float recv_buf[m_num_response_features];
   const int rank = dc::get_mpi_rank();
   const int num_part = dc::get_number_of_io_partitions();
@@ -351,6 +379,7 @@ void hdf5_reader::gather_responses(float *responses) {
   }
 
   std::memcpy(responses, recv_buf, sizeof(float) * m_num_response_features);
+#endif // LBANN_HAS_DISTCONV
 }
 
 } // namespace lbann

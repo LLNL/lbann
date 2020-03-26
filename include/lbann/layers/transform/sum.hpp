@@ -123,14 +123,15 @@ protected:
     this->get_dc() = make_unique<sum_distconv_adapter<TensorDataType>>(*this);
   }
 #endif // LBANN_HAS_DISTCONV
-
 };
 
+#ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType>
 std::unique_ptr<typename sum_distconv_adapter<TensorDataType>::TensorDevType>
 sum_distconv_adapter<TensorDataType>::setup_error_signals_i(int index) const {
   return make_unique<TensorDevType>(this->get_prev_error_signals(0));
 }
+#endif // LBANN_HAS_DISTCONV
 
 LBANN_DEFINE_LAYER_BUILDER(sum);
 

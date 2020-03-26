@@ -37,13 +37,9 @@ if (LBANN_HAS_CUDA)
     sort.cu
     slice.cu
     tessellate.cu
+    split.cu
+    sum.cu
     )
-endif ()
-
-if (LBANN_HAS_DISTCONV)
-  list(APPEND THIS_DIR_CU_SOURCES
-    "${CMAKE_CURRENT_SOURCE_DIR}/split.cu"
-    "${CMAKE_CURRENT_SOURCE_DIR}/sum.cu")
 endif ()
 
 # Propagate the files up the tree

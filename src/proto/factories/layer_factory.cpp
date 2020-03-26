@@ -327,7 +327,9 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& params = proto_layer.input();
     const auto& io_buffer = params.io_buffer();
     const auto& mode_str = params.target_mode();
+#ifdef LBANN_HAS_DISTCONV
     const auto& data_type_str = params.data_type();
+#endif // LBANN_HAS_DISTCONV
     data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION;
     if (mode_str.empty() || mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }

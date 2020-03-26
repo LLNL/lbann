@@ -62,7 +62,11 @@ data_store_conduit::data_store_conduit(
     LBANN_ERROR("m_comm is nullptr");
   }
 
+#ifdef LBANN_HAS_DISTCONV
   int num_io_parts = dc::get_number_of_io_partitions();
+#else
+  int num_io_parts = 1;
+#endif // LBANN_HAS_DISTCONV
 
   m_world_master = m_comm->am_world_master();
   m_trainer_master = m_comm->am_trainer_master();
@@ -611,7 +615,11 @@ int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size) 
   int k = 0;
   for (int i=current_pos; i< current_pos + mb_size; ++i) {
     auto index = (*m_shuffled_indices)[i];
+#ifdef LBANN_HAS_DISTCONV
     int num_ranks_in_partition = dc::get_number_of_io_partitions();
+#else
+    int num_ranks_in_partition = 1;
+#endif // LBANN_HAS_DISTCONV
     if ((((i % m_owner_map_mb_size) % m_num_partitions_in_trainer) * num_ranks_in_partition + m_offset_in_partition) == m_rank_in_trainer) {
       auto key = std::make_pair(index, m_offset_in_partition);
       int owner = m_owner[key];
@@ -637,7 +645,11 @@ int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) 
       is_mine = true;
     }
     if (is_mine) {
+#ifdef LBANN_HAS_DISTCONV
       int num_ranks_in_partition = dc::get_number_of_io_partitions();
+#else
+      int num_ranks_in_partition = 1;
+#endif // LBANN_HAS_DISTCONV
       m_indices_to_send[(((i % m_owner_map_mb_size) % m_num_partitions_in_trainer) * num_ranks_in_partition + m_offset_in_partition)].insert(index);
 
       // Sanity check
