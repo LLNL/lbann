@@ -888,3 +888,46 @@ def make_iterable(obj):
 def str_list(it):
     """Convert an iterable object to a space-separated string"""
     return ' '.join([str(i) for i in make_iterable(it)])
+
+# Define evaluation function
+def collect_metrics_from_log_func(log_file, key):
+    metrics = []
+    with open(log_file) as f:
+        for line in f:
+            match = re.search(key + ' : ([0-9.]+)', line)
+            if match:
+                metrics.append(float(match.group(1)))
+    return metrics
+
+def compare_metrics(baseline_metrics, test_metrics):
+    assert len(baseline_metrics) == len(test_metrics), \
+        'baseline and test experiments did not run for same number of epochs'
+    for i in range(len(baseline_metrics)):
+        x = baseline_metrics[i]
+        xhat = test_metrics[i]
+        assert x == xhat, \
+            'found discrepancy in metrics for baseline and test'
+
+# Perform a diff across a directoy where not all of the subdirectories will exist in
+# the test directory.  Return a list of unchecked subdirectories, the running error code
+# and the list of failed directories
+def multidir_diff(baseline, test, fileList):
+    tmpList = []
+    err_msg = ""
+    # Iterate over the list of filepaths & remove each file.
+    for filePath in fileList:
+        d = os.path.basename(filePath)
+        t = os.path.basename(os.path.dirname(filePath))
+        c = os.path.join(test, t, d)
+        err = 0
+        if os.path.exists(c):
+            diff_err = os.system('diff -rq {baseline} {test}'.format(
+                baseline=filePath, test=c))
+            if diff_err != 0:
+                err_msg += 'diff -rq {baseline} {test} failed {dt}\n'.format(
+                    dt=diff_err, baseline=filePath, test=c)
+            err += diff_err
+        else:
+            tmpList.append(filePath)
+
+    return tmpList, err, err_msg

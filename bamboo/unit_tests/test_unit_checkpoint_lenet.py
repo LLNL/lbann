@@ -161,50 +161,6 @@ def create_test_func(test_func):
     """
     test_name = test_func.__name__
 
-    # Define evaluation function
-    def eval_func(log_file, key):
-        metrics = []
-        with open(log_file) as f:
-            for line in f:
-                match = re.search(key + ' : ([0-9.]+)', line)
-                if match:
-                    metrics.append(float(match.group(1)))
-        return metrics
-
-    def compare_metrics(baseline_metrics, test_metrics):
-        assert len(baseline_metrics) == len(test_metrics), \
-            'baseline and test experiments did not run for same number of epochs'
-        for i in range(len(baseline_metrics)):
-            x = baseline_metrics[i]
-            xhat = test_metrics[i]
-            assert x == xhat, \
-                'found discrepancy in metrics for baseline and test'
-
-    # Perform a diff across a directoy where not all of the subdirectories will exist in
-    # the test directory.  Return a list of unchecked subdirectories, the running error code
-    # and the list of failed directories
-    def diff_dirs(baseline, test, fileList):
-        tmpList = []
-        err_msg = ""
-        # Iterate over the list of filepaths & remove each file.
-        for filePath in fileList:
-            d = os.path.basename(filePath)
-            t = os.path.basename(os.path.dirname(filePath))
-            c = os.path.join(test, t, d)
-            err = 0
-            if os.path.exists(c):
-                diff_err = os.system('diff -rq {baseline} {test}'.format(
-                    baseline=filePath, test=c))
-                if diff_err != 0:
-                    err_msg += 'diff -rq {baseline} {test} failed {dt}\n'.format(
-                        dt=diff_err, baseline=filePath, test=c)
-                err += diff_err
-            else:
-                tmpList.append(filePath)
-
-        return tmpList, err, err_msg
-
-
     # Define test function
     def func(cluster, exes, dirname, weekly):
 
@@ -213,9 +169,9 @@ def create_test_func(test_func):
         print('Running baseline model')
         print('################################################################################\n')
         baseline_test_output = test_func(cluster, exes, dirname)
-        baseline_training_metrics = eval_func(baseline_test_output['stdout_log_file'], 'training epoch [0-9]+ objective function')
-        baseline_validation_metrics = eval_func(baseline_test_output['stdout_log_file'], 'validation objective function')
-        baseline_test_metrics = eval_func(baseline_test_output['stdout_log_file'], 'test objective function')
+        baseline_training_metrics = tools.collect_metrics_from_log_func(baseline_test_output['stdout_log_file'], 'training epoch [0-9]+ objective function')
+        baseline_validation_metrics = tools.collect_metrics_from_log_func(baseline_test_output['stdout_log_file'], 'validation objective function')
+        baseline_test_metrics = tools.collect_metrics_from_log_func(baseline_test_output['stdout_log_file'], 'test objective function')
 
         # Run LBANN model to checkpoint
         print('\n################################################################################')
@@ -231,9 +187,9 @@ def create_test_func(test_func):
         )
 
         checkpoint_test_output = test_func_checkpoint[0](cluster, exes, dirname)
-        checkpoint_training_metrics = eval_func(checkpoint_test_output['stdout_log_file'], 'training epoch [0-9]+ objective function')
-        checkpoint_validation_metrics = eval_func(checkpoint_test_output['stdout_log_file'], 'validation objective function')
-        checkpoint_test_metrics = eval_func(checkpoint_test_output['stdout_log_file'], 'test objective function')
+        checkpoint_training_metrics = tools.collect_metrics_from_log_func(checkpoint_test_output['stdout_log_file'], 'training epoch [0-9]+ objective function')
+        checkpoint_validation_metrics = tools.collect_metrics_from_log_func(checkpoint_test_output['stdout_log_file'], 'validation objective function')
+        checkpoint_test_metrics = tools.collect_metrics_from_log_func(checkpoint_test_output['stdout_log_file'], 'test objective function')
 
         print('\n################################################################################')
         print('Running restarted model to completion')
@@ -252,9 +208,9 @@ def create_test_func(test_func):
 
         # Restart LBANN model and run to completion
         restart_test_output = test_func_restart[0](cluster, exes, dirname)
-        restart_training_metrics = eval_func(restart_test_output['stdout_log_file'], 'training epoch [0-9]+ objective function')
-        restart_validation_metrics = eval_func(restart_test_output['stdout_log_file'], 'validation objective function')
-        restart_test_metrics = eval_func(restart_test_output['stdout_log_file'], 'test objective function')
+        restart_training_metrics = tools.collect_metrics_from_log_func(restart_test_output['stdout_log_file'], 'training epoch [0-9]+ objective function')
+        restart_validation_metrics = tools.collect_metrics_from_log_func(restart_test_output['stdout_log_file'], 'validation objective function')
+        restart_test_metrics = tools.collect_metrics_from_log_func(restart_test_output['stdout_log_file'], 'test objective function')
 
         print('\n################################################################################')
         print('Comparing results of models')
@@ -265,11 +221,11 @@ def create_test_func(test_func):
         # of metric values.
 
         # Comparing training objective functions
-        compare_metrics(baseline_training_metrics, checkpoint_training_metrics + restart_training_metrics)
+        tools.compare_metrics(baseline_training_metrics, checkpoint_training_metrics + restart_training_metrics)
         # Comparing validation objective functions
-        compare_metrics(baseline_validation_metrics, checkpoint_validation_metrics + restart_validation_metrics)
+        tools.compare_metrics(baseline_validation_metrics, checkpoint_validation_metrics + restart_validation_metrics)
         # Comparing test objective functions
-        compare_metrics(baseline_test_metrics, restart_test_metrics)
+        tools.compare_metrics(baseline_test_metrics, restart_test_metrics)
 
         baseline_ckpt=os.path.join(baseline_test_output['work_dir'], checkpoint_dir)
         checkpoint_ckpt=os.path.join(checkpoint_test_output['work_dir'], checkpoint_dir)
@@ -277,9 +233,9 @@ def create_test_func(test_func):
 
         err_dirs = ''
         fileList = glob.glob('{base}/trainer0/*'.format(base=baseline_ckpt))
-        fileList, err, tmp_err_str = diff_dirs(baseline_ckpt, restart_ckpt, fileList)
+        fileList, err, tmp_err_str = tools.multidir_diff(baseline_ckpt, restart_ckpt, fileList)
         err_dirs += tmp_err_str
-        fileList, err, tmp_err_str = diff_dirs(baseline_ckpt, checkpoint_ckpt, fileList)
+        fileList, err, tmp_err_str = tools.multidir_diff(baseline_ckpt, checkpoint_ckpt, fileList)
         err_dirs += tmp_err_str
 
         err_msg = "\nUnmatched checkpoints:\n"
@@ -298,6 +254,6 @@ for _test_func in tools.create_tests(setup_experiment,
                                      __file__,
                                      test_name_base=test_name_base,
                                      nodes=num_nodes,
-                                    work_subdir='baseline',
+                                     work_subdir='baseline',
                                      lbann_args=['--disable_cuda=True']):
     globals()[_test_func.__name__] = create_test_func(_test_func)
