@@ -54,6 +54,7 @@ class checkpoint : public callback_base {
    *  expensive.
    *
    *  @param checkpoint_dir directory to save checkpoint files
+   *  @param restart_dir directory to find checkpoint files
    *  @param checkpoint_epochs interval to checkpoint
    *  @param checkpoint_steps interval to checkpoint
    *  @param checkpoint_secs interval to checkpoint
@@ -62,6 +63,7 @@ class checkpoint : public callback_base {
    *  @param ckpt_dist_steps The frequence of distributed checkpoints in steps
    */
   checkpoint(std::string checkpoint_dir,
+             std::string restart_dir,
              int checkpoint_epochs,
              int checkpoint_steps,
              int checkpoint_secs,
@@ -72,6 +74,7 @@ class checkpoint : public callback_base {
     m_active_trainer(nullptr),
     m_active_training_algorithm(nullptr),
     m_checkpoint_dir(checkpoint_dir),
+    m_restart_dir(restart_dir),
     m_checkpoint_epochs(checkpoint_epochs),
     m_checkpoint_steps(checkpoint_steps),
     m_checkpoint_secs(checkpoint_secs),
@@ -94,6 +97,19 @@ class checkpoint : public callback_base {
 
   inline const std::string& get_checkpoint_dir(){
     return m_checkpoint_dir;
+  }
+
+  inline void set_restart_dir(const std::string& dir){
+    m_restart_dir = dir;
+  }
+
+  inline const std::string& get_restart_dir(){
+    // If the restart directory has been explicitly defined use that
+    if(m_restart_dir.length() != 0) {
+      return m_restart_dir;
+    }else {
+      return m_checkpoint_dir;
+    }
   }
 
   inline void set_active_trainer(trainer* t){
@@ -147,14 +163,16 @@ class checkpoint : public callback_base {
   }
 
   inline std::string get_shared_checkpoint_rootdir() {
-    return get_checkpoint_dir();
+    return get_restart_dir();
   }
 
+  /// @todo BVE FIMME this looks wrong  I think that the order
+  /// should be reversed
   inline std::string get_distributed_checkpoint_rootdir() {
     if(m_per_rank_dir.length()) {
-      return get_per_rank_dir() + "/" + get_checkpoint_dir();
+      return get_per_rank_dir() + "/" + get_restart_dir();
     }else {
-      return get_checkpoint_dir();
+      return get_restart_dir();
     }
   }
 
@@ -162,8 +180,8 @@ class checkpoint : public callback_base {
   std::string find_latest_checkpoint(model *m, std::string& latest_file, execution_mode& mode, size_t &epoch, size_t& step, int& shared);
   bool open_latest_checkpoint(model *m,
                               const std::string& task_label,
-                              std::function<void(/*const */persist&)> reload_shared_ckpt,
-                              std::function<void(/*const */persist&)> reload_distributed_ckpt);
+                              std::function<bool(/*const */persist&)> reload_shared_ckpt,
+                              std::function<bool(/*const */persist&)> reload_distributed_ckpt);
   bool reload_model(model *m);
   bool reload_trainer(trainer *t);
   bool restart(model *m);
@@ -174,6 +192,9 @@ class checkpoint : public callback_base {
   trainer* m_active_trainer;
   training_algorithm* m_active_training_algorithm;
   std::string m_checkpoint_dir;
+  // If the restart directory is not explicity set, default to the
+  // checkpoint directory
+  std::string m_restart_dir;
   int m_checkpoint_epochs;
   int m_checkpoint_steps;
   EvalType m_checkpoint_secs;

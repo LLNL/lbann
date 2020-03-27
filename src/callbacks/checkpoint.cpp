@@ -142,7 +142,7 @@ bool checkpoint::do_checkpoint(model *m) {
   auto& t = get_active_trainer();
   if(&t != &c.get_trainer()) { LBANN_ERROR("Mismatched trainers"); }
   // if the checkpoint directory is not defined, bail
-  if (m_checkpoint_dir.length() == 0 && m_per_rank_dir.length() == 0) {
+  if (get_checkpoint_dir().length() == 0 && m_per_rank_dir.length() == 0) {
     return false;
   }
   // time how long this takes
@@ -167,7 +167,7 @@ bool checkpoint::do_checkpoint(model *m) {
     std::cout << "[" << m->get_name()
               << "." << comm->get_trainer_rank()
               << "] Checkpoint [" << to_string(c.get_execution_mode())
-              << "] to " << m_checkpoint_dir
+              << "] to " << get_checkpoint_dir()
               << " : epoch " << epoch << " step " << step << " ..." << std::endl;
     fflush(stdout);
   }
@@ -179,9 +179,11 @@ bool checkpoint::do_checkpoint(model *m) {
     // prepend per rank directory with shared checkpoint dir name
     // Per rank directory typically a cache location like node local SSDs
     if(m_per_rank_dir.length() != 0){
-      snprintf(dir, sizeof(dir), "%s/%s", m_per_rank_dir.c_str(), m_checkpoint_dir.c_str());
+      /// @todo BVE FIXME this looks wrong  I think that the order
+      /// should be reversed
+      snprintf(dir, sizeof(dir), "%s/%s", m_per_rank_dir.c_str(), get_checkpoint_dir().c_str());
     } else {
-      strcpy(dir, m_checkpoint_dir.c_str());
+      strcpy(dir, get_checkpoint_dir().c_str());
     }
     makedir(dir);
     // create directories per ranks
@@ -210,7 +212,7 @@ bool checkpoint::do_checkpoint(model *m) {
   }
   // Shared checkpoint, logic identical to Distributed.
   if(m_checkpoint_shared){
-    strcpy(dir, m_checkpoint_dir.c_str());
+    strcpy(dir, get_checkpoint_dir().c_str());
     makedir(dir);
     epochdir = get_shared_checkpoint_dirname(t.get_name(),
                                              get_active_training_algorithm().get_name(),
@@ -251,7 +253,7 @@ bool checkpoint::do_checkpoint(model *m) {
     std::cout << "[" << m->get_name()
               << "." << comm->get_trainer_rank()
               << "] Checkpoint [" << to_string(c.get_execution_mode())
-              << "] to " << m_checkpoint_dir
+              << "] to " << get_checkpoint_dir()
               << " complete: Epoch=" << epoch
               << " Step=" << step
               << " (" << secs << " secs, " << bytes_count << " bytes, "
@@ -279,7 +281,7 @@ std::string checkpoint::find_latest_checkpoint(model *m, std::string& latest_fil
                                                              dir);
       read_latest(latest_file, &mode, &epoch_dist, &step_dist);
     }
-    if(m_checkpoint_dir.length()){
+    if(get_restart_dir().length()){
       dir = get_shared_checkpoint_rootdir();
       latest_file = get_last_shared_checkpoint_filename(get_active_trainer().get_name(),
                                                         get_active_training_algorithm().get_name(),
@@ -332,10 +334,10 @@ std::string checkpoint::find_latest_checkpoint(model *m, std::string& latest_fil
 bool checkpoint::open_latest_checkpoint(
   model *m,
   const std::string& task_label,
-  std::function<void(/*const */persist&)> reload_shared_ckpt,
-  std::function<void(/*const */persist&)> reload_distributed_ckpt) {
+  std::function<bool(/*const */persist&)> reload_shared_ckpt,
+  std::function<bool(/*const */persist&)> reload_distributed_ckpt) {
   // if the checkpoint directory is not defined, bail
-  if (m_checkpoint_dir.length() == 0 &&  m_per_rank_dir.length() == 0) {
+  if (get_restart_dir().length() == 0 &&  m_per_rank_dir.length() == 0) {
     return false;
   }
 
@@ -360,7 +362,7 @@ bool checkpoint::open_latest_checkpoint(
   // let user know we're restarting from a checkpoint
   if (comm->am_trainer_master()) {
     timer.Start();
-    std::cout << task_label << "ing from " << m_checkpoint_dir << " : mode " << to_string(mode) << " epoch " << epoch << " step " << step << " ..." << std::endl;
+    std::cout << task_label << "ing from " << get_restart_dir() << " : mode " << to_string(mode) << " epoch " << epoch << " step " << step << " ..." << std::endl;
   }
 
   std::string epochdir;
@@ -374,7 +376,8 @@ bool checkpoint::open_latest_checkpoint(
       return false;
     }
     p.open_restart(epochdir.c_str());
-    reload_distributed_ckpt(p);
+    auto flag = reload_distributed_ckpt(p);
+    if(!flag) { LBANN_WARNING("Unable to reload distributed checkpoint ", epochdir); }
     p.close_restart();
   }
   else {
@@ -393,7 +396,8 @@ bool checkpoint::open_latest_checkpoint(
     // // Ensure all ranks have access to checkpoint dir, needed for loading rank specific rng state
     //   p.m_checkpoint_dir = epochdir;
     // }
-    reload_shared_ckpt(p);
+    auto flag = reload_shared_ckpt(p);
+    if(!flag) { LBANN_WARNING("Unable to reload shared checkpoint ", epochdir); }
     // if(comm->am_trainer_master()) {
     /// @todo For the moment let all ranks open the checkpoint files
     p.close_restart();
@@ -412,7 +416,7 @@ bool checkpoint::open_latest_checkpoint(
     std::cout << "[" << get_active_trainer().get_name()
               << "." << m->get_name()
               << "] " << task_label
-              << " from " << m_checkpoint_dir
+              << " from " << get_restart_dir()
               << " complete: Epoch=" << epoch
               << " Step=" << step
               << " (" << secs << " secs, " << bytes_count << " bytes, "
@@ -425,36 +429,36 @@ bool checkpoint::open_latest_checkpoint(
 
 // Reload a model from a Shared/Distributed checkpoint
 bool checkpoint::reload_model(model *m) {
-  auto reload_shared_model = std::function<void(/*const */persist&)>
+  auto reload_shared_model = std::function<bool(/*const */persist&)>
     ([m](/*const */persist& p_ref)
-     ->void {
-      m->load_from_checkpoint_shared(p_ref);
-      return;
+     ->bool {
+      auto flag = m->load_from_checkpoint_shared(p_ref);
+      return flag;
     });
 
-  auto reload_distributed_model = std::function<void(/*const */persist&)>
+  auto reload_distributed_model = std::function<bool(/*const */persist&)>
     ([m](/*const */persist& p_ref)
-     ->void {
-      m->load_from_checkpoint_distributed(p_ref);
-      return;
+     ->bool {
+      auto flag = m->load_from_checkpoint_distributed(p_ref);
+      return flag;
     });
 
 
-  open_latest_checkpoint(m, "Reload", reload_shared_model, reload_distributed_model);
-
-  return true;
+  auto flag = open_latest_checkpoint(m, "Reload", reload_shared_model, reload_distributed_model);
+  return flag;
 }
 
 // Reload a model from a Shared/Distributed checkpoint
 bool checkpoint::reload_trainer(trainer *t) {
-  std::string dir = get_trainer_checkpoint_dirname(t->get_name(), m_checkpoint_dir);
+  std::string dir = get_trainer_checkpoint_dirname(t->get_name(), get_restart_dir());
   bool shared = true;
+  bool flag;
   if(!shared){
-    t->load_from_checkpoint_distributed(p);
+    flag = t->load_from_checkpoint_distributed(p);
   }else {
-    t->load_from_checkpoint_shared(p);
+    flag = t->load_from_checkpoint_shared(p);
   }
-
+  if(flag) { LBANN_MSG("Reloading trainer from ", dir); }
   return true;
 }
 
@@ -467,15 +471,15 @@ bool checkpoint::restart(model *m) {
   auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
 
   auto restart_shared_model = [&m, &c](/*const */persist& p_ref)
-    ->void {
-    c.get_trainer().load_from_checkpoint_shared(p_ref, *m, c);
-    return;
+    ->bool {
+    auto flag = c.get_trainer().load_from_checkpoint_shared(p_ref, *m, c);
+    return flag;
   };
 
   auto restart_distributed_model = [&m, &c](/*const */persist& p_ref)
-    ->void {
-    c.get_trainer().load_from_checkpoint_distributed(p_ref, *m, c);
-    return;
+    ->bool {
+    auto flag = c.get_trainer().load_from_checkpoint_distributed(p_ref, *m, c);
+    return flag;
   };
 
 
@@ -490,6 +494,7 @@ build_checkpoint_callback_from_pbuf(
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackCheckpoint&>(proto_msg);
   return make_unique<checkpoint>(params.checkpoint_dir(),
+                                 params.restart_dir(),
                                  params.checkpoint_epochs(),
                                  params.checkpoint_steps(),
                                  params.checkpoint_secs(),
