@@ -69,7 +69,7 @@ class Layer(abc.ABC):
         if self.datatype:
             proto.datatype = self.datatype
         if self.hint_layer:
-            proto.hint_layer = self.hint_layer.name
+            proto.hint_layer = self.hint_layer
         for k, v in self.parallel_strategy.items():
             setattr(proto.parallel_strategy, k, v)
         return proto
