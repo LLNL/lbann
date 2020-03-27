@@ -233,7 +233,7 @@ void write_cereal_archive(C& obj, const std::string& filename) {
 
 template <typename C>
 void write_cereal_archive(C& obj, persist& p, const std::string& filename) {
-  write_cereal_archive<C>(obj, p.get_checkpoint_dir() + filename);
+  write_cereal_archive<C>(obj, p.get_checkpoint_dir() + "/" + filename);
 }
 
 template <typename C>
