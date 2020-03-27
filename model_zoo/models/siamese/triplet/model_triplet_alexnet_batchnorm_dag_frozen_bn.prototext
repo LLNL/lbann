@@ -1,4 +1,14 @@
 trainer {
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    checkpoint {
+      checkpoint_dir: "pretrain-stage12"
+      checkpoint_epochs: 1
+      checkpoint_steps: 5000
+    }
+  }
 }
 model {
   data_layout: "data_parallel"
@@ -49,13 +59,6 @@ model {
   callback {
     poly_learning_rate {
       power: 0.5
-    }
-  }
-  callback {
-    checkpoint {
-      checkpoint_dir: "pretrain-stage12"
-      checkpoint_epochs: 1
-      checkpoint_steps: 5000
     }
   }
 

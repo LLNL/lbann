@@ -111,7 +111,7 @@ def test_unit_two_models_bad2(cluster, dirname, exes):
     )
     return_code = os.system(command)
     tools.assert_failure(return_code,
-                         "possibly you left out '{' or '}' or both ??",
+                         "possibly you left out '{' or '}' or both",
                          error_file_name)
 
 

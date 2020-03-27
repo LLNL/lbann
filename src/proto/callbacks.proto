@@ -75,6 +75,7 @@ message Callback {
     CallbackEarlyStopping early_stopping = 43;
     CallbackTimeline timeline = 44;
     CallbackPrintModelDescription print_model_description = 45;
+    CallbackLoadModel load_model = 46;
   }
 
   message CallbackLTFB {
@@ -84,6 +85,7 @@ message Callback {
     bool low_score_wins = 4;
     string communication_algorithm = 5;   // default: "sendrecv_weights"
     bool exchange_hyperparameters = 6;
+    string checkpoint_basedir = 7;
   }
 
   message CallbackStepLearningRate {
@@ -258,6 +260,11 @@ message Callback {
     string dir = 1;
     string extension = 2;
     bool disable_save_after_training = 3;
+  }
+
+  message CallbackLoadModel {
+    string dirs = 1;  //director(ies) to load pretrained model(s)
+    string extension = 2;
   }
 
   message CallbackReplaceWeights {

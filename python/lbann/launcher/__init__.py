@@ -22,10 +22,12 @@ def run(trainer, model, data_reader, optimizer,
         account=None,
         reservation=None,
         launcher_args=[],
+        lbann_exe=lbann.lbann_exe(),
         lbann_args=[],
         environment={},
         overwrite_script=False,
         setup_only=False,
+        batch_job=False,
         experiment_dir=None):
     """Run LBANN.
 
@@ -57,6 +59,7 @@ def run(trainer, model, data_reader, optimizer,
         reservation (str, optional): Scheduler reservation name.
         launcher_args (str, optional): Command-line arguments to
             launcher.
+        lbann_exe (str, optional): LBANN executable.
         lbann_args (str, optional): Command-line arguments to LBANN
             executable.
         environment (dict of {str: str}, optional): Environment
@@ -65,13 +68,12 @@ def run(trainer, model, data_reader, optimizer,
             file if it already exists.
         setup_only (bool, optional): If true, the experiment is not
             run after the experiment directory is initialized.
+        batch_job (bool, optional): If true, the experiment is
+            submitted to the scheduler as a batch job.
         experiment_dir (str, optional, deprecated): See `work_dir`.
 
     Returns:
-        int: Exit status from scheduler. This is really only
-            meaningful if LBANN is run on an existing node
-            allocation. If a batch job is submitted, the scheduler
-            will probably return 0 trivially.
+        int: Exit status.
 
     """
 
@@ -90,18 +92,11 @@ def run(trainer, model, data_reader, optimizer,
                                launcher_args=launcher_args,
                                environment=environment)
 
-    # Check for an existing job allocation
-    has_allocation = False
-    if isinstance(script, lbann.launcher.slurm.SlurmBatchScript):
-        has_allocation = 'SLURM_JOB_ID' in os.environ
-    if isinstance(script, lbann.launcher.lsf.LSFBatchScript):
-        has_allocation = 'LSB_JOBID' in os.environ
-
     # Batch script prints start time
     script.add_command('echo "Started at $(date)"')
 
     # Batch script invokes LBANN
-    lbann_command = [lbann.lbann_exe()]
+    lbann_command = [lbann_exe]
     lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
@@ -117,14 +112,14 @@ def run(trainer, model, data_reader, optimizer,
     script.add_command('echo "Finished at $(date)"')
     script.add_command('exit ${status}')
 
-    # Write, run, or submit batch script
+    # Write, submit, or run batch script
     status = 0
     if setup_only:
         script.write(overwrite=overwrite_script)
-    elif has_allocation:
-        status = script.run(overwrite=overwrite_script)
-    else:
+    elif batch_job:
         status = script.submit(overwrite=overwrite_script)
+    else:
+        status = script.run(overwrite=overwrite_script)
     return status
 
 def make_batch_script(script_file=None,

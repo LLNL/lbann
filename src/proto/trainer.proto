@@ -28,6 +28,8 @@ syntax = "proto3";
 
 package lbann_data;
 
+import "callbacks.proto";
+
 message Trainer {
 
   // Unique identifier
@@ -48,6 +50,8 @@ message Trainer {
   // These threads are typically used to perform data ingestion in the
   // background.
   int64 num_parallel_readers = 3;
+
+  repeated Callback callback = 20;
 
   // -------------------------------
   // Advanced options

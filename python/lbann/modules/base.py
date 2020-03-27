@@ -50,7 +50,8 @@ class FullyConnectedModule(Module):
                  weights=[],
                  activation=None,
                  name=None,
-                 data_layout='data_parallel'):
+                 data_layout='data_parallel',
+                 parallel_strategy={}):
         """Initialize fully-connected module.
 
         Args:
@@ -66,6 +67,7 @@ class FullyConnectedModule(Module):
                 initialization and the bias with zeros.
             name (str): Default name is in the form 'fcmodule<index>'.
             data_layout (str): Data layout.
+            parallel_strategy (dict): Data partitioning scheme.
 
         """
         super().__init__()
@@ -78,6 +80,7 @@ class FullyConnectedModule(Module):
                      if name
                      else 'fcmodule{0}'.format(FullyConnectedModule.global_count))
         self.data_layout = data_layout
+        self.parallel_strategy = parallel_strategy
 
         # Initialize weights
         # Note: If weights are not provided, matrix weights are
@@ -116,11 +119,13 @@ class FullyConnectedModule(Module):
                                  data_layout=self.data_layout,
                                  num_neurons=self.size,
                                  has_bias=self.bias,
-                                 transpose=self.transpose)
+                                 transpose=self.transpose,
+                                 parallel_strategy=self.parallel_strategy)
         if self.activation:
             return self.activation(y,
                                    name=name+'_activation',
-                                   data_layout=self.data_layout)
+                                   data_layout=self.data_layout,
+                                   parallel_strategy=self.parallel_strategy)
         else:
             return y
 
@@ -136,7 +141,8 @@ class ConvolutionModule(Module):
     def __init__(self, num_dims,
                  out_channels, kernel_size,
                  stride=1, padding=0, dilation=1, groups=1, bias=True,
-                 weights=[], activation=None, name=None, transpose=False):
+                 weights=[], activation=None, name=None, transpose=False,
+                 parallel_strategy={}):
         """Initialize convolution module.
 
         Args:
@@ -158,6 +164,7 @@ class ConvolutionModule(Module):
             name (str): Default name is in the form 'convmodule<index>'.
             transpose (bool): If true call deconvolution (or convolution
                          transpose)
+            parallel_strategy dict): Data partitioning scheme.
 
         """
         super().__init__()
@@ -176,6 +183,7 @@ class ConvolutionModule(Module):
                      if name
                      else 'convmodule{0}'.format(ConvolutionModule.global_count))
         self.transpose = transpose
+        self.parallel_strategy = parallel_strategy
 
         # Initialize weights
         # Note: If weights are not provided, kernel weights are
@@ -220,7 +228,8 @@ class ConvolutionModule(Module):
                               conv_strides_i=self.stride,
                               conv_dilations_i=self.dilation,
                               num_groups=self.groups,
-                              has_bias=self.bias)
+                              has_bias=self.bias,
+                              parallel_strategy=self.parallel_strategy)
         else:
           y = lbann.Convolution(x,
                               weights=self.weights,
@@ -233,7 +242,8 @@ class ConvolutionModule(Module):
                               conv_strides_i=self.stride,
                               conv_dilations_i=self.dilation,
                               num_groups=self.groups,
-                              has_bias=self.bias)
+                              has_bias=self.bias,
+                              parallel_strategy=self.parallel_strategy)
         if self.activation:
             return self.activation(y, name=name+'_activation')
         else:

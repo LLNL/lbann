@@ -1,5 +1,5 @@
 import os, os.path
-from lbann import lbann_exe
+import lbann
 import lbann.launcher
 import lbann.contrib.lc.launcher
 import lbann.contrib.lc.systems
@@ -10,9 +10,11 @@ def run(
     model,
     data_reader,
     optimizer,
+    lbann_exe=lbann.lbann_exe(),
     lbann_args=[],
     overwrite_script=False,
     setup_only=False,
+    batch_job=False,
     *args,
     **kwargs,
 ):
@@ -27,18 +29,11 @@ def run(
     # Create batch script generator
     script = make_batch_script(*args, **kwargs)
 
-    # Check for an existing job allocation
-    has_allocation = False
-    if isinstance(script, lbann.launcher.slurm.SlurmBatchScript):
-        has_allocation = 'SLURM_JOB_ID' in os.environ
-    if isinstance(script, lbann.launcher.lsf.LSFBatchScript):
-        has_allocation = 'LSB_JOBID' in os.environ
-
     # Batch script prints start time
     script.add_command('echo "Started at $(date)"')
 
     # Batch script invokes LBANN
-    lbann_command = [lbann.lbann_exe()]
+    lbann_command = [lbann_exe]
     lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
@@ -58,10 +53,10 @@ def run(
     status = 0
     if setup_only:
         script.write(overwrite=overwrite_script)
-    elif has_allocation:
-        status = script.run(overwrite=overwrite_script)
-    else:
+    elif batch_job:
         status = script.submit(overwrite=overwrite_script)
+    else:
+        status = script.run(overwrite=overwrite_script)
     return status
 
 def make_batch_script(*args, **kwargs):

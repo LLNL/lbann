@@ -72,17 +72,20 @@ int main(int argc, char *argv[]) {
     for(auto&& pb_model : pbs) {
       models.emplace_back(
         build_model_from_prototext(argc, argv, pb_trainer, *pb_model,
-                                   comm.get(), opts, io_thread_pool, models.size() == 0));
+                                   comm.get(), opts, io_thread_pool,
+                                   trainer->get_callbacks_with_ownership(), models.size() == 0));
     }
 
     // Load layer weights from checkpoint if checkpoint directory given
     if(opts->has_string("ckpt_dir")){
       for(auto&& m : models) {
-        bool loaded = callback::save_model::load_model_weights(
-          opts->get_string("ckpt_dir"),
-          m.get(),
-          opts->get_bool("ckptdir_is_fullpath"));
-        if(!loaded)  LBANN_ERROR("Unable to reload model");
+        auto&& dirs = parse_list<std::string>(opts->get_string("ckpt_dir"));
+        for(auto&& d : dirs) { //load file from each (space limited) directory
+          bool loaded = callback::load_model::load_model_weights(d,
+               m.get(),
+               opts->get_bool("ckptdir_is_fullpath"));
+           if(!loaded)  LBANN_ERROR("Unable to reload model");
+        }
       }
     }else {
       LBANN_ERROR("Unable to reload model");

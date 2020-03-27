@@ -32,6 +32,7 @@
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/save_model.hpp"
+#include "lbann/callbacks/load_model.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -148,6 +149,7 @@ std::unique_ptr<model> build_model_from_prototext(
   lbann_comm *comm,
   options *opts,
   thread_pool& io_thread_pool,
+  std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
   bool first_model) {
 
   int random_seed = lbann_default_random_seed;
@@ -239,6 +241,11 @@ std::unique_ptr<model> build_model_from_prototext(
                                                             pb.trainer(),
                                                             pb.model());
 
+  // Add the trainer's callbacks to the model
+  for (auto&& c : shared_callbacks) {
+    ret_model->add_callback(c);
+  }
+
   // If the checkpoint directory has been overridden reset it before
   // setting up the model
   if (opts->has_string("ckpt_dir")) {
@@ -305,7 +312,7 @@ std::unique_ptr<model> build_model_from_prototext(
 #endif
 
   if (opts && opts->has_string("restart_dir")) {
-    bool loaded = callback::save_model::load_model_weights(
+    bool loaded = callback::load_model::load_model_weights(
       opts->get_string("restart_dir"),
       ret_model.get(),
       opts->get_bool("restart_dir_is_fullpath"));

@@ -1,4 +1,14 @@
 trainer {
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback {
+    checkpoint {
+      checkpoint_dir: "ckpt"
+      checkpoint_epochs: 1
+      checkpoint_steps: 845
+    }
+  }
 }
 model {
   data_layout: "data_parallel"
@@ -43,13 +53,6 @@ model {
     }
   }
 
-  callback {
-    checkpoint {
-      checkpoint_dir: "ckpt"
-      checkpoint_epochs: 1
-      checkpoint_steps: 845
-    }
-  }
   callback {
     adaptive_learning_rate {
       patience: 4

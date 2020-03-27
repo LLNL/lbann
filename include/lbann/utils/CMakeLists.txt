@@ -26,6 +26,7 @@ set_full_path(THIS_DIR_HEADERS
   omp_diagnostics.hpp
   opencv.hpp
   options.hpp
+  nvshmem.hpp
   profiling.hpp
   prototext.hpp
   python.hpp
