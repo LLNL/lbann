@@ -247,7 +247,7 @@ bool trainer::save_to_checkpoint_shared(persist& p) {
 }
 
 bool trainer::load_from_checkpoint_shared(persist& p) {
-  return true;
+  return false;
 }
 bool trainer::load_from_checkpoint_shared(persist& p, model& m, execution_context& c) {
   execution_mode current_mode = c.get_execution_mode();
@@ -285,7 +285,7 @@ bool trainer::save_to_checkpoint_distributed(persist& p){
 }
 
 bool trainer::load_from_checkpoint_distributed(persist& p){
-  return true;
+  return false;
 }
 bool trainer::load_from_checkpoint_distributed(persist& p, model& m, execution_context& c){
   execution_mode current_mode = c.get_execution_mode();
