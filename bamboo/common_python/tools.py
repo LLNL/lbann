@@ -6,7 +6,7 @@ import re
 import sys
 import numpy as np
 import pytest
-
+import shutil
 
 def check_list(substrings, strings):
     errors = []
@@ -762,6 +762,16 @@ def create_tests(setup_func,
             _kwargs['work_dir'] = os.path.join(os.path.dirname(test_file),
                                                'experiments',
                                                test_name)
+
+        # If the user provided a suffix for the work directory, append it
+        if 'work_subdir' in _kwargs:
+            _kwargs['work_dir'] = os.path.join(_kwargs['work_dir'], _kwargs['work_subdir'])
+            del _kwargs['work_subdir']
+
+        # Delete the work directory
+        if os.path.isdir(_kwargs['work_dir']):
+            shutil.rmtree(_kwargs['work_dir'])
+
         if 'job_name' not in _kwargs:
             _kwargs['job_name'] = f'lbann_{test_name}'
         if 'overwrite_script' not in _kwargs:
