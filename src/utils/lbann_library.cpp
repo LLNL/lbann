@@ -271,27 +271,47 @@ std::unique_ptr<model> build_model_from_prototext(
         auto* cb = dynamic_cast<callback::checkpoint*>(c);
         if(cb != nullptr) {
           cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
-          std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
+          if(comm->am_trainer_master()) {
+            std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
+          }
         }
       }
       {
         auto* cb = dynamic_cast<callback::dump_weights*>(c);
         if(cb != nullptr) {
           cb->set_target_dir(opts->get_string("ckpt_dir"));
-          std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+          if(comm->am_trainer_master()) {
+            std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+          }
         }
       }
       {
         auto* cb = dynamic_cast<callback::save_model*>(c);
         if(cb != nullptr) {
           cb->set_target_dir(opts->get_string("ckpt_dir"));
-          std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+          if(comm->am_trainer_master()) {
+            std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+          }
         }
       }
     }
   }
 
   if (opts && opts->has_string("restart_dir")) {
+    for (auto&& c : ret_model->get_callbacks()) {
+      {
+        auto* cb = dynamic_cast<callback::checkpoint*>(c);
+        if(cb != nullptr) {
+          cb->set_restart_dir(opts->get_string("restart_dir"));
+          if(comm->am_trainer_master()) {
+            std::cout << "Setting the restart directory to " << cb->get_restart_dir() << std::endl;
+          }
+        }
+      }
+    }
+  }
+
+  if (opts && opts->has_string("load_model_dir")) {
     callback::load_model* cb = nullptr;
     for (auto&& c : ret_model->get_callbacks()) {
       cb = dynamic_cast<callback::load_model*>(c);
@@ -300,33 +320,34 @@ std::unique_ptr<model> build_model_from_prototext(
       }
     }
 
-    std::string active_restart_dir;
-    std::string restart_dir = opts->get_string("restart_dir");
-    if(opts->get_bool("restart_dir_is_fullpath")) {
-      active_restart_dir = restart_dir;
+    std::string active_load_model_dir;
+    std::string load_model_dir = opts->get_string("load_model_dir");
+    if(opts->get_bool("load_model_dir_is_fullpath")) {
+      active_load_model_dir = load_model_dir;
     }else {
       size_t epochLast = std::numeric_limits<size_t>::max();;
       size_t stepLast = std::numeric_limits<size_t>::max();;
       execution_mode mode = execution_mode::invalid;
-      active_restart_dir = callback::get_last_shared_checkpoint_filename("sgd", restart_dir);
+      active_load_model_dir = callback::get_last_shared_checkpoint_filename("sgd", load_model_dir);
 
       // get last epoch and step saved.
-      int success = callback::read_latest(active_restart_dir, &mode, &epochLast, &stepLast);
+      int success = callback::read_latest(active_load_model_dir, &mode, &epochLast, &stepLast);
       if(!success) {
-        LBANN_ERROR("Unable to find the latest checkpoint ", active_restart_dir);
+        LBANN_ERROR("Unable to find the latest checkpoint ", active_load_model_dir);
         return nullptr;
       }
-      active_restart_dir = callback::get_shared_checkpoint_dirname("sgd", ret_model.get(), restart_dir, mode, epochLast, stepLast);
+      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", ret_model.get(), load_model_dir, mode, epochLast, stepLast);
     }
 
     if(cb == nullptr) {
-      std::vector<std::string> dirs = {active_restart_dir};
+      std::vector<std::string> dirs = {active_load_model_dir};
       std::unique_ptr<callback::load_model> load_model_cb =
         make_unique<callback::load_model>(dirs);
       cb = load_model_cb.get();
       ret_model->add_callback(std::move(load_model_cb));
+      LBANN_WARNING("command line flag --load_model_dir was provided but there was no explicit load_model callback, adding one automagically!");
     }
-    cb->add_dir(opts->get_string("restart_dir"));
+    cb->add_dir(opts->get_string("load_model_dir"));
   }
 
   // Setup data readers
