@@ -259,7 +259,7 @@ void read_cereal_archive(C& obj, const std::string& filename) {
 
 template <typename C>
 void read_cereal_archive(C& obj, persist& p, const std::string& filename) {
-  read_cereal_archive(obj, p.get_checkpoint_dir() + filename);
+  read_cereal_archive(obj, p.get_checkpoint_dir() + "/" + filename);
 }
 
 template <typename C>
