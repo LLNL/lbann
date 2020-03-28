@@ -311,7 +311,7 @@ std::unique_ptr<model> build_model_from_prototext(
     }
   }
 
-  if (opts && opts->has_string("load_model_dir")) {
+  if (opts && opts->has_string("load_model_weights_dir")) {
     callback::load_model* cb = nullptr;
     for (auto&& c : ret_model->get_callbacks()) {
       cb = dynamic_cast<callback::load_model*>(c);
@@ -321,8 +321,8 @@ std::unique_ptr<model> build_model_from_prototext(
     }
 
     std::string active_load_model_dir;
-    std::string load_model_dir = opts->get_string("load_model_dir");
-    if(opts->get_bool("load_model_dir_is_fullpath")) {
+    std::string load_model_dir = opts->get_string("load_model_weights_dir");
+    if(opts->get_bool("load_model_weights_dir_is_fullpath")) {
       active_load_model_dir = load_model_dir;
     }else {
       size_t epochLast = std::numeric_limits<size_t>::max();;
@@ -347,7 +347,7 @@ std::unique_ptr<model> build_model_from_prototext(
       ret_model->add_callback(std::move(load_model_cb));
       LBANN_WARNING("command line flag --load_model_dir was provided but there was no explicit load_model callback, adding one automagically!");
     }
-    cb->add_dir(opts->get_string("load_model_dir"));
+    cb->add_dir(opts->get_string("load_model_weights_dir"));
   }
 
   // Setup data readers
