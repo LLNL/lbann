@@ -102,3 +102,8 @@ def imagenet_labels(system = system(), data_set = 'train',
         return os.path.join(label_dir, 'test.txt')
     else:
         raise RuntimeError('unknown ImageNet data set (' + data_set + ')')
+
+def jag_dir(system = system()) :
+  """JAG directory on LC systems.
+  """
+  return parallel_file_system_path(system) + 'brainusr/datasets/10MJAG/1M_A'

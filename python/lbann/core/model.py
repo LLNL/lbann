@@ -12,6 +12,9 @@ class Model:
                  metrics=[], callbacks=[], random_seed=None,
                  summary_dir=None):
 
+        # Initialize protobuf message
+        self.model = model_pb2.Model()
+
         # Scalar fields
         self.mini_batch_size = mini_batch_size
         self.epochs = epochs
@@ -38,10 +41,18 @@ class Model:
         self.metrics = make_iterable(metrics)
         self.callbacks = make_iterable(callbacks)
 
+    def get_protobuf_model(self) :
+        """Return the protobuf message. 
+
+           This is make available for settings that are not
+           explicitly paramatized in the call to __init__()
+        """
+        return self.model
+
     def export_proto(self):
         """Construct and return a protobuf message."""
-        # Initialize protobuf message
-        model = model_pb2.Model()
+        # Fill in protobuf message
+        model = self.model
         model.mini_batch_size = self.mini_batch_size
         model.num_epochs = self.epochs
         if self.random_seed is not None:

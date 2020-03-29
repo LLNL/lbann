@@ -72,4 +72,6 @@ class ObjectiveFunction:
                 proto.layer_term.extend([term_message])
             elif type(term) is L2WeightRegularization:
                 proto.l2_weight_regularization.extend([term_message])
+            else :
+              raise RuntimeError('Encountered unsupported object in lbann.ObjectiveFunction.export_proto; term_message: ' + str(term))
         return proto

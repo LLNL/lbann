@@ -5,6 +5,11 @@ import math
 import numpy as np
 import pytest
 
+#
+# The model below replicates:
+#   model_zoo/tests/data_reader_tests/jag_single_layer_ae.prototext
+#
+
 # Local files
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
@@ -12,22 +17,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 
 import tools
 
-
 # ==============================================
 # Options
 # ==============================================
 
 # Training options
 num_epochs = 5
-mini_batch_size = 256
+mini_batch_size = 128
 num_nodes = 2
-jag_fraction = 0.1 # Train with 1000 out of 10000 samples
+fc_neurons = 1024
+jag_fraction = 0.01 # Train with 1000 out of 10000 samples
 index_list = 't0_sample_list_10k.txt'
-#index_list = 'index.txt'
 meta_data='--metadata=/usr/workspace/wsb/hysom/lbann/model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext'
 random_seed = 20191206
-fc_output_size = 1024
-fc_input_size = 1024
 
 # ==============================================
 # Setup LBANN experiment
@@ -43,7 +45,8 @@ def setup_experiment(lbann):
     trainer = lbann.Trainer()
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
-    optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
+    optimizer = lbann.Adam(learn_rate=0.001, beta1 = 0.9, beta2 = 0.99, eps = 1e-08)
+
     return trainer, model, data_reader, optimizer
 
 def construct_model(lbann):
@@ -51,9 +54,7 @@ def construct_model(lbann):
 
     Args:
         lbann (module): Module for LBANN Python frontend
-
     """
-
     # TODO (tym): Figure out how to switch between LBANN builds. See
     # GitHub Issue #1289.
     import lbann.models
@@ -63,36 +64,30 @@ def construct_model(lbann):
     slice = lbann.Slice(input_, get_slice_points_from_reader='independent', name="slice_layer")
     x1 = lbann.Identity(slice, name='image_data_dummy')
     x2 = lbann.Identity(slice, name='param_data_id')
-    f1 = lbann.FullyConnected(x1, num_neurons = 1024, has_bias = True, name='encodefc1')
-    f2 = lbann.FullyConnected(f1, num_neurons = 1024, has_bias = True, name='decode0')
+    f1 = lbann.FullyConnected(x1, num_neurons = fc_neurons, has_bias = True, name='encodefc1')
+    f2 = lbann.FullyConnected(f1, hint_layer = 'image_data_dummy', has_bias = True, name='decode0')
+    m1 = lbann.MeanSquaredError(parents = [f2, x1], name='img_loss')
 
     # Make sure all layers are on CPU
     for layer in lbann.traverse_layer_graph(input_):
         layer.device = 'cpu'
 
     # Objects for LBANN model
-    callbacks = [lbann.CallbackPrint(), lbann.CallbackTimer()]
-    x = lbann.Identity(input_)
-    y = lbann.L2Norm2(x)
-    z = lbann.Multiply(y, lbann.Sqrt(lbann.MiniBatchIndex()))
-    metrics = [lbann.Metric(z, name='metric')]
+    callbacks = [lbann.CallbackPrint(interval = 1), lbann.CallbackTimer()]
+    metrics = [lbann.Metric(m1, name='reconstr_loss')]
+    obj = [m1, lbann.L2WeightRegularization(scale=1e-4)]
 
     # Construct model
-    x = {}
-    x['serialize_io'] = True
-    x['testme'] = 'who'
     model = lbann.Model(mini_batch_size,
                        num_epochs,
                        layers=lbann.traverse_layer_graph(input_),
                        metrics=metrics,
+                       objective_function = obj,
                        callbacks=callbacks,
-                       random_seed=random_seed,
-                       kwargs = {'serialize_io' : True, 'testme' :  'who'})
-                       #others = {'serialize_io' = True} )
-    #pb_model = model.get_protobuf_model()
-    #pb_model.serialize_io = True
+                       random_seed=random_seed)
+    pb_model = model.get_protobuf_model()
+    pb_model.serialize_io = True
     return model
-
 
 def construct_data_reader(lbann):
     """Construct Protobuf message for jag conduit data reader.
@@ -101,7 +96,6 @@ def construct_data_reader(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-
     # TODO (tym): Figure out how to switch between LBANN builds. See
     # GitHub Issue #1289.
     import lbann.contrib.lc.paths
@@ -151,7 +145,7 @@ def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname,
     datastore_metrics = []
     with open(datastore_test_output['stdout_log_file']) as f:
         for line in f:
-            match = re.search('validation metric : ([0-9.]+)', line)
+            match = re.search('reconstr_loss : ([0-9.]+)', line)
             if match:
                 datastore_metrics.append(float(match.group(1)))
 
@@ -210,7 +204,7 @@ def run_baseline_test_func(baseline_test_func, cluster, exes, dirname) :
     baseline_metrics = []
     with open(baseline_test_output['stdout_log_file']) as f:
         for line in f:
-            match = re.search('validation metric : ([0-9.]+)', line)
+            match = re.search('reconstr_loss : ([0-9.]+)', line)
             if match:
                 baseline_metrics.append(float(match.group(1)))
     
@@ -297,39 +291,23 @@ is_f = 'is_fully_loaded'
 
 # test checkpoint, preload
 test_name = 'data_store_checkpoint_preload'
-make_test(test_name, datastore_tests, ['--preload_data_store', '--data_store_test_checkpoint=CHECKPOINT', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--preload_data_store', '--data_store_test_checkpoint=CHECKPOINT', '--data_store_profile', meta_data])
 profile_data[test_name] =  {is_e : '0', is_l : '0', is_f : '1'}
 
 # test checkpoint, explicit
 test_name = 'data_store_checkpoint_explicit'
-make_test(test_name, datastore_tests, ['--use_data_store', '--data_store_test_checkpoint=CHECKPOINT', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--use_data_store', '--data_store_test_checkpoint=CHECKPOINT', '--data_store_profile', meta_data])
 profile_data[test_name] =  {is_e : '1', is_l : '0', is_f : '0'}
 
 # explicit loading
 test_name = 'data_store_explicit'
-make_test(test_name, datastore_tests, ['--use_data_store', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--use_data_store', '--data_store_profile', meta_data])
 profile_data[test_name] = {is_e : '1', is_l : '0', is_f : '0'} 
 
 # preloading
 test_name = 'data_store_preload'
-make_test(test_name, datastore_tests, ['--preload_data_store', '--data_store_profile'])
+make_test(test_name, datastore_tests, ['--preload_data_store', '--data_store_profile', meta_data])
 profile_data[test_name] =  {is_e : '0', is_l : '0', is_f : '1'}
-
-#local cache with explicit loading (internally, this should run identically
-#with the flag: --preload_data_store 
-test_name = 'data_store_cache_explicit'
-make_test(test_name, datastore_tests, ['--data_store_cache', '--data_store_profile'])
-profile_data[test_name] =  {is_e : '1', is_l : '1', is_f : '0'}
-
-#local cache with preloading
-test_name = 'data_store_cache_preloading'
-make_test(test_name, datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_profile'])
-profile_data[test_name] =  {is_e : '0', is_l : '1', is_f : '0'}
-
-#test local cache
-test_name = 'data_store_test_cache'
-make_test(test_name, datastore_tests, ['--data_store_cache', '--preload_data_store', '--data_store_test_cache', '--data_store_profile'])
-profile_data[test_name] =  {is_e : '0', is_l : '1', is_f : '0'}
 
 for i in range(len(datastore_tests)):
     _test_func = create_test_func(baseline_tests[i], datastore_tests[i], profile_data)
