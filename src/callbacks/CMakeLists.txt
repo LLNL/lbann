@@ -17,6 +17,7 @@ set_full_path(THIS_DIR_SOURCES
   dump_outputs.cpp
   dump_weights.cpp
   early_stopping.cpp
+  freezer.cpp
   gpu_memory_usage.cpp
   hang.cpp
   imcomm.cpp

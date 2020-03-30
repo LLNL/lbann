@@ -76,6 +76,7 @@ message Callback {
     CallbackTimeline timeline = 44;
     CallbackPrintModelDescription print_model_description = 45;
     CallbackLoadModel load_model = 46;
+    CallbackFreezer freezer = 47;
   }
 
   message CallbackLTFB {
@@ -334,4 +335,18 @@ message Callback {
   message CallbackPrintModelDescription {
   }
 
+  message CallbackFreezer {
+    message EpochLayer {
+      uint64 epoch = 1;
+      string layer = 2;
+    }
+    message StepLayer {
+      uint64 step  = 1;
+      string layer = 2;
+    }
+    repeated EpochLayer freeze_by_epoch = 1;
+    repeated EpochLayer unfreeze_by_epoch = 2;
+    repeated StepLayer freeze_by_step = 3;
+    repeated StepLayer unfreeze_by_step = 4;
+  }
 }
