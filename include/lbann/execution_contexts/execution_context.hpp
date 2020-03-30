@@ -47,7 +47,7 @@ public:
 class execution_context {
 public:
   /** Constructor. */
-  execution_context(observer_ptr<trainer> trainer, observer_ptr<training_algorithm> training_alg,
+  execution_context(trainer& trainer, training_algorithm& training_alg,
                     lbann_comm *comm, execution_mode mode);
   /** Destructor. */
   virtual ~execution_context() = default;
@@ -99,23 +99,15 @@ public:
 
   /** Get the execution environment */
   const trainer& get_trainer() const {
-    if (!m_trainer) { LBANN_ERROR("m_trainer is null"); }
-    return *m_trainer;
+    return m_trainer;
   }
 
   trainer& get_trainer() {
     return const_cast<trainer&>(static_cast<const execution_context&>(*this).get_trainer());
   }
 
-  inline void set_training_algorithm(training_algorithm* t){
-    m_training_algorithm = t;
-  }
-
   const training_algorithm& get_training_algorithm() const {
-    if(m_training_algorithm == nullptr) {
-      LBANN_ERROR("No active training algorithm for the checkpoint callback");
-    }
-    return *m_training_algorithm;
+    return m_training_algorithm;
   }
 
   training_algorithm& get_training_algorithm() {
@@ -151,9 +143,9 @@ protected:
 
 private:
   /** Pointer to the training context (execution environment) for the training algorithm */
-  observer_ptr<trainer> m_trainer;
+  trainer& m_trainer;
 
-  observer_ptr<training_algorithm> m_training_algorithm;
+  training_algorithm& m_training_algorithm;
 
   /** LBANN communicator. */
   observer_ptr<lbann_comm> m_comm;

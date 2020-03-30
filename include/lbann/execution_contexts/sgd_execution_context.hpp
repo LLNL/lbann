@@ -44,7 +44,7 @@ public:
 class sgd_execution_context final : public execution_context {
 public:
   /** Constructor. */
-  sgd_execution_context(observer_ptr<trainer> trainer, observer_ptr<training_algorithm> training_alg,
+  sgd_execution_context(trainer& trainer, training_algorithm& training_alg,
                         lbann_comm *comm, execution_mode mode, size_t mini_batch_size);
   /** Destructor. */
   virtual ~sgd_execution_context() = default;
