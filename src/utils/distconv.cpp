@@ -387,12 +387,10 @@ HaloExchangeMethod get_halo_exchange_method() {
 template <typename TensorDataType>
 TensorShuffler<TensorDataType> *get_tensor_shuffler(const TensorDev<TensorDataType> &src,
                                                     const TensorDev<TensorDataType> &dst) {
-  dc::MPIPrintStreamDebug()
-      << "Available memory: " <<
-      cuda::get_available_memory_capacity() / 1024.0 / 1024.0
-      << " MB";
   if (opt_tensor_shuffler == ShuffleMethod::AL) {
     return new TensorShufflerAL<TensorDataType>(src, dst, get_mpicuda());
+  } else if (opt_tensor_shuffler == ShuffleMethod::MPI) {
+    return new TensorShuffler<TensorDataType>(src, dst);
 #ifdef DISTCONV_HAS_P2P
   } else if (opt_tensor_shuffler == ShuffleMethod::HYBRID) {
     return new TensorShufflerHybrid<TensorDataType>(src, dst, *p2p_instance, get_mpicuda(),
@@ -402,26 +400,20 @@ TensorShuffler<TensorDataType> *get_tensor_shuffler(const TensorDev<TensorDataTy
     bool src_feasible = is_p2p_shuffle_feasible(src);
     bool dst_feasible = is_p2p_shuffle_feasible(dst);
     if (!src_feasible) {
-      MPIRootPrintStreamInfo()
-          << "Unable to use P2P shuffler for source tensor";
+      LBANN_ERROR("P2P shuffler requested but not possible; ",
+                  "inter-node communication is required for source tennsor");
     }
     if (!dst_feasible) {
-      MPIRootPrintStreamInfo()
-          << "Unable to use P2P shuffler for destination tensor";
+      LBANN_ERROR("P2P shuffler requested but not possible; ",
+                  "inter-node communication is required for destination tennsor");
     }
-    if (src_feasible && dst_feasible) {
-      MPIRootPrintStreamInfo() << "Using P2P shuffler";
-      return new TensorShufflerP2P<TensorDataType>(src, dst, *p2p_instance,
-                                                   get_shuffler_src_buf(src),
-                                                   get_shuffler_dst_buf(dst));
-    } else {
-      MPIRootPrintStreamInfo() << "P2P shuffler requested but not possible as inter-node communication is required";
-    }
+    return new TensorShufflerP2P<TensorDataType>(src, dst, *p2p_instance,
+                                                 get_shuffler_src_buf(src),
+                                                 get_shuffler_dst_buf(dst));
 #endif // DISTCONV_HAS_P2P
+  } else {
+    LBANN_ERROR("Unsupported shuffler method: ", opt_tensor_shuffler);
   }
-  // Fall-back default
-  MPIRootPrintStreamInfo() << "Using MPI-based shuffler";
-  return new TensorShuffler<TensorDataType>(src, dst);
 }
 
 MPI_Comm get_input_comm(const lbann_comm &comm) {

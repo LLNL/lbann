@@ -29,10 +29,6 @@
 #include "lbann/models/model.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 
-#ifdef LBANN_HAS_DISTCONV
-#include "lbann/layers/io/input/generic_input_layer.hpp"
-#endif // LBANN_HAS_DISTCONV
-
 namespace lbann {
 
 template <typename TensorDataType>
