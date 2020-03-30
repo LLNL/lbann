@@ -62,7 +62,7 @@ public:
                      execution_mode mode,
                      termination_criteria const& term_criteria) = 0;
 
-  void setup_models(model& model);
+  void setup_models(std::vector<observer_ptr<model>> models);
 
 };
 

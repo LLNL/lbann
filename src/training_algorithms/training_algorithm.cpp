@@ -33,30 +33,32 @@
 
 namespace lbann {
 
-void training_algorithm::setup_models(model& model) {
-  // Set up callbacks
-  for (auto* c : model.get_callbacks()) {
-    {
-      auto* cb = dynamic_cast<callback::checkpoint*>(c);
-      if(cb != nullptr) {
-        cb->set_active_training_algorithm(this);
+void training_algorithm::setup_models(std::vector<observer_ptr<model>> models) {
+  for (observer_ptr<model> m : models) {
+    // Set up callbacks
+    for (auto* c : m->get_callbacks()) {
+      {
+        auto* cb = dynamic_cast<callback::checkpoint*>(c);
+        if(cb != nullptr) {
+          cb->set_active_training_algorithm(this);
+        }
       }
+      // {
+      //   auto* cb = dynamic_cast<callback::save_model*>(c);
+      //   if(cb != nullptr) {
+      //     cb->set_active_training_algorithm(this);
+      //   }
+      // }
+      // {
+      //   auto* cb = dynamic_cast<callback::load_model*>(c);
+      //   if(cb != nullptr) {
+      //     cb->set_active_training_algorithm(this);
+      //   }
+      // }
     }
-    // {
-    //   auto* cb = dynamic_cast<callback::save_model*>(c);
-    //   if(cb != nullptr) {
-    //     cb->set_active_training_algorithm(this);
-    //   }
-    // }
-    // {
-    //   auto* cb = dynamic_cast<callback::load_model*>(c);
-    //   if(cb != nullptr) {
-    //     cb->set_active_training_algorithm(this);
-    //   }
-    // }
+    // Setup models
+    m->setup();
   }
-  // Setup models
-  model.setup();
   return;
 }
 
