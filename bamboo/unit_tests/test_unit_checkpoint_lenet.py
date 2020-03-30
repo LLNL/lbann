@@ -20,7 +20,6 @@ import tools
 # Training options
 num_epochs = 4
 num_ckpt_epochs = int(float(num_epochs)/2)
-num_restart_epochs = num_epochs - num_ckpt_epochs
 mini_batch_size = 64
 num_nodes = 1
 lenet_fraction = 0.1
