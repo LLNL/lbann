@@ -30,7 +30,7 @@ print("LBANN inf Exe ", lbann_exe)
 parser = argparse.ArgumentParser()
 lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
-    '--job-name', action='store', default='eval_macc_surrogate_375K', type=str,
+    '--job-name', action='store', default='eval', type=str,
     help='job name', metavar='NAME')
 parser.add_argument(
     '--mini-batch-size', action='store', default=4096, type=int,
@@ -60,8 +60,8 @@ parser.add_argument(
     '--data-filedir-test', action='store', default='/p/gpfs1/brainusr/datasets/10MJAG/1M_B/', type=str,
     help='data filedir (default test dir is 10MJAG/1M_B)', metavar='NAME')
 parser.add_argument(
-    '--index-list-train', action='store', default='t0_sample_list_100k.txt', type=str,
-    help='index list (default t0_sample_list_100k.txt 100 samples)', metavar='NAME')
+    '--index-list-train', action='store', default='index_eight.txt', type=str,
+    help='index list (default index_eight 8 samples)', metavar='NAME')
 parser.add_argument(
     '--index-list-test', action='store', default='t2_index.txt', type=str,
     help='index list (default index.txt)', metavar='NAME')
@@ -143,9 +143,11 @@ def construct_model():
     #loss_gen1  =  L_l2_x + lamda_cyc*L_cyc_y
     
     #for dump outputs
-    conc_out = lbann.Concatenation([gt_x,wae_loss,img_sca_loss,dec_fw_inv_enc_y,
-                                    L_l2_x,L_cyc_x,L_cyc_y], name='x_errors')
+    #conc_out = lbann.Concatenation([gt_x,wae_loss,img_sca_loss,dec_fw_inv_enc_y,
+    #                                L_l2_x,L_cyc_x,L_cyc_y], name='x_errors')
 
+    conc_out = lbann.Concatenation([gt_x,wae_loss,img_sca_loss,dec_fw_inv_enc_y,
+                                    L_l2_x], name='x_errors')
     layers = list(lbann.traverse_layer_graph(input))
     weights = set()
     for l in layers:
@@ -155,7 +157,7 @@ def construct_model():
     obj = lbann.ObjectiveFunction([loss_gen0,loss_gen1])
     # Initialize check metric callback
     #Last 3 losses are relative to latent space, how is output cycle loss meaningful
-    metrics = [lbann.Metric(img_sca_loss, name='img_re1'),
+    metrics = [lbann.Metric(img_sca_loss, name='img_re1'),  
                lbann.Metric(dec_fw_inv_enc_y, name='img_re2'),
                lbann.Metric(wae_loss, name='wae_loss'),
                lbann.Metric(L_l2_x, name='inverse loss'),
@@ -163,7 +165,7 @@ def construct_model():
                lbann.Metric(L_cyc_x, name='param cycle loss')]
 
     callbacks = [lbann.CallbackPrint(),
-                 lbann.CallbackDumpOutputs(layers=f'{gt_y.name} {y_image_re.name} {y_image_re2.name} {conc_out.name}',
+                 lbann.CallbackDumpOutputs(layers=f'{y_image_re2.name} {conc_out.name}',
                                            execution_modes='test',
                                            directory=args.dump_outputs,
                                            batch_interval=1,
@@ -195,7 +197,7 @@ if __name__ == '__main__':
 
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     status = lbann.contrib.launcher.run(trainer,model, data_reader_proto, opt,
-                       lbann_command = [lbann_exe],
+                       lbann_exe,
                        #scheduler='slurm',
                        account='lbpm',
                        #account='cancer',
@@ -206,12 +208,12 @@ if __name__ == '__main__':
                        procs_per_node=4,
                        time_limit=30,
                        setup_only=False, 
+                       batch_job=False, 
                        job_name=args.job_name,
                        lbann_args=['--preload_data_store --use_data_store --ckptdir_is_fullpath',
                                    f'--metadata={metadata_prototext}',
                                    f'--ckpt_dir={args.pretrained_dir}',
                                    f'--index_list_test={args.index_list_test}',
-                                   f'--percent_of_data_to_use={args.percent_of_data_to_use}',
                                    f'--data_filedir_test={args.data_filedir_test}'],
                                    **kwargs)
     print(status)

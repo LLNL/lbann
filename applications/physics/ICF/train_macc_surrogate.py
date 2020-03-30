@@ -29,7 +29,7 @@ metadata_prototext = join(dirname(cur_dir),
 parser = argparse.ArgumentParser()
 lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
-    '--job-name', action='store', default='macc_surrogate_375K', type=str,
+    '--job-name', action='store', default='surrogate', type=str,
     help='job name', metavar='NAME')
 parser.add_argument(
     '--mini-batch-size', action='store', default=128, type=int,
@@ -160,7 +160,7 @@ def construct_model():
     # Setup objective function
     obj = lbann.ObjectiveFunction([loss_gen0,loss_gen1])
     # Initialize check metric callback
-    metrics = [lbann.Metric(img_sca_loss, name='img_sca_loss'),
+    metrics = [lbann.Metric(img_sca_loss, name='fw_loss'),
                lbann.Metric(L_l2_x, name='inverse loss'),
                lbann.Metric(L_cyc_y, name='output cycle loss'),
                lbann.Metric(L_cyc_x, name='param cycle loss')]
@@ -201,8 +201,8 @@ if __name__ == '__main__':
                        #reservation='dat_0318',
                        partition='pdebug',
                        account='lbpm',
-                       time_limit=30,
-                       setup_only=False, 
+                       time_limit=480,
+                       setup_only=False,
                        job_name=args.job_name,
                        lbann_args=['--preload_data_store --use_data_store',
                                    f'--metadata={metadata_prototext}',

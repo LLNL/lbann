@@ -23,7 +23,7 @@ metadata_prototext = join(model_zoo_dir,
 parser = argparse.ArgumentParser()
 lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
-    '--job-name', action='store', default='wae_macc_375K', type=str,
+    '--job-name', action='store', default='wae', type=str,
     help='job name', metavar='NAME')
 parser.add_argument(
     '--mini-batch-size', action='store', default=128, type=int,
@@ -86,7 +86,6 @@ def construct_model():
     zero  = lbann.Constant(value=0.0,num_neurons='1',name='zero')
     one  = lbann.Constant(value=1.0,num_neurons='1',name='one')
 
-    y_dim = 16399 #image+scalar shape
     z_dim = 20  #Latent space dim
 
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
@@ -159,7 +158,7 @@ if __name__ == '__main__':
                        partition='pdebug',
                        nodes=args.num_nodes,
                        procs_per_node=4,
-                       time_limit=30,
+                       time_limit=480,
                        setup_only=False, 
                        job_name=args.job_name,
                        lbann_args=['--preload_data_store --use_data_store',
