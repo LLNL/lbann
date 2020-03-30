@@ -144,9 +144,9 @@ trainer::execution_context_key_pair_t trainer::check_and_build_execution_context
     if(dynamic_cast<observer_ptr<sgd_training_algorithm>>(&alg) != nullptr) {
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
-      context = make_unique<sgd_execution_context>(this, &alg, m_comm, mode, model->get_max_mini_batch_size());
+      context = make_unique<sgd_execution_context>(*this, alg, m_comm, mode, model->get_max_mini_batch_size());
     }else {
-      context = make_unique<execution_context>(this, &alg, m_comm, mode);
+      context = make_unique<execution_context>(*this, alg, m_comm, mode);
     }
     m_model_execution_context.emplace(key,std::move(context));
   }
@@ -162,9 +162,9 @@ trainer::execution_context_key_pair_t trainer::check_and_build_execution_context
     std::unique_ptr<execution_context> context;
     //    observer_ptr<training_algorithm> alg = const_cast
     if(dynamic_cast<observer_ptr</*const */sgd_execution_context>>(&c) != nullptr) {
-      context = make_unique<sgd_execution_context>(this, &(c.get_training_algorithm()), m_comm, mode, model.get_max_mini_batch_size());
+      context = make_unique<sgd_execution_context>(*this, c.get_training_algorithm(), m_comm, mode, model.get_max_mini_batch_size());
     }else {
-      context = make_unique<execution_context>(this, &(c.get_training_algorithm()), m_comm, mode);
+      context = make_unique<execution_context>(*this, c.get_training_algorithm(), m_comm, mode);
     }
     m_model_execution_context.emplace(key,std::move(context));
   }
