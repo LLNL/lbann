@@ -88,6 +88,10 @@ class save_model : public callback_base {
   void write_proto_text(const lbann_data::Model& proto, const std::string filename);
 };
 
+inline std::string get_save_model_dirname(const std::string& trainer_name, const std::string& model_name, const std::string& dir) {
+  return build_string(dir, '/', trainer_name, '/', model_name, '/');
+}
+
 // Builder function
 std::unique_ptr<callback_base>
 build_save_model_callback_from_pbuf(
