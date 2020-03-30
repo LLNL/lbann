@@ -369,6 +369,9 @@ void Layer::setup() {
   setup_pointers();
   setup_dims();
   setup_matrices(m_comm->get_trainer_grid());
+#ifdef LBANN_HAS_DISTCONV
+  prepare_distconv();
+#endif // LBANN_HAS_DISTCONV
   setup_data();
   if (using_gpus()) { setup_gpu(); }
 }
@@ -602,5 +605,83 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
   m_hint_layer = layers[pos];
   pos++;
 }
+
+#ifdef LBANN_HAS_DISTCONV
+int Layer::get_num_dims() const {
+  // Use the dimension of either input or output data.
+  auto nd = get_num_parents() > 0 ? get_input_dims().size() :
+      get_output_dims().size();
+  nd += 1; // input and output dimensions do not have the sample dimension.
+  if (!(nd == 4 || nd == 5)) {
+    LBANN_ERROR(get_name(), ": Invalid number of dimensions: ", nd);
+  }
+  return nd;
+}
+
+int Layer::get_num_spatial_dims() const {
+  return get_num_dims() - 2;
+}
+
+void Layer::prepare_distconv() {
+  if (distconv_enabled()) {
+    setup_distconv_adapter();
+  }
+}
+
+bool Layer::distconv_enabled() const {
+  if (!m_distconv_enabled_set) {
+    // Distconv is disabled if no parallel strategy is defined. When no
+    // strategy is defined, the layer has the default strategy of all
+    // zeros, which is invalid, thus should not be used when distconv is
+    // used.
+    const auto &ps = get_parallel_strategy();
+    ParallelStrategy default_zero_ps;
+    if (ps == default_zero_ps) {
+      dc::MPIRootPrintStreamDebug()
+          << "Disable " << get_name()
+          << " as it does not have a parallel strategy.";
+      m_distconv_enabled = false;
+      m_distconv_enabled_set = true;
+    }
+  }
+
+  if (!m_distconv_enabled_set) {
+    // Finally, check whether a layer is supported by distconv.
+    m_distconv_enabled = is_distconv_supported();
+    m_distconv_enabled_set = true;
+  }
+
+  return m_distconv_enabled;
+}
+
+bool Layer::keep_original_inputs(int index) const {
+  return !(distconv_enabled() && !dc().parent_copy_required(index));
+}
+
+bool Layer::keep_original_outputs(int index) const {
+  return !(distconv_enabled() && !dc().child_copy_required(index));
+}
+
+bool Layer::keep_original_gradient_wrt_outputs(int index) const {
+  return keep_original_outputs(index);
+}
+
+bool Layer::keep_original_gradient_wrt_inputs(int index) const {
+  return keep_original_inputs(index);
+}
+
+distconv_adapter& Layer::dc() {
+  return const_cast<distconv_adapter&>(
+      static_cast<const Layer&>(*this).dc());
+}
+
+const distconv_adapter& Layer::dc() const {
+  if (m_dc == nullptr) {
+    LBANN_ERROR("Trying to access distconv adapter for layer, ",
+                get_name(), ", without setting up");
+  }
+  return *m_dc;
+}
+#endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann

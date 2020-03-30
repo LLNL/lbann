@@ -37,6 +37,10 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/typename.hpp"
+#include "lbann/utils/distconv.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
 #include <string>
 #include <vector>
 
@@ -584,6 +588,41 @@ private:
 private:
   friend std::vector<const weights*> extract_weights(Layer const& l);
   friend std::vector<weights*> extract_weights(Layer& l);
+
+#ifdef LBANN_HAS_DISTCONV
+  friend class distconv_adapter;
+ public:
+  int get_num_dims() const;
+  int get_num_spatial_dims() const;
+  /** Indicate whether distconv is enabled. */
+  bool distconv_enabled() const;
+  /** Indicate whether original input matrices need to be set up. */
+  virtual bool keep_original_inputs(int index) const;
+  /** Indicate whether original output matrices need to be set up. */
+  virtual bool keep_original_outputs(int index) const;
+  /** Indicate whether original gradient wrt input matrices need to be set up. */
+  virtual bool keep_original_gradient_wrt_inputs(int index) const;
+  /** Indicate whether original gradient wrt output matrices need to be set up. */
+  virtual bool keep_original_gradient_wrt_outputs(int index) const;
+  /** Retrievs distconv adapter. */
+  virtual const distconv_adapter& dc() const;
+  /** Retrievs distconv adapter. */
+  virtual distconv_adapter& dc();
+
+ protected:
+  /** Indicate whether distconv is supported. */
+  virtual bool is_distconv_supported() const { return false; }
+  /** Pre-initialize distconv attributes needed for setup_data(). */
+  void prepare_distconv();
+  virtual void setup_distconv_adapter() = 0;
+  std::unique_ptr<distconv_adapter>& get_dc() { return m_dc; };
+  const std::unique_ptr<distconv_adapter>& get_dc() const { return m_dc; };
+
+ private:
+  mutable bool m_distconv_enabled = false;
+  mutable bool m_distconv_enabled_set = false;
+  std::unique_ptr<distconv_adapter> m_dc;
+#endif // LBANN_HAS_DISTCONV
 };
 
 inline std::vector<weights*> extract_weights(Layer& l) {

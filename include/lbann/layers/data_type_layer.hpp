@@ -32,6 +32,13 @@
 
 #include "lbann/utils/h2_tmp.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/data_type_distconv_adapter.hpp"
+#include <set>
+#include <map>
+#include <array>
+#endif // LBANN_HAS_DISTCONV
+
 namespace lbann {
 
 // Forward declarations
@@ -312,6 +319,16 @@ private:
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
   std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
+
+#ifdef LBANN_HAS_DISTCONV
+  friend class data_type_distconv_adapter<TensorDataType>;
+ public:
+  data_type_distconv_adapter<TensorDataType>& dc() override;
+  const data_type_distconv_adapter<TensorDataType>& dc() const override;
+
+ protected:
+  void setup_distconv_adapter() override;
+#endif // LBANN_HAS_DISTCONV
 
 #ifdef LBANN_HAS_CUDA
   template <typename U>
