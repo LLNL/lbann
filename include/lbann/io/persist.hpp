@@ -101,6 +101,7 @@ inline std::string to_string(persist_type pt) {
 /// @todo Fix the callback types to properly track execution phases
 enum class callback_type {
   model_only,
+  weights_only,
   execution_context_only,
   full_checkpoint,
   invalid
@@ -127,6 +128,7 @@ class persist {
     ckpt_type = type;
   }
 
+  void open_checkpoint_dir(const std::string& dir);
   void open_checkpoint(const std::string& dir);
   void close_checkpoint();
 

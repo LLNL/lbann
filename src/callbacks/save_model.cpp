@@ -73,7 +73,7 @@ void save_model::write_proto_text(const lbann_data::Model& proto,
 bool save_model::do_save_model(model *m) {
   lbann_data::Model model_param;
 
-  p.set_cb_type(callback_type::model_only);
+  p.set_cb_type(callback_type::weights_only);
   do_save_model_weights(m);
   p.set_cb_type(callback_type::invalid);
 
@@ -116,14 +116,12 @@ bool save_model::do_save_model_weights(model *m) {
                                                 m->get_name(),
                                                 m_dir.c_str());
   if (comm->am_trainer_master()) {
-    p.open_checkpoint(epochdir.c_str());
+    p.open_checkpoint_dir(epochdir.c_str());
   }else {
     // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
     p.m_checkpoint_dir = epochdir;
   }
   m->save_weights(p);
-  // close our checkpoint
-  p.close_checkpoint();
 
   uint64_t bytes_count = p.get_bytes();
 
