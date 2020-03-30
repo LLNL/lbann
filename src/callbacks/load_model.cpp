@@ -53,7 +53,10 @@ void load_model::on_train_begin(model *m) {
 }
 
 
-bool load_model::load_model_weights(std::string ckpt_dir, std::string alg_name, model *m, bool ckptdir_is_fullpath) {
+bool load_model::load_model_weights(const std::string& ckpt_dir,
+                                    const std::string& alg_name,
+                                    model *m,
+                                    bool ckptdir_is_fullpath) {
   std::vector<std::string> weight_list = std::vector<std::string>();
   std::string active_ckpt_dir;
   if(ckptdir_is_fullpath) {
