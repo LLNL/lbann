@@ -183,7 +183,7 @@ class persist {
   template <typename TensorDataType>
   bool read_datatype (persist_type type, const char *name, TensorDataType *val);
 
-  const std::string get_checkpoint_dir() const { return m_checkpoint_dir; }
+  const std::string& get_checkpoint_dir() const { return m_checkpoint_dir; }
 
   std::string get_filename(persist_type type) const;
  private:
