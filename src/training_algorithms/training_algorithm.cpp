@@ -43,18 +43,6 @@ void training_algorithm::setup_models(std::vector<observer_ptr<model>> models) {
           cb->set_active_training_algorithm(this);
         }
       }
-      // {
-      //   auto* cb = dynamic_cast<callback::save_model*>(c);
-      //   if(cb != nullptr) {
-      //     cb->set_active_training_algorithm(this);
-      //   }
-      // }
-      // {
-      //   auto* cb = dynamic_cast<callback::load_model*>(c);
-      //   if(cb != nullptr) {
-      //     cb->set_active_training_algorithm(this);
-      //   }
-      // }
     }
     // Setup models
     m->setup();
