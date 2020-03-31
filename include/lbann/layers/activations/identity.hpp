@@ -28,8 +28,24 @@
 #define LBANN_LAYERS_ACTIVATIONS_IDENTITY_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class identity_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
+ public:
+  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+  identity_distconv_adapter(Layer &layer):
+      data_type_distconv_adapter<TensorDataType>(layer) {}
+  virtual ~identity_distconv_adapter() = default;
+  void setup_distributions(tensor_overlap_constraints &constraints) override;
+  std::unique_ptr<TensorDevType> setup_activations_i(int index) const override;
+  std::unique_ptr<TensorDevType> setup_error_signals_i(int index) const override;
+};
+#endif // LBANN_HAS_DISTCONV
+
 
 /** @brief Output a tensor view.
  *
@@ -57,6 +73,14 @@ protected:
   }
   void fp_compute() override {}
   void bp_compute() override {}
+#ifdef LBANN_HAS_DISTCONV
+ protected:
+  bool is_distconv_supported() const override { return true; }
+  void setup_distconv_adapter() override {
+    this->get_dc() = make_unique<identity_distconv_adapter<
+      TensorDataType, Layout, Device>>(*this);
+  }
+#endif // LBANN_HAS_DISTCONV
 };
 
 #ifndef LBANN_IDENTITY_LAYER_INSTANTIATE
