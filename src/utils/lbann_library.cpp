@@ -322,7 +322,7 @@ std::unique_ptr<model> build_model_from_prototext(
 
     std::string active_load_model_dir;
     std::string load_model_dir = opts->get_string("load_model_weights_dir");
-    if(opts->get_bool("load_model_weights_dir_is_fullpath")) {
+    if(opts->get_bool("load_model_weights_dir_is_complete")) {
       active_load_model_dir = load_model_dir;
     }else {
       size_t epochLast = std::numeric_limits<size_t>::max();;
