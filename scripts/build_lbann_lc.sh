@@ -287,6 +287,8 @@ while :; do
         --with-distconv)
             WITH_DISTCONV=ON
             WITH_DIHYDROGEN=ON
+            # CUDA is required for Distconv
+            WITH_CUDA=ON
             # MPI-CUDA backend is required for Distconv
             ALUMINUM_WITH_MPI_CUDA=ON
             ;;
