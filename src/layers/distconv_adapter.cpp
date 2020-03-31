@@ -207,7 +207,7 @@ void distconv_adapter::setup_tensor_shuffle() {
     ss << " child shuffle:" << child_shuffle_ss.str();
   }
   if (ss.str().size() > 0) {
-    dc::MPIRootPrintStreamInfo() << get_name() << ":" << ss.str();
+    dc::MPIRootPrintStreamDebug() << get_name() << ":" << ss.str();
   }
 }
 
