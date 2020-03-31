@@ -24,48 +24,31 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_TRAINING_ALGORITHM_HPP
-#define LBANN_TRAINING_ALGORITHM_HPP
-
-#include "lbann/base.hpp"
-#include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/training_algorithms/training_algorithm.hpp"
 #include "lbann/models/model.hpp"
+#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
+#include "lbann/callbacks/save_model.hpp"
+#include "lbann/callbacks/load_model.hpp"
 
 namespace lbann {
 
-// Forward-declare this.
-class execution_context;
+void training_algorithm::setup_models(std::vector<observer_ptr<model>> models) {
+  for (observer_ptr<model> m : models) {
+    // Set up callbacks
+    for (auto* c : m->get_callbacks()) {
+      {
+        auto* cb = dynamic_cast<callback::checkpoint*>(c);
+        if(cb != nullptr) {
+          cb->set_active_training_algorithm(this);
+        }
+      }
+    }
+    // Setup models
+    m->setup();
+  }
+  return;
+}
 
-/** Base class for LBANN training_algorithms. */
-class training_algorithm {
-public:
-
-  /** Constructor. */
-  training_algorithm() {};
-  /** Copy constructor. */
-  training_algorithm(const training_algorithm& other) = default;
-  /** Copy assignment operator. */
-  training_algorithm& operator=(const training_algorithm& other) = default;
-  /** Move constructor. */
-  training_algorithm(training_algorithm&& other) = default;
-  /** Move assignment operator. */
-  training_algorithm& operator=(training_algorithm&& other) = default;
-  /** Destructor. */
-  virtual ~training_algorithm() = default;
-  /** Copy training_algorithm. */
-  //  virtual training_algorithm* copy() const = default;
-
-  virtual std::string get_name() const = 0;
-
-  virtual void apply(execution_context& context,
-                     model& model,
-                     execution_mode mode,
-                     termination_criteria const& term_criteria) = 0;
-
-  void setup_models(std::vector<observer_ptr<model>> models);
-
-};
 
 }  // namespace lbann
-
-#endif  // LBANN_TRAINING_ALGORITHM_HPP
