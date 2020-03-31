@@ -424,10 +424,10 @@ public:
   template <typename AccessPolicy>
   readonly_reference<std::string>
   add_option(std::string const& name,
-                  std::initializer_list<std::string> cli_flags,
-                  EnvVariable<AccessPolicy> env,
-                  std::string const& description,
-                  char const* default_value)
+             std::initializer_list<std::string> cli_flags,
+             EnvVariable<AccessPolicy> env,
+             std::string const& description,
+             char const* default_value)
   {
     return add_option(name, cli_flags, std::move(env),
                       description, std::string(default_value));
