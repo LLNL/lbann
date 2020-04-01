@@ -285,9 +285,6 @@ std::unique_ptr<model> build_model_from_prototext(
     io_thread_pool.relaunch_pinned_threads(1);
   }
 
-  // Get I/O thread details
-  auto io_threads_per_process = io_thread_pool.get_num_threads();
-
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
   save_session(*comm, argc, argv, pb);
@@ -376,22 +373,6 @@ std::unique_ptr<model> build_model_from_prototext(
       }
     }else {
       cb->add_dir(opts->get_string("load_model_weights_dir"));
-    }
-  }
-
-  // Setup data readers
-  for(auto&& dr: data_readers) {
-    dr.second->setup(io_threads_per_process, &io_thread_pool);
-    dr.second->set_rank(comm->get_rank_in_trainer());
-  }
-
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
-    if (master) {
-      std::cout << "\nUSING DATA STORE!\n\n";
-    }
-    for (auto&& r : data_readers) {
-      if (!r.second) continue;
-      r.second->setup_data_store(pb_model->mini_batch_size());
     }
   }
 

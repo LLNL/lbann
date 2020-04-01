@@ -73,7 +73,6 @@ int main(int argc, char *argv[]) {
     if(dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     }
-    TargetModeDimMap data_dimensions_map = trainer->get_data_coordinator().get_data_dims();
 
     std::vector<std::unique_ptr<model>> models;
     for(auto&& pb_model : pbs) {
@@ -82,7 +81,7 @@ int main(int argc, char *argv[]) {
                                    comm.get(), opts, io_thread_pool,
                                    trainer->get_callbacks_with_ownership(),
                                    training_dr_linearized_data_size,
-                                   data_dimensions_map, models.size() == 0));
+                                   models.size() == 0));
     }
 
     // Load layer weights from checkpoint if checkpoint directory given

@@ -81,7 +81,6 @@ model::model(const model& other) :
   m_execution_context(other.m_execution_context),
   m_comm(other.m_comm),
   m_name(other.m_name),
-  m_max_mini_batch_size(other.m_max_mini_batch_size),
   m_model_is_setup(other.m_model_is_setup) {
 
   // Deep copies
@@ -140,7 +139,6 @@ model& model::operator=(const model& other) {
   // Shallow copies
   m_comm = other.m_comm;
   m_name = other.m_name;
-  m_max_mini_batch_size = other.m_max_mini_batch_size;
   m_model_is_setup = other.m_model_is_setup;
 
   // Deep copies

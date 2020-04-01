@@ -72,12 +72,12 @@ int main(int argc, char *argv[]) {
     if(dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
     }
-    TargetModeDimMap data_dimensions_map = trainer->get_data_coordinator().get_data_dims();
+
     auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
                                               comm.get(), opts, io_thread_pool,
                                               trainer->get_callbacks_with_ownership(),
                                               training_dr_linearized_data_size,
-                                              data_dimensions_map, true); //ae
+                                              true); //ae
     std::unique_ptr<model>
       model_2, //cycgan
       model_3; //ae+cycgan
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
                                            comm.get(), opts, io_thread_pool,
                                            trainer->get_callbacks_with_ownership(),
                                            training_dr_linearized_data_size,
-                                           data_dimensions_map, false);
+                                           false);
     }
 
     if (pbs.size() > 2) {
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
                                            comm.get(), opts, io_thread_pool,
                                            trainer->get_callbacks_with_ownership(),
                                            training_dr_linearized_data_size,
-                                           data_dimensions_map, false);
+                                           false);
     }
 
 

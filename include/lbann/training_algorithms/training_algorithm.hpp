@@ -64,7 +64,7 @@ public:
                      execution_mode mode,
                      termination_criteria const& term_criteria) = 0;
 
-  void setup_models(std::vector<observer_ptr<model>> models);
+  void setup_models(std::vector<observer_ptr<model>> models, size_t max_mini_batch_size, TargetModeDimMap& data_dimensions_map);
 
 };
 
