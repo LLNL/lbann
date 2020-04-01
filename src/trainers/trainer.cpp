@@ -298,6 +298,8 @@ bool trainer::load_from_checkpoint_shared(persist& p) {
 bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
   load_rng_from_checkpoint(get_persist_obj(), m_comm);
 
+  auto flag = get_data_coordinator().load_from_checkpoint_shared(p);
+
   execution_mode current_mode = c.get_execution_mode();
 
   for(execution_mode mode : execution_mode_iterator()) {
@@ -322,7 +324,7 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
       }
     }
   }
-  return true;
+  return flag;
 }
 
 bool trainer::save_to_checkpoint_distributed(){

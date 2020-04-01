@@ -605,8 +605,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
         buf = create_cereal_archive_binary_string<generic_input_layer>(*this);
       }
 
-      this->m_model->get_execution_context().get_trainer().get_data_coordinator().load_from_checkpoint_shared(p);
-
       // TODO: this assumes homogeneous processors
       // broadcast state from rank 0
       this->get_comm()->trainer_broadcast(0, buf);
