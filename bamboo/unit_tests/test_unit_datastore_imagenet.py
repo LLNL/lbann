@@ -34,7 +34,7 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    trainer = lbann.Trainer(random_seed=random_seed, mini_batch_size=mini_batch_size)
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size, random_seed=random_seed)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
