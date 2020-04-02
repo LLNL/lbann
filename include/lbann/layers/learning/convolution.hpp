@@ -161,8 +161,8 @@ protected:
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
       if (this->distconv_enabled()) {
-        this->distconv_forward();
-        this->apply_bias_distconv();
+        this->dc().fp_compute_convolution();
+        this->dc().fp_apply_bias();
         return;
       }
 #endif // LBANN_HAS_DISTCONV
@@ -182,15 +182,15 @@ protected:
         if (this->skip_first_layer_bp()) {
           dc::MPIRootPrintStreamDebug() << "Skipping bp data for "
                                         << this->get_name();
-          this->distconv_backward_filter();
+          this->dc().bp_compute_convolution_filter();
           return;
         }
         if (this->dc().m_conv->is_overlap_bwd_halo_exchange_enabled()) {
           this->dc().m_conv->backward_data_exchange_halo(
               this->dc().get_prev_error_signals());
         }
-        this->distconv_backward_filter();
-        this->distconv_backward_data();
+        this->dc().bp_compute_convolution_filter();
+        this->dc().bp_compute_convolution_data();
         return;
       }
 #endif // LBANN_HAS_DISTCONV
@@ -299,11 +299,9 @@ void convolution_distconv_adapter<TensorDataType, Layout, Device>::setup_layer(
 
   if (dc::is_deterministic()) {
     dc::MPIRootPrintStreamDebug() << "Using deterministic convolution algorithms";
-    // Same algorithm as LBANN
-    this->m_fwd_algo = "IMPLICIT_GEMM";
-    // Deterministic algorithm
-    this->m_bwd_data_algo = "ALGO_1";
-    this->m_bwd_filter_algo = "ALGO_1";
+    this->m_fwd_algo = "DETERMINISTIC";
+    this->m_bwd_data_algo = "DETERMINISTIC";
+    this->m_bwd_filter_algo = "DETERMINISTIC";
   } else {
     this->m_fwd_algo = dc::get_convolution_fwd_algorithm();
     this->m_bwd_data_algo = dc::get_convolution_bwd_data_algorithm();

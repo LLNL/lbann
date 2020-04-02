@@ -28,7 +28,6 @@
 #define LBANN_LAYER_LEARNING_HPP_INCLUDED
 
 #include "lbann/layers/data_type_layer.hpp"
-#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
 
