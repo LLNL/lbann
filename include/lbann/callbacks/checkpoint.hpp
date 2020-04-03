@@ -228,14 +228,12 @@ inline std::string get_last_shared_checkpoint_filename(const std::string& traine
   return get_last_shared_checkpoint_filename(alg_name, get_trainer_checkpoint_dirname(trainer_name, dir));
 }
 
-inline std::string get_shared_checkpoint_dirname(const std::string& alg_name, model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
-  std::cout << m->get_name();
+inline std::string get_shared_checkpoint_dirname(const std::string& alg_name, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
   return build_string(dir, '/', alg_name, ".shared.", to_string(mode), ".epoch.", epoch, ".step.", step, '/');
-  //  return build_string(dir, '/', alg_name, ".shared.", to_string(mode), ".epoch.", epoch, ".step.", step, '/', m->get_name(), '/');
 }
 
-inline std::string get_shared_checkpoint_dirname(const std::string& trainer_name, const std::string& alg_name, model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
-  return get_shared_checkpoint_dirname(alg_name, m, get_trainer_checkpoint_dirname(trainer_name, dir), mode, epoch, step);
+inline std::string get_shared_checkpoint_dirname(const std::string& trainer_name, const std::string& alg_name, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
+  return get_shared_checkpoint_dirname(alg_name, get_trainer_checkpoint_dirname(trainer_name, dir), mode, epoch, step);
 }
 
 inline std::string get_last_distributed_checkpoint_filename(const std::string& alg_name, const std::string& dir) {
@@ -246,26 +244,17 @@ inline std::string get_last_distributed_checkpoint_filename(const std::string& t
   return get_last_distributed_checkpoint_filename(alg_name, get_trainer_checkpoint_dirname(trainer_name, dir));
 }
 
-inline std::string get_distributed_checkpoint_dirname(const std::string& alg_name, model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
-  lbann_comm *comm = m->get_comm();
-  std::cout << m->get_name();
+inline std::string get_distributed_checkpoint_dirname(const std::string& alg_name, const int rank_in_trainer, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
   return build_string(dir, '/',
      alg_name,
-    ".rank.", comm->get_rank_in_trainer(),
+    ".rank.", rank_in_trainer,
     ".distributed.", to_string(mode),
     ".epoch.", epoch,
     ".step.", step, '/');
-  // return build_string(dir, '/',
-  //    alg_name,
-  //   ".rank.", comm->get_rank_in_trainer(),
-  //   ".distributed.", to_string(mode),
-  //   ".epoch.", epoch,
-  //   ".step.", step, '/',
-  //   m->get_name(), '/');
 }
 
-inline std::string get_distributed_checkpoint_dirname(const std::string& trainer_name, const std::string& alg_name, model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
-  return get_distributed_checkpoint_dirname(alg_name, m, get_trainer_checkpoint_dirname(trainer_name, dir), mode, epoch, step);
+inline std::string get_distributed_checkpoint_dirname(const std::string& trainer_name, const std::string& alg_name, const int rank_in_trainer, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
+  return get_distributed_checkpoint_dirname(alg_name, rank_in_trainer, get_trainer_checkpoint_dirname(trainer_name, dir), mode, epoch, step);
 }
 
 // Print last checkpoint to file, used to determine which checkpoint to load from.

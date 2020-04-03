@@ -73,7 +73,7 @@ bool load_model::load_model_weights(const std::string& ckpt_dir,
       LBANN_WARNING("Unable to find the latest checkpoint ", active_ckpt_dir);
       return false;
     }
-    active_ckpt_dir = get_shared_checkpoint_dirname(alg_name, m, ckpt_dir, mode, epochLast, stepLast);
+    active_ckpt_dir = get_shared_checkpoint_dirname(alg_name, ckpt_dir, mode, epochLast, stepLast);
   }
   lbann_comm *comm = m->get_comm();
   if(comm->am_trainer_master()) {

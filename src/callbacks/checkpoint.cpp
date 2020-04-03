@@ -189,7 +189,8 @@ bool checkpoint::do_checkpoint(model *m) {
     // create directories per ranks
     epochdir = get_distributed_checkpoint_dirname(t.get_name(),
                                                   get_active_training_algorithm().get_name(),
-                                                  m, dir, c.get_execution_mode(), epoch, step);
+                                                  m->get_comm()->get_rank_in_trainer(),
+                                                  dir, c.get_execution_mode(), epoch, step);
     /** @todo BVE FIXME this should be refactored to only open the
         checkpoints files that we care about */
     p.open_checkpoint(epochdir.c_str(), true);
@@ -218,7 +219,7 @@ bool checkpoint::do_checkpoint(model *m) {
     makedir(dir);
     epochdir = get_shared_checkpoint_dirname(t.get_name(),
                                              get_active_training_algorithm().get_name(),
-                                             m, dir, c.get_execution_mode(), epoch, step);
+                                             dir, c.get_execution_mode(), epoch, step);
     p.open_checkpoint(epochdir.c_str(), comm->am_trainer_master());
     // Make sure that the master has had a chance to create the directories
     comm->trainer_barrier();
@@ -367,7 +368,8 @@ bool checkpoint::open_latest_checkpoint(
   if(!shared){
     epochdir = get_distributed_checkpoint_dirname(get_active_trainer().get_name(),
                                                   get_active_training_algorithm().get_name(),
-                                                  m, dir, mode, epoch, step);
+                                                  m->get_comm()->get_rank_in_trainer(),
+                                                  dir, mode, epoch, step);
     if(!file::directory_exists(epochdir)) {
       LBANN_WARNING(epochdir + " does not exist");
       return false;
@@ -380,7 +382,7 @@ bool checkpoint::open_latest_checkpoint(
   else {
     epochdir = get_shared_checkpoint_dirname(get_active_trainer().get_name(),
                                              get_active_training_algorithm().get_name(),
-                                             m, dir, mode, epoch, step);
+                                             dir, mode, epoch, step);
 
     if(!file::directory_exists(epochdir)) {
       LBANN_WARNING(epochdir + " does not exist");
