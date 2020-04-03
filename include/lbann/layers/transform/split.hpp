@@ -30,10 +30,7 @@
 #include <vector>
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
-
-#ifdef LBANN_HAS_DISTCONV
 #include "lbann/utils/distconv.hpp"
-#endif
 
 namespace lbann {
 
@@ -42,22 +39,11 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class split_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
-
   split_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~split_distconv_adapter() = default;
-
   void setup_distributions(tensor_overlap_constraints &constraints) override;
-
-  dc::Shape get_activations_local_shape(int index) const override {
-    return data_type_distconv_adapter<TensorDataType>::get_activations_local_shape(0);
-  }
-
-  std::unique_ptr<TensorDevType> setup_activations_i(int index) const override {
-    const auto &parent_activations =
-        dynamic_cast<const TensorDevType&>(
-            this->layer().get_parent_layers()[0]->dc().get_activations(this->layer()));
-    return make_unique<TensorDevType>(parent_activations);
-  }
+  dc::Shape get_activations_local_shape(int index) const override;
+  std::unique_ptr<TensorDevType> setup_activations_i(int index) const override;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -100,18 +86,13 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
  protected:
   bool is_distconv_supported() const override { return true; }
-
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<split_distconv_adapter<
       TensorDataType, T_layout, Dev>>(*this);
   }
-
   split_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
   const split_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
-
-  void fp_compute_distconv() {}
 #endif // LBANN_HAS_DISTCONV
-
 };
 
 #ifdef LBANN_HAS_DISTCONV
@@ -142,6 +123,19 @@ setup_distributions(tensor_overlap_constraints &constraints) {
 
   constraints.mark_equivalent(x, y);
   constraints.mark_equivalent(dx, dy);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+dc::Shape split_distconv_adapter<TensorDataType, T_layout, Dev>::
+get_activations_local_shape(int index) const {
+  return data_type_distconv_adapter<TensorDataType>::get_activations_local_shape(0);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+std::unique_ptr<typename split_distconv_adapter<TensorDataType, T_layout, Dev>::TensorDevType>
+split_distconv_adapter<TensorDataType, T_layout, Dev>::
+setup_activations_i(int index) const {
+  return make_unique<TensorDevType>(this->get_prev_activations(0));
 }
 #endif // LBANN_HAS_DISTCONV
 

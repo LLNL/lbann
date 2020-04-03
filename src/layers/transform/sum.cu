@@ -39,7 +39,6 @@ namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
 namespace {
-
 template <typename TensorDataType>
 struct accumulate {
   __device__ void operator()(TensorDataType &x, TensorDataType &y) const {
@@ -91,7 +90,6 @@ void fp_compute_distconv(int num_parents, SumDistConvLayer<TensorDataType> &dc) 
       }
   }
 }
-
 } // namespace
 #endif // LBANN_HAS_DISTCONV
 

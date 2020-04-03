@@ -29,15 +29,12 @@
 
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
-
-#ifdef LBANN_HAS_DISTCONV
 #include "lbann/utils/distconv.hpp"
-#endif
 
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType>
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class sum_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
@@ -115,20 +112,19 @@ protected:
   void bp_compute() override {}
 
 #ifdef LBANN_HAS_DISTCONV
-  friend class sum_distconv_adapter<TensorDataType>;
+  friend class sum_distconv_adapter<TensorDataType, T_layout, Dev>;
  protected:
   bool is_distconv_supported() const override { return true; }
-
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<sum_distconv_adapter<TensorDataType>>(*this);
+    this->get_dc() = make_unique<sum_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
 #endif // LBANN_HAS_DISTCONV
 };
 
 #ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType>
-std::unique_ptr<typename sum_distconv_adapter<TensorDataType>::TensorDevType>
-sum_distconv_adapter<TensorDataType>::setup_error_signals_i(int index) const {
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+std::unique_ptr<typename sum_distconv_adapter<TensorDataType, T_layout, Dev>::TensorDevType>
+sum_distconv_adapter<TensorDataType, T_layout, Dev>::setup_error_signals_i(int index) const {
   return make_unique<TensorDevType>(this->get_prev_error_signals(0));
 }
 #endif // LBANN_HAS_DISTCONV

@@ -39,7 +39,6 @@ namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
 namespace {
-
 template <typename TensorDataType>
 struct accumulate {
   __device__ void operator()(TensorDataType &x, const TensorDataType &y) const {
@@ -61,7 +60,6 @@ void bp_compute_distconv(SplitAdapter &dc, int num_children) {
   auto &error_signals = dc.get_error_signals(0);
   switch (num_children) {
     case 0:
-      dc::MPIPrintStreamInfo() << "No parent for this sum layer";
       error_signals.zero(El::GPUManager::Stream());
       break;
     case 1:

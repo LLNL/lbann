@@ -47,7 +47,7 @@ LBANN_LAYER_DEFAULT_BUILDER(sum)
   template class sum_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
   template class sum_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>; \
   LBANN_LAYER_BUILDER_ETI(sum, T, El::Device::CPU)
-    
+
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 

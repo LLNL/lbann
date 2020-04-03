@@ -45,13 +45,9 @@ class concatenate_distconv_adapter : public data_type_distconv_adapter<TensorDat
   concatenate_distconv_adapter(Layer& layer):
       data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~concatenate_distconv_adapter() = default;
-
-  dc::Shape get_activations_local_shape(int index=0) const override {
-    assert_eq(index, 0);
-    auto shape = this->get_prev_activations().get_local_shape();
-    shape[-2] = this->get_activations_shape()[-2];
-    return shape;
-  }
+  dc::Shape get_activations_local_shape(int index=0) const override;
+  void fp_compute();
+  void bp_compute();
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -114,28 +110,12 @@ private:
   friend class concatenate_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
   bool is_distconv_supported() const override { return true; }
-
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<
       concatenate_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
-
-  void fp_compute_distconv() {
-    assert_always(this->distconv_enabled());
-    assert_always(this->get_num_parents() == 2);
-    dc::tensor::Concatenate(this->dc().get_activations(0),
-                            this->dc().get_prev_activations(0),
-                            this->dc().get_prev_activations(1),
-                            El::GPUManager::Stream());
-  }
-
-  void bp_compute_distconv() {
-    assert_always(this->distconv_enabled());
-    dc::tensor::Slice(this->dc().get_error_signals(0),
-                      this->dc().get_error_signals(1),
-                      this->dc().get_prev_error_signals(0),
-                      El::GPUManager::Stream());
-  }
+  concatenate_distconv_adapter<TensorDataType, Layout, Device>& dc() override;
+  const concatenate_distconv_adapter<TensorDataType, Layout, Device>& dc() const override;
 #endif // LBANN_HAS_DISTCONV
 };
 
@@ -254,9 +234,7 @@ void concatenate_layer<TensorDataType,Layout,Device>::setup_dims() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::fp_setup_outputs(El::Int mini_batch_size) {
 #ifdef LBANN_HAS_DISTCONV
-  if (this->distconv_enabled() && !this->dc().child_copy_required(0)) {
-    return;
-  }
+  if (!this->keep_original_outputs(0)) return;
 #endif // LBANN_HAS_DISTCONV
   const auto& input0 = this->get_prev_activations(0);
   auto& output = this->get_activations();
@@ -274,7 +252,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    fp_compute_distconv();
+    dc().fp_compute();
     return;
   }
 #endif
@@ -293,7 +271,6 @@ void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
 template <typename TensorDataType, El::Device Device>
 void bp_setup_gradient_wrt_inputs_impl(
   concatenate_layer<TensorDataType,data_layout::MODEL_PARALLEL,Device>& l) {
-
 #ifdef LBANN_HAS_DISTCONV
   if (l.distconv_enabled()) {
     LBANN_ERROR("Model-parallel LBANN matrix not supported in distconv");
@@ -323,14 +300,14 @@ void bp_setup_gradient_wrt_inputs_impl(
   const auto& output_grad = l.get_prev_error_signals();
   if (num_inputs == 1) {
 #ifdef LBANN_HAS_DISTCONV
-    if (l.distconv_enabled() && !l.dc().parent_copy_required(0)) return;
+    if (!l.keep_original_gradient_wrt_inputs(0)) return;
 #endif
     El::LockedView(l.get_error_signals(0), output_grad);
   }
   else {
     for (size_t j=0; j<num_inputs; ++j) {
 #ifdef LBANN_HAS_DISTCONV
-      if (l.distconv_enabled() && !l.dc().parent_copy_required(j)) continue;
+      if (!l.keep_original_gradient_wrt_inputs(j)) continue;
 #endif
       auto& input_grad = l.get_error_signals(j);
       input_grad.AlignWith(output_grad);
@@ -342,11 +319,6 @@ void bp_setup_gradient_wrt_inputs_impl(
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
-#ifdef LBANN_HAS_DISTCONV
-  if (this->skip_first_layer_bp()) {
-    return;
-  }
-#endif
   bp_setup_gradient_wrt_inputs_impl(*this);
 }
 
@@ -354,7 +326,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    bp_compute_distconv();
+    dc().bp_compute();
     return;
   }
 #endif
@@ -369,6 +341,50 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
   bp_compute_impl(*this, m_concat_dim);
 
 }
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+concatenate_distconv_adapter<TensorDataType, T_layout, Dev>&
+concatenate_layer<TensorDataType, T_layout, Dev>::dc() {
+  return const_cast<concatenate_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      static_cast<const concatenate_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+const concatenate_distconv_adapter<TensorDataType, T_layout, Dev>&
+concatenate_layer<TensorDataType, T_layout, Dev>::dc() const {
+  return dynamic_cast<const concatenate_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+dc::Shape concatenate_distconv_adapter<TensorDataType, Layout, Device>::
+get_activations_local_shape(int index) const {
+  assert_eq(index, 0);
+  auto shape = this->get_prev_activations().get_local_shape();
+  shape[-2] = this->get_activations_shape()[-2];
+  return shape;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void concatenate_distconv_adapter<TensorDataType, Layout, Device>::
+fp_compute() {
+  assert_always(this->layer().get_num_parents() == 2);
+  dc::tensor::Concatenate(this->get_activations(0),
+                          this->get_prev_activations(0),
+                          this->get_prev_activations(1),
+                          El::GPUManager::Stream());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void concatenate_distconv_adapter<TensorDataType, Layout, Device>::
+bp_compute() {
+  dc::tensor::Slice(this->get_error_signals(0),
+                    this->get_error_signals(1),
+                    this->get_prev_error_signals(0),
+                    El::GPUManager::Stream());
+}
+#endif // LBANN_HAS_DISTCONV
 
 LBANN_DEFINE_LAYER_BUILDER(concatenate);
 
