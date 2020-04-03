@@ -82,6 +82,7 @@ int main(int argc, char *argv[]) {
         auto&& dirs = parse_list<std::string>(opts->get_string("ckpt_dir"));
         for(auto&& d : dirs) { //load file from each (space limited) directory
           bool loaded = callback::load_model::load_model_weights(d,
+              "sgd",
                m.get(),
                opts->get_bool("ckptdir_is_fullpath"));
            if(!loaded)  LBANN_ERROR("Unable to reload model");

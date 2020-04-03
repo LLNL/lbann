@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
+#include "lbann/training_algorithms/training_algorithm.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -72,7 +73,7 @@ void save_model::write_proto_text(const lbann_data::Model& proto,
 bool save_model::do_save_model(model *m) {
   lbann_data::Model model_param;
 
-  p.set_cb_type(callback_type::model_only);
+  p.set_cb_type(callback_type::weights_only);
   do_save_model_weights(m);
   p.set_cb_type(callback_type::invalid);
 
@@ -111,20 +112,16 @@ bool save_model::do_save_model_weights(model *m) {
 
   // Shared checkpoint, logic identical to Distributed.i
   makedir(m_dir.c_str());
-  std::string epochdir = get_shared_checkpoint_dirname(c.get_trainer().get_name(), m, m_dir.c_str(), c.get_execution_mode(), epoch, step);
+  std::string epochdir = get_save_model_dirname(c.get_trainer().get_name(),
+                                                m->get_name(),
+                                                m_dir.c_str());
   if (comm->am_trainer_master()) {
-    p.open_checkpoint(epochdir.c_str());
+    p.open_checkpoint_dir(epochdir.c_str());
   }else {
     // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
     p.m_checkpoint_dir = epochdir;
   }
   m->save_weights(p);
-  // close our checkpoint
-  p.close_checkpoint();
-  if (comm->am_trainer_master()) {
-    std::string latest_file = get_last_shared_checkpoint_filename(c.get_trainer().get_name(), m, m_dir.c_str());
-    write_latest(latest_file, c.get_execution_mode(), epoch, step);
-  }
 
   uint64_t bytes_count = p.get_bytes();
 
