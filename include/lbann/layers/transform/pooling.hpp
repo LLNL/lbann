@@ -33,7 +33,6 @@
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/im2col.hpp"
-#include "lbann_config.hpp"
 #include "lbann/utils/distconv.hpp"
 
 namespace lbann {
