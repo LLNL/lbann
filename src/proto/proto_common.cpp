@@ -763,7 +763,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     model->set_disable_cuda(opts->get_bool("disable_cuda"));
   }
   if (opts->has_int("random_seed")) {
-    model->set_random_seed(opts->get_int("random_seed"));
+    trainer->set_random_seed(opts->get_int("random_seed"));
   }
   if(opts->get_bool("serialize_io")) {
     model->set_serialize_io(opts->get_bool("serialize_io"));
@@ -801,7 +801,7 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
             << "  serialize_io:            " << m.serialize_io()  << std::endl
             << "  cuda:                    " << (disable_cuda ? "disabled" : "enabled") << std::endl
             << "  cudnn:                   " << (disable_cudnn ? "disabled" : "enabled") << std::endl
-            << "  random_seed:             " << m.random_seed() << std::endl
+            << "  random_seed:             " << t.random_seed() << std::endl
             << "  data_layout:             " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n";
 }
@@ -827,7 +827,7 @@ void print_help(std::ostream& os)
        "  --saveme=<string>  You can suppress writing the file via the option:\n"
        "  --saveme=0\n"
        "\n"
-       "Some prototext values can be over-riden on the command line;\n"
+       "Some prototext values can be overriden on the command line;\n"
        "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
        "        e.g: --disable_cuda, then a value of '1' is assigned)\n"
        "\n"
@@ -872,8 +872,13 @@ void print_help(std::ostream& os)
        "      Restart from a checkpoint found in the given directory.\n"
        "      If the directory doesn't exist or doesn't contain a checkpoint,\n"
        "      an error will be thrown.\n"
-       "  --restart_dir_is_fullpath=<bool>\n"
-       "      Indicate whether the restart_dir is a full path.\n"
+       "  --load_model_weights_dir=<string>\n"
+       "      Load model wieghts found in the given directory.\n"
+       "      If the directory doesn't exist, doesn't contain valid weights,\n"
+       "      or doesn't contain a checkpoint,\n"
+       "      an error will be thrown.\n"
+       "  --load_model_weights_dir_is_complete=<bool>\n"
+       "      Use load_model_weights_dir as given, ignoring checkpoint hierarchy.\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir=<string>\n"

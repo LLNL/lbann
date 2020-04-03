@@ -247,6 +247,7 @@ message Callback {
 
   message CallbackCheckpoint {
     string checkpoint_dir = 1;
+    string restart_dir = 8;
     int64 checkpoint_epochs = 2;
     int64 checkpoint_steps = 3;
     double checkpoint_secs = 4;

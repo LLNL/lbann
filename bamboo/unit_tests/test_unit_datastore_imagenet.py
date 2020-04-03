@@ -34,7 +34,7 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    trainer = lbann.Trainer()
+    trainer = lbann.Trainer(random_seed=random_seed)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
@@ -71,8 +71,7 @@ def construct_model(lbann):
                        num_epochs,
                        layers=lbann.traverse_layer_graph(input_),
                        metrics=metrics,
-                       callbacks=callbacks,
-                       random_seed=random_seed)
+                       callbacks=callbacks)
 
 def construct_data_reader(lbann):
     """Construct Protobuf message for ImageNet data reader.
