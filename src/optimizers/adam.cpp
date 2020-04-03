@@ -28,12 +28,6 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
-#include <cereal/types/base_class.hpp>
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/types/utility.hpp>
-
 namespace lbann {
 
 template <typename TensorDataType>
@@ -220,7 +214,7 @@ bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string nam
 template <typename TensorDataType>
 bool adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   OptimizerType::load_from_checkpoint_shared(p, name_prefix);
-  //  load_from_shared_cereal_archive<adam<TensorDataType>(*this, p, this->get_comm(), "adam.xml");
+  load_from_shared_cereal_archive<adam<TensorDataType>>(*this, p, this->get_comm(), "adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -236,7 +230,7 @@ template <typename TensorDataType>
 bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
   OptimizerType::save_to_checkpoint_distributed(p, name_prefix);
 
-  //  write_cereal_archive<adam<TensorDataType>>(*this, p, "adam.xml");
+  write_cereal_archive<adam<TensorDataType>>(*this, p, "adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -251,7 +245,7 @@ bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::strin
 template <typename TensorDataType>
 bool adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
   OptimizerType::load_from_checkpoint_distributed(p, name_prefix);
-  //  read_cereal_archive<adam<TensorDataType>>(*this, p, "adam.xml");
+  read_cereal_archive<adam<TensorDataType>>(*this, p, "adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());

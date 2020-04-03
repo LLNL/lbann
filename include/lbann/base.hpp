@@ -48,13 +48,14 @@
 #include <memory>
 #include <string>
 
-namespace half_float {
+
+namespace cereal {
 template <class ArchiveT>
-void serialize(ArchiveT& archive, half& value)
+void serialize(ArchiveT& archive, __half& value)
 {
   (void) archive;
 }
-}// namespace half_float
+}// namespace cereal
 
 namespace lbann {
 

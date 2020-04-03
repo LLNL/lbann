@@ -63,7 +63,7 @@ public:
    */
   virtual data_type_optimizer* copy() const override = 0;
 
-    /** Archive for checkpoint and restart */
+  /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
     ar(cereal::base_class<optimizer>( this ),
        CEREAL_NVP(m_learning_rate));

@@ -178,7 +178,7 @@ bool sgd<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name
   OptimizerType::save_to_checkpoint_shared(p, name_prefix);
 
   if (this->get_comm().am_trainer_master()) {
-    pack_scalars(p);
+    write_cereal_archive<sgd<TensorDataType>>(*this, p, "sgd.xml");
   }
 
   char l_name[512];
@@ -191,14 +191,8 @@ bool sgd<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name
 template <typename TensorDataType>
 bool sgd<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   OptimizerType::load_from_checkpoint_shared(p, name_prefix);
-  struct packing_header header;
-  if (this->get_comm().am_trainer_master()) {
-    unpack_scalars(p, &header);
-  }
+  load_from_shared_cereal_archive<sgd<TensorDataType>>(*this, p, this->get_comm(), "sgd.xml");
 
-  this->get_comm().trainer_broadcast(0, header);
-
-  unpack_header(header);
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
   p.read_distmat(persist_type::train, l_name, m_velocity.get());
@@ -209,8 +203,7 @@ bool sgd<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string na
 template <typename TensorDataType>
 bool sgd<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
   OptimizerType::save_to_checkpoint_distributed(p, name_prefix);
-
-  pack_scalars(p);
+  write_cereal_archive<sgd<TensorDataType>>(*this, p, "sgd.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
@@ -222,8 +215,7 @@ bool sgd<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string
 template <typename TensorDataType>
 bool sgd<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
   OptimizerType::load_from_checkpoint_distributed(p, name_prefix);
-  struct packing_header header;
-  unpack_scalars(p, &header);
+  read_cereal_archive<sgd<TensorDataType>>(*this, p, "sgd.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());

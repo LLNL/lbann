@@ -34,23 +34,6 @@
 //#include <cereal/types/utility.hpp>
 
 namespace lbann {
-
-// template <class Archive>
-// float save_minimal(
-//   Archive const &,
-//   cpu_fp16 const & h )
-// {
-//   return h;
-// }
-
-// template <class Archive>
-// void load_minimal( Archive const &,
-//   cpu_fp16 & h,
-//   float const & value )
-// {
-//   h = value;
-// }
-
 namespace callback {
 class perturb_adam;
 } // namespace callback
@@ -95,14 +78,12 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    //    float foo = m_beta1;
-    ar(/*cereal::base_class<data_type_optimizer<TensorDataType>>( this ),*/
-       CEREAL_NVP(m_beta1));
-       // CEREAL_NVP(static_cast<float>(m_beta1)),
-       // CEREAL_NVP(static_cast<float>(m_beta2)),
-       // CEREAL_NVP(static_cast<float>(m_eps)),
-       // CEREAL_NVP(static_cast<float>(m_current_beta1)),
-       // CEREAL_NVP(static_cast<float>(m_current_beta2)));
+    ar(cereal::base_class<data_type_optimizer<TensorDataType>>( this ),
+       CEREAL_NVP(m_beta1),
+       CEREAL_NVP(m_beta2),
+       CEREAL_NVP(m_eps),
+       CEREAL_NVP(m_current_beta1),
+       CEREAL_NVP(m_current_beta2));
   }
   ///@}
 
