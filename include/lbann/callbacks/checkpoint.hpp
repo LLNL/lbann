@@ -229,7 +229,9 @@ inline std::string get_last_shared_checkpoint_filename(const std::string& traine
 }
 
 inline std::string get_shared_checkpoint_dirname(const std::string& alg_name, model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
-  return build_string(dir, '/', alg_name, ".shared.", to_string(mode), ".epoch.", epoch, ".step.", step, '/', m->get_name(), '/');
+  std::cout << m->get_name();
+  return build_string(dir, '/', alg_name, ".shared.", to_string(mode), ".epoch.", epoch, ".step.", step, '/');
+  //  return build_string(dir, '/', alg_name, ".shared.", to_string(mode), ".epoch.", epoch, ".step.", step, '/', m->get_name(), '/');
 }
 
 inline std::string get_shared_checkpoint_dirname(const std::string& trainer_name, const std::string& alg_name, model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
@@ -246,13 +248,20 @@ inline std::string get_last_distributed_checkpoint_filename(const std::string& t
 
 inline std::string get_distributed_checkpoint_dirname(const std::string& alg_name, model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {
   lbann_comm *comm = m->get_comm();
+  std::cout << m->get_name();
   return build_string(dir, '/',
      alg_name,
     ".rank.", comm->get_rank_in_trainer(),
     ".distributed.", to_string(mode),
     ".epoch.", epoch,
-    ".step.", step, '/',
-    m->get_name(), '/');
+    ".step.", step, '/');
+  // return build_string(dir, '/',
+  //    alg_name,
+  //   ".rank.", comm->get_rank_in_trainer(),
+  //   ".distributed.", to_string(mode),
+  //   ".epoch.", epoch,
+  //   ".step.", step, '/',
+  //   m->get_name(), '/');
 }
 
 inline std::string get_distributed_checkpoint_dirname(const std::string& trainer_name, const std::string& alg_name, model *m, const std::string& dir, execution_mode mode, size_t epoch, size_t step) {

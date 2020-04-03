@@ -120,6 +120,11 @@ class persist {
   persist();
   ~persist() {};
 
+  // /** Archive for checkpoint and restart */
+  // template <class Archive> void serialize( Archive & ar ) {
+  //   ar(CEREAL_NVP(ckpt_type));
+  // }
+
   callback_type get_cb_type() const {
     return ckpt_type;
   }
@@ -128,12 +133,13 @@ class persist {
     ckpt_type = type;
   }
 
-  void open_checkpoint_dir(const std::string& dir);
-  void open_checkpoint(const std::string& dir);
+  void open_checkpoint_dir(const std::string& dir, bool create_dir);
+  void open_checkpoint(const std::string& dir, bool create_dir);
   void close_checkpoint();
 
   void open_restart(const std::string& dir);
   void close_restart();
+  void set_restart_dir(const std::string& dir) { m_checkpoint_dir = dir; }
 
   uint64_t get_bytes() const {
     uint64_t bytes = 0;
@@ -295,18 +301,18 @@ void unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
 }
 
 template <typename C>
-void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
+void load_from_shared_cereal_archive(C& obj, persist& p,
                                      lbann_comm& comm,
-                                     const std::string& suffix) {
+                                     const std::string& filename) {
   std::string buf;
   if (comm.am_trainer_master()) {
-    read_cereal_archive<C>(obj, p, pt, suffix);
+    read_cereal_archive<C>(obj, p, filename);
     buf = create_cereal_archive_binary_string<C>(obj);
   }else {
     // If you are not the trainer master, still check to see if the file exists
-    std::ifstream is(p.get_filename(pt) + suffix);
+    std::ifstream is(filename);
     if(!is.is_open()) {
-      throw NonexistentArchiveFile(p.get_filename(pt) + suffix);
+      throw NonexistentArchiveFile(filename);
     }
   }
 
@@ -317,6 +323,13 @@ void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
   if (!comm.am_trainer_master()) {
     unpack_cereal_archive_binary_string<C>(obj, buf);
   }
+}
+
+template <typename C>
+void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
+                                     lbann_comm& comm,
+                                     const std::string& suffix) {
+  load_from_shared_cereal_archive<C>(obj, p, comm, p.get_filename(pt) + suffix);
 }
 
 template <typename C>

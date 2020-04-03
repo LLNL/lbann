@@ -28,6 +28,12 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
 
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/polymorphic.hpp>
+#include <cereal/types/utility.hpp>
+
 namespace lbann {
 
 template <typename TensorDataType>
@@ -198,7 +204,7 @@ bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string nam
   OptimizerType::save_to_checkpoint_shared(p, name_prefix);
 
   if (this->get_comm().am_trainer_master()) {
-    pack_scalars(p);
+    write_cereal_archive<adam<TensorDataType>>(*this, p, "adam.xml");
   }
 
   char l_name[512];
@@ -214,14 +220,7 @@ bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string nam
 template <typename TensorDataType>
 bool adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
   OptimizerType::load_from_checkpoint_shared(p, name_prefix);
-  struct packing_header header;
-  if (this->get_comm().am_trainer_master()) {
-    unpack_scalars(p, &header);
-  }
-
-  this->get_comm().trainer_broadcast(0, header);
-
-  unpack_header(header);
+  //  load_from_shared_cereal_archive<adam<TensorDataType>(*this, p, this->get_comm(), "adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -237,7 +236,7 @@ template <typename TensorDataType>
 bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
   OptimizerType::save_to_checkpoint_distributed(p, name_prefix);
 
-  pack_scalars(p);
+  //  write_cereal_archive<adam<TensorDataType>>(*this, p, "adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -252,8 +251,7 @@ bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::strin
 template <typename TensorDataType>
 bool adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
   OptimizerType::load_from_checkpoint_distributed(p, name_prefix);
-  struct packing_header header;
-  unpack_scalars(p, &header);
+  //  read_cereal_archive<adam<TensorDataType>>(*this, p, "adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());

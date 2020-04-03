@@ -225,32 +225,36 @@ lbann::persist::persist() {
   }
 }
 
-void lbann::persist::open_checkpoint_dir(const std::string& dir) {
-  // create directory for checkpoint
-  lbann::makedir(dir.c_str());
+void lbann::persist::open_checkpoint_dir(const std::string& dir, bool create_dir) {
+  if(create_dir) {
+    // create directory for checkpoint
+    lbann::makedir(dir.c_str());
+  }
   // copy checkpoint directory
   m_checkpoint_dir = dir;
 }
 
 /** @todo BVE FIXME this should be refactored to only open the
     checkpoints files that we care about */
-void lbann::persist::open_checkpoint(const std::string& dir) {
-  open_checkpoint_dir(dir);
+void lbann::persist::open_checkpoint(const std::string& dir, bool create_dir) {
+  open_checkpoint_dir(dir, create_dir);
 
-  for(persist_type pt : persist_type_iterator()) {
-    // open the file for writing
-    m_filenames[pt] = dir + to_string(pt);
-    // Do not explicitly open several files -- this state is saved via Cereal
-    if(pt != persist_type::metrics &&
-       pt != persist_type::testing &&
-       pt != persist_type::validate &&
-       pt != persist_type::testing_context &&
-       pt != persist_type::training_context &&
-       pt != persist_type::validation_context &&
-       pt != persist_type::prediction_context) {
-      m_FDs[pt] = lbann::openwrite(m_filenames[pt].c_str());
-      if (m_FDs[pt] < 0) {
-        LBANN_ERROR("failed to open file (", m_filenames[pt], ")");
+  if(create_dir) {
+    for(persist_type pt : persist_type_iterator()) {
+      // open the file for writing
+      m_filenames[pt] = dir + to_string(pt);
+      // Do not explicitly open several files -- this state is saved via Cereal
+      if(pt != persist_type::metrics &&
+         pt != persist_type::testing &&
+         pt != persist_type::validate &&
+         pt != persist_type::testing_context &&
+         pt != persist_type::training_context &&
+         pt != persist_type::validation_context &&
+         pt != persist_type::prediction_context) {
+        m_FDs[pt] = lbann::openwrite(m_filenames[pt].c_str());
+        if (m_FDs[pt] < 0) {
+          LBANN_ERROR("failed to open file (", m_filenames[pt], ")");
+        }
       }
     }
   }

@@ -192,7 +192,9 @@ bool checkpoint::do_checkpoint(model *m) {
                                                   m, dir, c.get_execution_mode(), epoch, step);
     /** @todo BVE FIXME this should be refactored to only open the
         checkpoints files that we care about */
-    p.open_checkpoint(epochdir.c_str());
+    p.open_checkpoint(epochdir.c_str(), true);
+    // Make sure that the master has had a chance to create the directories
+    comm->trainer_barrier();
     // Call top level save to checkpoint function in model, in turn calls save to checkpoint functions for other model classes (weights, layers)
     if(p.get_cb_type() == callback_type::model_only || p.get_cb_type() == callback_type::full_checkpoint) {
       m->save_to_checkpoint_distributed(p);
@@ -217,12 +219,7 @@ bool checkpoint::do_checkpoint(model *m) {
     epochdir = get_shared_checkpoint_dirname(t.get_name(),
                                              get_active_training_algorithm().get_name(),
                                              m, dir, c.get_execution_mode(), epoch, step);
-    if (comm->am_trainer_master()) {
-      p.open_checkpoint(epochdir.c_str());
-    }else {
-      // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
-      p.m_checkpoint_dir = epochdir;
-    }
+    p.open_checkpoint(epochdir.c_str(), comm->am_trainer_master());
     // Make sure that the master has had a chance to create the directories
     comm->trainer_barrier();
     if(p.get_cb_type() == callback_type::model_only || p.get_cb_type() == callback_type::full_checkpoint) {

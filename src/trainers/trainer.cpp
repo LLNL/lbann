@@ -242,6 +242,7 @@ bool trainer::save_to_checkpoint_shared(persist& p) {
   auto save_checkpoint = [&p](observer_ptr<execution_context> ctx)
     ->void { ctx->save_to_checkpoint_shared(p); };
   for_each_execution_context(save_checkpoint);
+  save_rng_to_checkpoint_shared(p, m_comm);
   return true;
 }
 
@@ -249,6 +250,8 @@ bool trainer::load_from_checkpoint_shared(persist& p) {
   return false;
 }
 bool trainer::load_from_checkpoint_shared(persist& p, model& m, execution_context& c) {
+  load_rng_from_checkpoint(p, m_comm);
+
   execution_mode current_mode = c.get_execution_mode();
 
   for(execution_mode mode : execution_mode_iterator()) {
@@ -280,13 +283,17 @@ bool trainer::save_to_checkpoint_distributed(persist& p){
   auto save_checkpoint = [&p](observer_ptr<execution_context> ctx)
     ->void { ctx->save_to_checkpoint_distributed(p); };
   for_each_execution_context(save_checkpoint);
+  save_rng_to_checkpoint_distributed(p, m_comm);
   return true;
 }
 
 bool trainer::load_from_checkpoint_distributed(persist& p){
   return false;
 }
+
 bool trainer::load_from_checkpoint_distributed(persist& p, model& m, execution_context& c){
+  load_rng_from_checkpoint(p, m_comm);
+
   execution_mode current_mode = c.get_execution_mode();
 
   for(execution_mode mode : execution_mode_iterator()) {

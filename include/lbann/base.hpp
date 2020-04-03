@@ -48,6 +48,14 @@
 #include <memory>
 #include <string>
 
+namespace half_float {
+template <class ArchiveT>
+void serialize(ArchiveT& archive, half& value)
+{
+  (void) archive;
+}
+}// namespace half_float
+
 namespace lbann {
 
 // Forward-declaration.
