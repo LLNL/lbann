@@ -151,7 +151,6 @@ void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  OptimizerType::save_to_checkpoint_shared(p,name_prefix);
   if (this->get_comm().am_trainer_master()) {
     write_cereal_archive<hypergradient_adam<TensorDataType>>(*this, p, "hypergradient_adam.xml");
   }
@@ -171,7 +170,6 @@ bool hypergradient_adam<TensorDataType>::save_to_checkpoint_shared(persist& p, s
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  OptimizerType::load_from_checkpoint_shared(p,name_prefix);
   load_from_shared_cereal_archive<hypergradient_adam<TensorDataType>>(*this, p, this->get_comm(), "hypergradient_adam.xml");
 
   char l_name[512];
@@ -188,7 +186,6 @@ bool hypergradient_adam<TensorDataType>::load_from_checkpoint_shared(persist& p,
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  OptimizerType::save_to_checkpoint_distributed(p,name_prefix);
   write_cereal_archive<hypergradient_adam<TensorDataType>>(*this, p, "hypergradient_adam.xml");
 
   char l_name[512];
@@ -206,7 +203,6 @@ bool hypergradient_adam<TensorDataType>::save_to_checkpoint_distributed(persist&
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  OptimizerType::load_from_checkpoint_distributed(p,name_prefix);
   read_cereal_archive<hypergradient_adam<TensorDataType>>(*this, p, "hypergradient_adam.xml");
 
   char l_name[512];

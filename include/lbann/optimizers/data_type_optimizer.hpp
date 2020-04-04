@@ -205,17 +205,6 @@ private:
    *  if an allreduce is needed but hasn't been started.
    */
   void finish_gradient_allreduce();
-
-public:
-
-  // ===========================================
-  // Checkpointing
-  // ===========================================
-  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
-
 };
 
 #ifndef LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE

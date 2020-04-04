@@ -195,8 +195,6 @@ void adam<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  OptimizerType::save_to_checkpoint_shared(p, name_prefix);
-
   if (this->get_comm().am_trainer_master()) {
     write_cereal_archive<adam<TensorDataType>>(*this, p, "adam.xml");
   }
@@ -213,7 +211,6 @@ bool adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string nam
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  OptimizerType::load_from_checkpoint_shared(p, name_prefix);
   load_from_shared_cereal_archive<adam<TensorDataType>>(*this, p, this->get_comm(), "adam.xml");
 
   char l_name[512];
@@ -228,8 +225,6 @@ bool adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string n
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  OptimizerType::save_to_checkpoint_distributed(p, name_prefix);
-
   write_cereal_archive<adam<TensorDataType>>(*this, p, "adam.xml");
 
   char l_name[512];
@@ -244,7 +239,6 @@ bool adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::strin
 
 template <typename TensorDataType>
 bool adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  OptimizerType::load_from_checkpoint_distributed(p, name_prefix);
   read_cereal_archive<adam<TensorDataType>>(*this, p, "adam.xml");
 
   char l_name[512];
