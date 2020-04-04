@@ -239,24 +239,26 @@ void lbann::persist::open_checkpoint_dir(const std::string& dir, bool create_dir
 void lbann::persist::open_checkpoint(const std::string& dir, bool create_dir) {
   open_checkpoint_dir(dir, create_dir);
 
-  if(create_dir) {
-    for(persist_type pt : persist_type_iterator()) {
-      // open the file for writing
-      m_filenames[pt] = dir + to_string(pt);
-      // Do not explicitly open several files -- this state is saved via Cereal
-      if(pt != persist_type::metrics &&
-         pt != persist_type::testing &&
-         pt != persist_type::validate &&
-         pt != persist_type::testing_context &&
-         pt != persist_type::training_context &&
-         pt != persist_type::validation_context &&
-         pt != persist_type::prediction_context) {
+  for(persist_type pt : persist_type_iterator()) {
+    // open the file for writing
+    m_filenames[pt] = dir + to_string(pt);
+#if 0
+    // Do not explicitly open several files -- this state is saved via Cereal
+    if(pt != persist_type::metrics &&
+       pt != persist_type::testing &&
+       pt != persist_type::validate &&
+       pt != persist_type::testing_context &&
+       pt != persist_type::training_context &&
+       pt != persist_type::validation_context &&
+       pt != persist_type::prediction_context) {
+      if(create_dir) {
         m_FDs[pt] = lbann::openwrite(m_filenames[pt].c_str());
         if (m_FDs[pt] < 0) {
           LBANN_ERROR("failed to open file (", m_filenames[pt], ")");
         }
       }
     }
+#endif
   }
 }
 
@@ -277,6 +279,7 @@ void lbann::persist::open_restart(const std::string& dir) {
   for(persist_type pt : persist_type_iterator()) {
     // open the file for reading
     m_filenames[pt] = dir + to_string(pt);
+#if 0
     if(pt != persist_type::metrics &&
        pt != persist_type::testing &&
        pt != persist_type::validate &&
@@ -289,6 +292,7 @@ void lbann::persist::open_restart(const std::string& dir) {
         LBANN_ERROR("failed to open file (", m_filenames[pt], ")");
       }
     }
+#endif
   }
 }
 
@@ -361,6 +365,8 @@ bool lbann::persist::write_bytes(persist_type type, const char *name, const void
       return false;
     }
     m_bytes[type] += size;
+  }else {
+    LBANN_ERROR("Unable to write to file ", filename);
   }
   return true;
 }

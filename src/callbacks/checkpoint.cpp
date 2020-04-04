@@ -54,7 +54,13 @@ void checkpoint::setup(trainer *t) {
 // before execution phase
 void checkpoint::on_train_begin(model *m) {
   p.set_cb_type(callback_type::full_checkpoint);
-  restart(m);
+  bool flag = restart(m);
+  m->get_comm()->trainer_barrier();
+  if(flag) {
+    m_checkpoint_shared = true;
+    m_checkpoint_dist = false;
+    do_checkpoint(m);
+  }
 }
 
 // Interval defined with checkpoint_epochs or ckpt_dist_epochs
@@ -482,9 +488,9 @@ bool checkpoint::restart(model *m) {
   };
 
 
-  open_latest_checkpoint(m, "Restart", restart_shared_model, restart_distributed_model);
+  auto flag = open_latest_checkpoint(m, "Restart", restart_shared_model, restart_distributed_model);
 
-  return true;
+  return flag;
 }
 
 std::unique_ptr<callback_base>
