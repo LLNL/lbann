@@ -110,7 +110,6 @@ enum class callback_type {
 class persist {
  private:
   std::map<persist_type, uint64_t> m_bytes;
-  std::map<persist_type, int> m_FDs;
   std::map<persist_type, std::string> m_filenames;
   callback_type ckpt_type;
  public:
@@ -121,9 +120,9 @@ class persist {
   ~persist() {};
 
   /** Archive for checkpoint and restart */
-  // template <class Archive> void serialize( Archive & ar ) {
-  //   ar(CEREAL_NVP(ckpt_type));
-  // }
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(ckpt_type));
+  }
 
   callback_type get_cb_type() const {
     return ckpt_type;
@@ -165,61 +164,13 @@ class persist {
   template <typename TensorDataType>
   bool read_distmat (persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M);
 
-  bool write_bytes(persist_type type, const char *name, const void *buf, size_t size);
-  bool read_bytes(persist_type type, const char *name, void *buf, size_t size);
-
-  bool write_uint32(persist_type type, const char *name, uint32_t  val);
-  bool read_uint32 (persist_type type, const char *name, uint32_t *val);
-
-  bool write_uint64(persist_type type, const char *name, uint64_t  val);
-  bool read_uint64 (persist_type type, const char *name, uint64_t *val);
-
-  bool write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count);
-  bool read_int32_contig (persist_type type, const char *name, int32_t *buf, uint64_t count);
-
-  bool write_float(persist_type type, const char *name, float  val);
-  bool read_float (persist_type type, const char *name, float *val);
-
-  bool write_string(persist_type type, const char *name, const char *val, int str_length);
-  bool read_string (persist_type type, const char *name, char *val, int str_length);
-
-  bool write_double(persist_type type, const char *name, double  val);
-  bool read_double (persist_type type, const char *name, double *val);
-
-  template <typename TensorDataType>
-  bool write_datatype(persist_type type, const char *name, TensorDataType  val);
-  template <typename TensorDataType>
-  bool read_datatype (persist_type type, const char *name, TensorDataType *val);
-
   const std::string& get_checkpoint_dir() const { return m_checkpoint_dir; }
 
   std::string get_filename(persist_type type) const;
- private:
-  int get_fd(persist_type type) const;
 };
-
-template <typename TensorDataType>
-bool write_distmat(int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes);
-template <typename TensorDataType>
-bool read_distmat (int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes);
 
 bool write_bytes(int fd, const char *name, const void *buf, size_t size);
 bool read_bytes(int fd, const char *name, void *buf, size_t size);
-
-bool write_uint32(int fd, const char *name, uint32_t  val);
-bool read_uint32 (int fd, const char *name, uint32_t *val);
-
-bool write_uint64(int fd, const char *name, uint64_t  val);
-bool read_uint64 (int fd, const char *name, uint64_t *val);
-
-bool write_int32_contig(int fd, const char *name, const int32_t *buf, uint64_t count);
-bool read_int32_contig (int fd, const char *name, int32_t *buf, uint64_t count);
-
-bool write_float(int fd, const char *name, float  val);
-bool read_float (int fd, const char *name, float *val);
-
-bool write_double(int fd, const char *name, double  val);
-bool read_double (int fd, const char *name, double *val);
 
 bool write_string(int fd, const char *name, const char *buf, size_t size);
 bool read_string(int fd, const char *name, char *buf, size_t size);
@@ -356,15 +307,7 @@ void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
   extern template bool persist::write_distmat<T>(                           \
   persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
   extern template bool persist::read_distmat<T>(                            \
-  persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
-  extern template bool persist::write_datatype<T>(                          \
-    persist_type type, const char *name, T val);                            \
-  extern template bool persist::read_datatype<T>(                           \
-    persist_type type, const char *name, T *val);                           \
-  extern template bool write_distmat<T>(                                    \
-    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);            \
-  extern template bool read_distmat<T>(                                     \
-    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes)
+  persist_type type, const char *name, El::AbstractDistMatrix<T> *M)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF
