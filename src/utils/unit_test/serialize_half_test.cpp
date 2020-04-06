@@ -28,23 +28,30 @@ TEMPLATE_TEST_CASE("Serialization of half types",
 
   std::stringstream ss;
   lbann::cpu_fp16 val(1.23f), val_restore(0.f);
+#ifdef LBANN_GPU_HAS_FP16
   lbann::fp16 val_gpu(3.21f), val_gpu_restore(0.f);
-
+#endif
   // Save
   {
     OutputArchiveT oarchive(ss);
 
     CHECK_NOTHROW(oarchive(val));
+#ifdef LBANN_GPU_HAS_FP16
     CHECK_NOTHROW(oarchive(val_gpu));
+#endif
   }
 
   // Restore
   {
     InputArchiveT iarchive(ss);
     CHECK_NOTHROW(iarchive(val_restore));
+#ifdef LBANN_GPU_HAS_FP16
     CHECK_NOTHROW(iarchive(val_gpu_restore));
+#endif
   }
 
   CHECK(val == val_restore);
+#ifdef LBANN_GPU_HAS_FP16
   CHECK(val_gpu == val_gpu_restore);
+#endif
 }
