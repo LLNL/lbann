@@ -32,20 +32,6 @@
 
 namespace lbann {
 
-template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void split_layer<TensorDataType, Layout, Dev>::bp_compute() {
-  auto& gradient_wrt_input = this->get_error_signals();
-  if (this->get_num_children() > 0) {
-    El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
-  } else {
-    El::Zero(gradient_wrt_input);
-  }
-  for (int i = 1; i < this->get_num_children(); ++i) {
-    El::Axpy(TensorDataType{1}, this->get_prev_error_signals(i),
-             gradient_wrt_input);
-  }
-}
-
 LBANN_LAYER_DEFAULT_BUILDER(split)
 
 #define PROTO(T)                                                        \
@@ -55,5 +41,19 @@ LBANN_LAYER_DEFAULT_BUILDER(split)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
+#undef PROTO
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void split_distconv_adapter<TensorDataType, Layout, Dev>::bp_compute() {
+  LBANN_ERROR(this->get_name(), ": Distconv not supported");
+}
+
+#define PROTO(T)                                                        \
+  template class split_distconv_adapter<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class split_distconv_adapter<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#include "lbann/macros/instantiate.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 }// namespace lbann

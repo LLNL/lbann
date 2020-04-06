@@ -107,14 +107,14 @@ void fp_gpu(lbann_comm& comm,
   auto&& stream = El::GPUManager::Stream();
   CHECK_CUBLAS(cublasSetPointerMode(handle, CUBLAS_POINTER_MODE_DEVICE));
 
-#ifdef LBANN_HAS_DISTCONV  
+#ifdef LBANN_HAS_DISTCONV
   if (dc::evaluate_performance()) {
     El::Zero(sum_d);
-    copy_event.record(stream);    
+    copy_event.record(stream);
     return;
   }
 #endif
-  
+
   // Compute sum of local input matrix entries
   if (local_input.IsEmpty()) {
     El::Zero(sum_d);

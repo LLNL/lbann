@@ -44,6 +44,7 @@ class split_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   void setup_distributions(tensor_overlap_constraints &constraints) override;
   dc::Shape get_activations_local_shape(int index) const override;
   std::unique_ptr<TensorDevType> setup_activations_i(int index) const override;
+  void bp_compute();
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -81,11 +82,30 @@ protected:
 
   void fp_compute() override {}
 
-  void bp_compute() override;
+  void bp_compute() override {
+#ifdef LBANN_HAS_DISTCONV
+    if (this->distconv_enabled()) {
+      dc().bp_compute();
+      return;
+    }
+#endif // LBANN_HAS_DISTCONV
+    auto& gradient_wrt_input = this->get_error_signals();
+    if (this->get_num_children() > 0) {
+      El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
+    } else {
+      El::Zero(gradient_wrt_input);
+    }
+    for (int i = 1; i < this->get_num_children(); ++i) {
+      El::Axpy(DataType(1), this->get_prev_error_signals(i),
+               gradient_wrt_input);
+    }
+  }
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  bool is_distconv_supported() const override { return true; }
+  bool is_distconv_supported() const override {
+    return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
+  }
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<split_distconv_adapter<
       TensorDataType, T_layout, Dev>>(*this);
@@ -148,6 +168,14 @@ LBANN_DEFINE_LAYER_BUILDER(split);
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
+#ifdef LBANN_HAS_DISTCONV
+#define PROTO_DEVICE(T, Device) \
+  extern template class split_distconv_adapter<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class split_distconv_adapter<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_HAS_DISTCONV
 #endif // LBANN_SPLIT_LAYER_INSTANTIATE
 
 } // namespace lbann

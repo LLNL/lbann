@@ -26,88 +26,11 @@
 
 #define LBANN_SUM_LAYER_INSTANTIATE
 #include "lbann/layers/transform/sum.hpp"
-#include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/memory.hpp"
 
-#ifdef LBANN_HAS_DISTCONV
 #include "distconv/tensor/algorithms_cuda.hpp"
-#include "distconv/util/util_mpi.hpp"
-#endif
 
 namespace lbann {
-
-#ifdef LBANN_HAS_DISTCONV
-namespace {
-template <typename TensorDataType>
-struct accumulate {
-  __device__ void operator()(TensorDataType &x, TensorDataType &y) const {
-    x += y;
-  }
-};
-
-template <typename TensorDataType>
-struct accumulate2 {
-  __device__ void operator()(TensorDataType &x, TensorDataType &y, TensorDataType &z) const {
-    x = y + z;
-  }
-};
-
-template <typename TensorDataType, template<typename> class SumDistConvLayer>
-void fp_compute_distconv(int num_parents, SumDistConvLayer<TensorDataType> &dc) {
-  auto activations = dc.get_activations();
-  switch (num_parents) {
-    case 0:
-      activations.zero(El::GPUManager::Stream());
-      break;
-    case 1:
-      dc::tensor::Copy(activations, dc.get_prev_activations(),
-                       El::GPUManager::Stream());
-      break;
-    case 2:
-      // Optimization for layers with 2 parents (e.g.,
-      // Resnet50). Avoids loading destination tensors multiple times
-      dc.get_prev_activations(1).set_outermost_dimension(
-          activations.get_shape()[-1]);
-      dc::tensor::Transform(activations,
-                            dc.get_prev_activations(0),
-                            dc.get_prev_activations(1),
-                            accumulate2<TensorDataType>(),
-                            dc::get_backend().get_stream());
-      break;
-    default:
-      for (int i = 0; i < num_parents; ++i) {
-        auto &prev_activations = dc.get_prev_activations(i);
-        prev_activations.set_outermost_dimension(activations.get_shape()[-1]);
-        if (i == 0) {
-          dc::tensor::Copy(activations, prev_activations,
-                           El::GPUManager::Stream());
-        } else {
-          distconv::tensor::Transform(activations, prev_activations,
-                                      accumulate<TensorDataType>(),
-                                      dc::get_backend().get_stream());
-        }
-      }
-  }
-}
-} // namespace
-#endif // LBANN_HAS_DISTCONV
-
-template <typename TensorDataType, data_layout Layout, El::Device Dev>
-void sum_layer<TensorDataType, Layout, Dev>::fp_compute() {
-#ifdef LBANN_HAS_DISTCONV
-  if (this->distconv_enabled()) {
-    fp_compute_distconv(
-        this->get_num_parents(), this->dc());
-    return;
-  }
-#endif
-  auto& output = this->get_activations();
-  El::Copy(this->get_prev_activations(0), output);
-  for (int i = 1; i < this->get_num_parents(); ++i) {
-    El::Axpy(TensorDataType{1}, this->get_prev_activations(i), output);
-  }
-}
 
 LBANN_LAYER_DEFAULT_BUILDER(sum)
 
@@ -118,5 +41,68 @@ LBANN_LAYER_DEFAULT_BUILDER(sum)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
+#undef PROTO
+
+#ifdef LBANN_HAS_DISTCONV
+namespace {
+template <typename TensorDataType>
+struct accumulate_op {
+  __device__ void operator()(TensorDataType &x, TensorDataType &y) const {
+    x += y;
+  }
+};
+
+template <typename TensorDataType>
+struct sum_op {
+  __device__ void operator()(TensorDataType &x, TensorDataType &y, TensorDataType &z) const {
+    x = y + z;
+  }
+};
+} // namespace
+
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void sum_distconv_adapter<TensorDataType, Layout, Dev>::fp_compute() {
+  auto &activations = this->get_activations();
+  switch (this->layer().get_num_parents()) {
+    case 0:
+      activations.zero(El::GPUManager::Stream());
+      break;
+    case 1:
+      dc::tensor::Copy(activations, this->get_prev_activations(),
+                       El::GPUManager::Stream());
+      break;
+    case 2:
+      // Optimization for layers with 2 parents (e.g.,
+      // Resnet50). Avoids loading destination tensors multiple times
+      this->get_prev_activations(1).set_outermost_dimension(
+          activations.get_shape()[-1]);
+      dc::tensor::Transform(activations,
+                            this->get_prev_activations(0),
+                            this->get_prev_activations(1),
+                            sum_op<TensorDataType>(),
+                            El::GPUManager::Stream());
+      break;
+    default:
+      for (int i = 0; i < this->layer().get_num_parents(); ++i) {
+        auto &prev_activations = this->get_prev_activations(i);
+        prev_activations.set_outermost_dimension(activations.get_shape()[-1]);
+        if (i == 0) {
+          dc::tensor::Copy(activations, prev_activations,
+                           El::GPUManager::Stream());
+        } else {
+          distconv::tensor::Transform(activations, prev_activations,
+                                      accumulate_op<TensorDataType>(),
+                                      El::GPUManager::Stream());
+        }
+      }
+  }
+}
+
+#define PROTO(T)                                                        \
+  template class sum_distconv_adapter<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class sum_distconv_adapter<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#include "lbann/macros/instantiate.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 } // namespace lbann
