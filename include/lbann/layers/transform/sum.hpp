@@ -29,8 +29,21 @@
 
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class sum_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
+ public:
+  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+  sum_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  virtual ~sum_distconv_adapter() = default;
+  std::unique_ptr<TensorDevType> setup_error_signals_i(int index) const override;
+  void fp_compute();
+};
+#endif // LBANN_HAS_DISTCONV
 
 template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
@@ -88,6 +101,12 @@ protected:
   }
 
   void fp_compute() override {
+#ifdef LBANN_HAS_DISTCONV
+    if (this->distconv_enabled()) {
+      dc().fp_compute();
+      return;
+    }
+#endif // LBANN_HAS_DISTCONV
     auto& output = this->get_activations();
     El::Copy(this->get_prev_activations(0), output);
     for (int i = 1; i < this->get_num_parents(); ++i) {
@@ -104,7 +123,41 @@ protected:
 
   void bp_compute() override {}
 
+#ifdef LBANN_HAS_DISTCONV
+  friend class sum_distconv_adapter<TensorDataType, T_layout, Dev>;
+ protected:
+  bool is_distconv_supported() const override {
+    return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
+  }
+  void setup_distconv_adapter() override {
+    this->get_dc() = make_unique<sum_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
+  }
+  sum_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
+  const sum_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
+#endif // LBANN_HAS_DISTCONV
 };
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+sum_distconv_adapter<TensorDataType, T_layout, Dev>&
+sum_layer<TensorDataType, T_layout, Dev>::dc() {
+  return const_cast<sum_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      static_cast<const sum_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+const sum_distconv_adapter<TensorDataType, T_layout, Dev>&
+sum_layer<TensorDataType, T_layout, Dev>::dc() const {
+  return dynamic_cast<const sum_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      data_type_layer<TensorDataType>::dc());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+std::unique_ptr<typename sum_distconv_adapter<TensorDataType, T_layout, Dev>::TensorDevType>
+sum_distconv_adapter<TensorDataType, T_layout, Dev>::setup_error_signals_i(int index) const {
+  return make_unique<TensorDevType>(this->get_prev_error_signals(0));
+}
+#endif // LBANN_HAS_DISTCONV
 
 LBANN_DEFINE_LAYER_BUILDER(sum);
 
@@ -115,6 +168,14 @@ LBANN_DEFINE_LAYER_BUILDER(sum);
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
+#ifdef LBANN_HAS_DISTCONV
+#define PROTO_DEVICE(T, Device) \
+  extern template class sum_distconv_adapter<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class sum_distconv_adapter<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_HAS_DISTCONV
 #endif // LBANN_SUM_LAYER_INSTANTIATE
 
 } // namespace lbann
