@@ -40,6 +40,11 @@ set_full_path(THIS_DIR_HEADERS
   typename.hpp
   )
 
+if (LBANN_HAS_HALF)
+  list(APPEND THIS_DIR_HEADERS
+    ${CMAKE_CURRENT_SOURCE_DIR}/serialization.hpp)
+endif (LBANN_HAS_HALF)
+
 # Add the subdirectories
 add_subdirectory(threads)
 add_subdirectory(impl)

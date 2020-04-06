@@ -32,6 +32,8 @@
  *  Cereal's Binary, JSON, and XML archives are provided.
  */
 
+#include "lbann_config.hpp"
+
 // Half-precision support comes from here:
 #include <El.hpp>
 
@@ -44,23 +46,27 @@
  *  Extensions to Cereal for extra arithmetic types used by LBANN.
  */
 namespace cereal {
+#ifdef LBANN_HAS_HALF
+#ifdef LBANN_HAS_GPU_FP16
 
 /** @name General templates */
 ///@{
 
-/** @brief Save this GPU half-precision value as a float. */
+/** @brief Save a GPU half-precision value. */
 template <typename OutputArchiveT>
 void save(OutputArchiveT& archive, __half const& value) {
   float x = value;
   archive(x);
 }
 
+/** @brief Load a GPU half-precision value. */
 template <typename InputArchiveT>
 void load(InputArchiveT& archive, __half& value) {
   float x = 0.f;
   archive(x);
   value = x;
 }
+
 ///@}
 /** @name Binary archives */
 ///@{
@@ -72,6 +78,8 @@ void save(BinaryOutputArchive&, __half const&);
 void load(BinaryInputArchive&, __half&);
 
 ///@}
+#endif // LBANN_HAS_GPU_FP16
+
 /** @name XML archives */
 ///@{
 
@@ -98,6 +106,7 @@ void save(JSONOutputArchive&, half_float::half const&);
 void load(JSONInputArchive&, half_float::half&);
 
 ///@}
+#endif // LBANN_HAS_HALF
 }// namespace cereal
 
 #endif // LBANN_UTILS_SERIALIZATION_HPP_INCLUDED

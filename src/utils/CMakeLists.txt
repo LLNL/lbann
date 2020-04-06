@@ -19,7 +19,6 @@ set_full_path(THIS_DIR_SOURCES
   protobuf_utils.cpp
   python.cpp
   random.cpp
-  serialization.cpp
   stack_profiler.cpp
   stack_trace.cpp
   statistics.cpp
@@ -29,6 +28,11 @@ set_full_path(THIS_DIR_SOURCES
   jag_common.cpp
   commify.cpp
 )
+
+if (LBANN_HAS_HALF)
+  list(APPEND THIS_DIR_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/serialization.cpp)
+endif (LBANN_HAS_HALF)
 
 if (LBANN_HAS_CUDA)
   # Add the CUDA source files for this directory
