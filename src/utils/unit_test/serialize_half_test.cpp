@@ -9,6 +9,8 @@
 
 #include <lbann/utils/h2_tmp.hpp>
 
+#include <sstream>
+
 using namespace h2::meta;
 
 // (NOTE trb 04/06/2020): There seems to be an issue with Catch2 where
