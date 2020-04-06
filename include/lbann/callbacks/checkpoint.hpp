@@ -177,9 +177,18 @@ class checkpoint : public callback_base {
   }
 
   bool need_checkpoint(model *m, callback_phase phase);
-  std::string find_latest_checkpoint(model *m, std::string& latest_file, execution_mode& mode, size_t &epoch, size_t& step, int& shared);
-  bool open_latest_checkpoint(model *m,
+  std::string find_latest_checkpoint(lbann_comm& comm,
+                                     const std::string& trainer_name,
+                                     const std::string& alg_name,
+                                     std::string& latest_file,
+                                     execution_mode& mode,
+                                     size_t &epoch,
+                                     size_t& step,
+                                     int& shared);
+  bool open_latest_checkpoint(lbann_comm& comm,
                               const std::string& task_label,
+                              const std::string& trainer_name,
+                              const std::string& alg_name,
                               std::function<bool(/*const */persist&)> reload_shared_ckpt,
                               std::function<bool(/*const */persist&)> reload_distributed_ckpt);
   bool reload_model(model *m);
@@ -202,7 +211,6 @@ class checkpoint : public callback_base {
   int m_ckpt_dist_epochs;
   int m_ckpt_dist_steps;
   EvalType m_checkpoint_last;
-  persist p;
   bool m_checkpoint_dist;
   bool m_checkpoint_shared;
 

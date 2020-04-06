@@ -60,6 +60,11 @@ public:
   /** Destructor. */
   ~trainer();
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_persist));
+  }
+
   /** Set the trainer's name; this is an arbitrary string
    *  that may be useful in multi-trainer scenarios, e.g,
    *  LTFB, jag
@@ -142,6 +147,11 @@ public:
     return m_comm;
   }
 
+  /** Get the trainer's persist object */
+  inline persist& get_persist_obj() {
+    return m_persist;
+  }
+
   /** Set a flag that can be used to enable / disable the background I/O activities */
   void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
 
@@ -153,14 +163,14 @@ public:
   // ===========================================
 
   /** @brief Checkpoint model to given file descriptor, return number of bytes written */
-  bool save_to_checkpoint_shared(persist& p);
+  bool save_to_checkpoint_shared();
   /** @brief Restore model by reading checkpoint from given file descriptor, return number of bytes read */
   bool load_from_checkpoint_shared(persist& p);
-  bool load_from_checkpoint_shared(persist& p, model& m, execution_context& c);
+  bool load_from_checkpoint_shared(model& m, execution_context& c);
 
-  bool save_to_checkpoint_distributed(persist& p);
+  bool save_to_checkpoint_distributed();
   bool load_from_checkpoint_distributed(persist& p);
-  bool load_from_checkpoint_distributed(persist& p, model& m, execution_context& c);
+  bool load_from_checkpoint_distributed(model& m, execution_context& c);
 
 private:
 
@@ -175,6 +185,9 @@ private:
 
   /** Flag that allows input layers to fetch data in the background */
   bool m_background_io_allowed;
+
+  /** Persist object used for serializing LBANN classes */
+  persist m_persist;
 
   /** Hash function for @c m_model_execution_context */
   using model_execution_context_hash_t = pair_hash<observer_ptr<model>,

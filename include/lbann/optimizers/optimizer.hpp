@@ -83,7 +83,7 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_step_time));
+    // Do not save the optimizer's step time,
   }
 
   /** @brief Create a copy of the class instance.

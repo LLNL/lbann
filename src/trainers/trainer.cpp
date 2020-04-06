@@ -238,19 +238,30 @@ void trainer::evaluate(observer_ptr<model> model, execution_mode mode, El::Int n
 // Checkpointing
 // =============================================
 
-bool trainer::save_to_checkpoint_shared(persist& p) {
-  auto save_checkpoint = [&p](observer_ptr<execution_context> ctx)
-    ->void { ctx->save_to_checkpoint_shared(p); };
+bool trainer::save_to_checkpoint_shared() {
+  auto save_checkpoint = [this](observer_ptr<execution_context> ctx)
+    ->void { ctx->save_to_checkpoint_shared(this->get_persist_obj()); };
   for_each_execution_context(save_checkpoint);
-  save_rng_to_checkpoint_shared(p, m_comm);
+  save_rng_to_checkpoint_shared(get_persist_obj(), m_comm);
+
+  if (m_comm->am_trainer_master()) {
+    write_cereal_archive<trainer>(*this, get_persist_obj(), "trainer.xml");
+  }
   return true;
 }
 
 bool trainer::load_from_checkpoint_shared(persist& p) {
-  return false;
+  try {
+    load_from_shared_cereal_archive<trainer>(*this, p, *get_comm(), "trainer.xml");
+  }catch (NonexistentArchiveFile const& e) {
+    LBANN_MSG(e.what());
+    return false;
+  }
+  return true;
 }
-bool trainer::load_from_checkpoint_shared(persist& p, model& m, execution_context& c) {
-  load_rng_from_checkpoint(p, m_comm);
+
+bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
+  load_rng_from_checkpoint(get_persist_obj(), m_comm);
 
   execution_mode current_mode = c.get_execution_mode();
 
@@ -261,11 +272,11 @@ bool trainer::load_from_checkpoint_shared(persist& p, model& m, execution_contex
     try {
       if(current_mode == mode) {
         /// Restart has to be able to load the currently running execution context
-        c.load_from_checkpoint_shared(p);
+        c.load_from_checkpoint_shared(get_persist_obj());
       }else {
         key = check_and_build_execution_context(c, m, mode);
         auto& evaluation_context = static_cast<sgd_execution_context&>(get_execution_context(key));
-        evaluation_context.load_from_checkpoint_shared(p);
+        evaluation_context.load_from_checkpoint_shared(get_persist_obj());
       }
     }catch (NonexistentArchiveFile const&) {
       // Ignore the exception if the file is not for the current execution mode
@@ -279,20 +290,21 @@ bool trainer::load_from_checkpoint_shared(persist& p, model& m, execution_contex
   return true;
 }
 
-bool trainer::save_to_checkpoint_distributed(persist& p){
-  auto save_checkpoint = [&p](observer_ptr<execution_context> ctx)
-    ->void { ctx->save_to_checkpoint_distributed(p); };
+bool trainer::save_to_checkpoint_distributed(){
+  auto save_checkpoint = [this](observer_ptr<execution_context> ctx)
+    ->void { ctx->save_to_checkpoint_distributed(this->get_persist_obj()); };
   for_each_execution_context(save_checkpoint);
-  save_rng_to_checkpoint_distributed(p, m_comm);
+  save_rng_to_checkpoint_distributed(get_persist_obj(), m_comm);
   return true;
 }
 
 bool trainer::load_from_checkpoint_distributed(persist& p){
+  read_cereal_archive<trainer>(*this, p, "trainer.xml");
   return false;
 }
 
-bool trainer::load_from_checkpoint_distributed(persist& p, model& m, execution_context& c){
-  load_rng_from_checkpoint(p, m_comm);
+bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c){
+  load_rng_from_checkpoint(get_persist_obj(), m_comm);
 
   execution_mode current_mode = c.get_execution_mode();
 
@@ -303,11 +315,11 @@ bool trainer::load_from_checkpoint_distributed(persist& p, model& m, execution_c
     try {
       if(current_mode == mode) {
         /// Restart has to be able to load the currently running  execution context
-        c.load_from_checkpoint_distributed(p);
+        c.load_from_checkpoint_distributed(get_persist_obj());
       }else {
         key = check_and_build_execution_context(c, m, mode);
         auto& evaluation_context = static_cast<sgd_execution_context&>(get_execution_context(key));
-        evaluation_context.load_from_checkpoint_distributed(p);
+        evaluation_context.load_from_checkpoint_distributed(get_persist_obj());
       }
     }catch (NonexistentArchiveFile const&) {
       // Ignore the exception if the file is not for the current execution mode
