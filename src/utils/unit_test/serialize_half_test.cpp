@@ -10,48 +10,62 @@
 #include <lbann/utils/h2_tmp.hpp>
 
 using namespace h2::meta;
-using BinaryArchiveTypes = TL<cereal::BinaryOutputArchive,
+
+// (NOTE trb 04/06/2020): There seems to be an issue with Catch2 where
+// this *must* be a parameter pack. This only appears to be true for
+// templated type aliases, not actual classes. I haven't looked into
+// it, but I don't care that much since this works around well.
+
+template <typename... ValueType>
+using BinaryArchiveTypes = TL<ValueType...,
+                              cereal::BinaryOutputArchive,
                               cereal::BinaryInputArchive>;
-using JSONArchiveTypes = TL<cereal::JSONOutputArchive,
+template <typename... ValueType>
+using JSONArchiveTypes = TL<ValueType...,
+                            cereal::JSONOutputArchive,
                             cereal::JSONInputArchive>;
-using XMLArchiveTypes = TL<cereal::XMLOutputArchive,
+template <typename... ValueType>
+using XMLArchiveTypes = TL<ValueType...,
+                           cereal::XMLOutputArchive,
                            cereal::XMLInputArchive>;
-TEMPLATE_TEST_CASE("Serialization of half types",
-                   "[utilities][half][serialize]",
-                   BinaryArchiveTypes,
-                   JSONArchiveTypes,
-                   XMLArchiveTypes)
+
+// This is not really elegant, but preprocessing macros inside
+// preprocessor blocks is "undefined behavior" so we duplicate the
+// whole thing.
+#ifdef LBANN_HAS_GPU_FP16
+TEMPLATE_PRODUCT_TEST_CASE(
+  "Serialization of half types",
+  "[utilities][half][serialize]",
+  (BinaryArchiveTypes, JSONArchiveTypes, XMLArchiveTypes),
+  (lbann::cpu_fp16, lbann::fp16))
+#else
+TEMPLATE_PRODUCT_TEST_CASE(
+  "Serialization of half types",
+  "[utilities][half][serialize]",
+  (BinaryArchiveTypes, JSONArchiveTypes, XMLArchiveTypes),
+  (lbann::cpu_fp16))
+#endif
 {
-  using ArchiveTypes = TestType;
+  using ValueType = tlist::Car<TestType>;
+  using ArchiveTypes = tlist::Cdr<TestType>;
   using OutputArchiveT = tlist::Car<ArchiveTypes>; // First entry
   using InputArchiveT = tlist::Cadr<ArchiveTypes>; // Second entry
 
   std::stringstream ss;
-  lbann::cpu_fp16 val(1.23f), val_restore(0.f);
-#ifdef LBANN_GPU_HAS_FP16
-  lbann::fp16 val_gpu(3.21f), val_gpu_restore(0.f);
-#endif
+  ValueType val(1.23f), val_restore(0.f);
+
   // Save
   {
     OutputArchiveT oarchive(ss);
 
     CHECK_NOTHROW(oarchive(val));
-#ifdef LBANN_GPU_HAS_FP16
-    CHECK_NOTHROW(oarchive(val_gpu));
-#endif
   }
 
   // Restore
   {
     InputArchiveT iarchive(ss);
     CHECK_NOTHROW(iarchive(val_restore));
-#ifdef LBANN_GPU_HAS_FP16
-    CHECK_NOTHROW(iarchive(val_gpu_restore));
-#endif
   }
 
   CHECK(val == val_restore);
-#ifdef LBANN_GPU_HAS_FP16
-  CHECK(val_gpu == val_gpu_restore);
-#endif
 }
