@@ -93,6 +93,35 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     // Initalize trainer
     std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, *pb_trainer);
 
+    // If the checkpoint directory has been overridden reset it before
+    // setting up the trainer
+    if (opts && opts->has_string("ckpt_dir")) {
+      for (auto&& c : trainer->get_callbacks()) {
+        {
+          auto* cb = dynamic_cast<callback::checkpoint*>(c);
+          if(cb != nullptr) {
+            cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
+            if(comm->am_trainer_master()) {
+              std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
+            }
+          }
+        }
+      }
+    }
+    if (opts && opts->has_string("restart_dir")) {
+      for (auto&& c : trainer->get_callbacks()) {
+        {
+          auto* cb = dynamic_cast<callback::checkpoint*>(c);
+          if(cb != nullptr) {
+            cb->set_restart_dir(opts->get_string("restart_dir"));
+            if(comm->am_trainer_master()) {
+              std::cout << "Setting the restart directory to " << cb->get_restart_dir() << std::endl;
+            }
+          }
+        }
+      }
+    }
+
     trainer->setup(std::move(io_thread_pool));
 
     if(opts->get_bool("disable_background_io_activity")) {
@@ -268,15 +297,6 @@ std::unique_ptr<model> build_model_from_prototext(
   if (opts && opts->has_string("ckpt_dir")) {
     for (auto&& c : ret_model->get_callbacks()) {
       {
-        auto* cb = dynamic_cast<callback::checkpoint*>(c);
-        if(cb != nullptr) {
-          cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
-          if(comm->am_trainer_master()) {
-            std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
-          }
-        }
-      }
-      {
         auto* cb = dynamic_cast<callback::dump_weights*>(c);
         if(cb != nullptr) {
           cb->set_target_dir(opts->get_string("ckpt_dir"));
@@ -291,20 +311,6 @@ std::unique_ptr<model> build_model_from_prototext(
           cb->set_target_dir(opts->get_string("ckpt_dir"));
           if(comm->am_trainer_master()) {
             std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
-          }
-        }
-      }
-    }
-  }
-
-  if (opts && opts->has_string("restart_dir")) {
-    for (auto&& c : ret_model->get_callbacks()) {
-      {
-        auto* cb = dynamic_cast<callback::checkpoint*>(c);
-        if(cb != nullptr) {
-          cb->set_restart_dir(opts->get_string("restart_dir"));
-          if(comm->am_trainer_master()) {
-            std::cout << "Setting the restart directory to " << cb->get_restart_dir() << std::endl;
           }
         }
       }
