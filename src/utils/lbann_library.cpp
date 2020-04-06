@@ -343,6 +343,7 @@ std::unique_ptr<model> build_model_from_prototext(
         return nullptr;
       }
       active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, mode, epochLast, stepLast);
+      active_load_model_dir += ret_model->get_name() + '/';
     }
 
     if(cb == nullptr) {

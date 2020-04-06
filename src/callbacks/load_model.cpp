@@ -74,7 +74,9 @@ bool load_model::load_model_weights(const std::string& ckpt_dir,
       return false;
     }
     active_ckpt_dir = get_shared_checkpoint_dirname(alg_name, ckpt_dir, mode, epochLast, stepLast);
+    active_ckpt_dir += m->get_name() + '/';
   }
+
   lbann_comm *comm = m->get_comm();
   if(comm->am_trainer_master()) {
     std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;
