@@ -99,8 +99,7 @@ void init_data_readers(
     if ((name == "mnist") || (name == "cifar10")) {
       init_org_image_data_reader(readme, master, reader);
       set_transform_pipeline = false;
-    } else if ((name == "imagenet") ||
-               (name == "multihead_siamese")) {
+    } else if ((name == "imagenet")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_transform_pipeline = false;
     } else if (name == "jag_conduit") {
@@ -392,8 +391,6 @@ void init_data_readers(
         reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
-      } else if (name == "multihead_siamese") {
-  	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
       } else if (name == "jag_conduit") {
         /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
         /// is also shared
