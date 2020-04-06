@@ -27,20 +27,24 @@ TEMPLATE_TEST_CASE("Serialization of half types",
   using InputArchiveT = tlist::Cadr<ArchiveTypes>; // Second entry
 
   std::stringstream ss;
-  lbann::cpu_fp16 val(4.13f), val_restore(0.f);
+  lbann::cpu_fp16 val(1.23f), val_restore(0.f);
+  lbann::fp16 val_gpu(3.21f), val_gpu_restore(0.f);
 
   // Save
   {
     OutputArchiveT oarchive(ss);
 
     CHECK_NOTHROW(oarchive(val));
+    CHECK_NOTHROW(oarchive(val_gpu));
   }
 
   // Restore
   {
     InputArchiveT iarchive(ss);
     CHECK_NOTHROW(iarchive(val_restore));
+    CHECK_NOTHROW(iarchive(val_gpu_restore));
   }
 
   CHECK(val == val_restore);
+  CHECK(val_gpu == val_gpu_restore);
 }

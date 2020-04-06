@@ -43,6 +43,18 @@
 namespace cereal
 {
 
+/** @brief Save this half-precision value in Binary */
+void save(BinaryOutputArchive& archive, __half const& value)
+{
+  archive.saveBinary(std::addressof(value), sizeof(value));
+}
+
+/** @brief Load this half-precision value from Binary */
+void load(BinaryInputArchive& archive, __half& value)
+{
+  archive.loadBinary(std::addressof(value), sizeof(value));
+}
+
 // Save/load functions for XML archives
 float save_minimal(XMLOutputArchive const&,
                    half_float::half const& val) noexcept

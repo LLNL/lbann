@@ -45,6 +45,33 @@
  */
 namespace cereal {
 
+/** @name General templates */
+///@{
+
+/** @brief Save this GPU half-precision value as a float. */
+template <typename OutputArchiveT>
+void save(OutputArchiveT& archive, __half const& value) {
+  float x = value;
+  archive(x);
+}
+
+template <typename InputArchiveT>
+void load(InputArchiveT& archive, __half& value) {
+  float x = 0.f;
+  archive(x);
+  value = x;
+}
+///@}
+/** @name Binary archives */
+///@{
+
+/** @brief Save this half-precision value in Binary */
+void save(BinaryOutputArchive&, __half const&);
+
+/** @brief Load this half-precision value from Binary */
+void load(BinaryInputArchive&, __half&);
+
+///@}
 /** @name XML archives */
 ///@{
 
