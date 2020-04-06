@@ -48,15 +48,6 @@
 #include <memory>
 #include <string>
 
-
-namespace cereal {
-template <class ArchiveT>
-void serialize(ArchiveT& archive, __half& value)
-{
-  (void) archive;
-}
-}// namespace cereal
-
 namespace lbann {
 
 // Forward-declaration.

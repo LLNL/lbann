@@ -216,8 +216,8 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, El::
  ****************************************************/
 
 lbann::persist::persist():
-  m_checkpoint_dir("<unknown>"),
-  ckpt_type(callback_type::invalid) {
+  ckpt_type(callback_type::invalid),
+  m_checkpoint_dir("<unknown>") {
   for(persist_type pt : persist_type_iterator()) {
     // initialize number of bytes written
     m_bytes[pt] = 0;
