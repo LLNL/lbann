@@ -27,11 +27,13 @@
 #ifndef LBANN_BASE_HPP_INCLUDED
 #define LBANN_BASE_HPP_INCLUDED
 
-#include "El.hpp"
+#include <El.hpp>
+
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/enum_iterator.hpp"
+#include "lbann/utils/serialization.hpp"
 
 // Defines, among other things, DataType.
 #include "lbann_config.hpp"

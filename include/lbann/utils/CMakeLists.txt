@@ -31,6 +31,7 @@ set_full_path(THIS_DIR_HEADERS
   prototext.hpp
   python.hpp
   random.hpp
+  serialization.hpp
   statistics.hpp
   summary.hpp
   summary_impl.hpp
