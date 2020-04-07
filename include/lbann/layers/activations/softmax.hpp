@@ -186,18 +186,15 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class softmax_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
-  bool is_distconv_supported() const override { return true; }
-
+  bool is_distconv_supported() const override {
+    return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
+  }
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<softmax_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }
-
   softmax_distconv_adapter<TensorDataType, Layout, Device>& dc() override;
   const softmax_distconv_adapter<TensorDataType, Layout, Device>& dc() const override;
-
-  void fp_compute_distconv();
-  void bp_compute_distconv();
 #endif // LBANN_HAS_DISTCONV
 };
 

@@ -24,8 +24,11 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_RELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/relu.hpp"
 #include "lbann/utils/entrywise_operator.hpp"
+
+#ifdef LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -69,9 +72,10 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
 
 #define PROTO(T)                                                        \
   template class relu_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
-  template class relu_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>;
+  template class relu_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
+#endif // LBANN_HAS_DISTCONV

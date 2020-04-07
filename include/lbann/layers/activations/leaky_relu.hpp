@@ -93,18 +93,15 @@ private:
 
 #ifdef LBANN_HAS_DISTCONV
  protected:
-  bool is_distconv_supported() const override { return true; }
-
+  bool is_distconv_supported() const override {
+    return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;    
+  }
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<leaky_relu_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }
-
   leaky_relu_distconv_adapter<TensorDataType, Layout, Device>& dc() override;
   const leaky_relu_distconv_adapter<TensorDataType, Layout, Device>& dc() const override;
-
-  void fp_compute_distconv();
-  void bp_compute_distconv();
 #endif // LBANN_HAS_DISTCONV
 };
 
@@ -148,7 +145,6 @@ void leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
   m_leaky_relu = make_unique<dc::LeakyReLU>(dc::get_backend());
 }
 #endif // LBANN_HAS_DISTCONV
-
 
 #ifndef LBANN_LEAKY_RELU_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

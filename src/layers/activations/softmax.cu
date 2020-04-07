@@ -263,31 +263,27 @@ __global__ void bp_kernel(size_t height,
   }
 }
 
-} // namespace
-
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void softmax_layer<TensorDataType, Layout, Device>::fp_compute_distconv() {
-  assert_always(this->distconv_enabled());
-  assert_always(Layout == data_layout::DATA_PARALLEL);
-  dc().m_softmax->forward(dc().get_prev_activations(), dc().get_activations());
+void fp_compute_distconv(softmax_distconv_adapter<TensorDataType, Layout, Device> &dc) {
+  dc.m_softmax->forward(dc.get_prev_activations(), dc.get_activations());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void softmax_layer<TensorDataType, Layout, Device>::bp_compute_distconv() {
-  assert_always(this->distconv_enabled());
-  assert_always(Layout == data_layout::DATA_PARALLEL);
-  dc().m_softmax->backward(dc().get_activations(),
-                           dc().get_prev_error_signals(),
-                           dc().get_error_signals());
+void bp_compute_distconv(softmax_distconv_adapter<TensorDataType, Layout, Device> &dc) {
+  dc.m_softmax->backward(dc.get_activations(),
+                         dc.get_prev_error_signals(),
+                         dc.get_error_signals());
 }
 #endif // LBANN_HAS_DISTCONV
+
+} // namespace
 
 template <typename TensorDataType>
 void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 #ifdef LBANN_HAS_DISTCONV
   if (l.distconv_enabled()) {
-    l.fp_compute_distconv();
+    fp_compute_distconv(l.dc());
     return;
   }
 #endif // LBANN_HAS_DISTCONV
@@ -308,7 +304,6 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
   const cudnn::ScalingParamType<TensorDataType> one = 1.;
   const auto& local_input = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_prev_activations());
   auto& local_output = dynamic_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(l.get_local_activations());
-
   if (!local_input.IsEmpty()) {
     CHECK_CUDNN(cudnnSoftmaxForward(cudnn::get_handle(),
                                     CUDNN_SOFTMAX_ACCURATE,
@@ -330,7 +325,7 @@ template <typename TensorDataType>
 void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 #ifdef LBANN_HAS_DISTCONV
   if (l.distconv_enabled()) {
-    l.bp_compute_distconv();
+    bp_compute_distconv(l.dc());
     return;
   }
 #endif // LBANN_HAS_DISTCONV

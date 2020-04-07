@@ -84,18 +84,6 @@ void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
                            this->get_local_error_signals());
 }
 
-#ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute_distconv() {
-  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
-}
-
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute_distconv() {
-  LBANN_ERROR("Device, ", hydrogen::DeviceName<Device>(), " not supported");
-}
-#endif // LBANN_HAS_DISTCONV
-
 #define PROTO(T)                                      \
   template class leaky_relu_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
   template class leaky_relu_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>

@@ -30,9 +30,10 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/utils/distconv.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
+
 namespace lbann {
 
-#ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class relu_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
@@ -46,7 +47,6 @@ class relu_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
 
   std::unique_ptr<dc::ReLU> m_relu;
 };
-#endif // LBANN_HAS_DISTCONV
 
 /** Rectified linear unit activation function layer.
  *  \f[ ReLU(x) = \text{max}(x, 0) \f]
@@ -65,24 +65,17 @@ protected:
   void fp_compute() override;
   void bp_compute() override;
 
-#ifdef LBANN_HAS_DISTCONV
- protected:
-  bool is_distconv_supported() const override { return true; }
-
+  bool is_distconv_supported() const override {
+    return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
+  }
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<relu_distconv_adapter<
       TensorDataType, T_layout, Dev>>(*this);
   }
-
   relu_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
   const relu_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
-
-  void fp_compute_distconv();
-  void bp_compute_distconv();
-#endif // LBANN_HAS_DISTCONV
 };
 
-#ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 relu_distconv_adapter<TensorDataType, T_layout, Dev>&
 relu_layer<TensorDataType, T_layout, Dev>::dc() {
@@ -123,8 +116,17 @@ void relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
                 this->get_error_signals(),
                 this->get_prev_error_signals());
 }
-#endif // LBANN_HAS_DISTCONV
+
+#ifndef LBANN_RELU_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class relu_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class relu_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_SOFTMAX_LAYER_INSTANTIATE
 
 } // namespace lbann
 
+#endif // LBANN_HAS_DISTCONV
 #endif // LBANN_LAYER_ACTIVATION_RELU_HPP_INCLUDED
