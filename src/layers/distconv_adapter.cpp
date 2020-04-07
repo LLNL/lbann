@@ -207,18 +207,21 @@ void distconv_adapter::setup_tensor_shuffle() {
     ss << " child shuffle:" << child_shuffle_ss.str();
   }
   if (ss.str().size() > 0) {
-    dc::MPIRootPrintStreamInfo() << get_name() << ":" << ss.str();
+    dc::MPIRootPrintStreamDebug() << get_name() << ":" << ss.str();
   }
 }
 
 void distconv_adapter::adjust_parallel_strategy() {
   auto &ps = layer().get_parallel_strategy();
-  auto n = ps.sample_groups;
-  auto c = ps.channel_groups;
-  auto f = ps.filter_groups;
-  auto d = get_num_spatial_dims() == 3 ? ps.depth_groups : 1;
-  auto h = ps.height_groups;
-  auto w = ps.width_groups;
+  // The numerical attributes are 0 when not specified. Assume no
+  // partitioning then.
+  auto n = ps.sample_groups != 0 ? ps.sample_groups : 1;
+  auto c = ps.channel_groups != 0 ? ps.channel_groups : 1;
+  auto f = ps.filter_groups != 0 ? ps.filter_groups : 1;
+  auto d = (get_num_spatial_dims() == 3 && ps.depth_groups != 0) ?
+      ps.depth_groups : 1;
+  auto h = ps.height_groups != 0 ? ps.height_groups : 1;
+  auto w = ps.width_groups != 0 ? ps.width_groups : 1;
   auto np = layer().m_comm->get_procs_per_trainer();
 
   const auto spatial_prod = d * h * w;

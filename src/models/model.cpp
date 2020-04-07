@@ -1420,6 +1420,19 @@ bool model::save_model() {
 
 #ifdef LBANN_HAS_DISTCONV
 void model::setup_distconv() {
+  std::stringstream dc_enabled, dc_disabled;
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto &layer = get_layer(i);
+    if (layer.distconv_enabled()) {
+      dc_enabled << " " << layer.get_name();
+    } else {
+      dc_disabled << " " << layer.get_name();
+    }
+  }
+  if (m_comm->am_world_master()) {
+    std::cout << "Distconv-enabled layers: " << dc_enabled.str() << std::endl;
+    std::cout << "Distconv-disabled layers: " << dc_disabled.str() << std::endl;
+  }
   setup_distributions();
   print_distributions();
   // Setup fp tensors
@@ -1435,7 +1448,7 @@ void model::setup_distconv() {
     layer.dc().setup_bp_tensors();
   }
   // Final setup.
-  auto workspace_capacity = get_workspace_capacity();
+  auto workspace_capacity = dc::get_workspace_capacity();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto &layer = get_layer(i);
     if (!layer.distconv_enabled()) continue;
@@ -1474,22 +1487,8 @@ void model::print_distributions() const {
       ss << layer.get_name() << ": distconv disabled" << "\n";
     }
   }
-  dc::MPIRootPrintStreamInfo() << ss.str();
+  dc::MPIRootPrintStreamDebug() << ss.str();
 }
-
-size_t model::get_workspace_capacity() const {
-  size_t available = cuda::get_available_memory_capacity();
-  size_t workspace_capacity = available;
-  // set aside some space for shuffling, halo exchange, etc.
-  workspace_capacity -= 1 << 28;
-  dc::MPIRootPrintStreamInfo()
-      << "Current available memory: " << available << " (" << int(available / 1024.0 / 1024.0)
-      << " MB), workspace: " << workspace_capacity
-      << " (" << int(workspace_capacity / 1024.0 / 1024.0)
-      << " MB)";
-  return workspace_capacity;
-}
-
 #endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann

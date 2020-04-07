@@ -450,6 +450,20 @@ Dist get_hydrogen_data_parallel_distribution(int num_dims) {
   return sample_dist;
 }
 
+size_t get_workspace_capacity() {
+  size_t available, total;
+  FORCE_CHECK_CUDA(cudaMemGetInfo(&available, &total));
+  size_t workspace_capacity = available;
+  // set aside some space for shuffling, halo exchange, etc.
+  workspace_capacity -= 1 << 28;
+  dc::MPIRootPrintStreamInfo()
+      << "Current available memory: " << available << " (" << int(available / 1024.0 / 1024.0)
+      << " MB), workspace: " << workspace_capacity
+      << " (" << int(workspace_capacity / 1024.0 / 1024.0)
+      << " MB)";
+  return workspace_capacity;
+}
+
 #define PROTO(T)                                                \
   template TensorShuffler<T> *get_tensor_shuffler<T>(           \
       const TensorDev<T> &, const TensorDev<T> &);

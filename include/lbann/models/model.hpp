@@ -53,10 +53,6 @@
 #include <string>
 #include <unordered_map>
 
-#ifdef LBANN_HAS_DISTCONV
-#include "lbann/utils/cuda.hpp"
-#endif
-
 // Forward-declare protobuf class
 namespace lbann_data {
 class Model;
@@ -508,8 +504,7 @@ private:
   void setup_distconv();
   void setup_distributions();
   void print_distributions() const;
-  size_t get_workspace_capacity() const;
-#endif
+#endif // LBANN_HAS_DISTCONV
 };
 
 } // namespace lbann
