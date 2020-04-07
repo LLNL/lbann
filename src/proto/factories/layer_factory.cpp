@@ -34,6 +34,9 @@
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/identity.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/activations/relu.hpp"
+#endif // LBANN_HAS_DISTCONV
 #include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/image/bilinear_resize.hpp"
