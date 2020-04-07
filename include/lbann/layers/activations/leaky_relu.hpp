@@ -94,7 +94,7 @@ private:
 #ifdef LBANN_HAS_DISTCONV
  protected:
   bool is_distconv_supported() const override {
-    return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;    
+    return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter() override {
     this->get_dc() = make_unique<leaky_relu_distconv_adapter<
