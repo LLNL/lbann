@@ -463,6 +463,11 @@ private:
   /** @brief Flag that allows input layers to fetch data in the background */
   bool m_background_io_allowed = true;
 
+  /** @brief Is the model setup
+   *  @details Flag to indicate if the setup function has been called
+   */
+  bool m_model_is_setup = false;
+
   // ===========================================
   // Functions to add utility layers
   // ===========================================
