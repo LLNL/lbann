@@ -43,6 +43,8 @@ namespace lbann {
    */
 class smiles_data_reader : public generic_data_reader {
 
+public:
+
   smiles_data_reader(const bool shuffle);
   smiles_data_reader(const smiles_data_reader&);
   smiles_data_reader& operator=(const smiles_data_reader&);
