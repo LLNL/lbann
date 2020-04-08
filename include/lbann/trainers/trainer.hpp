@@ -64,13 +64,9 @@ public:
   ~trainer();
 
   /** Archive for checkpoint and restart */
-<<<<<<< 3dcc5bdd96b4d44d7ec3922f2e5d91922755a59e
   template <class Archive> void serialize(Archive & ar) {
-    ar(CEREAL_NVP(m_persist));
-=======
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(CEREAL_NVP(m_max_mini_batch_size));
->>>>>>> Moved the data reader out of the layer factories where they are
+    ar(CEREAL_NVP(m_persist),
+       CEREAL_NVP(m_max_mini_batch_size));
   }
 
   /** Set the trainer's name; this is an arbitrary string

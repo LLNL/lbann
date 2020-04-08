@@ -84,7 +84,6 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {
-    ar(CEREAL_NVP(m_max_mini_batch_size));
   }
 
   // ===========================================
