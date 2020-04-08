@@ -28,7 +28,9 @@
 #include "lbann/layers/transform/sum.hpp"
 #include "lbann/utils/exception.hpp"
 
+#ifdef LBANN_HAS_DISTCONV
 #include "distconv/tensor/algorithms_cuda.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
