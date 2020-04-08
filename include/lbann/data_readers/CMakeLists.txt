@@ -17,6 +17,7 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_python.hpp
   data_reader_synthetic.hpp
   data_reader_multihead_siamese.hpp
+  data_reader_smiles.hpp
   )
 
 # Propagate the files up the tree
