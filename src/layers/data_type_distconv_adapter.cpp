@@ -301,7 +301,7 @@ setup_original_prev_activations_i(int index) const {
     // Create a shallow copy of the activations of the prev layer
     const auto &parent_activations =
         dynamic_cast<const TensorDevType&>(
-            layer().get_parent_layers()[index]->dc().get_activations(layer()));
+            layer().get_parent_layers()[index]->get_distconv_adapter().get_activations(layer()));
     t = make_unique<TensorDevType>(parent_activations);
   }
   return t;
@@ -332,7 +332,7 @@ setup_prev_activations_i(int index) const {
     // Create a shallow copy
     const auto &parent_activations =
         dynamic_cast<const TensorDevType&>(
-            layer().get_parent_layers()[index]->dc().get_activations(layer()));
+            layer().get_parent_layers()[index]->get_distconv_adapter().get_activations(layer()));
     // Sanity check
     assert_always(parent_activations.get_distribution() == dist);
     t = make_unique<TensorDevType>(parent_activations);
@@ -480,7 +480,7 @@ setup_prev_error_signals_i(int index) const {
     // Create a shallow copy
     const auto &child_error_signals =
         dynamic_cast<const TensorDevType&>(
-            layer().get_child_layers()[index]->dc().get_error_signals(layer()));
+            layer().get_child_layers()[index]->get_distconv_adapter().get_error_signals(layer()));
     // Just sanity check
     assert_always(child_error_signals.get_distribution() == dist);
     t = make_unique<TensorDevType>(child_error_signals);
@@ -517,7 +517,7 @@ setup_original_prev_error_signals_i(int index) const {
     // Create a shallow copy of the activations of the prev layer
     const auto &child_error_signals =
         dynamic_cast<const TensorDevType&>(
-            layer().get_child_layers()[index]->dc().get_error_signals(layer()));
+            layer().get_child_layers()[index]->get_distconv_adapter().get_error_signals(layer()));
     t = make_unique<TensorDevType>(child_error_signals);
   }
   return t;

@@ -603,9 +603,9 @@ private:
   /** Indicate whether original gradient wrt output matrices need to be set up. */
   virtual bool keep_original_gradient_wrt_outputs(int index) const;
   /** Retrievs distconv adapter. */
-  virtual const distconv_adapter& dc() const;
+  virtual const distconv_adapter& get_distconv_adapter() const;
   /** Retrievs distconv adapter. */
-  virtual distconv_adapter& dc();
+  virtual distconv_adapter& get_distconv_adapter();
 
  protected:
   /** Indicate whether distconv is supported. */

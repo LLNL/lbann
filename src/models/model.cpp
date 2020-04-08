@@ -1447,20 +1447,20 @@ void model::setup_distconv() {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto &layer = get_layer(i);
     if (!layer.distconv_enabled()) continue;
-    layer.dc().setup_fp_tensors();
+    layer.get_distconv_adapter().setup_fp_tensors();
   }
   // Setup bp tensors in an reverse order
   for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
     auto &layer = get_layer(i);
     if (!layer.distconv_enabled()) continue;
-    layer.dc().setup_bp_tensors();
+    layer.get_distconv_adapter().setup_bp_tensors();
   }
   // Final setup.
   auto workspace_capacity = dc::get_workspace_capacity();
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto &layer = get_layer(i);
     if (!layer.distconv_enabled()) continue;
-    layer.dc().setup_layer(workspace_capacity);
+    layer.get_distconv_adapter().setup_layer(workspace_capacity);
   }
 }
 
@@ -1469,13 +1469,13 @@ void model::setup_distributions() {
   // Initialize the distributions and constraints
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     if (!get_layer(i).distconv_enabled()) continue;
-    get_layer(i).dc().setup_distributions(constraints);
+    get_layer(i).get_distconv_adapter().setup_distributions(constraints);
   }
   // Add inter-layer distribution constraints
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     if (!get_layer(i).distconv_enabled()) continue;
 
-    get_layer(i).dc().impose_adjacent_overlap_constraints(constraints);
+    get_layer(i).get_distconv_adapter().impose_adjacent_overlap_constraints(constraints);
   }
   constraints.find_valid_overlap();
 }
@@ -1486,10 +1486,10 @@ void model::print_distributions() const {
     const auto& layer = get_layer(i);
     if (layer.distconv_enabled()) {
       ss << layer.get_name()  << " disributions: "
-         << "prev_activations: " << layer.dc().get_prev_activations_dist()
-         << ", activations: " << layer.dc().get_activations_dist()
-         << ", error_signals: " << layer.dc().get_error_signals_dist()
-         << ", prev_error_signals: " << layer.dc().get_prev_activations_dist()
+         << "prev_activations: " << layer.get_distconv_adapter().get_prev_activations_dist()
+         << ", activations: " << layer.get_distconv_adapter().get_activations_dist()
+         << ", error_signals: " << layer.get_distconv_adapter().get_error_signals_dist()
+         << ", prev_error_signals: " << layer.get_distconv_adapter().get_prev_activations_dist()
          << "\n";
     } else {
       ss << layer.get_name() << ": distconv disabled" << "\n";

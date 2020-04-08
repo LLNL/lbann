@@ -330,8 +330,8 @@ void distconv_adapter::impose_adjacent_overlap_constraints(
     Layer *child = const_cast<Layer*>(l.get_child_layers()[0]);
     if (child->distconv_enabled() &&
         child->get_parallel_strategy() == ps) {
-      auto &child_x = child->dc().get_prev_activations_dist();
-      auto &child_dx = child->dc().get_error_signals_dist();
+      auto &child_x = child->get_distconv_adapter().get_prev_activations_dist();
+      auto &child_dx = child->get_distconv_adapter().get_error_signals_dist();
       constraints.mark_equivalent(y, child_x);
       constraints.mark_equivalent(dy, child_dx);
     }
@@ -340,9 +340,9 @@ void distconv_adapter::impose_adjacent_overlap_constraints(
       if (child->distconv_enabled() &&
           child->get_parallel_strategy() == ps) {
         auto &child_x = const_cast<dc::Dist&>(
-            child->dc().get_prev_activations_dist());
+            child->get_distconv_adapter().get_prev_activations_dist());
         auto &child_dx = const_cast<dc::Dist&>(
-            child->dc().get_error_signals_dist());
+            child->get_distconv_adapter().get_error_signals_dist());
         constraints.mark_equivalent(y, child_x);
         constraints.mark_equivalent(dy, child_dx);
       }
@@ -358,9 +358,9 @@ void distconv_adapter::impose_adjacent_overlap_constraints(
     if (parent->distconv_enabled() &&
         parent->get_parallel_strategy() == ps) {
       auto &parent_y = const_cast<dc::Dist&>(
-          parent->dc().get_activations_dist());
+          parent->get_distconv_adapter().get_activations_dist());
       auto &parent_dy = const_cast<dc::Dist&>(
-          parent->dc().get_prev_error_signals_dist());
+          parent->get_distconv_adapter().get_prev_error_signals_dist());
       constraints.mark_equivalent(x, parent_y);
       constraints.mark_equivalent(dx, parent_dy);
     }

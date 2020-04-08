@@ -104,7 +104,7 @@ void data_type_layer<TensorDataType>::forward_prop() {
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) dc().fp_setup(mini_batch_size);
+  if (distconv_enabled()) get_distconv_adapter().fp_setup(mini_batch_size);
 #endif // LBANN_HAS_DISTCONV
 
   // Apply layer's compute function
@@ -113,7 +113,7 @@ void data_type_layer<TensorDataType>::forward_prop() {
   m_fp_compute_time += get_time() - fp_compute_start;
 
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) dc().fp_postprocess();
+  if (distconv_enabled()) get_distconv_adapter().fp_postprocess();
 #endif // LBANN_HAS_DISTCONV
 
   // Add this layer as a gradient source for weight optimizers
@@ -146,7 +146,7 @@ void data_type_layer<TensorDataType>::back_prop() {
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) dc().bp_setup(mini_batch_size);
+  if (distconv_enabled()) get_distconv_adapter().bp_setup(mini_batch_size);
 #endif // LBANN_HAS_DISTCONV
 
   // Backprop the compute function.
@@ -155,7 +155,7 @@ void data_type_layer<TensorDataType>::back_prop() {
   m_bp_compute_time += get_time() - bp_compute_start;
 
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) dc().bp_postprocess();
+  if (distconv_enabled()) get_distconv_adapter().bp_postprocess();
 #endif // LBANN_HAS_DISTCONV
 
   // Remove this layer as a gradient source for weight optimizers
@@ -414,7 +414,7 @@ void data_type_layer<TensorDataType>::setup_data() {
   // memory, but there are some edge cases that are not handled.
   for (int i = 0; i < get_num_children(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
-    if (distconv_enabled() && !dc().child_copy_required(i)) {
+    if (distconv_enabled() && !get_distconv_adapter().child_copy_required(i)) {
       // Avoids allocating unused matrices
       continue;
     }
@@ -670,13 +670,13 @@ void data_type_layer<TensorDataType>::setup_distconv_adapter() {
 }
 
 template <typename TensorDataType>
-data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::dc() {
+data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::get_distconv_adapter() {
   return const_cast<data_type_distconv_adapter<TensorDataType>&>(
-      static_cast<const data_type_layer<TensorDataType>&>(*this).dc());
+      static_cast<const data_type_layer<TensorDataType>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType>
-const data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::dc() const {
+const data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::get_distconv_adapter() const {
   return dynamic_cast<const data_type_distconv_adapter<TensorDataType>&>(*get_distconv_adapter_ptr());
 }
 #endif // LBANN_HAS_DISTCONV
