@@ -30,6 +30,7 @@
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include <mutex>
 
 namespace lbann {
 
@@ -38,6 +39,12 @@ smiles_data_reader::smiles_data_reader(const bool shuffle)
 
 smiles_data_reader::smiles_data_reader(const smiles_data_reader& rhs)  : generic_data_reader(rhs) {
   copy_members(rhs);
+}
+
+smiles_data_reader::~smiles_data_reader() {
+  if (m_data_stream.is_open()) {
+    m_data_stream.close();
+  }
 }
 
 smiles_data_reader& smiles_data_reader::operator=(const smiles_data_reader& rhs) {
@@ -72,194 +79,91 @@ void smiles_data_reader::load() {
 
   std::string infile = get_data_filename();
 
-#if 0
-  // Build owner map
-  int np = m_comm->get_procs_per_trainer();
-  for (size_t j=0; j<m_filenames.size(); j++) {
-    int owner = j % np;
-    int first = first_multi_id_per_file[j];
-    for (int k=0; k<multi_samples_per_file[j]; ++k) {
-      m_multi_sample_to_owner[k+first] = owner;
-    }
+  // Open input data file; get num samples and max sample size
+  m_data_stream.open(infile, std::ios::binary);
+  if (!m_data_stream) {
+    LBANN_ERROR("failed to open SMILES data file for reading: ", infile);
   }
+  m_data_stream.seekg(0, m_data_stream.end);
+  int len =  m_data_stream.tellg();
+  len -= sizeof(int);
+  m_data_stream.seekg(len);
+  int num_samples;
+  m_data_stream.read((char*)&num_samples, sizeof(int));
+  len -= sizeof(short);
+  m_data_stream.seekg(len);
+  short max_sample_size;
+  m_data_stream.read((char*)&max_sample_size, sizeof(short));
+  m_linearized_data_size = max_sample_size;
+  m_data_stream.seekg(0);
 
-  int my_rank = m_comm->get_rank_in_trainer();
-
-  //m_filename_to_multi_sample maps filename -> multi-sample data_ids
-  //m_multi_sample_id_to_first_sample maps multi-sample data_id 
-  //    -> first single-sample that is part of the multi-sample. 
-  //Note: multi-sample data_id is global; single-sample data_id is 
-  //      local (WRT the current file)
-  
-  //Note: m_filename_to_multi_sample contains all multi-samples in the file;
-  //      some of these may be marked for transfer to the validation set
-  //      (during select_subset_of_data)
-
-  for (size_t j=my_rank; j<m_filenames.size(); j += np) { 
-    int first_multi_sample_id = first_multi_id_per_file[j];
-    int num_multi_samples = multi_samples_per_file[j];
-    for (int k=0; k<num_multi_samples; k++) {
-      m_filename_to_multi_sample[m_filenames[j]].insert(first_multi_sample_id+k);
-      m_multi_sample_id_to_first_sample[first_multi_sample_id+k] = k*m_seq_len;
-    }
+  m_sample_offsets.reserve(num_samples);
+  m_sample_sizes.reserve(num_samples);
+  short n_chars;
+  for (int j=0; j<num_samples; j++) {
+    m_data_stream.read((char*)&n_chars, sizeof(short));
+    m_sample_sizes.push_back(n_chars);
+    m_sample_offsets.push_back(m_data_stream.tellg());
   }
-
-  fill_in_metadata();
 
   m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_num_global_samples);
+  m_shuffled_indices.resize(num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
 
   instantiate_data_store();
   select_subset_of_data();
-
-  m_num_train_samples = m_shuffled_indices.size();
-  m_num_validate_samples = m_num_global_samples - m_num_train_samples;
-#endif
 }
 
 void smiles_data_reader::do_preload_data_store() {
-#if 0
   if (is_master()) std::cout << "starting smiles_data_reader::do_preload_data_store; num indices: " << utils::commify(m_shuffled_indices.size()) << " for role: " << get_role() << std::endl;
+  LBANN_ERROR("smiles_data_reader::do_preload_data_store is not yet implemented");
+}
 
-#if 0
-==========================================================================
-data types, from python+numpy:
-
-  rots          numpy.float64  RAS rotation angle    
-  states        numpy.float64  the assigned state
-  tilts         numpy.float64  RAS tilt angle
-  density_sig1  numpy.float64  13x13x14 lipid density data
-  frames        numpy.int64    list of frame ids
-  bbs           numpy.float32  184x3 xyz coordinates for 
-                               each of the 184 RAS backbone beads
-  probs         numpy.float64  probability to be in each of the three states
-
-  Notes: 
-    1. Adam talks about 'frames,' which is equivalent, in lbannese, to 'sample'
-    2. the "frames" field is simply a set of sequential integers, 0 .. 539
-
-==========================================================================
-#endif
-
-  m_data_store->set_owner_map(m_multi_sample_to_owner);
-
-  // get normalization data
-  read_normalization_data();
-
-  // get the set of shuffled indices
-  std::unordered_set<int> this_readers_indices;
-  for (const auto &data_id : m_shuffled_indices) {
-    this_readers_indices.insert(data_id);
-  }
-
-  // Variables only used for user feedback
-  bool verbose = options::get()->get_bool("verbose");
-  int np = m_comm->get_procs_per_trainer();
-  size_t nn = 0; 
-
-  std::vector<conduit::Node> work(m_seq_len);
-
-  // option and variables only used for testing during development
-  bool debug_concatenate = options::get()->get_bool("debug_concatenate");
-  if (m_seq_len > 1) {
-    debug_concatenate = false;
-  }
-  bool testme = true;
-
-  // Determine which branch to use when forming multi-sample and inserting
-  // in the data store
-  int which = 2;
-  if (m_seq_len == 1 && !debug_concatenate) {
-    which = 1;
-  }
-  //TODO: fix this
-  which = 2;
-
-  // Loop over the files owned by this processer
-  for (const auto &t : m_filename_to_multi_sample) {
-
-    // Load the next data file
-    std::map<std::string, cnpy::NpyArray> data = cnpy::npz_load(t.first);
-
-    for (const auto &multi_sample_id : t.second) {
-      if (this_readers_indices.find(multi_sample_id) != this_readers_indices.end()) {
-        int starting_id = m_multi_sample_id_to_first_sample[multi_sample_id];
-
-        // Load the single-samples that will be concatenated to form
-        // the next multi-sample
-        for (int k=0; k<m_seq_len; ++k) {
-          load_the_next_sample(work[k], starting_id+k, data);
-
-          ++nn;
-          if (verbose && is_master() && nn % 1000 == 0) {
-            std::cout << "estimated number of single-samples processed: "
-                      << utils::commify(nn/1000*np) << "K" << std::endl;
-          }
-        }
-
-        // First branch: seq_len = 1
-        if (which == 1) {
-          // debug block; will go away
-          if (testme && is_master()) {
-            std::cout << "Taking first branch (seq_len == 1)" << std::endl;
-            testme = false;
-          }
-
-          work[0]["states"].value();
-          m_data_store->set_conduit_node(multi_sample_id, work[0]);
-        }  
-
-        // Second branch: seq_len > 1, or seq_len = 1 and we're using this
-        //        branch for debugging
-        else {
-          // debug block; will go away
-          if (is_master() && m_seq_len == 1 && testme) {
-            std::cout << "Taking second branch (seq_len == 1)" << std::endl;
-            testme = false;
-          }
-
-          // Construct the multi-sample and set it in the data store
-          conduit::Node n3;
-          construct_multi_sample(work, multi_sample_id, n3);
-          m_data_store->set_conduit_node(multi_sample_id, n3);
-        }
+bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
+  bool have_node = true;
+  conduit::Node node;
+  std::vector<short> data_vector;
+  if (m_data_store != nullptr) {
+    if (data_store_active()) {
+      //get data from node from data store
+      const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
+      node.set_external(ds_node);
+      have_node = true;
+    } else if (priming_data_store()) {
+      //get data from file, and stuff it in the data store;
+      // data is retrieved in vector<short> data
+      load_conduit_node_from_file(data_id, node);
+      m_data_store->set_conduit_node(data_id, node);
+      have_node = false;
+    } else {
+      have_node = false;
+      if (get_role() != "test") {
+        LBANN_ERROR("using data_store for smiles_data_reader::fetch_datum is not implemented for role=test (actually, you probably shouldn't be here; please contact Dave Hysom)");
+      } else {
+       LBANN_ERROR("data_store is active, but data_store_active()=false and priming_data_store() = false. It should be impossible to be here; please contact Dave Hysom");
       }
     }
   }
 
-  // user feedback
-  if (get_role() == "train") {
-    print_shapes_etc();
-  }
-#endif
-}
-
-bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
-#if 0
-  const conduit::Node& node = m_data_store->get_conduit_node(data_id);
-  const double *data = node[LBANN_DATA_ID_STR(data_id) + "/density_sig1"].value();
-
-  size_t n = m_seq_len*m_datum_num_words["density_sig1"];
-  for (size_t j = 0; j < n; ++j) {
-    X(j, mb_idx) = data[j];
+  // this block fires if not using data store
+  else {
+    read_datum(data_id, data_vector);
   }
 
-#if 0
-Notes from Adam:
-The keras model that I gave you only looks at the density_sig1 data as input data and it uses the states data as labels.  We¿ll want to also extract bbs to merge that with density_sig1 in various ways as input data in future models that we¿re putting together.
-
- The probs field can be useful as an alternate label if building a regression model instead of a classification model.  I¿ve also been using the probs field as a filter on the training data to only consider those input data whose state probability exceeds some threshold.
-
-  So that works out to:
-
-   bb, density_sig1 - datum
-   states           - label
-   probs            - used as a filter to include/exclude certain samples
-
-#endif
-#endif
+  short *v;
+  if (have_node) {
+    //get v* from conduit node
+    v =  node[LBANN_DATA_ID_STR(data_id) + "/density_sig1"].value(); 
+  } else {
+    //get v* from vector<short> data
+    v = data_vector.data();
+  }
+  int n = m_sample_sizes[data_id];
+  for (int j = 0; j < n; ++j) {
+    X(j, mb_idx) = v[j]; 
+  }
+  
   return true;
 }
 
@@ -274,45 +178,44 @@ bool smiles_data_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
 }
 
 
-#if 0
-TODO: print statistics
 //user feedback
-void smiles_data_reader::print_shapes_etc() {
+void smiles_data_reader::print_statistics() const {
   if (!is_master()) {
     return;
   }
 
-  // master prints statistics
   std::cout << "\n======================================================\n";
+#if 0
   std::cout << "num train samples=" << m_num_train_samples << std::endl;
   std::cout << "num validate samples=" << m_num_validate_samples << std::endl;
   std::cout << "sequence length=" << m_seq_len << std::endl;
   std::cout << "num features=" << get_linearized_data_size() << std::endl;
   std::cout << "num labels=" << get_num_labels() << std::endl;
   std::cout << "data dims=";
-  for (size_t h=0; h<m_datum_shapes["density_sig1"].size(); h++) {
-    std::cout << m_datum_shapes["density_sig1"][h];
-    if (h < m_datum_shapes["density_sig1"].size() - 1) {
-      std::cout << "x";
-    }
-  }
-  std::cout << std::endl;
-
-  if (options::get()->get_bool("verbose_print")) {
-    std::cout << "\nAll data shapes:\n";
-    for (const auto &t : m_datum_shapes) {
-      std::cout << "  " << t.first << " ";
-      for (const auto &t2 : t.second) {
-        std::cout << t2 << " ";
-      }
-      std::cout << std::endl;
-    }
-    std::cout << std::endl;
-  }  
-
+#endif
   std::cout << "======================================================\n\n";
 }
-#endif
 
+void smiles_data_reader::read_datum(const int data_id, std::vector<short> &data_out) {
+  //TODO: get rid of mutex
+  std::lock_guard<std::mutex> lock(m_mutex);
+  if (!m_data_stream.is_open()) {
+    LBANN_ERROR("input data stream is not open, but should be");
+  }
+  m_data_stream.seekg(m_sample_offsets[data_id]);
+  short num_chars;
+  m_data_stream.read((char*)&num_chars, sizeof(short));
+  if (num_chars != m_sample_sizes[data_id]) {
+    LBANN_ERROR("num_chars != m_sample_sizes[data_id] but should be");
+  }
+  data_out.resize(num_chars);
+  m_data_stream.read((char*)data_out.data(), sizeof(short)*num_chars);
+}
+
+void smiles_data_reader::load_conduit_node_from_file(const int data_id, conduit::Node &node) {
+  std::vector<short>  data;
+  read_datum(data_id, data);
+  node[LBANN_DATA_ID_STR(data_id) + "/data"].set(data);
+}
 
 }  // namespace lbann

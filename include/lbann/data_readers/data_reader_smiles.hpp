@@ -31,7 +31,6 @@
 #include "conduit/conduit.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/data_readers/data_reader.hpp"
-#include "conduit/conduit.hpp"
 
 namespace lbann {
   /**
@@ -44,12 +43,10 @@ namespace lbann {
    */
 class smiles_data_reader : public generic_data_reader {
 
-public:
-
   smiles_data_reader(const bool shuffle);
   smiles_data_reader(const smiles_data_reader&);
   smiles_data_reader& operator=(const smiles_data_reader&);
-  ~smiles_data_reader() override {}
+  ~smiles_data_reader() override;
 
   smiles_data_reader* copy() const override { return new smiles_data_reader(*this); }
 
@@ -59,8 +56,6 @@ public:
 
   void load() override;
 
-  void set_num_labels(int n) { m_num_labels = n; }
-
   int get_linearized_data_size() const override { return m_linearized_data_size; }
   int get_linearized_label_size() const override {  return m_linearized_label_size; }
   int get_linearized_response_size() const override { return m_linearized_response_size; }
@@ -69,10 +64,21 @@ public:
 
 private:
 
+  std::ifstream m_data_stream;
+
   int m_linearized_data_size = 0;
   int m_linearized_label_size = 0;
   int m_linearized_response_size = 0;
   int m_num_labels = 0;
+
+  // m_sample_offsets[j] contains the offset, wrt m_data_stream,
+  // at which the j-th sample begins
+  std::vector<size_t> m_sample_offsets;
+
+  // m_sample_sizes[j] contains the number of shorts in the j-th sample
+  std::vector<short> m_sample_sizes;
+
+  std::mutex m_mutex;
 
   //=====================================================================
   // private methods follow
@@ -86,6 +92,10 @@ private:
   bool fetch_datum(CPUMat& X, int data_id, int mb_idx) override;
   bool fetch_label(CPUMat& Y, int data_id, int mb_idx) override;
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
+
+  void print_statistics() const;
+  void read_datum(const int data_id, std::vector<short> &data_out);
+  void load_conduit_node_from_file(const int data_id, conduit::Node &node);
 };
 
 }  // namespace lbann
