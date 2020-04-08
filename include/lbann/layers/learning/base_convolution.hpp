@@ -1272,27 +1272,27 @@ private:
   friend class base_convolution_adapter<TensorDataType, Device>;
  protected:
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<
+    this->get_distconv_adapter_ptr() = make_unique<
       base_convolution_adapter<TensorDataType, Device>>(*this);
   }
-  base_convolution_adapter<TensorDataType, Device>& dc() override;
-  const base_convolution_adapter<TensorDataType, Device>& dc() const override;
+  base_convolution_adapter<TensorDataType, Device>& get_distconv_adapter() override;
+  const base_convolution_adapter<TensorDataType, Device>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 };
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, El::Device Device>
 const base_convolution_adapter<TensorDataType, Device>&
-base_convolution_layer<TensorDataType, Device>::dc() const {
+base_convolution_layer<TensorDataType, Device>::get_distconv_adapter() const {
   return dynamic_cast<const base_convolution_adapter<
-    TensorDataType, Device>&>(data_type_layer<TensorDataType>::dc());
+    TensorDataType, Device>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, El::Device Device>
 base_convolution_adapter<TensorDataType, Device>&
-base_convolution_layer<TensorDataType, Device>::dc() {
+base_convolution_layer<TensorDataType, Device>::get_distconv_adapter() {
   return const_cast<base_convolution_adapter<TensorDataType, Device>&>(
-      static_cast<const base_convolution_layer<TensorDataType, Device>&>(*this).dc());
+      static_cast<const base_convolution_layer<TensorDataType, Device>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType, El::Device Device>
@@ -1319,7 +1319,7 @@ void base_convolution_adapter<TensorDataType, Device>::setup_fp_tensors() {
       *m_kernel, layer.get_data_type_weights(0).get_values().LockedBuffer()));
 
   if (layer.m_bias_scaling_factor != TensorDataType(0)) {
-    dc::Shape bias_shape(layer.get_num_dims(), 1);
+    dc::Shape bias_shape(dc::get_num_dims(layer), 1);
     bias_shape[dc::get_channel_dim()] = layer.get_output_dims()[0];
     m_bias = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
     assert0(dc::tensor::View(
@@ -1349,7 +1349,7 @@ void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors() {
   if (l.m_bias_scaling_factor != TensorDataType(0)) {
     auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
     if (bias_optimizer != nullptr) {
-      dc::Shape bias_shape(this->get_num_dims(), 1);
+      dc::Shape bias_shape(dc::get_num_dims(l), 1);
       bias_shape[dc::get_channel_dim()] = l.get_output_dims()[0];
       m_bias_gradient = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
       // setup_bias_gradients needs strides of the bias tensor,
@@ -1367,7 +1367,7 @@ size_t workspace_capacity) {
   data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
   auto &layer = dynamic_cast<base_convolution_layer<TensorDataType, Device>&>(this->layer());
   m_conv = make_unique<dc::Convolution<TensorDataType>>(
-      dc::get_backend(), layer.get_num_dims(),
+      dc::get_backend(), dc::get_num_dims(layer),
       dc::get_halo_exchange_method());
   if (layer.m_bias_scaling_factor != TensorDataType(0)) {
     m_conv->setup_bias(*m_bias);
