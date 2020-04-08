@@ -188,14 +188,7 @@ protected:
    *  setup, they are destroyed and reinstantiated.
    */
   void setup_matrices(const El::Grid& grid) override;
-  /** Construct distributed matrix.
-   *  Called by the 'setup_matrices' function. 'type' is one of the
-   *  following: "input", "output", "gradient_wrt_output",
-   *  "gradient_wrt_input".
-   */
-  virtual std::unique_ptr<AbsDistMatrixType> construct_matrix(const El::Grid& grid,
-                                                       std::string type,
-                                                       El::Int index);
+
   /** Setup layer data.
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
@@ -282,6 +275,7 @@ protected:
   bool has_weights() const noexcept { return num_weights() > 0; }
 
 private:
+
   // ===========================================================
   // Private access functions
   // ===========================================================
