@@ -57,6 +57,8 @@ SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
 ENABLE_GPUS=ON
 GPU_VARIANTS="+gpu+nccl"
+ENABLE_HALF=OFF
+HALF_VARIANTS="~half"
 BUILD_TYPE=Release
 VERBOSE=0
 LBANN_ENV=
@@ -80,6 +82,7 @@ Options:
   ${C}--verbose${N}            Verbose output.
   ${C}-d | -deps-only)${N}     Only install the lbann dependencies
   ${C}-e | --env${N}           Build and install LBANN in the spack environment provided.
+  ${C}--half${N}               Enable support for HALF precision data types in Hydrogen and DiHydrogen
   ${C}--disable-gpus${N}       Disable GPUS
   ${C}-s | --superbuild${N}    Superbuild LBANN with dihydrogen, hydrogen, and aluminum
 EOF
@@ -110,6 +113,10 @@ while :; do
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
+            ;;
+        --half)
+            ENABLE_HALF=ON
+            HALF_VARIANTS="+half"
             ;;
         --disable-gpus)
             ENABLE_GPUS=OFF
@@ -146,8 +153,8 @@ if [[ ${SYS} = "Darwin" ]]; then
 fi
 
 BUILD_SPECS=
-HYDROGEN_VARIANTS="variants: +shared +int64 +al"
-DIHYDROGEN_VARIANTS="variants: +shared +al +openmp"
+HYDROGEN_VARIANTS="variants: +shared +int64 +al ${HALF_VARIANTS}"
+DIHYDROGEN_VARIANTS="variants: +shared +al +openmp ${HALF_VARIANTS}"
 if [[ ${DEPS_ONLY} = "TRUE" ]]; then
     if [[ ${SYS} != "Darwin" ]]; then
         HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +openmp_blas"
@@ -173,6 +180,14 @@ EOF
 )
     fi
 
+    HALF_PACKAGES=
+    if [[ "${ENABLE_HALF}" == "ON" ]]; then
+        HALF_PACKAGES=$(cat <<EOF
+  - half
+EOF
+)
+    fi
+
     SUPERBUILD_SPECS=
     if [[ ${BUILD_LBANN_SW_STACK} == "TRUE" ]]; then
         SUPERBUILD_SPECS=$(cat <<EOF
@@ -191,7 +206,7 @@ ${SUPERBUILD_SPECS}
   - clara
   - cnpy
   - conduit
-  - half
+${HALF_PACKAGES}
   - hwloc
   - opencv
   - zlib
@@ -204,6 +219,7 @@ ${GPU_PACKAGES}
   - catch2
   - cmake
   - ninja
+  - python
   - py-pytest
 ${COMPILER_PACKAGE}
 EOF
@@ -219,7 +235,7 @@ fi
 
 AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
-    AL_VARIANTS="variants: +gpu+nccl~mpi_cuda"
+    AL_VARIANTS="variants: +gpu+nccl+mpi_cuda"
     HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
     DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy"
 fi

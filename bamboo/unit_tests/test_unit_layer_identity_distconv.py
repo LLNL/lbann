@@ -77,7 +77,7 @@ def construct_model(lbann):
     callbacks = []
 
     # ------------------------------------------
-    # Data-parallel layout
+    # Data-parallel layout with distconv
     # ------------------------------------------
 
     # LBANN implementation

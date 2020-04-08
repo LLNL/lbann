@@ -238,11 +238,7 @@ void exchange_models(lbann_comm& comm,
   {
     persist p;
     p.set_cb_type(callback_type::model_only);
-    if (comm.am_trainer_master()) {
-      p.open_checkpoint(send_dir);
-    } else {
-      p.m_checkpoint_dir = send_dir;
-    }
+    p.open_checkpoint(send_dir, comm.am_trainer_master());
     comm.trainer_barrier();
     m.save_to_checkpoint_shared(p);
     p.close_checkpoint();
