@@ -122,7 +122,7 @@ void rmsprop<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
 template <typename TensorDataType>
 bool rmsprop<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   if (this->get_comm().am_trainer_master()) {
-    write_cereal_archive<rmsprop<TensorDataType>>(*this, p, "rmsprop.xml");
+    write_cereal_archive(*this, p, "rmsprop.xml");
   }
 
   char l_name[512];
@@ -134,7 +134,7 @@ bool rmsprop<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string 
 
 template <typename TensorDataType>
 bool rmsprop<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  load_from_shared_cereal_archive<rmsprop<TensorDataType>>(*this, p, this->get_comm(), "rmsprop.xml");
+  load_from_shared_cereal_archive(*this, p, this->get_comm(), "rmsprop.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -145,7 +145,7 @@ bool rmsprop<TensorDataType>::load_from_checkpoint_shared(persist& p, std::strin
 
 template <typename TensorDataType>
 bool rmsprop<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  write_cereal_archive<rmsprop<TensorDataType>>(*this, p, "rmsprop.xml");
+  write_cereal_archive(*this, p, "rmsprop.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -156,7 +156,7 @@ bool rmsprop<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::st
 
 template <typename TensorDataType>
 bool rmsprop<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  read_cereal_archive<rmsprop<TensorDataType>>(*this, p, "rmsprop.xml");
+  read_cereal_archive(*this, p, "rmsprop.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());

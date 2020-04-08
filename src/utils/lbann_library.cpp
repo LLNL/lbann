@@ -342,8 +342,7 @@ std::unique_ptr<model> build_model_from_prototext(
         LBANN_ERROR("Unable to find the latest checkpoint ", active_load_model_dir);
         return nullptr;
       }
-      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, mode, epochLast, stepLast);
-      active_load_model_dir += ret_model->get_name() + '/';
+      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, mode, epochLast, stepLast) + ret_model->get_name() + '/';
     }
 
     if(cb == nullptr) {

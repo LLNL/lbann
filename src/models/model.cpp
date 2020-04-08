@@ -40,8 +40,6 @@
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
 #include <cereal/types/base_class.hpp>
 #include <cereal/types/polymorphic.hpp>
 
@@ -1274,13 +1272,13 @@ struct lbann_model_header {
 };
 
 bool model::save_to_checkpoint_shared(persist& p) {
-  std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_checkpoint_dir(p.get_checkpoint_dir() + '/' + get_name() + '/', m_comm->am_trainer_master());
+  const std::string trainer_dir = p.get_checkpoint_dir();
+  p.open_checkpoint_dir(trainer_dir + '/' + get_name() + '/', m_comm->am_trainer_master());
   // Make sure that the master has had a chance to create the directories
   m_comm->trainer_barrier();
   // write out fields we need to save for model
   if (m_comm->am_trainer_master()) {
-    write_cereal_archive<model>(*this, p, "model.xml");
+    write_cereal_archive(*this, p, "model.xml");
   }
 
   for (auto&& w : m_weights) {
@@ -1300,11 +1298,11 @@ bool model::save_to_checkpoint_shared(persist& p) {
 }
 
 bool model::load_from_checkpoint_shared(persist& p) {
-  std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_restart(p.get_checkpoint_dir() + '/' + get_name() + '/');
+  const std::string trainer_dir = p.get_checkpoint_dir();
+  p.open_restart(trainer_dir + '/' + get_name() + '/');
   // Assume checkpoint reload from epoch end not step end
 
-  load_from_shared_cereal_archive<model>(*this, p, *get_comm(), "model.xml");
+  load_from_shared_cereal_archive(*this, p, *get_comm(), "model.xml");
 
   for (auto&& w : m_weights) {
     w->load_from_checkpoint_shared(p);
@@ -1331,12 +1329,12 @@ bool model::load_from_checkpoint_shared(persist& p) {
 }
 
 bool model::save_to_checkpoint_distributed(persist& p){
-  std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_checkpoint_dir(p.get_checkpoint_dir() + '/' + get_name() + '/', true);
+  const std::string trainer_dir = p.get_checkpoint_dir();
+  p.open_checkpoint_dir(trainer_dir + '/' + get_name() + '/', true);
   // Make sure that the master has had a chance to create the directories
   m_comm->trainer_barrier();
 
-  write_cereal_archive<model>(*this, p, "model.xml");
+  write_cereal_archive(*this, p, "model.xml");
 
   // for each execution context write out them out
   for (auto&& w : m_weights) {
@@ -1357,10 +1355,10 @@ bool model::save_to_checkpoint_distributed(persist& p){
 }
 
 bool model::load_from_checkpoint_distributed(persist& p){
-  std::string trainer_dir = p.get_checkpoint_dir();
-  p.open_restart(p.get_checkpoint_dir() + '/' + get_name() + '/');
+  const std::string trainer_dir = p.get_checkpoint_dir();
+  p.open_restart(trainer_dir + '/' + get_name() + '/');
 
-  read_cereal_archive<model>(*this, p, "model.xml");
+  read_cereal_archive(*this, p, "model.xml");
 
   for (auto&& w : m_weights) {
     w->load_from_checkpoint_distributed(p);

@@ -120,7 +120,7 @@ class persist {
   ~persist() {};
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
+  template <class Archive> void serialize(Archive & ar) {
     ar(CEREAL_NVP(ckpt_type));
   }
 
@@ -280,14 +280,14 @@ template <typename C>
 void load_from_shared_cereal_archive(C& obj, persist& p,
                                      lbann_comm& comm,
                                      const std::string& filename) {
-  load_from_shared_cereal_archive<C>(obj, comm, p.get_checkpoint_dir() + filename);
+  load_from_shared_cereal_archive(obj, comm, p.get_checkpoint_dir() + filename);
 }
 
 template <typename C>
 void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
                                      lbann_comm& comm,
                                      const std::string& suffix) {
-  load_from_shared_cereal_archive<C>(obj, comm, p.get_filename(pt) + suffix);
+  load_from_shared_cereal_archive(obj, comm, p.get_filename(pt) + suffix);
 }
 
 template <typename C>

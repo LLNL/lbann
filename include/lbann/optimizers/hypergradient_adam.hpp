@@ -84,8 +84,8 @@ public:
   hypergradient_adam* copy() const override { return new hypergradient_adam(*this); }
 
     /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<data_type_optimizer<TensorDataType>>( this ),
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
        CEREAL_NVP(m_hyper_learning_rate),
        CEREAL_NVP(m_beta1),
        CEREAL_NVP(m_beta2),

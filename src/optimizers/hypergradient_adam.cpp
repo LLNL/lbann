@@ -152,7 +152,7 @@ void hypergradient_adam<TensorDataType>::step_compute(AbsDistMatrixType& values,
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   if (this->get_comm().am_trainer_master()) {
-    write_cereal_archive<hypergradient_adam<TensorDataType>>(*this, p, "hypergradient_adam.xml");
+    write_cereal_archive(*this, p, "hypergradient_adam.xml");
   }
 
   char l_name[512];
@@ -170,7 +170,7 @@ bool hypergradient_adam<TensorDataType>::save_to_checkpoint_shared(persist& p, s
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  load_from_shared_cereal_archive<hypergradient_adam<TensorDataType>>(*this, p, this->get_comm(), "hypergradient_adam.xml");
+  load_from_shared_cereal_archive(*this, p, this->get_comm(), "hypergradient_adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld.bin", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -186,7 +186,7 @@ bool hypergradient_adam<TensorDataType>::load_from_checkpoint_shared(persist& p,
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  write_cereal_archive<hypergradient_adam<TensorDataType>>(*this, p, "hypergradient_adam.xml");
+  write_cereal_archive(*this, p, "hypergradient_adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());
@@ -203,7 +203,7 @@ bool hypergradient_adam<TensorDataType>::save_to_checkpoint_distributed(persist&
 
 template <typename TensorDataType>
 bool hypergradient_adam<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  read_cereal_archive<hypergradient_adam<TensorDataType>>(*this, p, "hypergradient_adam.xml");
+  read_cereal_archive(*this, p, "hypergradient_adam.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_adam_moment1_%lldx%lld", name_prefix.c_str(), m_moment1->Height(), m_moment2->Width());

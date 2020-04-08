@@ -82,8 +82,8 @@ public:
   virtual ~optimizer() = default;
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    // Do not save the optimizer's step time,
+  template <class Archive> void serialize(Archive & ar) {
+    // Do not save the optimizer's step time
   }
 
   /** @brief Create a copy of the class instance.

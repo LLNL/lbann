@@ -77,8 +77,8 @@ public:
   adam* copy() const override { return new adam(*this); }
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<data_type_optimizer<TensorDataType>>( this ),
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
        CEREAL_NVP(m_beta1),
        CEREAL_NVP(m_beta2),
        CEREAL_NVP(m_eps),

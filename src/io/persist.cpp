@@ -226,7 +226,7 @@ lbann::persist::persist():
   }
 }
 
-void lbann::persist::open_checkpoint_dir(const std::string& dir, bool create_dir) {
+void lbann::persist::open_checkpoint_dir(const std::string& dir, bool const create_dir) {
   if(create_dir) {
     // create directory for checkpoint
     lbann::makedir(dir.c_str());
@@ -237,7 +237,7 @@ void lbann::persist::open_checkpoint_dir(const std::string& dir, bool create_dir
 
 /** @todo BVE FIXME this should be refactored to only open the
     checkpoints files that we care about */
-void lbann::persist::open_checkpoint(const std::string& dir, bool create_dir) {
+void lbann::persist::open_checkpoint(const std::string& dir, bool const create_dir) {
   open_checkpoint_dir(dir, create_dir);
 
   for(persist_type pt : persist_type_iterator()) {

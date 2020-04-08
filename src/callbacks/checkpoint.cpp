@@ -466,19 +466,13 @@ bool checkpoint::reload_model(model *m) {
 
 // Reload a model from a Shared/Distributed checkpoint
 bool checkpoint::reload_trainer(trainer *t) {
-  auto reload_shared_trainer = std::function<bool(persist&)>
-    ([t](persist& p_ref)
-     ->bool {
-      auto flag = t->load_from_checkpoint_shared(p_ref);
-      return flag;
-    });
+  auto reload_shared_trainer = [t](persist& p_ref) {
+      return t->load_from_checkpoint_shared(p_ref);
+    };
 
-  auto reload_distributed_trainer = std::function<bool(persist&)>
-    ([t](persist& p_ref)
-     ->bool {
-      auto flag = t->load_from_checkpoint_distributed(p_ref);
-      return flag;
-    });
+  auto reload_distributed_trainer = [t](persist& p_ref) {
+      return t->load_from_checkpoint_distributed(p_ref);
+    };
 
   auto flag = open_latest_checkpoint(*(t->get_comm()),
                                      "Reloading Trainer",

@@ -61,7 +61,7 @@ public:
   ~trainer();
 
   /** Archive for checkpoint and restart */
-  template <class Archive> void serialize( Archive & ar ) {
+  template <class Archive> void serialize(Archive & ar) {
     ar(CEREAL_NVP(m_persist));
   }
 

@@ -176,7 +176,7 @@ void sgd<TensorDataType>::momentum_step_cpu(AbsDistMatrixType& values,
 template <typename TensorDataType>
 bool sgd<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
   if (this->get_comm().am_trainer_master()) {
-    write_cereal_archive<sgd<TensorDataType>>(*this, p, "sgd.xml");
+    write_cereal_archive(*this, p, "sgd.xml");
   }
 
   char l_name[512];
@@ -188,7 +188,7 @@ bool sgd<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name
 
 template <typename TensorDataType>
 bool sgd<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  load_from_shared_cereal_archive<sgd<TensorDataType>>(*this, p, this->get_comm(), "sgd.xml");
+  load_from_shared_cereal_archive(*this, p, this->get_comm(), "sgd.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld.bin", name_prefix.c_str(), m_velocity->Height(), m_velocity->Width());
@@ -199,7 +199,7 @@ bool sgd<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string na
 
 template <typename TensorDataType>
 bool sgd<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  write_cereal_archive<sgd<TensorDataType>>(*this, p, "sgd.xml");
+  write_cereal_archive(*this, p, "sgd.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());
@@ -210,7 +210,7 @@ bool sgd<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string
 
 template <typename TensorDataType>
 bool sgd<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  read_cereal_archive<sgd<TensorDataType>>(*this, p, "sgd.xml");
+  read_cereal_archive(*this, p, "sgd.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_velocity_%lldx%lld", name_prefix.c_str(), m_velocity->LocalHeight(), m_velocity->LocalWidth());

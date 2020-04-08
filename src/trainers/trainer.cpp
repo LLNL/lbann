@@ -239,13 +239,14 @@ void trainer::evaluate(observer_ptr<model> model, execution_mode mode, El::Int n
 // =============================================
 
 bool trainer::save_to_checkpoint_shared() {
-  auto save_checkpoint = [this](observer_ptr<execution_context> ctx)
-    ->void { ctx->save_to_checkpoint_shared(this->get_persist_obj()); };
+  auto save_checkpoint = [this](observer_ptr<execution_context> ctx) {
+    ctx->save_to_checkpoint_shared(this->get_persist_obj());
+  };
   for_each_execution_context(save_checkpoint);
   save_rng_to_checkpoint_shared(get_persist_obj(), m_comm);
 
   if (m_comm->am_trainer_master()) {
-    write_cereal_archive<trainer>(*this, get_persist_obj(), "trainer.xml");
+    write_cereal_archive(*this, get_persist_obj(), "trainer.xml");
   }
   return true;
 }
@@ -291,15 +292,16 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
 }
 
 bool trainer::save_to_checkpoint_distributed(){
-  auto save_checkpoint = [this](observer_ptr<execution_context> ctx)
-    ->void { ctx->save_to_checkpoint_distributed(this->get_persist_obj()); };
+  auto save_checkpoint = [this](observer_ptr<execution_context> ctx) {
+    ctx->save_to_checkpoint_distributed(this->get_persist_obj());
+  };
   for_each_execution_context(save_checkpoint);
   save_rng_to_checkpoint_distributed(get_persist_obj(), m_comm);
   return true;
 }
 
 bool trainer::load_from_checkpoint_distributed(persist& p){
-  read_cereal_archive<trainer>(*this, p, "trainer.xml");
+  read_cereal_archive(*this, p, "trainer.xml");
   return false;
 }
 
