@@ -180,11 +180,10 @@ class checkpoint : public callback_base {
   std::string find_latest_checkpoint(lbann_comm& comm,
                                      const std::string& trainer_name,
                                      const std::string& alg_name,
-                                     std::string& latest_file,
                                      execution_mode& mode,
                                      size_t &epoch,
                                      size_t& step,
-                                     int& shared);
+                                     bool& shared);
   bool open_latest_checkpoint(lbann_comm& comm,
                               const std::string& task_label,
                               const std::string& trainer_name,

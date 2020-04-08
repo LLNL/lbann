@@ -272,11 +272,10 @@ bool checkpoint::do_checkpoint(model *m) {
 std::string checkpoint::find_latest_checkpoint(lbann_comm& comm,
                                                const std::string& trainer_name,
                                                const std::string& alg_name,
-                                               std::string& latest_file,
                                                execution_mode& mode,
                                                size_t &epoch,
                                                size_t& step,
-                                               int& shared) {
+                                               bool& shared) {
   constexpr unsigned int max_len_dirname = 1024;
   std::string dir;
   size_t epoch_dist = 0;
@@ -284,6 +283,7 @@ std::string checkpoint::find_latest_checkpoint(lbann_comm& comm,
 
   // Grab latest checkpoint information, checks for latest in dist and shared, restarts from most recent between the two.
   if (comm.am_trainer_master()) {
+    std::string latest_file;
     if(m_per_rank_dir.length()){
       dir = get_distributed_checkpoint_rootdir();
       latest_file = get_last_distributed_checkpoint_filename(trainer_name, alg_name, dir);
@@ -353,16 +353,15 @@ bool checkpoint::open_latest_checkpoint(
   // constexpr unsigned int max_len_dirname = 1024;
   // get top level directory
   // char dir[max_len_dirname];
-  std::string latest_file;
   size_t epoch = std::numeric_limits<size_t>::max();
   size_t step = std::numeric_limits<size_t>::max();
-  int shared = 1;
+  bool shared = true;
   execution_mode mode;
 
   std::string dir = find_latest_checkpoint(comm,
                                            trainer_name,
                                            alg_name,
-                                           latest_file, mode, epoch, step, shared);
+                                           mode, epoch, step, shared);
 
   // if we couldn't find the latest epoch, just return
   if (epoch == std::numeric_limits<size_t>::max()) {
