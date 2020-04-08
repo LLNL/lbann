@@ -684,8 +684,13 @@ void data_type_distconv_adapter<TensorDataType>::bp_setup(El::Int mini_batch_siz
     }
     // TODO: Check other input tensors
     if (i == 0) {
+<<<<<<< HEAD
       if (parent_copy_required(i) && !l.skip_first_layer_bp()
           && get_original_error_signals().is_split_root()) {
+=======
+      if (parent_copy_required(i) &&
+          get_original_error_signals().is_split_root()) {
+>>>>>>> cd5ecad15da45c257e5ee3112a74688d30d7296a
         assert_eq((int)get_original_error_signals().get_local_shape()[-1],
                   l.get_error_signals().LocalWidth());
       }
@@ -835,6 +840,7 @@ void data_type_distconv_adapter<TensorDataType>::ensure_prev_error_signals() {
 template <typename TensorDataType>
 void data_type_distconv_adapter<TensorDataType>::copy_out_error_signals() {
   auto &l = dynamic_cast<data_type_layer<TensorDataType>&>(layer());
+<<<<<<< HEAD
 
   if (l.skip_first_layer_bp()) {
     // No need to copy back when the parent is an input layer
@@ -843,6 +849,8 @@ void data_type_distconv_adapter<TensorDataType>::copy_out_error_signals() {
     return;
   }
 
+=======
+>>>>>>> cd5ecad15da45c257e5ee3112a74688d30d7296a
   for (int i = 0; i < l.get_num_parents(); ++i) {
     if (!parent_copy_required(i)) continue;
     if (i != 0) {

@@ -53,6 +53,10 @@
 #include <string>
 #include <unordered_map>
 
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/cuda.hpp"
+#endif
+
 // Forward-declare protobuf class
 namespace lbann_data {
 class Model;

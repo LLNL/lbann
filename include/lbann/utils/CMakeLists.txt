@@ -39,6 +39,10 @@ set_full_path(THIS_DIR_HEADERS
   typename.hpp
   )
 
+if (LBANN_HAS_DISTCONV)
+  list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/distconv.hpp")
+endif ()
+
 # Add the subdirectories
 add_subdirectory(threads)
 add_subdirectory(impl)
