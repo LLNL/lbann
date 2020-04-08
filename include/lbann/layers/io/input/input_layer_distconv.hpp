@@ -104,7 +104,7 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
     const auto &output_dist = this->get_activations_dist();
     const auto tensor_shape = this->get_activations_shape(0);
     const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(
-        this->get_num_dims());
+        dc::get_num_dims(this->layer()));
     auto local_shape = tensor_shape;
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
@@ -195,7 +195,7 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
   // No enforced local shape as the activations tensor is always
   // copied from the El matrix.
   dc::Shape get_activations_local_shape(int index=0) const override {
-    return dc::Shape(this->get_num_dims(), 0);
+    return dc::Shape(dc::get_num_dims(this->layer()), 0);
   }
 
   dc::Shape get_activations_shape(int index) const {
@@ -222,7 +222,7 @@ class input_adapter: public data_type_distconv_adapter<TensorDataType> {
     assert_always(m_copy_labels);
     const auto tensor_shape = get_activations_shape(1);
     const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(
-        this->get_num_dims());
+        dc::get_num_dims(this->layer()));
     auto local_shape = tensor_shape;
     // calculated by Distconv
     local_shape[dc::get_sample_dim()] = 0;
@@ -356,7 +356,7 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
     } else {
       assert_eq(index, 1);
       if (this->distconv_enabled() &&
-          dc().m_copy_labels && !dc().child_copy_required(index)) {
+          get_distconv_adapter().m_copy_labels && !get_distconv_adapter().child_copy_required(index)) {
         return false;
       } else {
         return true;
@@ -364,11 +364,11 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
     }
   }
 
-  input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>& dc() override;
-  const input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>& dc() const override;
+  input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>& get_distconv_adapter() override;
+  const input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>& get_distconv_adapter() const override;
 
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<
+    this->get_distconv_adapter_ptr() = make_unique<
       input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>>(*this);
   }
 
@@ -380,11 +380,11 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
     // index is already updated by fp_compute.
     const int mb_size = static_cast<sgd_execution_context&>(
         this->get_model()->get_execution_context()).get_current_mini_batch_size();
-    auto &input_view = dc().m_input_host_view;
-    auto &input_tensor = dc().m_input_host_tensor;
+    auto &input_view = get_distconv_adapter().m_input_host_view;
+    auto &input_tensor = get_distconv_adapter().m_input_host_tensor;
 
-    this->dc().get_activations().set_outermost_dimension(mb_size);
-    dc().m_input_dev.set_outermost_dimension(mb_size);
+    this->get_distconv_adapter().get_activations().set_outermost_dimension(mb_size);
+    get_distconv_adapter().m_input_dev.set_outermost_dimension(mb_size);
 
     assert_eq(mb_size * dc::get_number_of_io_partitions(),
               this->get_activations().Width());
@@ -405,7 +405,7 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
       dc::MPIPrintStreamDebug()
           << this->get_name()
           << ": Shuffle the input LBANN tensor to Distconv tensor";
-      dc().get_shuffler(input_view, input_tensor, false).shuffle_forward(
+      get_distconv_adapter().get_shuffler(input_view, input_tensor, false).shuffle_forward(
           input_view.get_const_base_ptr(),
           input_tensor.get_base_ptr());
     }
@@ -429,22 +429,22 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
     // now, avoid this with the manual copy below. Also, in the
     // Cosmoflow case, "input_tensor" is not a pinned buffer.
     if (!dc::is_cosmoflow_parallel_io_enabled()) {
-      assert0(dc::tensor::Copy(dc().m_input_dev, input_tensor, El::GPUManager::Stream()));
+      assert0(dc::tensor::Copy(get_distconv_adapter().m_input_dev, input_tensor, El::GPUManager::Stream()));
     } else {
       int chan_dim = input_tensor.get_local_shape()[::distconv::get_channel_dim()];
       size_t block_size = input_tensor.get_local_size() / chan_dim;
       for (int i = 0; i < chan_dim; ++i) {
         auto dev_off =
-            dc().m_input_dev.get_local_offset(dc::IndexVector({0,0,0,i,0}));
+            get_distconv_adapter().m_input_dev.get_local_offset(dc::IndexVector({0,0,0,i,0}));
         auto host_off = block_size * i;
         // First copy to temporary pinned buffer
-        std::memcpy(dc().m_copy_pinned_buffer + dev_off,
+        std::memcpy(get_distconv_adapter().m_copy_pinned_buffer + dev_off,
                     input_tensor.get_const_buffer() + host_off,
                     sizeof(short) * block_size);
       }
       CHECK_CUDA(cudaMemcpyAsync(
-          dc().m_input_dev.get_buffer(),  dc().m_copy_pinned_buffer,
-          dc().m_input_dev.get_local_real_size() * sizeof(InputType),
+          get_distconv_adapter().m_input_dev.get_buffer(),  get_distconv_adapter().m_copy_pinned_buffer,
+          get_distconv_adapter().m_input_dev.get_local_real_size() * sizeof(InputType),
           cudaMemcpyHostToDevice, El::GPUManager::Stream()));
     }
     prof_region_end("copy-to-device", false);
@@ -456,15 +456,15 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
         const auto norm_alpha = std::stod(norm_alpha_p);
         const auto norm_beta = std::stod(norm_beta_p);
         prof_region_begin("cast-scale-bias-from-int16", prof_colors[1], false);
-        dc::tensor::CastScaleBias(this->dc().get_activations(),
-                                  dc().m_input_dev,
+        dc::tensor::CastScaleBias(this->get_distconv_adapter().get_activations(),
+                                  get_distconv_adapter().m_input_dev,
                                   (TensorDataType) norm_alpha,
                                   (TensorDataType) norm_beta,
                                   El::GPUManager::Stream());
         prof_region_end("cast-scale-bias-from-int16", false);
       } else {
         prof_region_begin("cast-from-int16", prof_colors[1], false);
-        dc::tensor::Cast(this->dc().get_activations(), dc().m_input_dev, El::GPUManager::Stream());
+        dc::tensor::Cast(this->get_distconv_adapter().get_activations(), get_distconv_adapter().m_input_dev, El::GPUManager::Stream());
         prof_region_end("cast-from-int16", false);
       }
     }
@@ -476,22 +476,22 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
   }
 
   void copy_label_distconv(int mb_size) {
-    if (!dc().m_copy_labels) return;
+    if (!get_distconv_adapter().m_copy_labels) return;
     constexpr int mat_idx = 1;
     assert_eq(mb_size * dc::get_number_of_io_partitions(),
               this->get_activations(mat_idx).Width());
 
-    auto &labels_dev = this->dc().get_activations(1);
+    auto &labels_dev = this->get_distconv_adapter().get_activations(1);
 
     // Adjust the sample size
-    dc().m_labels_host_view.set_outermost_dimension(mb_size);
-    dc().m_labels_host_tensor.set_outermost_dimension(mb_size);
+    get_distconv_adapter().m_labels_host_view.set_outermost_dimension(mb_size);
+    get_distconv_adapter().m_labels_host_tensor.set_outermost_dimension(mb_size);
     labels_dev.set_outermost_dimension(mb_size);
-    dc().m_labels_input_type.set_outermost_dimension(mb_size);
+    get_distconv_adapter().m_labels_input_type.set_outermost_dimension(mb_size);
 
     // Setup view to the LBANN matrix
     assert0(dc::tensor::View(
-        dc().m_labels_host_view,
+        get_distconv_adapter().m_labels_host_view,
         reinterpret_cast<const InputType*>(
             this->get_activations(mat_idx).LockedBuffer())));
 
@@ -499,21 +499,21 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
     if (dc::is_cosmoflow_parallel_io_enabled()) {
       // The input buffer is assumed to be already partitioned
       assert0(dc::tensor::View(
-          dc().m_labels_host_tensor,
-          dc().m_labels_host_view.get_const_buffer()));
+          get_distconv_adapter().m_labels_host_tensor,
+          get_distconv_adapter().m_labels_host_view.get_const_buffer()));
     } else {
       dc::MPIPrintStreamDebug()
           << this->get_name()
           << ": Shuffle the label LBANN tensor to Distconv tensor";
-      dc().get_shuffler(dc().m_labels_host_view,
-                        dc().m_labels_host_tensor, true).shuffle_forward(
-                            dc().m_labels_host_view.get_const_base_ptr(),
-                            dc().m_labels_host_tensor.get_base_ptr());
+      get_distconv_adapter().get_shuffler(get_distconv_adapter().m_labels_host_view,
+                        get_distconv_adapter().m_labels_host_tensor, true).shuffle_forward(
+                            get_distconv_adapter().m_labels_host_view.get_const_base_ptr(),
+                            get_distconv_adapter().m_labels_host_tensor.get_base_ptr());
     }
 
     // After this, there is no inter-process communication, so it's
     // safe to exit if the local tensor is empty.
-    if (dc().m_labels_host_tensor.get_local_size() == 0) {
+    if (get_distconv_adapter().m_labels_host_tensor.get_local_size() == 0) {
       return;
     }
 
@@ -521,12 +521,12 @@ class input_layer_distconv : public input_layer<TensorDataType, T_io_buffer, T_l
     dc::MPIPrintStreamDebug() << "Copy the host label to device tensor";
     prof_region_begin("label-copy-to-device", prof_colors[1], false);
     assert0(dc::tensor::Copy(
-        dc().m_labels_input_type, dc().m_labels_host_tensor, El::GPUManager::Stream()));
+        get_distconv_adapter().m_labels_input_type, get_distconv_adapter().m_labels_host_tensor, El::GPUManager::Stream()));
     prof_region_end("label-copy-to-device", false);
 
     // Cast to DataType. Just a copy if both tensors are in the same type.
     prof_region_begin("label-cast-from-int16", prof_colors[1], false);
-    dc::tensor::Cast(labels_dev, dc().m_labels_input_type, El::GPUManager::Stream());
+    dc::tensor::Cast(labels_dev, get_distconv_adapter().m_labels_input_type, El::GPUManager::Stream());
     prof_region_end("label-cast-from-int16", false);
   }
 #endif // LBANN_HAS_DISTCONV

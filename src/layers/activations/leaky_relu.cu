@@ -160,7 +160,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    fp_compute_distconv(dc(), m_negative_slope);
+    fp_compute_distconv(get_distconv_adapter(), m_negative_slope);
     return;
   }
 #endif // LBANN_HAS_DISTCONV
@@ -172,7 +172,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    bp_compute_distconv(dc(), m_negative_slope);
+    bp_compute_distconv(get_distconv_adapter(), m_negative_slope);
     return;
   }
 #endif // LBANN_HAS_DISTCONV

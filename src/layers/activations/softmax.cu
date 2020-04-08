@@ -283,7 +283,7 @@ template <typename TensorDataType>
 void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 #ifdef LBANN_HAS_DISTCONV
   if (l.distconv_enabled()) {
-    fp_compute_distconv(l.dc());
+    fp_compute_distconv(l.get_distconv_adapter());
     return;
   }
 #endif // LBANN_HAS_DISTCONV
@@ -325,7 +325,7 @@ template <typename TensorDataType>
 void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 #ifdef LBANN_HAS_DISTCONV
   if (l.distconv_enabled()) {
-    bp_compute_distconv(l.dc());
+    bp_compute_distconv(l.get_distconv_adapter());
     return;
   }
 #endif // LBANN_HAS_DISTCONV

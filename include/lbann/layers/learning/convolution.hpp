@@ -161,8 +161,8 @@ protected:
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
       if (this->distconv_enabled()) {
-        this->dc().fp_compute_convolution();
-        this->dc().fp_apply_bias();
+        this->get_distconv_adapter().fp_compute_convolution();
+        this->get_distconv_adapter().fp_apply_bias();
         return;
       }
 #endif // LBANN_HAS_DISTCONV
@@ -182,15 +182,15 @@ protected:
         if (this->skip_first_layer_bp()) {
           dc::MPIRootPrintStreamDebug() << "Skipping bp data for "
                                         << this->get_name();
-          this->dc().bp_compute_convolution_filter();
+          this->get_distconv_adapter().bp_compute_convolution_filter();
           return;
         }
-        if (this->dc().m_conv->is_overlap_bwd_halo_exchange_enabled()) {
-          this->dc().m_conv->backward_data_exchange_halo(
-              this->dc().get_prev_error_signals());
+        if (this->get_distconv_adapter().m_conv->is_overlap_bwd_halo_exchange_enabled()) {
+          this->get_distconv_adapter().m_conv->backward_data_exchange_halo(
+              this->get_distconv_adapter().get_prev_error_signals());
         }
-        this->dc().bp_compute_convolution_filter();
-        this->dc().bp_compute_convolution_data();
+        this->get_distconv_adapter().bp_compute_convolution_filter();
+        this->get_distconv_adapter().bp_compute_convolution_data();
         return;
       }
 #endif // LBANN_HAS_DISTCONV
@@ -206,14 +206,14 @@ protected:
   friend class convolution_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<
+    this->get_distconv_adapter_ptr() = make_unique<
       convolution_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
 
   bool is_distconv_supported() const override {
     bool cond = true;
     const auto& kernel_dims = get_kernel_dims();
-    for(int i = 0; i < this->get_num_spatial_dims(); i++) {
+    for(int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
       cond &= kernel_dims[2 + i] == kernel_dims[2];
       cond &= kernel_dims[2 + i] == this->m_pads[i] / this->m_dilations[i] * 2 + 1;
     }
@@ -239,10 +239,10 @@ setup_distributions(tensor_overlap_constraints &constraints) {
   std::reverse(kernel_dims.begin(), kernel_dims.end());
   auto dilations = l.m_dilations;
   std::reverse(dilations.begin(), dilations.end());
-  dc::IntVector overlap(this->get_num_dims(), 0);
+  dc::IntVector overlap(dc::get_num_dims(l), 0);
   const auto &ps = l.get_parallel_strategy();
   // i=0 -> width; i=1 -> height; i=2: -> depth;
-  for(int i = 0; i < this->get_num_spatial_dims(); i++) {
+  for(int i = 0; i < dc::get_num_spatial_dims(l); i++) {
     int splits = 0;
     switch (i) {
       case 0: splits = ps.width_splits; break;

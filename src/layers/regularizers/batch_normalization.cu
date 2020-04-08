@@ -306,21 +306,21 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute_distco
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   assert0(dc::tensor::View(
-      this->dc().m_scale,
+      this->get_distconv_adapter().m_scale,
       this->get_data_type_weights(0).get_values().LockedMatrix().LockedBuffer()));
   assert0(dc::tensor::View(
-      this->dc().m_bias,
+      this->get_distconv_adapter().m_bias,
       this->get_data_type_weights(1).get_values().LockedMatrix().LockedBuffer()));
   assert0(dc::tensor::View(
-      this->dc().m_running_mean,
+      this->get_distconv_adapter().m_running_mean,
       this->get_data_type_weights(2).get_values().Matrix().Buffer()));
   assert0(dc::tensor::View(
-      this->dc().m_running_var,
+      this->get_distconv_adapter().m_running_var,
       this->get_data_type_weights(3).get_values().Matrix().Buffer()));
 
-  dc().m_bn->forward_stage1(this->dc().get_prev_activations(),
-                            this->dc().m_mean,
-                            this->dc().m_var,
+  get_distconv_adapter().m_bn->forward_stage1(this->get_distconv_adapter().get_prev_activations(),
+                            this->get_distconv_adapter().m_mean,
+                            this->get_distconv_adapter().m_var,
                             is_training);
 
   if (m_statistics_group_size == 0) {
@@ -332,14 +332,14 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute_distco
     LBANN_ERROR("statics_group_size must be either 0 or 1 for now.");
   }
 
-  dc().m_bn->forward_stage2(this->dc().get_prev_activations(),
-                            this->dc().m_mean,
-                            this->dc().m_var,
-                            this->dc().m_running_mean,
-                            this->dc().m_running_var,
-                            this->dc().m_scale,
-                            this->dc().m_bias,
-                            this->dc().get_activations(),
+  get_distconv_adapter().m_bn->forward_stage2(this->get_distconv_adapter().get_prev_activations(),
+                            this->get_distconv_adapter().m_mean,
+                            this->get_distconv_adapter().m_var,
+                            this->get_distconv_adapter().m_running_mean,
+                            this->get_distconv_adapter().m_running_var,
+                            this->get_distconv_adapter().m_scale,
+                            this->get_distconv_adapter().m_bias,
+                            this->get_distconv_adapter().get_activations(),
                             is_training);
 }
 
@@ -353,14 +353,14 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute_distco
   assert_always(is_training);
 
   assert0(dc::tensor::View(
-      this->dc().m_scale,
+      this->get_distconv_adapter().m_scale,
       this->get_data_type_weights(0).get_values().LockedMatrix().LockedBuffer()));
 
-  dc().m_bn->backward_stage1(dc().get_prev_activations(),
-                             dc().get_prev_error_signals(),
-                             dc().m_mean, dc().m_var, dc().m_scale,
-                             dc().m_scale_gradient, dc().m_bias_gradient,
-                             dc().m_mean_gradient, dc().m_var_gradient);
+  get_distconv_adapter().m_bn->backward_stage1(get_distconv_adapter().get_prev_activations(),
+                             get_distconv_adapter().get_prev_error_signals(),
+                             get_distconv_adapter().m_mean, get_distconv_adapter().m_var, get_distconv_adapter().m_scale,
+                             get_distconv_adapter().m_scale_gradient, get_distconv_adapter().m_bias_gradient,
+                             get_distconv_adapter().m_mean_gradient, get_distconv_adapter().m_var_gradient);
 
   // Verbatim copy from bp_compute_gpu
   // Accumulate gradients
@@ -383,11 +383,11 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute_distco
     bias_optimizer->add_to_gradient(*m_bias_gradient, TensorDataType{1}, true);
   }
 
-  dc().m_bn->backward_stage2(dc().get_prev_activations(),
-                             dc().get_prev_error_signals(),
-                             dc().m_mean, dc().m_var, dc().m_scale,
-                             dc().m_mean_gradient, dc().m_var_gradient,
-                             dc().get_error_signals());
+  get_distconv_adapter().m_bn->backward_stage2(get_distconv_adapter().get_prev_activations(),
+                             get_distconv_adapter().get_prev_error_signals(),
+                             get_distconv_adapter().m_mean, get_distconv_adapter().m_var, get_distconv_adapter().m_scale,
+                             get_distconv_adapter().m_mean_gradient, get_distconv_adapter().m_var_gradient,
+                             get_distconv_adapter().get_error_signals());
 }
 
 #endif // LBANN_HAS_DISTCONV
@@ -506,7 +506,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   }
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    this->dc().dump_original_activations();
+    this->get_distconv_adapter().dump_original_activations();
   }
 #endif // LBANN_HAS_DISTCONV
 }
@@ -631,7 +631,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   }
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    this->dc().dump_original_error_signals();
+    this->get_distconv_adapter().dump_original_error_signals();
   }
 #endif // LBANN_HAS_DISTCONV
 }

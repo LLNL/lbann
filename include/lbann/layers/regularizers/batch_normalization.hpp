@@ -391,12 +391,12 @@ protected:
   bool is_distconv_supported() const override { return true; }
 
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<
+    this->get_distconv_adapter_ptr() = make_unique<
       batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
 
-  batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
-  const batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
+  batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
+  const batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 
   void fp_compute_distconv();
   void bp_compute_distconv();
@@ -406,16 +406,16 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 const batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>&
-batch_normalization_layer<TensorDataType, T_layout, Dev>::dc() const {
+batch_normalization_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
   return dynamic_cast<const batch_normalization_distconv_adapter<
-    TensorDataType, T_layout, Dev>&>(data_type_layer<TensorDataType>::dc());
+    TensorDataType, T_layout, Dev>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>&
-batch_normalization_layer<TensorDataType, T_layout, Dev>::dc() {
+batch_normalization_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
   return const_cast<batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const batch_normalization_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+      static_cast<const batch_normalization_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
@@ -429,7 +429,7 @@ get_per_channel_stat_shape() const {
   assert_eq(l.m_mean_and_var->Matrix().Width() *
             l.m_mean_and_var->Matrix().Height(),
             num_channels * 2);
-  dc::Shape per_channel_stat_shape(l.get_num_dims(), 1);
+  dc::Shape per_channel_stat_shape(dc::get_num_dims(l), 1);
   per_channel_stat_shape[dc::get_channel_dim()] = num_channels;
   return per_channel_stat_shape;
 }
@@ -528,7 +528,7 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::setup_
   }
 
   m_bn = make_unique<dc::BatchNormalization<TensorDataType>>(
-      dc::get_backend(), this->get_num_dims(),
+      dc::get_backend(), dc::get_num_dims(l),
       l.m_decay, l.m_epsilon, global_stats);
 }
 #endif // LBANN_HAS_DISTCONV

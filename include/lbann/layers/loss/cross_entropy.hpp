@@ -236,27 +236,27 @@ private:
   bool is_distconv_supported() const override { return true; }
 
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<
+    this->get_distconv_adapter_ptr() = make_unique<
       cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
 
-  cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
-  const cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
+  cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
+  const cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 
   void fp_compute_distconv() {
     assert_always(this->distconv_enabled());
-    dc().m_cross_entropy->forward(this->dc().get_prev_activations(0),
-                                  this->dc().get_prev_activations(1),
-                                  this->dc().get_activations());
+    get_distconv_adapter().m_cross_entropy->forward(this->get_distconv_adapter().get_prev_activations(0),
+                                  this->get_distconv_adapter().get_prev_activations(1),
+                                  this->get_distconv_adapter().get_activations());
   }
 
   void bp_compute_distconv() {
     assert_always(this->distconv_enabled());
-    dc().m_cross_entropy->backward(this->dc().get_prev_activations(0),
-                                   this->dc().get_prev_activations(1),
-                                   this->dc().get_prev_error_signals(0),
-                                   this->dc().get_error_signals(0),
-                                   this->dc().get_error_signals(1));
+    get_distconv_adapter().m_cross_entropy->backward(this->get_distconv_adapter().get_prev_activations(0),
+                                   this->get_distconv_adapter().get_prev_activations(1),
+                                   this->get_distconv_adapter().get_prev_error_signals(0),
+                                   this->get_distconv_adapter().get_error_signals(0),
+                                   this->get_distconv_adapter().get_error_signals(1));
   }
 #endif // LBANN_HAS_DISTCONV
 };
@@ -264,16 +264,16 @@ private:
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 const cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&
-cross_entropy_layer<TensorDataType, T_layout, Dev>::dc() const {
+cross_entropy_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
   return dynamic_cast<const cross_entropy_distconv_adapter<
-    TensorDataType, T_layout, Dev>&>(data_type_layer<TensorDataType>::dc());
+    TensorDataType, T_layout, Dev>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&
-cross_entropy_layer<TensorDataType, T_layout, Dev>::dc() {
+cross_entropy_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
   return const_cast<cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const cross_entropy_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+      static_cast<const cross_entropy_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
