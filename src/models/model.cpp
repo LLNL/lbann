@@ -1309,7 +1309,6 @@ bool model::load_from_checkpoint_shared(persist& p) {
   // Assume checkpoint reload from epoch end not step end
 
   load_from_shared_cereal_archive(*this, p, *get_comm(), "model.xml");
-  load_rng_from_checkpoint(p, m_comm);
 
   for (auto&& w : m_weights) {
     w->load_from_checkpoint_shared(p);
@@ -1366,7 +1365,6 @@ bool model::load_from_checkpoint_distributed(persist& p){
   p.open_restart(trainer_dir + '/' + get_name() + '/');
 
   read_cereal_archive(*this, p, "model.xml");
-  load_rng_from_checkpoint(p, m_comm);
 
   for (auto&& w : m_weights) {
     w->load_from_checkpoint_distributed(p);
