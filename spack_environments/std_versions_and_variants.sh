@@ -21,17 +21,12 @@ STD_PACKAGES=$(cat <<EOF
 
     nccl::
       buildable: true
-      version: [2.4.8-1]
+      version: [2.5.7-1]
 
     protobuf::
       buildable: True
       variants: build_type=Release +shared
       version: [3.10.0]
-
-    python::
-      buildable: True
-      variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
-      version: [3.7.2]
 
     py-numpy::
       buildable: True

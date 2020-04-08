@@ -63,6 +63,8 @@ SPACK_ARCH_TARGET=$(spack arch -t)
 
 SCRIPT=$(basename ${BASH_SOURCE})
 ENABLE_GPUS=ON
+ENABLE_DISTCONV=OFF
+ENABLE_DIHYDROGEN=OFF
 EXEC_ENV=TRUE
 BUILD_TYPE=Release
 VERBOSE=0
@@ -99,6 +101,7 @@ Options:
   ${C}--disable-gpus${N}       Disable GPUS
   ${C}--instrument${N}         Use -finstrument-functions flag, for profiling stack traces
   ${C}-s | --superbuild${N}    Superbuild LBANN with hydrogen and aluminum
+  ${C}-c | --distconv${N}      Enable the DistConv library
 EOF
 }
 
@@ -197,6 +200,14 @@ while :; do
             # Debug mode
             SUPERBUILD="superbuild_lbann_with_hydrogen_and_aluminum.sh"
             ;;
+        -c|--distconv)
+            ENABLE_DISTCONV=ON
+            ENABLE_DIHYDROGEN=ON
+            # CUDA is required for Distconv
+            ENABLE_GPUS=ON
+            # MPI-CUDA backend is required for Distconv
+            ALUMINUM_WITH_MPI_CUDA=ON
+            ;;
         -?*)
             # Unknown option
             echo "Unknown option (${1})" >&2
@@ -261,6 +272,6 @@ ninja install
 
 echo "To rebuild the environment:"
 echo "    ${SPACK_ENV_CMD}"
-echo "    cd ${LBANN_BUILD_DIR}/lbann/build"
+echo "    cd ${LBANN_BUILD_DIR}"
 echo "    unset CPATH"
 echo "    ninja install"
