@@ -607,21 +607,6 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
 }
 
 #ifdef LBANN_HAS_DISTCONV
-int Layer::get_num_dims() const {
-  // Use the dimension of either input or output data.
-  auto nd = get_num_parents() > 0 ? get_input_dims().size() :
-      get_output_dims().size();
-  nd += 1; // input and output dimensions do not have the sample dimension.
-  if (!(nd == 4 || nd == 5)) {
-    LBANN_ERROR(get_name(), ": Invalid number of dimensions: ", nd);
-  }
-  return nd;
-}
-
-int Layer::get_num_spatial_dims() const {
-  return get_num_dims() - 2;
-}
-
 void Layer::prepare_distconv() {
   if (distconv_enabled()) {
     setup_distconv_adapter();

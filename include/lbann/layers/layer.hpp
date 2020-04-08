@@ -592,8 +592,6 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class distconv_adapter;
  public:
-  int get_num_dims() const;
-  int get_num_spatial_dims() const;
   /** Indicate whether distconv is enabled. */
   bool distconv_enabled() const;
   /** Indicate whether original input matrices need to be set up. */

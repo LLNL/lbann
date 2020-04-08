@@ -41,14 +41,6 @@ std::string distconv_adapter::get_name() const {
   return layer().get_name();
 }
 
-int distconv_adapter::get_num_dims() const {
-  return layer().get_num_dims();
-}
-
-int distconv_adapter::get_num_spatial_dims() const {
-  return layer().get_num_spatial_dims();
-}
-
 dc::Dist &distconv_adapter::get_prev_activations_dist() {
   return const_cast<dc::Dist&>(static_cast<const distconv_adapter&>(
       *this).get_prev_activations_dist());
@@ -218,7 +210,7 @@ void distconv_adapter::adjust_parallel_strategy() {
   auto n = ps.sample_groups != 0 ? ps.sample_groups : 1;
   auto c = ps.channel_groups != 0 ? ps.channel_groups : 1;
   auto f = ps.filter_groups != 0 ? ps.filter_groups : 1;
-  auto d = (get_num_spatial_dims() == 3 && ps.depth_groups != 0) ?
+  auto d = (dc::get_num_spatial_dims(layer()) == 3 && ps.depth_groups != 0) ?
       ps.depth_groups : 1;
   auto h = ps.height_groups != 0 ? ps.height_groups : 1;
   auto w = ps.width_groups != 0 ? ps.width_groups : 1;
@@ -270,7 +262,7 @@ void distconv_adapter::adjust_parallel_strategy() {
 }
 
 void distconv_adapter::setup_distributions(tensor_overlap_constraints &constraints) {
-  const auto num_dims = get_num_dims();
+  const auto num_dims = dc::get_num_dims(layer());
   dc::Shape input_locale_shape(num_dims);
   dc::Shape input_split_shape(num_dims);
   dc::Shape output_locale_shape(num_dims);
