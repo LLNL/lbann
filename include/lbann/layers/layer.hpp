@@ -613,8 +613,10 @@ private:
   /** Pre-initialize distconv attributes needed for setup_data(). */
   void prepare_distconv();
   virtual void setup_distconv_adapter() = 0;
-  std::unique_ptr<distconv_adapter>& get_dc() { return m_dc; };
-  const std::unique_ptr<distconv_adapter>& get_dc() const { return m_dc; };
+  std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() {
+    return m_dc; };
+  const std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() const {
+    return m_dc; };
 
  private:
   mutable bool m_distconv_enabled = false;

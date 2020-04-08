@@ -666,7 +666,7 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(El::Int mini_
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::setup_distconv_adapter() {
-  this->get_dc() = make_unique<data_type_distconv_adapter<TensorDataType>>(*this);
+  this->get_distconv_adapter_ptr() = make_unique<data_type_distconv_adapter<TensorDataType>>(*this);
 }
 
 template <typename TensorDataType>
@@ -677,7 +677,7 @@ data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::dc(
 
 template <typename TensorDataType>
 const data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::dc() const {
-  return dynamic_cast<const data_type_distconv_adapter<TensorDataType>&>(*get_dc());
+  return dynamic_cast<const data_type_distconv_adapter<TensorDataType>&>(*get_distconv_adapter_ptr());
 }
 #endif // LBANN_HAS_DISTCONV
 
