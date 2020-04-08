@@ -204,6 +204,7 @@ ${GPU_PACKAGES}
   - catch2
   - cmake
   - ninja
+  - python
   - py-pytest
 ${COMPILER_PACKAGE}
 EOF
@@ -219,7 +220,7 @@ fi
 
 AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
-    AL_VARIANTS="variants: +gpu+nccl~mpi_cuda"
+    AL_VARIANTS="variants: +gpu+nccl+mpi_cuda"
     HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
     DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy"
 fi
