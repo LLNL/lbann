@@ -253,7 +253,7 @@ bool trainer::save_to_checkpoint_shared() {
 
 bool trainer::load_from_checkpoint_shared(persist& p) {
   try {
-    load_from_shared_cereal_archive<trainer>(*this, p, *get_comm(), "trainer.xml");
+    load_from_shared_cereal_archive(*this, p, *get_comm(), "trainer.xml");
   }catch (NonexistentArchiveFile const& e) {
     LBANN_MSG(e.what());
     return false;
