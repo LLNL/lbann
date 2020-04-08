@@ -42,6 +42,10 @@ if (LBANN_HAS_CUDA)
     )
 endif ()
 
+if (LBANN_HAS_DISTCONV)
+  list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/distconv.cpp")
+endif ()
+
 add_subdirectory(threads)
 
 # Propagate the files up the tree

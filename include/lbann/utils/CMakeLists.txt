@@ -45,6 +45,10 @@ if (LBANN_HAS_HALF)
     ${CMAKE_CURRENT_SOURCE_DIR}/serialization.hpp)
 endif (LBANN_HAS_HALF)
 
+if (LBANN_HAS_DISTCONV)
+  list(APPEND THIS_DIR_HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/distconv.hpp")
+endif ()
+
 # Add the subdirectories
 add_subdirectory(threads)
 add_subdirectory(impl)

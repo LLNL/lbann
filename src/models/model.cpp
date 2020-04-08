@@ -54,6 +54,8 @@
 #include <queue>
 #include <unordered_set>
 
+#include "lbann/utils/distconv.hpp"
+
 namespace lbann {
 
 // =============================================
@@ -594,6 +596,10 @@ void model::setup() {
     cb->setup(this);
   }
 
+#ifdef LBANN_HAS_DISTCONV
+  setup_distconv();
+#endif
+
   // Callback hooks at end of setup
   do_setup_end_cbs();
 
@@ -884,6 +890,11 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
       }
       split->set_name(name);
       layer_names.insert(name);
+
+      // Copy parallel strategy from parent.
+      ParallelStrategy& ps = split->get_parallel_strategy();
+      ParallelStrategy& orig_ps = l.get_parallel_strategy();
+      ps = orig_ps;
 
       // Setup relationships between split layer and child layers
       for (auto&& const_child : children) {
@@ -1410,5 +1421,78 @@ bool model::save_model() {
   }
   return false;
 }
+
+#ifdef LBANN_HAS_DISTCONV
+void model::setup_distconv() {
+  std::stringstream dc_enabled, dc_disabled;
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto &layer = get_layer(i);
+    if (layer.distconv_enabled()) {
+      dc_enabled << " " << layer.get_name();
+    } else {
+      dc_disabled << " " << layer.get_name();
+    }
+  }
+  if (m_comm->am_world_master()) {
+    std::cout << "Distconv-enabled layers: " << dc_enabled.str() << std::endl;
+    std::cout << "Distconv-disabled layers: " << dc_disabled.str() << std::endl;
+  }
+  setup_distributions();
+  print_distributions();
+  // Setup fp tensors
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto &layer = get_layer(i);
+    if (!layer.distconv_enabled()) continue;
+    layer.get_distconv_adapter().setup_fp_tensors();
+  }
+  // Setup bp tensors in an reverse order
+  for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
+    auto &layer = get_layer(i);
+    if (!layer.distconv_enabled()) continue;
+    layer.get_distconv_adapter().setup_bp_tensors();
+  }
+  // Final setup.
+  auto workspace_capacity = dc::get_workspace_capacity();
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto &layer = get_layer(i);
+    if (!layer.distconv_enabled()) continue;
+    layer.get_distconv_adapter().setup_layer(workspace_capacity);
+  }
+}
+
+void model::setup_distributions() {
+  tensor_overlap_constraints constraints;
+  // Initialize the distributions and constraints
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    if (!get_layer(i).distconv_enabled()) continue;
+    get_layer(i).get_distconv_adapter().setup_distributions(constraints);
+  }
+  // Add inter-layer distribution constraints
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    if (!get_layer(i).distconv_enabled()) continue;
+
+    get_layer(i).get_distconv_adapter().impose_adjacent_overlap_constraints(constraints);
+  }
+  constraints.find_valid_overlap();
+}
+
+void model::print_distributions() const {
+  std::stringstream ss;
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    const auto& layer = get_layer(i);
+    if (layer.distconv_enabled()) {
+      ss << layer.get_name()  << " disributions: "
+         << "prev_activations: " << layer.get_distconv_adapter().get_prev_activations_dist()
+         << ", activations: " << layer.get_distconv_adapter().get_activations_dist()
+         << ", error_signals: " << layer.get_distconv_adapter().get_error_signals_dist()
+         << ", prev_error_signals: " << layer.get_distconv_adapter().get_prev_activations_dist()
+         << "\n";
+    } else {
+      ss << layer.get_name() << ": distconv disabled" << "\n";
+    }
+  }
+  dc::MPIRootPrintStreamDebug() << ss.str();
+}
+#endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann
