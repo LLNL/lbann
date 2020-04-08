@@ -100,13 +100,6 @@ public:
    *  tensors.
    */
   void forward_prop() override;
-  /** Backward propagation step.
-   *  Given the objective function gradients w.r.t. the output
-   *  tensors, compute the gradients w.r.t. the input tensors and
-   *  w.r.t. the weights. This is essentially an application of the
-   *  chain rule.
-   */
-  void back_prop() override;
 
   void summarize_matrices(lbann_summary& summarizer, int step) override;
 
@@ -275,6 +268,36 @@ protected:
   bool has_weights() const noexcept { return num_weights() > 0; }
 
 private:
+
+  /** @brief Take ownership of a reference to the previous error signals.
+   *
+   *  If the underlying tensor has the right datatype, the reference
+   *  is stored explicitly. Otherwise a deep copy is made so that it
+   *  has the correct datatype.
+   *
+   *  @param child The layer from which the error signals have come.
+   *  @param signals The error signals from the layer.
+   */
+  void set_prev_error_signals_(
+    Layer const& child,
+    std::unique_ptr<El::BaseDistMatrix> signals) final;
+
+  void allocate_new_gradients_() final;
+
+  void propagate_error_signals_to_parents_() final;
+
+  void clear_prev_error_signals_() final {
+    for (auto& es : m_gradient_wrt_outputs)
+      es.reset();
+  }
+
+  /** Backward propagation step.
+   *  Given the objective function gradients w.r.t. the output
+   *  tensors, compute the gradients w.r.t. the input tensors and
+   *  w.r.t. the weights. This is essentially an application of the
+   *  chain rule.
+   */
+  void back_prop_impl_() final;
 
   // ===========================================================
   // Private access functions

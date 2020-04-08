@@ -514,6 +514,16 @@ void Layer::check_setup() {
   }
 }
 
+void Layer::back_prop() {
+  // std::cout << "Starting backprop on layer " << this->get_name()
+  //           << " (" << typeid(*this).name() << ")" << std::endl;
+  allocate_new_gradients_();
+  back_prop_impl_();
+  propagate_error_signals_to_parents_();
+  clear_prev_error_signals_();
+}
+
+
 bool Layer::save_to_checkpoint_shared(persist& p) const {
   return true;
 }

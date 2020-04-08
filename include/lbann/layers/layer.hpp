@@ -232,7 +232,8 @@ public:
    *  w.r.t. the weights. This is essentially an application of the
    *  chain rule.
    */
-  virtual void back_prop() {};
+  void back_prop();
+
   /** Update step.
    *  Update the layer's internal members. Note that the optimization
    *  step for the weights happens elsewhere.
@@ -559,6 +560,21 @@ protected:
   std::string m_name;
 
 private:
+  friend void move_error_signal(
+    Layer& parent, Layer const& child,
+    std::unique_ptr<BaseDistMat> signals);
+
+  virtual void back_prop_impl_() = 0;
+
+  virtual void allocate_new_gradients_() = 0;
+
+  virtual void propagate_error_signals_to_parents_() = 0;
+
+  virtual void clear_prev_error_signals_() = 0;
+
+  virtual void set_prev_error_signals_(
+    Layer const& child,
+    std::unique_ptr<BaseDistMat> signals) = 0;
 
   // ===========================================================
   // Private access functions
