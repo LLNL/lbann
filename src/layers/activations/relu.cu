@@ -74,7 +74,7 @@ void bp_compute_distconv(relu_distconv_adapter<TensorDataType, Layout, Device> &
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void relu_layer<TensorDataType, Layout, Device>::fp_compute() {
   if (this->distconv_enabled()) {
-    fp_compute_distconv(dc());
+    fp_compute_distconv(get_distconv_adapter());
     return;
   }
   cuda::apply_entrywise_unary_operator<op, TensorDataType>(
@@ -85,7 +85,7 @@ void relu_layer<TensorDataType, Layout, Device>::fp_compute() {
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
   if (this->distconv_enabled()) {
-    bp_compute_distconv(dc());
+    bp_compute_distconv(get_distconv_adapter());
     return;
   }
   cuda::apply_entrywise_binary_operator<op_backprop, TensorDataType>(
