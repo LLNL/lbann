@@ -105,6 +105,7 @@
 #include "lbann/layers/transform/weights.hpp"
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/data_readers/data_reader_smiles.hpp"
 #include "lbann/utils/peek_map.hpp"
 
 #include <layers.pb.h>
@@ -729,6 +730,15 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_
                   + "\". Must be either \"independent\" or \"dependent\".");
     }
   }
+
+  // ugly hack for smiles_data_reader
+  else{
+    const auto dr2 = dynamic_cast<const smiles_data_reader*>(dr_generic);
+    if (dr2 != nullptr) {
+      slice_points = dr2->get_slice_points();
+    }
+  }
+
   return slice_points;
 }
 

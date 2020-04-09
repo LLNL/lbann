@@ -64,6 +64,8 @@ public:
   const std::vector<int> get_data_dims() const override {  return {get_linearized_data_size()}; }
   int get_num_labels() const override { return m_num_labels; }
 
+  std::vector<El::Int> get_slice_points() const;
+
 private:
 
   std::ifstream m_data_stream;
@@ -81,6 +83,8 @@ private:
   std::vector<short> m_sample_sizes;
 
   std::mutex m_mutex;
+
+  const short m_pad = 420;
 
   //=====================================================================
   // private methods follow

@@ -160,8 +160,12 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     v = data_vector.data();
   }
   int n = m_sample_sizes[data_id];
-  for (int j = 0; j < n; ++j) {
+  int j;
+  for (j = 0; j < n; ++j) {
     X(j, mb_idx) = v[j]; 
+  }
+  for (; j<m_linearized_data_size; j++) {
+    X(j, mb_idx) = m_pad;
   }
   
   return true;
@@ -216,6 +220,14 @@ void smiles_data_reader::load_conduit_node_from_file(const int data_id, conduit:
   std::vector<short>  data;
   read_datum(data_id, data);
   node[LBANN_DATA_ID_STR(data_id) + "/data"].set(data);
+}
+
+std::vector<El::Int> smiles_data_reader::get_slice_points() const {
+  std::vector<El::Int> p;
+  for (int j=0; j<m_linearized_data_size; j++) {
+    p.push_back(j);
+  }
+  return p;
 }
 
 }  // namespace lbann
