@@ -97,6 +97,9 @@ void smiles_data_reader::load() {
   m_linearized_data_size = max_sample_size;
   m_data_stream.seekg(0);
 
+  // TODO: FIX THIS! Hack to make things work, for now
+  m_linearized_data_size = 57;
+
   m_sample_offsets.reserve(num_samples);
   m_sample_sizes.reserve(num_samples);
   short n_chars;
