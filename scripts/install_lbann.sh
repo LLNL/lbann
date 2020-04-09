@@ -321,8 +321,9 @@ else
         # Reactivate the spack environment since a clean installation will note setup the modules properly
         CMD=". $SPACK_ROOT/share/spack/setup-env.sh"
         ${CMD}
-        CMD="spack env loads"
-        ${CMD}
+        # It is no longer necessary to load modules
+        # CMD="spack env loads"
+        # ${CMD}
 
         echo "Build LBANN from source using the spack environment ${LBANN_ENV}, using the build script:"
         echo "  ${SCRIPTS_DIR}/build_lbann_from_source.sh -e ${LBANN_ENV}"
