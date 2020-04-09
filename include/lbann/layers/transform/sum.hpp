@@ -103,7 +103,7 @@ protected:
   void fp_compute() override {
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {
-      dc().fp_compute();
+      get_distconv_adapter().fp_compute();
       return;
     }
 #endif // LBANN_HAS_DISTCONV
@@ -130,26 +130,26 @@ protected:
     return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<sum_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
+    this->get_distconv_adapter_ptr() = make_unique<sum_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
-  sum_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
-  const sum_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
+  sum_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
+  const sum_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 };
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 sum_distconv_adapter<TensorDataType, T_layout, Dev>&
-sum_layer<TensorDataType, T_layout, Dev>::dc() {
+sum_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
   return const_cast<sum_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const sum_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+      static_cast<const sum_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 const sum_distconv_adapter<TensorDataType, T_layout, Dev>&
-sum_layer<TensorDataType, T_layout, Dev>::dc() const {
+sum_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
   return dynamic_cast<const sum_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      data_type_layer<TensorDataType>::dc());
+      data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

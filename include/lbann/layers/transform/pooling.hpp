@@ -284,7 +284,7 @@ protected:
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
       if (this->distconv_enabled()) {
-        dc().fp_compute();
+        get_distconv_adapter().fp_compute();
         return;
       }
 #endif // LBANN_HAS_DISTCONV
@@ -298,7 +298,7 @@ protected:
     if(this->using_gpus()) {
 #ifdef LBANN_HAS_DISTCONV
       if (this->distconv_enabled()) {
-        dc().bp_compute();
+        get_distconv_adapter().bp_compute();
         return;
       }
 #endif // LBANN_HAS_DISTCONV
@@ -543,11 +543,11 @@ private:
  protected:
   bool is_distconv_supported() const override;
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<
+    this->get_distconv_adapter_ptr() = make_unique<
       pooling_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
-  pooling_distconv_adapter<TensorDataType, T_layout, Dev>& dc() override;
-  const pooling_distconv_adapter<TensorDataType, T_layout, Dev>& dc() const override;
+  pooling_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
+  const pooling_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 
 #ifdef LBANN_HAS_CUDNN
@@ -603,22 +603,22 @@ private:
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 pooling_distconv_adapter<TensorDataType, T_layout, Dev>&
-pooling_layer<TensorDataType, T_layout, Dev>::dc() {
+pooling_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
   return const_cast<pooling_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const pooling_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+      static_cast<const pooling_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 const pooling_distconv_adapter<TensorDataType, T_layout, Dev>&
-pooling_layer<TensorDataType, T_layout, Dev>::dc() const {
+pooling_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
   return dynamic_cast<const pooling_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      data_type_layer<TensorDataType>::dc());
+      data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 bool pooling_layer<TensorDataType, T_layout, Dev>::is_distconv_supported() const {
   bool cond = true;
-  for(int i = 0; i < this->get_num_spatial_dims(); i++) {
+  for(int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
     cond &= (m_pool_dims[i] % 2 != 0) ||
         (m_pool_dims[i] == m_strides[i]);
   }
@@ -628,7 +628,7 @@ bool pooling_layer<TensorDataType, T_layout, Dev>::is_distconv_supported() const
     return false;
   }
 
-  for (int i = 0; i < this->get_num_spatial_dims(); i++) {
+  for (int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
     bool odd = m_pool_dims[i] % 2;
     if (odd) {
       int stencil = (m_pool_dims[i] - 1) / 2;
@@ -657,11 +657,11 @@ setup_distributions(tensor_overlap_constraints &constraints) {
       constraints);
   const auto &l = dynamic_cast<const pooling_layer<TensorDataType, T_layout, Dev>&>(
       this->layer());
-  dc::IntVector overlap(this->get_num_dims(), 0);
+  dc::IntVector overlap(dc::get_num_dims(l), 0);
   const auto &ps = l.get_parallel_strategy();
   auto pool_dims = l.m_pool_dims;
   std::reverse(pool_dims.begin(), pool_dims.end());
-  for(int i = 0; i < this->get_num_spatial_dims(); i++) {
+  for(int i = 0; i < dc::get_num_spatial_dims(l); i++) {
     int splits = 0;
     switch (i) {
       case 0: splits = ps.width_splits; break;
@@ -704,7 +704,7 @@ get_activations_local_shape(int index) const {
   auto strides = layer.m_strides;
   std::reverse(std::begin(strides), std::end(strides));
   const std::vector<int> dilations(
-      this->get_num_spatial_dims(), 1);
+      dc::get_num_spatial_dims(layer), 1);
   bool use_padding = layer.m_pads[0] != 0;
   auto output_spatial_local_shape =
       ::distconv::get_pooling_output_local_tensor_shape(
@@ -720,7 +720,7 @@ setup_layer(size_t workspace_capacity) {
 
   // Init the dc::Pooling layer
   m_pooling = make_unique<dc::Pooling<TensorDataType>>(
-      dc::get_backend(), this->get_num_dims(),
+      dc::get_backend(), dc::get_num_dims(l),
       dc::get_halo_exchange_method());
 
   std::string mode;
