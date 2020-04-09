@@ -4,12 +4,10 @@ from lbann.util import str_list
 
 
 def construct_lc_launcher_args():
-    import multiprocessing as mp
     import argparse
 
     # defaults correspond to the settings needed for training on the moses dataset
     parser = argparse.ArgumentParser(prog="lbann charVAE training")
-    parser.add_argument("--account", default="hpcdl")
     parser.add_argument("--partition", default=None)
     parser.add_argument("--scheduler", default="slurm")
     parser.add_argument(
@@ -19,7 +17,7 @@ def construct_lc_launcher_args():
     parser.add_argument(
         "--data-config",
         help="path to a data config file that is used for the construction of the data reader",
-    )  # TODO(derek): just put all data relevant info into the config, condense condense condense
+    ) 
     parser.add_argument(
         "--time-limit",
         type=int,
@@ -27,29 +25,23 @@ def construct_lc_launcher_args():
         help="specified time limit in number of minutes",
     )
     parser.add_argument("--nodes", type=int, default=1)
-    parser.add_argument("--job-name", default="atom_char_rnn_250k")
+    parser.add_argument("--job-name", default="atom_char_rnn")
     parser.add_argument("--embedding-dim", type=int, default=30)
     parser.add_argument("--num-embeddings", type=int, default=30)
     parser.add_argument("--batch-size", type=int, default=64)
-    parser.add_argument("--num-epochs", type=int, default=50)
-    parser.add_argument("--data-path")
+    parser.add_argument("--num-epochs", type=int, default=10)
     parser.add_argument("--data-reader-prototext", default=None)
     parser.add_argument("--pad-index", type=int, default=28)
     parser.add_argument("--sequence-length", type=int, default=None)
-    parser.add_argument("--chunked-data", action="store_true")
+    parser.add_argument("--use-data-reader-prototext", action="store_true")
+    parser.add_argument("--dump_weights_dir", type=str, default="weights")
 
     # these are specific to the Trainer object
     parser.add_argument(
         "--procs-per-trainer",
         type=int,
-        default=mp.cpu_count(),
-        help="number of processes to use per trainer",
-    )
-    parser.add_argument(
-        "--num-parallel-readers",
-        type=int,
         default=0,
-        help="number of data reader instances",
+        help="number of processes to use per trainer",
     )
 
 
@@ -100,13 +92,11 @@ def construct_model(run_args):
 
     # Layer graph
     input = lbann.Input(name="inp_tensor", target_mode="N/A")
-    # input = lbann.Input(name='inp_tensor')  # this came from the lbann implementation, above line is a patch
     print(sequence_length)
     x_slice = lbann.Slice(
         input,
         axis=0,
         slice_points=str_list(range(sequence_length + 1)),
-        device="CPU",
         name="inp_slice",
     )
 
@@ -144,7 +134,6 @@ def construct_model(run_args):
         emb_l = lbann.Embedding(
             idl[i],
             name="emb_" + str(i),
-            device="CPU",
             weights=emb_weights,
             embedding_dim=embedding_dim,
             num_embeddings=num_embeddings,
@@ -158,8 +147,7 @@ def construct_model(run_args):
         # mask padding in input
         pad_mask = lbann.NotEqual(
             [idl[i], lbann.Constant(value=run_args.pad_index, num_neurons="1")],
-            device="CPU",
-        )  # TODO: am adding a .config that will be used to read the value of pad index
+        )  
         ce_mask = lbann.Multiply([pad_mask, ce], name="loss_mask_" + str(i))
         loss.append(lbann.LayerTerm(ce_mask, scale=1 / (sequence_length - 1)))
 
@@ -174,16 +162,13 @@ def construct_model(run_args):
         lbann.CallbackPrint(),
         lbann.CallbackTimer(),
         lbann.CallbackStepLearningRate(step=run_args.step_size, amt=run_args.gamma),
-        lbann.CallbackDumpWeights(basename="weights", epoch_interval=1),
+        lbann.CallbackDumpWeights(basename=run_args.dump_weights_dir, epoch_interval=1),
     ]
 
     # Construct model
-    batch_size = run_args.batch_size
-    num_epochs = run_args.num_epochs
-
     return lbann.Model(
-        batch_size,
-        num_epochs,
+        run_args.batch_size,
+        run_args.num_epochs,
         weights=weights,
         layers=layers,
         objective_function=obj,
@@ -203,11 +188,9 @@ def construct_data_reader(run_args):
     import os.path
     import lbann
 
-    # module_file = os.path.abspath(__file__)
     module_file = os.path.abspath(run_args.data_module_file)
     os.environ["DATA_CONFIG"] = os.path.abspath(run_args.data_config)
 
-    # TODO: here is where I can on the fly switch datasets with the caveat that each one needs their own module
     module_name = os.path.splitext(os.path.basename(module_file))[0]
     module_dir = os.path.dirname(module_file)
 
@@ -221,16 +204,12 @@ def construct_data_reader(run_args):
     data_reader.name = "python"
     data_reader.role = "train"
     data_reader.shuffle = True
-    data_reader.percent_of_data_to_use = 1.0
+    data_reader.percent_of_data_to_use = 0.001
     data_reader.python.module = module_name
     data_reader.python.module_dir = module_dir
     data_reader.python.sample_function = "get_sample"
     data_reader.python.num_samples_function = "num_samples"
     data_reader.python.sample_dims_function = "sample_dims"
-
-    # in the event we are feeding slices to the script
-    if run_args.data_file_pattern is not None:
-        data_reader.python.data_file_pattern = run_args.data_file_pattern
 
     return message
 
@@ -242,17 +221,16 @@ if __name__ == "__main__":
     import os
     import lbann
 
-    import lbann.contrib.lc.launcher
+    import lbann.contrib.launcher
 
     trainer = lbann.Trainer(
         name=None,
         procs_per_trainer=run_args.procs_per_trainer,
-        num_parallel_readers=run_args.num_parallel_readers,
     )
     model = construct_model(run_args)
     opt = lbann.Adam(learn_rate=run_args.lr, beta1=0.9, beta2=0.99, eps=1e-8)
-
-    if run_args.chunked_data:
+    print("BOOL ", run_args.use_data_reader_prototext)
+    if run_args.use_data_reader_prototext:
 
         import os.path
         import lbann
@@ -268,7 +246,6 @@ if __name__ == "__main__":
 
     import datetime
 
-    # shamelessly lifted from lbann/blob/develop/python/lbann/launcher/__init__.py
     if "LBANN_EXPERIMENT_DIR" in os.environ:
         work_dir = os.environ["LBANN_EXPERIMENT_DIR"]
     else:
@@ -284,13 +261,11 @@ if __name__ == "__main__":
     import torch
 
     torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
-
-    status = lbann.contrib.lc.launcher.run(
+    status = lbann.contrib.launcher.run(
         trainer,
         model,
         data_reader,
         opt,
-        account=run_args.account,
         partition=run_args.partition,
         scheduler=run_args.scheduler,
         time_limit=run_args.time_limit,
