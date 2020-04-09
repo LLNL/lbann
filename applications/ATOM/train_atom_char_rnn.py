@@ -11,12 +11,12 @@ def construct_lc_launcher_args():
     parser.add_argument("--partition", default=None)
     parser.add_argument("--scheduler", default="slurm")
     parser.add_argument(
-        "--data-module-file",
+        "--data-module-file", default="dataset.py",
         help="specifies the module that contains the logic for loading data",
     )
     parser.add_argument(
-        "--data-config",
-        help="path to a data config file that is used for the construction of the data reader",
+        "--data-config", default="data_config.json",
+        help="path to a data config file that is used for the construction of python data reader",
     ) 
     parser.add_argument(
         "--time-limit",
