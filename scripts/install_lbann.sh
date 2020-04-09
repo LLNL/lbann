@@ -175,6 +175,7 @@ EOF
         GPU_PACKAGES=$(cat <<EOF
   - cudnn
   - cub
+  - cuda
   - nccl
 EOF
 )
