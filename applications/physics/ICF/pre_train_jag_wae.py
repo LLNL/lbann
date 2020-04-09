@@ -76,7 +76,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A',name='inp_data')
+    input = lbann.Input(target_mode='N/A',data_set_per_model=True, name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
     #inp_slice = lbann.Slice(input, axis=0, slice_points="0 16399 16404",name='inp_slice')
     inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+5]),name='inp_slice')
@@ -121,6 +121,8 @@ def construct_model():
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer(),
                  lbann.CallbackSaveModel(dir=args.dump_models),
+                 lbann.CallbackLTFB(batch_interval=782,metric='recon_error',
+                                    low_score_wins=True),
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
                                       batch_interval=2)]
@@ -138,7 +140,7 @@ def construct_model():
 if __name__ == '__main__':
     import lbann
     
-    trainer = lbann.Trainer()
+    trainer = lbann.Trainer(procs_per_trainer=16)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
@@ -155,13 +157,13 @@ if __name__ == '__main__':
                        #account='cancer',
                        scheduler='lsf',
                        #reservation='dat_0318',
-                       partition='pdebug',
+                       partition='pbatch',
                        nodes=args.num_nodes,
                        procs_per_node=4,
-                       time_limit=480,
+                       time_limit=720,
                        setup_only=False, 
                        job_name=args.job_name,
-                       lbann_args=['--preload_data_store --use_data_store',
+                       lbann_args=['--use_data_store',
                                    f'--metadata={metadata_prototext}',
                                    f'--index_list_train={args.index_list_train}',
                                    f'--index_list_test={args.index_list_test}',

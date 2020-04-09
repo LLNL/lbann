@@ -165,7 +165,8 @@ def construct_model():
                lbann.Metric(L_cyc_x, name='param cycle loss')]
 
     callbacks = [lbann.CallbackPrint(),
-                 lbann.CallbackDumpOutputs(layers=f'{y_image_re2.name} {conc_out.name}',
+                 #lbann.CallbackDumpOutputs(layers=f'{y_image_re2.name} {conc_out.name}',
+                 lbann.CallbackDumpOutputs(layers=f'{conc_out.name}',
                                            execution_modes='test',
                                            directory=args.dump_outputs,
                                            batch_interval=1,
