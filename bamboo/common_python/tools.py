@@ -6,7 +6,8 @@ import re
 import sys
 import numpy as np
 import pytest
-
+import shutil
+import subprocess
 
 def check_list(substrings, strings):
     errors = []
@@ -762,6 +763,16 @@ def create_tests(setup_func,
             _kwargs['work_dir'] = os.path.join(os.path.dirname(test_file),
                                                'experiments',
                                                test_name)
+
+        # If the user provided a suffix for the work directory, append it
+        if 'work_subdir' in _kwargs:
+            _kwargs['work_dir'] = os.path.join(_kwargs['work_dir'], _kwargs['work_subdir'])
+            del _kwargs['work_subdir']
+
+        # Delete the work directory
+        if os.path.isdir(_kwargs['work_dir']):
+            shutil.rmtree(_kwargs['work_dir'])
+
         if 'job_name' not in _kwargs:
             _kwargs['job_name'] = f'lbann_{test_name}'
         if 'overwrite_script' not in _kwargs:
@@ -878,3 +889,48 @@ def make_iterable(obj):
 def str_list(it):
     """Convert an iterable object to a space-separated string"""
     return ' '.join([str(i) for i in make_iterable(it)])
+
+# Define evaluation function
+def collect_metrics_from_log_func(log_file, key):
+    metrics = []
+    with open(log_file) as f:
+        for line in f:
+            match = re.search(key + ' : ([0-9.]+)', line)
+            if match:
+                metrics.append(float(match.group(1)))
+    return metrics
+
+def compare_metrics(baseline_metrics, test_metrics):
+    assert len(baseline_metrics) == len(test_metrics), \
+        'baseline and test experiments did not run for same number of epochs'
+    for i in range(len(baseline_metrics)):
+        x = baseline_metrics[i]
+        xhat = test_metrics[i]
+        assert x == xhat, \
+            'found discrepancy in metrics for baseline and test'
+
+
+# Perform a diff across a directoy where not all of the subdirectories will exist in
+# the test directory.  Return a list of unchecked subdirectories, the running error code
+# and the list of failed directories
+def multidir_diff(baseline, test, fileList):
+    tmpList = []
+    err_msg = ""
+    err = 0
+    # Iterate over the list of filepaths & remove each file.
+    for filePath in fileList:
+        d = os.path.basename(filePath)
+        t = os.path.basename(os.path.dirname(filePath))
+        c = os.path.join(test, t, d)
+        if os.path.exists(c):
+            ret = subprocess.run('diff -rq {baseline} {test}'.format(
+                baseline=filePath, test=c), capture_output=True, shell=True, text=True)
+            if ret.returncode != 0:
+                err_msg += 'diff -rq {baseline} {test} failed {dt}\n'.format(
+                    dt=ret.returncode, baseline=filePath, test=c)
+                err_msg += ret.stdout
+            err += ret.returncode
+        else:
+            tmpList.append(filePath)
+
+    return tmpList, err, err_msg

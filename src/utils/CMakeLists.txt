@@ -1,3 +1,4 @@
+
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
   argument_parser.cpp
@@ -28,11 +29,21 @@ set_full_path(THIS_DIR_SOURCES
   commify.cpp
 )
 
+if (LBANN_HAS_HALF)
+  list(APPEND THIS_DIR_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/serialization.cpp)
+endif (LBANN_HAS_HALF)
+
 if (LBANN_HAS_CUDA)
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
     cuda.cu
+    nvshmem.cu
     )
+endif ()
+
+if (LBANN_HAS_DISTCONV)
+  list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/distconv.cpp")
 endif ()
 
 add_subdirectory(threads)

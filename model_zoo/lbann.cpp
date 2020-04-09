@@ -89,7 +89,8 @@ int main(int argc, char *argv[]) {
     lbann_data::Model *pb_model = pb.mutable_model();
 
     auto model = build_model_from_prototext(argc, argv, pb_trainer, pb,
-                                            comm.get(), opts, io_thread_pool, true);
+                                            comm.get(), opts, io_thread_pool,
+                                            trainer->get_callbacks_with_ownership(), true);
 
     if (opts->has_string("create_tarball")) {
       return EXIT_SUCCESS;

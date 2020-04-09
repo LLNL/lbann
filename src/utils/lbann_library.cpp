@@ -29,6 +29,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/threads/thread_utils.hpp"
+#include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/checkpoint.hpp"
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/save_model.hpp"
@@ -92,11 +93,83 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     // Initalize trainer
     std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, *pb_trainer);
 
+    // If the checkpoint directory has been overridden reset it before
+    // setting up the trainer
+    if (opts && opts->has_string("ckpt_dir")) {
+      for (auto&& c : trainer->get_callbacks()) {
+        {
+          auto* cb = dynamic_cast<callback::checkpoint*>(c);
+          if(cb != nullptr) {
+            cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
+            if(comm->am_trainer_master()) {
+              std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
+            }
+          }
+        }
+      }
+    }
+    if (opts && opts->has_string("restart_dir")) {
+      for (auto&& c : trainer->get_callbacks()) {
+        {
+          auto* cb = dynamic_cast<callback::checkpoint*>(c);
+          if(cb != nullptr) {
+            cb->set_restart_dir(opts->get_string("restart_dir"));
+            if(comm->am_trainer_master()) {
+              std::cout << "Setting the restart directory to " << cb->get_restart_dir() << std::endl;
+            }
+          }
+        }
+      }
+    }
+
     trainer->setup(std::move(io_thread_pool));
 
     if(opts->get_bool("disable_background_io_activity")) {
       trainer->allow_background_io_activity(false);
     }
+
+    int random_seed = lbann_default_random_seed;
+
+    // Change random seed if needed.
+    if (pb_trainer->random_seed() > 0) {
+      random_seed = pb_trainer->random_seed();
+      // Reseed here so that setup is done with this new seed.
+      init_random(random_seed);
+      init_data_seq_random(random_seed);
+    }
+
+    // Initialize models differently if needed.
+#ifndef LBANN_DETERMINISTIC
+    if (!pb_trainer->random_init_trainers_identically()) {
+      hash_combine(random_seed, comm->get_trainer_rank());
+      // Reseed here so that setup is done with this new seed.
+      init_random(random_seed);
+      init_data_seq_random(random_seed);
+    }
+#else
+    if (!pb_trainer->random_init_trainers_identically()) {
+      if (master) {
+        std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
+          "due to sequential consistency" << std::endl;
+      }
+    }
+#endif
+
+#ifndef LBANN_DETERMINISTIC
+    // Under normal conditions, reinitialize the random number generator so
+    // that regularization techniques (e.g. dropout) generate unique patterns
+    // on different ranks.
+    init_random(random_seed + comm->get_rank_in_world());
+#else
+    if(comm->am_world_master()) {
+      std::cout <<
+        "--------------------------------------------------------------------------------\n"
+        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
+        "--------------------------------------------------------------------------------\n";
+    }
+#endif
+
+
 
     // Report useful information
     if (comm->am_world_master()) {
@@ -149,9 +222,9 @@ std::unique_ptr<model> build_model_from_prototext(
   lbann_comm *comm,
   options *opts,
   thread_pool& io_thread_pool,
+  std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
   bool first_model) {
 
-  int random_seed = lbann_default_random_seed;
   bool master = comm->am_world_master();
   if (master) {
     std::cerr << "starting build_model_from_prototext" << std::endl;
@@ -171,32 +244,6 @@ std::unique_ptr<model> build_model_from_prototext(
 
   // Get I/O thread details
   auto io_threads_per_process = io_thread_pool.get_num_threads();
-
-  /// @todo BVE FIXME should this be in the trainer
-  // Change random seed if needed.
-  if (pb_model->random_seed() > 0) {
-    random_seed = pb_model->random_seed();
-    // Reseed here so that setup is done with this new seed.
-    init_random(random_seed);
-    init_data_seq_random(random_seed);
-  }
-
-  // Initialize models differently if needed.
-#ifndef LBANN_DETERMINISTIC
-  if (!pb_trainer->random_init_trainers_identically()) {
-    hash_combine(random_seed, comm->get_trainer_rank());
-    // Reseed here so that setup is done with this new seed.
-    init_random(random_seed);
-    init_data_seq_random(random_seed);
-  }
-#else
-  if (!pb_trainer->random_init_trainers_identically()) {
-    if (master) {
-      std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
-        "due to sequential consistency" << std::endl;
-    }
-  }
-#endif
 
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
@@ -240,31 +287,75 @@ std::unique_ptr<model> build_model_from_prototext(
                                                             pb.trainer(),
                                                             pb.model());
 
+  // Add the trainer's callbacks to the model
+  for (auto&& c : shared_callbacks) {
+    ret_model->add_callback(c);
+  }
+
   // If the checkpoint directory has been overridden reset it before
   // setting up the model
-  if (opts->has_string("ckpt_dir")) {
+  if (opts && opts->has_string("ckpt_dir")) {
     for (auto&& c : ret_model->get_callbacks()) {
-      {
-        auto* cb = dynamic_cast<callback::checkpoint*>(c);
-        if(cb != nullptr) {
-          cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
-          std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
-        }
-      }
       {
         auto* cb = dynamic_cast<callback::dump_weights*>(c);
         if(cb != nullptr) {
           cb->set_target_dir(opts->get_string("ckpt_dir"));
-          std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+          if(comm->am_trainer_master()) {
+            std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+          }
         }
       }
       {
         auto* cb = dynamic_cast<callback::save_model*>(c);
         if(cb != nullptr) {
           cb->set_target_dir(opts->get_string("ckpt_dir"));
-          std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+          if(comm->am_trainer_master()) {
+            std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+          }
         }
       }
+    }
+  }
+
+  if (opts && opts->has_string("load_model_weights_dir")) {
+    callback::load_model* cb = nullptr;
+    for (auto&& c : ret_model->get_callbacks()) {
+      cb = dynamic_cast<callback::load_model*>(c);
+      if(cb != nullptr) {
+        break;
+      }
+    }
+
+    std::string active_load_model_dir;
+    std::string load_model_dir = opts->get_string("load_model_weights_dir");
+    if(opts->get_bool("load_model_weights_dir_is_complete")) {
+      active_load_model_dir = load_model_dir;
+    }else {
+      size_t epochLast = std::numeric_limits<size_t>::max();;
+      size_t stepLast = std::numeric_limits<size_t>::max();;
+      execution_mode mode = execution_mode::invalid;
+      active_load_model_dir = callback::get_last_shared_checkpoint_filename("sgd", load_model_dir);
+
+      // get last epoch and step saved.
+      int success = callback::read_latest(active_load_model_dir, &mode, &epochLast, &stepLast);
+      if(!success) {
+        LBANN_ERROR("Unable to find the latest checkpoint ", active_load_model_dir);
+        return nullptr;
+      }
+      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, mode, epochLast, stepLast) + ret_model->get_name() + '/';
+    }
+
+    if(cb == nullptr) {
+      std::vector<std::string> dirs = {active_load_model_dir};
+      std::unique_ptr<callback::load_model> load_model_cb =
+        make_unique<callback::load_model>(dirs);
+      cb = load_model_cb.get();
+      ret_model->add_callback(std::move(load_model_cb));
+      if(comm->am_trainer_master()) {
+        LBANN_WARNING("command line flag --load_model_dir was provided but there was no explicit load_model callback, adding one automagically!");
+      }
+    }else {
+      cb->add_dir(opts->get_string("load_model_weights_dir"));
     }
   }
 
@@ -273,9 +364,6 @@ std::unique_ptr<model> build_model_from_prototext(
     dr.second->setup(io_threads_per_process, &io_thread_pool);
     dr.second->set_rank(comm->get_rank_in_trainer());
   }
-
-  // Setup models
-  ret_model->setup();
 
   if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
     if (master) {
@@ -290,31 +378,6 @@ std::unique_ptr<model> build_model_from_prototext(
   // restart model from checkpoint if we have one
   //@todo
   //model->restartShared();
-
-#ifndef LBANN_DETERMINISTIC
-  // Under normal conditions, reinitialize the random number generator so
-  // that regularization techniques (e.g. dropout) generate unique patterns
-  // on different ranks.
-  init_random(random_seed + comm->get_rank_in_world());
-#else
-  if(comm->am_world_master()) {
-    std::cout <<
-      "--------------------------------------------------------------------------------\n"
-      "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-      "--------------------------------------------------------------------------------\n";
-  }
-#endif
-
-  if (opts && opts->has_string("restart_dir")) {
-    bool loaded = callback::load_model::load_model_weights(
-      opts->get_string("restart_dir"),
-      ret_model.get(),
-      opts->get_bool("restart_dir_is_fullpath"));
-    if(!loaded) {
-      LBANN_ERROR("Unable to reload model from given restart directory: ",
-                  opts->get_string("restart_dir"));
-    }
-  }
 
   return ret_model;
 }

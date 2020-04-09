@@ -41,6 +41,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include <cereal/types/utility.hpp>
 
 // Note (trb): There's what is, IMO, an STL error in GCC in which the
 // dtor for unique_ptr is checking sizeof(T), so this must be a
@@ -81,6 +82,11 @@ public:
   model& operator=(const model& other);
   virtual ~model();
   virtual std::unique_ptr<model> copy_model() const = 0;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(CEREAL_NVP(m_max_mini_batch_size));
+  }
 
   // ===========================================
   // Access functions
@@ -136,7 +142,16 @@ public:
   std::vector<weights*> get_weights();
 
   /** @brief Get the list of callbacks for the model. */
-  virtual std::vector<callback_base*>& get_callbacks() {
+  virtual std::vector<observer_ptr<callback_base>> get_callbacks() {
+    std::vector<observer_ptr<callback_base>> callback_list;
+    callback_list.reserve(m_callbacks.size());
+    for (const auto& ptr : m_callbacks) {
+      callback_list.push_back(ptr.get());
+    }
+    return callback_list;
+  }
+
+  virtual std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
     return m_callbacks;
   }
 
@@ -174,7 +189,10 @@ public:
   void add_weights(std::unique_ptr<weights> w);
 
   /** @brief Register a new callback for the model. */
-  void add_callback(callback_base *cb);
+  void add_callback(std::shared_ptr<callback_base> cb);
+
+  /** @brief Register a new callback for the model. */
+  //  void add_callbacks(std::vector<std::shared_ptr<callback_base>>& cb);
 
   /** @brief Register a new metric for the model. */
   void add_metric(metric *m);
@@ -446,10 +464,15 @@ private:
   std::vector<metric*> m_metrics;
 
   /** @brief Current callbacks to process. */
-  std::vector<callback_base*> m_callbacks;
+  std::vector<std::shared_ptr<callback_base>> m_callbacks;
 
   /** @brief Flag that allows input layers to fetch data in the background */
   bool m_background_io_allowed = true;
+
+  /** @brief Is the model setup
+   *  @details Flag to indicate if the setup function has been called
+   */
+  bool m_model_is_setup = false;
 
   // ===========================================
   // Functions to add utility layers
@@ -488,6 +511,11 @@ private:
    */
   void add_split_layers(std::unordered_set<std::string>& layer_names);
 
+#ifdef LBANN_HAS_DISTCONV
+  void setup_distconv();
+  void setup_distributions();
+  void print_distributions() const;
+#endif // LBANN_HAS_DISTCONV
 };
 
 } // namespace lbann

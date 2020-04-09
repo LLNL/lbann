@@ -101,6 +101,7 @@ inline std::string to_string(persist_type pt) {
 /// @todo Fix the callback types to properly track execution phases
 enum class callback_type {
   model_only,
+  weights_only,
   execution_context_only,
   full_checkpoint,
   invalid
@@ -109,7 +110,6 @@ enum class callback_type {
 class persist {
  private:
   std::map<persist_type, uint64_t> m_bytes;
-  std::map<persist_type, int> m_FDs;
   std::map<persist_type, std::string> m_filenames;
   callback_type ckpt_type;
  public:
@@ -119,6 +119,11 @@ class persist {
   persist();
   ~persist() {};
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(CEREAL_NVP(ckpt_type));
+  }
+
   callback_type get_cb_type() const {
     return ckpt_type;
   }
@@ -127,11 +132,13 @@ class persist {
     ckpt_type = type;
   }
 
-  void open_checkpoint(const std::string& dir);
+  void open_checkpoint_dir(const std::string& dir, bool create_dir);
+  void open_checkpoint(const std::string& dir, bool create_dir);
   void close_checkpoint();
 
   void open_restart(const std::string& dir);
   void close_restart();
+  void set_restart_dir(const std::string& dir) { m_checkpoint_dir = dir; }
 
   uint64_t get_bytes() const {
     uint64_t bytes = 0;
@@ -157,59 +164,13 @@ class persist {
   template <typename TensorDataType>
   bool read_distmat (persist_type type, const char *name, El::AbstractDistMatrix<TensorDataType> *M);
 
-  bool write_bytes(persist_type type, const char *name, const void *buf, size_t size);
-  bool read_bytes(persist_type type, const char *name, void *buf, size_t size);
-
-  bool write_uint32(persist_type type, const char *name, uint32_t  val);
-  bool read_uint32 (persist_type type, const char *name, uint32_t *val);
-
-  bool write_uint64(persist_type type, const char *name, uint64_t  val);
-  bool read_uint64 (persist_type type, const char *name, uint64_t *val);
-
-  bool write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count);
-  bool read_int32_contig (persist_type type, const char *name, int32_t *buf, uint64_t count);
-
-  bool write_float(persist_type type, const char *name, float  val);
-  bool read_float (persist_type type, const char *name, float *val);
-
-  bool write_string(persist_type type, const char *name, const char *val, int str_length);
-  bool read_string (persist_type type, const char *name, char *val, int str_length);
-
-  bool write_double(persist_type type, const char *name, double  val);
-  bool read_double (persist_type type, const char *name, double *val);
-
-  template <typename TensorDataType>
-  bool write_datatype(persist_type type, const char *name, TensorDataType  val);
-  template <typename TensorDataType>
-  bool read_datatype (persist_type type, const char *name, TensorDataType *val);
+  const std::string& get_checkpoint_dir() const { return m_checkpoint_dir; }
 
   std::string get_filename(persist_type type) const;
- private:
-  int get_fd(persist_type type) const;
 };
-
-template <typename TensorDataType>
-bool write_distmat(int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes);
-template <typename TensorDataType>
-bool read_distmat (int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes);
 
 bool write_bytes(int fd, const char *name, const void *buf, size_t size);
 bool read_bytes(int fd, const char *name, void *buf, size_t size);
-
-bool write_uint32(int fd, const char *name, uint32_t  val);
-bool read_uint32 (int fd, const char *name, uint32_t *val);
-
-bool write_uint64(int fd, const char *name, uint64_t  val);
-bool read_uint64 (int fd, const char *name, uint64_t *val);
-
-bool write_int32_contig(int fd, const char *name, const int32_t *buf, uint64_t count);
-bool read_int32_contig (int fd, const char *name, int32_t *buf, uint64_t count);
-
-bool write_float(int fd, const char *name, float  val);
-bool read_float (int fd, const char *name, float *val);
-
-bool write_double(int fd, const char *name, double  val);
-bool read_double (int fd, const char *name, double *val);
 
 bool write_string(int fd, const char *name, const char *buf, size_t size);
 bool read_string(int fd, const char *name, char *buf, size_t size);
@@ -220,13 +181,23 @@ public:
 };
 
 template <typename C>
-void write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
-  std::ofstream os(p.get_filename(pt) + suffix);
+void write_cereal_archive(C& obj, const std::string& filename) {
+  std::ofstream os(filename);
   if(!os.is_open()) {
-    throw NonexistentArchiveFile(p.get_filename(pt) + suffix);
+    throw NonexistentArchiveFile(filename);
   }
   cereal::XMLOutputArchive archive(os);
   archive(obj);
+}
+
+template <typename C>
+void write_cereal_archive(C& obj, persist& p, const std::string& filename) {
+  write_cereal_archive<C>(obj, p.get_checkpoint_dir() + "/" + filename);
+}
+
+template <typename C>
+void write_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
+  write_cereal_archive<C>(obj, p.get_filename(pt) + suffix);
 }
 
 template <typename C>
@@ -236,13 +207,23 @@ void write_cereal_archive(C& obj, persist& p, execution_mode mode, const std::st
 }
 
 template <typename C>
-void read_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
-  std::ifstream is(p.get_filename(pt) + suffix);
+void read_cereal_archive(C& obj, const std::string& filename) {
+  std::ifstream is(filename);
   if(!is.is_open()) {
-    throw NonexistentArchiveFile(p.get_filename(pt) + suffix);
+    throw NonexistentArchiveFile(filename);
   }
   cereal::XMLInputArchive archive(is);
   archive(obj);
+}
+
+template <typename C>
+void read_cereal_archive(C& obj, persist& p, const std::string& filename) {
+  read_cereal_archive(obj, p.get_checkpoint_dir() + "/" + filename);
+}
+
+template <typename C>
+void read_cereal_archive(C& obj, persist& p, persist_type pt, const std::string& suffix) {
+  read_cereal_archive(obj, p.get_filename(pt) + suffix);
 }
 
 template <typename C>
@@ -271,18 +252,18 @@ void unpack_cereal_archive_binary_string(C& obj, const std::string& buf) {
 }
 
 template <typename C>
-void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
+void load_from_shared_cereal_archive(C& obj,
                                      lbann_comm& comm,
-                                     const std::string& suffix) {
+                                     const std::string& filename) {
   std::string buf;
   if (comm.am_trainer_master()) {
-    read_cereal_archive<C>(obj, p, pt, suffix);
+    read_cereal_archive<C>(obj, filename);
     buf = create_cereal_archive_binary_string<C>(obj);
   }else {
     // If you are not the trainer master, still check to see if the file exists
-    std::ifstream is(p.get_filename(pt) + suffix);
+    std::ifstream is(filename);
     if(!is.is_open()) {
-      throw NonexistentArchiveFile(p.get_filename(pt) + suffix);
+      throw NonexistentArchiveFile(filename);
     }
   }
 
@@ -293,6 +274,20 @@ void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
   if (!comm.am_trainer_master()) {
     unpack_cereal_archive_binary_string<C>(obj, buf);
   }
+}
+
+template <typename C>
+void load_from_shared_cereal_archive(C& obj, persist& p,
+                                     lbann_comm& comm,
+                                     const std::string& filename) {
+  load_from_shared_cereal_archive(obj, comm, p.get_checkpoint_dir() + filename);
+}
+
+template <typename C>
+void load_from_shared_cereal_archive(C& obj, persist& p, persist_type pt,
+                                     lbann_comm& comm,
+                                     const std::string& suffix) {
+  load_from_shared_cereal_archive(obj, comm, p.get_filename(pt) + suffix);
 }
 
 template <typename C>
@@ -312,15 +307,7 @@ void load_from_shared_cereal_archive(C& obj, persist& p, execution_mode mode,
   extern template bool persist::write_distmat<T>(                           \
   persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
   extern template bool persist::read_distmat<T>(                            \
-  persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
-  extern template bool persist::write_datatype<T>(                          \
-    persist_type type, const char *name, T val);                            \
-  extern template bool persist::read_datatype<T>(                           \
-    persist_type type, const char *name, T *val);                           \
-  extern template bool write_distmat<T>(                                    \
-    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);            \
-  extern template bool read_distmat<T>(                                     \
-    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes)
+  persist_type type, const char *name, El::AbstractDistMatrix<T> *M)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

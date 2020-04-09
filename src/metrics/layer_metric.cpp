@@ -102,4 +102,27 @@ EvalType layer_metric::evaluate(execution_mode mode,
   return *eval;
 }
 
+bool layer_metric::save_to_checkpoint_shared(persist& p) {
+  // write out fields we need to save for model
+  if (get_comm().am_trainer_master()) {
+    write_cereal_archive<layer_metric>(*this, p, "metrics.xml");
+  }
+  return true;
+}
+
+bool layer_metric::load_from_checkpoint_shared(persist& p) {
+  load_from_shared_cereal_archive<layer_metric>(*this, p, get_comm(), "metrics.xml");
+  return true;
+}
+
+bool layer_metric::save_to_checkpoint_distributed(persist& p) {
+  write_cereal_archive<layer_metric>(*this, p, "metrics.xml");
+  return true;
+}
+
+bool layer_metric::load_from_checkpoint_distributed(persist& p) {
+  read_cereal_archive<layer_metric>(*this, p, "metrics.xml");
+  return true;
+}
+
 } // namespace lbann

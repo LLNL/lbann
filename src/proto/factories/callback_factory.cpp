@@ -82,6 +82,7 @@
 
 namespace lbann {
 namespace proto {
+
 namespace {
 
 // Define the factory type.
@@ -108,8 +109,6 @@ void register_default_builders(factory_type& factory)
                            build_check_metric_callback_from_pbuf);
   factory.register_builder("CallbackCheckNaN",
                            build_check_nan_callback_from_pbuf);
-  factory.register_builder("CallbackCheckpoint",
-                           build_checkpoint_callback_from_pbuf);
   factory.register_builder("CallbackCheckSmall",
                            build_check_small_callback_from_pbuf);
   factory.register_builder("CallbackConfusionMatrix",
@@ -238,5 +237,48 @@ std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
   return nullptr;
 }
 
+namespace {
+// Define a second factory type for callbacks that don't require a summarizer
+using factory_type_no_summarizer = lbann::generic_factory<
+  lbann::callback_base,
+  std::string,
+  generate_builder_type<lbann::callback_base,
+                        google::protobuf::Message const&>,
+  default_key_error_policy>;
+
+void register_default_builders_no_summarizer(factory_type_no_summarizer& factory)
+{
+  using namespace callback;
+  factory.register_builder("CallbackCheckpoint",
+                           build_checkpoint_callback_from_pbuf);
+}
+
+// Manage a global factory with no summarizer
+struct factory_manager_no_summarizer
+{
+    factory_type_no_summarizer factory_;
+
+    factory_manager_no_summarizer() {
+        register_default_builders_no_summarizer(factory_);
+    }
+};
+
+factory_manager_no_summarizer factory_mgr_no_summarizer_;
+factory_type_no_summarizer const& get_callback_factory_no_summarizer() noexcept
+{
+  return factory_mgr_no_summarizer_.factory_;
+}
+
+} // namespace
+
+std::unique_ptr<callback_base>
+construct_callback(
+  const google::protobuf::Message& proto_msg) {
+
+  auto const& factory = get_callback_factory_no_summarizer();
+  auto const& msg =
+    helpers::get_oneof_message(proto_msg, "callback_type");
+  return factory.create_object(msg.GetDescriptor()->name(), msg);
+}
 } // namespace proto
 } // namespace lbann

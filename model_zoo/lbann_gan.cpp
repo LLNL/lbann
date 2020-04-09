@@ -67,11 +67,13 @@ int main(int argc, char *argv[]) {
 
     thread_pool& io_thread_pool = trainer->get_io_thread_pool();
 
-    auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]), comm.get(), opts, io_thread_pool, true); //discriminator
+    auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]), comm.get(), opts, io_thread_pool,
+                                              trainer->get_callbacks_with_ownership(), true); //discriminator
                                                                                     //model
     std::unique_ptr<model> model_2 = nullptr; //adversarial model
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]), comm.get(), opts, io_thread_pool, false);
+      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]), comm.get(), opts, io_thread_pool,
+                                           trainer->get_callbacks_with_ownership(), false);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();

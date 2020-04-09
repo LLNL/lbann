@@ -37,6 +37,10 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/typename.hpp"
+#include "lbann/utils/distconv.hpp"
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/layers/distconv_adapter.hpp"
+#endif // LBANN_HAS_DISTCONV
 #include <string>
 #include <vector>
 
@@ -82,6 +86,73 @@ class weights;
 namespace callback {
 class sync_layers;
 } // namespace callback
+
+/** Represents a parallel strategy for a layer. */
+struct ParallelStrategy {
+  /** Number of process groups the sample dimension is split over. */
+  int sample_groups = 0;
+  /** Number of groups the sample dimension is split over. */
+  int sample_splits = 0;
+  /** Number of process groups the depth dimension is split over. */
+  int depth_groups = 0;
+  /** Number of groups the depth dimension is split over. */
+  int depth_splits = 0;
+  /** Number of process groups the height dimension is split over. */
+  int height_groups = 0;
+  /** Number of groups the height dimension is split over. */
+  int height_splits = 0;
+  /** Number of process groups the width dimension is split over. */
+  int width_groups = 0;
+  /** Number of groups the width dimension is split over. */
+  int width_splits = 0;
+  /** Number of process groups the channel dimension is split over. */
+  int channel_groups = 0;
+  /** Number of groups the channel dimension is split over. */
+  int channel_splits = 0;
+  /** Number of process groups the filter dimension is split over. */
+  int filter_groups = 0;
+  /** Number of groups the filter dimension is split over. */
+  int filter_splits = 0;
+  /** Number of times the layer is replicated (for FC layers right now). */
+  int replications = 0;
+  bool operator==(const ParallelStrategy &ps) const {
+    return sample_groups == ps.sample_groups &&
+        sample_splits == ps.sample_splits &&
+        depth_groups == ps.depth_groups &&
+        depth_splits == ps.depth_splits &&
+        height_groups == ps.height_groups &&
+        height_splits == ps.height_splits &&
+        width_groups == ps.width_groups &&
+        width_splits == ps.width_splits &&
+        channel_groups == ps.channel_groups &&
+        channel_splits == ps.channel_splits &&
+        filter_groups == ps.filter_groups &&
+        filter_splits == ps.filter_splits &&
+        replications == ps.replications;
+  }
+  bool operator!=(const ParallelStrategy &ps) const {
+    return !(*this == ps);
+  }
+};
+
+inline std::ostream &operator<<(std::ostream &os,
+                                const ParallelStrategy &ps) {
+  os << "{" << ps.sample_groups
+     << "/" << ps.sample_splits
+     << ", " << ps.depth_groups
+     << "/" << ps.depth_splits
+     << ", " << ps.height_groups
+     << "/" << ps.height_splits
+     << ", " << ps.width_groups
+     << "/" << ps.width_splits
+     << ", " << ps.channel_groups
+     << "/" << ps.channel_splits
+     << ", " << ps.filter_groups
+     << "/" << ps.filter_splits
+     << ", " << ps.replications
+     << "}";
+  return os;
+}
 
 /**
  * @brief Neural network tensor operation.
@@ -140,6 +211,15 @@ public:
 
   /** Human-readable description. */
   virtual description get_description() const;
+
+  /** Get the parallel strategy for the layer. */
+  inline ParallelStrategy& get_parallel_strategy() {
+    return m_parallel_strategy;
+  }
+  /** Get the parallel strategy for the layer. */
+  const ParallelStrategy& get_parallel_strategy() const {
+    return m_parallel_strategy;
+  }
 
   /** Forward propagation step.
    *  Apply a mathematical operation to input tensors to obtain output
@@ -502,9 +582,47 @@ private:
    */
   const Layer* m_hint_layer = nullptr;
 
+  /** Parallel strategy for the layer. */
+  ParallelStrategy m_parallel_strategy;
+
 private:
   friend std::vector<const weights*> extract_weights(Layer const& l);
   friend std::vector<weights*> extract_weights(Layer& l);
+
+#ifdef LBANN_HAS_DISTCONV
+  friend class distconv_adapter;
+ public:
+  /** Indicate whether distconv is enabled. */
+  bool distconv_enabled() const;
+  /** Indicate whether original input matrices need to be set up. */
+  virtual bool keep_original_inputs(int index) const;
+  /** Indicate whether original output matrices need to be set up. */
+  virtual bool keep_original_outputs(int index) const;
+  /** Indicate whether original gradient wrt input matrices need to be set up. */
+  virtual bool keep_original_gradient_wrt_inputs(int index) const;
+  /** Indicate whether original gradient wrt output matrices need to be set up. */
+  virtual bool keep_original_gradient_wrt_outputs(int index) const;
+  /** Retrievs distconv adapter. */
+  virtual const distconv_adapter& get_distconv_adapter() const;
+  /** Retrievs distconv adapter. */
+  virtual distconv_adapter& get_distconv_adapter();
+
+ protected:
+  /** Indicate whether distconv is supported. */
+  virtual bool is_distconv_supported() const { return false; }
+  /** Pre-initialize distconv attributes needed for setup_data(). */
+  void prepare_distconv();
+  virtual void setup_distconv_adapter() = 0;
+  std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() {
+    return m_dc; };
+  const std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() const {
+    return m_dc; };
+
+ private:
+  mutable bool m_distconv_enabled = false;
+  mutable bool m_distconv_enabled_set = false;
+  std::unique_ptr<distconv_adapter> m_dc;
+#endif // LBANN_HAS_DISTCONV
 };
 
 inline std::vector<weights*> extract_weights(Layer& l) {

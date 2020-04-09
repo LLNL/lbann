@@ -215,51 +215,42 @@ bool lbann::persist::read_rank_distmat(persist_type type, const char *name, El::
  * Functions to read/write values to files
  ****************************************************/
 
-lbann::persist::persist() {
+lbann::persist::persist():
+  ckpt_type(callback_type::invalid),
+  m_checkpoint_dir("<unknown>") {
   for(persist_type pt : persist_type_iterator()) {
     // initialize number of bytes written
     m_bytes[pt] = 0;
     // initialize file descriptors
-    m_FDs[pt] = -1;
     m_filenames[pt] = "<unknown>";
   }
 }
 
-/** @todo BVE FIXME this should be refactored to only open the
-    checkpoints files that we care about */
-void lbann::persist::open_checkpoint(const std::string& dir) {
-  // create directory for checkpoint
-  lbann::makedir(dir.c_str());
-
+void lbann::persist::open_checkpoint_dir(const std::string& dir, bool const create_dir) {
+  if(create_dir) {
+    // create directory for checkpoint
+    lbann::makedir(dir.c_str());
+  }
   // copy checkpoint directory
   m_checkpoint_dir = dir;
+}
+
+/** @todo BVE FIXME this should be refactored to only open the
+    checkpoints files that we care about */
+void lbann::persist::open_checkpoint(const std::string& dir, bool const create_dir) {
+  open_checkpoint_dir(dir, create_dir);
 
   for(persist_type pt : persist_type_iterator()) {
     // open the file for writing
-    m_filenames[pt] = dir + to_string(pt);
-    // Do not explicitly open several files -- this state is saved via Cereal
-    if(pt != persist_type::metrics &&
-       pt != persist_type::testing &&
-       pt != persist_type::validate &&
-       pt != persist_type::testing_context &&
-       pt != persist_type::training_context &&
-       pt != persist_type::validation_context &&
-       pt != persist_type::prediction_context) {
-      m_FDs[pt] = lbann::openwrite(m_filenames[pt].c_str());
-      if (m_FDs[pt] < 0) {
-        LBANN_ERROR("failed to open file (", m_filenames[pt], ")");
-      }
+    if(m_filenames[pt].compare("<unknown>") == 0) {
+      m_filenames[pt] = dir + to_string(pt);
     }
   }
 }
 
 void lbann::persist::close_checkpoint() {
   for(persist_type pt : persist_type_iterator()) {
-    if (m_FDs[pt] >= 0) {
-      lbann::closewrite(m_FDs[pt], m_filenames[pt].c_str());
-      m_FDs[pt] = -1;
-      m_filenames[pt] = "<unknown>";
-    }
+    m_filenames[pt] = "<unknown>";
   }
 }
 
@@ -269,29 +260,15 @@ void lbann::persist::open_restart(const std::string& dir) {
 
   for(persist_type pt : persist_type_iterator()) {
     // open the file for reading
-    m_filenames[pt] = dir + to_string(pt);
-    if(pt != persist_type::metrics &&
-       pt != persist_type::testing &&
-       pt != persist_type::validate &&
-       pt != persist_type::testing_context &&
-       pt != persist_type::training_context &&
-       pt != persist_type::validation_context &&
-       pt != persist_type::prediction_context) {
-      m_FDs[pt] = lbann::openread(m_filenames[pt].c_str());
-      if (m_FDs[pt] < 0) {
-        LBANN_ERROR("failed to open file (", m_filenames[pt], ")");
-      }
+    if(m_filenames[pt].compare("<unknown>") == 0) {
+      m_filenames[pt] = dir + to_string(pt);
     }
   }
 }
 
 void lbann::persist::close_restart() {
   for(persist_type pt : persist_type_iterator()) {
-    if (m_FDs[pt] >= 0) {
-      lbann::closeread(m_FDs[pt], m_filenames[pt].c_str());
-      m_FDs[pt] = -1;
-      m_filenames[pt] = "<unknown>";
-    }
+    m_filenames[pt] = "<unknown>";
   }
 }
 
@@ -343,104 +320,6 @@ bool lbann::persist::read_distmat(persist_type type, const char *name, El::Abstr
   return true;
 }
 
-bool lbann::persist::write_bytes(persist_type type, const char *name, const void *buf, size_t size) {
-  int fd = get_fd(type);
-  std::string filename = get_filename(type);
-  if (fd >= 0) {
-    ssize_t rc = write(fd, buf, size);
-    if (rc != (ssize_t) size) {
-      LBANN_ERROR("failed to write to fd ", fd,
-                  " for file ", filename, " and field (", name, ")");
-      return false;
-    }
-    m_bytes[type] += size;
-  }
-  return true;
-}
-
-bool lbann::persist::read_bytes(persist_type type, const char *name, void *buf, size_t size) {
-  int fd = get_fd(type);
-  std::string filename = get_filename(type);
-  if (fd >= 0) {
-    ssize_t rc = read(fd, buf, size);
-    if (rc != (ssize_t) size) {
-      LBANN_ERROR("failed to read ", size, " bytes from fd ",
-                  fd, " for file ", filename, " and field (", name,
-                  ") at offset ", m_bytes[type]);
-      return false;
-    }
-    m_bytes[type] += size;
-  }
-  else {
-    return false;
-  }
-  return true;
-}
-
-bool lbann::persist::write_uint32(persist_type type, const char *name, uint32_t val) {
-  return write_bytes(type, name, &val, sizeof(uint32_t));
-}
-
-bool lbann::persist::read_uint32(persist_type type, const char *name, uint32_t *val) {
-  return read_bytes(type, name, val, sizeof(uint32_t));
-}
-
-bool lbann::persist::write_uint64(persist_type type, const char *name, uint64_t val) {
-  return write_bytes(type, name, &val, sizeof(uint64_t));
-}
-
-bool lbann::persist::read_uint64(persist_type type, const char *name, uint64_t *val) {
-  return read_bytes(type, name, val, sizeof(uint64_t));
-}
-
-bool lbann::persist::write_int32_contig(persist_type type, const char *name, const int32_t *buf, uint64_t count) {
-  size_t bytes = count * sizeof(int32_t);
-  return write_bytes(type, name, buf, bytes);
-}
-
-bool lbann::persist::read_int32_contig(persist_type type, const char *name, int32_t *buf, uint64_t count) {
-  size_t bytes = count * sizeof(int32_t);
-  return read_bytes(type, name, buf, bytes);
-}
-
-bool lbann::persist::write_float(persist_type type, const char *name, float val) {
-  return write_bytes(type, name, &val, sizeof(float));
-}
-
-bool lbann::persist::read_float(persist_type type, const char *name, float *val) {
-  return read_bytes(type, name, val, sizeof(float));
-}
-
-bool lbann::persist::write_double(persist_type type, const char *name, double val) {
-  return write_bytes(type, name, &val, sizeof(double));
-}
-
-bool lbann::persist::read_double(persist_type type, const char *name, double *val) {
-  return read_bytes(type, name, val, sizeof(double));
-}
-
-template <typename TensorDataType>
-bool lbann::persist::write_datatype(persist_type type, const char *name, TensorDataType val) {
-  return write_bytes(type, name, &val, sizeof(TensorDataType));
-}
-
-template <typename TensorDataType>
-bool lbann::persist::read_datatype(persist_type type, const char *name, TensorDataType *val) {
-  return read_bytes(type, name, val, sizeof(TensorDataType));
-}
-
-bool lbann::persist::write_string(persist_type type, const char *name, const char *val, int str_length) {
-  return write_bytes(type, name, val, sizeof(char) * str_length);
-}
-
-bool lbann::persist::read_string(persist_type type, const char *name, char *val, int str_length) {
-  return read_bytes(type, name, val, sizeof(char) * str_length);
-}
-
-int lbann::persist::get_fd(persist_type type) const {
-  return m_FDs.at(type);
-}
-
 std::string lbann::persist::get_filename(persist_type type) const {
   return m_filenames.at(type);
 }
@@ -448,35 +327,6 @@ std::string lbann::persist::get_filename(persist_type type) const {
 /****************************************************
  * Functions to read/write values to files
  ****************************************************/
-
-template <typename TensorDataType>
-bool lbann::write_distmat(int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes) {
-  El::Write(*M, name, El::BINARY, "");
-  //Write_MPI(M, name, BINARY, "");
-
-  uint64_t bytes_written = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(TensorDataType);
-  *bytes += bytes_written;
-
-  return true;
-}
-
-template <typename TensorDataType>
-bool lbann::read_distmat(int fd, const char *name, DistMatDT<TensorDataType> *M, uint64_t *bytes) {
-  // check whether file exists
-  int exists = lbann::exists(name);
-  if (! exists) {
-    LBANN_ERROR("failed to read distributed matrix from file (", name, ")");
-    return false;
-  }
-
-  El::Read(*M, name, El::BINARY, true);
-  //Read_MPI(M, name, BINARY, 1);
-
-  uint64_t bytes_read = 2 * sizeof(El::Int) + M->Height() * M->Width() * sizeof(TensorDataType);
-  *bytes += bytes_read;
-
-  return true;
-}
 
 bool lbann::write_bytes(int fd, const char *name, const void *buf, size_t size) {
   if (fd >= 0) {
@@ -498,48 +348,6 @@ bool lbann::read_bytes(int fd, const char *name, void *buf, size_t size) {
     }
   }
   return true;
-}
-
-bool lbann::write_uint32(int fd, const char *name, uint32_t val) {
-  return lbann::write_bytes(fd, name, &val, sizeof(uint32_t));
-}
-
-bool lbann::read_uint32(int fd, const char *name, uint32_t *val) {
-  return lbann::read_bytes(fd, name, val, sizeof(uint32_t));
-}
-
-bool lbann::write_uint64(int fd, const char *name, uint64_t val) {
-  return lbann::write_bytes(fd, name, &val, sizeof(uint64_t));
-}
-
-bool lbann::read_uint64(int fd, const char *name, uint64_t *val) {
-  return lbann::read_bytes(fd, name, val, sizeof(uint64_t));
-}
-
-bool lbann::write_int32_contig(int fd, const char *name, const int32_t *buf, uint64_t count) {
-  size_t bytes = count * sizeof(int32_t);
-  return lbann::write_bytes(fd, name, buf, bytes);
-}
-
-bool lbann::read_int32_contig(int fd, const char *name, int32_t *buf, uint64_t count) {
-  size_t bytes = count * sizeof(int32_t);
-  return lbann::read_bytes(fd, name, buf, bytes);
-}
-
-bool lbann::write_float(int fd, const char *name, float val) {
-  return lbann::write_bytes(fd, name, &val, sizeof(float));
-}
-
-bool lbann::read_float(int fd, const char *name, float *val) {
-  return lbann::read_bytes(fd, name, val, sizeof(float));
-}
-
-bool lbann::write_double(int fd, const char *name, double val) {
-  return lbann::write_bytes(fd, name, &val, sizeof(double));
-}
-
-bool lbann::read_double(int fd, const char *name, double *val) {
-  return lbann::read_bytes(fd, name, val, sizeof(double));
 }
 
 bool lbann::write_string(int fd, const char *name, const char *buf, size_t size) {
@@ -564,6 +372,7 @@ bool lbann::read_string(int fd, const char *name, char *buf, size_t size) {
   return true;
 }
 
+
 namespace lbann {
 
 #define PROTO(T)                     \
@@ -574,15 +383,7 @@ namespace lbann {
   template bool persist::write_distmat<T>(                             \
     persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
   template bool persist::read_distmat<T>(                              \
-    persist_type type, const char *name, El::AbstractDistMatrix<T> *M);       \
-  template bool persist::write_datatype<T>(                            \
-    persist_type type, const char *name, T val);                              \
-  template bool persist::read_datatype<T>(                             \
-    persist_type type, const char *name, T *val);                             \
-  template bool write_distmat<T>(                                      \
-    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes);              \
-  template bool read_distmat<T>(                                       \
-    int fd, const char *name, DistMatDT<T> *M, uint64_t *bytes)
+    persist_type type, const char *name, El::AbstractDistMatrix<T> *M)
 
 #define LBANN_INSTANTIATE_CPU_HALF
 #define LBANN_INSTANTIATE_GPU_HALF

@@ -287,7 +287,7 @@ std::unique_ptr<model> construct_model(
   for (auto&& l   : layer_list   ) { m->add_layer(std::move(l));    }
   for (auto&& w   : weights_list ) { m->add_weights(std::move(w));  }
   for (auto&& met : metric_list  ) { m->add_metric(met.release());  }
-  for (auto&& cb  : callback_list) { m->add_callback(cb.release()); }
+  for (auto&& cb  : callback_list) { m->add_callback(std::move(cb)); }
   const auto& name = proto_model.name();
   if (!name.empty()) {
     m->set_name(name);

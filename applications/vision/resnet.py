@@ -144,8 +144,7 @@ model = lbann.Model(args.mini_batch_size,
                     layers=layers,
                     objective_function=obj,
                     metrics=metrics,
-                    callbacks=callbacks,
-                    random_seed=args.random_seed)
+                    callbacks=callbacks)
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)
@@ -154,7 +153,7 @@ opt = lbann.contrib.args.create_optimizer(args)
 data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
 # Setup trainer
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(random_seed=args.random_seed)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)

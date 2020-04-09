@@ -60,6 +60,11 @@ public:
   /** Destructor. */
   ~trainer();
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(CEREAL_NVP(m_persist));
+  }
+
   /** Set the trainer's name; this is an arbitrary string
    *  that may be useful in multi-trainer scenarios, e.g,
    *  LTFB, jag
@@ -77,6 +82,27 @@ public:
   /** Human-readable description. */
   description get_description() const;
 
+  /** @brief Get the list of callbacks for the trainer. */
+  std::vector<observer_ptr<callback_base>> get_callbacks() {
+    std::vector<observer_ptr<callback_base>> callback_list;
+    callback_list.reserve(m_callbacks.size());
+    for (const auto& ptr : m_callbacks) {
+      callback_list.push_back(ptr.get());
+    }
+    return callback_list;
+  }
+
+  void add_callback(std::shared_ptr<callback_base> cb) {
+    if (cb == nullptr) {
+      throw lbann_exception("model: Attempted to add null pointer as a callback.");
+    }
+    m_callbacks.push_back(std::move(cb));
+  }
+
+  std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
+    return m_callbacks;
+  }
+
   /** Set up the trainer. */
   void setup(std::unique_ptr<thread_pool> io_thread_pool);
 
@@ -88,7 +114,7 @@ public:
                                     execution_mode mode);
 
   execution_context_key_pair_t
-  check_and_build_execution_context(const execution_context& c,
+  check_and_build_execution_context(execution_context& c,
                                     model& model,
                                     execution_mode mode);
 
@@ -121,11 +147,30 @@ public:
     return m_comm;
   }
 
+  /** Get the trainer's persist object */
+  inline persist& get_persist_obj() {
+    return m_persist;
+  }
+
   /** Set a flag that can be used to enable / disable the background I/O activities */
   void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
 
   /** Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
+
+  // ===========================================
+  // Checkpointing
+  // ===========================================
+
+  /** @brief Checkpoint model to given file descriptor, return number of bytes written */
+  bool save_to_checkpoint_shared();
+  /** @brief Restore model by reading checkpoint from given file descriptor, return number of bytes read */
+  bool load_from_checkpoint_shared(persist& p);
+  bool load_from_checkpoint_shared(model& m, execution_context& c);
+
+  bool save_to_checkpoint_distributed();
+  bool load_from_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(model& m, execution_context& c);
 
 private:
 
@@ -141,6 +186,9 @@ private:
   /** Flag that allows input layers to fetch data in the background */
   bool m_background_io_allowed;
 
+  /** Persist object used for serializing LBANN classes */
+  persist m_persist;
+
   /** Hash function for @c m_model_execution_context */
   using model_execution_context_hash_t = pair_hash<observer_ptr<model>,
                                                    execution_mode,
@@ -151,6 +199,9 @@ private:
   std::unordered_map<std::pair<observer_ptr<model>, execution_mode>,
                      std::unique_ptr<execution_context>,
                      model_execution_context_hash_t> m_model_execution_context;
+
+  /** @brief Current callbacks to process. */
+  std::vector<std::shared_ptr<callback_base>> m_callbacks;
 };
 
 }  // namespace lbann

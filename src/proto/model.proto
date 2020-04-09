@@ -63,7 +63,5 @@ message Model {
 
   repeated Callback callback = 20;
 
-  int64 random_seed = 30;
-
   Summarizer summarizer = 32;
 }
