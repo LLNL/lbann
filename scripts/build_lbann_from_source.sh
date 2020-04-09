@@ -249,8 +249,6 @@ SPACK_ENV_CMD=
 if [[ ${LBANN_ENV} ]]; then
     SPACK_ENV_CMD="spack env activate -p ${LBANN_ENV}"
     ${SPACK_ENV_CMD}
-    source ${SPACK_ROOT}/var/spack/environments/${LBANN_ENV}/loads
-    unset CPATH
 fi
 
 if [[ ${SYS} = "Darwin" ]]; then
@@ -273,5 +271,4 @@ ninja install
 echo "To rebuild the environment:"
 echo "    ${SPACK_ENV_CMD}"
 echo "    cd ${LBANN_BUILD_DIR}"
-echo "    unset CPATH"
 echo "    ninja install"
