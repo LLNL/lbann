@@ -41,6 +41,7 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/weights/weights.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include <cereal/types/utility.hpp>
 
 // Note (trb): There's what is, IMO, an STL error in GCC in which the
 // dtor for unique_ptr is checking sizeof(T), so this must be a
@@ -81,6 +82,11 @@ public:
   model& operator=(const model& other);
   virtual ~model();
   virtual std::unique_ptr<model> copy_model() const = 0;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(CEREAL_NVP(m_max_mini_batch_size));
+  }
 
   // ===========================================
   // Access functions
@@ -462,6 +468,11 @@ private:
 
   /** @brief Flag that allows input layers to fetch data in the background */
   bool m_background_io_allowed = true;
+
+  /** @brief Is the model setup
+   *  @details Flag to indicate if the setup function has been called
+   */
+  bool m_model_is_setup = false;
 
   // ===========================================
   // Functions to add utility layers

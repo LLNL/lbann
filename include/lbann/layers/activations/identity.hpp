@@ -79,7 +79,7 @@ protected:
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<identity_distconv_adapter<
+    this->get_distconv_adapter_ptr() = make_unique<identity_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }
 #endif // LBANN_HAS_DISTCONV

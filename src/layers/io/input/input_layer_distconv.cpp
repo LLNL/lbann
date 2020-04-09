@@ -33,20 +33,20 @@ namespace lbann {
 template <typename TensorDataType, typename T_io_buffer,
           data_layout T_layout, El::Device Dev, typename InputType>
 const input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>&
-input_layer_distconv<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::dc() const {
+input_layer_distconv<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::get_distconv_adapter() const {
   return dynamic_cast<const input_adapter<
     TensorDataType, T_io_buffer, T_layout, Dev, InputType>&>(
-        data_type_layer<TensorDataType>::dc());
+        data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, typename T_io_buffer,
           data_layout T_layout, El::Device Dev, typename InputType>
 input_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>&
-input_layer_distconv<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::dc() {
+input_layer_distconv<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::get_distconv_adapter() {
   return const_cast<input_adapter<
     TensorDataType, T_io_buffer, T_layout, Dev, InputType>&>(
         static_cast<const input_layer_distconv<
-        TensorDataType, T_io_buffer, T_layout, Dev, InputType>&>(*this).dc());
+        TensorDataType, T_io_buffer, T_layout, Dev, InputType>&>(*this).get_distconv_adapter());
 }
 #endif // LBANN_HAS_DISTCONV
 

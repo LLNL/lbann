@@ -464,6 +464,21 @@ size_t get_workspace_capacity() {
   return workspace_capacity;
 }
 
+int get_num_dims(const Layer &layer) {
+  // Use the dimension of either input or output data.
+  auto nd = layer.get_num_parents() > 0 ? layer.get_input_dims().size() :
+      layer.get_output_dims().size();
+  nd += 1; // input and output dimensions do not have the sample dimension.
+  if (!(nd == 4 || nd == 5)) {
+    LBANN_ERROR(layer.get_name(), ": Invalid number of dimensions: ", nd);
+  }
+  return nd;
+}
+
+int get_num_spatial_dims(const Layer &layer) {
+  return get_num_dims(layer) - 2;
+}
+
 #define PROTO(T)                                                \
   template TensorShuffler<T> *get_tensor_shuffler<T>(           \
       const TensorDev<T> &, const TensorDev<T> &);

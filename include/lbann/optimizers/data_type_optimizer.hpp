@@ -63,6 +63,12 @@ public:
    */
   virtual data_type_optimizer* copy() const override = 0;
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<optimizer>(this),
+       CEREAL_NVP(m_learning_rate));
+  }
+
   /** @brief Human-readable description. */
   virtual description get_description() const override;
 
@@ -199,17 +205,6 @@ private:
    *  if an allreduce is needed but hasn't been started.
    */
   void finish_gradient_allreduce();
-
-public:
-
-  // ===========================================
-  // Checkpointing
-  // ===========================================
-  bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
-  bool save_to_checkpoint_distributed(persist& p, std::string m_name) override;
-  bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
-
 };
 
 #ifndef LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE

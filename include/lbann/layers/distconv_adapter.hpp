@@ -104,8 +104,6 @@ class distconv_adapter {
   virtual Layer& layer();
   virtual const Layer& layer() const;
   std::string get_name() const;
-  int get_num_dims() const;
-  int get_num_spatial_dims() const;
 
   virtual void setup_prev_activations() = 0;
   virtual void setup_original_prev_activations() = 0;

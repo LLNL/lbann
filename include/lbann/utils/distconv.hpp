@@ -234,6 +234,9 @@ void dump_tensor(const Tensor &t, const std::string &path) {
 
 size_t get_workspace_capacity();
 
+int get_num_dims(const Layer &layer);
+int get_num_spatial_dims(const Layer &layer);
+
 #ifndef LBANN_UTILS_DISTCONV_INSTANTIATE
 #define PROTO(T)                                                \
   extern template TensorShuffler<T> *get_tensor_shuffler<T>(    \

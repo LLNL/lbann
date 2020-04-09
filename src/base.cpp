@@ -51,6 +51,9 @@
 #ifdef LBANN_HAS_NVSHMEM
 #include "lbann/utils/nvshmem.hpp"
 #endif
+#ifdef LBANN_HAS_DISTCONV
+#include "lbann/utils/distconv.hpp"
+#endif
 
 #include <iostream>
 #include <string>

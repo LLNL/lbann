@@ -104,7 +104,7 @@ void data_type_layer<TensorDataType>::forward_prop() {
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) dc().fp_setup(mini_batch_size);
+  if (distconv_enabled()) get_distconv_adapter().fp_setup(mini_batch_size);
 #endif // LBANN_HAS_DISTCONV
 
   // Apply layer's compute function
@@ -113,7 +113,7 @@ void data_type_layer<TensorDataType>::forward_prop() {
   m_fp_compute_time += get_time() - fp_compute_start;
 
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) dc().fp_postprocess();
+  if (distconv_enabled()) get_distconv_adapter().fp_postprocess();
 #endif // LBANN_HAS_DISTCONV
 
   // Add this layer as a gradient source for weight optimizers
@@ -146,7 +146,7 @@ void data_type_layer<TensorDataType>::back_prop() {
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
 
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) dc().bp_setup(mini_batch_size);
+  if (distconv_enabled()) get_distconv_adapter().bp_setup(mini_batch_size);
 #endif // LBANN_HAS_DISTCONV
 
   // Backprop the compute function.
@@ -155,7 +155,7 @@ void data_type_layer<TensorDataType>::back_prop() {
   m_bp_compute_time += get_time() - bp_compute_start;
 
 #ifdef LBANN_HAS_DISTCONV
-  if (distconv_enabled()) dc().bp_postprocess();
+  if (distconv_enabled()) get_distconv_adapter().bp_postprocess();
 #endif // LBANN_HAS_DISTCONV
 
   // Remove this layer as a gradient source for weight optimizers
@@ -330,6 +330,29 @@ auto data_type_layer<TensorDataType>::get_error_signals(const Layer& parent) con
   return get_error_signals(parent_index);
 }
 
+namespace {
+
+template <typename T>
+void set_default_memory_mode(
+  El::AbstractMatrix<T>& m, El::Device const& device) {
+#ifdef LBANN_HAS_GPU
+  switch (device) {
+  case El::Device::GPU:
+    // Allocate GPU memory with the CUDA API
+    m.SetMemoryMode(0); break;
+  case El::Device::CPU:
+    // Use pinned memory for data on the host.
+    m.SetMemoryMode(1); break;
+  default: break;
+  }
+#else
+  (void) m;
+  (void) device;
+#endif // LBANN_HAS_GPU
+}
+
+}// namespace <anon>
+
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
 
@@ -338,32 +361,6 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   m_outputs.clear();
   m_gradient_wrt_outputs.clear();
   m_gradient_wrt_inputs.clear();
-
-  // Construct matrices
-  m_inputs.resize(get_num_parents());
-  m_outputs.resize(get_num_children());
-  m_gradient_wrt_outputs.resize(get_num_children());
-  m_gradient_wrt_inputs.resize(get_num_parents());
-  for (int i = 0; i < get_num_parents(); ++i) {
-    m_inputs[i] = construct_matrix(grid, "input", i);
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_outputs[i] = construct_matrix(grid, "output", i);
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_gradient_wrt_outputs[i]
-      = construct_matrix(grid, "gradient_wrt_output", i);
-  }
-  for (int i = 0; i < get_num_parents(); ++i) {
-    m_gradient_wrt_inputs[i]
-      = construct_matrix(grid, "gradient_wrt_input", i);
-  }
-}
-
-template <typename TensorDataType>
-auto data_type_layer<TensorDataType>::construct_matrix(const El::Grid& grid,
-                                                       std::string type,
-                                                       El::Int index) -> std::unique_ptr<AbsDistMatrixType> {
 
   // Choose matrix distribution
   El::Distribution col_dist, row_dist;
@@ -383,19 +380,33 @@ auto data_type_layer<TensorDataType>::construct_matrix(const El::Grid& grid,
   default: LBANN_ERROR("invalid data layout");
   }
 
-  // Construct matrix
-  std::unique_ptr<AbsDistMatrixType> mat;
-  mat.reset(AbsDistMatrixType::Instantiate(grid, 0,
-                                    col_dist, row_dist, wrap, device));
-
-#ifdef LBANN_HAS_GPU
-  // Allocate GPU memory with the CUDA API
-  if (device == El::Device::GPU) { mat->Matrix().SetMemoryMode(0); }
-  // Use pinned memory for data on the host.
-  if (device == El::Device::CPU) { mat->Matrix().SetMemoryMode(1); }
-#endif // LBANN_HAS_GPU
-
-  return mat;
+  // Construct matrices
+  m_inputs.resize(get_num_parents());
+  m_outputs.resize(get_num_children());
+  m_gradient_wrt_outputs.resize(get_num_children());
+  m_gradient_wrt_inputs.resize(get_num_parents());
+  for (int i = 0; i < get_num_parents(); ++i) {
+    m_inputs[i].reset(AbsDistMatrixType::Instantiate(
+                        grid, 0, col_dist, row_dist, wrap, device));
+    set_default_memory_mode(m_inputs[i]->Matrix(), device);
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    m_outputs[i].reset(AbsDistMatrixType::Instantiate(
+                         grid, 0, col_dist, row_dist, wrap, device));
+    set_default_memory_mode(m_outputs[i]->Matrix(), device);
+  }
+  for (int i = 0; i < get_num_children(); ++i) {
+    m_gradient_wrt_outputs[i].reset(
+      AbsDistMatrixType::Instantiate(
+        grid, 0, col_dist, row_dist, wrap, device));
+    set_default_memory_mode(m_gradient_wrt_outputs[i]->Matrix(), device);
+  }
+  for (int i = 0; i < get_num_parents(); ++i) {
+    m_gradient_wrt_inputs[i].reset(
+      AbsDistMatrixType::Instantiate(
+        grid, 0, col_dist, row_dist, wrap, device));
+    set_default_memory_mode(m_gradient_wrt_inputs[i]->Matrix(), device);
+  }
 }
 
 template <typename TensorDataType>
@@ -414,7 +425,7 @@ void data_type_layer<TensorDataType>::setup_data() {
   // memory, but there are some edge cases that are not handled.
   for (int i = 0; i < get_num_children(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
-    if (distconv_enabled() && !dc().child_copy_required(i)) {
+    if (distconv_enabled() && !get_distconv_adapter().child_copy_required(i)) {
       // Avoids allocating unused matrices
       continue;
     }
@@ -514,7 +525,9 @@ void data_type_layer<TensorDataType>::replace_weights(Layer* other_layer) {
   const std::vector<WeightsType*>& other_layer_weights =
     dynamic_cast<data_type_layer<TensorDataType>*>(other_layer)->get_data_type_weights();
   for (size_t i = 0; i < m_weights.size(); ++i) {
-    m_weights[i]->set_values(other_layer_weights[i]->get_values());
+    if (m_weights[i]) {
+      m_weights[i]->set_values(other_layer_weights[i]->get_values());
+    }
   }
 
 }
@@ -670,18 +683,18 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(El::Int mini_
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::setup_distconv_adapter() {
-  this->get_dc() = make_unique<data_type_distconv_adapter<TensorDataType>>(*this);
+  this->get_distconv_adapter_ptr() = make_unique<data_type_distconv_adapter<TensorDataType>>(*this);
 }
 
 template <typename TensorDataType>
-data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::dc() {
+data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::get_distconv_adapter() {
   return const_cast<data_type_distconv_adapter<TensorDataType>&>(
-      static_cast<const data_type_layer<TensorDataType>&>(*this).dc());
+      static_cast<const data_type_layer<TensorDataType>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType>
-const data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::dc() const {
-  return dynamic_cast<const data_type_distconv_adapter<TensorDataType>&>(*get_dc());
+const data_type_distconv_adapter<TensorDataType>& data_type_layer<TensorDataType>::get_distconv_adapter() const {
+  return dynamic_cast<const data_type_distconv_adapter<TensorDataType>&>(*get_distconv_adapter_ptr());
 }
 #endif // LBANN_HAS_DISTCONV
 

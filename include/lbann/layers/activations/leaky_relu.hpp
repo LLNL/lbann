@@ -97,27 +97,27 @@ private:
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<leaky_relu_distconv_adapter<
+    this->get_distconv_adapter_ptr() = make_unique<leaky_relu_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }
-  leaky_relu_distconv_adapter<TensorDataType, Layout, Device>& dc() override;
-  const leaky_relu_distconv_adapter<TensorDataType, Layout, Device>& dc() const override;
+  leaky_relu_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
+  const leaky_relu_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 };
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>&
-leaky_relu_layer<TensorDataType, T_layout, Dev>::dc() {
+leaky_relu_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
   return const_cast<leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const leaky_relu_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+      static_cast<const leaky_relu_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 const leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>&
-leaky_relu_layer<TensorDataType, T_layout, Dev>::dc() const {
+leaky_relu_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
   return dynamic_cast<const leaky_relu_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      data_type_layer<TensorDataType>::dc());
+      data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

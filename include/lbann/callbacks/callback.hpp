@@ -32,7 +32,6 @@
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/layers/layer.hpp"
 #include "lbann/models/model.hpp"
-#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/summary.hpp"

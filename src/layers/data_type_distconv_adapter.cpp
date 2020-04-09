@@ -292,7 +292,7 @@ setup_original_prev_activations_i(int index) const {
     // calculated by Distconv
     local_shape[-1] = 0;
     const auto dist = dc::get_hydrogen_data_parallel_distribution(
-        layer().get_num_dims());
+        dc::get_num_dims(layer()));
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
     t = make_unique<TensorDevType>(shape, loc, dist, local_shape);
   } else if (parent_shuffle_required(index)) {
@@ -301,7 +301,7 @@ setup_original_prev_activations_i(int index) const {
     // Create a shallow copy of the activations of the prev layer
     const auto &parent_activations =
         dynamic_cast<const TensorDevType&>(
-            layer().get_parent_layers()[index]->dc().get_activations(layer()));
+            layer().get_parent_layers()[index]->get_distconv_adapter().get_activations(layer()));
     t = make_unique<TensorDevType>(parent_activations);
   }
   return t;
@@ -332,7 +332,7 @@ setup_prev_activations_i(int index) const {
     // Create a shallow copy
     const auto &parent_activations =
         dynamic_cast<const TensorDevType&>(
-            layer().get_parent_layers()[index]->dc().get_activations(layer()));
+            layer().get_parent_layers()[index]->get_distconv_adapter().get_activations(layer()));
     // Sanity check
     assert_always(parent_activations.get_distribution() == dist);
     t = make_unique<TensorDevType>(parent_activations);
@@ -353,7 +353,7 @@ template <typename TensorDataType>
 dc::Shape data_type_distconv_adapter<TensorDataType>::get_prev_activations_local_shape(
     int input_index) const {
   // No enforced local shape.
-  return dc::Shape(this->get_num_dims(), 0);
+  return dc::Shape(dc::get_num_dims(layer()), 0);
 }
 
 template <typename TensorDataType>
@@ -443,7 +443,7 @@ setup_original_activations_i(int index) const {
   TensorDevPtr<TensorDataType> t = nullptr;
   if (child_copy_required(index)) {
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
-    const auto dist = dc::get_hydrogen_data_parallel_distribution(get_num_dims());
+    const auto dist = dc::get_hydrogen_data_parallel_distribution(dc::get_num_dims(layer()));
     const auto shape = get_activations_shape(index);
     assert_always(!shape.is_empty());
     auto local_shape = shape;
@@ -480,7 +480,7 @@ setup_prev_error_signals_i(int index) const {
     // Create a shallow copy
     const auto &child_error_signals =
         dynamic_cast<const TensorDevType&>(
-            layer().get_child_layers()[index]->dc().get_error_signals(layer()));
+            layer().get_child_layers()[index]->get_distconv_adapter().get_error_signals(layer()));
     // Just sanity check
     assert_always(child_error_signals.get_distribution() == dist);
     t = make_unique<TensorDevType>(child_error_signals);
@@ -505,7 +505,7 @@ setup_original_prev_error_signals_i(int index) const {
     const auto shape = get_prev_error_signals_shape(index);
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
     const auto dist = dc::get_hydrogen_data_parallel_distribution(
-        layer().get_num_dims());
+        dc::get_num_dims(layer()));
     auto local_shape = shape;
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv
@@ -517,7 +517,7 @@ setup_original_prev_error_signals_i(int index) const {
     // Create a shallow copy of the activations of the prev layer
     const auto &child_error_signals =
         dynamic_cast<const TensorDevType&>(
-            layer().get_child_layers()[index]->dc().get_error_signals(layer()));
+            layer().get_child_layers()[index]->get_distconv_adapter().get_error_signals(layer()));
     t = make_unique<TensorDevType>(child_error_signals);
   }
   return t;
@@ -566,7 +566,7 @@ setup_original_error_signals_i(int index) const {
     const auto shape = get_error_signals_shape(index);
     const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
     const auto dist = dc::get_hydrogen_data_parallel_distribution(
-        get_num_dims());
+        dc::get_num_dims(layer()));
     auto local_shape = shape;
     // Set the sample dimension as 0 so that its actual value is
     // calculated by Distconv

@@ -358,7 +358,8 @@ void Layer::unfreeze() {
 bool Layer::is_frozen() const {
   for(auto& w : get_weights()) {
     if (w->is_frozen() != m_frozen) {
-      LBANN_ERROR("layer and weights of them are inconsistently frozen");
+      LBANN_ERROR("layer ", get_name(), " and weight ", w->get_name(), \
+                  " of it are inconsistently frozen");
     }
   }
   return m_frozen;
@@ -606,21 +607,6 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
 }
 
 #ifdef LBANN_HAS_DISTCONV
-int Layer::get_num_dims() const {
-  // Use the dimension of either input or output data.
-  auto nd = get_num_parents() > 0 ? get_input_dims().size() :
-      get_output_dims().size();
-  nd += 1; // input and output dimensions do not have the sample dimension.
-  if (!(nd == 4 || nd == 5)) {
-    LBANN_ERROR(get_name(), ": Invalid number of dimensions: ", nd);
-  }
-  return nd;
-}
-
-int Layer::get_num_spatial_dims() const {
-  return get_num_dims() - 2;
-}
-
 void Layer::prepare_distconv() {
   if (distconv_enabled()) {
     setup_distconv_adapter();
@@ -654,11 +640,11 @@ bool Layer::distconv_enabled() const {
 }
 
 bool Layer::keep_original_inputs(int index) const {
-  return !(distconv_enabled() && !dc().parent_copy_required(index));
+  return !(distconv_enabled() && !get_distconv_adapter().parent_copy_required(index));
 }
 
 bool Layer::keep_original_outputs(int index) const {
-  return !(distconv_enabled() && !dc().child_copy_required(index));
+  return !(distconv_enabled() && !get_distconv_adapter().child_copy_required(index));
 }
 
 bool Layer::keep_original_gradient_wrt_outputs(int index) const {
@@ -669,12 +655,12 @@ bool Layer::keep_original_gradient_wrt_inputs(int index) const {
   return keep_original_inputs(index);
 }
 
-distconv_adapter& Layer::dc() {
+distconv_adapter& Layer::get_distconv_adapter() {
   return const_cast<distconv_adapter&>(
-      static_cast<const Layer&>(*this).dc());
+      static_cast<const Layer&>(*this).get_distconv_adapter());
 }
 
-const distconv_adapter& Layer::dc() const {
+const distconv_adapter& Layer::get_distconv_adapter() const {
   if (m_dc == nullptr) {
     LBANN_ERROR("Trying to access distconv adapter for layer, ",
                 get_name(), ", without setting up");

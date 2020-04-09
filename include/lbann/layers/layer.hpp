@@ -592,8 +592,6 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class distconv_adapter;
  public:
-  int get_num_dims() const;
-  int get_num_spatial_dims() const;
   /** Indicate whether distconv is enabled. */
   bool distconv_enabled() const;
   /** Indicate whether original input matrices need to be set up. */
@@ -605,9 +603,9 @@ private:
   /** Indicate whether original gradient wrt output matrices need to be set up. */
   virtual bool keep_original_gradient_wrt_outputs(int index) const;
   /** Retrievs distconv adapter. */
-  virtual const distconv_adapter& dc() const;
+  virtual const distconv_adapter& get_distconv_adapter() const;
   /** Retrievs distconv adapter. */
-  virtual distconv_adapter& dc();
+  virtual distconv_adapter& get_distconv_adapter();
   /** Indicate whether backprop can be safely skipped. */
   bool skip_first_layer_bp() const;
 
@@ -617,8 +615,10 @@ private:
   /** Pre-initialize distconv attributes needed for setup_data(). */
   void prepare_distconv();
   virtual void setup_distconv_adapter() = 0;
-  std::unique_ptr<distconv_adapter>& get_dc() { return m_dc; };
-  const std::unique_ptr<distconv_adapter>& get_dc() const { return m_dc; };
+  std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() {
+    return m_dc; };
+  const std::unique_ptr<distconv_adapter>& get_distconv_adapter_ptr() const {
+    return m_dc; };
 
  private:
   mutable bool m_distconv_enabled = false;

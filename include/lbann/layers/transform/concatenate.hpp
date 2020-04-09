@@ -111,11 +111,11 @@ private:
  protected:
   bool is_distconv_supported() const override { return true; }
   void setup_distconv_adapter() override {
-    this->get_dc() = make_unique<
+    this->get_distconv_adapter_ptr() = make_unique<
       concatenate_distconv_adapter<TensorDataType, Layout, Device>>(*this);
   }
-  concatenate_distconv_adapter<TensorDataType, Layout, Device>& dc() override;
-  const concatenate_distconv_adapter<TensorDataType, Layout, Device>& dc() const override;
+  concatenate_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() override;
+  const concatenate_distconv_adapter<TensorDataType, Layout, Device>& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
 };
 
@@ -252,7 +252,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::fp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    dc().fp_compute();
+    get_distconv_adapter().fp_compute();
     return;
   }
 #endif
@@ -326,7 +326,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
-    dc().bp_compute();
+    get_distconv_adapter().bp_compute();
     return;
   }
 #endif
@@ -345,16 +345,16 @@ void concatenate_layer<TensorDataType,Layout,Device>::bp_compute() {
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 concatenate_distconv_adapter<TensorDataType, T_layout, Dev>&
-concatenate_layer<TensorDataType, T_layout, Dev>::dc() {
+concatenate_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
   return const_cast<concatenate_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      static_cast<const concatenate_layer<TensorDataType, T_layout, Dev>&>(*this).dc());
+      static_cast<const concatenate_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 const concatenate_distconv_adapter<TensorDataType, T_layout, Dev>&
-concatenate_layer<TensorDataType, T_layout, Dev>::dc() const {
+concatenate_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
   return dynamic_cast<const concatenate_distconv_adapter<TensorDataType, T_layout, Dev>&>(
-      data_type_layer<TensorDataType>::dc());
+      data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
