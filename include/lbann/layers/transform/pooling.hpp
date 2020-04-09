@@ -617,6 +617,10 @@ pooling_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 bool pooling_layer<TensorDataType, T_layout, Dev>::is_distconv_supported() const {
+  if (Dev != El::Device::GPU || T_layout == data_layout::DATA_PARALLEL) {
+    return false;
+  }
+
   bool cond = true;
   for(int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
     cond &= (m_pool_dims[i] % 2 != 0) ||
