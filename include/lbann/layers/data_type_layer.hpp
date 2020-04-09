@@ -84,7 +84,8 @@ public:
     h2::meta::tlist::MemberV<TensorDataType, supported_layer_data_type>(),
     "Must use a supported type.");
 
-  data_type_layer(lbann_comm *comm) : Layer(comm) {}
+  data_type_layer(lbann_comm *comm, bool persistent_error_signals=true)
+    : Layer(comm), m_persistent_error_signals{persistent_error_signals} {}
   data_type_layer(const data_type_layer<TensorDataType>& other);
   data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
   virtual ~data_type_layer() = default;
@@ -208,12 +209,6 @@ protected:
   // Back prop step helper functions
   // ===========================================================
 
-  /** Setup gradient w.r.t. output tensors.
-   *  Called by the 'back_prop' function. Each gradient w.r.t. output
-   *  tensor is setup as a view or copy of the corresponding child
-   *  layer's gradient w.r.t. input tensor.
-   */
-  void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) override;
   /** Setup gradient w.r.t. input tensors.
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
@@ -269,27 +264,28 @@ protected:
 
 private:
 
-  /** @brief Take ownership of a reference to the previous error signals.
+  /** @brief Take ownership of a reference to the previous error signal.
    *
    *  If the underlying tensor has the right datatype, the reference
    *  is stored explicitly. Otherwise a deep copy is made so that it
    *  has the correct datatype.
    *
-   *  @param child The layer from which the error signals have come.
-   *  @param signals The error signals from the layer.
+   *  @param child The layer from which the error signal has come.
+   *  @param signals The error signal from the layer.
    */
-  void set_prev_error_signals_(
-    Layer const& child,
-    std::unique_ptr<El::BaseDistMatrix> signals) final;
+  void set_prev_error_signal_(
+    const Layer& child,
+    std::unique_ptr<El::BaseDistMatrix> signal) final;
+
+  void set_prev_error_signal_(
+    const Layer& child,
+    const El::BaseDistMatrix& signal) final;
 
   void allocate_new_gradients_() final;
 
   void propagate_error_signals_to_parents_() final;
 
-  void clear_prev_error_signals_() final {
-    for (auto& es : m_gradient_wrt_outputs)
-      es.reset();
-  }
+  void clear_prev_error_signals_() final;
 
   /** Backward propagation step.
    *  Given the objective function gradients w.r.t. the output
@@ -336,6 +332,13 @@ private:
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
   std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
+
+  /** @brief Whether to keep persistent error signals or dynamically
+   *         allocate/deallocate them.
+   *
+   *  The default behavior is dynamic allocation.
+   */
+  bool m_persistent_error_signals = false;
 
 #ifdef LBANN_HAS_DISTCONV
   friend class data_type_distconv_adapter<TensorDataType>;

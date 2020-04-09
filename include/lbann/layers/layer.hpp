@@ -487,12 +487,6 @@ protected:
   // Back prop step helper functions
   // ===========================================================
 
-  /** Setup gradient w.r.t. output tensors.
-   *  Called by the 'back_prop' function. Each gradient w.r.t. output
-   *  tensor is setup as a view or copy of the corresponding child
-   *  layer's gradient w.r.t. input tensor.
-   */
-  virtual void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) = 0;
   /** Setup gradient w.r.t. input tensors.
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
@@ -560,21 +554,78 @@ protected:
   std::string m_name;
 
 private:
+  /** @name Implementation details of back-prop. */
+  ///@{
+
+  /** @brief Move error signals from a child to its parent.
+   *
+   *  This is a hacky workaround to C++ rules for protected member
+   *  functions. No error-checking is done, e.g., to assert that the
+   *  two layers actually have a parent-child relationship because
+   *  this is just an implementation detail. The symbol is never
+   *  exposed to the public API.
+   *
+   *  @param parent The parent layer, into which the signal is moved
+   *  @param child  The child layer, from which the signal is moved
+   *  @param signal The now-released error signal from the child layer
+   */
   friend void move_error_signal(
     Layer& parent, Layer const& child,
     std::unique_ptr<BaseDistMat> signals);
+  friend void view_error_signal(
+    Layer& parent, Layer const& child,
+    const BaseDistMat& signals);
 
+  /** @brief Computes the core back-prop steps. */
   virtual void back_prop_impl_() = 0;
 
+  /** @brief Allocates new storage for the gradients that this layer
+   *         will compute.
+   *
+   *  If the layer has persistent error signal information, this will
+   *  simply clear the gradients.
+   */
   virtual void allocate_new_gradients_() = 0;
 
+  /** @brief Moves all error signals to their respective parents
+   *
+   *  Error signals from this instances either are directly moved into
+   *  the parent layer or, in cases in which a direct move is not
+   *  possible, are deep-copied into a new tensor in the parent layer
+   *  (e.g., into a different data type or data distribution).
+   */
   virtual void propagate_error_signals_to_parents_() = 0;
 
+  /** @brief Releases the error signals propagated from the child
+   *         layers.
+   *
+   *  At the conclusion of back-prop, the error signals propagated
+   *  from the child layers are no longer needed. This ensures that
+   *  the memory is released.
+   *
+   *  If the layer has persistent error signal information, this
+   *  function is a no-op.
+   */
   virtual void clear_prev_error_signals_() = 0;
 
-  virtual void set_prev_error_signals_(
+  /** @brief Assumes ownership of the error signals from the specified
+   *         child layer.
+   *
+   *  This is a simple pointer move when possible; otherwise it is a
+   *  deep-copy of the signal data.
+   *
+   *  @param child The layer whence the signal is coming.
+   *  @param signals The error signals being sent to this layer.
+   */
+  virtual void set_prev_error_signal_(
     Layer const& child,
-    std::unique_ptr<BaseDistMat> signals) = 0;
+    std::unique_ptr<BaseDistMat> signal) = 0;
+
+  virtual void set_prev_error_signal_(
+    const Layer& child,
+    const El::BaseDistMatrix& signal) = 0;
+
+  ///@}
 
   // ===========================================================
   // Private access functions
