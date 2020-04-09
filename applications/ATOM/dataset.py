@@ -5,7 +5,6 @@ import json
 
 # the idea here is to use the same code with abritrary sets of data
 with open(os.environ['DATA_CONFIG'], 'rb') as handle:
-    print("HANDLE ", handle)
     config = json.load(handle)
 
 pad_index = config['pad_index']
