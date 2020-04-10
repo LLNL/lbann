@@ -46,6 +46,18 @@ void data_coordinator::setup(int max_mini_batch_size) {
   for(auto&& dr: m_data_readers) {
     calculate_num_iterations_per_epoch_single_model(max_mini_batch_size, dr.second);
   }
+
+  options *opts = options::get();
+  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
+    bool master = m_comm->am_world_master();
+    if (master) {
+      std::cout << "\nUSING DATA STORE!\n\n";
+    }
+    for (auto&& r : m_data_readers) {
+      if (!r.second) continue;
+      r.second->setup_data_store(m_trainer->get_max_mini_batch_size());
+    }
+  }
 }
 
 void data_coordinator::calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) {

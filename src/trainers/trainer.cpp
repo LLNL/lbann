@@ -135,12 +135,12 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool) {
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
 
+  m_data_coordinator.setup(get_max_mini_batch_size());
+
   // Set up callbacks first - allow checkpoint / restart to reload state
   for (auto& cb : m_callbacks) {
     cb->setup(this);
   }
-
-  m_data_coordinator.setup(get_max_mini_batch_size());
 }
 
 /// Check if there is already an execution context for the model in this mode, if not create one
@@ -296,20 +296,14 @@ bool trainer::load_from_checkpoint_shared(persist& p) {
     return false;
   }
 
-  // // Note that the trainer archive has to be reloaded prior to loading
-  // // the data coordinator.
-  // auto flag = get_data_coordinator().load_from_checkpoint_shared(p/*get_persist_obj()*/);
+  auto flag = get_data_coordinator().load_from_checkpoint_shared(p);
 
-  // load_rng_from_checkpoint(p/*get_persist_obj()*/, m_comm);
-
-  return true;
+  return flag;
 }
 
 bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
-  // Note that the trainer archive has to be reloaded prior to loading
-  // the data coordinator.
-  auto flag = get_data_coordinator().load_from_checkpoint_shared(get_persist_obj());
-
+  // Reload the RNG once the trainer and all of the  models are setup
+  // to avoid spurious turns of the RNGs
   load_rng_from_checkpoint(get_persist_obj(), m_comm);
 
   execution_mode current_mode = c.get_execution_mode();
