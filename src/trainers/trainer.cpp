@@ -285,7 +285,7 @@ bool trainer::save_to_checkpoint_shared() {
 
   auto flag = get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
 
-  return true;
+  return flag;
 }
 
 bool trainer::load_from_checkpoint_shared(persist& p) {
