@@ -15,12 +15,6 @@ data.prototext*
 build
 spack_environments/users/
 
-# can ignore experiment/data directories
-applications/ATOM/charvae_data
-applications/ATOM/charvae_experiments
-
-# can ignore the moses repo
-applications/ATOM/moses/
 
 # we don't want to collect slurm output
 **/slurm-*.out
