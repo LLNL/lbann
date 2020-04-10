@@ -373,7 +373,6 @@ class data_coordinator {
   dataset m_training_dataset;
   dataset m_testing_dataset;
   dataset m_validation_dataset;
-  //  bool m_data_sets_span_models;
 
   data_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
