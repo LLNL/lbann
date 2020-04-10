@@ -103,7 +103,7 @@ public:
     m_terminate_training = f;
   }
 
-  /** Grab the trainer from the execiton context */
+  /** Grab the trainer from the execution context */
   const trainer& get_trainer() const {
     return m_trainer;
   }

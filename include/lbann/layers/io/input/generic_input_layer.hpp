@@ -110,9 +110,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    // ar(/*CEREAL_NVP(m_io_buffer),
-    //    CEREAL_NVP(m_data_readers),
-    //    CEREAL_NVP(m_data_set_processed)*/);
+    // ar(CEREAL_NVP(m_io_buffer));
   }
 
   template<typename T_io_buffer>
