@@ -54,6 +54,7 @@ void generic_data_reader::shuffle_indices(rng_gen& gen) {
   }
 }
 
+  /// @todo BVE FIXME
 void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
   m_base_offset = 0;
   m_sample_stride = 1;

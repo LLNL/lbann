@@ -62,7 +62,7 @@ trainer::trainer(lbann_comm *comm,
     m_max_mini_batch_size(mini_batch_size),
     m_io_thread_pool(),
     m_background_io_allowed(true),
-    m_data_coordinator(comm, data_readers) {
+    m_data_coordinator(*this, comm, data_readers) {
 
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
@@ -135,7 +135,7 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool) {
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
 
-  // Set up callbacks
+  // Set up callbacks first - allow checkpoint / restart to reload state
   for (auto& cb : m_callbacks) {
     cb->setup(this);
   }
@@ -282,6 +282,9 @@ bool trainer::save_to_checkpoint_shared() {
   if (m_comm->am_trainer_master()) {
     write_cereal_archive(*this, get_persist_obj(), "trainer.xml");
   }
+
+  auto flag = get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
+
   return true;
 }
 
@@ -292,13 +295,22 @@ bool trainer::load_from_checkpoint_shared(persist& p) {
     LBANN_MSG(e.what());
     return false;
   }
+
+  // // Note that the trainer archive has to be reloaded prior to loading
+  // // the data coordinator.
+  // auto flag = get_data_coordinator().load_from_checkpoint_shared(p/*get_persist_obj()*/);
+
+  // load_rng_from_checkpoint(p/*get_persist_obj()*/, m_comm);
+
   return true;
 }
 
 bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
-  load_rng_from_checkpoint(get_persist_obj(), m_comm);
+  // Note that the trainer archive has to be reloaded prior to loading
+  // the data coordinator.
+  auto flag = get_data_coordinator().load_from_checkpoint_shared(get_persist_obj());
 
-  auto flag = get_data_coordinator().load_from_checkpoint_shared(m_persist);
+  load_rng_from_checkpoint(get_persist_obj(), m_comm);
 
   execution_mode current_mode = c.get_execution_mode();
 
@@ -324,7 +336,7 @@ bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
       }
     }
   }
-  return flag;
+  return true;
 }
 
 bool trainer::save_to_checkpoint_distributed(){

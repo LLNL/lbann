@@ -38,13 +38,17 @@
 
 namespace lbann {
 
+// Forward-declare trainer
+class trainer;
+
 class data_coordinator {
  public:
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
  public:
-  data_coordinator(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
+  data_coordinator(trainer& trainer, lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
+    m_trainer(&trainer),
     m_comm(comm),
     m_training_dataset(),
     m_testing_dataset(),
@@ -364,7 +368,9 @@ class data_coordinator {
   }
 
  protected:
-  /** Reference to LBANN communicator. */
+  /** Pointer to hosting trainer */
+  trainer *m_trainer;
+  /** Pointer to LBANN communicator. */
   lbann_comm *m_comm;
 
   dataset m_training_dataset;

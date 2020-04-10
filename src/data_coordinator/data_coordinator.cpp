@@ -25,10 +25,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lbann/data_coordinator/data_coordinator.hpp>
+#include <lbann/trainers/trainer.hpp>
 
 namespace lbann {
 
 void data_coordinator::setup(int max_mini_batch_size) {
+  // Setup data readers
+  for(auto&& dr: m_data_readers) {
+    dr.second->setup(m_trainer->get_io_thread_pool().get_num_threads(),
+                     &(m_trainer->get_io_thread_pool()));
+    dr.second->set_rank(m_comm->get_rank_in_trainer());
+  }
+
   /// @todo BVE FIXME
   // if(io_layer<TensorDataType>::m_data_set_spans_models) {
   //calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
