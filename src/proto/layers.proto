@@ -383,7 +383,6 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    bool data_set_per_model = 1;  // Default: false
     string io_buffer = 2;         // Options: "partitioned" (default)
     string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "N/A"
   }
