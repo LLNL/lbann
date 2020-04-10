@@ -49,8 +49,7 @@ std::unique_ptr<model> build_model_from_prototext(
     options *opts,
     thread_pool& io_thread_pool,
     std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
-    int training_dr_linearized_data_size,
-    bool first_model);
+    int training_dr_linearized_data_size);
 
 void print_lbann_configuration(lbann_comm *comm,
                                int io_threads_per_process,

@@ -97,8 +97,7 @@ int main(int argc, char *argv[]) {
     auto model = build_model_from_prototext(argc, argv, pb_trainer, pb,
                                             comm.get(), opts, io_thread_pool,
                                             trainer->get_callbacks_with_ownership(),
-                                            training_dr_linearized_data_size,
-                                            true);
+                                            training_dr_linearized_data_size);
 
     if (opts->has_string("create_tarball")) {
       return EXIT_SUCCESS;

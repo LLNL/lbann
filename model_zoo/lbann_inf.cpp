@@ -80,8 +80,7 @@ int main(int argc, char *argv[]) {
         build_model_from_prototext(argc, argv, pb_trainer, *pb_model,
                                    comm.get(), opts, io_thread_pool,
                                    trainer->get_callbacks_with_ownership(),
-                                   training_dr_linearized_data_size,
-                                   models.size() == 0));
+                                   training_dr_linearized_data_size));
     }
 
     // Load layer weights from checkpoint if checkpoint directory given

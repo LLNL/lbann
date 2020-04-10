@@ -101,17 +101,6 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     }
     init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
 
-    // BVE FIXME
-    // hack to prevent all data readers from loading identical data; instead,
-    // share a single copy. See data_reader_jag_conduit_hdf5 for example
-    // if (first_model) {
-    //   if (opts->has_string("share_data_reader_data")) {
-    //     for (auto&& t : data_readers) {
-    //       opts->set_ptr((void*)t.second);
-    //     }
-    //   }
-    // }
-
     // User feedback
     //    print_parameters(comm, pb);
 
@@ -247,8 +236,7 @@ std::unique_ptr<model> build_model_from_prototext(
   options *opts,
   thread_pool& io_thread_pool,
   std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
-  int training_dr_linearized_data_size,
-  bool first_model) {
+  int training_dr_linearized_data_size) {
 
   bool master = comm->am_world_master();
   if (master) {
