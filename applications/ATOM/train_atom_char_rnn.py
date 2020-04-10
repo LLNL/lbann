@@ -204,7 +204,7 @@ def construct_data_reader(run_args):
     data_reader.name = "python"
     data_reader.role = "train"
     data_reader.shuffle = True
-    data_reader.percent_of_data_to_use = 0.001
+    data_reader.percent_of_data_to_use = 1.0
     data_reader.python.module = module_name
     data_reader.python.module_dir = module_dir
     data_reader.python.sample_function = "get_sample"
