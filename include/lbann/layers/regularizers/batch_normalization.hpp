@@ -30,10 +30,7 @@
 #include "lbann_config.hpp"
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/models/model.hpp"
-#ifdef LBANN_HAS_DISTCONV
-#include "lbann/utils/cuda.hpp"
 #include "lbann/utils/distconv.hpp"
-#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -53,16 +50,16 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class batch_normalization_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
-
-  batch_normalization_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  batch_normalization_distconv_adapter(Layer& layer):
+      data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~batch_normalization_distconv_adapter() = default;
   void setup_fp_tensors() override;
   void setup_bp_tensors() override;
-
   dc::Shape get_per_channel_stat_shape() const;
   dc::Dist get_per_channel_stat_dist(const dc::Dist &input_dist) const;
-
   void setup_layer(size_t workspace_capacity) override;
+  void fp_compute();
+  void bp_compute();
 
   TensorDevType m_mean;
   TensorDevType m_var;
@@ -388,18 +385,15 @@ protected:
 #ifdef LBANN_HAS_DISTCONV
   friend class batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>;
  protected:
-  bool is_distconv_supported() const override { return true; }
-
+  bool is_distconv_supported() const override {
+    return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
+  }
   void setup_distconv_adapter() override {
     this->get_distconv_adapter_ptr() = make_unique<
       batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
   }
-
   batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
   const batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
-
-  void fp_compute_distconv();
-  void bp_compute_distconv();
 #endif // LBANN_HAS_DISTCONV
 };
 
