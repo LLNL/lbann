@@ -7,6 +7,7 @@ import sys
 import numpy as np
 import pytest
 import shutil
+import subprocess
 
 def check_list(substrings, strings):
     errors = []
@@ -908,25 +909,27 @@ def compare_metrics(baseline_metrics, test_metrics):
         assert x == xhat, \
             'found discrepancy in metrics for baseline and test'
 
+
 # Perform a diff across a directoy where not all of the subdirectories will exist in
 # the test directory.  Return a list of unchecked subdirectories, the running error code
 # and the list of failed directories
 def multidir_diff(baseline, test, fileList):
     tmpList = []
     err_msg = ""
+    err = 0
     # Iterate over the list of filepaths & remove each file.
     for filePath in fileList:
         d = os.path.basename(filePath)
         t = os.path.basename(os.path.dirname(filePath))
         c = os.path.join(test, t, d)
-        err = 0
         if os.path.exists(c):
-            diff_err = os.system('diff -rq {baseline} {test}'.format(
-                baseline=filePath, test=c))
-            if diff_err != 0:
+            ret = subprocess.run('diff -rq {baseline} {test}'.format(
+                baseline=filePath, test=c), capture_output=True, shell=True, text=True)
+            if ret.returncode != 0:
                 err_msg += 'diff -rq {baseline} {test} failed {dt}\n'.format(
-                    dt=diff_err, baseline=filePath, test=c)
-            err += diff_err
+                    dt=ret.returncode, baseline=filePath, test=c)
+                err_msg += ret.stdout
+            err += ret.returncode
         else:
             tmpList.append(filePath)
 

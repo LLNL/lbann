@@ -236,9 +236,11 @@ def create_test_func(test_func):
         checkpoint_ckpt=os.path.join(checkpoint_test_output['work_dir'], checkpoint_dir)
         restart_ckpt=os.path.join(restart_test_output['work_dir'], checkpoint_dir)
 
+        err = 0
         err_dirs = ''
         fileList = glob.glob('{base}/trainer0/*'.format(base=checkpoint_ckpt))
-        fileList, err, tmp_err_str = tools.multidir_diff(checkpoint_ckpt, restart_ckpt, fileList)
+        fileList, tmp_err, tmp_err_str = tools.multidir_diff(checkpoint_ckpt, restart_ckpt, fileList)
+        err += tmp_err
         err_dirs += tmp_err_str
 
         err_msg = "\nUnmatched checkpoints:\n"

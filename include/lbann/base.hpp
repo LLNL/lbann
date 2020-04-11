@@ -27,14 +27,18 @@
 #ifndef LBANN_BASE_HPP_INCLUDED
 #define LBANN_BASE_HPP_INCLUDED
 
-#include "El.hpp"
+#include <El.hpp>
+
+// Defines, among other things, DataType.
+#include "lbann_config.hpp"
+
 #include "lbann/Elemental_extensions.hpp"
 #include "lbann/utils/cyg_profile.hpp"
 #include "lbann/utils/file_utils.hpp"
 #include "lbann/utils/enum_iterator.hpp"
-
-// Defines, among other things, DataType.
-#include "lbann_config.hpp"
+#ifdef LBANN_HAS_HALF
+#include "lbann/utils/serialization.hpp"
+#endif // LBANN_HAS_HALF
 
 // Support for OpenMP macros
 #include "lbann/utils/omp_pragma.hpp"
