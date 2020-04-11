@@ -8,4 +8,4 @@
 	ignore = dirty
 [submodule "applications/ATOM/moses"]
 	path = applications/ATOM/moses
-	url = git@github.com:williamdjones/moses.git
+	url = git@github.com:samadejacobs/moses.git
