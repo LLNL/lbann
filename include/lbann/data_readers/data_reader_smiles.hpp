@@ -64,9 +64,15 @@ public:
   const std::vector<int> get_data_dims() const override {  return {get_linearized_data_size()}; }
   int get_num_labels() const override { return m_num_labels; }
 
-  std::vector<El::Int> get_slice_points() const;
+  void set_sequence_length(int n) { m_linearized_data_size = n; }
+  int get_sequence_length() { return get_linearized_data_size(); }
+
+  void set_num_samples(int n) { m_num_samples = n; }
+  int get_num_samples() { return m_num_samples; }
 
 private:
+
+  int m_num_samples = -1;
 
   std::ifstream m_data_stream;
 
@@ -75,16 +81,12 @@ private:
   int m_linearized_response_size = 0;
   int m_num_labels = 0;
 
-  // m_sample_offsets[j] contains the offset, wrt m_data_stream,
-  // at which the j-th sample begins
-  std::vector<size_t> m_sample_offsets;
-
-  // m_sample_sizes[j] contains the number of shorts in the j-th sample
-  std::vector<short> m_sample_sizes;
-
-  std::mutex m_mutex;
-
+  //TODO: make this a user setting -- ??
   const short m_pad = 420;
+
+  const short m_unk = 421;
+
+  std::unordered_map<char, short> m_vocab;
 
   //=====================================================================
   // private methods follow
@@ -100,8 +102,11 @@ private:
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
   void print_statistics() const;
-  void read_datum(const int data_id, std::vector<short> &data_out);
-  void load_conduit_node_from_file(const int data_id, conduit::Node &node);
+  void load_vocab();
+  int get_num_lines(std::string fn); 
+  void construct_conduit_node(int data_id, const std::string &line, conduit::Node &node); 
+  void encode_smiles(const std::string &sm, std::vector<short> &data);
+
 };
 
 }  // namespace lbann
