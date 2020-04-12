@@ -88,7 +88,6 @@ class load_model : public callback_base {
   std::vector<std::string> m_dirs; //director(ies) to load pretrained model(s)
   /// Disables the normal behavior of saving when training is complete
   std::string m_extension; //file extension
-  persist p;
 
 };
 

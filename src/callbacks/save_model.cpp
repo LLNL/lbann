@@ -115,14 +115,7 @@ bool save_model::do_save_model_weights(model *m) {
   std::string epochdir = get_save_model_dirname(c.get_trainer().get_name(),
                                                 m->get_name(),
                                                 m_dir.c_str());
-  if (comm->am_trainer_master()) {
-    p.open_checkpoint(epochdir.c_str());
-  }else {
-    // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
-    p.m_checkpoint_dir = epochdir;
-  }
-  // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
-  comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
+  p.open_checkpoint_dir(epochdir.c_str(), comm->am_trainer_master());
   m->save_weights(p);
 
   uint64_t bytes_count = p.get_bytes();

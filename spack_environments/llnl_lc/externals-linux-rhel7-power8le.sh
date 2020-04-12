@@ -3,7 +3,7 @@
 EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
-        mpi: [spectrum-mpi@rolling-release arch=linux-rhel7-power9le]
+        mpi: [spectrum-mpi@rolling-release arch=linux-rhel7-power8le]
         lapack: [openblas threads=openmp]
         blas: [openblas threasd=openmp]
       buildable: true
@@ -19,13 +19,13 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       variants: ~openssl ~ncurses
       version: [3.14.5]
       paths:
-        cmake@3.14.5 arch=linux-rhel7-power9le:   /usr/tce/packages/cmake/cmake-3.14.5
+        cmake@3.14.5 arch=linux-rhel7-power8le:   /usr/tce/packages/cmake/cmake-3.14.5
 
     cuda::
       buildable: False
       version: [10.1.243]
       modules:
-        cuda@10.1.243 arch=linux-rhel7-power9le: cuda/10.1.243
+        cuda@10.1.243 arch=linux-rhel7-power8le: cuda/10.1.243
 
     cudnn::
       buildable: true
@@ -35,13 +35,13 @@ EXTERNAL_PACKAGES=$(cat <<EOF
        buildable: False
        version: [7.3.1]
        modules:
-         gcc@7.3.1 arch=linux-rhel7-power9le: gcc/7.3.1
+         gcc@7.3.1 arch=linux-rhel7-power8le: gcc/7.3.1
 
     hwloc::
       buildable: False
       version: [2.0.2]
       paths:
-        hwloc@2.0.2 arch=linux-rhel7-power9le: /usr/lib64/libhwloc.so
+        hwloc@2.0.2 arch=linux-rhel7-power8le: /usr/lib64/libhwloc.so
 
     openblas::
       buildable: True
@@ -58,12 +58,12 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
       version: [3.7.2]
       modules:
-        python@3.7.2 arch=linux-rhel7-power9le: python/3.7.2
+        python@3.7.2 arch=linux-rhel7-power8le: python/3.7.2
 
     spectrum-mpi::
       buildable: False
       version: [rolling-release]
       paths:
-        spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel7-power9le: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
+        spectrum-mpi@rolling-release %gcc@7.3.1 arch=linux-rhel7-power8le: /usr/tce/packages/spectrum-mpi/spectrum-mpi-rolling-release-gcc-7.3.1
 EOF
 )
