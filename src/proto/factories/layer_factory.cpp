@@ -731,14 +731,6 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_
     }
   }
 
-  // ugly hack for smiles_data_reader
-  else{
-    const auto dr2 = dynamic_cast<const smiles_data_reader*>(dr_generic);
-    if (dr2 != nullptr) {
-      slice_points = dr2->get_slice_points();
-    }
-  }
-
   return slice_points;
 }
 
