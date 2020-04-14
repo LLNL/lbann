@@ -89,10 +89,6 @@ message Reader {
   bool index_list_per_model   = 401;
   //------------- end of only for index lists ------------------
 
-  //------------- start of only for smiles reader ------------------
-  int32 sequence_length = 402;
-  //------------- end of only for smiles reader ------------------
-
   PythonDataReader python = 501;
 
   repeated Transform transforms = 600;  // Ordered list of transforms to apply.
