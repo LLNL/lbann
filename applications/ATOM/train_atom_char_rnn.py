@@ -9,6 +9,7 @@ def construct_lc_launcher_args():
     # defaults correspond to the settings needed for training on the moses dataset
     parser = argparse.ArgumentParser(prog="lbann charVAE training")
     parser.add_argument("--partition", default=None)
+    parser.add_argument("--account", default="hpcdl")
     parser.add_argument("--scheduler", default="slurm")
     parser.add_argument(
         "--data-module-file", default="dataset.py",
@@ -259,7 +260,7 @@ if __name__ == "__main__":
 
     # dump the config to the experiment_dir so that it can be used to load the model in pytorch (moses codebase)
     import torch
-
+    ppn = 4 if run_args.scheduler == "lsf" else 2
     torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
     status = lbann.contrib.launcher.run(
         trainer,
@@ -270,6 +271,7 @@ if __name__ == "__main__":
         scheduler=run_args.scheduler,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
+        procs_per_node = ppn,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
     )
