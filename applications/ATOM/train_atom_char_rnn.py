@@ -269,6 +269,7 @@ if __name__ == "__main__":
         opt,
         partition=run_args.partition,
         scheduler=run_args.scheduler,
+        account = run_args.account,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
         procs_per_node = ppn,
