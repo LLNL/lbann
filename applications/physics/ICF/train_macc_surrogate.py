@@ -153,12 +153,10 @@ def construct_model():
             l.weights[w].optimizer = lbann.NoOptimizer()
       weights.update(l.weights)
          
-    '''
     l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
-    d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
-    '''
+    #d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
     # Setup objective function
-    obj = lbann.ObjectiveFunction([loss_gen0,loss_gen1])
+    obj = lbann.ObjectiveFunction([loss_gen0,loss_gen1,l2_reg])
     # Initialize check metric callback
     metrics = [lbann.Metric(img_sca_loss, name='fw_loss'),
                lbann.Metric(L_l2_x, name='inverse loss'),
