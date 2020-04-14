@@ -27,7 +27,6 @@
 #ifndef LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 #define LBANN_LAYER_REGULARIZER_BATCH_NORMALIZATION_HPP_INCLUDED
 
-#include "lbann_config.hpp"
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/distconv.hpp"
@@ -74,7 +73,6 @@ class batch_normalization_distconv_adapter: public data_type_distconv_adapter<Te
   std::unique_ptr<dc::BatchNormalization<TensorDataType>> m_bn;
 };
 #endif // LBANN_HAS_DISTCONV
-
 
 /** @brief
  *
