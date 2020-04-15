@@ -74,19 +74,21 @@ private:
 
   int m_num_samples = -1;
 
-  std::ifstream m_data_stream;
-
   int m_linearized_data_size = 0;
   int m_linearized_label_size = 0;
   int m_linearized_response_size = 0;
   int m_num_labels = 0;
 
-  //TODO: make this a user setting -- ??
-  const short m_pad = 420;
+  // these may be changed when the vocab file is read
+  short m_pad = 420;
+  short m_unk = 421;
+  short m_bos = 422;
+  short m_eos = 423;
 
-  const short m_unk = 421;
+  std::unordered_map<std::string, short> m_vocab;
 
-  std::unordered_map<char, short> m_vocab;
+  size_t m_missing_char_in_vocab = 0;
+  std::unordered_set<std::string> m_missing_chars;
 
   //=====================================================================
   // private methods follow
@@ -102,7 +104,7 @@ private:
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
   void print_statistics() const;
-  void load_vocab();
+  int load_vocab();
   int get_num_lines(std::string fn); 
   void construct_conduit_node(int data_id, const std::string &line, conduit::Node &node); 
   void encode_smiles(const std::string &sm, std::vector<short> &data);

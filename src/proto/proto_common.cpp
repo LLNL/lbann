@@ -146,8 +146,6 @@ void init_data_readers(
       reader = new data_reader_nci(shuffle);
     } else if (name == "smiles") {
       smiles_data_reader * smiles = new smiles_data_reader(shuffle);
-      smiles->set_sequence_length(readme.sequence_length());
-      smiles->set_num_samples(readme.num_samples());
       reader = smiles;
     } else if (name == "ras_lipid") {
       auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);

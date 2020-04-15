@@ -42,8 +42,14 @@ smiles_data_reader::smiles_data_reader(const smiles_data_reader& rhs)  : generic
 }
 
 smiles_data_reader::~smiles_data_reader() {
-  if (m_data_stream.is_open()) {
-    m_data_stream.close();
+  if (m_missing_chars.size()) {
+    if (is_master()) {
+      std::cout << std::endl << "Tokens in data that were missing from vocab: ";
+      for (const auto t : m_missing_chars) {
+        std::cout << t << " ";
+      }
+    }
+    std::cout << std::endl;
   }
 }
 
@@ -62,11 +68,18 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   if(rhs.m_data_store != nullptr) {
       m_data_store = new data_store_conduit(rhs.get_data_store());
   }
+  m_num_samples = rhs.m_num_samples;
   m_data_store->set_data_reader_ptr(this);
   m_linearized_data_size = rhs.m_linearized_data_size;
   m_linearized_label_size = rhs.m_linearized_label_size;
   m_linearized_response_size = rhs.m_linearized_response_size;
   m_num_labels = rhs.m_num_labels;
+  m_pad = rhs.m_pad;
+  m_unk = rhs.m_unk;
+  m_bos = rhs.m_bos;
+  m_eos = rhs.m_eos;
+  m_missing_char_in_vocab = rhs.m_missing_char_in_vocab;
+  m_missing_chars = rhs.m_missing_chars;
 }
 
 void smiles_data_reader::load() {
@@ -82,26 +95,35 @@ void smiles_data_reader::load() {
     opts->set_option("preload_data_store", 1);
   }
 
-  // load the vocabulary; this is a map: string -> short
-  load_vocab();
+  if (!opts->has_int("sequence_length")) {
+    LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line");
+  }
+  m_linearized_data_size = opts->get_int("sequence_length");
 
-  // get the number of samples to use; if no param: --num_samples,
-  // then the entire file will be read. In this case we count the
-  // number of lines in the file, which may be slow for large files.
-  // Or maybe not.
-  std::string infile = get_data_filename();
-  int num_samples = get_num_samples();
+  // load the vocabulary; this is a map: string -> short
+  int sanity = load_vocab();
+  if (!(opts->has_int("num_embeddings") && opts->has_int("embedding_dim"))) {
+    LBANN_ERROR("you must pass --num-embeddings=<int> and --embedding-dim=<int> on the cmd line");
+  }
+  int n_embeddings = opts->get_int("num_embeddings");
+  int n_embedding_dim = opts->get_int("embedding_dim");
+  if (sanity != n_embeddings || sanity != n_embedding_dim) {
+    LBANN_ERROR("--num_embeddings=", n_embeddings, "; --embedding_dim=", n_embedding_dim, "; both should be the same as vocab_size which is: ", m_vocab.size());
+  }
+
+  // get the number of samples to use; if --num_samples=<int> wasn't 
+  // passed on the cmd line, then the entire file will be used. In this case 
+  // we count the number of lines in the file, which may be slow 
+  // for large files. Or maybe not.
   if (opts->has_int("num_samples")) {
-    num_samples = opts->get_int("num_samples");
+    m_num_samples = opts->get_int("num_samples");
+  } else {
+    const std::string infile = get_file_dir() + "/" + get_data_filename();
+    m_num_samples = get_num_lines(infile) -1;
   }
-  /*
-  if (num_samples == -1) {
-    num_samples = get_num_lines(infile);
-  }
-  */
 
   m_shuffled_indices.clear();
-  m_shuffled_indices.resize(num_samples);
+  m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
 
@@ -221,33 +243,61 @@ void smiles_data_reader::print_statistics() const {
   std::cout << "======================================================\n\n";
 }
 
-void smiles_data_reader::load_vocab() {
-  std::vector<char> v { 
-    '#', '%', '(', ')', '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', 
-    '8', '9', '=', '@', 'B', 'C', 'F', 'H', 'I', 'N', 'O', 'P', 'S', '[', ']', 
-    'e', 'i', 'l', 'm', 'r', 's'};
-
-  short j = 0;
-  for (const auto &t : v) {
-    m_vocab[t] = j++;
-  }
-/*
+int smiles_data_reader::load_vocab() {
   options *opts = options::get();
-  if (!opts->has_string("vocab_fn")) {
-    LBANN_ERROR("you must pass: --vocab_fn=<string>");
+  if (!opts->has_string("vocab")) {
+    LBANN_ERROR("you must pass --vocab=<string> on the command line");
   }
-  const std::string fn = opts->get_string("vocab_fn");
+  const std::string fn = opts->get_string("vocab");
   std::ifstream in(fn.c_str());
   if (!in) {
-    LBANN_ERROR("failed to open vocab file: ", fn, " for reading");
+    LBANN_ERROR("failed to open ", fn, " for reading; this is the vocabulary file");
   }
-  std::string key;
-  short value;
-  while (in >> key >> value) {
-    m_vocab[key = value];
+  std::string token;
+  short id;
+  int sanity = 4;
+  while (in >> token >> id) {
+    m_vocab[token] = id;
+    if (token == "<pad>") {
+      m_pad = id;
+      --sanity;
+    }
+    if (token == "<unk>") {
+      m_unk = id;
+      --sanity;
+    }
+    if (token == "<bos>") {
+      m_bos = id;
+      --sanity;
+    }
+    if (token == "<eos>") {
+      m_eos = id;
+      --sanity;
+    }
   }
   in.close();
-*/
+  if (sanity) {
+    LBANN_ERROR("failed to find <pad> and/or <unk> and/or <bos> and/or <eos> in vocab file: ", fn);
+  }
+  if (opts->has_int("pad_index")) {
+    short tmp = opts->get_int("pad_index");
+    if (tmp != m_pad) {
+      LBANN_ERROR("you passed --pad_index=", tmp, " but we got --pad_index=", m_pad, " from the vocabulary file");
+    }
+  }
+  return(m_vocab.size());
+  
+#if 0
+  //, '<bos>': 34, '<eos>': 35, '<pad>': 36, '<unk>': 37}; 
+  //
+  //
+//from Derek:
+  //m_vocab = {'#': 0, '%': 1, '(': 2, ')': 3, '+': 4, '-': 5, '.': 6, '0': 7, '1': 8, '2': 9, '3': 10, '4': 11, '5': 12, '6': 13, '7': 14, '8': 15, '9': 16, '=': 17, '@': 18, 'B': 19, 'C': 20, 'F': 21, 'H': 22, 'I': 23, 'N': 24, 'O': 25, 'P': 26, 'S': 27, '[': 28, ']': 29, 'e': 30, 'i': 31, 'l': 32, 'r': 33, '<bos>': 34, '<eos>': 35, '<pad>': 36, '<unk>': 37}; 
+  
+//mine:
+//  std::vector<char> v { 
+ //   '#', '%', '(', ')', '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '=', '@', 'B', 'C', 'F', 'H', 'I', 'N', 'O', 'P', 'S', '[', ']', 'e', 'i', 'l', 'm', 'r', 's'};
+#endif
 }
 
 int smiles_data_reader::get_num_lines(std::string fn) {
@@ -276,24 +326,20 @@ void smiles_data_reader::construct_conduit_node(int data_id, const std::string &
   node.reset();
   size_t j = line.find('\t');
   if (j == std::string::npos) {
-    LBANN_ERROR("failed to find tab character in line: ", line);
+    j = line.find(',');
+  }
+  if (j == std::string::npos) {
+    LBANN_ERROR("failed to find delimit character (tab or comma) in line: ", line);
   }
   std::string sm = line.substr(0, j);
   std::vector<short> data;
   encode_smiles(sm, data);
-//XXsize_t s1 = sm.size();
   node[LBANN_DATA_ID_STR(data_id) + "/data"].set(data);
   int sz = data.size();
-
-  //XXstd::cout << "=== starting construct_conduit_node; data_id: " << data_id << std::endl;
-  //XXstd::cout << "smiles: " << s1 << " final size: " << sz << std::endl;
-  //XXstd::cout << sm << std::endl;
   node[LBANN_DATA_ID_STR(data_id) + "/size"].set(sz);
 }
 
 void smiles_data_reader::encode_smiles(const std::string &sm, std::vector<short> &data) {
-  //TODO: would training be better with an algorithm that deals 
-  //      with multi-character tokens?
   int stop = sm.size();
   static int count = 0;
 
@@ -308,10 +354,16 @@ void smiles_data_reader::encode_smiles(const std::string &sm, std::vector<short>
   }
 
   for (int j=0; j<stop; j++) {
-    if (m_vocab.find(sm[j]) == m_vocab.end()) {
+    const std::string w(1, sm[j]);
+    if (m_vocab.find(w) == m_vocab.end()) {
+      m_missing_chars.insert(w);
+      ++m_missing_char_in_vocab;
+      if (m_missing_char_in_vocab < 2) {
+        LBANN_WARNING("smiles_data_reader::encode_smiles encounted character not in vocab: ", w, "; for SMILES string: ", sm);
+      }  
       data.push_back(m_unk);
     } else {
-      data.push_back(m_vocab[sm[j]]);
+      data.push_back(m_vocab[w]);
     }
   }
   for (size_t j = data.size(); j<(size_t)m_linearized_data_size; j++) {
