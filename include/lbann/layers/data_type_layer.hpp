@@ -84,7 +84,7 @@ public:
     h2::meta::tlist::MemberV<TensorDataType, supported_layer_data_type>(),
     "Must use a supported type.");
 
-  data_type_layer(lbann_comm *comm, bool persistent_error_signals=true)
+  data_type_layer(lbann_comm *comm, bool persistent_error_signals=false)
     : Layer(comm), m_persistent_error_signals{persistent_error_signals} {}
   data_type_layer(const data_type_layer<TensorDataType>& other);
   data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
@@ -273,11 +273,15 @@ private:
    *  @param child The layer from which the error signal has come.
    *  @param signals The error signal from the layer.
    */
-  void set_prev_error_signal_(
+  void move_or_copy_prev_error_signal_(
     const Layer& child,
     std::unique_ptr<El::BaseDistMatrix> signal) final;
 
-  void set_prev_error_signal_(
+  void view_or_copy_prev_error_signal_(
+    const Layer& child,
+    const El::BaseDistMatrix& signal) final;
+
+  void deep_copy_prev_error_signal_(
     const Layer& child,
     const El::BaseDistMatrix& signal) final;
 

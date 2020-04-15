@@ -25,6 +25,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_DATA_TYPE_LAYER_INSTANTIATE
+
+#include "matrix_builder.hpp"
+
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
@@ -138,8 +141,6 @@ void data_type_layer<TensorDataType>::back_prop_impl_() {
   const auto& c = static_cast<sgd_execution_context&>(
     m_model->get_execution_context());
   const auto& mini_batch_size = c.get_current_mini_batch_size();
-  (void) mini_batch_size;
-  //bp_setup_gradient_wrt_outputs(mini_batch_size);
   bp_setup_gradient_wrt_inputs(mini_batch_size);
 
 #if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
@@ -361,11 +362,73 @@ void set_default_memory_mode(
 #endif // LBANN_HAS_GPU
 }
 
+// Some indirection around building matrices to keep things tidy in
+// the real code. This is just to hide multiple switches without
+// building a full-blown dispatch engine... This also keeps bad
+// type/device combinations from being instantiated (eg, cpu_fp16 on
+// Device::GPU).
+using namespace h2::meta;
+
+#ifdef LBANN_HAS_GPU
+template <typename T, data_layout Layout,
+          typename=EnableWhenV<El::IsStorageType<T, El::Device::GPU>>>
+auto MakeMatBuilderGPU()
+  -> std::unique_ptr<details::MatrixBuilder<T>>
+{
+  return make_unique<
+      details::DefaultMemoryMatrixBuilder<T,Layout,El::Device::GPU>>();
+}
+
+template <typename T, data_layout Layout,
+          typename=EnableUnlessV<El::IsComputeType<T, El::Device::GPU>>,
+          typename=void>
+auto MakeMatBuilderGPU()
+  -> std::unique_ptr<details::MatrixBuilder<T>>
+{
+  LBANN_ERROR("Bad type/device combination.");
+  return nullptr;
+}
+#endif // LBANN_HAS_GPU
+
+template <typename T, data_layout Layout>
+auto MakeMatBuilderDev(El::Device const device)
+  -> std::unique_ptr<details::MatrixBuilder<T>>
+{
+  switch (device) {
+  case El::Device::CPU:
+    return make_unique<
+      details::DefaultMemoryMatrixBuilder<T,Layout,El::Device::CPU>>();
+#ifdef LBANN_HAS_GPU
+  case El::Device::GPU:
+    return MakeMatBuilderGPU<T, Layout>();
+#endif // LBANN_HAS_GPU
+  default:
+    LBANN_ERROR("Invalid device type");
+  }
+}
+template <typename T>
+auto MakeMatBuilder(data_layout const layout, El::Device const device)
+  -> std::unique_ptr<details::MatrixBuilder<T>>
+{
+  switch (layout) {
+  case data_layout::DATA_PARALLEL:
+    return MakeMatBuilderDev<T, data_layout::DATA_PARALLEL>(device);
+  case data_layout::MODEL_PARALLEL:
+    return MakeMatBuilderDev<T, data_layout::MODEL_PARALLEL>(device);
+  default:
+    LBANN_ERROR("Invalid data layout");
+  }
+  return nullptr;
+}
+
 }// namespace <anon>
 
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
 
+  using MatrixBuilderType = details::MatrixBuilder<TensorDataType>;
+
+  // DEBUG
   {
     char* keep_error_signals = getenv("TOM_KEEP_ERROR_SIGNALS");
     if (!keep_error_signals || (std::stoi(keep_error_signals) == 0))
@@ -374,11 +437,10 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
       m_persistent_error_signals = true;
   }
 
-  // std::cout << "  Layer " << m_name << ": "
-  //           << (m_persistent_error_signals
-  //               ? "Keep error signals"
-  //               : "Dynamically manage error signals")
-  //           << std::endl;
+  // Figure out how to make new matrices
+  std::unique_ptr<MatrixBuilderType> mat_builder =
+    MakeMatBuilder<TensorDataType>(
+      this->get_data_layout(), this->get_device_allocation());
 
   // Destroy previously setup matrices
   m_inputs.clear();
@@ -386,52 +448,22 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   m_gradient_wrt_outputs.clear();
   m_gradient_wrt_inputs.clear();
 
-  // Choose matrix distribution
-  El::Distribution col_dist, row_dist;
-  El::DistWrap wrap;
-  El::Device device = this->get_device_allocation();
-  switch (get_data_layout()) {
-  case data_layout::DATA_PARALLEL:
-    col_dist = El::STAR;
-    row_dist = El::VC;
-    wrap     = El::ELEMENT;
-    break;
-  case data_layout::MODEL_PARALLEL:
-    col_dist = El::MC;
-    row_dist = El::MR;
-    wrap     = El::ELEMENT;
-    break;
-  default: LBANN_ERROR("invalid data layout");
-  }
-
   // Construct matrices
   m_inputs.resize(get_num_parents());
   m_outputs.resize(get_num_children());
   m_gradient_wrt_outputs.resize(get_num_children());
   m_gradient_wrt_inputs.resize(get_num_parents());
-  for (int i = 0; i < get_num_parents(); ++i) {
-    m_inputs[i].reset(AbsDistMatrixType::Instantiate(
-                        grid, 0, col_dist, row_dist, wrap, device));
-    set_default_memory_mode(m_inputs[i]->Matrix(), device);
+  for (auto& input : m_inputs) {
+    input = mat_builder->MakeEmpty(grid, 0);
   }
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_outputs[i].reset(AbsDistMatrixType::Instantiate(
-                         grid, 0, col_dist, row_dist, wrap, device));
-    set_default_memory_mode(m_outputs[i]->Matrix(), device);
+  for (auto& output : m_outputs) {
+    output = mat_builder->MakeEmpty(grid, 0);
   }
-  if (m_persistent_error_signals) {
-    for (int i = 0; i < get_num_children(); ++i) {
-      m_gradient_wrt_outputs[i].reset(
-        AbsDistMatrixType::Instantiate(
-          grid, 0, col_dist, row_dist, wrap, device));
-      set_default_memory_mode(m_gradient_wrt_outputs[i]->Matrix(), device);
-    }
-    for (int i = 0; i < get_num_parents(); ++i) {
-      m_gradient_wrt_inputs[i].reset(
-        AbsDistMatrixType::Instantiate(
-          grid, 0, col_dist, row_dist, wrap, device));
-      set_default_memory_mode(m_gradient_wrt_inputs[i]->Matrix(), device);
-    }
+  for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
+    grad_wrt_input = mat_builder->MakeEmpty(grid, 0);
+  }
+  for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
+    grad_wrt_output = mat_builder->MakeEmpty(grid, 0);
   }
 }
 
@@ -445,37 +477,6 @@ void data_type_layer<TensorDataType>::setup_data() {
   // Initialize input and output tensors
   fp_setup_inputs(mini_batch_size);
   fp_setup_outputs(mini_batch_size);
-
-  // Initialize gradient w.r.t. output tensors
-  // Note: We guess whether the tensor is a view or needs to allocate
-  // memory, but there are some edge cases that are not handled.
-  for (int i = 0; i < get_num_children(); ++i) {
-#ifdef LBANN_HAS_DISTCONV
-    if (distconv_enabled() && !get_distconv_adapter().child_copy_required(i)) {
-      // Avoids allocating unused matrices
-      continue;
-    }
-#endif // LBANN_HAS_DISTCONV
-    // if (m_gradient_wrt_outputs[i]) {
-    //   std::cout << "SETUP_DATA()" << std::endl;
-    //   const auto& child = *m_child_layers[i];
-    //   const auto& output = get_activations(i);
-    //   auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
-    //   gradient_wrt_output.Empty(false);
-    //   gradient_wrt_output.AlignWith(output);
-    //   if (child.get_data_layout() == get_data_layout()
-    //       && child.get_device_allocation() == get_device_allocation()
-    //       && gradient_wrt_output.DistData() == output.DistData()) {
-    //     El::LockedView(gradient_wrt_output, output);
-    //   } else {
-    //     El::Copy(output, gradient_wrt_output);
-    //   }
-    // }
-  }
-
-  // Initialize gradient w.r.t. input tensors
-  //bp_setup_gradient_wrt_inputs(mini_batch_size);
-
 }
 
 template <typename TensorDataType>
@@ -523,22 +524,22 @@ void data_type_layer<TensorDataType>::check_setup() {
       LBANN_ERROR(err.str());
     }
   }
-  // for (int i = 0; i < get_num_children(); ++i) {
-  //   if (m_gradient_wrt_outputs[i] == nullptr) {
-  //     err << "layer \"" << get_name() << "\" has an "
-  //         << "uninitialized gradient w.r.t. output tensor "
-  //         << "(index " << i << ")";
-  //     LBANN_ERROR(err.str());
-  //   }
-  // }
-  // for (int i = 0; i < get_num_parents(); ++i) {
-  //   if (m_gradient_wrt_inputs[i] == nullptr) {
-  //     err << "layer \"" << get_name() << "\" has an "
-  //         << "uninitialized gradient w.r.t. input tensor "
-  //         << "(index " << i << ")";
-  //     LBANN_ERROR(err.str());
-  //   }
-  // }
+  for (int i = 0; i < get_num_children(); ++i) {
+    if (!m_gradient_wrt_outputs[i]) {
+      err << "layer \"" << get_name() << "\" has an "
+          << "uninitialized gradient w.r.t. output tensor "
+          << "(index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
+  for (int i = 0; i < get_num_parents(); ++i) {
+    if (!m_gradient_wrt_inputs[i]) {
+      err << "layer \"" << get_name() << "\" has an "
+          << "uninitialized gradient w.r.t. input tensor "
+          << "(index " << i << ")";
+      LBANN_ERROR(err.str());
+    }
+  }
 }
 
 // ===========================================================
@@ -639,65 +640,11 @@ void data_type_layer<TensorDataType>::fp_setup_outputs(El::Int mini_batch_size) 
 
 }
 
-// template <typename TensorDataType>
-// void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
-
-//   LBANN_ERROR("THIS SHOULDN'T BE CALLED!!!");
-
-  // This function loops through the error signals propagated by the
-  // child and verifies that they're of the correct data type. If not,
-  // a deep copy is done to make them the right type. It can go away
-  // since this will be handled at propagation time.
-
-//   for (int i = 0; i < get_num_children(); ++i) {
-// #ifdef LBANN_HAS_DISTCONV
-//     if (!keep_original_gradient_wrt_outputs(i)) continue;
-// #endif // LBANN_HAS_DISTCONV
-//     // Initialize gradient w.r.t. output tensor
-//     const auto& child = *m_child_layers[i];
-//     const auto& child_gradient_wrt_input = child.get_error_signals(*this);
-//     auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
-//     gradient_wrt_output.Empty(false);
-//     gradient_wrt_output.AlignWith(get_activations(i));
-//     if (child_gradient_wrt_input.DistData()
-//         == gradient_wrt_output.DistData()) {
-//       El::LockedView(gradient_wrt_output, dynamic_cast<const AbsDistMatrixType&>(child_gradient_wrt_input));
-//     } else {
-//       bool async_copy = false;
-// #if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-//       // Asynchronously copy CPU data to GPU data if they are otherwise aligned
-//       if (child_gradient_wrt_input.GetLocalDevice() == El::Device::CPU
-//           && gradient_wrt_output.GetLocalDevice() == El::Device::GPU) {
-//         auto child_dist_data = child_gradient_wrt_input.DistData();
-//         child_dist_data.device = El::Device::GPU;
-//         async_copy = child_dist_data == gradient_wrt_output.DistData();
-//       }
-// #endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-//       if (async_copy) {
-//         El::CopyAsync(child_gradient_wrt_input, gradient_wrt_output);
-//       } else {
-//         El::Copy(child_gradient_wrt_input, gradient_wrt_output);
-//       }
-//     }
-
-//     // Check gradient w.r.t. output matrix dimensions
-//     const auto& height = get_output_size(i);
-//     const auto& width = mini_batch_size;
-//     if (gradient_wrt_output.Height() != height
-//         || gradient_wrt_output.Width() != width) {
-//       std::stringstream err;
-//       err << "layer \"" << get_name() << "\" "
-//           << "expected a gradient w.r.t. output tensor stored in a "
-//           << height << " x " << width << " matrix "
-//           << "from layer \"" << child.get_name() << "\", but got a "
-//           << gradient_wrt_output.Height() << " x "
-//           << gradient_wrt_output.Width() << " matrix";
-//       LBANN_ERROR(err.str());
-//     }
-//   }
-// }
-
+// Implementation details for back-propagation.
 namespace {
+
+// There's some strange logic for whether to do this copy
+// asynchronously or not -- encapsulate it in this little function.
 template <typename TDT>
 void do_tensor_copy(const BaseDistMat& src,
                     El::AbstractDistMatrix<TDT>& tgt) {
@@ -720,6 +667,7 @@ void do_tensor_copy(const BaseDistMat& src,
   }
 }
 
+// This was just cluttering up things.
 void assert_tensor_size(const BaseDistMat& mat,
                         El::Int expected_height, El::Int expected_width,
                         std::string const& this_layer_name,
@@ -733,24 +681,43 @@ void assert_tensor_size(const BaseDistMat& mat,
       mat.Height(), " x ", mat.Width(), " matrix.");
   }
 }
+
+// Layers only store pointers-to-const to their
+// parents/children. Sometimes we need nonconst access to be able to
+// efficiently move/swap things.
+Layer& get_nonconst_layer(std::vector<Layer*> const& layers,
+                          Layer const* layer_in)
+{
+  // Thanks to the lack of const-correctness in Layers, we cannot
+  // modify parent/child layers directly, but we can through the
+  // model. Unfortunately, this costs us a linear search through the
+  // layer list. Maybe it's better to just "const-cast" things away,
+  // since const-correctness is already long gone.
+  auto p_layer_it = std::find(begin(layers), end(layers), layer_in);
+  if (p_layer_it == end(layers)) {
+    LBANN_ERROR("Layer \"", layer_in->get_name(), "\" not found in model.");
+  }
+  return **p_layer_it;
+}
+
 }// namespace <anon>
 
 template <typename TensorDataType>
-void data_type_layer<TensorDataType>::set_prev_error_signal_(
+void data_type_layer<TensorDataType>::view_or_copy_prev_error_signal_(
   const Layer& child, const BaseDistMat& signal)
 {
   auto layer_idx = find_child_layer_index(std::addressof(child));
 #ifdef LBANN_HAS_DISTCONV
-  if (!keep_original_gradient_wrt_outputs(layer_idx)) continue;
+  if (!keep_original_gradient_wrt_outputs(layer_idx)) return;
 #endif // LBANN_HAS_DISTCONV
 
   // Check the signal size
-  //
-  // FIXME (trb 04/08/2020): Should this be done only in debug mode??
   assert_tensor_size(
     signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
     m_name, child.get_name());
 
+  // If the distributions are compatible, we can just view
+  // things. Otherwise, deep-copy the data.
   auto& prev_error_sig = *m_gradient_wrt_outputs[layer_idx];
   if (signal.DistData() == prev_error_sig.DistData()) {
     El::LockedView(prev_error_sig,
@@ -762,133 +729,135 @@ void data_type_layer<TensorDataType>::set_prev_error_signal_(
 }
 
 template <typename TensorDataType>
-void data_type_layer<TensorDataType>::clear_prev_error_signals_() {
-  if (!m_persistent_error_signals) {
-    for (auto& es : m_gradient_wrt_outputs)
-      es.reset();
-  }
-}
-
-void view_error_signal(
-  Layer& parent, const Layer& child, const BaseDistMat& signal)
+void data_type_layer<TensorDataType>::move_or_copy_prev_error_signal_(
+  const Layer& child, std::unique_ptr<BaseDistMat> signal_in)
 {
-  parent.set_prev_error_signal_(child, signal);
-}
-
-void move_error_signal(
-    Layer& parent, const Layer& child, std::unique_ptr<BaseDistMat> signal)
-{
-  parent.set_prev_error_signal_(child, std::move(signal));
-}
-
-template <typename TensorDataType>
-void data_type_layer<TensorDataType>::propagate_error_signals_to_parents_() {
-  auto& parents = get_parent_layers();
-
-  // Thanks to the lack of const-correctness in Layers, we cannot
-  // modify parent/child layers directly, but we can through the
-  // model. Unfortunately, this costs us a linear search through the
-  // layer list.
-  auto const& layers = get_model()->get_layers();
-  for (size_t p_idx = 0; p_idx < parents.size(); ++p_idx) {
-    auto p_layer_it = std::find(begin(layers), end(layers), parents[p_idx]);
-    if (p_layer_it != end(layers)) {
-      Layer& parent = **p_layer_it;
-      if (m_persistent_error_signals)
-        if (m_gradient_wrt_inputs[p_idx])
-          view_error_signal(parent, *this, *m_gradient_wrt_inputs[p_idx]);
-        else
-          LBANN_ERROR("BAD MEMORY!");
-      else
-        move_error_signal(parent, *this,
-                          std::move(m_gradient_wrt_inputs[p_idx]));
-    }
-    else {
-      LBANN_ERROR("Couldn't find parent layer in model.");
-    }
-  }
-}
-
-template <typename TensorDataType>
-void data_type_layer<TensorDataType>::allocate_new_gradients_() {
-  if (m_persistent_error_signals) {
-    for (int i = 0; i < get_num_parents(); ++i) {
+    auto layer_idx = find_child_layer_index(std::addressof(child));
 #ifdef LBANN_HAS_DISTCONV
-      if (!keep_original_gradient_wrt_inputs(i)) continue;
-#endif // LBANN_HAS_DISTCONV
-      if (!m_gradient_wrt_inputs[i]) {
-        LBANN_ERROR("Logic error: Matrix should be allocated already.");
-      }
-
-      auto& gradient_wrt_input = get_error_signals(i);
-      gradient_wrt_input.Empty(false);
-      gradient_wrt_input.AlignWith(get_prev_activations(i));
-      gradient_wrt_input.Resize(get_input_size(i),  m_inputs[i]->Width());
-    }
-  }
-  else {
-    for (int p = 0; p < get_num_parents(); ++p) {
-#ifdef LBANN_HAS_DISTCONV
-      if (!keep_original_gradient_wrt_inputs(p)) continue;
-#endif // LBANN_HAS_DISTCONV
-
-      // Reallocate the structure
-      m_gradient_wrt_inputs[p].reset(
-        AbsDistMatrixType::Instantiate(m_inputs[p]->DistData()));
-
-      // Set the memory allocation mode
-      if (get_device_allocation() == El::Device::CPU)
-        m_gradient_wrt_inputs[p]->Matrix().SetMemoryMode(0);
-      else
-        m_gradient_wrt_inputs[p]->Matrix().SetMemoryMode(1);
-
-      // Reallocate the data
-      //m_gradient_wrt_inputs[p]->Resize(
-      //  get_input_size(p), m_inputs[p]->Width());
-    }
-  }
-}
-
-template <typename TensorDataType>
-void data_type_layer<TensorDataType>::set_prev_error_signal_(
-  Layer const& child,
-  std::unique_ptr<El::BaseDistMatrix> signal)
-{
-  auto layer_idx = find_child_layer_index(std::addressof(child));
-#ifdef LBANN_HAS_DISTCONV
-  if (!keep_original_gradient_wrt_outputs(layer_idx)) continue;
+  if (!keep_original_gradient_wrt_outputs(layer_idx)) return;
 #endif // LBANN_HAS_DISTCONV
 
   // Check the signal size
-  //
-  // FIXME (trb 04/08/2020): Should this be done only in debug mode??
+  auto& signal = *signal_in;
   assert_tensor_size(
-    *signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
+    signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
     m_name, child.get_name());
 
-  // If all's good with this layer's distribution, we just take
-  // over the previous layer's output signal without modification.
-  if (signal->DistData() == get_activations(layer_idx).DistData()) {
-    if (auto sig_ptr = dynamic_cast<AbsDistMatrixType*>(signal.get())) {
-      if (!sig_ptr->Viewing()) {
-        signal.release();
-        m_gradient_wrt_outputs[layer_idx].reset(sig_ptr);
-      }
+  // If the distribution is OK, then we can just swap data
+  // around. Otherwise, deep copy into correct distribution.
+  El::DistData expected_distdata = m_outputs[layer_idx]->DistData();
+  if (signal.DistData() == expected_distdata) {
+    if (auto sig_ptr = dynamic_cast<AbsDistMatrixType*>(signal_in.get())) {
+      signal_in.release();
+      m_gradient_wrt_outputs[layer_idx].reset(sig_ptr);
     }
     else {
       LBANN_ERROR("Logic error: DistData objects compare equal "
                   "but matrices have different dynamic types.");
     }
   }
-
-  // Otherwise we copy the gradient into the correct distribution.
-  if (signal)
+  else // Deep copy
   {
-    m_gradient_wrt_outputs[layer_idx].reset(
-      AbsDistMatrixType::Instantiate(
-        get_activations(layer_idx).DistData()));
+    if (!m_gradient_wrt_outputs[layer_idx]) {
+      m_gradient_wrt_outputs[layer_idx] =
+        MakeMatBuilder<TensorDataType>(
+          this->get_data_layout(),
+          this->get_device_allocation())->MakeEmpty(*expected_distdata.grid, 0);
+    }
 
-    do_tensor_copy(*signal, *m_gradient_wrt_outputs[layer_idx]);
+    do_tensor_copy(signal, *m_gradient_wrt_outputs[layer_idx]);
+  }
+}
+
+template <typename TensorDataType>
+void data_type_layer<TensorDataType>::deep_copy_prev_error_signal_(
+  const Layer& child, const BaseDistMat& signal)
+{
+  auto layer_idx = find_child_layer_index(std::addressof(child));
+#ifdef LBANN_HAS_DISTCONV
+  if (!keep_original_gradient_wrt_outputs(layer_idx)) return;
+#endif // LBANN_HAS_DISTCONV
+
+  // Check the signal size
+  assert_tensor_size(
+    signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
+    m_name, child.get_name());
+
+  // If the distributions are compatible, we can just view
+  // things. Otherwise, deep-copy the data.
+  auto& prev_error_sig = *m_gradient_wrt_outputs[layer_idx];
+  do_tensor_copy(signal, prev_error_sig);
+}
+
+template <typename TensorDataType>
+void data_type_layer<TensorDataType>::clear_prev_error_signals_() {
+  if (!m_persistent_error_signals) {
+    for (auto& es : m_gradient_wrt_outputs)
+      es->Empty(true);
+  }
+}
+
+void attempt_view_error_signal(
+  Layer& parent, const Layer& child, const BaseDistMat& signal)
+{
+  parent.view_or_copy_prev_error_signal_(child, signal);
+}
+
+void attempt_move_error_signal(
+  Layer& parent, const Layer& child, std::unique_ptr<BaseDistMat> signal)
+{
+  parent.move_or_copy_prev_error_signal_(child, std::move(signal));
+}
+
+void deep_copy_error_signal(
+    Layer& parent, const Layer& child, const BaseDistMat& signal)
+{
+  parent.deep_copy_prev_error_signal_(child, signal);
+}
+
+// If I have persistent error signals, both my "previous error
+// signals" and my new error signals will be persistent. So my parents
+// can simply setup views into my error signals, if layout, alignment,
+// etc is OK.
+template <typename TensorDataType>
+void data_type_layer<TensorDataType>::propagate_error_signals_to_parents_() {
+  auto& parents = get_parent_layers();
+  std::vector<Layer*> layer_list = get_model()->get_layers();
+  for (size_t p_idx = 0; p_idx < parents.size(); ++p_idx) {
+    Layer& parent = get_nonconst_layer(layer_list, parents[p_idx]);
+
+    // If my error signals persist, my parent can always view them,
+    // assuming the distdata is right. Otherwise, my views and my data
+    // will be released. Views must be copied and owned data can
+    // either be copied or swapped out.
+    auto& error_signal = *m_gradient_wrt_inputs[p_idx];
+    if (m_persistent_error_signals)
+      attempt_view_error_signal(parent, *this, error_signal);
+    else if (error_signal.Viewing())
+      deep_copy_error_signal(parent, *this, error_signal);
+    else
+      attempt_move_error_signal(parent, *this,
+                                std::move(m_gradient_wrt_inputs[p_idx]));
+  }
+}
+
+
+template <typename TensorDataType>
+void data_type_layer<TensorDataType>::allocate_new_gradients_() {
+  for (int i = 0; i < get_num_parents(); ++i) {
+#ifdef LBANN_HAS_DISTCONV
+    if (!keep_original_gradient_wrt_inputs(i)) continue;
+#endif // LBANN_HAS_DISTCONV
+    if (!m_gradient_wrt_inputs[i]) {
+      m_gradient_wrt_inputs[i] =
+        MakeMatBuilder<TensorDataType>(
+          this->get_data_layout(),
+          this->get_device_allocation())->MakeEmpty(
+            m_inputs[i]->Grid(), 0);
+    }
+    auto& gradient_wrt_input = get_error_signals(i);
+    gradient_wrt_input.Empty(false);
+    gradient_wrt_input.AlignWith(get_prev_activations(i));
   }
 }
 

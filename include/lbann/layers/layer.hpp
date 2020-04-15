@@ -569,10 +569,13 @@ private:
    *  @param child  The child layer, from which the signal is moved
    *  @param signal The now-released error signal from the child layer
    */
-  friend void move_error_signal(
+  friend void attempt_move_error_signal(
     Layer& parent, Layer const& child,
     std::unique_ptr<BaseDistMat> signals);
-  friend void view_error_signal(
+  friend void attempt_view_error_signal(
+    Layer& parent, Layer const& child,
+    const BaseDistMat& signals);
+  friend void deep_copy_error_signal(
     Layer& parent, Layer const& child,
     const BaseDistMat& signals);
 
@@ -617,11 +620,15 @@ private:
    *  @param child The layer whence the signal is coming.
    *  @param signals The error signals being sent to this layer.
    */
-  virtual void set_prev_error_signal_(
-    Layer const& child,
-    std::unique_ptr<BaseDistMat> signal) = 0;
+  virtual void move_or_copy_prev_error_signal_(
+    const Layer& child,
+    std::unique_ptr<El::BaseDistMatrix> signal) = 0;
 
-  virtual void set_prev_error_signal_(
+  virtual void view_or_copy_prev_error_signal_(
+    const Layer& child,
+    const El::BaseDistMatrix& signal) = 0;
+
+  virtual void deep_copy_prev_error_signal_(
     const Layer& child,
     const El::BaseDistMatrix& signal) = 0;
 
