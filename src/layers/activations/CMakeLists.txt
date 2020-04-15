@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_SOURCES
   activations.cpp
   elu.cpp
   identity.cpp
+  relu.cpp
   leaky_relu.cpp
   log_softmax.cpp
   softmax.cpp
@@ -14,15 +15,11 @@ if (LBANN_HAS_CUDA)
   set_full_path(THIS_DIR_CU_SOURCES
     activations.cu
     elu.cu
+    relu.cu
     leaky_relu.cu
     log_softmax.cu
     softmax.cu
     )
-endif ()
-
-if (LBANN_HAS_DISTCONV)
-  list(APPEND THIS_DIR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/relu.cpp")
-  list(APPEND THIS_DIR_CU_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/relu.cu")
 endif ()
 
 # Propagate the files up the tree

@@ -155,32 +155,18 @@ struct softsign_op {
   }
 
 DEFINE_COMPUTE_OPS(log_sigmoid_layer, log_sigmoid_op)
-#ifndef LBANN_HAS_DISTCONV
-// ReLU is supported in distconv, but the unary-op framework is not.
-DEFINE_COMPUTE_OPS(relu_layer, relu_op)
-#endif // LBANN_HAS_DISTCONV
 DEFINE_COMPUTE_OPS(selu_layer, selu_op)
 DEFINE_COMPUTE_OPS(sigmoid_layer, sigmoid_op)
 DEFINE_COMPUTE_OPS(softplus_layer, softplus_op)
 DEFINE_COMPUTE_OPS(softsign_layer, softsign_op)
 
 // Omit relu_layer when distconv is enabled
-#ifndef LBANN_HAS_DISTCONV
-#define PROTO(T) \
-  UNARY_ETI_INST_MACRO_DEV_DT(log_sigmoid_layer, T, El::Device::GPU); \
-  UNARY_ETI_INST_MACRO_DEV_DT(relu_layer, T, El::Device::GPU);        \
-  UNARY_ETI_INST_MACRO_DEV_DT(selu_layer, T, El::Device::GPU);        \
-  UNARY_ETI_INST_MACRO_DEV_DT(sigmoid_layer, T, El::Device::GPU);     \
-  UNARY_ETI_INST_MACRO_DEV_DT(softplus_layer, T, El::Device::GPU);    \
-  UNARY_ETI_INST_MACRO_DEV_DT(softsign_layer, T, El::Device::GPU)
-#else
 #define PROTO(T) \
   UNARY_ETI_INST_MACRO_DEV_DT(log_sigmoid_layer, T, El::Device::GPU); \
   UNARY_ETI_INST_MACRO_DEV_DT(selu_layer, T, El::Device::GPU);        \
   UNARY_ETI_INST_MACRO_DEV_DT(sigmoid_layer, T, El::Device::GPU);     \
   UNARY_ETI_INST_MACRO_DEV_DT(softplus_layer, T, El::Device::GPU);    \
   UNARY_ETI_INST_MACRO_DEV_DT(softsign_layer, T, El::Device::GPU)
-#endif // LBANN_HAS_DISTCONV
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"

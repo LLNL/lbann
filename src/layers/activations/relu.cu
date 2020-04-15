@@ -27,8 +27,6 @@
 #define LBANN_RELU_LAYER_INSTANTIATE
 #include "lbann/layers/activations/relu.hpp"
 
-#ifdef LBANN_HAS_DISTCONV
-
 namespace lbann {
 
 namespace {
@@ -53,6 +51,7 @@ struct op_backprop {
   }
 };
 
+#ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void fp_compute_distconv(relu_distconv_adapter<TensorDataType, Layout, Device> &dc) {
   assert_always(Layout == data_layout::DATA_PARALLEL);
@@ -68,15 +67,17 @@ void bp_compute_distconv(relu_distconv_adapter<TensorDataType, Layout, Device> &
                       dc.get_prev_activations(),
                       TensorDataType{0}, dc.get_error_signals());
 }
-
+#endif // LBANN_HAS_DISTCONV
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void relu_layer<TensorDataType, Layout, Device>::fp_compute() {
+#ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     fp_compute_distconv(get_distconv_adapter());
     return;
   }
+#endif // LBANN_HAS_DISTCONV
   cuda::apply_entrywise_unary_operator<op, TensorDataType>(
       this->get_prev_activations(),
       this->get_activations());
@@ -84,10 +85,12 @@ void relu_layer<TensorDataType, Layout, Device>::fp_compute() {
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
+#ifdef LBANN_HAS_DISTCONV
   if (this->distconv_enabled()) {
     bp_compute_distconv(get_distconv_adapter());
     return;
   }
+#endif // LBANN_HAS_DISTCONV
   cuda::apply_entrywise_binary_operator<op_backprop, TensorDataType>(
       this->get_prev_activations(), this->get_prev_error_signals(),
       this->get_error_signals());
@@ -101,4 +104,3 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
-#endif // LBANN_HAS_DISTCONV
