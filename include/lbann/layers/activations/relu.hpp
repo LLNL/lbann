@@ -124,7 +124,7 @@ void relu_distconv_adapter<TensorDataType, T_layout, Dev>::setup_layer(
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE
-#endif // LBANN_SOFTMAX_LAYER_INSTANTIATE
+#endif // LBANN_RELU_LAYER_INSTANTIATE
 
 } // namespace lbann
 
