@@ -109,7 +109,11 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class concatenate_distconv_adapter<TensorDataType, Layout, Device>;
  protected:
-  bool is_distconv_supported() const override { return true; }
+  bool is_distconv_supported() const override {
+    // Only supported for the channel dimension
+    return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL
+        && m_concat_dim == 0;
+  }
   void setup_distconv_adapter() override {
     this->get_distconv_adapter_ptr() = make_unique<
       concatenate_distconv_adapter<TensorDataType, Layout, Device>>(*this);
