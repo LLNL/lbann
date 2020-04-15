@@ -1,0 +1,7 @@
+{
+
+  "pad_index": 28,
+  "max_seq_len": 57,
+  "data_path": "/p/lustre2/brainusr/datasets/zinc/moses_zinc_train250K.npy"
+
+}

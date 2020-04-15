@@ -3,6 +3,7 @@ set_full_path(THIS_DIR_HEADERS
   activations.hpp
   elu.hpp
   identity.hpp
+  relu.hpp
   leaky_relu.hpp
   log_softmax.hpp
   softmax.hpp
