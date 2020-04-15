@@ -35,6 +35,8 @@ def construct_lc_launcher_args():
     parser.add_argument("--sequence-length", type=int, default=None)
     parser.add_argument("--use-data-reader-prototext", action="store_true")
     parser.add_argument("--dump_weights_dir", type=str, default="weights")
+    parser.add_argument("--num-samples", type=int, default=-1)
+    parser.add_argument("--vocab", default=None)
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -231,6 +233,7 @@ if __name__ == "__main__":
     opt = lbann.Adam(learn_rate=run_args.lr, beta1=0.9, beta2=0.99, eps=1e-8)
     print("BOOL ", run_args.use_data_reader_prototext)
     if run_args.use_data_reader_prototext:
+        print("using external prototext file for data_reader")
 
         import os.path
         import lbann
@@ -272,6 +275,7 @@ if __name__ == "__main__":
         nodes=run_args.nodes,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
+        lbann_args=f'--vocab={run_args.vocab} --num_samples={run_args.num_samples} --num_embeddings={run_args.num_embeddings} --embedding_dim={run_args.embedding_dim} --sequence_length={run_args.sequence_length}'
     )
 
     print(status)
