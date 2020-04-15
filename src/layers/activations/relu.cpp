@@ -28,8 +28,6 @@
 #include "lbann/layers/activations/relu.hpp"
 #include "lbann/utils/entrywise_operator.hpp"
 
-#ifdef LBANN_HAS_DISTCONV
-
 namespace lbann {
 
 namespace {
@@ -78,4 +76,3 @@ void relu_layer<TensorDataType, Layout, Device>::bp_compute() {
 #include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann
-#endif // LBANN_HAS_DISTCONV
