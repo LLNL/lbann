@@ -233,7 +233,9 @@ private:
 #ifdef LBANN_HAS_DISTCONV
   friend class cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>;
  protected:
-  bool is_distconv_supported() const override { return true; }
+  bool is_distconv_supported() const override {
+    return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
+  }
 
   void setup_distconv_adapter() override {
     this->get_distconv_adapter_ptr() = make_unique<
