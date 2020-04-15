@@ -275,7 +275,7 @@ if __name__ == "__main__":
         nodes=run_args.nodes,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
-        lbann_args=f'--vocab={run_args.vocab} --num_samples={run_args.num_samples} --num_embeddings={run_args.num_embeddings} --embedding_dim={run_args.embedding_dim} --sequence_length={run_args.sequence_length}'
+        lbann_args=f'--vocab={run_args.vocab} --num_samples={run_args.num_samples} --num_embeddings={run_args.num_embeddings} --embedding_dim={run_args.embedding_dim} --sequence_length={run_args.sequence_length} --pad-index={run_args.pad_index}'
     )
 
     print(status)
