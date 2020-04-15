@@ -211,16 +211,19 @@ protected:
   }
 
   bool is_distconv_supported() const override {
-    bool cond = true;
     const auto& kernel_dims = get_kernel_dims();
     for(int i = 0; i < dc::get_num_spatial_dims(*this); i++) {
-      cond &= kernel_dims[2 + i] == kernel_dims[2];
-      cond &= kernel_dims[2 + i] == this->m_pads[i] / this->m_dilations[i] * 2 + 1;
-    }
-    if (!cond) {
-      dc::MPIPrintStreamDebug()
-          << "Unsupported as padding does not match the kernel size";
-      return false;
+      if (kernel_dims[2 + i] != kernel_dims[2]) {
+        dc::MPIRootPrintStreamDebug()
+            << "Nonsymmetric kernel not supported";
+        return false;
+      }
+      if (kernel_dims[2 + i] !=
+          this->m_pads[i] / this->m_dilations[i] * 2 + 1) {
+        dc::MPIRootPrintStreamDebug()
+            << "Unsupported as padding does not match the kernel size";
+        return false;
+      }
     }
     return true;
   }
