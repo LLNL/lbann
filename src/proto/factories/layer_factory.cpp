@@ -40,7 +40,6 @@
 #include "lbann/layers/image/bilinear_resize.hpp"
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
-#include "lbann/layers/io/input/input_layer_distconv.hpp"
 #include "lbann/layers/io/io_layer.hpp"
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/channelwise_fully_connected.hpp"
@@ -127,12 +126,12 @@ std::unique_ptr<Layer> construct_input_layer(
     data_reader_target_mode target_mode,
     const std::string &type_name) {
   if (type_name == "int16") {
-    return lbann::make_unique<input_layer_distconv<
+    return lbann::make_unique<input_layer<
       TensorDataType,partitioned_io_buffer<TensorDataType>,Layout,Device,int16_t>>(
           comm, num_parallel_readers, data_readers, !data_set_per_model,
           target_mode);
   } else if (type_name.empty()) {
-    return lbann::make_unique<input_layer_distconv<
+    return lbann::make_unique<input_layer<
       TensorDataType,partitioned_io_buffer<TensorDataType>,Layout,Device,TensorDataType>>(
           comm, num_parallel_readers, data_readers, !data_set_per_model,
           target_mode);
