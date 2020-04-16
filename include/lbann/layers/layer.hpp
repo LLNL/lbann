@@ -427,6 +427,13 @@ public:
   void unfreeze();
   bool is_frozen() const;
 
+  /** @brief Set whether to keep or dynamically reallocate error signals.
+   *
+   *  Passing a value of @c true means to keep the error signals; @c
+   *  false means to dynamically reallocate them.
+   */
+  virtual void set_keep_error_signals(bool) = 0;
+
 protected:
 
   // ===========================================================
@@ -590,7 +597,7 @@ private:
    */
   virtual void allocate_new_gradients_() = 0;
 
-  /** @brief Moves all error signals to their respective parents
+  /** @brief Moves all error signals to their respective parents.
    *
    *  Error signals from this instances either are directly moved into
    *  the parent layer or, in cases in which a direct move is not
@@ -606,8 +613,8 @@ private:
    *  from the child layers are no longer needed. This ensures that
    *  the memory is released.
    *
-   *  If the layer has persistent error signal information, this
-   *  function is a no-op.
+   *  This function may do other work, but must respect the persistent
+   *  error signal flag.
    */
   virtual void clear_prev_error_signals_() = 0;
 
@@ -618,16 +625,31 @@ private:
    *  deep-copy of the signal data.
    *
    *  @param child The layer whence the signal is coming.
-   *  @param signals The error signals being sent to this layer.
+   *  @param signal The error signals being sent to this layer.
    */
   virtual void move_or_copy_prev_error_signal_(
     const Layer& child,
     std::unique_ptr<El::BaseDistMatrix> signal) = 0;
 
+  /** @brief Attempts to view the error signals from the specified
+   *         child layer.
+   *
+   *  This is a simple data view when possible; otherwise it is a
+   *  deep-copy of the signal data.
+   *
+   *  @param child The layer whence the signal is coming.
+   *  @param signal The error signals being sent to this layer.
+   */
   virtual void view_or_copy_prev_error_signal_(
     const Layer& child,
     const El::BaseDistMatrix& signal) = 0;
 
+  /** @brief Deep-copy the error signals from the specified child
+   *         layer.
+   *
+   *  @param child The layer whence the signal is coming.
+   *  @param signal The error signals being sent to this layer.
+   */
   virtual void deep_copy_prev_error_signal_(
     const Layer& child,
     const El::BaseDistMatrix& signal) = 0;

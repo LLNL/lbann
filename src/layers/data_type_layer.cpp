@@ -341,26 +341,13 @@ auto data_type_layer<TensorDataType>::get_error_signals(const Layer& parent) con
   return get_error_signals(parent_index);
 }
 
-namespace {
-
-template <typename T>
-void set_default_memory_mode(
-  El::AbstractMatrix<T>& m, El::Device const& device) {
-#ifdef LBANN_HAS_GPU
-  switch (device) {
-  case El::Device::GPU:
-    // Allocate GPU memory with the CUDA API
-    m.SetMemoryMode(0); break;
-  case El::Device::CPU:
-    // Use pinned memory for data on the host.
-    m.SetMemoryMode(1); break;
-  default: break;
-  }
-#else
-  (void) m;
-  (void) device;
-#endif // LBANN_HAS_GPU
+template <typename TensorDataType>
+void data_type_layer<TensorDataType>::set_keep_error_signals(bool flag)
+{
+  m_persistent_error_signals = flag;
 }
+
+namespace {
 
 // Some indirection around building matrices to keep things tidy in
 // the real code. This is just to hide multiple switches without
@@ -430,7 +417,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
 
   // DEBUG
   {
-    char* keep_error_signals = getenv("TOM_KEEP_ERROR_SIGNALS");
+    char* keep_error_signals = getenv("LBANN_KEEP_ERROR_SIGNALS");
     if (!keep_error_signals || (std::stoi(keep_error_signals) == 0))
       m_persistent_error_signals = false;
     else
@@ -840,7 +827,6 @@ void data_type_layer<TensorDataType>::propagate_error_signals_to_parents_() {
                                 std::move(m_gradient_wrt_inputs[p_idx]));
   }
 }
-
 
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::allocate_new_gradients_() {

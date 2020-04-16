@@ -152,6 +152,13 @@ public:
   /** Get local portion of error signal tensor. */
   const AbsMatrixType& get_local_error_signals(int parent_index = 0) const;
 
+  /** @brief Set whether to keep or dynamically reallocate error signals.
+   *
+   *  Passing a value of @c true means to keep the error signals; @c
+   *  false means to dynamically reallocate them.
+   */
+  void set_keep_error_signals(bool) override;
+
 protected:
 
   // ===========================================================
@@ -264,31 +271,73 @@ protected:
 
 private:
 
-  /** @brief Take ownership of a reference to the previous error signal.
+  /** @brief Attempt to take ownership of the previous error signal.
    *
-   *  If the underlying tensor has the right datatype, the reference
-   *  is stored explicitly. Otherwise a deep copy is made so that it
-   *  has the correct datatype.
+   *  If the underlying matrix has the right datatype and
+   *  distribution, the signal is moved explicitly. Otherwise a deep
+   *  copy is made so that it has the correct datatype and
+   *  distribution.
+   *
+   *  This is valid if the child layer does not have persistent error
+   *  signals.
    *
    *  @param child The layer from which the error signal has come.
-   *  @param signals The error signal from the layer.
+   *  @param signal The error signal from the layer.
    */
   void move_or_copy_prev_error_signal_(
     const Layer& child,
     std::unique_ptr<El::BaseDistMatrix> signal) final;
 
+  /** @brief Attempt to view the previous error signal.
+   *
+   *  If the underlying matrix has the right datatype and
+   *  distribution, the signal can be viewed directly. Otherwise a
+   *  deep copy is made so that it has the correct datatype and
+   *  distribution.
+   *
+   *  This is only valid if the child layer has persistent error
+   *  signals. Otherwise, the viewed data my be invalidated.
+   *
+   *  @param child The layer from which the error signal has come.
+   *  @param signal The error signal from the layer.
+   */
   void view_or_copy_prev_error_signal_(
     const Layer& child,
     const El::BaseDistMatrix& signal) final;
 
+  /** @brief Deep copy the error signal.
+   *
+   *  In some cases, it can be determined that neither viewing nor
+   *  moving is a possibility. In these cases, we must do a deep copy.
+   *
+   *  @param child The layer from which the error signal has come.
+   *  @param signal The error signal from the layer.
+   */
   void deep_copy_prev_error_signal_(
     const Layer& child,
     const El::BaseDistMatrix& signal) final;
 
+  /** @brief Ensure that gradient matrices exist.
+   *
+   *  This step is performed immediately prior to the bp_compute()
+   *  work.
+   */
   void allocate_new_gradients_() final;
 
+  /** @brief Send error signals computed by this layer to their
+   *         respective parents.
+   *
+   *  This step is performed immediately after the bp_compute() work
+   *  and prior to clearing the previous error signals. This ordering
+   *  is necessary in case this layer's error signals are views into
+   *  the previous error signals.
+   */
   void propagate_error_signals_to_parents_() final;
 
+  /** @brief Free previous error signals, if possible.
+   *
+   *  This step is performed at the end of a layer's backprop phase.
+   */
   void clear_prev_error_signals_() final;
 
   /** Backward propagation step.
