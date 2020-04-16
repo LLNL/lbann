@@ -29,12 +29,6 @@
 
 #include "lbann/layers/data_type_layer.hpp"
 
-//#define DISPLAY_INDIVIDUAL_MSE
-#ifdef DISPLAY_INDIVIDUAL_MSE
-#include "lbann/utils/cublas.hpp"
-#include "lbann/models/model.hpp"
-#endif
-
 namespace lbann {
 
 /** @brief
@@ -119,22 +113,9 @@ public:
                                                && input_dist.blockWidth == 1 ?
                                                El::ELEMENT : El::BLOCK),
                                               input_dist.device));
-#ifdef DISPLAY_INDIVIDUAL_MSE
-    m_workspace_pc.reset(AbsDistMat::Instantiate(*input_dist.grid,
-                                                 input_dist.root,
-                                                 El::STAR,
-                                                 input_dist.rowDist,
-                                                 (input_dist.blockHeight == 1
-                                                  && input_dist.blockWidth == 1 ?
-                                                  El::ELEMENT : El::BLOCK),
-                                                 input_dist.device));
-#endif
 #ifdef HYDROGEN_HAVE_CUB
     if (m_workspace->GetLocalDevice() == El::Device::GPU) {
       m_workspace->Matrix().SetMemoryMode(1); // CUB memory pool
-#ifdef DISPLAY_INDIVIDUAL_MSE
-      m_workspace_pc->Matrix().SetMemoryMode(1); // CUB memory pool
-#endif
     }
 #endif // HYDROGEN_HAVE_CUB
 
@@ -153,7 +134,7 @@ public:
     this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
     El::Copy(*m_workspace, this->get_activations());
 
-   // Clean up
+    // Clean up
     m_workspace->Empty();
 
   }
@@ -181,7 +162,8 @@ private:
   void local_bp_compute();
 
   /** Workspace matrix. */
-  std::unique_ptr<AbsDistMatrixType> m_workspace;  
+  std::unique_ptr<AbsDistMatrixType> m_workspace;
+
 };
 
 #ifndef LBANN_MEAN_SQUARED_ERROR_LAYER_INSTANTIATE

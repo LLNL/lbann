@@ -28,14 +28,10 @@
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/utils/distconv.hpp"
 
 #include <thrust/sort.h>
 #include <thrust/device_ptr.h>
-
-#ifdef LBANN_HAS_DISTCONV
-#include "lbann/utils/distconv.hpp"
-#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
@@ -174,7 +170,7 @@ void fp_gpu(lbann_comm& comm,
     return;
   }
 #endif
-  
+
   // Local matrices
   const auto& local_input = input.LockedMatrix();
   auto& local_output = output.Matrix();

@@ -37,40 +37,13 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class cross_entropy_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
-
   cross_entropy_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
   virtual ~cross_entropy_distconv_adapter() = default;
-
   void setup_distributions(tensor_overlap_constraints &constraints) override;
-
-  dc::Shape get_prev_activations_shape(int index) const override {
-    // Assumes both of the two input tensors have the equal shape.
-    return data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape(0);
-  }
-
-  // NOTE: LBANN matrix is a 2-D matrix, while Distconv keeps the
-  // original spatial and channel dimensions, so
-  // get_output_tensor_shape() doesn't work here.
-  dc::Shape get_activations_shape(int output_index=0) const override {
-    dc::Shape shape = this->get_prev_activations_shape(0);
-    assert_always(shape.num_dims() == 5);
-    for (int i = 0; i < shape.num_dims() - 1; ++i) {
-      shape[i] = 1;
-    }
-    return shape;
-  }
-
-  dc::Shape get_activations_local_shape(int index=0) const override {
-    assert_eq(index, 0);
-    auto input_shape = this->get_prev_activations().get_local_shape();
-    for (int i = 0; i < input_shape.length() - 1; ++i) {
-      input_shape[i] = 1;
-    }
-    return input_shape;
-  }
-
+  dc::Shape get_prev_activations_shape(int index) const override;
+  dc::Shape get_activations_shape(int index) const override;
+  dc::Shape get_activations_local_shape(int index) const override;
   void setup_layer(size_t workspace_capacity) override;
-
   std::unique_ptr<dc::CrossEntropy> m_cross_entropy;
 };
 #endif // LBANN_HAS_DISTCONV
@@ -276,6 +249,37 @@ cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&
 cross_entropy_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
   return const_cast<cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>&>(
       static_cast<const cross_entropy_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+dc::Shape cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::
+get_prev_activations_shape(int index) const {
+  // Assumes both of the two input tensors have the equal shape.
+  return data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape(0);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+dc::Shape cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::
+get_activations_shape(int output_index) const {
+  // NOTE: LBANN matrix is a 2-D matrix, while Distconv keeps the
+  // original spatial and channel dimensions, so
+  // get_output_tensor_shape() doesn't work here.
+  dc::Shape shape = this->get_prev_activations_shape(0);
+  for (int i = 0; i < shape.num_dims() - 1; ++i) {
+    shape[i] = 1;
+  }
+  return shape;
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+dc::Shape cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>::
+get_activations_local_shape(int index) const {
+  assert_eq(index, 0);
+  auto input_shape = this->get_prev_activations().get_local_shape();
+  for (int i = 0; i < input_shape.length() - 1; ++i) {
+    input_shape[i] = 1;
+  }
+  return input_shape;
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>

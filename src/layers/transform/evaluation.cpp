@@ -32,10 +32,7 @@
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/cublas.hpp"
 #endif // LBANN_HAS_GPU
-#include "lbann/models/model.hpp"
-#ifdef LBANN_HAS_DISTCONV
 #include "lbann/utils/distconv.hpp"
-#endif // LBANN_HAS_DISTCONV
 
 namespace lbann {
 
