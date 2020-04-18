@@ -134,16 +134,48 @@ void local_bp(TensorDataType negative_slope,
 
 }
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void fp_compute_distconv(leaky_relu_distconv_adapter<TensorDataType, Layout, Device> &dc,
+                         TensorDataType negative_slope) {
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  dc.m_leaky_relu->forward(dc.get_prev_activations(), negative_slope,
+                           dc.get_activations());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void bp_compute_distconv(leaky_relu_distconv_adapter<TensorDataType, Layout, Device> &dc,
+                         TensorDataType negative_slope) {
+  assert_always(Layout == data_layout::DATA_PARALLEL);
+  dc.m_leaky_relu->backward(dc.get_prev_activations(),
+                            dc.get_prev_error_signals(),
+                            negative_slope,
+                            dc.get_error_signals());
+}
+#endif // LBANN_HAS_DISTCONV
+
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::fp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    fp_compute_distconv(get_distconv_adapter(), m_negative_slope);
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
   local_fp(this->m_negative_slope,
            this->get_local_prev_activations(),
            this->get_local_activations());
 }
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void leaky_relu_layer<TensorDataType, Layout, Device>::bp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    bp_compute_distconv(get_distconv_adapter(), m_negative_slope);
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
   local_bp(this->m_negative_slope,
            this->get_local_prev_activations(),
            this->get_local_prev_error_signals(),

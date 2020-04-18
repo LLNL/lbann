@@ -56,17 +56,6 @@ struct log_sigmoid_op {
   }
 };
 
-/** ReLU operator. */
-template <typename TensorDataType>
-struct relu_op {
-  inline TensorDataType operator()(const TensorDataType& x) const {
-    return std::max(x, El::TypeTraits<TensorDataType>::Zero());
-  }
-  inline TensorDataType operator()(const TensorDataType& x, const TensorDataType& dy) const {
-    return x > El::TypeTraits<TensorDataType>::Zero() ? dy : El::TypeTraits<TensorDataType>::Zero();
-  }
-};
-
 /** SELU operator. */
 template <typename TensorDataType>
 struct selu_op {
@@ -161,7 +150,6 @@ struct softsign_op {
   }
 
 DEFINE_COMPUTE_OPS(log_sigmoid_layer, log_sigmoid_op)
-DEFINE_COMPUTE_OPS(relu_layer, relu_op)
 DEFINE_COMPUTE_OPS(selu_layer, selu_op)
 DEFINE_COMPUTE_OPS(sigmoid_layer, sigmoid_op)
 DEFINE_COMPUTE_OPS(softplus_layer, softplus_op)
@@ -169,7 +157,6 @@ DEFINE_COMPUTE_OPS(softsign_layer, softsign_op)
 
 #define PROTO(T) \
   UNARY_ETI_INST_MACRO_DEV_DT(log_sigmoid_layer, T, El::Device::CPU); \
-  UNARY_ETI_INST_MACRO_DEV_DT(relu_layer, T, El::Device::CPU);        \
   UNARY_ETI_INST_MACRO_DEV_DT(selu_layer, T, El::Device::CPU);        \
   UNARY_ETI_INST_MACRO_DEV_DT(sigmoid_layer, T, El::Device::CPU);     \
   UNARY_ETI_INST_MACRO_DEV_DT(softplus_layer, T, El::Device::CPU);    \
