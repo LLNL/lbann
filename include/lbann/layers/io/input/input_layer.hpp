@@ -40,13 +40,12 @@ namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
+          data_layout T_layout, El::Device Dev>
 class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
-  using TensorDevIOType = dc::TensorDev<IODataType>;
-  using TensorHost = dc::TensorHost<IODataType>;
-  using TensorHostShuffler = dc::TensorHostShuffler<IODataType>;
+  using TensorHost = dc::TensorHost<TensorDataType>;
+  using TensorHostShuffler = dc::TensorHostShuffler<TensorDataType>;
 
   input_distconv_adapter(Layer& layer);
   virtual ~input_distconv_adapter() = default;
@@ -78,17 +77,16 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   std::vector<bool> m_is_input_processed;
   std::vector<std::unique_ptr<TensorHost>> m_original_host_tensors;
   std::vector<std::unique_ptr<TensorHost>> m_host_tensors;
-  std::vector<std::unique_ptr<TensorDevIOType>> m_device_tensors_io_type;
 
   bool m_shuffle_required = true;
   std::vector<std::array<std::unique_ptr<TensorHostShuffler>, 4>> m_shufflers;
-  std::unique_ptr<IODataType> m_shuffler_src_buf;
+  std::unique_ptr<TensorDataType> m_shuffler_src_buf;
   size_t m_shuffler_src_buf_size = 0;
-  std::unique_ptr<IODataType> m_shuffler_dst_buf;
+  std::unique_ptr<TensorDataType> m_shuffler_dst_buf;
   size_t m_shuffler_dst_buf_size = 0;
 
   // TODO: Use pinned memory pool
-  IODataType *m_copy_pinned_buffer = nullptr;
+  TensorDataType *m_copy_pinned_buffer = nullptr;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -96,8 +94,7 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
 template <typename TensorDataType,
           typename T_io_buffer,
           data_layout T_layout = data_layout::DATA_PARALLEL,
-          El::Device Dev = El::Device::CPU,
-          typename InputType=TensorDataType>
+          El::Device Dev = El::Device::CPU>
 class input_layer : public generic_input_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "input layer only supports DATA_PARALLEL data layout");
@@ -140,15 +137,14 @@ class input_layer : public generic_input_layer<TensorDataType> {
 
 #ifdef LBANN_HAS_DISTCONV
   void fp_compute () override;
-  using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>;
+  using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>;
   friend distconv_adapter_type;
  protected:
   bool is_distconv_supported() const override {
     return Dev == El::Device::CPU && T_layout == data_layout::DATA_PARALLEL;
   }
   void setup_distconv_adapter() override {
-    this->get_distconv_adapter_ptr() = make_unique<
-      input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>>(*this);
+    this->get_distconv_adapter_ptr() = make_unique<distconv_adapter_type>(*this);
   }
   distconv_adapter_type& get_distconv_adapter() override;
   const distconv_adapter_type& get_distconv_adapter() const override;
@@ -158,13 +154,10 @@ class input_layer : public generic_input_layer<TensorDataType> {
 
 #ifndef LBANN_INPUT_LAYER_INSTANTIATE
 
-#define PROTO_DEVICE(T, Device)          \
-  extern template class input_layer<     \
-    T, partitioned_io_buffer<T>,         \
-    data_layout::DATA_PARALLEL, Device>; \
-  extern template class input_layer<     \
-    T, partitioned_io_buffer<T>,         \
-    data_layout::DATA_PARALLEL, Device, int16_t>
+#define PROTO_DEVICE(T, Device)         \
+  extern template class input_layer<    \
+    T, partitioned_io_buffer<T>,        \
+    data_layout::DATA_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

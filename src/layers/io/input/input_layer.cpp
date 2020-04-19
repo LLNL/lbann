@@ -32,8 +32,8 @@ namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::
+          data_layout T_layout, El::Device Dev>
+input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
 input_distconv_adapter(Layer& layer):  data_type_distconv_adapter<TensorDataType>(layer) {
   // Input data is only processed when its consumer layer is also
   // enabled for distconv
@@ -41,7 +41,7 @@ input_distconv_adapter(Layer& layer):  data_type_distconv_adapter<TensorDataType
     m_is_input_processed.push_back(layer.get_child_layers()[i]->distconv_enabled());
   }
   auto &l = dynamic_cast<input_layer<
-    TensorDataType, T_io_buffer, T_layout, Dev, IODataType>&>(this->layer());
+    TensorDataType, T_io_buffer, T_layout, Dev>&>(this->layer());
   // TODO: hdf5_reader is assumed to return a sub-sample partitioned
   // in the same way as specified by the parallel strategy of this input
   // layer. Other data readers are assumed to return a complete
@@ -58,8 +58,8 @@ input_distconv_adapter(Layer& layer):  data_type_distconv_adapter<TensorDataType
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-bool input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::
+          data_layout T_layout, El::Device Dev>
+bool input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
 is_input_processed(size_t index) const {
   if (index >= m_is_input_processed.size()) {
     LBANN_ERROR("Invalid index: ", index);
@@ -68,9 +68,9 @@ is_input_processed(size_t index) const {
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-typename input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::TensorHostShuffler&
-input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::get_shuffler(
+          data_layout T_layout, El::Device Dev>
+typename input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::TensorHostShuffler&
+input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::get_shuffler(
     const TensorHost &src, const TensorHost &dst, int mat_idx) {
   size_t cur_mb_size = src.get_shape()[dc::get_sample_dim()];
   auto src_buf = m_shuffler_src_buf.get();
@@ -95,8 +95,8 @@ input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::setup_fp_tensors() {
+          data_layout T_layout, El::Device Dev>
+void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::setup_fp_tensors() {
   const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(
       dc::get_num_dims(this->layer()));
   for (int mat_idx = 0; mat_idx < this->layer().get_num_children(); ++mat_idx) {
@@ -141,29 +141,23 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataTy
       // CUDAHostPooledAllocator, but the shuffler is
       // only specialized for BaseAllocator.
       size_t buf_size = m_host_tensors.back()->get_local_real_size()
-          * sizeof(IODataType);
-      IODataType *buf = nullptr;
+          * sizeof(TensorDataType);
+      TensorDataType *buf = nullptr;
       CHECK_CUDA(cudaMallocHost(&buf, buf_size));
       // Note buf should be deallocated.
       dc::tensor::View(*m_host_tensors.back(), buf);
       setup_shuffler_buffers(*m_original_host_tensors.back(),
                              *m_host_tensors.back());
     }
-
-    // Keeps the same input type and convert to TensorDataType on GPU
-    m_device_tensors_io_type.emplace_back(
-        make_unique<TensorDevIOType>(shape, loc, dist));
-    assert0(m_device_tensors_io_type.back()->allocate());
-    m_device_tensors_io_type.back()->zero(El::GPUManager::Stream());
   }
 
   this->setup_activations();
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-std::unique_ptr<typename input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::TensorDevType>
-input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::
+          data_layout T_layout, El::Device Dev>
+std::unique_ptr<typename input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::TensorDevType>
+input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
 setup_activations_i(int index) const {
   if (!is_input_processed(index)) return nullptr;
   if (index == 0) {
@@ -188,8 +182,8 @@ setup_activations_i(int index) const {
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-dc::Shape input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::
+          data_layout T_layout, El::Device Dev>
+dc::Shape input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
 get_activations_local_shape(int index) const {
   // No enforced local shape as the activations tensor is always
   // copied from the El matrix.
@@ -197,8 +191,8 @@ get_activations_local_shape(int index) const {
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-dc::Shape input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::
+          data_layout T_layout, El::Device Dev>
+dc::Shape input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
 get_activations_shape(int index) const {
   if (index == 0) {
     return data_type_distconv_adapter<TensorDataType>::
@@ -219,28 +213,28 @@ get_activations_shape(int index) const {
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::
+          data_layout T_layout, El::Device Dev>
+void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
 setup_shuffler_buffers(const TensorHost &src, const TensorHost &dst) {
   auto shuffler_src_size = TensorHostShuffler::get_buf_size(src);
   if (m_shuffler_src_buf_size < shuffler_src_size) {
     m_shuffler_src_buf_size = shuffler_src_size;
     m_shuffler_src_buf =
-        std::unique_ptr<IODataType>(static_cast<IODataType*>(
+        std::unique_ptr<TensorDataType>(static_cast<TensorDataType*>(
             dc::util::aligned_malloc(m_shuffler_src_buf_size)));
   }
   auto shuffler_dst_size = TensorHostShuffler::get_buf_size(dst);
   if (m_shuffler_dst_buf_size < shuffler_dst_size) {
     m_shuffler_dst_buf_size = shuffler_dst_size;
     m_shuffler_dst_buf =
-        std::unique_ptr<IODataType>(static_cast<IODataType*>(
+        std::unique_ptr<TensorDataType>(static_cast<TensorDataType*>(
             dc::util::aligned_malloc(m_shuffler_dst_buf_size)));
   }
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-bool input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::
+          data_layout T_layout, El::Device Dev>
+bool input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
 child_copy_required(size_t output_index) const {
   // Not required when label is not handled.
   if (output_index == 1 && !is_input_processed(1)) {
@@ -252,8 +246,8 @@ child_copy_required(size_t output_index) const {
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-bool input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::
+          data_layout T_layout, El::Device Dev>
+bool input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
 child_shuffle_required(size_t output_index) const {
   // Not required when label is not handled.
   if (output_index == 1 && !is_input_processed(1)) {
@@ -265,10 +259,10 @@ child_shuffle_required(size_t output_index) const {
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename IODataType>
-void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataType>::fp_compute() {
+          data_layout T_layout, El::Device Dev>
+void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::fp_compute() {
   auto &l = dynamic_cast<input_layer<
-    TensorDataType, T_io_buffer, T_layout, Dev, IODataType>&>(this->layer());
+    TensorDataType, T_io_buffer, T_layout, Dev>&>(this->layer());
   auto stream = El::GPUManager::Stream();
   // Note that the mini-batch size of the data reader is not
   // actually the one for the current mini-batch as the mini-batch
@@ -285,19 +279,16 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataTy
     auto &original_tensor = *m_original_host_tensors[mat_idx];
     auto &host_tensor = *m_host_tensors[mat_idx];
     auto &device_tensor = this->get_activations(mat_idx);
-    auto &device_tensor_io_type = *m_device_tensors_io_type[mat_idx];
 
     // Adjust the mini-batch size
     original_tensor.set_outermost_dimension(mb_size);
     host_tensor.set_outermost_dimension(mb_size);
     device_tensor.set_outermost_dimension(mb_size);
-    device_tensor_io_type.set_outermost_dimension(mb_size);
 
     // Setup view
     assert0(dc::tensor::View(
         original_tensor,
-        reinterpret_cast<const IODataType*>(
-            l.get_activations(mat_idx).LockedBuffer())));
+        l.get_activations(mat_idx).LockedBuffer()));
 
     // Shuffle if necessary
     if (m_shuffle_required) {
@@ -319,40 +310,35 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataTy
 
     prof_region_begin("copy-to-device", prof_colors[1], false);
     assert0(dc::tensor::Copy(
-        device_tensor_io_type, host_tensor, stream));
+        device_tensor, host_tensor, stream));
     prof_region_end("copy-to-device", false);
-
-    prof_region_begin("cast", prof_colors[1], false);
-    dc::tensor::Cast(device_tensor, device_tensor_io_type, stream);
-    prof_region_end("cast", false);
   }
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename InputType>
-const input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>&
-input_layer<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::get_distconv_adapter() const {
+          data_layout T_layout, El::Device Dev>
+const input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>&
+input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::get_distconv_adapter() const {
   return dynamic_cast<const input_distconv_adapter<
-    TensorDataType, T_io_buffer, T_layout, Dev, InputType>&>(
+    TensorDataType, T_io_buffer, T_layout, Dev>&>(
         data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename InputType>
-input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputType>&
-input_layer<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::get_distconv_adapter() {
+          data_layout T_layout, El::Device Dev>
+input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>&
+input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::get_distconv_adapter() {
   return const_cast<input_distconv_adapter<
-    TensorDataType, T_io_buffer, T_layout, Dev, InputType>&>(
+    TensorDataType, T_io_buffer, T_layout, Dev>&>(
         static_cast<const input_layer<
-        TensorDataType, T_io_buffer, T_layout, Dev, InputType>&>(*this).get_distconv_adapter());
+        TensorDataType, T_io_buffer, T_layout, Dev>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType,
           typename T_io_buffer,
           data_layout T_layout,
-          El::Device Dev,
-          typename InputType>
-bool input_layer<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::
+          El::Device Dev>
+bool input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::
 keep_original_outputs(int index) const {
   // The original output matrices are always needed as we copy them
   // into distconv tensors.
@@ -362,9 +348,8 @@ keep_original_outputs(int index) const {
 template <typename TensorDataType,
           typename T_io_buffer,
           data_layout T_layout,
-          El::Device Dev,
-          typename InputType>
-void input_layer<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::
+          El::Device Dev>
+void input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::
 fp_compute() {
   generic_input_layer<TensorDataType>::fp_compute();
   if (this->distconv_enabled()) {
@@ -373,9 +358,8 @@ fp_compute() {
 }
 #endif // LBANN_HAS_DISTCONV
 
-#define PROTO_DEVICE(T, Device)                                         \
-  template class input_layer<T, partitioned_io_buffer<T>, data_layout::DATA_PARALLEL, Device>; \
-  template class input_layer<T, partitioned_io_buffer<T>, data_layout::DATA_PARALLEL, Device, int16_t>
+#define PROTO_DEVICE(T, Device) \
+  template class input_layer<T, partitioned_io_buffer<T>, data_layout::DATA_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 

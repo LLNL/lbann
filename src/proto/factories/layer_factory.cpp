@@ -116,31 +116,6 @@ namespace proto {
 std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr,
                                                   const std::string& var_category,
                                                   bool& is_supported);
-#ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType, data_layout Layout, El::Device Device>
-std::unique_ptr<Layer> construct_input_layer(
-    lbann_comm* comm,
-    int num_parallel_readers,
-    const std::map<execution_mode, generic_data_reader*>& data_readers,
-    bool data_set_per_model,
-    data_reader_target_mode target_mode,
-    const std::string &type_name) {
-  if (type_name == "int16") {
-    return lbann::make_unique<input_layer<
-      TensorDataType,partitioned_io_buffer<TensorDataType>,Layout,Device,int16_t>>(
-          comm, num_parallel_readers, data_readers, !data_set_per_model,
-          target_mode);
-  } else if (type_name.empty()) {
-    return lbann::make_unique<input_layer<
-      TensorDataType,partitioned_io_buffer<TensorDataType>,Layout,Device,TensorDataType>>(
-          comm, num_parallel_readers, data_readers, !data_set_per_model,
-          target_mode);
-  } else {
-    LBANN_ERROR("Invalid type name for input_layer data type:",
-                type_name);
-  }
-}
-#endif // LBANN_HAS_DISTCONV
 
 namespace {
 
@@ -324,9 +299,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     const auto& params = proto_layer.input();
     const auto& io_buffer = params.io_buffer();
     const auto& mode_str = params.target_mode();
-#ifdef LBANN_HAS_DISTCONV
-    const auto& data_type_str = params.data_type();
-#endif // LBANN_HAS_DISTCONV
     data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION;
     if (mode_str.empty() || mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
     if (mode_str == "regression")                         { target_mode = data_reader_target_mode::REGRESSION; }
@@ -342,12 +314,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
       /// this is not related to this PR.
       if ((typeid(TensorDataType) == typeid(DataType))
           && (Layout == data_layout::DATA_PARALLEL)) {
-#ifdef LBANN_HAS_DISTCONV
-        return construct_input_layer<DataType, data_layout::DATA_PARALLEL, Device>(
-            comm, num_parallel_readers, data_readers,
-            params.data_set_per_model(), target_mode,
-            data_type_str);
-#else
         return lbann::make_unique<input_layer<DataType,
                                               partitioned_io_buffer<DataType>,
                                               data_layout::DATA_PARALLEL,
@@ -357,7 +323,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
                                                 data_readers,
                                                 !params.data_set_per_model(),
                                                 target_mode);
-#endif // LBANN_HAS_DISTCONV
       }
       else {
         LBANN_ERROR("Input layers are only valid with "
