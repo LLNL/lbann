@@ -137,10 +137,10 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataTy
     }
 
     // Keeps the same input type and convert to TensorDataType on GPU
-    m_device_tensors_input_type.emplace_back(
-        make_unique<TensorDevInput>(shape, loc, dist));
-    assert0(m_device_tensors_input_type.back()->allocate());
-    m_device_tensors_input_type.back()->zero(El::GPUManager::Stream());
+    m_device_tensors_io_type.emplace_back(
+        make_unique<TensorDevIOType>(shape, loc, dist));
+    assert0(m_device_tensors_io_type.back()->allocate());
+    m_device_tensors_io_type.back()->zero(El::GPUManager::Stream());
   }
 
   this->setup_activations();
@@ -271,13 +271,13 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataTy
     auto &original_tensor = *m_original_host_tensors[mat_idx];
     auto &host_tensor = *m_host_tensors[mat_idx];
     auto &device_tensor = this->get_activations(mat_idx);
-    auto &device_tensor_input_type = *m_device_tensors_input_type[mat_idx];
+    auto &device_tensor_io_type = *m_device_tensors_io_type[mat_idx];
 
     // Adjust the mini-batch size
     original_tensor.set_outermost_dimension(mb_size);
     host_tensor.set_outermost_dimension(mb_size);
     device_tensor.set_outermost_dimension(mb_size);
-    device_tensor_input_type.set_outermost_dimension(mb_size);
+    device_tensor_io_type.set_outermost_dimension(mb_size);
 
     // Setup view
     assert0(dc::tensor::View(
@@ -312,13 +312,13 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataTy
     // now, avoid this with the manual copy below. Also, in the
     // Cosmoflow case, "input_tensor" is not a pinned buffer.
     auto host_halo = host_tensor.get_halo_width();
-    auto device_halo = device_tensor_input_type.get_halo_width();
+    auto device_halo = device_tensor_io_type.get_halo_width();
     if (host_halo == device_halo) {
       assert0(dc::tensor::Copy(
-          device_tensor_input_type, host_tensor, stream));
+          device_tensor_io_type, host_tensor, stream));
     } else {
       if (m_copy_pinned_buffer == nullptr) {
-        auto buf_size = device_tensor_input_type.get_local_real_size() * sizeof(IODataType);
+        auto buf_size = device_tensor_io_type.get_local_real_size() * sizeof(IODataType);
         CHECK_CUDA(cudaMallocHost(&m_copy_pinned_buffer, buf_size));
       }
       int chan_dim = host_tensor.get_local_shape()[::distconv::get_channel_dim()];
@@ -327,21 +327,21 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataTy
       for (int i = 0; i < chan_dim; ++i) {
         dc::IndexVector base_idx(dc::get_num_dims(this->layer()), 0);
         base_idx[dc::get_channel_dim()] = i;
-        auto dev_off = device_tensor_input_type.get_local_offset(base_idx);
+        auto dev_off = device_tensor_io_type.get_local_offset(base_idx);
         auto host_off = block_size * i;
         std::memcpy(m_copy_pinned_buffer + dev_off,
                     host_tensor.get_const_buffer() + host_off,
                     sizeof(short) * block_size);
       }
       CHECK_CUDA(cudaMemcpyAsync(
-          device_tensor_input_type.get_buffer(),  m_copy_pinned_buffer,
-          device_tensor_input_type.get_local_real_size() * sizeof(IODataType),
+          device_tensor_io_type.get_buffer(),  m_copy_pinned_buffer,
+          device_tensor_io_type.get_local_real_size() * sizeof(IODataType),
           cudaMemcpyHostToDevice, stream));
     }
     prof_region_end("copy-to-device", false);
 
     prof_region_begin("cast", prof_colors[1], false);
-    dc::tensor::Cast(device_tensor, device_tensor_input_type, stream);
+    dc::tensor::Cast(device_tensor, device_tensor_io_type, stream);
     prof_region_end("cast", false);
   }
 }

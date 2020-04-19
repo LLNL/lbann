@@ -44,11 +44,9 @@ template <typename TensorDataType, typename T_io_buffer,
 class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+  using TensorDevIOType = dc::TensorDev<IODataType>;
   using TensorHost = dc::TensorHost<IODataType>;
   using TensorHostShuffler = dc::TensorHostShuffler<IODataType>;
-  using TensorDevInput = ::distconv::tensor::Tensor<
-    IODataType, ::distconv::tensor::LocaleMPI,
-    ::distconv::tensor::CUDAAllocator>;
 
   input_distconv_adapter(Layer& layer);
   virtual ~input_distconv_adapter() = default;
@@ -80,7 +78,7 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
   std::vector<bool> m_is_input_processed;
   std::vector<std::unique_ptr<TensorHost>> m_original_host_tensors;
   std::vector<std::unique_ptr<TensorHost>> m_host_tensors;
-  std::vector<std::unique_ptr<TensorDevInput>> m_device_tensors_input_type;
+  std::vector<std::unique_ptr<TensorDevIOType>> m_device_tensors_io_type;
 
   bool m_shuffle_required = true;
   std::vector<std::array<std::unique_ptr<TensorHostShuffler>, 4>> m_shufflers;
