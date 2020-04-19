@@ -40,15 +40,13 @@ namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, typename T_io_buffer,
-          data_layout T_layout, El::Device Dev, typename InputType>
+          data_layout T_layout, El::Device Dev, typename IODataType>
 class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
-  using TensorHost = dc::TensorHost<InputType>;
-  using TensorHostShuffler = dc::TensorHostShuffler<InputType>;
-  using TensorDevInput = ::distconv::tensor::Tensor<
-    InputType, ::distconv::tensor::LocaleMPI,
-    ::distconv::tensor::CUDAAllocator>;
+  using TensorDevIOType = dc::TensorDev<IODataType>;
+  using TensorHost = dc::TensorHost<IODataType>;
+  using TensorHostShuffler = dc::TensorHostShuffler<IODataType>;
 
   input_distconv_adapter(Layer& layer);
   virtual ~input_distconv_adapter() = default;
@@ -73,26 +71,24 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
 
   // Nothing to do here as everything is done in fp_compute_distconv.
   void fp_setup(El::Int mini_batch_size) override {}
-
   void fp_compute();
-
   bool is_input_processed(size_t index) const;
 
  private:
   std::vector<bool> m_is_input_processed;
   std::vector<std::unique_ptr<TensorHost>> m_original_host_tensors;
   std::vector<std::unique_ptr<TensorHost>> m_host_tensors;
-  std::vector<std::unique_ptr<TensorDevInput>> m_device_tensors_input_type;
+  std::vector<std::unique_ptr<TensorDevIOType>> m_device_tensors_io_type;
 
   bool m_shuffle_required = true;
   std::vector<std::array<std::unique_ptr<TensorHostShuffler>, 4>> m_shufflers;
-  std::unique_ptr<InputType> m_shuffler_src_buf;
+  std::unique_ptr<IODataType> m_shuffler_src_buf;
   size_t m_shuffler_src_buf_size = 0;
-  std::unique_ptr<InputType> m_shuffler_dst_buf;
+  std::unique_ptr<IODataType> m_shuffler_dst_buf;
   size_t m_shuffler_dst_buf_size = 0;
 
   // TODO: Use pinned memory pool
-  InputType *m_copy_pinned_buffer = nullptr;
+  IODataType *m_copy_pinned_buffer = nullptr;
 };
 #endif // LBANN_HAS_DISTCONV
 
