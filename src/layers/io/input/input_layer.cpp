@@ -340,24 +340,9 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, InputTyp
     }
     prof_region_end("copy-to-device", false);
 
-    // Temporary hack for Cosmoflow. Scaling for input samples.
-    const auto norm_alpha_p = std::getenv("COSMOFLOW_NORMALIZE_ALPHA");
-    const auto norm_beta_p  = std::getenv("COSMOFLOW_NORMALIZE_BETA");
-    if (mat_idx == 0 && norm_alpha_p != nullptr) {
-      const auto norm_alpha = std::stod(norm_alpha_p);
-      const auto norm_beta = std::stod(norm_beta_p);
-      prof_region_begin("cast-scale-bias", prof_colors[1], false);
-      dc::tensor::CastScaleBias(device_tensor,
-                                device_tensor_input_type,
-                                (TensorDataType) norm_alpha,
-                                (TensorDataType) norm_beta,
-                                stream);
-      prof_region_end("cast-scale-bias", false);
-    } else {
-      prof_region_begin("cast", prof_colors[1], false);
-      dc::tensor::Cast(device_tensor, device_tensor_input_type, stream);
-      prof_region_end("cast", false);
-    }
+    prof_region_begin("cast", prof_colors[1], false);
+    dc::tensor::Cast(device_tensor, device_tensor_input_type, stream);
+    prof_region_end("cast", false);
   }
 }
 
