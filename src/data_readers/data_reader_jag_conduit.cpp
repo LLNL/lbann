@@ -139,6 +139,8 @@ data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
 }
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
+std::cerr << "COPY!\n";
+  m_verify_data = rhs.m_verify_data;
   m_independent = rhs.m_independent;
   m_independent_groups = rhs.m_independent_groups;
   m_dependent = rhs.m_dependent;
@@ -188,6 +190,8 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
     m_data_store = new data_store_conduit(rhs.get_data_store());
     m_data_store->set_data_reader_ptr(this);
   }
+
+  //TODO: deal with verify stream
 }
 
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
@@ -212,6 +216,9 @@ data_reader_jag_conduit::~data_reader_jag_conduit() {
   // if (m_data_store != nullptr) {
   //   delete m_data_store;
   // }
+  if (m_verify_stream) {
+    m_verify_stream.close();
+  }
 }
 
 void data_reader_jag_conduit::set_defaults() {
@@ -787,6 +794,10 @@ void data_reader_jag_conduit::load() {
   const std::string sample_list_file = data_dir + get_data_index_list();
 
   options *opts = options::get();
+
+  // Deal with the "--verify_data" sanity flag
+  init_verify_data();
+
   bool check_data = opts->get_bool("check_data");
 
   /// The use of these flags need to be updated to properly separate
@@ -894,6 +905,20 @@ void data_reader_jag_conduit::do_preload_data_store() {
       m_sample_list.open_samples_file_handle(index, true);
       auto h = m_sample_list.get_samples_file_handle(id);
       conduit::Node & node = m_data_store->get_empty_node(index);
+
+
+      if (m_verify_data) { 
+        // stuff the filename and sample name into the conduit node; this is 
+        // needed when running in --verify_data mode
+        const std::string filename = m_sample_list.get_samples_dirname() 
+                      + "/" +  m_sample_list.get_samples_filename(id);;
+        node['/' + LBANN_DATA_ID_STR(index) + "/filename"] = filename;
+        //need to pad the sample name to ensure all conduit nodes
+        //are the same length
+        char b[80];
+        sprintf(b, "%79s", sample_name.c_str());
+        node['/' + LBANN_DATA_ID_STR(index) + "/sample_name"] = b;
+      }
 
       preload_helper(h, sample_name, m_output_scalar_prefix, index, node);
       preload_helper(h, sample_name, m_input_prefix, index, node);
@@ -1237,8 +1262,13 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
     conduit_ch_t emi = sample[conduit_obj].value();
     const size_t num_vals = emi.number_of_elements();
     const ch_t* emi_data = sample[conduit_obj].value();
+
     // Note that data will be cast from ch_t to DataType format
     image_ptrs.emplace_back(emi_data, emi_data + num_vals);
+
+    if (m_verify_data) {
+      verify_image(emi_data, num_vals, sample_id, emi_tag);
+    }
   }
 
   return image_ptrs;
@@ -1457,10 +1487,11 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
+  m_cur_node = &node; // used for --verify_data=<int>
   if (data_store_active()) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
-  }else {
+  } else {
     m_sample_list.open_samples_file_handle(data_id);
   }
 
@@ -1552,6 +1583,99 @@ void data_reader_jag_conduit::add_scalar_normalization_param(const data_reader_j
 
 void data_reader_jag_conduit::add_input_normalization_param(const data_reader_jag_conduit::linear_transform_t& t) {
   m_input_normalization_params.push_back(t);
+}
+
+void data_reader_jag_conduit::init_verify_data() {
+  options *opts = options::get();
+  m_verify_data = 0; // should already be set
+  if (opts->has_int("verify_data")) {
+    m_verify_data = opts->get_int("verify_data");
+  }  
+  if (m_verify_data && !opts->get_bool("preload_data_store")) {
+    LBANN_ERROR("you requested --verify_data, but you are not preloading (--preload_data_store); verify_data only works when preloading");
+  }
+  if (m_verify_data && is_master()) {
+    LBANN_WARNING("\n\nRUNNING IN VERIFY_DATA_MODE; this will be slow\n");
+  }
+  if (m_verify_data) {
+    if (! opts->has_int("num_io_threads") && (opts->get_int("num_io_threads") == 1)) {
+      LBANN_ERROR("You must use --num_io_threads=1 when running with --verify_data");
+    }
+  }
+  if (m_verify_data) {
+    if (m_verify_data < 0 || m_verify_data > 3) {
+      LBANN_ERROR("--verivy_data=<int> should be 0, 1, 2, or 3; you passed: ", m_verify_data);
+    }
+  }
+  if (m_verify_data == 3) {
+    std::stringstream s;
+    s << "debug_verify_data__role=" << get_role() << "__trainer=" 
+      << m_comm->get_trainer_rank()
+      << "__rank=" << m_comm->get_rank_in_trainer();
+    m_verify_data_fn = s.str();
+    m_verify_stream.open(m_verify_data_fn.c_str());
+    if (!m_verify_stream) {
+      LBANN_ERROR("failed to open ", m_verify_data_fn, " for writing");
+    }
+  }
+}
+
+void data_reader_jag_conduit::verify_image(const ch_t* emi_data, size_t num_vals, int data_id, std::string image_name) const {
+  // leading zero
+  int leading_zero_count = 0;
+  for (size_t j=0; j<num_vals; j++) {
+    if (emi_data[j] == 0.) {
+      ++leading_zero_count;
+    } else {
+      break;
+    }
+  }
+
+  // trailing zero
+  int trailing_zero_count = 0;
+  for (size_t j=num_vals-1; j!=0; j--) {
+    if (emi_data[j] == 0.) {
+      ++trailing_zero_count;
+    } else {
+      break;
+    }
+  }
+
+std::cerr << "4; num_vals: "<< num_vals << "\n";
+  // zero count
+  int zero_count = 0;
+if (is_master()) {
+  for (size_t j=0; j<num_vals; j++) {
+    if (emi_data[j] == 0.) {
+      ++zero_count;
+    }
+  }
+}
+std::cerr << "5\n";
+
+  const std::string filename = (*m_cur_node)['/' + LBANN_DATA_ID_STR(data_id) + "/filename"].as_string();
+  const std::string sample_name = (*m_cur_node)['/' + LBANN_DATA_ID_STR(data_id) + "/sample_name"].as_string();
+
+std::cerr << "6\n";
+  std::stringstream s;
+  s << std::endl << filename << " :: "  << sample_name << " :: " 
+    << image_name <<  std::endl
+    << "num_vals: " << num_vals << " zero count: " << zero_count
+    << " non-zero count: " << num_vals-zero_count << std::endl
+    << "leading zero count: " << leading_zero_count
+    << " trailing zero count: " << trailing_zero_count << std::endl;
+
+  if (is_master()) {
+    std::cerr << s.str() << std::endl;
+  }
+m_comm->global_barrier();
+exit(9);
+  if (m_verify_data > 1) {
+    m_verify_stream << s.str() << std::endl;
+  }
+  if (m_verify_data > 2) {
+    //TODO: read image from file and compare
+  }
 }
 
 } // end of namespace lbann

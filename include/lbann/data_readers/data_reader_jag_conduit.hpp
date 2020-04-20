@@ -251,6 +251,34 @@ class data_reader_jag_conduit : public generic_data_reader {
 
  protected:
 
+  /// For sanity checking the data_store; to activate: --verify_data=<int>
+  /// If nonzero, when fetch_datum is called, various checks are
+  /// performed. 1 - master writes summary info (num zeros, num nonzeros, etc)
+  /// to cerr; 2 - each rank opens a separate file and writes summary info;
+  /// 3 - in addition to summary info, each rank reads the conduit node from
+  /// file, and compares the images to the conduit node retrieved from file;
+  /// additionally, master will print 'VERIFY_PASSED' or 'VERIFY_FAILED'
+  /// to cerr for each image (this is included for use in testing)
+  int m_verify_data = 0;
+
+  /// cache; only used when running with --verify_data
+  std::unordered_map<std::string, conduit::Node> m_verify_nodes;
+
+  /// only used when running with --verify_data
+  mutable std::ofstream m_verify_stream;
+
+  /// called by load() to deal with initialization for the --verify_data flag
+  void init_verify_data();
+
+  /// only used with --verify_data
+  std::string m_verify_data_fn;
+
+  /// only used with --verify_data
+  conduit::Node *m_cur_node;
+
+  /// only used with --verify_data
+  void verify_image(const ch_t* emi_data, size_t num_vals, int data_id, std::string image_name) const;
+
   /// once the sample_list class and file formats are generalized and
   /// finalized, it should (may?) be possible to code a single
   /// preload_data_store method.
