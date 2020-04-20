@@ -279,6 +279,9 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// only used with --verify_data
   void verify_image(const ch_t* emi_data, size_t num_vals, int data_id, std::string image_name) const;
 
+  /// only used with --verify_data
+  void verify_scalars(const std::vector<scalar_t> &scalars, int data_id) const;
+
   /// once the sample_list class and file formats are generalized and
   /// finalized, it should (may?) be possible to code a single
   /// preload_data_store method.

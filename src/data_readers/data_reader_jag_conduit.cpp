@@ -1419,6 +1419,9 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
     }
     case JAG_Scalar: {
       const std::vector<scalar_t> scalars(get_scalars(data_id, sample));
+      if (m_verify_data) {
+        verify_scalars(scalars, data_id);
+      }
       set_minibatch_item<scalar_t>(X, mb_idx, scalars.data(), get_linearized_scalar_size());
       break;
     }
@@ -1681,6 +1684,45 @@ void data_reader_jag_conduit::verify_image(const ch_t* emi_data, size_t num_vals
     //TODO: read image from file and compare
   }
 }
+
+void data_reader_jag_conduit::verify_scalars(const std::vector<scalar_t> &scalars, int data_id) const {
+  double min = DBL_MAX;
+  double max = -DBL_MAX;
+  int num_zeros = 0;
+  double total = 0.;
+  for (size_t j=0; j<scalars.size(); j++) {
+    if (scalars[j] < min) min = scalars[j];
+    if (scalars[j] > max) max = scalars[j];
+    if (scalars[j] == 0) ++num_zeros;
+    total += scalars[j];
+  }
+
+  const std::string filename = (*m_cur_node)['/' + LBANN_DATA_ID_STR(data_id) + "/filename"].as_string();
+  const std::string sample_name = (*m_cur_node)['/' + LBANN_DATA_ID_STR(data_id) + "/sample_name"].as_string();
+
+  // strip of white space
+  size_t kk = 0;
+  for (size_t j=0; j<sample_name.size(); j++) {
+    if (sample_name[j] == ' ') {
+      ++kk;
+    }
+  }
+  std::string sample_name_2 = sample_name.substr(kk);
+
+  std::stringstream s;
+  s << std::endl << "verify_scalars; filename: " << filename 
+    << "\nsample name: "  << sample_name_2 << std::endl
+    << "num zero: " << num_zeros << " min: " << min
+    << " max: " << max << " avg: " << total/scalars.size() << std::endl;
+
+  if (is_master()) {
+    std::cerr << s.str() << std::endl;
+  }
+  if (m_verify_data > 1) {
+    m_verify_stream << s.str() << std::endl;
+  }
+}
+
 
 } // end of namespace lbann
 
