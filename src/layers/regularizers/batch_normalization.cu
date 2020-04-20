@@ -296,8 +296,104 @@ __global__ void backprop2_kernel(
 
 } // namespace
 
+#ifdef LBANN_HAS_DISTCONV
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute() {
+  assert_always(Dev == El::Device::GPU);
+  assert_always(T_layout == data_layout::DATA_PARALLEL);
+
+  auto &l = dynamic_cast<batch_normalization_layer<
+    TensorDataType, T_layout, Dev>&>(this->layer());
+
+  const bool is_training =
+      l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
+
+  assert0(dc::tensor::View(
+      m_scale, l.get_data_type_weights(0).get_values().LockedMatrix().LockedBuffer()));
+  assert0(dc::tensor::View(
+      m_bias, l.get_data_type_weights(1).get_values().LockedMatrix().LockedBuffer()));
+  assert0(dc::tensor::View(
+      m_running_mean, l.get_data_type_weights(2).get_values().Matrix().Buffer()));
+  assert0(dc::tensor::View(
+      m_running_var, l.get_data_type_weights(3).get_values().Matrix().Buffer()));
+
+  m_bn->forward_stage1(this->get_prev_activations(), m_mean,
+                       m_var, is_training);
+
+  if (l.m_statistics_group_size == 0) {
+    l.m_comm->allreduce(*l.m_mean_and_var, l.m_mean_and_var->RedundantComm(),
+                        El::mpi::SUM);
+  } else if (l.m_statistics_group_size == 1) {
+    // Local aggregation
+  } else {
+    LBANN_ERROR("statics_group_size must be either 0 or 1 for now.");
+  }
+
+  m_bn->forward_stage2(this->get_prev_activations(),
+                       m_mean, m_var, m_running_mean,
+                       m_running_var, m_scale, m_bias,
+                       this->get_activations(), is_training);
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::bp_compute() {
+  assert_always(Dev == El::Device::GPU);
+  assert_always(T_layout == data_layout::DATA_PARALLEL);
+
+  auto &l = dynamic_cast<batch_normalization_layer<
+    TensorDataType, T_layout, Dev>&>(this->layer());
+
+  // Check execution mode
+  const bool is_training =
+      l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
+  assert_always(is_training);
+
+  assert0(dc::tensor::View(
+      m_scale, l.get_data_type_weights(0).get_values().LockedMatrix().LockedBuffer()));
+
+  m_bn->backward_stage1(this->get_prev_activations(),
+                        this->get_prev_error_signals(),
+                        m_mean, m_var, m_scale,
+                        m_scale_gradient, m_bias_gradient,
+                        m_mean_gradient, m_var_gradient);
+
+  // Verbatim copy from bp_compute_gpu
+  // Accumulate gradients
+  if (is_training) {
+    if (l.m_statistics_group_size == 0) {
+      l.m_comm->allreduce(*l.m_mean_and_var_gradient,
+                          l.m_mean_and_var_gradient->RedundantComm(),
+                          El::mpi::SUM);
+    }
+  } else {
+    Zero(*l.m_mean_and_var_gradient);
+  }
+
+  auto* scale_optimizer = l.get_data_type_weights(0).get_optimizer();
+  if (scale_optimizer != nullptr) {
+    scale_optimizer->add_to_gradient(*l.m_scale_gradient, TensorDataType{1}, true);
+  }
+  auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+  if (bias_optimizer != nullptr) {
+    bias_optimizer->add_to_gradient(*l.m_bias_gradient, TensorDataType{1}, true);
+  }
+
+  m_bn->backward_stage2(this->get_prev_activations(), this->get_prev_error_signals(),
+                        m_mean, m_var, m_scale, m_mean_gradient, m_var_gradient,
+                        this->get_error_signals());
+}
+
+#endif // LBANN_HAS_DISTCONV
+
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    get_distconv_adapter().fp_compute();
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
 
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
@@ -407,6 +503,12 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+#ifdef LBANN_HAS_DISTCONV
+  if (this->distconv_enabled()) {
+    get_distconv_adapter().bp_compute();
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
 
   const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 

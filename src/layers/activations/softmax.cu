@@ -263,10 +263,30 @@ __global__ void bp_kernel(size_t height,
   }
 }
 
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void fp_compute_distconv(softmax_distconv_adapter<TensorDataType, Layout, Device> &dc) {
+  dc.m_softmax->forward(dc.get_prev_activations(), dc.get_activations());
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void bp_compute_distconv(softmax_distconv_adapter<TensorDataType, Layout, Device> &dc) {
+  dc.m_softmax->backward(dc.get_activations(),
+                         dc.get_prev_error_signals(),
+                         dc.get_error_signals());
+}
+#endif // LBANN_HAS_DISTCONV
+
 } // namespace
 
 template <typename TensorDataType>
 void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+#ifdef LBANN_HAS_DISTCONV
+  if (l.distconv_enabled()) {
+    fp_compute_distconv(l.get_distconv_adapter());
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
 
   cudnnSoftmaxMode_t cudnn_softmax_mode;
   switch(l.m_mode) {
@@ -303,6 +323,12 @@ void fp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, E
 
 template <typename TensorDataType>
 void bp_compute_impl(softmax_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
+#ifdef LBANN_HAS_DISTCONV
+  if (l.distconv_enabled()) {
+    bp_compute_distconv(l.get_distconv_adapter());
+    return;
+  }
+#endif // LBANN_HAS_DISTCONV
 
   cudnnSoftmaxMode_t cudnn_softmax_mode;
   switch(l.m_mode) {
