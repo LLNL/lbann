@@ -916,7 +916,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
         //need to pad the sample name to ensure all conduit nodes
         //are the same length
         char b[80];
-        sprintf(b, "%79s", sample_name.c_str());
+        sprintf(b, "%20s", sample_name.c_str());
         node['/' + LBANN_DATA_ID_STR(index) + "/sample_name"] = b;
       }
 
@@ -1621,15 +1621,22 @@ void data_reader_jag_conduit::init_verify_data() {
 }
 
 void data_reader_jag_conduit::verify_image(const ch_t* emi_data, size_t num_vals, int data_id, std::string image_name) const {
-  // leading zero
+
+  // leading zero and total zero
   int leading_zero_count = 0;
+  int zero_count = 0;
+  bool leading_flag = true;
   for (size_t j=0; j<num_vals; j++) {
     if (emi_data[j] == 0.) {
-      ++leading_zero_count;
+      ++zero_count;
+      if (leading_flag) {
+        ++leading_zero_count;
+      }
     } else {
-      break;
+      leading_flag = false;
     }
   }
+  int non_zero_count = num_vals - zero_count;
 
   // trailing zero
   int trailing_zero_count = 0;
@@ -1641,35 +1648,32 @@ void data_reader_jag_conduit::verify_image(const ch_t* emi_data, size_t num_vals
     }
   }
 
-std::cerr << "4; num_vals: "<< num_vals << "\n";
-  // zero count
-  int zero_count = 0;
-if (is_master()) {
-  for (size_t j=0; j<num_vals; j++) {
-    if (emi_data[j] == 0.) {
-      ++zero_count;
-    }
-  }
-}
-std::cerr << "5\n";
-
   const std::string filename = (*m_cur_node)['/' + LBANN_DATA_ID_STR(data_id) + "/filename"].as_string();
   const std::string sample_name = (*m_cur_node)['/' + LBANN_DATA_ID_STR(data_id) + "/sample_name"].as_string();
 
-std::cerr << "6\n";
+  // strip of white space
+  size_t kk = 0;
+  for (size_t j=0; j<sample_name.size(); j++) {
+    if (sample_name[j] == ' ') {
+      ++kk;
+    }
+  }
+  std::string sample_name_2 = sample_name.substr(kk);
+
   std::stringstream s;
-  s << std::endl << filename << " :: "  << sample_name << " :: " 
-    << image_name <<  std::endl
-    << "num_vals: " << num_vals << " zero count: " << zero_count
-    << " non-zero count: " << num_vals-zero_count << std::endl
-    << "leading zero count: " << leading_zero_count
-    << " trailing zero count: " << trailing_zero_count << std::endl;
+  s << std::endl << "filename: " << filename 
+    << "\nsample name: "  << sample_name_2 << " image name: " << image_name
+    << "\nzero: " << zero_count << " non-zero: " << non_zero_count
+    << "\nsanity: zero+non-zero; should = num_vals: " 
+    << (zero_count+non_zero_count) << " (num_vals=" << num_vals << ")"
+    << "\nleading zero: " << leading_zero_count
+    << " trailing zero: " << trailing_zero_count 
+    << "\nsanity: num_vals-(leading+trailing); should be > 0: "
+    << num_vals-(leading_zero_count+trailing_zero_count) << std::endl;
 
   if (is_master()) {
     std::cerr << s.str() << std::endl;
   }
-m_comm->global_barrier();
-exit(9);
   if (m_verify_data > 1) {
     m_verify_stream << s.str() << std::endl;
   }
