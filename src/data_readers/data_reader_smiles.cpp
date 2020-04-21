@@ -133,7 +133,7 @@ void smiles_data_reader::load() {
 
 void smiles_data_reader::do_preload_data_store() {
   if (is_master()) {
-    std::cout << "starting smiles_data_reader::do_preload_data_store; num indices: " 
+    std::cout << "starting do_preload_data_store; num indices: " 
               << utils::commify(m_shuffled_indices.size()) 
               << " for role: " << get_role() << std::endl;
   }
