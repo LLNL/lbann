@@ -47,8 +47,11 @@ input_distconv_adapter(Layer& layer):  data_type_distconv_adapter<TensorDataType
   // layer. Other data readers are assumed to return a complete
   // sample, thus shuffling is required (unless sample-parallel
   // strategy is given). Conceptually, it seems to make sense if a
-  // data reader is annotated with a parallel strategy.
-  m_shuffle_required = dynamic_cast<hdf5_reader*>(l.get_data_reader()) != nullptr;
+  // data reader is annotated with a parallel strategy. Note that,
+  // when the HDF5 data reader is used, it is assumed that it is used
+  // in all execution modes.
+  auto training_dr = l.get_data_reader(execution_mode::training);
+  m_shuffle_required = dynamic_cast<hdf5_reader*>(training_dr) == nullptr;
   if (m_shuffle_required) {
     m_shufflers.resize(layer.get_num_children());
   }
@@ -314,41 +317,9 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev, IODataTy
       continue;
     }
 
-    // This should not incur communication as the distributions should
-    // be the same except for overlapping width. Device copy should be
-    // done with cudaMemcpy3D.
     prof_region_begin("copy-to-device", prof_colors[1], false);
-    // TODO: Copy doesn't seem to be working correctly, likely because
-    // of the additional halo region in the destination buffer. For
-    // now, avoid this with the manual copy below. Also, in the
-    // Cosmoflow case, "input_tensor" is not a pinned buffer.
-    auto host_halo = host_tensor.get_halo_width();
-    auto device_halo = device_tensor_io_type.get_halo_width();
-    if (host_halo == device_halo) {
-      assert0(dc::tensor::Copy(
-          device_tensor_io_type, host_tensor, stream));
-    } else {
-      if (m_copy_pinned_buffer == nullptr) {
-        auto buf_size = device_tensor_io_type.get_local_real_size() * sizeof(IODataType);
-        CHECK_CUDA(cudaMallocHost(&m_copy_pinned_buffer, buf_size));
-      }
-      int chan_dim = host_tensor.get_local_shape()[::distconv::get_channel_dim()];
-      size_t block_size = host_tensor.get_local_size() / chan_dim;
-      // Pack to temporary pinned buffer
-      for (int i = 0; i < chan_dim; ++i) {
-        dc::IndexVector base_idx(dc::get_num_dims(this->layer()), 0);
-        base_idx[dc::get_channel_dim()] = i;
-        auto dev_off = device_tensor_io_type.get_local_offset(base_idx);
-        auto host_off = block_size * i;
-        std::memcpy(m_copy_pinned_buffer + dev_off,
-                    host_tensor.get_const_buffer() + host_off,
-                    sizeof(short) * block_size);
-      }
-      CHECK_CUDA(cudaMemcpyAsync(
-          device_tensor_io_type.get_buffer(),  m_copy_pinned_buffer,
-          device_tensor_io_type.get_local_real_size() * sizeof(IODataType),
-          cudaMemcpyHostToDevice, stream));
-    }
+    assert0(dc::tensor::Copy(
+        device_tensor_io_type, host_tensor, stream));
     prof_region_end("copy-to-device", false);
 
     prof_region_begin("cast", prof_colors[1], false);
