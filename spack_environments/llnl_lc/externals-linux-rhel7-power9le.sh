@@ -60,6 +60,12 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       modules:
         python@3.7.2 arch=linux-rhel7-power9le: python/3.7.2
 
+    rdma-core::
+      buildable: False
+      version: [20]
+      paths:
+        rdma-core@20 arch=linux-rhel7-power9le: /usr
+
     spectrum-mpi::
       buildable: False
       version: [rolling-release]
