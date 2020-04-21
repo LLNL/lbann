@@ -138,6 +138,7 @@ void smiles_data_reader::do_preload_data_store() {
               << " for role: " << get_role() << std::endl;
   }
 
+  m_data_store->set_node_sizes_vary();
   const std::string infile = get_file_dir() + "/" + get_data_filename();
   std::ifstream in(infile.c_str());
   if (!in) {
@@ -205,11 +206,9 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   for (j = 0; j < n; ++j) {
     X(j, mb_idx) = v[j]; 
   }
-  /*
   for (; j<m_linearized_data_size; j++) {
     X(j, mb_idx) = m_pad;
   }
-  */
   
   return true;
 }
@@ -366,9 +365,11 @@ void smiles_data_reader::encode_smiles(const std::string &sm, std::vector<short>
       data.push_back(m_vocab[w]);
     }
   }
+  /*
   for (size_t j = data.size(); j<(size_t)m_linearized_data_size; j++) {
     data.push_back(m_pad);
   }
+  */
 }
 
 

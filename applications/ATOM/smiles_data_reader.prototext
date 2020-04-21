@@ -1,0 +1,15 @@
+data_reader {
+  reader {
+    name: "smiles"
+    role: "train"
+    shuffle: true
+    percent_of_data_to_use: 1.0
+
+    # all2018q1-2REAL680SMILES.smiles should be moved to lustre!
+    data_filedir: "/usr/workspace/wsa/enamine"
+    data_filename: "all2018q1-2REAL680SMILES.smiles"
+
+    #data_filedir: "/p/lustre2/hysom"
+    #data_filename: "dataset_v1.csv"
+  }
+}
