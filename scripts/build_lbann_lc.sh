@@ -607,7 +607,7 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" -
 		    ;;
 	        rzhasgpu)
 		    . /usr/share/[mM]odules/init/bash
-		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+		    CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda}
 		    ;;
 		pascal)
 		    CUDA_TOOLKIT_MODULE=${CUDA_TOOLKIT_MODULE:-cuda/10.1.168}
