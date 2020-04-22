@@ -107,8 +107,6 @@ categorical_accuracy_strategy::get_image_indices(model const& m) const {
     *(distdata.grid), distdata.root);
   El::Copy(categorized_correctly_dist, categorized_correctly);
 
-//FIXME: Should width of img_layer and accuracy_layer activations be tested here?
-
   if (categorized_correctly.Height() != El::Int(1))
     LBANN_ERROR("Tom was wrong about this matrix. Oops.");
 
@@ -244,13 +242,11 @@ autoencoder_strategy::get_image_indices(model const& m) const {
       auto const& sample_index = shuffled_indices[minibatch_start_index + ii];
 
       if (m_tracked_images.find(sample_index) != m_tracked_images.end()){
-        //std::cout << "I found a tracked index! Idx = " << sample_index << "\n";
         img_indices.push_back(std::make_pair(ii, sample_index));
       }
       else if(m_tracked_images.size() < m_num_images) {
-         m_tracked_images.insert(sample_index);
+        m_tracked_images.insert(sample_index);
         img_indices.push_back(std::make_pair(ii, sample_index));
-        //std::cout << "Adding to tracked indices Idx = " << sample_index << "\n";
       }
 
       flush(std::cout);
