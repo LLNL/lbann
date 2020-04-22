@@ -354,18 +354,9 @@ template <typename TensorDataType,
           typename InputType>
 bool input_layer<TensorDataType, T_io_buffer, T_layout, Dev, InputType>::
 keep_original_outputs(int index) const {
-  if (index == 0) {
-    return data_type_layer<TensorDataType>::keep_original_outputs(index);
-  } else {
-    assert_eq(index, 1);
-    if (this->distconv_enabled() &&
-        get_distconv_adapter().is_input_processed(1)
-        && !get_distconv_adapter().child_copy_required(index)) {
-      return false;
-    } else {
-      return true;
-    }
-  }
+  // The original output matrices are always needed as we copy them
+  // into distconv tensors.
+  return true;
 }
 
 template <typename TensorDataType,
