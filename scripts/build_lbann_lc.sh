@@ -587,7 +587,7 @@ fi
 # Initialize GPU libraries
 ################################################################
 
-if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]; then
+if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" -o "${CLUSTER}" == "rzhasgpu" ]; then
     HAS_GPU=1
     WITH_CUDA=${WITH_CUDA:-ON}
     WITH_CUDNN=ON
@@ -602,6 +602,10 @@ if [ "${CLUSTER}" == "surface" -o "${CORAL}" -eq 1 -o "${CLUSTER}" == "pascal" ]
     # Hack for surface
 	case $CLUSTER in
 		surface)
+		    . /usr/share/[mM]odules/init/bash
+		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
+		    ;;
+	        rzhasgpu)
 		    . /usr/share/[mM]odules/init/bash
 		    CUDA_TOOLKIT_MODULE=cudatoolkit/9.2
 		    ;;

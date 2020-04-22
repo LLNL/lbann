@@ -20,6 +20,7 @@ _system_params = {
     'pascal':   SystemParams(36, 2, 'slurm'),
     'quartz':   SystemParams(36, 0, 'slurm'),
     'surface':  SystemParams(16, 2, 'slurm'),
+    'rzhasgpu': SystemParams(16, 4, 'slurm'),
     'lassen':   SystemParams(44, 4, 'lsf'),
     'ray':      SystemParams(40, 4, 'lsf'),
     'sierra':   SystemParams(44, 4, 'lsf'),
