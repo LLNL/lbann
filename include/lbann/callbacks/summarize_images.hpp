@@ -45,14 +45,16 @@ class image_output_strategy {
 public:
   virtual std::vector<std::pair<size_t, El::Int>>
   get_image_indices(model const&) const = 0;
+  virtual std::string get_tag(std::string const& layer_name,
+                              El::Int index, El::Int epoch) const = 0;
   virtual ~image_output_strategy() = default;
 
 }; //class image_output_strategy
 
 
 /** @class CategoricalAccuracy
- *  @brief Subclass of image_output_strategy to dump categorized images
- *  Dump images to event files based on categorization criteria
+ *  @brief Subclass of image_output_strategy to dump categorized
+ *  images to event files based on categorization criteria
  */
 class categorical_accuracy_strategy : public image_output_strategy {
 public:
@@ -80,6 +82,10 @@ public:
    */
   std::vector<std::pair<size_t, El::Int>>
   get_image_indices(model const& m) const final;
+
+  /** @brief Construct tag for image */
+  std::string get_tag(std::string const& layer_name,
+                      El::Int index, El::Int epoch) const final;
 
 private:
    /** @brief Tests whether image should be dumped based on criteria
@@ -121,6 +127,10 @@ public:
    */
   std::vector<std::pair<size_t, El::Int>>
   get_image_indices(model const& m) const final;
+
+  /** @brief Construct tag for image */
+  std::string get_tag(std::string const& layer_name,
+                      El::Int index, El::Int epoch) const final;
 
 private:
 
@@ -174,8 +184,6 @@ private:
   /** @brief Add image to event file */
   void dump_images_to_summary(model const& m) const;
 
-  /** @brief Construct tag for image */
-  std::string get_tag(El::Int index, El::Int epoch) const;
 
 private:
 

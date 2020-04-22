@@ -83,13 +83,12 @@ construct_strategy(google::protobuf::Message const& proto_msg) {
   return factory.create_object(msg.GetDescriptor()->name(), msg);
 }
 
-}// namespace
+}// namespace (Strategy construction)
 
 
 // categorical_accuracy_strategy
 std::vector<std::pair<size_t, El::Int>>
 categorical_accuracy_strategy::get_image_indices(model const& m) const {
-//std::cout << "Test block 1 MORE VISIBLE TEXT AND STUFF" << std::endl;
   static size_t img_counter = 0;
   static size_t epoch_counter = 0;
   auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(m.get_execution_context());
@@ -127,7 +126,6 @@ categorical_accuracy_strategy::get_image_indices(model const& m) const {
       }
 
       if(img_indices.size() > static_cast<size_t>(num_samples) || img_counter >= m_num_images){
-        std::cout << "I should print " << m_num_images << " images." << std::endl;
         break;
       }
 
@@ -152,6 +150,13 @@ bool categorical_accuracy_strategy::meets_criteria(
     return true;
   }
   return false;
+}
+
+std::string categorical_accuracy_strategy::get_tag(std::string const& layer_name,
+                                                   El::Int index, El::Int epoch) const {
+  // Sort by epoch
+  return build_string("epoch ", epoch, "/layer: ", layer_name,
+                      "/sample_index-", index);
 }
 
 // Builder function
@@ -188,8 +193,6 @@ std::ostream& operator<<(std::ostream& os, std::vector<T> const& v)
 std::vector<std::pair<size_t, El::Int>>
 autoencoder_strategy::get_image_indices(model const& m) const {
 
-std::cout << "Test block 2 MORE VISIBLE TEXT AND STUFF" << std::endl;
-
   // Find the input layer
   auto const& input_layer = dynamic_cast<generic_input_layer<DataType> const&>(
     get_layer_by_name(m, m_input_layer_name));
@@ -206,8 +209,8 @@ std::cout << "Test block 2 MORE VISIBLE TEXT AND STUFF" << std::endl;
   bool const last_mb = (current_step == total_steps);
   size_t const mb_size =
     (last_mb
-     ? data_reader.get_global_mini_batch_size()
-     : data_reader.get_global_last_mini_batch_size());
+     ? data_reader.get_global_last_mini_batch_size()
+     : data_reader.get_global_mini_batch_size());
 
   // FIXME (trb 08/20/19): Based on my testing, the data reader will
   // reshuffle its indices before the end-of-batch callbacks are
@@ -245,9 +248,7 @@ std::cout << "Test block 2 MORE VISIBLE TEXT AND STUFF" << std::endl;
         img_indices.push_back(std::make_pair(ii, sample_index));
       }
       else if(m_tracked_images.size() < m_num_images) {
- std::cout << "Test block 3 MORE VISIBLE TEXT AND STUFF (num_images is "
-           << m_num_images << ")" << std::endl;
-        m_tracked_images.insert(sample_index);
+         m_tracked_images.insert(sample_index);
         img_indices.push_back(std::make_pair(ii, sample_index));
         //std::cout << "Adding to tracked indices Idx = " << sample_index << "\n";
       }
@@ -256,7 +257,16 @@ std::cout << "Test block 2 MORE VISIBLE TEXT AND STUFF" << std::endl;
     }
   }
   return img_indices;
+
 }
+
+std::string autoencoder_strategy::get_tag(std::string const& layer_name,
+                                      El::Int index, El::Int epoch) const {
+  // Sort by index
+  return build_string("image id ", index, "/layer: ", layer_name,
+                      "/epoch ", epoch);
+
+}// End autoencoder strategy
 
 // Builder function
 std::unique_ptr<image_output_strategy>
@@ -289,22 +299,15 @@ summarize_images::summarize_images(std::shared_ptr<lbann_summary> const& summari
 
 void summarize_images::on_batch_evaluate_end(model* m) {
 
-std::cout << "Test block 4 MORE VISIBLE TEXT AND STUFF" << std::endl;
-
   auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(m->get_execution_context());
   if (exe_ctx.get_epoch() % m_epoch_interval != 0)
     return;
 
   if (m->get_execution_context().get_execution_mode() == execution_mode::validation)
     dump_images_to_summary(*m);
-
-// FIXME: Dump original image for Autoencoder Strategy
-//  if(m->get_epoch() > 1)
-//    dump_images_to_summary(*m_img_layer, m->get_step());
 }
 
 void summarize_images::dump_images_to_summary(model const& m) const {
-std::cout << "Test block 5 MORE VISIBLE TEXT AND STUFF" << std::endl;
 
   auto img_indices = m_strategy->get_image_indices(m);
 
@@ -317,10 +320,6 @@ std::cout << "Test block 5 MORE VISIBLE TEXT AND STUFF" << std::endl;
   El::Copy(layer_activations, all_images);
 
   if (all_images.CrossRank() == all_images.Root()) {
-    std::cout << "IMG_INDICES={";
-    for (auto const& i : img_indices)
-      std::cout << " " << i.first;
-    std::cout << " }" << std::endl;
     auto const& local_images = all_images.LockedMatrix();
     auto dims = layer.get_output_dims();
 
@@ -330,27 +329,19 @@ std::cout << "Test block 5 MORE VISIBLE TEXT AND STUFF" << std::endl;
       auto const& sample_index = img_id.second;
       if (col_index >= size_t(local_images.Width())) {
         LBANN_ERROR(
-            "column index (", col_index, "( is greater than Matrix height (",
-            local_images.Height(), ")");
+            "Column index ", col_index, " is greater than Matrix width ",
+            local_images.Width());
       }
        auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(
          m.get_execution_context());
-      auto image_tag =  get_tag(sample_index, exe_ctx.get_epoch());
+       auto image_tag =  m_strategy->get_tag(m_img_source_layer_name,
+                                             sample_index, exe_ctx.get_epoch());
       auto const local_image = local_images(El::ALL, El::IR(col_index));
 
       this->m_summarizer->report_image(
         image_tag, m_img_format, local_image, dims, m.get_execution_context().get_step());
     }
   }
-}
-
-std::string summarize_images::get_tag(El::Int index, El::Int epoch) const {
-#ifdef SORT_BY_EPOCH
-  return build_string("epoch ", epoch,
-                      "/sample_index-", index);
-#else /* SORT_BY_INDEX */
-  return build_string("image id ", index, "/epoch ", epoch);
-#endif
 }
 
 Layer const& get_layer_by_name(model const& m,

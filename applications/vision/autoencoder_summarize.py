@@ -79,7 +79,7 @@ dropout1 = lbann.Dropout(relu1,
 decode1 = lbann.FullyConnected(dropout1,
                                name="decode1",
                                data_layout="model_parallel",
-                               hint_layer="image",
+                               hint_layer=image,
                                has_bias=True)
 
 reconstruction = lbann.Sigmoid(decode1,
@@ -96,55 +96,38 @@ dropout2 = lbann.Dropout(reconstruction,
 mean_squared_error = lbann.MeanSquaredError([dropout2, image],
                              name="mean_squared_error")
 
+layer_term = lbann.LayerTerm(mean_squared_error)
+obj = lbann.ObjectiveFunction(layer_term)
 
-
-preds = resnet(images)
-probs = lbann.Softmax(preds)
-cross_entropy = lbann.CrossEntropy(probs, labels)
-top1 = lbann.CategoricalAccuracy(probs, labels, name='louise')
-top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
-layers = list(lbann.traverse_layer_graph(input_))
-
-# Setup objective function
-l2_reg_weights = set()
-for l in layers:
-    if type(l) == lbann.Convolution or type(l) == lbann.FullyConnected:
-        l2_reg_weights.update(l.weights)
-l2_reg = lbann.L2WeightRegularization(weights=l2_reg_weights, scale=1e-4)
-obj = lbann.ObjectiveFunction([cross_entropy, l2_reg])
-
-# Setup model
-metrics = [lbann.Metric(top1, name='top-1 accuracy', unit='%'),
-           lbann.Metric(top5, name='top-5 accuracy', unit='%')]
+metrics = [lbann.Metric(mean_squared_error, name="mean squared error")]
 
 img_strategy = lbann.AutoencoderStrategy(
     input_layer_name='input',
     num_tracked_images=10)
 
-img_dump_cb = lbann.CallbackSummarizeImages(
+summarize_images = lbann.CallbackSummarizeImages(
     selection_strategy=img_strategy,
-    image_source_layer_name='images',
-    epoch_interval=1)
+    image_source_layer_name='dropout2',
+    epoch_interval=10)
+
+summarize_input_layer = lbann.CallbackSummarizeImages(
+    selection_strategy=img_strategy,
+    image_source_layer_name=image.name,
+    epoch_interval=10000)
 
 callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer(),
-#             lbann.CallbackSummary(batch_interval = 2,
-#                                   mat_interval = 3),
-             lbann.CallbackDropFixedLearningRate(
-                 drop_epoch=[30, 60, 80], amt=0.1),
-             img_dump_cb]
-if args.warmup:
-    callbacks.append(
-        lbann.CallbackLinearGrowthLearningRate(
-            target=0.1 * args.mini_batch_size / 256, num_epochs=5))
+             summarize_images,
+             summarize_input_layer]
+
+layers = list(lbann.traverse_layer_graph(input_))
 model = lbann.Model(args.mini_batch_size,
                     args.num_epochs,
                     layers=layers,
                     objective_function=obj,
                     metrics=metrics,
                     callbacks=callbacks,
-                    random_seed=args.random_seed,
-                    summary_dir="/g/g13/graham63/workspace/code/lbann")
+                    summary_dir="/g/g13/graham63/workspace/code/lbann/event_files")
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)
@@ -158,11 +141,12 @@ else:
     data_reader = data.imagenet.make_data_reader(num_classes=num_classes)
 
 # Setup trainer
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(random_seed=args.random_seed)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 kwargs['lbann_args'] = '--data_reader_percent='+str(args.data_reader_percent)
+
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
                            **kwargs)

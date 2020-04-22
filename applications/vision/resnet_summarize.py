@@ -146,7 +146,7 @@ img_strategy = lbann.CategoricalAccuracyStrategy(
 img_dump_cb = lbann.CallbackSummarizeImages(
     selection_strategy=img_strategy,
     image_source_layer_name='images',
-    input_layer_name='input',
+#    input_layer_name='input',
     epoch_interval=1)
 
 callbacks = [lbann.CallbackPrint(),
@@ -166,7 +166,6 @@ model = lbann.Model(args.mini_batch_size,
                     objective_function=obj,
                     metrics=metrics,
                     callbacks=callbacks,
-                    random_seed=args.random_seed,
                     summary_dir="/g/g13/graham63/workspace/code/lbann/event_files")
 
 # Setup optimizer
@@ -181,7 +180,7 @@ else:
     data_reader = data.imagenet.make_data_reader(num_classes=num_classes)
 
 # Setup trainer
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(random_seed=args.random_seed)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
