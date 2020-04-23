@@ -178,6 +178,16 @@ void init_data_readers(
       reader_numpy_npz->set_has_responses(!readme.disable_responses());
       reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
       reader = reader_numpy_npz;
+    } else if (name == "cosmoflow") {
+      auto* reader_cosmoflow = new cosmoflow_reader(shuffle);
+      auto filedir = readme.data_filedir();
+      if(!endsWith(filedir, "/")) {
+        filedir = filedir + "/";
+      }
+      const auto paths = glob(filedir + readme.data_file_pattern());
+      reader_cosmoflow->set_npz_paths(paths);
+      reader_cosmoflow->set_scaling_factor_int16(readme.scaling_factor_int16());
+      reader = reader_cosmoflow;
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
