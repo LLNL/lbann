@@ -424,6 +424,12 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
       m_persistent_error_signals = true;
   }
 
+  // If no CUB, force persistent error signals:
+#if defined(HYDROGEN_HAVE_CUDA) && !defined(HYDROGEN_HAVE_CUB)
+  if (this->get_device_allocation() == El::Device::GPU)
+    m_persistent_error_signals = true;
+#endif
+
   // Figure out how to make new matrices
   std::unique_ptr<MatrixBuilderType> mat_builder =
     MakeMatBuilder<TensorDataType>(
