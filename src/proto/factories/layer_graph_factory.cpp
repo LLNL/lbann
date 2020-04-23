@@ -215,6 +215,7 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
 #include "lbann/macros/instantiate_device.hpp"
 
 #undef TEMPLATE_INSTANTIATION
+
     // Set up parallel strategy.
     ParallelStrategy& ps = l->get_parallel_strategy();
     ps.sample_groups = proto_layer.parallel_strategy().sample_groups();
