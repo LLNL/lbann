@@ -173,6 +173,7 @@ public:
     local_fp_compute();
     this->get_comm()->allreduce(*m_workspace, m_workspace->RedundantComm());
     El::Copy(*m_workspace, this->get_activations());
+
   }
 
   void bp_compute() override {
