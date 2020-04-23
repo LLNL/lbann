@@ -74,14 +74,16 @@ private:
 
   //==== start hack to make it work fast ====
   
-  // maps: sample_id to offset wrt m_data
+  // maps: sample_id to <sample offset, wrt m_data[0], sample_size>
   std::unordered_map<int, std::pair<size_t, short>> m_sample_lookup;
 
   std::vector<char> m_data;
 
+  bool m_fast_experimental = false;
+
   void get_sample(int sample_id, std::vector<short> &sample_out);
 
-  bool m_fast_experimental = false;
+  void setup_fast_experimental();
 
   //==== end hack to make it work fast ====
 
