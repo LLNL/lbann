@@ -14,7 +14,7 @@ from lbann.util import str_list
 cur_dir = dirname(abspath(__file__))
 data_reader_prototext = join(dirname(cur_dir),
                              'data',
-                             'data_reader_jag_conduit_lassen.prototext')
+                             'jag_conduit_reader.prototext')
 metadata_prototext = join(dirname(cur_dir),
                              'data',
                              'jag_100M_metadata.prototext')
@@ -40,6 +40,9 @@ parser.add_argument(
 parser.add_argument(
     '--num-nodes', action='store', default=4, type=int,
     help='number of nodes (default: 4)', metavar='NUM')
+parser.add_argument(
+    '--ppn', action='store', default=4, type=int,
+    help='processes per node (default: 4)', metavar='NUM')
 parser.add_argument(
     '--ydim', action='store', default=16399, type=int,
     help='image+scalar dim (default: 64*64*4+15=16399)', metavar='NUM')
@@ -76,10 +79,14 @@ parser.add_argument(
 parser.add_argument(
     '--pretrained-dir', action='store', default=' ', type=str,
     help='pretrained WAE dir  (default: empty)', metavar='NAME')
+parser.add_argument(
+    '--procs-per-trainer', action='store', default=0, type=int,
+    help='processes per trainer (default: 0)', metavar='NUM')
 args = parser.parse_args()
 
 if not(args.pretrained_dir):
-  print("WARNING pretrained dir ", args.pretrained_dir, " is empty")
+  print("WARNING pretrained dir ", args.pretrained_dir, " is empty, default option assumes
+         pretrained autoencoder")
 
 def list2str(l):
     return ' '.join(l)
@@ -93,7 +100,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A',name='inp_data')
+    input = lbann.Input(target_mode='N/A',data_set_per_model=True,name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
     inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+args.xdim]),name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
@@ -169,9 +176,14 @@ def construct_model():
                  lbann.CallbackTimer()]
                                             
     # Construct model
+    #serialize io if using single trainer
+    serialize_io = (True if args.procs_per_trainer==0 
+                          or args.procs_per_trainer== args.num_nodes*args.ppn 
+                       else False) 
     return lbann.Model(args.mini_batch_size,
                        args.num_epochs,
                        weights=weights,
+                       serialize_io=serialize_io,
                        layers=layers,
                        metrics=metrics,
                        objective_function=obj,
@@ -181,7 +193,7 @@ def construct_model():
 if __name__ == '__main__':
     import lbann
     
-    trainer = lbann.Trainer()
+    trainer = lbann.Trainer(procs_per_trainer=args.procs_per_trainer)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
@@ -195,10 +207,8 @@ if __name__ == '__main__':
     status = lbann.contrib.launcher.run(trainer,model, data_reader_proto, opt,
                        scheduler='lsf',
                        nodes=args.num_nodes,
-                       procs_per_node=4,
-                       #reservation='dat_0318',
-                       partition='pdebug',
-                       account='lbpm',
+                       procs_per_node=args.ppn,
+                       partition='pbatch',
                        time_limit=480,
                        setup_only=False,
                        job_name=args.job_name,

@@ -14,7 +14,7 @@ from lbann.util import str_list
 model_zoo_dir = dirname(dirname(abspath(__file__)))
 data_reader_prototext = join(model_zoo_dir,
                              'data',
-                             'data_reader_jag_conduit_lassen.prototext')
+                             'jag_conduit_reader.prototext')
 metadata_prototext = join(model_zoo_dir,
                              'data',
                              'jag_100M_metadata.prototext')
@@ -34,6 +34,9 @@ parser.add_argument(
 parser.add_argument(
     '--num-nodes', action='store', default=4, type=int,
     help='number of nodes (default: 4)', metavar='NUM')
+parser.add_argument(
+    '--ppn', action='store', default=4, type=int,
+    help='processes per node (default: 4)', metavar='NUM')
 parser.add_argument(
     '--ydim', action='store', default=16399, type=int,
     help='image+scalar dim (default: 64*64*4+15=16399)', metavar='NUM')
@@ -61,6 +64,9 @@ parser.add_argument(
 parser.add_argument(
     '--dump-models', action='store', default='dump_models', type=str,
     help='dump models dir (default: jobdir/dump_models)', metavar='NAME')
+parser.add_argument(
+    '--procs-per-trainer', action='store', default=0, type=int,
+    help='processes per trainer (default: 0)', metavar='NUM')
 args = parser.parse_args()
 
 
@@ -121,15 +127,18 @@ def construct_model():
     callbacks = [lbann.CallbackPrint(),
                  lbann.CallbackTimer(),
                  lbann.CallbackSaveModel(dir=args.dump_models),
-                 lbann.CallbackLTFB(batch_interval=782,metric='recon_error',
-                                    low_score_wins=True),
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
                                       batch_interval=2)]
                                             
     # Construct model
+    #serialize io if using single trainer
+    serialize_io = (True if args.procs_per_trainer==0 
+                          or args.procs_per_trainer== args.num_nodes*args.ppn 
+                       else False) 
     return lbann.Model(args.mini_batch_size,
                        args.num_epochs,
+                       serialize_io=serialize_io,
                        weights=weights,
                        layers=layers,
                        metrics=metrics,
@@ -140,7 +149,7 @@ def construct_model():
 if __name__ == '__main__':
     import lbann
     
-    trainer = lbann.Trainer(procs_per_trainer=16)
+    trainer = lbann.Trainer(procs_per_trainer=args.procs_per_trainer)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
@@ -152,18 +161,14 @@ if __name__ == '__main__':
 
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     status = lbann.contrib.launcher.run(trainer,model, data_reader_proto, opt,
-                       #scheduler='slurm',
-                       account='lbpm',
-                       #account='cancer',
                        scheduler='lsf',
-                       #reservation='dat_0318',
                        partition='pbatch',
                        nodes=args.num_nodes,
-                       procs_per_node=4,
+                       procs_per_node=args.ppn,
                        time_limit=720,
                        setup_only=False, 
                        job_name=args.job_name,
-                       lbann_args=['--use_data_store',
+                       lbann_args=['--use_data_store --preload_data_store',
                                    f'--metadata={metadata_prototext}',
                                    f'--index_list_train={args.index_list_train}',
                                    f'--index_list_test={args.index_list_test}',

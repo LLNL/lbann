@@ -16,7 +16,7 @@ import datetime
 cur_dir = dirname(abspath(__file__))
 data_reader_prototext = join(dirname(cur_dir),
                              'data',
-                             'eval_jag_conduit_lassen.prototext')
+                             'jag_conduit_reader.prototext')
 metadata_prototext = join(dirname(cur_dir),
                              'data',
                              'jag_100M_metadata.prototext')
@@ -25,7 +25,6 @@ metadata_prototext = join(dirname(cur_dir),
 lbann_exe = abspath(lbann.lbann_exe())
 lbann_exe = join(dirname(lbann_exe), 'lbann_inf')
 
-print("LBANN inf Exe ", lbann_exe)
 # Command-line arguments
 parser = argparse.ArgumentParser()
 lbann.contrib.args.add_scheduler_arguments(parser)
@@ -38,6 +37,9 @@ parser.add_argument(
 parser.add_argument(
     '--num-nodes', action='store', default=4, type=int,
     help='number of nodes (default: 4)', metavar='NUM')
+parser.add_argument(
+    '--ppn', action='store', default=4, type=int,
+    help='processes per node (default: 4)', metavar='NUM')
 parser.add_argument(
     '--ydim', action='store', default=16399, type=int,
     help='image+scalar dim (default: 64*64*4+15=16399)', metavar='NUM')
@@ -72,10 +74,15 @@ parser.add_argument(
     '--dump-outputs', action='store', default='dump_outs', type=str,
     help='dump outputs dir (default: jobdir/dump_outs)', metavar='NAME')
 parser.add_argument(
-    '--pretrained-dir', action='store', default='/p/gpfs1/brainusr/datasets/macc_lbann/models/surrogate/model0.trainer.0.shared.training.epoch.100.step.78200/', type=str,
-    help='pretrained WAE surrogate dir  (default: GPFS)', metavar='NAME')
+    '--pretrained-dir', action='store', default=None, type=str,
+    help='pretrained WAE surrogate dir  (default: ' ')', metavar='NAME')
+parser.add_argument(
+    '--procs-per-trainer', action='store', default=0, type=int,
+    help='processes per trainer (default: 0)', metavar='NUM')
 args = parser.parse_args()
 
+print("Pretrained dir ", args.pretrained_dir)
+assert args.pretrained_dir, "evaluate script asssumes a pretrained MaCC model" 
 
 def list2str(l):
     return ' '.join(l)
@@ -126,7 +133,6 @@ def construct_model():
     L_cyc_x = lbann.MeanSquaredError(input_cyc,gt_x)  #param, x cycle loss, from latent space
 
     L_l2_y =  lbann.MeanSquaredError(output_fake,y_pred_fwd) #pred error into latent space (enc(y),fw(x))
-    #output cycle loss, how is output, since it is all in latent space
     L_cyc_y = lbann.MeanSquaredError(output_cyc,y_pred_fwd) # pred error into latent space (enc(y), fw(inv(enc(y))))
    
      
@@ -142,9 +148,6 @@ def construct_model():
     loss_gen1  = lbann.WeightedSum([L_l2_x,L_cyc_y], scaling_factors=f'1 {args.lamda_cyc}')
     #loss_gen1  =  L_l2_x + lamda_cyc*L_cyc_y
     
-    #for dump outputs
-    #conc_out = lbann.Concatenation([gt_x,wae_loss,img_sca_loss,dec_fw_inv_enc_y,
-    #                                L_l2_x,L_cyc_x,L_cyc_y], name='x_errors')
 
     conc_out = lbann.Concatenation([gt_x,wae_loss,img_sca_loss,dec_fw_inv_enc_y,
                                     L_l2_x], name='x_errors')
@@ -156,7 +159,6 @@ def construct_model():
     # Setup objective function
     obj = lbann.ObjectiveFunction([loss_gen0,loss_gen1])
     # Initialize check metric callback
-    #Last 3 losses are relative to latent space, how is output cycle loss meaningful
     metrics = [lbann.Metric(img_sca_loss, name='img_re1'),  
                lbann.Metric(dec_fw_inv_enc_y, name='img_re2'),
                lbann.Metric(wae_loss, name='wae_loss'),
@@ -165,7 +167,6 @@ def construct_model():
                lbann.Metric(L_cyc_x, name='param cycle loss')]
 
     callbacks = [lbann.CallbackPrint(),
-                 #lbann.CallbackDumpOutputs(layers=f'{y_image_re2.name} {conc_out.name}',
                  lbann.CallbackDumpOutputs(layers=f'{conc_out.name}',
                                            execution_modes='test',
                                            directory=args.dump_outputs,
@@ -175,10 +176,15 @@ def construct_model():
                                             
     # Construct model
     num_epochs =1
+    #serialize io if using single trainer
+    serialize_io = (True if args.procs_per_trainer==0 
+                          or args.procs_per_trainer== args.num_nodes*args.ppn 
+                       else False) 
     return lbann.Model(args.mini_batch_size,
                        num_epochs,
                        weights=weights,
                        layers=layers,
+                       serialize_io=serialize_io,
                        metrics=metrics,
                        objective_function=obj,
                        callbacks=callbacks)
@@ -186,7 +192,7 @@ def construct_model():
 
 if __name__ == '__main__':
 
-    trainer = lbann.Trainer()
+    trainer = lbann.Trainer(procs_per_trainer=args.procs_per_trainer)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
@@ -199,14 +205,10 @@ if __name__ == '__main__':
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     status = lbann.contrib.launcher.run(trainer,model, data_reader_proto, opt,
                        lbann_exe,
-                       #scheduler='slurm',
-                       account='lbpm',
-                       #account='cancer',
                        scheduler='lsf',
-                       #reservation='dat_0318',
                        partition='pdebug',
                        nodes=args.num_nodes,
-                       procs_per_node=4,
+                       procs_per_node=args.ppn,
                        time_limit=30,
                        setup_only=False, 
                        batch_job=False, 
