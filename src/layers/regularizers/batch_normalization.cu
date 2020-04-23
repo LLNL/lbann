@@ -498,6 +498,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
         local_scale.LockedBuffer(), local_bias.LockedBuffer(),
         local_output.Buffer(), local_output.LDim());
   }
+
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
@@ -618,6 +619,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
         local_mean_gradient.LockedBuffer(), local_var_gradient.LockedBuffer(),
         local_gradient_wrt_input.Buffer(), local_gradient_wrt_input.LDim());
   }
+
 }
 
 #define PROTO(T)                                      \
