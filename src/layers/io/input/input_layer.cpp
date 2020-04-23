@@ -26,6 +26,7 @@
 
 #define LBANN_INPUT_LAYER_INSTANTIATE
 #include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/utils/profiling.hpp"
 #include "lbann/data_readers/data_reader_hdf5.hpp"
 
 namespace lbann {
@@ -34,7 +35,8 @@ namespace lbann {
 template <typename TensorDataType, typename T_io_buffer,
           data_layout T_layout, El::Device Dev>
 input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
-input_distconv_adapter(Layer& layer):  data_type_distconv_adapter<TensorDataType>(layer) {
+input_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer),
+                                      m_shuffle_required(true) {
   // Input data is only processed when its consumer layer is also
   // enabled for distconv
   for (int i = 0; i < layer.get_num_children(); ++i) {
