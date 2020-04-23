@@ -65,5 +65,11 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version: [3.7.2]
       modules:
         python@3.7.2 arch=linux-rhel7-broadwell: python/3.7.2
+
+    rdma-core::
+      buildable: False
+      version: [20]
+      paths:
+        rdma-core@20 arch=linux-rhel7-broadwell: /usr
 EOF
 )
