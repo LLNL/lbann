@@ -45,7 +45,6 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <sys/stat.h>
-#include <cassert>
 
 namespace lbann {
 
@@ -194,7 +193,7 @@ void init_data_readers(
       auto filedir = readme.data_filedir();
       if(!endsWith(filedir, "/")) {
         filedir = filedir + "/";
-      } 
+      }
       const auto paths = glob(filedir +readme.data_file_pattern());
       reader_cosmo_hdf5->set_hdf5_paths(paths);
       reader = reader_cosmo_hdf5;
