@@ -53,7 +53,7 @@
 
 namespace lbann {
 
-#define PROFILE_VERBOSE
+//#define PROFILE_VERBOSE
 
 int number = 0;  // for use in DEBUG_DS statements
 
@@ -1523,7 +1523,12 @@ PROFILE("exchange_mini_batch_data; m_owner_maps_were_exchanged = true");
     */
   }
 
+  //uncomment barriers, and tm1=, to get accurate data_exchange timing;
+  //however, this will possibly slow the code a bit. Or maybe not
+  //m_comm->global_barrier();
+  //tm1 = get_time();
   exchange_data_by_sample(current_pos, mb_size);
+  //m_comm->global_barrier();
   m_exchange_time += (get_time() - tm1);
 }
 

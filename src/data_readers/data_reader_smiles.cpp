@@ -80,6 +80,7 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   m_eos = rhs.m_eos;
   m_missing_char_in_vocab = rhs.m_missing_char_in_vocab;
   m_missing_chars = rhs.m_missing_chars;
+  m_fast_experimental = rhs.m_fast_experimental;
 }
 
 void smiles_data_reader::load() {
@@ -138,6 +139,106 @@ void smiles_data_reader::do_preload_data_store() {
               << " for role: " << get_role() << std::endl;
   }
 
+  m_fast_experimental = false;
+  if (options::get()->get_bool("fast_experimental")) {
+    m_fast_experimental = true;
+    if (is_master()) {
+      std::cerr << "\nSMILES_DATA_READER is running in --fast_experimental mode\n";
+    }
+  }  
+
+  if (m_fast_experimental) {
+
+    // Let the hacking begin ...
+    // TODO: break into several function calls
+    // TODO: some/most of the following could/should be in the data_store ??
+    std::vector<size_t> sample_offsets(m_shuffled_indices.size()*3);
+    size_t buffer_size;
+  
+    if (is_master()) {
+      double tm1 = get_time();
+  
+      // Open input file and discard header line
+      const std::string infile = get_file_dir() + "/" + get_data_filename();
+      std::ifstream in(infile.c_str());
+      if (!in) {
+        LBANN_ERROR("failed to open data file: ", infile, " for reading");
+      }
+      std::string line;
+      getline(in, line); //assume a header line, and discard
+  
+      // Count memory requirements (ugh; possibly precompute);
+      // This can be done better, but doing it the easy way for now;
+      // do it the better way only if this is too slow
+      std::unordered_set<int> samples_to_use;
+      int max_sample_id = 0; //stop compiler complaints
+      for (size_t j=0; j<m_shuffled_indices.size(); j++) {
+        samples_to_use.insert(m_shuffled_indices[j]);
+        max_sample_id = m_shuffled_indices[j] > max_sample_id ? m_shuffled_indices[j] : max_sample_id;
+      }
+      ++max_sample_id;
+  
+      sample_offsets.clear();
+      size_t offset = 0;
+      for (int j=0; j<max_sample_id; j++) {
+        getline(in, line);
+        if (samples_to_use.find(j) != samples_to_use.end()) {
+          size_t k = line.find('\t');
+          if (k == std::string::npos) {
+            k = line.find(',');
+          }
+          if (k == std::string::npos) {
+            LBANN_ERROR("failed to find delimit character (tab or comma) in line: ", line, " which is line number ", j);
+          }
+          sample_offsets.push_back(j);
+          sample_offsets.push_back(offset);
+          sample_offsets.push_back(k);
+          offset += k;
+        }
+      }
+      buffer_size = offset;
+      m_data.resize(buffer_size);
+
+      // Fill in the data buffer
+      in.seekg(0);
+      getline(in, line); //assume a header line, and discard
+      offset = 0;
+      for (int j=0; j<max_sample_id; j++) {
+        getline(in, line);
+        if (samples_to_use.find(j) != samples_to_use.end()) {
+          size_t k = line.find('\t');
+          if (k == std::string::npos) {
+            k = line.find(',');
+          }
+          for (size_t n=0; n<k; n++) {
+            m_data[n+offset] = line[n];
+          }
+          offset += k;
+        }
+      }
+  
+      std::cout << "Time for computing sample sizes: " << get_time() - tm1 << std::endl;
+      if (sample_offsets.size()/3 != m_shuffled_indices.size()) {
+        LBANN_ERROR("sample_offsets.size()/3: ", sample_offsets.size()/3, " should be equal to m_shuffled_indices.size which is ", m_shuffled_indices.size());
+      }
+    }
+
+    m_comm->broadcast<size_t>(0, sample_offsets.data(), sample_offsets.size(), m_comm->get_world_comm());
+  
+    // Construct lookup table
+    for (size_t j=0; j<sample_offsets.size(); j += 3) {
+      m_sample_lookup[sample_offsets[j]] = 
+        std::make_pair(sample_offsets[j+1], sample_offsets[j+3]);
+    }
+
+    // Bcast the sample buffer
+    m_comm->broadcast<size_t>(0, &buffer_size, 1, m_comm->get_world_comm());
+    m_data.resize(buffer_size);
+    m_comm->broadcast<char>(0, m_data.data(), m_data.size(), m_comm->get_world_comm());
+  }
+
+  else {
+
   m_data_store->set_node_sizes_vary();
   const std::string infile = get_file_dir() + "/" + get_data_filename();
   std::ifstream in(infile.c_str());
@@ -161,6 +262,7 @@ void smiles_data_reader::do_preload_data_store() {
     m_data_store->set_preloaded_conduit_node(index, node);
   }
   in.close();
+  } // ! m_fast_experimental
 }
 
 bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
@@ -209,7 +311,6 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
   for (; j<m_linearized_data_size; j++) {
     X(j, mb_idx) = m_pad;
   }
-  
   return true;
 }
 

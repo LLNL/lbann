@@ -72,6 +72,19 @@ public:
 
 private:
 
+  //==== start hack to make it work fast ====
+  
+  // maps: sample_id to offset wrt m_data
+  std::unordered_map<int, std::pair<size_t, short>> m_sample_lookup;
+
+  std::vector<char> m_data;
+
+  void get_sample(int sample_id, std::vector<short> &sample_out);
+
+  bool m_fast_experimental = false;
+
+  //==== end hack to make it work fast ====
+
   int m_num_samples = -1;
 
   int m_linearized_data_size = 0;
