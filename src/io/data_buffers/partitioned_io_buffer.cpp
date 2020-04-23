@@ -109,10 +109,6 @@ int partitioned_io_buffer<TensorDataType>::fetch_to_local_matrix(generic_data_re
   data_buffer<IODataType> *buf = get_data_buffer(mode);
   buf->m_num_samples_fetched = 0;
   if (this->m_comm->get_rank_in_trainer() < num_parallel_readers && (buf->m_input_buffers[0]->Height() != 0 && buf->m_input_buffers[0]->Width() != 0)) {
-    for(auto& m : buf->m_input_buffers) {
-      El::Zeros_seq(*m, m->Height(), m->Width());
-    }
-
     /// Each data reader needs to either have independent / split
     /// data, or take an offset / stride
     if(buf->m_input_buffers.size() == 2) {
