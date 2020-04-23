@@ -25,6 +25,8 @@
 //
 // profiling .hpp .cpp - Various routines for interfacing with profilers
 ///////////////////////////////////////////////////////////////////////////////
+#ifndef LBANN_UTILS_PROFILING_HPP
+#define LBANN_UTILS_PROFILING_HPP
 
 namespace lbann {
 
@@ -43,3 +45,5 @@ void prof_region_begin(const char *s, int c, bool sync);
 void prof_region_end(const char *s, bool sync);
 
 }  // namespace lbann
+
+#endif // LBANN_UTILS_PROFILING_HPP
