@@ -328,7 +328,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
       next_io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
       next_io_buffer->set_fetch_data_in_background(true, mode);
     }
-
   }
 
   void setup_next_io_buffer(generic_io_buffer<TensorDataType>* io_buffer) {
@@ -869,7 +868,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
   bool m_data_set_processed;
   std::mutex dr_mutex;
-
 };
 
 }  // namespace lbann
