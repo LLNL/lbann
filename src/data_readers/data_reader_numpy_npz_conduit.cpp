@@ -274,11 +274,13 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     // Convert int16 to DataType.
     short *data = reinterpret_cast<short*>(char_data_2);
     DataType *dest = X_v.Buffer();
+
     // OPTIMIZE
     LBANN_OMP_PARALLEL_FOR
-        for(int j = 0; j < m_num_features; j++) {
-          dest[j] = data[j] * m_scaling_factor_int16;
-        }
+      for(int j = 0; j < m_num_features; j++) {
+        dest[j] = data[j] * m_scaling_factor_int16;
+      }
+
   } else {
     void *data = (void*)char_data_2;
     std::memcpy(X_v.Buffer(), data, m_num_features * m_data_word_size);
