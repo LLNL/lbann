@@ -64,6 +64,4 @@ namespace lbann
 using DataType = @LBANN_DATATYPE@;
 }// namespace lbann
 
-#cmakedefine LBANN_IO_DISABLE_ZEROS
-
 #endif /* LBANN_CONFIG_H__ */

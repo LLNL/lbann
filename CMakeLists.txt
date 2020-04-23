@@ -160,8 +160,6 @@ mark_as_advanced(LBANN_WARNINGS_AS_ERRORS)
 set(LBANN_DATATYPE "float"
   CACHE STRING "The datatype to use in LBANN")
 
-option(LBANN_IO_DISABLE_ZEROS "Disable zero-clearing of matrices at data loading" ON)
-
 #
 # Initialize build
 #
