@@ -84,7 +84,9 @@ void partitioned_io_buffer<TensorDataType>::setup_data(El::Int num_neurons, El::
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled()) {
     num_neurons /= dc::get_number_of_io_partitions();
-    num_neurons /= sizeof(TensorDataType) / sizeof(short);
+    // TensorDataType is assumed to be 2-byte integer types such as
+    // short or int16_t.
+    assert_eq(sizeof(TensorDataType), sizeof(short));
     max_mini_batch_size *= dc::get_number_of_io_partitions();
   }
 #endif // LBANN_HAS_DISTCONV
