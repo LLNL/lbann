@@ -1485,11 +1485,11 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
     PROFILE("calling exchange_owner_maps");
     if (!m_owner_maps_were_exchanged) {
       exchange_owner_maps();
-    } 
+    }
 
-    else {  
+    else {
       PROFILE("  owner_maps were already exchanged; returning");
-    }  
+    }
     m_owner_maps_were_exchanged = true;
 PROFILE("exchange_mini_batch_data; m_owner_maps_were_exchanged = true");
     /*
@@ -1655,7 +1655,7 @@ void data_store_conduit::save_state() {
   {
   cereal::XMLOutputArchive archive(os);
     archive(CEREAL_NVP(m_my_num_indices),
-            CEREAL_NVP(m_owner_maps_were_exchanged), 
+            CEREAL_NVP(m_owner_maps_were_exchanged),
             CEREAL_NVP(m_is_setup),
             CEREAL_NVP(m_preloading),
             CEREAL_NVP(m_loading_is_complete),
@@ -1981,13 +1981,13 @@ void data_store_conduit::check_query_flags() const {
   }
 }
 
-void data_store_conduit::clear_owner_map() { 
+void data_store_conduit::clear_owner_map() {
     m_owner_maps_were_exchanged = false;
-    m_owner.clear(); 
+    m_owner.clear();
 }
 
 void data_store_conduit::verify_sample_size() {
-  // Note: m_compacted_sample_size is set during calls to set_conduit_node() or 
+  // Note: m_compacted_sample_size is set during calls to set_conduit_node() or
   //  set_preloaded_conduit_node(). Hence, if these are not called (i.e, the
   //  rank does not own any data), m_compacted_sample_size will be zero.
   //  This method ensures that all ranks know the sample size, whether or not
@@ -2003,4 +2003,3 @@ void data_store_conduit::verify_sample_size() {
 }
 
 }  // namespace lbann
-

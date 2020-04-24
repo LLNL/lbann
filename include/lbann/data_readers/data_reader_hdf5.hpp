@@ -1,18 +1,16 @@
 // Licensed under the Apache License, Version 2.0 (the "Licensee"); you
-// // may not use this file except in compliance with the License.  You may
-// // obtain a copy of the License at:
-// //
-// // http://www.apache.org/licenses/LICENSE-2.0
-// //
-// // Unless required by applicable law or agreed to in writing, software
-// // distributed under the License is distributed on an "AS IS" BASIS,
-// // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-// // implied. See the License for the specific language governing
-// // permissions and limitations under the license.
-// //
-// ////////////////////////////////////////////////////////////////////////////////
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
 //
+// http://www.apache.org/licenses/LICENSE-2.0
 //
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+//
+////////////////////////////////////////////////////////////////////////////////
 #ifndef LBANN_DATA_READER_HDF5_HPP
 #define LBANN_DATA_READER_HDF5_HPP
 #include "data_reader_image.hpp"
@@ -83,4 +81,4 @@ class hdf5_reader : public generic_data_reader {
   static const std::string HDF5_KEY_DATA, HDF5_KEY_LABELS, HDF5_KEY_RESPONSES;
 };
 }
-#endif
+#endif // LBANN_DATA_READER_HDF5_HPP

@@ -198,7 +198,7 @@ class data_store_conduit {
   void set_preloaded_owner_map(const std::unordered_map<int,int> &owner) {
     // TODO: needs slab extension
     // m_owner = owner;
-    LBANN_ERROR("Slab-extension missing");    
+    LBANN_ERROR("Slab-extension missing");
   }
 
   /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
@@ -643,7 +643,7 @@ private :
     flush_profile_file();
   }
 
-  void DEBUG_DS() { 
+  void DEBUG_DS() {
     if (!m_debug) {
       return;
     }
