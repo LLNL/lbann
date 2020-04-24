@@ -176,15 +176,11 @@ def construct_model():
                                             
     # Construct model
     num_epochs =1
-    #serialize io if using single trainer
-    serialize_io = (True if args.procs_per_trainer==0 
-                          or args.procs_per_trainer== args.num_nodes*args.ppn 
-                       else False) 
     return lbann.Model(args.mini_batch_size,
                        num_epochs,
                        weights=weights,
                        layers=layers,
-                       serialize_io=serialize_io,
+                       serialize_io=True,
                        metrics=metrics,
                        objective_function=obj,
                        callbacks=callbacks)
