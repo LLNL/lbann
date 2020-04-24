@@ -36,6 +36,7 @@ set_full_path(THIS_DIR_HEADERS
   summary.hpp
   summary_impl.hpp
   timer.hpp
+  trainer_file_utils.hpp
   type_erased_matrix.hpp
   typename.hpp
   )
