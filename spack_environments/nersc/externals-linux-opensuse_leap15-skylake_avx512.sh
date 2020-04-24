@@ -64,6 +64,12 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
       version: [3.7.4]
       modules:
-        python@3.7.4 arch=linux-rhel7-broadwell: python/3.7-anaconda-2019.10
+        python@3.7.4 arch=linux-opensuse_leap15-skylake_avx512: python/3.7-anaconda-2019.10
+
+    rdma-core::
+      buildable: False
+      version: [20]
+      paths:
+        rdma-core@20 arch=linux-opensuse_leap15-skylake_avx512: /usr
 EOF
 )
