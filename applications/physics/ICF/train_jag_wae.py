@@ -86,16 +86,8 @@ def construct_model():
 if __name__ == '__main__':
     import lbann
 
-    # Command-line arguments
-    desc = ('Construct and run a WAE on JAG data. ')
-    parser = argparse.ArgumentParser(description=desc)
-    lbann.contrib.args.add_scheduler_arguments(parser)
-    parser.add_argument(
-        '--mini-batch-size', action='store', default=128, type=int,
-        help='mini-batch size (default: 128)', metavar='NUM')
-    args = parser.parse_args()
-
-    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
+    mini_batch_size = 128
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)

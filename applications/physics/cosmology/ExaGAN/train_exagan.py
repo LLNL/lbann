@@ -108,16 +108,8 @@ def construct_data_reader():
 if __name__ == '__main__':
     import lbann
 
-    # Command-line arguments
-    desc = ('Construct and run ExaGAN on Cosmology data. ')
-    parser = argparse.ArgumentParser(description=desc)
-    lbann.contrib.args.add_scheduler_arguments(parser)
-    parser.add_argument(
-        '--mini-batch-size', action='store', default=64, type=int,
-        help='mini-batch size (default: 64)', metavar='NUM')
-    args = parser.parse_args()
-
-    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
+    mini_batch_size = 64
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0002,beta1=0.5,beta2=0.99,eps=1e-8)
