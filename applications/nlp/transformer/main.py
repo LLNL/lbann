@@ -61,8 +61,10 @@ os.makedirs(work_dir, exist_ok=True)
 # ----------------------------------------------
 
 # Create batch script
-model_params = {
+trainer_params = {
     'mini_batch_size': args.mini_batch_size,
+}
+model_params = {
     'num_epochs': args.num_epochs,
     'embed_dim': args.embed_dim,
     'num_heads': args.num_attention_heads,
@@ -72,6 +74,7 @@ script_params = lbann.contrib.args.get_scheduler_kwargs(args)
 script_params['work_dir'] = work_dir
 script_params['job_name'] = args.job_name
 train_script = train.make_batch_script(
+    trainer_params=trainer_params,
     model_params=model_params,
     script_params=script_params,
 )
