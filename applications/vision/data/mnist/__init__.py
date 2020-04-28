@@ -5,6 +5,7 @@ import urllib.request
 
 import google.protobuf.text_format
 import lbann
+import lbann.contrib.lc.paths
 
 # Paths
 data_dir = os.path.dirname(os.path.realpath(__file__))
@@ -35,15 +36,21 @@ def download_data():
                 with open(data_file, 'wb') as out_file:
                     out_file.write(in_file.read())
 
-def make_data_reader():
+def make_data_reader(download_data=True):
     """Make Protobuf message for MNIST data reader.
 
     MNIST data is downloaded if needed.
 
     """
 
-    # Download MNIST data files
-    download_data()
+    if download_data:
+        # Download MNIST data files
+        download_data()
+        data_filedir = data_dir
+    else:
+        # Set location of MNIST data if not downloaded
+        data_filedir = lbann.contrib.lc.paths.mnist_dir()
+        print('Setting the path directory to ' + data_filedir)
 
     # Load Protobuf message from file
     protobuf_file = os.path.join(data_dir, 'data_reader.prototext')
@@ -54,6 +61,6 @@ def make_data_reader():
 
     # Set paths
     for reader in message.reader:
-        reader.data_filedir = data_dir
+        reader.data_filedir = data_filedir
 
     return message
