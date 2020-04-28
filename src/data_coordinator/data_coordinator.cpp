@@ -30,8 +30,12 @@
 namespace lbann {
 
 void data_coordinator::setup(int max_mini_batch_size) {
+
+  /// @todo BVE FIXME the list of execution modes should not include
+  // ones will null data readers.  Fix this in next PR.
   // Setup data readers
   for(auto&& dr: m_data_readers) {
+    if (!dr.second) continue;
     dr.second->setup(m_trainer->get_io_thread_pool().get_num_threads(),
                      &(m_trainer->get_io_thread_pool()));
     dr.second->set_rank(m_comm->get_rank_in_trainer());
@@ -41,6 +45,7 @@ void data_coordinator::setup(int max_mini_batch_size) {
    *  and validation given a specified mini-batch size.
    */
   for(auto&& dr: m_data_readers) {
+    if (!dr.second) continue;
     calculate_num_iterations_per_epoch(max_mini_batch_size, dr.second);
   }
 
@@ -106,6 +111,7 @@ void data_coordinator::calculate_num_iterations_per_epoch(int max_mini_batch_siz
 
 void data_coordinator::calculate_num_iterations_per_epoch(int mini_batch_size) {
   for(auto&& dr: m_data_readers) {
+    if (!dr.second) continue;
     calculate_num_iterations_per_epoch(mini_batch_size, dr.second);
   }
 }
