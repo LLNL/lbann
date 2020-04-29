@@ -55,6 +55,6 @@ def make_data_reader():
 
     # Set paths
     for reader in message.reader:
-        reader.data_filedir = data_filedir
+        reader.data_filedir = data_dir
 
     return message
