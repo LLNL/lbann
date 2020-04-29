@@ -5,7 +5,6 @@ import urllib.request
 
 import google.protobuf.text_format
 import lbann
-import lbann.contrib.lc.paths
 
 # Paths
 data_dir = os.path.dirname(os.path.realpath(__file__))
