@@ -50,7 +50,7 @@ def setup_experiment(lbann):
     trainer = lbann.Trainer()
     model = construct_model(lbann)
     # Setup data reader
-    data_reader = data.imagenet.make_data_reader(num_classes=1000)
+    data_reader = data.imagenet.make_data_reader(lbann, num_classes=1000)
 
     optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
     return trainer, model, data_reader, optimizer

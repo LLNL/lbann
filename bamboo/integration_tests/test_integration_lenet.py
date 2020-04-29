@@ -51,7 +51,7 @@ def setup_experiment(lbann):
     trainer = lbann.Trainer()
     model = construct_model(lbann)
 
-    data_reader = data.mnist.make_data_reader(download_data=False)
+    data_reader = data.mnist.make_data_reader(lbann)
     # No validation set
     data_reader.reader[0].validation_percent = 0
 

@@ -2,10 +2,12 @@ import os
 import os.path
 
 import google.protobuf.text_format
-import lbann
-import lbann.contrib.lc.paths
 
-def make_data_reader(num_classes=1000):
+def make_data_reader(lbann, num_classes=1000):
+
+    # TODO (tym): Figure out how to switch between LBANN builds. See
+    # GitHub Issue #1289.
+    import lbann.contrib.lc.paths
 
     # Load Protobuf message from file
     current_dir = os.path.dirname(os.path.realpath(__file__))

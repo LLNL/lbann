@@ -36,21 +36,15 @@ def download_data():
                 with open(data_file, 'wb') as out_file:
                     out_file.write(in_file.read())
 
-def make_data_reader(download_data=True):
+def make_data_reader():
     """Make Protobuf message for MNIST data reader.
 
     MNIST data is downloaded if needed.
 
     """
 
-    if download_data:
-        # Download MNIST data files
-        download_data()
-        data_filedir = data_dir
-    else:
-        # Set location of MNIST data if not downloaded
-        data_filedir = lbann.contrib.lc.paths.mnist_dir()
-        print('Setting the path directory to ' + data_filedir)
+    # Download MNIST data files
+    download_data()
 
     # Load Protobuf message from file
     protobuf_file = os.path.join(data_dir, 'data_reader.prototext')
