@@ -13,15 +13,7 @@ current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 import tools
-
-# Applications directories
-bamboo_dir = os.path.dirname(current_dir)
-lbann_dir = os.path.dirname(bamboo_dir)
-sys.path.insert(0, os.path.join(lbann_dir, 'applications', 'vision'))
 import data.imagenet
-
-# Python directory
-sys.path.insert(0, os.path.join(lbann_dir, 'python'))
 
 # ==============================================
 # Options
