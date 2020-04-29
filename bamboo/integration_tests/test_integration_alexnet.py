@@ -20,6 +20,8 @@ lbann_dir = os.path.dirname(bamboo_dir)
 sys.path.insert(0, os.path.join(lbann_dir, 'applications', 'vision'))
 import data.imagenet
 
+# Python directory
+sys.path.insert(0, os.path.join(lbann_dir, 'python'))
 
 # ==============================================
 # Options
