@@ -166,31 +166,6 @@ description slice_layer<TensorDataType,Layout,Device>::get_description() const {
   return desc;
 }
 
-namespace {
-/// Obtain the slice points from the data reader
-std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_generic,
-                                                  const std::string& var_category,
-                                                  bool& is_supported) {
-  std::vector<El::Int> slice_points;
-  is_supported = false;
-  // TODO: remove the dynamic cast when this feature gets merged into the base class
-  const auto dr = dynamic_cast<const data_reader_jag_conduit*>(dr_generic);
-
-  if (dr != nullptr) {
-    is_supported = true;
-    if (var_category == "independent") {
-      slice_points = dr->get_slice_points_independent();
-    } else if (var_category == "dependent") {
-      slice_points = dr->get_slice_points_independent();
-    } else {
-      LBANN_ERROR("Unknown variable category \"" + var_category \
-                  + "\". Must be either \"independent\" or \"dependent\".");
-    }
-  }
-  return slice_points;
-}
-} // namespace anonymous
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void slice_layer<TensorDataType,Layout,Device>::setup_dims(TargetModeDimMap& data_dimensions_map) {
   data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
@@ -202,8 +177,9 @@ void slice_layer<TensorDataType,Layout,Device>::setup_dims(TargetModeDimMap& dat
     std::string slice_point_method_name = "'get_slice_points_from_reader'";
     auto& t = this->m_model->get_execution_context().get_trainer();
     auto* dr_generic  = t.get_data_coordinator().get_data_reader(execution_mode::training);
+
     for (const auto& slice_point
-           : get_slice_points_from_reader(dr_generic, m_var_category, is_supported)) {
+           : dr_generic->get_slice_points(m_var_category, is_supported)) {
       slice_points.push_back(slice_point);
     }
 

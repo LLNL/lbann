@@ -345,6 +345,10 @@ class generic_data_reader {
   virtual const std::vector<int> get_data_dims() const {
     return std::vector<int>(0);
   }
+
+  virtual std::vector<El::Int> get_slice_points(const std::string& var_category,
+                                                bool& is_supported) { return {}; }
+
   /// True if the data reader's current position is valid.
   virtual bool position_valid() const {
     return (m_current_pos < get_num_data());

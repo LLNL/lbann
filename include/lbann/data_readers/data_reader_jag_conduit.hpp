@@ -208,15 +208,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the dimension of data
   const std::vector<int> get_data_dims() const override;
 
-  /// Return the slice points for linearized independent variables
-  std::vector<El::Int> get_slice_points_independent() const;
-  /// Return the slice points for linearized dependent variables
-  std::vector<El::Int> get_slice_points_dependent() const;
-
   int get_num_data() const override;
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
   int get_linearized_size(const std::string& desc) const override;
+
+  std::vector<El::Int> get_slice_points(const std::string& var_category,
+                                        bool& is_supported) override;
 
   void set_split_image_channels();
   void unset_split_image_channels();
@@ -274,7 +272,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the dimension of a particular JAG variable type
   const std::vector<int> get_dims(const variable_t t) const;
   /// Return the slice points for linearized data or responses
-  std::vector<El::Int> get_slice_points(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const;
+  std::vector<El::Int> get_slice_points_impl(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const;
+  /// Return the slice points for linearized independent variables
+  std::vector<El::Int> get_slice_points_independent() const;
+  /// Return the slice points for linearized dependent variables
+  std::vector<El::Int> get_slice_points_dependent() const;
+
   /// A utility function to make a string to show all the variable types
   static std::string to_string(const std::vector<variable_t>& vec);
   /// A utility function to make a string to show all the groups of variable types
@@ -464,7 +467,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool m_list_per_trainer;
   bool m_list_per_model;
 
-  void preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node); 
+  void preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node);
 };
 
 /**

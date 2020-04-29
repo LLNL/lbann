@@ -1062,7 +1062,23 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
 #endif
 }
 
-std::vector<El::Int> data_reader_jag_conduit::get_slice_points(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const {
+std::vector<El::Int> data_reader_jag_conduit::get_slice_points(
+  const std::string& var_category,
+  bool& is_supported) {
+  std::vector<El::Int> slice_points;
+  is_supported = true;
+  if (var_category == "independent") {
+    slice_points = get_slice_points_independent();
+  } else if (var_category == "dependent") {
+    slice_points = get_slice_points_dependent();
+  } else {
+    LBANN_ERROR("Unknown variable category \"" + var_category           \
+                + "\". Must be either \"independent\" or \"dependent\".");
+  }
+  return slice_points;
+}
+
+std::vector<El::Int> data_reader_jag_conduit::get_slice_points_impl(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const {
   std::vector<El::Int> points(var.size()+1u, static_cast<El::Int>(0));
   for (size_t i = 0u; i < var.size(); ++i) {
     const auto& group = var[i];
@@ -1076,11 +1092,11 @@ std::vector<El::Int> data_reader_jag_conduit::get_slice_points(const std::vector
 }
 
 std::vector<El::Int> data_reader_jag_conduit::get_slice_points_independent() const {
-  return get_slice_points(m_independent_groups);
+  return get_slice_points_impl(m_independent_groups);
 }
 
 std::vector<El::Int> data_reader_jag_conduit::get_slice_points_dependent() const {
-  return get_slice_points(m_independent_groups);
+  return get_slice_points_impl(m_dependent_groups);
 }
 
 int data_reader_jag_conduit::get_num_data() const {
