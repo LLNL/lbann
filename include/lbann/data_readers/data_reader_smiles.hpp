@@ -85,9 +85,23 @@ private:
 
   void setup_fast_experimental();
 
+  // to enable this feature, add '#define DEBUG_F' to data_reader_smiles.cpp;
+  // this is ONLY for testing/development; if enabled, each rank will encode
+  // all samples after loading, and prior to the first epoch
+  void test_encode();
+
+  char m_delimiter = '\t';
+
+  int get_smiles_string_length(const std::string &line, int line_number);
+
   //==== end hack to make it work fast ====
 
+  // Number of samples the user has requested
   int m_num_samples = -1;
+
+  // The total number of samples in the file; will be 
+  // computed from the input file
+  int m_total_samples;
 
   int m_linearized_data_size = 0;
   int m_linearized_label_size = 0;
@@ -100,10 +114,14 @@ private:
   short m_bos = 422;
   short m_eos = 423;
 
-  std::unordered_map<std::string, short> m_vocab;
+  bool m_has_header = true;
 
-  size_t m_missing_char_in_vocab = 0;
-  std::unordered_set<std::string> m_missing_chars;
+  std::unordered_map<char, short> m_vocab;
+
+  std::mutex m_mutex;
+
+  size_t m_missing_char_in_vocab_count = 0;
+  std::unordered_set<char> m_missing_chars;
 
   //=====================================================================
   // private methods follow
@@ -119,10 +137,10 @@ private:
   bool fetch_response(CPUMat& Y, int data_id, int mb_idx) override;
 
   void print_statistics() const;
-  int load_vocab();
+  void load_vocab();
   int get_num_lines(std::string fn); 
   void construct_conduit_node(int data_id, const std::string &line, conduit::Node &node); 
-  void encode_smiles(const std::string &sm, std::vector<short> &data);
+  void encode_smiles(const std::string &sm, std::vector<short> &data, int data_id);
 
 };
 

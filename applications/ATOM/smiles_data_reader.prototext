@@ -2,14 +2,13 @@ data_reader {
   reader {
     name: "smiles"
     role: "train"
-    shuffle: true
+    shuffle: false
     percent_of_data_to_use: 1.0
-
-    # all2018q1-2REAL680SMILES.smiles should be moved to lustre!
-    data_filedir: "/usr/workspace/wsa/enamine"
+    data_filedir: "/p/lustre2/brainusr/datasets/enamine"
     data_filename: "all2018q1-2REAL680SMILES.smiles"
 
-    #data_filedir: "/p/lustre2/hysom"
-    #data_filename: "dataset_v1.csv"
+    #data_filename: "good.csv"
+    #data_filedir: "/usr/workspace/wsb/hysom/corona/applications/ATOM"
+    #data_filename: "enamine1M.csv.sorted.longest_first"
   }
 }

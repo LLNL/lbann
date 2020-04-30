@@ -44,7 +44,7 @@ smiles_data_reader::smiles_data_reader(const smiles_data_reader& rhs)  : generic
 smiles_data_reader::~smiles_data_reader() {
   if (m_missing_chars.size()) {
     if (is_master()) {
-      std::cout << std::endl << "Tokens in data that were missing from vocab: ";
+      std::cout << std::endl << "The following tokens were in SMILES strings, but were missing from the vocabulary: ";
       for (const auto t : m_missing_chars) {
         std::cout << t << " ";
       }
@@ -78,7 +78,9 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   m_unk = rhs.m_unk;
   m_bos = rhs.m_bos;
   m_eos = rhs.m_eos;
-  m_missing_char_in_vocab = rhs.m_missing_char_in_vocab;
+  m_has_header = rhs.m_has_header;
+  m_delimiter = rhs.m_delimiter;
+  m_missing_char_in_vocab_count = rhs.m_missing_char_in_vocab_count;
   m_missing_chars = rhs.m_missing_chars;
   m_fast_experimental = rhs.m_fast_experimental;
 }
@@ -89,6 +91,11 @@ void smiles_data_reader::load() {
   }
 
   options *opts = options::get();
+
+  m_fast_experimental = true;
+
+  #if 0
+  TODO: leaving this in, for possible future development using the data_store
 
   m_fast_experimental = false;
   if (options::get()->get_bool("fast_experimental")) {
@@ -104,34 +111,37 @@ void smiles_data_reader::load() {
       opts->set_option("preload_data_store", 1);
     }
   }
+  #endif
 
   if (!opts->has_int("sequence_length")) {
     LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line");
   }
-  m_linearized_data_size = opts->get_int("sequence_length");
+  m_linearized_data_size = opts->get_int("sequence_length") +2;
 
   // load the vocabulary; this is a map: string -> short
-  int sanity = load_vocab();
-  if (!(opts->has_int("num_embeddings") && opts->has_int("embedding_dim"))) {
-    LBANN_ERROR("you must pass --num-embeddings=<int> and --embedding-dim=<int> on the cmd line");
-  }
-  int n_embeddings = opts->get_int("num_embeddings");
-  int n_embedding_dim = opts->get_int("embedding_dim");
-  if (sanity != n_embeddings || sanity != n_embedding_dim) {
-    LBANN_ERROR("--num_embeddings=", n_embeddings, "; --embedding_dim=", n_embedding_dim, "; both should be the same as vocab_size which is: ", m_vocab.size());
+  load_vocab();
+
+  // Count total number of samples in the file
+  //m_has_header = !opts->get_bool("no_header");
+  // TODO: fix this!
+  m_has_header = true;
+
+  const std::string infile = get_file_dir() + "/" + get_data_filename();
+  m_total_samples = get_num_lines(infile);
+  if (m_has_header) {
+    --m_total_samples;
   }
 
-  // get the number of samples to use; if --num_samples=<int> wasn't 
-  // passed on the cmd line, then the entire file will be used. In this case 
-  // we count the number of lines in the file, which may be slow 
-  // for large files. Or maybe not.
+  // Get the number of samples to use (this is separate from "percent_of_data_to_use," etc);
+  m_num_samples = m_total_samples;
   if (opts->has_int("num_samples")) {
     m_num_samples = opts->get_int("num_samples");
-  } else {
-    const std::string infile = get_file_dir() + "/" + get_data_filename();
-    m_num_samples = get_num_lines(infile) -1;
+  }
+  if (m_num_samples > m_total_samples) {
+    LBANN_ERROR("You requested to use ", m_num_samples, " samples, but input file only contains ", m_total_samples);
   }
 
+  // Do the usual things we always do to finish up ...
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
@@ -140,11 +150,15 @@ void smiles_data_reader::load() {
   instantiate_data_store();
   select_subset_of_data();
 
+  // TODO: does this work if we carve of a validation set?
   if (m_fast_experimental) {
     setup_fast_experimental();
   }
+
+  print_statistics();
 }
 
+// TODO: relook if/when we start using data_store
 void smiles_data_reader::do_preload_data_store() {
   if (is_master()) {
     std::cout << "starting do_preload_data_store; num indices: " 
@@ -158,7 +172,9 @@ void smiles_data_reader::do_preload_data_store() {
     LBANN_ERROR("failed to open data file: ", infile, " for reading");
   }
   std::string line;
-  getline(in, line); //assume a header line, and discard
+  if (m_has_header) {
+    getline(in, line); 
+  }
 
   //TODO: this is terrible! Maybe: have root scan the file and bcast a map:
   //      offset->line number
@@ -189,6 +205,9 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
       X(jj, mb_idx) = m_pad;
     }
   }
+
+  #if 0
+  // Leaving the following in for now for possible future development
 
   // run with data_store in preload mode
   else {
@@ -238,6 +257,8 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
       X(j, mb_idx) = m_pad;
     }
   }
+#endif
+
   return true;
 }
 
@@ -259,18 +280,17 @@ void smiles_data_reader::print_statistics() const {
   }
 
   std::cout << "\n======================================================\n";
-#if 0
-  std::cout << "num train samples=" << m_num_train_samples << std::endl;
-  std::cout << "num validate samples=" << m_num_validate_samples << std::endl;
-  std::cout << "sequence length=" << m_seq_len << std::endl;
-  std::cout << "num features=" << get_linearized_data_size() << std::endl;
-  std::cout << "num labels=" << get_num_labels() << std::endl;
-  std::cout << "data dims=";
-#endif
+  std::cout << "role: " << get_role() << std::endl;
+  std::cout << "num samples=" << m_shuffled_indices.size() << std::endl;
+  std::cout << "max sequence length=" << m_linearized_data_size << std::endl;
+  std::cout << "num features=" << m_linearized_data_size << std::endl;
+  std::cout << "delimiter= " << m_delimiter << std::endl;
+  std::cout << "pad index= " << m_pad << std::endl;
+  std::cout << "vocab size= " << m_vocab.size() << std::endl;
   std::cout << "======================================================\n\n";
 }
 
-int smiles_data_reader::load_vocab() {
+void smiles_data_reader::load_vocab() {
   options *opts = options::get();
   if (!opts->has_string("vocab")) {
     LBANN_ERROR("you must pass --vocab=<string> on the command line");
@@ -284,7 +304,9 @@ int smiles_data_reader::load_vocab() {
   short id;
   int sanity = 4;
   while (in >> token >> id) {
-    m_vocab[token] = id;
+    if (token.size() == 1) {
+      m_vocab[token[0]] = id;
+    }  
     if (token == "<pad>") {
       m_pad = id;
       --sanity;
@@ -312,39 +334,35 @@ int smiles_data_reader::load_vocab() {
       LBANN_ERROR("you passed --pad_index=", tmp, " but we got --pad_index=", m_pad, " from the vocabulary file");
     }
   }
-  return(m_vocab.size());
-  
-#if 0
-  //, '<bos>': 34, '<eos>': 35, '<pad>': 36, '<unk>': 37}; 
-  //
-  //
-//from Derek:
-  //m_vocab = {'#': 0, '%': 1, '(': 2, ')': 3, '+': 4, '-': 5, '.': 6, '0': 7, '1': 8, '2': 9, '3': 10, '4': 11, '5': 12, '6': 13, '7': 14, '8': 15, '9': 16, '=': 17, '@': 18, 'B': 19, 'C': 20, 'F': 21, 'H': 22, 'I': 23, 'N': 24, 'O': 25, 'P': 26, 'S': 27, '[': 28, ']': 29, 'e': 30, 'i': 31, 'l': 32, 'r': 33, '<bos>': 34, '<eos>': 35, '<pad>': 36, '<unk>': 37}; 
-  
-//mine:
-//  std::vector<char> v { 
- //   '#', '%', '(', ')', '+', '-', '.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '=', '@', 'B', 'C', 'F', 'H', 'I', 'N', 'O', 'P', 'S', '[', ']', 'e', 'i', 'l', 'm', 'r', 's'};
-#endif
 }
 
 int smiles_data_reader::get_num_lines(std::string fn) {
-  //TODO: master should read and bcast; notify usr every n lines
-  //      May be faster to do the canonical C thing
   double tm1 = get_time();
-  std::ifstream in(fn.c_str());
-  if (!in) {
-    LBANN_ERROR("failed to open date file: ", fn, " for reading");
-  }
-  std::string line;
-  int count = 0;
-  while(getline(in,line)) {
-    ++count;
-  }
-  in.close();
-
   if (is_master()) {
+    std::cout << "starting: count number of lines in the input file" << std::endl;
+  }
+
+  int count = 0;
+  if (is_master()) {
+    std::ifstream in(fn.c_str());
+    if (!in) {
+      LBANN_ERROR("failed to open data file: ", fn, " for reading");
+    }
+    std::string line;
+    if (m_has_header) {
+      getline(in,line);
+    }
+    while(getline(in,line)) {
+      ++count;
+    }
+    in.close();
+
     std::cout << "smiles_data_reader::get_num_lines; num_lines: " 
               << count << " time: " << get_time()-tm1 << std::endl;
+  }
+  m_comm->broadcast<int>(0, &count, 1, m_comm->get_world_comm());
+  if (is_master()) {
+    std::cout << "time to count number of lines in the input file: " << get_time() - tm1 << std::endl;
   }
   return count;
 }
@@ -360,44 +378,46 @@ void smiles_data_reader::construct_conduit_node(int data_id, const std::string &
   }
   std::string sm = line.substr(0, j);
   std::vector<short> data;
-  encode_smiles(sm, data);
+  encode_smiles(sm, data, data_id);
   node[LBANN_DATA_ID_STR(data_id) + "/data"].set(data);
   int sz = data.size();
   node[LBANN_DATA_ID_STR(data_id) + "/size"].set(sz);
 }
 
-void smiles_data_reader::encode_smiles(const std::string &sm, std::vector<short> &data) {
+void smiles_data_reader::encode_smiles(const std::string &sm, std::vector<short> &data, int data_id) {
   int stop = sm.size();
   static int count = 0;
 
-  if (stop > m_linearized_data_size) {
-    stop = m_linearized_data_size;
-    if (is_master()) {
-      if (count < 20) {
-        count += 1;
-        LBANN_WARNING("smiles string size is ", sm.size(), "; losing ", (sm.size()-m_linearized_data_size), " characters");
-      }
+  if (stop+2 > m_linearized_data_size) {
+    stop = m_linearized_data_size-2;
+    if (count < 20) {
+      count += 1;
+      LBANN_WARNING("data_id: ", data_id, " smiles string size is ", sm.size(), "; losing ", (sm.size()-(m_linearized_data_size-2)), " characters");
     }
   }
 
+  data.clear();
+  data.reserve(stop+2);
+  data.push_back(m_bos);
   for (int j=0; j<stop; j++) {
-    const std::string w(1, sm[j]);
+    const char &w = sm[j];
     if (m_vocab.find(w) == m_vocab.end()) {
-      m_missing_chars.insert(w);
-      ++m_missing_char_in_vocab;
-      if (m_missing_char_in_vocab < 2) {
-        LBANN_WARNING("smiles_data_reader::encode_smiles encounted character not in vocab: ", w, "; for SMILES string: ", sm);
-      }  
+      {
+        std::lock_guard<std::mutex> lock(m_mutex);
+        m_missing_chars.insert(w);
+        ++m_missing_char_in_vocab_count;
+        if (m_missing_char_in_vocab_count < 20) {
+          std::stringstream ss;
+          ss << "rank: " << m_comm->get_rank_in_trainer() << "; character not in vocab >>" << w << "<<; idx: " << j << "; data_id: " << data_id << "; string length: " << sm.size() << "; will use length: " << stop << "; SMILES string: >>" << sm << "<<" << std::endl;
+          std::cerr << ss.str();
+        }
+      }
       data.push_back(m_unk);
     } else {
       data.push_back(m_vocab[w]);
     }
   }
-  /*
-  for (size_t j = data.size(); j<(size_t)m_linearized_data_size; j++) {
-    data.push_back(m_pad);
-  }
-  */
+  data.push_back(m_eos);
 }
 
 void smiles_data_reader::get_sample(int sample_id, std::vector<short> &sample_out) {
@@ -410,59 +430,89 @@ void smiles_data_reader::get_sample(int sample_id, std::vector<short> &sample_ou
   }
   size_t offset = iter->second.first;
   short size = iter->second.second;
-
   if (offset + size > m_data.size()) {
     LBANN_ERROR("offset: ", offset, " + size: ", size, " is > m_data.size(): ", m_data.size());
   }
 
   const char *v = m_data.data()+offset;
   const std::string smiles_string(v, size);
-  encode_smiles(smiles_string, sample_out);
+  encode_smiles(smiles_string, sample_out, sample_id);
 }
 
-// Let the hacking begin ...
-// TODO: break into several function calls
+int smiles_data_reader::get_smiles_string_length(const std::string &line, int line_number) {
+  if (m_delimiter == '\0') {
+    return line.size();
+  }
+  size_t k = line.find(m_delimiter);
+  if (k == std::string::npos) {
+    LBANN_ERROR("failed to find delimit character >>", m_delimiter, " in line: ", line, " which is line number ", line_number);
+  }
+  return k;
+}
+
+
+// TODO: break into several function calls ??
 // TODO: some/most of the following could/should be in the data_store ??
 void smiles_data_reader::setup_fast_experimental() {
+  double tm3 = get_time();
+  if (is_master()) {
+    std::cout << "\nSTARTING smiles_data_reader::setup_fast_experimental() " << std::endl << std::endl;
+  }  
+
+  // Get delimiter; default delimiter is none ('\0'), though it's likely
+  // to be ',' or '\t', since we're likely reading csv files
+  options *opts = options::get();
+  if (opts->has_string("delimiter")) {
+    const std::string d = opts->get_string("delimiter");
+    m_delimiter = d[0];
+  }
+  if (is_master()) {
+    std::cout << "USING delimiter character: " << m_delimiter << std::endl;
+  }
+
+  // This will hold: (dataum_id, datum_offset, datum length) for each sample
   std::vector<size_t> sample_offsets(m_shuffled_indices.size()*3);
+
+  // Will hold size of above buffer, for bcasting
   size_t buffer_size;
 
   if (is_master()) {
-    std::cout << "\nSTARTING smiles_data_reader::setup_fast_experimental() " << std::endl << std::endl;
     double tm1 = get_time();
 
-    // Open input file and discard header line
+    // Open input file and discard header line, if it exists
     const std::string infile = get_file_dir() + "/" + get_data_filename();
     std::ifstream in(infile.c_str());
     if (!in) {
       LBANN_ERROR("failed to open data file: ", infile, " for reading");
     }
     std::string line;
-    getline(in, line); //assume a header line, and discard
+    if (m_has_header) {
+      getline(in, line);
+    }  
 
-    // Count memory requirements (ugh; possibly precompute);
-    // This can be done better, but doing it the easy way for now;
-    // do it the better way only if this is too slow
+    // Part 1: compute memory requirements for local cache
+
+    // Get max sample id, which will be the number of lines we need to 
+    // read from file. This is needed if (1) not using 100% of data,
+    // and/or (2) carving off part of train data to use as validation.
     std::unordered_set<int> samples_to_use;
-    int max_sample_id = 0; //stop compiler complaints
+    int max_sample_id = 0; 
     for (size_t j=0; j<m_shuffled_indices.size(); j++) {
       samples_to_use.insert(m_shuffled_indices[j]);
       max_sample_id = m_shuffled_indices[j] > max_sample_id ? m_shuffled_indices[j] : max_sample_id;
     }
     ++max_sample_id;
 
+    // Construct sample_offsets vector
     sample_offsets.clear();
     size_t offset = 0;
     for (int j=0; j<max_sample_id; j++) {
       getline(in, line);
+      if (line.size() < 5) {
+        LBANN_ERROR("read ", j, " lines from file; could not read another. --num_samples is probably incorrect");
+      }
       if (samples_to_use.find(j) != samples_to_use.end()) {
-        size_t k = line.find('\t');
-        if (k == std::string::npos) {
-          k = line.find(',');
-        }
-        if (k == std::string::npos) {
-          LBANN_ERROR("failed to find delimit character (tab or comma) in line: ", line, " which is line number ", j);
-        }
+        int k = get_smiles_string_length(line, j);
         sample_offsets.push_back(j);
         sample_offsets.push_back(offset);
         sample_offsets.push_back(k);
@@ -472,42 +522,75 @@ void smiles_data_reader::setup_fast_experimental() {
     buffer_size = offset;
     m_data.resize(buffer_size);
 
-    // Fill in the data buffer
+    // Part 2: Fill in the data buffer
     in.seekg(0);
-    getline(in, line); //assume a header line, and discard
+    if (m_has_header) {
+      getline(in, line); 
+    }  
     offset = 0;
     for (int j=0; j<max_sample_id; j++) {
       getline(in, line);
       if (samples_to_use.find(j) != samples_to_use.end()) {
-        size_t k = line.find('\t');
-        if (k == std::string::npos) {
-          k = line.find(',');
-        }
-        for (size_t n=0; n<k; n++) {
+        int k = get_smiles_string_length(line, j);
+        for (int n=0; n<k; n++) {
           m_data[n+offset] = line[n];
         }
         offset += k;
       }
     }
 
-    std::cout << "Time for computing sample sizes: " << get_time() - tm1 << std::endl;
     if (sample_offsets.size()/3 != m_shuffled_indices.size()) {
       LBANN_ERROR("sample_offsets.size()/3: ", sample_offsets.size()/3, " should be equal to m_shuffled_indices.size which is ", m_shuffled_indices.size());
     }
+    std::cout << "P_0 time for computing sample sizes and filling buffer: " << get_time() - tm1 << std::endl;
   }
 
+  // Construct lookup table for locating samples in the m_data vector (aka, the sample buffer)
   m_comm->broadcast<size_t>(0, sample_offsets.data(), sample_offsets.size(), m_comm->get_world_comm());
-
-  // Construct lookup table
   for (size_t j=0; j<sample_offsets.size(); j += 3) {
     m_sample_lookup[sample_offsets[j]] = 
-      std::make_pair(sample_offsets[j+1], sample_offsets[j+3]);
+      std::make_pair(sample_offsets[j+1], sample_offsets[j+2]);
   }
 
   // Bcast the sample buffer
   m_comm->broadcast<size_t>(0, &buffer_size, 1, m_comm->get_world_comm());
   m_data.resize(buffer_size);
-  m_comm->broadcast<char>(0, m_data.data(), m_data.size(), m_comm->get_world_comm());
+
+  int full_rounds = m_data.size() / INT_MAX;
+  int last_round = m_data.size() % INT_MAX;
+  size_t the_offset = 0;
+
+  for (int j=0; j<full_rounds; j++) {
+    m_comm->broadcast<char>(0, m_data.data()+the_offset, INT_MAX, m_comm->get_world_comm());
+    the_offset += INT_MAX;
+  }
+  if (last_round) {
+    m_comm->broadcast<char>(0, m_data.data()+the_offset, last_round, m_comm->get_world_comm());
+  }
+
+  if (is_master()) {
+    std::cout << "total time for loading data: " << get_time()-tm3 << std::endl
+              << "num samples: " << m_sample_lookup.size() << std::endl;
+  }
+
+  // Only used for testing/debugging during development
+  if (opts->get_bool("test_encode")) {
+    test_encode();
+  }
+}
+
+void smiles_data_reader::test_encode() {
+  double tm1 = get_time();
+  if (is_master()) {
+    std::cout << "STARTING TEST_ENCODE" << std::endl;
+  }
+  std::vector<short> encoded;
+  for (auto t : m_sample_lookup) {
+    get_sample(t.first, encoded);
+  }
+  if (is_master()) {
+    std::cout << "ENDING TEST_ENCODE; time: " << get_time()-tm1 << std::endl;
+  }
 }
 
 }  // namespace lbann

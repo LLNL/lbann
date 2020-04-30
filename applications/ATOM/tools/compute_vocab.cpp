@@ -2,6 +2,7 @@
 #include <string>
 #include <fstream>
 #include <unordered_set>
+#include <set>
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/timer.hpp"
@@ -47,8 +48,10 @@ int main(int argc, char **argv) {
     }
 
     const std::string w = opts->get_string("delimiter");
-    const char d = w[0];
+    const char d = '\t';
+    //const char d = w[0];
 
+    //std::set<char> s;
     std::unordered_set<char> s;
 
     std::string line;
@@ -75,8 +78,8 @@ int main(int argc, char **argv) {
     }
     out << "<bos> " << idx++ << std::endl;
     out << "<eos> " << idx++ << std::endl;
-    out << "<unk> " << idx++ << std::endl;
     out << "<pad> " << idx++ << std::endl;
+    out << "<unk> " << idx++ << std::endl;
 
     in.close();
     out.close();
