@@ -1,10 +1,12 @@
 import macc_models 
 import argparse
-from os.path import abspath, dirname, join
+import os
+from os.path import abspath, dirname, join 
 import google.protobuf.text_format as txtf
 import lbann.contrib.launcher
 import lbann.contrib.args
 from lbann.util import str_list
+import datetime
 
 # ==============================================
 # Setup and launch experiment
@@ -19,24 +21,19 @@ metadata_prototext = join(dirname(cur_dir),
                              'data',
                              'jag_100M_metadata.prototext')
 
-#model_dir=''
-#Load at least pretrained WAE model
-#assert model_dir, 'pre_trained_dir should not be empty'
-#Assume pre_trained model is in current directory, change path if not
-#pre_trained_dir=join(cur_dir,model_dir) 
+# Initialize LBANN inf executable 
+lbann_exe = abspath(lbann.lbann_exe())
+lbann_exe = join(dirname(lbann_exe), 'lbann_inf')
 
 # Command-line arguments
 parser = argparse.ArgumentParser()
 lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
-    '--job-name', action='store', default='surrogate', type=str,
+    '--job-name', action='store', default='eval', type=str,
     help='job name', metavar='NAME')
 parser.add_argument(
-    '--mini-batch-size', action='store', default=128, type=int,
+    '--mini-batch-size', action='store', default=4096, type=int,
     help='mini-batch size (default: 128)', metavar='NUM')
-parser.add_argument(
-    '--num-epochs', action='store', default=100, type=int,
-    help='number of epochs (default: 100)', metavar='NUM')
 parser.add_argument(
     '--num-nodes', action='store', default=4, type=int,
     help='number of nodes (default: 4)', metavar='NUM')
@@ -65,28 +62,27 @@ parser.add_argument(
     '--data-filedir-test', action='store', default='/p/gpfs1/brainusr/datasets/10MJAG/1M_B/', type=str,
     help='data filedir (default test dir is 10MJAG/1M_B)', metavar='NAME')
 parser.add_argument(
-    '--index-list-train', action='store', default='index.txt', type=str,
+    '--index-list-train', action='store', default='index_eight.txt', type=str,
+    help='index list (default index_eight 8 samples)', metavar='NAME')
+parser.add_argument(
+    '--index-list-test', action='store', default='t2_index.txt', type=str,
     help='index list (default index.txt)', metavar='NAME')
 parser.add_argument(
-    '--index-list-test', action='store', default='t0_sample_list_multi_10K.txt', type=str,
-    help='index list (default t0_sample_list_multi_10K.txt, 100 samples)', metavar='NAME')
+    '--percent-of-data-to-use', action='store', default=0.01, type=float,
+    help='percent of data to use (default: 0.01)', metavar='NUM')
 parser.add_argument(
     '--dump-outputs', action='store', default='dump_outs', type=str,
     help='dump outputs dir (default: jobdir/dump_outs)', metavar='NAME')
 parser.add_argument(
-    '--dump-models', action='store', default='dump_models', type=str,
-    help='dump models dir (default: jobdir/dump_models)', metavar='NAME')
-parser.add_argument(
-    '--pretrained-dir', action='store', default=' ', type=str,
-    help='pretrained WAE dir  (default: empty)', metavar='NAME')
+    '--pretrained-dir', action='store', default=None, type=str,
+    help='pretrained WAE surrogate dir  (default: ' ')', metavar='NAME')
 parser.add_argument(
     '--procs-per-trainer', action='store', default=0, type=int,
     help='processes per trainer (default: 0)', metavar='NUM')
 args = parser.parse_args()
 
-if not(args.pretrained_dir):
-  print("WARNING pretrained dir ", args.pretrained_dir, " is empty, default option assumes
-         pretrained autoencoder")
+print("Pretrained dir ", args.pretrained_dir)
+assert args.pretrained_dir, "evaluate script asssumes a pretrained MaCC model" 
 
 def list2str(l):
     return ' '.join(l)
@@ -100,7 +96,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A',data_set_per_model=True,name='inp_data')
+    input = lbann.Input(target_mode='N/A',name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
     inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+args.xdim]),name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
@@ -128,18 +124,22 @@ def construct_model():
     output_fake = fwd(gt_x)
     y_image_re = wae.decoder(output_fake)
 
+    y_out = wae.decoder(y_pred_fwd) 
+
     param_pred2_ = wae.encoder(y_image_re)
     input_cyc = inv(param_pred2_)
 
-    L_l2_x =  lbann.MeanSquaredError(input_fake,gt_x)
-    L_cyc_x = lbann.MeanSquaredError(input_cyc,gt_x)
+    L_l2_x =  lbann.MeanSquaredError(input_fake,gt_x) #(x,inv(enc(y)), (encoder+)inverse loss 
+    L_cyc_x = lbann.MeanSquaredError(input_cyc,gt_x)  #param, x cycle loss, from latent space
 
-    L_l2_y =  lbann.MeanSquaredError(output_fake,y_pred_fwd)
-    L_cyc_y = lbann.MeanSquaredError(output_cyc,y_pred_fwd)
+    L_l2_y =  lbann.MeanSquaredError(output_fake,y_pred_fwd) #pred error into latent space (enc(y),fw(x))
+    L_cyc_y = lbann.MeanSquaredError(output_cyc,y_pred_fwd) # pred error into latent space (enc(y), fw(inv(enc(y))))
    
      
     #@todo slice here to separate scalar from image
-    img_sca_loss = lbann.MeanSquaredError(y_image_re,gt_y)
+    img_sca_loss = lbann.MeanSquaredError(y_image_re,gt_y) # (y,dec(fw(x))) #forward model to decoder, no latent space
+    dec_fw_inv_enc_y = lbann.MeanSquaredError(y_image_re2,gt_y) #(y, dec(fw(inv(enc(y))))) y->enc_z->x'->fw_z->y'
+    wae_loss  = lbann.MeanSquaredError(y_out,gt_y) #(y, dec(enc(y)) '
     #L_cyc = L_cyc_y + L_cyc_x
     L_cyc = lbann.Add(L_cyc_y, L_cyc_x)
 
@@ -147,48 +147,47 @@ def construct_model():
     loss_gen0  = lbann.WeightedSum([L_l2_y,L_cyc], scaling_factors=f'1 {args.lamda_cyc}')
     loss_gen1  = lbann.WeightedSum([L_l2_x,L_cyc_y], scaling_factors=f'1 {args.lamda_cyc}')
     #loss_gen1  =  L_l2_x + lamda_cyc*L_cyc_y
+    
 
-
+    conc_out = lbann.Concatenation([gt_x,wae_loss,img_sca_loss,dec_fw_inv_enc_y,
+                                    L_l2_x], name='x_errors')
     layers = list(lbann.traverse_layer_graph(input))
     weights = set()
-    #Freeze appropriate (pretrained) weights
-    pretrained_models = ["wae"]  #add macc?
     for l in layers:
-      for idx in range(len(pretrained_models)):
-        if(l.weights and pretrained_models[idx] in l.name):
-          for w in range(len(l.weights)):
-            l.weights[w].optimizer = lbann.NoOptimizer()
       weights.update(l.weights)
          
-    l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
-    #d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
     # Setup objective function
-    obj = lbann.ObjectiveFunction([loss_gen0,loss_gen1,l2_reg])
+    obj = lbann.ObjectiveFunction([loss_gen0,loss_gen1])
     # Initialize check metric callback
-    metrics = [lbann.Metric(img_sca_loss, name='fw_loss'),
+    metrics = [lbann.Metric(img_sca_loss, name='img_re1'),  
+               lbann.Metric(dec_fw_inv_enc_y, name='img_re2'),
+               lbann.Metric(wae_loss, name='wae_loss'),
                lbann.Metric(L_l2_x, name='inverse loss'),
                lbann.Metric(L_cyc_y, name='output cycle loss'),
                lbann.Metric(L_cyc_x, name='param cycle loss')]
 
     callbacks = [lbann.CallbackPrint(),
-                 lbann.CallbackSaveModel(dir=args.dump_models),
-                 lbann.CallbackLoadModel(dirs=str(args.pretrained_dir)),
+                 lbann.CallbackDumpOutputs(layers=f'{conc_out.name}',
+                                           execution_modes='test',
+                                           directory=args.dump_outputs,
+                                           batch_interval=1,
+                                           format='npy'),
                  lbann.CallbackTimer()]
                                             
     # Construct model
+    num_epochs =1
     return lbann.Model(args.mini_batch_size,
-                       args.num_epochs,
+                       num_epochs,
                        weights=weights,
-                       serialize_io=True,
                        layers=layers,
+                       serialize_io=True,
                        metrics=metrics,
                        objective_function=obj,
                        callbacks=callbacks)
 
 
 if __name__ == '__main__':
-    import lbann
-    
+
     trainer = lbann.Trainer(procs_per_trainer=args.procs_per_trainer)
     model = construct_model()
     # Setup optimizer
@@ -201,18 +200,19 @@ if __name__ == '__main__':
 
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     status = lbann.contrib.launcher.run(trainer,model, data_reader_proto, opt,
+                       lbann_exe,
                        scheduler='lsf',
+                       partition='pdebug',
                        nodes=args.num_nodes,
                        procs_per_node=args.ppn,
-                       partition='pbatch',
-                       time_limit=480,
-                       setup_only=False,
+                       time_limit=30,
+                       setup_only=False, 
+                       batch_job=False, 
                        job_name=args.job_name,
-                       lbann_args=['--preload_data_store --use_data_store',
+                       lbann_args=['--preload_data_store --use_data_store --ckptdir_is_fullpath',
                                    f'--metadata={metadata_prototext}',
-                                   f'--index_list_train={args.index_list_train}',
+                                   f'--ckpt_dir={args.pretrained_dir}',
                                    f'--index_list_test={args.index_list_test}',
-                                   f'--data_filedir_train={args.data_filedir_train}',
                                    f'--data_filedir_test={args.data_filedir_test}'],
                                    **kwargs)
     print(status)

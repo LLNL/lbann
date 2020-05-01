@@ -84,7 +84,8 @@ public:
     h2::meta::tlist::MemberV<TensorDataType, supported_layer_data_type>(),
     "Must use a supported type.");
 
-  data_type_layer(lbann_comm *comm) : Layer(comm) {}
+  data_type_layer(lbann_comm *comm, bool persistent_error_signals=false)
+    : Layer(comm), m_persistent_error_signals{persistent_error_signals} {}
   data_type_layer(const data_type_layer<TensorDataType>& other);
   data_type_layer& operator=(const data_type_layer<TensorDataType>& other);
   virtual ~data_type_layer() = default;
@@ -100,13 +101,6 @@ public:
    *  tensors.
    */
   void forward_prop() override;
-  /** Backward propagation step.
-   *  Given the objective function gradients w.r.t. the output
-   *  tensors, compute the gradients w.r.t. the input tensors and
-   *  w.r.t. the weights. This is essentially an application of the
-   *  chain rule.
-   */
-  void back_prop() override;
 
   void summarize_matrices(lbann_summary& summarizer, int step) override;
 
@@ -157,6 +151,13 @@ public:
   const AbsMatrixType& get_local_activations(int child_index = 0) const;
   /** Get local portion of error signal tensor. */
   const AbsMatrixType& get_local_error_signals(int parent_index = 0) const;
+
+  /** @brief Set whether to keep or dynamically reallocate error signals.
+   *
+   *  Passing a value of @c true means to keep the error signals; @c
+   *  false means to dynamically reallocate them.
+   */
+  void set_keep_error_signals(bool) override;
 
 protected:
 
@@ -215,12 +216,6 @@ protected:
   // Back prop step helper functions
   // ===========================================================
 
-  /** Setup gradient w.r.t. output tensors.
-   *  Called by the 'back_prop' function. Each gradient w.r.t. output
-   *  tensor is setup as a view or copy of the corresponding child
-   *  layer's gradient w.r.t. input tensor.
-   */
-  void bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) override;
   /** Setup gradient w.r.t. input tensors.
    *  Called by the 'back_prop' function. Each gradient w.r.t. input
    *  tensor is resized to match the mini-batch size.
@@ -276,6 +271,83 @@ protected:
 
 private:
 
+  /** @brief Attempt to take ownership of the previous error signal.
+   *
+   *  If the underlying matrix has the right datatype and
+   *  distribution, the signal is moved explicitly. Otherwise a deep
+   *  copy is made so that it has the correct datatype and
+   *  distribution.
+   *
+   *  This is valid if the child layer does not have persistent error
+   *  signals.
+   *
+   *  @param child The layer from which the error signal has come.
+   *  @param signal The error signal from the layer.
+   */
+  void move_or_copy_prev_error_signal_(
+    const Layer& child,
+    std::unique_ptr<El::BaseDistMatrix> signal) final;
+
+  /** @brief Attempt to view the previous error signal.
+   *
+   *  If the underlying matrix has the right datatype and
+   *  distribution, the signal can be viewed directly. Otherwise a
+   *  deep copy is made so that it has the correct datatype and
+   *  distribution.
+   *
+   *  This is only valid if the child layer has persistent error
+   *  signals. Otherwise, the viewed data my be invalidated.
+   *
+   *  @param child The layer from which the error signal has come.
+   *  @param signal The error signal from the layer.
+   */
+  void view_or_copy_prev_error_signal_(
+    const Layer& child,
+    const El::BaseDistMatrix& signal) final;
+
+  /** @brief Deep copy the error signal.
+   *
+   *  In some cases, it can be determined that neither viewing nor
+   *  moving is a possibility. In these cases, we must do a deep copy.
+   *
+   *  @param child The layer from which the error signal has come.
+   *  @param signal The error signal from the layer.
+   */
+  void deep_copy_prev_error_signal_(
+    const Layer& child,
+    const El::BaseDistMatrix& signal) final;
+
+  /** @brief Ensure that gradient matrices exist.
+   *
+   *  This step is performed immediately prior to the bp_compute()
+   *  work.
+   */
+  void allocate_new_gradients_() final;
+
+  /** @brief Send error signals computed by this layer to their
+   *         respective parents.
+   *
+   *  This step is performed immediately after the bp_compute() work
+   *  and prior to clearing the previous error signals. This ordering
+   *  is necessary in case this layer's error signals are views into
+   *  the previous error signals.
+   */
+  void propagate_error_signals_to_parents_() final;
+
+  /** @brief Free previous error signals, if possible.
+   *
+   *  This step is performed at the end of a layer's backprop phase.
+   */
+  void clear_prev_error_signals_() final;
+
+  /** Backward propagation step.
+   *  Given the objective function gradients w.r.t. the output
+   *  tensors, compute the gradients w.r.t. the input tensors and
+   *  w.r.t. the weights. This is essentially an application of the
+   *  chain rule.
+   */
+  void back_prop_impl_() final;
+
   // ===========================================================
   // Private access functions
   // ===========================================================
@@ -313,6 +385,13 @@ private:
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
   std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
+
+  /** @brief Whether to keep persistent error signals or dynamically
+   *         allocate/deallocate them.
+   *
+   *  The default behavior is dynamic allocation.
+   */
+  bool m_persistent_error_signals = false;
 
 #ifdef LBANN_HAS_DISTCONV
   friend class data_type_distconv_adapter<TensorDataType>;

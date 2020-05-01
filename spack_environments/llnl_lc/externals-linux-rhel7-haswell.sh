@@ -3,7 +3,7 @@
 EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
-        mpi: [mvapich2@2.3 arch=linux-opensuse_leap15-skylake_avx512]
+        mpi: [mvapich2@2.3 arch=linux-rhel7-haswell]
         lapack: [openblas threads=openmp]
         blas: [openblas threasd=openmp]
       buildable: true
@@ -17,37 +17,37 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     cmake::
       buildable: True
       variants: ~openssl ~ncurses
-      version: [3.14.4]
-      modules:
-        cmake@3.14.4 arch=linux-opensuse_leap15-skylake_avx512: cmake/3.14.4
+      version: [3.14.5]
+      paths:
+        cmake@3.14.5 arch=linux-rhel7-haswell:  /usr/tce/packages/cmake/cmake-3.14.5
 
     cuda::
       buildable: False
-      version: [10.2.89]
+      version: [10.1.168]
       modules:
-        cuda@10.2.89 arch=linux-opensuse_leap15-skylake_avx512: cuda/10.2.89
+        cuda@10.1.168 arch=linux-rhel7-haswell: cuda/10.1.168
 
     cudnn::
       buildable: true
-      version: [7.6.5.32-10.2-linux-x64]
+      version: [7.6.5.32-10.1-linux-x64]
 
     gcc::
        buildable: False
-       version: [8.2.0]
+       version: [7.3.0]
        modules:
-         gcc@8.2.0 arch=linux-opensuse_leap15-skylake_avx512: gcc/8.2.0
+         gcc@7.3.0 arch=linux-rhel7-haswell: gcc/7.3.0
 
     hwloc::
       buildable: False
-      version: [1.11.8]
+      version: [2.0.2]
       paths:
-        hwloc@1.11.8 arch=linux-opensuse_leap15-skylake_avx512: /usr/lib64/libhwloc.so
+        hwloc@2.0.2 arch=linux-rhel7-haswell: /usr/lib64/libhwloc.so
 
     mvapich2::
-      buildable: False
-      version: [2.3.2]
-      modules:
-        mvapich2@2.3.2%gcc@8.2.0 arch=linux-opensuse_leap15-skylake_avx512: mvapich2/2.3.2
+      buildable: True
+      version: [2.3]
+      paths:
+        mvapich2@2.3%gcc@7.3.0 arch=linux-rhel7-haswell: /usr/tce/packages/mvapich2/mvapich2-2.3-gcc-7.3.0/
 
     openblas::
       buildable: True
@@ -62,14 +62,14 @@ EXTERNAL_PACKAGES=$(cat <<EOF
     python::
       buildable: True
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
-      version: [3.7.4]
+      version: [3.7.2]
       modules:
-        python@3.7.4 arch=linux-opensuse_leap15-skylake_avx512: python/3.7-anaconda-2019.10
+        python@3.7.2 arch=linux-rhel7-haswell: python/3.7.2
 
     rdma-core::
       buildable: False
       version: [20]
       paths:
-        rdma-core@20 arch=linux-opensuse_leap15-skylake_avx512: /usr
+        rdma-core@20 arch=linux-rhel7-haswell: /usr
 EOF
 )
