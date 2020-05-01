@@ -68,6 +68,12 @@ public:
        CEREAL_NVP(m_effective_mini_batch_size));
   }
 
+  /** @brief Return the state of the execution context as a string */
+  std::string get_state_string() const noexcept override {
+    return build_string("sgd.", to_string(get_execution_mode()),
+                        ".epoch.", get_epoch(), ".step.", get_step());
+  }
+
   /** Number of times the training set has been traversed. */
   inline size_t get_epoch() const noexcept { return m_epoch; }
 
