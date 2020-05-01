@@ -20,7 +20,7 @@ import tools
 
 # Data
 np.random.seed(20191204)
-_num_samples = 17
+_num_samples = 8 #17
 _sample_size = 60
 _samples = np.random.normal(size=(_num_samples,_sample_size), loc=1).astype(np.float32)
 
@@ -72,7 +72,6 @@ def construct_model(lbann):
     # Objects for LBANN model
     obj = []
     metrics = []
-    callbacks = []
 
     # --------------------------
     # Concatenate along axis 0
@@ -89,6 +88,14 @@ def construct_model(lbann):
     z = lbann.L2Norm2(lbann.Multiply(x, y))
     obj.append(z)
     metrics.append(lbann.Metric(z, name='axis0'))
+
+    callbacks = [lbann.CallbackPrint(),
+                 lbann.CallbackDumpOutputs(layers=f'{x_slice.name}',
+                                           execution_modes='training',
+                                           directory='dump_outs',
+                                           batch_interval=1,
+                                           format='csv'),
+    ]
 
     # NumPy implementation
     vals = []
@@ -220,7 +227,7 @@ def construct_model(lbann):
     # Gradient checking
     # --------------------------
 
-    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
+    callbacks.append(lbann.CallbackCheckGradients(verbose=True, error_on_failure=False))
 
     # --------------------------
     # Construct model

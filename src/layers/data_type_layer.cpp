@@ -468,34 +468,6 @@ void data_type_layer<TensorDataType>::setup_data(size_t max_mini_batch_size) {
   // Initialize input and output tensors
   fp_setup_inputs(max_mini_batch_size);
   fp_setup_outputs(max_mini_batch_size);
-
-  // Initialize gradient w.r.t. output tensors
-  // Note: We guess whether the tensor is a view or needs to allocate
-  // memory, but there are some edge cases that are not handled.
-  for (int i = 0; i < get_num_children(); ++i) {
-#ifdef LBANN_HAS_DISTCONV
-    if (distconv_enabled() && !get_distconv_adapter().child_copy_required(i)) {
-      // Avoids allocating unused matrices
-      continue;
-    }
-#endif // LBANN_HAS_DISTCONV
-    const auto& child = *m_child_layers[i];
-    const auto& output = get_activations(i);
-    auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
-    gradient_wrt_output.Empty(false);
-    gradient_wrt_output.AlignWith(output);
-    if (child.get_data_layout() == get_data_layout()
-        && child.get_device_allocation() == get_device_allocation()
-        && gradient_wrt_output.DistData() == output.DistData()) {
-      El::LockedView(gradient_wrt_output, output);
-    } else {
-      El::Copy(output, gradient_wrt_output);
-    }
-  }
-
-  // Initialize gradient w.r.t. input tensors
-  bp_setup_gradient_wrt_inputs(max_mini_batch_size);
-
 }
 
 template <typename TensorDataType>
