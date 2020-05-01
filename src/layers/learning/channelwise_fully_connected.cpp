@@ -219,7 +219,7 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
   // Initialize freeze state
   for (auto&& w : this->get_data_type_weights()) {
-    if (this->m_frozen) {
+    if (this->is_frozen()) {
       w->freeze();
     } else {
       w->unfreeze();

@@ -548,9 +548,7 @@ void data_type_layer<TensorDataType>::replace_weights(Layer* other_layer) {
   const std::vector<WeightsType*>& other_layer_weights =
     dynamic_cast<data_type_layer<TensorDataType>*>(other_layer)->get_data_type_weights();
   for (size_t i = 0; i < m_weights.size(); ++i) {
-    if (m_weights[i]) {
-      m_weights[i]->set_values(other_layer_weights[i]->get_values());
-    }
+    m_weights[i]->set_values(other_layer_weights[i]->get_values());
   }
 
 }

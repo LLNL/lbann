@@ -53,6 +53,10 @@
 
 namespace lbann {
 
+//#define PROFILE_VERBOSE
+
+int number = 0;  // for use in DEBUG_DS statements
+
 data_store_conduit::data_store_conduit(
   generic_data_reader *reader) :
   m_reader(reader) {
@@ -106,6 +110,7 @@ data_store_conduit::data_store_conduit(
 }
 
 data_store_conduit::~data_store_conduit() {
+  profile_timing();
   if (m_debug) {
     m_debug->close();
   }
@@ -230,6 +235,8 @@ void data_store_conduit::setup(int mini_batch_size) {
   m_is_setup = true;
 }
 
+#if 0
+XX
 void data_store_conduit::setup_data_store_buffers() {
   // allocate buffers that are used in exchange_data()
   m_send_buffer.resize(m_np_in_trainer);
@@ -240,6 +247,7 @@ void data_store_conduit::setup_data_store_buffers() {
   m_incoming_msg_sizes.resize(m_np_in_trainer);
   m_recv_buffer.resize(m_np_in_trainer);
 }
+#endif
 
 void data_store_conduit::spill_preloaded_conduit_node(int data_id, const conduit::Node &node) {
   // note: at this point m_data[data_id] = node
@@ -453,8 +461,23 @@ void data_store_conduit::build_node_for_sending(const conduit::Node &node_in, co
 }
 
 void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_size) {
+  double tm5 = get_time();
+  ++number;
+  DEBUG_DS("================================================================");
+  DEBUG_DS(number, " :: STARTING exchange_data_by_sample, pos ", current_pos);
+
+  #ifdef PROFILE_VERBOSE
+  PROFILE(number, " :: STARTING exchange_data_by_sample, pos ", current_pos);
+  #endif
+
   if (! m_is_setup) {
     LBANN_ERROR("setup(mb_size) has not been called");
+  }
+
+  std::stringstream s123;
+  std::set<int> s33;
+  for (const auto t : m_owner) {
+    s33.insert(t.first);
   }
 
   // The following is needed to deal with one-off cases where one or
@@ -467,7 +490,6 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
     m_bcast_sample_size = false;
   }
 
-  double tm5 = get_time();
 
   /// exchange sample sizes if they are non-uniform (imagenet);
   /// this will only be called once, during the first call to
@@ -570,8 +592,28 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
 
   // wait for all msgs to complete
   tm5 = get_time();
-  m_comm->wait_all(m_send_requests);
-  m_comm->wait_all(m_recv_requests);
+
+  if (m_recv_requests.size()) {
+    DEBUG_DS("calling wait_all for ", m_recv_requests.size(), " recvs");
+    m_comm->wait_all(m_recv_requests);
+    DEBUG_DS("DONE! calling wait_all for recvs");
+  } else {
+    DEBUG_DS("not calling wait_all(m_recv_requests), since we have nothing to receive");
+  }
+
+  if (m_send_requests.size()) {
+    DEBUG_DS("calling wait_all for ", m_send_requests.size(), " sends");
+    m_comm->wait_all(m_send_requests);
+    DEBUG_DS("DONE calling wait_all for sends");
+  } else {
+    DEBUG_DS("not calling wait_all(m_send_requests), since we have nothing to send");
+  }
+
+  #ifdef PROFILE_VERBOSE
+  PROFILE(number, " :: sends and recvs finished!");
+  #endif
+
+//  m_comm->trainer_barrier();
   m_wait_all_time += (get_time() - tm5);
 
   //========================================================================
@@ -601,6 +643,11 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
     // TODO
     m_data.clear();
   }
+  DEBUG_DS(number, " :: LEAVING exchange_data_by_sample");
+
+  #ifdef PROFILE_VERBOSE
+  PROFILE(number, " :: LEAVING exchange_data_by_sample");
+  #endif
 }
 
 int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size) {
@@ -615,14 +662,22 @@ int data_store_conduit::build_indices_i_will_recv(int current_pos, int mb_size) 
       k++;
     }
   }
+
+  std::stringstream sss;
+  for (size_t j=0; j<m_indices_to_recv.size(); j++) {
+    sss << "  " << number << " :: receiving " << m_indices_to_recv[j].size() << " samples from P_" << j << std::endl;
+  }
+
+  DEBUG_DS(number, " :: leaving build_indices_i_will_recv; cur pos: ", current_pos, " mb_size: ", mb_size);
+  DEBUG_DS(sss.str());
   return k;
 }
 
 int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) {
   m_indices_to_send.clear();
   m_indices_to_send.resize(m_np_in_trainer);
+  int count = 0;
   int k = 0;
-  DEBUG_DS("build_indices_i_will_send; cur pos: ", current_pos, " mb_size: ", mb_size, " m_data.size: ", m_data.size());
   for (int i = current_pos; i < current_pos + mb_size; i++) {
     auto index = (*m_shuffled_indices)[i];
     /// If this rank owns the index send it to the (i%m_np)'th rank
@@ -633,6 +688,7 @@ int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) 
       is_mine = true;
     }
     if (is_mine) {
+++count;
       m_indices_to_send[(i % m_owner_map_mb_size) % m_np_in_trainer].insert(index);
 
       // Sanity check
@@ -642,6 +698,13 @@ int data_store_conduit::build_indices_i_will_send(int current_pos, int mb_size) 
       k++;
     }
   }
+
+  std::stringstream sss;
+  for (size_t j=0; j<m_indices_to_send.size(); j++) {
+    sss << "  " << number << " :: sending " << m_indices_to_send[j].size() << " samples to P_" << j << std::endl;
+  }  
+  DEBUG_DS(number, " :: leaving build_indices_i_will_send; cur pos: ", current_pos, " mb_size: ", mb_size, " my_num_owned: ", m_data.size());
+  DEBUG_DS(sss.str());
   return k;
 }
 
@@ -1363,7 +1426,7 @@ void data_store_conduit::profile_timing() {
   if (m_exchange_time > 0.) {
     PROFILE(
         "\n",
-        "Exchange Data Timing:\n",
+        "Exchange Data Timing (cumulative for previous epoch):\n",
         "  exchange_mini_batch_data: ", m_exchange_time, "\n",
         "  exchange sample sizes:    ", m_exchange_sample_sizes_time, "\n",
         "  start sends and rcvs:     ", m_start_snd_rcv_time, "\n",
@@ -1410,6 +1473,10 @@ void data_store_conduit::profile_timing() {
     m_rebuild_time = 0.;
     m_exchange_time = 0.;
   }
+  else {
+    PROFILE("if (m_exchange_time > 0.)  IS FALSE");
+  }
+
 }
 
 void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_size) {
@@ -1456,7 +1523,12 @@ PROFILE("exchange_mini_batch_data; m_owner_maps_were_exchanged = true");
     */
   }
 
+  //uncomment barriers, and tm1=, to get accurate data_exchange timing;
+  //however, this will possibly slow the code a bit. Or maybe not
+  //m_comm->global_barrier();
+  //tm1 = get_time();
   exchange_data_by_sample(current_pos, mb_size);
+  //m_comm->global_barrier();
   m_exchange_time += (get_time() - tm1);
 }
 

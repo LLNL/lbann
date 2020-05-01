@@ -1,0 +1,14 @@
+data_reader {
+  reader {
+    name: "smiles"
+    role: "train"
+    shuffle: true
+    percent_of_data_to_use: 1.0
+    data_filedir: "/p/lustre2/brainusr/datasets/enamine"
+    data_filename: "all2018q1-2REAL680SMILES.smiles"
+
+    #data_filename: "good.csv"
+    #data_filedir: "/usr/workspace/wsb/hysom/corona/applications/ATOM"
+    #data_filename: "enamine1M.csv.sorted.longest_first"
+  }
+}

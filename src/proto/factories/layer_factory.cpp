@@ -106,6 +106,7 @@
 #include "lbann/layers/transform/weights.hpp"
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/data_readers/data_reader_smiles.hpp"
 #include "lbann/utils/peek_map.hpp"
 
 #include <layers.pb.h>
@@ -730,6 +731,7 @@ std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_
                   + "\". Must be either \"independent\" or \"dependent\".");
     }
   }
+
   return slice_points;
 }
 

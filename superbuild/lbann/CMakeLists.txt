@@ -210,6 +210,14 @@ ExternalProject_Add_Step(LBANN build-jag-utils
   DEPENDERS install
   LOG 1
   USES_TERMINAL 1)
+# Ensure the ATOM utils are built
+ExternalProject_Add_Step(LBANN build-atom-tools
+  COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target atom-tools
+  COMMENT "Performing building of ATOM tools for 'LBANN'"
+  DEPENDEES build
+  DEPENDERS install
+  LOG 1
+  USES_TERMINAL 1)
 
 set(LBANN_DIR ${LBANN_CMAKE_INSTALL_PREFIX}
   CACHE INTERNAL "The install prefix of LBANN.")

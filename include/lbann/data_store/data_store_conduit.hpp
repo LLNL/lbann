@@ -474,8 +474,6 @@ private :
 
   void exchange_data_by_sample(size_t current_pos, size_t mb_size);
 
-  void setup_data_store_buffers();
-
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
 

@@ -358,8 +358,7 @@ void Layer::unfreeze() {
 bool Layer::is_frozen() const {
   for(auto& w : get_weights()) {
     if (w->is_frozen() != m_frozen) {
-      LBANN_ERROR("layer ", get_name(), " and weight ", w->get_name(), \
-                  " of it are inconsistently frozen");
+      LBANN_ERROR("layer and weights of them are inconsistently frozen");
     }
   }
   return m_frozen;
