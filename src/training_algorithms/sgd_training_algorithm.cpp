@@ -63,7 +63,6 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
 
   // Initialize epoch
   model.reset_mode(c, execution_mode::training);
-  model.reset_epoch_statistics(execution_mode::training);
   dc.reset_mode(c);
 
   do_train_begin_cbs(model);

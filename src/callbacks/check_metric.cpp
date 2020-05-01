@@ -97,17 +97,6 @@ void check_metric::do_check_metric(const model& m) const {
     }
   }
 
-  if ((m_lower_bound <= value && value <= m_upper_bound)) {
-    err << "callback \"" << name() << "\" expected "
-        << "metric \"" << m_metric_name << "\" "
-        << "to have a value in range "
-        << "[" << m_lower_bound << "," << m_upper_bound << "], "
-        << "but found a value of " << value;
-    if (m.get_comm()->am_trainer_master()) {
-      LBANN_MSG(err.str());
-    }
-  }
-
 }
 
 std::unique_ptr<callback_base>

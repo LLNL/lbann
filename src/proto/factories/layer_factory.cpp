@@ -404,7 +404,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
 
     if (params.get_slice_points_from_reader() != "") {
       const std::string& var = params.get_slice_points_from_reader();
-      layer->setup_slice_points(0/*params.axis()*/, true, var);
+      layer->setup_slice_points(params.axis(), true, var);
     } else {
       std::string slice_point_method_name = "'slice_points'";
       slice_points = parse_list<size_t>(params.slice_points());
