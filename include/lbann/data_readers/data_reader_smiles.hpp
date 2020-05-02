@@ -116,7 +116,8 @@ private:
 
   bool m_has_header = true;
 
-  std::unordered_map<char, short> m_vocab;
+  std::unordered_map<char,short> m_vocab;
+  std::unordered_map<short,std::string> m_vocab_inv;
 
   std::mutex m_mutex;
 
@@ -140,7 +141,9 @@ private:
   void load_vocab();
   int get_num_lines(std::string fn); 
   void construct_conduit_node(int data_id, const std::string &line, conduit::Node &node); 
-  void encode_smiles(const std::string &sm, std::vector<short> &data, int data_id);
+  void encode_smiles(const char *smiles, short size, std::vector<short> &data_out, int data_id);
+
+  void decode_smiles(const std::vector<short> &data, std::string &out);
 
 };
 
