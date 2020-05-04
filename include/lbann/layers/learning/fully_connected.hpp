@@ -212,7 +212,7 @@ protected:
 
     // Initialize freeze state
     for (auto&& w : this->get_data_type_weights()) {
-      if (this->is_frozen()) {
+      if (this->m_frozen) {
         w->freeze();
       } else {
         w->unfreeze();
