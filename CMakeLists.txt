@@ -657,7 +657,7 @@ add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/jag_utils)
 add_subdirectory(applications/CANDLE/pilot2/tools)
-add_subdirectory(applications/ATOM/tools)
+add_subdirectory(applications/ATOM/utils)
 add_subdirectory(tests)
 add_subdirectory(scripts)
 
