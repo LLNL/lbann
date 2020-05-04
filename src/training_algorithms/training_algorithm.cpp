@@ -33,7 +33,7 @@
 
 namespace lbann {
 
-void training_algorithm::setup_models(std::vector<observer_ptr<model>> models, size_t max_mini_batch_size, TargetModeDimMap& data_dimensions_map) {
+void training_algorithm::setup_models(std::vector<observer_ptr<model>> models, size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   for (observer_ptr<model> m : models) {
     // Set up callbacks
     for (auto* c : m->get_callbacks()) {
@@ -45,7 +45,7 @@ void training_algorithm::setup_models(std::vector<observer_ptr<model>> models, s
       }
     }
     // Setup models
-    m->setup(max_mini_batch_size, data_dimensions_map);
+    m->setup(max_mini_batch_size, dr_metadata);
   }
   return;
 }

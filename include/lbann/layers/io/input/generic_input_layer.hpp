@@ -126,10 +126,10 @@ class generic_input_layer : public io_layer<TensorDataType> {
     return desc;
   }
 
-  void setup_dims(TargetModeDimMap& data_dimensions_map) override {
-    io_layer<TensorDataType>::setup_dims(data_dimensions_map);
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    io_layer<TensorDataType>::setup_dims(dr_metadata);
     for (int i = 0; i < this->get_num_children(); ++i) {
-      this->set_output_dims(get_data_dims(data_dimensions_map, i), i);
+      this->set_output_dims(get_data_dims(dr_metadata, i), i);
     }
   }
 
@@ -440,11 +440,11 @@ class generic_input_layer : public io_layer<TensorDataType> {
   /**
    * Get the dimensions of the underlying data.
    */
-  const std::vector<int> get_data_dims(TargetModeDimMap& data_dimensions_map, int child_index = 0) const override {
+  const std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const override {
     if(child_index == 0) {
-      return data_dimensions_map[data_reader_target_mode::INPUT];
+      return dr_metadata.data_dims[data_reader_target_mode::INPUT];
     }else if(child_index == 1) {
-      return data_dimensions_map[this->m_data_reader_mode];
+      return dr_metadata.data_dims[this->m_data_reader_mode];
     }else {
       LBANN_ERROR("get_data_dims: Invalid child index");
     }

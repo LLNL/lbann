@@ -185,12 +185,6 @@ enum class pool_mode {invalid, max, average, average_no_pad};
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m);
 
-// NA - Not applicable, used for input layers that don't produce a second output
-enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, INPUT, NA};
-std::string to_string(data_reader_target_mode m);
-using TargetModeDimMap = std::unordered_map<data_reader_target_mode, std::vector<int>>;
-using data_reader_target_mode_iterator = enum_iterator<data_reader_target_mode, data_reader_target_mode::CLASSIFICATION, data_reader_target_mode::NA>;
-
 /*
  * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/
  * Case Sensitive Implementation of endsWith()

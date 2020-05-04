@@ -1063,16 +1063,16 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
 }
 
 std::vector<El::Int> data_reader_jag_conduit::get_slice_points(
-  const std::string& var_category,
+  const slice_points_mode var_category,
   bool& is_supported) {
   std::vector<El::Int> slice_points;
   is_supported = true;
-  if (var_category == "independent") {
+  if (var_category == slice_points_mode::INDEPENDENT) {
     slice_points = get_slice_points_independent();
-  } else if (var_category == "dependent") {
+  } else if (var_category == slice_points_mode::DEPENDENT) {
     slice_points = get_slice_points_dependent();
   } else {
-    LBANN_ERROR("Unknown variable category \"" + var_category           \
+    LBANN_ERROR("Unknown variable category \"" + lbann::to_string(var_category) \
                 + "\". Must be either \"independent\" or \"dependent\".");
   }
   return slice_points;

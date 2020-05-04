@@ -245,8 +245,8 @@ protected:
     m_bias_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
   }
 
-  void setup_dims(TargetModeDimMap& data_dimensions_map) override {
-    regularizer_layer<TensorDataType>::setup_dims(data_dimensions_map);
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    regularizer_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 

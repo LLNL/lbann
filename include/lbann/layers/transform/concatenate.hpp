@@ -72,7 +72,7 @@ public:
 protected:
 
   void setup_pointers() override;
-  void setup_dims(TargetModeDimMap& data_dimensions_map) override;
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
@@ -173,8 +173,8 @@ void concatenate_layer<TensorDataType,Layout,Device>::setup_pointers() {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void concatenate_layer<TensorDataType,Layout,Device>::setup_dims(TargetModeDimMap& data_dimensions_map) {
-  data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
+void concatenate_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
   // Dimensions of first input tensor
   auto output_dims = this->get_input_dims(0);

@@ -68,8 +68,8 @@ class discrete_random_layer : public transform_layer<TensorDataType> {
 
  protected:
 
-  void setup_dims(TargetModeDimMap& data_dimensions_map) override {
-    transform_layer<TensorDataType>::setup_dims(data_dimensions_map);
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    transform_layer<TensorDataType>::setup_dims(dr_metadata);
     if (this->get_input_size() != (int) m_values.size()) {
       LBANN_ERROR("input tensor dimensions don't match number of "
                   "values in discrete distribution");

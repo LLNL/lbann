@@ -30,6 +30,7 @@
 #define LBANN_DATA_READER_HPP
 
 #include "lbann/base.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/comm.hpp"
@@ -346,8 +347,11 @@ class generic_data_reader {
     return std::vector<int>(0);
   }
 
-  virtual std::vector<El::Int> get_slice_points(const std::string& var_category,
-                                                bool& is_supported) { return {}; }
+  virtual std::vector<El::Int> get_slice_points(const slice_points_mode var_category,
+                                                bool& is_supported) {
+    is_supported = false;
+    return {};
+  }
 
   /// True if the data reader's current position is valid.
   virtual bool position_valid() const {

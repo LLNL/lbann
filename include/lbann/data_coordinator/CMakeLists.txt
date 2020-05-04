@@ -1,6 +1,7 @@
 # Add the headers for this directory
 set_full_path(THIS_DIR_HEADERS
   data_coordinator.hpp
+  data_coordinator_metadata.hpp
   )
 
 # Propagate the files up the tree

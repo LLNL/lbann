@@ -249,23 +249,6 @@ std::istream& operator>>(std::istream& is, execution_mode& m) {
   return is;
 }
 
-std::string to_string(data_reader_target_mode m) {
-  switch(m) {
-  case data_reader_target_mode::CLASSIFICATION:
-    return "classification";
-  case data_reader_target_mode::REGRESSION:
-    return "regression";
-  case data_reader_target_mode::RECONSTRUCTION:
-    return "reconstruction";
-  case data_reader_target_mode::INPUT:
-    return "input";
-  case data_reader_target_mode::NA:
-    return "na";
-  default:
-      LBANN_ERROR("Invalid data reader target mode specified");
-  }
-}
-
 bool endsWith(const std::string mainStr, const std::string &toMatch)
 {
   if(mainStr.size() >= toMatch.size() &&

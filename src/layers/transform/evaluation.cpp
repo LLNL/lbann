@@ -191,8 +191,8 @@ abstract_evaluation_layer<TensorDataType>::abstract_evaluation_layer(lbann_comm 
 }
 
 template <typename TensorDataType>
-void abstract_evaluation_layer<TensorDataType>::setup_dims(TargetModeDimMap& data_dimensions_map) {
-  transform_layer<TensorDataType>::setup_dims(data_dimensions_map);
+void abstract_evaluation_layer<TensorDataType>::setup_dims(DataReaderMetaData& dr_metadata) {
+  transform_layer<TensorDataType>::setup_dims(dr_metadata);
   if (this->get_input_size() != 1) {
     std::stringstream err;
     const auto& dims = this->get_input_dims();

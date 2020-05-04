@@ -66,8 +66,8 @@ class in_top_k_layer : public transform_layer<TensorDataType> {
 
  protected:
 
-  void setup_dims(TargetModeDimMap& data_dimensions_map) override {
-    data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 

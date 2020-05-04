@@ -105,6 +105,7 @@
 #include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/weights.hpp"
 
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/peek_map.hpp"
 
 #include <layers.pb.h>
@@ -403,7 +404,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
     auto layer = lbann::make_unique<slice_layer<TensorDataType, Layout, Device>>(comm);
 
     if (params.get_slice_points_from_reader() != "") {
-      const std::string& var = params.get_slice_points_from_reader();
+      const slice_points_mode var = from_string(params.get_slice_points_from_reader());
       layer->setup_slice_points(params.axis(), true, var);
     } else {
       std::string slice_point_method_name = "'slice_points'";

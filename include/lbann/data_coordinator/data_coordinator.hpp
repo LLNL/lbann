@@ -27,6 +27,7 @@
 #ifndef LBANN_DATA_COORDINATOR_HPP
 #define LBANN_DATA_COORDINATOR_HPP
 
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/dataset.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
 #include <cereal/types/utility.hpp>
@@ -169,6 +170,36 @@ class data_coordinator {
     }
     LBANN_ERROR("get_data_dims: no available data readers");
     return {};
+  }
+
+  /**
+   * Get the dimensions of the underlying data.
+   */
+  SPModeSlicePoints get_slice_points() {
+    SPModeSlicePoints map;
+    generic_data_reader *dr;
+    for(execution_mode mode : execution_mode_iterator()) {
+      dr = get_data_reader(mode);
+      if (dr != nullptr) {
+        for(slice_points_mode sp_mode : slice_points_mode_iterator()) {
+          bool is_supported;
+          std::vector<El::Int> tmp = dr->get_slice_points(sp_mode, is_supported);
+          if(is_supported) {
+            map[sp_mode] = tmp;
+          }
+        }
+        return map;
+      }
+    }
+    LBANN_ERROR("get_data_dims: no available data readers");
+    return {};
+  }
+
+  DataReaderMetaData get_dr_metadata() {
+    DataReaderMetaData drm;
+    drm.data_dims = get_data_dims();
+    drm.slice_points = get_slice_points();
+    return drm;
   }
 
   // At the start of the epoch, set the execution mode and make sure

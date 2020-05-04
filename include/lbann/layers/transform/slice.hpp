@@ -72,7 +72,7 @@ public:
 
   void setup_slice_points(size_t slice_dim,
                           bool set_slice_points_from_data_reader,
-                          const std::string& var_category) {
+                          const slice_points_mode var_category) {
     m_slice_dim = slice_dim;
     m_set_slice_points_from_data_reader = set_slice_points_from_data_reader;
     m_var_category = var_category;
@@ -80,7 +80,7 @@ public:
 
 protected:
 
-  void setup_dims(TargetModeDimMap& data_dimensions_map) override;
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
@@ -96,7 +96,7 @@ private:
   /** Slice points are automatically defined by the data reader */
   bool m_set_slice_points_from_data_reader;
   /** Category for retrieving slice points from data reader */
-  std::string m_var_category;
+  slice_points_mode m_var_category;
 
 #ifdef LBANN_HAS_GPU
   /** @brief Workspace buffer.
@@ -130,7 +130,7 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 slice_layer<TensorDataType,Layout,Device>::slice_layer(lbann_comm *comm)
   : data_type_layer<TensorDataType>(comm),
   m_set_slice_points_from_data_reader(false),
-  m_var_category() {
+  m_var_category(slice_points_mode::NA) {
   this->m_expected_num_child_layers = -1; // No limit on children
 }
 
@@ -167,28 +167,20 @@ description slice_layer<TensorDataType,Layout,Device>::get_description() const {
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void slice_layer<TensorDataType,Layout,Device>::setup_dims(TargetModeDimMap& data_dimensions_map) {
-  data_type_layer<TensorDataType>::setup_dims(data_dimensions_map);
+void slice_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
   // Setup the slice points if they are to be established by the data reader
   if(m_set_slice_points_from_data_reader) {
     std::vector<size_t> slice_points;
-    bool is_supported = false;
     std::string slice_point_method_name = "'get_slice_points_from_reader'";
-    auto& t = this->m_model->get_execution_context().get_trainer();
-    auto* dr_generic  = t.get_data_coordinator().get_data_reader(execution_mode::training);
-
-    for (const auto& slice_point
-           : dr_generic->get_slice_points(m_var_category, is_supported)) {
+    for (auto& slice_point
+           : dr_metadata.slice_points[m_var_category]) {
       slice_points.push_back(slice_point);
     }
 
     if (slice_points.size() < 2u) {
-      if (is_supported) {
-        LBANN_ERROR("Failed to get slice points via ", slice_point_method_name, '.');
-      } else {
-        LBANN_ERROR(slice_point_method_name, " is not supported by the reader.");
-      }
+      LBANN_ERROR(slice_point_method_name, " is not supported by the reader.");
       return;
     }
     m_slice_points = std::move(slice_points);

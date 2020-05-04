@@ -39,6 +39,7 @@
 #include "lbann/utils/description.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/training_algorithms/sgd_training_algorithm.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -223,8 +224,8 @@ void trainer::apply(training_algorithm& alg,
                     termination_criteria const& term_criteria) {
 
   auto key = check_and_build_execution_context(alg, model, mode);
-  TargetModeDimMap data_dimensions_map = get_data_coordinator().get_data_dims();
-  alg.setup_models({model}, get_max_mini_batch_size(), data_dimensions_map);
+  DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
+  alg.setup_models({model}, get_max_mini_batch_size(), dr_metadata);
   /// Apply the training algorithm to train the model
   alg.apply(*(m_model_execution_context[key].get()), *model, get_data_coordinator(), mode, term_criteria);
 }
@@ -232,8 +233,8 @@ void trainer::apply(training_algorithm& alg,
 void trainer::train(observer_ptr<model> model, El::Int num_epochs, El::Int num_batches) {
   auto sgd = make_unique<sgd_training_algorithm>();
   auto key = check_and_build_execution_context(*sgd.get(), model, execution_mode::training);
-  TargetModeDimMap data_dimensions_map = get_data_coordinator().get_data_dims();
-  sgd.get()->setup_models({model}, get_max_mini_batch_size(), data_dimensions_map);
+  DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
+  sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
   /// Apply the training algorithm to train the model
   sgd.get()->train(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, get_data_coordinator(), num_epochs, num_batches);
 }
@@ -241,8 +242,8 @@ void trainer::train(observer_ptr<model> model, El::Int num_epochs, El::Int num_b
 void trainer::evaluate(observer_ptr<model> model, execution_mode mode, El::Int num_batches) {
   auto sgd = make_unique<sgd_training_algorithm>();
   auto key = check_and_build_execution_context(*sgd.get(), model, mode);
-  TargetModeDimMap data_dimensions_map = get_data_coordinator().get_data_dims();
-  sgd.get()->setup_models({model}, get_max_mini_batch_size(), data_dimensions_map);
+  DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
+  sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
   /// Apply the training algorithm to evaluate the model
   sgd.get()->evaluate(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, get_data_coordinator(), mode, num_batches);
 }
