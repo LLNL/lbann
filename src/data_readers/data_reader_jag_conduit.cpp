@@ -1071,6 +1071,8 @@ std::vector<El::Int> data_reader_jag_conduit::get_slice_points(
     slice_points = get_slice_points_independent();
   } else if (var_category == slice_points_mode::DEPENDENT) {
     slice_points = get_slice_points_dependent();
+  } else if (var_category == slice_points_mode::NA) {
+    is_supported = false;
   } else {
     LBANN_ERROR("Unknown variable category \"" + lbann::to_string(var_category) \
                 + "\". Must be either \"independent\" or \"dependent\".");
