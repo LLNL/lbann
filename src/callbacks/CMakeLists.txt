@@ -39,6 +39,7 @@ set_full_path(THIS_DIR_SOURCES
   timer.cpp
   variable_minibatch.cpp
   load_model.cpp
+  set_weights_value.cpp
 )
 
 # Propagate the files up the tree

@@ -76,6 +76,7 @@ message Callback {
     CallbackTimeline timeline = 44;
     CallbackPrintModelDescription print_model_description = 45;
     CallbackLoadModel load_model = 46;
+    CallbackSetWeightsValue set_weights_value = 47;
   }
 
   message CallbackLTFB {
@@ -332,6 +333,12 @@ message Callback {
   // description includes information on the model's layers, weights,
   // and callbacks.
   message CallbackPrintModelDescription {
+  }
+
+  message CallbackSetWeightsValue {
+    string weight_name = 1;
+    float  weight_value = 2;
+    int64  epoch_interval = 3;
   }
 
 }
