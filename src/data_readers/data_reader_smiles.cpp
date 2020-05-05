@@ -477,10 +477,10 @@ void smiles_data_reader::setup_fast_experimental() {
     const char dd = d[0];
     switch (dd) {
       case 'c' :
-        m_delimiter = 'c';
+        m_delimiter = ',';
         break;
       case 't' :
-        m_delimiter = 't';
+        m_delimiter = '\t';
         break;
       case '0' :
         m_delimiter = '\0';
