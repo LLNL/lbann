@@ -37,7 +37,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--num-samples", type=int, default=None)
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
-    parser.add_argument("--delimiter", default=',')
+    parser.add_argument("--delimiter", default='0')
     parser.add_argument("--no-header", type=bool, default=True)
 
 
@@ -284,7 +284,7 @@ if __name__ == "__main__":
         nodes=run_args.nodes,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
-        lbann_args=f'--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header}'
+        lbann_args=f'--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}'
     )
 
     print(status)

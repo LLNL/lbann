@@ -284,9 +284,19 @@ void smiles_data_reader::print_statistics() const {
   std::cout << "num samples=" << m_shuffled_indices.size() << std::endl;
   std::cout << "max sequence length=" << m_linearized_data_size << std::endl;
   std::cout << "num features=" << m_linearized_data_size << std::endl;
-  std::cout << "delimiter= " << m_delimiter << std::endl;
+  if (m_delimiter == '\t') {
+    std::cout << "delimiter=<tab>\n"; 
+  } else if (m_delimiter == ',') {
+    std::cout << "delimiter=<,>\n"; 
+  } else if (m_delimiter == '0') {
+    std::cout << "delimiter=<none>\n"; 
+  } else {
+    LBANN_ERROR("invalid delimiter character: ", m_delimiter);
+  }
   std::cout << "pad index= " << m_pad << std::endl;
-  std::cout << "vocab size= " << m_vocab.size() << std::endl;
+
+  // +4 for <bos>, <eos>, <unk>, <pad>
+  std::cout << "vocab size= " << m_vocab.size() +4 << std::endl;
   std::cout << "======================================================\n\n";
 }
 
@@ -464,7 +474,20 @@ void smiles_data_reader::setup_fast_experimental() {
   options *opts = options::get();
   if (opts->has_string("delimiter")) {
     const std::string d = opts->get_string("delimiter");
-    m_delimiter = d[0];
+    const char dd = d[0];
+    switch (dd) {
+      case 'c' :
+        m_delimiter = 'c';
+        break;
+      case 't' :
+        m_delimiter = 't';
+        break;
+      case '0' :
+        m_delimiter = '\0';
+        break;
+      default :
+        LBANN_ERROR("Invalid delimiter character; should be 'c', 't', '0'; you passed: ", d);
+    }  
   }
   if (is_master()) {
     std::cout << "USING delimiter character: " << m_delimiter << std::endl;
