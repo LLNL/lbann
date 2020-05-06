@@ -102,3 +102,50 @@ def imagenet_labels(system = system(), data_set = 'train',
         return os.path.join(label_dir, 'test.txt')
     else:
         raise RuntimeError('unknown ImageNet data set (' + data_set + ')')
+
+def imagenet_sample_list(system = system(), data_set = 'train',
+                         num_classes = 1000):
+    """ImageNet sample_list file on LC system.
+
+    The file contains ground truth labels from the ILSVRC2012
+    competition. It is a plain text file where each line contains an
+    image file path (relative to the ImageNet directory; see the
+    `imagenet_dir` function) and the corresponding label ID.
+
+    There are three available data sets: 'training', 'validation', and
+    'testing'.
+
+    Some of these data sets have been preprocessed to only include
+    images in a subset of the label classes, e.g. images in the first
+    10 label classes. This is convenient for quickly evaluating
+    performance or learning behavior. The availabiilty of these
+    subsampled data sets may vary by system.
+
+    """
+    slist_dir = parallel_file_system_path(system)
+    if system in ('lassen', 'sierra'):
+        slist_dir += 'brainusr/datasets/ILSVRC2012/sample_list/'
+    else:
+        slist_dir += 'brainusr/datasets/ILSVRC2012/sample_list/'
+    suffixes = {1000: '', 10: '_c0-9', 100: '_c0-99',
+                200: '_c100-299', 300: '_c0-299'}
+    if data_set.lower() in ('train', 'training'):
+        if num_classes in suffixes.keys():
+            return os.path.join(slist_dir,
+                                'train' + suffixes[num_classes] + '_sample_list.txt')
+        else:
+            raise RuntimeError('invalid number of classes ({0}) '
+                               'for ImageNet data set ({1})'
+                               .format(num_classes, data_set))
+    elif data_set.lower() in ('val', 'validation'):
+        if num_classes in suffixes.keys():
+            return os.path.join(slist_dir,
+                                'val' + suffixes[num_classes] + '_sample_list.txt')
+        else:
+            raise RuntimeError('invalid number of classes ({0}) '
+                               'for ImageNet data set ({1})'
+                               .format(num_classes, data_set))
+    elif data_set.lower() in ('test', 'testing'):
+        return os.path.join(slist_dir, 'test_sample_list.txt')
+    else:
+        raise RuntimeError('unknown ImageNet data set (' + data_set + ')')
