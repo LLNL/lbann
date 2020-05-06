@@ -37,7 +37,7 @@ def construct_lc_launcher_args():
     parser.add_argument("--num-samples", type=int, default=None)
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
-    parser.add_argument("--delimiter", default='0')
+    parser.add_argument("--delimiter", default='c')
     parser.add_argument("--no-header", type=bool, default=True)
 
 
