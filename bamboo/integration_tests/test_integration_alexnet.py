@@ -51,6 +51,8 @@ def setup_experiment(lbann):
     model = construct_model(lbann)
     # Setup data reader
     data_reader = data.imagenet.make_data_reader(lbann, num_classes=1000)
+    # We train on a subset of ImageNet
+    data_reader.reader[0].percent_of_data_to_use = imagenet_fraction
 
     optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
     return trainer, model, data_reader, optimizer
