@@ -359,9 +359,6 @@ int smiles_data_reader::get_num_lines(std::string fn) {
       LBANN_ERROR("failed to open data file: ", fn, " for reading");
     }
     std::string line;
-    if (m_has_header) {
-      getline(in,line);
-    }
     while(getline(in,line)) {
       ++count;
     }
