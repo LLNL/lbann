@@ -211,8 +211,8 @@ ExternalProject_Add_Step(LBANN build-jag-utils
   LOG 1
   USES_TERMINAL 1)
 # Ensure the ATOM utils are built
-ExternalProject_Add_Step(LBANN build-atom-tools
-  COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target atom-tools
+ExternalProject_Add_Step(LBANN build-atom-utils
+  COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target atom-utils
   COMMENT "Performing building of ATOM tools for 'LBANN'"
   DEPENDEES build
   DEPENDERS install
