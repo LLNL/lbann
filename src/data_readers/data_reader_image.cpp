@@ -140,6 +140,16 @@ bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   return true;
 }
 
+void image_data_reader::dump_sample_label_list(const std::string& dump_file_name) {
+  std::ofstream os(dump_file_name);
+  const auto num_samples = m_sample_list.size();
+  for (size_t i = 0ul; i < num_samples; ++i) {
+    const auto file_id = m_sample_list[i].first;
+    const std::string filename = m_sample_list.get_samples_filename(file_id);
+    os << filename << ' ' << std::to_string(m_labels[i]) << std::endl;
+  }
+}
+
 void image_data_reader::load() {
   options *opts = options::get();
 
@@ -164,6 +174,16 @@ void image_data_reader::load() {
       LBANN_WARNING(msg);
     }
     m_sample_list.write(s.str());
+  }
+  if (opts->has_string("write_sample_label_list") && m_comm->am_trainer_master()) {
+    if (!(m_keep_sample_order || opts->has_string("keep_sample_order"))) {
+    std::cout << "Writting sample label list without the option "
+              << "`keep_sample_order' set." << std::endl;
+    }
+    std::string dump_file = "image_list.trainer"
+                          + std::to_string(m_comm->get_trainer_rank())
+                          + "." + this->get_role() + ".txt";
+    dump_sample_label_list(dump_file);
   }
 
   // reset indices

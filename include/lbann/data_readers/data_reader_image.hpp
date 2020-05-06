@@ -106,6 +106,9 @@ class image_data_reader : public generic_data_reader {
   bool fetch_label(Mat& Y, int data_id, int mb_idx) override;
   void set_linearized_image_size();
 
+  /** Dump the image list file in which each line consists of the file name
+   *  and the label of a sample */
+  void dump_sample_label_list(const std::string& dump_file_name);
   /// Rely on pre-determined list of samples.
   void load_list_of_samples(const std::string filename);
   /// Load the sample list from a serialized archive from another rank
