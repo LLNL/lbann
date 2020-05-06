@@ -51,9 +51,6 @@ class data_coordinator {
   data_coordinator(trainer& trainer, lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
     m_trainer(&trainer),
     m_comm(comm),
-    m_training_dataset(),
-    m_testing_dataset(),
-    m_validation_dataset(),
     m_data_readers(data_readers),
     m_data_set_processed(false),
     m_execution_context(nullptr) {
