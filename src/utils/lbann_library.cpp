@@ -148,7 +148,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     }
 #else
     if (!pb_trainer->random_init_trainers_identically()) {
-      if (master) {
+      if(comm->am_trainer_master()) {
         std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
           "due to sequential consistency" << std::endl;
       }
