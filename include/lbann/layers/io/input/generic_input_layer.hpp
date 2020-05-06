@@ -440,7 +440,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
   /**
    * Get the dimensions of the underlying data.
    */
-  const std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const override {
+  std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const override {
     if(child_index == 0) {
       return dr_metadata.data_dims[data_reader_target_mode::INPUT];
     }else if(child_index == 1) {
