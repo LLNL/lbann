@@ -257,7 +257,7 @@ autoencoder_strategy::get_image_indices(model const& m) const {
 }
 
 std::string autoencoder_strategy::get_tag(std::string const& layer_name,
-                                      El::Int index, El::Int epoch) const {
+                                          El::Int index, El::Int epoch) const {
   // Sort by index
   return build_string("image id ", index, "/layer: ", layer_name,
                       "/epoch ", epoch);
@@ -319,21 +319,19 @@ void summarize_images::dump_images_to_summary(model const& m) const {
     auto const& local_images = all_images.LockedMatrix();
     auto dims = layer.get_output_dims();
 
-
     for (const auto& img_id : img_indices) {
       auto const& col_index = img_id.first;
       auto const& sample_index = img_id.second;
       if (col_index >= size_t(local_images.Width())) {
         LBANN_ERROR(
-            "Column index ", col_index, " is greater than Matrix width ",
-            local_images.Width());
+          "Column index ", col_index, " is greater than Matrix width ",
+          local_images.Width());
       }
-       auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(
-         m.get_execution_context());
-       auto image_tag =  m_strategy->get_tag(m_img_source_layer_name,
-                                             sample_index, exe_ctx.get_epoch());
+      auto const& exe_ctx = dynamic_cast<sgd_execution_context const&>(
+        m.get_execution_context());
+      auto image_tag =  m_strategy->get_tag(m_img_source_layer_name,
+                                            sample_index, exe_ctx.get_epoch());
       auto const local_image = local_images(El::ALL, El::IR(col_index));
-
       this->m_summarizer->report_image(
         image_tag, m_img_format, local_image, dims, m.get_execution_context().get_step());
     }

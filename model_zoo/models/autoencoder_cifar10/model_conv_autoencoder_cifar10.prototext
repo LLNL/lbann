@@ -6,7 +6,9 @@ model {
   mini_batch_size: 128
   num_epochs: 10
   disable_cuda: true
-
+  summarizer {
+    dir: "."
+  }
   ###################################################
   # Objective function
   ###################################################
@@ -43,17 +45,20 @@ model {
   }
   callback {
     summary {
-      dir: "."
       batch_interval: 2
       mat_interval: 3
     }
   }
   callback {
-    summarize_autoencoder_images {
-      reconstruction_layer: "reconstruction"
-      image_layer: "image"
-      input_layer: "data"
-      interval: 6
+    summarize_images {
+      selection_strategy {
+        autoencoder {
+          input_layer_name: "data"
+          num_tracked_images: 20
+        }
+      }
+      image_source_layer_name: "conv1"
+      epoch_interval: 2
     }
   }
 
@@ -375,7 +380,7 @@ model {
 
 
   #################
-  # RECONSTRUCTION
+  # Reconstruction
   #################
   layer {
     parents: "reconstruction image"
