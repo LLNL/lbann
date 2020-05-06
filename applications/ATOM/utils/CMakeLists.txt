@@ -1,10 +1,10 @@
 # Add a target to control building all the utilities
-add_custom_target(atom-tools)
+add_custom_target(atom-utils)
 
 add_executable(compute_vocab
   EXCLUDE_FROM_ALL compute_vocab.cpp)
   target_link_libraries(compute_vocab lbann)
-  add_dependencies(atom-tools compute_vocab)
+  add_dependencies(atom-utils compute_vocab)
 
 # Install the binaries
 install( 
