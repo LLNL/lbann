@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <unordered_set>
 #include <set>
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/exception.hpp"
@@ -26,7 +25,8 @@ int main(int argc, char **argv) {
       std::cerr 
         << "usage: " << argv[0] 
         << " --input_fn=<string> --output_fn=<string> --delimiter=<char>\n"
-        << "where: input_fn is csv file containing SMILES strings\n"
+        << "where: input_fn is csv file containing SMILES strings;\n"
+        << "       --delimiter is c (comma), t (tab) or 0 (none)\n"
         << "function: computes vocabulary\n";
       exit(9);
     }
@@ -48,11 +48,23 @@ int main(int argc, char **argv) {
     }
 
     const std::string w = opts->get_string("delimiter");
-    const char d = '\t';
-    //const char d = w[0];
+    const char ww = w[0];
+    char d = 0;
+    switch (ww) {
+      case 'c' :
+        d = ',';
+        break;
+      case 't' :
+        d = '\t';
+        break;
+      case '0' :
+        d = '\0';
+        break;
+      default :
+        LBANN_ERROR("Invalid delimiter character; should be 'c', 't', '0'; you passed: ", ww);
+    }  
 
-    //std::set<char> s;
-    std::unordered_set<char> s;
+    std::set<char> s;
 
     std::string line;
     getline(in, line); //discard header
