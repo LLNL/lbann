@@ -46,7 +46,7 @@ using data_reader_target_mode_iterator = enum_iterator<data_reader_target_mode, 
 
 enum class slice_points_mode {INDEPENDENT, DEPENDENT, NA};
 std::string to_string(const slice_points_mode m);
-slice_points_mode from_string(const std::string& m);
+slice_points_mode slice_points_mode_from_string(const std::string& m);
 /// Map from slice points modes to slice points
 using SPModeSlicePoints = std::unordered_map<slice_points_mode, std::vector<El::Int>>;
 using slice_points_mode_iterator = enum_iterator<slice_points_mode, slice_points_mode::INDEPENDENT, slice_points_mode::NA>;

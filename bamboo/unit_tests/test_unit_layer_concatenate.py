@@ -220,7 +220,7 @@ def construct_model(lbann):
     # Gradient checking
     # --------------------------
 
-    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=False))
+    callbacks.append(lbann.CallbackCheckGradients(error_on_failure=True))
 
     # --------------------------
     # Construct model

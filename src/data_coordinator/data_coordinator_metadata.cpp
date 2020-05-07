@@ -42,7 +42,8 @@ std::string to_string(const data_reader_target_mode m) {
   case data_reader_target_mode::NA:
     return "na";
   default:
-      LBANN_ERROR("Invalid data reader target mode specified");
+    LBANN_ERROR("Invalid data reader target mode specified");
+    return "";
   }
 }
 
@@ -55,7 +56,8 @@ std::string to_string(const slice_points_mode m) {
   case slice_points_mode::NA:
     return "na";
   default:
-      LBANN_ERROR("Invalid slice points mode specified");
+    LBANN_ERROR("Invalid slice points mode specified");
+    return "";
   }
 }
 
@@ -70,6 +72,7 @@ slice_points_mode from_string(const std::string& str) {
     return slice_points_mode::NA;
   }
   LBANN_ERROR("Invalid slice points mode specified");
+  return slice_points_mode::NA;
 }
 
 } // namespace lbann
