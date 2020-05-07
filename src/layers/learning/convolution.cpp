@@ -28,12 +28,31 @@
 #include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/convolution.hpp"
 
-#include <lbann/proto/proto_common.hpp>
+#include "lbann/proto/proto_common.hpp"
 
 #include <layers.pb.h>
 
 namespace lbann {
 namespace {
+
+#ifdef LBANN_HAS_CUDNN
+using ProtoTensorOpEnumType = decltype(lbann_data::Layer::DEFAULT_TENSOR_OPS);
+cudnnMathType_t convert_to_cudnn_math_type(ProtoTensorOpEnumType mt)
+{
+  switch (mt)
+  {
+  case lbann_data::Layer::DEFAULT_TENSOR_OPS:
+    return cudnn::get_default_convolution_math_type();
+  case lbann_data::Layer::NO_TENSOR_OPS:
+    return CUDNN_DEFAULT_MATH;
+  case lbann_data::Layer::USE_TENSOR_OPS:
+    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+  default:
+    LBANN_ERROR("Bad math type value.");
+  }
+  return CUDNN_DEFAULT_MATH;
+}
+#endif // LBANN_HAS_CUDNN
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 struct ConvLayerBuilder
@@ -57,10 +76,18 @@ struct ConvLayerBuilder
       if (dilations.empty()) {
         dilations.resize(dims.size(), 1);
       }
-
+#ifdef LBANN_HAS_CUDNN
+      auto ret = lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
+        comm, dims.size(), num_output_channels,
+        dims, pads, strides, dilations, num_groups, bias);
+      ret->set_cudnn_math_mode(
+        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      return ret;
+#else
       return lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
         comm, dims.size(), num_output_channels,
         dims, pads, strides, dilations, num_groups, bias);
+#endif // LBANN_HAS_CUDNN
     }
     else {
       const auto& num_dims = params.num_dims();
@@ -71,9 +98,18 @@ struct ConvLayerBuilder
       if (dilation == 0) {
         dilation = 1;
       }
+#ifdef LBANN_HAS_CUDNN
+      auto ret =lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
+        comm, num_dims, num_output_channels,
+        dim, pad, stride, dilation, num_groups, bias);
+      ret->set_cudnn_math_mode(
+        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      return ret;
+#else
       return lbann::make_unique<convolution_layer<TensorDataType, Layout, Device>>(
         comm, num_dims, num_output_channels,
         dim, pad, stride, dilation, num_groups, bias);
+#endif // LBANN_HAS_CUDNN
     }
   }
 };

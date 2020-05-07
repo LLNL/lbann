@@ -110,6 +110,10 @@
 
 #include <layers.pb.h>
 
+#ifdef LBANN_HAS_CUDNN
+#include <cudnn.h>
+#endif // LBANN_HAS_CUDNN
+
 namespace lbann {
 namespace proto {
 
@@ -277,6 +281,28 @@ factory_type const& get_layer_factory() noexcept
   return factory_mgr_.get();
 }
 
+// Some cuDNN stuff -- copied from convolution.cpp. To what common
+// location should this go?? The problem is it's the confluence of two
+// evils: protobuf and cudnn. I'd rather they never meet, but whatdya
+// gonna do.
+#ifdef LBANN_HAS_CUDNN
+using ProtoTensorOpEnumType = decltype(lbann_data::Layer::DEFAULT_TENSOR_OPS);
+cudnnMathType_t convert_to_cudnn_math_type(ProtoTensorOpEnumType mt)
+{
+  switch (mt)
+  {
+  case lbann_data::Layer::DEFAULT_TENSOR_OPS:
+    return cudnn::get_default_convolution_math_type();
+  case lbann_data::Layer::NO_TENSOR_OPS:
+    return CUDNN_DEFAULT_MATH;
+  case lbann_data::Layer::USE_TENSOR_OPS:
+    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+  default:
+    LBANN_ERROR("Bad math type value.");
+  }
+  return CUDNN_DEFAULT_MATH;
+}
+#endif // LBANN_HAS_CUDNN
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -356,9 +382,19 @@ std::unique_ptr<Layer> construct_layer_legacy(
       if (dilations.empty()) {
         dilations.resize(dims.size(), 1);
       }
+#ifdef LBANN_HAS_CUDNN
+      auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+        comm, dims.size(), num_output_channels,
+        dims, pads, strides, dilations, num_groups, bias);
+      ret->set_cudnn_math_mode(
+        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      return ret;
+#else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
                comm, dims.size(), num_output_channels,
                dims, pads, strides, dilations, num_groups, bias);
+#endif // LBANN_HAS_CUDNN
+
     } else {
       const auto& num_dims = params.num_dims();
       const auto& dim = params.conv_dims_i();
@@ -368,9 +404,18 @@ std::unique_ptr<Layer> construct_layer_legacy(
       if (dilation == 0) {
         dilation = 1;
       }
+#ifdef LBANN_HAS_CUDNN
+      auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+        comm, num_dims, num_output_channels,
+        dim, pad, stride, dilation, num_groups, bias);
+      ret->set_cudnn_math_mode(
+        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      return ret;
+#else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-               comm, num_dims, num_output_channels,
-               dim, pad, stride, dilation, num_groups, bias);
+        comm, num_dims, num_output_channels,
+        dim, pad, stride, dilation, num_groups, bias);
+#endif // LBANN_HAS_CUDNN
     }
   }
 

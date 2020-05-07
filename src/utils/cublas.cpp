@@ -284,6 +284,14 @@ void gemm_strided_batched(cublasHandle_t const& handle,
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
 
+void default_to_tensor_ops()
+{
+  CHECK_CUBLAS(
+        cublasSetMathMode(
+          hydrogen::cublas::GetLibraryHandle(),
+          CUBLAS_TENSOR_OP_MATH));
+}
+
 } // namespace cublas
 } // namespace lbann
 

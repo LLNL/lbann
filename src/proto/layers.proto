@@ -539,6 +539,17 @@ message Layer {
     bool transpose = 3;
   }
 
+  // Lives here because it's used by both Convolution and
+  // Deconvolution.
+  enum ConvTensorOpsMode {
+    // Use the global default.
+    DEFAULT_TENSOR_OPS = 0;
+    // Explicitly disable tensor ops.
+    NO_TENSOR_OPS = 1;
+    // Use tensor ops -- allows conversion FP32->FP16
+    USE_TENSOR_OPS = 2;
+  }
+
   message Convolution {
     int64 num_dims = 1;
     int64 num_output_channels = 4;
@@ -562,6 +573,9 @@ message Layer {
     bool has_bias = 10;                   //default: true
     double bias_initial_value = 11;       //default: 0
     double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
   }
 
   message Deconvolution {
@@ -587,6 +601,9 @@ message Layer {
     bool has_bias = 10;                   //default: true
     double bias_initial_value = 11;       //default: 0
     double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
   }
 
   /** @brief Lookup table to embedding vectors.
