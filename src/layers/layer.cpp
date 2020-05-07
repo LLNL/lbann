@@ -358,7 +358,8 @@ void Layer::unfreeze() {
 bool Layer::is_frozen() const {
   for(auto& w : get_weights()) {
     if (w->is_frozen() != m_frozen) {
-      LBANN_ERROR("layer and weights of them are inconsistently frozen");
+      LBANN_ERROR("layer ", get_name(), " and weight ", w->get_name(), \
+                  " of it are inconsistently frozen");
     }
   }
   return m_frozen;
@@ -512,6 +513,14 @@ void Layer::check_setup() {
     }
   }
 }
+
+void Layer::back_prop() {
+  allocate_new_gradients_();
+  back_prop_impl_();
+  propagate_error_signals_to_parents_();
+  clear_prev_error_signals_();
+}
+
 
 bool Layer::save_to_checkpoint_shared(persist& p) const {
   return true;
