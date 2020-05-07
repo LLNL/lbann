@@ -13,6 +13,7 @@ current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 import tools
+import data.imagenet
 
 # ==============================================
 # Options
@@ -48,7 +49,11 @@ def setup_experiment(lbann):
     """
     trainer = lbann.Trainer()
     model = construct_model(lbann)
-    data_reader = construct_data_reader(lbann)
+    # Setup data reader
+    data_reader = data.imagenet.make_data_reader(lbann, num_classes=1000)
+    # We train on a subset of ImageNet
+    data_reader.reader[0].percent_of_data_to_use = imagenet_fraction
+
     optimizer = lbann.SGD(learn_rate=0.1, momentum=0.9)
     return trainer, model, data_reader, optimizer
 
@@ -93,47 +98,6 @@ def construct_model(lbann):
                        objective_function=obj,
                        metrics=metrics,
                        callbacks=callbacks)
-
-def construct_data_reader(lbann):
-    """Construct Protobuf message for Python data reader.
-
-    The Python data reader will import the current Python file to
-    access the sample access functions.
-
-    Args:
-        lbann (module): Module for LBANN Python frontend
-
-    """
-
-    # TODO (tym): Figure out how to switch between LBANN builds. See
-    # GitHub Issue #1289.
-    import lbann.contrib.lc.paths
-
-    # Load data readers from prototext
-    dirname = os.path.dirname
-    lbann_dir = dirname(dirname(dirname(os.path.realpath(__file__))))
-    pb_file = os.path.join(lbann_dir,
-                           'model_zoo',
-                           'data_readers',
-                           'data_reader_imagenet.prototext')
-    message = lbann.lbann_pb2.LbannPB()
-    with open(pb_file, 'r') as f:
-        google.protobuf.text_format.Merge(f.read(), message)
-    message = message.data_reader
-
-    # Set location of ImageNet-1K data
-    message.reader[0].data_filedir = lbann.contrib.lc.paths.imagenet_dir(data_set='train')
-    message.reader[0].data_filename = lbann.contrib.lc.paths.imagenet_labels(data_set='train')
-    message.reader[1].data_filedir = lbann.contrib.lc.paths.imagenet_dir(data_set='val')
-    message.reader[1].data_filename = lbann.contrib.lc.paths.imagenet_labels(data_set='val')
-
-    # We train on a subset of ImageNet
-    message.reader[0].percent_of_data_to_use = imagenet_fraction
-
-    # Only evaluate on ImageNet validation set at end of training
-    message.reader[1].role = 'test'
-
-    return message
 
 # ==============================================
 # Setup PyTest
