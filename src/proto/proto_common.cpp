@@ -143,6 +143,9 @@ void init_data_readers(
       set_transform_pipeline = false;
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
+    } else if (name == "smiles") {
+      smiles_data_reader * smiles = new smiles_data_reader(shuffle);
+      reader = smiles;
     } else if (name == "ras_lipid") {
       auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
       ras_lipid->set_num_labels(readme.num_labels());
@@ -391,6 +394,8 @@ void init_data_readers(
         reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
+      } else if (name == "smiles") {
+        reader_validation = new smiles_data_reader(*dynamic_cast<const smiles_data_reader*>(reader));
       } else if (name == "jag_conduit") {
         /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
         /// is also shared
