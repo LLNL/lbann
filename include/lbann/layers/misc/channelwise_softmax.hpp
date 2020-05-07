@@ -64,7 +64,7 @@ public:
 
 protected:
 
-  void setup_dims() override;
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
 
   void fp_compute() override;
   void bp_compute() override;
@@ -105,8 +105,8 @@ El::Device channelwise_softmax_layer<TensorDataType,Layout,Device>::get_device_a
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void channelwise_softmax_layer<TensorDataType,Layout,Device>::setup_dims() {
-  data_type_layer<TensorDataType>::setup_dims();
+void channelwise_softmax_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims(this->get_input_dims());
 }
 

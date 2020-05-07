@@ -63,17 +63,24 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
 
     thread_pool& io_thread_pool = trainer->get_io_thread_pool();
 
+    int training_dr_linearized_data_size = -1;
+    auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::training);
+    if(dr != nullptr) {
+      training_dr_linearized_data_size = dr->get_linearized_data_size();
+    }
+
     auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]), comm.get(), opts, io_thread_pool,
-                                              trainer->get_callbacks_with_ownership(), true); //discriminator
-                                                                                    //model
+                                              trainer->get_callbacks_with_ownership(),
+                                              training_dr_linearized_data_size); //discriminator model
     std::unique_ptr<model> model_2 = nullptr; //adversarial model
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]), comm.get(), opts, io_thread_pool,
-                                           trainer->get_callbacks_with_ownership(), false);
+                                           trainer->get_callbacks_with_ownership(),
+                                           training_dr_linearized_data_size);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();

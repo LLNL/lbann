@@ -29,7 +29,7 @@
 #include "lbann/data_readers/data_reader.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/utils/omp_pragma.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include <omp.h>
 #include <future>
 #include "lbann/io/persist.hpp"
@@ -54,6 +54,7 @@ void generic_data_reader::shuffle_indices(rng_gen& gen) {
   }
 }
 
+  /// @todo BVE FIXME
 void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
   m_base_offset = 0;
   m_sample_stride = 1;
@@ -96,7 +97,7 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   #ifdef DEBUG
   if (m_current_pos == 0) {
     if (is_master()) {
-      std::cout << "role: " << get_role() << " model: " << m_model->get_name()
+      std::cout << "role: " << get_role() << " model: " << m_trainer->get_name()
                 << " shuffled indices: ";
       for (size_t j=0; j<15; j++) {
         std::cout << m_shuffled_indices[j] << " ";
@@ -753,7 +754,7 @@ bool generic_data_reader::data_store_active() const {
     return true;
   }
 
-  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
   /// Use the data store for all modes except testing
   /// i.e. training, validation, tournament
   return (m_data_store != nullptr
@@ -764,7 +765,7 @@ bool generic_data_reader::data_store_active() const {
 }
 
 bool generic_data_reader::priming_data_store() const {
-  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
   if (m_data_store != nullptr && m_data_store->is_fully_loaded()) {
     return false;
   }
@@ -819,8 +820,8 @@ void generic_data_reader::preload_data_store() {
   if (m_data_store->is_local_cache()) {
     m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling m_data_store->preload_local_cache()");
     m_data_store->preload_local_cache();
-  } 
-  
+  }
+
   else {
     std::vector<int> local_list_sizes;
     int np = m_comm->get_procs_per_trainer();

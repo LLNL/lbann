@@ -52,10 +52,16 @@ message Trainer {
   int64 num_parallel_readers = 3;
 
   repeated Callback callback = 20;
+  int64 mini_batch_size = 12;
 
   // -------------------------------
   // Advanced options
   // -------------------------------
+
+  // BVE FIXME these should go away
+  bool shareable_training_data_reader = 42; // Can the data reader be shared across multiple models( e.g. GAN)
+  bool shareable_testing_data_reader = 43; // Can the data reader be shared across multiple models (e.g. GAN)
+  bool shareable_validation_data_reader = 44; // Can the data reader be shared across multiple models (e.g. GAN)
 
   // If false, trainers will have their trainer rank mixed into their random seed.
   bool random_init_trainers_identically = 4;

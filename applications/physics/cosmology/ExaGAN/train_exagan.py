@@ -66,10 +66,8 @@ def construct_model():
                                       batch_interval=2)]
 
     # Construct model
-    mini_batch_size = 64
     num_epochs = 20
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        weights=weights,
                        layers=layers,
                        metrics=metrics,
@@ -110,7 +108,8 @@ def construct_data_reader():
 if __name__ == '__main__':
     import lbann
 
-    trainer = lbann.Trainer()
+    mini_batch_size = 64
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0002,beta1=0.5,beta2=0.99,eps=1e-8)

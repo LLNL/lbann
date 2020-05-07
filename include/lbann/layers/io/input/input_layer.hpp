@@ -109,13 +109,12 @@ class input_layer : public generic_input_layer<TensorDataType> {
  public:
 
   /// @todo make the map and vector references
-  input_layer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode,
-    generic_data_reader *> data_readers, bool data_set_spans_models = true,
+  input_layer(lbann_comm *comm, int num_parallel_readers,
     data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION)
-    : generic_input_layer<TensorDataType>(comm, num_parallel_readers, data_readers, data_set_spans_models, target_mode) {
+    : generic_input_layer<TensorDataType>(comm, num_parallel_readers, target_mode) {
     // Initialize two buffers
-    initialize_io_buffer(comm, std::min(num_parallel_readers, data_type_layer<TensorDataType>::m_comm->get_procs_per_trainer()), data_readers);
-    initialize_io_buffer(comm, std::min(num_parallel_readers, data_type_layer<TensorDataType>::m_comm->get_procs_per_trainer()), data_readers);
+    initialize_io_buffer(comm, std::min(num_parallel_readers, data_type_layer<TensorDataType>::m_comm->get_procs_per_trainer()));
+    initialize_io_buffer(comm, std::min(num_parallel_readers, data_type_layer<TensorDataType>::m_comm->get_procs_per_trainer()));
     for (auto io_buffer : this->m_io_buffers) {
       io_buffer->fetch_data_fn = new fetch_data_functor<IODataType>(target_mode);
       io_buffer->update_data_reader_fn = new update_data_reader_functor();
@@ -127,8 +126,8 @@ class input_layer : public generic_input_layer<TensorDataType> {
     return new input_layer(*this);
   }
 
-  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-    generic_input_layer<TensorDataType>::template initialize_io_buffer<T_io_buffer>(comm, num_parallel_readers, data_readers);
+  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers) {
+    generic_input_layer<TensorDataType>::template initialize_io_buffer<T_io_buffer>(comm, num_parallel_readers);
   }
 
   std::string get_type() const override { return "input"; }

@@ -47,7 +47,7 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    trainer = lbann.Trainer()
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
     # Setup data reader
     data_reader = data.imagenet.make_data_reader(lbann, num_classes=1000)
@@ -92,8 +92,7 @@ def construct_model(lbann):
     metrics = [lbann.Metric(top5, name='top-5 accuracy', unit='%')]
 
     # Construct model
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        layers=layers,
                        objective_function=obj,
                        metrics=metrics,

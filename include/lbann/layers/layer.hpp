@@ -29,6 +29,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/optimizers/optimizer.hpp"
 #include "lbann/utils/exception.hpp"
@@ -249,7 +250,7 @@ public:
    *  assumed that pointers to parent/child layers have already been
    *  initialized.
    */
-  virtual void setup();
+  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
   /** Check that the setup is reasonable. */
   virtual void check_setup();
 
@@ -450,7 +451,7 @@ protected:
    *  the base method sets all uninitialized output tensor dimensions
    *  equal to the first input tensor dimensions.
    */
-  virtual void setup_dims();
+  virtual void setup_dims(DataReaderMetaData& dr_metadata);
   /** Setup distributed matrices.
    *  Called by the 'setup' function. Each column of these distributed
    *  matrices is interpreted as the flattened tensor for a mini-batch
@@ -463,7 +464,7 @@ protected:
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
    */
-  virtual void setup_data() {};
+  virtual void setup_data(size_t max_mini_batch_size) {};
   /** Setup GPU objects.
    *  Called by the 'setup' function if the layer is on GPUs.
    */

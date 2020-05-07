@@ -127,15 +127,14 @@ if learning_rate < 0:
 opt = lbann.SGD(learn_rate=learning_rate)
 
 # Create LBANN objects
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 callbacks = [
     lbann.CallbackPrint(),
     lbann.CallbackTimer(),
     lbann.CallbackDumpWeights(basename='embeddings',
                               epoch_interval=args.num_epochs),
 ]
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
+model = lbann.Model(args.num_epochs,
                     layers=lbann.traverse_layer_graph(input_),
                     objective_function=obj,
                     callbacks=callbacks)

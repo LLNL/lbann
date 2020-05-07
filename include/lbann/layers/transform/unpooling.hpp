@@ -74,8 +74,8 @@ class unpooling_layer : public transform_layer<TensorDataType> {
     }
   }
 
-  void setup_dims() override {
-    transform_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    transform_layer<TensorDataType>::setup_dims(dr_metadata);
 
     // Check that input tensor is valid
     const auto& input_dims = this->get_input_dims();

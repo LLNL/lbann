@@ -194,7 +194,7 @@ protected:
    *  Called by the 'setup' function. Memory is allocated for
    *  distributed matrices.
    */
-  void setup_data() override;
+  void setup_data(size_t max_mini_batch_size) override;
 
   // ===========================================================
   // Forward prop step helper functions
