@@ -36,16 +36,16 @@ namespace lbann {
 namespace {
 
 #ifdef LBANN_HAS_CUDNN
-using ProtoTensorOpEnumType = decltype(lbann_data::Layer::DEFAULT_TENSOR_OPS);
+using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
 cudnnMathType_t convert_to_cudnn_math_type(ProtoTensorOpEnumType mt)
 {
   switch (mt)
   {
-  case lbann_data::Layer::DEFAULT_TENSOR_OPS:
+  case lbann_data::DEFAULT_TENSOR_OPS:
     return cudnn::get_default_convolution_math_type();
-  case lbann_data::Layer::NO_TENSOR_OPS:
+  case lbann_data::NO_TENSOR_OPS:
     return CUDNN_DEFAULT_MATH;
-  case lbann_data::Layer::USE_TENSOR_OPS:
+  case lbann_data::USE_TENSOR_OPS:
     return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
   default:
     LBANN_ERROR("Bad math type value.");

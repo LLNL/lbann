@@ -36,6 +36,17 @@ enum DataType {
   FP16 = 2;
 }
 
+// Lives here because it's used by both Convolution and
+// Deconvolution.
+enum ConvTensorOpsMode {
+  // Use the global default.
+  DEFAULT_TENSOR_OPS = 0;
+  // Explicitly disable tensor ops.
+  NO_TENSOR_OPS = 1;
+  // Use tensor ops -- allows conversion FP32->FP16
+  USE_TENSOR_OPS = 2;
+}
+
 message Layer {
   string name = 50;
   string parents = 151;
@@ -537,17 +548,6 @@ message Layer {
     bool has_bias = 2;
     // Whether to apply transpose of weights matrix
     bool transpose = 3;
-  }
-
-  // Lives here because it's used by both Convolution and
-  // Deconvolution.
-  enum ConvTensorOpsMode {
-    // Use the global default.
-    DEFAULT_TENSOR_OPS = 0;
-    // Explicitly disable tensor ops.
-    NO_TENSOR_OPS = 1;
-    // Use tensor ops -- allows conversion FP32->FP16
-    USE_TENSOR_OPS = 2;
   }
 
   message Convolution {
