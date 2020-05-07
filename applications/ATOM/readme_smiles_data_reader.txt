@@ -4,14 +4,12 @@ setenv BASE /usr/workspace/wsb/hysom/corona/applications/ATOM
 
 run python3 train_atom_char_rnn_REV.py \
   --nodes=16             \
-  --batch-size=16000     \
-  --num-epochs=10        \
-  --sequence-length=120  \
-  --embedding-dim=40     \
-  --num-embeddings=40    \
-  --pad-index=38         \
-  --num-samples=1000000  \
-  --vocab=$BASE/data/vocab_enamine.txt \
+  --batch-size=1024      \
+  --sequence-length=57   \
+  --embedding-dim=30     \
+  --num-embeddings=30    \
+  --pad-index=28         \
+  --vocab=/p/lustre2/brainusr/datasets/zinc/vocab_train.txt \
   --data-reader-prototext=$BASE/smiles_data_reader.prototext \
  |& tee out
 
@@ -24,11 +22,13 @@ Optional arguments:
 
 Notes:
   --sequence-length, --vocab, --num-embeddings, and --embedding-dim should 
-  match the data set; vocabs for enamine and zinc are in applications/ATOM/data.
+  match the data set; vocabs for various datasets are in /p/lustre2/brainusr/datasets/zinc,
+  /p/lustre2/brainusr/datasets/enamine, etc.
   For now, assume num-embeddings = embedding-dim = vocab.size(), and 
   pad-index= vocab.size()-2
   
   If --sequence-length is too short, portions of some samples will be discarded.
+
   The smiles_data_reader dtor prints any characters that were not
   found in the vocabulary, and the number of characters (if any) that
   were discarded (but note, statistics are only gathered for P_0)
@@ -39,3 +39,8 @@ WARNING (when running with the Python data_reader):
    Also ensure "--pad-index" matches the entry in the json file; 
    also not error checked.
 
+Verification: to test the above cmd line against output using the python data reader:
+run python3 ./train_atom_char_rnn.py --nodes=16 --pad-index=28 --sequence-length=57 --embedding-dim=30 --num-embeddings=30 --batch-size=1024 |& tee out
+
+
+  
