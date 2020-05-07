@@ -26,7 +26,6 @@ images = lbann.Identity(input_)
 labels = lbann.Identity(input_)
 
 # LeNet
-tensor_ops_mode = lbann.ConvTensorOpsMode.DEFAULT_TENSOR_OPS
 x = lbann.Convolution(images,
                       num_dims = 2,
                       num_output_channels = 6,
@@ -34,8 +33,7 @@ x = lbann.Convolution(images,
                       conv_dims_i = 5,
                       conv_strides_i = 1,
                       conv_dilations_i = 1,
-                      has_bias = True,
-                      conv_tensor_op_mode=tensor_ops_mode)
+                      has_bias = True)
 x = lbann.Relu(x)
 x = lbann.Pooling(x,
                   num_dims = 2,
@@ -49,8 +47,7 @@ x = lbann.Convolution(x,
                       conv_dims_i = 5,
                       conv_strides_i = 1,
                       conv_dilations_i = 1,
-                      has_bias = True,
-                      conv_tensor_op_mode=tensor_ops_mode)
+                      has_bias = True)
 x = lbann.Relu(x)
 x = lbann.Pooling(x,
                   num_dims = 2,
