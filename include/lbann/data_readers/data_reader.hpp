@@ -647,7 +647,10 @@ class generic_data_reader {
 
   void set_trainer(trainer *t) { m_trainer = t; }
 
-  trainer *get_trainer() const { return m_trainer; }
+  trainer& get_trainer() const {
+    if(m_trainer == nullptr) { LBANN_ERROR("get_trainer called with nullptr"); }
+    return *m_trainer;
+  }
 
   /// experimental; used to ensure all readers for jag_conduit_hdf5
   /// have identical shuffled indices

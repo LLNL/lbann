@@ -61,7 +61,7 @@ std::string to_string(const slice_points_mode m) {
   }
 }
 
-slice_points_mode from_string(const std::string& str) {
+slice_points_mode slice_points_mode_from_string(const std::string& str) {
   if(str == "independent" || str == "INDEPENDENT") {
     return slice_points_mode::INDEPENDENT;
   }
