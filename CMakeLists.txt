@@ -104,6 +104,9 @@ option(LBANN_WITH_CONDUIT "Enable Conduit library" ON)
 
 option(LBANN_WITH_CUDNN "Include Nvidia cuDNN" ON)
 
+option(LBANN_WITH_CUDNN_TENSOR_OPS
+  "Use cuDNN tensor operations when possible." OFF)
+
 option(LBANN_WITH_DIHYDROGEN "Build with DiHydrogen support" OFF)
 if (LBANN_WITH_DIHYDROGEN)
   message(WARNING "DiHydrogen support is currently expermimental. "
@@ -330,6 +333,7 @@ if (LBANN_HAS_CUDA)
   endif (LBANN_HAS_GPU_FP16)
 
   set(LBANN_HAS_CUDNN ${CUDNN_FOUND})
+  set(LBANN_HAS_CUDNN_TENSOR_OPS ${LBANN_WITH_CUDNN_TENSOR_OPS})
 
   if (LBANN_HAS_ALUMINUM AND AL_HAS_NCCL)
     set(LBANN_HAS_NCCL2 TRUE)

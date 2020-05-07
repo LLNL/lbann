@@ -37,6 +37,7 @@
 
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
+#cmakedefine LBANN_HAS_CUDNN_TENSOR_OPS
 #cmakedefine LBANN_HAS_NVSHMEM
 #ifndef LBANN_HAS_CUDA
 #undef LBANN_HAS_NVSHMEM

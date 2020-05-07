@@ -490,6 +490,12 @@ public:
 
     // Set convolution descriptor
     CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_cudnn_desc));
+#ifdef LBANN_HAS_CUDNN_TENSOR_OPS
+    CHECK_CUDNN(
+      cudnnSetConvolutionMathType(
+        m_convolution_cudnn_desc,
+        CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION));
+#endif // LBANN_HAS_CUDNN_TENSOR_OPS
     CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(m_convolution_cudnn_desc,
                                                 m_pads.size(),
                                                 m_pads.data(),
@@ -1154,6 +1160,14 @@ private:
       int num_groups;
       CHECK_CUDNN(cudnnGetConvolutionGroupCount(src,
                                                 &num_groups));
+
+#ifdef LBANN_HAS_CUDNN_TENSOR_OPS
+      // Assume the math type propagates with copy, too.
+      cudnnMathType_t mathtype;
+      CHECK_CUDNN(cudnnGetConvolutionMathType(src, &mathtype));
+      CHECK_CUDNN(cudnnSetConvolutionMathType(dst, mathtype));
+#endif // LBANN_HAS_CUDNN_TENSOR_OPS
+
       CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(dst,
                                                   num_dims,
                                                   pads.data(),
