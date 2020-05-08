@@ -400,7 +400,6 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    string io_buffer = 2;         // Options: "partitioned" (default)
     string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "label_reconstruction", "N/A"
   }
 

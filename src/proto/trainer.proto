@@ -71,4 +71,10 @@ message Trainer {
 
   // Algorithmic block size for Hydrogen
   int64 hydrogen_block_size = 100;
+
+  DataCoordinator data_coordinator = 200;
+
+  message DataCoordinator {
+    string io_buffer = 2;         // Options: "partitioned" (default)
+  }
 }

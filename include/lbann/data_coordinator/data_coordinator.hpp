@@ -30,6 +30,8 @@
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/dataset.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
+#include "lbann/io/data_buffers/generic_io_buffer.hpp"
+#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include <cereal/types/utility.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
@@ -39,6 +41,25 @@
 #include "lbann/data_readers/data_reader_hdf5.hpp"
 #endif // LBANN_HAS_DISTCONV
 
+
+/** Design docs:
+ num_parallel_readers - used by the partitioned io buffer to control
+ how many ranks will access data.  Can be set by either the user, or
+ by the size of the mini-batch????
+
+ * IO buffers should go away and be rolled into the data coordinator.
+
+ * Buffered data coordinator knows about the native data size / for
+ * the data reader and how to store it
+
+ * input layer should take responsibility for the "distribute from
+ * local matrix code.  That should be the copy out of the data
+ * coordinator into the input layer.
+
+ * num children layers for the IO buffers is a property of the data
+ * reader
+ * there should be one input layer for each type of data to read.
+ */
 namespace lbann {
 
 // Forward-declare trainer
@@ -56,7 +77,7 @@ class data_coordinator {
     m_data_set_processed(false),
     m_execution_context(nullptr) {}
 
-  ~data_coordinator() {
+  virtual ~data_coordinator() {
     // Data coordinator always frees data readers.
     for (auto& dr : m_data_readers) {
       delete dr.second;
@@ -70,6 +91,7 @@ class data_coordinator {
       m_testing_dataset(other.m_testing_dataset),
       m_validation_dataset(other.m_validation_dataset),
       m_data_readers(other.m_data_readers),
+      m_data_set_processed(other.m_data_set_processed),
       m_execution_context(other.m_execution_context) {
     for (auto& dr : m_data_readers) {
       dr.second = dr.second ? dr.second->copy() : nullptr;
@@ -93,7 +115,7 @@ class data_coordinator {
        CEREAL_NVP(m_data_set_processed)*/);
   }
 
-  void setup(int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+  virtual void setup(int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
 
   /** Check to see if there is a valid training context for the data coordinator */
   bool has_valid_execution_context() const {
@@ -192,6 +214,98 @@ class data_coordinator {
     return drm;
   }
 
+  /**
+   * Get the linearized size of the underlying data.
+   */
+  long get_linearized_data_size() const {
+    long linearized_data_size = -1;
+
+    generic_data_reader *dr;
+    dr = get_data_reader(execution_mode::training);
+    if (dr != nullptr) {
+      linearized_data_size = dr->get_linearized_data_size();
+    }
+
+    dr = get_data_reader(execution_mode::validation);
+    if (dr != nullptr) {
+      long tmp_data_size = dr->get_linearized_data_size();
+      if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
+        LBANN_ERROR("lbann_io_layer: validation data set size does not "
+                              "match the currently established data set size");
+      }
+    }
+
+    dr = get_data_reader(execution_mode::testing);
+    if (dr != nullptr) {
+      long tmp_data_size = dr->get_linearized_data_size();
+      if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
+        LBANN_ERROR("lbann_io_layer: testing data set size does not "
+                              "match the currently established data set size");
+      }
+    }
+    return linearized_data_size;
+  }
+
+  /**
+   * Get the linearized size of the labels for the underlying data.
+   */
+  long get_linearized_label_size() const {
+    // if (this->is_for_regression()) {
+    //   return static_cast<long>(1);
+    // }
+    long linearized_label_size = -1;
+    generic_data_reader *dr;
+    dr = get_data_reader(execution_mode::training);
+    if (dr != nullptr) {
+      linearized_label_size = dr->get_linearized_label_size();
+    }
+    dr = get_data_reader(execution_mode::validation);
+    if (dr != nullptr) {
+      long tmp_label_size = dr->get_linearized_label_size();
+      if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
+        LBANN_ERROR("lbann_io_layer: validation label set size (" + std::to_string(tmp_label_size) + ") does not match the currently established data set size (" + std::to_string(linearized_label_size) + ")");
+      }
+    }
+    dr = get_data_reader(execution_mode::testing);
+    if (dr != nullptr) {
+      long tmp_label_size = dr->get_linearized_label_size();
+      if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
+        LBANN_ERROR("lbann_io_layer: testing label set size does not "
+                              "match the currently established data set size");
+      }
+    }
+    return linearized_label_size;
+  }
+
+  long get_linearized_response_size() const {
+    // if (!this->is_for_regression()) {
+    //   return static_cast<long>(1);
+    // }
+    long linearized_response_size = -1;
+    generic_data_reader *dr;
+    dr = get_data_reader(execution_mode::training);
+    if (dr != nullptr) {
+      linearized_response_size = dr->get_linearized_response_size();
+    }
+    dr = get_data_reader(execution_mode::validation);
+    if (dr != nullptr) {
+      long tmp_response_size = dr->get_linearized_response_size();
+      if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
+        LBANN_ERROR("lbann_io_layer: validation response set size does not "
+                              "match the currently established data set size");
+      }
+    }
+    dr = get_data_reader(execution_mode::testing);
+    if (dr != nullptr) {
+      long tmp_response_size = dr->get_linearized_response_size();
+      if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
+        LBANN_ERROR("lbann_io_layer: testing response set size does not "
+                              "match the currently established data set size");
+      }
+    }
+    return linearized_response_size;
+  }
+
   // At the start of the epoch, set the execution mode and make sure
   // that each layer points to this model
   void reset_mode(execution_context& context) {
@@ -272,12 +386,17 @@ class data_coordinator {
   int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const;
   static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
 
+  virtual int get_num_parallel_readers(execution_mode mode) const {
+    const generic_data_reader *data_reader = get_data_reader(mode);
+    return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
+  }
+
   //************************************************************************
   //
   //************************************************************************
 
   // save state of IO to a checkpoint
-  bool save_to_checkpoint_shared(persist& p) const {
+  virtual bool save_to_checkpoint_shared(persist& p) const {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
     if(p.get_cb_type() == callback_type::execution_context_only
@@ -304,7 +423,7 @@ class data_coordinator {
   }
 
   // reload state of IO from a checkpoint
-  bool load_from_checkpoint_shared(persist& p) {
+  virtual bool load_from_checkpoint_shared(persist& p) {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
     if(p.get_cb_type() == callback_type::execution_context_only
@@ -341,7 +460,7 @@ class data_coordinator {
     return true;
   }
 
-  bool save_to_checkpoint_distributed(persist& p) const {
+  virtual bool save_to_checkpoint_distributed(persist& p) const {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
     if(p.get_cb_type() == callback_type::execution_context_only
@@ -365,7 +484,7 @@ class data_coordinator {
     return true;
   }
 
-  bool load_from_checkpoint_distributed(persist& p) {
+  virtual bool load_from_checkpoint_distributed(persist& p) {
     // save state of data readers from input layer
     data_reader_map_t::const_iterator it;
     it = this->m_data_readers.find(execution_mode::training);
@@ -397,6 +516,7 @@ class data_coordinator {
 
   data_reader_map_t m_data_readers;
  //  std::map<execution_mode, dataset_stats> m_dataset_stats;
+
 public:  // @todo BVE FIXME
   bool m_data_set_processed;
   std::mutex dr_mutex;

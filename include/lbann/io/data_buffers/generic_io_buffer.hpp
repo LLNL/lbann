@@ -107,7 +107,7 @@ public:
   ///@}
 
 public:
-  generic_io_buffer(lbann_comm *comm, int num_parallel_readers);
+  generic_io_buffer(lbann_comm *comm);
   generic_io_buffer(
     const generic_io_buffer&);
   generic_io_buffer& operator=(

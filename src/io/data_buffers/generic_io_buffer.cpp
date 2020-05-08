@@ -29,7 +29,7 @@
 
 namespace lbann {
 template <typename TensorDataType>
-generic_io_buffer<TensorDataType>::generic_io_buffer(lbann_comm *comm, int num_parallel_readers)
+generic_io_buffer<TensorDataType>::generic_io_buffer(lbann_comm *comm)
   : m_comm(comm), fetch_data_fn(nullptr),  update_data_reader_fn(nullptr) {}
 
 template <typename TensorDataType>

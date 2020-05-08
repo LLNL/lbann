@@ -149,8 +149,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 #ifndef _JAG_OFFLINE_TOOL_MODE_
   /// Load data and do data reader's chores.
   void load() override;
-  /// Set the type of io_buffer that will rely on this reader
-  void set_io_buffer_type(const std::string io_buffer);
 
   /// Set the id of this local instance
   void set_local_id(const std::string role);
@@ -434,12 +432,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::set<std::string> m_input_filter;
   /// The list of input key prefixes to filter out
   std::vector<prefix_t> m_input_prefix_filter;
-
-  /**
-   * io_buffer type that will rely on this reader.
-   * e.g. distributed_io_buffer, partitioned_io_buffer
-   */
-  std::string m_io_buffer_type;
 
   /// The number of local instances of this reader type
   static std::unordered_map<std::string, int> m_num_local_readers;

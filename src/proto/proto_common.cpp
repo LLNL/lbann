@@ -134,9 +134,6 @@ void init_data_readers(
       for (int i=0; i < pb_model.layer_size(); ++i) {
         const auto& proto_layer = pb_model.layer(i);
         if (proto_layer.has_input()) {
-          const auto& params = proto_layer.input();
-          const auto& io_buffer = params.io_buffer();
-          reader_jag_conduit->set_io_buffer_type(io_buffer);
           const auto num_readers = get_requested_num_parallel_readers(*comm, p);
           reader_jag_conduit->set_num_parallel_readers(num_readers);
           reader_jag_conduit->set_local_id(readme.role());

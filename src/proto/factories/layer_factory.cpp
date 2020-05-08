@@ -325,7 +325,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
   // arguments.
   if (proto_layer.has_input()) {
     const auto& params = proto_layer.input();
-    const auto& io_buffer = params.io_buffer();
     const auto& mode_str = params.target_mode();
     data_reader_target_mode target_mode = data_reader_target_mode::CLASSIFICATION;
     if (mode_str.empty() || mode_str == "classification") { target_mode = data_reader_target_mode::CLASSIFICATION; }
@@ -337,26 +336,20 @@ std::unique_ptr<Layer> construct_layer_legacy(
       LBANN_ERROR("input layer is only supported with "
                   "a data-parallel layout");
     }
-    if (io_buffer == "partitioned" || io_buffer.empty()) {
-      /// @todo Question for Tim Moon and Tom Benson, I had to change this line from Layout to
-      /// data_layout::DATA_PARALLEL to make it compile with clang on OS X, but it seems like
-      /// this is not related to this PR.
-      if ((typeid(TensorDataType) == typeid(DataType))
-          && (Layout == data_layout::DATA_PARALLEL)) {
-        return lbann::make_unique<input_layer<DataType,
-                                              partitioned_io_buffer<DataType>,
-                                              data_layout::DATA_PARALLEL,
-                                              Device>>(
-                                                comm,
-                                                num_parallel_readers,
-                                                target_mode);
-      }
-      else {
-        LBANN_ERROR("Input layers are only valid with "
+    /// @todo Question for Tim Moon and Tom Benson, I had to change this line from Layout to
+    /// data_layout::DATA_PARALLEL to make it compile with clang on OS X, but it seems like
+    /// this is not related to this PR.
+    if ((typeid(TensorDataType) == typeid(DataType))
+        && (Layout == data_layout::DATA_PARALLEL)) {
+      return lbann::make_unique<input_layer<DataType,
+                                            partitioned_io_buffer<DataType>,
+                                            data_layout::DATA_PARALLEL,
+                                            Device>>(comm,
+                                                     target_mode);
+    }
+    else {
+      LBANN_ERROR("Input layers are only valid with "
                     "TensorDataType == DataType and Layout == DATA_PARALLEL");
-      }
-    } else {
-      LBANN_ERROR("invalid IO buffer type (" + io_buffer + ")");
     }
   }
 

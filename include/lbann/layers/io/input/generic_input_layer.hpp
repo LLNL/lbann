@@ -32,6 +32,7 @@
 #include "lbann/io/persist.hpp"
 #include "lbann/io/data_buffers/generic_io_buffer.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
+#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/callbacks/imcomm.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
@@ -53,11 +54,8 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
  public:
   generic_input_layer(lbann_comm *comm,
-              int num_parallel_readers,
-              data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
-    : io_layer<TensorDataType>(comm, dr_mode),
-      m_io_buffers() {
-      //m_data_sets_span_models(data_sets_span_models) {
+                      data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
+    : io_layer<TensorDataType>(comm, dr_mode) {
     // Input layers have no parents
     this->m_expected_num_parent_layers = 0;
     if(dr_mode == data_reader_target_mode::NA) {
@@ -67,10 +65,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
       // original value, categorical label, or regression value
       this->m_expected_num_child_layers = 2;
     }
-
-    this->m_active_buffer[execution_mode::training].store(-1);
-    this->m_active_buffer[execution_mode::validation].store(-1);
-    this->m_active_buffer[execution_mode::testing].store(-1);
   }
 
   ~generic_input_layer() override {
@@ -85,26 +79,15 @@ class generic_input_layer : public io_layer<TensorDataType> {
         this->m_model->get_execution_context().get_io_thread_pool().reap_threads();
       }
     }
-
-    for (auto& io_buffer : m_io_buffers) {
-      delete io_buffer;
-    }
   }
 
   // Input layers copy their datareaders.
   generic_input_layer(const generic_input_layer& other)
-    : io_layer<TensorDataType>(other),
-      m_io_buffers(other.m_io_buffers) {
-    for (auto& io_buffer : m_io_buffers) {
-      io_buffer = io_buffer->copy();
-    }
+    : io_layer<TensorDataType>(other) {
   }
 
   generic_input_layer& operator=(const generic_input_layer& other) {
     io_layer<TensorDataType>::operator=(other);
-    for (auto& io_buffer : m_io_buffers) {
-      io_buffer = io_buffer->copy();
-    }
     return *this;
   }
 
@@ -113,16 +96,10 @@ class generic_input_layer : public io_layer<TensorDataType> {
     // ar(CEREAL_NVP(m_io_buffer));
   }
 
-  template<typename T_io_buffer>
-  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers) {
-    m_io_buffers.push_back(new T_io_buffer(comm, num_parallel_readers, this->m_expected_num_child_layers));
-  }
-
   std::string get_type() const override { return "generic_input"; }
 
   description get_description() const override {
     auto desc = io_layer<TensorDataType>::get_description();
-    desc.add("Buffer", m_io_buffers[0]->get_type());
     return desc;
   }
 
@@ -140,18 +117,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
     for (int i = 0; i < this->get_num_children(); ++i) {
       auto& output = this->get_activations(i);
       output.Resize(output.Height(), max_mini_batch_size);
-    }
-
-    for (auto& io_buffer : m_io_buffers) {
-      int linearized_target_size;
-      if(this->get_num_children() > 1) {
-        linearized_target_size = this->get_output_size(1);
-      }else {
-        linearized_target_size = 0;
-      }
-      io_buffer->setup_data(this->get_output_size(0),
-                            linearized_target_size,
-                            max_mini_batch_size);
     }
   }
 
@@ -184,18 +149,12 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
     // Initialize matrices
     io_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
-
-    for (auto& io_buffer : m_io_buffers) {
-      for (int i = 0; i < this->get_num_children(); ++i) {
-        io_buffer->fp_setup_data(mini_batch_size, i);
-      }
-    }
   }
 
   void fetch_data_in_background(int future_active_buffer, execution_mode mode) {
-    int active_buffer = future_active_buffer % m_io_buffers.size();
-    generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[active_buffer];
-    data_coordinator& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
+    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
+    int active_buffer = future_active_buffer % dc.m_io_buffers.size();
+    generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[active_buffer];
     std::lock_guard<std::mutex> guard(dc.dr_mutex);
     setup_next_io_buffer(io_buffer);
     io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
@@ -204,7 +163,8 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
   /// Check for each buffer if there is an outstanding fetch request
   void collect_background_data_fetch(execution_mode mode) {
-    for(auto& io_buffer : m_io_buffers) {
+    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
+    for(auto& io_buffer : dc.m_io_buffers) {
       if(io_buffer->is_data_fetched_in_background(mode)) {
         io_buffer->get_data_fetch_future(mode).get();
         io_buffer->set_fetch_data_in_background(false, mode);
@@ -214,10 +174,11 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
   void fp_compute() override {
     execution_mode mode = this->m_model->get_execution_context().get_execution_mode();
+    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
 
     increment_active_buffer_idx(mode);
 
-    generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
+    generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
 
     // If there is no valid data and there is not already a background
     // thread to fetch the data, queue up the background thread
@@ -260,14 +221,13 @@ class generic_input_layer : public io_layer<TensorDataType> {
       LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
     }
 
-    data_coordinator& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
     dc.m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
 
     if(!dc.m_data_set_processed && this->m_model->get_execution_context().background_io_activity_allowed()) {
       int next_active_buffer = get_active_buffer_idx(mode) + 1;
       std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool().submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, mode));
-      generic_io_buffer<TensorDataType>* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
+      generic_io_buffer<TensorDataType>* next_io_buffer = dc.m_io_buffers[next_active_buffer % dc.m_io_buffers.size()];
       next_io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
       next_io_buffer->set_fetch_data_in_background(true, mode);
     }
@@ -298,15 +258,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
   generic_data_reader *get_data_reader() const {
     return get_data_reader(this->m_model->get_execution_context().get_execution_mode());
-  }
-
-  virtual int get_num_parallel_readers(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
-  }
-
-  virtual int get_num_parallel_readers() const {
-    return get_num_parallel_readers(this->m_model->get_execution_context().get_execution_mode());
   }
 
   virtual int get_num_iterations_per_epoch(execution_mode mode) const {
@@ -433,7 +384,8 @@ class generic_input_layer : public io_layer<TensorDataType> {
    */
   El::Matrix<El::Int>* get_sample_indices_per_mb() override {
     execution_mode mode = this->m_model->get_execution_context().get_execution_mode();
-    generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
+    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
+    generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
     return io_buffer->get_sample_indices_fetched_per_mb(this->m_model->get_execution_context().get_execution_mode());
   }
 
@@ -449,104 +401,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
       LBANN_ERROR("get_data_dims: Invalid child index");
     }
     return std::vector<int>(1, 0);
-  }
-
-  /**
-   * Get the linearized size of the underlying data.
-   */
-  long get_linearized_data_size() const override {
-    long linearized_data_size = -1;
-
-    generic_data_reader *dr;
-
-    auto& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
-    dr = dc.get_data_reader(execution_mode::training);
-    if (dr != nullptr) {
-      linearized_data_size = dr->get_linearized_data_size();
-    }
-
-    dr = dc.get_data_reader(execution_mode::validation);
-    if (dr != nullptr) {
-      long tmp_data_size = dr->get_linearized_data_size();
-      if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
-        LBANN_ERROR("lbann_io_layer: validation data set size does not "
-                              "match the currently established data set size");
-      }
-    }
-
-    dr = dc.get_data_reader(execution_mode::testing);
-    if (dr != nullptr) {
-      long tmp_data_size = dr->get_linearized_data_size();
-      if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
-        LBANN_ERROR("lbann_io_layer: testing data set size does not "
-                              "match the currently established data set size");
-      }
-    }
-    return linearized_data_size;
-  }
-
-  /**
-   * Get the linearized size of the labels for the underlying data.
-   */
-  long get_linearized_label_size() const override {
-    if (this->is_for_regression()) {
-      return static_cast<long>(1);
-    }
-    long linearized_label_size = -1;
-    generic_data_reader *dr;
-
-    auto& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
-    dr = dc.get_data_reader(execution_mode::training);
-    if (dr != nullptr) {
-      linearized_label_size = dr->get_linearized_label_size();
-    }
-    dr = dc.get_data_reader(execution_mode::validation);
-    if (dr != nullptr) {
-      long tmp_label_size = dr->get_linearized_label_size();
-      if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
-        LBANN_ERROR("lbann_io_layer: validation label set size (" + std::to_string(tmp_label_size) + ") does not match the currently established data set size (" + std::to_string(linearized_label_size) + ")");
-      }
-    }
-    dr = dc.get_data_reader(execution_mode::testing);
-    if (dr != nullptr) {
-      long tmp_label_size = dr->get_linearized_label_size();
-      if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
-        LBANN_ERROR("lbann_io_layer: testing label set size does not "
-                              "match the currently established data set size");
-      }
-    }
-    return linearized_label_size;
-  }
-
-  long get_linearized_response_size() const override {
-    if (!this->is_for_regression()) {
-      return static_cast<long>(1);
-    }
-    long linearized_response_size = -1;
-    generic_data_reader *dr;
-
-    auto& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
-    dr = dc.get_data_reader(execution_mode::training);
-    if (dr != nullptr) {
-      linearized_response_size = dr->get_linearized_response_size();
-    }
-    dr = dc.get_data_reader(execution_mode::validation);
-    if (dr != nullptr) {
-      long tmp_response_size = dr->get_linearized_response_size();
-      if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
-        LBANN_ERROR("lbann_io_layer: validation response set size does not "
-                              "match the currently established data set size");
-      }
-    }
-    dr = dc.get_data_reader(execution_mode::testing);
-    if (dr != nullptr) {
-      long tmp_response_size = dr->get_linearized_response_size();
-      if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
-        LBANN_ERROR("lbann_io_layer: testing response set size does not "
-                              "match the currently established data set size");
-      }
-    }
-    return linearized_response_size;
   }
 
   long get_num_samples_trained() const override {
@@ -635,15 +489,15 @@ class generic_input_layer : public io_layer<TensorDataType> {
   }
 
   int get_active_buffer_idx(execution_mode m) {
-    return m_active_buffer[m].load();
+    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
+    return dc.m_active_buffer[m].load();
   }
   void increment_active_buffer_idx(execution_mode m) {
-    m_active_buffer[m]++;
+    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
+    dc.m_active_buffer[m]++;
   }
 
  protected:
-  std::vector<generic_io_buffer<TensorDataType>*> m_io_buffers;
-  io_buffer_map_t m_active_buffer;
 };
 
 }  // namespace lbann
