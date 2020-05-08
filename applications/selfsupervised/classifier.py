@@ -68,8 +68,7 @@ def setup(data_reader_file,
         )
 
     # Construct model
-    model = lbann.Model(mini_batch_size,
-                        num_epochs,
+    model = lbann.Model(num_epochs,
                         layers=lbann.traverse_layer_graph(input),
                         objective_function=obj,
                         metrics=metrics,
@@ -120,7 +119,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Setup experiment
-    trainer = lbann.Trainer()
+    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
     current_dir = os.path.dirname(os.path.realpath(__file__))
     data_reader_file = os.path.join(current_dir, 'data_reader_cub.prototext')
     model, data_reader, opt = setup(
