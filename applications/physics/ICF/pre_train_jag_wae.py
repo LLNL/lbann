@@ -82,7 +82,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A',data_set_per_model=True, name='inp_data')
+    input = lbann.Input(target_mode='N/A', name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
     #inp_slice = lbann.Slice(input, axis=0, slice_points="0 16399 16404",name='inp_slice')
     inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+5]),name='inp_slice')
@@ -157,8 +157,6 @@ if __name__ == '__main__':
 
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     status = lbann.contrib.launcher.run(trainer,model, data_reader_proto, opt,
-                       scheduler='lsf',
-                       partition='pbatch',
                        nodes=args.num_nodes,
                        procs_per_node=args.ppn,
                        time_limit=720,
