@@ -139,10 +139,14 @@ int main(int argc, char *argv[]) {
       e.print_report(fs);
     }
     El::ReportException(e);
-    return EXIT_FAILURE;
+    // It's possible that a proper subset of ranks throw some
+    // exception. But we want to tear down the whole world.
+    El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
   } catch (std::exception& e) {
     El::ReportException(e);
-    return EXIT_FAILURE;
+    // It's possible that a proper subset of ranks throw some
+    // exception. But we want to tear down the whole world.
+    El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
   }
 
   return EXIT_SUCCESS;
