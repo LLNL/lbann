@@ -62,9 +62,6 @@
  */
 namespace lbann {
 
-// Forward-declare trainer
-class trainer;
-
 class data_coordinator {
  public:
   using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
