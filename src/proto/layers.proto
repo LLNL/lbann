@@ -30,11 +30,7 @@ package lbann_data;
 
 import "google/protobuf/wrappers.proto";
 
-enum DataType {
-  FLOAT = 0;
-  DOUBLE = 1;
-  FP16 = 2;
-}
+import "datatype.proto";
 
 // Lives here because it's used by both Convolution and
 // Deconvolution.

@@ -45,8 +45,8 @@ class buffered_data_coordinator : public data_coordinator {
 
   ///@}
  public:
-  buffered_data_coordinator(trainer& trainer, lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
-    data_coordinator(trainer, comm, data_readers),
+  buffered_data_coordinator(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
+    data_coordinator(comm, data_readers),
     m_io_buffers() {
 
     // Initialize two buffers
@@ -87,7 +87,7 @@ class buffered_data_coordinator : public data_coordinator {
     //    ar(/*CEREAL_NVP(m_io_buffer),*/);
   }
 
-  void setup(int max_mini_batch_size);
+  void setup(thread_pool& io_thread_pool, int max_mini_batch_size);
 
   inline void initialize_io_buffer(lbann_comm *comm) {
     /// @todo BVE FIXME we need to know how much data buffer based on

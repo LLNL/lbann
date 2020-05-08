@@ -30,7 +30,9 @@
 
 namespace lbann {
 
-void data_coordinator::setup(int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers) {
+void data_coordinator::setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers) {
+  m_io_thread_pool = &io_thread_pool;
+
   m_data_readers = data_readers;
 
   if(m_data_readers[execution_mode::training] != nullptr) {
@@ -50,8 +52,8 @@ void data_coordinator::setup(int max_mini_batch_size, std::map<execution_mode, g
   // Setup data readers
   for(auto&& dr: m_data_readers) {
     if (!dr.second) continue;
-    dr.second->setup(m_trainer->get_io_thread_pool().get_num_threads(),
-                     &(m_trainer->get_io_thread_pool()));
+    dr.second->setup(m_io_thread_pool->get_num_threads(),
+                     m_io_thread_pool);
     dr.second->set_rank(m_comm->get_rank_in_trainer());
   }
 
@@ -71,7 +73,7 @@ void data_coordinator::setup(int max_mini_batch_size, std::map<execution_mode, g
     }
     for (auto&& r : m_data_readers) {
       if (!r.second) continue;
-      r.second->setup_data_store(m_trainer->get_max_mini_batch_size());
+      r.second->setup_data_store(max_mini_batch_size);
     }
   }
 }

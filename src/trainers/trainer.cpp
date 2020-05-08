@@ -56,22 +56,24 @@ namespace lbann {
 ////////////////////////////////////////////////////////////
 
 trainer::trainer(lbann_comm *comm,
-                 size_t mini_batch_size)
+                 size_t mini_batch_size,
+                 std::unique_ptr<data_coordinator> dc)
   : m_comm(comm),
     m_max_mini_batch_size(mini_batch_size),
     m_io_thread_pool(),
-    m_background_io_allowed(true),
-    m_data_coordinator(*this, comm) {
+    m_background_io_allowed(true) {
 
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
+  m_data_coordinator = std::move(dc);
 }
 
 trainer::trainer(const trainer& other) :
   m_comm(other.m_comm),
   m_max_mini_batch_size(other.m_max_mini_batch_size),
-  m_background_io_allowed(other.m_background_io_allowed),
-  m_data_coordinator(other.m_data_coordinator) {
+  m_background_io_allowed(other.m_background_io_allowed) {
+
+  //  m_data_coordinator = other.m_data_coordinator;
 
   // Deep copies
   // m_io_thread_pool = (other.m_io_thread_pool ?
@@ -137,7 +139,7 @@ void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool, std::map<execut
   for (auto d : data_readers) {
     d.second->set_trainer(this);
   }
-  m_data_coordinator.setup(get_max_mini_batch_size(), data_readers);
+  m_data_coordinator.get()->setup(*m_io_thread_pool.get(), get_max_mini_batch_size(), data_readers);
 
   // Set up callbacks first - allow checkpoint / restart to reload state
   for (auto& cb : m_callbacks) {

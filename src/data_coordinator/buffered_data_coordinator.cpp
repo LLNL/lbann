@@ -30,7 +30,9 @@
 namespace lbann {
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::setup(int max_mini_batch_size) {
+void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_pool, int max_mini_batch_size) {
+  data_coordinator::setup(io_thread_pool, max_mini_batch_size);
+
   auto data_dims = get_data_dims();
   for (auto& io_buffer : m_io_buffers) {
     io_buffer->setup_data(get_linearized_data_size(),

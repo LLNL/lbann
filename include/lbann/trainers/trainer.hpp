@@ -53,7 +53,8 @@ public:
 
   /** Constructor. */
   trainer(lbann_comm *comm,
-          size_t mini_batch_size);
+          size_t mini_batch_size,
+          std::unique_ptr<data_coordinator> dc);
 
   /** Copy constructor. */
   trainer(const trainer& other);
@@ -143,7 +144,10 @@ public:
 
   void for_each_execution_context(std::function<void(observer_ptr<execution_context>)>fn);
 
-  data_coordinator& get_data_coordinator() { return m_data_coordinator; }
+  data_coordinator& get_data_coordinator() {
+    if(m_data_coordinator == nullptr) { LBANN_ERROR("data_coordinator is nullptr"); }
+    return *m_data_coordinator;
+  }
 
   void apply(training_algorithm& alg,
              observer_ptr<model> model,
@@ -243,7 +247,7 @@ private:
   std::vector<std::shared_ptr<callback_base>> m_callbacks;
 
   /** @brief Data Coordinator holding trainers data readers */
-  data_coordinator m_data_coordinator;
+  std::unique_ptr<data_coordinator> m_data_coordinator;
 };
 
 }  // namespace lbann

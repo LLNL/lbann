@@ -28,6 +28,8 @@ syntax = "proto3";
 
 package lbann_data;
 
+import "datatype.proto";
+
 import "callbacks.proto";
 
 message Trainer {
@@ -75,6 +77,7 @@ message Trainer {
   DataCoordinator data_coordinator = 200;
 
   message DataCoordinator {
+    DataType datatype = 1;
     string io_buffer = 2;         // Options: "partitioned" (default)
   }
 }

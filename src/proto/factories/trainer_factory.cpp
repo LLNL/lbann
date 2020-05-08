@@ -27,6 +27,8 @@
 #include "lbann/proto/factories.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/callbacks/callback.hpp"
+#include "lbann/proto/datatype_helpers.hpp"
+#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
 
 #include <trainer.pb.h>
 
@@ -36,8 +38,29 @@ namespace proto {
 std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
                                            const lbann_data::Trainer& proto_trainer) {
 
+  auto proto_datatype = proto_trainer.data_coordinator().datatype();
+  std::unique_ptr<data_coordinator> dc;
+#define TEMPLATE_INSTANTIATION(TensorDataType)                              \
+    do {                                                                    \
+      if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {   \
+        dc = lbann::make_unique<buffered_data_coordinator<TensorDataType>>( \
+          comm,                                                             \
+          data_readers);                                                    \
+      }                                                                     \
+    } while (0)
+
+#define PROTO(T) \
+    TEMPLATE_INSTANTIATION(T)
+
+#include "lbann/macros/instantiate.hpp"
+
+#undef PROTO
+#undef TEMPLATE_INSTANTIATION
+
   // Instantiate trainer
-  auto t = make_unique<trainer>(comm, proto_trainer.mini_batch_size());
+  auto t = make_unique<trainer>(comm,
+                                proto_trainer.mini_batch_size(),
+                                std::move(dc));
   const auto& name = proto_trainer.name();
   if (!name.empty()) {
     t->set_name(name);

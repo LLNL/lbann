@@ -71,8 +71,13 @@ class data_coordinator {
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
  public:
+<<<<<<< 7567d2330c4feed1289512f175cc8ac4e28d42f5
   data_coordinator(trainer& trainer, lbann_comm *comm) :
     m_trainer(&trainer),
+=======
+  data_coordinator(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
+    m_trainer(nullptr),
+>>>>>>> Revamped the creation of the data coordinator so that it is
     m_comm(comm),
     m_data_set_processed(false),
     m_execution_context(nullptr) {}
@@ -115,7 +120,7 @@ class data_coordinator {
        CEREAL_NVP(m_data_set_processed)*/);
   }
 
-  virtual void setup(int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
+  virtual void setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
 
   /** Check to see if there is a valid training context for the data coordinator */
   bool has_valid_execution_context() const {
@@ -523,6 +528,8 @@ public:  // @todo BVE FIXME
 
   /** Pointer to the execution context object used for training or evaluating this model */
   observer_ptr<execution_context> m_execution_context;
+
+  observer_ptr<thread_pool> m_io_thread_pool;
 };
 
 } // namespace lbann
