@@ -121,8 +121,8 @@ public:
 
 protected:
 
-  void setup_dims() override {
-    base_convolution_layer<TensorDataType, Device>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    base_convolution_layer<TensorDataType, Device>::setup_dims(dr_metadata);
 
     // Get tensor dimensions
     const auto& input_dims = this->get_input_dims();
