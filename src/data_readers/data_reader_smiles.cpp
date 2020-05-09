@@ -316,6 +316,7 @@ void smiles_data_reader::load_vocab() {
   while (in >> token >> id) {
     if (token.size() == 1) {
       m_vocab[token[0]] = id;
+      m_vocab_inv[id] = token[0];
     }  
     if (token == "<pad>") {
       m_pad = id;
@@ -375,6 +376,7 @@ int smiles_data_reader::get_num_lines(std::string fn) {
 }
 
 void smiles_data_reader::construct_conduit_node(int data_id, const std::string &line, conduit::Node &node) {
+#if 0
   node.reset();
   size_t j = line.find('\t');
   if (j == std::string::npos) {
@@ -389,17 +391,18 @@ void smiles_data_reader::construct_conduit_node(int data_id, const std::string &
   node[LBANN_DATA_ID_STR(data_id) + "/data"].set(data);
   int sz = data.size();
   node[LBANN_DATA_ID_STR(data_id) + "/size"].set(sz);
+#endif
 }
 
-void smiles_data_reader::encode_smiles(const std::string &sm, std::vector<short> &data, int data_id) {
-  int stop = sm.size();
+void smiles_data_reader::encode_smiles(const char *smiles, short size, std::vector<short> &data, int data_id) {
   static int count = 0;
 
-  if (stop+2 > m_linearized_data_size) {
+  int stop = size;
+  if (stop+2 > m_linearized_data_size) { //+2 is for <bos> and <eos>
     stop = m_linearized_data_size-2;
     if (count < 20) {
-      count += 1;
-      LBANN_WARNING("data_id: ", data_id, " smiles string size is ", sm.size(), "; losing ", (sm.size()-(m_linearized_data_size-2)), " characters");
+      ++count;
+      LBANN_WARNING("data_id: ", data_id, " smiles string size is ", size, "; losing ", (size-(m_linearized_data_size-2)), " characters");
     }
   }
 
@@ -407,7 +410,7 @@ void smiles_data_reader::encode_smiles(const std::string &sm, std::vector<short>
   data.reserve(stop+2);
   data.push_back(m_bos);
   for (int j=0; j<stop; j++) {
-    const char &w = sm[j];
+    const char &w = smiles[j];
     if (m_vocab.find(w) == m_vocab.end()) {
       {
         std::lock_guard<std::mutex> lock(m_mutex);
@@ -415,7 +418,7 @@ void smiles_data_reader::encode_smiles(const std::string &sm, std::vector<short>
         ++m_missing_char_in_vocab_count;
         if (m_missing_char_in_vocab_count < 20) {
           std::stringstream ss;
-          ss << "rank: " << m_comm->get_rank_in_trainer() << "; character not in vocab >>" << w << "<<; idx: " << j << "; data_id: " << data_id << "; string length: " << sm.size() << "; will use length: " << stop << "; SMILES string: >>" << sm << "<<" << std::endl;
+          ss << "rank: " << m_comm->get_rank_in_trainer() << "; character not in vocab >>" << w << "<<; idx: " << j << "; data_id: " << data_id << "; string length: " << size << "; will use length: " << stop;
           std::cerr << ss.str();
         }
       }
@@ -443,7 +446,7 @@ void smiles_data_reader::get_sample(int sample_id, std::vector<short> &sample_ou
 
   const char *v = m_data.data()+offset;
   const std::string smiles_string(v, size);
-  encode_smiles(smiles_string, sample_out, sample_id);
+  encode_smiles(v, size, sample_out, sample_id);
 }
 
 int smiles_data_reader::get_smiles_string_length(const std::string &line, int line_number) {
@@ -600,17 +603,112 @@ void smiles_data_reader::setup_fast_experimental() {
 }
 
 void smiles_data_reader::test_encode() {
+  // What this does: at this point, P_0 has read and bcast the data set,
+  // and each rank has built a lookup table. Below, P_1 looks up each
+  // data_id; encodes the string (E1); reads the string from file (S2); 
+  // decodes E1 to produce string S1; compares S1 and S2 for equality.
   double tm1 = get_time();
   if (is_master()) {
     std::cout << "STARTING TEST_ENCODE" << std::endl;
   }
-  std::vector<short> encoded;
+  if (m_comm->get_rank_in_world() != 1) {
+    return;
+  }
+  
+  // option: testing the test ;)
+  bool fail = options::get()->get_bool("make_test_fail");
+
+  // Build ordered set of data_ids so we can more easily iterate
+  // through the file -- instead of jumping around
+  std::set<int> data_ids;
   for (auto t : m_sample_lookup) {
-    get_sample(t.first, encoded);
+    data_ids.insert(t.first);
   }
-  if (is_master()) {
-    std::cout << "ENDING TEST_ENCODE; time: " << get_time()-tm1 << std::endl;
+
+  // Open input file and discard header (if it exists)
+  const std::string infile = get_file_dir() + "/" + get_data_filename();
+  std::ifstream in(infile.c_str());
+  if (!in) {
+    LBANN_ERROR("failed to open ", infile, " for reading");
   }
+  std::string line;
+  if (m_has_header) {
+    getline(in, line);
+  }
+
+  size_t num_tested = 0;
+
+  std::vector<short> encoded;
+  std::string decoded;
+  int sample_id = -1;
+  while (getline(in, line)) {
+    ++sample_id;
+
+    if (data_ids.find(sample_id) != data_ids.end()) {
+      ++num_tested;
+      // encode then decode the datum that is stored in memory
+      get_sample(sample_id, encoded);
+      decode_smiles(encoded, decoded); 
+
+      // get datum length from the line we've just read from file
+      size_t k = get_smiles_string_length(line, sample_id);
+      std::string S2(line.data(), k);
+
+      // test the test! Optionally make the test fail;
+      // assumes smiles string contains at least 8 characters,
+      // and no string contains "~~~~"
+      if (num_tested > 10 && fail) {
+        for (size_t h=0; h<S2.size(); h++) {
+          S2[h] = '~';
+        }  
+      }
+
+      // conduct tests
+      // It would be simpler to throw exceptions here, but currently that
+      // would cause all other procs to hang
+      if (S2.size() != decoded.size()) {
+        LBANN_ERROR("S2.size (", S2.size(), ") != decoded.size (", decoded.size());
+      }
+      if (S2 != decoded) {
+        LBANN_ERROR("test_encoded failed; string from memory: ", decoded, "; string from file: ", S2, "; should be equal");
+      }
+    }
+  }
+  in.close();
+
+  if (num_tested != m_sample_lookup.size()) {
+    LBANN_ERROR("num_tested= ", num_tested, "; m_sample_lookup.size()= ", m_sample_lookup.size(), "; should be equal");
+  }
+
+  std::cout << "ENDING TEST_ENCODE; time: " << get_time()-tm1 
+            << " >>> TESTS PASSED <<< " << std::endl;
+}
+void smiles_data_reader::decode_smiles(const std::vector<short> &data, std::string &out) {
+  std::stringstream s;
+  for (const auto &t : data) {
+    if (!(t == m_eos || t == m_bos || t == m_pad || t == m_unk)) {
+      if (m_vocab_inv.find(t) == m_vocab_inv.end()) {
+      std::stringstream s2;
+      s2 <<"failed to find: " << t <<" in m_vocab_inv for input data: ";
+      for (auto tt : data) {
+        s2 << tt << " ";
+      }
+      s2 << "; m_vocab_inv.size(): " << m_vocab_inv.size() 
+         << " m_vocab_inv keys: ";
+      for (auto tt : m_vocab_inv) {
+        s2 << tt.first << " ";
+      }
+      LBANN_ERROR(s2.str());
+    }
+    }
+    const std::string &x = m_vocab_inv[t];
+    if (x == "<unk>") {
+      s << "<unk>";
+    } else if (!(x == "<bos>" || x == "<eos>" || x == "<pad>")) {
+      s << m_vocab_inv[t];
+    } 
+  }
+  out = s.str();
 }
 
 }  // namespace lbann
