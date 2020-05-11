@@ -7,13 +7,12 @@ import lbann.core.objective_function
 class Model:
     """Neural network model."""
 
-    def __init__(self, mini_batch_size, epochs,
+    def __init__(self, epochs,
                  layers=[], weights=[], objective_function=None,
                  metrics=[], callbacks=[],
                  summary_dir=None,serialize_io=False):
 
         # Scalar fields
-        self.mini_batch_size = mini_batch_size
         self.epochs = epochs
         self.summary_dir = summary_dir
         self.serialize_io = serialize_io
@@ -42,7 +41,6 @@ class Model:
         """Construct and return a protobuf message."""
         # Initialize protobuf message
         model = model_pb2.Model()
-        model.mini_batch_size = self.mini_batch_size
         model.num_epochs = self.epochs
         if self.summary_dir is not None:
             model.summarizer.dir = self.summary_dir

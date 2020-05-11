@@ -42,8 +42,9 @@ namespace lbann {
 
 /// Construct a trainer that contains a lbann comm object and threadpool
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
-                                             lbann_data::Trainer* pb_trainer,
-                                             options *opts) {
+                                           lbann_data::Trainer* pb_trainer,
+                                           lbann_data::LbannPB &pb,
+                                           options *opts) {
   try {
     int procs_per_trainer = 0;
     if(pb_trainer->procs_per_trainer() > 0) {
@@ -87,11 +88,24 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     //   display_omp_setup();
     // }
 
+    // Update the index lists to accomodate multi-trainer / multi-model specification
+    customize_data_readers_index_list(*comm, pb);
+
+    // Initialize data readers
+    //@todo: code not in place for correctly handling image preprocessing
+    std::map<execution_mode, generic_data_reader *> data_readers;
+    bool is_shared_training_data_reader = pb_trainer->shareable_training_data_reader();
+    bool is_shared_testing_data_reader = pb_trainer->shareable_testing_data_reader();
+    if (opts->has_string("share_testing_data_readers")) {
+      is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
+    }
+    init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
+
     // User feedback
     //    print_parameters(comm, pb);
 
     // Initalize trainer
-    std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, *pb_trainer);
+    std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, data_readers, *pb_trainer);
 
     // If the checkpoint directory has been overridden reset it before
     // setting up the trainer
@@ -122,12 +136,6 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
       }
     }
 
-    trainer->setup(std::move(io_thread_pool));
-
-    if(opts->get_bool("disable_background_io_activity")) {
-      trainer->allow_background_io_activity(false);
-    }
-
     int random_seed = lbann_default_random_seed;
 
     // Change random seed if needed.
@@ -148,7 +156,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     }
 #else
     if (!pb_trainer->random_init_trainers_identically()) {
-      if (master) {
+      if(comm->am_trainer_master()) {
         std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
           "due to sequential consistency" << std::endl;
       }
@@ -169,6 +177,11 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     }
 #endif
 
+    trainer->setup(std::move(io_thread_pool));
+
+    if(opts->get_bool("disable_background_io_activity")) {
+      trainer->allow_background_io_activity(false);
+    }
 
 
     // Report useful information
@@ -223,7 +236,7 @@ std::unique_ptr<model> build_model_from_prototext(
   options *opts,
   thread_pool& io_thread_pool,
   std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
-  bool first_model) {
+  int training_dr_linearized_data_size) {
 
   bool master = comm->am_world_master();
   if (master) {
@@ -242,9 +255,6 @@ std::unique_ptr<model> build_model_from_prototext(
     io_thread_pool.relaunch_pinned_threads(1);
   }
 
-  // Get I/O thread details
-  auto io_threads_per_process = io_thread_pool.get_num_threads();
-
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
   save_session(*comm, argc, argv, pb);
@@ -254,35 +264,12 @@ std::unique_ptr<model> build_model_from_prototext(
     display_omp_setup();
   }
 
-  // Update the index lists to accomodate multi-trainer / multi-model specification
-  customize_data_readers_index_list(*comm, pb);
-
-  // Initialize data readers
-  //@todo: code not in place for correctly handling image preprocessing
-  std::map<execution_mode, generic_data_reader *> data_readers;
-  bool is_shared_training_data_reader = pb_model->shareable_training_data_reader();
-  bool is_shared_testing_data_reader = pb_model->shareable_testing_data_reader();
-  if (opts->has_string("share_testing_data_readers")) {
-    is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
-  }
-  init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
-
-  // hack to prevent all data readers from loading identical data; instead,
-  // share a single copy. See data_reader_jag_conduit_hdf5 for example
-  if (first_model) {
-    if (opts->has_string("share_data_reader_data")) {
-      for (auto&& t : data_readers) {
-        opts->set_ptr((void*)t.second);
-      }
-    }
-  }
-
   // User feedback
   print_parameters(*comm, pb);
 
   // Initalize model
   std::unique_ptr<model> ret_model = proto::construct_model(comm,
-                                                            data_readers,
+                                                            training_dr_linearized_data_size,
                                                             pb.optimizer(),
                                                             pb.trainer(),
                                                             pb.model());
@@ -356,22 +343,6 @@ std::unique_ptr<model> build_model_from_prototext(
       }
     }else {
       cb->add_dir(opts->get_string("load_model_weights_dir"));
-    }
-  }
-
-  // Setup data readers
-  for(auto&& dr: data_readers) {
-    dr.second->setup(io_threads_per_process, &io_thread_pool);
-    dr.second->set_rank(comm->get_rank_in_trainer());
-  }
-
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
-    if (master) {
-      std::cout << "\nUSING DATA STORE!\n\n";
-    }
-    for (auto&& r : data_readers) {
-      if (!r.second) continue;
-      r.second->setup_data_store(pb_model->mini_batch_size());
     }
   }
 

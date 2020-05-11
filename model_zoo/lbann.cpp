@@ -82,15 +82,22 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, pb, opts);
 
     thread_pool& io_thread_pool = trainer->get_io_thread_pool();
+
+    int training_dr_linearized_data_size = -1;
+    auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::training);
+    if(dr != nullptr) {
+      training_dr_linearized_data_size = dr->get_linearized_data_size();
+    }
 
     lbann_data::Model *pb_model = pb.mutable_model();
 
     auto model = build_model_from_prototext(argc, argv, pb_trainer, pb,
                                             comm.get(), opts, io_thread_pool,
-                                            trainer->get_callbacks_with_ownership(), true);
+                                            trainer->get_callbacks_with_ownership(),
+                                            training_dr_linearized_data_size);
 
     if (opts->has_string("create_tarball")) {
       return EXIT_SUCCESS;
@@ -132,10 +139,14 @@ int main(int argc, char *argv[]) {
       e.print_report(fs);
     }
     El::ReportException(e);
-    return EXIT_FAILURE;
+    // It's possible that a proper subset of ranks throw some
+    // exception. But we want to tear down the whole world.
+    El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
   } catch (std::exception& e) {
     El::ReportException(e);
-    return EXIT_FAILURE;
+    // It's possible that a proper subset of ranks throw some
+    // exception. But we want to tear down the whole world.
+    El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
   }
 
   return EXIT_SUCCESS;

@@ -66,6 +66,12 @@ public:
        CEREAL_NVP(m_step));
   }
 
+  /** @brief Return the state of the execution context as a string */
+  virtual std::string get_state_string() const noexcept {
+    return build_string("ec.", to_string(get_execution_mode()),
+                        ".step.", get_step());
+  }
+
   /** @brief Current step in the training algorithm
     *  @details Step counts the number of iterations in the training
     *  algorithm's internal state
@@ -97,7 +103,7 @@ public:
     m_terminate_training = f;
   }
 
-  /** Get the execution environment */
+  /** Grab the trainer from the execution context */
   const trainer& get_trainer() const {
     return m_trainer;
   }

@@ -294,8 +294,8 @@ public:
 
   }
 
-  void setup_dims() override {
-    data_type_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     std::ostringstream err;
 
     // Check number of channels and channel groups
@@ -381,8 +381,8 @@ public:
   /** Setup layer data.
    *  The kernel weights are setup in the convolution and
    *  deconvolution classes. */
-  void setup_data() override {
-    data_type_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Tensor dimensions
     const auto& input_dims = this->get_input_dims();

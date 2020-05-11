@@ -103,8 +103,8 @@ public:
     m_weights_gradient.reset(new StarMatDT<TensorDataType, Device>(grid));
   }
 
-  void setup_data() override {
-    data_type_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
     const El::Int num_channels = this->get_output_dims()[0];
 
     // Construct default weights if needed

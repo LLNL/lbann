@@ -160,7 +160,6 @@ DEFINE_COMPUTE_OPS(sigmoid_layer, sigmoid_op)
 DEFINE_COMPUTE_OPS(softplus_layer, softplus_op)
 DEFINE_COMPUTE_OPS(softsign_layer, softsign_op)
 
-// Omit relu_layer when distconv is enabled
 #define PROTO(T) \
   UNARY_ETI_INST_MACRO_DEV_DT(log_sigmoid_layer, T, El::Device::GPU); \
   UNARY_ETI_INST_MACRO_DEV_DT(selu_layer, T, El::Device::GPU);        \
