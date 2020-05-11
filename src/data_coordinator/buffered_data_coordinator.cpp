@@ -36,7 +36,7 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
   auto data_dims = get_data_dims();
   for (auto& io_buffer : m_io_buffers) {
     io_buffer->setup_data(get_linearized_data_size(),
-                          get_linearized_response_size(),
+                          get_linearized_label_size(),
                           max_mini_batch_size);
   }
 
