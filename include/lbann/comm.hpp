@@ -85,9 +85,6 @@ struct request {
   mpi_req_type mpi_req = mpi_null_req;
   nccl_req_type nccl_req = nccl_null_req;
   mpicuda_req_type mpicuda_req = mpicuda_null_req;
-#ifdef LBANN_HAS_GPU
-  El::SyncInfo<El::Device::GPU> req_syncinfo_;
-#endif // LBANN_HAS_GPU
 };
 
 } // namespace Al
