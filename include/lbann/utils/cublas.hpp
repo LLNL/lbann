@@ -177,6 +177,12 @@ void gemm_strided_batched(cublasHandle_t const& handle,
                           TensorDataType * C, int ldc,
                           long long int strideC,
                           int batchCount);
+
+/** @brief Set the default to use tensor core operations, allowing
+ *         FP32->FP16 conversions.
+ */
+void default_to_tensor_ops();
+
 } // namespace cublas
 } // namespace lbann
 
