@@ -145,6 +145,7 @@ class data_store_conduit {
    * flag: --data_store_cache
    */ 
   bool is_local_cache() const { return m_is_local_cache; }
+  bool is_local_non_shared_cache() const { return m_is_local_cache_non_shared; }
 
   /** @brief Turn preloading on or off */ 
   void set_is_preloading(bool flag);
@@ -167,7 +168,9 @@ class data_store_conduit {
 
 
   /** @brief turns local cache mode on of off */
-  void set_is_local_cache(bool flag) { m_is_local_cache = flag; }
+  void set_is_local_cache(bool flag = true) { m_is_local_cache = flag; }
+
+  void set_is_local_cache_non_shared(bool flag = true) { m_is_local_cache_non_shared = flag; }
 
   /** @brief Check that explicit loading, preloading, and fully loaded flags are consistent */
   void check_query_flags() const;
@@ -226,6 +229,8 @@ class data_store_conduit {
 
   /// for use during development and debugging
   int get_data_size() { return m_data.size(); }
+
+  size_t get_mem_store_usage() const;
 
   /// made public for debugging during development
   void copy_members(const data_store_conduit& rhs);
@@ -395,6 +400,8 @@ private :
   int m_compacted_sample_size = 0;
 
   bool m_is_local_cache = false;
+
+  bool m_is_local_cache_non_shared = false;
 
   bool m_node_sizes_vary = false;
 

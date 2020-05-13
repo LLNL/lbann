@@ -79,11 +79,9 @@ private:
 
   std::vector<char> m_data;
 
-  bool m_fast_experimental = false;
-
   void get_sample(int sample_id, std::vector<short> &sample_out);
 
-  void setup_fast_experimental();
+  void setup_local_cache();
 
   // to enable this feature, add '#define DEBUG_F' to data_reader_smiles.cpp;
   // this is ONLY for testing/development; if enabled, each rank will encode
@@ -92,6 +90,8 @@ private:
 
   char m_delimiter = '\0';
 
+  // CAUTION: line_number is same as sample_id, i.e, assumes a single
+  //          data input file
   int get_smiles_string_length(const std::string &line, int line_number);
 
   //==== end hack to make it work fast ====
@@ -128,6 +128,11 @@ private:
   // private methods follow
   //=====================================================================
 
+  void get_delimiter();
+
+  /// returns a lower bound on memory usage for dataset
+  size_t get_mem_usage() const;
+
   /** @brief Contains common code for operator= and copy ctor */
   void copy_members(const smiles_data_reader& rhs);
 
@@ -142,6 +147,8 @@ private:
   int get_num_lines(std::string fn); 
   void construct_conduit_node(int data_id, const std::string &line, conduit::Node &node); 
   void encode_smiles(const char *smiles, short size, std::vector<short> &data, int data_id); 
+
+  void encode_smiles(const std::string &smiles, std::vector<short> &data, int data_id); 
 
   void decode_smiles(const std::vector<short> &data, std::string &out);
 
