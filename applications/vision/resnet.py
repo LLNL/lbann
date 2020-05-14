@@ -139,8 +139,7 @@ if args.warmup:
     callbacks.append(
         lbann.CallbackLinearGrowthLearningRate(
             target=0.1 * args.mini_batch_size / 256, num_epochs=5))
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
+model = lbann.Model(args.num_epochs,
                     layers=layers,
                     objective_function=obj,
                     metrics=metrics,
@@ -153,7 +152,7 @@ opt = lbann.contrib.args.create_optimizer(args)
 data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
 # Setup trainer
-trainer = lbann.Trainer(random_seed=args.random_seed)
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, random_seed=args.random_seed)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)

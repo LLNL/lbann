@@ -191,8 +191,8 @@ abstract_evaluation_layer<TensorDataType>::abstract_evaluation_layer(lbann_comm 
 }
 
 template <typename TensorDataType>
-void abstract_evaluation_layer<TensorDataType>::setup_dims() {
-  transform_layer<TensorDataType>::setup_dims();
+void abstract_evaluation_layer<TensorDataType>::setup_dims(DataReaderMetaData& dr_metadata) {
+  transform_layer<TensorDataType>::setup_dims(dr_metadata);
   if (this->get_input_size() != 1) {
     std::stringstream err;
     const auto& dims = this->get_input_dims();
@@ -208,8 +208,8 @@ void abstract_evaluation_layer<TensorDataType>::setup_dims() {
 }
 
 template <typename TensorDataType>
-void abstract_evaluation_layer<TensorDataType>::setup_data() {
-  transform_layer<TensorDataType>::setup_data();
+void abstract_evaluation_layer<TensorDataType>::setup_data(size_t max_mini_batch_size) {
+  transform_layer<TensorDataType>::setup_data(max_mini_batch_size);
 #ifdef LBANN_HAS_GPU
   m_value.SetMemoryMode(1); // Use pinned memory on host
 #endif // LBANN_HAS_GPU

@@ -13,6 +13,7 @@ current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'common_python'))
 import tools
+import data.mnist
 
 # ==============================================
 # Options
@@ -47,9 +48,13 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    trainer = lbann.Trainer()
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
-    data_reader = construct_data_reader(lbann)
+
+    data_reader = data.mnist.make_data_reader(lbann)
+    # No validation set
+    data_reader.reader[0].validation_percent = 0
+
     optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
     return trainer, model, data_reader, optimizer
 
@@ -79,48 +84,11 @@ def construct_model(lbann):
     metrics = [lbann.Metric(acc, name='accuracy', unit='%')]
 
     # Construct model
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        layers=lbann.traverse_layer_graph(input_),
                        objective_function=loss,
                        metrics=metrics,
                        callbacks=callbacks)
-
-def construct_data_reader(lbann):
-    """Construct Protobuf message for Python data reader.
-
-    The Python data reader will import the current Python file to
-    access the sample access functions.
-
-    Args:
-        lbann (module): Module for LBANN Python frontend
-
-    """
-
-    # TODO (tym): Figure out how to switch between LBANN builds. See
-    # GitHub Issue #1289.
-    import lbann.contrib.lc.paths
-
-    # Load data readers from prototext
-    dirname = os.path.dirname
-    lbann_dir = dirname(dirname(dirname(os.path.realpath(__file__))))
-    pb_file = os.path.join(lbann_dir,
-                           'model_zoo',
-                           'data_readers',
-                           'data_reader_mnist.prototext')
-    message = lbann.lbann_pb2.LbannPB()
-    with open(pb_file, 'r') as f:
-        google.protobuf.text_format.Merge(f.read(), message)
-    message = message.data_reader
-
-    # Set location of MNIST data
-    for reader in message.reader:
-        reader.data_filedir = lbann.contrib.lc.paths.mnist_dir()
-
-    # No validation set
-    message.reader[0].validation_percent = 0
-
-    return message
 
 # ==============================================
 # Setup PyTest

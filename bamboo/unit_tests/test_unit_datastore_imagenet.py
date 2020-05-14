@@ -34,7 +34,7 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    trainer = lbann.Trainer(random_seed=random_seed)
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size, random_seed=random_seed)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.SGD(learn_rate=0.01, momentum=0.9)
@@ -67,8 +67,7 @@ def construct_model(lbann):
     metrics = [lbann.Metric(z, name='metric')]
 
     # Construct model
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        layers=lbann.traverse_layer_graph(input_),
                        metrics=metrics,
                        callbacks=callbacks)
@@ -116,10 +115,10 @@ def construct_data_reader(lbann):
 # Setup PyTest
 # ==============================================
 def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname, profile_data) :
-    '''Executes the input test function  
+    '''Executes the input test function
 
     Args:
-        run_datastore_test_func (function): test function 
+        run_datastore_test_func (function): test function
         baseline_metrics: list of metrics against which the output of
                           the test function will be compared
         profile_data: dictionary of key, value pairs for testing
@@ -165,7 +164,7 @@ def run_datastore_test_func(test_func, baseline_metrics, cluster, exes, dirname,
       if test_name.find(key) != -1 :
         d = profile_data[key]
         break
-    assert d != None, 'failed to find key for profile_data'    
+    assert d != None, 'failed to find key for profile_data'
 
     found_profile_data = {}
     with open(datastore_test_output['work_dir'] + '/data_store_profile_train.txt') as f:
@@ -188,11 +187,11 @@ def run_baseline_test_func(baseline_test_func, cluster, exes, dirname) :
     '''Executes the input test function
 
     Args:
-        baseline_test_func (function): test function 
+        baseline_test_func (function): test function
 
     Returns:
         list of metrics that are parsed from the function's
-        output log          
+        output log
     '''
     baseline_test_output = baseline_test_func(cluster, exes, dirname)
     baseline_metrics = []
@@ -201,7 +200,7 @@ def run_baseline_test_func(baseline_test_func, cluster, exes, dirname) :
             match = re.search('validation metric : ([0-9.]+)', line)
             if match:
                 baseline_metrics.append(float(match.group(1)))
-    
+
     assert len(baseline_metrics) > 0, 'failed to parse baseline_metrics; len: ' + str(len(baseline_metrics))
     return baseline_metrics
 
@@ -255,7 +254,7 @@ def create_test_func(baseline_test_func, datastore_test_funcs, profile_data=None
     # Return test function from factory function
     func.__name__ = baseline_test_func.__name__
     return func
- 
+
 # Create test functions that can interact with PyTest
 def make_test(name, test_by_platform_list=[], args=[]) :
     test_list = tools.create_tests(
@@ -296,7 +295,7 @@ profile_data[test_name] =  {is_e : '1', is_l : '0', is_f : '0'}
 # explicit loading
 test_name = 'data_store_explicit'
 make_test(test_name, datastore_tests, ['--use_data_store', '--data_store_profile'])
-profile_data[test_name] = {is_e : '1', is_l : '0', is_f : '0'} 
+profile_data[test_name] = {is_e : '1', is_l : '0', is_f : '0'}
 
 # preloading
 test_name = 'data_store_preload'
@@ -304,7 +303,7 @@ make_test(test_name, datastore_tests, ['--preload_data_store', '--data_store_pro
 profile_data[test_name] =  {is_e : '0', is_l : '0', is_f : '1'}
 
 #local cache with explicit loading (internally, this should run identically
-#with the flag: --preload_data_store 
+#with the flag: --preload_data_store
 test_name = 'data_store_cache_explicit'
 make_test(test_name, datastore_tests, ['--data_store_cache', '--data_store_profile'])
 profile_data[test_name] =  {is_e : '1', is_l : '1', is_f : '0'}

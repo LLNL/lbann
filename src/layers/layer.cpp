@@ -365,14 +365,14 @@ bool Layer::is_frozen() const {
   return m_frozen;
 }
 
-void Layer::setup() {
+void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   setup_pointers();
-  setup_dims();
+  setup_dims(dr_metadata);
   setup_matrices(m_comm->get_trainer_grid());
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv();
 #endif // LBANN_HAS_DISTCONV
-  setup_data();
+  setup_data(max_mini_batch_size);
   if (using_gpus()) { setup_gpu(); }
 }
 
@@ -453,7 +453,7 @@ void Layer::setup_pointers() {
 
 }
 
-void Layer::setup_dims() {
+void Layer::setup_dims(DataReaderMetaData& dr_metadata) {
   m_output_dims_list.resize(get_num_children());
   if (m_hint_layer != nullptr) {
     const auto& hint_dims = m_hint_layer->get_output_dims();
@@ -513,6 +513,14 @@ void Layer::check_setup() {
     }
   }
 }
+
+void Layer::back_prop() {
+  allocate_new_gradients_();
+  back_prop_impl_();
+  propagate_error_signals_to_parents_();
+  clear_prev_error_signals_();
+}
+
 
 bool Layer::save_to_checkpoint_shared(persist& p) const {
   return true;

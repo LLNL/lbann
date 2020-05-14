@@ -34,6 +34,7 @@
 #include "lbann/layers/activations/elu.hpp"
 #include "lbann/layers/activations/identity.hpp"
 #include "lbann/layers/activations/leaky_relu.hpp"
+#include "lbann/layers/activations/relu.hpp"
 #include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/image/bilinear_resize.hpp"
@@ -104,17 +105,13 @@
 #include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/weights.hpp"
 
-#include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/peek_map.hpp"
 
 #include <layers.pb.h>
 
 namespace lbann {
 namespace proto {
-
-std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr,
-                                                  const std::string& var_category,
-                                                  bool& is_supported);
 
 namespace {
 
@@ -285,7 +282,7 @@ factory_type const& get_layer_factory() noexcept
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> construct_layer_legacy(
   lbann_comm* comm,
-  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  int training_dr_linearized_data_size,
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer) {
   std::stringstream err;
@@ -319,8 +316,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
                                               Device>>(
                                                 comm,
                                                 num_parallel_readers,
-                                                data_readers,
-                                                !params.data_set_per_model(),
                                                 target_mode);
       }
       else {
@@ -344,11 +339,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
       num_groups = 1;
     }
     if (proto_layer.num_neurons_from_data_reader()) {
-      const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
-      if (!dr) {
+      if (training_dr_linearized_data_size == -1) {
         LBANN_ERROR("Training data reader does not exist!");
       }
-      num_output_channels = dr->get_linearized_data_size();
+      num_output_channels = training_dr_linearized_data_size;
     }
     if (Layout != data_layout::DATA_PARALLEL) {
       LBANN_ERROR("deconvolution layer is only supported with "
@@ -392,11 +386,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
     }
     if (proto_layer.num_neurons_from_data_reader()) {
       dims.clear();
-      const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
-      if (!dr) {
+      if (training_dr_linearized_data_size == -1) {
         LBANN_ERROR("Training data reader does not exist!");
       }
-      dims.push_back(dr->get_linearized_data_size());
+      dims.push_back(training_dr_linearized_data_size);
     }
     return lbann::make_unique<reshape_layer<TensorDataType, Layout, Device>>(comm, dims);
   }
@@ -407,33 +400,23 @@ std::unique_ptr<Layer> construct_layer_legacy(
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
     std::vector<size_t> slice_points;
-    bool is_supported = false;
-    std::string slice_point_method_name;
+
+    auto layer = lbann::make_unique<slice_layer<TensorDataType, Layout, Device>>(comm);
 
     if (params.get_slice_points_from_reader() != "") {
-      slice_point_method_name = "'get_slice_points_from_reader'";
-      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
-      const std::string& var = params.get_slice_points_from_reader();
-      for (const auto& slice_point
-             : get_slice_points_from_reader(dr_generic, var, is_supported)) {
-        slice_points.push_back(slice_point);
-      }
+      const slice_points_mode var = slice_points_mode_from_string(params.get_slice_points_from_reader());
+      layer->setup_slice_points(params.axis(), true, var);
     } else {
-      slice_point_method_name = "'slice_points'";
+      std::string slice_point_method_name = "'slice_points'";
       slice_points = parse_list<size_t>(params.slice_points());
-      is_supported = true;
-    }
-    if (slice_points.size() < 2u) {
-      if (is_supported) {
+      if (slice_points.size() < 2u) {
         err << "Failed to get slice points via " << slice_point_method_name << '.';
-      } else {
-        err << slice_point_method_name << " is not supported by the reader.";
+        LBANN_ERROR(err.str());
+        return nullptr;
       }
-      LBANN_ERROR(err.str());
-      return nullptr;
+      layer->setup_slice_points(params.axis(), slice_points);
     }
-    return lbann::make_unique<slice_layer<TensorDataType, Layout, Device>>(
-             comm, params.axis(), slice_points);
+    return layer;
   }
   if (proto_layer.has_gaussian()) {
     const auto& params = proto_layer.gaussian();
@@ -709,33 +692,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
 
 }
 
-/// Obtain the slice points from the data reader
-std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_generic,
-                                                  const std::string& var_category,
-                                                  bool& is_supported) {
-  std::vector<El::Int> slice_points;
-  is_supported = false;
-  // TODO: remove the dynamic cast when this feature gets merged into the base class
-  const auto dr = dynamic_cast<const data_reader_jag_conduit*>(dr_generic);
-
-  if (dr != nullptr) {
-    is_supported = true;
-    if (var_category == "independent") {
-      slice_points = dr->get_slice_points_independent();
-    } else if (var_category == "dependent") {
-      slice_points = dr->get_slice_points_independent();
-    } else {
-      LBANN_ERROR("Unknown variable category \"" + var_category \
-                  + "\". Must be either \"independent\" or \"dependent\".");
-    }
-  }
-  return slice_points;
-}
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> construct_layer(
   lbann_comm* comm,
-  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  int training_dr_linearized_data_size,
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer) {
 
@@ -748,7 +708,7 @@ std::unique_ptr<Layer> construct_layer(
   if(!l) {
     if (typeid(TensorDataType) == typeid(DataType))
       l = construct_layer_legacy<DataType, Layout, Device>(
-        comm, data_readers, num_parallel_readers, proto_layer);
+            comm, training_dr_linearized_data_size, num_parallel_readers, proto_layer);
     else
       LBANN_ERROR("Currently, layers of type \"", msg.GetDescriptor()->name(),
                   "\" are not constructible with any type other than the "
@@ -761,13 +721,13 @@ std::unique_ptr<Layer> construct_layer(
 #define PROTO_DEVICE(T, Device) \
   template std::unique_ptr<Layer> construct_layer<T, data_layout::DATA_PARALLEL, Device>(  \
     lbann_comm* comm,                                                                      \
-    const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
+    int training_dr_linearized_data_size,                                                  \
     int num_parallel_readers,                                                              \
     const lbann_data::Layer& proto_layer                                                   \
   );                                                                                       \
   template std::unique_ptr<Layer> construct_layer<T, data_layout::MODEL_PARALLEL, Device>( \
     lbann_comm* comm,                                                                      \
-    const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
+    int training_dr_linearized_data_size,                                                  \
     int num_parallel_readers,                                                              \
     const lbann_data::Layer& proto_layer                                                   \
   )

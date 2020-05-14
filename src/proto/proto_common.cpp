@@ -99,8 +99,7 @@ void init_data_readers(
     if ((name == "mnist") || (name == "cifar10")) {
       init_org_image_data_reader(readme, master, reader);
       set_transform_pipeline = false;
-    } else if ((name == "imagenet") ||
-               (name == "multihead_siamese")) {
+    } else if ((name == "imagenet")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_transform_pipeline = false;
     } else if (name == "jag_conduit") {
@@ -108,7 +107,8 @@ void init_data_readers(
       set_transform_pipeline = false;
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
-      reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
+      const lbann_data::Trainer& pb_trainer = p.trainer();
+      reader->set_mini_batch_size(static_cast<int>(pb_trainer.mini_batch_size()));
       reader->set_data_index_list(readme.index_list());
       reader_jag_conduit->set_list_per_trainer(readme.index_list_per_trainer());
       reader_jag_conduit->set_list_per_model(readme.index_list_per_model());
@@ -144,6 +144,9 @@ void init_data_readers(
       set_transform_pipeline = false;
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
+    } else if (name == "smiles") {
+      smiles_data_reader * smiles = new smiles_data_reader(shuffle);
+      reader = smiles;
     } else if (name == "ras_lipid") {
       auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
       ras_lipid->set_num_labels(readme.num_labels());
@@ -392,8 +395,8 @@ void init_data_readers(
         reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
-      } else if (name == "multihead_siamese") {
-  	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
+      } else if (name == "smiles") {
+        reader_validation = new smiles_data_reader(*dynamic_cast<const smiles_data_reader*>(reader));
       } else if (name == "jag_conduit") {
         /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
         /// is also shared
@@ -745,7 +748,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     }
   }
   if (opts->has_int("mini_batch_size")) {
-    model->set_mini_batch_size(opts->get_int("mini_batch_size"));
+    trainer->set_mini_batch_size(opts->get_int("mini_batch_size"));
   }
   if (opts->has_int("num_epochs")) {
     model->set_num_epochs(opts->get_int("num_epochs"));
@@ -793,7 +796,7 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
             << "Running with these parameters:\n"
             << " General:\n"
             << "  datatype size:           " << sizeof(DataType) << std::endl
-            << "  mini_batch_size:         " << m.mini_batch_size() << std::endl
+            << "  mini_batch_size:         " << t.mini_batch_size() << std::endl
             << "  num_epochs:              " << m.num_epochs()  << std::endl
             << "  hydrogen_block_size:     " << t.hydrogen_block_size()  << std::endl
             << "  procs_per_trainer:       " << t.procs_per_trainer()  << std::endl

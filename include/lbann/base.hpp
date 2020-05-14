@@ -185,9 +185,6 @@ enum class pool_mode {invalid, max, average, average_no_pad};
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m);
 
-// NA - Not applicable, used for input layers that don't produce a second output
-enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, NA};
-
 /*
  * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/
  * Case Sensitive Implementation of endsWith()

@@ -63,12 +63,10 @@ namespace lbann {
 // =============================================
 
 model::model(lbann_comm* comm,
-             size_t mini_batch_size,
              objective_function* obj_fn,
              std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg)
   : m_execution_context(nullptr),
     m_comm(comm),
-    m_max_mini_batch_size(mini_batch_size),
     m_default_optimizer_msg(std::move(default_optimizer_msg)),
     m_objective_function(obj_fn) {
 
@@ -83,7 +81,6 @@ model::model(const model& other) :
   m_execution_context(other.m_execution_context),
   m_comm(other.m_comm),
   m_name(other.m_name),
-  m_max_mini_batch_size(other.m_max_mini_batch_size),
   m_model_is_setup(other.m_model_is_setup) {
 
   // Deep copies
@@ -142,7 +139,6 @@ model& model::operator=(const model& other) {
   // Shallow copies
   m_comm = other.m_comm;
   m_name = other.m_name;
-  m_max_mini_batch_size = other.m_max_mini_batch_size;
   m_model_is_setup = other.m_model_is_setup;
 
   // Deep copies
@@ -573,7 +569,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // Setup
 // =============================================
 
-void model::setup() {
+void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
 
   // Bail out if the model is already setup
   if(m_model_is_setup) { return; }
@@ -581,7 +577,7 @@ void model::setup() {
   // Setup layers
   setup_layer_topology();
   setup_layer_execution_order();
-  setup_layers();
+  setup_layers(max_mini_batch_size, dr_metadata);
 
   // Setup weights
   setup_weights();
@@ -682,11 +678,11 @@ void model::setup_layer_execution_order() {
 
 }
 
-void model::setup_layers() {
+void model::setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.set_model(this);
-    l.setup();
+    l.setup(max_mini_batch_size, dr_metadata);
     l.check_setup();
   }
 }
@@ -1278,7 +1274,6 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 
 /* struct used to serialize mode fields in file and MPI transfer */
 struct lbann_model_header {
-  uint64_t max_mini_batch_size;
   uint32_t callback_type;
 };
 
@@ -1389,8 +1384,8 @@ bool model::load_from_checkpoint_distributed(persist& p){
 
 void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
-  if (m_comm->am_world_master())
-    proto->set_mini_batch_size(m_max_mini_batch_size);
+  // if (m_comm->am_world_master())
+  //   proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
 

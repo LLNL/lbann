@@ -183,12 +183,12 @@ void exchange_models(lbann_comm& comm,
           recv_adam->set_eps(std::get<3>(hyperparameters));
           recv_adam->set_current_beta1(std::get<4>(hyperparameters));
           recv_adam->set_current_beta2(std::get<5>(hyperparameters));
-          El::SendRecv(send_adam->get_moment1().LockedMatrix(),
-                       recv_adam->get_moment1().Matrix(),
-                       comm.get_world_comm(),
-                       partner_rank_in_world,
-                       partner_rank_in_world);
         }
+        El::SendRecv(send_adam->get_moment1().LockedMatrix(),
+                     recv_adam->get_moment1().Matrix(),
+                     comm.get_world_comm(),
+                     partner_rank_in_world,
+                     partner_rank_in_world);
         El::SendRecv(send_adam->get_moment2().LockedMatrix(),
                      recv_adam->get_moment2().Matrix(),
                      comm.get_world_comm(),
@@ -542,7 +542,6 @@ void ltfb::on_batch_begin(model *m) {
         << "= " << partner_score << ")" << "\n";
     std::cout << msg.str();
   }
-
 }
 
 typename ltfb::communication_algorithm
