@@ -169,6 +169,7 @@ std::set<T> parse_set(std::string const& str) {
     return details::parse_set_impl<T>(trim_str);
   return {};
 }
+
 } // namespace lbann
 
 #endif // LBANN_PROTO_PROTO_COMMON_HPP_INCLUDED
