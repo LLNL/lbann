@@ -17,7 +17,7 @@ def construct_lc_launcher_args():
     parser.add_argument(
         "--data-config", default="data_config.json",
         help="path to a data config file that is used for the construction of python data reader",
-    ) 
+    )
     parser.add_argument(
         "--time-limit",
         type=int,
@@ -157,7 +157,7 @@ def construct_model(run_args):
         # mask padding in input
         pad_mask = lbann.NotEqual(
             [idl[i], lbann.Constant(value=pad_index, num_neurons="1")],
-        )  
+        )
         ce_mask = lbann.Multiply([pad_mask, ce], name="loss_mask_" + str(i))
         loss.append(lbann.LayerTerm(ce_mask, scale=1 / (sequence_length - 1)))
 
@@ -177,7 +177,6 @@ def construct_model(run_args):
 
     # Construct model
     return lbann.Model(
-        run_args.batch_size,
         run_args.num_epochs,
         weights=weights,
         layers=layers,
@@ -234,6 +233,7 @@ if __name__ == "__main__":
     import lbann.contrib.launcher
 
     trainer = lbann.Trainer(
+        mini_batch_size=run_args.batch_size,
         name=None,
         procs_per_trainer=run_args.procs_per_trainer,
     )
