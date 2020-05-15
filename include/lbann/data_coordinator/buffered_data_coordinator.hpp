@@ -100,22 +100,22 @@ class buffered_data_coordinator : public data_coordinator {
   //************************************************************************
 
   // save state of IO to a checkpoint
-  bool save_to_checkpoint_shared(persist& p) const {
-    return true;
-  }
+  // bool save_to_checkpoint_shared(persist& p) const {
+  //   return true;
+  // }
 
-  // reload state of IO from a checkpoint
-  bool load_from_checkpoint_shared(persist& p) {
-    return true;
-  }
+  // // reload state of IO from a checkpoint
+  // bool load_from_checkpoint_shared(persist& p) {
+  //   return true;
+  // }
 
-  bool save_to_checkpoint_distributed(persist& p) const {
-    return true;
-  }
+  // bool save_to_checkpoint_distributed(persist& p) const {
+  //   return true;
+  // }
 
-  bool load_from_checkpoint_distributed(persist& p) {
-    return true;
-  }
+  // bool load_from_checkpoint_distributed(persist& p) {
+  //   return true;
+  // }
 
  protected:
 
