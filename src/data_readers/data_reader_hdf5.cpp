@@ -328,7 +328,7 @@ bool hdf5_reader::fetch_response(Mat& Y, int data_id, int mb_idx) {
 
   prof_region_begin("fetch_response", prof_colors[0], false);
   float *buf = nullptr;
-  if(!m_hyperslab_labels) {
+  if(m_hyperslab_labels) {
     assert_eq(Y.Height(), m_num_features);
     const std::string conduit_key = LBANN_DATA_ID_STR(data_id);
     conduit::Node node;
