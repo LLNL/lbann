@@ -95,6 +95,29 @@ class buffered_data_coordinator : public data_coordinator {
     m_io_buffers.push_back(new partitioned_io_buffer<TensorDataType>(comm, 2 /*this->m_expected_num_child_layers*/));
   }
 
+  void fetch_data(execution_mode mode) override;
+
+  partitioned_io_buffer<TensorDataType>* get_active_buffer(execution_mode mode);
+
+  /** @brief Complete any background I/O data fetch for the execution
+      mode requested */
+  void collect_background_data_fetch(execution_mode mode);
+
+  bool epoch_complete(execution_mode mode);
+
+protected:
+  void fetch_data_in_background(int future_active_buffer, execution_mode mode);
+
+  void setup_next_io_buffer(generic_io_buffer<TensorDataType>* io_buffer, execution_mode mode);
+
+  int get_active_buffer_idx(execution_mode m) {
+    return m_active_buffer[m].load();
+  }
+
+  void increment_active_buffer_idx(execution_mode m) {
+    m_active_buffer[m]++;
+  }
+
   //************************************************************************
   //
   //************************************************************************

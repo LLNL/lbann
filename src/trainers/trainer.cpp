@@ -66,6 +66,7 @@ trainer::trainer(lbann_comm *comm,
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
   m_data_coordinator = std::move(dc);
+  m_data_coordinator->set_trainer(*this);
 }
 
 trainer::trainer(const trainer& other) :

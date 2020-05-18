@@ -119,6 +119,8 @@ class data_coordinator {
 
   virtual void setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
 
+  void set_trainer(trainer &trainer) { m_trainer = &trainer; }
+
   /** Check to see if there is a valid training context for the data coordinator */
   bool has_valid_execution_context() const {
     return (m_execution_context != nullptr);
@@ -136,6 +138,22 @@ class data_coordinator {
   execution_context& get_execution_context() {
     return const_cast<execution_context&>(static_cast<const data_coordinator&>(*this).get_execution_context());
   }
+
+  /** Return the I/O thread pool */
+  thread_pool& get_io_thread_pool() const {
+    if (!m_io_thread_pool) { LBANN_ERROR("m_io_thread_pool is null"); }
+    return *m_io_thread_pool;
+  }
+
+  virtual void fetch_data(execution_mode mode) = 0;
+
+  /** @brief Complete any background I/O data fetch for the execution
+      mode requested */
+  virtual void collect_background_data_fetch(execution_mode mode) = 0;
+
+  /// @todo BVE FIXME this should probably be a property of the
+  /// execution mode
+  virtual bool epoch_complete(execution_mode mode) = 0;
 
   //************************************************************************
   // Helper functions to access the data readers
@@ -392,6 +410,8 @@ class data_coordinator {
     const generic_data_reader *data_reader = get_data_reader(mode);
     return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
   }
+
+  int get_current_mini_batch_size(execution_mode mode) const;
 
   //************************************************************************
   //

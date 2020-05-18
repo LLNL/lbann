@@ -919,16 +919,6 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
 // =============================================
 // Execution
 // =============================================
-
-void model::collect_background_data_fetch(execution_mode mode) {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    auto *input = dynamic_cast<generic_input_layer<DataType>*>(&get_layer(i));
-    if (input != nullptr) {
-      input->collect_background_data_fetch(mode);
-    }
-  }
-}
-
 // only used in callbacks/ltfb.cpp; from that file:
 // "Note that this is a temporary fix
 // for the current use of the tournament"

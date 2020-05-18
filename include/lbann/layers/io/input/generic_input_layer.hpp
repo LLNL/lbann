@@ -151,65 +151,17 @@ class generic_input_layer : public io_layer<TensorDataType> {
     io_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
   }
 
-  void fetch_data_in_background(int future_active_buffer, execution_mode mode) {
-    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
-    int active_buffer = future_active_buffer % dc.m_io_buffers.size();
-    generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[active_buffer];
-    std::lock_guard<std::mutex> guard(dc.dr_mutex);
-    setup_next_io_buffer(io_buffer);
-    io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
-    return;
-  }
-
-  /// Check for each buffer if there is an outstanding fetch request
-  void collect_background_data_fetch(execution_mode mode) {
-    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
-    for(auto& io_buffer : dc.m_io_buffers) {
-      if(io_buffer->is_data_fetched_in_background(mode)) {
-        io_buffer->get_data_fetch_future(mode).get();
-        io_buffer->set_fetch_data_in_background(false, mode);
-      }
-    }
-  }
-
   void fp_compute() override {
     execution_mode mode = this->m_model->get_execution_context().get_execution_mode();
     buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
 
-    increment_active_buffer_idx(mode);
+    partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
+    // generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[dc.get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
 
-    generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
-
-    // If there is no valid data and there is not already a background
-    // thread to fetch the data, queue up the background thread
-    if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->is_data_fetched_in_background(mode)) {
-      std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool().submit_job(
-        std::bind(&generic_input_layer::fetch_data_in_background, this, get_active_buffer_idx(mode), mode));
-      io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
-      io_buffer->set_fetch_data_in_background(true, mode);
-    }
-
-    // Wait for the background thread to complete fetching the data
-    if(io_buffer->is_data_fetched_in_background(mode)) {
-      io_buffer->get_data_fetch_future(mode).get();
-      io_buffer->set_fetch_data_in_background(false, mode);
-    }
-
-    int num_samples_in_batch = 0;
-    if(io_buffer->num_samples_ready(mode) > 0) {
-      num_samples_in_batch = io_buffer->num_samples_ready(mode);
-    }else {
-        if(!get_data_reader()->position_is_overrun()) {
-          std::stringstream err;
-          err << "I/O buffer does not contain valid samples ("<< num_samples_in_batch << ")";
-          LBANN_ERROR(err.str());
-        }
-    }
-
-    if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
+    // if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
       // Use the predetermined size of the mini-batch to set the current
       // batch size for the neural network
-      num_samples_in_batch = get_current_mini_batch_size();
+      int num_samples_in_batch = get_current_mini_batch_size();
 
       update_num_samples_processed(num_samples_in_batch);
       if(this->m_expected_num_child_layers == 1) {
@@ -217,35 +169,10 @@ class generic_input_layer : public io_layer<TensorDataType> {
       }else {
         io_buffer->distribute_from_local_matrix(get_data_reader(), mode, this->get_activations(0), this->get_activations(1));
       }
-    }else {
-      LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
-    }
+    // }else {
+    //   LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
+    // }
 
-    dc.m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
-
-    if(!dc.m_data_set_processed && this->m_model->get_execution_context().background_io_activity_allowed()) {
-      int next_active_buffer = get_active_buffer_idx(mode) + 1;
-      std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool().submit_job(
-        std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, mode));
-      generic_io_buffer<TensorDataType>* next_io_buffer = dc.m_io_buffers[next_active_buffer % dc.m_io_buffers.size()];
-      next_io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
-      next_io_buffer->set_fetch_data_in_background(true, mode);
-    }
-  }
-
-  void setup_next_io_buffer(generic_io_buffer<TensorDataType>* io_buffer) {
-    int mini_batch_size = get_current_mini_batch_size();
-    for (int i = 0; i < this->get_num_children(); ++i) {
-      io_buffer->fp_setup_data(mini_batch_size, i);
-    }
-  }
-
-  /**
-   * Once a mini-batch is processed, resuffle the data for the next batch if necessary
-   */
-  bool update_compute() override {
-    data_coordinator& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
-    return dc.m_data_set_processed;
   }
 
   //************************************************************************
@@ -379,6 +306,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
     return ds.get_num_samples_processed();
   }
 
+#if 0
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
@@ -388,6 +316,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
     generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
     return io_buffer->get_sample_indices_fetched_per_mb(this->m_model->get_execution_context().get_execution_mode());
   }
+#endif
 
   /**
    * Get the dimensions of the underlying data.
@@ -486,15 +415,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
     read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
     return true;
-  }
-
-  int get_active_buffer_idx(execution_mode m) {
-    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
-    return dc.m_active_buffer[m].load();
-  }
-  void increment_active_buffer_idx(execution_mode m) {
-    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
-    dc.m_active_buffer[m]++;
   }
 
  protected:

@@ -54,6 +54,91 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
   }
 }
 
+template <typename TensorDataType>
+void buffered_data_coordinator<TensorDataType>::fetch_data_in_background(int future_active_buffer, execution_mode mode) {
+  int active_buffer = future_active_buffer % m_io_buffers.size();
+  generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[active_buffer];
+  std::lock_guard<std::mutex> guard(dr_mutex);
+  setup_next_io_buffer(io_buffer, mode);
+  io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
+  return;
+}
+
+/// Check for each buffer if there is an outstanding fetch request
+template <typename TensorDataType>
+void buffered_data_coordinator<TensorDataType>::collect_background_data_fetch(execution_mode mode) {
+  for(auto& io_buffer : m_io_buffers) {
+    if(io_buffer->is_data_fetched_in_background(mode)) {
+      io_buffer->get_data_fetch_future(mode).get();
+      io_buffer->set_fetch_data_in_background(false, mode);
+    }
+  }
+}
+
+template <typename TensorDataType>
+void buffered_data_coordinator<TensorDataType>::setup_next_io_buffer(generic_io_buffer<TensorDataType>* io_buffer, execution_mode mode) {
+  int mini_batch_size = get_current_mini_batch_size(mode);
+  for (int i = 0; i < 2/*this->get_num_children()*/; ++i) {
+    io_buffer->fp_setup_data(mini_batch_size, i);
+  }
+}
+
+template <typename TensorDataType>
+void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode) {
+
+  increment_active_buffer_idx(mode);
+
+  generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[this->get_active_buffer_idx(mode) % m_io_buffers.size()];
+
+  // If there is no valid data and there is not already a background
+  // thread to fetch the data, queue up the background thread
+  if(io_buffer->num_samples_ready(mode) == 0 && !io_buffer->is_data_fetched_in_background(mode)) {
+    std::future<void> background_fetch_done = get_io_thread_pool().submit_job(
+      std::bind(&buffered_data_coordinator::fetch_data_in_background, this, this->get_active_buffer_idx(mode), mode));
+    io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
+    io_buffer->set_fetch_data_in_background(true, mode);
+  }
+
+  // Wait for the background thread to complete fetching the data
+  if(io_buffer->is_data_fetched_in_background(mode)) {
+    io_buffer->get_data_fetch_future(mode).get();
+    io_buffer->set_fetch_data_in_background(false, mode);
+  }
+
+  //  int num_samples_in_batch = 0;
+  if(io_buffer->num_samples_ready(mode) > 0) {
+    /*num_samples_in_batch = */io_buffer->num_samples_ready(mode);
+  }else {
+      if(!get_data_reader(mode)->position_is_overrun()) {
+        std::stringstream err;
+        err << "I/O buffer does not contain valid samples ("/*<< num_samples_in_batch << ")"*/;
+        LBANN_ERROR(err.str());
+      }
+  }
+}
+
+template <typename TensorDataType>
+bool buffered_data_coordinator<TensorDataType>::epoch_complete(execution_mode mode) {
+  generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[this->get_active_buffer_idx(mode) % m_io_buffers.size()];
+
+  m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
+
+  if(!m_data_set_processed && m_trainer->background_io_activity_allowed()) {
+    int next_active_buffer = this->get_active_buffer_idx(mode) + 1;
+    std::future<void> background_fetch_done = get_io_thread_pool().submit_job(
+      std::bind(&buffered_data_coordinator::fetch_data_in_background, this, next_active_buffer, mode));
+    generic_io_buffer<TensorDataType>* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
+    next_io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
+    next_io_buffer->set_fetch_data_in_background(true, mode);
+  }
+  return m_data_set_processed;
+}
+
+template <typename TensorDataType>
+partitioned_io_buffer<TensorDataType>* buffered_data_coordinator<TensorDataType>::get_active_buffer(execution_mode mode) {
+  return dynamic_cast<partitioned_io_buffer<TensorDataType>*>(m_io_buffers[this->get_active_buffer_idx(mode) % m_io_buffers.size()]);
+}
+
 #define PROTO(T)                     \
   template class buffered_data_coordinator<T>
 
