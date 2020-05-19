@@ -99,6 +99,8 @@ class buffered_data_coordinator : public data_coordinator {
 
   partitioned_io_buffer<TensorDataType>* get_active_buffer(execution_mode mode);
 
+  El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) override;
+
   /** @brief Complete any background I/O data fetch for the execution
       mode requested */
   void collect_background_data_fetch(execution_mode mode);

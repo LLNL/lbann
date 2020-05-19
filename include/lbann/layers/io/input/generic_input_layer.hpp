@@ -306,18 +306,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
     return ds.get_num_samples_processed();
   }
 
-#if 0
-  /**
-   * Return the sample indices fetched in the current mini-batch.
-   */
-  El::Matrix<El::Int>* get_sample_indices_per_mb() override {
-    execution_mode mode = this->m_model->get_execution_context().get_execution_mode();
-    buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
-    generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
-    return io_buffer->get_sample_indices_fetched_per_mb(this->m_model->get_execution_context().get_execution_mode());
-  }
-#endif
-
   /**
    * Get the dimensions of the underlying data.
    */

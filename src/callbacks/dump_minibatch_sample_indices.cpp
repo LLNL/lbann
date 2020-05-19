@@ -29,7 +29,7 @@
 
 #include <vector>
 #include "lbann/callbacks/dump_minibatch_sample_indices.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 
 #include <callbacks.pb.h>
 
@@ -41,34 +41,27 @@ namespace callback {
 
 void dump_minibatch_sample_indices::dump_to_file(model *m, Layer *l, int64_t step) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-  // Print minibatch sample indices of input layers
-  auto *input = dynamic_cast<generic_input_layer<DataType>*>(l);
-  if (input != nullptr) {
-    El::Matrix<El::Int>* indices = l->get_sample_indices_per_mb();
-    if (indices == nullptr
-        || indices->Height() == 0
-        || indices->Width() == 0) {
-      return;
-    }
-
-    std::ostringstream s;
-    s << "mkdir -p " << m_basename;
-    const int dir= system(s.str().c_str());
-    if (dir< 0) {
-      LBANN_ERROR("callback_dump_minibatch_sample_indices is unable to create the target director");
-    }
-
-    const std::string file
-      = (m_basename
-         + to_string(c.get_execution_mode())
-         + "-model" + std::to_string(m->get_comm()->get_trainer_rank())
-         + "-rank" + std::to_string(m->get_comm()->get_rank_in_trainer())
-         + "-epoch" + std::to_string(c.get_epoch())
-         + "-step" + std::to_string(c.get_step())
-         + "-" + l->get_name()
-         + "-MB_Sample_Indices");
-    El::Write(*indices, file, El::ASCII);
+  // Print minibatch sample indices of the data coordinator
+  data_coordinator& dc = m->get_execution_context().get_trainer().get_data_coordinator();
+  El::Matrix<El::Int>* indices = dc.get_sample_indices_per_mb(c.get_execution_mode());
+  if (indices == nullptr
+      || indices->Height() == 0
+      || indices->Width() == 0) {
+    return;
   }
+
+  std::ostringstream s;
+  s << "mkdir -p " << m_basename;
+  const int dir= system(s.str().c_str());
+  if (dir< 0) {
+    LBANN_ERROR("callback_dump_minibatch_sample_indices is unable to create the target director");
+  }
+
+  const std::string file
+    = (get_multi_trainer_path(*m, m_basename)
+       + to_string(c.get_execution_mode())
+       + "-MB_Sample_Indices");
+  El::Write(*indices, file, El::ASCII);
 }
 
 void dump_minibatch_sample_indices::on_forward_prop_end(model *m, Layer *l) {

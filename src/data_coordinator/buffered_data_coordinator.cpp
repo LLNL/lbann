@@ -139,6 +139,15 @@ partitioned_io_buffer<TensorDataType>* buffered_data_coordinator<TensorDataType>
   return dynamic_cast<partitioned_io_buffer<TensorDataType>*>(m_io_buffers[this->get_active_buffer_idx(mode) % m_io_buffers.size()]);
 }
 
+  /**
+   * Return the sample indices fetched in the current mini-batch.
+   */
+template <typename TensorDataType>
+El::Matrix<El::Int>* buffered_data_coordinator<TensorDataType>::get_sample_indices_per_mb(execution_mode mode) {
+  generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
+  return io_buffer->get_sample_indices_fetched_per_mb(mode);
+}
+
 #define PROTO(T)                     \
   template class buffered_data_coordinator<T>
 

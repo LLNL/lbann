@@ -155,6 +155,11 @@ class data_coordinator {
   /// execution mode
   virtual bool epoch_complete(execution_mode mode) = 0;
 
+  /**
+   * Return the sample indices fetched in the current mini-batch.
+   */
+  virtual El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) = 0;
+
   //************************************************************************
   // Helper functions to access the data readers
   //************************************************************************

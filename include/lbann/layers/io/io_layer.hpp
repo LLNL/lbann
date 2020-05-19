@@ -84,11 +84,6 @@ class io_layer : public data_type_layer<TensorDataType> {
   virtual long update_num_samples_processed(long num_samples) = 0;
 
   /**
-   * Return the sample indices fetched in the current mini-batch.
-   */
-  //  El::Matrix<El::Int>* get_sample_indices_per_mb() override = 0;
-
-  /**
    * Get the dimensions of the underlying data.
    */
   virtual std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const = 0;
