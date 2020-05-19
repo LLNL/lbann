@@ -198,7 +198,7 @@ check_gradients::check_gradients(std::set<execution_mode> modes,
 void check_gradients::do_check_gradients(model& m) const {
 
   // Get objects from model
-  const auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
+  auto& c = static_cast<sgd_execution_context&>(m.get_execution_context());
   auto& comm = *m.get_comm();
   const auto mode = c.get_execution_mode();
   const auto& layers = m.get_layers();
@@ -217,6 +217,8 @@ void check_gradients::do_check_gradients(model& m) const {
   }
 
   // Load data in input layers
+  data_coordinator& dc = c.get_trainer().get_data_coordinator();
+  dc.fetch_data(mode);
   for (auto&& l : m.get_layers()) {
     if (dynamic_cast<generic_input_layer<DataType>*>(l) != nullptr) {
       l->forward_prop();
@@ -289,7 +291,6 @@ void check_gradients::do_check_gradients(model& m) const {
 
   // Clean up
   /// @todo tym: I'm not sure if data readers are properly reset
-  const data_coordinator& dc = c.get_trainer().get_data_coordinator();
   auto&& reader = dc.get_data_reader(mode);
   reader->set_initial_position();
   m.get_objective_function()->reset_statistics(mode);
