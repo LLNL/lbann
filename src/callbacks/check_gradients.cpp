@@ -289,13 +289,9 @@ void check_gradients::do_check_gradients(model& m) const {
 
   // Clean up
   /// @todo tym: I'm not sure if data readers are properly reset
-  for (auto&& l : m.get_layers()) {
-    auto&& input = dynamic_cast<generic_input_layer<DataType>*>(l);
-    if (input != nullptr) {
-      auto&& reader = input->get_data_reader(mode);
-      reader->set_initial_position();
-    }
-  }
+  const data_coordinator& dc = c.get_trainer().get_data_coordinator();
+  auto&& reader = dc.get_data_reader(mode);
+  reader->set_initial_position();
   m.get_objective_function()->reset_statistics(mode);
   for (auto&& met : m.get_metrics()) {
     met->reset_statistics(mode);

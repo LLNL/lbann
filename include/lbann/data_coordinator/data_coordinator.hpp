@@ -456,6 +456,15 @@ class data_coordinator {
     return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
   }
 
+  bool at_new_epoch(execution_mode mode) const {
+    const generic_data_reader *dr = get_data_reader(mode);
+    return (dr != nullptr && dr->at_new_epoch());
+  }
+
+  bool at_new_epoch() const {
+    return at_new_epoch(execution_mode::training);
+  }
+
   //************************************************************************
   //
   //************************************************************************

@@ -167,26 +167,14 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
       dc.update_num_samples_processed(mode, num_samples_in_batch);
       if(this->m_expected_num_child_layers == 1) {
-        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, this->get_activations(0));
+        io_buffer->distribute_from_local_matrix(dc.get_data_reader(mode), mode, this->get_activations(0));
       }else {
-        io_buffer->distribute_from_local_matrix(get_data_reader(), mode, this->get_activations(0), this->get_activations(1));
+        io_buffer->distribute_from_local_matrix(dc.get_data_reader(mode), mode, this->get_activations(0), this->get_activations(1));
       }
     // }else {
     //   LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
     // }
 
-  }
-
-  //************************************************************************
-  // Helper functions to access the data readers
-  //************************************************************************
-
-  generic_data_reader *get_data_reader(const execution_mode mode) const {
-    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_data_reader(mode);
-  }
-
-  generic_data_reader *get_data_reader() const {
-    return get_data_reader(this->m_model->get_execution_context().get_execution_mode());
   }
 
   /**
@@ -201,11 +189,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
       LBANN_ERROR("get_data_dims: Invalid child index");
     }
     return std::vector<int>(1, 0);
-  }
-
-  bool at_new_epoch() const override {
-    const generic_data_reader *dr = this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_data_reader(execution_mode::training);
-    return (dr != nullptr && dr->at_new_epoch());
   }
 
   //************************************************************************
