@@ -170,7 +170,7 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   // Ensure that the data coordinator has the right execution context
   dc.reset_mode(c);
   // Return early if execution mode is invalid
-  if (!model.is_execution_mode_valid(mode)) return;
+  if (!dc.is_execution_mode_valid(mode)) return;
   if (mode != execution_mode::validation
       && mode != execution_mode::testing) {
     std::stringstream err;

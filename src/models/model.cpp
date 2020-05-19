@@ -457,16 +457,6 @@ void model::copy_trained_weights_from(std::vector<weights*>& new_weights) {
    }
 }
 
-bool model::is_execution_mode_valid(execution_mode mode) const {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    const auto* input = dynamic_cast<const generic_input_layer<DataType>*>(&get_layer(i));
-    if (input != nullptr && !input->is_execution_mode_valid(mode)) {
-      return false;
-    }
-  }
-  return true;
-}
-
 void model::reorder_layers(const std::vector<El::Int>& gather_indices) {
   std::stringstream err;
 

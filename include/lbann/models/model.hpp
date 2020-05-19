@@ -350,10 +350,6 @@ public:
   /** @brief Reset model statistics for an epoch. */
   virtual void reset_epoch_statistics(execution_mode mode);
 
-  /** @brief Check if the trainer execution mode is valid for this model.
-    @todo this should be moved to the trainer when the data readers move. */
-  virtual bool is_execution_mode_valid(execution_mode mode) const;
-
   /** @brief Forward propagation step. */
   virtual void forward_prop(execution_mode mode);
   /** @brief Backward propagation step. */

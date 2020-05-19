@@ -361,9 +361,9 @@ class data_coordinator {
     m_execution_context = static_cast<observer_ptr<execution_context>>(&context);
   }
 
-  //************************************************************************
-  // Helper functions to access the dataset statistics
-  //************************************************************************
+  /** @name Helper functions to access the dataset statistics */
+///@{
+   /** @brief Return the dataset for the given execution mode. */
   dataset& get_dataset(execution_mode m) {
     switch(m) {
     case execution_mode::training:
@@ -424,6 +424,22 @@ class data_coordinator {
   long get_total_num_testing_samples() const {
     return m_testing_dataset.get_total_samples();
   }
+
+  /**
+   * Update the number of samples processed for the current execution mode.
+   */
+  long update_num_samples_processed(execution_mode mode, long num_samples) {
+    dataset& ds = get_dataset(mode);
+    ds.num_samples_processed() += num_samples;
+    return ds.get_num_samples_processed();
+  }
+
+  /** @brief Check if the execution mode is valid (i.e. has data). */
+  bool is_execution_mode_valid(execution_mode mode) const {
+    const dataset& ds = get_dataset(mode);
+    return (ds.get_total_samples() != static_cast<long>(0));
+  }
+///@}
 
   //************************************************************************
   //

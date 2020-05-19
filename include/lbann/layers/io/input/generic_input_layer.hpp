@@ -165,7 +165,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
       // batch size for the neural network
       int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
 
-      update_num_samples_processed(num_samples_in_batch);
+      dc.update_num_samples_processed(mode, num_samples_in_batch);
       if(this->m_expected_num_child_layers == 1) {
         io_buffer->distribute_from_local_matrix(get_data_reader(), mode, this->get_activations(0));
       }else {
@@ -187,47 +187,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
   generic_data_reader *get_data_reader() const {
     return get_data_reader(this->m_model->get_execution_context().get_execution_mode());
-  }
-
-  //************************************************************************
-  // Helper functions to access the dataset statistics
-  //************************************************************************
-  dataset& get_dataset(execution_mode m) override {
-    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_dataset(m);
-  }
-
-  const dataset& get_dataset(execution_mode m) const override {
-    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_dataset(m);
-  }
-
-  /**
-   * Return the dataset associated with the current execution mode.
-   */
-  dataset& select_dataset() override { return get_dataset(this->m_model->get_execution_context().get_execution_mode()); }
-  const dataset& select_dataset() const override { return get_dataset(this->m_model->get_execution_context().get_execution_mode()); }
-
-  /**
-   * Return the first dataset with a valid (non-null) datareader.
-   * Returns null if none are valid.
-   */
-  dataset* select_first_valid_dataset() override {
-    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().select_first_valid_dataset();
-  }
-
-  /**
-   * Return the data reader associated with the current execution mode.
-   */
-  generic_data_reader *select_data_reader() const override {
-    return get_data_reader();
-  }
-
-  /**
-   * Update the number of samples processed for the current execution mode.
-   */
-  long update_num_samples_processed(long num_samples) override {
-    dataset& ds = select_dataset();
-    ds.num_samples_processed() += num_samples;
-    return ds.get_num_samples_processed();
   }
 
   /**
@@ -262,10 +221,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
     return (dr != nullptr && dr->at_new_epoch());
   }
 
-  bool is_execution_mode_valid(execution_mode mode) const override {
-    const dataset& ds = get_dataset(mode);
-    return (ds.get_total_samples() != static_cast<long>(0));
-  }
   //************************************************************************
   //
   //************************************************************************

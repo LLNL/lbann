@@ -56,34 +56,6 @@ class io_layer : public data_type_layer<TensorDataType> {
   }
 
   /**
-   * Return the dataset for the given execution mode.
-   */
-  virtual dataset& get_dataset(execution_mode m) = 0;
-  virtual const dataset& get_dataset(execution_mode m) const = 0;
-
-  /**
-   * Return the dataset associated with the current execution mode.
-   */
-  virtual dataset& select_dataset() = 0;
-  virtual const dataset& select_dataset() const = 0;
-
-  /**
-   * Return the first dataset with a valid (non-null) datareader.
-   * Returns null if none are valid.
-   */
-  virtual dataset* select_first_valid_dataset() = 0;
-
-  /**
-   * Return the data reader associated with the current execution mode.
-   */
-  virtual generic_data_reader *select_data_reader() const = 0;
-
-  /**
-   * Update the number of samples processed for the current execution mode.
-   */
-  virtual long update_num_samples_processed(long num_samples) = 0;
-
-  /**
    * Get the dimensions of the underlying data.
    */
   virtual std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const = 0;
@@ -94,8 +66,6 @@ class io_layer : public data_type_layer<TensorDataType> {
   virtual long get_total_num_testing_samples() const = 0;
 
   virtual bool at_new_epoch() const = 0;
-
-  virtual bool is_execution_mode_valid(execution_mode mode) const = 0;
 
 #if 0
   bool saveToCheckpointShared(persist& p) {
