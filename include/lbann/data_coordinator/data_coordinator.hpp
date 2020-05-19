@@ -155,10 +155,34 @@ class data_coordinator {
   /// execution mode
   virtual bool epoch_complete(execution_mode mode) = 0;
 
+  //************************************************************************
+  // Helper functions to access the statistics about the data set
+  //************************************************************************
+
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) = 0;
+
+  virtual int get_num_iterations_per_epoch(execution_mode mode) const;
+
+  virtual int get_current_step_in_epoch(execution_mode mode) const;
+
+  virtual int get_mini_batch_size(execution_mode mode) const;
+
+  virtual int get_last_mini_batch_size(execution_mode mode) const;
+
+  virtual int get_current_mini_batch_size(execution_mode mode) const;
+
+  virtual int get_global_mini_batch_size(execution_mode mode) const;
+
+  virtual int get_current_global_mini_batch_size(execution_mode mode) const;
+
+  virtual int get_global_last_mini_batch_size(execution_mode mode) const;
+
+  virtual int get_world_master_mini_batch_adjustment(execution_mode mode) const;
+
+  virtual int get_current_world_master_mini_batch_adjustment(execution_mode mode, int model_rank) const;
 
   //************************************************************************
   // Helper functions to access the data readers
@@ -415,8 +439,6 @@ class data_coordinator {
     const generic_data_reader *data_reader = get_data_reader(mode);
     return (data_reader != nullptr) ? data_reader->get_num_parallel_readers() : 0;
   }
-
-  int get_current_mini_batch_size(execution_mode mode) const;
 
   //************************************************************************
   //

@@ -342,16 +342,6 @@ const std::vector<weights*> model::get_weights() const {
   return weights_list;
 }
 
-size_t model::get_num_iterations_per_epoch(execution_mode mode) const {
-  for (El::Int i = 0; i < get_num_layers(); ++i) {
-    const auto* input = dynamic_cast<const generic_input_layer<DataType>*>(&get_layer(i));
-    if (input != nullptr) {
-      return input->get_num_iterations_per_epoch(mode);
-    }
-  }
-  return 0;
-}
-
 // =============================================
 // Model specification
 // =============================================

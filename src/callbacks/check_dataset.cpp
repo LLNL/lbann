@@ -122,10 +122,12 @@ void check_dataset::on_epoch_end(model *m) {
 
   std::cout << "Training: my local vector has size " << local_data.size() << std::endl;
   if (comm->am_trainer_master()) {
+    auto& c = static_cast<sgd_execution_context&>(m->get_execution_context());
+    data_coordinator& dc = c.get_trainer().get_data_coordinator();
     // Build a vector large enough to hold all indices for the model.
     std::vector<int> model_training_set(
-      input->get_num_iterations_per_epoch(execution_mode::training) *
-      m->get_execution_context().get_trainer().get_max_mini_batch_size());
+      dc.get_num_iterations_per_epoch(execution_mode::training) *
+      c.get_trainer().get_max_mini_batch_size());
 
     std::cout << "Training: my model vector has size " << model_training_set.size() << std::endl;
     // comm->trainer_gatherv(local_data.data(), local_data.size(),

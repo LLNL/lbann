@@ -228,8 +228,6 @@ public:
   /** @brief Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
 
-  size_t get_num_iterations_per_epoch(execution_mode mode) const;
-
   // ===========================================
   // Setup
   // ===========================================

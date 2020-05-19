@@ -127,21 +127,23 @@ class generic_input_layer : public io_layer<TensorDataType> {
     /// During model setup there is no valid execution context, but
     /// during execution there is a context
     if(this->m_model->has_valid_execution_context()) {
+      auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+      auto mode = c.get_execution_mode();
+      data_coordinator& dc = c.get_trainer().get_data_coordinator();
       // Determine model mini-batch size and effective mini-batch size
       // Note: If inter-model communication is activated, the effective
       // mini-batch is equal to the global mini-batch size.
       /// @todo This functionality should probably be moved elsewhere
-      mini_batch_size = get_current_mini_batch_size();
+      mini_batch_size = dc.get_current_mini_batch_size(mode);
 
       auto effective_mini_batch_size = mini_batch_size;
       for (auto&& cb : this->m_model->get_callbacks()) {
         if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
-          effective_mini_batch_size = get_current_global_mini_batch_size();
+          effective_mini_batch_size = dc.get_current_global_mini_batch_size(mode);
           break;
         }
       }
 
-      auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
       // Set mini-batch size in model
       c.set_current_mini_batch_size(mini_batch_size);
       c.set_effective_mini_batch_size(effective_mini_batch_size);
@@ -161,7 +163,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
     // if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
       // Use the predetermined size of the mini-batch to set the current
       // batch size for the neural network
-      int num_samples_in_batch = get_current_mini_batch_size();
+      int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
 
       update_num_samples_processed(num_samples_in_batch);
       if(this->m_expected_num_child_layers == 1) {
@@ -185,84 +187,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
   generic_data_reader *get_data_reader() const {
     return get_data_reader(this->m_model->get_execution_context().get_execution_mode());
-  }
-
-  virtual int get_num_iterations_per_epoch(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_num_iterations_per_epoch() : 0;
-  }
-
-  virtual int get_num_iterations_per_epoch() const {
-    return get_num_iterations_per_epoch(this->m_model->get_execution_context().get_execution_mode());
-  }
-
-  virtual int get_current_step_in_epoch(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_current_step_in_epoch() : 0;
-  }
-
-  virtual int get_current_step_in_epoch() const {
-    return get_current_step_in_epoch(this->m_model->get_execution_context().get_execution_mode());
-  }
-
-  virtual int get_mini_batch_size(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_mini_batch_size() : 0;
-  }
-
-  virtual int get_last_mini_batch_size(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_last_mini_batch_size() : 0;
-  }
-
-  virtual int get_last_mini_batch_size() const {
-    return get_last_mini_batch_size(this->m_model->get_execution_context().get_execution_mode());
-  }
-
-  virtual int get_current_mini_batch_size(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_current_mini_batch_size() : 0;
-  }
-
-  virtual int get_current_mini_batch_size() const {
-    return get_current_mini_batch_size(this->m_model->get_execution_context().get_execution_mode());
-  }
-
-  virtual int get_global_mini_batch_size(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_global_mini_batch_size() : 0;
-  }
-
-  virtual int get_global_last_mini_batch_size(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_global_last_mini_batch_size() : 0;
-  }
-
-  virtual int get_current_global_mini_batch_size(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_current_global_mini_batch_size() : 0;
-  }
-
-  virtual int get_current_global_mini_batch_size() const {
-    return get_current_global_mini_batch_size(this->m_model->get_execution_context().get_execution_mode());
-  }
-
-  virtual int get_world_master_mini_batch_adjustment(execution_mode mode) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_world_master_mini_batch_adjustment() : 0;
-  }
-
-  virtual int get_world_master_mini_batch_adjustment() const {
-    return get_world_master_mini_batch_adjustment(this->m_model->get_execution_context().get_execution_mode());
-  }
-
-  virtual int get_current_world_master_mini_batch_adjustment(execution_mode mode, int model_rank) const {
-    const generic_data_reader *data_reader = get_data_reader(mode);
-    return (data_reader != nullptr) ? data_reader->get_current_world_master_mini_batch_adjustment(model_rank) : 0;
-  }
-
-  virtual int get_current_world_master_mini_batch_adjustment(int model_rank) const {
-    return get_current_world_master_mini_batch_adjustment(this->m_model->get_execution_context().get_execution_mode(), model_rank);
   }
 
   //************************************************************************

@@ -180,9 +180,54 @@ int data_coordinator::compute_max_num_parallel_readers(long data_set_size, int m
   return num_parallel_readers;
 }
 
+int data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_num_iterations_per_epoch() : 0;
+}
+
+int data_coordinator::get_current_step_in_epoch(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_current_step_in_epoch() : 0;
+}
+
+int data_coordinator::get_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_last_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_last_mini_batch_size() : 0;
+}
+
 int data_coordinator::get_current_mini_batch_size(execution_mode mode) const {
   const generic_data_reader *data_reader = get_data_reader(mode);
   return (data_reader != nullptr) ? data_reader->get_current_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_global_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_global_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_current_global_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_current_global_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_global_last_mini_batch_size(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_global_last_mini_batch_size() : 0;
+}
+
+int data_coordinator::get_world_master_mini_batch_adjustment(execution_mode mode) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_world_master_mini_batch_adjustment() : 0;
+}
+
+int data_coordinator::get_current_world_master_mini_batch_adjustment(execution_mode mode, int model_rank) const {
+  const generic_data_reader *data_reader = get_data_reader(mode);
+  return (data_reader != nullptr) ? data_reader->get_current_world_master_mini_batch_adjustment(model_rank) : 0;
 }
 
 } // namespace lbann

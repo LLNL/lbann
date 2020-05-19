@@ -64,21 +64,23 @@ void debug_io::on_forward_prop_begin(model *m, Layer *l) {
 
 void debug_io::print_fp_start(model *m, generic_input_layer<DataType> *input) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  data_coordinator& dc = m->get_execution_context().get_trainer().get_data_coordinator();
   const auto& step = c.get_step();
+  const auto mode = c.get_execution_mode();
   std::cout << "[" << m->get_comm()->get_trainer_rank()
             << "." << m->get_comm()->get_rank_in_trainer()
             << "] @" << c.get_epoch() << "." << step
-            << " Phase: " << to_string(c.get_execution_mode())
+            << " Phase: " << to_string(mode)
             << " starting forward propagation for layer " << input->get_name()
             << " type: " << input->get_type()
-            << " iteration: " << input->get_data_reader()->get_current_mini_batch_index()
-            << " of " << input->get_num_iterations_per_epoch()
-            << " loading idx " << input->get_data_reader()->get_loaded_mini_batch_index()
-            << " bs=" << input->get_current_mini_batch_size() << "/"
-            << input->get_current_global_mini_batch_size()
-            << " @" << input->get_data_reader()->get_position()
+            << " iteration: " << dc.get_data_reader(mode)->get_current_mini_batch_index()
+            << " of " << dc.get_num_iterations_per_epoch(mode)
+            << " loading idx " << dc.get_data_reader(mode)->get_loaded_mini_batch_index()
+            << " bs=" << dc.get_current_mini_batch_size(mode) << "/"
+            << dc.get_current_global_mini_batch_size(mode)
+            << " @" << dc.get_data_reader(mode)->get_position()
     //              << " %" << input->get_data_reader()->get_batch_stride()
-            << " ^" << input->get_data_reader()->get_sample_stride()
+            << " ^" << dc.get_data_reader(mode)->get_sample_stride()
             << std::endl;
 }
 
