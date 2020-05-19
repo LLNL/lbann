@@ -68,17 +68,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
   }
 
   ~generic_input_layer() override {
-
-    // Synchronize the I/O thread pool
-    // Note: The thread pool may still be running asynchronously if the
-    // trainer is destroyed in the middle of an epoch. The thread pool
-    // needs to interact with data readers, etc., so it needs to be
-    // synchronized before any of them are destroyed.
-    if (this->m_model != nullptr) {
-      if (this->m_model->has_valid_execution_context()) {
-        this->m_model->get_execution_context().get_io_thread_pool().reap_threads();
-      }
-    }
   }
 
   // Input layers copy their datareaders.
