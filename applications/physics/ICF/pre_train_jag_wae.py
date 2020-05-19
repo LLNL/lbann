@@ -82,7 +82,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A',data_set_per_model=True, name='inp_data')
+    input = lbann.Input(target_mode='N/A', name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
     #inp_slice = lbann.Slice(input, axis=0, slice_points="0 16399 16404",name='inp_slice')
     inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+5]),name='inp_slice')
@@ -96,8 +96,8 @@ def construct_model():
 
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
     model = macc_models.MACCWAE(args.zdim,args.ydim,use_CNN=args.useCNN)
-    d1_real, d1_fake, d_adv, pred_y  = model(z,gt_y) 
-    
+    d1_real, d1_fake, d_adv, pred_y  = model(z,gt_y)
+
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')
     d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
@@ -130,10 +130,9 @@ def construct_model():
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
                                       batch_interval=2)]
-                                            
+
     # Construct model
-    return lbann.Model(args.mini_batch_size,
-                       args.num_epochs,
+    return lbann.Model(args.num_epochs,
                        serialize_io=True,
                        weights=weights,
                        layers=layers,
@@ -144,8 +143,9 @@ def construct_model():
 
 if __name__ == '__main__':
     import lbann
-    
-    trainer = lbann.Trainer(procs_per_trainer=args.procs_per_trainer)
+
+    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
+                            procs_per_trainer=args.procs_per_trainer)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)
@@ -157,12 +157,10 @@ if __name__ == '__main__':
 
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
     status = lbann.contrib.launcher.run(trainer,model, data_reader_proto, opt,
-                       scheduler='lsf',
-                       partition='pbatch',
                        nodes=args.num_nodes,
                        procs_per_node=args.ppn,
                        time_limit=720,
-                       setup_only=False, 
+                       setup_only=False,
                        job_name=args.job_name,
                        lbann_args=['--use_data_store --preload_data_store',
                                    f'--metadata={metadata_prototext}',

@@ -142,7 +142,7 @@ private:
    * Generate Beta-distributed values using Johnk's algorithm.
    * This is a rejection-sampling algorithm that only needs a few
    * uniformly random values.
-   * 
+   *
    * See:
    *
    *     Johnk, H. D. "Erzeugung von betaverteilten und gammaverteilten
@@ -168,8 +168,8 @@ private:
   template <typename Generator>
   result_type generate_johnk(Generator& g, result_type a, result_type b) {
     while (true) {
-      const result_type U = fast_random_uniform<result_type>(g);
-      const result_type V = fast_random_uniform<result_type>(g);
+      const result_type U = random_uniform<result_type>(g);
+      const result_type V = random_uniform<result_type>(g);
       const result_type X = std::pow(U, result_type(1) / a);
       const result_type Y = std::pow(V, result_type(1) / b);
       const result_type XplusY = X + Y;
