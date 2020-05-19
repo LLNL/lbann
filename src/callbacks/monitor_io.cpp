@@ -29,7 +29,7 @@
 #include <utility>
 
 #include "lbann/callbacks/monitor_io.hpp"
-#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/proto/proto_common.hpp"
 
 #include <callbacks.pb.h>
@@ -39,39 +39,25 @@ namespace callback {
 
 void monitor_io::on_epoch_end(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const data_coordinator& dc = c.get_trainer().get_data_coordinator();
   lbann_comm *comm = m->get_comm();
-  for (Layer *layer : m->get_layers()) {
-    if(m_layers.size() == 0
-       || m_layers.find(layer->get_name()) != m_layers.end()) {
-      auto *input = dynamic_cast<generic_input_layer<DataType> *> (layer);
-      if(input != nullptr) {
-        std::cout << "Rank " << comm->get_trainer_rank() << "."
-                  << comm->get_rank_in_trainer() << " processed "
-                  << input->get_num_samples_trained() << " training samples of "
-                  << input->get_total_num_training_samples() << " ("
-                  << input->get_num_samples_trained() / c.get_epoch() << " per epoch)" << std::endl;
-      }
-    }
-  }
+  std::cout << "Rank " << comm->get_trainer_rank() << "."
+            << comm->get_rank_in_trainer() << " processed "
+            << dc.get_num_samples_trained() << " training samples of "
+            << dc.get_total_num_training_samples() << " ("
+            << dc.get_num_samples_trained() / c.get_epoch() << " per epoch)" << std::endl;
 }
 
 void monitor_io::on_test_end(model *m) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+  const data_coordinator& dc = c.get_trainer().get_data_coordinator();
   lbann_comm *comm = m->get_comm();
-  for (Layer *layer : m->get_layers()) {
-    if(m_layers.size() == 0
-       || m_layers.find(layer->get_name()) != m_layers.end()) {
-      auto *input = dynamic_cast<generic_input_layer<DataType> *> (layer);
-      if(input != nullptr) {
-        std::cout << "Rank " << comm->get_trainer_rank() << "."
-                  << comm->get_rank_in_trainer() << " processed "
-                  << input->get_num_samples_tested() << " test samples of "
-                  << input->get_total_num_testing_samples() << " ("
-                  << input->get_num_samples_tested() / c.get_epoch()
-                  << " per epoch)" << std::endl;
-      }
-    }
-  }
+  std::cout << "Rank " << comm->get_trainer_rank() << "."
+            << comm->get_rank_in_trainer() << " processed "
+            << dc.get_num_samples_tested() << " test samples of "
+            << dc.get_total_num_testing_samples() << " ("
+            << dc.get_num_samples_tested() / c.get_epoch()
+            << " per epoch)" << std::endl;
 }
 
 std::unique_ptr<callback_base>

@@ -203,19 +203,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
     return std::vector<int>(1, 0);
   }
 
-  long get_num_samples_trained() const override {
-    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_num_samples_trained();
-  }
-  long get_num_samples_tested() const override {
-    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_num_samples_tested();
-  }
-  long get_total_num_training_samples() const override {
-    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_total_num_training_samples();
-  }
-  long get_total_num_testing_samples() const override {
-    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_total_num_testing_samples();
-  }
-
   bool at_new_epoch() const override {
     const generic_data_reader *dr = this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_data_reader(execution_mode::training);
     return (dr != nullptr && dr->at_new_epoch());

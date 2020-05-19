@@ -60,11 +60,6 @@ class io_layer : public data_type_layer<TensorDataType> {
    */
   virtual std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const = 0;
 
-  virtual long get_num_samples_trained() const = 0;
-  virtual long get_num_samples_tested() const = 0;
-  virtual long get_total_num_training_samples() const = 0;
-  virtual long get_total_num_testing_samples() const = 0;
-
   virtual bool at_new_epoch() const = 0;
 
 #if 0

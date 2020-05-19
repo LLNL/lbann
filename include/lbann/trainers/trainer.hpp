@@ -144,9 +144,13 @@ public:
 
   void for_each_execution_context(std::function<void(observer_ptr<execution_context>)>fn);
 
-  data_coordinator& get_data_coordinator() {
+  const data_coordinator& get_data_coordinator() const {
     if(m_data_coordinator == nullptr) { LBANN_ERROR("data_coordinator is nullptr"); }
     return *m_data_coordinator;
+  }
+
+  data_coordinator& get_data_coordinator() {
+    return const_cast<data_coordinator&>(static_cast<const trainer&>(*this).get_data_coordinator());
   }
 
   void apply(training_algorithm& alg,
