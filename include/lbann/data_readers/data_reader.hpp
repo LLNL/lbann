@@ -306,6 +306,8 @@ class generic_data_reader {
   /** Return this data_reader's type */
   virtual std::string get_type() const = 0;
 
+  /** @brief Fetch a mini-batch worth of data, including samples, labels, responses (as appropriate) */
+  int fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched);
   /// Fetch this mini-batch's samples into X.
   virtual int fetch_data(CPUMat& X, El::Matrix<El::Int>& indices_fetched);
   /// Fetch this mini-batch's labels into Y.

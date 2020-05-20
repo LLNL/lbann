@@ -69,29 +69,14 @@ int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(const execu
   buf->m_num_samples_fetched = 0;
   if (this->m_comm->get_rank_in_trainer() < num_parallel_readers
       && (buf->m_input_buffers[input_data_type::SAMPLES]->Height() != 0 && buf->m_input_buffers[input_data_type::SAMPLES]->Width() != 0)) {
-    /// Each data reader needs to either have independent / split
-    /// data, or take an offset / stride
-
+    /// Create a map of the local matrices to pass into the data reader
+    std::map<input_data_type, CPUMat*> local_input_buffers;
+    for(auto& b : buf->m_input_buffers) {
+      local_input_buffers[b.first] = static_cast<CPUMat*>(&(b.second->Matrix()));
+    }
     /** @brief Each rank will fetch a mini-batch worth of data into it's buffer */
-    buf->m_num_samples_fetched = data_reader->fetch_data(buf->m_input_buffers[input_data_type::SAMPLES]->Matrix(), buf->m_indices_fetched_per_mb);
-    if(data_reader->has_labels()) {
-      int num_labels_fetched = data_reader->fetch_labels(buf->m_input_buffers[input_data_type::LABELS]->Matrix());
-      if(num_labels_fetched != buf->m_num_samples_fetched) {
-        LBANN_ERROR("Number of samples: ",
-                    std::to_string(buf->m_num_samples_fetched),
-                    " does not match the number of labels: ",
-                    std::to_string(num_labels_fetched));
-      }
-    }
-    if(data_reader->has_responses()) {
-      int num_responses_fetched = data_reader->fetch_responses(buf->m_input_buffers[input_data_type::RESPONSES]->Matrix());
-      if(num_responses_fetched != buf->m_num_samples_fetched) {
-        LBANN_ERROR("Number of samples: ",
-                    std::to_string(buf->m_num_samples_fetched),
-                    " does not match the number of responses: ",
-                    std::to_string(num_responses_fetched));
-      }
-    }
+    buf->m_num_samples_fetched = data_reader->fetch(local_input_buffers, buf->m_indices_fetched_per_mb);
+
     // if(buf->m_input_buffers.size() == 2) {
     //   buf->m_num_samples_fetched = (*this->fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_input_buffers[1]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
     // }else {

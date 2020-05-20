@@ -78,6 +78,28 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
   m_io_thread_pool = io_thread_pool;
 }
 
+int lbann::generic_data_reader::fetch(std::map<input_data_type, CPUMat*>& input_buffers, El::Matrix<El::Int>& indices_fetched) {
+  int num_samples_fetched = fetch_data(*(input_buffers[input_data_type::SAMPLES]), indices_fetched);
+  if(has_labels()) {
+    int num_labels_fetched = fetch_labels(*(input_buffers[input_data_type::LABELS]));
+    if(num_labels_fetched != num_samples_fetched) {
+      LBANN_ERROR("Number of samples: ",
+                  std::to_string(num_samples_fetched),
+                  " does not match the number of labels: ",
+                  std::to_string(num_labels_fetched));
+    }
+  }
+  if(has_responses()) {
+    int num_responses_fetched = fetch_responses(*(input_buffers[input_data_type::RESPONSES]));
+    if(num_responses_fetched != num_samples_fetched) {
+      LBANN_ERROR("Number of samples: ",
+                  std::to_string(num_samples_fetched),
+                  " does not match the number of responses: ",
+                  std::to_string(num_responses_fetched));
+    }
+  }
+  return num_samples_fetched;
+}
 
 bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
   locked_io_rng_ref io_rng = set_io_generators_local_index(block_offset);
