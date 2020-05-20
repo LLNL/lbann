@@ -99,11 +99,11 @@ public:
   /** Report the (squared) 2-norm of mat. */
   template <typename TensorDataType>
   void reduce_2norm(const std::string tag, const El::AbstractDistMatrix<TensorDataType>& mat, int step);
-  void report_image(std::string const& tag,
-                    std::string const& img_format,
-                    CPUMat const& image,
-                    std::vector<int> const& dims_in,
-                    int step);
+  void report_image(std::string const& /*tag*/,
+                    std::string const& /*img_format*/,
+                    CPUMat const& /*image*/,
+                    std::vector<int> const& /*dims*/,
+                    int /*step*/);
   /**
    * Write all summaries out.
    * @todo This can be made faster by combining collective operations element-

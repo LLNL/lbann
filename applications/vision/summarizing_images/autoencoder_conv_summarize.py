@@ -31,14 +31,21 @@
 #
 ################################################################################
 
+import os.path
+import sys
 import argparse
 import lbann
 import lbann.models
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
 import lbann.contrib.launcher
-import data.cifar10
-import data.imagenet
+
+# Get relative path to data
+current_file = os.path.realpath(__file__)
+current_dir = os.path.dirname(current_file)
+sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'data'))
+import cifar10
+import imagenet
 
 # Command-line arguments
 desc = ('Construct and run ResNet on ImageNet-1K data. '
@@ -252,10 +259,10 @@ callbacks = [lbann.CallbackPrint(),
              summarize_images,
              summarize_input_layer]
 
-layers = list(lbann.traverse_layer_graph(input_))
-model = lbann.Model(args.mini_batch_size,
+layer_list = list(lbann.traverse_layer_graph(input_))
+model = lbann.Model(
                     args.num_epochs,
-                    layers=layers,
+                    layers=layer_list,
                     objective_function=obj,
                     metrics=metrics,
                     callbacks=callbacks,
@@ -268,12 +275,12 @@ opt = lbann.contrib.args.create_optimizer(args)
 num_classes=min(args.num_classes, num_labels)
 
 if dataset == "cifar10":
-    data_reader = data.cifar10.make_data_reader(num_classes=num_classes)
+    data_reader = cifar10.make_data_reader(num_classes=num_classes)
 else:
-    data_reader = data.imagenet.make_data_reader(num_classes=num_classes)
+    data_reader = imagenet.make_data_reader(num_classes=num_classes)
 
 # Setup trainer
-trainer = lbann.Trainer(random_seed=args.random_seed)
+trainer = lbann.Trainer(random_seed=args.random_seed, mini_batch_size=args.mini_batch_size)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)

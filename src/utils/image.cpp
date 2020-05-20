@@ -220,16 +220,14 @@ std::string encode_image(const El::Matrix<uint8_t>& image,
   cv::Mat Mat_img = utils::get_opencv_mat(
     const_cast<El::Matrix<uint8_t>&>(image), dims);
   std::vector<uint8_t> encoded_img;
-  //Defulat for IMWRITE_JPEG_QUALITY is 95. Can lower if files are too big
-  //std::vector<int> params = {cv::IMWRITE_JPEG_QUALITY, 20};
-  //cv::imencode(img_format, Mat_img, encoded_img, params);
+  // Default IMWRITE_JPEG_QUALITY is 95. Can lower if files are too large
   cv::imencode(img_format, Mat_img, encoded_img);
 
   return std::string{encoded_img.begin(), encoded_img.end()};
 }
 
 El::Matrix<uint8_t> get_uint8_t_image(const CPUMat& image,
-                            const std::vector<size_t>& dims) {
+                                      const std::vector<size_t>& dims) {
   // Create the output matrix
   size_t const size = utils::get_linearized_size(dims);
   El::Matrix<uint8_t> output_mat(size, 1);

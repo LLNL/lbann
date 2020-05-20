@@ -40,6 +40,10 @@
 namespace lbann {
 namespace callback {
 
+/** @class image_output_strategy
+ *  @brief Interface for strategies for determining which images
+ *  to output to the summarizer.
+ */
 class image_output_strategy {
 
 public:
@@ -165,13 +169,16 @@ public:
    *  @param img_format Image file format (e.g. .jpg, .png, .pgm)
    */
   summarize_images(std::shared_ptr<lbann_summary> const& summarizer,
-                   std::shared_ptr<image_output_strategy> const& strategy,
+                   std::unique_ptr<image_output_strategy> strategy,
                    std::string const& img_source_layer_name,
                    uint64_t interval = 1,
                    std::string const& img_format = ".jpg");
 
   /** @brief Copy constructor */
-  callback_base* copy() const override { return new summarize_images(*this); }
+  callback_base* copy() const override {
+    LBANN_ERROR( "This callback is not copyable.");
+    return nullptr;
+  }
 
   /** @brief Return name of callback */
   std::string name() const override { return "summarize_images"; }
@@ -191,7 +198,7 @@ private:
   std::shared_ptr<lbann_summary> m_summarizer;
 
   /* @brief image_output_strategy object */
-  std::shared_ptr<image_output_strategy> m_strategy;
+  std::unique_ptr<image_output_strategy> m_strategy;
 
   /* @brief Names of layers */
   std::string m_img_source_layer_name;

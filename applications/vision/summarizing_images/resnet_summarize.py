@@ -41,7 +41,7 @@ import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
 import lbann.contrib.launcher
 
-# Get relative paths
+# Get relative path to data
 current_file = os.path.realpath(__file__)
 current_dir = os.path.dirname(current_file)
 sys.path.insert(0, os.path.join(os.path.dirname(current_dir), 'data'))
@@ -164,11 +164,11 @@ probs = lbann.Softmax(preds)
 cross_entropy = lbann.CrossEntropy(probs, labels)
 top1 = lbann.CategoricalAccuracy(probs, labels, name='louise')
 top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
-layers = list(lbann.traverse_layer_graph(input_))
+layer_list = list(lbann.traverse_layer_graph(input_))
 
 # Setup objective function
 l2_reg_weights = set()
-for l in layers:
+for l in layer_list:
     if type(l) == lbann.Convolution or type(l) == lbann.FullyConnected:
         l2_reg_weights.update(l.weights)
 l2_reg = lbann.L2WeightRegularization(weights=l2_reg_weights, scale=1e-4)
@@ -197,13 +197,12 @@ if args.warmup:
     callbacks.append(
         lbann.CallbackLinearGrowthLearningRate(
             target=0.1 * args.mini_batch_size / 256, num_epochs=5))
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
-                    layers=layers,
+model = lbann.Model(args.num_epochs,
+                    layers=layer_list,
                     objective_function=obj,
                     metrics=metrics,
                     callbacks=callbacks,
-                    summary_dir="/g/g13/graham63/workspace/code/lbann/event_files")
+                    summary_dir=".")
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)
@@ -217,7 +216,7 @@ else:
     data_reader = imagenet.make_data_reader(num_classes=num_classes)
 
 # Setup trainer
-trainer = lbann.Trainer(random_seed=args.random_seed)
+trainer = lbann.Trainer(random_seed=args.random_seed, mini_batch_size=args.mini_batch_size)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)

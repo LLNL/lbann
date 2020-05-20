@@ -174,19 +174,7 @@ build_categorical_accuracy_strategy_from_pbuf(google::protobuf::Message const& m
     ConvertToLbannType(strategy_msg.match_type()),
     strategy_msg.num_images_per_epoch());
 }
-
 // End categorical_accuracy_strategy
-
-namespace {
-template <typename T>
-std::ostream& operator<<(std::ostream& os, std::vector<T> const& v)
-{
-  os << "{";
-  for (auto const& x : v)
-    os << " " << x;
-  return os << " }";
-}
-}
 
 std::vector<std::pair<size_t, El::Int>>
 autoencoder_strategy::get_image_indices(model const& m) const {
@@ -248,8 +236,6 @@ autoencoder_strategy::get_image_indices(model const& m) const {
         m_tracked_images.insert(sample_index);
         img_indices.push_back(std::make_pair(ii, sample_index));
       }
-
-      flush(std::cout);
     }
   }
   return img_indices;
@@ -277,13 +263,13 @@ build_autoencoder_strategy_from_pbuf(google::protobuf::Message const& msg) {
 }
 
 summarize_images::summarize_images(std::shared_ptr<lbann_summary> const& summarizer,
-                                   std::shared_ptr<image_output_strategy> const& strategy,
+                                   std::unique_ptr<image_output_strategy> strategy,
                                    std::string const& img_layer_name,
                                    uint64_t epoch_interval,
                                    std::string const& img_format)
   : callback_base(/*batch interval=*/1),
     m_summarizer(summarizer),
-    m_strategy(strategy),
+    m_strategy(std::move(strategy)),
     m_img_source_layer_name(img_layer_name),
     m_epoch_interval(std::max(epoch_interval, uint64_t{1})),
     m_img_format(img_format)

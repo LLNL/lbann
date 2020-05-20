@@ -366,7 +366,6 @@ void lbann_summary::gather_scalar_summary(
 void lbann_summary::gather_scalar_summary(const std::string tag,
                                           float s,
                                           int step) {
-#if 0
   if (m_comm->am_world_master()) {
     std::vector<float> data(m_comm->get_num_trainers());
     m_comm->intertrainer_gather(s, data);
@@ -376,7 +375,6 @@ void lbann_summary::gather_scalar_summary(const std::string tag,
   } else {
     m_comm->intertrainer_gather(s, m_comm->get_intertrainer_master());
   }
-#endif
 }
 
 #endif  // LBANN_HAS_TBINF
