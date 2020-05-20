@@ -50,9 +50,9 @@ void variable_minibatch::on_train_begin(model *m) {
   const auto& t = c.get_trainer();
 
   // Get first input layer in model
-  generic_input_layer<DataType>* input = nullptr;
+  input_layer<DataType>* input = nullptr;
   for (auto&& l : m->get_layers()) {
-    input = dynamic_cast<generic_input_layer<DataType>*>(l);
+    input = dynamic_cast<input_layer<DataType>*>(l);
     if (input != nullptr) { break; }
   }
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }
@@ -75,9 +75,9 @@ void variable_minibatch::on_epoch_end(model *m) {
   const auto& t = c.get_trainer();
 
   // Get first input layer in model
-  generic_input_layer<DataType>* input = nullptr;
+  input_layer<DataType>* input = nullptr;
   for (auto&& l : m->get_layers()) {
-    input = dynamic_cast<generic_input_layer<DataType>*>(l);
+    input = dynamic_cast<input_layer<DataType>*>(l);
     if (input != nullptr) { break; }
   }
   if (input == nullptr) { LBANN_ERROR("could not get input layer"); }

@@ -29,7 +29,7 @@
 #include "lbann/callbacks/callback.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/transform/dummy.hpp"
 #include "lbann/layers/transform/split.hpp"
 #include "lbann/layers/transform/evaluation.hpp"
@@ -643,7 +643,7 @@ void model::setup_layer_execution_order() {
   // Find input layers
   std::vector<El::Int> input_layers, other_layers;
   for (El::Int i = 0; i < get_num_layers(); ++i) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(&get_layer(i)) != nullptr) {
+    if (dynamic_cast<input_layer<DataType>*>(&get_layer(i)) != nullptr) {
       input_layers.push_back(i);
     } else {
       other_layers.push_back(i);

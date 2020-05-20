@@ -27,16 +27,190 @@
 #define LBANN_INPUT_LAYER_INSTANTIATE
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/utils/profiling.hpp"
+#include "lbann/callbacks/imcomm.hpp"
 
 namespace lbann {
 
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+void input_layer<TensorDataType, T_layout, Dev>::
+setup_dims(DataReaderMetaData& dr_metadata) {
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  for (int i = 0; i < this->get_num_children(); ++i) {
+    this->set_output_dims(get_data_dims(dr_metadata, i), i);
+  }
+}
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+void input_layer<TensorDataType, T_layout, Dev>::setup_data(size_t max_mini_batch_size) {
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
+
+  // Resize output to maximum mini-batch size
+  for (int i = 0; i < this->get_num_children(); ++i) {
+    auto& output = this->get_activations(i);
+    output.Resize(output.Height(), max_mini_batch_size);
+  }
+}
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+void input_layer<TensorDataType, T_layout, Dev>::fp_setup_outputs(El::Int mini_batch_size) {
+  /// During model setup there is no valid execution context, but
+  /// during execution there is a context
+  if(this->m_model->has_valid_execution_context()) {
+    auto& c = static_cast<sgd_execution_context&>(this->m_model->get_execution_context());
+    auto mode = c.get_execution_mode();
+    data_coordinator& dc = c.get_trainer().get_data_coordinator();
+    // Determine model mini-batch size and effective mini-batch size
+    // Note: If inter-model communication is activated, the effective
+    // mini-batch is equal to the global mini-batch size.
+    /// @todo This functionality should probably be moved elsewhere
+    mini_batch_size = dc.get_current_mini_batch_size(mode);
+
+    auto effective_mini_batch_size = mini_batch_size;
+    for (auto&& cb : this->m_model->get_callbacks()) {
+      if (dynamic_cast<callback::imcomm*>(cb) != nullptr) {
+        effective_mini_batch_size = dc.get_current_global_mini_batch_size(mode);
+        break;
+      }
+    }
+
+    // Set mini-batch size in model
+    c.set_current_mini_batch_size(mini_batch_size);
+    c.set_effective_mini_batch_size(effective_mini_batch_size);
+  }
+
+  // Initialize matrices
+  data_type_layer<TensorDataType>::fp_setup_outputs(mini_batch_size);
+}
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+void input_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  execution_mode mode = this->m_model->get_execution_context().get_execution_mode();
+  buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
+
+  partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
+  // generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[dc.get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
+
+  // if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
+  // Use the predetermined size of the mini-batch to set the current
+  // batch size for the neural network
+  int num_samples_in_batch = dc.get_current_mini_batch_size(mode);
+
+  dc.update_num_samples_processed(mode, num_samples_in_batch);
+  if(this->m_expected_num_child_layers == 1) {
+    io_buffer->distribute_from_local_matrix(dc.get_data_reader(mode), mode, this->get_activations(0));
+  }else {
+    io_buffer->distribute_from_local_matrix(dc.get_data_reader(mode), mode, this->get_activations(0), this->get_activations(1));
+  }
+  // }else {
+  //   LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
+  // }
+
+}
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+bool input_layer<TensorDataType, T_layout, Dev>::
+save_to_checkpoint_shared(persist& p) const {
+  // save state of data readers from input layer
+  if(p.get_cb_type() == callback_type::execution_context_only
+     || p.get_cb_type() == callback_type::full_checkpoint){
+
+    this->m_model->get_execution_context().get_trainer().get_data_coordinator().save_to_checkpoint_shared(p);
+
+    if (this->get_comm()->am_trainer_master()) {
+      write_cereal_archive<const input_layer>(*this, p, execution_mode::training, "_io.xml");
+    }
+
+  }
+  return true;
+}
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+std::vector<int> input_layer<TensorDataType, T_layout, Dev>::
+get_data_dims(DataReaderMetaData& dr_metadata, int child_index) const {
+  if(child_index == 0) {
+    return dr_metadata.data_dims[data_reader_target_mode::INPUT];
+  }else if(child_index == 1) {
+    return dr_metadata.data_dims[this->m_data_reader_mode];
+  }else {
+    LBANN_ERROR("get_data_dims: Invalid child index");
+  }
+  return std::vector<int>(1, 0);
+}
+
+// reload state of IO from a checkpoint
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+bool input_layer<TensorDataType, T_layout, Dev>::
+load_from_checkpoint_shared(persist& p) {
+  // save state of the input layer
+  if(p.get_cb_type() == callback_type::execution_context_only
+     || p.get_cb_type() == callback_type::full_checkpoint){
+
+    std::string buf;
+    if (this->get_comm()->am_trainer_master()) {
+      read_cereal_archive<input_layer>(*this, p, execution_mode::training, "_io.xml");
+      buf = create_cereal_archive_binary_string<input_layer>(*this);
+    }
+
+    // TODO: this assumes homogeneous processors
+    // broadcast state from rank 0
+    this->get_comm()->trainer_broadcast(0, buf);
+
+    if (!this->get_comm()->am_trainer_master()) {
+      unpack_cereal_archive_binary_string<input_layer>(*this, buf);
+    }
+
+  }
+  return true;
+}
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+bool input_layer<TensorDataType, T_layout, Dev>::
+save_to_checkpoint_distributed(persist& p) const {
+  // save state of data readers from input layer
+  if(p.get_cb_type() == callback_type::execution_context_only || p.get_cb_type() == callback_type::full_checkpoint) {
+    this->m_model->get_execution_context().get_trainer().get_data_coordinator().save_to_checkpoint_distributed(p);
+
+    write_cereal_archive<const input_layer>(*this, p, execution_mode::training, "_io.xml");
+  }
+  return true;
+}
+
+template <typename TensorDataType,
+          data_layout T_layout,
+          El::Device Dev>
+bool input_layer<TensorDataType, T_layout, Dev>::
+load_from_checkpoint_distributed(persist& p) {
+  // load state of data readers for input layer
+
+  this->m_model->get_execution_context().get_trainer().get_data_coordinator().load_from_checkpoint_distributed(p);
+
+  read_cereal_archive<input_layer>(*this, p, execution_mode::training, "_io.xml");
+  return true;
+}
+
 #ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
+input_distconv_adapter<TensorDataType, T_layout, Dev>::
 input_distconv_adapter(Layer& layer, const bool shuffle_required)
-    : data_type_distconv_adapter<TensorDataType>(layer),
-      m_shuffle_required(shuffle_required) {
+  : data_type_distconv_adapter<TensorDataType>(layer),
+  m_shuffle_required(shuffle_required) {
   // Input data is only processed when its consumer layer is also
   // enabled for distconv
   for (int i = 0; i < layer.get_num_children(); ++i) {
@@ -47,9 +221,9 @@ input_distconv_adapter(Layer& layer, const bool shuffle_required)
   }
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-bool input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
+bool input_distconv_adapter<TensorDataType, T_layout, Dev>::
 is_input_processed(size_t index) const {
   if (index >= m_is_input_processed.size()) {
     LBANN_ERROR("Invalid index: ", index);
@@ -57,10 +231,10 @@ is_input_processed(size_t index) const {
   return m_is_input_processed[index];
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-typename input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::TensorHostShuffler&
-input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::get_shuffler(
+typename input_distconv_adapter<TensorDataType, T_layout, Dev>::TensorHostShuffler&
+input_distconv_adapter<TensorDataType, T_layout, Dev>::get_shuffler(
     const TensorHost &src, const TensorHost &dst, int mat_idx) {
   size_t cur_mb_size = src.get_shape()[dc::get_sample_dim()];
   auto src_buf = m_shuffler_src_buf.get();
@@ -84,9 +258,9 @@ input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::get_shuffler
   return *shfl;
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::setup_fp_tensors() {
+void input_distconv_adapter<TensorDataType, T_layout, Dev>::setup_fp_tensors() {
   const auto sample_dist = dc::get_hydrogen_data_parallel_distribution(
       dc::get_num_dims(this->layer()));
   for (int mat_idx = 0; mat_idx < this->layer().get_num_children(); ++mat_idx) {
@@ -144,10 +318,10 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::setup_f
   this->setup_activations();
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-std::unique_ptr<typename input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::TensorDevType>
-input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
+std::unique_ptr<typename input_distconv_adapter<TensorDataType, T_layout, Dev>::TensorDevType>
+input_distconv_adapter<TensorDataType, T_layout, Dev>::
 setup_activations_i(int index) const {
   if (!is_input_processed(index)) return nullptr;
   if (index == 0) {
@@ -171,18 +345,18 @@ setup_activations_i(int index) const {
   }
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-dc::Shape input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
+dc::Shape input_distconv_adapter<TensorDataType, T_layout, Dev>::
 get_activations_local_shape(int index) const {
   // No enforced local shape as the activations tensor is always
   // copied from the El matrix.
   return dc::Shape(dc::get_num_dims(this->layer()), 0);
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-dc::Shape input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
+dc::Shape input_distconv_adapter<TensorDataType, T_layout, Dev>::
 get_activations_shape(int index) const {
   if (index == 0) {
     return data_type_distconv_adapter<TensorDataType>::
@@ -202,9 +376,9 @@ get_activations_shape(int index) const {
   }
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
+void input_distconv_adapter<TensorDataType, T_layout, Dev>::
 setup_shuffler_buffers(const TensorHost &src, const TensorHost &dst) {
   auto shuffler_src_size = TensorHostShuffler::get_buf_size(src);
   if (m_shuffler_src_buf_size < shuffler_src_size) {
@@ -222,9 +396,9 @@ setup_shuffler_buffers(const TensorHost &src, const TensorHost &dst) {
   }
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-bool input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
+bool input_distconv_adapter<TensorDataType, T_layout, Dev>::
 child_copy_required(size_t output_index) const {
   // Not required when label is not handled.
   if (output_index == 1 && !is_input_processed(1)) {
@@ -235,9 +409,9 @@ child_copy_required(size_t output_index) const {
   }
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-bool input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::
+bool input_distconv_adapter<TensorDataType, T_layout, Dev>::
 child_shuffle_required(size_t output_index) const {
   // Not required when label is not handled.
   if (output_index == 1 && !is_input_processed(1)) {
@@ -248,11 +422,11 @@ child_shuffle_required(size_t output_index) const {
   }
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::fp_compute() {
+void input_distconv_adapter<TensorDataType, T_layout, Dev>::fp_compute() {
   auto &l = dynamic_cast<input_layer<
-    TensorDataType, T_io_buffer, T_layout, Dev>&>(this->layer());
+    TensorDataType, T_layout, Dev>&>(this->layer());
   auto stream = hydrogen::cuda::GetDefaultStream();
   // Note that the mini-batch size of the data reader is not
   // actually the one for the current mini-batch as the mini-batch
@@ -308,30 +482,29 @@ void input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::fp_comp
   }
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-const input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>&
-input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::get_distconv_adapter() const {
+const input_distconv_adapter<TensorDataType, T_layout, Dev>&
+input_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
   return dynamic_cast<const input_distconv_adapter<
-    TensorDataType, T_io_buffer, T_layout, Dev>&>(
+    TensorDataType, T_layout, Dev>&>(
         data_type_layer<TensorDataType>::get_distconv_adapter());
 }
 
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
-input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>&
-input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::get_distconv_adapter() {
+input_distconv_adapter<TensorDataType, T_layout, Dev>&
+input_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
   return const_cast<input_distconv_adapter<
-    TensorDataType, T_io_buffer, T_layout, Dev>&>(
+    TensorDataType, T_layout, Dev>&>(
         static_cast<const input_layer<
-        TensorDataType, T_io_buffer, T_layout, Dev>&>(*this).get_distconv_adapter());
+        TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
 }
 
 template <typename TensorDataType,
-          typename T_io_buffer,
           data_layout T_layout,
           El::Device Dev>
-bool input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::
+bool input_layer<TensorDataType, T_layout, Dev>::
 keep_original_outputs(int index) const {
   // The original output matrices are always needed as we copy them
   // into distconv tensors.
@@ -339,10 +512,9 @@ keep_original_outputs(int index) const {
 }
 
 template <typename TensorDataType,
-          typename T_io_buffer,
           data_layout T_layout,
           El::Device Dev>
-void input_layer<TensorDataType, T_io_buffer, T_layout, Dev>::
+void input_layer<TensorDataType, T_layout, Dev>::
 fp_compute() {
   generic_input_layer<TensorDataType>::fp_compute();
   if (this->distconv_enabled()) {
@@ -352,7 +524,7 @@ fp_compute() {
 #endif // LBANN_HAS_DISTCONV
 
 #define PROTO_DEVICE(T, Device) \
-  template class input_layer<T, partitioned_io_buffer<T>, data_layout::DATA_PARALLEL, Device>
+  template class input_layer<T, data_layout::DATA_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 

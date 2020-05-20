@@ -46,7 +46,7 @@ void debug_io::on_epoch_begin(model *m) {
 }
 
 void debug_io::on_forward_prop_begin(model *m, Layer *l) {
-  auto *input = dynamic_cast<generic_input_layer<DataType>*>(l);
+  auto *input = dynamic_cast<input_layer<DataType>*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
   }
@@ -64,7 +64,7 @@ void debug_io::on_forward_prop_begin(model *m, Layer *l) {
   /// I think that the reset mini batch index may be off
 }
 
-void debug_io::print_fp_start(model *m, generic_input_layer<DataType> *input) {
+void debug_io::print_fp_start(model *m, input_layer<DataType> *input) {
   const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
   const data_coordinator& dc = c.get_trainer().get_data_coordinator();
   const auto& step = c.get_step();
@@ -137,7 +137,7 @@ void debug_io::on_validation_begin(model *m) {
 }
 
 void debug_io::on_evaluate_forward_prop_begin(model *m, Layer *l) {
-  auto *input = dynamic_cast<generic_input_layer<DataType>*>(l);
+  auto *input = dynamic_cast<input_layer<DataType>*>(l);
   if (input == nullptr || m_debug_lvl < 1) {
     return;
   }

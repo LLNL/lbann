@@ -27,7 +27,9 @@
 #ifndef LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 #define LBANN_LAYERS_INPUT_LAYER_HPP_INCLUDED
 
-#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
+#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/distconv.hpp"
 #include "lbann/models/model.hpp"
@@ -36,10 +38,16 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <cereal/types/utility.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/xml.hpp>
+
 namespace lbann {
 
 #ifdef LBANN_HAS_DISTCONV
-template <typename TensorDataType, typename T_io_buffer,
+template <typename TensorDataType,
           data_layout T_layout, El::Device Dev>
 class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
@@ -92,32 +100,91 @@ class input_distconv_adapter: public data_type_distconv_adapter<TensorDataType> 
 
 /** @brief Interface with data reader. */
 template <typename TensorDataType,
-          typename T_io_buffer,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
-class input_layer : public generic_input_layer<TensorDataType> {
+class input_layer : public data_type_layer<TensorDataType> {
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "input layer only supports DATA_PARALLEL data layout");
+ protected:
+  data_reader_target_mode m_data_reader_mode;
+
  public:
 
   /// @todo make the map and vector references
   input_layer(lbann_comm *comm,
               data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
-    : generic_input_layer<TensorDataType>(comm, dr_mode) {
+    : data_type_layer<TensorDataType>(comm),
+    m_data_reader_mode(dr_mode) {
+
+    // Input layers have no parents
+    this->m_expected_num_parent_layers = 0;
+    if(dr_mode == data_reader_target_mode::NA) {
+      this->m_expected_num_child_layers = 1;
+    }else {
+      // Input layers output a sample and target, which could be the
+      // original value, categorical label, or regression value
+      this->m_expected_num_child_layers = 2;
+    }
   }
+
   input_layer(const input_layer&) = default;
   input_layer& operator=(const input_layer&) = default;
   input_layer* copy() const override {
     return new input_layer(*this);
   }
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_data_reader_mode));
+  }
+
   std::string get_type() const override { return "input"; }
+  // description get_description() const override {
+  //   auto desc = io_layer<TensorDataType>::get_description();
+  //   return desc;
+  // }
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+
+  void setup_dims(DataReaderMetaData& dr_metadata);
+
+  void setup_data(size_t max_mini_batch_size);
+
+  /** Setup output tensors.
+   *  Sets up the effective (global) mini-batch size.
+   */
+  void fp_setup_outputs(El::Int mini_batch_size) override;
+
+  void fp_compute() override;
+
+  /**
+   * Get the dimensions of the underlying data.
+   */
+  std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const;
+
+  bool is_for_regression() const {
+    return (m_data_reader_mode == data_reader_target_mode::REGRESSION);
+  }
+
+  /** @brief Checkpoint and restore functions */
+///{@
+  // save state of IO to a checkpoint
+  bool save_to_checkpoint_shared(persist& p) const override;
+
+  // reload state of IO from a checkpoint
+  bool load_from_checkpoint_shared(persist& p) override;
+
+  bool save_to_checkpoint_distributed(persist& p) const override;
+
+  bool load_from_checkpoint_distributed(persist& p) override;
+///@}
+
 #ifdef LBANN_HAS_DISTCONV
+  /** @brief Extensions for distributed convolutions */
+///{@
   void fp_compute () override;
-  using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>;
+  using distconv_adapter_type = input_distconv_adapter<TensorDataType, T_layout, Dev>;
   friend distconv_adapter_type;
  protected:
   bool is_distconv_supported() const override {
@@ -130,6 +197,7 @@ class input_layer : public generic_input_layer<TensorDataType> {
   distconv_adapter_type& get_distconv_adapter() override;
   const distconv_adapter_type& get_distconv_adapter() const override;
   bool keep_original_outputs(int index) const override;
+///@}
 #endif // LBANN_HAS_DISTCONV
 };
 
@@ -137,8 +205,7 @@ class input_layer : public generic_input_layer<TensorDataType> {
 
 #define PROTO_DEVICE(T, Device)         \
   extern template class input_layer<    \
-    T, partitioned_io_buffer<T>,        \
-    data_layout::DATA_PARALLEL, Device>
+    T, data_layout::DATA_PARALLEL, Device>
 
 #include "lbann/macros/instantiate_device.hpp"
 #undef PROTO_DEVICE

@@ -26,7 +26,7 @@
 
 #include "lbann/callbacks/check_gradients.hpp"
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/layers/io/input/generic_input_layer.hpp"
+#include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
 
@@ -52,7 +52,7 @@ EvalType compute_objective_function(model& m) {
 
   // Forward prop, skipping input layers
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(l) == nullptr) {
+    if (dynamic_cast<input_layer<DataType>*>(l) == nullptr) {
       l->forward_prop();
     }
   }
@@ -220,7 +220,7 @@ void check_gradients::do_check_gradients(model& m) const {
   data_coordinator& dc = c.get_trainer().get_data_coordinator();
   dc.fetch_data(mode);
   for (auto&& l : m.get_layers()) {
-    if (dynamic_cast<generic_input_layer<DataType>*>(l) != nullptr) {
+    if (dynamic_cast<input_layer<DataType>*>(l) != nullptr) {
       l->forward_prop();
     }
   }

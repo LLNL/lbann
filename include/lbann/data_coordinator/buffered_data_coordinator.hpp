@@ -40,6 +40,8 @@ class buffered_data_coordinator : public data_coordinator {
   /** @name Public Types */
   ///@{
 
+  using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
+
   /** @brief The local tensor type expected for IO in this object. */
   using IODataType = DataType;
 

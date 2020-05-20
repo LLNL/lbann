@@ -38,9 +38,9 @@
 #include "lbann/layers/activations/log_softmax.hpp"
 #include "lbann/layers/activations/softmax.hpp"
 #include "lbann/layers/image/bilinear_resize.hpp"
-#include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/io_layer.hpp"
+#include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/channelwise_fully_connected.hpp"
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 #include "lbann/layers/learning/convolution.hpp"
@@ -342,7 +342,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
     if ((typeid(TensorDataType) == typeid(DataType))
         && (Layout == data_layout::DATA_PARALLEL)) {
       return lbann::make_unique<input_layer<DataType,
-                                            partitioned_io_buffer<DataType>,
                                             data_layout::DATA_PARALLEL,
                                             Device>>(comm,
                                                      target_mode);

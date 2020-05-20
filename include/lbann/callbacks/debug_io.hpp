@@ -75,7 +75,7 @@ class debug_io : public callback_base {
   void on_test_begin(model *m) override;
 
   /** Common format for printing I/O stats at the start of a mini-batch */
-  void print_fp_start(model *m, generic_input_layer<DataType> *input);
+  void print_fp_start(model *m, input_layer<DataType> *input);
   /** Common format for printing I/O stats at the start of a phase */
   void print_phase_start(model *m, execution_mode mode);
 
