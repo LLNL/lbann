@@ -26,7 +26,7 @@
 
 #include "lbann/callbacks/check_gradients.hpp"
 #include "lbann/data_readers/data_reader.hpp"
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/memory.hpp"
 

@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/sync_layers.hpp"
 
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/timer.hpp"
 

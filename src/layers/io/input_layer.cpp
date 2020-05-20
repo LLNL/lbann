@@ -25,7 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #define LBANN_INPUT_LAYER_INSTANTIATE
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/profiling.hpp"
 #include "lbann/callbacks/imcomm.hpp"
 

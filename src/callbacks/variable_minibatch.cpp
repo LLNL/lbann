@@ -28,7 +28,7 @@
 
 #include "lbann/callbacks/variable_minibatch.hpp"
 
-#include "lbann/layers/io/input/input_layer.hpp"
+#include "lbann/layers/io/input_layer.hpp"
 #include "lbann/utils/exception.hpp"
 
 #include <callbacks.pb.h>
