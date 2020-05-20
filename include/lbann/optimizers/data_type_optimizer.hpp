@@ -36,7 +36,15 @@ template <typename TensorDataType>
 class data_type_weights;
 
 template <typename TensorDataType>
-class data_type_optimizer : public optimizer {
+class data_type_optimizer
+  : public Cloneable<
+             HasAbstractFunction<data_type_optimizer<TensorDataType>>,
+             optimizer> {
+
+  using BaseType =
+    Cloneable<HasAbstractFunction<data_type_optimizer<TensorDataType>>,
+              optimizer>;
+
   friend class data_type_weights<TensorDataType>;
 
 public:
@@ -53,15 +61,7 @@ public:
 
 public:
   data_type_optimizer(TensorDataType learning_rate = 0);
-  data_type_optimizer(const data_type_optimizer& other);
-  data_type_optimizer& operator=(const data_type_optimizer& other);
   virtual ~data_type_optimizer() = default;
-
-  /** @brief Create a copy of the class instance.
-   *
-   *  The caller is responsible for deallocating the returned object.
-   */
-  virtual data_type_optimizer* copy() const override = 0;
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {
@@ -133,15 +133,6 @@ public:
    */
   virtual void setup(data_type_weights<TensorDataType>* w = nullptr);
 
-  /** @brief Unregister a gradient source.
-   *
-   *  When an object adds its contribution to the objective function
-   *  gradient during back prop, it should unregister itself. If there
-   *  are no more gradient sources remaining, a non-blocking allreduce
-   *  will be launched on the gradient, if needed.
-   */
-  void remove_gradient_source(const void* source) override;
-
   /** @brief Optimization step. */
   void step() override;
 
@@ -151,6 +142,9 @@ public:
   void set_learning_rate(TensorDataType learning_rate);
 
 protected:
+
+  data_type_optimizer(const data_type_optimizer& other);
+  data_type_optimizer& operator=(const data_type_optimizer& other);
 
   /** @brief Computation for an optimization step.
    *
@@ -197,7 +191,7 @@ private:
    *  Does nothing if an allreduce is not needed or has already been
    *  started.
    */
-  void start_gradient_allreduce();
+  void start_gradient_allreduce() final;
 
   /** @brief Synchronize non-blocking allreduce on the gradient, if needed.
    *

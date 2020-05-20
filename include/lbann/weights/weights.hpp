@@ -30,6 +30,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/description.hpp"
 
 #include <memory>
@@ -60,7 +61,7 @@ class optimizer;
  *  Note that LBANN weights are similar to Tensorflow variables and
  *  Caffe parameters.
  */
-class weights {
+class weights : public Cloneable<HasAbstractFunction<weights>> {
 private:
   weights();
   // -----------------------------------------------
@@ -71,8 +72,6 @@ private:
 
 public:
   weights(lbann_comm* comm);
-  weights(const weights& other);
-  weights& operator=(const weights& other);
   virtual ~weights() = default;
 
   /** Set weights name.
@@ -87,13 +86,6 @@ public:
     if(m_comm == nullptr) { LBANN_ERROR("weights class has null comm pointer"); }
     return *m_comm;
   }
-
-  /** Create a copy of the weights.
-   *  This function dynamically allocates memory for a weights
-   *  instance and instantiates a copy. The caller is responsible for
-   *  deallocating the instance.
-   */
-  virtual weights* copy() const = 0;
 
   /** Human-readable description. */
   virtual description get_description() const;
@@ -219,6 +211,11 @@ public:
 
   /** Write weights to proto file */
   virtual void write_proto(lbann_data::WeightsData* proto) const = 0;
+
+protected:
+
+  weights(const weights& other);
+  weights& operator=(const weights& other);
 
 private:
 

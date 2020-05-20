@@ -35,8 +35,7 @@ namespace lbann {
 
 template <typename TensorDataType>
 variance_scaling_initializer<TensorDataType>::variance_scaling_initializer(probability_distribution dist)
-  : data_type_weights_initializer<TensorDataType>(),
-    m_prob_dist(dist),
+  : m_prob_dist(dist),
     m_fan_in(0),
     m_fan_out(0) {
   if (m_prob_dist != probability_distribution::gaussian

@@ -28,6 +28,7 @@
 #define LBANN_WEIGHTS_VARIANCE_SCALING_INITIALIZER_HPP
 
 #include "lbann/weights/initializer.hpp"
+#include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/random.hpp"
 
 namespace lbann {
@@ -43,7 +44,10 @@ namespace lbann {
  *  convolution and fully-connected layers.
  */
 template <typename TensorDataType>
-class variance_scaling_initializer : public data_type_weights_initializer<TensorDataType> {
+class variance_scaling_initializer
+  : public Cloneable<
+      HasAbstractFunction<variance_scaling_initializer<TensorDataType>>,
+      data_type_weights_initializer<TensorDataType>> {
 public:
   /** @name Public Types */
   ///@{
@@ -63,7 +67,7 @@ public:
   /** Set fan-out parameter. */
   void set_fan_out(El::Int fan_out) { m_fan_out = fan_out; }
 
-protected:
+private:
   /** Get probability distribution variance. */
   virtual TensorDataType get_variance(El::Int fan_in, El::Int fan_out) = 0;
 
@@ -82,43 +86,46 @@ private:
  *  Also called Xavier initialization.
  */
 template <typename TensorDataType>
-class glorot_initializer : public variance_scaling_initializer<TensorDataType> {
+class glorot_initializer
+  : public Cloneable<glorot_initializer<TensorDataType>,
+                     variance_scaling_initializer<TensorDataType>> {
+  using BaseType = Cloneable<glorot_initializer<TensorDataType>,
+                             variance_scaling_initializer<TensorDataType>>;
 public:
   glorot_initializer(probability_distribution prob_dist)
-    : variance_scaling_initializer<TensorDataType>(prob_dist) {}
-  glorot_initializer* copy() const override {
-    return new glorot_initializer(*this);
-  }
+    : BaseType(prob_dist) {}
   std::string get_type() const override { return "Glorot"; }
-protected:
+private:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
 
 /** @brief Fill weights with variance of 2 / fan-in. */
 template <typename TensorDataType>
-class he_initializer : public variance_scaling_initializer<TensorDataType> {
+class he_initializer
+  : public Cloneable<he_initializer<TensorDataType>,
+                     variance_scaling_initializer<TensorDataType>> {
+  using BaseType = Cloneable<he_initializer<TensorDataType>,
+                             variance_scaling_initializer<TensorDataType>>;
 public:
   he_initializer(probability_distribution prob_dist)
-    : variance_scaling_initializer<TensorDataType>(prob_dist) {}
-  he_initializer* copy() const override {
-    return new he_initializer(*this);
-  }
+    : BaseType(prob_dist) {}
   std::string get_type() const override { return "He"; }
-protected:
+private:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
 
 /** @brief Fill weights with variance of 1 / fan-in. */
 template <typename TensorDataType>
-class lecun_initializer : public variance_scaling_initializer<TensorDataType> {
+class lecun_initializer
+  : public Cloneable<lecun_initializer<TensorDataType>,
+                     variance_scaling_initializer<TensorDataType>> {
+  using BaseType = Cloneable<lecun_initializer<TensorDataType>,
+                             variance_scaling_initializer<TensorDataType>>;
 public:
   lecun_initializer(probability_distribution prob_dist)
-    : variance_scaling_initializer<TensorDataType>(prob_dist) {}
-  lecun_initializer* copy() const override {
-    return new lecun_initializer(*this);
-  }
+    : BaseType(prob_dist) {}
   std::string get_type() const override { return "LeCun"; }
-protected:
+private:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
 

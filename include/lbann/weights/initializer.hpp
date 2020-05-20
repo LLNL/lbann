@@ -28,6 +28,7 @@
 #define LBANN_WEIGHTS_INITIALIZER_HPP
 
 #include "lbann/base.hpp"
+#include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/description.hpp"
 
 #include <google/protobuf/message.h>
@@ -35,7 +36,8 @@
 namespace lbann {
 
 /** @brief Scheme for initializing weight values. */
-class weights_initializer {
+class weights_initializer
+  : public Cloneable<HasAbstractFunction<weights_initializer>> {
 public:
   weights_initializer() = default;
   virtual ~weights_initializer() = default;
@@ -46,14 +48,14 @@ public:
   /** Human-readable description of class instance. */
   virtual description get_description() const;
 
-  /** Create a copy. */
-  virtual weights_initializer* copy() const = 0;
-
 };
 
 /** @brief Scheme for initializing weight values. */
 template <typename TensorDataType>
-class data_type_weights_initializer : public weights_initializer {
+class data_type_weights_initializer
+  : public Cloneable<
+      HasAbstractFunction<data_type_weights_initializer<TensorDataType>>,
+      weights_initializer> {
 public:
   /** @name Public Types */
   ///@{
@@ -64,7 +66,6 @@ public:
 public:
   data_type_weights_initializer() = default;
   virtual ~data_type_weights_initializer() = default;
-  data_type_weights_initializer* copy() const override = 0;
 
   /** Human-readable string describing concrete class. */
   std::string get_type() const override { return "data_type_weights"; }
@@ -76,7 +77,9 @@ public:
 
 /** @brief Fill weights with a constant value. */
 template <typename TensorDataType>
-class constant_initializer : public data_type_weights_initializer<TensorDataType> {
+class constant_initializer
+  : public Cloneable<constant_initializer<TensorDataType>,
+                     data_type_weights_initializer<TensorDataType>> {
 public:
   /** @name Public Types */
   ///@{
@@ -86,10 +89,8 @@ public:
 
 public:
   constant_initializer(TensorDataType value)
-    : data_type_weights_initializer<TensorDataType>(), m_value(value) {}
-  constant_initializer* copy() const override {
-    return new constant_initializer(*this);
-  }
+    : m_value(value)
+  {}
   std::string get_type() const override { return "constant"; }
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;
@@ -107,7 +108,9 @@ private:
  *  provided values.
  */
 template <typename TensorDataType>
-class value_initializer : public data_type_weights_initializer<TensorDataType> {
+class value_initializer
+  : public Cloneable<value_initializer<TensorDataType>,
+                     data_type_weights_initializer<TensorDataType>> {
 public:
   /** @name Public Types */
   ///@{
@@ -117,10 +120,8 @@ public:
 
 public:
   value_initializer(std::vector<TensorDataType> values)
-    : data_type_weights_initializer<TensorDataType>(), m_values(std::move(values)) {}
-  value_initializer* copy() const override {
-    return new value_initializer(*this);
-  }
+    : m_values{std::move(values)}
+  {}
   std::string get_type() const override { return "value"; }
   void fill(AbsDistMatrixType& matrix) override;
 
@@ -133,7 +134,9 @@ private:
 
 /** @brief Draw weights values from a uniform random distribution. */
 template <typename TensorDataType>
-class uniform_initializer : public data_type_weights_initializer<TensorDataType> {
+class uniform_initializer
+  : public Cloneable<uniform_initializer<TensorDataType>,
+                     data_type_weights_initializer<TensorDataType>> {
 public:
   /** @name Public Types */
   ///@{
@@ -144,10 +147,8 @@ public:
  public:
   uniform_initializer(TensorDataType min = El::To<TensorDataType>(0),
                       TensorDataType max = El::To<TensorDataType>(1))
-    : data_type_weights_initializer<TensorDataType>(), m_min(min), m_max(max) {}
-  uniform_initializer* copy() const override {
-    return new uniform_initializer(*this);
-  }
+    : m_min{min}, m_max{max}
+  {}
   std::string get_type() const override{ return "uniform"; }
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;
@@ -163,7 +164,9 @@ private:
 
 /** @brief Draw weights values from a normal random distribution. */
 template <typename TensorDataType>
-class normal_initializer : public data_type_weights_initializer<TensorDataType> {
+class normal_initializer
+  : public Cloneable<normal_initializer<TensorDataType>,
+                     data_type_weights_initializer<TensorDataType>> {
 public:
   /** @name Public Types */
   ///@{
@@ -174,14 +177,12 @@ public:
   ///@}
 
 public:
-  normal_initializer(TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
-                     TensorDataType standard_deviation = El::TypeTraits<TensorDataType>::One())
-    : data_type_weights_initializer<TensorDataType>(),
-      m_mean(mean),
-      m_standard_deviation(standard_deviation) {}
-  normal_initializer* copy() const override {
-    return new normal_initializer(*this);
-  }
+  normal_initializer(
+    TensorDataType mean = El::TypeTraits<TensorDataType>::Zero(),
+    TensorDataType standard_deviation = El::TypeTraits<TensorDataType>::One())
+    : m_mean{mean},
+      m_standard_deviation{standard_deviation}
+  {}
   std::string get_type() const override { return "normal"; }
   description get_description() const override;
   void fill(AbsDistMatrixType& matrix) override;

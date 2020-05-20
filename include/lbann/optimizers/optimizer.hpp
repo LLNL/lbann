@@ -27,18 +27,21 @@
 #ifndef LBANN_OPTIMIZERS_OPTIMIZER_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_OPTIMIZER_HPP_INCLUDED
 
-#include <string>
-#include <memory>
-#include <unordered_set>
-#include "lbann/utils/compiler_control.hpp"
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/utils/description.hpp"
+#include "lbann/utils/cloneable.hpp"
+#include "lbann/utils/compiler_control.hpp"
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/cuda.hpp"
 #endif // LBANN_HAS_GPU
+#include "lbann/utils/description.hpp"
+#include "lbann/utils/exception.hpp"
+
 #include <cereal/types/utility.hpp>
+
+#include <memory>
+#include <string>
+#include <unordered_set>
 
 namespace lbann {
 
@@ -56,7 +59,7 @@ enum class optimizer_gradient_status {
    *  @details Non-blocking allreduce must be synchronized before
    *  accessing.
    */
-  allreduce_started
+  allreduce_started,
 };
 
 /** @brief Human-readable string for status of gradient in optimizer. */
@@ -73,29 +76,24 @@ class persist;
  *  optimization step requires the objective function gradient
  *  w.r.t. the weights.
  */
-class optimizer {
+class optimizer : public Cloneable<HasAbstractFunction<optimizer>> {
 public:
 
+  /** @name Constructors and Destructor */
+  ///@{
+
   optimizer();
-  optimizer(const optimizer& other);
-  optimizer& operator=(const optimizer& other);
   virtual ~optimizer() = default;
 
-  /** Archive for checkpoint and restart */
-  template <class Archive> void serialize(Archive & ar) {
-    // Do not save the optimizer's step time
-  }
-
-  /** @brief Create a copy of the class instance.
-   *
-   *  The caller is responsible for deallocating the returned object.
-   */
-  virtual optimizer* copy() const = 0;
+  ///@}
 
   /** @brief Human-readable type name. */
   virtual std::string get_type() const = 0;
   /** @brief Human-readable description. */
   virtual description get_description() const;
+
+  /** @name Gradient update management */
+  ///@{
 
   /** @brief Zero out the objective function gradient w.r.t. the weights. */
   virtual void clear_gradient() = 0;
@@ -110,6 +108,7 @@ public:
    *  forward prop.
    */
   void add_gradient_source(const void* source);
+
   /** @brief Unregister a gradient source.
    *
    *  When an object adds its contribution to the objective function
@@ -117,22 +116,49 @@ public:
    *  are no more gradient sources remaining, a non-blocking allreduce
    *  will be launched on the gradient, if needed.
    */
-  virtual void remove_gradient_source(const void* source);
+  void remove_gradient_source(const void* source);
 
-  /** @brief Optimization step. */
+  /** @brief Perform optimization step. */
   virtual void step() = 0;
 
-  /** @brief LBANN communicator. */
+  ///@}
+  /** @brief Communicator access */
+  ///@{
+
+  /** @brief Access LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
-  /** @brief LBANN communicator. */
+  /** @brief Access LBANN communicator. */
   const lbann_comm& get_comm() const { return *m_comm; }
+
+  ///@}
+  /** @brief Statistics access and management */
+  ///@{
 
   /** @brief Time spent in optimization step. */
   EvalType get_step_time() const { return m_step_time; }
+
   /** @brief Reset stats counters. */
   virtual void reset_counters() { m_step_time = 0; }
 
+  ///@}
+  /** @name Checkpointing */
+  ///@{
+
+  /** @brief Store state to archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    // Do not save the optimizer's step time
+  }
+
+  virtual bool save_to_checkpoint_shared(persist& p, std::string m_name) = 0;
+  virtual bool load_from_checkpoint_shared(persist& p, std::string m_name) = 0;
+  virtual bool save_to_checkpoint_distributed(persist& p, std::string m_name) = 0;
+  virtual bool load_from_checkpoint_distributed(persist& p, std::string m_name) = 0;
+  ///@}
+
 protected:
+  /** @brief Copy construct/copy assign */
+  optimizer(const optimizer& other);
+  optimizer& operator=(const optimizer& other);
 
   /** @brief Return the current gradient status */
   optimizer_gradient_status get_gradient_status() const { return m_gradient_status; }
@@ -146,6 +172,11 @@ protected:
   void set_step_time(EvalType time) { m_step_time = time; }
 
   void inc_step_time(EvalType time) { m_step_time += time; }
+
+private:
+
+  /** @brief Begin the allreduce on the gradient values. */
+  virtual void start_gradient_allreduce() = 0;
 
 private:
 
@@ -169,16 +200,6 @@ private:
 
   /** @brief Time spent in optimization step. */
   EvalType m_step_time = 0;
-
-public:
-
-  // ===========================================
-  // Checkpointing
-  // ===========================================
-  virtual bool save_to_checkpoint_shared(persist& p, std::string m_name) = 0;
-  virtual bool load_from_checkpoint_shared(persist& p, std::string m_name) = 0;
-  virtual bool save_to_checkpoint_distributed(persist& p, std::string m_name) = 0;
-  virtual bool load_from_checkpoint_distributed(persist& p, std::string m_name) = 0;
 
 };
 

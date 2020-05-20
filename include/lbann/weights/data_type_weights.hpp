@@ -56,7 +56,10 @@ namespace lbann {
  *  Caffe parameters.
  */
 template <typename TensorDataType>
-class data_type_weights : public weights {
+class data_type_weights
+  : public Cloneable<data_type_weights<TensorDataType>, weights> {
+  using BaseType = Cloneable<data_type_weights<TensorDataType>, weights>;
+
 public:
   /** @name Public Types */
   ///@{
@@ -80,13 +83,6 @@ public:
   data_type_weights(const data_type_weights& other);
   data_type_weights& operator=(const data_type_weights& other);
   virtual ~data_type_weights() = default;
-
-  /** Create a copy of the weights.
-   *  This function dynamically allocates memory for a weights
-   *  instance and instantiates a copy. The caller is responsible for
-   *  deallocating the instance.
-   */
-  data_type_weights* copy() const override { return new data_type_weights(*this); }
 
   /** Human-readable description. */
   description get_description() const override;
