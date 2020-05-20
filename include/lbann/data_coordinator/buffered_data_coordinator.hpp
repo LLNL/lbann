@@ -110,9 +110,11 @@ class buffered_data_coordinator : public data_coordinator {
   bool epoch_complete(execution_mode mode);
 
 protected:
+  int fetch_to_local_matrix(const execution_mode mode, partitioned_io_buffer<TensorDataType>* io_buffer);
+
   void fetch_data_in_background(int future_active_buffer, execution_mode mode);
 
-  void setup_next_io_buffer(generic_io_buffer<TensorDataType>* io_buffer, execution_mode mode);
+  void setup_next_io_buffer(partitioned_io_buffer<TensorDataType>* io_buffer, execution_mode mode);
 
   int get_active_buffer_idx(execution_mode m) {
     return m_active_buffer[m].load();
@@ -147,7 +149,7 @@ protected:
  protected:
 
 public:
-  std::vector<generic_io_buffer<TensorDataType>*> m_io_buffers;
+  std::vector<partitioned_io_buffer<TensorDataType>*> m_io_buffers;
   io_buffer_map_t m_active_buffer;
 
 };

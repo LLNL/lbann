@@ -24,8 +24,10 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lbann/data_coordinator/buffered_data_coordinator.hpp>
-#include <lbann/trainers/trainer.hpp>
+#include "lbann/data_coordinator/buffered_data_coordinator.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
+#include "lbann/trainers/trainer.hpp"
+#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 
@@ -43,8 +45,9 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
   for (auto& io_buffer : m_io_buffers) {
     // How much data does the buffer fetch, just the sample or the
     // response as well?
-    for (int i = 0; i < 2; ++i) {
-      io_buffer->fp_setup_data(max_mini_batch_size, i);
+    //    for (int i = 0; i < 2; ++i) {
+    for(auto idt : input_data_type_iterator()) {
+      io_buffer->fp_setup_data(max_mini_batch_size, idt);
     }
   }
 
@@ -55,12 +58,61 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
 }
 
 template <typename TensorDataType>
+int buffered_data_coordinator<TensorDataType>::fetch_to_local_matrix(const execution_mode mode, partitioned_io_buffer<TensorDataType>* io_buffer) {
+  generic_data_reader *data_reader = get_data_reader(mode);
+  int num_parallel_readers = data_reader->get_num_parallel_readers();
+
+  prof_region_begin("fetch_to_local_matrix", prof_colors[2], false);
+  /// Coordinate all available readers so that the perform I/O in the same step
+  /// Check to make sure that the local matrix has space for data
+  data_buffer<IODataType> *buf = io_buffer->get_data_buffer(mode);
+  buf->m_num_samples_fetched = 0;
+  if (this->m_comm->get_rank_in_trainer() < num_parallel_readers
+      && (buf->m_input_buffers[input_data_type::SAMPLES]->Height() != 0 && buf->m_input_buffers[input_data_type::SAMPLES]->Width() != 0)) {
+    /// Each data reader needs to either have independent / split
+    /// data, or take an offset / stride
+
+    /** @brief Each rank will fetch a mini-batch worth of data into it's buffer */
+    buf->m_num_samples_fetched = data_reader->fetch_data(buf->m_input_buffers[input_data_type::SAMPLES]->Matrix(), buf->m_indices_fetched_per_mb);
+    if(data_reader->has_labels()) {
+      int num_labels_fetched = data_reader->fetch_labels(buf->m_input_buffers[input_data_type::LABELS]->Matrix());
+      if(num_labels_fetched != buf->m_num_samples_fetched) {
+        LBANN_ERROR("Number of samples: ",
+                    std::to_string(buf->m_num_samples_fetched),
+                    " does not match the number of labels: ",
+                    std::to_string(num_labels_fetched));
+      }
+    }
+    if(data_reader->has_responses()) {
+      int num_responses_fetched = data_reader->fetch_responses(buf->m_input_buffers[input_data_type::RESPONSES]->Matrix());
+      if(num_responses_fetched != buf->m_num_samples_fetched) {
+        LBANN_ERROR("Number of samples: ",
+                    std::to_string(buf->m_num_samples_fetched),
+                    " does not match the number of responses: ",
+                    std::to_string(num_responses_fetched));
+      }
+    }
+    // if(buf->m_input_buffers.size() == 2) {
+    //   buf->m_num_samples_fetched = (*this->fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_input_buffers[1]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
+    // }else {
+    //   buf->m_num_samples_fetched = (*this->fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
+    // }
+    bool data_valid = (buf->m_num_samples_fetched > 0);
+    if(data_valid) {
+      //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
+    }
+  }
+  prof_region_end("fetch_to_local_matrix", false);
+  return buf->m_num_samples_fetched;
+}
+
+template <typename TensorDataType>
 void buffered_data_coordinator<TensorDataType>::fetch_data_in_background(int future_active_buffer, execution_mode mode) {
   int active_buffer = future_active_buffer % m_io_buffers.size();
-  generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[active_buffer];
+  partitioned_io_buffer<TensorDataType>* io_buffer = m_io_buffers[active_buffer];
   std::lock_guard<std::mutex> guard(dr_mutex);
   setup_next_io_buffer(io_buffer, mode);
-  io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
+  fetch_to_local_matrix(mode, io_buffer);
   return;
 }
 
@@ -76,10 +128,11 @@ void buffered_data_coordinator<TensorDataType>::collect_background_data_fetch(ex
 }
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::setup_next_io_buffer(generic_io_buffer<TensorDataType>* io_buffer, execution_mode mode) {
+void buffered_data_coordinator<TensorDataType>::setup_next_io_buffer(partitioned_io_buffer<TensorDataType>* io_buffer, execution_mode mode) {
   int mini_batch_size = get_current_mini_batch_size(mode);
-  for (int i = 0; i < 2/*this->get_num_children()*/; ++i) {
-    io_buffer->fp_setup_data(mini_batch_size, i);
+  //  for (int i = 0; i < 2/*this->get_num_children()*/; ++i) {
+  for(auto idt : input_data_type_iterator()) {
+    io_buffer->fp_setup_data(mini_batch_size, idt);
   }
 }
 
@@ -88,7 +141,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode) 
 
   increment_active_buffer_idx(mode);
 
-  generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[this->get_active_buffer_idx(mode) % m_io_buffers.size()];
+  partitioned_io_buffer<TensorDataType>* io_buffer = m_io_buffers[this->get_active_buffer_idx(mode) % m_io_buffers.size()];
 
   // If there is no valid data and there is not already a background
   // thread to fetch the data, queue up the background thread
@@ -119,7 +172,7 @@ void buffered_data_coordinator<TensorDataType>::fetch_data(execution_mode mode) 
 
 template <typename TensorDataType>
 bool buffered_data_coordinator<TensorDataType>::epoch_complete(execution_mode mode) {
-  generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[this->get_active_buffer_idx(mode) % m_io_buffers.size()];
+  partitioned_io_buffer<TensorDataType>* io_buffer = m_io_buffers[this->get_active_buffer_idx(mode) % m_io_buffers.size()];
 
   m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
 
@@ -127,7 +180,7 @@ bool buffered_data_coordinator<TensorDataType>::epoch_complete(execution_mode mo
     int next_active_buffer = this->get_active_buffer_idx(mode) + 1;
     std::future<void> background_fetch_done = get_io_thread_pool().submit_job(
       std::bind(&buffered_data_coordinator::fetch_data_in_background, this, next_active_buffer, mode));
-    generic_io_buffer<TensorDataType>* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
+    partitioned_io_buffer<TensorDataType>* next_io_buffer = m_io_buffers[next_active_buffer % m_io_buffers.size()];
     next_io_buffer->set_data_fetch_future(std::move(background_fetch_done), mode);
     next_io_buffer->set_fetch_data_in_background(true, mode);
   }
@@ -144,7 +197,7 @@ partitioned_io_buffer<TensorDataType>* buffered_data_coordinator<TensorDataType>
    */
 template <typename TensorDataType>
 El::Matrix<El::Int>* buffered_data_coordinator<TensorDataType>::get_sample_indices_per_mb(execution_mode mode) {
-  generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
+  partitioned_io_buffer<TensorDataType>* io_buffer = m_io_buffers[get_active_buffer_idx(mode) % m_io_buffers.size()];
   return io_buffer->get_sample_indices_fetched_per_mb(mode);
 }
 

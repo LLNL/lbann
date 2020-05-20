@@ -28,6 +28,7 @@
 #define LBANN_PARTITIONED_IO_BUFFER_HPP_INCLUDED
 
 #include "lbann/io/data_buffers/generic_io_buffer.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
 
 namespace lbann {
 
@@ -46,7 +47,7 @@ public:
   /** Number of samples in the current mini-batch */
   int m_num_samples_fetched;
   /** Distributed matrix used to stage local data to layer output */
-  std::vector<std::unique_ptr<AbsDistMatrixType>> m_input_buffers;
+  std::map<input_data_type, std::unique_ptr<AbsDistMatrixType>> m_input_buffers;
   std::atomic<bool> m_fetch_data_in_background;
   std::future<void> m_data_fetch_future;
   /// 1-D Matrix of which indices were fetched in this mini-batch
@@ -56,9 +57,10 @@ public:
     m_num_samples_fetched(0), m_fetch_data_in_background(false)
   {
     m_input_buffers.clear();
-    m_input_buffers.resize(num_child_layers);
-    for(int i = 0; i < num_child_layers; i++) {
-      m_input_buffers[i].reset(new StarVCMatDT<TensorDataType, El::Device::CPU>(comm->get_trainer_grid()));
+    //    m_input_buffers.resize(num_child_layers);
+    //    for(int i = 0; i < num_child_layers; i++) {
+    for(auto idt : input_data_type_iterator()) {
+      m_input_buffers[idt].reset(new StarVCMatDT<TensorDataType, El::Device::CPU>(comm->get_trainer_grid()));
     }
   }
 
@@ -67,19 +69,19 @@ public:
   {
     m_fetch_data_in_background.store(other.m_fetch_data_in_background);
     m_input_buffers.clear();
-    m_input_buffers.reserve(other.m_input_buffers.size());
-    for (const auto& ptr : other.m_input_buffers) {
-      m_input_buffers.emplace_back(ptr ? ptr->Copy() : nullptr);
-    }
+    // m_input_buffers.reserve(other.m_input_buffers.size());
+    // for (const auto& ptr : other.m_input_buffers) {
+    //   m_input_buffers.emplace_back(ptr ? ptr->Copy() : nullptr);
+    // }
   }
   data_buffer& operator=(const data_buffer& other) {
     m_num_samples_fetched = other.m_num_samples_fetched;
     m_fetch_data_in_background.store(other.m_fetch_data_in_background);
     m_input_buffers.clear();
-    m_input_buffers.reserve(other.m_input_buffers.size());
-    for (const auto& ptr : other.m_input_buffers) {
-      m_input_buffers.emplace_back(ptr ? ptr->Copy() : nullptr);
-    }
+    // m_input_buffers.reserve(other.m_input_buffers.size());
+    // for (const auto& ptr : other.m_input_buffers) {
+    //   m_input_buffers.emplace_back(ptr ? ptr->Copy() : nullptr);
+    // }
     return *this;
   }
   data_buffer* copy() const { return new data_buffer(*this); }
@@ -113,10 +115,9 @@ public:
 
   std::string get_type() const override { return "partitioned"; }
 
-  void fp_setup_data(El::Int cur_mini_batch_size, int idx) override;
+  void fp_setup_data(El::Int cur_mini_batch_size, input_data_type idx);
   void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) override;
 
-  int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response) override;
   void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample) override;
   bool update_data_set(generic_data_reader *data_reader, execution_mode mode) override;

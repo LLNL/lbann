@@ -124,10 +124,10 @@ public:
 
   /** Return this buffer's type, e.g: "partitioned_io_buffer," etc. */
   virtual std::string get_type() const = 0;
-  virtual void fp_setup_data(El::Int cur_mini_batch_size, int idx) = 0;
+  //  virtual void fp_setup_data(El::Int cur_mini_batch_size, int idx) = 0;
   virtual void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_minibatch_size) = 0;
 
-  virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) = 0;
+  //  virtual int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) = 0;
   virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response) {}
   virtual void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample) {}
   virtual bool update_data_set(generic_data_reader *data_reader, execution_mode mode) = 0;

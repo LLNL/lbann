@@ -32,6 +32,7 @@
 #include "lbann/base.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/random_number_generators.hpp"
+#include "lbann/data_readers/utils/input_data_type.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"
@@ -109,6 +110,11 @@ class generic_data_reader {
     m_trainer(nullptr),
     m_issue_warning(true)
   {
+    // By default only support fetching input samples
+    for(auto i : input_data_type_iterator()) {
+      m_supported_input_types[i] = false;
+    }
+    m_supported_input_types[input_data_type::SAMPLES] = true;
   }
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
@@ -120,7 +126,8 @@ class generic_data_reader {
   template <class Archive> void serialize( Archive & ar ) {
     ar(CEREAL_NVP(m_current_mini_batch_idx),
        CEREAL_NVP(m_current_pos),
-       CEREAL_NVP(m_shuffled_indices));
+       CEREAL_NVP(m_shuffled_indices),
+       CEREAL_NVP(m_supported_input_types));
   }
 
   /// set the comm object
@@ -305,6 +312,9 @@ class generic_data_reader {
   virtual int fetch_labels(CPUMat& Y);
   /// Fetch this mini-batch's responses into Y.
   virtual int fetch_responses(CPUMat& Y);
+
+  virtual bool has_labels() { return m_supported_input_types[input_data_type::LABELS]; }
+  virtual bool has_responses() { return m_supported_input_types[input_data_type::RESPONSES]; }
 
   /**
    * During the network's update phase, the data reader will
@@ -835,6 +845,10 @@ private:
   }
 
  protected :
+  /** @brief Holds a true value for each input data type that is supported.
+   *  Use an ordered map so that checkpoints are stable. */
+  std::map<input_data_type, bool> m_supported_input_types;
+
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0

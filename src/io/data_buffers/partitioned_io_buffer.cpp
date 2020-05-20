@@ -70,7 +70,7 @@ partitioned_io_buffer<TensorDataType>& partitioned_io_buffer<TensorDataType>::op
 }
 
 template <typename TensorDataType>
-void partitioned_io_buffer<TensorDataType>::fp_setup_data(El::Int cur_mini_batch_size, int idx) {
+void partitioned_io_buffer<TensorDataType>::fp_setup_data(El::Int cur_mini_batch_size, input_data_type idx) {
 #ifdef LBANN_HAS_DISTCONV
   cur_mini_batch_size *= dc::get_number_of_io_partitions();
 #endif
@@ -105,17 +105,20 @@ void partitioned_io_buffer<TensorDataType>::setup_data(El::Int num_neurons, El::
   }
   for (const auto& it : m_data_buffers) {
     data_buffer<IODataType> *data_buffer = it.second;
-    int i = 0;
-    for (const auto& buf : data_buffer->m_input_buffers) {
-      if(i == 0) {
-        buf->Resize(num_neurons, max_mini_batch_size);
-      }else if(i == 1) {
-        buf->Resize(num_targets, max_mini_batch_size);
-      }else {
-        LBANN_ERROR("Unsupported number of input channels");
-      }
-      i++;
-    }
+    //    int i = 0;
+    //    for (const auto& buf : data_buffer->m_input_buffers) {
+    // for (auto i : input_data_type_interator) {
+      data_buffer->m_input_buffers[input_data_type::SAMPLES]->Resize(num_neurons, max_mini_batch_size);
+      data_buffer->m_input_buffers[input_data_type::LABELS]->Resize(num_targets, max_mini_batch_size);
+    //   if(i == 0) {
+    //     buf->Resize(num_neurons, max_mini_batch_size);
+    //   }else if(i == 1) {
+    //     buf->Resize(num_targets, max_mini_batch_size);
+    //   }else {
+    //     LBANN_ERROR("Unsupported number of input channels");
+    //   }
+    //   i++;
+    // }
     /// The amount of space needed will vary based on input layer type,
     /// but the batch size is the maximum space necessary
     El::Zeros_seq(data_buffer->m_indices_fetched_per_mb, local_mini_batch_size, 1);
@@ -123,37 +126,11 @@ void partitioned_io_buffer<TensorDataType>::setup_data(El::Int num_neurons, El::
 }
 
 template <typename TensorDataType>
-int partitioned_io_buffer<TensorDataType>::fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) {
-  int num_parallel_readers = data_reader->get_num_parallel_readers();
-
-  prof_region_begin("fetch_to_local_matrix", prof_colors[2], false);
-  /// Coordinate all available readers so that the perform I/O in the same step
-  /// Check to make sure that the local matrix has space for data
-  data_buffer<IODataType> *buf = get_data_buffer(mode);
-  buf->m_num_samples_fetched = 0;
-  if (this->m_comm->get_rank_in_trainer() < num_parallel_readers && (buf->m_input_buffers[0]->Height() != 0 && buf->m_input_buffers[0]->Width() != 0)) {
-    /// Each data reader needs to either have independent / split
-    /// data, or take an offset / stride
-    if(buf->m_input_buffers.size() == 2) {
-      buf->m_num_samples_fetched = (*this->fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_input_buffers[1]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
-    }else {
-      buf->m_num_samples_fetched = (*this->fetch_data_fn)(buf->m_input_buffers[0]->Matrix(), buf->m_indices_fetched_per_mb, data_reader);
-    }
-    bool data_valid = (buf->m_num_samples_fetched > 0);
-    if(data_valid) {
-      //      m_num_data_per_epoch+=num_samples_fetched; /// BVE FIXME need to change how this is shared
-    }
-  }
-  prof_region_end("fetch_to_local_matrix", false);
-  return buf->m_num_samples_fetched;
-}
-
-template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response) {
   prof_region_begin("distribute_from_local_matrix", prof_colors[3], false);
   data_buffer<IODataType> *buf = get_data_buffer(mode);
-  Copy(*buf->m_input_buffers[0], sample);
-  Copy(*buf->m_input_buffers[1], response);
+  Copy(*buf->m_input_buffers[input_data_type::SAMPLES], sample);
+  Copy(*buf->m_input_buffers[input_data_type::LABELS], response);
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled()) {
     response.Resize(response.Height(), response.Width() /
@@ -168,7 +145,7 @@ void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic
 template <typename TensorDataType>
 void partitioned_io_buffer<TensorDataType>::distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample) {
   data_buffer<IODataType> *buf = get_data_buffer(mode);
-  Copy(*buf->m_input_buffers[0], sample);
+  Copy(*buf->m_input_buffers[input_data_type::SAMPLES], sample);
   buf->m_num_samples_fetched = 0;
   return;
 }
