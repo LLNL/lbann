@@ -53,7 +53,8 @@ STD_MODULES=$(cat <<EOF
       core_compilers:
         - 'gcc@7.3.0'
         - 'gcc@7.3.1'
-      naming_scheme: '\${PACKAGE}/\${VERSION}-\${COMPILERNAME}-\${COMPILERVER}'
+      projections:
+        all: '\${PACKAGE}/\${VERSION}-\${COMPILERNAME}-\${COMPILERVER}'
       blacklist:
         - '%gcc@4.8'
         - '%gcc@4.9.3'
@@ -75,7 +76,8 @@ STD_MODULES=$(cat <<EOF
       core_compilers:
         - 'gcc@7.3.0'
         - 'gcc@7.3.1'
-      naming_scheme: '\${PACKAGE}/\${VERSION}-\${COMPILERNAME}-\${COMPILERVER}'
+      projections:
+        all: '\${PACKAGE}/\${VERSION}-\${COMPILERNAME}-\${COMPILERVER}'
       whitelist:
         - gcc
       blacklist:
