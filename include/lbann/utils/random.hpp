@@ -130,7 +130,8 @@ struct random_uniform_impl<Generator, float> {
     // float has a 24-bit significand, including an implicit bit. See
     // section on converting uint64_ts to doubles in
     // http://xoshiro.di.unimi.it/
-    const uint32_t r = g();
+    constexpr uint64_t mask32 = 0xFFFFFFFFull;
+    const uint64_t r = uint64_t(g()) & mask32;
     return (r >> 8) * (1.0f / 16777216.0f);
   }
 };
