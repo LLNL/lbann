@@ -83,25 +83,9 @@ int main(int argc, char *argv[]) {
                                    training_dr_linearized_data_size));
     }
 
-    // Load layer weights from checkpoint if checkpoint directory given
-    if(opts->has_string("ckpt_dir")){
-      for(auto&& m : models) {
-        auto&& dirs = parse_list<std::string>(opts->get_string("ckpt_dir"));
-        for(auto&& d : dirs) { //load file from each (space limited) directory
-          bool loaded = callback::load_model::load_model_weights(d,
-              "sgd",
-               m.get(),
-               opts->get_bool("ckptdir_is_fullpath"));
-           if(!loaded)  LBANN_ERROR("Unable to reload model");
-        }
-      }
-    }else {
-      LBANN_ERROR("Unable to reload model");
-    }
-
     /// Interleave the inference between the models so that they can use a shared data reader
     /// Enable shared testing data readers on the command line via --share_testing_data_readers=1
-    El::Int num_samples = models[0]->get_num_iterations_per_epoch(execution_mode::testing);
+    El::Int num_samples = trainer->get_data_coordinator().get_data_reader(execution_mode::testing)->get_num_iterations_per_epoch();
     for(El::Int s = 0; s < num_samples; s++) {
       for(auto&& m : models) {
         trainer->evaluate(m.get(), execution_mode::testing, 1);
