@@ -90,6 +90,7 @@ reader = lbann.reader_pb2.DataReader()
 _reader = reader.reader.add()
 _reader.name = 'python'
 _reader.role = 'train'
+_reader.shuffle = True
 _reader.percent_of_data_to_use = 1.0
 _reader.python.module = 'dataset'
 _reader.python.module_dir = current_dir

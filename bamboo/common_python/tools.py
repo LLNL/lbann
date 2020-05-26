@@ -851,6 +851,7 @@ def create_python_data_reader(lbann,
     reader = lbann.reader_pb2.Reader()
     reader.name = 'python'
     reader.role = execution_mode
+    reader.shuffle = False
     reader.percent_of_data_to_use = 1.0
     reader.python.module = module_name
     reader.python.module_dir = dir_name
