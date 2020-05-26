@@ -79,6 +79,7 @@ bool save_model::do_save_model(model *m) {
 
 #if 0 /// @todo BVE FIXME this method for writing out the prototext does not seem to work
   m->write_proto(&model_param);
+  t->write_proto(&trainer_param);
   std::string filename = m->get_name() + "." + m_extension;
   std::string fullpath = m_dir + "/" + filename;
   //@todo flag to save as either binary or text

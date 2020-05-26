@@ -102,9 +102,8 @@ _reader.python.sample_dims_function = 'sample_dims'
 # ----------------------------------
 
 # Create LBANN objects
-trainer = lbann.Trainer()
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
+model = lbann.Model(args.num_epochs,
                     layers=lbann.traverse_layer_graph(input_),
                     objective_function=loss,
                     callbacks=[lbann.CallbackPrint(),

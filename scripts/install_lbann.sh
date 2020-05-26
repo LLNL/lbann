@@ -256,7 +256,7 @@ ${STD_PACKAGES}
 
     aluminum:
       buildable: true
-      version: [master]
+      version: [0.3.3]
       ${AL_VARIANTS}
       providers: {}
       paths: {}

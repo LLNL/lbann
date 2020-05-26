@@ -46,15 +46,12 @@ namespace lbann {
 template <typename TensorDataType>
 class io_layer : public data_type_layer<TensorDataType> {
  protected:
-  bool m_data_set_spans_models;
   data_reader_target_mode m_data_reader_mode;
 
  public:
   io_layer(lbann_comm *comm,
-           bool data_set_spans_models = true,
            data_reader_target_mode data_reader_mode = data_reader_target_mode::CLASSIFICATION)
     : data_type_layer<TensorDataType>(comm),
-      m_data_set_spans_models(data_set_spans_models),
       m_data_reader_mode(data_reader_mode) {
   }
 
@@ -94,7 +91,7 @@ class io_layer : public data_type_layer<TensorDataType> {
   /**
    * Get the dimensions of the underlying data.
    */
-  virtual const std::vector<int> get_data_dims(int child_index = 0) const = 0;
+  virtual std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const = 0;
 
   /**
    * Get the linearized size of the underlying data.

@@ -907,7 +907,7 @@ def compare_metrics(baseline_metrics, test_metrics):
         x = baseline_metrics[i]
         xhat = test_metrics[i]
         assert x == xhat, \
-            'found discrepancy in metrics for baseline and test'
+            'found discrepancy in metrics for baseline {b} and test {t}'.format(b=x, t=xhat)
 
 
 # Perform a diff across a directoy where not all of the subdirectories will exist in

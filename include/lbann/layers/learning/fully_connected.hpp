@@ -141,8 +141,8 @@ protected:
 
   void setup_matrices(const El::Grid& grid) override;
 
-  void setup_data() override {
-    learning_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    learning_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize default weights if none are provided
     if (this->num_weights() > 2) {

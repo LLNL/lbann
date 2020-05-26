@@ -137,8 +137,8 @@ public:
 
   }
 
-  void setup_data() override {
-    transform_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    transform_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize default weights if none are provided
     if (!this->has_weights()) {

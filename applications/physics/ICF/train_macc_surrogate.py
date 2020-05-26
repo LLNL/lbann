@@ -1,4 +1,4 @@
-import macc_models 
+import macc_models
 import argparse
 from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
@@ -23,7 +23,7 @@ metadata_prototext = join(dirname(cur_dir),
 #Load at least pretrained WAE model
 #assert model_dir, 'pre_trained_dir should not be empty'
 #Assume pre_trained model is in current directory, change path if not
-#pre_trained_dir=join(cur_dir,model_dir) 
+#pre_trained_dir=join(cur_dir,model_dir)
 
 # Command-line arguments
 parser = argparse.ArgumentParser()
@@ -100,7 +100,7 @@ def construct_model():
     import lbann
 
     # Layer graph
-    input = lbann.Input(target_mode='N/A',data_set_per_model=True,name='inp_data')
+    input = lbann.Input(target_mode='N/A',name='inp_data')
     # data is 64*64*4 images + 15 scalar + 5 param
     inp_slice = lbann.Slice(input, axis=0, slice_points=str_list([0,args.ydim,args.ydim+args.xdim]),name='inp_slice')
     gt_y = lbann.Identity(inp_slice,name='gt_y')
@@ -114,8 +114,8 @@ def construct_model():
     wae = macc_models.MACCWAE(args.zdim,args.ydim,use_CNN=args.useCNN) #pretrained, freeze
     inv = macc_models.MACCInverse(args.xdim)
     fwd = macc_models.MACCForward(args.zdim)
-    
-    
+
+
     y_pred_fwd = wae.encoder(gt_y)
 
     param_pred_ = wae.encoder(gt_y)
@@ -136,8 +136,8 @@ def construct_model():
 
     L_l2_y =  lbann.MeanSquaredError(output_fake,y_pred_fwd)
     L_cyc_y = lbann.MeanSquaredError(output_cyc,y_pred_fwd)
-   
-     
+
+
     #@todo slice here to separate scalar from image
     img_sca_loss = lbann.MeanSquaredError(y_image_re,gt_y)
     #L_cyc = L_cyc_y + L_cyc_x
@@ -159,7 +159,7 @@ def construct_model():
           for w in range(len(l.weights)):
             l.weights[w].optimizer = lbann.NoOptimizer()
       weights.update(l.weights)
-         
+
     l2_reg = lbann.L2WeightRegularization(weights=weights, scale=1e-4)
     #d_adv_bce = lbann.LayerTerm(d_adv_bce,scale=0.01)
     # Setup objective function
@@ -174,10 +174,9 @@ def construct_model():
                  lbann.CallbackSaveModel(dir=args.dump_models),
                  lbann.CallbackLoadModel(dirs=str(args.pretrained_dir)),
                  lbann.CallbackTimer()]
-                                            
+
     # Construct model
-    return lbann.Model(args.mini_batch_size,
-                       args.num_epochs,
+    return lbann.Model(args.num_epochs,
                        weights=weights,
                        serialize_io=True,
                        layers=layers,
@@ -188,8 +187,9 @@ def construct_model():
 
 if __name__ == '__main__':
     import lbann
-    
-    trainer = lbann.Trainer(procs_per_trainer=args.procs_per_trainer)
+
+    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size,
+                            procs_per_trainer=args.procs_per_trainer)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0001,beta1=0.9,beta2=0.99,eps=1e-8)

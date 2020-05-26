@@ -296,6 +296,17 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   size_t ws_size,
   void* ws);
 
+/** @brief Set the default to use tensor core operations, allowing
+ *         FP32->FP16 conversions.
+ */
+void default_to_tensor_ops() noexcept;
+
+/** @brief Get the default math type.
+ *
+ *  Will query the command-line args.
+ */
+cudnnMathType_t get_default_convolution_math_type() noexcept;
+
 } // namespace cudnn
 } // namespace lbann
 

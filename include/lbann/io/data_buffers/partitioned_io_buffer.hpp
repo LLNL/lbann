@@ -105,7 +105,7 @@ public:
  public:
   typedef std::map<execution_mode, data_buffer<IODataType> *> data_buffer_map_t;
  public:
-  partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
+  partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, int num_child_layers);
   partitioned_io_buffer(const partitioned_io_buffer& other);
   partitioned_io_buffer& operator=(const partitioned_io_buffer& other);
   ~partitioned_io_buffer();
@@ -126,11 +126,6 @@ public:
   int num_samples_ready(execution_mode mode) override;
   void set_data_fetch_future(std::future<void> future, execution_mode mode) override;
   std::future<void> get_data_fetch_future(execution_mode mode) override;
-
-  void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) override;
-  void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) override;
-  int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const override;
-  static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
 
   data_buffer<IODataType> *get_data_buffer(const execution_mode mode) const {
     data_buffer<IODataType> *data_buffer = nullptr;

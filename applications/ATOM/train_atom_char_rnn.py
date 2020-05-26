@@ -18,7 +18,7 @@ def construct_lc_launcher_args():
     parser.add_argument(
         "--data-config", default="data_config.json",
         help="path to a data config file that is used for the construction of python data reader",
-    ) 
+    )
     parser.add_argument(
         "--time-limit",
         type=int,
@@ -27,15 +27,20 @@ def construct_lc_launcher_args():
     )
     parser.add_argument("--nodes", type=int, default=1)
     parser.add_argument("--job-name", default="atom_char_rnn")
-    parser.add_argument("--embedding-dim", type=int, default=30)
-    parser.add_argument("--num-embeddings", type=int, default=30)
+    parser.add_argument("--embedding-dim", type=int, default=None)
+    parser.add_argument("--num-embeddings", type=int, default=None)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--num-epochs", type=int, default=10)
     parser.add_argument("--data-reader-prototext", default=None)
-    parser.add_argument("--pad-index", type=int, default=28)
+    parser.add_argument("--pad-index", type=int, default=None)
     parser.add_argument("--sequence-length", type=int, default=None)
-    parser.add_argument("--use-data-reader-prototext", action="store_true")
     parser.add_argument("--dump_weights_dir", type=str, default="weights")
+    parser.add_argument("--num-samples", type=int, default=None)
+    parser.add_argument("--num-io-threads", type=int, default=11)
+    parser.add_argument("--vocab", default=None)
+    parser.add_argument("--delimiter", default='c')
+    parser.add_argument("--no-header", type=bool, default=True)
+
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -85,6 +90,9 @@ def construct_model(run_args):
     import lbann
     import lbann.modules
 
+    pad_index = run_args.pad_index
+    assert pad_index is not None
+
     sequence_length = run_args.sequence_length
     assert sequence_length is not None
 
@@ -105,6 +113,8 @@ def construct_model(run_args):
     emb = []
     embedding_dim = run_args.embedding_dim
     num_embeddings = run_args.num_embeddings
+    assert embedding_dim is not None
+    assert num_embeddings is not None
 
     emb_weights = lbann.Weights(
         initializer=lbann.NormalInitializer(mean=0, standard_deviation=1),
@@ -147,8 +157,8 @@ def construct_model(run_args):
         ce = lbann.CrossEntropy([y_soft, gt], name="loss_" + str(i))
         # mask padding in input
         pad_mask = lbann.NotEqual(
-            [idl[i], lbann.Constant(value=run_args.pad_index, num_neurons="1")],
-        )  
+            [idl[i], lbann.Constant(value=pad_index, num_neurons="1")],
+        )
         ce_mask = lbann.Multiply([pad_mask, ce], name="loss_mask_" + str(i))
         loss.append(lbann.LayerTerm(ce_mask, scale=1 / (sequence_length - 1)))
 
@@ -168,7 +178,6 @@ def construct_model(run_args):
 
     # Construct model
     return lbann.Model(
-        run_args.batch_size,
         run_args.num_epochs,
         weights=weights,
         layers=layers,
@@ -225,13 +234,16 @@ if __name__ == "__main__":
     import lbann.contrib.launcher
 
     trainer = lbann.Trainer(
+        mini_batch_size=run_args.batch_size,
         name=None,
         procs_per_trainer=run_args.procs_per_trainer,
     )
     model = construct_model(run_args)
     opt = lbann.Adam(learn_rate=run_args.lr, beta1=0.9, beta2=0.99, eps=1e-8)
-    print("BOOL ", run_args.use_data_reader_prototext)
-    if run_args.use_data_reader_prototext:
+    if run_args.data_reader_prototext :
+        print("USING data_reader_prototext")
+        assert run_args.sequence_length is not None
+        assert run_args.vocab is not None
 
         import os.path
         import lbann
@@ -275,6 +287,7 @@ if __name__ == "__main__":
         procs_per_node = ppn,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
+        lbann_args=f'--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}'
     )
 
     print(status)
