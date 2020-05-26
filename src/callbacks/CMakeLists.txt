@@ -21,6 +21,7 @@ set_full_path(THIS_DIR_SOURCES
   hang.cpp
   imcomm.cpp
   learning_rate.cpp
+  load_model.cpp
   ltfb.cpp
   mixup.cpp
   monitor_io.cpp
@@ -33,13 +34,12 @@ set_full_path(THIS_DIR_SOURCES
   save_images.cpp
   save_model.cpp
   save_topk_models.cpp
+  set_weights_value.cpp
   summary.cpp
   sync_layers.cpp
   timeline.cpp
   timer.cpp
   variable_minibatch.cpp
-  load_model.cpp
-  set_weights_value.cpp
 )
 
 # Propagate the files up the tree

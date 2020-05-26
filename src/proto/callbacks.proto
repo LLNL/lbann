@@ -335,10 +335,11 @@ message Callback {
   message CallbackPrintModelDescription {
   }
 
+  /** @brief Set values in a weights object at a given training step */
   message CallbackSetWeightsValue {
-    string weight_name = 1;
-    float  weight_value = 2;
-    int64  epoch_interval = 3;
+    string weights = 1;
+    double value = 2;
+    uint64 step = 3;
   }
 
 }

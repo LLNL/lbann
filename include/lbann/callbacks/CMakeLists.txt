@@ -33,6 +33,7 @@ set_full_path(THIS_DIR_HEADERS
   save_images.hpp
   save_model.hpp
   save_topk_models.hpp
+  set_weights_value.hpp
   summary.hpp
   sync_layers.hpp
   timeline.hpp

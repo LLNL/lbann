@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// set_weights_value .hpp .cpp - Callbacks to dump weight matrices
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/callbacks/set_weights_value.hpp"
@@ -35,24 +33,61 @@
 namespace lbann {
 namespace callback {
 
-void set_weights_value::on_epoch_begin(model *m) {
-  const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
-  if(El::Int(c.get_epoch()) !=  m_epoch_interval)  return;
-  for (weights *w : m->get_weights()) {
-    auto* dtw = dynamic_cast<data_type_weights<DataType>*>(w);
-    if(dtw->get_name() == m_weight_name) {
-      dtw->set_value(DataType(m_weight_value),0);
-    }
-  }    
+set_weights_value::set_weights_value(
+  std::string weights_name,
+  double value,
+  size_t step)
+  : callback_base(),
+    m_weights_name(std::move(weights_name)),
+    m_value{value},
+    m_step{step} {}
+
+set_weights_value* set_weights_value::copy() const {
+  return new set_weights_value(*this);
 }
 
+std::string set_weights_value::name() const {
+  return "set weights value";
+}
+
+void set_weights_value::on_batch_begin(model *m) {
+
+  // Check whether to set weights value at current mini-batch step
+  const auto& context = m->get_execution_context();
+  if (context.get_step() != m_step) { return; }
+  if (context.get_execution_mode() != execution_mode::training) { return; }
+
+  // Find weights and set value
+  for (weights* w : m->get_weights()) {
+    if (w->get_name() == m_weights_name) {
+      /// @todo Handle weights with other data types
+      auto* dtw = dynamic_cast<data_type_weights<float>*>(w);
+      if (dtw == nullptr) {
+        LBANN_ERROR("\"",this->name(),"\" callback ",
+                    "attempted to set value of ",
+                    "weights \"",m_weights_name,"\", "
+                    "which has an invalid data type");
+      }
+      El::Fill(dtw->get_values(), float(m_value));
+      return;
+    }
+    LBANN_ERROR("\"",this->name(),"\" callback ",
+                "could not find ",
+                "weights \"",m_weights_name,"\", "
+                "in model \"",m->get_name(),"\"");
+  }
+
+}
 
 std::unique_ptr<callback_base>
 build_set_weights_value_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackSetWeightsValue&>(proto_msg);
-  return make_unique<set_weights_value>(params.weight_name(), params.weight_value(), params.epoch_interval());
+  return make_unique<set_weights_value>(
+    params.weights(),
+    params.value(),
+    params.step());
 }
 
 } // namespace callback

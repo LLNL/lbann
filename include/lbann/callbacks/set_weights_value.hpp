@@ -22,8 +22,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
-//
-// set_weights_value .hpp .cpp - Callbacks to set weights value
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef LBANN_CALLBACKS_CALLBACK_SET_WEIGHTS_VALUE_HPP_INCLUDED
@@ -36,36 +34,36 @@
 namespace lbann {
 namespace callback {
 
-/**
- * Set weights value.
+/** @brief Set values in a weights object at a given training step
+ *
+ *  @todo Support weights with arbitrary data types. Currently only
+ *  floats are supported.
  */
 class set_weights_value : public callback_base {
  public:
   /**
-   * @param weight_name The name of weight to be set.
-   * @param weight_value The new value for weight_name.
-   * @param epoch_interval The epoch at which to set new value.
-   *
+   *  @param weights_name Name of weights object
+   *  @param value Value to set weights
+   *  @param step Mini-batch step at which to set weights value
    */
-  set_weights_value(std::string weight_name, float weight_value,El::Int epoch_interval=0) :
-    callback_base(), m_weight_name(std::move(weight_name)),
-    m_weight_value(weight_value),
-    m_epoch_interval(std::max(El::Int(0),epoch_interval)) {}
+  set_weights_value(std::string weights_name, double value, size_t step);
   set_weights_value(const set_weights_value&) = default;
-  set_weights_value& operator=(
-    const set_weights_value&) = default;
-  set_weights_value* copy() const override {
-    return new set_weights_value(*this);
-  }
-  void on_epoch_begin(model *m) override;
-  std::string name() const override { return "set weights value"; }
+  set_weights_value& operator=(const set_weights_value&) = default;
+
+  set_weights_value* copy() const override;
+  std::string name() const override;
+
+  void on_batch_begin(model *m) override;
+
  private:
-  /** weight name. */
-  std::string m_weight_name;
-  /** new weight value */
-  float m_weight_value;
-  /** Epoch interval at which to set weight value*/
-  El::Int m_epoch_interval;
+
+  /** @brief Name of weights object. */
+  std::string m_weights_name;
+  /** @brief Value to set weights. */
+  double m_value;
+  /** @brief Mini-batch step at which to set weights value. */
+  size_t m_step;
+
 };
 
 // Builder function
