@@ -39,8 +39,9 @@ python_reader::python_reader(std::string module,
                              std::string module_dir,
                              std::string sample_function,
                              std::string num_samples_function,
-                             std::string sample_dims_function)
-  : generic_data_reader(true) {
+                             std::string sample_dims_function,
+                             bool shuffle)
+  : generic_data_reader(shuffle) {
 
   // Make sure Python is running and acquire GIL
   python::global_interpreter_lock gil;
