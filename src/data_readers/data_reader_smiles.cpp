@@ -65,11 +65,12 @@ smiles_data_reader& smiles_data_reader::operator=(const smiles_data_reader& rhs)
 
 
 void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
-  if(rhs.m_data_store != nullptr) {
+  m_data_store = nullptr;
+  if (rhs.m_data_store != nullptr) {
       m_data_store = new data_store_conduit(rhs.get_data_store());
+      m_data_store->set_data_reader_ptr(this);
   }
   m_num_samples = rhs.m_num_samples;
-  m_data_store->set_data_reader_ptr(this);
   m_linearized_data_size = rhs.m_linearized_data_size;
   m_linearized_label_size = rhs.m_linearized_label_size;
   m_linearized_response_size = rhs.m_linearized_response_size;
