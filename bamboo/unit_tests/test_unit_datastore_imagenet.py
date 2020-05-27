@@ -91,6 +91,7 @@ def construct_data_reader(lbann):
     # Configure data reader
     reader.name = 'imagenet'
     reader.role = 'train'
+    reader.shuffle = False
     reader.data_filedir = lbann.contrib.lc.paths.imagenet_dir(data_set='train')
     reader.data_filename = lbann.contrib.lc.paths.imagenet_labels(data_set='train')
     reader.percent_of_data_to_use = imagenet_fraction
