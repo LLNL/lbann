@@ -196,6 +196,13 @@ void fp_compute_impl(
                 "but only 3-D tensors are currently supported");
   }
 
+  // Get synchronization info from input tensor
+  using LocalMatrix = El::Matrix<TensorDataType, El::Device::GPU>;
+  const auto& input = l.get_prev_activations();
+  const auto& local_input = dynamic_cast<const LocalMatrix&>(input.LockedMatrix());
+  auto&& sync_info = El::SyncInfoFromMatrix(local_input);
+  auto&& stream = sync_info.stream_;
+
   // Get dimensions and strides for each output tensor
   const size_t num_outputs = l.get_num_children();
   std::vector<TensorDataType*> output_buffer_list;
@@ -229,7 +236,6 @@ void fp_compute_impl(
 
   // Get strides for input tensor
   dim4 input_strides;
-  const auto& input = l.get_prev_activations();
   {
 
     // Construct dimensions and strides in reverse order
@@ -239,8 +245,8 @@ void fp_compute_impl(
     for (size_t d=1; d<input_dims.size(); ++d) {
       rstrides[d] = rdims[d-1] * rstrides[d-1];
     }
-    rdims.push_back(input.LocalWidth());
-    rstrides.push_back(input.LDim());
+    rdims.push_back(local_input.Width());
+    rstrides.push_back(local_input.LDim());
 
     // Pad tensor dimensions to 4D
     rdims.resize(4, 1);
@@ -278,9 +284,10 @@ void fp_compute_impl(
   pos += sizeof(dim4) * output_strides_list.size();
 
   // Copy tensor data to GPU
-  auto&& stream = El::GPUManager::Stream();
-  cuda::thrust::vector<unsigned char> device_workspace(l.m_workspace.size());
-  unsigned char* device_workspace_ptr = device_workspace.data().get();
+  hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
+    l.m_workspace.size(),
+    sync_info);
+  unsigned char* device_workspace_ptr = device_workspace.data();
   cudaMemcpyAsync(device_workspace_ptr,
                   l.m_workspace.data(),
                   l.m_workspace.size(),
@@ -310,7 +317,7 @@ void fp_compute_impl(
     grid_dims.y = num_outputs;
     slice4d_kernel<<<grid_dims, block_dims, 0, stream>>>(
       num_outputs,
-      input.LockedBuffer(),
+      local_input.LockedBuffer(),
       input_strides,
       device_input_offset_list,
       device_output_buffer_list,
@@ -333,6 +340,13 @@ void bp_compute_impl(
                 "is operating on ",num_dims,"-D tensors, ",
                 "but only 3-D tensors are currently supported");
   }
+
+  // Get synchronization info from input gradient tensor
+  using LocalMatrix = El::Matrix<TensorDataType, El::Device::GPU>;
+  auto& input_grad = l.get_error_signals();
+  auto& local_input_grad = dynamic_cast<LocalMatrix&>(input_grad.Matrix());
+  auto&& sync_info = El::SyncInfoFromMatrix(local_input_grad);
+  auto&& stream = sync_info.stream_;
 
   // Get dimensions and strides for each output gradient tensor
   const size_t num_outputs = l.get_num_children();
@@ -367,7 +381,6 @@ void bp_compute_impl(
 
   // Get strides for input gradient tensor
   dim4 input_grad_strides;
-  auto& input_grad = l.get_error_signals();
   {
 
     // Construct dimensions and strides in reverse order
@@ -377,8 +390,8 @@ void bp_compute_impl(
     for (size_t d=1; d<input_dims.size(); ++d) {
       rstrides[d] = rdims[d-1] * rstrides[d-1];
     }
-    rdims.push_back(input_grad.LocalWidth());
-    rstrides.push_back(input_grad.LDim());
+    rdims.push_back(local_input_grad.Width());
+    rstrides.push_back(local_input_grad.LDim());
 
     // Pad tensor dimensions to 4D
     rdims.resize(4, 1);
@@ -416,9 +429,10 @@ void bp_compute_impl(
   pos += sizeof(size_t) * input_grad_offset_list.size();
 
   // Copy tensor data to GPU
-  auto&& stream = El::GPUManager::Stream();
-  cuda::thrust::vector<unsigned char> device_workspace(l.m_workspace.size());
-  unsigned char* device_workspace_ptr = device_workspace.data().get();
+  hydrogen::simple_buffer<unsigned char, El::Device::GPU> device_workspace(
+    l.m_workspace.size(),
+    sync_info);
+  unsigned char* device_workspace_ptr = device_workspace.data();
   cudaMemcpyAsync(device_workspace_ptr,
                   l.m_workspace.data(),
                   l.m_workspace.size(),
@@ -451,7 +465,7 @@ void bp_compute_impl(
       device_output_grad_buffer_list,
       device_output_grad_dims_list,
       device_output_grad_strides_list,
-      input_grad.Buffer(),
+      local_input_grad.Buffer(),
       input_grad_strides,
       device_input_grad_offset_list);
   }
