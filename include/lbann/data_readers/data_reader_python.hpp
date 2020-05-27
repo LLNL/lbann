@@ -39,7 +39,8 @@ public:
                 std::string module_dir,
                 std::string sample_function,
                 std::string num_samples_function,
-                std::string sample_dims_function);
+                std::string sample_dims_function,
+                bool shuffle);
   python_reader(const python_reader&) = default;
   python_reader& operator=(const python_reader&) = default;
   ~python_reader() override;
