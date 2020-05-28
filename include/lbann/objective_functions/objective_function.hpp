@@ -48,6 +48,11 @@ class objective_function {
   /** Copy function. */
   objective_function* copy() const { return new objective_function(*this); }
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    //    ar(CEREAL_NVP(m_statistics));
+  }
+
   /** Add a term to the objective function.
    *  The objective function takes ownership of the objective function
    *  term and deallocates it during destruction.

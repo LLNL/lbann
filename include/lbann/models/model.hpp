@@ -76,7 +76,7 @@ public:
   // ===========================================
 
   model(lbann_comm* comm,
-        objective_function* obj_fn,
+        std::unique_ptr<objective_function> obj_fn,
         std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
   model& operator=(const model& other);
@@ -85,6 +85,7 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {
+    // ar(CEREAL_NVP(m_objective_function));
   }
 
   // ===========================================
@@ -112,8 +113,8 @@ public:
   virtual description get_description() const;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function* get_objective_function() const {
-    return m_objective_function;
+  observer_ptr<objective_function> get_objective_function() const {
+    return m_objective_function.get();
   }
 
   /** @brief Return the model's metrics. */
@@ -444,7 +445,7 @@ private:
   std::unique_ptr<lbann_data::Optimizer> m_default_optimizer_msg;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function* m_objective_function;
+  std::unique_ptr<objective_function> m_objective_function;
 
   /** @brief Numerical quantities to evaluate model performance.
    *  @details Does not affect training.
