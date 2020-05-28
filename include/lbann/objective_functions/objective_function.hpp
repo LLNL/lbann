@@ -50,7 +50,13 @@ class objective_function {
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    //    ar(CEREAL_NVP(m_statistics));
+    ar(CEREAL_NVP(m_statistics));
+
+    // Serialized each objective function term object explicitly, not the pointer to
+    // the objective function term
+    for(auto&& t : m_terms) {
+      ar(CEREAL_NVP(*t));
+    }
   }
 
   /** Add a term to the objective function.

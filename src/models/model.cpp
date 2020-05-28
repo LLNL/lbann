@@ -581,6 +581,9 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   // Setup weights
   setup_weights();
 
+  // Setup objective function
+  m_objective_function->setup(*this);
+
   // Setup metrics
   for (const auto& m : m_metrics) {
     m->setup(*this);
