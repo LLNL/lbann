@@ -41,7 +41,7 @@ namespace {
 template <typename TensorDataType>
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& input,
-            TensorDataType& value,
+            EvalType& value,
             Al::request& req) {
   const auto& local_input = input.LockedMatrix();
   const auto& local_height = local_input.Height();
@@ -81,7 +81,7 @@ void fp_cpu(lbann_comm& comm,
 template <typename TensorDataType>
 void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<TensorDataType>& input,
-            TensorDataType& value,
+            EvalType& value,
             cuda::event_wrapper& copy_event) {
   const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
   const TensorDataType one = El::TypeTraits<TensorDataType>::One();

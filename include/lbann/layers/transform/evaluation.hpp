@@ -35,7 +35,7 @@ namespace lbann {
 template <typename TensorDataType>
 class abstract_evaluation_layer : public transform_layer<TensorDataType> {
 public:
-  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+  using CPUMatType = El::Matrix<EvalType, El::Device::CPU>;
 
 public:
 

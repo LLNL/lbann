@@ -95,9 +95,13 @@ class objective_function {
   void compute_weight_regularization();
 
   /** Clear all statistics. */
-  void reset_statistics() { m_statistics.clear(); }
+  void reset_statistics() {
+    for (auto& stats : m_statistics) {
+      stats.second.reset();
+    }
+  }
   /** Clear statistics for an execution mode. */
-  void reset_statistics(execution_mode mode) { m_statistics.erase(mode); }
+  void reset_statistics(execution_mode mode) { m_statistics[mode].reset(); }
 
   /** Get mean objective function value.
    *  This is a weighted average such that each mini-batch sample makes
