@@ -209,9 +209,9 @@ if __name__ == '__main__':
                        setup_only=False,
                        batch_job=False,
                        job_name=args.job_name,
-                       lbann_args=['--preload_data_store --use_data_store --ckptdir_is_fullpath',
+                       lbann_args=['--preload_data_store --use_data_store --load_model_weights_dir_is_complete',
                                    f'--metadata={metadata_prototext}',
-                                   f'--ckpt_dir={args.pretrained_dir}',
+                                   f'--load_model_weights_dir={args.pretrained_dir}',
                                    f'--index_list_test={args.index_list_test}',
                                    f'--data_filedir_test={args.data_filedir_test}'],
                                    **kwargs)
