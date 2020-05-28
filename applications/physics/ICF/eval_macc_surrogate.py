@@ -1,7 +1,7 @@
-import macc_models 
+import macc_models
 import argparse
 import os
-from os.path import abspath, dirname, join 
+from os.path import abspath, dirname, join
 import google.protobuf.text_format as txtf
 import lbann.contrib.launcher
 import lbann.contrib.args
@@ -21,7 +21,7 @@ metadata_prototext = join(dirname(cur_dir),
                              'data',
                              'jag_100M_metadata.prototext')
 
-# Initialize LBANN inf executable 
+# Initialize LBANN inf executable
 lbann_exe = abspath(lbann.lbann_exe())
 lbann_exe = join(dirname(lbann_exe), 'lbann_inf')
 
@@ -82,7 +82,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 print("Pretrained dir ", args.pretrained_dir)
-assert args.pretrained_dir, "evaluate script asssumes a pretrained MaCC model" 
+assert args.pretrained_dir, "evaluate script asssumes a pretrained MaCC model"
 
 def list2str(l):
     return ' '.join(l)
@@ -110,8 +110,8 @@ def construct_model():
     wae = macc_models.MACCWAE(args.zdim,args.ydim,use_CNN=args.useCNN) #pretrained, freeze
     inv = macc_models.MACCInverse(args.xdim)
     fwd = macc_models.MACCForward(args.zdim)
-    
-    
+
+
     y_pred_fwd = wae.encoder(gt_y)
 
     param_pred_ = wae.encoder(gt_y)
@@ -124,18 +124,18 @@ def construct_model():
     output_fake = fwd(gt_x)
     y_image_re = wae.decoder(output_fake)
 
-    y_out = wae.decoder(y_pred_fwd) 
+    y_out = wae.decoder(y_pred_fwd)
 
     param_pred2_ = wae.encoder(y_image_re)
     input_cyc = inv(param_pred2_)
 
-    L_l2_x =  lbann.MeanSquaredError(input_fake,gt_x) #(x,inv(enc(y)), (encoder+)inverse loss 
+    L_l2_x =  lbann.MeanSquaredError(input_fake,gt_x) #(x,inv(enc(y)), (encoder+)inverse loss
     L_cyc_x = lbann.MeanSquaredError(input_cyc,gt_x)  #param, x cycle loss, from latent space
 
     L_l2_y =  lbann.MeanSquaredError(output_fake,y_pred_fwd) #pred error into latent space (enc(y),fw(x))
     L_cyc_y = lbann.MeanSquaredError(output_cyc,y_pred_fwd) # pred error into latent space (enc(y), fw(inv(enc(y))))
-   
-     
+
+
     #@todo slice here to separate scalar from image
     img_sca_loss = lbann.MeanSquaredError(y_image_re,gt_y) # (y,dec(fw(x))) #forward model to decoder, no latent space
     dec_fw_inv_enc_y = lbann.MeanSquaredError(y_image_re2,gt_y) #(y, dec(fw(inv(enc(y))))) y->enc_z->x'->fw_z->y'
@@ -147,7 +147,7 @@ def construct_model():
     loss_gen0  = lbann.WeightedSum([L_l2_y,L_cyc], scaling_factors=f'1 {args.lamda_cyc}')
     loss_gen1  = lbann.WeightedSum([L_l2_x,L_cyc_y], scaling_factors=f'1 {args.lamda_cyc}')
     #loss_gen1  =  L_l2_x + lamda_cyc*L_cyc_y
-    
+
 
     conc_out = lbann.Concatenation([gt_x,wae_loss,img_sca_loss,dec_fw_inv_enc_y,
                                     L_l2_x], name='x_errors')
@@ -155,11 +155,11 @@ def construct_model():
     weights = set()
     for l in layers:
       weights.update(l.weights)
-         
+
     # Setup objective function
     obj = lbann.ObjectiveFunction([loss_gen0,loss_gen1])
     # Initialize check metric callback
-    metrics = [lbann.Metric(img_sca_loss, name='img_re1'),  
+    metrics = [lbann.Metric(img_sca_loss, name='img_re1'),
                lbann.Metric(dec_fw_inv_enc_y, name='img_re2'),
                lbann.Metric(wae_loss, name='wae_loss'),
                lbann.Metric(L_l2_x, name='inverse loss'),
@@ -173,7 +173,7 @@ def construct_model():
                                            batch_interval=1,
                                            format='npy'),
                  lbann.CallbackTimer()]
-                                            
+
     # Construct model
     num_epochs =1
     return lbann.Model(args.mini_batch_size,
@@ -206,12 +206,12 @@ if __name__ == '__main__':
                        nodes=args.num_nodes,
                        procs_per_node=args.ppn,
                        time_limit=30,
-                       setup_only=False, 
-                       batch_job=False, 
+                       setup_only=False,
+                       batch_job=False,
                        job_name=args.job_name,
-                       lbann_args=['--preload_data_store --use_data_store --ckptdir_is_fullpath',
+                       lbann_args=['--preload_data_store --use_data_store --load_model_weights_dir_is_complete',
                                    f'--metadata={metadata_prototext}',
-                                   f'--ckpt_dir={args.pretrained_dir}',
+                                   f'--load_model_weights_dir={args.pretrained_dir}',
                                    f'--index_list_test={args.index_list_test}',
                                    f'--data_filedir_test={args.data_filedir_test}'],
                                    **kwargs)
