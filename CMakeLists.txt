@@ -526,6 +526,7 @@ if (LBANN_WITH_UNIT_TESTING)
   include(Catch)
   add_subdirectory(src/proto/unit_test)
   add_subdirectory(src/utils/unit_test)
+  add_subdirectory(src/weights/unit_test)
   add_subdirectory(src/transforms/unit_test)
   add_subdirectory(src/transforms/vision/unit_test)
 

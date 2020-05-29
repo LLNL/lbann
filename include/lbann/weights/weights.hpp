@@ -88,7 +88,7 @@ public:
   }
 
   /** Human-readable description. */
-  virtual description get_description() const;
+  description get_description() const;
 
   virtual bool has_optimizer() const = 0;
 
@@ -131,16 +131,22 @@ public:
   /** Set weight tensor dimensions.
    *  See the 'get_dims' function for an explanation of the notation.
    */
-  virtual void set_dims(std::vector<int> matrix_height_dims,
-                        std::vector<int> matrix_width_dims = std::vector<int>());
+  void set_dims(std::vector<int> matrix_height_dims,
+                std::vector<int> matrix_width_dims = std::vector<int>());
   /** Set weight tensor dimensions as a 1D tensor. */
-  virtual void set_dims(int size) { set_dims({size}, {}); }
+  void set_dims(int size) { set_dims({size}, {}); }
 
   // -----------------------------------------------
   // Matrix distribution accessors
   // -----------------------------------------------
   El::DistData get_matrix_distribution() const;
   void set_matrix_distribution(El::DistData dist);
+
+  /** @name Matrix accessors */
+  ///@{
+  virtual El::BaseDistMatrix& get_values() = 0;
+  virtual El::BaseDistMatrix const& get_values() const = 0;
+  ///@}
 
   // -----------------------------------------------
   // Initializer accessors
@@ -173,7 +179,7 @@ public:
   // -----------------------------------------------
   // Setup
   // -----------------------------------------------
-  virtual void setup();
+  void setup();
 
   // -----------------------------------------------
   // Freezing
@@ -217,6 +223,11 @@ protected:
   weights(const weights& other);
   weights& operator=(const weights& other);
 
+private:
+  virtual void do_augment_description_(description&) const = 0;
+  virtual void do_setup_() = 0;
+  virtual void do_set_dims_(std::vector<int> const& matrix_height_dims,
+                            std::vector<int> const& matrix_width_dims) = 0;
 private:
 
   /** Weights name.

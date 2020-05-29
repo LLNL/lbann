@@ -84,20 +84,11 @@ public:
   data_type_weights& operator=(const data_type_weights& other);
   virtual ~data_type_weights() = default;
 
-  /** Human-readable description. */
-  description get_description() const override;
-
   bool has_optimizer() const override { return m_optimizer != nullptr; }
 
   // -----------------------------------------------
   // Dimension accessors
   // -----------------------------------------------
-  void set_dims(std::vector<int> matrix_height_dims,
-                std::vector<int> matrix_width_dims = std::vector<int>()) override;
-  /** Set weight tensor dimensions as a 1D tensor. */
-  void set_dims(int size) override { set_dims({size}, {}); }
-
-
   // -----------------------------------------------
   // Initializer accessors
   // -----------------------------------------------
@@ -127,18 +118,13 @@ public:
   void set_optimizer(std::unique_ptr<optimizer>&& opt) override;
 
   // -----------------------------------------------
-  // Setup
-  // -----------------------------------------------
-  void setup() override;
-
-  // -----------------------------------------------
   // Weight matrix accessors
   // -----------------------------------------------
 
   /** Get the weight matrix. */
-  AbsDistMatrixType& get_values();
+  AbsDistMatrixType& get_values() override;
   /** Get the weight matrix. */
-  const AbsDistMatrixType& get_values() const;
+  const AbsDistMatrixType& get_values() const override;
   /** Set the weight matrix. */
   void set_values(const AbsDistMatrixType& values);
 
@@ -172,6 +158,11 @@ public:
   /** Write weights to proto file */
   void write_proto(lbann_data::WeightsData* proto) const override;
 
+private:
+  void do_augment_description_(description&) const override;
+  void do_setup_() override;
+  void do_set_dims_(std::vector<int> const& matrix_height_dims,
+                    std::vector<int> const& matrix_width_dims) override;
 private:
 
   /** Weight matrix. */

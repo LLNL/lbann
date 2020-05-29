@@ -105,8 +105,7 @@ auto data_type_weights<TensorDataType>::operator=(const WeightsType& other) -> W
 }
 
 template <typename TensorDataType>
-description data_type_weights<TensorDataType>::get_description() const {
-  description desc = weights::get_description();
+void data_type_weights<TensorDataType>::do_augment_description_(description& desc) const {
 
   // Optimizer
   if (m_optimizer != nullptr) {
@@ -118,16 +117,15 @@ description data_type_weights<TensorDataType>::get_description() const {
     desc.add(m_initializer->get_description());
   }
 
-  return desc;
 }
 
 // -----------------------------------------------
 // Dimension accessors
 // -----------------------------------------------
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::set_dims(std::vector<int> matrix_height_dims,
-                                                 std::vector<int> matrix_width_dims) {
-  weights::set_dims(matrix_height_dims, matrix_width_dims);
+void data_type_weights<TensorDataType>::do_set_dims_(
+  std::vector<int> const& matrix_height_dims,
+  std::vector<int> const& matrix_width_dims) {
   if (m_values != nullptr) {
     const auto& height = this->get_matrix_height();
     const auto& width = this->get_matrix_width();
@@ -210,11 +208,9 @@ void data_type_weights<TensorDataType>::set_optimizer(
 // -----------------------------------------------
 
 template <typename TensorDataType>
-void data_type_weights<TensorDataType>::setup() {
+void data_type_weights<TensorDataType>::do_setup_() {
   // Return immediately if weights have already been setup
   if (m_values != nullptr) { return; }
-
-  weights::setup();
 
   auto matrix_dist = this->get_matrix_distribution();
   // Construct weights matrix
