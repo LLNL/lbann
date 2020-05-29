@@ -32,7 +32,7 @@
 /** @file
  *
  *  This file implements covariant returns via smart pointers for a
- *  polymorphic @c clone functoin. The implementation largely follows
+ *  polymorphic @c clone function. The implementation largely follows
  *  the solution presented <a
  *  href="https://www.fluentcpp.com/2017/09/12/how-to-return-a-smart-pointer-and-use-covariance/">by
  *  the FluentC++ blog</a>. Some class/tag names have been updated to
