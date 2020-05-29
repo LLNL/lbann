@@ -134,6 +134,37 @@ using ProxyType = h2::meta::tlist::Cadr<TypePair>;
 template <typename MasterT, typename ProxyT>
 using MasterProxyPair = h2::meta::TL<MasterT, ProxyT>;
 
+// These grew out of a realization that an initial implementation of
+// some of these functions violated the class contract in their usage
+// of the internal pointers.
+TEST_CASE("Empty WeightsProxy tests.", "[mpi][weights][proxy]")
+{
+  lbann::WeightsProxy<float> proxy;
+
+  SECTION("Copy construction.")
+  {
+    lbann::WeightsProxy<float> proxy_copy(proxy);
+    REQUIRE(proxy.empty());
+    REQUIRE(proxy_copy.empty());
+  }
+
+  SECTION("Move construction.")
+  {
+    lbann::WeightsProxy<float> proxy_move(std::move(proxy));
+    REQUIRE(proxy.empty());
+    REQUIRE(proxy_move.empty());
+  }
+
+  SECTION("Copy assignment.")
+  {
+    lbann::WeightsProxy<float> proxy_copy;
+    REQUIRE(proxy.empty());
+    REQUIRE_NOTHROW(proxy_copy = proxy);
+    REQUIRE(proxy.empty());
+    REQUIRE(proxy_copy.empty());
+  }
+}
+
 TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
                    (MasterProxyPair<float, float>),
                    (MasterProxyPair<double, float>))
@@ -165,24 +196,11 @@ TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
   REQUIRE_NOTHROW(dtw.setup());
 
   // Phew. Start testing the proxy.
+  lbann::WeightsProxy<DataType> proxy(dtw);
 
-  SECTION("Default-constructed proxy.")
+  SECTION("Proxy accesses values correctly.")
   {
-    lbann::WeightsProxy<DataType> proxy;
-    REQUIRE(proxy.empty());
-    REQUIRE_NOTHROW(proxy.setup(dtw));
-
-    // At this point, the proxy should have the right size.
-    CHECK(proxy.values().Height() == dtw.get_matrix_height());
-    CHECK(proxy.values().Width() == dtw.get_matrix_width());
-
-    // For better or worse, I assume that, at this point, the rest of
-    // this SECTION will behave the same as the next SECTION.
-  }
-
-  SECTION("Proxy with real weights object.")
-  {
-    lbann::WeightsProxy<DataType> proxy(dtw);
+    // Proxy should not be empty.
     REQUIRE(!proxy.empty());
 
     // At this point, the proxy should have the right size.
@@ -195,5 +213,98 @@ TEMPLATE_TEST_CASE("Weights proxy tests.", "[mpi][weights][proxy]",
     auto const dt_value = El::To<DataType>(value);
     CHECK(count_differing_values(dt_value, get_local_values(proxy)) == 0);
 
+  }
+
+  // This SECTION uses `double` since we don't independently test the
+  // <double,double> combination.
+  SECTION("Copy-from-other-type construction")
+  {
+    // Test "copy from other type" construction.
+    lbann::WeightsProxy<double> proxy_copy(proxy);
+    REQUIRE(!proxy_copy.empty());
+    CHECK(&proxy.master_weights() == &proxy_copy.master_weights());
+    CHECK(proxy_copy.values().Height() == proxy.values().Height());
+    CHECK(proxy_copy.values().Width() == proxy.values().Width());
+  }
+
+  SECTION("WeightsProxy move construction")
+  {
+    lbann::WeightsProxy<DataType> proxy_move(std::move(proxy));
+    REQUIRE(proxy.empty());
+    REQUIRE(!proxy_move.empty());
+    CHECK(&proxy_move.master_weights() == &dtw);
+    CHECK(proxy_move.values().Height() == dtw.get_values().Height());
+    CHECK(proxy_move.values().Width() == dtw.get_values().Width());
+  }
+
+  SECTION("WeightsProxy swap operation")
+  {
+    lbann::WeightsProxy<DataType> proxy_other;
+    REQUIRE(proxy_other.empty());
+
+    // Do the swap (no point REQUIRE_NOTHROW since the swap operation
+    // is noexcept -- it will terminate if an exception is encountered).
+    std::swap(proxy, proxy_other);
+    REQUIRE(proxy.empty());
+    REQUIRE(!proxy_other.empty());
+    CHECK(&proxy_other.master_weights() == &dtw);
+    CHECK(proxy_other.values().Height() == dtw.get_values().Height());
+    CHECK(proxy_other.values().Width() == dtw.get_values().Width());
+  }
+
+  SECTION("WeightsProxy copy assignment")
+  {
+    lbann::WeightsProxy<DataType> proxy_other;
+    REQUIRE(proxy_other.empty());
+
+    proxy_other = proxy;
+
+    REQUIRE(!proxy.empty());
+    REQUIRE(!proxy_other.empty());
+
+    CHECK(&proxy_other.master_weights() == &proxy.master_weights());
+    CHECK(proxy_other.values().Height() == proxy.values().Height());
+    CHECK(proxy_other.values().Width() == proxy.values().Width());
+  }
+
+  SECTION("WeightsProxy move assignment")
+  {
+    lbann::WeightsProxy<DataType> proxy_other;
+    REQUIRE(proxy_other.empty());
+
+    proxy_other = std::move(proxy);
+    REQUIRE(proxy.empty());
+    REQUIRE(!proxy_other.empty());
+    CHECK(&proxy_other.master_weights() == &dtw);
+    CHECK(proxy_other.values().Height() == dtw.get_values().Height());
+    CHECK(proxy_other.values().Width() == dtw.get_values().Width());
+  }
+
+  // Verify the default-construction path to sanity.
+  SECTION("Default-constructed proxy.")
+  {
+    lbann::WeightsProxy<DataType> proxy_default;
+    REQUIRE(proxy_default.empty());
+    REQUIRE_NOTHROW(proxy_default.setup(dtw));
+    REQUIRE(!proxy_default.empty());
+    CHECK(&proxy_default.master_weights() == &dtw);
+
+    // At this point, the proxy_default should have the right size.
+    CHECK(proxy_default.values().Height() == dtw.get_matrix_height());
+    CHECK(proxy_default.values().Width() == dtw.get_matrix_width());
+  }
+
+  SECTION("Default-constructed proxy via weights interface.")
+  {
+    lbann::WeightsProxy<DataType> proxy_default;
+    REQUIRE(proxy_default.empty());
+    REQUIRE_NOTHROW(
+      proxy_default.setup(static_cast<lbann::weights const&>(dtw)));
+    REQUIRE(!proxy_default.empty());
+    CHECK(&proxy_default.master_weights() == &dtw);
+
+    // At this point, the proxy_default should have the right size.
+    CHECK(proxy_default.values().Height() == dtw.get_matrix_height());
+    CHECK(proxy_default.values().Width() == dtw.get_matrix_width());
   }
 }
