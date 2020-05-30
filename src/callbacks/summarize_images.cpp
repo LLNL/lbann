@@ -108,7 +108,8 @@ categorical_accuracy_strategy::get_image_indices(model const& m) const {
   El::Copy(categorized_correctly_dist, categorized_correctly);
 
   if (categorized_correctly.Height() != El::Int(1))
-    LBANN_ERROR("Tom was wrong about this matrix. Oops.");
+    LBANN_ERROR("categorical_accuracy_strategry expected to find a tensor of size 1, ",
+                "but found a tensor of size ",categorized_correctly.Height());
 
   // Fill return value if root process
   if (categorized_correctly.CrossRank() == categorized_correctly.Root()) {
