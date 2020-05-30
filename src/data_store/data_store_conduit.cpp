@@ -270,7 +270,7 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::
     ++m_my_num_indices;
   }
 
-  if (is_local_cache()) {
+  if (is_local_cache() || is_local_non_shared_cache()) {
     m_data[data_id] = node; 
     return;
   }
@@ -402,6 +402,14 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
     return t3->second;
   }
 
+  if (m_is_local_cache_non_shared) {
+    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
+    if (t3 == m_data.end()) {
+      LBANN_ERROR("(local cache) failed to find data_id: ", data_id, " in m_data; m_data.size: ", m_data.size());
+    }
+    return t3->second;
+  }
+
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
   // if not preloaded, and get_label() or get_response() is called,
   // we need to check m_data
@@ -474,7 +482,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   /// exchange_data_by_sample at the beginning of the 2nd epoch,
   /// or during the first call th exchange_data_by_sample() during
   /// the first epoch if preloading
-  if (m_node_sizes_vary && !m_have_sample_sizes) {
+  if (m_node_sizes_vary && !m_have_sample_sizes & !m_is_local_cache_non_shared) {
     double tm3 = get_time();
     exchange_sample_sizes();
     m_exchange_sample_sizes_time += (get_time() - tm3);
@@ -1416,6 +1424,9 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
   if (is_local_cache() && is_fully_loaded()) {
     return;
   }
+  if (m_is_local_cache_non_shared) {
+    return;
+  }
 
   if (m_reader->at_new_epoch() && is_local_cache() && is_explicitly_loading()) {
     exchange_local_caches();
@@ -1957,4 +1968,5 @@ void data_store_conduit::verify_sample_size() {
 }
 
 }  // namespace lbann
+
 

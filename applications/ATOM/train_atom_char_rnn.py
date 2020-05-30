@@ -178,11 +178,12 @@ def construct_model(run_args):
     # Construct model
     return lbann.Model(
         run_args.num_epochs,
-        weights=weights,
         layers=layers,
+        weights=weights,
         objective_function=obj,
-        callbacks=callbacks,
+        callbacks=callbacks
     )
+        #callbacks=callbacks
 
 
 def construct_data_reader(run_args):
@@ -233,7 +234,7 @@ if __name__ == "__main__":
     import lbann.contrib.launcher
 
     trainer = lbann.Trainer(
-        mini_batch_size=run_args.batch_size,
+        run_args.batch_size,
         name=None,
         procs_per_trainer=run_args.procs_per_trainer,
     )
