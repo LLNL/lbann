@@ -155,7 +155,12 @@ void smiles_data_reader::load() {
 
   // TODO: does this work if we carve off a validation set?
   if (m_data_store == nullptr) {
+    double tm4 = get_time();
     setup_local_cache();
+    if (is_master()) {
+      std::cout << "time for setup_local_cache(): " << get_time()-tm4<<std::endl;
+
+    }
   }
 
   print_statistics();
