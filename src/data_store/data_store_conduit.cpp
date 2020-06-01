@@ -115,11 +115,11 @@ data_store_conduit::~data_store_conduit() {
   if (m_is_local_cache && m_mem_seg) {
     int sanity = shm_unlink(m_seg_name.c_str());
     if (sanity != 0) {
-      std::cerr << "\nWARNING: shm_unlink failed in data_store_conduit::~data_store_conduit()\n";
+      std::cout << "\nWARNING: shm_unlink failed in data_store_conduit::~data_store_conduit()\n";
     }
     sanity = munmap(reinterpret_cast<void*>(m_mem_seg), m_mem_seg_length);
     if (sanity != 0) {
-      std::cerr << "\nWARNING: munmap failed in data_store_conduit::~data_store_conduit()\n";
+      std::cout << "\nWARNING: munmap failed in data_store_conduit::~data_store_conduit()\n";
     }
   }
 }
@@ -265,23 +265,27 @@ void data_store_conduit::spill_preloaded_conduit_node(int data_id, const conduit
 
 void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::Node &node) {
   // note: at this point m_data[data_id] = node
-  {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    ++m_my_num_indices;
+  if (m_data.find(data_id) == m_data.end()) {
+    LBANN_ERROR("(m_data.find(data_id) == m_data.end() for id: ", data_id);
   }
 
-  if (is_local_cache() || is_local_non_shared_cache()) {
+  // TODO: get rid of "m_my_num_indices" -dah, May 2020
+
+  if (is_local_cache()) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    ++m_my_num_indices;
     m_data[data_id] = node; 
     return;
   }
 
-
   if (m_spill) {
+    ++m_my_num_indices;
     spill_preloaded_conduit_node(data_id, node);
     return;
   }
 
   { 
+    // TODO: why are we copying here? dah, May 2020
     conduit::Node n2 = node;
     std::lock_guard<std::mutex> lock(m_mutex);
     build_node_for_sending(n2, m_data[data_id]);
@@ -402,14 +406,6 @@ const conduit::Node & data_store_conduit::get_conduit_node(int data_id) const {
     return t3->second;
   }
 
-  if (m_is_local_cache_non_shared) {
-    std::unordered_map<int, conduit::Node>::const_iterator t3 = m_data.find(data_id);
-    if (t3 == m_data.end()) {
-      LBANN_ERROR("(local cache) failed to find data_id: ", data_id, " in m_data; m_data.size: ", m_data.size());
-    }
-    return t3->second;
-  }
-
   std::unordered_map<int, conduit::Node>::const_iterator t2 = m_minibatch_data.find(data_id);
   // if not preloaded, and get_label() or get_response() is called,
   // we need to check m_data
@@ -482,7 +478,7 @@ void data_store_conduit::exchange_data_by_sample(size_t current_pos, size_t mb_s
   /// exchange_data_by_sample at the beginning of the 2nd epoch,
   /// or during the first call th exchange_data_by_sample() during
   /// the first epoch if preloading
-  if (m_node_sizes_vary && !m_have_sample_sizes & !m_is_local_cache_non_shared) {
+  if (m_node_sizes_vary && !m_have_sample_sizes & !m_is_local_cache) {
     double tm3 = get_time();
     exchange_sample_sizes();
     m_exchange_sample_sizes_time += (get_time() - tm3);
@@ -841,7 +837,7 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
     double mem_this_proc = bytes_per_sample * my_sample_count;
     double mem_this_node = mem_this_proc * procs_per_node;
 
-    std::cerr
+    std::cout
       << "\n"
       << "==============================================================\n"
       << "Estimated memory requirements for JAG samples:\n"
@@ -852,12 +848,12 @@ void data_store_conduit::check_mem_capacity(lbann_comm *comm, const std::string 
       << "Total mem for all ranks on a node: " << mem_this_node << " kB\n"
       << "Available memory: " << a_mem << " kB (RAM only; not virtual)\n";
     if (mem_this_node > static_cast<double>(a_mem)) {
-      std::cerr << "\nYOU DO NOT HAVE ENOUGH MEMORY\n"
+      std::cout << "\nYOU DO NOT HAVE ENOUGH MEMORY\n"
         << "==============================================================\n\n";
       LBANN_ERROR("insufficient memory to load data\n");
     } else {
       double m = 100 * mem_this_node / a_mem;
-      std::cerr << "Estimate that data will consume at least " << m << " % of memory\n"
+      std::cout << "Estimate that data will consume at least " << m << " % of memory\n"
         << "==============================================================\n\n";
     }
   }
@@ -1424,9 +1420,6 @@ void data_store_conduit::exchange_mini_batch_data(size_t current_pos, size_t mb_
   if (is_local_cache() && is_fully_loaded()) {
     return;
   }
-  if (m_is_local_cache_non_shared) {
-    return;
-  }
 
   if (m_reader->at_new_epoch() && is_local_cache() && is_explicitly_loading()) {
     exchange_local_caches();
@@ -1489,18 +1482,17 @@ void data_store_conduit::flush_profile_file() const {
 
 size_t data_store_conduit::get_num_global_indices() const {
   size_t n = m_comm->trainer_allreduce<size_t>(m_data.size());
-  //size_t n = m_comm->trainer_allreduce<size_t>(m_my_num_indices);
   return n;
 }
 
 void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
   if (m_world_master) {
-    std::cerr << "starting data_store_conduit::test_checkpoint for role: "
+    std::cout << "starting data_store_conduit::test_checkpoint for role: "
               << m_reader->get_role() << std::endl;
     print_partial_owner_map(10);
-    std::cerr << "\nHere are some private variables before clearing them:\n";
+    std::cout << "\nHere are some private variables before clearing them:\n";
     print_variables();
-    std::cerr << "\nCalling write_checkpoint()" << std::endl;
+    std::cout << "\nCalling write_checkpoint()" << std::endl;
   }
   write_checkpoint(checkpoint_dir);
 
@@ -1518,20 +1510,20 @@ void data_store_conduit::test_checkpoint(const std::string &checkpoint_dir) {
   m_node_sizes_vary = true;
 
   if (m_world_master) {
-    std::cerr << "\nHere are some private variables after clearing them:\n";
+    std::cout << "\nHere are some private variables after clearing them:\n";
     print_variables();
   }
 
   if (m_world_master) {
-    std::cerr << "Cleared the owner map; m_owner.size(): " << m_owner.size() 
+    std::cout << "Cleared the owner map; m_owner.size(): " << m_owner.size() 
               << std::endl
               << "Calling load_checkpoint" << std::endl;
   }
   load_checkpoint(checkpoint_dir, nullptr);
   if (m_world_master) {
-    std::cerr << "Here is part of the re-loaded owner map; map.size(): " << m_owner.size() << std::endl;
+    std::cout << "Here is part of the re-loaded owner map; map.size(): " << m_owner.size() << std::endl;
     print_partial_owner_map(10);
-    std::cerr << "\nHere are some private variables after reloading:\n";
+    std::cout << "\nHere are some private variables after reloading:\n";
     print_variables();
   }
 
@@ -1713,7 +1705,7 @@ void data_store_conduit::print_variables() {
   if (!m_world_master) {
     return;
   }
-  std::cerr << "m_is_setup: " << m_is_setup << std::endl
+  std::cout << "m_is_setup: " << m_is_setup << std::endl
             << "m_preloading: " << m_preloading << std::endl
             << "m_explicitly_loading: " << m_explicitly_loading << std::endl
             << "m_owner_map_mb_size: " << m_owner_map_mb_size << std::endl
@@ -1809,14 +1801,14 @@ void data_store_conduit::open_informational_files() {
 }
 
 void data_store_conduit::print_partial_owner_map(int n) {
-   std::cerr << "\nHere is part of the owner map; m_owner.size(): " << m_owner.size() << std::endl;
+   std::cout << "\nHere is part of the owner map; m_owner.size(): " << m_owner.size() << std::endl;
   std::map<int,int> m;
   for (auto t : m_owner) {
     m[t.first] = t.second;
   }
   int j = 0;
   for (auto t : m) {
-    std::cerr << "  sample_id: " << t.first << " owner: " << t.second << std::endl;
+    std::cout << "  sample_id: " << t.first << " owner: " << t.second << std::endl;
     if (j++ >= 10) break;
   }
 }
@@ -1852,11 +1844,11 @@ void data_store_conduit::test_imagenet_node(int index, bool dereference) {
     PROFILE("    WARNING: offset is >= INT_MAX!");
   }
 
-  std::cerr << "testing sample_id: "<< utils::commify(data_id)<< " stored at offset: "<< utils::commify(m_image_offsets[data_id]);
+  std::cout << "testing sample_id: "<< utils::commify(data_id)<< " stored at offset: "<< utils::commify(m_image_offsets[data_id]);
   if (m_image_offsets[data_id] >= INT_MAX) {
-    std::cerr << "; (>= INT_MAX)\n";
+    std::cout << "; (>= INT_MAX)\n";
   } else {
-    std::cerr << std::endl;
+    std::cout << std::endl;
   }  
   conduit::Node nd1;
   image_reader->load_conduit_node_from_file(data_id, nd1);
@@ -1929,7 +1921,7 @@ bool data_store_conduit::test_local_cache_imagenet(int n) {
   // test image with largest offset
   test_imagenet_node(id_max, false);
 
-  if (m_world_master) std::cerr<< "  All tests passed\n";
+  if (m_world_master) std::cout<< "  All tests passed\n";
   PROFILE("  All tests passed\n.");
   return true;
 }
@@ -1966,6 +1958,29 @@ void data_store_conduit::verify_sample_size() {
   }
   m_compacted_sample_size = max_samples;
 }
+
+size_t data_store_conduit::get_mem_usage() {
+  size_t r = 0;
+  for (const auto &t : m_data) {
+    const conduit::Node &nd = t.second;
+    if (!nd.is_contiguous()) {
+      LBANN_ERROR("node does not have a contiguous layout");
+    }
+/*
+    if (nd.data_ptr() == nullptr) {
+      nd.print();
+      sleep(1);
+      LBANN_ERROR("node does not have a valid data pointer");
+    }
+*/
+    if (nd.contiguous_data_ptr() == nullptr) {
+      LBANN_ERROR("node does not have a valid contiguous data pointer");
+    }
+    r += nd.total_bytes_compact();
+  }  
+  return r;
+}
+
 
 }  // namespace lbann
 
