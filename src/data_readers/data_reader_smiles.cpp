@@ -83,6 +83,7 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
   m_delimiter = rhs.m_delimiter;
   m_missing_char_in_vocab_count = rhs.m_missing_char_in_vocab_count;
   m_missing_chars = rhs.m_missing_chars;
+  m_vocab = rhs.m_vocab;
 }
 
 void smiles_data_reader::load() {
@@ -158,21 +159,22 @@ void smiles_data_reader::load() {
     double tm4 = get_time();
     setup_local_cache();
     if (is_master()) {
-      std::cout << "time for setup_local_cache(): " << get_time()-tm4<<std::endl;
-
+      std::cout << "time for setup_local_cache(): " << get_time()-tm4
+                << "; num samples: " << m_sample_lookup.size() << std::endl;
     }
+    print_statistics();
   }
-
-  print_statistics();
 }
 
 void smiles_data_reader::do_preload_data_store() {
+  double tm1 = get_time();
   if (is_master()) {
     std::cout << "starting do_preload_data_store; num indices: " 
               << utils::commify(m_shuffled_indices.size()) 
               << " for role: " << get_role() << std::endl;
   }
   m_data_store->set_node_sizes_vary();
+  m_data_store->set_is_local_cache();
   const std::string infile = get_file_dir() + "/" + get_data_filename();
   std::ifstream in(infile.c_str());
   if (!in) {
@@ -190,13 +192,13 @@ void smiles_data_reader::do_preload_data_store() {
     max_line = static_cast<size_t>(id) > max_line ? id : max_line;
   }
 
-  conduit::Node node;
   size_t sample_id = -1;
   while (true) {
     ++sample_id;
     ssize_t n = 0;
     getline(in, line);
     if (valid_ids.find(sample_id) != valid_ids.end()) {
+      conduit::Node &node = m_data_store->get_empty_node(sample_id);
       construct_conduit_node(sample_id, line, node);
       m_data_store->set_preloaded_conduit_node(sample_id, node);
     }
@@ -206,7 +208,17 @@ void smiles_data_reader::do_preload_data_store() {
   }
   in.close();
   m_data_store->set_loading_is_complete();
-  m_data_store->set_is_local_cache_non_shared();
+  if (is_master()) {
+    std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
+  }
+  print_statistics();
+  if (is_master()) {
+    pid_t p = getpid();
+    char buf[80];
+    sprintf(buf, "cat /proc/%d/status >& status.txt", p);
+    system(buf);
+    std::cout << "wrote proc/[pid]/status to 'status.txt'" << std::endl;
+  }
 }
 
 bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
@@ -225,9 +237,13 @@ bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     if (! data_store_active()) {
       LBANN_ERROR("it should be impossible you you to be here; please contact Dave Hysom");
     }
+
     //get data from node from data store
+    // TODO: change if/when using sharing:
+    //   node["/data/" + ...
     const conduit::Node& node = m_data_store->get_conduit_node(data_id);
-    const std::string &smiles_string = node["/data/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
+    const std::string &smiles_string = node["/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
+    //const std::string &smiles_string = node["/data/" + LBANN_DATA_ID_STR(data_id) + "/data"].as_string();
     encode_smiles(smiles_string, data, data_id);
     data_ptr = data.data();
     sz = data.size();
@@ -263,23 +279,23 @@ void smiles_data_reader::print_statistics() const {
 
   std::cout << "\n======================================================\n";
   std::cout << "role: " << get_role() << std::endl;
-  std::cout << "mem for data, lower bound: " << get_mem_usage() << std::endl;
-  std::cout << "num samples=" << m_shuffled_indices.size() << std::endl;
-  std::cout << "max sequence length=" << m_linearized_data_size << std::endl;
-  std::cout << "num features=" << m_linearized_data_size << std::endl;
+  std::cout << "mem for data, lower bound: " << utils::commify(get_mem_usage()) << std::endl;
+  std::cout << "num samples: " << m_shuffled_indices.size() << std::endl;
+  std::cout << "max sequence length: " << utils::commify(m_linearized_data_size) << std::endl;
+  std::cout << "num features=" << utils::commify(m_linearized_data_size) << std::endl;
   if (m_delimiter == '\t') {
-    std::cout << "delimiter=<tab>\n"; 
+    std::cout << "delimiter: <tab>\n"; 
   } else if (m_delimiter == ',') {
-    std::cout << "delimiter=<,>\n"; 
+    std::cout << "delimiter: <comma>\n"; 
   } else if (m_delimiter == '0') {
-    std::cout << "delimiter=<none>\n"; 
+    std::cout << "delimiter: <none>\n"; 
   } else {
     LBANN_ERROR("invalid delimiter character: ", m_delimiter);
   }
-  std::cout << "pad index= " << m_pad << std::endl;
+  std::cout << "pad index: " << m_pad << std::endl;
 
   // +4 for <bos>, <eos>, <unk>, <pad>
-  std::cout << "vocab size= " << m_vocab.size() +4 << std::endl
+  std::cout << "vocab size: " << m_vocab.size() +4 << std::endl
             << "    (includes +4 for <bos>, <eos>, <pad>, <unk>)" << std::endl
             << "======================================================\n\n";
 }
@@ -350,12 +366,9 @@ int smiles_data_reader::get_num_lines(std::string fn) {
     in.close();
 
     std::cout << "smiles_data_reader::get_num_lines; num_lines: " 
-              << count << " time: " << get_time()-tm1 << std::endl;
+              << utils::commify(count) << " time: " << get_time()-tm1 << std::endl;
   }
   m_comm->broadcast<int>(0, &count, 1, m_comm->get_world_comm());
-  if (is_master()) {
-    std::cout << "time to count number of lines in the input file: " << get_time() - tm1 << std::endl;
-  }
   return count;
 }
 
@@ -376,7 +389,7 @@ void smiles_data_reader::encode_smiles(const char *smiles, short size, std::vect
   int stop = size;
   if (stop+2 > m_linearized_data_size) { //+2 is for <bos> and <eos>
     stop = m_linearized_data_size-2;
-    if (count < 20) {
+    if (m_verbose && count < 20) {
       ++count;
       LBANN_WARNING("data_id: ", data_id, " smiles string size is ", size, "; losing ", (size-(m_linearized_data_size-2)), " characters");
     }
@@ -394,10 +407,16 @@ void smiles_data_reader::encode_smiles(const char *smiles, short size, std::vect
         ++m_missing_char_in_vocab_count;
         if (m_missing_char_in_vocab_count < 20) {
           std::stringstream ss;
-          ss << "rank: " << m_comm->get_rank_in_trainer() << "; character not in vocab >>" << w << "<<; idx: " << j << "; data_id: " << data_id << "; string length: " << size << "; will use length: " << stop;
+          ss << "XX rank: " << m_comm->get_rank_in_trainer() << "; character not in vocab >>" << w << "<<; idx: " << j << "; data_id: " << data_id << "; string length: " << size << "; will use length: " << stop << "; vocab size: " << m_vocab.size() << std::endl;
           std::cerr << ss.str();
+
+          //XX
+          for (auto t : m_vocab) {
+            std::cerr << t.first << " -> " << t.second << "\n";
+          }
         }
       }
+LBANN_ERROR("ERROR!");
       data.push_back(m_unk);
     } else {
       data.push_back(m_vocab[w]);
@@ -551,6 +570,14 @@ void smiles_data_reader::setup_local_cache() {
   if (options::get()->get_bool("test_encode")) {
     test_encode();
   }
+
+  if (is_master()) {
+    pid_t p = getpid();
+    char buf[80];
+    sprintf(buf, "cat /proc/%d/status >& status.txt", p);
+    system(buf);
+    std::cout << "wrote proc/[pid]/status to 'status.txt'" << std::endl;
+  }
 }
 
 void smiles_data_reader::test_encode() {
@@ -664,7 +691,10 @@ void smiles_data_reader::decode_smiles(const std::vector<short> &data, std::stri
 }
 
 size_t smiles_data_reader::get_mem_usage() const {
-  return 42;
+  if (m_data_store == nullptr) {
+    return m_data.size();
+  }
+  return m_data_store->get_mem_usage();
 }
 
 void smiles_data_reader::get_delimiter() {
