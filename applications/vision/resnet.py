@@ -154,5 +154,5 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, random_seed=args.r
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
-                              job_name=args.job_name,
-                              **kwargs)
+                           job_name=args.job_name,
+                           **kwargs)
