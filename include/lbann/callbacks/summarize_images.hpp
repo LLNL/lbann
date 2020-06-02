@@ -75,7 +75,7 @@ public:
    *  @param num_images Number of images to summarize per epoch
    */
   categorical_accuracy_strategy(std::string const& cat_accuracy_layer_name,
-                                MatchType match_type,
+                                MatchType match_type=MatchType::NOMATCH,
                                 size_t num_images=10)
     : m_cat_accuracy_layer_name(cat_accuracy_layer_name),
       m_match_type(match_type),
@@ -153,7 +153,7 @@ private:
 }; // class Autoencoder : image_output_strategy
 
 std::unique_ptr<image_output_strategy>
-build_autoencoder_strategy_from_pbuf(google::protobuf::Message const&);
+build_track_sample_ids_strategy_from_pbuf(google::protobuf::Message const&);
 
 /** @class summarize_images
  *  @brief Callback to dump images to event files based on strategy

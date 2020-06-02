@@ -57,8 +57,8 @@ using factory_type = lbann::generic_factory<
 void register_default_builders(factory_type& factory) {
   factory.register_builder("CategoricalAccuracyStrategy",
                            build_categorical_accuracy_strategy_from_pbuf);
-  factory.register_builder("AutoencoderStrategy",
-                           build_autoencoder_strategy_from_pbuf);
+  factory.register_builder("TrackSampleIDsStrategy",
+                           build_track_sample_ids_strategy_from_pbuf);
 }
 
 // Manage a global factory
@@ -252,9 +252,9 @@ std::string autoencoder_strategy::get_tag(std::string const& layer_name,
 
 // Builder function
 std::unique_ptr<image_output_strategy>
-build_autoencoder_strategy_from_pbuf(google::protobuf::Message const& msg) {
+build_track_sample_ids_strategy_from_pbuf(google::protobuf::Message const& msg) {
   using callback_type = lbann_data::Callback::CallbackSummarizeImages;
-  using strategy_type = callback_type::SelectionStrategy::AutoencoderStrategy;
+  using strategy_type = callback_type::SelectionStrategy::TrackSampleIDsStrategy;
 
   const auto& strategy_msg = dynamic_cast<const strategy_type&>(msg);
   return make_unique<autoencoder_strategy>(

@@ -141,14 +141,14 @@ obj = lbann.ObjectiveFunction(layer_term)
 
 metrics = [lbann.Metric(mean_squared_error, name=mean_squared_error.name)]
 
-img_strategy = lbann.AutoencoderStrategy(
+img_strategy = lbann.TrackSampleIDsStrategy(
     input_layer_name=input_.name,
     num_tracked_images=10)
 
 summarize_images = lbann.CallbackSummarizeImages(
     selection_strategy=img_strategy,
-    image_source_layer_name=dropout2.name,
-    epoch_interval=10)
+    image_source_layer_name=reconstruction.name,
+    epoch_interval=1)
 
 # Dump original image from input layer one time
 summarize_input_layer = lbann.CallbackSummarizeImages(

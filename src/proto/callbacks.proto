@@ -341,7 +341,7 @@ message Callback {
 
       oneof strategy_type {
         CategoricalAccuracyStrategy categorical_accuracy = 1;
-        AutoencoderStrategy autoencoder = 2;
+        TrackSampleIDsStrategy track_sample_ids = 2;
       }
 
       message CategoricalAccuracyStrategy {
@@ -355,7 +355,7 @@ message Callback {
         uint64 num_images_per_epoch = 3;
       }
 
-      message AutoencoderStrategy {
+      message TrackSampleIDsStrategy {
         string input_layer_name = 1;
         uint64 num_tracked_images = 2;
       }
