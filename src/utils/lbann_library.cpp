@@ -371,10 +371,12 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
             << LBANN_MAKE_STR(LBANN_VERSION)
             << " (" << LBANN_MAKE_STR(LBANN_GIT_VERSION) << ")"
             << std::endl;
+#ifdef HYDROGEN_VERSION
   std::cout << "         LLNL Hydrogen version: "
             << HYDROGEN_VERSION
             << " (" << HYDROGEN_GIT_VERSION << ")"
             << std::endl << std::endl;
+#endif
   std::cout << "Build settings" << std::endl;
   std::cout << "  Type     : ";
 #ifdef LBANN_DEBUG
