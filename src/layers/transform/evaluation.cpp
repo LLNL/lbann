@@ -91,7 +91,6 @@ void fp_gpu(lbann_comm& comm,
 
   // Local matrix
   const auto& local_tdf_input = input.LockedMatrix();
-  //  El::Matrix<EvalDataType, El::Device::GPU> local_input;
   const auto local_input = ViewIfPossibleOrCopy<TensorDataType, EvalDataType>::get(local_tdf_input);
   const auto& local_height = local_input->Height();
   const auto& local_width = local_input->Width();
