@@ -337,7 +337,7 @@ void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::I
   El::Gaussian(mat, m, n, mean, stddev);
 #else
   gaussian_fill_procdet(mat, m, n, mean, stddev);
-#endif  // LBANN_PARALLEL_DETERMINISTIC
+#endif  // LBANN_DETERMINISTIC
 }
 
 template <typename TensorDataType>
@@ -346,7 +346,7 @@ void bernoulli_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::
   El::Bernoulli(mat, m, n, p);
 #else
   bernoulli_fill_procdet(mat, m, n, p);
-#endif  // LBANN_PARALLEL_DETERMINISTIC
+#endif  // LBANN_DETERMINISTIC
 }
 
 template <typename TensorDataType>
@@ -356,7 +356,7 @@ void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::In
   El::Uniform(mat, m, n, center, radius);
 #else
   uniform_fill_procdet(mat, m, n, center, radius);
-#endif  // LBANN_PARALLEL_DETERMINISTIC
+#endif  // LBANN_DETERMINISTIC
 }
 
 template <typename TensorDataType>
