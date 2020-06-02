@@ -57,7 +57,8 @@ void lbann_summary::report_image(std::string const& tag,
 
   if (static_cast<size_t>(image.Height()) != utils::get_linearized_size(dims))
   {
-    throw std::runtime_error("Everything is the worst.");
+    LBANN_ERROR("Image height \"", image.Height(), "\" does not match expected value \"",
+                utils::get_linearized_size(dims), "\".");
   }
 
   auto uint8_img = get_uint8_t_image(image, dims);
