@@ -61,7 +61,7 @@ void fp_cpu(lbann_comm& comm,
 #ifdef LBANN_HAS_HALF
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<cpu_fp16>& input,
-            cpu_fp16& value,
+            EvalType& value,
             Al::request& req) {
     LBANN_ERROR("This function is not supported in FP16 on CPUs");
 }
@@ -70,7 +70,7 @@ void fp_cpu(lbann_comm& comm,
 #ifdef LBANN_HAS_GPU_FP16
 void fp_cpu(lbann_comm& comm,
             const El::AbstractDistMatrix<fp16>& input,
-            fp16& value,
+            EvalType& value,
             Al::request& req) {
     LBANN_ERROR("This function is not supported in FP16 on CPUs");
 }
@@ -158,7 +158,7 @@ void fp_gpu(lbann_comm& comm,
 #ifdef LBANN_HAS_GPU_FP16
 void fp_gpu(lbann_comm& comm,
             const El::AbstractDistMatrix<cpu_fp16>& input,
-            cpu_fp16& value,
+            EvalType& value,
             cuda::event_wrapper& copy_event) {
   LBANN_ERROR("This function is not supported with "
               "the CPU FP16 type on GPUs. "
