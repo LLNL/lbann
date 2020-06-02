@@ -25,7 +25,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/summary.hpp"
-#include <lbann/utils/image.hpp>
+
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/image.hpp"
+#include "lbann/utils/opencv.hpp"
 
 namespace lbann {
 
@@ -57,7 +60,8 @@ void lbann_summary::report_image(std::string const& tag,
 
   if (static_cast<size_t>(image.Height()) != utils::get_linearized_size(dims))
   {
-    LBANN_ERROR("Image height \"", image.Height(), "\" does not match expected value \"",
+    LBANN_ERROR("Image height \"", image.Height(),
+                "\" does not match expected value \"",
                 utils::get_linearized_size(dims), "\".");
   }
 
