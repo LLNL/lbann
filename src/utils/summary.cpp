@@ -26,7 +26,6 @@
 
 #include "lbann/utils/summary.hpp"
 #include <lbann/utils/image.hpp>
-#include <lbann/utils/opencv.hpp>
 
 namespace lbann {
 

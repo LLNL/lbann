@@ -56,15 +56,6 @@ parser.add_argument(
     '--job-name', action='store', default='lbann_image_ae', type=str,
     help='scheduler job name (default: lbann_resnet)')
 parser.add_argument(
-    '--width', action='store', default=1, type=float,
-    help='Wide ResNet width factor (default: 1)')
-parser.add_argument(
-    '--bn-statistics-group-size', action='store', default=1, type=int,
-    help=('Group size for aggregating batch normalization statistics '
-          '(default: 1)'))
-parser.add_argument(
-    '--warmup', action='store_true', help='use a linear warmup')
-parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
 parser.add_argument(
@@ -222,7 +213,6 @@ relu6 = lbann.Relu(deconv1, name="relu6")
 decode1 = lbann.FullyConnected(relu6,
                                name="decode1",
                                hint_layer=image,
-                               num_neurons=784,
                                has_bias=True)
 
 reconstruction = lbann.Sigmoid(decode1,
