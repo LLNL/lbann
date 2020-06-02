@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/summary.hpp"
+#include <lbann/utils/image.hpp>
 
 namespace lbann {
 
@@ -45,6 +46,25 @@ lbann_summary::~lbann_summary() {
   if (m_sw != nullptr) {
     delete m_sw;
   }
+}
+
+void lbann_summary::report_image(std::string const& tag,
+                                 std::string const& img_format,
+                                 CPUMat const& image,
+                                 std::vector<int> const& dims_in,
+                                 int step) {
+  std::vector<size_t> dims(dims_in.begin(), dims_in.end());
+
+  if (static_cast<size_t>(image.Height()) != utils::get_linearized_size(dims))
+  {
+    LBANN_ERROR("Image height \"", image.Height(), "\" does not match expected value \"",
+                utils::get_linearized_size(dims), "\".");
+  }
+
+  auto uint8_img = get_uint8_t_image(image, dims);
+  auto img_str = encode_image(uint8_img, dims, img_format);
+  m_sw->add_image(tag, img_str, dims, step);
+
 }
 
 void lbann_summary::flush() {

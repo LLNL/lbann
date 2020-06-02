@@ -36,6 +36,7 @@ set_full_path(THIS_DIR_SOURCES
   save_topk_models.cpp
   set_weights_value.cpp
   summary.cpp
+  summarize_images.cpp
   sync_layers.cpp
   timeline.cpp
   timer.cpp
