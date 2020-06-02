@@ -4,7 +4,7 @@ import lbann.models
 import lbann.models.resnet
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
-import lbann.contrib.launcher
+import lbann.contrib.lc.launcher
 import data.imagenet
 
 # Command-line arguments
@@ -111,12 +111,6 @@ top1 = lbann.CategoricalAccuracy(probs, labels)
 top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
 layers = list(lbann.traverse_layer_graph(input_))
 
-# Setup tensor core operations (just to demonstrate enum usage)
-tensor_ops_mode = lbann.ConvTensorOpsMode.NO_TENSOR_OPS
-for l in layers:
-    if type(l) == lbann.Convolution:
-        l.conv_tensor_op_mode=tensor_ops_mode
-        
 # Setup objective function
 l2_reg_weights = set()
 for l in layers:
@@ -128,28 +122,21 @@ obj = lbann.ObjectiveFunction([cross_entropy, l2_reg])
 # Setup model
 metrics = [lbann.Metric(top1, name='top-1 accuracy', unit='%'),
            lbann.Metric(top5, name='top-5 accuracy', unit='%')]
-img_dump_cb = lbann.CallbackSummarizeImages(
-    cat_accuracy_layer="cat_accuracy",
-    image_layer="images",
-    criterion=callbacks_pb2.Callback.CallbackSummarizeImages.NOMATCH,
-    interval=5)
-
 callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer(),
-             lbann.CallbackSummary(dir = ".", batch_interval = 2,
-                                   mat_interval = 3),
              lbann.CallbackDropFixedLearningRate(
-                 drop_epoch=[30, 60, 80], amt=0.1),
-             img_dump_cb]
+                 drop_epoch=[30, 60, 80], amt=0.1)]
 if args.warmup:
     callbacks.append(
         lbann.CallbackLinearGrowthLearningRate(
             target=0.1 * args.mini_batch_size / 256, num_epochs=5))
-model = lbann.Model(args.num_epochs,
+model = lbann.Model(args.mini_batch_size,
+                    args.num_epochs,
                     layers=layers,
                     objective_function=obj,
                     metrics=metrics,
-                    callbacks=callbacks)
+                    callbacks=callbacks,
+                    random_seed=args.random_seed)
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)
@@ -158,10 +145,10 @@ opt = lbann.contrib.args.create_optimizer(args)
 data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
 # Setup trainer
-trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, random_seed=args.random_seed)
+trainer = lbann.Trainer()
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.launcher.run(trainer, model, data_reader, opt,
-                           job_name=args.job_name,
-                           **kwargs)
+lbann.contrib.lc.launcher.run(trainer, model, data_reader, opt,
+                              job_name=args.job_name,
+                              **kwargs)
