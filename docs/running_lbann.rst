@@ -148,7 +148,9 @@ Model components
 
 + Callback: Function that is performed at various points during an
   experiment. Callbacks are helpful for reporting, debugging, and
-  performing advanced training techniques.
+  performing advanced training techniques. Please consult the :ref:
+  `Callback<callbacks>` documentation for detailed descriptions of
+  the callbacks.
 
   - This is the natural home for experimental training
     techniques.

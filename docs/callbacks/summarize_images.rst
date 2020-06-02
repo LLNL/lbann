@@ -23,14 +23,14 @@ Callback Options
 
 + Strategy
 
-  Pointer to the autoencoder strategy or the categorical accuracy
+  Pointer to the categorical accuracy or the track-sample-ids
   strategy.
 
-    - Autoencoder
+    - Track Sample IDs
 
-      This strategy is to be used with an autoencoder model. This
-      strategy will track a given number of images throughout the
-      training process.
+      This strategy is ideally suited to generative applications,
+      allowing users to track fixed samples' progress throughout
+      training.
 
       .. note:: *There is currenly no built in way to print the
                 original images from the images pulled from the
@@ -89,7 +89,7 @@ Callback Options
 
 + Name of image source layer. Defined in the Python Front end.
 
-  .. note:: *For the autoencoder strategy, the image source layer
+  .. note:: *For the track-sample-ids strategy, the image source layer
             must be the reconstruction layer or the dropout layer.*
 
   .. code-block:: c
@@ -121,12 +121,12 @@ Examples Using Summarize Images Callback
 Python front end
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-+ Autoencoder Strategy
++ Track Sample IDs Strategy
 
   .. code-block:: python
 
      # Set up image selection strategy
-     img_strategy = lbann.AutoencoderStrategy(
+     img_strategy = lbann.TrackSampleIDsStrategy(
                      input_layer_name="input",
                      num_tracked_images=10)
 
@@ -168,13 +168,13 @@ Python front end
 Profobuf (Advanced)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-+ Autoencoder
++ Track Sample IDs
 
 ::
    callback {
      summarize_images {
        selection_strategy {
-         autoencoder {
+         track_sample_ids {
            input_layer_name: "input"
            num_tracked_images: 10
          }
