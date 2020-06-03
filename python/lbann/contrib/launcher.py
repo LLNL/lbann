@@ -1,9 +1,48 @@
 import os, os.path
+import socket
 import lbann
 import lbann.launcher
-import lbann.contrib.lc.launcher
-import lbann.contrib.lc.systems
 from lbann.util import make_iterable
+
+
+# ==============================================
+# Identify the Compute Center
+# ==============================================
+
+# Supported Compute Centers
+NERSC = 'NERSC'
+LC = 'LC'
+
+def is_nersc_center():
+    NERSC_HOST = os.getenv('NERSC_HOST')
+    if NERSC_HOST:
+        return NERSC
+    else:
+        return None
+
+def is_lc_center():
+    _dn = str.join('.', socket.getfqdn().split('.')[-2:])
+    if _dn == 'llnl.gov':
+        return LC
+    else:
+        return None
+
+# Detect center
+_center = is_lc_center()
+if not _center:
+    _center = is_nersc_center()
+
+if not _center:
+    system = socket.getfqdn()
+    raise RuntimeError('unknown compute center (' + system + ')')
+
+if _center == LC:
+    import lbann.contrib.lc.launcher
+    import lbann.contrib.lc.systems
+elif _center == NERSC:
+    import lbann.contrib.nersc.launcher
+    import lbann.contrib.nersc.systems
+
 
 def run(
     trainer,
@@ -68,9 +107,14 @@ def make_batch_script(*args, **kwargs):
 
     """
 
+    print('Starting to make the batch script')
     # Livermore Computing
-    if lbann.contrib.lc.systems.is_lc_system():
+    if _center == LC and lbann.contrib.lc.systems.is_lc_system():
         return lbann.contrib.lc.launcher.make_batch_script(*args, **kwargs)
+
+    # NERSC
+    elif _center == NERSC and lbann.contrib.nersc.systems.is_nersc_system():
+        return lbann.contrib.nersc.launcher.make_batch_script(*args, **kwargs)
 
     # Default launcher
     return lbann.launcher.make_batch_script(*args, **kwargs)
