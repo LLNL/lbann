@@ -40,10 +40,9 @@ def make_batch_script(
     environment = environment.copy()
 
     if system == CORI_GPU:
-        cores_per_socket = cores_per_node(system)
-        cores_per_proc = cores_per_socket // procs_per_node
+        cores_per_proc = cores_per_node(system) // procs_per_node
         if 'AL_PROGRESS_RANKS_PER_NUMA_NODE' not in environment:
-            environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = ceil(procs_per_node / 2)
+            environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = ceil(procs_per_node / numa_nodes_per_node(system))
         if 'OMP_NUM_THREADS' not in environment:
             environment['OMP_NUM_THREADS'] = cores_per_proc - 1
         if scheduler == 'slurm':
@@ -54,7 +53,7 @@ def make_batch_script(
             launcher_args.append('--cpu_bind=mask_cpu:{}'.format(mask_str))
 
         launcher_args.extend(['--qos=regular',
-                              f'--cpus-per-task={procs_per_node}',
+                              f'--cpus-per-task={cores_per_proc}',
                               '--gpus-per-task=1',
                               '--constraint=gpu'])
         

@@ -8,15 +8,16 @@ import re
 
 class SystemParams:
     """Simple data structure to describe an NERSC system."""
-    def __init__(self, cores_per_node, gpus_per_node, scheduler):
+    def __init__(self, cores_per_node, numa_nodes_per_node, gpus_per_node, scheduler):
         self.cores_per_node = cores_per_node
+        self.numa_nodes_per_node = numa_nodes_per_node
         self.gpus_per_node = gpus_per_node
         self.scheduler = scheduler
 
 # Supported LC systems
 CORI_GPU='cgpu'
 _system_params = {
-    CORI_GPU : SystemParams(40, 8, 'slurm'),
+    CORI_GPU : SystemParams(40, 2, 8, 'slurm'),
 }
 
 # Detect system
@@ -56,6 +57,12 @@ def cores_per_node(system = system()):
         raise RuntimeError('unknown system (' + system + ')')
     return _system_params[system].cores_per_node
 
+def numa_nodes_per_node(system = system()):
+    """Number of NUMA nodes per node."""
+    if not is_nersc_system(system):
+        raise RuntimeError('unknown system (' + system + ')')
+    return _system_params[system].numa_nodes_per_node
+
 def scheduler(system = system()):
     """Job scheduler for NERSC system."""
     if not is_nersc_system(system):
@@ -67,6 +74,5 @@ def procs_per_node(system = system()):
     if has_gpu(system):
         return gpus_per_node(system)
     else:
-        # Catalyst and Quartz have 2 sockets per node
         ### @todo Think of a smarter heuristic
-        return 2
+        return numa_nodes_per_node(system)
