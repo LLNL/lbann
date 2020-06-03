@@ -1,6 +1,7 @@
 from lbann.contrib.nersc.systems import *
 import lbann.launcher
 from lbann.util import make_iterable
+from math import ceil
 
 def run(*args, **kwargs):
     """Run LBANN with NERSC-specific optimizations (deprecated).
@@ -42,7 +43,7 @@ def make_batch_script(
         cores_per_socket = cores_per_node(system)
         cores_per_proc = cores_per_socket // procs_per_node
         if 'AL_PROGRESS_RANKS_PER_NUMA_NODE' not in environment:
-            environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_node / 2
+            environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = ceil(procs_per_node / 2)
         if 'OMP_NUM_THREADS' not in environment:
             environment['OMP_NUM_THREADS'] = cores_per_proc - 1
         if scheduler == 'slurm':
