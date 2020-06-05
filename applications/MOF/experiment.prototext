@@ -1,0 +1,311 @@
+data_reader {
+  reader {
+    name: "python"
+    role: "train"
+    shuffle: true
+    percent_of_data_to_use: 1.0
+    python {
+      module: "dataset"
+      module_dir: "/home/szaman5/lbann/applications/MOF"
+      sample_function: "get_train"
+      num_samples_function: "num_train_samples"
+      sample_dims_function: "sample_dims"
+    }
+  }
+}
+model {
+  objective_function {
+    layer_term {
+      scale_factor: 1.0
+      layer: "MSE"
+    }
+  }
+  metric {
+    layer_metric {
+      layer: "MSE"
+      name: "recon_error"
+    }
+  }
+  num_epochs: 100
+  layer {
+    name: "layer1"
+    children: "input"
+    input {
+      target_mode: "reconstruction"
+    }
+  }
+  layer {
+    name: "input"
+    parents: "layer1"
+    children: "conv_1 MSE"
+    reshape {
+      dims: "11 32 32 32"
+    }
+  }
+  layer {
+    name: "conv_1"
+    parents: "input"
+    children: "bn_conv1"
+    convolution {
+      num_dims: 3
+      num_output_channels: 256
+      num_groups: 1
+      conv_dims_i: 4
+      conv_pads_i: 1
+      conv_strides_i: 2
+      conv_dilations_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    name: "bn_conv1"
+    parents: "conv_1"
+    children: "activation_conv1"
+    batch_normalization {
+    }
+  }
+  layer {
+    name: "activation_conv1"
+    parents: "bn_conv1"
+    children: "conv2"
+    leaky_relu {
+    }
+  }
+  layer {
+    name: "conv2"
+    parents: "activation_conv1"
+    children: "bn_conv2"
+    convolution {
+      num_dims: 3
+      num_output_channels: 512
+      num_groups: 1
+      conv_dims_i: 4
+      conv_pads_i: 1
+      conv_strides_i: 2
+      conv_dilations_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    name: "bn_conv2"
+    parents: "conv2"
+    children: "activation_conv2"
+    batch_normalization {
+    }
+  }
+  layer {
+    name: "activation_conv2"
+    parents: "bn_conv2"
+    children: "conv3"
+    leaky_relu {
+    }
+  }
+  layer {
+    name: "conv3"
+    parents: "activation_conv2"
+    children: "bn_conv3"
+    convolution {
+      num_dims: 3
+      num_output_channels: 1024
+      num_groups: 1
+      conv_dims_i: 4
+      conv_pads_i: 1
+      conv_strides_i: 2
+      conv_dilations_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    name: "bn_conv3"
+    parents: "conv3"
+    children: "activation_conv3"
+    batch_normalization {
+    }
+  }
+  layer {
+    name: "activation_conv3"
+    parents: "bn_conv3"
+    children: "conv4"
+    leaky_relu {
+    }
+  }
+  layer {
+    name: "conv4"
+    parents: "activation_conv3"
+    children: "bn_conv4"
+    convolution {
+      num_dims: 3
+      num_output_channels: 2048
+      num_groups: 1
+      conv_dims_i: 4
+      conv_pads_i: 1
+      conv_strides_i: 2
+      conv_dilations_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    name: "bn_conv4"
+    parents: "conv4"
+    children: "activation_conv4"
+    batch_normalization {
+    }
+  }
+  layer {
+    name: "activation_conv4"
+    parents: "bn_conv4"
+    children: "encoded"
+    leaky_relu {
+    }
+  }
+  layer {
+    name: "encoded"
+    parents: "activation_conv4"
+    children: "deconv1"
+    convolution {
+      num_dims: 3
+      num_output_channels: 2048
+      num_groups: 1
+      conv_dims_i: 2
+      conv_strides_i: 2
+      conv_dilations_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    name: "deconv1"
+    parents: "encoded"
+    children: "bn_deconv1"
+    deconvolution {
+      num_dims: 3
+      num_output_channels: 176
+      num_groups: 1
+      conv_dims_i: 4
+      conv_strides_i: 2
+      conv_dilations_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    name: "bn_deconv1"
+    parents: "deconv1"
+    children: "layer18"
+    batch_normalization {
+    }
+  }
+  layer {
+    name: "layer18"
+    parents: "bn_deconv1"
+    children: "deconv2"
+    tanh {
+    }
+  }
+  layer {
+    name: "deconv2"
+    parents: "layer18"
+    children: "layer20"
+    deconvolution {
+      num_dims: 3
+      num_output_channels: 44
+      num_groups: 1
+      conv_dims_i: 4
+      conv_pads_i: 1
+      conv_strides_i: 2
+      conv_dilations_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    name: "layer20"
+    parents: "deconv2"
+    children: "layer21"
+    batch_normalization {
+    }
+  }
+  layer {
+    name: "layer21"
+    parents: "layer20"
+    children: "deconv3"
+    tanh {
+    }
+  }
+  layer {
+    name: "deconv3"
+    parents: "layer21"
+    children: "layer23"
+    deconvolution {
+      num_dims: 3
+      num_output_channels: 22
+      num_groups: 1
+      conv_dims_i: 4
+      conv_pads_i: 1
+      conv_strides_i: 2
+      conv_dilations_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    name: "layer23"
+    parents: "deconv3"
+    children: "layer24"
+    batch_normalization {
+    }
+  }
+  layer {
+    name: "layer24"
+    parents: "layer23"
+    children: "deconv4"
+    tanh {
+    }
+  }
+  layer {
+    name: "deconv4"
+    parents: "layer24"
+    children: "decoded"
+    deconvolution {
+      num_dims: 3
+      num_output_channels: 11
+      num_groups: 1
+      conv_dims_i: 4
+      conv_pads_i: 1
+      conv_strides_i: 2
+      conv_dilations_i: 1
+      has_bias: true
+    }
+  }
+  layer {
+    name: "decoded"
+    parents: "deconv4"
+    children: "MSE"
+    tanh {
+    }
+  }
+  layer {
+    name: "MSE"
+    parents: "decoded input"
+    mean_squared_error {
+    }
+  }
+  callback {
+    print_model_description {
+    }
+  }
+  callback {
+    print {
+      interval: 1
+    }
+  }
+}
+optimizer {
+  adam {
+    learn_rate: 1e-06
+    beta1: 0.9
+    beta2: 0.99
+    eps: 1e-09
+  }
+}
+trainer {
+  name: "MOF_AE_1"
+  procs_per_trainer: 1
+  mini_batch_size: 128
+}
