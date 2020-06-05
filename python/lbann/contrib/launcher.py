@@ -16,21 +16,22 @@ LC = 'LC'
 def is_nersc_center():
     NERSC_HOST = os.getenv('NERSC_HOST')
     if NERSC_HOST:
-        return NERSC
-    else:
-        return None
+        return True
+    return False
 
 def is_lc_center():
-    _dn = str.join('.', socket.getfqdn().split('.')[-2:])
-    if _dn == 'llnl.gov':
-        return LC
-    else:
-        return None
+    return str.join('.', socket.getfqdn().split('.')[-2:]) == 'llnl.gov'
+    
+def get_center():
+  if is_lc_center():
+    return LC
+  elif is_nersc_center():
+    return NERSC
+  else
+    return None
 
 # Detect center
-_center = is_lc_center()
-if not _center:
-    _center = is_nersc_center()
+_center = get_center()
 
 if not _center:
     system = socket.getfqdn()
@@ -107,7 +108,6 @@ def make_batch_script(*args, **kwargs):
 
     """
 
-    print('Starting to make the batch script')
     # Livermore Computing
     if _center == LC and lbann.contrib.lc.systems.is_lc_system():
         return lbann.contrib.lc.launcher.make_batch_script(*args, **kwargs)

@@ -8,10 +8,10 @@ from lbann.contrib.nersc.systems import system
 
 def parallel_file_system_path(system = system()):
     """Base path to parallel file system."""
-    if system in (CORI_GPU):
+    if system == lbann.contrib.nersc.systems.CORI_GPU:
         return '/global/cfs/cdirs/m3363/'
     else:
-        return '/<unknown>/<path>/'
+        raise RuntimeError(f'The parallel file system path is unknown on the NERSC system {system}')
 
 def mnist_dir(system = system()):
     """MNIST directory on NERSC system.

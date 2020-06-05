@@ -3,21 +3,6 @@ import lbann.launcher
 from lbann.util import make_iterable
 from math import ceil
 
-def run(*args, **kwargs):
-    """Run LBANN with NERSC-specific optimizations (deprecated).
-
-    This is deprecated. Use `lbann.contrib.launcher.run` instead.
-
-    """
-
-    import warnings
-    warnings.warn(
-        'Using deprecated function `lbann.contrib.lc.launcher.run`. '
-        'Use `lbann.contrib.launcher.run` instead.'
-    )
-    from ..launcher import run as _run
-    _run(*args, **kwargs)
-
 def make_batch_script(
     system=system(),
     procs_per_node=procs_per_node(),
@@ -56,9 +41,6 @@ def make_batch_script(
                               f'--cpus-per-task={cores_per_proc}',
                               '--gpus-per-task=1',
                               '--constraint=gpu'])
-        
-        if 'MV2_USE_CUDA' not in environment:
-            environment['MV2_USE_CUDA'] = 1
             
         # Hack to enable process forking
         # Note: InfiniBand is known to experience hangs if an MPI
