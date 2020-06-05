@@ -1,4 +1,4 @@
-"""Default settings for LC systems."""
+"""Default settings for NERSC systems."""
 import socket
 import re
 
@@ -14,10 +14,9 @@ class SystemParams:
         self.gpus_per_node = gpus_per_node
         self.scheduler = scheduler
 
-# Supported LC systems
-CORI_GPU='cgpu'
+# Supported NERSC systems
 _system_params = {
-    CORI_GPU : SystemParams(40, 2, 8, 'slurm'),
+    'cgpu' : SystemParams(40, 2, 8, 'slurm'), # Cori GPU nodes
 }
 
 # Detect system

@@ -1,20 +1,5 @@
-import argparse
 import lbann
 import data.mnist
-import lbann.contrib.args
-import lbann.contrib.launcher
-
-# ----------------------------------
-# Command-line arguments
-# ----------------------------------
-
-desc = ('Train LeNet on MNIST data using LBANN.')
-parser = argparse.ArgumentParser(description=desc)
-lbann.contrib.args.add_scheduler_arguments(parser)
-parser.add_argument(
-    '--job-name', action='store', default='lbann_lenet', type=str,
-    help='scheduler job name (default: lbann_lenet)')
-args = parser.parse_args()
 
 # ----------------------------------
 # Construct layer graph
@@ -95,7 +80,4 @@ trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
 # Note: Use `lbann.contrib.launcher.run` instead for optimized
 # defaults.
 
-kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.launcher.run(trainer, model, data_reader, opt,
-                           job_name=args.job_name,
-                           **kwargs)
+lbann.run(trainer, model, data_reader, opt)

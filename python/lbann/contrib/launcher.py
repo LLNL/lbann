@@ -4,45 +4,51 @@ import lbann
 import lbann.launcher
 from lbann.util import make_iterable
 
-
 # ==============================================
-# Identify the Compute Center
+# Detect the current compute center
 # ==============================================
-
-# Supported Compute Centers
-NERSC = 'NERSC'
-LC = 'LC'
-
-def is_nersc_center():
-    NERSC_HOST = os.getenv('NERSC_HOST')
-    if NERSC_HOST:
-        return NERSC
-    else:
-        return None
 
 def is_lc_center():
-    _dn = str.join('.', socket.getfqdn().split('.')[-2:])
-    if _dn == 'llnl.gov':
-        return LC
-    else:
-        return None
+    """Current system is operated by Livermore Computing at Lawrence
+    Livermore National Laboratory.
 
-# Detect center
-_center = is_lc_center()
-if not _center:
-    _center = is_nersc_center()
+    Checks whether the domain name ends with ".llnl.gov".
 
-if not _center:
-    system = socket.getfqdn()
-    raise RuntimeError('unknown compute center (' + system + ')')
+    """
+    domain = socket.getfqdn().split('.')
+    return (len(domain) > 2
+            and domain[-2] == 'llnl'
+            and domain[-1] == 'gov')
 
-if _center == LC:
+def is_nersc_center():
+    """Current system is operated by the National Energy Research
+    Scientific Computing Center at Lawrence Berkeley National
+    Laboratory.
+
+    Checks whether the environment variable NERSC_HOST is set.
+
+    """
+    return bool(os.getenv('NERSC_HOST'))
+
+# Detect compute center and choose launcher
+_center = 'unknown'
+launcher = lbann.launcher
+if is_lc_center():
+    _center = 'lc'
     import lbann.contrib.lc.launcher
-    import lbann.contrib.lc.systems
-elif _center == NERSC:
+    launcher = lbann.contrib.lc.launcher
+elif is_nersc_center():
+    _center = 'nersc'
     import lbann.contrib.nersc.launcher
-    import lbann.contrib.nersc.systems
+    launcher = lbann.contrib.nersc.launcher
 
+def compute_center():
+    """Name of organization that operates current system."""
+    return _center
+
+# ==============================================
+# Launcher functions
+# ==============================================
 
 def run(
     trainer,
@@ -106,15 +112,4 @@ def make_batch_script(*args, **kwargs):
     optimizations for the current system.
 
     """
-
-    print('Starting to make the batch script')
-    # Livermore Computing
-    if _center == LC and lbann.contrib.lc.systems.is_lc_system():
-        return lbann.contrib.lc.launcher.make_batch_script(*args, **kwargs)
-
-    # NERSC
-    elif _center == NERSC and lbann.contrib.nersc.systems.is_nersc_system():
-        return lbann.contrib.nersc.launcher.make_batch_script(*args, **kwargs)
-
-    # Default launcher
-    return lbann.launcher.make_batch_script(*args, **kwargs)
+    return launcher.make_batch_script(*args, **kwargs)
