@@ -15,6 +15,10 @@ The callbacks are set to execute at various times, and can be
 used for reporting, debugging, and performing advanced training
 techniques.
 
+For a complete listing of callbacks and details about their
+functionality, Please see :ref:`Available
+Callbacks<available-callbacks>`.
+
 .. _using-callbacks:
 ------------------------------------------------
 Using Callbacks
@@ -49,16 +53,11 @@ Python Front End
                        metrics,
                        callbacks)
 
-For a complete listing of callbacks and details about their
-functionality, Please see :ref:`Available
-Callbacks<available-callbacks>`.
-
-
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Profobuf (Advanced)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-::
+.. code-block:: guess
 
    callback {
      timer {
@@ -73,7 +72,6 @@ Profobuf (Advanced)
    }
 
 .. _available-callbacks:
-
 ------------------------------------------------
 Available Callbacks
 ------------------------------------------------
