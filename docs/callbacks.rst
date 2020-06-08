@@ -46,8 +46,7 @@ Python Front End
                 print_stats,
                 save_model]
 
-   model = lbann.Model(mini_batch_size,
-                       num_epochs,
+   model = lbann.Model(num_epochs,
                        layers,
                        objective_function,
                        metrics,
