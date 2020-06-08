@@ -92,15 +92,6 @@ trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
 # ----------------------------------
 # Run experiment
 # ----------------------------------
-# Note: Use `lbann.contrib.launcher.run` instead for optimized
-# defaults.
-
-# ----------------------------------
-# Run experiment
-# ----------------------------------
-# Note: Use `lbann.contrib.launcher.run` instead for optimized
-# defaults.
-
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 lbann.contrib.launcher.run(trainer, model, data_reader, opt,
                            job_name=args.job_name,
