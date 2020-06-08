@@ -56,7 +56,7 @@ Python Front End
 Profobuf (Advanced)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. code-block:: guess
+.. code-block::
 
    callback {
      timer {
