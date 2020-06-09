@@ -90,7 +90,11 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
     // Evaluate on validation set
     auto key = c.get_trainer().check_and_build_execution_context(c, model, execution_mode::validation);
     auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
-    evaluate(evaluation_context, model, dc, execution_mode::validation);
+    // Check to make sure that the model has a valid execution mode
+    // before trying to do inference
+    if (model.is_execution_mode_valid(execution_mode::validation)) {
+      evaluate(evaluation_context, model, dc, execution_mode::validation);
+    }
   }
   do_train_end_cbs(model);
 }
@@ -150,6 +154,11 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
                                       data_coordinator& dc,
                                       execution_mode mode,
                                       size_t num_batches) {
+  /// @todo BVE FIXME this state needs to be set for inference-only
+  /// workflows -- however, if the model will bail due to a lack of a
+  /// valid mode, the state of the data coordinator is not
+  /// consistent.  Fix this once the data coordinator is fully
+  /// decoupled from the input layer.
   model.reset_epoch_statistics(mode);
   model.reset_mode(c, mode);
   // Ensure that the data coordinator has the right execution context
