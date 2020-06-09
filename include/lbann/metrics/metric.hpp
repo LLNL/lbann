@@ -61,6 +61,12 @@ struct metric_statistics {
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
+    /// @todo BVE FIXME truncating the sum to 5 digits of precision is
+    /// a reasonable measure for ensuring that spurious differences in
+    /// the computed objective function are not reported as
+    /// differences in the checkpoint.  However, it would be nice to
+    /// get an exact match.
+    m_sum = (long)(1e5 * m_sum) / 1.0e5;
     ar(CEREAL_NVP(m_sum),
        CEREAL_NVP(m_num_samples));
   }
