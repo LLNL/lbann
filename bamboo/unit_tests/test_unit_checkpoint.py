@@ -60,7 +60,7 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
     return_code_ckpt_2 = os.system(command)
     tools.assert_success(return_code_ckpt_2, error_file_name)
 
-    diff_test = os.system('diff -rq {ckpt} {no_ckpt}'.format(
+    diff_test = os.system('diff -r {ckpt} {no_ckpt}'.format(
         ckpt=ckpt_dir, no_ckpt=no_ckpt_dir))
     path_prefix = '{d}/bamboo/unit_tests/'.format(d=dir_name)
     if diff_test !=0:
@@ -125,7 +125,7 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
     return_code_ckpt_2 = os.system(command)
     tools.assert_success(return_code_ckpt_2, error_file_name)
 
-    diff_test = os.system('diff -rq {ckpt} {no_ckpt}'.format(
+    diff_test = os.system('diff -r {ckpt} {no_ckpt}'.format(
         ckpt=ckpt_dir, no_ckpt=no_ckpt_dir))
     path_prefix = '{d}/bamboo/unit_tests'.format(d=dir_name)
     if diff_test != 0:
