@@ -169,6 +169,17 @@ void weights::set_dims(std::vector<int> matrix_height_dims,
 // Matrix distribution accessors
 // -----------------------------------------------
 
+void weights::set_values(El::BaseDistMatrix const& values) {
+  if ((values.Height() != get_values().Height())
+      || (values.Width() != get_values().Width())) {
+    LBANN_ERROR("Expected matrix size ",
+                this->get_matrix_height(), "x", this->get_matrix_width(),
+                "; got a matrix with size ",
+                values.Height(), "x", values.Width());
+  }
+  El::Copy(values, this->get_values());
+}
+
 El::DistData weights::get_matrix_distribution() const {
   return m_matrix_dist;
 }

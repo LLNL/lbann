@@ -28,7 +28,7 @@
 #define LBANN_LAYERS_DATA_TYPE_LAYER_HPP_INCLUDED
 
 #include "lbann/layers/layer.hpp"
-#include "lbann/weights/data_type_weights.hpp"
+#include "lbann/weights/weights_proxy.hpp"
 
 #include "lbann/utils/h2_tmp.hpp"
 
@@ -74,8 +74,8 @@ public:
   /** @brief The local tensor type expected in this object. */
   using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
 
-  /** @brief The concrete weights type used by this object. */
-  using WeightsType = data_type_weights<TensorDataType>;
+  /** @brief The proxy type for weights used by this object. */
+  using WeightsProxyType = weights_proxy<TensorDataType>;
 
   ///@}
 
@@ -106,24 +106,6 @@ public:
 
   /** Check that the setup is reasonable. */
   void check_setup() override;
-
-  // ===========================================================
-  // Weights access functions
-  // ===========================================================
-
-  /** @brief Set list of pointers to weights. */
-  void set_weights(std::vector<weights*>& w) override {
-    m_weights.resize(w.size());
-    std::transform(begin(w), end(w), begin(m_weights),
-                   [](weights* wptr) {
-                     return (wptr
-                             ? &(dynamic_cast<WeightsType&>(*wptr))
-                             : nullptr);
-                   });
-  }
-
-  /** @brief Replace weights with another Layer's weights*/
-  void replace_weights(Layer* other_layer) override;
 
   // ===========================================================
   // Public Tensor access functions
@@ -233,43 +215,29 @@ protected:
   // Protected Weights access functions
   // ===========================================================
 
-  /** Get references to weights. */
-  std::vector<WeightsType*>& get_data_type_weights() { return m_weights; }
-  /** Get references to weights. (const) */
-  const std::vector<WeightsType*>& get_data_type_weights() const {
-    return m_weights;
+  /** @brief Get the values matrix for a specific weights object */
+  AbsDistMatrixType const& weights_values(size_t idx) const {
+    if (idx >= m_weights_proxy.size())
+      LBANN_ERROR("Bad index ", idx, " "
+                  "(size=" , m_weights_proxy.size(), ")");
+    return m_weights_proxy[idx].values();
   }
 
-  /** @brief Get a specific weights object */
-  WeightsType& get_data_type_weights(size_t idx) {
-    return *(m_weights.at(idx));
+  /** @brief Get a specific master weights object.
+   *
+   *  This is sufficient for setting or accessing metadata about the
+   *  weights class.
+   */
+  weights& master_weights(size_t idx) {
+    return get_weights(idx);
   }
-  WeightsType const& get_data_type_weights(size_t idx) const {
-    return *(m_weights.at(idx));
+  weights const& master_weights(size_t idx) const {
+    return get_weights(idx);
   }
-
-  bool has_data_type_weights(size_t idx) const noexcept {
-    return (idx < m_weights.size() && m_weights[idx] != nullptr);
-  }
-
-  void set_num_data_type_weights(size_t num_weights) {
-    m_weights.resize(num_weights, nullptr);
-  }
-
-  void set_data_type_weights(size_t idx, WeightsType* w) {
-    m_weights.at(idx) = w;
-  }
-
-  /** Set list of pointers to weights. */
-  void set_data_type_weights(std::vector<WeightsType*> w) { m_weights = w; }
-  /** Replace weights with another Layer's weights*/
-  //void replace_weights(Layer* other_layer) override;
-
-  void add_weights(WeightsType* w) { m_weights.push_back(w); }
-  size_t num_weights() const noexcept { return m_weights.size(); }
-  bool has_weights() const noexcept { return num_weights() > 0; }
 
 private:
+
+  void setup_weights(size_t idx, weights& w) override;
 
   /** @brief Attempt to take ownership of the previous error signal.
    *
@@ -349,25 +317,22 @@ private:
   void back_prop_impl_() final;
 
   // ===========================================================
-  // Private access functions
-  // ===========================================================
-
-  /** @brief Get references to weights. */
-  std::vector<weights*> get_weights() override {
-    return std::vector<weights*>(begin(m_weights), end(m_weights));
-  }
-
-  /** @brief Get references to weights. (const) */
-  std::vector<weights const*> get_weights() const override {
-    return std::vector<weights const*>(begin(m_weights), end(m_weights));
-  }
-
-  // ===========================================================
   // Private class members
   // ===========================================================
 
-  /** References to layer weights. */
-  std::vector<WeightsType*> m_weights;
+  /** @brief Persistent, read-only, proxied views of the weights
+   *         values matrix.
+   *
+   *  @note (trb 05/28/2020): These are kept as members out of
+   *  consideration for the case where accessing them could require a
+   *  deep copy. This is more out of my own concern about ways in
+   *  which derived classes could abuse weights; in theory, I believe,
+   *  you could just create these on the fly once during FP and once
+   *  during BP. Then the question is: does the performance cost of
+   *  (potentially) two(ish) copies or the memory cost of storing an
+   *  additional copy of the weights hurt more?
+   */
+  std::vector<WeightsProxyType> m_weights_proxy;
 
   /** Input tensors.
    *  Each matrix column corresponds to a flattened mini-batch sample.

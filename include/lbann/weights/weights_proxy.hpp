@@ -29,6 +29,7 @@
 #include "lbann_config.hpp"
 
 #include "lbann/base.hpp"
+#include "lbann/weights/data_type_weights.hpp"
 #include "lbann/weights/weights.hpp"
 
 #if defined LBANN_DEBUG

@@ -144,6 +144,22 @@ public:
 
   /** @name Matrix accessors */
   ///@{
+  /** @brief Set the values matrix to the given matrix.
+   *
+   *  The input matrix must be compatible with the established matrix
+   *  dimensions. If the data type of the input matrix is different
+   *  from that expected by the weights object, they will be cast to
+   *  the data type expected by the weights object.
+   *
+   *  @throws lbann::exception If the input matrix has incompatible
+   *                           dimensions.
+   *
+   *  @todo (trb 05/28/2020): Should this check the DistData of the
+   *  input against the expected DistData for the weights object?
+   */
+  void set_values(El::BaseDistMatrix const& values);
+
+  /** @brief Access the matrix of weights values. */
   virtual El::BaseDistMatrix& get_values() = 0;
   virtual El::BaseDistMatrix const& get_values() const = 0;
   ///@}

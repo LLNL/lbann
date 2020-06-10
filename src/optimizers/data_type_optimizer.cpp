@@ -103,9 +103,37 @@ auto data_type_optimizer<TensorDataType>::get_gradient() -> AbsDistMatrixType& {
 }
 
 template <typename TensorDataType>
-void data_type_optimizer<TensorDataType>::add_to_gradient(const AbsDistMatrixType& gradient,
-                                TensorDataType scale,
-                                bool allreduce_needed) {
+void data_type_optimizer<TensorDataType>::add_to_gradient(
+  El::BaseDistMatrix const& gradient,
+  double scale,
+  bool allreduce_needed) {
+
+  using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
+
+  // FIXME (trb 06/02/2020): This is an obvious pessimization. This
+  // function should be able to dispatch "mixed precision" kernels.
+  if (auto const* dt_grad = dynamic_cast<AbsDistMatType const*>(&gradient)) {
+    this->add_to_gradient(*dt_grad,
+                          El::To<TensorDataType>(scale),
+                          allreduce_needed);
+  }
+  else
+  {
+    std::unique_ptr<AbsDistMatType> grad(
+      AbsDistMatType::Instantiate(gradient.DistData()));
+    El::Copy(gradient, *grad);
+    this->add_to_gradient(*grad,
+                          El::To<TensorDataType>(scale),
+                          allreduce_needed);
+  }
+}
+
+
+template <typename TensorDataType>
+void data_type_optimizer<TensorDataType>::add_to_gradient(
+  const AbsDistMatrixType& gradient,
+  TensorDataType scale,
+  bool allreduce_needed) {
 
   // Check that matrices have been setup
   if (m_gradient == nullptr || m_gradient_v == nullptr) {
@@ -182,9 +210,11 @@ void data_type_optimizer<TensorDataType>::clear_gradient() {
 }
 
 template <typename TensorDataType>
-auto data_type_optimizer<TensorDataType>::get_gradient_buffer(TensorDataType& buf_scale,
-                                           TensorDataType& in_scale,
-                                           bool allreduce_needed) -> AbsDistMatrixType& {
+auto data_type_optimizer<TensorDataType>::get_gradient_buffer(
+  TensorDataType& buf_scale,
+  TensorDataType& in_scale,
+  bool allreduce_needed) -> AbsDistMatrixType& {
+
   if (m_gradient == nullptr) {
     LBANN_ERROR("attempted to access gradient before it is set up");
   }
@@ -193,6 +223,7 @@ auto data_type_optimizer<TensorDataType>::get_gradient_buffer(TensorDataType& bu
   if (this->get_gradient_status() == optimizer_gradient_status::allreduce_started) {
     finish_gradient_allreduce();
   }
+
   // Determine scaling factor and transition state.
   switch (this->get_gradient_status()) {
   case optimizer_gradient_status::ready:
@@ -267,6 +298,7 @@ template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::start_gradient_allreduce() {
   switch (this->get_gradient_status()) {
   case optimizer_gradient_status::allreduce_needed:
+    this->accumulate_all_gradient_contributions(*m_gradient);
     this->get_comm().nb_allreduce(*m_gradient,
                                   m_gradient->RedundantComm(),
                                   m_gradient_allreduce_req);
@@ -309,6 +341,16 @@ void data_type_optimizer<TensorDataType>::step() {
   const auto start_time = get_time();
   this->step_compute(m_weights->get_values(), get_gradient());
   this->inc_step_time(get_time() - start_time);
+}
+
+template <typename TensorDataType>
+El::DistData data_type_optimizer<TensorDataType>::get_matrix_info(
+  El::Int& height, El::Int& width) const
+{
+  auto const& w = this->get_weights();
+  height = w.get_matrix_height();
+  width = w.get_matrix_width();
+  return w.get_matrix_distribution();
 }
 
 // =============================

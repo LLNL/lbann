@@ -105,6 +105,22 @@ public:
    *                            allreduce is performed lazily when the
    *                            gradient is accessed.
    */
+  void add_to_gradient(El::BaseDistMatrix const& gradient,
+                       double scale = 1.0,
+                       bool allreduce_needed = false) override;
+
+  /** @brief Add to the objective function gradient w.r.t. the weights.
+   *  @param gradient           Contribution to gradient.
+   *  @param scale              Scaling factor for gradient
+   *                            contribution.
+   *  @param allreduce_needed   Whether the gradient contribution
+   *                            requires an allreduce over its redundant
+   *                            communicator. If false, duplicated data
+   *                            (over the redundant communicator) is
+   *                            assumed to be identical. If true, an
+   *                            allreduce is performed lazily when the
+   *                            gradient is accessed.
+   */
   void add_to_gradient(const AbsDistMatrixType& gradient,
                        TensorDataType scale = TensorDataType(1),
                        bool allreduce_needed = false);
@@ -169,6 +185,8 @@ protected:
    */
   virtual void step_compute(AbsDistMatrixType& values,
                             const AbsDistMatrixType& gradient) = 0;
+
+  El::DistData get_matrix_info(El::Int& h, El::Int& w) const override;
 
 private:
 

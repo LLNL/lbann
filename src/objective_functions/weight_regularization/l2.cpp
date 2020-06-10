@@ -162,10 +162,10 @@ EvalType l2_weight_regularization::finish_evaluation() {
 
 void l2_weight_regularization::compute_weight_regularization() {
   if (m_scale_factor == EvalType(0)) { return; }
-  for (auto&& w : m_weights) {
-    auto&& opt = dynamic_cast<OptimizerType*>(w->get_optimizer());
+  for (auto* w : m_weights) {
+    auto* opt = w->get_optimizer();
     if (opt != nullptr) {
-      opt->add_to_gradient(dynamic_cast<WeightsType*>(w)->get_values(), m_scale_factor);
+      opt->add_to_gradient(w->get_values(), m_scale_factor);
     }
   }
 }

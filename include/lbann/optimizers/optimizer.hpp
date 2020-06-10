@@ -36,6 +36,7 @@
 #endif // LBANN_HAS_GPU
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/weights/weights.hpp"
 
 #include <cereal/types/utility.hpp>
 
@@ -95,10 +96,27 @@ public:
   /** @name Gradient update management */
   ///@{
 
+  /** @brief Add to the objective function gradient w.r.t. the weights.
+   *  @param gradient           Contribution to gradient.
+   *  @param scale              Scaling factor for gradient
+   *                            contribution.
+   *  @param allreduce_needed   Whether the gradient contribution
+   *                            requires an allreduce over its redundant
+   *                            communicator. If false, duplicated data
+   *                            (over the redundant communicator) is
+   *                            assumed to be identical. If true, an
+   *                            allreduce is performed lazily when the
+   *                            gradient is accessed.
+   */
+  virtual void add_to_gradient(El::BaseDistMatrix const& gradient,
+                               double scale = 1.0,
+                               bool allreduce_needed = false) = 0;
+
   /** @brief Zero out the objective function gradient w.r.t. the weights. */
   virtual void clear_gradient() = 0;
 
   /** @brief Objects that are expected to contribute to the gradient. */
+
   El::Int get_num_gradient_sources() const;
   /** @brief Register a gradient source.
    *
@@ -121,12 +139,42 @@ public:
   /** @brief Perform optimization step. */
   virtual void step() = 0;
 
+  /** @brief Get the gradient buffer.
+   *
+   *  This provides access to the underlying gradient buffer, which
+   *  may be directly summed into. This buffer should be considered
+   *  ephemeral and not stored. The caller must also ensure the buffer
+   *  has an appropriate distribution. buf_scale provides the caller
+   *  with a scale factor that must be applied to the gradient buffer
+   *  before writing to it, and in_scale provides a scaling factor
+   *  that must be applied to the user's data.  Essentially, this
+   *  enables computations of the form
+   *  @verbatim
+   *    gradient = buf_scale*gradient + in_scale*new_gradient
+   *  @endverbatim
+   *  This is an expert-mode function and is intended to help
+   *  eliminate copies and facilitate kernel fusion.
+   *
+   *  @param buf_scale A scale factor provided to the caller to scale
+   *                   the returned buffer by.
+   *  @param in_scale A scale factor provided to the caller to scale
+   *                  their gradient contributions by.
+   *  @param allreduce_needed Whether this gradient contribution will need to
+   *                          be allreduced.
+   */
+  template <typename TensorDataType>
+  El::AbstractDistMatrix<TensorDataType>& get_gradient_buffer(
+    TensorDataType& buf_scale,
+    TensorDataType& in_scale,
+    bool allreduce_needed = false);
+
   ///@}
   /** @brief Communicator access */
   ///@{
 
   /** @brief Access LBANN communicator. */
   lbann_comm& get_comm() { return *m_comm; }
+
   /** @brief Access LBANN communicator. */
   const lbann_comm& get_comm() const { return *m_comm; }
 
@@ -173,10 +221,17 @@ protected:
 
   void inc_step_time(EvalType time) { m_step_time += time; }
 
+  virtual El::DistData get_matrix_info(El::Int& h, El::Int& w) const = 0;
+
+  template <typename TensorDataType>
+  void accumulate_all_gradient_contributions(
+    El::AbstractDistMatrix<TensorDataType>& gradient);
 private:
 
   /** @brief Begin the allreduce on the gradient values. */
   virtual void start_gradient_allreduce() = 0;
+  /** @brief Complete the allreduce on the gradient values. */
+  virtual void finish_gradient_allreduce() = 0;
 
 private:
 
@@ -201,7 +256,95 @@ private:
   /** @brief Time spent in optimization step. */
   EvalType m_step_time = 0;
 
+  /** @brief Map from data types to gradient contributions.
+   *  @todo Refactor this out. It's a hack.
+   */
+  using gradient_mat_type = El::BaseDistMatrix;
+  using gradient_mat_ptr = std::unique_ptr<gradient_mat_type>;
+  std::unordered_map<std::type_index, gradient_mat_ptr> gradients_;
+
 };
+
+template <typename TensorDataType>
+El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
+  TensorDataType& buf_scale,
+  TensorDataType& in_scale,
+  bool allreduce_needed) {
+
+  using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
+  auto const ti = std::type_index(typeid(TensorDataType));
+  auto& buffer_ptr = gradients_[ti];
+  if (!buffer_ptr) {
+    El::Int height, width;
+    auto dist_data = this->get_matrix_info(height, width);
+    auto tmp = std::unique_ptr<AbsDistMatType>(
+      AbsDistMatType::Instantiate(dist_data));
+    tmp->Resize(height, width);
+    buffer_ptr = std::move(tmp);
+  }
+
+  auto& buffer = dynamic_cast<AbsDistMatType&>(*buffer_ptr);
+
+// Complete outstanding allreduce.
+  if (this->get_gradient_status() == optimizer_gradient_status::allreduce_started) {
+    this->finish_gradient_allreduce();
+  }
+
+  // Determine scaling factor and transition state.
+  switch (this->get_gradient_status()) {
+  case optimizer_gradient_status::ready:
+    buf_scale = DataType(1);
+    in_scale = DataType(1);
+    if (allreduce_needed) {
+      buf_scale /= buffer.RedundantSize();
+      this->set_gradient_status(optimizer_gradient_status::allreduce_needed);
+    }
+    break;
+  case optimizer_gradient_status::cleared:
+    buf_scale = DataType(0);
+    in_scale = DataType(1);
+    this->clear_gradient();
+    this->set_gradient_status((allreduce_needed ?
+                               optimizer_gradient_status::allreduce_needed :
+                               optimizer_gradient_status::ready));
+    break;
+  case optimizer_gradient_status::allreduce_needed:
+    buf_scale = DataType(1);
+    // Properly scale data that does not need to be allreduced.
+    in_scale = (allreduce_needed ?
+                DataType(1) :
+                DataType(1) / buffer.RedundantSize());
+    break;
+  case optimizer_gradient_status::allreduce_started:
+  default:
+    LBANN_ERROR("unexpected gradient status ("
+                + to_string(this->get_gradient_status()) + ")");
+  }
+  return buffer;
+}
+
+template <typename TensorDataType>
+void optimizer::accumulate_all_gradient_contributions(
+  El::AbstractDistMatrix<TensorDataType>& gradient)
+{
+  using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
+  static const TensorDataType one = TensorDataType(1.f);
+
+  El::Zero(gradient);
+
+  auto tmp = std::unique_ptr<AbsDistMatType>{
+    gradient.Construct(gradient.Grid(), gradient.Root())};
+  for (auto const& grad_map_value : this->gradients_) {
+    auto const& buf_unique_ptr = grad_map_value.second;
+    if (auto* buf_ptr = dynamic_cast<AbsDistMatType*>(buf_unique_ptr.get())) {
+      El::Axpy(one, *buf_ptr, gradient);
+    }
+    else {
+      El::Copy(*buf_unique_ptr, *tmp);
+      El::Axpy(one, *tmp, gradient);
+    }
+  }
+}
 
 } // namespace lbann
 

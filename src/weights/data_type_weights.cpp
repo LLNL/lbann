@@ -258,6 +258,13 @@ auto data_type_weights<TensorDataType>::get_values() const
 
 template <typename TensorDataType>
 void data_type_weights<TensorDataType>::set_values(const AbsDistMatrixType& values) {
+  if ((values.Height() != get_values().Height())
+      || (values.Width() != get_values().Width())) {
+    LBANN_ERROR("Expected matrix size ",
+                this->get_matrix_height(), "x", this->get_matrix_width(),
+                "; got a matrix with size ",
+                values.Height(), "x", values.Width());
+  }
   El::Copy(values, get_values());
 }
 

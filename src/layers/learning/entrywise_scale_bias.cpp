@@ -34,12 +34,9 @@ namespace {
 template <typename TensorDataType>
 void fp_impl(const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
              El::Matrix<TensorDataType, El::Device::CPU>& local_output,
-             const data_type_weights<TensorDataType>& scale_bias) {
-  using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
+             El::Matrix<TensorDataType, El::Device::CPU> const& local_scale_bias) {
 
   // Local matrices
-  const auto& local_scale_bias
-    = dynamic_cast<const CPUMatType&>(scale_bias.get_values().LockedMatrix());
   const auto local_scale = El::LockedView(local_scale_bias,
                                           El::ALL, El::IR(0));
   const auto local_bias = El::LockedView(local_scale_bias,
@@ -66,14 +63,12 @@ void bp_impl(
   const El::Matrix<TensorDataType, El::Device::CPU>& local_input,
   const El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_output,
   El::Matrix<TensorDataType, El::Device::CPU>& local_gradient_wrt_input,
-  data_type_weights<TensorDataType>& scale_bias,
+  El::Matrix<TensorDataType, El::Device::CPU> const& local_scale_bias,
   El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias) {
 
   using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
   // Local matrices
-  const auto& local_scale_bias
-    = dynamic_cast<const CPUMatType&>(scale_bias.get_values().LockedMatrix());
   auto& local_gradient_wrt_scale_bias
     = dynamic_cast<CPUMatType&>(gradient_wrt_scale_bias.Matrix());
   const auto local_scale = El::LockedView(local_scale_bias,
@@ -115,12 +110,6 @@ void bp_impl(
 
   }
 
-  // Update optimizer with gradient
-  auto* opt = scale_bias.get_optimizer();
-  if (opt != nullptr) {
-    opt->add_to_gradient(gradient_wrt_scale_bias, El::TypeTraits<TensorDataType>::One(), true);
-  }
-
 }
 
 } // namespace
@@ -130,17 +119,26 @@ void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::fp_compute() {
   using LocalMatType = El::Matrix<TensorDataType, Device>;
   fp_impl(dynamic_cast<LocalMatType const&>(this->get_local_prev_activations()),
           dynamic_cast<LocalMatType&>(this->get_local_activations()),
-          this->get_data_type_weights(0));
+          dynamic_cast<LocalMatType const&>(this->weights_values(0)));
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
   using LocalMatType = El::Matrix<TensorDataType, Device>;
+
   bp_impl(dynamic_cast<LocalMatType const&>(this->get_local_prev_activations()),
           dynamic_cast<LocalMatType const&>(this->get_local_prev_error_signals()),
           dynamic_cast<LocalMatType&>(this->get_local_error_signals()),
-          this->get_data_type_weights(0),
+          dynamic_cast<LocalMatType const&>(this->weights_values(0)),
           *this->m_weights_gradient);
+
+  // Update optimizer with gradient
+  auto* opt = this->get_weights(0).get_optimizer();
+  if (opt != nullptr) {
+    opt->add_to_gradient(*(this->m_weights_gradient),
+                         El::TypeTraits<TensorDataType>::One(),
+                         true);
+  }
 }
 
 LBANN_LAYER_DEFAULT_BUILDER(entrywise_scale_bias)
