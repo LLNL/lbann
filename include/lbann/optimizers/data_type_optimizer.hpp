@@ -93,68 +93,6 @@ public:
    */
   AbsDistMatrixType& get_gradient();
 
-  /** @brief Add to the objective function gradient w.r.t. the weights.
-   *  @param gradient           Contribution to gradient.
-   *  @param scale              Scaling factor for gradient
-   *                            contribution.
-   *  @param allreduce_needed   Whether the gradient contribution
-   *                            requires an allreduce over its redundant
-   *                            communicator. If false, duplicated data
-   *                            (over the redundant communicator) is
-   *                            assumed to be identical. If true, an
-   *                            allreduce is performed lazily when the
-   *                            gradient is accessed.
-   */
-  void add_to_gradient(El::BaseDistMatrix const& gradient,
-                       double scale = 1.0,
-                       bool allreduce_needed = false) override;
-
-  /** @brief Add to the objective function gradient w.r.t. the weights.
-   *  @param gradient           Contribution to gradient.
-   *  @param scale              Scaling factor for gradient
-   *                            contribution.
-   *  @param allreduce_needed   Whether the gradient contribution
-   *                            requires an allreduce over its redundant
-   *                            communicator. If false, duplicated data
-   *                            (over the redundant communicator) is
-   *                            assumed to be identical. If true, an
-   *                            allreduce is performed lazily when the
-   *                            gradient is accessed.
-   */
-  void add_to_gradient(const AbsDistMatrixType& gradient,
-                       TensorDataType scale = TensorDataType(1),
-                       bool allreduce_needed = false);
-
-  /** @brief Zero out the objective function gradient w.r.t. the weights. */
-  void clear_gradient() override;
-
-  /** @brief Get the gradient buffer.
-   *
-   *  This provides access to the underlying gradient buffer, which
-   *  may be directly summed into. This buffer should be considered
-   *  ephemeral and not stored. The caller must also ensure the buffer
-   *  has an appropriate distribution. buf_scale provides the caller
-   *  with a scale factor that must be applied to the gradient buffer
-   *  before writing to it, and in_scale provides a scaling factor
-   *  that must be applied to the user's data.  Essentially, this
-   *  enables computations of the form
-   *  @verbatim
-   *    gradient = buf_scale*gradient + in_scale*new_gradient
-   *  @endverbatim
-   *  This is an expert-mode function and is intended to help
-   *  eliminate copies and facilitate kernel fusion.
-   *
-   *  @param buf_scale A scale factor provided to the caller to scale
-   *                   the returned buffer by.
-   *  @param in_scale A scale factor provided to the caller to scale
-   *                  their gradient contributions by.
-   *  @param allreduce_needed Whether this gradient contribution will need to
-   *                          be allreduced.
-   */
-  AbsDistMatrixType& get_gradient_buffer(TensorDataType& buf_scale,
-                                         TensorDataType& in_scale,
-                                         bool allreduce_needed = false);
-
   /** @brief Optimization step. */
   void step() override;
   ///@}
@@ -186,7 +124,7 @@ protected:
   virtual void step_compute(AbsDistMatrixType& values,
                             const AbsDistMatrixType& gradient) = 0;
 
-  El::DistData get_matrix_info(El::Int& h, El::Int& w) const override;
+  std::tuple<El::Int,El::Int,El::DistData> get_matrix_info() const override;
 
 private:
 
@@ -226,14 +164,14 @@ private:
    *  Does nothing if an allreduce is not needed or has already been
    *  started.
    */
-  void start_gradient_allreduce() final;
+  //void start_gradient_allreduce() final;
 
   /** @brief Synchronize non-blocking allreduce on the gradient, if needed.
    *
    *  Does nothing if an allreduce isn't needed. Throws an exception
    *  if an allreduce is needed but hasn't been started.
    */
-  void finish_gradient_allreduce();
+  //void finish_gradient_allreduce();
 };
 
 #ifndef LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE

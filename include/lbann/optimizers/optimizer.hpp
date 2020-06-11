@@ -36,6 +36,7 @@
 #endif // LBANN_HAS_GPU
 #include "lbann/utils/description.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
 #include "lbann/weights/weights.hpp"
 
 #include <cereal/types/utility.hpp>
@@ -108,12 +109,27 @@ public:
    *                            allreduce is performed lazily when the
    *                            gradient is accessed.
    */
-  virtual void add_to_gradient(El::BaseDistMatrix const& gradient,
-                               double scale = 1.0,
-                               bool allreduce_needed = false) = 0;
+  template <typename TensorDataType>
+  void add_to_gradient(El::AbstractDistMatrix<TensorDataType> const& contrib,
+                       TensorDataType scale = 1.f,
+                       bool allreduce_needed = false) {
+    TensorDataType buf_scale, in_scale;
+    auto& grad = get_gradient_buffer(buf_scale, in_scale, allreduce_needed);
+    El::Scale(buf_scale, grad);
+    El::Axpy(in_scale*scale, contrib, grad);
+  }
 
   /** @brief Zero out the objective function gradient w.r.t. the weights. */
-  virtual void clear_gradient() = 0;
+  void clear_gradient() {
+    for (auto& g : gradients_) {
+      if (g.second->get_status() ==
+          optimizer_gradient_status::allreduce_started) {
+        g.second->complete_allreduce(*m_comm);
+      }
+      g.second->clear();
+    }
+    this->get_gradient_sources().clear();
+  }
 
   /** @brief Objects that are expected to contribute to the gradient. */
 
@@ -204,35 +220,115 @@ public:
   ///@}
 
 protected:
+  /** @brief Manage gradient information. */
+  class GradientHelper {
+  public:
+    virtual ~GradientHelper() = default;
+    optimizer_gradient_status get_status() const noexcept { return status_; }
+    void set_status(optimizer_gradient_status s) noexcept { status_ = s; }
+    virtual El::BaseDistMatrix& gradient() noexcept = 0;
+    virtual El::BaseDistMatrix const& gradient() const noexcept = 0;
+    virtual void start_allreduce(lbann_comm&) = 0;
+    virtual void complete_allreduce(lbann_comm&) = 0;
+    virtual void clear() = 0;
+  private:
+    optimizer_gradient_status status_ = optimizer_gradient_status::cleared;
+  };// class GradientHelper
+
+  template <typename TensorDataType>
+  class GradientHelperImpl : public GradientHelper {
+  public:
+    using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
+  public:
+    GradientHelperImpl(El::Int height, El::Int width, El::DistData dist_data)
+      : gradient_{AbsDistMatType::Instantiate(dist_data)}
+    {
+      gradient_->Resize(height, width);
+    }
+    AbsDistMatType& gradient() noexcept override { return *gradient_; }
+    AbsDistMatType const& gradient() const noexcept override {
+      return *gradient_;
+    }
+    void start_allreduce(lbann_comm& comm) override {
+      switch (this->get_status()) {
+      case optimizer_gradient_status::allreduce_needed:
+        comm.nb_allreduce(*gradient_,
+                          gradient_->RedundantComm(),
+                          allreduce_req_);
+        this->set_status(optimizer_gradient_status::allreduce_started);
+        break;
+      case optimizer_gradient_status::ready:
+      case optimizer_gradient_status::cleared:
+      case optimizer_gradient_status::allreduce_started:
+        break;
+      default: LBANN_ERROR("unexpected gradient status "
+                           "(" + to_string(this->get_status()) + ")");
+      }
+    }
+    void complete_allreduce(lbann_comm& comm) override {
+      switch (this->get_status()) {
+      case optimizer_gradient_status::allreduce_started:
+        comm.wait(allreduce_req_);
+        this->set_status(optimizer_gradient_status::ready);
+        break;
+      case optimizer_gradient_status::ready:
+      case optimizer_gradient_status::cleared:
+        break;
+      case optimizer_gradient_status::allreduce_needed:
+        LBANN_ERROR("attempted to finish gradient allreduce "
+                    "before starting it");
+        break;
+      default:
+        LBANN_ERROR("unexpected gradient status "
+                    "(" + to_string(this->get_status()) + ")");
+      }
+    }
+    void clear() {
+      this->set_status(optimizer_gradient_status::cleared);
+    }
+  private:
+    std::unique_ptr<AbsDistMatType> gradient_;
+    Al::request allreduce_req_;
+  };// class GradientHelperImpl
+
   /** @brief Copy construct/copy assign */
   optimizer(const optimizer& other);
   optimizer& operator=(const optimizer& other);
 
   /** @brief Return the current gradient status */
-  optimizer_gradient_status get_gradient_status() const { return m_gradient_status; }
-
-  void set_gradient_status(const optimizer_gradient_status status) { m_gradient_status = status; }
-
-  std::unordered_set<const void*>& get_gradient_sources() { return m_gradient_sources; }
-
+  optimizer_gradient_status get_gradient_status() const {
+    return m_gradient_status;
+  }
+  void set_gradient_status(const optimizer_gradient_status status) {
+    m_gradient_status = status;
+  }
+  std::unordered_set<const void*>& get_gradient_sources() {
+    return m_gradient_sources;
+  }
   void set_comm(lbann_comm& comm) { m_comm = &comm; }
 
   void set_step_time(EvalType time) { m_step_time = time; }
 
   void inc_step_time(EvalType time) { m_step_time += time; }
 
-  virtual El::DistData get_matrix_info(El::Int& h, El::Int& w) const = 0;
+  virtual std::tuple<El::Int,El::Int,El::DistData> get_matrix_info() const = 0;
 
   template <typename TensorDataType>
   void accumulate_all_gradient_contributions(
     El::AbstractDistMatrix<TensorDataType>& gradient);
-private:
 
   /** @brief Begin the allreduce on the gradient values. */
-  virtual void start_gradient_allreduce() = 0;
+  void start_gradient_allreduce() {
+    for (auto& grad_mgr : gradients_) {
+      grad_mgr.second->start_allreduce(*m_comm);
+    }
+  }
   /** @brief Complete the allreduce on the gradient values. */
-  virtual void finish_gradient_allreduce() = 0;
-
+  void finish_gradient_allreduce() {
+    for (auto& grad_mgr : gradients_) {
+      grad_mgr.second->complete_allreduce(*m_comm);
+    }
+  }
 private:
 
   /** @brief LBANN communicator. */
@@ -259,9 +355,9 @@ private:
   /** @brief Map from data types to gradient contributions.
    *  @todo Refactor this out. It's a hack.
    */
-  using gradient_mat_type = El::BaseDistMatrix;
-  using gradient_mat_ptr = std::unique_ptr<gradient_mat_type>;
-  std::unordered_map<std::type_index, gradient_mat_ptr> gradients_;
+  using gradient_manager_type = GradientHelper;
+  using gradient_manager_ptr = std::unique_ptr<gradient_manager_type>;
+  std::unordered_map<std::type_index, gradient_manager_ptr> gradients_;
 
 };
 
@@ -271,42 +367,38 @@ El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
   TensorDataType& in_scale,
   bool allreduce_needed) {
 
-  using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
-  auto const ti = std::type_index(typeid(TensorDataType));
-  auto& buffer_ptr = gradients_[ti];
-  if (!buffer_ptr) {
-    El::Int height, width;
-    auto dist_data = this->get_matrix_info(height, width);
-    auto tmp = std::unique_ptr<AbsDistMatType>(
-      AbsDistMatType::Instantiate(dist_data));
-    tmp->Resize(height, width);
-    buffer_ptr = std::move(tmp);
+  using GradMgrType = GradientHelperImpl<TensorDataType>;
+
+  auto& grad_mgr_ptr = gradients_[std::type_index(typeid(TensorDataType))];
+  if (!grad_mgr_ptr) {
+    auto mat_info = this->get_matrix_info();
+    grad_mgr_ptr = make_unique<GradMgrType>(
+      std::get<0>(mat_info), std::get<1>(mat_info), std::get<2>(mat_info));
+    grad_mgr_ptr->set_status(optimizer_gradient_status::cleared);
   }
-
-  auto& buffer = dynamic_cast<AbsDistMatType&>(*buffer_ptr);
-
-// Complete outstanding allreduce.
-  if (this->get_gradient_status() == optimizer_gradient_status::allreduce_started) {
-    this->finish_gradient_allreduce();
+  auto& grad_mgr = static_cast<GradMgrType&>(*grad_mgr_ptr);
+  auto& buffer = grad_mgr.gradient();
+  // Complete outstanding allreduce, if needed.
+  if (grad_mgr.get_status() == optimizer_gradient_status::allreduce_started) {
+    grad_mgr.complete_allreduce(*(this->m_comm));
   }
 
   // Determine scaling factor and transition state.
-  switch (this->get_gradient_status()) {
+  switch (grad_mgr.get_status()) {
   case optimizer_gradient_status::ready:
     buf_scale = DataType(1);
     in_scale = DataType(1);
     if (allreduce_needed) {
       buf_scale /= buffer.RedundantSize();
-      this->set_gradient_status(optimizer_gradient_status::allreduce_needed);
+      grad_mgr.set_status(optimizer_gradient_status::allreduce_needed);
     }
     break;
   case optimizer_gradient_status::cleared:
     buf_scale = DataType(0);
     in_scale = DataType(1);
-    this->clear_gradient();
-    this->set_gradient_status((allreduce_needed ?
-                               optimizer_gradient_status::allreduce_needed :
-                               optimizer_gradient_status::ready));
+    grad_mgr.set_status(allreduce_needed ?
+                        optimizer_gradient_status::allreduce_needed :
+                        optimizer_gradient_status::ready);
     break;
   case optimizer_gradient_status::allreduce_needed:
     buf_scale = DataType(1);
@@ -318,7 +410,7 @@ El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
   case optimizer_gradient_status::allreduce_started:
   default:
     LBANN_ERROR("unexpected gradient status ("
-                + to_string(this->get_gradient_status()) + ")");
+                + to_string(grad_mgr.get_status()) + ")");
   }
   return buffer;
 }
@@ -334,13 +426,18 @@ void optimizer::accumulate_all_gradient_contributions(
 
   auto tmp = std::unique_ptr<AbsDistMatType>{
     gradient.Construct(gradient.Grid(), gradient.Root())};
-  for (auto const& grad_map_value : this->gradients_) {
-    auto const& buf_unique_ptr = grad_map_value.second;
-    if (auto* buf_ptr = dynamic_cast<AbsDistMatType*>(buf_unique_ptr.get())) {
-      El::Axpy(one, *buf_ptr, gradient);
+  for (auto const& grad_mgr_v : this->gradients_) {
+    auto const& grad_mgr = *(grad_mgr_v.second);
+    if (grad_mgr.get_status() != optimizer_gradient_status::ready) {
+      LBANN_ERROR("Expected ready status. Got: ",
+                  to_string(grad_mgr.get_status()));
+    }
+    auto const& grad_base = grad_mgr.gradient();
+    if (auto const* grad = dynamic_cast<AbsDistMatType const*>(&grad_base)) {
+      El::Axpy(one, *grad, gradient);
     }
     else {
-      El::Copy(*buf_unique_ptr, *tmp);
+      El::Copy(grad_base, *tmp);
       El::Axpy(one, *tmp, gradient);
     }
   }

@@ -119,7 +119,7 @@ void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::fp_compute() {
   using LocalMatType = El::Matrix<TensorDataType, Device>;
   fp_impl(dynamic_cast<LocalMatType const&>(this->get_local_prev_activations()),
           dynamic_cast<LocalMatType&>(this->get_local_activations()),
-          dynamic_cast<LocalMatType const&>(this->weights_values(0)));
+          dynamic_cast<LocalMatType const&>(this->weights_values(0).LockedMatrix()));
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -129,7 +129,7 @@ void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
   bp_impl(dynamic_cast<LocalMatType const&>(this->get_local_prev_activations()),
           dynamic_cast<LocalMatType const&>(this->get_local_prev_error_signals()),
           dynamic_cast<LocalMatType&>(this->get_local_error_signals()),
-          dynamic_cast<LocalMatType const&>(this->weights_values(0)),
+          dynamic_cast<LocalMatType const&>(this->weights_values(0).LockedMatrix()),
           *this->m_weights_gradient);
 
   // Update optimizer with gradient

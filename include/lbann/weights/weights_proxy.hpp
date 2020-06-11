@@ -262,8 +262,9 @@ public:
    */
   void synchronize_with_master()
   {
-    if (!empty() && !values_->Viewing())
+    if (!empty() && !values_->Viewing()) {
       El::Copy(master_weights_->get_values(), *values_);
+    }
   }
 
   ///@}

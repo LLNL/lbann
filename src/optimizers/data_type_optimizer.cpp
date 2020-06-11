@@ -45,7 +45,9 @@ data_type_optimizer<TensorDataType>::data_type_optimizer(const data_type_optimiz
     m_learning_rate(other.m_learning_rate) {}
 
 template <typename TensorDataType>
-data_type_optimizer<TensorDataType>& data_type_optimizer<TensorDataType>::operator=(const data_type_optimizer<TensorDataType>& other) {
+data_type_optimizer<TensorDataType>&
+data_type_optimizer<TensorDataType>::operator=(
+  const data_type_optimizer<TensorDataType>& other) {
   optimizer::operator=(other);
   m_weights = other.m_weights;
   m_gradient.reset(other.m_gradient ? other.m_gradient->Copy() : nullptr);
@@ -85,17 +87,11 @@ auto data_type_optimizer<TensorDataType>::get_gradient() -> AbsDistMatrixType& {
   }
 
   // Make sure gradient values are ready
-  start_gradient_allreduce();
-  finish_gradient_allreduce();
-  if (this->get_gradient_status() == optimizer_gradient_status::cleared) {
-    El::Zero(*m_gradient);
-    this->set_gradient_status(optimizer_gradient_status::ready);
-  }
-  if (this->get_gradient_status() != optimizer_gradient_status::ready) {
-    LBANN_ERROR("unexpected gradient status (expected \"",
-                to_string(optimizer_gradient_status::ready), "\", "
-                "but found \"", to_string(this->get_gradient_status()), "\")");
-  }
+  this->start_gradient_allreduce();
+  this->finish_gradient_allreduce();
+
+  // Gather all gradients to the master precision
+  this->accumulate_all_gradient_contributions(*m_gradient);
 
   // Return gradient
   return *m_gradient;
@@ -103,163 +99,9 @@ auto data_type_optimizer<TensorDataType>::get_gradient() -> AbsDistMatrixType& {
 }
 
 template <typename TensorDataType>
-void data_type_optimizer<TensorDataType>::add_to_gradient(
-  El::BaseDistMatrix const& gradient,
-  double scale,
-  bool allreduce_needed) {
-
-  using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
-
-  // FIXME (trb 06/02/2020): This is an obvious pessimization. This
-  // function should be able to dispatch "mixed precision" kernels.
-  if (auto const* dt_grad = dynamic_cast<AbsDistMatType const*>(&gradient)) {
-    this->add_to_gradient(*dt_grad,
-                          El::To<TensorDataType>(scale),
-                          allreduce_needed);
-  }
-  else
-  {
-    std::unique_ptr<AbsDistMatType> grad(
-      AbsDistMatType::Instantiate(gradient.DistData()));
-    El::Copy(gradient, *grad);
-    this->add_to_gradient(*grad,
-                          El::To<TensorDataType>(scale),
-                          allreduce_needed);
-  }
-}
-
-
-template <typename TensorDataType>
-void data_type_optimizer<TensorDataType>::add_to_gradient(
-  const AbsDistMatrixType& gradient,
-  TensorDataType scale,
-  bool allreduce_needed) {
-
-  // Check that matrices have been setup
-  if (m_gradient == nullptr || m_gradient_v == nullptr) {
-    LBANN_ERROR("attempted to access gradient before it is set up");
-  }
-  if (scale == DataType(0)) { return; }
-
-  // Make sure input matrix is in correct distribution
-  // Note: If input matrix is already in correct distribution, just
-  // make a matrix view. Otherwise redistribute and possibly allreduce
-  // the matrix.
-  m_gradient_v->Empty();
-  m_gradient_v->AlignWith(*m_gradient);
-  if (m_gradient_v->DistData() == gradient.DistData()) {
-    El::LockedView(*m_gradient_v, gradient);
-  } else if (allreduce_needed) {
-    std::unique_ptr<AbsDistMatrixType> temp(gradient.Copy());
-    this->get_comm().allreduce(*temp, temp->RedundantComm());
-    El::Copy(*temp, *m_gradient_v);
-    allreduce_needed = false;
-  } else {
-    El::Copy(gradient, *m_gradient_v);
-  }
-
-  // Add to gradient
-  if (this->get_gradient_status() == optimizer_gradient_status::allreduce_started) {
-    finish_gradient_allreduce();
-  }
-  switch (this->get_gradient_status()) {
-  case optimizer_gradient_status::ready:
-    if (allreduce_needed) {
-      // Properly scale contributions that have already been allreduced or that
-      // do not need allreduces.
-      El::Scale(DataType(1) / m_gradient->RedundantSize(), *m_gradient);
-      this->set_gradient_status(optimizer_gradient_status::allreduce_needed);
-    }
-    El::Axpy(scale, *m_gradient_v, *m_gradient);
-    break;
-  case optimizer_gradient_status::cleared:
-    El::Copy(*m_gradient_v, *m_gradient);
-    El::Scale(scale, *m_gradient);
-    this->set_gradient_status((allreduce_needed ?
-                               optimizer_gradient_status::allreduce_needed :
-                               optimizer_gradient_status::ready));
-    break;
-  case optimizer_gradient_status::allreduce_needed:
-    {
-      // Properly scale data that does not need to be allreduced.
-      const auto& scale_ =
-        (allreduce_needed ?
-         scale :
-         scale / El::To<TensorDataType>(m_gradient->RedundantSize()));
-      El::Axpy(scale_, *m_gradient_v, *m_gradient);
-    }
-    break;
-  case optimizer_gradient_status::allreduce_started:
-  default:
-    LBANN_ERROR("unexpected gradient status "
-                "(" + to_string(this->get_gradient_status()) + ")");
-  }
-
-  // Clean up
-  m_gradient_v->Empty();
-
-}
-
-template <typename TensorDataType>
-void data_type_optimizer<TensorDataType>::clear_gradient() {
-  if (this->get_gradient_status() == optimizer_gradient_status::allreduce_started) {
-    finish_gradient_allreduce();
-  }
-  this->set_gradient_status(optimizer_gradient_status::cleared);
-  this->get_gradient_sources().clear();
-}
-
-template <typename TensorDataType>
-auto data_type_optimizer<TensorDataType>::get_gradient_buffer(
-  TensorDataType& buf_scale,
-  TensorDataType& in_scale,
-  bool allreduce_needed) -> AbsDistMatrixType& {
-
-  if (m_gradient == nullptr) {
-    LBANN_ERROR("attempted to access gradient before it is set up");
-  }
-
-  // Complete outstanding allreduce.
-  if (this->get_gradient_status() == optimizer_gradient_status::allreduce_started) {
-    finish_gradient_allreduce();
-  }
-
-  // Determine scaling factor and transition state.
-  switch (this->get_gradient_status()) {
-  case optimizer_gradient_status::ready:
-    buf_scale = DataType(1);
-    in_scale = DataType(1);
-    if (allreduce_needed) {
-      buf_scale /= m_gradient->RedundantSize();
-      this->set_gradient_status(optimizer_gradient_status::allreduce_needed);
-    }
-    break;
-  case optimizer_gradient_status::cleared:
-    buf_scale = DataType(0);
-    in_scale = DataType(1);
-    this->set_gradient_status((allreduce_needed ?
-                               optimizer_gradient_status::allreduce_needed :
-                               optimizer_gradient_status::ready));
-    break;
-  case optimizer_gradient_status::allreduce_needed:
-    buf_scale = DataType(1);
-    // Properly scale data that does not need to be allreduced.
-    in_scale = (allreduce_needed ?
-                DataType(1) :
-                DataType(1) / m_gradient->RedundantSize());
-    break;
-  case optimizer_gradient_status::allreduce_started:
-  default:
-    LBANN_ERROR("unexpected gradient status ("
-                + to_string(this->get_gradient_status()) + ")");
-  }
-  return *m_gradient;
-}
-
-template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::setup(WeightsType* w) {
   this->set_comm(w->get_comm());
-  clear_gradient();
+  this->clear_gradient();
 
   // Set weights being optimized
   if (w != nullptr) { set_weights(w); }
@@ -294,11 +136,11 @@ void data_type_optimizer<TensorDataType>::set_learning_rate(TensorDataType learn
   m_learning_rate = learning_rate;
 }
 
+#if 0
 template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::start_gradient_allreduce() {
   switch (this->get_gradient_status()) {
   case optimizer_gradient_status::allreduce_needed:
-    this->accumulate_all_gradient_contributions(*m_gradient);
     this->get_comm().nb_allreduce(*m_gradient,
                                   m_gradient->RedundantComm(),
                                   m_gradient_allreduce_req);
@@ -332,6 +174,7 @@ void data_type_optimizer<TensorDataType>::finish_gradient_allreduce() {
                 "(" + to_string(this->get_gradient_status()) + ")");
   }
 }
+#endif // 0
 
 template <typename TensorDataType>
 void data_type_optimizer<TensorDataType>::step() {
@@ -339,18 +182,19 @@ void data_type_optimizer<TensorDataType>::step() {
     LBANN_ERROR("attempted to perform optimization step without weights");
   }
   const auto start_time = get_time();
-  this->step_compute(m_weights->get_values(), get_gradient());
+  this->step_compute(m_weights->get_values(), this->get_gradient());
   this->inc_step_time(get_time() - start_time);
 }
 
 template <typename TensorDataType>
-El::DistData data_type_optimizer<TensorDataType>::get_matrix_info(
-  El::Int& height, El::Int& width) const
-{
+std::tuple<El::Int,El::Int,El::DistData>
+data_type_optimizer<TensorDataType>::get_matrix_info() const {
   auto const& w = this->get_weights();
-  height = w.get_matrix_height();
-  width = w.get_matrix_width();
-  return w.get_matrix_distribution();
+  return {
+    w.get_matrix_height(),
+    w.get_matrix_width(),
+    w.get_matrix_distribution()
+  };
 }
 
 // =============================
