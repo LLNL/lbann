@@ -135,7 +135,6 @@ option(LBANN_WITH_VTUNE
 option(LBANN_WITH_UNIT_TESTING
   "Enable the unit testing framework (requires Catch2)" OFF)
 
-# Enable parallel random matrix generation, if possible
 # Use deterministic GPU algorithms and layer operations
 option(LBANN_DETERMINISTIC
   "Use deterministic algorithms as much as possible." OFF)
