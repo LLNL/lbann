@@ -937,6 +937,9 @@ def multidir_diff(baseline, test, fileList):
 
     return tmpList, err, err_msg
 
+# Perform a line by line difference of an xml file and look for any floating point values
+# For each floating point value, check to see if it is close-enough and log a warning if it
+# is within a threshhold.
 def approx_diff_xml_files(file1, file2):
     f1 = open(file1, 'r')
     f2 = open(file2, 'r')
@@ -949,7 +952,7 @@ def approx_diff_xml_files(file1, file2):
             try:
                 v1 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l1))
                 v2 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l2))
-                close = math.isclose(v1, v2, rel_tol=1e-8, abs_tol=0.0)
+                close = math.isclose(v1, v2, rel_tol=1e-7, abs_tol=0.0)
                 if not close:
                     err = ('lines: %s and %s differ: %.13f != %.13f' % (l1.rstrip(), l2.rstrip(), v1, v2))
                     diff_list.append(err)
@@ -964,6 +967,9 @@ def approx_diff_xml_files(file1, file2):
                 files_differ = True
     return files_differ, diff_list, near_diff_list
 
+# Given a recursive python diff from dircmp, perform a recursive exploration of any files
+# with differences.  For files with differences, if check any XML files for approximate equivalence
+# which can be seen in some of the floating point recorded values
 def print_diff_files(dcmp):
     any_files_differ = False
     all_diffs = []
