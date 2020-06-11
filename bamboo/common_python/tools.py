@@ -949,7 +949,7 @@ def approx_diff_xml_files(file1, file2):
             try:
                 v1 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l1))
                 v2 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l2))
-                close = math.isclose(v1, v2, rel_tol=1e-9, abs_tol=0.0)
+                close = math.isclose(v1, v2, rel_tol=1e-8, abs_tol=0.0)
                 if not close:
                     err = ('lines: %s and %s differ: %.13f != %.13f' % (l1.rstrip(), l2.rstrip(), v1, v2))
                     diff_list.append(err)

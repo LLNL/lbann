@@ -3,7 +3,7 @@ sys.path.insert(0, '../common_python')
 import tools
 import pytest
 import os
-
+from filecmp import dircmp
 
 def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
                                      compiler_name, weekly, data_reader_percent):
@@ -60,12 +60,19 @@ def skeleton_checkpoint_lenet_shared(cluster, executables, dir_name,
     return_code_ckpt_2 = os.system(command)
     tools.assert_success(return_code_ckpt_2, error_file_name)
 
-    diff_test = os.system('diff -r {ckpt} {no_ckpt}'.format(
-        ckpt=ckpt_dir, no_ckpt=no_ckpt_dir))
-    path_prefix = '{d}/bamboo/unit_tests/'.format(d=dir_name)
-    if diff_test !=0:
-        raise AssertionError('diff_test={dt}\nCompare {ncd} and {cd} in {p}'.format(
-            dt=diff_test, ncd=no_ckpt_dir, cd=ckpt_dir, p=path_prefix))
+    dcmp = dircmp(ckpt_dir, no_ckpt_dir)
+    fail, diffs, warns = tools.print_diff_files(dcmp)
+    for w in warns:
+        print(w)
+
+    if fail:
+        print()
+        for d in diffs:
+            print(d)
+        path_prefix = '{d}/bamboo/unit_tests'.format(d=dir_name)
+        raise AssertionError(
+            'Compare {ncd} and {cd} in {p}'.format(
+                ncd=no_ckpt_dir, cd=ckpt_dir, p=path_prefix))
 
 
 def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
@@ -125,13 +132,19 @@ def skeleton_checkpoint_lenet_distributed(cluster, executables, dir_name,
     return_code_ckpt_2 = os.system(command)
     tools.assert_success(return_code_ckpt_2, error_file_name)
 
-    diff_test = os.system('diff -r {ckpt} {no_ckpt}'.format(
-        ckpt=ckpt_dir, no_ckpt=no_ckpt_dir))
-    path_prefix = '{d}/bamboo/unit_tests'.format(d=dir_name)
-    if diff_test != 0:
+    dcmp = dircmp(ckpt_dir, no_ckpt_dir)
+    fail, diffs, warns = tools.print_diff_files(dcmp)
+    for w in warns:
+        print(w)
+
+    if fail:
+        print()
+        for d in diffs:
+            print(d)
+        path_prefix = '{d}/bamboo/unit_tests'.format(d=dir_name)
         raise AssertionError(
-            'diff_test={dt}\nCompare {ncd} and {cd} in {p}'.format(
-                dt=diff_test, ncd=no_ckpt_dir, cd=ckpt_dir, p=path_prefix))
+            'Compare {ncd} and {cd} in {p}'.format(
+                ncd=no_ckpt_dir, cd=ckpt_dir, p=path_prefix))
 
 
 def test_unit_checkpoint_lenet_shared_clang6(cluster, exes, dirname,
