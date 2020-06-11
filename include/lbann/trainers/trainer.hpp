@@ -66,7 +66,9 @@ public:
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {
     ar(CEREAL_NVP(m_persist),
-       CEREAL_NVP(m_max_mini_batch_size));
+       CEREAL_NVP(m_max_mini_batch_size),
+       CEREAL_NVP(m_random_seed),
+       CEREAL_NVP(m_data_seq_random_seed));
   }
 
   /** Set the trainer's name; this is an arbitrary string
@@ -85,6 +87,15 @@ public:
 
   /** Human-readable description. */
   description get_description() const;
+
+  /** Set the random seeds used for the trainer */
+  void set_random_seeds(int random_seed, int data_seq_random_seed) {
+    m_random_seed = random_seed;
+    m_data_seq_random_seed = data_seq_random_seed;
+  }
+
+  int get_random_seed() const { return m_random_seed; }
+  int get_data_seq_random_seed() const { return m_data_seq_random_seed; }
 
   /** @brief Get the list of callbacks for the trainer. */
   std::vector<observer_ptr<callback_base>> get_callbacks() {
@@ -199,6 +210,11 @@ private:
    *  local to the particular, instance of the training context..
    */
   size_t m_max_mini_batch_size;
+
+  // Random seed used for the general RNGs
+  int m_random_seed;
+  // Random seed used for the RNG used to fetch data
+  int m_data_seq_random_seed;
 
   /** Threads available for I/O */
   std::unique_ptr<thread_pool> m_io_thread_pool;

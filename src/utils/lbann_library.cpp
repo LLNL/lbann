@@ -136,25 +136,37 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
       }
     }
 
+    // Random seed used for the general RNGs
     int random_seed = lbann_default_random_seed;
 
-    // Change random seed if needed.
+    // Change random seed if requested
     if (pb_trainer->random_seed() > 0) {
       random_seed = pb_trainer->random_seed();
-      // Reseed here so that setup is done with this new seed.
-      init_random(random_seed);
-      init_data_seq_random(random_seed);
     }
+
+    // Random seed used for the RNG used to fetch data
+    int data_seq_random_seed = random_seed;
 
     // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
     if (!pb_trainer->random_init_trainers_identically()) {
-      hash_combine(random_seed, comm->get_trainer_rank());
-      // Reseed here so that setup is done with this new seed.
-      init_random(random_seed);
-      init_data_seq_random(random_seed);
+      random_seed = hash_combine(random_seed, comm->get_trainer_rank());
+      // Also update the data sequence random seed
+      data_seq_random_seed = random_seed;
     }
+
+    // Under normal conditions, reinitialize the random number generator so
+    // that regularization techniques (e.g. dropout) generate unique patterns
+    // on different ranks.
+    // At this point the data sequence random seed is no longer updated
+    random_seed = hash_combine(random_seed, comm->get_rank_in_world());
 #else
+    if(comm->am_world_master()) {
+      std::cout <<
+        "--------------------------------------------------------------------------------------------------------------------\n"
+        "ALERT: executing with LBANN_DETERMINISTIC flag to minimize reduce numerical variance -- performance will be degraded\n"
+        "--------------------------------------------------------------------------------------------------------------------\n";
+    }
     if (!pb_trainer->random_init_trainers_identically()) {
       if(comm->am_trainer_master()) {
         std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
@@ -163,19 +175,10 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     }
 #endif
 
-#ifndef LBANN_DETERMINISTIC
-    // Under normal conditions, reinitialize the random number generator so
-    // that regularization techniques (e.g. dropout) generate unique patterns
-    // on different ranks.
-    init_random(random_seed + comm->get_rank_in_world());
-#else
-    if(comm->am_world_master()) {
-      std::cout <<
-        "--------------------------------------------------------------------------------\n"
-        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-        "--------------------------------------------------------------------------------\n";
-    }
-#endif
+    // Initialize the general RNGs and the data sequence RNGs
+    init_random(random_seed);
+    init_data_seq_random(data_seq_random_seed);
+    trainer->set_random_seeds(random_seed, data_seq_random_seed);
 
     trainer->setup(std::move(io_thread_pool));
 
@@ -192,6 +195,9 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
       std::cout << "\n"
                 << trainer->get_description()
                 << std::endl;
+
+      // User feedback
+      print_parameters(*comm, pb, random_seed, data_seq_random_seed);
     }
 
     return trainer;
@@ -263,9 +269,6 @@ std::unique_ptr<model> build_model_from_prototext(
   if (opts->has_string("print_affinity")) {
     display_omp_setup();
   }
-
-  // User feedback
-  print_parameters(*comm, pb);
 
   // Initalize model
   std::unique_ptr<model> ret_model = proto::construct_model(comm,

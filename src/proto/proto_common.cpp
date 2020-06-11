@@ -776,7 +776,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
 
 }
 
-void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
+void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p, int random_seed, int data_seq_random_seed)
 {
   if (!comm.am_world_master()) {
     return;
@@ -801,18 +801,19 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
   std::cout << std::endl
             << "Running with these parameters:\n"
             << " General:\n"
-            << "  datatype size:           " << sizeof(DataType) << std::endl
-            << "  mini_batch_size:         " << t.mini_batch_size() << std::endl
-            << "  num_epochs:              " << m.num_epochs()  << std::endl
-            << "  hydrogen_block_size:     " << t.hydrogen_block_size()  << std::endl
-            << "  procs_per_trainer:       " << t.procs_per_trainer()  << std::endl
-            << "  num_parallel_readers:    " << t.num_parallel_readers()  << std::endl
-            << "  serialize_io:            " << m.serialize_io()  << std::endl
-            << "  cuda:                    " << (disable_cuda ? "disabled" : "enabled") << std::endl
-            << "  cudnn:                   " << (disable_cudnn ? "disabled" : "enabled") << std::endl
-            << "  random_seed:             " << t.random_seed() << std::endl
-            << "  deterministic_exec:      " << (enable_determinism ? "enabled" : "disabled") << std::endl
-            << "  data_layout:             " << m.data_layout()  << std::endl
+            << "  datatype size:             " << sizeof(DataType) << std::endl
+            << "  mini_batch_size:           " << t.mini_batch_size() << std::endl
+            << "  num_epochs:                " << m.num_epochs()  << std::endl
+            << "  hydrogen_block_size:       " << t.hydrogen_block_size()  << std::endl
+            << "  procs_per_trainer:         " << t.procs_per_trainer()  << std::endl
+            << "  num_parallel_readers:      " << t.num_parallel_readers()  << std::endl
+            << "  serialize_io:              " << m.serialize_io()  << std::endl
+            << "  cuda:                      " << (disable_cuda ? "disabled" : "enabled") << std::endl
+            << "  cudnn:                     " << (disable_cudnn ? "disabled" : "enabled") << std::endl
+            << "  random_seed:               " << random_seed << std::endl
+            << "  data sequence random_seed: " << data_seq_random_seed << std::endl
+            << "  deterministic_exec:        " << (enable_determinism ? "enabled" : "disabled") << std::endl
+            << "  data_layout:               " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n";
 }
 

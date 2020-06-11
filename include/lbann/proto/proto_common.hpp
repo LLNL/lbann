@@ -79,7 +79,7 @@ void set_num_parallel_readers(const lbann_comm& comm, ::lbann_data::LbannPB& p);
 void get_cmdline_overrides(const lbann_comm& comm, ::lbann_data::LbannPB& p);
 
 /** @brief print various params (learn_rate, etc) to cout */
-void print_parameters(const lbann_comm& comm, ::lbann_data::LbannPB& p);
+void print_parameters(const lbann_comm& comm, ::lbann_data::LbannPB& p, int random_seed, int data_seq_random_seed);
 
 /** @brief prints usage information */
 void print_help(const lbann_comm& comm);

@@ -40,8 +40,7 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  auto comm = initialize(argc, argv, random_seed);
+  auto comm = initialize(argc, argv);
   const bool master = comm->am_world_master();
 
   try {
