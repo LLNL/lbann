@@ -793,6 +793,10 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
 #ifndef LBANN_HAS_CUDNN
   disable_cudnn = true;
 #endif // LBANN_HAS_CUDNN
+  bool enable_determinism = false;
+#ifdef LBANN_DETERMINISTIC
+  enable_determinism = true;
+#endif // LBANN_DETERMINISTIC
 
   std::cout << std::endl
             << "Running with these parameters:\n"
@@ -807,6 +811,7 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
             << "  cuda:                    " << (disable_cuda ? "disabled" : "enabled") << std::endl
             << "  cudnn:                   " << (disable_cudnn ? "disabled" : "enabled") << std::endl
             << "  random_seed:             " << t.random_seed() << std::endl
+            << "  deterministic_exec:      " << (enable_determinism ? "enabled" : "disabled") << std::endl
             << "  data_layout:             " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n";
 }
