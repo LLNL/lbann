@@ -940,7 +940,7 @@ def multidir_diff(baseline, test, fileList):
 # Perform a line by line difference of an xml file and look for any floating point values
 # For each floating point value, check to see if it is close-enough and log a warning if it
 # is within a threshhold.
-def approx_diff_xml_files(file1, file2):
+def approx_diff_xml_files(file1, file2, rel_tol):
     f1 = open(file1, 'r')
     f2 = open(file2, 'r')
     files_differ = False
@@ -952,13 +952,13 @@ def approx_diff_xml_files(file1, file2):
             try:
                 v1 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l1))
                 v2 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l2))
-                close = math.isclose(v1, v2, rel_tol=1e-7, abs_tol=0.0)
+                close = math.isclose(v1, v2, rel_tol=rel_tol, abs_tol=0.0)
                 if not close:
                     err = ('lines: %s and %s differ: %.13f != %.13f' % (l1.rstrip(), l2.rstrip(), v1, v2))
                     diff_list.append(err)
                     files_differ = True
                 else:
-                    warn = ('lines: %s and %s are close: %.13f ~= %.13f' % (l1.rstrip(), l2.rstrip(), v1, v2))
+                    warn = ('lines: %s and %s are close: %.13f ~= %.13f (+/- %.1e)' % (l1.rstrip(), l2.rstrip(), v1, v2, rel_tol))
                     near_diff_list.append(warn)
             except ValueError:
                 # Non-numerical diff.
@@ -979,7 +979,7 @@ def print_diff_files(dcmp):
         err = f'Files {os.path.join(dcmp.left, name)} and {os.path.join(dcmp.right, name)} differ'
         if re.search('.xml', name):
             files_differ, diff_list, warn_list = approx_diff_xml_files(
-                os.path.join(dcmp.left, name), os.path.join(dcmp.right, name))
+                os.path.join(dcmp.left, name), os.path.join(dcmp.right, name), 1e-7)
             if files_differ:
                 any_files_differ = True
                 all_diffs.append(err)
