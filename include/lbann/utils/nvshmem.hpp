@@ -28,19 +28,87 @@
 #define LBANN_UTILS_NVSHMEM_HPP_INCLUDED
 
 #include "lbann/base.hpp"
+#include "lbann/utils/exception.hpp"
 #ifdef LBANN_HAS_NVSHMEM
-#include "nvshmem.h"
-#include "nvshmemx.h"
-
-#include "lbann/comm.hpp"
+#include <mpi.h>
+#include <nvshmem.h>
+#include <nvshmemx.h>
 
 namespace lbann {
 namespace nvshmem {
 
-/// Initialize NVSHMEM library
-void initialize(MPI_Comm comm);
-/// Finalize NVSHMEM library
+/** Whether NVSHMEM is active.
+ *
+ *  Returns true if NVSHMEM has been initialized and has not been
+ *  finalized.
+ */
+bool is_active() noexcept;
+
+/** @brief Initialize NVSHMEM library.
+ *
+ *  Does nothing if NVSHMEM has already been initialized. This is
+ *  _not_ thread-safe.
+ */
+void initialize(MPI_Comm comm=MPI_COMM_WORLD);
+
+/** @brief Finalize NVSHMEM library.
+ *
+ *  Does nothing if NVSHMEM has not been initialized or has already
+ *  been finalized. This is _not_ thread-safe.
+ */
 void finalize();
+
+/** @brief Allocate GPU buffer on the NVSHMEM symmetric heap.
+ *
+ *  Initializes NVSHMEM if needed.
+ */
+template <typename T=void>
+T* malloc(size_t size);
+
+/** @brief Resize GPU buffer on the NVSHMEM symmetric heap.
+ *
+ *  Initializes NVSHMEM if needed.
+ */
+template <typename T=void>
+T* realloc(T* ptr, size_t size);
+
+} // namespace nvshmem
+} // namespace lbann
+
+// =============================================
+// Implementation
+// =============================================
+
+namespace lbann {
+namespace nvshmem {
+
+template <typename T>
+T* malloc(size_t size) {
+  initialize();
+  if (size == 0) {
+    return nullptr;
+  }
+  auto* ptr = nvshmem_malloc(size * sizeof(T));
+  if (ptr == nullptr) {
+    LBANN_ERROR(
+      "NVSHMEM failed to allocate a GPU buffer ",
+      "from the symmetric heap ",
+      "(requested ",size," B)");
+  }
+  return reinterpret_cast<T*>(ptr);
+}
+
+template <typename T>
+T* realloc(T* ptr, size_t size) {
+  initialize();
+
+  /// @todo Use nvshmem_realloc once it's supported
+  if (ptr != nullptr) {
+    nvshmem_free(ptr);
+  }
+  return malloc<T>(size);
+
+}
 
 } // namespace nvshmem
 } // namespace lbann

@@ -26,22 +26,49 @@
 
 #include "lbann/utils/nvshmem.hpp"
 #ifdef LBANN_HAS_NVSHMEM
-#include "lbann/utils/exception.hpp"
 
 namespace lbann {
 namespace nvshmem {
 
+namespace {
+
+bool is_active_ = false;
+
+} // namespace <anon>
+
+bool is_active() noexcept {
+  return is_active_;
+}
+
 void initialize(MPI_Comm comm) {
+
+  // Do nothing if NVSHMEM has already been initialized
+  if (is_active_) {
+    return;
+  }
+
+  // Initialization
   nvshmemx_init_attr_t attr;
   attr.mpi_comm = &comm;
   auto status = nvshmemx_init_attr(NVSHMEMX_INIT_WITH_MPI_COMM, &attr);
   if (status != 0) {
     LBANN_ERROR("failed to initialize NVSHMEM (status ",status,")");
   }
+  is_active_ = true;
+
 }
 
 void finalize() {
+
+  // Do nothing if NVSHMEM has not been initialized
+  if (!is_active_) {
+    return;
+  }
+
+  // Finalization
   nvshmem_finalize();
+  is_active_ = false;
+
 }
 
 } // namespace nvshmem
