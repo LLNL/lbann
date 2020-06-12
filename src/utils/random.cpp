@@ -51,31 +51,40 @@ extern lbann::fast_rng_gen fast_generator;
 lbann::fast_rng_gen fast_generator;
 #endif
 
+bool generator_inited = false;
+bool fast_generator_inited = false;
+
 thread_local lbann::rng_gen data_seq_generator;
 thread_local bool data_seq_generator_inited = false;
 int data_seq_generator_seed_base = 0;
+bool data_seq_generator_seed_inited = false;
 
 thread_local lbann::rng_gen io_generator;
 thread_local bool io_generator_inited = false;
 int io_generator_seed_base = 0;
+bool io_generator_seed_inited = false;
 
 thread_local lbann::fast_rng_gen fast_io_generator;
 thread_local bool fast_io_generator_inited = false;
 int fast_io_generator_seed_base = 0;
+bol fast_io_generator_seed_inited = false;
 }
 
 namespace lbann {
 
 rng_gen& get_generator() {
+  if (!::generator_inited) { LBANN_ERROR("RNG seed not set"); }
   return ::generator;
 }
 
 fast_rng_gen& get_fast_generator() {
+  if (!::fast_generator_inited) { LBANN_ERROR("Fast RNG seed not set"); }
   return ::fast_generator;
 }
 
 rng_gen& get_data_seq_generator() {
   if (!::data_seq_generator_inited) {
+    if (!::data_seq_generator_seed_inited) { LBANN_ERROR("data sequence RNG seed not set"); }
     ::data_seq_generator.seed(::data_seq_generator_seed_base);
     ::data_seq_generator_inited = true;
   }
@@ -84,6 +93,7 @@ rng_gen& get_data_seq_generator() {
 
 rng_gen& get_io_generator() {
   if (!::io_generator_inited) {
+    if (!::io_generator_seed_inited) { LBANN_ERROR("I/O RNG seed not set"); }
     ::io_generator.seed(hash_combine(::io_generator_seed_base,
                                      std::this_thread::get_id()));
     ::io_generator_inited = true;
@@ -93,6 +103,7 @@ rng_gen& get_io_generator() {
 
 fast_rng_gen& get_fast_io_generator() {
   if (!::fast_io_generator_inited) {
+    if (!::fast_io_generator_seed_inited) { LBANN_ERROR("Fast I/O RNG seed not set"); }
     ::fast_io_generator.seed(hash_combine(::fast_io_generator_seed_base,
                                           std::this_thread::get_id()));
     ::fast_io_generator_inited = true;
@@ -257,6 +268,8 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
 }
 
 void init_random(int seed, lbann_comm *comm) {
+  generator_inited = true;
+  fast_generator_inited = true;
   if (seed != -1) {
     // Seed every OpenMP thread, if present.
     // Note: Threadprivate OMP variables don't work with dynamic threads.
@@ -310,6 +323,7 @@ void init_data_seq_random(int seed) {
   }
 
   ::data_seq_generator_seed_base = seed;
+  ::data_seq_generator_seed_inited = true;
   /// Reset the init flag so that generator will reinitialize
   ::data_seq_generator_inited = false;
 }
@@ -322,10 +336,12 @@ void init_io_random(int seed) {
   }
 
   ::io_generator_seed_base = seed;
+  ::io_generator_seed_inited = true;
   /// Reset the init flag so that generator will reinitialize
   ::io_generator_inited = false;
 
   ::fast_io_generator_seed_base = seed;
+  ::fast_io_generator_seed_inited = true;
   /// Reset the init flag so that generator will reinitialize
   ::fast_io_generator_inited = false;
 }
