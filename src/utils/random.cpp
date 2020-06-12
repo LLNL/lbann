@@ -287,9 +287,17 @@ void init_random(int seed, lbann_comm *comm) {
 #ifdef LBANN_SET_EL_RNG
     // Set Elemental's RNG seed
     auto elemental_seed = hash_combine(seed, 104729); // 10000th prime
-    elemental_seed = (comm == nullptr
-                      ? hash_combine(elemental_seed, El::mpi::Rank(El::mpi::COMM_WORLD))
-                      : hash_combine(elemental_seed, comm->get_rank_in_trainer()));
+    int mpi_initialized = 0;
+    MPI_Initialized(&mpi_initialized);
+    if(mpi_initialized) {
+      // If MPI is initialized mix in the rank to ensure that Hydrogen
+      // has good RNGs.  Note that under some configurations LBANN
+      // will not do this, so it is good to ensure that Hydrogen is
+      // well seeded.
+      elemental_seed = (comm == nullptr
+                        ? hash_combine(elemental_seed, El::mpi::Rank(El::mpi::COMM_WORLD))
+                        : hash_combine(elemental_seed, comm->get_rank_in_trainer()));
+    }
     El::Generator().seed(elemental_seed);
 #endif
 
