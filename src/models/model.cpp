@@ -35,7 +35,6 @@
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/metrics/layer_metric.hpp"
-#include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"

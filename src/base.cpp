@@ -38,7 +38,6 @@
 
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
