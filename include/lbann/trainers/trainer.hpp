@@ -53,8 +53,7 @@ public:
 
   /** Constructor. */
   trainer(lbann_comm *comm,
-          size_t mini_batch_size,
-          std::map<execution_mode, generic_data_reader *> data_readers);
+          size_t mini_batch_size);
 
   /** Copy constructor. */
   trainer(const trainer& other);
@@ -119,7 +118,7 @@ public:
   }
 
   /** Set up the trainer. */
-  void setup(std::unique_ptr<thread_pool> io_thread_pool);
+  void setup(std::unique_ptr<thread_pool> io_thread_pool, std::map<execution_mode, generic_data_reader *> data_readers);
 
   using execution_context_key_pair_t = typename std::pair<observer_ptr<model>, execution_mode>;
 
