@@ -96,7 +96,6 @@ void init_data_seq_random(int seed = -1);
  */
 void init_io_random(int seed = -1);
 
-
 } // namespace lbann
 
 #endif // LBANN_UTILS_RNG_HPP

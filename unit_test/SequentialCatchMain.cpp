@@ -26,7 +26,7 @@
 
 #define CATCH_CONFIG_RUNNER
 #include <catch2/catch.hpp>
-#include <lbann/utils/random.hpp>
+#include <lbann/utils/random_number_generators.hpp>
 
 int main(int argc, char* argv[]) {
   // Initialize the general RNGs and the data sequence RNGs
