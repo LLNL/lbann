@@ -67,7 +67,7 @@ bool io_generator_seed_inited = false;
 thread_local lbann::fast_rng_gen fast_io_generator;
 thread_local bool fast_io_generator_inited = false;
 int fast_io_generator_seed_base = 0;
-bol fast_io_generator_seed_inited = false;
+bool fast_io_generator_seed_inited = false;
 }
 
 namespace lbann {
