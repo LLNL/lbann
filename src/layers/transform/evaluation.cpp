@@ -185,7 +185,7 @@ EvalType abstract_evaluation_layer<TensorDataType>::get_value(bool scaled) {
 #endif // LBANN_HAS_GPU
   default: LBANN_ERROR("invalid device");
   }
-  if (scaled) { return m_scale * El::To<EvalDataType>(m_value(0,0)); }
+  if (scaled) { return El::To<EvalDataType>(m_scale) * El::To<EvalDataType>(m_value(0,0)); }
   else        { return m_value(0,0); }
 }
 
