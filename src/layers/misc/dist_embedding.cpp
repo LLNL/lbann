@@ -437,8 +437,10 @@ std::unique_ptr<Layer> build_dist_embedding_layer_from_pbuf(
 /// @todo fp16
 template class dist_embedding_layer<
   float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#ifdef LBANN_HAS_GPU
 extern template class dist_embedding_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // LBANN_HAS_GPU
 
 #define PROTO_DEVICE(T, Device)                         \
   LBANN_LAYER_BUILDER_ETI(dist_embedding, T, Device)
