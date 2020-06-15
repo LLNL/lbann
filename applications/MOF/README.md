@@ -14,6 +14,14 @@ The representation is channel-wise concatenation of 11 32x32x32 voxel grids, whe
 
 For more information on the data representation: 
 
+## Running Instructions
+
+Run the 
+```
+python3 MOFae.py --nodes N  --procs-per-node P --mini-batch-size B 
+```
+
+
 @article {Kimeaax9324,
 	author = {Kim, Baekjun and Lee, Sangwon and Kim, Jihan},
 	title = {Inverse design of porous materials using artificial neural networks},
