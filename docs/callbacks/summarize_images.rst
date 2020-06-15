@@ -162,6 +162,7 @@ Callback Option Details
      uint64_t interval = 1
 
 .. _image-format:
+
 + **Image format**
 
   String to specify the image format. The default is .jpg.
