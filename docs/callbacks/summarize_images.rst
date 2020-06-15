@@ -167,7 +167,7 @@ Callback Option Details
 
 + **Image format**
 
-  String to specify the image format. The default is .jpg.
+  String to specify the image format. The default is ".jpg".
 
   .. code-block:: c
 
