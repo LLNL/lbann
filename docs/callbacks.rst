@@ -17,7 +17,7 @@ used for reporting, debugging, and performing advanced training
 techniques.
 
 For a complete listing of callbacks and details about their
-functionality, Please see :ref:`Available
+functionality, please see :ref:`Available
 Callbacks<available-callbacks>`.
 
 .. _using-callbacks:
