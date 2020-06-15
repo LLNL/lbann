@@ -31,7 +31,7 @@ class MOFDataset(Dataset):
 
     def __getitem__(self, idx):
         if self.no_grid:
-            return self.data[idx].loc_tensor
+            return self.data[idx].loc_tensor.flatten()
         elif self.no_loc:
             return self.data[idx].grid_tensor    
         else:

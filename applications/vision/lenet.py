@@ -1,5 +1,6 @@
 import argparse
 import lbann
+import lbann.contrib.launcher
 import data.mnist
 
 # ----------------------------------

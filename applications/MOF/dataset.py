@@ -39,8 +39,11 @@ if __name__ == '__main__':
 	train_file_path = os.path.join(data_dir, 'data/mofs.p')  
 	test_file_path = os.path.join(data_dir, 'data/mofs.p')
 
-	training_data =MOFDataset(train_file_path)
-	test_data = MOFDataset(test_file_path)
+	training_data =MOFDataset(train_file_path, no_grid=True)
+	test_data = MOFDataset(test_file_path, no_grid=True)
+
+	print(len(training_data))
+	print(training_data[0].shape)
 
 
 	

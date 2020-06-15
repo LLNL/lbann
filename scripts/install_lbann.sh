@@ -265,7 +265,7 @@ ${STD_PACKAGES}
       target: []
     hydrogen:
       buildable: true
-      version: [develop]
+      version: [1.3.3]
       ${HYDROGEN_VARIANTS}
       providers: {}
       paths: {}
