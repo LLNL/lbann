@@ -143,8 +143,10 @@ Callback Option Details
   String to specify which layer to pull images from. Defined in the
   Python Front end.
 
-  .. note:: *For the track-sample-ids strategy, the image source layer
-            must be the reconstruction layer or the dropout layer.*
+  .. note:: For the "track sample ids" strategy, the image source layer
+            must output a valid image tensor. This means it must be either 
+            a 2-D tensor (greyscale image) or a 3-D tensor with the channel
+            dimension equal to 1 or 3 (greyscale or RGB, respectively).
 
   .. code-block:: c
 
