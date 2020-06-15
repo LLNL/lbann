@@ -151,6 +151,7 @@ Callback Option Details
      std::string img_source_layer_name
 
 .. _epoch-interval:
+
 + **Epoch interval**
 
   Integer that sets the frequency to output images. The default value
