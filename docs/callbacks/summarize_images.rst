@@ -118,11 +118,11 @@ Callback Option Details
          Criteria for selecting images to output: correct (MATCH),
          incorrect (NOMATCH), or all images (ALL).
 
-         .. note:: *In Python front end, enum values from
+         .. note:: In the Python front end, enum values from
                    'lbann.CategoricalAccuracyStrategy.MatchType'
                    must be used. The options are 'NOMATCH',
                    'MATCH', or 'ALL'. The default value is
-                   'NOMATCH'.*
+                   'NOMATCH'.
 
          .. code-block:: c
 
