@@ -34,11 +34,21 @@
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
+#include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
 
 namespace lbann {
+
+void construct_std_options() {
+  auto& arg_parser = global_argument_parser();
+  arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
+                        {"--rng_seeds_per_trainer_to_display"},
+                        utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
+                        "Limit how many random seeds LBANN should display from each trainer",
+                        2);
+}
 
 /// Construct a trainer that contains a lbann comm object and threadpool
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
@@ -123,16 +133,18 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
       }
     }
 
-    // Random seed used for the general RNGs
-    int random_seed = lbann_default_random_seed;
+    // Root of the random seed tree
+    int root_random_seed = lbann_default_random_seed;
 
     // Change random seed if requested
     if (pb_trainer->random_seed() > 0) {
-      random_seed = pb_trainer->random_seed();
+      root_random_seed = pb_trainer->random_seed();
     }
 
+    // Random seed used for the general RNGs
+    int random_seed = root_random_seed;
     // Random seed used for the RNG used to fetch data
-    int data_seq_random_seed = random_seed;
+    int data_seq_random_seed = root_random_seed;
 
     // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
@@ -165,7 +177,15 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     // Initialize the general RNGs and the data sequence RNGs
     init_random(random_seed);
     init_data_seq_random(data_seq_random_seed);
-    trainer->set_random_seeds(random_seed, data_seq_random_seed);
+    trainer->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
+
+    // Collect everyone's random seeds
+    std::vector<int> root_random_seeds(comm->get_procs_in_world());
+    comm->world_all_gather(root_random_seed, root_random_seeds);
+    std::vector<int> random_seeds(comm->get_procs_in_world());
+    comm->world_all_gather(random_seed, random_seeds);
+    std::vector<int> data_seq_random_seeds(comm->get_procs_in_world());
+    comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
 
     // Update the index lists to accomodate multi-trainer / multi-model specification
     customize_data_readers_index_list(*comm, pb);
@@ -197,7 +217,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                 << std::endl;
 
       // User feedback
-      print_parameters(*comm, pb, random_seed, data_seq_random_seed);
+      print_parameters(*comm, pb, root_random_seeds, random_seeds, data_seq_random_seeds);
     }
 
     return trainer;

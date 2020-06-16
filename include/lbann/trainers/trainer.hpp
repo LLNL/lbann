@@ -66,6 +66,7 @@ public:
   template <class Archive> void serialize(Archive & ar) {
     ar(CEREAL_NVP(m_persist),
        CEREAL_NVP(m_max_mini_batch_size),
+       CEREAL_NVP(m_root_random_seed),
        CEREAL_NVP(m_random_seed),
        CEREAL_NVP(m_data_seq_random_seed));
   }
@@ -88,7 +89,8 @@ public:
   description get_description() const;
 
   /** Set the random seeds used for the trainer */
-  void set_random_seeds(int random_seed, int data_seq_random_seed) {
+  void set_random_seeds(int root_random_seed, int random_seed, int data_seq_random_seed) {
+    m_root_random_seed = root_random_seed;
     m_random_seed = random_seed;
     m_data_seq_random_seed = data_seq_random_seed;
   }
@@ -210,6 +212,8 @@ private:
    */
   size_t m_max_mini_batch_size;
 
+  // Root of the random seed tree: either default or user supplied
+  int m_root_random_seed;
   // Random seed used for the general RNGs
   int m_random_seed;
   // Random seed used for the RNG used to fetch data
