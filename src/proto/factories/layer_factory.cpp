@@ -645,7 +645,7 @@ std::unique_ptr<Layer> construct_layer_legacy(
   // Loss layers
   if (proto_layer.has_cross_entropy()) {
     const auto& params = proto_layer.cross_entropy();
-    return lbann::make_unique<cross_entropy_layer<Layout, Device>>(comm, params.use_labels());
+    return lbann::make_unique<cross_entropy_layer<TensorDataType, Layout, Device>>(comm, params.use_labels());
   }
   if (proto_layer.has_top_k_categorical_accuracy()) {
     const auto& params = proto_layer.top_k_categorical_accuracy();
