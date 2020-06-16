@@ -40,6 +40,9 @@
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/polymorphic.hpp>
+
 #include <model.pb.h>
 #include <optimizers.pb.h>
 
@@ -51,6 +54,8 @@
 #include <queue>
 #include <unordered_set>
 
+#include "lbann/utils/distconv.hpp"
+
 namespace lbann {
 
 // =============================================
@@ -58,15 +63,14 @@ namespace lbann {
 // =============================================
 
 model::model(lbann_comm* comm,
-             size_t mini_batch_size,
-             objective_function* obj_fn,
+             std::unique_ptr<objective_function> obj_fn,
              std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg)
   : m_execution_context(nullptr),
     m_comm(comm),
-    m_max_mini_batch_size(mini_batch_size),
-    m_default_optimizer_msg(std::move(default_optimizer_msg)),
-    m_objective_function(obj_fn) {
+    m_default_optimizer_msg(std::move(default_optimizer_msg))
+{
 
+  m_objective_function = std::move(obj_fn);
   // Default model name
   static El::Int num_models = 0;
   m_name = "model" + std::to_string(num_models);
@@ -78,22 +82,23 @@ model::model(const model& other) :
   m_execution_context(other.m_execution_context),
   m_comm(other.m_comm),
   m_name(other.m_name),
-  m_max_mini_batch_size(other.m_max_mini_batch_size) {
+  m_model_is_setup(other.m_model_is_setup) {
 
   // Deep copies
   m_default_optimizer_msg = (other.m_default_optimizer_msg
                              ? make_unique<lbann_data::Optimizer>(
                                *other.m_default_optimizer_msg)
                              : nullptr);
-  m_objective_function = (other.m_objective_function ?
-                          other.m_objective_function->copy() : nullptr);
+  m_objective_function = (other.m_objective_function
+                          ? make_unique<objective_function>(*other.m_objective_function)
+                          : nullptr);
   m_metrics = other.m_metrics;
   m_callbacks = other.m_callbacks;
   for (auto& m : m_metrics) {
     m = m->copy();
   }
   for (auto& cb : m_callbacks) {
-    cb = cb->copy();
+    cb.reset(cb->copy());
   }
 
   // Copy layers
@@ -130,28 +135,25 @@ model& model::operator=(const model& other) {
 
   // Delete objects
   if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
-  if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
-  for (const auto& cb : m_callbacks)   { delete cb; }
 
   // Shallow copies
   m_comm = other.m_comm;
   m_name = other.m_name;
-  m_max_mini_batch_size = other.m_max_mini_batch_size;
+  m_model_is_setup = other.m_model_is_setup;
 
   // Deep copies
   m_execution_context  = other.m_execution_context;
-  m_objective_function = other.m_objective_function;
+  m_objective_function = (other.m_objective_function
+                          ? make_unique<objective_function>(*other.m_objective_function)
+                          : nullptr);
   m_metrics            = other.m_metrics;
   m_callbacks          = other.m_callbacks;
-  if (m_objective_function != nullptr) {
-    m_objective_function = m_objective_function->copy();
-  }
   for (auto& m : m_metrics) {
     m = m->copy();
   }
   for (auto& cb : m_callbacks) {
-    cb = cb->copy();
+    cb.reset(cb->copy());
   }
 
   // Copy layers
@@ -188,9 +190,7 @@ model& model::operator=(const model& other) {
 }
 
 model::~model() {
-  if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
-  for (const auto& cb : m_callbacks)   { delete cb; }
 }
 
 // =============================================
@@ -412,11 +412,11 @@ void model::add_weights(std::unique_ptr<weights> ptr) {
 
 }
 
-void model::add_callback(callback_base *cb) {
+void model::add_callback(std::shared_ptr<callback_base> cb) {
   if (cb == nullptr) {
     throw lbann_exception("model: Attempted to add null pointer as a callback.");
   }
-  m_callbacks.push_back(cb);
+  m_callbacks.push_back(std::move(cb));
 }
 
 void model::add_metric(metric *m) {
@@ -568,15 +568,21 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // Setup
 // =============================================
 
-void model::setup() {
+void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
+
+  // Bail out if the model is already setup
+  if(m_model_is_setup) { return; }
 
   // Setup layers
   setup_layer_topology();
   setup_layer_execution_order();
-  setup_layers();
+  setup_layers(max_mini_batch_size, dr_metadata);
 
   // Setup weights
   setup_weights();
+
+  // Setup objective function
+  m_objective_function->setup(*this);
 
   // Setup metrics
   for (const auto& m : m_metrics) {
@@ -588,9 +594,14 @@ void model::setup() {
     cb->setup(this);
   }
 
+#ifdef LBANN_HAS_DISTCONV
+  setup_distconv();
+#endif
+
   // Callback hooks at end of setup
   do_setup_end_cbs();
 
+  m_model_is_setup = true;
 }
 
 void model::setup_layer_topology() {
@@ -669,11 +680,11 @@ void model::setup_layer_execution_order() {
 
 }
 
-void model::setup_layers() {
+void model::setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.set_model(this);
-    l.setup();
+    l.setup(max_mini_batch_size, dr_metadata);
     l.check_setup();
   }
 }
@@ -877,6 +888,11 @@ void model::add_split_layers(std::unordered_set<std::string>& layer_names) {
       }
       split->set_name(name);
       layer_names.insert(name);
+
+      // Copy parallel strategy from parent.
+      ParallelStrategy& ps = split->get_parallel_strategy();
+      ParallelStrategy& orig_ps = l.get_parallel_strategy();
+      ps = orig_ps;
 
       // Setup relationships between split layer and child layers
       for (auto&& const_child : children) {
@@ -1260,15 +1276,17 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 
 /* struct used to serialize mode fields in file and MPI transfer */
 struct lbann_model_header {
-  uint64_t max_mini_batch_size;
   uint32_t callback_type;
 };
 
 bool model::save_to_checkpoint_shared(persist& p) {
+  const std::string trainer_dir = p.get_checkpoint_dir();
+  p.open_checkpoint_dir(trainer_dir + '/' + get_name() + '/', m_comm->am_trainer_master());
+  // Make sure that the master has had a chance to create the directories
+  m_comm->trainer_barrier();
   // write out fields we need to save for model
   if (m_comm->am_trainer_master()) {
-    p.write_uint64(persist_type::model, "max_mini_batch_size",      (uint64_t) m_max_mini_batch_size);
-    p.write_uint32(persist_type::model, "persist_callback_type",      (uint32_t) p.get_cb_type());
+    write_cereal_archive(*this, p, "model.xml");
   }
 
   for (auto&& w : m_weights) {
@@ -1280,30 +1298,19 @@ bool model::save_to_checkpoint_shared(persist& p) {
       LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
     }
   }
-  save_rng_to_checkpoint_shared(p, m_comm);
   for (const auto& m : m_metrics) {
     m->save_to_checkpoint_shared(p);
   }
+  p.open_checkpoint_dir(trainer_dir, false);
   return true;
 }
 
 bool model::load_from_checkpoint_shared(persist& p) {
-  // have rank 0 read the file
-  // read state from file
-  struct lbann_model_header header;
+  const std::string trainer_dir = p.get_checkpoint_dir();
+  p.open_restart(trainer_dir + '/' + get_name() + '/');
   // Assume checkpoint reload from epoch end not step end
-  if (m_comm->am_trainer_master()) {
-    p.read_uint64(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
-    p.read_uint32(persist_type::model, "persist_callback_type",     &header.callback_type);
-  }
-  load_rng_from_checkpoint(p, m_comm);
-  // TODO: this assumes homogeneous processors
-  // broadcast state from rank 0
-  m_comm->trainer_broadcast(0, header);
-  // set our member params from values read from disk
-  m_max_mini_batch_size = (size_t)           header.max_mini_batch_size;
-  // set state of persist object to know which type of ckpt we are returning from.
-  p.set_cb_type((callback_type) header.callback_type);
+
+  load_from_shared_cereal_archive(*this, p, *get_comm(), "model.xml");
 
   for (auto&& w : m_weights) {
     w->load_from_checkpoint_shared(p);
@@ -1315,11 +1322,14 @@ bool model::load_from_checkpoint_shared(persist& p) {
       LBANN_ERROR("Unable to load layer[",i,"]=", get_layer(i).get_name());
     }
   }
-  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
+  /// @todo FIXME BVE why are we only reloading the metrics if there
+  //  has been validation iterations?
+  //  if(get_num_iterations_per_epoch(execution_mode::validation) != 0){
     for (const auto& m : m_metrics) {
       m->load_from_checkpoint_shared(p);
     }
-  }
+    //  }
+  p.set_restart_dir(trainer_dir);
 #ifdef LBANN_HAS_GPU
   El::GPUManager::SynchronizeDevice();
 #endif // LBANN_HAS_GPU
@@ -1327,9 +1337,12 @@ bool model::load_from_checkpoint_shared(persist& p) {
 }
 
 bool model::save_to_checkpoint_distributed(persist& p){
-  // write out fields we need to save for model
-  p.write_uint64(persist_type::model, "max_mini_batch_size",  (uint64_t) m_max_mini_batch_size);
-  p.write_uint32(persist_type::train, "persist_callback_type",(uint32_t) p.get_cb_type());
+  const std::string trainer_dir = p.get_checkpoint_dir();
+  p.open_checkpoint_dir(trainer_dir + '/' + get_name() + '/', true);
+  // Make sure that the master has had a chance to create the directories
+  m_comm->trainer_barrier();
+
+  write_cereal_archive(*this, p, "model.xml");
 
   // for each execution context write out them out
   for (auto&& w : m_weights) {
@@ -1341,23 +1354,19 @@ bool model::save_to_checkpoint_distributed(persist& p){
       LBANN_ERROR("Unable to save layer[",i,"]=", get_layer(i).get_name());
     }
   }
-  save_rng_to_checkpoint_distributed(p, m_comm);
   for (const auto& m : m_metrics) {
     m->save_to_checkpoint_distributed(p);
   }
 
+  p.open_checkpoint_dir(trainer_dir, false);
   return true;
 }
 
 bool model::load_from_checkpoint_distributed(persist& p){
-  struct lbann_model_header header;
-  p.read_uint64(persist_type::model, "max_mini_batch_size",      &header.max_mini_batch_size);
-  p.read_uint32(persist_type::train, "persist_callback_type",     &header.callback_type);
+  const std::string trainer_dir = p.get_checkpoint_dir();
+  p.open_restart(trainer_dir + '/' + get_name() + '/');
 
-  m_max_mini_batch_size = (size_t)           header.max_mini_batch_size;
-
-  p.set_cb_type((callback_type) header.callback_type);
-  load_rng_from_checkpoint(p, m_comm);
+  read_cereal_archive(*this, p, "model.xml");
 
   for (auto&& w : m_weights) {
     w->load_from_checkpoint_distributed(p);
@@ -1371,13 +1380,14 @@ bool model::load_from_checkpoint_distributed(persist& p){
   for (const auto& m : m_metrics) {
     m->load_from_checkpoint_distributed(p);
   }
+  p.set_restart_dir(trainer_dir);
   return true;
 }
 
 void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
-  if (m_comm->am_world_master())
-    proto->set_mini_batch_size(m_max_mini_batch_size);
+  // if (m_comm->am_world_master())
+  //   proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
 
@@ -1398,8 +1408,8 @@ bool model::reload_weights(const std::string latest, const std::vector<std::stri
 }
 
 bool model::save_model() {
-  for (auto* c : m_callbacks) {
-    if (auto *cb = dynamic_cast<callback::save_model*>(c)) {
+  for (auto&& c : m_callbacks) {
+    if (auto *cb = dynamic_cast<callback::save_model*>(c.get())) {
       return cb->do_save_model(this);
     }
   }
@@ -1408,5 +1418,78 @@ bool model::save_model() {
   }
   return false;
 }
+
+#ifdef LBANN_HAS_DISTCONV
+void model::setup_distconv() {
+  std::stringstream dc_enabled, dc_disabled;
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto &layer = get_layer(i);
+    if (layer.distconv_enabled()) {
+      dc_enabled << " " << layer.get_name();
+    } else {
+      dc_disabled << " " << layer.get_name();
+    }
+  }
+  if (m_comm->am_world_master()) {
+    std::cout << "Distconv-enabled layers: " << dc_enabled.str() << std::endl;
+    std::cout << "Distconv-disabled layers: " << dc_disabled.str() << std::endl;
+  }
+  setup_distributions();
+  print_distributions();
+  // Setup fp tensors
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto &layer = get_layer(i);
+    if (!layer.distconv_enabled()) continue;
+    layer.get_distconv_adapter().setup_fp_tensors();
+  }
+  // Setup bp tensors in an reverse order
+  for (El::Int i = get_num_layers() - 1; i >= 0; --i) {
+    auto &layer = get_layer(i);
+    if (!layer.distconv_enabled()) continue;
+    layer.get_distconv_adapter().setup_bp_tensors();
+  }
+  // Final setup.
+  auto workspace_capacity = dc::get_workspace_capacity();
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    auto &layer = get_layer(i);
+    if (!layer.distconv_enabled()) continue;
+    layer.get_distconv_adapter().setup_layer(workspace_capacity);
+  }
+}
+
+void model::setup_distributions() {
+  tensor_overlap_constraints constraints;
+  // Initialize the distributions and constraints
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    if (!get_layer(i).distconv_enabled()) continue;
+    get_layer(i).get_distconv_adapter().setup_distributions(constraints);
+  }
+  // Add inter-layer distribution constraints
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    if (!get_layer(i).distconv_enabled()) continue;
+
+    get_layer(i).get_distconv_adapter().impose_adjacent_overlap_constraints(constraints);
+  }
+  constraints.find_valid_overlap();
+}
+
+void model::print_distributions() const {
+  std::stringstream ss;
+  for (El::Int i = 0; i < get_num_layers(); ++i) {
+    const auto& layer = get_layer(i);
+    if (layer.distconv_enabled()) {
+      ss << layer.get_name()  << " disributions: "
+         << "prev_activations: " << layer.get_distconv_adapter().get_prev_activations_dist()
+         << ", activations: " << layer.get_distconv_adapter().get_activations_dist()
+         << ", error_signals: " << layer.get_distconv_adapter().get_error_signals_dist()
+         << ", prev_error_signals: " << layer.get_distconv_adapter().get_prev_activations_dist()
+         << "\n";
+    } else {
+      ss << layer.get_name() << ": distconv disabled" << "\n";
+    }
+  }
+  dc::MPIRootPrintStreamDebug() << ss.str();
+}
+#endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann

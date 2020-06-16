@@ -42,8 +42,12 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 ::channelwise_fully_connected_layer(
   lbann_comm* comm,
-  std::vector<size_t> output_channel_dims)
-  : data_type_layer<TensorDataType>(comm)
+  std::vector<size_t> output_channel_dims,
+  bool bias,
+  bool transpose)
+  : data_type_layer<TensorDataType>(comm),
+    m_has_bias{bias},
+    m_transpose{transpose}
 {
 
   // Initialize output tensor dimensions
@@ -93,11 +97,22 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
+description
+channelwise_fully_connected_layer<TensorDataType,Layout,Device>
+::get_description() const
+{
+  auto desc = data_type_layer<TensorDataType>::get_description();
+  desc.add("Bias", m_has_bias);
+  desc.add("Transpose", m_transpose);
+  return desc;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::setup_dims()
+::setup_dims(DataReaderMetaData& dr_metadata)
 {
-  data_type_layer<TensorDataType>::setup_dims();
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
   // Make sure input and output dimensions are valid
   const auto& input_dims = this->get_input_dims();
@@ -125,9 +140,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::setup_data()
+::setup_data(size_t max_mini_batch_size)
 {
-  data_type_layer<TensorDataType>::setup_data();
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
   // Tensor dimensions
   const auto& input_dims = this->get_input_dims();
@@ -143,8 +158,19 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     output_channel_dims.begin(), output_channel_dims.end(),
     1, std::multiplies<size_t>());
 
-  // Construct default weights if needed
-  this->set_num_data_type_weights(2);
+  // Set number of weights
+  using WeightsType = data_type_weights<TensorDataType>;
+  if ((m_has_bias && this->num_weights() > 2)
+      || (!m_has_bias && this->num_weights() > 1)) {
+    LBANN_ERROR(
+      "attempted to setup ",
+      this->get_type()," layer \"",this->get_name(),"\" ",
+      "with an invalid number of weights ",
+      "(",this->num_weights(),")");
+  }
+  this->set_num_data_type_weights(m_has_bias ? 2 : 1);
+
+  // Create default linearity weights if needed
   if (!this->has_data_type_weights(0)) {
     auto w = make_unique<WeightsType>(this->get_comm());
     auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
@@ -155,36 +181,45 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     this->set_data_type_weights(0, w.get());
     this->m_model->add_weights(std::move(w));
   }
-  if (!this->has_data_type_weights(1)) {
-    auto w = make_unique<WeightsType>(this->get_comm());
-    auto opt = this->m_model->template create_optimizer<TensorDataType>();
-    w->set_name(this->get_name() + "_bias_weights");
-    w->set_optimizer(std::move(opt));
-    this->set_data_type_weights(1, w.get());
-    this->m_model->add_weights(std::move(w));
-  }
-  auto& linearity_weights = this->get_data_type_weights(0);
-  auto& bias_weights = this->get_data_type_weights(1);
 
-  // Initialize variance scaling initialization for linearity weights
-  auto* cast_initializer = dynamic_cast<variance_scaling_initializer<TensorDataType>*>(linearity_weights.get_initializer());
-  if (cast_initializer != nullptr) {
-    cast_initializer->set_fan_in(input_channel_size);
-    cast_initializer->set_fan_out(output_channel_size);
+  // Setup linearity weights
+  {
+    auto& linearity_weights = this->get_data_type_weights(0);
+    auto dist = this->get_prev_activations().DistData();
+    dist.colDist = El::STAR;
+    dist.rowDist = El::STAR;
+    auto* cast_initializer = dynamic_cast<variance_scaling_initializer<TensorDataType>*>(linearity_weights.get_initializer());
+    if (cast_initializer != nullptr) {
+      cast_initializer->set_fan_in(input_channel_size);
+      cast_initializer->set_fan_out(output_channel_size);
+    }
+    linearity_weights.set_dims(
+      m_transpose ? input_channel_dims : output_channel_dims,
+      m_transpose ? output_channel_dims : input_channel_dims);
+    linearity_weights.set_matrix_distribution(dist);
   }
 
-  // Initialize weights
-  auto dist = this->get_prev_activations().DistData();
-  dist.colDist = El::STAR;
-  dist.rowDist = El::STAR;
-  linearity_weights.set_dims(output_channel_dims, input_channel_dims);
-  linearity_weights.set_matrix_distribution(dist);
-  bias_weights.set_dims(output_channel_dims);
-  bias_weights.set_matrix_distribution(dist);
+  // Setup bias weights if needed
+  if (m_has_bias) {
+    auto dist = this->get_prev_activations().DistData();
+    dist.colDist = El::STAR;
+    dist.rowDist = El::STAR;
+    if (!this->has_data_type_weights(1)) {
+      auto w = make_unique<WeightsType>(this->get_comm());
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+      w->set_name(this->get_name() + "_bias_weights");
+      w->set_optimizer(std::move(opt));
+      this->set_data_type_weights(1, w.get());
+      this->m_model->add_weights(std::move(w));
+    }
+    auto& bias_weights = this->get_data_type_weights(1);
+    bias_weights.set_dims(output_channel_dims);
+    bias_weights.set_matrix_distribution(dist);
+  }
 
   // Initialize freeze state
   for (auto&& w : this->get_data_type_weights()) {
-    if (this->is_frozen()) {
+    if (this->m_frozen) {
       w->freeze();
     } else {
       w->unfreeze();
@@ -204,11 +239,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
   // Data tensors
   using LocalMat = El::Matrix<TensorDataType,Device>;
   const auto& linearity = this->get_data_type_weights(0).get_values();
-  const auto& bias = this->get_data_type_weights(1).get_values();
   const auto& local_input = dynamic_cast<const LocalMat&>(this->get_local_prev_activations());
   auto& local_output = dynamic_cast<LocalMat&>(this->get_local_activations());
   const auto& local_linearity = dynamic_cast<const LocalMat&>(linearity.LockedMatrix());
-  const auto& local_bias = dynamic_cast<const LocalMat&>(bias.LockedMatrix());
 
   // Tensor dimensions
   const auto& local_mini_batch_size = local_input.Width();
@@ -252,17 +285,21 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
   // Apply linearity
   El::Gemm(
-    El::NORMAL, El::NORMAL,
+    m_transpose ? El::TRANSPOSE : El::NORMAL,
+    El::NORMAL,
     one, local_linearity, local_input_reshaped,
-    zero, reinterpret_cast<AbsMatrixType&>(local_output_reshaped));
+    zero, reinterpret_cast<LocalMat&>(local_output_reshaped));
 
   // Apply bias
-  LocalMat ones(local_mini_batch_size * num_channels, 1);
-  El::Fill(ones, one);
-  El::Gemm(
-    El::NORMAL, El::TRANSPOSE,
-    one, local_bias, ones,
-    one, reinterpret_cast<AbsMatrixType&>(local_output_reshaped));
+  if (m_has_bias) {
+    const auto& bias = this->get_data_type_weights(1).get_values();
+    LocalMat ones(local_mini_batch_size * num_channels, 1);
+    El::Fill(ones, one);
+    El::Gemm(
+      El::NORMAL, El::TRANSPOSE,
+      one, reinterpret_cast<const LocalMat&>(bias.LockedMatrix()), ones,
+      one, reinterpret_cast<LocalMat&>(local_output_reshaped));
+  }
 
 }
 
@@ -276,7 +313,6 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
   // Weights
   auto& linearity_weights = this->get_data_type_weights(0);
-  auto& bias_weights = this->get_data_type_weights(1);
 
   // Data tensors
   using LocalMat = El::Matrix<TensorDataType,Device>;
@@ -341,9 +377,10 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 
   // Compute gradient w.r.t. input
   El::Gemm(
-    El::TRANSPOSE, El::NORMAL,
+    m_transpose ? El::NORMAL : El::TRANSPOSE,
+    El::NORMAL,
     one, local_linearity, local_output_grad_reshaped,
-    zero, reinterpret_cast<AbsMatrixType&>(local_input_grad_reshaped));
+    zero, reinterpret_cast<LocalMat&>(local_input_grad_reshaped));
 
   // Compute gradient w.r.t. linearity
   auto* linearity_optimizer = linearity_weights.get_optimizer();
@@ -351,24 +388,35 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
     TensorDataType dst_scale, gradient_scale;
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
       dst_scale, gradient_scale, true);
-    El::Gemm(
-      El::NORMAL, El::TRANSPOSE,
-      gradient_scale, local_output_grad_reshaped, local_input_reshaped,
-      dst_scale, linearity_gradient.Matrix());
+    if (m_transpose) {
+      El::Gemm(
+        El::NORMAL, El::TRANSPOSE,
+        gradient_scale, local_input_reshaped, local_output_grad_reshaped,
+        dst_scale, linearity_gradient.Matrix());
+    }
+    else {
+      El::Gemm(
+        El::NORMAL, El::TRANSPOSE,
+        gradient_scale, local_output_grad_reshaped, local_input_reshaped,
+        dst_scale, linearity_gradient.Matrix());
+    }
   }
 
   // Compute gradient w.r.t. bias
-  auto* bias_optimizer = bias_weights.get_optimizer();
-  if (bias_optimizer != nullptr) {
-    TensorDataType dst_scale, gradient_scale;
-    auto& bias_gradient = bias_optimizer->get_gradient_buffer(
-      dst_scale, gradient_scale, true);
-    LocalMat ones(local_mini_batch_size * num_channels, 1);
-    El::Fill(ones, one);
-    El::Gemv(
-      El::NORMAL,
-      gradient_scale, local_output_grad_reshaped, ones,
-      dst_scale, bias_gradient.Matrix());
+  if (m_has_bias) {
+    auto& bias_weights = this->get_data_type_weights(1);
+    auto* bias_optimizer = bias_weights.get_optimizer();
+    if (bias_optimizer != nullptr) {
+      TensorDataType dst_scale, gradient_scale;
+      auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+      LocalMat ones(local_mini_batch_size * num_channels, 1);
+      El::Fill(ones, one);
+      El::Gemv(
+        El::NORMAL,
+        gradient_scale, local_output_grad_reshaped, ones,
+        dst_scale, bias_gradient.Matrix());
+    }
   }
 
 }
@@ -399,20 +447,14 @@ struct Builder
 template <typename TensorDataType, El::Device Device>
 struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>
 {
-  static std::unique_ptr<Layer> Build(
-    lbann_comm* comm, lbann_data::Layer const& proto_layer)
+  template <typename... Args>
+  static std::unique_ptr<Layer> Build(Args&&... args)
   {
-    const auto& params = proto_layer.channelwise_fully_connected();
-    std::vector<size_t> output_channel_dims;
-    const size_t num_output_channel_dims = params.output_channel_dims_size();
-    for (size_t i=0; i<num_output_channel_dims; ++i) {
-      output_channel_dims.push_back(params.output_channel_dims(i));
-    }
     using LayerType = channelwise_fully_connected_layer<
       TensorDataType,
       data_layout::DATA_PARALLEL,
       Device>;
-    return make_unique<LayerType>(comm, output_channel_dims);
+    return make_unique<LayerType>(std::forward<Args>(args)...);
   }
 };
 
@@ -423,7 +465,20 @@ std::unique_ptr<Layer> build_channelwise_fully_connected_layer_from_pbuf(
   lbann_comm* comm, lbann_data::Layer const& proto_layer)
 {
   using BuilderType = Builder<TensorDataType, Layout, Device>;
-  return BuilderType::Build(comm, proto_layer);
+  LBANN_ASSERT_MSG_HAS_FIELD(proto_layer, channelwise_fully_connected);
+  const auto& params = proto_layer.channelwise_fully_connected();
+  std::vector<size_t> output_channel_dims;
+  const size_t num_output_channel_dims = params.output_channel_dims_size();
+  for (size_t i=0; i<num_output_channel_dims; ++i) {
+    output_channel_dims.push_back(params.output_channel_dims(i));
+  }
+  const bool has_bias = (params.has_bias()
+                         ? params.bias().value()
+                         : true);
+  const bool transpose = (params.has_transpose()
+                          ? params.transpose().value()
+                          : false);
+  return BuilderType::Build(comm, output_channel_dims, has_bias, transpose);
 }
 
 // =========================================================

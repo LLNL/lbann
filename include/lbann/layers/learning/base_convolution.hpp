@@ -37,11 +37,43 @@
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
+#include "lbann/utils/distconv.hpp"
 
 #include <vector>
 #include <omp.h>
 
 namespace lbann {
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, El::Device Device>
+class base_convolution_adapter: public data_type_distconv_adapter<TensorDataType> {
+ public:
+  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+
+  base_convolution_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  virtual ~base_convolution_adapter() = default;
+
+  void setup_fp_tensors() override;
+  void setup_bp_tensors() override;
+  void setup_layer(size_t workspace_capacity) override;
+
+  void fp_compute_convolution();
+  void fp_apply_bias();
+
+  void bp_compute_convolution_data();
+  void bp_compute_convolution_filter();
+
+  std::unique_ptr<dc::Convolution<TensorDataType>> m_conv;
+  std::unique_ptr<TensorDevType> m_kernel;
+  std::unique_ptr<TensorDevType> m_bias;
+  std::unique_ptr<TensorDevType> m_kernel_gradient;
+  std::unique_ptr<TensorDevType> m_bias_gradient;
+
+  std::string m_fwd_algo;
+  std::string m_bwd_data_algo;
+  std::string m_bwd_filter_algo;
+};
+#endif // LBANN_HAS_DISTCONV
 
 /** @brief Computation kernels for convolution and deconvolution layers.
  */
@@ -95,6 +127,11 @@ protected:
 
 #ifdef LBANN_HAS_CUDNN
 
+  /** @brief Math type to use inside cuDNN.
+   *  @details Must be cached since it isn't used until setup.
+   */
+  cudnnMathType_t m_convolution_math_type =
+    cudnn::get_default_convolution_math_type();
   /** Convolution kernel cuDNN descriptor. */
   cudnnFilterDescriptor_t m_kernel_cudnn_desc = nullptr;
   /** Convolution cuDNN descriptor. */
@@ -148,7 +185,8 @@ public:
       m_groups(other.m_groups),
       m_bias_scaling_factor(other.m_bias_scaling_factor)
 #ifdef LBANN_HAS_CUDNN
-    , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc),
+    , m_convolution_math_type(other.m_convolution_math_type),
+      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc),
       m_fwd_cudnn_algos(other.m_fwd_cudnn_algos),
       m_bwd_data_cudnn_algos(other.m_bwd_data_cudnn_algos),
       m_bwd_filter_cudnn_algos(other.m_bwd_filter_cudnn_algos)
@@ -179,6 +217,7 @@ public:
 
 #ifdef LBANN_HAS_CUDNN
     // Copy cuDNN objects
+    m_convolution_math_type = other.m_convolution_math_type;
     copy_kernel_cudnn_desc(other.m_kernel_cudnn_desc,
                            m_kernel_cudnn_desc);
     copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
@@ -210,6 +249,12 @@ public:
     }
 #endif // LBANN_HAS_CUDNN
   }
+
+#ifdef LBANN_HAS_CUDNN
+  void set_cudnn_math_mode(cudnnMathType_t math_type) noexcept {
+    m_convolution_math_type = math_type;
+  }
+#endif // LBANN_HAS_CUDNN
 
   description get_description() const override {
     auto desc = data_type_layer<TensorDataType>::get_description();
@@ -257,13 +302,22 @@ public:
            "disabled" : "enabled");
     desc.add("Bias", ss.str());
 
+#ifdef LBANN_HAS_CUDNN
+    if (Device == El::Device::GPU) {
+      desc.add("cuDNN Math Mode",
+               (m_convolution_math_type == CUDNN_DEFAULT_MATH
+                ? "NO tensor cores."
+                : "USE tensor cores."));
+    }
+#endif // LBANN_HAS_CUDNN
+
     // Result
     return desc;
 
   }
 
-  void setup_dims() override {
-    data_type_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     std::ostringstream err;
 
     // Check number of channels and channel groups
@@ -349,8 +403,8 @@ public:
   /** Setup layer data.
    *  The kernel weights are setup in the convolution and
    *  deconvolution classes. */
-  void setup_data() override {
-    data_type_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Tensor dimensions
     const auto& input_dims = this->get_input_dims();
@@ -458,6 +512,8 @@ public:
 
     // Set convolution descriptor
     CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_cudnn_desc));
+    CHECK_CUDNN(cudnnSetConvolutionMathType(
+                  m_convolution_cudnn_desc, m_convolution_math_type));
     CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(m_convolution_cudnn_desc,
                                                 m_pads.size(),
                                                 m_pads.data(),
@@ -1101,7 +1157,10 @@ private:
     if(src != nullptr) {
       cudnnConvolutionMode_t mode;
       cudnnDataType_t data_type;
+      cudnnMathType_t math_type;
       int num_dims;
+
+      CHECK_CUDNN(cudnnGetConvolutionMathType(src, &math_type));
       CHECK_CUDNN(cudnnGetConvolutionNdDescriptor(src,
                                                   0,
                                                   &num_dims,
@@ -1122,6 +1181,7 @@ private:
       int num_groups;
       CHECK_CUDNN(cudnnGetConvolutionGroupCount(src,
                                                 &num_groups));
+      CHECK_CUDNN(cudnnSetConvolutionMathType(dst, math_type));
       CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(dst,
                                                   num_dims,
                                                   pads.data(),
@@ -1236,7 +1296,186 @@ private:
 
 #endif // LBANN_HAS_CUDNN
 
+#ifdef LBANN_HAS_DISTCONV
+  friend class base_convolution_adapter<TensorDataType, Device>;
+ protected:
+  void setup_distconv_adapter() override {
+    this->get_distconv_adapter_ptr() = make_unique<
+      base_convolution_adapter<TensorDataType, Device>>(*this);
+  }
+  base_convolution_adapter<TensorDataType, Device>& get_distconv_adapter() override;
+  const base_convolution_adapter<TensorDataType, Device>& get_distconv_adapter() const override;
+#endif // LBANN_HAS_DISTCONV
 };
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, El::Device Device>
+const base_convolution_adapter<TensorDataType, Device>&
+base_convolution_layer<TensorDataType, Device>::get_distconv_adapter() const {
+  return dynamic_cast<const base_convolution_adapter<
+    TensorDataType, Device>&>(data_type_layer<TensorDataType>::get_distconv_adapter());
+}
+
+template <typename TensorDataType, El::Device Device>
+base_convolution_adapter<TensorDataType, Device>&
+base_convolution_layer<TensorDataType, Device>::get_distconv_adapter() {
+  return const_cast<base_convolution_adapter<TensorDataType, Device>&>(
+      static_cast<const base_convolution_layer<TensorDataType, Device>&>(*this).get_distconv_adapter());
+}
+
+template <typename TensorDataType, El::Device Device>
+void base_convolution_adapter<TensorDataType, Device>::setup_fp_tensors() {
+  data_type_distconv_adapter<TensorDataType>::setup_fp_tensors();
+  auto &layer = dynamic_cast<
+    base_convolution_layer<TensorDataType, Device>&>(this->layer());
+  const auto &input_dist = this->get_prev_activations_dist();
+
+  const auto& kernel_dims = layer.get_kernel_dims();
+  std::stringstream ss;
+  dc::util::print_vector(ss, kernel_dims.begin(), kernel_dims.end());
+
+  // assumes no partitioning on channel/filter dimensions
+  assert_eq(input_dist.get_split_shape()[-2], 1);
+  auto shared_dist = dc::Dist::make_shared_distribution(
+      input_dist.get_locale_shape());
+
+  dc::Shape kernel_shape(kernel_dims);
+  std::reverse(kernel_shape.begin(), kernel_shape.end());
+  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+  m_kernel = make_unique<TensorDevType>(kernel_shape, loc, shared_dist);
+  assert0(dc::tensor::View(
+      *m_kernel, layer.get_data_type_weights(0).get_values().LockedBuffer()));
+
+  if (layer.m_bias_scaling_factor != TensorDataType(0)) {
+    dc::Shape bias_shape(dc::get_num_dims(layer), 1);
+    bias_shape[dc::get_channel_dim()] = layer.get_output_dims()[0];
+    m_bias = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
+    assert0(dc::tensor::View(
+        *m_bias, layer.get_data_type_weights(1).get_values().LockedBuffer()));
+  }
+}
+
+template <typename TensorDataType, El::Device Device>
+void base_convolution_adapter<TensorDataType, Device>::setup_bp_tensors() {
+  data_type_distconv_adapter<TensorDataType>::setup_bp_tensors();
+  auto &l = dynamic_cast<
+    base_convolution_layer<TensorDataType, Device>&>(this->layer());
+
+  const auto shared_dist = dc::Dist::make_shared_distribution(
+      this->get_prev_error_signals_dist().get_locale_shape());
+  dc::Shape kernel_shape(l.get_kernel_dims());
+  std::reverse(kernel_shape.begin(), kernel_shape.end());
+  const dc::LocaleMPI loc(dc::get_mpi_comm(), false);
+
+  m_kernel_gradient = make_unique<TensorDevType>(kernel_shape, loc, shared_dist);
+  // Gradient buffer is needed for auto-tuning the bp filter algorithm
+  assert0(dc::tensor::View(
+      *m_kernel_gradient,
+      l.get_data_type_weights(0).get_optimizer()->get_gradient().Buffer()));
+
+  // Bias tensor. Shared by all procs
+  if (l.m_bias_scaling_factor != TensorDataType(0)) {
+    auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+    if (bias_optimizer != nullptr) {
+      dc::Shape bias_shape(dc::get_num_dims(l), 1);
+      bias_shape[dc::get_channel_dim()] = l.get_output_dims()[0];
+      m_bias_gradient = make_unique<TensorDevType>(bias_shape, loc, shared_dist);
+      // setup_bias_gradients needs strides of the bias tensor,
+      // which is set when its view is set.
+      assert0(dc::tensor::View(
+          *m_bias_gradient,
+          l.get_data_type_weights(1).get_optimizer()->get_gradient().Buffer()));
+    }
+  }
+}
+
+template <typename TensorDataType, El::Device Device>
+void base_convolution_adapter<TensorDataType, Device>::setup_layer(
+size_t workspace_capacity) {
+  data_type_distconv_adapter<TensorDataType>::setup_layer(workspace_capacity);
+  auto &layer = dynamic_cast<base_convolution_layer<TensorDataType, Device>&>(this->layer());
+  m_conv = make_unique<dc::Convolution<TensorDataType>>(
+      dc::get_backend(), dc::get_num_dims(layer),
+      dc::get_halo_exchange_method());
+  if (layer.m_bias_scaling_factor != TensorDataType(0)) {
+    m_conv->setup_bias(*m_bias);
+    m_conv->setup_bias_gradient(*m_bias_gradient);
+  }
+}
+
+template <typename TensorDataType, El::Device Device>
+void base_convolution_adapter<TensorDataType, Device>::fp_compute_convolution() {
+  auto &l = dynamic_cast<base_convolution_layer<
+    TensorDataType, Device>&>(this->layer());
+  assert0(dc::tensor::View(
+      *m_kernel, l.get_data_type_weights(0).get_values().LockedBuffer()));
+  m_conv->forward(TensorDataType{1}, this->get_prev_activations(),
+                  *m_kernel, TensorDataType{0}, this->get_activations());
+}
+
+template <typename TensorDataType, El::Device Device>
+void base_convolution_adapter<TensorDataType, Device>::fp_apply_bias() {
+  auto &l = dynamic_cast<base_convolution_layer<
+    TensorDataType, Device>&>(this->layer());
+  if (l.m_bias_scaling_factor == TensorDataType(0)) return;
+  assert0(dc::tensor::View(
+      *m_bias, l.get_data_type_weights(1).get_values().LockedBuffer()));
+  m_conv->apply_bias(l.m_bias_scaling_factor, *m_bias,
+                     TensorDataType{1}, this->get_activations());
+}
+
+template <typename TensorDataType, El::Device Device>
+void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_data() {
+  auto &l = dynamic_cast<base_convolution_layer<
+    TensorDataType, Device>&>(this->layer());
+  assert0(dc::tensor::View(
+      *m_kernel, l.get_data_type_weights(0).get_values().LockedBuffer()));
+  m_conv->backward_data(TensorDataType{1}, *m_kernel,
+                        this->get_prev_error_signals(),
+                        TensorDataType{0}, this->get_error_signals());
+}
+
+template <typename TensorDataType, El::Device Device>
+void base_convolution_adapter<TensorDataType, Device>::bp_compute_convolution_filter() {
+  auto &l = dynamic_cast<base_convolution_layer<
+    TensorDataType, Device>&>(this->layer());
+  const bool has_local_data = this->get_prev_activations().get_local_size() > 0 &&
+      this->get_prev_error_signals().get_local_size() > 0;
+  if (l.m_bias_scaling_factor != TensorDataType(0)
+      && l.get_data_type_weights(1).get_optimizer() != nullptr) {
+    auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+    TensorDataType dst_scale{0}, gradient_scale{0};
+    auto& bias_gradient = bias_optimizer->get_gradient_buffer(
+        dst_scale, gradient_scale, true);
+    assert0(dc::tensor::View(*m_bias_gradient,
+                             bias_gradient.Buffer()));
+    if (has_local_data) {
+      m_conv->backward_bias(gradient_scale,
+                            this->get_prev_error_signals(),
+                            dst_scale, *m_bias_gradient, false);
+    } else {
+      m_bias_gradient->scale(dst_scale, El::GPUManager::Stream());
+    }
+  }
+
+  auto* kernel_optimizer = l.get_data_type_weights(0).get_optimizer();
+  if (kernel_optimizer == nullptr) return;
+  TensorDataType dst_scale{0}, gradient_scale{0};
+  auto& kernel_gradient = kernel_optimizer->get_gradient_buffer(
+      dst_scale, gradient_scale, true);
+  assert0(dc::tensor::View(
+      *m_kernel_gradient, kernel_gradient.Buffer()));
+  if (has_local_data) {
+    m_conv->backward_filter(gradient_scale,
+                            this->get_prev_activations(),
+                            this->get_prev_error_signals(),
+                            dst_scale,
+                            *m_kernel_gradient, false);
+  } else {
+    m_kernel_gradient->scale(dst_scale, El::GPUManager::Stream());
+  }
+}
+#endif // LBANN_HAS_DISTCONV
 
 #ifndef LBANN_BASE_CONVOLUTION_LAYER_INSTANTIATE
 

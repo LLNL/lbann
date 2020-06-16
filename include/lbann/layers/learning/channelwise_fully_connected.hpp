@@ -39,10 +39,11 @@ namespace lbann {
  *  row-vector convention:
  *    @f[ y(i,*) = \text{vec}( x(i,*) ) W^T + b @f]
  *
- *  Two weights are required: the linearity and the bias. If weights
- *  aren't provided, the linearity weights are initialized with He
- *  normal initialization and the bias weights are initialized to
- *  zero.
+ *  Two weights are required if bias is applied: the linearity and the
+ *  bias. Only the linearity weights are required if bias is not
+ *  applied. If weights aren't provided, the linearity weights are
+ *  initialized with He normal initialization and the bias weights are
+ *  initialized to zero.
  *
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -54,26 +55,19 @@ class channelwise_fully_connected_layer
                 "only supports data parallel layout");
 
 public:
-  /** @name Public Types */
-  ///@{
-
-  /** @brief The local tensor type expected in this object. */
-  using AbsMatrixType = El::AbstractMatrix<TensorDataType>;
-
-  /** @brief The concrete weights type used by this object. */
-  using WeightsType = data_type_weights<TensorDataType>;
-
-  ///@}
-
-public:
 
   /** @param comm                   LBANN communicator.
    *  @param output_channel_dims    Output tensor dimensions,
    *                                excluding the first dimension.
+   *  @param bias                   Whether to apply bias.
+   *  @param transpose              Whether to apply transpose of
+   *                                weights matrix.
    */
   channelwise_fully_connected_layer(
     lbann_comm* comm,
-    std::vector<size_t> output_channel_dims);
+    std::vector<size_t> output_channel_dims,
+    bool bias,
+    bool transpose);
 
   channelwise_fully_connected_layer(
     const channelwise_fully_connected_layer& other) = default;
@@ -85,14 +79,22 @@ public:
   std::string get_type() const override;
   data_layout get_data_layout() const override;
   El::Device get_device_allocation() const override;
+  description get_description() const override;
 
 protected:
 
-  void setup_dims() override;
-  void setup_data() override;
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
+  void setup_data(size_t max_mini_batch_size) override;
 
   void fp_compute() override;
   void bp_compute() override;
+
+private:
+
+  /** Whether to apply bias. */
+  bool m_has_bias;
+  /** Whether to transpose linearity. */
+  bool m_transpose;
 
 };
 

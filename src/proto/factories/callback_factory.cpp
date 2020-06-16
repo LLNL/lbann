@@ -57,12 +57,15 @@
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/callbacks/save_model.hpp"
+#include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/save_topk_models.hpp"
+#include "lbann/callbacks/summarize_images.hpp"
 #include "lbann/callbacks/summary.hpp"
 #include "lbann/callbacks/sync_layers.hpp"
 #include "lbann/callbacks/timeline.hpp"
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
+#include "lbann/callbacks/set_weights_value.hpp"
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
@@ -80,6 +83,7 @@
 
 namespace lbann {
 namespace proto {
+
 namespace {
 
 // Define the factory type.
@@ -93,7 +97,7 @@ using factory_type = lbann::generic_factory<
 
 void register_default_builders(factory_type& factory)
 {
-  using namespace callback;
+  using namespace ::lbann::callback;
   factory.register_builder("CallbackAdaptiveLearningRate",
                            build_adaptive_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackCheckDataset",
@@ -106,8 +110,6 @@ void register_default_builders(factory_type& factory)
                            build_check_metric_callback_from_pbuf);
   factory.register_builder("CallbackCheckNaN",
                            build_check_nan_callback_from_pbuf);
-  factory.register_builder("CallbackCheckpoint",
-                           build_checkpoint_callback_from_pbuf);
   factory.register_builder("CallbackCheckSmall",
                            build_check_small_callback_from_pbuf);
   factory.register_builder("CallbackConfusionMatrix",
@@ -168,12 +170,16 @@ void register_default_builders(factory_type& factory)
                            build_save_images_callback_from_pbuf);
   factory.register_builder("CallbackSaveModel",
                            build_save_model_callback_from_pbuf);
+  factory.register_builder("CallbackLoadModel",
+                           build_load_model_callback_from_pbuf);
   factory.register_builder("CallbackSaveTopKModels",
                            build_save_topk_models_callback_from_pbuf);
   factory.register_builder("CallbackStepLearningRate",
                            build_step_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackStepMinibatch",
                            build_step_minibatch_callback_from_pbuf);
+  factory.register_builder("CallbackSummarizeImages",
+                           build_summarize_images_callback_from_pbuf);
   factory.register_builder("CallbackSummary",
                            build_summary_callback_from_pbuf);
   factory.register_builder("CallbackSyncLayers",
@@ -182,6 +188,8 @@ void register_default_builders(factory_type& factory)
                            build_timeline_callback_from_pbuf);
   factory.register_builder("CallbackTimer",
                            build_timer_callback_from_pbuf);
+  factory.register_builder("CallbackSetWeightsValue",
+                           build_set_weights_value_callback_from_pbuf);
 }
 
 // Manage a global factory
@@ -232,5 +240,48 @@ std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
   return nullptr;
 }
 
+namespace {
+// Define a second factory type for callbacks that don't require a summarizer
+using factory_type_no_summarizer = lbann::generic_factory<
+  lbann::callback_base,
+  std::string,
+  generate_builder_type<lbann::callback_base,
+                        google::protobuf::Message const&>,
+  default_key_error_policy>;
+
+void register_default_builders_no_summarizer(factory_type_no_summarizer& factory)
+{
+  using namespace callback;
+  factory.register_builder("CallbackCheckpoint",
+                           build_checkpoint_callback_from_pbuf);
+}
+
+// Manage a global factory with no summarizer
+struct factory_manager_no_summarizer
+{
+    factory_type_no_summarizer factory_;
+
+    factory_manager_no_summarizer() {
+        register_default_builders_no_summarizer(factory_);
+    }
+};
+
+factory_manager_no_summarizer factory_mgr_no_summarizer_;
+factory_type_no_summarizer const& get_callback_factory_no_summarizer() noexcept
+{
+  return factory_mgr_no_summarizer_.factory_;
+}
+
+} // namespace
+
+std::unique_ptr<callback_base>
+construct_callback(
+  const google::protobuf::Message& proto_msg) {
+
+  auto const& factory = get_callback_factory_no_summarizer();
+  auto const& msg =
+    helpers::get_oneof_message(proto_msg, "callback_type");
+  return factory.create_object(msg.GetDescriptor()->name(), msg);
+}
 } // namespace proto
 } // namespace lbann

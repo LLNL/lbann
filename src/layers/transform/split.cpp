@@ -34,11 +34,26 @@ namespace lbann {
 
 LBANN_LAYER_DEFAULT_BUILDER(split)
 
-#define PROTO_DEVICE(T, Device) \
-  template class split_layer<T, data_layout::DATA_PARALLEL, Device>; \
-  template class split_layer<T, data_layout::MODEL_PARALLEL, Device>; \
-  LBANN_LAYER_BUILDER_ETI(split, T, Device)
+#define PROTO(T)                                                        \
+  template class split_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class split_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>; \
+  LBANN_LAYER_BUILDER_ETI(split, T, El::Device::CPU)
 
-#include "lbann/macros/instantiate_device.hpp"
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void split_distconv_adapter<TensorDataType, Layout, Dev>::bp_compute() {
+  LBANN_ERROR(this->get_name(), ": Distconv not supported");
+}
+
+#define PROTO(T)                                                        \
+  template class split_distconv_adapter<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class split_distconv_adapter<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#include "lbann/macros/instantiate.hpp"
+#endif // LBANN_HAS_DISTCONV
 
 }// namespace lbann

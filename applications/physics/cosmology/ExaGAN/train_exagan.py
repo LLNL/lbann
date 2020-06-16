@@ -1,6 +1,6 @@
 import ExaGAN
 import dataset
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 
 # ==============================================
 # Setup and launch experiment
@@ -26,8 +26,8 @@ def construct_model():
     zero = lbann.LogicalNot(one,name='is_fake')
 
     z = lbann.Reshape(lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="64", name='noise_vec'),dims='1 64')
-    d1_real, d1_fake, d_adv, gen_img  = ExaGAN.CosmoGAN()(input,z) 
-    
+    d1_real, d1_fake, d_adv, gen_img  = ExaGAN.CosmoGAN()(input,z)
+
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
     d1_fake_bce = lbann.SigmoidBinaryCrossEntropy([d1_fake,zero],name='d1_fake_bce')
     d_adv_bce = lbann.SigmoidBinaryCrossEntropy([d_adv,one],name='d_adv_bce')
@@ -64,12 +64,10 @@ def construct_model():
                  lbann.CallbackReplaceWeights(source_layers=list2str(src_layers),
                                       destination_layers=list2str(dst_layers),
                                       batch_interval=2)]
-                                            
+
     # Construct model
-    mini_batch_size = 64
     num_epochs = 20
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        weights=weights,
                        layers=layers,
                        metrics=metrics,
@@ -109,14 +107,15 @@ def construct_data_reader():
 
 if __name__ == '__main__':
     import lbann
-    
-    trainer = lbann.Trainer()
+
+    mini_batch_size = 64
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model()
     # Setup optimizer
     opt = lbann.Adam(learn_rate=0.0002,beta1=0.5,beta2=0.99,eps=1e-8)
     # Load data reader from prototext
     data_reader = construct_data_reader()
-    status = lbann.contrib.lc.launcher.run(trainer,model, data_reader, opt,
+    status = lbann.contrib.launcher.run(trainer,model, data_reader, opt,
                        scheduler='slurm',
                        #account='lbpm',
                        nodes=1,

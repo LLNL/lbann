@@ -119,6 +119,12 @@ void image_data_reader::set_input_params(const int width, const int height, cons
 
 bool image_data_reader::fetch_label(CPUMat& Y, int data_id, int mb_idx) {
   const label_t label = m_image_list[data_id].second;
+  if (label < label_t{0} || label >= static_cast<label_t>(m_num_labels)) {
+    LBANN_ERROR(
+      "\"",this->get_type(),"\" data reader ",
+      "expects data with ",m_num_labels," labels, ",
+      "but data sample ",data_id," has a label of ",label);
+  }
   Y.Set(label, mb_idx, 1);
   return true;
 }
@@ -209,12 +215,12 @@ void image_data_reader::do_preload_data_store() {
     load_conduit_nodes_from_file(data_ids[io_thread_pool->get_local_thread_id()]);
     io_thread_pool->finish_work_group();
   }
-  
+
   else {
     conduit::Node node;
     if (is_master()) {
       std::cout << "mode: NOT data_store_thread\n";
-    }  
+    }
     for (size_t data_id=0; data_id<m_shuffled_indices.size(); data_id++) {
       int index = m_shuffled_indices[data_id];
       if (m_data_store->get_index_owner(index) != rank) {

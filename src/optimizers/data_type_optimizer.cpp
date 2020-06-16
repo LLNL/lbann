@@ -325,32 +325,6 @@ void data_type_optimizer<TensorDataType>::step() {
 // Checkpointing
 // =============================
 
-template <typename TensorDataType>
-bool data_type_optimizer<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string m_name) {
-  //  m_learning_rate;
-  p.write_datatype(persist_type::train, "learning_rate", m_learning_rate);
-  return true;
-}
-
-template <typename TensorDataType>
-bool data_type_optimizer<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string m_name) {
-  p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
-  get_comm().trainer_broadcast(0, m_learning_rate);
-  return true;
-}
-
-template <typename TensorDataType>
-bool data_type_optimizer<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string m_name) {
-  p.write_datatype(persist_type::train, "learning_rate", m_learning_rate);
-  return true;
-}
-
-template <typename TensorDataType>
-bool data_type_optimizer<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string m_name) {
-  p.read_datatype(persist_type::train, "learning_rate", &m_learning_rate);
-  return true;
-}
-
 #define PROTO(T)                         \
   template class data_type_optimizer<T>
 

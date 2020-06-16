@@ -1,100 +1,36 @@
-import os, os.path
-from lbann import lbann_exe
 from lbann.contrib.lc.systems import *
 import lbann.launcher
 from lbann.util import make_iterable
 
-def run(trainer, model, data_reader, optimizer,
-        experiment_dir=None,
-        nodes=1,
-        procs_per_node=procs_per_node(),
-        time_limit=None,
-        scheduler=scheduler(),
-        job_name='lbann',
-        system=system(),
-        partition=partition(),
-        account=account(),
-        reservation=None,
-        overwrite_script=False,
-        launcher_args=[],
-        lbann_args=[],
-        environment={},
-        setup_only=False):
-    """Run LBANN with LC-specific optimizations.
+def run(*args, **kwargs):
+    """Run LBANN with LC-specific optimizations (deprecated).
 
-    This is intended to match the behavior of `lbann.launcher.run`,
-    with defaults and optimizations for LC systems.
+    This is deprecated. Use `lbann.contrib.launcher.run` instead.
 
     """
 
-    # Create batch script generator
-    script = make_batch_script(work_dir=experiment_dir,
-                               nodes=nodes,
-                               procs_per_node=procs_per_node,
-                               time_limit=time_limit,
-                               scheduler=scheduler,
-                               job_name=job_name,
-                               partition=partition,
-                               account=account,
-                               reservation=reservation,
-                               launcher_args=launcher_args,
-                               environment=environment)
+    import warnings
+    warnings.warn(
+        'Using deprecated function `lbann.contrib.lc.launcher.run`. '
+        'Use `lbann.contrib.launcher.run` instead.'
+    )
+    from ..launcher import run as _run
+    _run(*args, **kwargs)
 
-    # Check for an existing job allocation
-    has_allocation = False
-    if isinstance(script, lbann.launcher.slurm.SlurmBatchScript):
-        has_allocation = 'SLURM_JOB_ID' in os.environ
-    if isinstance(script, lbann.launcher.lsf.LSFBatchScript):
-        has_allocation = 'LSB_JOBID' in os.environ
-
-    # Batch script prints start time
-    script.add_command('echo "Started at $(date)"')
-
-    # Batch script invokes LBANN
-    lbann_command = [lbann.lbann_exe()]
-    lbann_command.extend(make_iterable(lbann_args))
-    prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
-    lbann.proto.save_prototext(prototext_file,
-                               trainer=trainer,
-                               model=model,
-                               data_reader=data_reader,
-                               optimizer=optimizer)
-    lbann_command.append('--prototext={}'.format(prototext_file))
-    script.add_parallel_command(lbann_command)
-    script.add_command('status=$?')
-
-    # Batch script prints finish time and returns status
-    script.add_command('echo "Finished at $(date)"')
-    script.add_command('exit ${status}')
-
-    # Write, run, or submit batch script
-    status = 0
-    if setup_only:
-        script.write(overwrite=overwrite_script)
-    elif has_allocation:
-        status = script.run(overwrite=overwrite_script)
-    else:
-        status = script.submit(overwrite=overwrite_script)
-    return status
-
-def make_batch_script(script_file=None,
-                      work_dir=None,
-                      nodes=1,
-                      procs_per_node=procs_per_node(),
-                      time_limit=None,
-                      scheduler=scheduler(),
-                      job_name='lbann',
-                      system=system(),
-                      partition=partition(),
-                      account=account(),
-                      reservation=None,
-                      launcher_args=[],
-                      environment={}):
+def make_batch_script(
+    system=system(),
+    procs_per_node=procs_per_node(),
+    scheduler=scheduler(),
+    launcher_args=[],
+    environment={},
+    *args,
+    **kwargs,
+):
     """Construct batch script manager with LC-specific optimizations.
 
-    This is intended to match the behavior of
-    `lbann.launcher.make_batch_script`, with defaults and
-    optimizations for LC systems.
+    This is a wrapper around `lbann.launcher.make_batch_script`, with
+    defaults and optimizations for LC systems. See that function for a
+    full list of options.
 
     """
 
@@ -175,15 +111,15 @@ def make_batch_script(script_file=None,
         if 'PAMI_MAX_NUM_CACHED_PAGES' not in environment:
             environment['PAMI_MAX_NUM_CACHED_PAGES'] = 0
 
-    return lbann.launcher.make_batch_script(script_file=script_file,
-                                            work_dir=work_dir,
-                                            nodes=nodes,
-                                            procs_per_node=procs_per_node,
-                                            time_limit=time_limit,
-                                            scheduler=scheduler,
-                                            job_name=job_name,
-                                            partition=partition,
-                                            account=account,
-                                            reservation=reservation,
-                                            launcher_args=launcher_args,
-                                            environment=environment)
+        # Configure NVSHMEM to load Spectrum MPI
+        if 'NVSHMEM_MPI_LIB_NAME' not in environment:
+            environment['NVSHMEM_MPI_LIB_NAME'] = 'libmpi_ibm.so'
+
+    return lbann.launcher.make_batch_script(
+        procs_per_node=procs_per_node,
+        scheduler=scheduler,
+        launcher_args=launcher_args,
+        environment=environment,
+        *args,
+        **kwargs,
+    )

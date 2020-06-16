@@ -64,14 +64,6 @@ namespace lbann {
  */
 DEFINE_ENTRYWISE_UNARY_LAYER(log_sigmoid_layer, "log sigmoid");
 
-/** @class lbann::relu_layer
- *  @brief Rectified linear unit.
- *
- *  @f[ \text{ReLU}(x) = \text{max}(x, 0) @f]
- *  See https://en.wikipedia.org/wiki/Rectifier_(neural_networks).
- */
-DEFINE_ENTRYWISE_UNARY_LAYER(relu_layer, "ReLU");
-
 /** @class lbann::selu_layer
  *  @brief Scaled exponential rectified linear unit.
  *

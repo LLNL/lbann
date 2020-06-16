@@ -37,6 +37,7 @@ namespace lbann {
 
 // Forward-declare this.
 class trainer;
+class training_algorithm;
 
 class termination_criteria {
 public:
@@ -46,7 +47,8 @@ public:
 class execution_context {
 public:
   /** Constructor. */
-  execution_context(observer_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode);
+  execution_context(trainer& trainer, training_algorithm& training_alg,
+                    lbann_comm *comm, execution_mode mode);
   /** Destructor. */
   virtual ~execution_context() = default;
 
@@ -62,6 +64,12 @@ public:
     ar(CEREAL_NVP(m_execution_mode),
        CEREAL_NVP(m_terminate_training),
        CEREAL_NVP(m_step));
+  }
+
+  /** @brief Return the state of the execution context as a string */
+  virtual std::string get_state_string() const noexcept {
+    return build_string("ec.", to_string(get_execution_mode()),
+                        ".step.", get_step());
   }
 
   /** @brief Current step in the training algorithm
@@ -95,10 +103,21 @@ public:
     m_terminate_training = f;
   }
 
-  /** Get the execution environment */
+  /** Grab the trainer from the execution context */
+  const trainer& get_trainer() const {
+    return m_trainer;
+  }
+
   trainer& get_trainer() {
-    if (!m_trainer) { LBANN_ERROR("m_trainer is null"); }
-    return *m_trainer;
+    return const_cast<trainer&>(static_cast<const execution_context&>(*this).get_trainer());
+  }
+
+  const training_algorithm& get_training_algorithm() const {
+    return m_training_algorithm;
+  }
+
+  training_algorithm& get_training_algorithm() {
+    return const_cast<training_algorithm&>(static_cast<const execution_context&>(*this).get_training_algorithm());
   }
 
   thread_pool& get_io_thread_pool() const;
@@ -130,7 +149,9 @@ protected:
 
 private:
   /** Pointer to the training context (execution environment) for the training algorithm */
-  observer_ptr<trainer> m_trainer;
+  trainer& m_trainer;
+
+  training_algorithm& m_training_algorithm;
 
   /** LBANN communicator. */
   observer_ptr<lbann_comm> m_comm;

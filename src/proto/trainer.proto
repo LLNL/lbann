@@ -28,6 +28,8 @@ syntax = "proto3";
 
 package lbann_data;
 
+import "callbacks.proto";
+
 message Trainer {
 
   // Unique identifier
@@ -49,12 +51,23 @@ message Trainer {
   // background.
   int64 num_parallel_readers = 3;
 
+  repeated Callback callback = 20;
+  int64 mini_batch_size = 12;
+
   // -------------------------------
   // Advanced options
   // -------------------------------
 
+  // BVE FIXME these should go away
+  bool shareable_training_data_reader = 42; // Can the data reader be shared across multiple models( e.g. GAN)
+  bool shareable_testing_data_reader = 43; // Can the data reader be shared across multiple models (e.g. GAN)
+  bool shareable_validation_data_reader = 44; // Can the data reader be shared across multiple models (e.g. GAN)
+
   // If false, trainers will have their trainer rank mixed into their random seed.
   bool random_init_trainers_identically = 4;
+
+  // Set a random seed for the entire trainer
+  int64 random_seed = 30;
 
   // Algorithmic block size for Hydrogen
   int64 hydrogen_block_size = 100;

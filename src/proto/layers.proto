@@ -36,6 +36,17 @@ enum DataType {
   FP16 = 2;
 }
 
+// Lives here because it's used by both Convolution and
+// Deconvolution.
+enum ConvTensorOpsMode {
+  // Use the global default.
+  DEFAULT_TENSOR_OPS = 0;
+  // Explicitly disable tensor ops.
+  NO_TENSOR_OPS = 1;
+  // Use tensor ops -- allows conversion FP32->FP16
+  USE_TENSOR_OPS = 2;
+}
+
 message Layer {
   string name = 50;
   string parents = 151;
@@ -47,6 +58,7 @@ message Layer {
   bool num_neurons_from_data_reader = 53;
   bool freeze = 5;
   string hint_layer = 56;
+  ParallelStrategy parallel_strategy = 58;
 
   repeated WeightsData weights_data = 153;
   string top = 154;
@@ -382,7 +394,6 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    bool data_set_per_model = 1;  // Default: false
     string io_buffer = 2;         // Options: "partitioned" (default)
     string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "N/A"
   }
@@ -562,6 +573,9 @@ message Layer {
     bool has_bias = 10;                   //default: true
     double bias_initial_value = 11;       //default: 0
     double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
   }
 
   message Deconvolution {
@@ -587,6 +601,9 @@ message Layer {
     bool has_bias = 10;                   //default: true
     double bias_initial_value = 11;       //default: 0
     double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
   }
 
   /** @brief Lookup table to embedding vectors.
@@ -624,15 +641,24 @@ message Layer {
    *  row-vector convention:
    *    @f[ y(i,*) = \text{vec}( x(i,*) ) W^T + b @f]
    *
-   *  Two weights are required: the linearity and the bias. If weights
-   *  aren't provided, the linearity weights are initialized with He
-   *  normal initialization and the bias weights are initialized to
-   *  zero.
+   *  Two weights are required if bias is applied: the linearity and the
+   *  bias. Only the linearity weights are required if bias is not
+   *  applied. If weights aren't provided, the linearity weights are
+   *  initialized with He normal initialization and the bias weights are
+   *  initialized to zero.
    *
    */
   message ChannelwiseFullyConnected {
-    /// Output tensor dimensions, excluding the first dimension
+    /// Output tensor dimensions, excluding the first dimension.
     repeated uint64 output_channel_dims = 1;
+    /** @brief Whether to apply bias.
+     *  @details Default: true
+     */
+    google.protobuf.BoolValue bias = 2;
+    /** @brief Whether to apply transpose of weights matrix.
+     *  @details Default: false
+     */
+    google.protobuf.BoolValue transpose = 3;
   }
 
   //////////////////
@@ -709,4 +735,25 @@ message WeightsData {
   repeated float data = 4 [packed=true];
 
   Imcomm imcomm = 55;
+}
+
+//========================================================================
+// Parallel strategies for generalized layer-wise parallelism
+//========================================================================
+message ParallelStrategy {
+  int64 sample_groups = 1;
+  int64 sample_splits = 2;
+  int64 height_groups = 3;
+  int64 height_splits = 4;
+  int64 width_groups = 5;
+  int64 width_splits = 6;
+  int64 channel_groups = 7;
+  int64 channel_splits = 8;
+  int64 filter_groups = 9;
+  int64 filter_splits = 10;
+  // For fully-connected layers.
+  int64 replications = 11;
+  int64 procs_per_replica = 12;
+  int64 depth_groups = 13;
+  int64 depth_splits = 14;
 }

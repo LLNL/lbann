@@ -28,7 +28,7 @@
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/image.hpp"
@@ -118,9 +118,12 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
   if (m_io_buffer_type == "partitioned") {
+#if 0
+    // @todo BVE FIXME - Why are we doing this here
     set_num_parallel_readers(partitioned_io_buffer<DataType>::compute_max_num_parallel_readers(
                              0, get_mini_batch_size(),
                              get_num_parallel_readers(), get_comm()));
+#endif
     set_sample_stride(get_num_parallel_readers());
     set_iteration_stride(1);
   } else {
@@ -1059,7 +1062,25 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
 #endif
 }
 
-std::vector<El::Int> data_reader_jag_conduit::get_slice_points(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const {
+std::vector<El::Int> data_reader_jag_conduit::get_slice_points(
+  const slice_points_mode var_category,
+  bool& is_supported) {
+  std::vector<El::Int> slice_points;
+  is_supported = true;
+  if (var_category == slice_points_mode::INDEPENDENT) {
+    slice_points = get_slice_points_independent();
+  } else if (var_category == slice_points_mode::DEPENDENT) {
+    slice_points = get_slice_points_dependent();
+  } else if (var_category == slice_points_mode::NA) {
+    is_supported = false;
+  } else {
+    LBANN_ERROR("Unknown variable category \"" + lbann::to_string(var_category) \
+                + "\". Must be either \"independent\" or \"dependent\".");
+  }
+  return slice_points;
+}
+
+std::vector<El::Int> data_reader_jag_conduit::get_slice_points_impl(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const {
   std::vector<El::Int> points(var.size()+1u, static_cast<El::Int>(0));
   for (size_t i = 0u; i < var.size(); ++i) {
     const auto& group = var[i];
@@ -1073,11 +1094,11 @@ std::vector<El::Int> data_reader_jag_conduit::get_slice_points(const std::vector
 }
 
 std::vector<El::Int> data_reader_jag_conduit::get_slice_points_independent() const {
-  return get_slice_points(m_independent_groups);
+  return get_slice_points_impl(m_independent_groups);
 }
 
 std::vector<El::Int> data_reader_jag_conduit::get_slice_points_dependent() const {
-  return get_slice_points(m_independent_groups);
+  return get_slice_points_impl(m_dependent_groups);
 }
 
 int data_reader_jag_conduit::get_num_data() const {
@@ -1480,7 +1501,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
 }
 
 bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
-  const auto& c = static_cast<const sgd_execution_context&>(m_model->get_execution_context());
+  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);

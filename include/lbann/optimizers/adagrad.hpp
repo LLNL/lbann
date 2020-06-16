@@ -66,6 +66,12 @@ public:
   ~adagrad() override = default;
   adagrad* copy() const override { return new adagrad(*this); }
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
+       CEREAL_NVP(m_eps));
+  }
+
   /** Human-readable type name. */
   std::string get_type() const override { return "AdaGrad"; }
   /** Human-readable description. */

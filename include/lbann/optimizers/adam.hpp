@@ -30,6 +30,8 @@
 #include "lbann/optimizers/data_type_optimizer.hpp"
 #include "lbann/io/persist.hpp"
 #include <optimizers.pb.h>
+#include <cereal/types/base_class.hpp>
+//#include <cereal/types/utility.hpp>
 
 namespace lbann {
 namespace callback {
@@ -74,6 +76,15 @@ public:
   ~adam() = default;
   adam* copy() const override { return new adam(*this); }
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
+       CEREAL_NVP(m_beta1),
+       CEREAL_NVP(m_beta2),
+       CEREAL_NVP(m_eps),
+       CEREAL_NVP(m_current_beta1),
+       CEREAL_NVP(m_current_beta2));
+  }
   ///@}
 
   /** @name Descriptions */
@@ -174,49 +185,6 @@ private:
 
   /** @name Checkpointing */
   ///@{
-
-  /* struct used to serialize mode fields in file and MPI transfer */
-  struct packing_header {
-    TensorDataType beta1;
-    TensorDataType beta2;
-    TensorDataType eps;
-    TensorDataType current_beta1;
-    TensorDataType current_beta2;
-  };
-
-  bool pack_scalars(persist& p) {
-    p.write_datatype(persist_type::train, "beta1", m_beta1);
-    p.write_datatype(persist_type::train, "beta2", m_beta2);
-    p.write_datatype(persist_type::train, "eps",   m_eps);
-    p.write_datatype(persist_type::train, "current_beta1", m_current_beta1);
-    p.write_datatype(persist_type::train, "current_beta2", m_current_beta2);
-    return true;
-  }
-
-  bool unpack_scalars(persist& p, struct packing_header *header) {
-    p.read_datatype(persist_type::train, "beta1", &m_beta1);
-    p.read_datatype(persist_type::train, "beta2", &m_beta2);
-    p.read_datatype(persist_type::train, "eps",   &m_eps);
-    p.read_datatype(persist_type::train, "current_beta1", &m_current_beta1);
-    p.read_datatype(persist_type::train, "current_beta2", &m_current_beta2);
-
-    if(header != nullptr) {
-      header->beta1 = m_beta1;
-      header->beta2 = m_beta2;
-      header->eps = m_eps;
-      header->current_beta1 = m_current_beta1;
-      header->current_beta2 = m_current_beta2;
-    }
-    return true;
-  }
-
-  void unpack_header(struct packing_header& header) {
-    m_beta1 = header.beta1;
-    m_beta2 = header.beta2;
-    m_eps = header.eps;
-    m_current_beta1 = header.current_beta1;
-    m_current_beta2 = header.current_beta2;
-  }
 
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;

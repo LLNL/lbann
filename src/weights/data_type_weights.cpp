@@ -367,7 +367,7 @@ bool data_type_weights<TensorDataType>::save_to_checkpoint_shared(lbann::persist
   // write weights using persist call -- uses Elemental's write function.
   p.write_distmat(persist_type::model, l_name, m_values.get());
   // if saving training state, also write out state of optimizer
-  if (m_optimizer != nullptr) {
+  if (m_optimizer != nullptr && (p.get_cb_type() != callback_type::weights_only)) {
     m_optimizer->save_to_checkpoint_shared(p, get_name());
   }
 

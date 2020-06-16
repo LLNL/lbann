@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.13)
 
 project(LBANN CXX)
 
@@ -111,6 +111,13 @@ if (LBANN_WITH_DIHYDROGEN)
     "Use caution before using any features.")
 endif (LBANN_WITH_DIHYDROGEN)
 
+option(LBANN_WITH_DISTCONV "Enable DiHydrogen's Distconv" OFF)
+if (LBANN_WITH_DISTCONV)
+  message(WARNING "Distconv support is currently expermimental. "
+    "There is no stable interface. "
+    "Use caution before using any features.")
+endif (LBANN_WITH_DISTCONV)
+
 option(LBANN_WITH_HWLOC
   "Enable topology-aware optimizations" ON)
 
@@ -128,12 +135,9 @@ option(LBANN_WITH_VTUNE
 option(LBANN_WITH_UNIT_TESTING
   "Enable the unit testing framework (requires Catch2)" OFF)
 
-# Enable parallel random matrix generation, if possible
+# Use deterministic GPU algorithms and layer operations
 option(LBANN_DETERMINISTIC
   "Use deterministic algorithms as much as possible." OFF)
-
-option(LBANN_SEQUENTIAL_INITIALIZATION
-  "Sequentially consistent initialization" OFF)
 
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
@@ -194,13 +198,28 @@ endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
+# DiHydrogen and Distconv
+if (LBANN_WITH_DISTCONV AND NOT LBANN_WITH_DIHYDROGEN)
+  message(FATAL_ERROR "Distconv requires DiHydrogen. Enable DiHydrogen to use Distconv.")
+endif ()
+
 if (LBANN_WITH_DIHYDROGEN)
-  find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
-    HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
-    ${H2_DIR} $ENV{H2_DIR}
-    PATH_SUFFIXES install/lib64/cmake install/lib/cmake
-    NO_DEFAULT_PATH)
-  find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
+  if (LBANN_WITH_DISTCONV)
+    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns DistConv
+      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+      ${H2_DIR} $ENV{H2_DIR}
+      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+      NO_DEFAULT_PATH)
+    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns DistConv)
+    set(LBANN_HAS_DISTCONV TRUE)
+  else ()
+    find_package(DiHydrogen CONFIG COMPONENTS Meta Patterns
+      HINTS ${DIHYDROGEN_DIR} $ENV{DIHYDROGEN_DIR}
+      ${H2_DIR} $ENV{H2_DIR}
+      PATH_SUFFIXES install/lib64/cmake install/lib/cmake
+      NO_DEFAULT_PATH)
+    find_package(DiHydrogen CONFIG REQUIRED COMPONENTS Meta Patterns)
+  endif ()
   set(LBANN_HAS_DIHYDROGEN TRUE)
 endif ()
 
@@ -314,6 +333,16 @@ if (LBANN_HAS_CUDA)
   else ()
     set(LBANN_HAS_NCCL2 FALSE)
   endif ()
+
+  if (LBANN_WITH_NVSHMEM)
+    find_package(NVSHMEM REQUIRED)
+    set_property(TARGET cuda::toolkit PROPERTY
+      INTERFACE_COMPILE_OPTIONS $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_70>)
+    # Build LBANN as a static library to get around a bug in NVSHMEM
+    set(BUILD_SHARED_LIBS OFF)
+  endif ()
+  set(LBANN_HAS_NVSHMEM "${NVSHMEM_FOUND}")
+
 endif (LBANN_HAS_CUDA)
 
 # This shouldn't be here, but is ok for now. This will occasionally be
@@ -546,6 +575,10 @@ target_link_libraries(lbann PUBLIC
   $<TARGET_NAME_IF_EXISTS:H2::H2Patterns>
   )
 
+if (LBANN_WITH_DISTCONV)
+  target_link_libraries(lbann PUBLIC H2::H2DistConv)
+endif ()
+
 if (LBANN_HAS_TBINF)
   target_link_libraries(lbann PUBLIC TBinf)
 endif ()
@@ -568,6 +601,11 @@ endif ()
 
 if (LBANN_HAS_PYTHON)
   target_link_libraries(lbann PUBLIC Python::Python)
+endif ()
+
+if (LBANN_HAS_NVSHMEM)
+  set_property(TARGET lbann PROPERTY CUDA_SEPARABLE_COMPILATION ON)
+  target_link_libraries(lbann PUBLIC NVSHMEM::NVSHMEM)
 endif ()
 
 if (TARGET LBANN_CXX_FLAGS_werror)
@@ -616,6 +654,7 @@ add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/jag_utils)
 add_subdirectory(applications/CANDLE/pilot2/tools)
+add_subdirectory(applications/ATOM/utils)
 add_subdirectory(tests)
 add_subdirectory(scripts)
 
@@ -811,6 +850,7 @@ string(APPEND _str "\n")
 append_str_tf(_str
   LBANN_GNU_LINUX
   LBANN_HAS_DIHYDROGEN
+  LBANN_HAS_DISTCONV
   LBANN_HAS_HYDROGEN
   LBANN_HAS_OPENCV
   LBANN_HAS_CEREAL
@@ -851,6 +891,13 @@ configure_file(
   "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.lua.in"
   "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   @ONLY)
+configure_file(
+  "${CMAKE_SOURCE_DIR}/cmake/configure_files/lbann_module.tcl.in"
+  "${CMAKE_BINARY_DIR}/lbann_module.tcl.install")
+
 install(FILES "${CMAKE_BINARY_DIR}/lbann_module.lua.install"
   RENAME "${LBANN_MODULEFILE_NAME}"
   DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles")
+install(FILES "${CMAKE_BINARY_DIR}/lbann_module.tcl.install"
+  RENAME "${LBANN_VERSION}"
+  DESTINATION "${CMAKE_INSTALL_SYSCONFDIR}/modulefiles/lbann")

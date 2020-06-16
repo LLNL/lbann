@@ -118,6 +118,21 @@ if (TARGET PROTOBUF)
   endif ()
 endif ()
 
+# DiHydrogen and Distconv
+if (TARGET DIHYDROGEN)
+  option(LBANN_WITH_DIHYDROGEN "Whether to use DiHydrogen in LBANN" ON)
+  if (LBANN_WITH_DIHYDROGEN)
+    list(APPEND _LBANN_DEPENDS DIHYDROGEN)
+    set(LBANN_SB_FWD_LBANN_DIHYDROGEN_DIR "${DIHYDROGEN_DIR}"
+      CACHE STRING "The path to DiHydrogen for LBANN.")
+    set(LBANN_SB_FWD_LBANN_WITH_DIHYDROGEN ON)
+  endif ()
+  option(LBANN_WITH_DISTCONV "Whether to use Distconv in LBANN" OFF)
+  if (LBANN_WITH_DISTCONV)
+    set(LBANN_SB_FWD_LBANN_WITH_DISTCONV ON)
+  endif ()
+endif ()
+
 # Get the list of LBANN variables
 get_property(LBANN_VARIABLES DIRECTORY PROPERTY VARIABLES)
 list(FILTER LBANN_VARIABLES INCLUDE REGEX "^LBANN_.*")
@@ -191,6 +206,14 @@ ExternalProject_Add(LBANN
 ExternalProject_Add_Step(LBANN build-jag-utils
   COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target jag-utils
   COMMENT "Performing building of JAG utils for 'LBANN'"
+  DEPENDEES build
+  DEPENDERS install
+  LOG 1
+  USES_TERMINAL 1)
+# Ensure the ATOM utils are built
+ExternalProject_Add_Step(LBANN build-atom-utils
+  COMMAND ${CMAKE_COMMAND} --build <BINARY_DIR> --config $<CONFIG> --target atom-utils
+  COMMENT "Performing building of ATOM tools for 'LBANN'"
   DEPENDEES build
   DEPENDERS install
   LOG 1

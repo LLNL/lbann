@@ -37,6 +37,8 @@ if (LBANN_HAS_CUDA)
     sort.cu
     slice.cu
     tessellate.cu
+    split.cu
+    sum.cu
     )
 endif ()
 

@@ -12,7 +12,7 @@ from lbann.util import make_iterable
 # ==============================================
 
 def run(trainer, model, data_reader, optimizer,
-        experiment_dir=None,
+        work_dir=None,
         nodes=1,
         procs_per_node=1,
         time_limit=None,
@@ -22,9 +22,13 @@ def run(trainer, model, data_reader, optimizer,
         account=None,
         reservation=None,
         launcher_args=[],
+        lbann_exe=lbann.lbann_exe(),
         lbann_args=[],
         environment={},
-        setup_only=False):
+        overwrite_script=False,
+        setup_only=False,
+        batch_job=False,
+        experiment_dir=None):
     """Run LBANN.
 
     This is intended to interface with job schedulers on HPC
@@ -43,7 +47,7 @@ def run(trainer, model, data_reader, optimizer,
         data_reader (lbann.reader_pb2.DataReader): Data reader.
         optimizer (lbann.model.Optimizer): Default optimizer for
             model.
-        experiment_dir (str, optional): Experiment directory.
+        work_dir (str, optional): Working directory.
         nodes (int, optional): Number of compute nodes.
         procs_per_node (int, optional): Number of processes per compute
             node.
@@ -55,23 +59,28 @@ def run(trainer, model, data_reader, optimizer,
         reservation (str, optional): Scheduler reservation name.
         launcher_args (str, optional): Command-line arguments to
             launcher.
+        lbann_exe (str, optional): LBANN executable.
         lbann_args (str, optional): Command-line arguments to LBANN
             executable.
         environment (dict of {str: str}, optional): Environment
             variables.
+        overwrite_script (bool, optional): Whether to overwrite script
+            file if it already exists.
         setup_only (bool, optional): If true, the experiment is not
             run after the experiment directory is initialized.
+        batch_job (bool, optional): If true, the experiment is
+            submitted to the scheduler as a batch job.
+        experiment_dir (str, optional, deprecated): See `work_dir`.
 
     Returns:
-        int: Exit status from scheduler. This is really only
-            meaningful if LBANN is run on an existing node
-            allocation. If a batch job is submitted, the scheduler
-            will probably return 0 trivially.
+        int: Exit status.
 
     """
 
     # Create batch script generator
-    script = make_batch_script(work_dir=experiment_dir,
+    if not work_dir:
+        work_dir = experiment_dir
+    script = make_batch_script(work_dir=work_dir,
                                nodes=nodes,
                                procs_per_node=procs_per_node,
                                time_limit=time_limit,
@@ -83,18 +92,11 @@ def run(trainer, model, data_reader, optimizer,
                                launcher_args=launcher_args,
                                environment=environment)
 
-    # Check for an existing job allocation
-    has_allocation = False
-    if isinstance(script, lbann.launcher.slurm.SlurmBatchScript):
-        has_allocation = 'SLURM_JOB_ID' in os.environ
-    if isinstance(script, lbann.launcher.lsf.LSFBatchScript):
-        has_allocation = 'LSB_JOBID' in os.environ
-
     # Batch script prints start time
     script.add_command('echo "Started at $(date)"')
 
     # Batch script invokes LBANN
-    lbann_command = [lbann.lbann_exe()]
+    lbann_command = [lbann_exe]
     lbann_command.extend(make_iterable(lbann_args))
     prototext_file = os.path.join(script.work_dir, 'experiment.prototext')
     lbann.proto.save_prototext(prototext_file,
@@ -110,14 +112,14 @@ def run(trainer, model, data_reader, optimizer,
     script.add_command('echo "Finished at $(date)"')
     script.add_command('exit ${status}')
 
-    # Write, run, or submit batch script
+    # Write, submit, or run batch script
     status = 0
     if setup_only:
-        script.write()
-    elif has_allocation:
-        status = script.run()
+        script.write(overwrite=overwrite_script)
+    elif batch_job:
+        status = script.submit(overwrite=overwrite_script)
     else:
-        status = script.submit()
+        status = script.run(overwrite=overwrite_script)
     return status
 
 def make_batch_script(script_file=None,
@@ -131,7 +133,8 @@ def make_batch_script(script_file=None,
                       account=None,
                       reservation=None,
                       launcher_args=[],
-                      environment={}):
+                      environment={},
+                      experiment_dir=None):
     """Construct batch script manager.
 
     Attempts to detect a scheduler if one is not provided.
@@ -160,6 +163,7 @@ def make_batch_script(script_file=None,
             Command-line arguments to parallel command launcher.
         environment (`dict` of `{str: str}`, optional): Environment
             variables.
+        experiment_dir (str, optional, deprecated): See `work_dir`.
 
     Returns:
         `lbann.launcher.batch_script.BatchScript`
@@ -187,6 +191,8 @@ def make_batch_script(script_file=None,
         raise RuntimeError('could not detect job scheduler')
 
     # Create work directory if not provided
+    if not work_dir:
+       work_dir = experiment_dir
     if not work_dir:
         if 'LBANN_EXPERIMENT_DIR' in os.environ:
             work_dir = os.environ['LBANN_EXPERIMENT_DIR']

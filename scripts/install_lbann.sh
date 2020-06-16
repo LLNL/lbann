@@ -57,6 +57,8 @@ SCRIPT=$(basename ${BASH_SOURCE})
 BUILD_DIR=${LBANN_HOME}/build/spack
 ENABLE_GPUS=ON
 GPU_VARIANTS="+gpu+nccl"
+ENABLE_HALF=OFF
+HALF_VARIANTS="~half"
 BUILD_TYPE=Release
 VERBOSE=0
 LBANN_ENV=
@@ -80,8 +82,9 @@ Options:
   ${C}--verbose${N}            Verbose output.
   ${C}-d | -deps-only)${N}     Only install the lbann dependencies
   ${C}-e | --env${N}           Build and install LBANN in the spack environment provided.
+  ${C}--half${N}               Enable support for HALF precision data types in Hydrogen and DiHydrogen
   ${C}--disable-gpus${N}       Disable GPUS
-  ${C}-s | --superbuild${N}    Superbuild LBANN with hydrogen and aluminum
+  ${C}-s | --superbuild${N}    Superbuild LBANN with dihydrogen, hydrogen, and aluminum
 EOF
 }
 
@@ -110,6 +113,10 @@ while :; do
                 echo "\"${1}\" option requires a non-empty option argument" >&2
                 exit 1
             fi
+            ;;
+        --half)
+            ENABLE_HALF=ON
+            HALF_VARIANTS="+half"
             ;;
         --disable-gpus)
             ENABLE_GPUS=OFF
@@ -146,7 +153,8 @@ if [[ ${SYS} = "Darwin" ]]; then
 fi
 
 BUILD_SPECS=
-HYDROGEN_VARIANTS="variants: +shared +int64 +al"
+HYDROGEN_VARIANTS="variants: +shared +int64 +al ${HALF_VARIANTS}"
+DIHYDROGEN_VARIANTS="variants: +shared +al +openmp ${HALF_VARIANTS}"
 if [[ ${DEPS_ONLY} = "TRUE" ]]; then
     if [[ ${SYS} != "Darwin" ]]; then
         HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +openmp_blas"
@@ -167,7 +175,16 @@ EOF
         GPU_PACKAGES=$(cat <<EOF
   - cudnn
   - cub
+  - cuda
   - nccl
+EOF
+)
+    fi
+
+    HALF_PACKAGES=
+    if [[ "${ENABLE_HALF}" == "ON" ]]; then
+        HALF_PACKAGES=$(cat <<EOF
+  - half
 EOF
 )
     fi
@@ -177,6 +194,7 @@ EOF
         SUPERBUILD_SPECS=$(cat <<EOF
   - aluminum
   - hydrogen
+  - dihydrogen
 EOF
 )
     fi
@@ -189,7 +207,7 @@ ${SUPERBUILD_SPECS}
   - clara
   - cnpy
   - conduit
-  - half
+${HALF_PACKAGES}
   - hwloc
   - opencv
   - zlib
@@ -202,6 +220,7 @@ ${GPU_PACKAGES}
   - catch2
   - cmake
   - ninja
+  - python
   - py-pytest
 ${COMPILER_PACKAGE}
 EOF
@@ -217,8 +236,9 @@ fi
 
 AL_VARIANTS=
 if [[ "${ENABLE_GPUS}" == "ON" ]]; then
-    AL_VARIANTS="variants: +gpu+nccl~mpi_cuda"
+    AL_VARIANTS="variants: +gpu+nccl+mpi_cuda"
     HYDROGEN_VARIANTS="${HYDROGEN_VARIANTS} +cuda"
+    DIHYDROGEN_VARIANTS="${DIHYDROGEN_VARIANTS} +cuda +legacy"
 fi
 
 SPACK_ENV=$(cat <<EOF
@@ -236,7 +256,7 @@ ${STD_PACKAGES}
 
     aluminum:
       buildable: true
-      version: [master]
+      version: [0.3.3]
       ${AL_VARIANTS}
       providers: {}
       paths: {}
@@ -245,8 +265,17 @@ ${STD_PACKAGES}
       target: []
     hydrogen:
       buildable: true
-      version: [develop]
+      version: [1.3.4]
       ${HYDROGEN_VARIANTS}
+      providers: {}
+      paths: {}
+      modules: {}
+      compiler: []
+      target: []
+    dihydrogen:
+      buildable: true
+      version: [master]
+      ${DIHYDROGEN_VARIANTS}
       providers: {}
       paths: {}
       modules: {}
@@ -292,8 +321,9 @@ else
         # Reactivate the spack environment since a clean installation will note setup the modules properly
         CMD=". $SPACK_ROOT/share/spack/setup-env.sh"
         ${CMD}
-        CMD="spack env loads"
-        ${CMD}
+        # It is no longer necessary to load modules
+        # CMD="spack env loads"
+        # ${CMD}
 
         echo "Build LBANN from source using the spack environment ${LBANN_ENV}, using the build script:"
         echo "  ${SCRIPTS_DIR}/build_lbann_from_source.sh -e ${LBANN_ENV}"

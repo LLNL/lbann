@@ -38,6 +38,7 @@
 #ifdef LBANN_HAS_GPU
 #include "lbann/utils/cuda.hpp"
 #endif // LBANN_HAS_GPU
+#include <cereal/types/utility.hpp>
 
 namespace lbann {
 
@@ -79,6 +80,11 @@ public:
   optimizer(const optimizer& other);
   optimizer& operator=(const optimizer& other);
   virtual ~optimizer() = default;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    // Do not save the optimizer's step time
+  }
 
   /** @brief Create a copy of the class instance.
    *

@@ -124,8 +124,6 @@
 #include "lbann/data_readers/data_reader_imagenet.hpp"
 #include "lbann/data_readers/data_reader_cifar10.hpp"
 #include "lbann/data_readers/data_reader_mnist.hpp"
-#include "lbann/data_readers/data_reader_multi_images.hpp"
-#include "lbann/data_readers/data_reader_multihead_siamese.hpp"
 #include "lbann/data_readers/data_reader_synthetic.hpp"
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/data_readers/data_reader_nci.hpp"
@@ -138,6 +136,7 @@
 #include "lbann/data_readers/data_reader_pilot2_molecular.hpp"
 #include "lbann/data_readers/data_reader_mesh.hpp"
 #include "lbann/data_readers/data_reader_python.hpp"
+#include "lbann/data_readers/data_reader_smiles.hpp"
 
 /// Data stores
 #include "lbann/data_store/data_store_conduit.hpp"
@@ -174,7 +173,7 @@
 #include "lbann/callbacks/replace_weights.hpp"
 #include "lbann/callbacks/save_images.hpp"
 #include "lbann/callbacks/save_model.hpp"
-#include "lbann/callbacks/save_model.hpp"
+#include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/save_topk_models.hpp"
 #include "lbann/callbacks/summary.hpp"
 #include "lbann/callbacks/sync_layers.hpp"

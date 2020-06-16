@@ -358,17 +358,21 @@ void Layer::unfreeze() {
 bool Layer::is_frozen() const {
   for(auto& w : get_weights()) {
     if (w->is_frozen() != m_frozen) {
-      LBANN_ERROR("layer and weights of them are inconsistently frozen");
+      LBANN_ERROR("layer ", get_name(), " and weight ", w->get_name(), \
+                  " of it are inconsistently frozen");
     }
   }
   return m_frozen;
 }
 
-void Layer::setup() {
+void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   setup_pointers();
-  setup_dims();
+  setup_dims(dr_metadata);
   setup_matrices(m_comm->get_trainer_grid());
-  setup_data();
+#ifdef LBANN_HAS_DISTCONV
+  prepare_distconv();
+#endif // LBANN_HAS_DISTCONV
+  setup_data(max_mini_batch_size);
   if (using_gpus()) { setup_gpu(); }
 }
 
@@ -449,7 +453,7 @@ void Layer::setup_pointers() {
 
 }
 
-void Layer::setup_dims() {
+void Layer::setup_dims(DataReaderMetaData& dr_metadata) {
   m_output_dims_list.resize(get_num_children());
   if (m_hint_layer != nullptr) {
     const auto& hint_dims = m_hint_layer->get_output_dims();
@@ -509,6 +513,14 @@ void Layer::check_setup() {
     }
   }
 }
+
+void Layer::back_prop() {
+  allocate_new_gradients_();
+  back_prop_impl_();
+  propagate_error_signals_to_parents_();
+  clear_prev_error_signals_();
+}
+
 
 bool Layer::save_to_checkpoint_shared(persist& p) const {
   return true;
@@ -601,5 +613,68 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
   m_hint_layer = layers[pos];
   pos++;
 }
+
+#ifdef LBANN_HAS_DISTCONV
+void Layer::prepare_distconv() {
+  if (distconv_enabled()) {
+    setup_distconv_adapter();
+  }
+}
+
+bool Layer::distconv_enabled() const {
+  if (!m_distconv_enabled_set) {
+    // Distconv is disabled if no parallel strategy is defined. When no
+    // strategy is defined, the layer has the default strategy of all
+    // zeros, which is invalid, thus should not be used when distconv is
+    // used.
+    const auto &ps = get_parallel_strategy();
+    ParallelStrategy default_zero_ps;
+    if (ps == default_zero_ps) {
+      dc::MPIRootPrintStreamDebug()
+          << "Disable " << get_name()
+          << " as it does not have a parallel strategy.";
+      m_distconv_enabled = false;
+      m_distconv_enabled_set = true;
+    }
+  }
+
+  if (!m_distconv_enabled_set) {
+    // Finally, check whether a layer is supported by distconv.
+    m_distconv_enabled = is_distconv_supported();
+    m_distconv_enabled_set = true;
+  }
+
+  return m_distconv_enabled;
+}
+
+bool Layer::keep_original_inputs(int index) const {
+  return !(distconv_enabled() && !get_distconv_adapter().parent_copy_required(index));
+}
+
+bool Layer::keep_original_outputs(int index) const {
+  return !(distconv_enabled() && !get_distconv_adapter().child_copy_required(index));
+}
+
+bool Layer::keep_original_gradient_wrt_outputs(int index) const {
+  return keep_original_outputs(index);
+}
+
+bool Layer::keep_original_gradient_wrt_inputs(int index) const {
+  return keep_original_inputs(index);
+}
+
+distconv_adapter& Layer::get_distconv_adapter() {
+  return const_cast<distconv_adapter&>(
+      static_cast<const Layer&>(*this).get_distconv_adapter());
+}
+
+const distconv_adapter& Layer::get_distconv_adapter() const {
+  if (m_dc == nullptr) {
+    LBANN_ERROR("Trying to access distconv adapter for layer, ",
+                get_name(), ", without setting up");
+  }
+  return *m_dc;
+}
+#endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann

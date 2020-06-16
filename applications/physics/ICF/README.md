@@ -2,12 +2,15 @@
 
 Scripts in this directory are surrogate deep learning models bridging simulation and experimental datasets from inertial confinement fusion (high energy physics) application. Please see [link](https://github.com/rushilanirudh/macc) for more details on model architectures and dataset description. Also, see LBANN documentations on how to install, build and run LBANN code. 
 
-### How to Train (Wasserstein autoencoder WAE)
+### Pre-train Wasserstein autoencoder (WAE)
 ```bash
-run python3 train_jag_wae.py
+python3 pre_train_jag_wae.py
 ```
-
-Expected training output in LBANN (90K training, 10K dataset, on a single LLNL Pascal GPU) is shown:
+### Train surrogate model using pre-trained WAE
+```bash
+python3 train_macc_surrogate.py
+```
+Expected output of pre-training WAE in LBANN (90K training, 10K validation dataset, on a single LLNL Pascal GPU) is shown:
 ```
 --------------------------------------------------------------------------------
 

@@ -5,7 +5,7 @@ import sys
 
 import lbann
 import lbann.modules
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 import lbann.contrib.args
 
 # Local imports
@@ -90,6 +90,7 @@ reader = lbann.reader_pb2.DataReader()
 _reader = reader.reader.add()
 _reader.name = 'python'
 _reader.role = 'train'
+_reader.shuffle = True
 _reader.percent_of_data_to_use = 1.0
 _reader.python.module = 'dataset'
 _reader.python.module_dir = current_dir
@@ -102,9 +103,8 @@ _reader.python.sample_dims_function = 'sample_dims'
 # ----------------------------------
 
 # Create LBANN objects
-trainer = lbann.Trainer()
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
+model = lbann.Model(args.num_epochs,
                     layers=lbann.traverse_layer_graph(input_),
                     objective_function=loss,
                     callbacks=[lbann.CallbackPrint(),
@@ -113,6 +113,6 @@ opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 
 # Run LBANN
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.lc.launcher.run(trainer, model, reader, opt,
-                              job_name=args.job_name,
-                              **kwargs)
+lbann.contrib.launcher.run(trainer, model, reader, opt,
+                           job_name=args.job_name,
+                           **kwargs)

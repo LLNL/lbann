@@ -13,3 +13,8 @@ data.prototext*
 # Can also ignore all directories and files in a directory.
 # tmp/**/* 
 build
+spack_environments/users/
+
+
+# we don't want to collect slurm output
+**/slurm-*.out

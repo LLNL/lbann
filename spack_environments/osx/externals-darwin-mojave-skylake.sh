@@ -42,5 +42,10 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       version: [4.0]
       paths:
         openmpi@4.0 arch=darwin-mojave-skylake: /usr/local/
+
+    python::
+      buildable: True
+      variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
+      version: [3.7.2]
 EOF
 )

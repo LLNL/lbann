@@ -72,8 +72,7 @@ acc = lbann.CategoricalAccuracy(probs, labels)
 # Setup model
 mini_batch_size = 64
 num_epochs = 20
-model = lbann.Model(mini_batch_size,
-                    num_epochs,
+model = lbann.Model(num_epochs,
                     layers=lbann.traverse_layer_graph(input_),
                     objective_function=loss,
                     metrics=[lbann.Metric(acc, name='accuracy', unit='%')],
@@ -88,13 +87,13 @@ opt = lbann.SGD(learn_rate=0.01, momentum=0.9)
 data_reader = data.mnist.make_data_reader()
 
 # Setup trainer
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
 
 # ----------------------------------
 # Run experiment
 # ----------------------------------
-# Note: Use `lbann.contrib.lc.launcher.run` instead for optimized
-# defaults on LC systems.
+# Note: Use `lbann.contrib.launcher.run` instead for optimized
+# defaults.
 
 kwargs = {}
 if args.partition: kwargs['partition'] = args.partition

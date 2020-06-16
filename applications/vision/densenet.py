@@ -1,7 +1,7 @@
 import argparse
 import lbann
 import lbann.contrib.args
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 import data.imagenet
 
 LOG = True
@@ -394,8 +394,7 @@ def set_up_experiment(args,
                  lbann.CallbackTimer(),
                  lbann.CallbackDropFixedLearningRate(
                      drop_epoch=[30, 60], amt=0.1)]
-    model = lbann.Model(args.mini_batch_size,
-                        args.num_epochs,
+    model = lbann.Model(args.num_epochs,
                         layers=layers,
                         objective_function=objective_function,
                         metrics=metrics,
@@ -416,7 +415,7 @@ def set_up_experiment(args,
         optimizer = lbann.contrib.args.create_optimizer(args)
 
     # Setup trainer
-    trainer = lbann.Trainer()
+    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 
     return trainer, model, data_reader, optimizer
 
@@ -428,9 +427,9 @@ def run_experiment(args,
                    optimizer):
     # Note: Use `lbann.run` instead for non-LC systems.
     kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-    lbann.contrib.lc.launcher.run(trainer, model, data_reader, optimizer,
-                                  job_name=args.job_name,
-                                  **kwargs)
+    lbann.contrib.launcher.run(trainer, model, data_reader, optimizer,
+                               job_name=args.job_name,
+                               **kwargs)
 
 
 # Main function ################################################################

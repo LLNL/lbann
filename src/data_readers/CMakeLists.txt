@@ -15,12 +15,10 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_numpy_npz.cpp
   data_reader_pilot2_molecular.cpp
   data_reader_synthetic.cpp
-  data_reader_multi_images.cpp
-  data_reader_multihead_siamese.cpp
   data_reader_python.cpp
-  offline_patches_npz.cpp
   data_reader_numpy_npz_conduit.cpp
   data_reader_npz_ras_lipid.cpp
+  data_reader_smiles.cpp
   )
 
 # Propagate the files up the tree

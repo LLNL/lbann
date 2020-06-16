@@ -7,7 +7,7 @@ import os
 def get_default_parameters(dir_name, two_models=True):
     data_reader_path = '{d}/model_zoo/data_readers/data_reader_mnist.prototext'.format(
         d=dir_name)
-    model_path = '{d}/model_zoo/models/simple_mnist/model_mnist_simple_1.prototext'.format(
+    model_path = '{d}/model_zoo/tests/model_lenet_mnist_ckpt.prototext'.format(
         d=dir_name)
     if two_models:
         model_path = '{{{mp},{mp}}}'.format(mp=model_path)
@@ -111,7 +111,7 @@ def test_unit_two_models_bad2(cluster, dirname, exes):
     )
     return_code = os.system(command)
     tools.assert_failure(return_code,
-                         "possibly you left out '{' or '}' or both ??",
+                         "possibly you left out '{' or '}' or both",
                          error_file_name)
 
 

@@ -3,13 +3,22 @@
 # Example on how to run:
 # srun --nodes=16 --ntasks=32  build/gnu.Release.catalyst.llnl.gov/lbann/build/model_zoo/lbann --model=model_zoo/tests/model_jag_single_layer_ae.prototext --optimizer=model_zoo/optimizers/opt_adam.prototext --reader=model_zoo/data_readers/data_reader_jag.prototext --metadata=model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext
 trainer {
+  mini_batch_size: 128
+  shareable_training_data_reader:false
+
+  ###################################################
+  # Callbacks
+  ###################################################
+  callback { checkpoint {
+              checkpoint_dir: "ckpt"
+              checkpoint_epochs: 1
+#              checkpoint_steps: 1
+              } }
 }
 model {
   name: "ae_model"
-  shareable_training_data_reader:false
   serialize_io: true
   data_layout: "data_parallel"
-  mini_batch_size: 128
   num_epochs: 4
 
   ###################################################
@@ -53,12 +62,6 @@ model {
       execution_modes: "testing"
     }
   }
-
-  callback { checkpoint {
-              checkpoint_dir: "ckpt"
-              checkpoint_epochs: 1
-#              checkpoint_steps: 1
-              } }
 
   ###################################################
   # start of layers

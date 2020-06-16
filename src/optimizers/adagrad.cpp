@@ -114,7 +114,9 @@ void adagrad<TensorDataType>::step_compute_cpu(AbsDistMatrixType& values,
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string name_prefix) {
-  OptimizerType::save_to_checkpoint_shared(p, name_prefix);
+  if (this->get_comm().am_trainer_master()) {
+    write_cereal_archive(*this, p, "adagrad.xml");
+  }
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -125,9 +127,9 @@ bool adagrad<TensorDataType>::save_to_checkpoint_shared(persist& p, std::string 
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::load_from_checkpoint_shared(persist& p, std::string name_prefix) {
-  OptimizerType::load_from_checkpoint_shared(p, name_prefix);
-  char l_name[512];
+  load_from_shared_cereal_archive(*this, p, this->get_comm(), "adagrad.xml");
 
+  char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld.bin", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
   p.read_distmat(persist_type::train, l_name, m_cache.get());
 
@@ -136,7 +138,7 @@ bool adagrad<TensorDataType>::load_from_checkpoint_shared(persist& p, std::strin
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::string name_prefix) {
-  OptimizerType::save_to_checkpoint_distributed(p, name_prefix);
+  write_cereal_archive(*this, p, "adagrad.xml");
 
   char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
@@ -147,9 +149,9 @@ bool adagrad<TensorDataType>::save_to_checkpoint_distributed(persist& p, std::st
 
 template <typename TensorDataType>
 bool adagrad<TensorDataType>::load_from_checkpoint_distributed(persist& p, std::string name_prefix) {
-  OptimizerType::load_from_checkpoint_distributed(p, name_prefix);
-  char l_name[512];
+  read_cereal_archive(*this, p, "adagrad.xml");
 
+  char l_name[512];
   sprintf(l_name, "%s_optimizer_cache_%lldx%lld", name_prefix.c_str(), m_cache->Height(), m_cache->Width());
   p.read_rank_distmat(persist_type::train, l_name, *m_cache);
 

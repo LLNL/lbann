@@ -48,8 +48,12 @@ namespace lbann {
 // Execution context
 //******************************************************************************
 
-execution_context::execution_context(observer_ptr<trainer> trainer, lbann_comm *comm, execution_mode mode)
+execution_context::execution_context(trainer& trainer,
+                                     training_algorithm& training_algorithm,
+                                     lbann_comm *comm,
+                                     execution_mode mode)
   : m_trainer(trainer),
+    m_training_algorithm(training_algorithm),
     m_comm(comm),
     m_execution_mode(mode),
     m_terminate_training(false) {}
@@ -63,12 +67,12 @@ execution_context::execution_context(observer_ptr<trainer> trainer, lbann_comm *
 // }
 
 thread_pool& execution_context::get_io_thread_pool() const {
-  return m_trainer->get_io_thread_pool();
+  return m_trainer.get_io_thread_pool();
 }
 
 /** Are background I/O activities enabled by the input layers */
 bool execution_context::background_io_activity_allowed() {
-  return m_trainer->background_io_activity_allowed();
+  return m_trainer.background_io_activity_allowed();
 }
 
 ////////////////////////////////////////////////////////////

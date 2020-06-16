@@ -2,7 +2,7 @@ import argparse
 import lbann
 import lbann.models
 import lbann.contrib.args
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 import data.imagenet
 
 # Command-line arguments
@@ -57,8 +57,7 @@ callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer(),
              lbann.CallbackDropFixedLearningRate(
                  drop_epoch=[20,40,60], amt=0.1)]
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
+model = lbann.Model(args.num_epochs,
                     layers=layers,
                     weights=weights,
                     objective_function=obj,
@@ -72,11 +71,11 @@ opt = lbann.contrib.args.create_optimizer(args)
 data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
 # Setup trainer
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.lc.launcher.run(trainer, model, data_reader, opt,
-                              job_name=args.job_name,
-                              setup_only=args.setup_only,
-                              **kwargs)
+lbann.contrib.launcher.run(trainer, model, data_reader, opt,
+                           job_name=args.job_name,
+                           setup_only=args.setup_only,
+                           **kwargs)

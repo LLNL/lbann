@@ -4,7 +4,7 @@ import lbann.models
 import lbann.models.resnet
 import lbann.contrib.args
 import lbann.contrib.models.wide_resnet
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 import data.imagenet
 
 # Command-line arguments
@@ -111,6 +111,12 @@ top1 = lbann.CategoricalAccuracy(probs, labels)
 top5 = lbann.TopKCategoricalAccuracy(probs, labels, k=5)
 layers = list(lbann.traverse_layer_graph(input_))
 
+# Setup tensor core operations (just to demonstrate enum usage)
+tensor_ops_mode = lbann.ConvTensorOpsMode.NO_TENSOR_OPS
+for l in layers:
+    if type(l) == lbann.Convolution:
+        l.conv_tensor_op_mode=tensor_ops_mode
+
 # Setup objective function
 l2_reg_weights = set()
 for l in layers:
@@ -130,13 +136,11 @@ if args.warmup:
     callbacks.append(
         lbann.CallbackLinearGrowthLearningRate(
             target=0.1 * args.mini_batch_size / 256, num_epochs=5))
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
+model = lbann.Model(args.num_epochs,
                     layers=layers,
                     objective_function=obj,
                     metrics=metrics,
-                    callbacks=callbacks,
-                    random_seed=args.random_seed)
+                    callbacks=callbacks)
 
 # Setup optimizer
 opt = lbann.contrib.args.create_optimizer(args)
@@ -145,10 +149,10 @@ opt = lbann.contrib.args.create_optimizer(args)
 data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
 # Setup trainer
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size, random_seed=args.random_seed)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.lc.launcher.run(trainer, model, data_reader, opt,
-                              job_name=args.job_name,
-                              **kwargs)
+lbann.contrib.launcher.run(trainer, model, data_reader, opt,
+                           job_name=args.job_name,
+                           **kwargs)

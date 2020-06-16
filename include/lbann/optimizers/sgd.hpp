@@ -68,6 +68,11 @@ public:
   ~sgd() override = default;
   sgd* copy() const override { return new sgd(*this); }
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
+       CEREAL_NVP(m_momentum));
+  }
   ///@}
 
   /** @name Descriptions */
@@ -138,29 +143,6 @@ private:
 
   /** @name Checkpointing */
   ///@{
-
-  struct packing_header {
-    TensorDataType momentum;
-  };
-
-  bool pack_scalars(persist& p) {
-    p.write_datatype(persist_type::train, "momentum", m_momentum);
-    return true;
-  }
-
-  bool unpack_scalars(persist& p, struct packing_header *header){
-    p.read_datatype(persist_type::train, "momentum",  &m_momentum);
-
-    if(header != nullptr){
-      header->momentum = m_momentum;
-    }
-
-  return true;
-  }
-
-  void unpack_header(struct packing_header& header){
-    m_momentum = header.momentum;
-  }
 
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;

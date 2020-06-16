@@ -183,12 +183,12 @@ void exchange_models(lbann_comm& comm,
           recv_adam->set_eps(std::get<3>(hyperparameters));
           recv_adam->set_current_beta1(std::get<4>(hyperparameters));
           recv_adam->set_current_beta2(std::get<5>(hyperparameters));
-          El::SendRecv(send_adam->get_moment1().LockedMatrix(),
-                       recv_adam->get_moment1().Matrix(),
-                       comm.get_world_comm(),
-                       partner_rank_in_world,
-                       partner_rank_in_world);
         }
+        El::SendRecv(send_adam->get_moment1().LockedMatrix(),
+                     recv_adam->get_moment1().Matrix(),
+                     comm.get_world_comm(),
+                     partner_rank_in_world,
+                     partner_rank_in_world);
         El::SendRecv(send_adam->get_moment2().LockedMatrix(),
                      recv_adam->get_moment2().Matrix(),
                      comm.get_world_comm(),
@@ -217,14 +217,20 @@ void exchange_models(lbann_comm& comm,
                      model& m,
                      El::Int step,
                      const std::set<std::string>& weights_names,
-                     const std::vector<data_type_weights<TensorDataType>*>& local_weights) {
+                     const std::vector<data_type_weights<TensorDataType>*>& local_weights,
+                     const std::string& ckpt_basedir) {
 
   // Checkpoint directories
+  const auto basedir = (ckpt_basedir.empty()?
+                          std::string("") :
+                          add_delimiter(ckpt_basedir));
   const auto local_trainer = comm.get_trainer_rank();
-  const std::string send_dir = (m.get_name()
+  const std::string send_dir = (basedir
+                                + m.get_name()
                                 + "_trainer" + std::to_string(local_trainer)
                                 + "_step" + std::to_string(step));
-  const std::string recv_dir = (m.get_name()
+  const std::string recv_dir = (basedir
+                                + m.get_name()
                                 + "_trainer" + std::to_string(partner_trainer)
                                 + "_step" + std::to_string(step));
 
@@ -232,11 +238,7 @@ void exchange_models(lbann_comm& comm,
   {
     persist p;
     p.set_cb_type(callback_type::model_only);
-    if (comm.am_trainer_master()) {
-      p.open_checkpoint(send_dir);
-    } else {
-      p.m_checkpoint_dir = send_dir;
-    }
+    p.open_checkpoint(send_dir, comm.am_trainer_master());
     comm.trainer_barrier();
     m.save_to_checkpoint_shared(p);
     p.close_checkpoint();
@@ -276,11 +278,18 @@ void exchange_models(lbann_comm& comm,
 
 }
 
-void restore_local_model(lbann_comm& comm, model& m, El::Int step) {
+void restore_local_model(lbann_comm& comm,
+                         model& m,
+                         El::Int step,
+                         const std::string& ckpt_basedir) {
 
   // Checkpoint directories
+  const auto basedir = (ckpt_basedir.empty()?
+                          std::string("") :
+                          add_delimiter(ckpt_basedir));
   const auto local_trainer = comm.get_trainer_rank();
-  const std::string checkpoint_dir = (m.get_name()
+  const std::string checkpoint_dir = (basedir
+                                      + m.get_name()
                                       + "_trainer" + std::to_string(local_trainer)
                                       + "_step" + std::to_string(step));
 
@@ -341,12 +350,14 @@ ltfb::ltfb(El::Int batch_interval,
            std::set<std::string> weights_names,
            bool low_score_wins,
            communication_algorithm comm_algo,
+           const std::string& ckpt_basedir,
            bool exchange_hyperparameters)
   : callback_base(batch_interval),
     m_metric_name(std::move(metric_name)),
     m_weights_names(std::move(weights_names)),
     m_low_score_wins(low_score_wins),
     m_comm_algo(comm_algo),
+    m_ckpt_basedir(ckpt_basedir),
     m_exchange_hyperparameters(exchange_hyperparameters) {}
 
 ltfb::ltfb(const ltfb& other) :
@@ -355,6 +366,7 @@ ltfb::ltfb(const ltfb& other) :
   m_weights_names(other.m_weights_names),
   m_low_score_wins(other.m_low_score_wins),
   m_comm_algo(other.m_comm_algo),
+  m_ckpt_basedir(other.m_ckpt_basedir),
   m_exchange_hyperparameters(other.m_exchange_hyperparameters) {
 
   // Deep copy
@@ -374,6 +386,7 @@ ltfb& ltfb::operator=(const ltfb& other) {
   m_weights_names = other.m_weights_names;
   m_low_score_wins = other.m_low_score_wins;
   m_comm_algo = other.m_comm_algo;
+  m_ckpt_basedir = other.m_ckpt_basedir;
   m_exchange_hyperparameters = other.m_exchange_hyperparameters;
 
   // Deep copy
@@ -484,7 +497,8 @@ void ltfb::on_batch_begin(model *m) {
                                      *m,
                                      step,
                                      m_weights_names,
-                                     local_weights);
+                                     local_weights,
+                                     m_ckpt_basedir);
     break;
   default:
     LBANN_ERROR("invalid LTFB communication algorithm");
@@ -509,7 +523,7 @@ void ltfb::on_batch_begin(model *m) {
       }
       break;
     case communication_algorithm::checkpoint_file:
-      checkpoint_file::restore_local_model(comm, *m, step);
+      checkpoint_file::restore_local_model(comm, *m, step, m_ckpt_basedir);
       break;
     default:
       LBANN_ERROR("invalid LTFB communication algorithm");
@@ -528,7 +542,6 @@ void ltfb::on_batch_begin(model *m) {
         << "= " << partner_score << ")" << "\n";
     std::cout << msg.str();
   }
-
 }
 
 typename ltfb::communication_algorithm
@@ -546,6 +559,14 @@ ltfb::string_to_comm_algo(const std::string& str) {
 
 }
 
+void ltfb::set_ckpt_basedir(const std::string& dir) {
+  m_ckpt_basedir = dir;
+}
+
+std::string ltfb::get_ckpt_basedir() const {
+  return m_ckpt_basedir;
+}
+
 std::unique_ptr<callback_base>
 build_ltfb_callback_from_pbuf(
   const google::protobuf::Message& proto_msg,
@@ -558,6 +579,7 @@ build_ltfb_callback_from_pbuf(
     parse_set<std::string>(params.weights()),
     params.low_score_wins(),
     ltfb::string_to_comm_algo(params.communication_algorithm()),
+    params.checkpoint_basedir(),
     params.exchange_hyperparameters());
 }
 

@@ -3,7 +3,7 @@ import argparse
 import os.path
 
 import lbann
-import lbann.contrib.lc.launcher
+import lbann.contrib.launcher
 import lbann.contrib.args
 
 import dataset
@@ -33,8 +33,8 @@ parser.add_argument(
     '--learning-rate', action='store', default=-1, type=float,
     help='learning rate (default: 0.025*mbsize)', metavar='VAL')
 parser.add_argument(
-    '--experiment-dir', action='store', default=None, type=str,
-    help='directory for experiment artifacts', metavar='DIR')
+    '--work-dir', action='store', default=None, type=str,
+    help='working directory', metavar='DIR')
 args = parser.parse_args()
 
 # ----------------------------------
@@ -108,6 +108,7 @@ reader = lbann.reader_pb2.DataReader()
 _reader = reader.reader.add()
 _reader.name = 'python'
 _reader.role = 'train'
+_reader.shuffle = True
 _reader.percent_of_data_to_use = 1.0
 _reader.python.module = 'dataset'
 _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
@@ -127,23 +128,22 @@ if learning_rate < 0:
 opt = lbann.SGD(learn_rate=learning_rate)
 
 # Create LBANN objects
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 callbacks = [
     lbann.CallbackPrint(),
     lbann.CallbackTimer(),
     lbann.CallbackDumpWeights(basename='embeddings',
                               epoch_interval=args.num_epochs),
 ]
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
+model = lbann.Model(args.num_epochs,
                     layers=lbann.traverse_layer_graph(input_),
                     objective_function=obj,
                     callbacks=callbacks)
 
 # Run LBANN
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.lc.launcher.run(trainer, model, reader, opt,
-                              job_name=args.job_name,
-                              experiment_dir=args.experiment_dir,
-                              overwrite_script=True,
-                              **kwargs)
+lbann.contrib.launcher.run(trainer, model, reader, opt,
+                           job_name=args.job_name,
+                           work_dir=args.work_dir,
+                           overwrite_script=True,
+                           **kwargs)

@@ -53,47 +53,36 @@ class LSFBatchScript(BatchScript):
                          interpreter=interpreter)
         self.nodes = nodes
         self.procs_per_node = procs_per_node
+        self.reservation = reservation
         self.launcher = launcher
         self.launcher_args = launcher_args
 
         # Configure header with LSF job options
-        self._construct_header(job_name=job_name,
-                               nodes=self.nodes,
-                               time_limit=time_limit,
-                               partition=partition,
-                               account=account,
-                               reservation=reservation)
-
-    def _construct_header(self,
-                          job_name=None,
-                          nodes=1,
-                          time_limit=None,
-                          partition=None,
-                          account=None,
-                          reservation=None):
-        """Construct script header with options for bsub."""
-        if job_name:
-            self.add_header_line('#BSUB -J {}'.format(job_name))
-        if partition:
-            self.add_header_line('#BSUB -q {}'.format(partition))
-        self.add_header_line('#BSUB -nnodes {}'.format(nodes))
+        self.add_header_line(f'#BSUB -cwd {self.work_dir}')
+        self.add_header_line(f'#BSUB -o {self.out_log_file}')
+        self.add_header_line(f'#BSUB -e {self.err_log_file}')
+        self.add_header_line(f'#BSUB -nnodes {nodes}')
         if time_limit:
-            hours, minutes = divmod(int(time_limit), 60)
-            self.add_header_line('#BSUB -W {}:{:02d}'.format(hours, minutes))
-        self.add_header_line('#BSUB -cwd {}'.format(self.work_dir))
-        self.add_header_line('#BSUB -o {}'.format(self.out_log_file))
-        self.add_header_line('#BSUB -e {}'.format(self.err_log_file))
+            minutes = int(round(max(time_limit, 0)))
+            hours, minutes = divmod(minutes, 60)
+            self.add_header_line(f'#BSUB -W {hours}:{minutes:02}')
+        if job_name:
+            self.add_header_line(f'#BSUB -J {job_name}')
+        if partition:
+            self.add_header_line(f'#BSUB -q {partition}')
         if account:
-            self.add_header_line('#BSUB -G {}'.format(account))
-        if reservation:
-            self.add_header_line('#BSUB -U {}'.format(reservation))
+            self.add_header_line(f'#BSUB -G {account}')
+        if self.reservation:
+            self.add_header_line(f'#BSUB -U {self.reservation}')
 
     def add_parallel_command(self,
                              command,
-                             launcher=None,
-                             launcher_args=None,
+                             work_dir=None,
                              nodes=None,
-                             procs_per_node=None):
+                             procs_per_node=None,
+                             reservation=None,
+                             launcher=None,
+                             launcher_args=None):
         """Add command to be executed in parallel.
 
         The command is launched with jsrun. Parallel processes are
@@ -102,28 +91,39 @@ class LSFBatchScript(BatchScript):
         Args:
             command (`str` or `Iterable` of `str`s): Command to be
                 executed in parallel.
-            launcher (str, optional): jsrun executable.
-            launcher_args (`Iterable` of `str`s, optional):
-                Command-line arguments to jsrun.
+            work_dir (str, optional): Working directory.
             nodes (int, optional): Number of compute nodes.
             procs_per_node (int, optional): Number of parallel
                 processes per compute node.
+            reservation (str, optional): Scheduler advance reservation.
+            launcher (str, optional): jsrun executable.
+            launcher_args (`Iterable` of `str`s, optional):
+                Command-line arguments to jsrun.
 
         """
-        if launcher is None:
-            launcher = self.launcher
-        if launcher_args is None:
-            launcher_args = self.launcher_args
+
+        # Use default values if needed
+        if work_dir is None:
+            work_dir = self.work_dir
         if nodes is None:
             nodes = self.nodes
         if procs_per_node is None:
             procs_per_node = self.procs_per_node
+        if reservation is None:
+            reservation = self.reservation
+        if launcher is None:
+            launcher = self.launcher
+        if launcher_args is None:
+            launcher_args = self.launcher_args
+
+        # Construct jsrun invocation
         args = [launcher]
         args.extend(make_iterable(launcher_args))
+        args.append(f'--chdir {work_dir}')
         args.extend([
-            '--nrs {}'.format(nodes),
+            f'--nrs {nodes}',
             '--rs_per_host 1',
-            '--tasks_per_rs {}'.format(procs_per_node),
+            f'--tasks_per_rs {procs_per_node}',
             '--launch_distribution packed',
             '--cpu_per_rs ALL_CPUS',
             '--gpu_per_rs ALL_GPUS',

@@ -36,6 +36,7 @@ const int lbann_default_random_seed = 42;
 
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
                                            lbann_data::Trainer* pb_trainer,
+                                           lbann_data::LbannPB &pb,
                                            options *opts);
 
 std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts);
@@ -47,7 +48,8 @@ std::unique_ptr<model> build_model_from_prototext(
     lbann_comm *comm,
     options *opts,
     thread_pool& io_thread_pool,
-    bool first_model);
+    std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
+    int training_dr_linearized_data_size);
 
 void print_lbann_configuration(lbann_comm *comm,
                                int io_threads_per_process,

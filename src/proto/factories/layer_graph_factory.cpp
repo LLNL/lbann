@@ -138,7 +138,7 @@ void setup_unpooling_pointers(lbann_comm* comm,
 
 std::vector<std::unique_ptr<Layer>> construct_layer_graph(
   lbann_comm* comm,
-  const std::map<execution_mode, generic_data_reader *>& data_readers,
+  int training_dr_linearized_data_size,
   const lbann_data::Trainer& proto_trainer,
   const lbann_data::Model& proto_model) {
   std::stringstream err;
@@ -202,7 +202,7 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
           && device == T_device) {                                      \
         l = construct_layer<TensorDataType, T_layout, T_device>(        \
           comm,                                                         \
-          data_readers,                                                 \
+          training_dr_linearized_data_size,                             \
           num_parallel_readers,                                         \
           proto_layer);                                                 \
       }                                                                 \
@@ -215,6 +215,22 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
 #include "lbann/macros/instantiate_device.hpp"
 
 #undef TEMPLATE_INSTANTIATION
+
+    // Set up parallel strategy.
+    ParallelStrategy& ps = l->get_parallel_strategy();
+    ps.sample_groups = proto_layer.parallel_strategy().sample_groups();
+    ps.sample_splits = proto_layer.parallel_strategy().sample_splits();
+    ps.height_groups = proto_layer.parallel_strategy().height_groups();
+    ps.height_splits = proto_layer.parallel_strategy().height_splits();
+    ps.width_groups = proto_layer.parallel_strategy().width_groups();
+    ps.width_splits = proto_layer.parallel_strategy().width_splits();
+    ps.channel_groups = proto_layer.parallel_strategy().channel_groups();
+    ps.channel_splits = proto_layer.parallel_strategy().channel_splits();
+    ps.filter_groups = proto_layer.parallel_strategy().filter_groups();
+    ps.filter_splits = proto_layer.parallel_strategy().filter_splits();
+    ps.replications = proto_layer.parallel_strategy().replications();
+    ps.depth_groups = proto_layer.parallel_strategy().depth_groups();
+    ps.depth_splits = proto_layer.parallel_strategy().depth_splits();
 
     // Check that layer has been constructed
     if (l == nullptr) {

@@ -45,7 +45,8 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    trainer = lbann.Trainer()
+    mini_batch_size = num_samples() // 2
+    trainer = lbann.Trainer(mini_batch_size)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
@@ -92,17 +93,26 @@ def construct_model(lbann):
     ).astype(np.float32)
     bias = np.random.normal(size=(output_channel_size,1)).astype(np.float32)
 
-    # Compute metric value
+    # With bias
     x = (_samples
          .reshape((-1,input_channel_size))
          .transpose()
          .astype(np.float64))
     y = np.matmul(linearity.astype(np.float64), x) + bias.astype(np.float64)
     z = tools.numpy_l2norm2(y) / _num_samples
-    val = z
+    val_with_bias = z
+
+    # Without bias
+    x = (_samples
+         .reshape((-1,input_channel_size))
+         .transpose()
+         .astype(np.float64))
+    y = np.matmul(linearity.astype(np.float64), x)
+    z = tools.numpy_l2norm2(y) / _num_samples
+    val_without_bias = z
 
     # ------------------------------------------
-    # Data-parallel layout
+    # Data-parallel layout, non-transpose, bias
     # ------------------------------------------
 
     # LBANN implementation
@@ -126,14 +136,114 @@ def construct_model(lbann):
     )
     z = lbann.L2Norm2(y)
     obj.append(z)
-    metrics.append(lbann.Metric(z, name='data-parallel layout'))
+    metrics.append(lbann.Metric(z, name='data-parallel layout, non-transpose, bias'))
 
     # NumPy implementation
-    tol = 8 * val * np.finfo(np.float32).eps
+    tol = 8 * val_with_bias * np.finfo(np.float32).eps
     callbacks.append(lbann.CallbackCheckMetric(
         metric=metrics[-1].name,
-        lower_bound=val-tol,
-        upper_bound=val+tol,
+        lower_bound=val_with_bias-tol,
+        upper_bound=val_with_bias+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # Data-parallel layout, non-transpose, no bias
+    # ------------------------------------------
+
+    # LBANN implementation
+    linearity_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(
+            values=tools.str_list(np.nditer(linearity, order='F'))
+        )
+    )
+    x = x_lbann
+    y = lbann.ChannelwiseFullyConnected(
+        x,
+        weights=(linearity_weights),
+        output_channel_dims=output_channel_dims,
+        bias=False,
+    )
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='data-parallel layout, non-transpose, no bias'))
+
+    # NumPy implementation
+    tol = 8 * val_without_bias * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val_without_bias-tol,
+        upper_bound=val_without_bias+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # Data-parallel layout, transpose, bias
+    # ------------------------------------------
+
+    # LBANN implementation
+    linearity_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(
+            values=tools.str_list(np.nditer(linearity, order='C'))
+        )
+    )
+    bias_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(
+            values=tools.str_list(np.nditer(bias))
+        )
+    )
+    x = x_lbann
+    y = lbann.ChannelwiseFullyConnected(
+        x,
+        weights=(linearity_weights, bias_weights),
+        output_channel_dims=output_channel_dims,
+        transpose=True,
+    )
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='data-parallel layout, transpose, bias'))
+
+    # NumPy implementation
+    tol = 8 * val_with_bias * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val_with_bias-tol,
+        upper_bound=val_with_bias+tol,
+        error_on_failure=True,
+        execution_modes='test'))
+
+    # ------------------------------------------
+    # Data-parallel layout, transpose, no bias
+    # ------------------------------------------
+
+    # LBANN implementation
+    linearity_weights = lbann.Weights(
+        optimizer=lbann.SGD(),
+        initializer=lbann.ValueInitializer(
+            values=tools.str_list(np.nditer(linearity, order='C'))
+        )
+    )
+    x = x_lbann
+    y = lbann.ChannelwiseFullyConnected(
+        x,
+        weights=(linearity_weights),
+        output_channel_dims=output_channel_dims,
+        bias=False,
+        transpose=True,
+    )
+    z = lbann.L2Norm2(y)
+    obj.append(z)
+    metrics.append(lbann.Metric(z, name='data-parallel layout, transpose, no bias'))
+
+    # NumPy implementation
+    tol = 8 * val_without_bias * np.finfo(np.float32).eps
+    callbacks.append(lbann.CallbackCheckMetric(
+        metric=metrics[-1].name,
+        lower_bound=val_without_bias-tol,
+        upper_bound=val_without_bias+tol,
         error_on_failure=True,
         execution_modes='test'))
 
@@ -147,10 +257,8 @@ def construct_model(lbann):
     # Construct model
     # ------------------------------------------
 
-    mini_batch_size = num_samples() // 2
     num_epochs = 0
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,
                        metrics=metrics,

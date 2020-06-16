@@ -121,6 +121,7 @@ public:
     std::set<std::string> weights_names = std::set<std::string>(),
     bool low_score_wins = false,
     communication_algorithm comm_algo = communication_algorithm::sendrecv_weights,
+    const std::string& ckptdir = "",
     bool exchange_hyperparameters = false);
   ltfb(const ltfb& other);
   ltfb& operator=(const ltfb& other);
@@ -137,6 +138,9 @@ public:
    *  communication_algorithm::sendrecv_weights.
    */
   static communication_algorithm string_to_comm_algo(const std::string& str);
+
+  void set_ckpt_basedir(const std::string& dir);
+  std::string get_ckpt_basedir() const;
 
 private:
 
@@ -155,6 +159,9 @@ private:
 
   /** Inter-trainer communication scheme. */
   communication_algorithm m_comm_algo;
+
+  /** Base directory of the checkpoint state */
+  std::string m_ckpt_basedir;
 
   /** Whether to exchange training hyperparameters between trainers
   */

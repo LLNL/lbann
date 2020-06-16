@@ -1,23 +1,25 @@
+"""Driver script for training Transformer example."""
 import argparse
+import datetime
 import math
+import os
 import os.path
 import sys
 
 import lbann
-import lbann.contrib.lc.launcher
 import lbann.contrib.args
-from lbann.util import str_list
 
 # Local imports
 current_dir = os.path.dirname(os.path.realpath(__file__))
 root_dir = os.path.dirname(current_dir)
 sys.path.append(root_dir)
-import dataset
-import model
+import train
+import evaluate
+import utils.paths
 
-# ----------------------------------
+# ----------------------------------------------
 # Options
-# ----------------------------------
+# ----------------------------------------------
 
 # Command-line arguments
 parser = argparse.ArgumentParser()
@@ -37,119 +39,56 @@ parser.add_argument(
 parser.add_argument(
     '--embed-dim', action='store', default=512, type=int,
     help='embedding space dimensions (default: 512)', metavar='NUM')
-parser.add_argument(
-    '--label-smoothing', action='store', default=0.1, type=float,
-    help='label smoothing (default: 0.1)', metavar='VAL')
 args = parser.parse_args()
 
-# ----------------------------------
-# Construct layer graph
-# ----------------------------------
+# Hard-coded options
+label_smoothing = 0.1
 
-# Dataset properties
-vocab_size = dataset.corpus.vocab_size
-sequence_length = dataset.sample_dims()[0]
+# ----------------------------------------------
+# Work directory
+# ----------------------------------------------
 
-# Input is a sequence of token IDs
-input_ = lbann.Identity(lbann.Input())
-input_slice = lbann.Slice(input_,
-                          slice_points=str_list(range(sequence_length+1)))
-tokens_list = [lbann.Identity(input_slice) for _ in range(sequence_length)]
-
-# Get sequence of embedding vectors
-# Note: Inputs to transformer decoder are shifted right
-# Note: Embeddings are scaled by sqrt(embed_dim)
-embeddings = lbann.Embedding(
-    lbann.Concatenation(lbann.Constant(value=-1, num_neurons='1'), input_),
-    num_embeddings=vocab_size,
-    embedding_dim=args.embed_dim
+timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+work_dir = os.path.join(
+    utils.paths.root_dir(),
+    'experiments',
+    f'{timestamp}_{args.job_name}',
 )
-embeddings = lbann.WeightedSum(
-    embeddings,
-    scaling_factors=str(math.sqrt(args.embed_dim)),
+os.makedirs(work_dir, exist_ok=True)
+
+# ----------------------------------------------
+# Train
+# ----------------------------------------------
+
+# Create batch script
+trainer_params = {
+    'mini_batch_size': args.mini_batch_size,
+}
+model_params = {
+    'num_epochs': args.num_epochs,
+    'embed_dim': args.embed_dim,
+    'num_heads': args.num_attention_heads,
+    'label_smoothing': label_smoothing,
+}
+script_params = lbann.contrib.args.get_scheduler_kwargs(args)
+script_params['work_dir'] = work_dir
+script_params['job_name'] = args.job_name
+train_script = train.make_batch_script(
+    trainer_params=trainer_params,
+    model_params=model_params,
+    script_params=script_params,
 )
-source_embeddings = lbann.Identity(lbann.Slice(
-    embeddings,
-    axis=0,
-    slice_points=str_list([1, sequence_length+1]),
-))
-target_embeddings = lbann.Identity(lbann.Slice(
-    embeddings,
-    axis=0,
-    slice_points=str_list([0, sequence_length]),
-))
-
-# Apply transformer model
-model = model.Transformer(
-    hidden_size=args.embed_dim,
-    num_heads=args.num_attention_heads,
-    dropout=0,  # TODO: Restore dropout
+weights_prefix = os.path.join(
+    work_dir,
+    'weights',
+    f'model0-epoch{args.num_epochs-1}',
 )
-result = model(
-    source_embeddings, sequence_length,
-    target_embeddings, sequence_length,
+train_script.add_command(
+    f'# python3 {utils.paths.root_dir()}/transformer/evaluate.py {weights_prefix}'
 )
+train_script.run(overwrite=True)
 
-# Use transformer decoder output to reconstruct input sequence
-preds = lbann.ChannelwiseFullyConnected(
-    result,
-    output_channel_dims=[vocab_size],
-)
-preds = lbann.ChannelwiseSoftmax(preds)
-
-# Cross entropy loss
-# Note: Apply label smoothing
-labels = [lbann.OneHot(token, size=vocab_size) for token in tokens_list]
-labels = lbann.Concatenation(
-    [lbann.Reshape(label, dims=str_list([1, vocab_size])) for label in labels],
-    axis=0,
-)
-if args.label_smoothing > 0:
-    uniform_labels = lbann.Constant(
-        value=1/vocab_size,
-        num_neurons=str_list([sequence_length, vocab_size])
-    )
-    labels = lbann.WeightedSum(
-        labels,
-        uniform_labels,
-        scaling_factors=str_list([1-args.label_smoothing, args.label_smoothing]),
-    )
-loss = lbann.CrossEntropy(preds, labels)
-
-# ----------------------------------
-# Create data reader
-# ----------------------------------
-
-reader = lbann.reader_pb2.DataReader()
-_reader = reader.reader.add()
-_reader.name = 'python'
-_reader.role = 'train'
-_reader.percent_of_data_to_use = 1.0
-_reader.python.module = 'dataset'
-_reader.python.module_dir = current_dir
-_reader.python.sample_function = 'get_sample'
-_reader.python.num_samples_function = 'num_samples'
-_reader.python.sample_dims_function = 'sample_dims'
-
-# ----------------------------------
-# Run LBANN
-# ----------------------------------
-
-# Create LBANN objects
-trainer = lbann.Trainer()
-metrics = []
-callbacks = [lbann.CallbackPrint(),
-             lbann.CallbackTimer()]
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
-                    layers=lbann.traverse_layer_graph(input_),
-                    objective_function=loss,
-                    metrics=metrics,
-                    callbacks=callbacks)
-opt = lbann.Adam(learn_rate=0.0004, beta1=0.9, beta2=0.98, eps=1e-9) # TODO: LR schedule
-
-# Run LBANN
-kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-lbann.contrib.lc.launcher.run(trainer, model, reader, opt,
-                              job_name=args.job_name,
-                              **kwargs)
+# ----------------------------------------------
+# Evaluate
+# ----------------------------------------------
+evaluate.evaluate_transformer(weights_prefix)

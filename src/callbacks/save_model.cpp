@@ -28,6 +28,7 @@
 
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/checkpoint.hpp" // Reuse the checkpoint naming scheme
+#include "lbann/training_algorithms/training_algorithm.hpp"
 
 #include <callbacks.pb.h>
 #include <model.pb.h>
@@ -72,12 +73,13 @@ void save_model::write_proto_text(const lbann_data::Model& proto,
 bool save_model::do_save_model(model *m) {
   lbann_data::Model model_param;
 
-  p.set_cb_type(callback_type::model_only);
+  p.set_cb_type(callback_type::weights_only);
   do_save_model_weights(m);
   p.set_cb_type(callback_type::invalid);
 
 #if 0 /// @todo BVE FIXME this method for writing out the prototext does not seem to work
   m->write_proto(&model_param);
+  t->write_proto(&trainer_param);
   std::string filename = m->get_name() + "." + m_extension;
   std::string fullpath = m_dir + "/" + filename;
   //@todo flag to save as either binary or text
@@ -111,19 +113,11 @@ bool save_model::do_save_model_weights(model *m) {
 
   // Shared checkpoint, logic identical to Distributed.i
   makedir(m_dir.c_str());
-  std::string epochdir = get_shared_checkpoint_dirname(m, m_dir.c_str(), c.get_execution_mode(), epoch, step);
-  if (comm->am_trainer_master()) {
-    p.open_checkpoint(epochdir.c_str());
-  }
-  // Need to give other ranks knowledge of checkpoint dir for writing of rank specific rng state
-  comm->trainer_broadcast(0, &(p.m_checkpoint_dir[0]), sizeof(p.m_checkpoint_dir));
+  std::string epochdir = get_save_model_dirname(c.get_trainer().get_name(),
+                                                m->get_name(),
+                                                m_dir.c_str());
+  p.open_checkpoint_dir(epochdir.c_str(), comm->am_trainer_master());
   m->save_weights(p);
-  // close our checkpoint
-  p.close_checkpoint();
-  if (comm->am_trainer_master()) {
-    std::string latest_file = get_last_shared_checkpoint_filename(m, m_dir.c_str());
-    write_latest(latest_file, c.get_execution_mode(), epoch, step);
-  }
 
   uint64_t bytes_count = p.get_bytes();
 
@@ -138,48 +132,6 @@ bool save_model::do_save_model_weights(model *m) {
     fflush(stdout);
   }
   p.reset_bytes();
-  return true;
-}
-
-bool save_model::load_model_weights(std::string ckpt_dir, model * m, bool ckptdir_is_fullpath) {
-  std::vector<std::string> weight_list = std::vector<std::string>();
-  std::string active_ckpt_dir;
-  if(ckptdir_is_fullpath) {
-    active_ckpt_dir = ckpt_dir;
-  }else {
-    size_t epochLast = std::numeric_limits<size_t>::max();;
-    size_t stepLast = std::numeric_limits<size_t>::max();;
-    execution_mode mode = execution_mode::invalid;
-    active_ckpt_dir = get_last_shared_checkpoint_filename(m, ckpt_dir);
-
-    // get last epoch and step saved.
-    int success = read_latest(active_ckpt_dir, &mode, &epochLast, &stepLast);
-    if(!success) {
-      return false;
-    }
-    active_ckpt_dir = get_shared_checkpoint_dirname(m, ckpt_dir, mode, epochLast, stepLast);
-  }
-  lbann_comm *comm = m->get_comm();
-  if(comm->am_trainer_master()) {
-    std::cout << "Loading model weights from " << active_ckpt_dir << std::endl;
-  }
-
-  DIR *weight_dir = opendir(active_ckpt_dir.c_str());
-  if(weight_dir == nullptr)
-  {
-    std::cout << "error opening " << active_ckpt_dir << "\n";
-    return false;
-  }
-  // Populate weight list
-  struct dirent *weight_file;
-  while ((weight_file = readdir(weight_dir)) != nullptr){
-    if(!strncmp(weight_file->d_name,"model_weights_",14))
-      weight_list.push_back(std::string(weight_file->d_name));
-  }
-  closedir(weight_dir);
-
-  // load weights that appear in weight list.
-  m->reload_weights(active_ckpt_dir, weight_list);
   return true;
 }
 

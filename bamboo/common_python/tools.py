@@ -6,7 +6,9 @@ import re
 import sys
 import numpy as np
 import pytest
-
+import shutil
+import subprocess
+from filecmp import cmp
 
 def check_list(substrings, strings):
     errors = []
@@ -706,7 +708,7 @@ def create_tests(setup_func,
         test_name (str, optional): Descriptive name (default: test
             file name with '.py' removed).
         **kwargs: Keyword arguments to pass into
-            `lbann.contrib.lc.launcher.run`.
+            `lbann.contrib.launcher.run`.
 
     Returns:
         Iterable of function: Tests that can interact with PyTest.
@@ -751,27 +753,37 @@ def create_tests(setup_func,
                                             'site-packages')
         sys.path.append(python_frontend_path)
         import lbann
-        import lbann.contrib.lc.launcher
+        import lbann.contrib.launcher
 
         # Setup LBANN experiment
         trainer, model, data_reader, optimizer = setup_func(lbann)
 
         # Configure kwargs to LBANN launcher
         _kwargs = copy.deepcopy(kwargs)
-        if 'experiment_dir' not in _kwargs:
-            _kwargs['experiment_dir'] = os.path.join(os.path.dirname(test_file),
-                                                    'experiments',
-                                                    test_name)
+        if 'work_dir' not in _kwargs:
+            _kwargs['work_dir'] = os.path.join(os.path.dirname(test_file),
+                                               'experiments',
+                                               test_name)
+
+        # If the user provided a suffix for the work directory, append it
+        if 'work_subdir' in _kwargs:
+            _kwargs['work_dir'] = os.path.join(_kwargs['work_dir'], _kwargs['work_subdir'])
+            del _kwargs['work_subdir']
+
+        # Delete the work directory
+        if os.path.isdir(_kwargs['work_dir']):
+            shutil.rmtree(_kwargs['work_dir'])
+
         if 'job_name' not in _kwargs:
             _kwargs['job_name'] = f'lbann_{test_name}'
         if 'overwrite_script' not in _kwargs:
             _kwargs['overwrite_script'] = True
 
         # Run LBANN
-        experiment_dir = _kwargs['experiment_dir']
-        stdout_log_file = os.path.join(experiment_dir, 'out.log')
-        stderr_log_file = os.path.join(experiment_dir, 'err.log')
-        return_code = lbann.contrib.lc.launcher.run(
+        work_dir = _kwargs['work_dir']
+        stdout_log_file = os.path.join(work_dir, 'out.log')
+        stderr_log_file = os.path.join(work_dir, 'err.log')
+        return_code = lbann.contrib.launcher.run(
             trainer=trainer,
             model=model,
             data_reader=data_reader,
@@ -781,7 +793,7 @@ def create_tests(setup_func,
         assert_success(return_code, stderr_log_file)
         return {
             'return_code': return_code,
-            'experiment_dir': experiment_dir,
+            'work_dir': work_dir,
             'stdout_log_file': stdout_log_file,
             'stderr_log_file': stderr_log_file,
         }
@@ -840,6 +852,7 @@ def create_python_data_reader(lbann,
     reader = lbann.reader_pb2.Reader()
     reader.name = 'python'
     reader.role = execution_mode
+    reader.shuffle = False
     reader.percent_of_data_to_use = 1.0
     reader.python.module = module_name
     reader.python.module_dir = dir_name
@@ -878,3 +891,116 @@ def make_iterable(obj):
 def str_list(it):
     """Convert an iterable object to a space-separated string"""
     return ' '.join([str(i) for i in make_iterable(it)])
+
+# Define evaluation function
+def collect_metrics_from_log_func(log_file, key):
+    metrics = []
+    with open(log_file) as f:
+        for line in f:
+            match = re.search(key + ' : ([0-9.]+)', line)
+            if match:
+                metrics.append(float(match.group(1)))
+    return metrics
+
+def compare_metrics(baseline_metrics, test_metrics):
+    assert len(baseline_metrics) == len(test_metrics), \
+        'baseline and test experiments did not run for same number of epochs'
+    for i in range(len(baseline_metrics)):
+        x = baseline_metrics[i]
+        xhat = test_metrics[i]
+        assert x == xhat, \
+            'found discrepancy in metrics for baseline {b} and test {t}'.format(b=x, t=xhat)
+
+
+# Perform a diff across a directoy where not all of the subdirectories will exist in
+# the test directory.  Return a list of unchecked subdirectories, the running error code
+# and the list of failed directories
+def multidir_diff(baseline, test, fileList):
+    tmpList = []
+    err_msg = ""
+    err = 0
+    # Iterate over the list of filepaths & remove each file.
+    for filePath in fileList:
+        d = os.path.basename(filePath)
+        t = os.path.basename(os.path.dirname(filePath))
+        c = os.path.join(test, t, d)
+        if os.path.exists(c):
+            ret = subprocess.run('diff -rq {baseline} {test}'.format(
+                baseline=filePath, test=c), capture_output=True, shell=True, text=True)
+            if ret.returncode != 0:
+                err_msg += 'diff -rq {baseline} {test} failed {dt}\n'.format(
+                    dt=ret.returncode, baseline=filePath, test=c)
+                err_msg += ret.stdout
+            err += ret.returncode
+        else:
+            tmpList.append(filePath)
+
+    return tmpList, err, err_msg
+
+# Perform a line by line difference of an xml file and look for any floating point values
+# For each floating point value, check to see if it is close-enough and log a warning if it
+# is within a threshhold.
+def approx_diff_xml_files(file1, file2, rel_tol):
+    f1 = open(file1, 'r')
+    f2 = open(file2, 'r')
+    files_differ = False
+    diff_list = []
+    near_diff_list = []
+    for l1 in f1:
+        l2 = next(f2)
+        if l1 != l2:
+            try:
+                v1 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l1))
+                v2 = float(re.sub(r'\s*<\w*>(\S*)<\/\w*>\s*', r'\1', l2))
+                close = math.isclose(v1, v2, rel_tol=rel_tol, abs_tol=0.0)
+                if not close:
+                    err = ('lines: %s and %s differ: %.13f != %.13f (+/- %.1e)' % (l1.rstrip(), l2.rstrip(), v1, v2, rel_tol))
+                    diff_list.append(err)
+                    files_differ = True
+                else:
+                    warn = ('lines: %s and %s are close: %.13f ~= %.13f (+/- %.1e)' % (l1.rstrip(), l2.rstrip(), v1, v2, rel_tol))
+                    near_diff_list.append(warn)
+            except ValueError:
+                # Non-numerical diff.
+                err = ('lines: %s and %s differ' % (l1.rstrip(), l2.rstrip()))
+                diff_list.append(err)
+                files_differ = True
+    return files_differ, diff_list, near_diff_list
+
+# Given a recursive python diff from dircmp, perform a recursive exploration of any files
+# with differences.  For files with differences, if check any XML files for approximate equivalence
+# which can be seen in some of the floating point recorded values
+def print_diff_files(dcmp):
+    any_files_differ = False
+    all_diffs = []
+    all_warns = []
+    for name in dcmp.diff_files:
+        from pprint import pprint
+        err = f'Files {os.path.join(dcmp.left, name)} and {os.path.join(dcmp.right, name)} differ'
+        if re.search('.xml', name):
+            files_differ, diff_list, warn_list = approx_diff_xml_files(
+                os.path.join(dcmp.left, name), os.path.join(dcmp.right, name), 1e-7)
+            if files_differ:
+                any_files_differ = True
+                all_diffs.append(err)
+                for d in diff_list:
+                    all_diffs.append(d)
+            if len(warn_list) > 0:
+                warn = f'Files {os.path.join(dcmp.left, name)} and {os.path.join(dcmp.right, name)} have a near difference'
+                all_warns.append(warn)
+                for w in warn_list:
+                    all_warns.append(w)
+        else:
+            any_files_differ = True
+            all_diffs.append(err)
+
+    for sub_dcmp in dcmp.subdirs.values():
+        files_differ, diff_list, warn_list = print_diff_files(sub_dcmp)
+        if files_differ:
+            any_files_differ = True
+            for d in diff_list:
+                all_diffs.append(d)
+        for d in warn_list:
+            all_warns.append(d)
+
+    return any_files_differ, all_diffs, all_warns

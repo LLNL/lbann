@@ -20,6 +20,7 @@ class Layer(abc.ABC):
         data_layout (str, optional): Data distribution scheme.
         datatype (lbann.DataType, optional): Data type used for activations and weights.
         hint_layer (Layer, optional): Hint for output dimensions.
+        parallel_strategy (dictionary, optional): Data partitioning scheme.
 
     """
 
@@ -34,7 +35,8 @@ class Layer(abc.ABC):
                  device=None,
                  data_layout=None,
                  datatype=None,
-                 hint_layer=None):
+                 hint_layer=None,
+                 parallel_strategy={}):
         Layer.global_count += 1
         self.parents = []
         self.children = []
@@ -44,6 +46,7 @@ class Layer(abc.ABC):
         self.data_layout = data_layout
         self.datatype = datatype
         self.hint_layer = hint_layer
+        self.parallel_strategy = parallel_strategy
 
         # Initialize parents, children, and weights
         for arg in args:
@@ -67,6 +70,8 @@ class Layer(abc.ABC):
             proto.datatype = self.datatype
         if self.hint_layer:
             proto.hint_layer = self.hint_layer.name
+        for k, v in self.parallel_strategy.items():
+            setattr(proto.parallel_strategy, k, v)
         return proto
 
     def add_parent(self, parent):
@@ -101,11 +106,11 @@ classes = lbann.core.util.generate_classes_from_protobuf_message(
     skip_fields = set([
         'name', 'parents', 'children', 'data_layout', 'device_allocation', 'datatype',
         'weights', 'num_neurons_from_data_reader', 'freeze', 'hint_layer',
-        'weights_data', 'top', 'bottom', 'type', 'motif_layer']),
+        'parallel_strategy', 'weights_data', 'top', 'bottom', 'type', 'motif_layer']),
     base_class = Layer,
     base_kwargs = set([
         'parents', 'children', 'weights',
-        'name', 'device', 'data_layout', 'datatype', 'hint_layer']),
+        'name', 'device', 'data_layout', 'datatype', 'hint_layer', 'parallel_strategy']),
     base_has_export_proto = True)
 for c in classes:
     globals()[c.__name__] = c

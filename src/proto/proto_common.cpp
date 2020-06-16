@@ -99,8 +99,7 @@ void init_data_readers(
     if ((name == "mnist") || (name == "cifar10")) {
       init_org_image_data_reader(readme, master, reader);
       set_transform_pipeline = false;
-    } else if ((name == "imagenet") ||
-               (name == "multihead_siamese")) {
+    } else if ((name == "imagenet")) {
       init_image_data_reader(readme, pb_metadata, master, reader);
       set_transform_pipeline = false;
     } else if (name == "jag_conduit") {
@@ -108,7 +107,8 @@ void init_data_readers(
       set_transform_pipeline = false;
       auto reader_jag_conduit = dynamic_cast<data_reader_jag_conduit*>(reader);
       const lbann_data::Model& pb_model = p.model();
-      reader->set_mini_batch_size(static_cast<int>(pb_model.mini_batch_size()));
+      const lbann_data::Trainer& pb_trainer = p.trainer();
+      reader->set_mini_batch_size(static_cast<int>(pb_trainer.mini_batch_size()));
       reader->set_data_index_list(readme.index_list());
       reader_jag_conduit->set_list_per_trainer(readme.index_list_per_trainer());
       reader_jag_conduit->set_list_per_model(readme.index_list_per_model());
@@ -144,6 +144,9 @@ void init_data_readers(
       set_transform_pipeline = false;
     } else if (name == "nci") {
       reader = new data_reader_nci(shuffle);
+    } else if (name == "smiles") {
+      smiles_data_reader * smiles = new smiles_data_reader(shuffle);
+      reader = smiles;
     } else if (name == "ras_lipid") {
       auto *ras_lipid = new ras_lipid_conduit_data_reader(shuffle);
       ras_lipid->set_num_labels(readme.num_labels());
@@ -300,7 +303,8 @@ void init_data_readers(
                                  params.module_dir(),
                                  params.sample_function(),
                                  params.num_samples_function(),
-                                 params.sample_dims_function());
+                                 params.sample_dims_function(),
+                                 shuffle);
 #else
       LBANN_ERROR("attempted to construct Python data reader, "
                   "but LBANN is not built with Python/C API");
@@ -392,8 +396,8 @@ void init_data_readers(
         reader_validation = new numpy_npz_conduit_reader(*dynamic_cast<const numpy_npz_conduit_reader*>(reader));
       } else if (name == "imagenet") {
         reader_validation = new imagenet_reader(*dynamic_cast<const imagenet_reader*>(reader));
-      } else if (name == "multihead_siamese") {
-  	reader_validation = new data_reader_multihead_siamese(*dynamic_cast<const data_reader_multihead_siamese*>(reader));
+      } else if (name == "smiles") {
+        reader_validation = new smiles_data_reader(*dynamic_cast<const smiles_data_reader*>(reader));
       } else if (name == "jag_conduit") {
         /// If the training data reader was shared and the validate reader is split from it, then the validation data reader
         /// is also shared
@@ -457,7 +461,8 @@ void init_data_readers(
                                               params.module_dir(),
                                               params.sample_function(),
                                               params.num_samples_function(),
-                                              params.sample_dims_function());
+                                              params.sample_dims_function(),
+                                              shuffle);
         (*(python_reader *)reader_validation) = (*(python_reader *)reader);
 #else
         LBANN_ERROR("attempted to construct Python data reader, "
@@ -745,7 +750,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     }
   }
   if (opts->has_int("mini_batch_size")) {
-    model->set_mini_batch_size(opts->get_int("mini_batch_size"));
+    trainer->set_mini_batch_size(opts->get_int("mini_batch_size"));
   }
   if (opts->has_int("num_epochs")) {
     model->set_num_epochs(opts->get_int("num_epochs"));
@@ -763,7 +768,7 @@ void get_cmdline_overrides(const lbann_comm& comm, lbann_data::LbannPB& p)
     model->set_disable_cuda(opts->get_bool("disable_cuda"));
   }
   if (opts->has_int("random_seed")) {
-    model->set_random_seed(opts->get_int("random_seed"));
+    trainer->set_random_seed(opts->get_int("random_seed"));
   }
   if(opts->get_bool("serialize_io")) {
     model->set_serialize_io(opts->get_bool("serialize_io"));
@@ -782,18 +787,22 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
 
   bool disable_cuda = m.disable_cuda();
 #ifndef LBANN_HAS_GPU
-  disable_cuda = false;
+  disable_cuda = true;
 #endif // LBANN_HAS_GPU
   bool disable_cudnn = disable_cuda;
 #ifndef LBANN_HAS_CUDNN
-  disable_cudnn = false;
+  disable_cudnn = true;
 #endif // LBANN_HAS_CUDNN
+  bool enable_determinism = false;
+#ifdef LBANN_DETERMINISTIC
+  enable_determinism = true;
+#endif // LBANN_DETERMINISTIC
 
   std::cout << std::endl
             << "Running with these parameters:\n"
             << " General:\n"
             << "  datatype size:           " << sizeof(DataType) << std::endl
-            << "  mini_batch_size:         " << m.mini_batch_size() << std::endl
+            << "  mini_batch_size:         " << t.mini_batch_size() << std::endl
             << "  num_epochs:              " << m.num_epochs()  << std::endl
             << "  hydrogen_block_size:     " << t.hydrogen_block_size()  << std::endl
             << "  procs_per_trainer:       " << t.procs_per_trainer()  << std::endl
@@ -801,7 +810,8 @@ void print_parameters(const lbann_comm& comm, lbann_data::LbannPB& p)
             << "  serialize_io:            " << m.serialize_io()  << std::endl
             << "  cuda:                    " << (disable_cuda ? "disabled" : "enabled") << std::endl
             << "  cudnn:                   " << (disable_cudnn ? "disabled" : "enabled") << std::endl
-            << "  random_seed:             " << m.random_seed() << std::endl
+            << "  random_seed:             " << t.random_seed() << std::endl
+            << "  deterministic_exec:      " << (enable_determinism ? "enabled" : "disabled") << std::endl
             << "  data_layout:             " << m.data_layout()  << std::endl
             << "     (only used for metrics)\n";
 }
@@ -827,7 +837,7 @@ void print_help(std::ostream& os)
        "  --saveme=<string>  You can suppress writing the file via the option:\n"
        "  --saveme=0\n"
        "\n"
-       "Some prototext values can be over-riden on the command line;\n"
+       "Some prototext values can be overriden on the command line;\n"
        "(notes: use '1' or '0' for bool; if no value is given for a flag,\n"
        "        e.g: --disable_cuda, then a value of '1' is assigned)\n"
        "\n"
@@ -872,8 +882,13 @@ void print_help(std::ostream& os)
        "      Restart from a checkpoint found in the given directory.\n"
        "      If the directory doesn't exist or doesn't contain a checkpoint,\n"
        "      an error will be thrown.\n"
-       "  --restart_dir_is_fullpath=<bool>\n"
-       "      Indicate whether the restart_dir is a full path.\n"
+       "  --load_model_weights_dir=<string>\n"
+       "      Load model wieghts found in the given directory.\n"
+       "      If the directory doesn't exist, doesn't contain valid weights,\n"
+       "      or doesn't contain a checkpoint,\n"
+       "      an error will be thrown.\n"
+       "  --load_model_weights_dir_is_complete=<bool>\n"
+       "      Use load_model_weights_dir as given, ignoring checkpoint hierarchy.\n"
        "\n"
        "DataReaders:\n"
        "  --data_filedir=<string>\n"

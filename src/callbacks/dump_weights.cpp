@@ -58,7 +58,7 @@ void dump_weights::do_dump_weights(model *m, std::string s) {
     }
     const std::string file
       = (m_basename
-         + "/model" + std::to_string(m->get_comm()->get_trainer_rank())
+         + "/" + m->get_name()
          + epoch
          + "-" + w->get_name()
          + "-Weights");
