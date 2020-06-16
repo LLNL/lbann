@@ -129,6 +129,9 @@ private:
   TensorDataType get_variance(El::Int fan_in, El::Int fan_out) override;
 };
 
+void set_fan_in(weights_initializer& initializer, double value);
+void set_fan_out(weights_initializer& initializer, double value);
+
 template <typename TensorDataType>
 std::unique_ptr<weights_initializer>
 build_glorot_initializer_from_pbuf(google::protobuf::Message const& msg);

@@ -155,11 +155,9 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
   auto& linearity_weights = this->get_weights(0);
 
   // Initialize variance scaling initialization
-  auto* cast_initializer
-    = dynamic_cast<variance_scaling_initializer<TensorDataType>*>(linearity_weights.get_initializer());
-  if (cast_initializer != nullptr) {
-    cast_initializer->set_fan_in(this->get_input_size());
-    cast_initializer->set_fan_out(this->get_output_size());
+  if (auto* initializer = linearity_weights.get_initializer()) {
+    set_fan_in(*initializer, this->get_input_size());
+    set_fan_out(*initializer, this->get_output_size());
   }
 
   // Setup linearity weights

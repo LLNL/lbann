@@ -28,10 +28,71 @@
 #include "lbann/weights/variance_scaling_initializers.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/memory.hpp"
+#include "lbann/utils/h2_tmp.hpp"
 
 #include <weights.pb.h>
 
 namespace lbann {
+namespace {
+using ValidDataTypes = h2::meta::TL<
+#ifdef LBANN_HAS_GPU_FP16
+  fp16,
+#endif
+#ifdef LBANN_HAS_HALF
+  cpu_fp16,
+#endif
+  float, double>;
+
+using InitTypes =
+  h2::meta::tlist::ExpandTL<variance_scaling_initializer, ValidDataTypes>;
+
+struct default_errors {
+  template <typename... Ts>
+  void DispatchError(Ts&&...) {
+    LBANN_ERROR("Failed to dispatch.");
+  }
+  template <typename... Ts>
+  void DeductionError(Ts&&...) {
+    // In this case, the initializer is just not a variance scaling
+    // initializer. This isn't a problem, so do nothing.
+  }
+};
+
+struct fan_in_functor : default_errors {
+  fan_in_functor(double val) : value_{val} {}
+  template <typename DType>
+  void operator()(variance_scaling_initializer<DType>& init)
+  {
+    init.set_fan_in(value_);
+  }
+  double value_;
+};
+struct fan_out_functor : default_errors {
+  fan_out_functor(double val) : value_{val} {}
+  template <typename DType>
+  void operator()(variance_scaling_initializer<DType>& init)
+  {
+    init.set_fan_out(value_);
+  }
+  double value_;
+};
+}
+
+void set_fan_in(weights_initializer& initializer, double value) {
+  using Dispatcher =
+    h2::multimethods::SwitchDispatcher<fan_in_functor,
+                                       void,
+                                       weights_initializer, InitTypes>;
+  Dispatcher::Exec(fan_in_functor(value), initializer);
+}
+
+void set_fan_out(weights_initializer& initializer, double value) {
+  using Dispatcher =
+    h2::multimethods::SwitchDispatcher<fan_out_functor,
+                                       void,
+                                       weights_initializer, InitTypes>;
+  Dispatcher::Exec(fan_out_functor(value), initializer);
+}
 
 template <typename TensorDataType>
 variance_scaling_initializer<TensorDataType>::variance_scaling_initializer(probability_distribution dist)

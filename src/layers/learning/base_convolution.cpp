@@ -326,12 +326,10 @@ base_convolution_layer<TensorDataType,Device>
 
   // Initialize default weights if none are provided
   if (this->num_weights() > 2) {
-    std::stringstream err;
-    err << "attempted to setup layer \"" << this->get_name() << "\" "
-        << "with an invalid number of weights "
-        << "(expected at most 2, "
-        << "found " << this->num_weights() << ")";
-    LBANN_ERROR(err.str());
+    LBANN_ERROR("attempted to setup layer \"", this->get_name(), "\" "
+                "with an invalid number of weights "
+                "(expected at most 2, "
+                "found ", this->num_weights(), ")");
   }
   if (m_bias_scaling_factor != El::TypeTraits<ScalingType>::Zero()) {
     this->set_num_weights(2);
@@ -352,11 +350,9 @@ base_convolution_layer<TensorDataType,Device>
   auto& kernel_weights = this->get_weights(0);
 
   // Initialize variance scaling initialization
-  auto* cast_initializer
-    = dynamic_cast<variance_scaling_initializer<TensorDataType>*>(kernel_weights.get_initializer());
-  if (cast_initializer != nullptr) {
-    cast_initializer->set_fan_in(kernel_size / output_dims[0]);
-    cast_initializer->set_fan_out(kernel_size / input_dims[0]);
+  if (auto* initializer = kernel_weights.get_initializer()) {
+    set_fan_in(*initializer, kernel_size / output_dims[0]);
+    set_fan_out(*initializer, kernel_size / input_dims[0]);
   }
 
   // Initialize weight matrices
