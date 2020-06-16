@@ -109,6 +109,19 @@ fast_rng_gen& get_fast_io_generator() {
   }
   return ::fast_io_generator;
 }
+
+void init_io_generator(const int local_thread_id) {
+  ::io_generator.seed(hash_combine(::io_generator_seed_base,
+                                   local_thread_id));
+  ::io_generator_inited = true;
+}
+
+void init_fast_io_generator(const int local_thread_id) {
+  ::fast_io_generator.seed(hash_combine(::fast_io_generator_seed_base,
+                                        local_thread_id));
+  ::fast_io_generator_inited = true;
+}
+
 void init_random(int seed, lbann_comm *comm) {
   generator_inited = true;
   fast_generator_inited = true;

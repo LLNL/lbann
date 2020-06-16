@@ -69,6 +69,18 @@ rng_gen& get_io_generator();
  */
 fast_rng_gen& get_fast_io_generator();
 
+/**
+ * Allow each pinned I/O thread to initialize the global LBANN random
+ * number generator used for I/O in a deterministic way.
+ */
+void init_io_generator(const int local_thread_id);
+
+/**
+ * Allow each pinned I/O thread to initialize the fast global LBANN random
+ * number generator used for I/O in a deterministic way.
+ */
+void init_fast_io_generator(const int local_thread_id);
+
 /** @brief Initialize the random number generator (with optional seed).
  *
  *  @param seed Seed value for the random number generator

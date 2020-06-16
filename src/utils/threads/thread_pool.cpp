@@ -1,4 +1,5 @@
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -145,6 +146,9 @@ void thread_pool::do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set)
     std::thread::id this_id = std::this_thread::get_id();
     m_thread_id_to_local_id_map[this_id] = tid;
   }
+  init_io_generator(tid);
+  init_fast_io_generator(tid);
+
   while (not all_work_done_)
   {
     auto task = global_work_queue_.wait_and_pop();
