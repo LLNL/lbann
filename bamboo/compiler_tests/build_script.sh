@@ -89,8 +89,12 @@ then
     if [[ "${CLUSTER}" =~ ^(lassen|ray)$ ]];
     then
         LAUNCH_CMD="lrun -1"
+        NHOSTS=$(expr $(printenv LSB_HOSTS | wc -w) - 1)
+        NNODES=$(expr ${NHOSTS} / 40)
+        PARALLEL_LAUNCH_CMD="jsrun -n${NNODES} -r1 -a4 -c40 -g4 -d packed -b packed:10 "
     else
         unset LAUNCH_CMD
+        PARALLEL_LAUNCH_CMD="srun -N${SLURM_NNODES} --ntasks-per-node=2 "
     fi
 
     cmake \
@@ -129,7 +133,7 @@ then
         -DPROTOBUF_DIR=${DEPENDENCY_DIR} \
         -Dprotobuf_MODULE_COMPATIBLE=ON \
         \
-        ${LBANN_DIR} && ${LAUNCH_CMD} ninja && ${LAUNCH_CMD} ninja install && ${LAUNCH_CMD} ./unit_test/seq-catch-tests -r junit -o ${CATCH2_OUTPUT_DIR}/seq_catch_tests_output-${CLUSTER}.xml
+        ${LBANN_DIR} && ${LAUNCH_CMD} ninja && ${LAUNCH_CMD} ninja install && ${LAUNCH_CMD} ./unit_test/seq-catch-tests -r junit -o ${CATCH2_OUTPUT_DIR}/seq_catch_tests_output-${CLUSTER}.xml ; ${PARALLEL_LAUNCH_CMD} ./unit_test/mpi-catch-tests -r junit -o "${CATCH2_OUTPUT_DIR}/mpi_catch_tests_output-${CLUSTER}-rank=%r-size=%s.xml"
 else
     ${LBANN_DIR}/scripts/build_lbann_lc.sh --with-conduit
 fi
