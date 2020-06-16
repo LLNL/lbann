@@ -37,7 +37,9 @@ template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 class cross_entropy_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
  public:
   using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
-  cross_entropy_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  cross_entropy_distconv_adapter(Layer& layer, bool use_labels)
+      : data_type_distconv_adapter<TensorDataType>(layer),
+        m_use_labels(use_labels){}
   virtual ~cross_entropy_distconv_adapter() = default;
   void setup_distributions(tensor_overlap_constraints &constraints) override;
   dc::Shape get_prev_activations_shape(int index) const override;
@@ -45,6 +47,7 @@ class cross_entropy_distconv_adapter: public data_type_distconv_adapter<TensorDa
   dc::Shape get_activations_local_shape(int index) const override;
   void setup_layer(size_t workspace_capacity) override;
   std::unique_ptr<dc::CrossEntropy> m_cross_entropy;
+  bool m_use_labels;
 };
 #endif // LBANN_HAS_DISTCONV
 
@@ -67,8 +70,9 @@ public:
 
 public:
 
-cross_entropy_layer(lbann_comm *comm) : data_type_layer<TensorDataType>(comm),
-                                        m_use_labels(use_labels) {
+  cross_entropy_layer(lbann_comm *comm, bool use_labels)
+      : data_type_layer<TensorDataType>(comm),
+        m_use_labels(use_labels) {
     this->m_expected_num_parent_layers = 2;
   }
 
@@ -234,7 +238,7 @@ private:
 
   void setup_distconv_adapter() override {
     this->get_distconv_adapter_ptr() = make_unique<
-      cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
+      cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>>(*this, m_use_labels);
   }
 
   cross_entropy_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
