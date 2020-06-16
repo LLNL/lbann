@@ -26,7 +26,10 @@
 
 #ifndef LBANN_LAYERS_MISC_DIST_EMBEDDING_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_DIST_EMBEDDING_HPP_INCLUDED
+#include "lbann/base.hpp"
+#include "lbann/layers/layer.hpp"
 
+#if defined(LBANN_HAS_SHMEM) || defined(LBANN_HAS_NVSHMEM)
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/sgd.hpp"
@@ -170,12 +173,9 @@ private:
 
 };
 
-// Builder function
-LBANN_DEFINE_LAYER_BUILDER(dist_embedding);
-
-// =============================================
+// ---------------------------------------------
 // Implementation
-// =============================================
+// ---------------------------------------------
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 dist_embedding_layer<TensorDataType,Layout,Device>::dist_embedding_layer(
@@ -353,16 +353,30 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::nb_barrier(
   comm.nb_allreduce(buffer, c, req);
 }
 
-// =============================================
+// ---------------------------------------------
 // Explicit template instantiation
-// =============================================
+// ---------------------------------------------
 
+#ifdef LBANN_HAS_SHMEM
 extern template class dist_embedding_layer<
   float, data_layout::DATA_PARALLEL, El::Device::CPU>;
-#ifdef LBANN_HAS_GPU
+#endif // LBANN_HAS_SHMEM
+#if defined(LBANN_HAS_GPU) && defined(LBANN_HAS_NVSHMEM)
 extern template class dist_embedding_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
-#endif // LBANN_HAS_GPU
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_HAS_NVSHMEM)
+
+} // namespace lbann
+#endif // defined(LBANN_HAS_SHMEM) || defined(LBANN_HAS_NVSHMEM)
+
+// ---------------------------------------------
+// Builder function
+// ---------------------------------------------
+
+namespace lbann
+{
+
+LBANN_DEFINE_LAYER_BUILDER(dist_embedding);
 
 } // namespace lbann
 
