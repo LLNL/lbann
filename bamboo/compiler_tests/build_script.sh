@@ -94,7 +94,7 @@ then
         PARALLEL_LAUNCH_CMD="jsrun -n${NNODES} -r1 -a4 -c40 -g4 -d packed -b packed:10 "
     else
         unset LAUNCH_CMD
-        PARALLEL_LAUNCH_CMD="srun -N${SLURM_NNODES} --ntasks-per-node=2 "
+        PARALLEL_LAUNCH_CMD="srun --mpibind=off -N${SLURM_NNODES} --ntasks-per-node=2 "
     fi
 
     cmake \
