@@ -229,7 +229,7 @@ training_output = lbann.CallbackPrint( interval = 1,
 
 gpu_usage = lbann.CallbackGPUMemoryUsage()
 
-encoded_output = lbann.CallbackDumpOutputs( layers = "decoded", batch_interval = 100, directory = os.path.dirname(os.path.realpath(__file__)), format="npy") 
+encoded_output = lbann.CallbackDumpOutputs( layers = "decoded", batch_interval = 400, directory = os.path.dirname(os.path.realpath(__file__)), format="npy") 
 
 ## Possibly include 3D Voxel Saver Call Back
 

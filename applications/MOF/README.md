@@ -9,17 +9,16 @@ The dataset used is a subset of the [CoRE MOF Database](https://gregchung.github
 
 The representation is channel-wise concatenation of 11 32x32x32 voxel grids, where each voxel grid represents the location of a particular element. 
 
-
-## Links  
-
-For more information on the data representation: 
-
 ## Running Instructions
 
 Run the 
 ```
 python3 MOFae.py --nodes N  --procs-per-node P --mini-batch-size B 
 ```
+## Links  
+
+For more information on the data representation: 
+
 
 
 @article {Kimeaax9324,
