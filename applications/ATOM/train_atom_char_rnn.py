@@ -29,7 +29,7 @@ def construct_lc_launcher_args():
     )
     parser.add_argument(
         "--data-config",
-        default="data_config.json",
+        default=os.path.join(os.path.abspath(os.path.dirname(__file__)), "data_config.json"),
         help="path to a data config file that is used for the construction of python data reader",
     )
     parser.add_argument(
