@@ -37,6 +37,12 @@ EXTERNAL_PACKAGES=$(cat <<EOF
        modules:
          gcc@8.2.0 arch=cray-cnl7-skylake_avx512: gcc/8.2.0
 
+    gettext::
+      buildable: False
+      version: [0.19.8.1]
+      paths:
+        gettext@0.19.8.1 arch=cray-cnl7-skylake_avx512: /usr
+
     hwloc::
       buildable: False
       version: [1.11.8]
@@ -63,8 +69,12 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       buildable: True
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
       version: [3.7.4]
-      modules:
-        python@3.7.4 arch=cray-cnl7-skylake_avx512: python/3.7-anaconda-2019.10
+
+    readline::
+      buildable: False
+      version: [8.0]
+      paths:
+        readline@8.0 arch=cray-cnl7-skylake_avx512: /lib64
 
     rdma-core::
       buildable: False
