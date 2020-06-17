@@ -39,9 +39,28 @@ namespace lbann {
 
 /** @brief Embedding layer with distributed weights.
  *
- *  @warning This is extremely experimental.
+ *  This is similar to the embedding layer, which takes integer
+ *  indices and returns embedding vectors from a lookup table.
+ *  However, the embedding vectors are distributed between processes
+ *  and one-sided inter-process communication is performed with
+ *  OpenSHMEM (on CPU) or NVSHMEM (on GPU).
  *
- *  @todo Arbitrary unbalanced distributions
+ *  The main benefit of this model-parallel approach is to handle
+ *  cases where the embedding vectors don't fit on one process. It
+ *  should also have better scaling properties when the mini-batch
+ *  size is very large.
+ *
+ *  To take advantage of sparse gradients, the distributed embedding
+ *  layer provides the option to bypass the optimizer (which currently
+ *  only supports dense gradients) and perform sparse SGD directly on
+ *  the embedding weights. If enabled, SGD occurs during the layers
+ *  "update" phase (i.e. in the virtual update_compute function).
+ *  Otherwise, the layer converts sparse gradients to a dense tensor
+ *  and passes it into the usual optimizer. This is a hack and will be
+ *  deprecated once the optimizer class supports sparse gradients.
+ *
+ *  @warning This is experimental.
+ *
  *  @todo Sparse SGD with optimizer class
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -113,32 +132,6 @@ private:
     size_t num_gradients,
     LocalMat& local_embeddings);
 
-  /** Size of dictionary of embeddings. */
-  size_t m_num_embeddings;
-  /** Size of embedding vectors. */
-  size_t m_embedding_dim;
-
-  /** Perform sparse SGD during backprop.
-   *
-   *  Bypasses optimizer class.
-   */
-  bool m_sparse_sgd;
-  /** SGD learning rate. */
-  DataType m_learning_rate;
-
-  /** Perform a blocking barrier at the beginning of forward prop.
-   *
-   *  This layer performs synchronization with non-blocking barriers
-   *  to ensure the correctness of asynchronous communication.
-   *  However, gradient checking changes the embedding values without
-   *  performing any synchronization. The quickest fix is to do a
-   *  blocking barrier at the beginning of forward prop to make sure
-   *  that all the embeddings are ready to be accessed.
-   *
-   *  @todo Think of a way to avoid this synchronization.
-   */
-  bool m_barrier_in_forward_prop;
-
   /** SHMEM buffer for embedding vectors.
    *
    *  If the embedding weights matrix is not already attached to a
@@ -172,6 +165,32 @@ private:
    *  the buffers are safe to access.
    */
   Al::request m_nb_barrier_request;
+
+  /** Size of dictionary of embeddings. */
+  size_t m_num_embeddings;
+  /** Size of embedding vectors. */
+  size_t m_embedding_dim;
+
+  /** Perform sparse SGD during backprop.
+   *
+   *  Bypasses optimizer class.
+   */
+  bool m_sparse_sgd;
+  /** SGD learning rate. */
+  DataType m_learning_rate;
+
+  /** Perform a blocking barrier at the beginning of forward prop.
+   *
+   *  This layer performs synchronization with non-blocking barriers
+   *  to ensure the correctness of asynchronous communication.
+   *  However, gradient checking changes the embedding values without
+   *  performing any synchronization. The quickest fix is to do a
+   *  blocking barrier at the beginning of forward prop to make sure
+   *  that all the embeddings are ready to be accessed.
+   *
+   *  @todo Think of a way to avoid this synchronization.
+   */
+  bool m_barrier_in_forward_prop;
 
 };
 
