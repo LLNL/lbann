@@ -63,7 +63,6 @@ namespace proto {
 
 /** Construct a trainer specified with a prototext. */
 std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
-                                           const std::map<execution_mode, generic_data_reader*>& data_readers,
                                            const lbann_data::Trainer& proto_trainer);
 
 /** Construct a model specified with a prototext. */

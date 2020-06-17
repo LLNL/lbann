@@ -53,6 +53,8 @@ def setup_experiment(lbann):
     data_reader = data.imagenet.make_data_reader(lbann, num_classes=1000)
     # We train on a subset of ImageNet
     data_reader.reader[0].percent_of_data_to_use = imagenet_fraction
+    # Only evaluate on ImageNet validation set at end of training
+    data_reader.reader[1].role = 'test'
 
     optimizer = lbann.SGD(learn_rate=0.1, momentum=0.9)
     return trainer, model, data_reader, optimizer
@@ -147,7 +149,7 @@ def augment_test_func(test_func):
                 match = re.search('training epoch [0-9]+ top-5 accuracy : ([0-9.]+)%', line)
                 if match:
                     train_accuracy = float(match.group(1))
-                match = re.search('validation top-5 accuracy : ([0-9.]+)%', line)
+                match = re.search('test top-5 accuracy : ([0-9.]+)%', line)
                 if match:
                     test_accuracy = float(match.group(1))
                 match = re.search('training epoch [0-9]+ mini-batch time statistics : ([0-9.]+)s mean', line)

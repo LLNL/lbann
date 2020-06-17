@@ -29,10 +29,11 @@ expected_train_accuracy_range = (98.75, 99.25)
 expected_test_accuracy_range = (98, 99)
 
 # Average mini-batch time (in sec) for each LC system
+# Note that run times are with LBANN_DETERMINISTIC set
 expected_mini_batch_times = {
-    'pascal':   0.0012,
+    'pascal':   0.0013,
     'catalyst': 0.0055,
-    'lassen':   0.0020,
+    'lassen':   0.0022,
     'ray':      0.0025,
     'corona':   0.0075,
 }

@@ -56,14 +56,12 @@ namespace lbann {
 ////////////////////////////////////////////////////////////
 
 trainer::trainer(lbann_comm *comm,
-                 size_t mini_batch_size,
-                 std::map<execution_mode,
-                 generic_data_reader *> data_readers)
+                 size_t mini_batch_size)
   : m_comm(comm),
     m_max_mini_batch_size(mini_batch_size),
     m_io_thread_pool(),
     m_background_io_allowed(true),
-    m_data_coordinator(*this, comm, data_readers) {
+    m_data_coordinator(*this, comm) {
 
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
@@ -131,12 +129,15 @@ description trainer::get_description() const {
 // Setup
 ////////////////////////////////////////////////////////////
 
-void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool) {
+void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool, std::map<execution_mode, generic_data_reader *> data_readers) {
   // Setup I/O threads - set up before setting up the layers (input
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
 
-  m_data_coordinator.setup(get_max_mini_batch_size());
+  for (auto d : data_readers) {
+    d.second->set_trainer(this);
+  }
+  m_data_coordinator.setup(get_max_mini_batch_size(), data_readers);
 
   // Set up callbacks first - allow checkpoint / restart to reload state
   for (auto& cb : m_callbacks) {

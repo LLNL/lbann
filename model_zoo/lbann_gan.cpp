@@ -29,6 +29,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+#include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -37,9 +38,48 @@
 
 using namespace lbann;
 
+namespace {
+int guess_global_rank() noexcept
+{
+  int have_mpi;
+  MPI_Initialized(&have_mpi);
+  if (have_mpi) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    return rank;
+  }
+  else {
+    if (char const* slurm_flag = std::getenv("SLURM_PROCID"))
+      return std::stoi(slurm_flag);
+    if (char const* open_mpi_flag = std::getenv("OMPI_WORLD_COMM_RANK"))
+      return std::stoi(open_mpi_flag);
+    else if (char const* mv2_flag = std::getenv("MV2_COMM_WORLD_LOCAL_RANK"))
+      return std::stoi(mv2_flag);
+    else
+      return -1;
+  }
+}
+}// namespace <anon>
+
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  auto& arg_parser = global_argument_parser();
+  construct_std_options();
+
+  try {
+    arg_parser.parse(argc, argv);
+  }
+  catch (std::exception const& e) {
+    auto guessed_rank = guess_global_rank();
+    if (guessed_rank <= 0)
+      // Cannot call `El::ReportException` because MPI hasn't been
+      // initialized yet.
+      std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                << e.what() << "\n\nProcess terminating."
+                << std::endl;
+    std::terminate();
+  }
+
+  world_comm_ptr comm = initialize(argc, argv);
   const bool master = comm->am_world_master();
 
   try {

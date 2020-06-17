@@ -28,7 +28,7 @@
 #include "lbann/transforms/vision/adjust_brightness.hpp"
 #include "lbann/transforms/vision/adjust_contrast.hpp"
 #include "lbann/transforms/vision/adjust_saturation.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/memory.hpp"
 #include "lbann/utils/opencv.hpp"
 

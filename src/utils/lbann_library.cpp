@@ -34,11 +34,21 @@
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
+#include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
 
 namespace lbann {
+
+void construct_std_options() {
+  auto& arg_parser = global_argument_parser();
+  arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
+                        {"--rng_seeds_per_trainer_to_display"},
+                        utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
+                        "Limit how many random seeds LBANN should display from each trainer",
+                        2);
+}
 
 /// Construct a trainer that contains a lbann comm object and threadpool
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
@@ -88,24 +98,11 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     //   display_omp_setup();
     // }
 
-    // Update the index lists to accomodate multi-trainer / multi-model specification
-    customize_data_readers_index_list(*comm, pb);
-
-    // Initialize data readers
-    //@todo: code not in place for correctly handling image preprocessing
-    std::map<execution_mode, generic_data_reader *> data_readers;
-    bool is_shared_training_data_reader = pb_trainer->shareable_training_data_reader();
-    bool is_shared_testing_data_reader = pb_trainer->shareable_testing_data_reader();
-    if (opts->has_string("share_testing_data_readers")) {
-      is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
-    }
-    init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
-
     // User feedback
     //    print_parameters(comm, pb);
 
     // Initalize trainer
-    std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, data_readers, *pb_trainer);
+    std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, *pb_trainer);
 
     // If the checkpoint directory has been overridden reset it before
     // setting up the trainer
@@ -136,25 +133,39 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
       }
     }
 
-    int random_seed = lbann_default_random_seed;
+    // Root of the random seed tree
+    int root_random_seed = lbann_default_random_seed;
 
-    // Change random seed if needed.
+    // Change random seed if requested
     if (pb_trainer->random_seed() > 0) {
-      random_seed = pb_trainer->random_seed();
-      // Reseed here so that setup is done with this new seed.
-      init_random(random_seed);
-      init_data_seq_random(random_seed);
+      root_random_seed = pb_trainer->random_seed();
     }
+
+    // Random seed used for the general RNGs
+    int random_seed = root_random_seed;
+    // Random seed used for the RNG used to fetch data
+    int data_seq_random_seed = root_random_seed;
 
     // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
     if (!pb_trainer->random_init_trainers_identically()) {
-      hash_combine(random_seed, comm->get_trainer_rank());
-      // Reseed here so that setup is done with this new seed.
-      init_random(random_seed);
-      init_data_seq_random(random_seed);
+      random_seed = hash_combine(random_seed, comm->get_trainer_rank());
+      // Also update the data sequence random seed
+      data_seq_random_seed = random_seed;
     }
+
+    // Under normal conditions, reinitialize the random number generator so
+    // that regularization techniques (e.g. dropout) generate unique patterns
+    // on different ranks.
+    // At this point the data sequence random seed is no longer updated
+    random_seed = hash_combine(random_seed, comm->get_rank_in_world());
 #else
+    if(comm->am_world_master()) {
+      std::cout <<
+        "--------------------------------------------------------------------------------------------------------------------\n"
+        "ALERT: executing with LBANN_DETERMINISTIC flag to minimize reduce numerical variance -- performance will be degraded\n"
+        "--------------------------------------------------------------------------------------------------------------------\n";
+    }
     if (!pb_trainer->random_init_trainers_identically()) {
       if(comm->am_trainer_master()) {
         std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
@@ -163,21 +174,33 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
     }
 #endif
 
-#ifndef LBANN_DETERMINISTIC
-    // Under normal conditions, reinitialize the random number generator so
-    // that regularization techniques (e.g. dropout) generate unique patterns
-    // on different ranks.
-    init_random(random_seed + comm->get_rank_in_world());
-#else
-    if(comm->am_world_master()) {
-      std::cout <<
-        "--------------------------------------------------------------------------------\n"
-        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-        "--------------------------------------------------------------------------------\n";
-    }
-#endif
+    // Initialize the general RNGs and the data sequence RNGs
+    init_random(random_seed);
+    init_data_seq_random(data_seq_random_seed);
+    trainer->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
 
-    trainer->setup(std::move(io_thread_pool));
+    // Collect everyone's random seeds
+    std::vector<int> root_random_seeds(comm->get_procs_in_world());
+    comm->world_all_gather(root_random_seed, root_random_seeds);
+    std::vector<int> random_seeds(comm->get_procs_in_world());
+    comm->world_all_gather(random_seed, random_seeds);
+    std::vector<int> data_seq_random_seeds(comm->get_procs_in_world());
+    comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
+
+    // Update the index lists to accomodate multi-trainer / multi-model specification
+    customize_data_readers_index_list(*comm, pb);
+
+    // Initialize data readers
+    //@todo: code not in place for correctly handling image preprocessing
+    std::map<execution_mode, generic_data_reader *> data_readers;
+    bool is_shared_training_data_reader = pb_trainer->shareable_training_data_reader();
+    bool is_shared_testing_data_reader = pb_trainer->shareable_testing_data_reader();
+    if (opts->has_string("share_testing_data_readers")) {
+      is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
+    }
+    init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
+
+    trainer->setup(std::move(io_thread_pool), data_readers);
 
     if(opts->get_bool("disable_background_io_activity")) {
       trainer->allow_background_io_activity(false);
@@ -192,6 +215,9 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
       std::cout << "\n"
                 << trainer->get_description()
                 << std::endl;
+
+      // User feedback
+      print_parameters(*comm, pb, root_random_seeds, random_seeds, data_seq_random_seeds);
     }
 
     return trainer;
@@ -263,9 +289,6 @@ std::unique_ptr<model> build_model_from_prototext(
   if (opts->has_string("print_affinity")) {
     display_omp_setup();
   }
-
-  // User feedback
-  print_parameters(*comm, pb);
 
   // Initalize model
   std::unique_ptr<model> ret_model = proto::construct_model(comm,

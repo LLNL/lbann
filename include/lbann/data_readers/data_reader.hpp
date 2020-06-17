@@ -31,7 +31,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"

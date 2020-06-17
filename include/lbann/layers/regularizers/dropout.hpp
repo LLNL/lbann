@@ -30,7 +30,7 @@
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/cudnn.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 namespace lbann {
 

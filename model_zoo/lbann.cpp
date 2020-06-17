@@ -70,6 +70,7 @@ int guess_global_rank() noexcept
 
 int main(int argc, char *argv[]) {
   auto& arg_parser = global_argument_parser();
+  construct_std_options();
   auto use_cudnn_tensor_ops =
     arg_parser.add_flag("use cudnn tensor ops",
                         {"--use-cudnn-tensor-ops"},
@@ -82,7 +83,6 @@ int main(int argc, char *argv[]) {
                         utils::ENV("LBANN_USE_CUBLAS_TENSOR_OPS"),
                         "Set the default cuBLAS math mode to use "
                         "Tensor Core operations when available.");
-
   try {
     arg_parser.parse(argc, argv);
   }
@@ -97,8 +97,7 @@ int main(int argc, char *argv[]) {
     std::terminate();
   }
 
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   const bool master = comm->am_world_master();
 
   if (master) {
