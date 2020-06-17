@@ -29,6 +29,10 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
+
 #include <cstdlib>
 
 using namespace lbann;
@@ -68,13 +72,30 @@ int main(int argc, char *argv[]) {
 
     std::ostringstream err;
 
-    // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
-
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    // Optionally over-ride some values in the prototext for each model
+    for(size_t i = 0; i < pbs.size(); i++) {
+      get_cmdline_overrides(*comm, *(pbs[i]));
+    }
 
-    auto model_1 = build_model_from_prototext(argc, argv, *(pbs[0]),
-                                              comm.get(), io_thread_pool, true); //D1 solver
+    lbann_data::LbannPB& pb = *(pbs[0]);
+    lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
+
+    // Construct the trainer
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
+
+    thread_pool& io_thread_pool = trainer->get_io_thread_pool();
+
+    int training_dr_linearized_data_size = -1;
+    auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::training);
+    if(dr != nullptr) {
+      training_dr_linearized_data_size = dr->get_linearized_data_size();
+    }
+
+    auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
+                                              comm.get(), opts, io_thread_pool,
+                                              trainer->get_callbacks_with_ownership(),
+                                              training_dr_linearized_data_size); //D1 solver
     //hack, overide model name to make reporting easy, what can break?"
     std::unique_ptr<model> model_2, //G1 solver
       model_3, //G2 solver
@@ -84,23 +105,31 @@ int main(int argc, char *argv[]) {
       ae_cycgan_model; //contain layer(s) from (cyc)GAN
 
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]),
-                                           comm.get(), io_thread_pool, false);
+      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]),
+                                           comm.get(), opts, io_thread_pool,
+                                           trainer->get_callbacks_with_ownership(),
+                                           training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 2) {
-      model_3 = build_model_from_prototext(argc, argv, *(pbs[2]),
-                                           comm.get(), io_thread_pool, false);
+      model_3 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[2]),
+                                           comm.get(), opts, io_thread_pool,
+                                           trainer->get_callbacks_with_ownership(),
+                                           training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 3) {
-      ae_model = build_model_from_prototext(argc, argv, *(pbs[3]),
-                                           comm.get(), io_thread_pool, false);
+      ae_model = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[3]),
+                                            comm.get(), opts, io_thread_pool,
+                                            trainer->get_callbacks_with_ownership(),
+                                            training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 4) {
-      ae_cycgan_model = build_model_from_prototext(argc, argv, *(pbs[4]),
-                                           comm.get(), io_thread_pool, false);
+      ae_cycgan_model = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[4]),
+                                                   comm.get(), opts, io_thread_pool,
+                                                   trainer->get_callbacks_with_ownership(),
+                                                   training_dr_linearized_data_size);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();
@@ -112,7 +141,7 @@ int main(int argc, char *argv[]) {
     if(ae_model != nullptr) {
       if(master) std::cout << " Pre-train autoencoder " << std::endl;
       const lbann_data::Model pb_model_4 = pbs[3]->model();
-      ae_model->train(pb_model_4.num_epochs());
+      trainer->train(ae_model.get(), pb_model_4.num_epochs());
       auto ae_weights = ae_model->get_weights();
       model_1->copy_trained_weights_from(ae_weights);
       model_2->copy_trained_weights_from(ae_weights);
@@ -125,20 +154,20 @@ int main(int argc, char *argv[]) {
     int max_super_step = pb_model.super_steps();
     while (super_step <= max_super_step) {
       if (master)  std::cerr << "\nSTARTING train - discriminator (D1 & D2) models at step " << super_step <<"\n\n";
-      model_1->train( super_step*pb_model.num_epochs(),pb_model.num_batches());
+      trainer->train(model_1.get(), super_step*pb_model.num_epochs(),pb_model.num_batches());
 
       if(master) std::cout << " Copy all trained weights from discriminator to G1 and train/freeze as appropriate " << std::endl;
       auto model1_weights = model_1->get_weights();
       model_2->copy_trained_weights_from(model1_weights);
       if (master) std::cerr << "\n STARTING train - G1 solver model at step " << super_step << " \n\n";
-      model_2->train( super_step*pb_model_2.num_epochs(),pb_model_2.num_batches());
+      trainer->train(model_2.get(), super_step*pb_model_2.num_epochs(),pb_model_2.num_batches());
       // Evaluate model on test set
       //      model_2->evaluate(execution_mode::testing,pb_model_2.num_batches());
 
       if(master) std::cout << " Copy all trained weights from discriminator to G2 and train/freeze as appropriate " << std::endl;
       model_3->copy_trained_weights_from(model1_weights);
       if (master) std::cerr << "\n STARTING train - G2 solver model at step " << super_step << " \n\n";
-      model_3->train( super_step*pb_model_3.num_epochs(),pb_model_3.num_batches());
+      trainer->train(model_3.get(), super_step*pb_model_3.num_epochs(),pb_model_3.num_batches());
       // Evaluate model on test set
       //      model_3->evaluate(execution_mode::testing,pb_model_3.num_batches());
 
@@ -167,14 +196,16 @@ int main(int argc, char *argv[]) {
     model_3->save_model();
     ae_cycgan_model->save_model();
     if(master) std::cout << " Evaluate pretrained autoencoder" << std::endl;
-    ae_cycgan_model->evaluate(execution_mode::testing);
+    trainer->evaluate(ae_cycgan_model.get(), execution_mode::testing);
 
     //has no affect unless option: --st_on was given
     stack_profiler::get()->print();
 
   } catch (std::exception& e) {
     El::ReportException(e);
-    return EXIT_FAILURE;
+    // It's possible that a proper subset of ranks throw some
+    // exception. But we want to tear down the whole world.
+    El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
   }
 
   return EXIT_SUCCESS;

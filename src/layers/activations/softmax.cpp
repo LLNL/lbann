@@ -24,23 +24,24 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_SOFTMAX_LAYER_INSTANTIATE
 #include "lbann/layers/activations/softmax.hpp"
 
 namespace lbann {
 
 namespace {
 
-// Minimum output value to avoid denormalized floats
-#ifdef LBANN_ENABLE_SOFTMAX_CUTOFF
-const DataType min_output = std::sqrt(std::numeric_limits<DataType>::min());
-#else
-const DataType min_output = 0;
-#endif // LBANN_ENABLE_SOFTMAX_CUTOFF
-
+template <typename TensorDataType>
 void fp(lbann_comm& comm,
-        const AbsDistMat& input,
-        AbsDistMat& output,
-        AbsDistMat& workspace) {
+        const El::AbstractDistMatrix<TensorDataType>& input,
+        El::AbstractDistMatrix<TensorDataType>& output,
+        El::AbstractDistMatrix<TensorDataType>& workspace,
+        TensorDataType threshold_val,
+        softmax_mode mode) {
+
+  if(mode != softmax_mode::INSTANCE) {
+    LBANN_ERROR("Unsupported softmax mode");
+  }
 
   // Local matrices
   const auto& local_input = input.LockedMatrix();
@@ -50,7 +51,7 @@ void fp(lbann_comm& comm,
   const auto& local_width = local_input.Width();
 
   // Find column-wise maximum entries
-  El::Fill(workspace, std::numeric_limits<DataType>::lowest());
+  El::Fill(workspace, std::numeric_limits<TensorDataType>::lowest());
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     auto& max_entry = local_workspace(0, col);
@@ -66,7 +67,7 @@ void fp(lbann_comm& comm,
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
     const auto shift = local_workspace(0, col);
-    DataType sum = 0;
+    TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_height; ++row) {
       const auto& x = local_input(row, col);
       auto& y = local_output(row, col);
@@ -85,17 +86,27 @@ void fp(lbann_comm& comm,
     const auto& scale = 1 / local_workspace(0, col);
     for (El::Int row = 0; row < local_height; ++row) {
       auto& y = local_output(row, col);
-      y = std::max(scale * y, min_output);
+      y = scale * y;
+#ifdef LBANN_ENABLE_SOFTMAX_THRESHOLD
+      y = std::max(y, threshold_val);
+#endif // LBANN_ENABLE_SOFTMAX_THRESHOLD
     }
   }
 
 }
 
+template <typename TensorDataType>
 void bp(lbann_comm& comm,
-        const AbsDistMat& output,
-        const AbsDistMat& gradient_wrt_output,
-        AbsDistMat& gradient_wrt_input,
-        AbsDistMat& workspace) {
+        const El::AbstractDistMatrix<TensorDataType>& output,
+        const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+        El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+        El::AbstractDistMatrix<TensorDataType>& workspace,
+        TensorDataType threshold_val,
+        softmax_mode mode) {
+
+  if(mode != softmax_mode::INSTANCE) {
+    LBANN_ERROR("Unsupported softmax mode");
+  }
 
   // Local matrices
   const auto& local_output = output.LockedMatrix();
@@ -126,7 +137,7 @@ void bp(lbann_comm& comm,
       const auto& y = local_output(row, col);
       const auto& dy = local_gradient_wrt_output(row, col);
       auto& dx = local_gradient_wrt_input(row, col);
-      dx = (y > min_output) ? y * (dy - y_dot_dy) : DataType(0);
+      dx = y * (dy - y_dot_dy);
     }
   }
 
@@ -134,35 +145,32 @@ void bp(lbann_comm& comm,
 
 } // namespace
 
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  fp(*get_comm(),
-     get_prev_activations(),
-     get_activations(),
-     *m_workspace);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp(*this->get_comm(),
+     this->get_prev_activations(),
+     this->get_activations(),
+     *this->m_workspace,
+     this->threshold_val,
+     this->m_mode);
 }
-template <>
-void softmax_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  bp(*get_comm(),
-     get_activations(),
-     get_prev_error_signals(),
-     get_error_signals(),
-     *m_workspace);
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void softmax_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp(*this->get_comm(),
+     this->get_activations(),
+     this->get_prev_error_signals(),
+     this->get_error_signals(),
+     *this->m_workspace,
+     this->threshold_val,
+     this->m_mode);
 }
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::fp_compute() {
-  fp(*get_comm(),
-     get_prev_activations(),
-     get_activations(),
-     *m_workspace);
-}
-template <>
-void softmax_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>::bp_compute() {
-  bp(*get_comm(),
-     get_activations(),
-     get_prev_error_signals(),
-     get_error_signals(),
-     *m_workspace);
-}
+
+#define PROTO(T)                                      \
+  template class softmax_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class softmax_layer<T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

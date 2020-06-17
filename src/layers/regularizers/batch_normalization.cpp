@@ -24,42 +24,43 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 
 namespace lbann {
 
-template <>
-void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_compute() {
-  constexpr DataType zero = 0;
-  constexpr DataType one = 1;
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
+  const TensorDataType one = El::TypeTraits<TensorDataType>::One();
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
-  const auto& input = get_prev_activations();
+  const auto& input = this->get_prev_activations();
   const auto& local_input = input.LockedMatrix();
-  auto& local_output = get_local_activations();
+  auto& local_output = this->get_local_activations();
 
   // Matrix parameters
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();
-  const auto& output_dims = get_output_dims();
+  const auto& output_dims = this->get_output_dims();
   const auto& num_channels = output_dims[0];
-  const auto& channel_size = get_output_size() / num_channels;
+  const auto& channel_size = this->get_output_size() / num_channels;
 
   // Compute statistics
   if (is_training) {
 
     // Local matrices
-    auto& local_mean = m_mean->Matrix();
-    auto& local_var = m_var->Matrix();
-    auto& local_running_mean = this->m_weights[2]->get_values().Matrix();
-    auto& local_running_var = this->m_weights[3]->get_values().Matrix();
+    auto& local_mean = this->m_mean_v->Matrix();
+    auto& local_var = this->m_var_v->Matrix();
+    auto& local_running_mean = this->get_data_type_weights(2).get_values().Matrix();
+    auto& local_running_var = this->get_data_type_weights(3).get_values().Matrix();
 
     // Compute sums and sums of squares
     LBANN_OMP_PARALLEL_FOR
     for (El::Int channel = 0; channel < num_channels; ++channel) {
-      DataType sum = zero;
-      DataType sqsum = zero;
+      TensorDataType sum = zero;
+      TensorDataType sqsum = zero;
       const auto& row_start = channel * channel_size;
       const auto& row_end = (channel+1) * channel_size;
       for (El::Int col = 0; col < local_width; ++col) {
@@ -73,28 +74,27 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
       local_var(channel, 0) = sqsum;
     }
     El::Int num_per_sum;
-    switch (m_stats_aggregation) {
-    case batch_normalization_stats_aggregation::global:
-      m_comm->allreduce(*m_mean, m_mean->RedundantComm(), El::mpi::SUM);
-      m_comm->allreduce(*m_var, m_var->RedundantComm(), El::mpi::SUM);
+    if (this->m_statistics_group_size == 0) {
+      // Global statistics aggregation; allreduce on fused buffer.
+      this->m_comm->allreduce(*this->m_mean_and_var, this->m_mean_and_var->RedundantComm(),
+                        El::mpi::SUM);
       num_per_sum = channel_size * width;
-      break;
-    case batch_normalization_stats_aggregation::node_local:
-      m_comm->allreduce(*m_mean, m_comm->get_node_comm(), El::mpi::SUM);
-      m_comm->allreduce(*m_var, m_comm->get_node_comm(), El::mpi::SUM);
-      if (m_num_per_sum_cache.count(width) == 0) {
-        num_per_sum = channel_size * local_width;
-        num_per_sum = m_comm->allreduce(num_per_sum, m_comm->get_node_comm());
-        m_num_per_sum_cache[width] = num_per_sum;
-      } else {
-        num_per_sum = m_num_per_sum_cache[width];
-      }
-      break;
-    case batch_normalization_stats_aggregation::local:
+    } else if (this->m_statistics_group_size == 1) {
+      // Local aggregation, no allreduce needed.
       num_per_sum = channel_size * local_width;
-      break;
-    default:
-      LBANN_ERROR("Unknown batch normalization stats aggregation");
+    } else {
+      // Grouped batchnorm. Allreduce on fused buffer.
+      this->m_comm->allreduce(*this->m_mean_and_var,
+                        this->m_comm->get_packed_group_comm(this->m_statistics_group_size),
+                        El::mpi::SUM);
+      if (this->m_num_per_sum_cache.count(width) == 0) {
+        num_per_sum = channel_size * local_width;
+        num_per_sum = this->m_comm->allreduce(
+          num_per_sum, this->m_comm->get_packed_group_comm(this->m_statistics_group_size));
+        this->m_num_per_sum_cache[width] = num_per_sum;
+      } else {
+        num_per_sum = this->m_num_per_sum_cache[width];
+      }
     }
 
     // Compute minibatch statistics
@@ -103,30 +103,32 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
     } else {
       LBANN_OMP_PARALLEL_FOR
       for (El::Int channel = 0; channel < num_channels; ++channel) {
-        const auto& mean = local_mean(channel, 0) / num_per_sum;
-        const auto& sqmean = local_var(channel, 0) / num_per_sum;
-        auto var = num_per_sum * (sqmean - mean * mean) / (num_per_sum - 1);
-        var = std::max(var, m_epsilon);
+        auto num_per_sum_dt = El::To<TensorDataType>(num_per_sum);
+        const auto& mean = local_mean(channel, 0) / num_per_sum_dt;
+        const auto& sqmean = local_var(channel, 0) / num_per_sum_dt;
+        auto var = num_per_sum_dt * (sqmean - mean * mean)
+          / (num_per_sum_dt - El::TypeTraits<TensorDataType>::One());
+        var = std::max(var, this->m_epsilon);
         local_mean(channel, 0) = mean;
         local_var(channel, 0) = var;
         auto& running_mean = local_running_mean(channel, 0);
         auto& running_var = local_running_var(channel, 0);
-        running_mean = m_decay * running_mean + (one - m_decay) * mean;
-        running_var = m_decay * running_var + (one - m_decay) * var;
+        running_mean = this->m_decay * running_mean + (one - this->m_decay) * mean;
+        running_var = this->m_decay * running_var + (one - this->m_decay) * var;
       }
     }
 
   }
 
   // Get matrices
-  const auto& local_scale = this->m_weights[0]->get_values().LockedMatrix();
-  const auto& local_bias = this->m_weights[1]->get_values().LockedMatrix();
+  const auto& local_scale = this->get_data_type_weights(0).get_values().LockedMatrix();
+  const auto& local_bias = this->get_data_type_weights(1).get_values().LockedMatrix();
   const auto& local_mean = (is_training ?
-                            m_mean->LockedMatrix() :
-                            this->m_weights[2]->get_values().LockedMatrix());
+                            this->m_mean_v->LockedMatrix() :
+                            this->get_data_type_weights(2).get_values().LockedMatrix());
   const auto& local_var = (is_training ?
-                           m_var->LockedMatrix() :
-                           this->m_weights[3]->get_values().LockedMatrix());
+                           this->m_var_v->LockedMatrix() :
+                           this->get_data_type_weights(3).get_values().LockedMatrix());
 
   // Iterate through channels
   LBANN_OMP_PARALLEL_FOR
@@ -135,7 +137,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
     // Get channel parameters
     const auto& mean = local_mean(channel, 0);
     const auto& var = local_var(channel, 0);
-    const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
+    const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / El::Sqrt(var + this->m_epsilon));
     const auto& scale = local_scale(channel, 0);
     const auto& bias = local_bias(channel, 0);
 
@@ -155,35 +157,33 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::fp_
 
 }
 
-template <>
-void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_compute() {
-  constexpr DataType one = 1;
-  const bool is_training = this->m_model->get_execution_mode() == execution_mode::training;
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
+  const bool is_training = this->m_model->get_execution_context().get_execution_mode() == execution_mode::training;
 
   // Matrices
-  const auto& local_scale = this->m_weights[0]->get_values().LockedMatrix();
+  const auto& local_scale = this->get_data_type_weights(0).get_values().LockedMatrix();
   const auto& local_mean = (is_training ?
-                            m_mean->LockedMatrix() :
-                            this->m_weights[2]->get_values().LockedMatrix());
+                            this->m_mean_v->LockedMatrix() :
+                            this->get_data_type_weights(2).get_values().LockedMatrix());
   const auto& local_var = (is_training ?
-                           m_var->LockedMatrix() :
-                           this->m_weights[3]->get_values().LockedMatrix());
-  const auto& input = get_prev_activations();
+                           this->m_var_v->LockedMatrix() :
+                           this->get_data_type_weights(3).get_values().LockedMatrix());
+  const auto& input = this->get_prev_activations();
   const auto& local_input = input.LockedMatrix();
-  const auto& local_gradient_wrt_output = get_local_prev_error_signals();
-  auto& local_gradient_wrt_input = get_local_error_signals();
-  auto& local_mean_gradient = m_mean_gradient->Matrix();
-  auto& local_var_gradient = m_var_gradient->Matrix();
-  auto& local_scale_gradient = m_scale_gradient->Matrix();
-  auto& local_bias_gradient = m_bias_gradient->Matrix();
+  const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
+  auto& local_gradient_wrt_input = this->get_local_error_signals();
+  auto& local_mean_gradient = this->m_mean_gradient_v->Matrix();
+  auto& local_var_gradient = this->m_var_gradient_v->Matrix();
+  auto& local_scale_gradient = this->m_scale_gradient->Matrix();
+  auto& local_bias_gradient = this->m_bias_gradient->Matrix();
 
   // Matrix parameters
-  const El::Int effective_mini_batch_size = this->m_model->get_effective_mini_batch_size();
   const auto& width = input.Width();
   const auto& local_width = local_input.Width();
-  const auto& output_dims = get_output_dims();
+  const auto& output_dims = this->get_output_dims();
   const auto& num_channels = output_dims[0];
-  const auto& channel_size = get_output_size() / num_channels;
+  const auto& channel_size = this->get_output_size() / num_channels;
 
   // Compute local gradients
   LBANN_OMP_PARALLEL_FOR
@@ -193,12 +193,12 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
     const auto& mean = local_mean(channel, 0);
     const auto& var = local_var(channel, 0);
     const auto& scale = local_scale(channel, 0);
-    const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
+    const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / El::Sqrt(var + this->m_epsilon));
     const auto& dvar_factor = inv_stdev * inv_stdev * inv_stdev / 2;
-    DataType dmean = 0;
-    DataType dvar = 0;
-    DataType dscale = 0;
-    DataType dbias = 0;
+    TensorDataType dmean = El::TypeTraits<TensorDataType>::Zero();
+    TensorDataType dvar = El::TypeTraits<TensorDataType>::Zero();
+    TensorDataType dscale = El::TypeTraits<TensorDataType>::Zero();
+    TensorDataType dbias = El::TypeTraits<TensorDataType>::Zero();
 
     // Compute gradient contributions from local entries
     const auto& row_start = channel * channel_size;
@@ -224,52 +224,41 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
 
   // Accumulate gradients
   if (is_training) {
-    if (m_stats_aggregation == batch_normalization_stats_aggregation::global) {
-      m_comm->allreduce(*m_mean_gradient,
-                        m_mean_gradient->RedundantComm(),
+    if (this->m_statistics_group_size == 0) {
+      // Global aggregation; allreduce on fused buffer.
+      this->m_comm->allreduce(*this->m_mean_and_var_gradient,
+                        this->m_mean_and_var_gradient->RedundantComm(),
                         El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient,
-                        m_var_gradient->RedundantComm(),
-                        El::mpi::SUM);
-    } else if (m_stats_aggregation == batch_normalization_stats_aggregation::node_local) {
-      m_comm->allreduce(*m_mean_gradient,
-                        m_comm->get_node_comm(),
-                        El::mpi::SUM);
-      m_comm->allreduce(*m_var_gradient,
-                        m_comm->get_node_comm(),
+    } else if (this->m_statistics_group_size > 1) {
+      // Grouped batchnorm; allreduce on fused buffer.
+      this->m_comm->allreduce(*this->m_mean_and_var_gradient,
+                        this->m_comm->get_packed_group_comm(this->m_statistics_group_size),
                         El::mpi::SUM);
     }
   } else {
-    El::Zero(*m_mean_gradient);
-    El::Zero(*m_var_gradient);
+    // Zero fused buffer.
+    El::Zero(*this->m_mean_and_var_gradient);
   }
-  optimizer* scale_optimizer = m_weights[0]->get_optimizer();
+  auto* scale_optimizer = this->get_data_type_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
-    scale_optimizer->add_to_gradient(*m_scale_gradient,
-                                     one / effective_mini_batch_size,
-                                     true);
+    scale_optimizer->add_to_gradient(*this->m_scale_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
-  optimizer* bias_optimizer = m_weights[1]->get_optimizer();
+  auto* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
-    bias_optimizer->add_to_gradient(*m_bias_gradient,
-                                    one / effective_mini_batch_size,
-                                    true);
+    bias_optimizer->add_to_gradient(*this->m_bias_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }
 
   // Compute error signal
   El::Int num_per_sum;
-  switch (m_stats_aggregation) {
-  case batch_normalization_stats_aggregation::global:
+  if (this->m_statistics_group_size == 0) {
+    // Global statistics aggregation.
     num_per_sum = channel_size * width;
-    break;
-  case batch_normalization_stats_aggregation::node_local:
-    num_per_sum = m_num_per_sum_cache[width];  // This was computed in FP.
-    break;
-  case batch_normalization_stats_aggregation::local:
+  } else if (this->m_statistics_group_size == 1) {
+    // Local aggregation.
     num_per_sum = channel_size * local_width;
-    break;
-  default:
-    LBANN_ERROR("Unknown batch normalization stats aggregation");
+  } else {
+    // Grouped batchnorm.
+    num_per_sum = this->m_num_per_sum_cache[width];  // This was computed in FP.
   }
   if (num_per_sum <= 1) {
     El::Zero(local_gradient_wrt_input);
@@ -285,7 +274,7 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
       const auto& dvar = local_var_gradient(channel, 0);
 
       // Compute useful constants
-      const DataType inv_stdev = 1 / std::sqrt(var + m_epsilon);
+      const TensorDataType inv_stdev = static_cast<TensorDataType>(1 / El::Sqrt(var + this->m_epsilon));
       const auto& dmean_term = dmean / num_per_sum;
       const auto& dvar_term = dvar * 2 / (num_per_sum - 1);
 
@@ -306,5 +295,11 @@ void batch_normalization_layer<data_layout::DATA_PARALLEL, El::Device::CPU>::bp_
   }
 
 }
+
+#define PROTO(T)                                      \
+  template class batch_normalization_layer<T, data_layout::DATA_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

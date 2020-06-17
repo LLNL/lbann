@@ -51,6 +51,6 @@ In order to make :bash:`make html` work, you may need to do a few steps:
 4. Add Doxygen to your path with
    :bash:`PATH="<doxygen directory>:${PATH}"`.
    You may want to add this to your "~/.bash_profile" so your :bash:`PATH` is
-   always correct. Run :bash:`source ~.bash_profile` to run that code.
+   always correct. Run :bash:`source ~/.bash_profile` to run that code.
 
 5. Try running :bash:`make html` again.

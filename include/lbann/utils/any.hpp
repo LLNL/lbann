@@ -64,7 +64,7 @@ public:
   ///@{
 
   /** @brief Default construct an empty "any" */
-  any() noexcept = default;
+  any() noexcept {}
 
   /** @brief Construct an object holding a T */
   template <typename T>

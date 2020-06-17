@@ -30,21 +30,24 @@
 #define LBANN_DATA_READER_HPP
 
 #include "lbann/base.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/random.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/data_readers/image_preprocessor.hpp"
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/transforms/transform_pipeline.hpp"
 #include <cassert>
 #include <algorithm>
 #include <string>
 #include <vector>
 #include <unistd.h>
 #include <unordered_set>
-
+#include <cereal/types/utility.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/vector.hpp>
 
 #define NOT_IMPLEMENTED(n) { \
   std::stringstream s; \
@@ -54,7 +57,7 @@
 namespace lbann {
 
 class data_store_conduit;
-class model;
+class trainer;
 
 /**
  * A data reader manages reading in data in a particular format.
@@ -62,7 +65,7 @@ class model;
  * classes should implement load and the appropriate subset of fetch_datum,
  * fetch_label, and fetch_response.
  */
-class generic_data_reader : public lbann_image_preprocessor {
+class generic_data_reader {
  public:
 
  #define JAG_NOOP_VOID if (m_jag_partitioned) { return; }
@@ -99,14 +102,21 @@ class generic_data_reader : public lbann_image_preprocessor {
     m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
-    m_model(nullptr),
+    m_trainer(nullptr),
     m_issue_warning(true)
   {}
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
-  ~generic_data_reader() override {}
+  virtual ~generic_data_reader() {}
   virtual generic_data_reader* copy() const = 0;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_current_mini_batch_idx),
+       CEREAL_NVP(m_current_pos),
+       CEREAL_NVP(m_shuffled_indices));
+  }
 
   /// set the comm object
   void set_comm(lbann_comm *comm) {
@@ -273,7 +283,7 @@ class generic_data_reader : public lbann_image_preprocessor {
    * If the base offset is not specified set it to 0
    * If the stride is not specified set it to batch size
    */
-  virtual void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool);
+  virtual void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool);
 
   /** Return this data_reader's type */
   virtual std::string get_type() const = 0;
@@ -285,15 +295,6 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// Fetch this mini-batch's responses into Y.
   virtual int fetch_responses(CPUMat& Y);
 
-  /**
-   * Save pixels to an image. The implementing data reader is responsible for
-   * handling format detection, conversion, etc.
-   */
-  // TODO: This function needs to go away from here
-  void save_image(Mat& pixels, const std::string filename,
-                          bool do_scale = true) override {
-    NOT_IMPLEMENTED("save_image");
-  }
   /**
    * During the network's update phase, the data reader will
    * advanced the current position pointer.  If the pointer wraps
@@ -345,6 +346,13 @@ class generic_data_reader : public lbann_image_preprocessor {
   virtual const std::vector<int> get_data_dims() const {
     return std::vector<int>(0);
   }
+
+  virtual std::vector<El::Int> get_slice_points(const slice_points_mode var_category,
+                                                bool& is_supported) {
+    is_supported = false;
+    return {};
+  }
+
   /// True if the data reader's current position is valid.
   virtual bool position_valid() const {
     return (m_current_pos < get_num_data());
@@ -559,9 +567,17 @@ class generic_data_reader : public lbann_image_preprocessor {
   }
 
   /**
-   * Select the appropriate subset of data based on settings.
+   * Optionally resizes the shuffled indices based on the data reader
+   * prototext settings: absolute_sample_count, percent_of_data_to_use.
+   * (dah - this was formerly part of select_subset_of_data)
    */
-  virtual void select_subset_of_data();
+  void resize_shuffled_indices();
+
+  /**
+   * Select the appropriate subset of data for the validation set based on
+   * the data reader prototext setting: validation_percent
+   */
+  void select_subset_of_data();
 
   /// called by select_subset_of_data() if data set is partitioned
   void select_subset_of_data_partitioned();
@@ -585,96 +601,15 @@ class generic_data_reader : public lbann_image_preprocessor {
 
 
   /** \brief Given directory to store checkpoint files, write state to file and add to number of bytes written */
-  bool save_to_checkpoint_shared(persist& p, const char *name);
+  bool save_to_checkpoint_shared(persist& p, execution_mode mode);
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
-  bool load_from_checkpoint_shared(persist& p, const char *name);
+  bool load_from_checkpoint_shared(persist& p, execution_mode mode);
 
-  bool save_to_checkpoint_distributed(persist& p, const char *name);
+  bool save_to_checkpoint_distributed(persist& p, execution_mode mode);
 
   /** \brief Given directory to store checkpoint files, read state from file and add to number of bytes read */
-  bool load_from_checkpoint_distributed(persist& p, const char *name);
-
-  struct packing_header {
-    uint64_t current_pos;
-    uint64_t current_mini_batch_idx;
-    uint64_t data_size;
-  };
-  bool pack_scalars(persist& p, const char *name) {
-    char fieldname[1024];
-    lbann::persist_type persist_value;
-    std::string s_name(name);
-    if(s_name.compare("data_reader_validation") == 0){
-      persist_value = persist_type::validate;
-    } else {
-       persist_value= persist_type::train;
-    }
-
-
-    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-    p.write_uint64(persist_value, fieldname, (uint64_t) m_current_mini_batch_idx);
-
-    int size = m_shuffled_indices.size();
-    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
-    p.write_uint64(persist_value, fieldname, (uint64_t) size);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-    p.write_uint64(persist_value, fieldname, (uint64_t) m_current_pos);
-
-    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-    p.write_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-
-    return true;
-  }
-
-  bool unpack_scalars(persist& p, struct packing_header *header, const char *name){
-    char fieldname[1024];
-    lbann::persist_type persist_value;
-    std::string s_name(name);
-    if(s_name.compare("data_reader_validation") == 0){
-      persist_value = persist_type::validate;
-    } else {
-       persist_value= persist_type::train;
-    }
-    // Closest to non checkpoint run only loads m_current_pos
-
-    // record minibatch index
-    uint64_t val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_current_mini_batch_idx", name);
-    p.read_uint64(persist_value, fieldname, &val);
-    m_current_mini_batch_idx = (int) val;
-
-    snprintf(fieldname, sizeof(fieldname), "%s_data_size", name);
-    p.read_uint64(persist_value, fieldname, &val);
-    auto size = (int) val;
-
-    // get current position within data
-    snprintf(fieldname, sizeof(fieldname), "%s_data_position", name);
-    p.read_uint64(persist_value, fieldname, &val);
-    m_current_pos = (int) val;
-    //resize shuffled index array to hold values
-    m_shuffled_indices.resize(size);
-
-     //read list of indices
-    snprintf(fieldname, sizeof(fieldname), "%s_data_indices", name);
-    p.read_int32_contig(persist_value, fieldname, &m_shuffled_indices[0], (uint64_t) size);
-
-    if(header != nullptr){
-      //shuffled data indices array size, used for resize after broadcast. Not unpacked.
-      header->data_size = size;
-      // all else, unpacked and set in unpack header.
-      header->current_pos = m_current_pos;
-      header->current_mini_batch_idx = m_current_mini_batch_idx;
-    }
-
-  return true;
-  }
-
-  void unpack_header(struct packing_header& header){
-    m_current_pos = (int) header.current_pos;
-    m_current_mini_batch_idx = (int) header.current_mini_batch_idx;
-  }
+  bool load_from_checkpoint_distributed(persist& p, execution_mode mode);
 
   /// returns a const ref to the data store
   virtual const data_store_conduit& get_data_store() const {
@@ -694,17 +629,9 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// until later.
   void setup_data_store(int mini_batch_size);
 
-  void instantiate_data_store(const std::vector<int>& local_list_sizes = std::vector<int>());
+  void instantiate_data_store();
 
-  // note: don't want to make this virtual, since then all derived classes
-  //       would have to override. But, this should only be called from within
-  //       derived classes where it makes sense to do so.
-  //       Once the sample_list class and file formats are generalized and
-  //       finalized, it should (may?) be possible to code a single
-  //       preload_data_store method.
-  virtual void preload_data_store() {
-    LBANN_ERROR("you should not be here");
-  }
+  virtual void preload_data_store();
 
   void set_gan_labeling(bool has_gan_labeling) {
      m_gan_labeling = has_gan_labeling;
@@ -718,13 +645,21 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   virtual bool priming_data_store() const;
 
-  void set_model(model *m) { m_model = m; }
+  void set_trainer(trainer *t) { m_trainer = t; }
 
-  model * get_model() const { return m_model; }
+  trainer& get_trainer() const {
+    if(m_trainer == nullptr) { LBANN_ERROR("get_trainer called with nullptr"); }
+    return *m_trainer;
+  }
 
   /// experimental; used to ensure all readers for jag_conduit_hdf5
   /// have identical shuffled indices
   virtual void post_update() {}
+
+  /** Set the transform pipeline this data reader will use. */
+  void set_transform_pipeline(transform::transform_pipeline&& tp) {
+    m_transform_pipeline = std::move(tp);
+  }
 
  protected:
 
@@ -855,8 +790,28 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   bool m_master;
 
+  /** @brief Print the return values from various get_X methods to file
+   *
+   * For use in unit testing. Only the master prints.
+   * Currently only prints values from get_X methods that only depend
+   * on the data_reader (i.e, not on the trainer, model, etc)
+   */
+  void print_get_methods(const std::string filename);
+
+  /**
+   * Returns the number of the shuffled indices that are to be
+   * used. Code in this method was formerly in select_subset_of_data()
+   */
+  size_t get_num_indices_to_use() const;
+
   friend class data_reader_merge_features;
   friend class data_reader_merge_samples;
+
+private:
+
+  virtual void do_preload_data_store() {
+    LBANN_ERROR("Not implemented.");
+  }
 
  protected :
   //var to support GAN
@@ -890,7 +845,7 @@ class generic_data_reader : public lbann_image_preprocessor {
 
   std::vector<std::vector<char>> m_thread_buffer;
 
-  std::shared_ptr<thread_pool> m_io_thread_pool;
+  observer_ptr<thread_pool> m_io_thread_pool;
 
   /// special handling for 1B jag; each reader
   /// owns a unique subset of the data
@@ -900,12 +855,19 @@ class generic_data_reader : public lbann_image_preprocessor {
   /// this sets various member variables (num_iterations, m_reset_mini_batch_index,
   /// etc.
   void set_jag_variables(int mb_size);
-  model *m_model;
+  trainer *m_trainer;
+
+  /** Transform pipeline for preprocessing data. */
+  transform::transform_pipeline m_transform_pipeline;
 
   /// for use with data_store: issue a warning a single time if m_data_store != nullptr,
   /// but we're not retrieving a conduit::Node from the store. This typically occurs
   /// during the test phase
   bool m_issue_warning;
+
+  /// throws exception if get_absolute_sample_count() and
+  /// get_use_percent() are incorrect
+  void error_check_counts() const;
 };
 
 template<typename T>

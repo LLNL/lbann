@@ -59,7 +59,7 @@ They consist of an identical list of tasks:
 
 
 The tests in Task 2 run
-:bash:`$PYTHON -m pytest -s [--weekly] --junitxml=results.xml`,
+:bash:`$PYTHON -m pytest -s -vv --durations=0 [--weekly] --junitxml=results.xml`,
 which will run all the pytests in the job's associated directory.
 Note that :bash:`$PYTHON` refers to the Python build to use.
 Also note that only Weekly Develop adds the :bash:`--weekly` option.
@@ -80,7 +80,8 @@ Writing Your Own Tests
 A side effect of our Bamboo setup is that tests must be written using pytest.
 Test files must begin with :bash:`test_` to be recognized by pytest.
 Individual test methods must also begin with :python:`test_`.
-Test methods should use the :python:`assert` keyword.
+Test methods should use the :python:`assert` keyword or raise an
+:python:`AssertionError`.
 A test will only fail if the assertion turns out to be false.
 Not putting an assertion will automatically cause the test to pass.
 
@@ -97,9 +98,15 @@ your fork for commits.
 They do not run nightly.
 If you push new commits to your fork, a new build should start automatically.
 You can also manually start a build by navigating to your individual plan and
-clicking Run > Run Plan.
+clicking Run > Run plan
+(this will say "Run branch" if you have plan branches set up).
 Once again, keep in mind that the tests will run off what has been pushed to
 your GitHub fork of LBANN and not your local copy of the LBANN repository.
+
+Plan branches allow you to test multiple branches simultaneously instead
+of simply testing "<fork-name>/develop".
+You can create plan branches by navigating to your individual plan,
+clicking Actions > Configure plan > Branches > Create plan branch.
 
 Navigating Bamboo
 ----------------------------------------
@@ -127,40 +134,25 @@ Alternatively, you can determine the agent from one of the first lines in the
 build logs:
 "Build working directory is /usr/workspace/wsb/lbannusr/bamboo/<bamboo-agent-name>/xml-data/build-dir/<build-plan-and-job>".
 
-Some build logs can be very large (e.g. over 100,000 lines).
-Beyond about 5,000 lines it is a good idea to download a log instead of
-viewing it in the browser.
-Beyond about 10,000 lines, some text editors may experience slowness.
-At this point it is good to split up the files with
-:bash:`split -l 10000 <log-file>`, which creates files of the form `x*` and of
-length 10,000.
-You can then run a command such as :bash:`grep -in "Errors for:" x*` to find
-which files have reported errors.
-After you are done, you can remove the files with :bash:`rm x*`.
-Note that the original log file is not modified by any of these steps.
-
-As an alternative to splitting the file,
-errors can be searched for with
-:bash:`grep -in -A <expected-number-of-errors> "Errors for:" <log-file>`.
 
 Bamboo Agent Properties
 ----------------------------------------
 
 Bamboo agent properties are used to specify requirements for each job.
 
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
-| Agents (jobs)                  | agent_owner | architecture | cluster  | gpu_architecture | sys_type            |
-+================================+=============+==============+==========+==================+=====================+
-| Catalyst Agents (x86_cpu)      | lbannusr    | x86_64       | catalyst | none             | toss_3_x86_64_ib    |
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
-| Pascal Agents (x86_gpu_pascal) | lbannusr    | x86_64       | pascal   | pascal           | chaos_6_x86_64_ib   |
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
-| Quartz Agents (x86_cpu)        | lbannusr    | x86_64       | quartz   | none	            | toss_3_x86_64_ib    |
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
-| Ray Agents (ppc64le_gpu)       | lbannusr    | ppc64_le     | ray      | pascal           | blueos_3_ppc64le_ib |
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
-| Surface Agents (x86_gpu)       | lbannusr    | x86_64       | surface  | kepler           | chaos_5_x86_64_ib   |
-+--------------------------------+-------------+--------------+----------+------------------+---------------------+
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
+| Agents (jobs)                  | agent_owner | architecture | cluster  | gpu_architecture | sys_type               |
++================================+=============+==============+==========+==================+========================+
+| Catalyst Agents (x86_cpu)      | lbannusr    | x86_64       | catalyst | none             | toss_3_x86_64_ib       |
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
+| Corona Agents (x86_cpu_corona) | lbannusr    | x86_64       | corona   | none             | toss_3_x86_64_ib       |
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
+| Lassen Agents (ppc64le_gpu)    | lbannusr    | ppc64le      | lassen   | volta            | blueos_3_ppc64le_ib_p9 |
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
+| Pascal Agents (x86_gpu_pascal) | lbannusr    | x86_64       | pascal   | pascal           | chaos_6_x86_64_ib      |
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
+| Ray Agents (ppc64le_gpu)       | lbannusr    | ppc64le      | ray      | pascal           | blueos_3_ppc64le_ib    |
++--------------------------------+-------------+--------------+----------+------------------+------------------------+
 
 Currently, "agent_owner", "architecture", and "gpu_architecture" are used to
 determine agents to run a job.
@@ -191,8 +183,9 @@ There should be a line above the test that gives the command to run the test
 locally, likely in the following form:
 :bash:`python -m pytest -s <test_file>.py -k '<test_name>' --exe=<executable>`.
 
-At this time, there is no way to run all the :python:`_exe` tests in a subdirectory
-and only those.
+If you have an executable, you can run the :python:`_exe` tests with
+:bash:`local_test.sh`. Use :bash:`local_test.cmd` as a template for writing
+a batch script. You can run only integration tests, only unit tests, or both.
 
 Helpful Files
 ----------------------------------------
@@ -200,7 +193,11 @@ Helpful Files
 First, run :bash:`sudo lbannusr`.
 
 To look at output and error from previous builds:
-:bash:`cd /usr/workspace/wsb/lbannusr/bamboo/<bamboo-agent-name>/xml-data/build-dir/<build-plan-and-job>/bamboo/<compiler_tests, integration_tests, or unit_tests>/<error or output>`
+:bash:`cd /usr/workspace/wsb/lbannusr/bamboo/<bamboo-agent-name>/xml-data/build-dir/<build-plan-and-job>/bamboo/<compiler_tests, integration_tests, or unit_tests>/<error or output>`.
+If the test uses the Python Front-End, use:
+:bash:`cd /usr/workspace/wsb/lbannusr/bamboo/<bamboo-agent-name>/xml-data/build-dir/<build-plan-and-job>/bamboo/<compiler_tests, integration_tests, or unit_tests>/experiments/<test-folder>`.
+(Note that these files can also be read by clicking on the "Artifacts" tab on
+the Bamboo build).
 
 To look at archived results from previous builds:
 :bash:`cd /usr/workspace/wsb/lbannusr/archives/<build-plan>`

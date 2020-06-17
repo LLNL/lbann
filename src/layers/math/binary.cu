@@ -24,30 +24,33 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_BINARY_LAYER_INSTANTIATE
 #include "lbann/layers/math/binary.hpp"
+#include "lbann/utils/cuda.hpp"
 
 namespace lbann {
 
 namespace {
 
 /** CUDA kernel to apply an binary backprop operator. */
-template <typename BinaryBackPropOperator>
+template <template <typename> class BinaryBackPropOperator,
+          typename TensorDataType>
 __global__
 void binary_backprop_operator_kernel(El::Int height, El::Int width,
-                                     const DataType* __restrict__ x1,
+                                     const TensorDataType* __restrict__ x1,
                                      El::Int x1_ldim,
-                                     const DataType* __restrict__ x2,
+                                     const TensorDataType* __restrict__ x2,
                                      El::Int x2_ldim,
-                                     const DataType* __restrict__ dy,
+                                     const TensorDataType* __restrict__ dy,
                                      El::Int dy_ldim,
-                                     DataType* __restrict__ dx1,
+                                     TensorDataType* __restrict__ dx1,
                                      El::Int dx1_ldim,
-                                     DataType* __restrict__ dx2,
+                                     TensorDataType* __restrict__ dx2,
                                      El::Int dx2_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
   const El::Int num_threads = blockDim.x * gridDim.x;
-  BinaryBackPropOperator op;
+  BinaryBackPropOperator<TensorDataType> op;
   for (El::Int pos = gid; pos < size; pos += num_threads) {
     const auto& row = pos % height;
     const auto& col = pos / height;
@@ -68,12 +71,13 @@ void binary_backprop_operator_kernel(El::Int height, El::Int width,
  *  \f$ dL/dx_2 \f$. The last two arguments should be overwritten when
  *  the BinaryBackPropOperator is called.
  */
-template <typename BinaryBackPropOperator>
-void apply_binary_backprop_operator(const AbsMat& x1,
-                                    const AbsMat& x2,
-                                    const AbsMat& dy,
-                                    AbsMat& dx1,
-                                    AbsMat& dx2) {
+template <template <typename> class BinaryBackPropOperator,
+          typename TensorDataType>
+void apply_binary_backprop_operator(const El::AbstractMatrix<TensorDataType>& x1,
+                                    const El::AbstractMatrix<TensorDataType>& x2,
+                                    const El::AbstractMatrix<TensorDataType>& dy,
+                                    El::AbstractMatrix<TensorDataType>& dx1,
+                                    El::AbstractMatrix<TensorDataType>& dx2) {
 
   // Get CUDA grid dimensions
   // Note: Maximum CUDA grid dimension is 2^32-1
@@ -111,98 +115,104 @@ void apply_binary_backprop_operator(const AbsMat& x1,
 // (\f$ \frac{dL}{dx_i} = \frac{dL}{dy} \frac{df}{dx_i}(x_1,x_2) \f$).
 
 /** Add operator. */
+template <typename TensorDataType>
 struct add_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
     return x1 + x2;
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
     dx1 = dy;
     dx2 = dy;
   }
 };
 
 /** Subtract operator. */
+template <typename TensorDataType>
 struct subtract_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
     return x1 - x2;
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
     dx1 = dy;
     dx2 = -dy;
   }
 };
 
 /** Multiply operator. */
+template <typename TensorDataType>
 struct multiply_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
     return x1 * x2;
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
     dx1 = dy * x2;
     dx2 = dy * x1;
   }
 };
 
 /** Divide operator. */
+template <typename TensorDataType>
 struct divide_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
     return x1 / x2;
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
     dx1 = dy / x2;
     dx2 = -dy * x1 / (x2*x2);
   }
 };
 
 /** Modulo operator. */
+template <typename TensorDataType>
 struct mod_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
     return cuda::mod(x1, x2);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
     dx1 = dy;
     dx2 = -dy * cuda::floor(x1 / x2);
   }
 };
 
 /** Power operator. */
+template <typename TensorDataType>
 struct pow_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
     return cuda::pow(x1, x2);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
 
-    dx1 = dy * x2 * cuda::pow(x1, x2 - DataType(1));
+    dx1 = dy * x2 * cuda::pow(x1, x2 - TensorDataType(1.0));
     dx2 = dy * cuda::log(x1) * cuda::pow(x1, x2);
   }
 };
@@ -211,298 +221,320 @@ struct pow_op {
  *  If a standard division produces an infinity or NaN, zero is output
  *  instead.
  */
+template <typename TensorDataType>
 struct safe_divide_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
     const auto& y = x1 / x2;
-    if (isfinite(y)) { return y; }
-    else             { return DataType(0); }
+    if (cuda::isfinite(y)) { return y; }
+    else             { return TensorDataType(0.0); }
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
     const auto& y = x1 / x2;
-    if (isfinite(y)) {
+    if (cuda::isfinite(y)) {
       dx1 = dy / x2;
       dx2 = -dy * x1 / (x2*x2);
     } else {
-      dx1 = DataType(0);
-      dx2 = DataType(0);
+      dx1 = TensorDataType(0.0);
+      dx2 = TensorDataType(0.0);
     }
   }
 };
 
 /** Squared difference operator. */
+template <typename TensorDataType>
 struct squared_difference_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
     const auto& diff = x1 - x2;
     return diff * diff;
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = dy * 2*(x1-x2);
-    dx2 = dy * 2*(x2-x1);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = dy * TensorDataType(2.) * (x1-x2);
+    dx2 = dy * TensorDataType(2.) * (x2-x1);
   }
 };
 
 /** Maximum operator. */
+template <typename TensorDataType>
 struct max_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
     return cuda::max(x1, x2);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
     if (x1 > x2) {
       dx1 = dy;
-      dx2 = DataType(0);
+      dx2 = TensorDataType(0.0);
     } else if (x2 > x1) {
-      dx1 = DataType(0);
+      dx1 = TensorDataType(0.0);
       dx2 = dy;
     } else {
-      dx1 = dy / 2;
-      dx2 = dy / 2;
+      dx1 = dy / TensorDataType(2.);
+      dx2 = dy / TensorDataType(2.);
     }
   }
 };
 
 /** Minimum operator. */
+template <typename TensorDataType>
 struct min_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
     return cuda::min(x1, x2);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
     if (x1 < x2) {
       dx1 = dy;
-      dx2 = DataType(0);
+      dx2 = TensorDataType(0.0);
     } else if (x2 < x1) {
-      dx1 = DataType(0);
+      dx1 = TensorDataType(0.0);
       dx2 = dy;
     } else {
-      dx1 = dy / 2;
-      dx2 = dy / 2;
+      dx1 = dy / TensorDataType(2.);
+      dx2 = dy / TensorDataType(2.);
     }
   }
 };
 
 /** Equal operator. */
+template <typename TensorDataType>
 struct equal_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 == x2 ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    return x1 == x2 ? TensorDataType(1.0) : TensorDataType(0.0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
 /** Not equal operator. */
+template <typename TensorDataType>
 struct not_equal_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 == x2 ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    return x1 == x2 ? TensorDataType(0.0) : TensorDataType(1.0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
 /** Less than operator. */
+template <typename TensorDataType>
 struct less_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 < x2 ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    return x1 < x2 ? TensorDataType(1.0) : TensorDataType(0.0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
 /** Less than or equal operator. */
+template <typename TensorDataType>
 struct less_equal_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 <= x2 ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    return x1 <= x2 ? TensorDataType(1.0) : TensorDataType(0.0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
 /** Greater than operator. */
+template <typename TensorDataType>
 struct greater_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 > x2 ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    return x1 > x2 ? TensorDataType(1.0) : TensorDataType(0.0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
 /** Greater than or equal operator. */
+template <typename TensorDataType>
 struct greater_equal_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    return x1 >= x2 ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    return x1 >= x2 ? TensorDataType(1.0) : TensorDataType(0.0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
 /** Logical and operator. */
+template <typename TensorDataType>
 struct logical_and_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    const auto& b1 = x1 != DataType(0) && !isnan(x1);
-    const auto& b2 = x2 != DataType(0) && !isnan(x2);
-    return (b1 && b2) ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    const auto& b1 = x1 != TensorDataType(0.0) && !cuda::isnan(x1);
+    const auto& b2 = x2 != TensorDataType(0.0) && !cuda::isnan(x2);
+    return (b1 && b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
 /** Logical or operator. */
+template <typename TensorDataType>
 struct logical_or_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    const auto& b1 = x1 != DataType(0) && !isnan(x1);
-    const auto& b2 = x2 != DataType(0) && !isnan(x2);
-    return (b1 || b2) ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    const auto& b1 = x1 != TensorDataType(0.0) && !cuda::isnan(x1);
+    const auto& b2 = x2 != TensorDataType(0.0) && !cuda::isnan(x2);
+    return (b1 || b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
 /** Logical xor operator. */
+template <typename TensorDataType>
 struct logical_xor_op {
-  inline __device__ DataType operator()(const DataType& x1,
-                                        const DataType& x2) const {
-    const auto& b1 = x1 != DataType(0) && !isnan(x1);
-    const auto& b2 = x2 != DataType(0) && !isnan(x2);
-    return (b1 || b2) && !(b1 && b2) ? DataType(1) : DataType(0);
+  inline __device__ TensorDataType operator()(const TensorDataType& x1,
+                                        const TensorDataType& x2) const {
+    const auto& b1 = x1 != TensorDataType(0.0) && !cuda::isnan(x1);
+    const auto& b2 = x2 != TensorDataType(0.0) && !cuda::isnan(x2);
+    return (b1 || b2) && !(b1 && b2) ? TensorDataType(1.0) : TensorDataType(0.0);
   }
-  inline __device__ void operator()(const DataType& x1,
-                                    const DataType& x2,
-                                    const DataType& dy,
-                                    DataType& dx1,
-                                    DataType& dx2) const {
-    dx1 = DataType(0);
-    dx2 = DataType(0);
+  inline __device__ void operator()(const TensorDataType& x1,
+                                    const TensorDataType& x2,
+                                    const TensorDataType& dy,
+                                    TensorDataType& dx1,
+                                    TensorDataType& dx2) const {
+    dx1 = TensorDataType(0.0);
+    dx2 = TensorDataType(0.0);
   }
 };
 
 } // namespace
 
 // Template instantiation
-#define INSTANTIATE(layer, op)                                          \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
-         ::fp_compute() {                                               \
-    cuda::apply_entrywise_binary_operator<op>(get_prev_activations(0),  \
-                                              get_prev_activations(1),  \
-                                              get_activations());       \
+#define DEFINE_COMPUTE_OPS(layer, op)                                   \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  void layer<TensorDataType, Layout, Device>::fp_compute() {            \
+    cuda::apply_entrywise_binary_operator<op>(                          \
+      this->get_prev_activations(0),                                    \
+      this->get_prev_activations(1),                                    \
+      this->get_activations());                                         \
   }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::MODEL_PARALLEL, El::Device::GPU>              \
-         ::bp_compute() {                                               \
-    apply_binary_backprop_operator<op>(get_local_prev_activations(0),   \
-                                       get_local_prev_activations(1),   \
-                                       get_local_prev_error_signals(),  \
-                                       get_local_error_signals(0),      \
-                                       get_local_error_signals(1));     \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
-         ::fp_compute() {                                               \
-    cuda::apply_entrywise_binary_operator<op>(get_prev_activations(0),  \
-                                              get_prev_activations(1),  \
-                                              get_activations());       \
-  }                                                                     \
-  template <>                                                           \
-  void layer<data_layout::DATA_PARALLEL, El::Device::GPU>               \
-  ::bp_compute() {                                                      \
-    apply_binary_backprop_operator<op>(get_local_prev_activations(0),   \
-                                       get_local_prev_activations(1),   \
-                                       get_local_prev_error_signals(),  \
-                                       get_local_error_signals(0),      \
-                                       get_local_error_signals(1));     \
+  template <typename TensorDataType, data_layout Layout, El::Device Device> \
+  void layer<TensorDataType, Layout, Device>::bp_compute() {            \
+    apply_binary_backprop_operator<op>(                                 \
+      this->get_local_prev_activations(0),                              \
+      this->get_local_prev_activations(1),                              \
+      this->get_local_prev_error_signals(),                             \
+      this->get_local_error_signals(0),                                 \
+      this->get_local_error_signals(1));                                \
   }
-  INSTANTIATE(add_layer, add_op)
-  INSTANTIATE(subtract_layer, subtract_op)
-  INSTANTIATE(multiply_layer, multiply_op)
-  INSTANTIATE(divide_layer, divide_op)
-  INSTANTIATE(mod_layer, mod_op)
-  INSTANTIATE(pow_layer, pow_op)
-  INSTANTIATE(safe_divide_layer, safe_divide_op)
-  INSTANTIATE(squared_difference_layer, squared_difference_op)
-  INSTANTIATE(max_layer, max_op)
-  INSTANTIATE(min_layer, min_op)
-  INSTANTIATE(equal_layer, equal_op)
-  INSTANTIATE(not_equal_layer, not_equal_op)
-  INSTANTIATE(less_layer, less_op)
-  INSTANTIATE(less_equal_layer, less_equal_op)
-  INSTANTIATE(greater_layer, greater_op)
-  INSTANTIATE(greater_equal_layer, greater_equal_op)
-  INSTANTIATE(logical_and_layer, logical_and_op)
-  INSTANTIATE(logical_or_layer, logical_or_op)
-  INSTANTIATE(logical_xor_layer, logical_xor_op)
+
+DEFINE_COMPUTE_OPS(add_layer, add_op)
+DEFINE_COMPUTE_OPS(subtract_layer, subtract_op)
+DEFINE_COMPUTE_OPS(multiply_layer, multiply_op)
+DEFINE_COMPUTE_OPS(divide_layer, divide_op)
+DEFINE_COMPUTE_OPS(mod_layer, mod_op)
+DEFINE_COMPUTE_OPS(pow_layer, pow_op)
+DEFINE_COMPUTE_OPS(safe_divide_layer, safe_divide_op)
+DEFINE_COMPUTE_OPS(squared_difference_layer, squared_difference_op)
+DEFINE_COMPUTE_OPS(max_layer, max_op)
+DEFINE_COMPUTE_OPS(min_layer, min_op)
+DEFINE_COMPUTE_OPS(equal_layer, equal_op)
+DEFINE_COMPUTE_OPS(not_equal_layer, not_equal_op)
+DEFINE_COMPUTE_OPS(less_layer, less_op)
+DEFINE_COMPUTE_OPS(less_equal_layer, less_equal_op)
+DEFINE_COMPUTE_OPS(greater_layer, greater_op)
+DEFINE_COMPUTE_OPS(greater_equal_layer, greater_equal_op)
+DEFINE_COMPUTE_OPS(logical_and_layer, logical_and_op)
+DEFINE_COMPUTE_OPS(logical_or_layer, logical_or_op)
+DEFINE_COMPUTE_OPS(logical_xor_layer, logical_xor_op)
+
+#define PROTO(T)                                                       \
+  BINARY_ETI_INST_MACRO_DEV_DT(add_layer, T, El::Device::GPU);         \
+  BINARY_ETI_INST_MACRO_DEV_DT(subtract_layer, T, El::Device::GPU);    \
+  BINARY_ETI_INST_MACRO_DEV_DT(multiply_layer, T, El::Device::GPU);    \
+  BINARY_ETI_INST_MACRO_DEV_DT(divide_layer, T, El::Device::GPU);      \
+  BINARY_ETI_INST_MACRO_DEV_DT(mod_layer, T, El::Device::GPU);         \
+  BINARY_ETI_INST_MACRO_DEV_DT(pow_layer, T, El::Device::GPU);         \
+  BINARY_ETI_INST_MACRO_DEV_DT(safe_divide_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(squared_difference_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(max_layer, T, El::Device::GPU);         \
+  BINARY_ETI_INST_MACRO_DEV_DT(min_layer, T, El::Device::GPU);         \
+  BINARY_ETI_INST_MACRO_DEV_DT(equal_layer, T, El::Device::GPU);       \
+  BINARY_ETI_INST_MACRO_DEV_DT(not_equal_layer, T, El::Device::GPU);   \
+  BINARY_ETI_INST_MACRO_DEV_DT(less_layer, T, El::Device::GPU);        \
+  BINARY_ETI_INST_MACRO_DEV_DT(less_equal_layer, T, El::Device::GPU);  \
+  BINARY_ETI_INST_MACRO_DEV_DT(greater_layer, T, El::Device::GPU);     \
+  BINARY_ETI_INST_MACRO_DEV_DT(greater_equal_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(logical_and_layer, T, El::Device::GPU); \
+  BINARY_ETI_INST_MACRO_DEV_DT(logical_or_layer, T, El::Device::GPU);  \
+  BINARY_ETI_INST_MACRO_DEV_DT(logical_xor_layer, T, El::Device::GPU)
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

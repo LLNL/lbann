@@ -29,6 +29,10 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
+
 #include <cstdlib>
 
 using namespace lbann;
@@ -49,16 +53,34 @@ int main(int argc, char *argv[]) {
 
     std::ostringstream err;
 
-    // Initalize a global I/O thread pool
-    std::shared_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm.get());
-
     auto pbs = protobuf_utils::load_prototext(master, argc, argv);
+    // Optionally over-ride some values in the prototext for each model
+    for(size_t i = 0; i < pbs.size(); i++) {
+      get_cmdline_overrides(*comm, *(pbs[i]));
+    }
 
-    auto model_1 = build_model_from_prototext(argc, argv, *(pbs[0]), comm.get(), io_thread_pool, true); //discriminator
-                                                                                    //model
+    lbann_data::LbannPB& pb = *(pbs[0]);
+    lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
+
+    // Construct the trainer
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
+
+    thread_pool& io_thread_pool = trainer->get_io_thread_pool();
+
+    int training_dr_linearized_data_size = -1;
+    auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::training);
+    if(dr != nullptr) {
+      training_dr_linearized_data_size = dr->get_linearized_data_size();
+    }
+
+    auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]), comm.get(), opts, io_thread_pool,
+                                              trainer->get_callbacks_with_ownership(),
+                                              training_dr_linearized_data_size); //discriminator model
     std::unique_ptr<model> model_2 = nullptr; //adversarial model
     if (pbs.size() > 1) {
-      model_2 = build_model_from_prototext(argc, argv, *(pbs[1]), comm.get(), io_thread_pool, false);
+      model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]), comm.get(), opts, io_thread_pool,
+                                           trainer->get_callbacks_with_ownership(),
+                                           training_dr_linearized_data_size);
     }
 
     const lbann_data::Model pb_model = pbs[0]->model();
@@ -71,7 +93,7 @@ int main(int argc, char *argv[]) {
     while (super_step <= max_super_step) {
       if (master)  std::cerr << "\nSTARTING train - discriminator model at step " << super_step <<"\n\n";
       //@todo freeze generator layers in this step
-      model_1->train( super_step*pb_model.num_epochs() );
+      trainer->train(model_1.get(), super_step*pb_model.num_epochs() );
 
       //Replace/copy "proxy" layer in adversarial model (model2) with its "equivalent" layer in discriminator model (model1)
       //@todo freeze layers after replacement
@@ -92,14 +114,16 @@ int main(int argc, char *argv[]) {
       }
 
       if (master) std::cerr << "\n STARTING train - adversarial model at step " << super_step << " \n\n";
-      model_2->train( super_step*pb_model_2.num_epochs() );
+      trainer->train(model_2.get(), super_step*pb_model_2.num_epochs() );
 
       super_step++;
     }
 
   } catch (std::exception& e) {
     El::ReportException(e);
-    return EXIT_FAILURE;
+    // It's possible that a proper subset of ranks throw some
+    // exception. But we want to tear down the whole world.
+    El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
   }
 
   return EXIT_SUCCESS;

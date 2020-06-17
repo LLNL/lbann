@@ -31,6 +31,9 @@
 
 namespace lbann {
 
+template <typename> class data_type_optimizer;
+template <typename> class data_type_weights;
+
 /** @class l2_weight_regularization
  *  @brief Apply L2 regularization to a set of weights.
  *
@@ -40,12 +43,29 @@ namespace lbann {
  */
 class l2_weight_regularization : public objective_function_term {
 public:
+  using AccumulateDataType = DataType;
 
+  using OptimizerType = data_type_optimizer<DataType>;
+
+  using WeightsType = data_type_weights<DataType>;
+
+  template <El::Device D>
+  using DMatType = El::Matrix<AccumulateDataType, D>;
+
+  using CPUMatType = DMatType<El::Device::CPU>;
+
+public:
   /** @param scale_factor   The objective function term is
    *                        @f$ \text{scale\_factor} \times \sum L2(w_i) @f$
    */
   l2_weight_regularization(EvalType scale_factor = 1);
   l2_weight_regularization* copy() const override { return new l2_weight_regularization(*this); }
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(cereal::base_class<objective_function_term>(this));
+  }
+
   std::string name() const override { return "L2 weight regularization"; }
   void setup(model& m) override;
   void start_evaluation() override;
@@ -69,7 +89,7 @@ public:
 private:
 
   /** Contributions to evaluated value. */
-  std::map<El::Device, CPUMat> m_contributions;
+  std::map<El::Device, CPUMatType> m_contributions;
 
   /** For non-blocking allreduces. */
   Al::request m_allreduce_req;
@@ -85,8 +105,8 @@ private:
    *                        accumulation variable.
    */
   template <El::Device Device>
-  static void accumulate_contribution(const DMat<Device>& vals,
-                                      DMat<Device>& contribution);
+  static void accumulate_contribution(const DMatType<Device>& vals,
+                                      DMatType<Device>& contribution);
 
 };
 

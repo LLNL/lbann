@@ -46,8 +46,9 @@ namespace lbann {
  *  @param window_dims      Dimensions of window.
  *  @param window_strides   Window shift strides.
  */
-void im2col(const CPUMat& im,
-            CPUMat& col,
+template <typename TensorDataType>
+void im2col(const CPUMatDT<TensorDataType>& im,
+            CPUMatDT<TensorDataType>& col,
             int num_channels,
             int im_num_dims,
             const int * im_dims,
@@ -71,8 +72,9 @@ void im2col(const CPUMat& im,
  *  @param window_dims      Dimensions of window.
  *  @param window_strides   Window shift strides.
  */
-void col2im(const CPUMat& col,
-            CPUMat& im,
+template <typename TensorDataType>
+void col2im(const CPUMatDT<TensorDataType>& col,
+            CPUMatDT<TensorDataType>& im,
             int num_channels,
             int im_num_dims,
             const int * im_dims,
@@ -97,15 +99,16 @@ void col2im(const CPUMat& col,
  *  @param window_strides   Window shift strides.
  *  @param reduction_op     Reduction operation.
  */
-void col2im(const CPUMat& col,
-            CPUMat& im,
+template <typename TensorDataType>
+void col2im(const CPUMatDT<TensorDataType>& col,
+            CPUMatDT<TensorDataType>& im,
             int num_channels,
             int im_num_dims,
             const int * im_dims,
             const int * im_pads,
             const int * window_dims,
             const int * window_strides,
-            std::function<DataType(const DataType&,const DataType&)> reduction_op);
+            std::function<TensorDataType(const TensorDataType&, const TensorDataType&)> reduction_op);
 
 /// Rearrange 1x1 image blocks into matrix columns
 /** This is an optimized implementation of im2col when the window has
@@ -113,8 +116,9 @@ void col2im(const CPUMat& col,
  *  one. im2col will automatically call this routine if it detects a
  *  1x1 im2col.
  */
-void im2col_1x1(const DataType * input_buffer,
-                DataType * output_buffer,
+template <typename TensorDataType>
+void im2col_1x1(const TensorDataType * input_buffer,
+                TensorDataType * output_buffer,
                 int num_channels,
                 int num_input_dims,
                 const int * input_dims);
@@ -123,8 +127,9 @@ void im2col_1x1(const DataType * input_buffer,
 /** This is an optimized implementation of im2col for 2D data. im2col
  *  will automatically call this routine if it detects 2D data.
  */
-void im2col_2d(const DataType *__restrict__ input_buffer,
-               DataType *__restrict__ output_buffer,
+template <typename TensorDataType>
+void im2col_2d(const TensorDataType *__restrict__ input_buffer,
+               TensorDataType *__restrict__ output_buffer,
                int input_dim_x,
                int input_dim_y,
                int input_pad_x,
@@ -141,8 +146,9 @@ void im2col_2d(const DataType *__restrict__ input_buffer,
  *  one. col2im will automatically call this routine if it detects a
  *  1x1 col2im.
  */
-void col2im_1x1(const DataType * input_buffer,
-                DataType * output_buffer,
+template <typename TensorDataType>
+void col2im_1x1(const TensorDataType * input_buffer,
+                TensorDataType * output_buffer,
                 const int num_channels,
                 const int num_output_dims,
                 const int * output_dims);
@@ -151,8 +157,9 @@ void col2im_1x1(const DataType * input_buffer,
 /** This is an optimized implementation of col2im for 2D data. col2im
  *  will automatically call this routine if it detects 2D data.
  */
-void col2im_2d(const DataType *__restrict__ input_buffer,
-               DataType *__restrict__ output_buffer,
+template <typename TensorDataType>
+void col2im_2d(const TensorDataType *__restrict__ input_buffer,
+               TensorDataType *__restrict__ output_buffer,
                int output_dim_x,
                int output_dim_y,
                int output_pad_x,
@@ -163,5 +170,6 @@ void col2im_2d(const DataType *__restrict__ input_buffer,
                int offset_stride_x,
                int offset_stride_y);
 
-} // end namespace
+} // namespace lbann
+
 #endif // LBANN_UTILS_IM2COL_HPP

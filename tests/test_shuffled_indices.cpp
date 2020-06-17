@@ -29,6 +29,11 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 
+#include <lbann.pb.h>
+#include <reader.pb.h>
+
+#include <string>
+
 using namespace lbann;
 
 int mini_batch_size = 128;

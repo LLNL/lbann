@@ -30,24 +30,42 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/graph.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/metrics/metric.hpp"
-#include "lbann/weights/weights.hpp"
+#include "lbann/objective_functions/objective_function.hpp"
 #include "lbann/optimizers/optimizer.hpp"
+#include "lbann/proto/factories.hpp"
+#include "lbann/weights/weights.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
-#include <lbann.pb.h>
+#include <cereal/types/utility.hpp>
+
+// Note (trb): There's what is, IMO, an STL error in GCC in which the
+// dtor for unique_ptr is checking sizeof(T), so this must be a
+// complete type. Sigh. (The greater implication of this is that you
+// cannot have `unique_ptr<IncompleteType>` as a drop-in for
+// `IncompleteType*`, which is annoying.
+#include <optimizers.pb.h>
+
 #include <vector>
 #include <string>
 #include <unordered_map>
+
+// Forward-declare protobuf class
+namespace lbann_data {
+class Model;
+}
 
 namespace lbann {
 
 // Forward declarations
 class lbann_callback;
+class training_algorithm;
+class callback_base;
 
 /** @brief Abstract base class for neural network models. */
 class model {
@@ -58,13 +76,17 @@ public:
   // ===========================================
 
   model(lbann_comm* comm,
-        El::Int mini_batch_size,
-        objective_function* obj_fn,
-        optimizer* default_optimizer = nullptr);
+        std::unique_ptr<objective_function> obj_fn,
+        std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
   model& operator=(const model& other);
   virtual ~model();
-  virtual model* copy() const = 0;
+  virtual std::unique_ptr<model> copy_model() const = 0;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(CEREAL_NVP(*m_objective_function));
+  }
 
   // ===========================================
   // Access functions
@@ -91,8 +113,8 @@ public:
   virtual description get_description() const;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function* get_objective_function() const {
-    return m_objective_function;
+  observer_ptr<objective_function> get_objective_function() const {
+    return m_objective_function.get();
   }
 
   /** @brief Return the model's metrics. */
@@ -120,63 +142,40 @@ public:
   std::vector<weights*> get_weights();
 
   /** @brief Get the list of callbacks for the model. */
-  virtual std::vector<lbann_callback*>& get_callbacks() {
+  virtual std::vector<observer_ptr<callback_base>> get_callbacks() {
+    std::vector<observer_ptr<callback_base>> callback_list;
+    callback_list.reserve(m_callbacks.size());
+    for (const auto& ptr : m_callbacks) {
+      callback_list.push_back(ptr.get());
+    }
+    return callback_list;
+  }
+
+  virtual std::vector<std::shared_ptr<callback_base>>& get_callbacks_with_ownership() {
     return m_callbacks;
   }
 
-  /** @brief Return the I/O thread pool */
-  std::shared_ptr<thread_pool> get_io_thread_pool() { return m_io_thread_pool; }
-
   /** @brief Get the model's comm. */
-  inline lbann_comm *get_comm() const {
+  lbann_comm *get_comm() const {
     return m_comm;
   }
 
-  void set_execution_mode(execution_mode mode);
-  execution_mode get_execution_mode() const noexcept;
+  /** Check to see if there is a valid training context for the model */
+  bool has_valid_execution_context() const {
+    return (m_execution_context != nullptr);
+  }
 
-  /** @brief Number of times the training set has been traversed. */
-  inline El::Int get_epoch() const noexcept { return m_epoch; }
+  /** Grab the training context of the model */
+  const execution_context& get_execution_context() const {
+    if(m_execution_context == nullptr) {
+      LBANN_ERROR("execution context is not set");
+    }
+    return *m_execution_context;
+  }
 
-  /** @brief Current mini-batch step for current execution mode.
-   *  @details Step counts are not reset after each epoch.
-   */
-  El::Int get_step() const noexcept;
-
-  /** @brief Current mini-batch step for given execution mode.
-   *  @details Step counts are not reset after each epoch.
-   */
-  El::Int get_step(execution_mode mode) const noexcept;
-
-  /** @brief Set the model's current mini-batch size. */
-  inline void set_current_mini_batch_size(int mini_batch_size) {
-    m_current_mini_batch_size = mini_batch_size;
-  }
-  /** @brief Get the model's current mini-batch size. */
-  inline int get_current_mini_batch_size() const {
-    return m_current_mini_batch_size;
-  }
-  /** @brief Get the model's maximum mini-batch size. */
-  inline int get_max_mini_batch_size() const {
-    return m_max_mini_batch_size;
-  }
-  /** @brief Get the model's effective mini-batch size. */
-  inline int get_effective_mini_batch_size() const {
-    return m_effective_mini_batch_size;
-  }
-  /** @brief Set the model's effective mini-batch size. */
-  inline void set_effective_mini_batch_size(int mini_batch_size) {
-    m_effective_mini_batch_size = mini_batch_size;
-  }
-  int get_num_iterations_per_epoch(execution_mode mode) const;
-
-  /** @brief Return true if the flag to stop training is set. */
-  bool get_terminate_training() const {
-    return m_terminate_training;
-  }
-  /** @brief Set the terminate training flag (on or off). */
-  void set_terminate_training(bool f) {
-    m_terminate_training = f;
+  /** Grab the training context of the model */
+  execution_context& get_execution_context() {
+    return const_cast<execution_context&>(static_cast<const model&>(*this).get_execution_context());
   }
 
   // ===========================================
@@ -187,10 +186,13 @@ public:
   virtual void add_layer(std::unique_ptr<Layer> l);
 
   /** @brief Add weights to model. */
-  void add_weights(weights *w);
+  void add_weights(std::unique_ptr<weights> w);
 
   /** @brief Register a new callback for the model. */
-  void add_callback(lbann_callback *cb);
+  void add_callback(std::shared_ptr<callback_base> cb);
+
+  /** @brief Register a new callback for the model. */
+  //  void add_callbacks(std::vector<std::shared_ptr<callback_base>>& cb);
 
   /** @brief Register a new metric for the model. */
   void add_metric(metric *m);
@@ -209,7 +211,14 @@ public:
    *
    *  If there is no default optimizer, a null pointer is returned.
    */
-  optimizer* create_optimizer() const;
+  template <typename TensorDataType>
+  std::unique_ptr<optimizer> create_optimizer() const
+  {
+    if (m_default_optimizer_msg)
+      return proto::construct_optimizer<TensorDataType>(
+        *m_default_optimizer_msg);
+    return nullptr;
+  }
 
   /** @brief Set a flag that can be used to enable / disable the
    *         background I/O activities
@@ -219,27 +228,15 @@ public:
   /** @brief Are background I/O activities enabled by the input layers */
   bool background_io_activity_allowed() { return m_background_io_allowed; }
 
+  size_t get_num_iterations_per_epoch(execution_mode mode) const;
+
   // ===========================================
   // Setup
   // ===========================================
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup(std::shared_ptr<thread_pool> io_thread_pool);
-
-  // ===========================================
-  // Execution
-  // ===========================================
-
-  /** @brief Evaluate model. */
-  virtual void evaluate(execution_mode mode, int num_batches=0);
-
-  /** @brief Train model. */
-  virtual void train(int num_epochs, int num_batches=0);
-
-  /** @brief Complete any background I/O data fetch for the execution
-      mode requested */
-  virtual void collect_background_data_fetch(execution_mode mode);
+  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
 
   virtual void make_data_store_preloaded(execution_mode mode);
 
@@ -286,9 +283,6 @@ public:
   virtual void write_proto(lbann_data::Model* proto);
 
 protected:
-
-  /** @brief Check if the model execution mode is valid. */
-  virtual bool is_execution_mode_valid(execution_mode mode) const;
 
   /** @brief Reorder layer list with a gather.
    *
@@ -339,7 +333,7 @@ protected:
    *
    *  Called in setup function.
    */
-  virtual void setup_layers();
+  virtual void setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
   /** @brief Set up weights.
    *
    *  Called in setup function. All weights being used by layers or
@@ -348,19 +342,31 @@ protected:
    */
   virtual void setup_weights();
 
+public:
+  // ===========================================
+  // Execution
+  // ===========================================
+
   /** @brief Reset model pointer and execution mode. */
-  virtual void reset_mode_and_model(execution_mode mode);
+  virtual void reset_mode(execution_context& context, execution_mode mode);
   /** @brief Reset model statistics for an epoch. */
   virtual void reset_epoch_statistics(execution_mode mode);
-  /** @brief Evaluate model on a mini-batch */
-  virtual bool evaluate_mini_batch(execution_mode mode);
-  /** @brief Train model on a mini-batch. */
-  virtual bool train_mini_batch();
+
+  /** @brief Check if the trainer execution mode is valid for this model.
+    @todo this should be moved to the trainer when the data readers move. */
+  virtual bool is_execution_mode_valid(execution_mode mode) const;
+
+  /** @brief Complete any background I/O data fetch for the execution
+      mode requested */
+  virtual void collect_background_data_fetch(execution_mode mode);
 
   /** @brief Forward propagation step. */
   virtual void forward_prop(execution_mode mode);
   /** @brief Backward propagation step. */
   virtual void backward_prop();
+  /** Evaluate any metrics in the model */
+  virtual void evaluate_metrics(execution_mode mode,
+                                size_t current_mini_batch_size);
   /** @brief Clear each optimizer's gradient.
    *
    *  This must be called before training forward prop since layers
@@ -382,22 +388,8 @@ protected:
   // Callbacks
   // ===========================================
 
-  /** @brief Execute callbacks at start of training. */
-  virtual void do_train_begin_cbs();
-  /** @brief Execute callbacks at end of training. */
-  virtual void do_train_end_cbs();
-  /** @brief Execute callbacks at start of evaluation. */
-  virtual void do_evaluate_begin_cbs(execution_mode mode);
-  /** @brief Execute callbacks at end of evaluation. */
-  virtual void do_evaluate_end_cbs(execution_mode mode);
-  /** @brief Execute callbacks at start of epoch. */
-  virtual void do_epoch_begin_cbs();
-  /** @brief Execute callbacks at end of epoch. */
-  virtual void do_epoch_end_cbs();
-  /** @brief Execute callbacks at start of mini-batch. */
-  virtual void do_batch_begin_cbs(execution_mode mode);
-  /** @brief Execute callbacks at end of mini-batch. */
-  virtual void do_batch_end_cbs(execution_mode mode);
+  /** @brief Execute callbacks at end of setup. */
+  virtual void do_setup_end_cbs();
   /** @brief Execute callbacks at start of model forward propagation. */
   virtual void do_model_forward_prop_begin_cbs(execution_mode mode);
   /** @brief Execute callbacks at end of model forward propagation. */
@@ -425,6 +417,9 @@ protected:
 
 private:
 
+  /** Pointer to the execution context object used for training or evaluating this model */
+  observer_ptr<execution_context> m_execution_context;
+
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;
 
@@ -434,54 +429,23 @@ private:
    */
   std::string m_name;
 
-  /** @brief Current execution mode. */
-  execution_mode m_execution_mode = execution_mode::training;
-
-  /** @brief Number of times the training data set has been traversed. */
-  El::Int m_epoch = 0;
-
-  /** @brief Number of mini-batch steps performed.
-   *  @details Step counts are not reset after each epoch.
-   */
-  std::map<execution_mode, El::Int> m_step;
-
-  /** @brief Whether to terminate training.
-   *  @details If true, training will terminate immediately before
-   *  the next epoch.
-   */
-  bool m_terminate_training = false;
-
-  /** @brief Size of the current mini-batch in the model. */
-  int m_current_mini_batch_size;
-  /** @details Maximum possible minibatch size supported by layers in
-   *  this model.  Note that this is local to the particular model,
-   *  not across multiple models.
-   */
-  int m_max_mini_batch_size;
-  /** @brief The "effective" size of a minibatch.
-   *
-   *  This is the size of the minibatch across all models and used for
-   *  e.g.  correctly averaging gradients from multiple models.
-   */
-  int m_effective_mini_batch_size;
-
   /** @brief Tensor operations.
    *  @details The list is in execution order for forward propagation.
    */
   std::vector<std::unique_ptr<Layer>> m_layers;
 
   /** @brief Trainable parameters. */
-  std::vector<weights*> m_weights;
+  std::vector<std::unique_ptr<weights>> m_weights;
 
   /** @details If a layer needs to construct an optimizer during
    *  setup, it will make a copy of the default optimizer. This object
    *  is just used to create copies and is not actually used for
    *  optimization.
    */
-  optimizer* m_default_optimizer = nullptr;
+  std::unique_ptr<lbann_data::Optimizer> m_default_optimizer_msg;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function* m_objective_function;
+  std::unique_ptr<objective_function> m_objective_function;
 
   /** @brief Numerical quantities to evaluate model performance.
    *  @details Does not affect training.
@@ -489,13 +453,15 @@ private:
   std::vector<metric*> m_metrics;
 
   /** @brief Current callbacks to process. */
-  std::vector<lbann_callback*> m_callbacks;
-
-  /** @brief Threads available for I/O */
-  std::shared_ptr<thread_pool> m_io_thread_pool;
+  std::vector<std::shared_ptr<callback_base>> m_callbacks;
 
   /** @brief Flag that allows input layers to fetch data in the background */
   bool m_background_io_allowed = true;
+
+  /** @brief Is the model setup
+   *  @details Flag to indicate if the setup function has been called
+   */
+  bool m_model_is_setup = false;
 
   // ===========================================
   // Functions to add utility layers
@@ -534,6 +500,11 @@ private:
    */
   void add_split_layers(std::unordered_set<std::string>& layer_names);
 
+#ifdef LBANN_HAS_DISTCONV
+  void setup_distconv();
+  void setup_distributions();
+  void print_distributions() const;
+#endif // LBANN_HAS_DISTCONV
 };
 
 } // namespace lbann

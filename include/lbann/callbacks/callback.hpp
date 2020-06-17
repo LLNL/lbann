@@ -23,20 +23,36 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 //
-// lbann_callback .hpp - Base class for LBANN callbacks
+// callback .hpp - Base class for LBANN callbacks
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
-#define __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
+#ifndef LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
+#define LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
 
-#include "lbann/base.hpp"
-#include "lbann/utils/summary.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/models/model.hpp"
+#include "lbann/utils/description.hpp"
+#include "lbann/utils/memory.hpp"
+#include "lbann/utils/summary.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
+
+#include <google/protobuf/message.h>
+
+#include <algorithm>
+#include <string>
+
+/** @brief A utility macro for easily adding default-constructed sub-class
+ *  builders.*/
+#define LBANN_ADD_DEFAULT_CALLBACK_BUILDER(Class, FunctionName)  \
+  inline std::unique_ptr<callback_base> FunctionName(           \
+    const google::protobuf::Message&, std::shared_ptr<lbann_summary> const&) {          \
+    return lbann::make_unique<Class>();                          \
+  }
 
 namespace lbann {
 
-/** @class lbann_callback
+/** @class callback_base
  *  @brief Base class for callbacks during training/testing.
  *
  *  The method of each callback is called at a given point during
@@ -44,37 +60,35 @@ namespace lbann {
  *  care about.  Callbacks may be passed a lbann_summary instance,
  *  which they can use to log any relevant information.
  */
-class lbann_callback {
+class callback_base {
 public:
 
   /** @name Constructors and destructor */
   ///@{
 
-  /** @brief Initialize a callback with an optional batch interval and
-   *         summarizer.
+  /** @brief Initialize a callback with an optional batch interval
    */
-  lbann_callback(int batch_interval = 1,
-                 lbann_summary *summarizer = nullptr) :
-    m_batch_interval(std::max(batch_interval, 1)), m_summarizer(summarizer) {}
-  lbann_callback(const lbann_callback&) = default;
-  virtual ~lbann_callback() {}
+  callback_base(int batch_interval = 1) :
+    m_batch_interval(std::max(batch_interval, 1)) {}
+  callback_base(const callback_base&) = default;
+  virtual ~callback_base() = default;
 
   ///@}
   /** @name Polymorphic copy */
   ///@{
 
-  virtual lbann_callback* copy() const = 0;
+  virtual callback_base* copy() const = 0;
 
   ///@}
   /** @name Modifiers */
   ///@{
 
-  void set_summarizer(lbann_summary *summarizer) {
-    m_summarizer = summarizer;
-  }
+  /** @brief Called once to set up the callback on the trainer
+   */
+  virtual void setup(trainer *t) {};
 
-  /** @brief Called once to set up the callback (after all layers are
-   *         set up).
+  /** @brief Called once to set up the callback on the model
+   *         (after all layers are set up).
    */
   virtual void setup(model *m) {};
 
@@ -82,6 +96,8 @@ public:
   /** @name Callback hooks */
   ///@{
 
+  /** @brief Called at the end of setup. */
+  virtual void on_setup_end(model *m) {}
   /** @brief Called at the beginning of training. */
   virtual void on_train_begin(model *m) {}
   /** @brief Called at the end of training. */
@@ -166,7 +182,42 @@ public:
   /** @brief Return this callback's name. */
   virtual std::string name() const = 0;
 
+  /** @brief Human-readable description. */
+  virtual description get_description() const;
+
   ///@}
+
+  /** @brief Build a standard directory hierachy including trainer,
+   * execution context, and model information (in that order).
+   */
+  inline std::string get_multi_trainer_ec_model_path(const model& m,
+                                                     const std::string& root_dir) {
+    std::string dir = root_dir;
+    if (dir.empty()) { dir = "./"; }
+    if (dir.back() != '/') { dir += "/"; }
+
+    const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+    return build_string(dir,
+                        c.get_trainer().get_name(), '/',
+                        c.get_state_string(), '/',
+                        m.get_name(), '/');
+  }
+
+  /** @brief Build a standard directory hierachy including trainer,
+   * model information in that order.
+   */
+  inline std::string get_multi_trainer_model_path(const model& m,
+                                                  const std::string& root_dir) {
+    std::string dir = root_dir;
+    if (dir.empty()) { dir = "./"; }
+    if (dir.back() != '/') { dir += "/"; }
+
+    const auto& c = static_cast<const sgd_execution_context&>(m.get_execution_context());
+    return build_string(dir,
+                        c.get_trainer().get_name(), '/',
+                        m.get_name(), '/');
+  }
+
 
 protected:
 
@@ -174,17 +225,15 @@ protected:
    *
    *  Performs a shallow (pointer) copy of the summarizer.
    */
-  lbann_callback& operator=(const lbann_callback&) = default;
+  callback_base& operator=(const callback_base&) = default;
 
 protected:
-  /** @todo Make lbann_callback data private */
+  /** @todo Make callback data private */
 
   /** @brief Batch methods should once every this many steps. */
   int m_batch_interval;
-  /** @brief Optional summarizer for the callbacks to use. */
-  lbann_summary *m_summarizer;
 };
 
 }  // namespace lbann
 
-#endif  // __LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED
+#endif  // LBANN_CALLBACKS_CALLBACK_HPP_INCLUDED

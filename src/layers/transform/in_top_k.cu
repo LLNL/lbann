@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_IN_TOP_K_LAYER_INSTANTIATE
 #include "lbann/layers/transform/in_top_k.hpp"
 #include "lbann/utils/cuda.hpp"
 #include "lbann/utils/exception.hpp"
@@ -36,9 +37,10 @@ namespace lbann {
 namespace {
 
 /** Sparse vector entry. */
+template <typename TensorDataType>
 struct entry {
   /** Vector entry value. */
-  DataType value;
+  TensorDataType value;
   /** Vector entry index. */
   El::Int index;
 };
@@ -47,8 +49,9 @@ struct entry {
  *  Entries are sorted by value in decreasing order, with ties broken
  *  in favor of entries with smaller indices.
  */
-struct entry_compare : ::thrust::binary_function<entry,entry,bool> {
-  __host__ __device__ bool operator()(const entry& a, const entry& b) const {
+template <typename TensorDataType>
+struct entry_compare : ::thrust::binary_function<entry<TensorDataType>,entry<TensorDataType>,bool> {
+  __host__ __device__ bool operator()(const entry<TensorDataType>& a, const entry<TensorDataType>& b) const {
     return a.value > b.value || (a.value == b.value && a.index < b.index);
   }
 };
@@ -58,15 +61,16 @@ struct entry_compare : ::thrust::binary_function<entry,entry,bool> {
  *  the sparse vectors correspond to global row indices in the dense
  *  matrix.
  */
+template <typename TensorDataType>
 __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
                                                El::Int local_matrix_height,
                                                El::Int local_matrix_width,
                                                El::Int global_matrix_height,
                                                El::Int global_matrix_col_shift,
                                                El::Int global_matrix_col_stride,
-                                               const DataType* __restrict__ local_matrix,
+                                               const TensorDataType* __restrict__ local_matrix,
                                                El::Int local_matrix_ldim,
-                                               entry* __restrict__ local_entries,
+                                               entry<TensorDataType>* __restrict__ local_entries,
                                                El::Int local_entries_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
@@ -98,6 +102,7 @@ __global__ void dense_matrix_to_sparse_vectors(El::Int local_vector_size,
  *    dim         = d(k)
  *    dim_stride  = d(k+1) * ... * d(n)
  */
+template <typename TensorDataType>
 __global__ void fill_with_tensor_index(El::Int tensor_size,
                                        El::Int dim,
                                        El::Int dim_stride,
@@ -114,6 +119,7 @@ __global__ void fill_with_tensor_index(El::Int tensor_size,
  *  local matrix entry corresponds to one of the top-k entries, then
  *  it is set to one.
  */
+template <typename TensorDataType>
 __global__ void indicate_matrix_entries(El::Int k,
                                         El::Int global_matrix_height,
                                         El::Int local_matrix_height,
@@ -122,9 +128,9 @@ __global__ void indicate_matrix_entries(El::Int k,
                                         El::Int global_matrix_col_align,
                                         El::Int global_matrix_col_shift,
                                         El::Int global_matrix_col_stride,
-                                        DataType* __restrict__ local_matrix,
+                                        TensorDataType* __restrict__ local_matrix,
                                         El::Int local_matrix_ldim,
-                                        const entry*  __restrict__ entries,
+                                        const entry<TensorDataType>*  __restrict__ entries,
                                         El::Int entries_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int num_threads = blockDim.x * gridDim.x;
@@ -142,14 +148,17 @@ __global__ void indicate_matrix_entries(El::Int k,
         local_row = ((global_row - global_matrix_col_shift - 1)
                      / global_matrix_col_stride + 1);
       }
-      local_matrix[local_row + local_col * local_matrix_ldim] = DataType(1);
+      local_matrix[local_row + local_col * local_matrix_ldim] = TensorDataType(1.0);
     }
   }
 }
 
 /** GPU implementation of in_top_k layer forward prop. */
+template <typename TensorDataType>
 void fp_gpu(lbann_comm& comm,
-            El::Int k, const AbsDistMat& input, AbsDistMat& output) {
+            El::Int k,
+            const El::AbstractDistMatrix<TensorDataType>& input,
+            El::AbstractDistMatrix<TensorDataType>& output) {
   if (input.Wrap() != El::ELEMENT || output.Wrap() != El::ELEMENT) {
     LBANN_ERROR("in_top_k layer GPU implementation assumes elemental "
                 "distributed matrices");
@@ -167,7 +176,7 @@ void fp_gpu(lbann_comm& comm,
     El::Zero(output);
     return;
   } else if (k >= height) {
-    El::Fill(output, DataType(1));
+    El::Fill(output, El::TypeTraits<TensorDataType>::One());
     return;
   } else if (local_width < 1) {
     return;
@@ -184,36 +193,36 @@ void fp_gpu(lbann_comm& comm,
   cuda::thrust::allocator<> alloc(stream);
 
   // Find top-k entries in each column of local prediction matrix
-  cuda::thrust::vector<entry> top_entries(local_width * k);
+  cuda::thrust::vector<entry<TensorDataType>> top_entries(local_width * k);
   {
     const auto& num_local_entries_per_col = std::max(local_height, k);
     const auto& num_local_entries = local_width * num_local_entries_per_col;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_local_entries + block_dim - 1) / block_dim;
-    cuda::thrust::vector<entry> local_entries(num_local_entries);
+    cuda::thrust::vector<entry<TensorDataType>> local_entries(num_local_entries);
     cuda::thrust::vector<El::Int> local_entries_cols(num_local_entries);
     dense_matrix_to_sparse_vectors<<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries_per_col, local_height, local_width, height,
       input.ColShift(), input.ColStride(),
       local_input.LockedBuffer(), local_input.LDim(),
       local_entries.data().get(), num_local_entries_per_col);
-    fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
+    fill_with_tensor_index<TensorDataType><<<grid_dim, block_dim, 0, stream>>>(
       num_local_entries, local_width, num_local_entries_per_col,
       local_entries_cols.data().get());
     ::thrust::sort_by_key(alloc.system(),
                           local_entries.begin(),
                           local_entries.end(),
                           local_entries_cols.begin(),
-                          entry_compare());
+                          entry_compare<TensorDataType>());
     ::thrust::stable_sort_by_key(alloc.system(),
                                  local_entries_cols.begin(),
                                  local_entries_cols.end(),
                                  local_entries.begin());
     CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
-                                 k * sizeof(entry),
+                                 k * sizeof(entry<TensorDataType>),
                                  local_entries.data().get(),
-                                 num_local_entries_per_col * sizeof(entry),
-                                 k * sizeof(entry),
+                                 num_local_entries_per_col * sizeof(entry<TensorDataType>),
+                                 k * sizeof(entry<TensorDataType>),
                                  local_width,
                                  cudaMemcpyDeviceToDevice,
                                  stream));
@@ -225,29 +234,29 @@ void fp_gpu(lbann_comm& comm,
     const auto& num_entries = col_comm_size * num_entries_per_rank;
     const auto& block_dim = 256;
     const auto& grid_dim = (num_entries + block_dim - 1) / block_dim;
-    cuda::thrust::vector<entry> global_top_entries(num_entries);
+    cuda::thrust::vector<entry<TensorDataType>> global_top_entries(num_entries);
     cuda::thrust::vector<El::Int> global_top_entries_cols(num_entries);
     comm.all_gather(reinterpret_cast<El::byte*>(top_entries.data().get()),
-                    top_entries.size() * sizeof(entry),
+                    top_entries.size() * sizeof(entry<TensorDataType>),
                     reinterpret_cast<El::byte*>(global_top_entries.data().get()),
-                    top_entries.size() * sizeof(entry),
+                    top_entries.size() * sizeof(entry<TensorDataType>),
                     col_comm, El::SyncInfo<El::Device::GPU>{stream, event});
-    fill_with_tensor_index<<<grid_dim, block_dim, 0, stream>>>(
+    fill_with_tensor_index<TensorDataType><<<grid_dim, block_dim, 0, stream>>>(
       num_entries, local_width, k, global_top_entries_cols.data().get());
     ::thrust::sort_by_key(alloc.system(),
                           global_top_entries.begin(),
                           global_top_entries.end(),
                           global_top_entries_cols.begin(),
-                          entry_compare());
+                          entry_compare<TensorDataType>());
     ::thrust::stable_sort_by_key(alloc.system(),
                                  global_top_entries_cols.begin(),
                                  global_top_entries_cols.end(),
                                  global_top_entries.begin());
     CHECK_CUDA(cudaMemcpy2DAsync(top_entries.data().get(),
-                                 k * sizeof(entry),
+                                 k * sizeof(entry<TensorDataType>),
                                  global_top_entries.data().get(),
-                                 col_comm_size * k * sizeof(entry),
-                                 k * sizeof(entry),
+                                 col_comm_size * k * sizeof(entry<TensorDataType>),
+                                 k * sizeof(entry<TensorDataType>),
                                  local_width,
                                  cudaMemcpyDeviceToDevice,
                                  stream));
@@ -271,15 +280,21 @@ void fp_gpu(lbann_comm& comm,
 
 } // namespace
 
-template <>
-void in_top_k_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void in_top_k_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_gpu(*this->get_comm(),
+         this->m_k,
+         this->get_prev_activations(),
+         this->get_activations());
 }
-template <>
-void in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(*get_comm(), m_k, get_prev_activations(), get_activations());
-}
+
+#define PROTO(T)                                     \
+  template class in_top_k_layer<                     \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class in_top_k_layer<                     \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -29,15 +29,30 @@
 
 #include "lbann/layers/transform/transform.hpp"
 #include "lbann/utils/exception.hpp"
+#include "lbann/utils/distconv.hpp"
 
 namespace lbann {
 
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class sum_layer : public transform_layer {
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+class sum_distconv_adapter: public data_type_distconv_adapter<TensorDataType> {
+ public:
+  using TensorDevType = typename data_type_distconv_adapter<TensorDataType>::TensorDevType;
+  sum_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>(layer) {}
+  virtual ~sum_distconv_adapter() = default;
+  std::unique_ptr<TensorDevType> setup_error_signals_i(int index) const override;
+  void fp_compute();
+};
+#endif // LBANN_HAS_DISTCONV
+
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
+class sum_layer : public transform_layer<TensorDataType> {
 public:
 
   sum_layer(lbann_comm *comm)
-    : transform_layer(comm) {
+    : transform_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = -1; // No limit on parents
   }
 
@@ -49,29 +64,29 @@ public:
 protected:
 
   void setup_pointers() override {
-    transform_layer::setup_pointers();
-    if (get_num_parents() < 1) {
+    transform_layer<TensorDataType>::setup_pointers();
+    if (this->get_num_parents() < 1) {
       std::stringstream err;
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "has no parent layers";
       LBANN_ERROR(err.str());
     }
   }
 
-  void setup_dims() override {
-    transform_layer::setup_dims();
-    set_output_dims(get_input_dims());
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    transform_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims(this->get_input_dims());
 
     // Check that input dimensions match
-    const auto& output_dims = get_output_dims();
-    for (int i = 0; i < get_num_parents(); ++i) {
-      if (get_input_dims(i) != output_dims) {
-        const auto& parents = get_parent_layers();
+    const auto& output_dims = this->get_output_dims();
+    for (int i = 0; i < this->get_num_parents(); ++i) {
+      if (this->get_input_dims(i) != output_dims) {
+        const auto& parents = this->get_parent_layers();
         std::stringstream err;
-        err << get_type() << " layer \"" << get_name() << "\" "
+        err << get_type() << " layer \"" << this->get_name() << "\" "
             << "has input tensors with incompatible dimensions (";
-        for (int j = 0; j < get_num_parents(); ++j) {
-          const auto& dims = get_input_dims(j);
+        for (int j = 0; j < this->get_num_parents(); ++j) {
+          const auto& dims = this->get_input_dims(j);
           err << (j > 0 ? ", " : "")
               << "layer \"" << parents[j]->get_name() << "\" outputs ";
           for (size_t k = 0; k < dims.size(); ++k) {
@@ -86,23 +101,82 @@ protected:
   }
 
   void fp_compute() override {
-    auto& output = get_activations();
-    El::Copy(get_prev_activations(0), output);
-    for (int i = 1; i < get_num_parents(); ++i) {
-      El::Axpy(DataType(1), get_prev_activations(i), output);
+#ifdef LBANN_HAS_DISTCONV
+    if (this->distconv_enabled()) {
+      get_distconv_adapter().fp_compute();
+      return;
+    }
+#endif // LBANN_HAS_DISTCONV
+    auto& output = this->get_activations();
+    El::Copy(this->get_prev_activations(0), output);
+    for (int i = 1; i < this->get_num_parents(); ++i) {
+      El::Axpy(DataType(1), this->get_prev_activations(i), output);
     }
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
-    const auto& gradient_wrt_output = get_prev_error_signals();
-    for (int i = 0; i < get_num_parents(); ++i) {
-      El::LockedView(get_error_signals(i), gradient_wrt_output);
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
+    for (int i = 0; i < this->get_num_parents(); ++i) {
+      El::LockedView(this->get_error_signals(i), gradient_wrt_output);
     }
   }
 
   void bp_compute() override {}
 
+#ifdef LBANN_HAS_DISTCONV
+  friend class sum_distconv_adapter<TensorDataType, T_layout, Dev>;
+ protected:
+  bool is_distconv_supported() const override {
+    return Dev == El::Device::GPU && T_layout == data_layout::DATA_PARALLEL;
+  }
+  void setup_distconv_adapter() override {
+    this->get_distconv_adapter_ptr() = make_unique<sum_distconv_adapter<TensorDataType, T_layout, Dev>>(*this);
+  }
+  sum_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() override;
+  const sum_distconv_adapter<TensorDataType, T_layout, Dev>& get_distconv_adapter() const override;
+#endif // LBANN_HAS_DISTCONV
 };
+
+#ifdef LBANN_HAS_DISTCONV
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+sum_distconv_adapter<TensorDataType, T_layout, Dev>&
+sum_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() {
+  return const_cast<sum_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      static_cast<const sum_layer<TensorDataType, T_layout, Dev>&>(*this).get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+const sum_distconv_adapter<TensorDataType, T_layout, Dev>&
+sum_layer<TensorDataType, T_layout, Dev>::get_distconv_adapter() const {
+  return dynamic_cast<const sum_distconv_adapter<TensorDataType, T_layout, Dev>&>(
+      data_type_layer<TensorDataType>::get_distconv_adapter());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+std::unique_ptr<typename sum_distconv_adapter<TensorDataType, T_layout, Dev>::TensorDevType>
+sum_distconv_adapter<TensorDataType, T_layout, Dev>::setup_error_signals_i(int index) const {
+  return make_unique<TensorDevType>(this->get_prev_error_signals(0));
+}
+#endif // LBANN_HAS_DISTCONV
+
+LBANN_DEFINE_LAYER_BUILDER(sum);
+
+#ifndef LBANN_SUM_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class sum_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class sum_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#ifdef LBANN_HAS_DISTCONV
+#define PROTO_DEVICE(T, Device) \
+  extern template class sum_distconv_adapter<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class sum_distconv_adapter<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_HAS_DISTCONV
+#endif // LBANN_SUM_LAYER_INSTANTIATE
 
 } // namespace lbann
 

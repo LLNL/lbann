@@ -22,6 +22,8 @@ recurrent neural networks via back propagation through time (BPTT)
 training, transfer learning, and multi-model and ensemble training
 methods.
 
+Users are advised to view `the Doxygen API Documentation
+<_static/doxygen/html/index.html>`_ for API information.
 
 .. toctree::
    :maxdepth: 2
@@ -40,6 +42,7 @@ methods.
    :maxdepth: 2
    :caption: Developer Documentation
 
+   lbann
    lbann/lbann
    style_guide
    continuous_integration

@@ -24,20 +24,21 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_VARIANCE_LAYER_INSTANTIATE
 #include "lbann/layers/misc/variance.hpp"
 
 namespace lbann {
 
 namespace {
 
-template <El::Int block_size>
+template <typename TensorDataType, El::Int block_size>
 __global__ void variance_contribution_kernel(El::Int height,
                                              El::Int width,
-                                             DataType scale,
-                                             const DataType* __restrict__ input,
+                                             TensorDataType scale,
+                                             const TensorDataType* __restrict__ input,
                                              El::Int input_ldim,
-                                             const DataType* __restrict__ means,
-                                             DataType* __restrict__ contribution) {
+                                             const TensorDataType* __restrict__ means,
+                                             TensorDataType* __restrict__ contribution) {
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -50,7 +51,7 @@ __global__ void variance_contribution_kernel(El::Int height,
     const auto& mean = means[col];
 
     // Compute contributions for each thread
-    DataType private_contribution = 0;
+    TensorDataType private_contribution = 0;
     for (El::Int row = gidx; row < height; row += nthreadsx) {
       const auto& diff = input[row + col * input_ldim] - mean;
       private_contribution += diff * diff;
@@ -58,7 +59,7 @@ __global__ void variance_contribution_kernel(El::Int height,
 
     // Shared memory reduction to get contribution for each block
     /// @todo unroll loops
-    __shared__ DataType shared_contribution[block_size];
+    __shared__ TensorDataType shared_contribution[block_size];
     shared_contribution[tid] = private_contribution;
     for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
       __syncthreads();
@@ -75,15 +76,16 @@ __global__ void variance_contribution_kernel(El::Int height,
 
 }
 
+template <typename TensorDataType>
 __global__
 void variance_backprop_kernel(El::Int height,
                               El::Int width,
-                              DataType scale,
-                              const DataType* __restrict__ gradient_wrt_output,
-                              const DataType* __restrict__ input,
+                              TensorDataType scale,
+                              const TensorDataType* __restrict__ gradient_wrt_output,
+                              const TensorDataType* __restrict__ input,
                               El::Int input_ldim,
-                              const DataType* __restrict__ means,
-                              DataType* __restrict__ gradient_wrt_input,
+                              const TensorDataType* __restrict__ means,
+                              TensorDataType* __restrict__ gradient_wrt_input,
                               El::Int gradient_wrt_input_ldim) {
   const El::Int gid = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int size = height * width;
@@ -103,16 +105,17 @@ void variance_backprop_kernel(El::Int height,
  *  We use a two-pass algorithm since it is more numerically stable
  *  than the naive single-pass algorithm.
  */
-void fp_gpu(const AbsDistMat& input,
-            AbsDistMat& output,
-            AbsDistMat& means,
-            AbsDistMat& workspace,
+template <typename TensorDataType>
+void fp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
+            El::AbstractDistMatrix<TensorDataType>& output,
+            El::AbstractDistMatrix<TensorDataType>& means,
+            El::AbstractDistMatrix<TensorDataType>& workspace,
             bool biased) {
 
   // Local matrices
-  const auto& local_input = static_cast<const GPUMat&>(input.LockedMatrix());
-  auto& local_means = static_cast<GPUMat&>(means.Matrix());
-  auto& local_workspace = static_cast<GPUMat&>(workspace.Matrix());
+  const auto& local_input = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input.LockedMatrix());
+  auto& local_means = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(means.Matrix());
+  auto& local_workspace = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input.Height();
@@ -124,15 +127,15 @@ void fp_gpu(const AbsDistMat& input,
   means.Empty(false);
   means.AlignWith(input);
   means.Resize(1, width);
-  GPUMat ones;
+  El::Matrix<TensorDataType, El::Device::GPU> ones;
 #ifdef HYDROGEN_HAVE_CUB
   ones.SetMemoryMode(1); // Use CUB GPU memory pool
 #endif // HYDROGEN_HAVE_CUB
   ones.Resize(local_height, 1);
-  El::Fill(ones, DataType(1));
+  El::Fill(ones, El::TypeTraits<TensorDataType>::One());
   El::Gemv(El::TRANSPOSE,
-           DataType(1) / height, local_input, ones,
-           DataType(0), local_means);
+           El::TypeTraits<TensorDataType>::One() / TensorDataType(height), local_input, ones,
+           El::TypeTraits<TensorDataType>::Zero(), local_means);
   El::AllReduce(means, means.RedundantComm());
 
   // Compute column-wise variance
@@ -145,8 +148,8 @@ void fp_gpu(const AbsDistMat& input,
     block_dims.x = block_size;
     grid_dims.x = (local_height + block_size - 1) / block_size;
     grid_dims.y = local_width;
-    const auto& scale = DataType(1) / (biased ? height : height - 1);
-    variance_contribution_kernel<block_size>
+    const auto& scale = El::TypeTraits<TensorDataType>::One() / (biased ? TensorDataType(height) : TensorDataType(height - 1));
+    variance_contribution_kernel<TensorDataType, block_size>
       <<<grid_dims, block_dims, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
         local_input.LockedBuffer(), local_input.LDim(),
@@ -161,18 +164,19 @@ void fp_gpu(const AbsDistMat& input,
 /** GPU backprop implementation.
  *  Means have already been computed in forward prop.
  */
-void bp_gpu(const AbsDistMat& input,
-            const AbsDistMat& gradient_wrt_output,
-            AbsDistMat& gradient_wrt_input,
-            const AbsDistMat& means,
-            AbsDistMat& workspace,
+template <typename TensorDataType>
+void bp_gpu(const El::AbstractDistMatrix<TensorDataType>& input,
+            const El::AbstractDistMatrix<TensorDataType>& gradient_wrt_output,
+            El::AbstractDistMatrix<TensorDataType>& gradient_wrt_input,
+            const El::AbstractDistMatrix<TensorDataType>& means,
+            El::AbstractDistMatrix<TensorDataType>& workspace,
             bool biased) {
 
   // Local matrices
-  const auto& local_input = static_cast<const GPUMat&>(input.LockedMatrix());
-  auto& local_gradient_wrt_input = static_cast<GPUMat&>(gradient_wrt_input.Matrix());
-  const auto& local_means = static_cast<const GPUMat&>(means.LockedMatrix());
-  auto& local_workspace = static_cast<GPUMat&>(workspace.Matrix());
+  const auto& local_input = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(input.LockedMatrix());
+  auto& local_gradient_wrt_input = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(gradient_wrt_input.Matrix());
+  const auto& local_means = static_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(means.LockedMatrix());
+  auto& local_workspace = static_cast<El::Matrix<TensorDataType, El::Device::GPU>&>(workspace.Matrix());
 
   // Dimensions
   const auto& height = input.Height();
@@ -183,11 +187,11 @@ void bp_gpu(const AbsDistMat& input,
   El::Copy(gradient_wrt_output, workspace);
 
   // Compute gradients w.r.t. input
-  const DataType scale = DataType(2) / (biased ? height : height - 1);
+  const TensorDataType scale = TensorDataType(2) / (biased ? TensorDataType(height) : TensorDataType(height - 1));
   constexpr El::Int block_size = 256;
   El::Int grid_size = (local_height * local_width + block_size - 1) / block_size;
   if (grid_size > 0) {
-    variance_backprop_kernel
+    variance_backprop_kernel<TensorDataType>
       <<<grid_size, block_size, 0, El::GPUManager::Stream()>>>(
         local_height, local_width, scale,
         local_workspace.LockedBuffer(),
@@ -200,46 +204,30 @@ void bp_gpu(const AbsDistMat& input,
 
 } // namespace
 
-template <>
-void variance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(get_prev_activations(),
-         get_activations(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void variance_layer<TensorDataType, Layout, Device>::fp_compute() {
+  fp_gpu(this->get_prev_activations(),
+         this->get_activations(),
+         *this->m_means,
+         *this->m_workspace,
+         this->m_biased);
 }
 
-template <>
-void variance_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  bp_gpu(get_prev_activations(),
-         get_prev_error_signals(),
-         get_error_signals(),
-         *m_means,
-         *m_workspace,
-         m_biased);
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void variance_layer<TensorDataType, Layout, Device>::bp_compute() {
+  bp_gpu(this->get_prev_activations(),
+         this->get_prev_error_signals(),
+         this->get_error_signals(),
+         *this->m_means,
+         *this->m_workspace,
+         this->m_biased);
 }
 
-template <>
-void variance_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::fp_compute() {
-  fp_gpu(get_prev_activations(),
-         get_activations(),
-         *m_means,
-         *m_workspace,
-         m_biased);
-}
+#define PROTO(T)                     \
+  template class variance_layer<T, data_layout::DATA_PARALLEL, El::Device::GPU>; \
+  template class variance_layer<T, data_layout::MODEL_PARALLEL, El::Device::GPU>
 
-template <>
-void variance_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::bp_compute() {
-  bp_gpu(get_prev_activations(),
-         get_prev_error_signals(),
-         get_error_signals(),
-         *m_means,
-         *m_workspace,
-         m_biased);
-}
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

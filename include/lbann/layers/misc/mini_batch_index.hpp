@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_MISC_MINI_BATCH_INDEX_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_MINI_BATCH_INDEX_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -37,11 +37,13 @@ namespace lbann {
  *  mini-batch sample. Each sample in a model's mini-batch has a
  *  unique index in [0, mini_batch_size).
  */
-template <data_layout Layout = data_layout::DATA_PARALLEL, El::Device Device = El::Device::CPU>
-class mini_batch_index_layer : public Layer {
+template <typename TensorDataType,
+          data_layout Layout = data_layout::DATA_PARALLEL,
+          El::Device Device = El::Device::CPU>
+class mini_batch_index_layer : public data_type_layer<TensorDataType> {
 public:
 
-  mini_batch_index_layer(lbann_comm* comm) : Layer(comm) {
+  mini_batch_index_layer(lbann_comm* comm) : data_type_layer<TensorDataType>(comm) {
     this->m_expected_num_parent_layers = 0;
   }
 
@@ -52,20 +54,21 @@ public:
 
 protected:
 
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims({1});
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims({1});
   }
 
   void fp_compute() override {
+    using CPUMatType = El::Matrix<TensorDataType, El::Device::CPU>;
 
     // Get output matrix
-    auto& output = get_activations();
+    auto& output = this->get_activations();
     auto& local_output = output.Matrix();
     const auto& local_width = local_output.Width();
 
     // Create temporary matrix if output matrix is not on CPU
-    CPUMat local_output_v;
+    CPUMatType local_output_v;
     if (local_output.GetDevice() == El::Device::CPU) {
       El::View(local_output_v, local_output);
     } else {
@@ -75,7 +78,7 @@ protected:
     // Populate matrix on CPU
     LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
-      local_output_v(0, col) = DataType(output.GlobalCol(col));
+      local_output_v(0, col) = El::To<TensorDataType>(output.GlobalCol(col));
     }
 
     // Copy result from CPU if needed
@@ -86,6 +89,15 @@ protected:
   }
 
 };
+
+#ifndef LBANN_MINI_BATCH_INDEX_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class mini_batch_index_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class mini_batch_index_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_MINI_BATCH_INDEX_LAYER_INSTANTIATE
 
 } // namespace lbann
 

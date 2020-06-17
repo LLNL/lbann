@@ -24,6 +24,7 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_IN_TOP_K_LAYER_INSTANTIATE
 #include "lbann/layers/transform/in_top_k.hpp"
 #include <algorithm>
 #include <limits>
@@ -34,15 +35,16 @@ namespace lbann {
 namespace {
 
 /** Sparse vector entry. */
+template <typename TensorDataType>
 struct entry {
 
   /** Vector entry value. */
-  DataType value = min_value;
+  TensorDataType value = min_value;
   /** Vector entry index. */
   El::Int index = max_index;
 
   /** Minimum possible value. */
-  static constexpr DataType min_value = -std::numeric_limits<DataType>::infinity();
+  static constexpr TensorDataType min_value = -std::numeric_limits<TensorDataType>::infinity();
   /** Maximum possible index. */
   static constexpr El::Int max_index = std::numeric_limits<El::Int>::max();
 
@@ -57,10 +59,11 @@ struct entry {
 };
 
 /** CPU implementation of in_top_k layer forward prop. */
+template <typename TensorDataType>
 void fp_cpu(lbann_comm& comm,
             El::Int k,
-            const AbsDistMat& input,
-            AbsDistMat& output) {
+            const El::AbstractDistMatrix<TensorDataType>& input,
+            El::AbstractDistMatrix<TensorDataType>& output) {
 
   // Local matrices
   const auto& local_input = input.LockedMatrix();
@@ -74,7 +77,7 @@ void fp_cpu(lbann_comm& comm,
     El::Zero(output);
     return;
   } else if (k >= height) {
-    El::Fill(output, DataType(1));
+    El::Fill(output, El::TypeTraits<TensorDataType>::One());
     return;
   } else if (local_width < 1) {
     return;
@@ -85,10 +88,10 @@ void fp_cpu(lbann_comm& comm,
   const auto& col_comm_size = El::mpi::Size(col_comm);
 
   // Find top-k entries in each column of local input matrix
-  std::vector<entry> top_entries(local_width * k);
+  std::vector<entry<TensorDataType>> top_entries(local_width * k);
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_width; ++col) {
-    std::vector<entry> local_entries(std::max(local_height, k));
+    std::vector<entry<TensorDataType>> local_entries(std::max(local_height, k));
     for (El::Int row = 0; row < local_height; ++row) {
       local_entries[row].value = local_input(row, col);
       local_entries[row].index = input.GlobalRow(row);
@@ -97,20 +100,20 @@ void fp_cpu(lbann_comm& comm,
                            local_entries.end(),
                            &top_entries[col*k],
                            &top_entries[col*k] + k,
-                           entry::compare);
+                           entry<TensorDataType>::compare);
   }
 
   // Find top-k entries in each column of global input matrix
   if (col_comm_size > 1) {
-    std::vector<entry> global_top_entries(col_comm_size * local_width * k);
+    std::vector<entry<TensorDataType>> global_top_entries(col_comm_size * local_width * k);
     comm.all_gather(reinterpret_cast<El::byte*>(top_entries.data()),
-                    top_entries.size() * sizeof(entry),
+                    top_entries.size() * sizeof(entry<TensorDataType>),
                     reinterpret_cast<El::byte*>(global_top_entries.data()),
-                    top_entries.size() * sizeof(entry),
+                    top_entries.size() * sizeof(entry<TensorDataType>),
                     col_comm);
     LBANN_OMP_PARALLEL_FOR
     for (El::Int col = 0; col < local_width; ++col) {
-      std::vector<entry> col_entries(col_comm_size * k);
+      std::vector<entry<TensorDataType>> col_entries(col_comm_size * k);
       for (El::Int rank = 0; rank < col_comm_size; ++rank) {
         const auto* start = &global_top_entries[rank*local_width*k+col*k];
         std::copy(start, start + k, &col_entries[rank*k]);
@@ -119,7 +122,7 @@ void fp_cpu(lbann_comm& comm,
                              col_entries.end(),
                              &top_entries[col*k],
                              &top_entries[col*k] + k,
-                             entry::compare);
+                             entry<TensorDataType>::compare);
     }
   }
 
@@ -131,7 +134,7 @@ void fp_cpu(lbann_comm& comm,
       const auto& global_row = top_entries[col*k+i].index;
       if (global_row < height && output.IsLocalRow(global_row)) {
         const auto& row = output.LocalRow(global_row);
-        local_output(row, col) = DataType(1);
+        local_output(row, col) = El::TypeTraits<TensorDataType>::One();
       }
     }
   }
@@ -140,15 +143,21 @@ void fp_cpu(lbann_comm& comm,
 
 } // namespace
 
-template <>
-void in_top_k_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  fp_cpu(*get_comm(), m_k, get_prev_activations(), get_activations());
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void in_top_k_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  fp_cpu(*this->get_comm(),
+         this->m_k,
+         this->get_prev_activations(),
+         this->get_activations());
 }
-template <>
-void in_top_k_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::fp_compute() {
-  fp_cpu(*get_comm(), m_k, get_prev_activations(), get_activations());
-}
+
+#define PROTO(T)                                     \
+  template class in_top_k_layer<                     \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>; \
+  template class in_top_k_layer<                     \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

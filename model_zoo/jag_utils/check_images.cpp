@@ -85,9 +85,6 @@ int main(int argc, char *argv[]) {
       if (h % 10 == 0) std::cout << rank << " :: processed " << h << " files\n";
       try {
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j] );
-      } catch (std::exception e) {
-        std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
-        continue;
       } catch (...) {
         std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
         continue;
@@ -96,7 +93,7 @@ int main(int argc, char *argv[]) {
       std::vector<std::string> cnames;
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (std::exception e) {
+      } catch (const std::exception&) {
         std::cerr << rank << " :: exception hdf5_group_list_child_names: " << files[j] << "\n";
         continue;
       }
@@ -106,7 +103,7 @@ int main(int argc, char *argv[]) {
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (exception const &e) {
+        } catch (const exception& e) {
           throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: caught exception reading success flag for child " + std::to_string(i) + " of " + std::to_string(cnames.size()) + "; " + e.what());
         }
         int success = n_ok.to_int64();
@@ -116,17 +113,14 @@ int main(int argc, char *argv[]) {
           std::vector<std::string> image_names;
           try {
             conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, key, image_names);
-          } catch (std::exception const &e) {
+          } catch (const std::exception&) {
             std::cerr << rank << " :: exception :hdf5_group_list_child_names for images: " << files[j] << "\n";
             continue;
           }
         }
       }
     }
-  } catch (exception const &e) {
-    El::ReportException(e);
-    return EXIT_FAILURE;
-  } catch (std::exception const &e) {
+  } catch (const std::exception& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
   }

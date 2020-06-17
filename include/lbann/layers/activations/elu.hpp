@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_ACTIVATIONS_ELU_HPP_INCLUDED
 #define LBANN_LAYERS_ACTIVATIONS_ELU_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -46,35 +46,44 @@ namespace lbann {
  *  and accurate deep network learning by exponential linear units
  *  (ELUs)." arXiv preprint arXiv:1511.07289 (2015).
  */
-template <data_layout Layout, El::Device Device>
-class elu_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class elu_layer : public data_type_layer<TensorDataType> {
 public:
-  elu_layer(lbann_comm *comm, DataType alpha = 1)
-    : Layer(comm), m_alpha(alpha) {}
+  elu_layer(lbann_comm *comm, TensorDataType alpha = 1)
+    : data_type_layer<TensorDataType>(comm), m_alpha(alpha) {}
   elu_layer* copy() const override { return new elu_layer(*this); }
   std::string get_type() const override { return "ELU"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
   description get_description() const override {
-    auto&& desc = Layer::get_description();
+    auto desc = data_type_layer<TensorDataType>::get_description();
     desc.add("alpha", m_alpha);
     return desc;
   }
 
 protected:
-  void setup_dims() override {
-    Layer::setup_dims();
-    set_output_dims(get_input_dims());
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+    this->set_output_dims(this->get_input_dims());
   }
   void fp_compute() override;
   void bp_compute() override;
 
 private:
   /** Scale parameter for negative region. */
-  DataType m_alpha;
+  TensorDataType m_alpha;
 
 };
+
+#ifndef LBANN_ELU_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class elu_layer<T, data_layout::DATA_PARALLEL, Device>; \
+  extern template class elu_layer<T, data_layout::MODEL_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_ELU_LAYER_INSTANTIATE
 
 } // namespace lbann
 

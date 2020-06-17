@@ -31,12 +31,22 @@
 
 namespace lbann {
 
+template <typename TensorDataType>
 class data_buffer {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
  public:
   /** Number of samples in the current mini-batch */
   int m_num_samples_fetched;
   /** Distributed matrix used to stage local data to layer output */
-  std::vector<std::unique_ptr<AbsDistMat>> m_input_buffers;
+  std::vector<std::unique_ptr<AbsDistMatrixType>> m_input_buffers;
   std::atomic<bool> m_fetch_data_in_background;
   std::future<void> m_data_fetch_future;
   /// 1-D Matrix of which indices were fetched in this mini-batch
@@ -48,7 +58,7 @@ class data_buffer {
     m_input_buffers.clear();
     m_input_buffers.resize(num_child_layers);
     for(int i = 0; i < num_child_layers; i++) {
-      m_input_buffers[i].reset(new StarVCMat<El::Device::CPU>(comm->get_trainer_grid()));
+      m_input_buffers[i].reset(new StarVCMatDT<TensorDataType, El::Device::CPU>(comm->get_trainer_grid()));
     }
   }
 
@@ -78,11 +88,24 @@ class data_buffer {
 /**
  * Parallel I/O routines for managing partitioned minibatches
  */
-class partitioned_io_buffer : public generic_io_buffer {
+template <typename TensorDataType>
+class partitioned_io_buffer : public generic_io_buffer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The local tensor type expected for IO in this object. */
+  using IODataType = DataType;
+
+  ///@}
+
  public:
-  typedef std::map<execution_mode, data_buffer *> data_buffer_map_t;
+  typedef std::map<execution_mode, data_buffer<IODataType> *> data_buffer_map_t;
  public:
-  partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers, int num_child_layers);
+  partitioned_io_buffer(lbann_comm *comm, int num_parallel_readers, int num_child_layers);
   partitioned_io_buffer(const partitioned_io_buffer& other);
   partitioned_io_buffer& operator=(const partitioned_io_buffer& other);
   ~partitioned_io_buffer();
@@ -94,8 +117,8 @@ class partitioned_io_buffer : public generic_io_buffer {
   void setup_data(El::Int num_neurons, El::Int num_targets, El::Int max_mini_batch_size) override;
 
   int fetch_to_local_matrix(generic_data_reader *data_reader, execution_mode mode) override;
-  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample, AbsDistMat& response) override;
-  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMat& sample) override;
+  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response) override;
+  void distribute_from_local_matrix(generic_data_reader *data_reader, execution_mode mode, AbsDistMatrixType& sample) override;
   bool update_data_set(generic_data_reader *data_reader, execution_mode mode) override;
   void set_fetch_data_in_background(bool flag, execution_mode mode) override;
   bool is_data_fetched_in_background(execution_mode mode) override;
@@ -104,14 +127,9 @@ class partitioned_io_buffer : public generic_io_buffer {
   void set_data_fetch_future(std::future<void> future, execution_mode mode) override;
   std::future<void> get_data_fetch_future(execution_mode mode) override;
 
-  void calculate_num_iterations_per_epoch_spanning_models(int max_mini_batch_size, generic_data_reader *data_reader) override;
-  void calculate_num_iterations_per_epoch_single_model(int max_mini_batch_size, generic_data_reader *data_reader) override;
-  int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers) const override;
-  static int compute_max_num_parallel_readers(long data_set_size, int mini_batch_size, int requested_num_parallel_readers, const lbann_comm* comm);
-
-  data_buffer *get_data_buffer(const execution_mode mode) const {
-    data_buffer *data_buffer = nullptr;
-    data_buffer_map_t::const_iterator it = m_data_buffers.find(mode);
+  data_buffer<IODataType> *get_data_buffer(const execution_mode mode) const {
+    data_buffer<IODataType> *data_buffer = nullptr;
+    typename data_buffer_map_t::const_iterator it = m_data_buffers.find(mode);
     if (it != m_data_buffers.end()) data_buffer = it->second;
 
     switch(mode) {

@@ -24,18 +24,19 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_L2_NORM2_LAYER_INSTANTIATE
 #include "lbann/layers/loss/l2_norm2.hpp"
 
 namespace lbann {
 
 namespace {
 
-template <El::Int block_size>
+template <El::Int block_size, typename TensorDataType>
 __global__ void fp_kernel(El::Int local_height,
                           El::Int local_width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
-                          DataType* __restrict__ contribution) {
+                          TensorDataType* __restrict__ contribution) {
 
   // Indices
   const El::Int tid = threadIdx.x;
@@ -47,7 +48,7 @@ __global__ void fp_kernel(El::Int local_height,
   for (El::Int col = bidy; col < local_width; col += gridDim.y) {
 
     // Compute contributions for each thread
-    DataType private_contribution = 0;
+    TensorDataType private_contribution = 0;
     for (El::Int row = gidx; row < local_height; row += nthreadsx) {
       const auto& x = input[row + col * input_ldim];
       private_contribution += x * x;
@@ -55,7 +56,7 @@ __global__ void fp_kernel(El::Int local_height,
 
     // Shared memory reduction to get contribution for each block
     /// @todo unroll loops
-    __shared__ DataType shared_contribution[block_size];
+    __shared__ TensorDataType shared_contribution[block_size];
     shared_contribution[tid] = private_contribution;
     for (El::Int stride = block_size / 2; stride > 0; stride /= 2) {
       __syncthreads();
@@ -71,7 +72,9 @@ __global__ void fp_kernel(El::Int local_height,
 
 }
 
-void local_fp_gpu(const AbsMat& local_input, AbsMat& local_contribution) {
+template <typename TensorDataType>
+void local_fp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
+                  El::AbstractMatrix<TensorDataType>& local_contribution) {
   El::Zero(local_contribution);
   if (!local_input.IsEmpty()) {
     const auto& local_height = local_input.Height();
@@ -90,12 +93,12 @@ void local_fp_gpu(const AbsMat& local_input, AbsMat& local_contribution) {
   }
 }
 
-template <El::Int block_size>
+template <El::Int block_size, typename TensorDataType>
 __global__ void bp_kernel(El::Int local_height, El::Int local_width,
-                          const DataType* __restrict__ input,
+                          const TensorDataType* __restrict__ input,
                           El::Int input_ldim,
-                          const DataType* __restrict__ gradient_wrt_output,
-                          DataType* __restrict__ gradient_wrt_input,
+                          const TensorDataType* __restrict__ gradient_wrt_output,
+                          TensorDataType* __restrict__ gradient_wrt_input,
                           El::Int gradient_wrt_input_ldim) {
   const El::Int gidx = threadIdx.x + blockIdx.x * blockDim.x;
   const El::Int bidy = blockIdx.y;
@@ -105,14 +108,15 @@ __global__ void bp_kernel(El::Int local_height, El::Int local_width,
     for (El::Int row = gidx; row < local_height; row += nthreadsx) {
       const auto& x = input[row + col * input_ldim];
       auto& dx = gradient_wrt_input[row + col * gradient_wrt_input_ldim];
-      dx = 2 * x * dy;
+      dx = TensorDataType(2) * x * dy;
     }
   }
 }
 
-void local_bp_gpu(const AbsMat& local_input,
-                  const AbsMat& local_gradient_wrt_output,
-                  AbsMat& local_gradient_wrt_input) {
+template <typename TensorDataType>
+void local_bp_gpu(const El::AbstractMatrix<TensorDataType>& local_input,
+                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
   if (!local_input.IsEmpty()) {
     const auto& local_height = local_input.Height();
     const auto& local_width = local_input.Width();
@@ -134,35 +138,26 @@ void local_bp_gpu(const AbsMat& local_input,
 
 } // namespace
 
-template <>
-void l2_norm2_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(const AbsMat& local_input,
-                        AbsMat& local_contribution) {
-  local_fp_gpu(local_input, local_contribution);
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+  local_fp_gpu(this->get_local_prev_activations(),
+               this->m_workspace->Matrix());
 }
-template <>
-void l2_norm2_layer<data_layout::MODEL_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(const AbsMat& local_input,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_input) {
-  local_bp_gpu(local_input,
-               local_gradient_wrt_output,
-               local_gradient_wrt_input);
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l2_norm2_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+  local_bp_gpu(this->get_local_prev_activations(),
+               this->m_workspace->LockedMatrix(),
+               this->get_local_error_signals());
 }
-template <>
-void l2_norm2_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_fp_compute(const AbsMat& local_input,
-                        AbsMat& local_contribution) {
-  local_fp_gpu(local_input, local_contribution);
-}
-template <>
-void l2_norm2_layer<data_layout::DATA_PARALLEL, El::Device::GPU>
-     ::local_bp_compute(const AbsMat& local_input,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_input) {
-  local_bp_gpu(local_input,
-               local_gradient_wrt_output,
-               local_gradient_wrt_input);
-}
+
+#define PROTO(T)                                      \
+  template class l2_norm2_layer<                      \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>;  \
+  template class l2_norm2_layer<                      \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+
+#define LBANN_INSTANTIATE_GPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

@@ -40,21 +40,37 @@ namespace lbann {
  *  to the red-top-left corner and (1,1,1) to the blue-bottom-right
  *  corner. The crop size is determined at setup.
  */
-template <data_layout T_layout = data_layout::DATA_PARALLEL, El::Device Dev = El::Device::CPU>
-class crop_layer : public transform_layer {
+template <typename TensorDataType,
+          data_layout T_layout = data_layout::DATA_PARALLEL,
+          El::Device Dev = El::Device::CPU>
+class crop_layer : public transform_layer<TensorDataType> {
+  static_assert(T_layout == data_layout::DATA_PARALLEL,
+                "crop layer only supports DATA_PARALLEL");
+#ifdef LBANN_HAS_GPU_FP16
+  using CompareType = typename std::conditional<std::is_same<TensorDataType, fp16>::value, float, TensorDataType>::type;
+#else
+  using CompareType = TensorDataType;
+#endif
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  ///@}
+
 public:
 
   crop_layer(lbann_comm *comm,
              std::vector<int> dims)
-    : transform_layer(comm) {
-    static_assert(T_layout == data_layout::DATA_PARALLEL,
-                  "crop layer only supports DATA_PARALLEL");
-    set_output_dims(dims);
+    : transform_layer<TensorDataType>(comm) {
+    this->set_output_dims(dims);
     this->m_expected_num_parent_layers = 2;
   }
 
   crop_layer(const crop_layer& other)
-    : transform_layer(other),
+    : transform_layer<TensorDataType>(other),
       m_input_v(other.m_input_v ?
                 other.m_input_v->Copy() : nullptr),
       m_output_v(other.m_output_v ?
@@ -62,7 +78,7 @@ public:
       m_crop_pos_v(other.m_crop_pos_v ?
                    other.m_crop_pos_v->Copy() : nullptr){}
   crop_layer& operator=(const crop_layer& other) {
-    transform_layer::operator=(other);
+    transform_layer<TensorDataType>::operator=(other);
     m_input_v.reset(other.m_input_v ?
                     other.m_input_v->Copy() : nullptr);
     m_output_v.reset(other.m_output_v ?
@@ -78,14 +94,14 @@ public:
   El::Device get_device_allocation() const override { return Dev; }
 
   void setup_matrices(const El::Grid& grid) override {
-    transform_layer::setup_matrices(grid);
-    const auto& input = get_prev_activations();
+    transform_layer<TensorDataType>::setup_matrices(grid);
+    const auto& input = this->get_prev_activations();
     const auto& dist = input.DistData();
     m_input_v.reset(input.Construct(input.Grid(), input.Root()));
     m_output_v.reset(input.Construct(input.Grid(), input.Root()));
 
     /// @todo Setup the input tensor with this data distribution
-    m_crop_pos_v.reset(AbsDistMat::Instantiate(*dist.grid,
+    m_crop_pos_v.reset(AbsDistMatrixType::Instantiate(*dist.grid,
                                                dist.root,
                                                El::STAR,
                                                dist.rowDist,
@@ -95,30 +111,30 @@ public:
 
   }
 
-  void setup_dims() override {
-    transform_layer::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    transform_layer<TensorDataType>::setup_dims(dr_metadata);
     std::stringstream err;
 
     // Make sure input tensors have valid dimensions
-    const auto& input_dims = get_input_dims(0);
-    const auto& loc_dims = get_input_dims(1);
-    const auto& output_dims = get_output_dims();
+    const auto& input_dims = this->get_input_dims(0);
+    const auto& loc_dims = this->get_input_dims(1);
+    const auto& output_dims = this->get_output_dims();
     if (input_dims.size() != output_dims.size()) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "expects a crop input tensor with "
           << output_dims.size() << " dimensions, "
           << "but parent layer "
-          << "\"" << m_parent_layers[0]->get_name() << "\" "
+          << "\"" << this->get_parent_layers()[0]->get_name() << "\" "
           << "outputs a tensor with "
           << input_dims.size() << " dimensions";
       LBANN_ERROR(err.str());
     }
     if (loc_dims.size() != 1 || loc_dims[0] != (int) input_dims.size()) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "expects a 1D crop position tensor with "
           << output_dims.size() << " entries, "
           << "but parent layer "
-          << "\"" << m_parent_layers[1]->get_name() << "\" "
+          << "\"" << this->get_parent_layers()[1]->get_name() << "\" "
           << "outputs a tensor with dimensions ";
       for (size_t i = 0; i < loc_dims.size(); ++i) {
         err << (i > 0 ? " x " : "") << loc_dims[i];
@@ -131,14 +147,14 @@ public:
 protected:
 
   void fp_compute() override {
-    switch (get_input_dims().size()) {
+    switch (this->get_input_dims().size()) {
     case 3: fp_compute_3d(); break;
     default: fp_compute_nd();
     }
   }
 
   void bp_compute() override {
-    switch (get_input_dims().size()) {
+    switch (this->get_input_dims().size()) {
     case 3: bp_compute_3d(); break;
     default: bp_compute_nd();
     }
@@ -146,22 +162,22 @@ protected:
 
 private:
   /** View into input tensor. */
-  std::unique_ptr<AbsDistMat> m_input_v;
+  std::unique_ptr<AbsDistMatrixType> m_input_v;
   /** View into output tensor. */
-  std::unique_ptr<AbsDistMat> m_output_v;
+  std::unique_ptr<AbsDistMatrixType> m_output_v;
   /** View into crop positions. */
-  std::unique_ptr<AbsDistMat> m_crop_pos_v;
+  std::unique_ptr<AbsDistMatrixType> m_crop_pos_v;
 
   /** Forward prop implementation for n-dimensional tensors. */
   void fp_compute_nd() {
 
     // Input and output tensors
-    const auto& input = get_prev_activations(0);
-    auto& output = get_activations();
+    const auto& input = this->get_prev_activations(0);
+    auto& output = this->get_activations();
 
     // Tensor dimensions
-    const auto& input_dims = get_input_dims(0);
-    const auto& output_dims = get_output_dims();
+    const auto& input_dims = this->get_input_dims(0);
+    const auto& output_dims = this->get_output_dims();
     const El::Int num_dims = output_dims.size();
     const auto& local_width = input.LocalWidth();
     const auto& region_size = output_dims.back();
@@ -169,7 +185,7 @@ private:
     // Get crop position
     m_crop_pos_v->Empty(false);
     m_crop_pos_v->AlignWith(input);
-    const auto& input1 = get_prev_activations(1);
+    const auto& input1 = this->get_prev_activations(1);
     if (m_crop_pos_v->DistData() == input1.DistData()) {
       El::LockedView(*m_crop_pos_v, input1);
     } else {
@@ -186,7 +202,7 @@ private:
       std::vector<El::Int> crop_offsets;
       for (El::Int d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, local_col);
-        if (pos < DataType(0) || pos > DataType(1)) {
+        if (CompareType(pos) < CompareType(0.0) || CompareType(pos) > CompareType(1.0)) {
           std::stringstream err;
           err << "crop position not in range [0,1] (pos=(";
           for (El::Int i = 0; i < local_crop_pos.Height(); ++i) {
@@ -196,7 +212,7 @@ private:
           LBANN_ERROR(err.str());
         }
         const El::Int num_offsets = input_dims[d] - output_dims[d] + 1;
-        crop_offsets.push_back(std::min(El::Int(pos * num_offsets),
+        crop_offsets.push_back(std::min(El::Int(static_cast<CompareType>(pos) * num_offsets),
                                         num_offsets - 1));
       }
 
@@ -241,17 +257,17 @@ private:
   void bp_compute_nd() {
 
     // Clear error signals
-    El::Zero(get_error_signals(0));
-    El::Zero(get_error_signals(1));
+    El::Zero(this->get_error_signals(0));
+    El::Zero(this->get_error_signals(1));
 
     // Input and gradient tensors
-    const auto& gradient_wrt_output = get_prev_error_signals();
-    auto& gradient_wrt_input = get_error_signals(0);
+    const auto& gradient_wrt_output = this->get_prev_error_signals();
+    auto& gradient_wrt_input = this->get_error_signals(0);
     const auto& local_crop_pos = m_crop_pos_v->LockedMatrix();
 
     // Tensor dimensions
-    const auto& input_dims = get_input_dims(0);
-    const auto& output_dims = get_output_dims();
+    const auto& input_dims = this->get_input_dims(0);
+    const auto& output_dims = this->get_output_dims();
     const El::Int num_dims = output_dims.size();
     const auto& local_width = gradient_wrt_input.LocalWidth();
     const auto& region_size = output_dims.back();
@@ -265,7 +281,7 @@ private:
       std::vector<El::Int> crop_offsets;
       for (El::Int d = 0; d < num_dims; ++d) {
         const auto& pos = local_crop_pos(d, local_col);
-        if (pos < DataType(0) || pos > DataType(1)) {
+        if (CompareType(pos) < CompareType(0.0) || CompareType(pos) > CompareType(1.0)) {
           std::stringstream err;
           err << "crop position not in range [0,1] (pos=(";
           for (El::Int i = 0; i < local_crop_pos.Height(); ++i) {
@@ -275,7 +291,7 @@ private:
           LBANN_ERROR(err.str());
         }
         const El::Int num_offsets = input_dims[d] - output_dims[d] + 1;
-        crop_offsets.push_back(std::min(El::Int(pos * num_offsets),
+        crop_offsets.push_back(std::min(El::Int(static_cast<CompareType>(pos) * num_offsets),
                                         num_offsets - 1));
       }
 
@@ -326,6 +342,16 @@ private:
   void bp_compute_3d();
 
 };
+
+LBANN_DEFINE_LAYER_BUILDER(crop);
+
+#ifndef LBANN_CROP_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class crop_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_CROP_LAYER_INSTANTIATE
 
 } // namespace lbann
 

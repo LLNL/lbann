@@ -27,23 +27,34 @@
 #ifndef LBANN_BASE_HPP_INCLUDED
 #define LBANN_BASE_HPP_INCLUDED
 
-#include "El.hpp"
-#include "lbann/Elemental_extensions.hpp"
-#include "lbann/utils/cyg_profile.hpp"
-#include "lbann/utils/file_utils.hpp"
+#include <El.hpp>
 
 // Defines, among other things, DataType.
 #include "lbann_config.hpp"
+
+#include "lbann/Elemental_extensions.hpp"
+#include "lbann/utils/cyg_profile.hpp"
+#include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/enum_iterator.hpp"
+#ifdef LBANN_HAS_HALF
+#include "lbann/utils/serialization.hpp"
+#endif // LBANN_HAS_HALF
 
 // Support for OpenMP macros
 #include "lbann/utils/omp_pragma.hpp"
 
 #include <functional>
+#include <iostream>
+#include <memory>
+#include <string>
 
 namespace lbann {
 
 // Forward-declaration.
 class lbann_comm;
+
+/// Creating an observer_ptr to complement the unique_ptr and shared_ptr
+template <typename T> using observer_ptr = typename std::add_pointer<T>::type;
 
 // Note that this should only be used to wrap the thing coming out of
 // initialize()! This will be removed when we have proper RAII around
@@ -72,6 +83,14 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed = -1);
  */
 void finalize(lbann_comm* comm = nullptr);
 
+#ifdef LBANN_HAS_HALF
+using cpu_fp16 = El::cpu_half_type;
+#endif
+
+#ifdef LBANN_HAS_GPU_FP16
+using fp16 = El::gpu_half_type;
+#endif
+
 // Typedefs for Elemental matrices
 using AbsMat = El::AbstractMatrix<DataType>;
 using CPUMat = El::Matrix<DataType, El::Device::CPU>;
@@ -79,6 +98,7 @@ using CPUMat = El::Matrix<DataType, El::Device::CPU>;
 using GPUMat = El::Matrix<DataType, El::Device::GPU>;
 #endif // LBANN_HAS_GPU
 using AbsDistMat = El::AbstractDistMatrix<DataType>;
+using BaseDistMat = El::BaseDistMatrix;
 
 // Deprecated typedefs
 /// @todo Remove
@@ -90,22 +110,45 @@ template <El::Device D>
 using AbsDistMatReadProxy = El::AbstractDistMatrixReadDeviceProxy<DataType, D>;
 using ElMat      = El::ElementalMatrix<DataType>;
 using BlockMat   = El::BlockMatrix<DataType>;
+
+template <typename TensorDataType>
+using CPUMatDT = El::Matrix<TensorDataType, El::Device::CPU>;
+
+template <typename TensorDataType, El::Device D>
+using MCMRMatDT   = El::DistMatrix<TensorDataType, El::MC  , El::MR  , El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using CircMatDT   = El::DistMatrix<TensorDataType, El::CIRC, El::CIRC, El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using StarMatDT   = El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using StarVCMatDT = El::DistMatrix<TensorDataType, El::STAR, El::VC  , El::ELEMENT, D>;
+template <typename TensorDataType, El::Device D>
+using VCStarMatDT = El::DistMatrix<TensorDataType, El::VC  , El::STAR, El::ELEMENT, D>; /// ColSumStarVCMat
+template <typename TensorDataType, El::Device D>
+using MCStarMatDT = El::DistMatrix<TensorDataType, El::MC  , El::STAR, El::ELEMENT, D>; /// RowSumMat
+template <typename TensorDataType, El::Device D>
+using MRStarMatDT = El::DistMatrix<TensorDataType, El::MR  , El::STAR, El::ELEMENT, D>; /// ColSumMat
+template <typename TensorDataType, El::Device D>
+using StarMRMatDT = El::DistMatrix<TensorDataType, El::STAR, El::MR  , El::ELEMENT, D>;
+template <typename TensorDataType>
+using DistMatDT   = MCMRMatDT<TensorDataType, El::Device::CPU>;
+
 template <El::Device D>
-using MCMRMat    = El::DistMatrix<DataType, El::MC  , El::MR  , El::ELEMENT, D>;
+using MCMRMat    = MCMRMatDT<DataType, D>;
 template <El::Device D>
-using CircMat    = El::DistMatrix<DataType, El::CIRC, El::CIRC, El::ELEMENT, D>;
+using CircMat    = CircMatDT<DataType, D>;
 template <El::Device D>
-using StarMat    = El::DistMatrix<DataType, El::STAR, El::STAR, El::ELEMENT, D>;
+using StarMat    = StarMatDT<DataType, D>;
 template <El::Device D>
-using StarVCMat  = El::DistMatrix<DataType, El::STAR, El::VC  , El::ELEMENT, D>;
+using StarVCMat  = StarVCMatDT<DataType, D>;
 template <El::Device D>
-using VCStarMat  = El::DistMatrix<DataType, El::VC  , El::STAR, El::ELEMENT, D>; /// ColSumStarVCMat
+using VCStarMat  = VCStarMatDT<DataType, D>; /// ColSumStarVCMat
 template <El::Device D>
-using MCStarMat  = El::DistMatrix<DataType, El::MC  , El::STAR, El::ELEMENT, D>; /// RowSumMat
+using MCStarMat  = MCStarMatDT<DataType, D>; /// RowSumMat
 template <El::Device D>
-using MRStarMat  = El::DistMatrix<DataType, El::MR  , El::STAR, El::ELEMENT, D>; /// ColSumMat
+using MRStarMat  = MRStarMatDT<DataType, D>; /// ColSumMat
 template <El::Device D>
-using StarMRMat  = El::DistMatrix<DataType, El::STAR, El::MR  , El::ELEMENT, D>;
+using StarMRMat  = StarMRMatDT<DataType, D>;
 using DistMat = MCMRMat<El::Device::CPU>;
 using Mat = El::Matrix<DataType, El::Device::CPU>; // Temporarily define as CPUMat
 
@@ -116,42 +159,25 @@ using EvalType = double;
 /// Distributed matrix format
 enum class matrix_format {MC_MR, CIRC_CIRC, STAR_STAR, STAR_VC, MC_STAR, invalid};
 
+/// @todo This should move to hydrogen
+std::string to_string(El::Device const& d);
+El::Device device_from_string(std::string const& str);
+
 /// Data layout that is optimized for different modes of parallelism
 enum class data_layout {MODEL_PARALLEL, DATA_PARALLEL, invalid};
-static matrix_format __attribute__((used)) data_layout_to_matrix_format(data_layout layout) {
-  matrix_format format;
-  switch(layout) {
-  case data_layout::MODEL_PARALLEL:
-    format = matrix_format::MC_MR;
-    break;
-  case data_layout::DATA_PARALLEL:
-    /// Weights are stored in STAR_STAR and data in STAR_VC
-    format = matrix_format::STAR_STAR;
-    break;
-  default:
-    throw(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " Invalid data layout selected");
-  }
-  return format;
-}
+matrix_format data_layout_to_matrix_format(data_layout layout);
+std::string to_string(data_layout const& dl);
+data_layout data_layout_from_string(std::string const& str);
 
 /// Neural network execution mode
 enum class execution_mode {training, validation, testing, prediction, invalid};
-static const char *__attribute__((used)) _to_string(execution_mode m) {
-  switch(m) {
-  case execution_mode::training:
-    return "training";
-  case execution_mode::validation:
-    return "validation";
-  case execution_mode::testing:
-    return "testing";
-  case execution_mode::prediction:
-    return "prediction";
-  case execution_mode::invalid:
-    return "invalid";
-  default:
-    throw("Invalid execution mode specified"); /// @todo this should be an lbann_exception but then the class has to move to resolve dependencies
-  }
-}
+std::string to_string(execution_mode m);
+using execution_mode_iterator = enum_iterator<execution_mode, execution_mode::training, execution_mode::invalid>;
+
+/** @brief Convert a string to an execution_mode. */
+execution_mode exec_mode_from_string(std::string const& str);
+/** @brief Extract an execution_mode from a stream. */
+std::istream& operator>>(std::istream& os, execution_mode& e);
 
 /** Pooling layer mode */
 enum class pool_mode {invalid, max, average, average_no_pad};
@@ -159,56 +185,26 @@ enum class pool_mode {invalid, max, average, average_no_pad};
 /** returns a string representation of the pool_mode */
 std::string get_pool_mode_name(pool_mode m);
 
-// NA - Not applicable, used for input layers that don't produce a second output
-enum class data_reader_target_mode {CLASSIFICATION, REGRESSION, RECONSTRUCTION, NA};
-
 /*
  * endsWith: http://thispointer.com/c-how-to-check-if-a-string-ends-with-an-another-given-string/
  * Case Sensitive Implementation of endsWith()
  * It checks if the string 'mainStr' ends with given string
  * 'toMatch'
  */
-static bool __attribute__((used)) endsWith(const std::string mainStr, const std::string &toMatch)
-{
-  if(mainStr.size() >= toMatch.size() &&
-     mainStr.compare(mainStr.size() - toMatch.size(), toMatch.size(), toMatch) == 0)
-    return true;
-  else
-    return false;
-}
+bool endsWith(const std::string mainStr, const std::string &toMatch);
 
 /// Print the dimensions and name of a Elemental matrix
-static void __attribute__((used)) _print_matrix_dims(AbsDistMat *m, const char *name) {
-  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
-}
-#define PRINT_MATRIX_DIMS(x) _print_matrix_dims(x, #x);
+void print_matrix_dims(AbsDistMat *m, const char *name);
+#define LBANN_PRINT_MATRIX_DIMS(x) print_matrix_dims(x, #x);
 
 /// Print the dimensions and name of a Elemental matrix
-static void __attribute__((used)) _print_local_matrix_dims(AbsMat *m, const char *name) {
-  std::cout << "DISPLAY MATRIX: " << name << " = " << m->Height() << " x " << m->Width() << std::endl;
-}
-#define PRINT_LOCAL_MATRIX_DIMS(x) _print_local_matrix_dims(x, #x);
+void print_local_matrix_dims(AbsMat *m, const char *name);
+#define LBANN_PRINT_LOCAL_MATRIX_DIMS(x) print_local_matrix_dims(x, #x);
 
-// FIXME
-#if 1
-// __FILE__
-#define log_msg(...) {\
-  char str[256];\
-  sprintf(str, __VA_ARGS__);\
-  std::cout << "[" << m_comm->get_trainer_rank() << "." << m_comm->get_rank_in_trainer() << "][" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
-  }
-#define log_simple_msg(...) {\
-  char str[256];\
-  sprintf(str, __VA_ARGS__);\
-  std::cout << "[" << __FUNCTION__ << "][Line " << __LINE__ << "]" << str << std::endl; \
-  }
-#else
-#define log_msg(...)
-#define log_simple_msg(...)
-#endif
+#define LBANN_MAKE_STR_(x) #x
+#define LBANN_MAKE_STR(x) LBANN_MAKE_STR_(x)
 
-#define LBANN_MAKE_STR(x) _LBANN_MAKE_STR(x)
-#define _LBANN_MAKE_STR(x) #x
+void lbann_mpi_err_handler(MPI_Comm *comm, int *err_code, ... );
 
 } // namespace lbann
 

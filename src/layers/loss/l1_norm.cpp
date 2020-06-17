@@ -24,17 +24,19 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+#define LBANN_L1_NORM_LAYER_INSTANTIATE
 #include "lbann/layers/loss/l1_norm.hpp"
 
 namespace lbann {
 
 namespace {
 
-void local_fp_cpu(const AbsMat& local_input,
-                  AbsMat& local_contribution) {
+template <typename TensorDataType>
+void local_fp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
+                  El::AbstractMatrix<TensorDataType>& local_contribution) {
   LBANN_OMP_PARALLEL_FOR
   for (El::Int col = 0; col < local_input.Width(); ++col) {
-    DataType sum = 0;
+    TensorDataType sum = El::TypeTraits<TensorDataType>::Zero();
     for (El::Int row = 0; row < local_input.Height(); ++row) {
       const auto& x = local_input(row, col);
       sum += std::fabs(x);
@@ -43,10 +45,11 @@ void local_fp_cpu(const AbsMat& local_input,
   }
 }
 
-void local_bp_cpu(const AbsMat& local_input,
-                  const AbsMat& local_gradient_wrt_output,
-                  AbsMat& local_gradient_wrt_input) {
-  constexpr DataType zero = 0;
+template <typename TensorDataType>
+void local_bp_cpu(const El::AbstractMatrix<TensorDataType>& local_input,
+                  const El::AbstractMatrix<TensorDataType>& local_gradient_wrt_output,
+                  El::AbstractMatrix<TensorDataType>& local_gradient_wrt_input) {
+  const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
   LBANN_OMP_PARALLEL_FOR_COLLAPSE2
   for (El::Int col = 0; col < local_input.Width(); ++col) {
     for (El::Int row = 0; row < local_input.Height(); ++row) {
@@ -66,35 +69,26 @@ void local_bp_cpu(const AbsMat& local_input,
 
 } // namespace
 
-template <>
-void l1_norm_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(const AbsMat& local_input,
-                        AbsMat& local_contribution) {
-  local_fp_cpu(local_input, local_contribution);
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l1_norm_layer<TensorDataType, T_layout, Dev>::local_fp_compute() {
+  local_fp_cpu(this->get_local_prev_activations(),
+               this->m_workspace->Matrix());
 }
-template <>
-void l1_norm_layer<data_layout::MODEL_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(const AbsMat& local_input,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_input) {
-  local_bp_cpu(local_input,
-               local_gradient_wrt_output,
-               local_gradient_wrt_input);
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void l1_norm_layer<TensorDataType, T_layout, Dev>::local_bp_compute() {
+  local_bp_cpu(this->get_local_prev_activations(),
+               this->m_workspace->LockedMatrix(),
+               this->get_local_error_signals());
 }
-template <>
-void l1_norm_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_fp_compute(const AbsMat& local_input,
-                        AbsMat& local_contribution) {
-  local_fp_cpu(local_input, local_contribution);
-}
-template <>
-void l1_norm_layer<data_layout::DATA_PARALLEL, El::Device::CPU>
-     ::local_bp_compute(const AbsMat& local_input,
-                        const AbsMat& local_gradient_wrt_output,
-                        AbsMat& local_gradient_wrt_input) {
-  local_bp_cpu(local_input,
-               local_gradient_wrt_output,
-               local_gradient_wrt_input);
-}
+
+#define PROTO(T)                                      \
+  template class l1_norm_layer<                       \
+    T, data_layout::DATA_PARALLEL, El::Device::CPU>;  \
+  template class l1_norm_layer<                       \
+    T, data_layout::MODEL_PARALLEL, El::Device::CPU>
+
+#define LBANN_INSTANTIATE_CPU_HALF
+#include "lbann/macros/instantiate.hpp"
 
 } // namespace lbann

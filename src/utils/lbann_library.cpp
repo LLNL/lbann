@@ -25,15 +25,189 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/callbacks/callback_checkpoint.hpp"
+
+#include "lbann/proto/factories.hpp"
+#include "lbann/utils/omp_diagnostics.hpp"
+#include "lbann/utils/threads/thread_utils.hpp"
+#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
+#include "lbann/callbacks/dump_weights.hpp"
+#include "lbann/callbacks/save_model.hpp"
+#include "lbann/callbacks/load_model.hpp"
+
+#include <lbann.pb.h>
+#include <model.pb.h>
 
 namespace lbann {
 
+/// Construct a trainer that contains a lbann comm object and threadpool
+std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
+                                           lbann_data::Trainer* pb_trainer,
+                                           lbann_data::LbannPB &pb,
+                                           options *opts) {
+  try {
+    int procs_per_trainer = 0;
+    if(pb_trainer->procs_per_trainer() > 0) {
+      procs_per_trainer = pb_trainer->procs_per_trainer();
+    }
+    if (procs_per_trainer == 0) {
+      procs_per_trainer = comm->get_procs_in_world();
+    }
+
+    // Set up the communicator and split the grid if necessary
+    comm->split_trainers(procs_per_trainer);
+    if (pb_trainer->num_parallel_readers() > procs_per_trainer) {
+      pb_trainer->set_num_parallel_readers(procs_per_trainer);
+    }
+
+    // Adjust the number of parallel readers; this may be adjusted
+    // after calling split_trainers()
+    // set_num_parallel_readers(*comm, pb);
+
+    // Initalize a per-trainer I/O thread pool
+    std::unique_ptr<thread_pool> io_thread_pool = construct_io_thread_pool(comm, opts);
+
+    // Setup I/O threads
+    auto io_threads_per_process = io_thread_pool->get_num_threads();
+    auto io_threads_offset = io_thread_pool->get_threads_offset();
+
+    // Set algorithmic blocksize in Hydrogen
+    if (pb_trainer->hydrogen_block_size() > 0) {
+      El::SetBlocksize(pb_trainer->hydrogen_block_size());
+    }
+
+    // Set up the communicator and get the grid based on the trainers' spec.
+    // We do not currently support splitting different trainers in different ways,
+    // as this implies different grids.
+    if (procs_per_trainer != comm->get_procs_per_trainer()) {
+      comm->split_trainers(procs_per_trainer);
+    }
+
+    // Display how the OpenMP threads are provisioned
+    // if (opts->has_string("print_affinity")) {
+    //   display_omp_setup();
+    // }
+
+    // Update the index lists to accomodate multi-trainer / multi-model specification
+    customize_data_readers_index_list(*comm, pb);
+
+    // Initialize data readers
+    //@todo: code not in place for correctly handling image preprocessing
+    std::map<execution_mode, generic_data_reader *> data_readers;
+    bool is_shared_training_data_reader = pb_trainer->shareable_training_data_reader();
+    bool is_shared_testing_data_reader = pb_trainer->shareable_testing_data_reader();
+    if (opts->has_string("share_testing_data_readers")) {
+      is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
+    }
+    init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
+
+    // User feedback
+    //    print_parameters(comm, pb);
+
+    // Initalize trainer
+    std::unique_ptr<trainer> trainer = proto::construct_trainer(comm, data_readers, *pb_trainer);
+
+    // If the checkpoint directory has been overridden reset it before
+    // setting up the trainer
+    if (opts && opts->has_string("ckpt_dir")) {
+      for (auto&& c : trainer->get_callbacks()) {
+        {
+          auto* cb = dynamic_cast<callback::checkpoint*>(c);
+          if(cb != nullptr) {
+            cb->set_checkpoint_dir(opts->get_string("ckpt_dir"));
+            if(comm->am_trainer_master()) {
+              std::cout << "Setting the checkpoint directory to " << cb->get_checkpoint_dir() << std::endl;
+            }
+          }
+        }
+      }
+    }
+    if (opts && opts->has_string("restart_dir")) {
+      for (auto&& c : trainer->get_callbacks()) {
+        {
+          auto* cb = dynamic_cast<callback::checkpoint*>(c);
+          if(cb != nullptr) {
+            cb->set_restart_dir(opts->get_string("restart_dir"));
+            if(comm->am_trainer_master()) {
+              std::cout << "Setting the restart directory to " << cb->get_restart_dir() << std::endl;
+            }
+          }
+        }
+      }
+    }
+
+    int random_seed = lbann_default_random_seed;
+
+    // Change random seed if needed.
+    if (pb_trainer->random_seed() > 0) {
+      random_seed = pb_trainer->random_seed();
+      // Reseed here so that setup is done with this new seed.
+      init_random(random_seed);
+      init_data_seq_random(random_seed);
+    }
+
+    // Initialize models differently if needed.
+#ifndef LBANN_DETERMINISTIC
+    if (!pb_trainer->random_init_trainers_identically()) {
+      hash_combine(random_seed, comm->get_trainer_rank());
+      // Reseed here so that setup is done with this new seed.
+      init_random(random_seed);
+      init_data_seq_random(random_seed);
+    }
+#else
+    if (!pb_trainer->random_init_trainers_identically()) {
+      if(comm->am_trainer_master()) {
+        std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
+          "due to sequential consistency" << std::endl;
+      }
+    }
+#endif
+
+#ifndef LBANN_DETERMINISTIC
+    // Under normal conditions, reinitialize the random number generator so
+    // that regularization techniques (e.g. dropout) generate unique patterns
+    // on different ranks.
+    init_random(random_seed + comm->get_rank_in_world());
+#else
+    if(comm->am_world_master()) {
+      std::cout <<
+        "--------------------------------------------------------------------------------\n"
+        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
+        "--------------------------------------------------------------------------------\n";
+    }
+#endif
+
+    trainer->setup(std::move(io_thread_pool));
+
+    if(opts->get_bool("disable_background_io_activity")) {
+      trainer->allow_background_io_activity(false);
+    }
+
+
+    // Report useful information
+    if (comm->am_world_master()) {
+      print_lbann_configuration(comm,
+                                io_threads_per_process,
+                                io_threads_offset);
+      std::cout << "\n"
+                << trainer->get_description()
+                << std::endl;
+    }
+
+    return trainer;
+
+  } catch (lbann_exception& e) {
+    El::mpi::Abort(El::mpi::COMM_WORLD, 1);
+  } catch (std::exception& e) {
+    El::ReportException(e);  // Elemental exceptions
+  }
+  return nullptr;
+}
+
 /// Setup I/O thread pool that is shared across all models
-std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm) {
+std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts) {
   int num_io_threads = num_free_cores_per_process(comm);
 
-  options *opts = options::get();
   if(opts->has_int("num_io_threads")) {
     int requested_io_threads = opts->get_int("num_io_threads");
     if(requested_io_threads > 0 && requested_io_threads < num_io_threads) {
@@ -56,148 +230,119 @@ std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm) {
 
 std::unique_ptr<model> build_model_from_prototext(
   int argc, char **argv,
+  const lbann_data::Trainer* pb_trainer,
   lbann_data::LbannPB &pb,
   lbann_comm *comm,
-  std::shared_ptr<thread_pool> io_thread_pool,
-  bool first_model) {
+  options *opts,
+  thread_pool& io_thread_pool,
+  std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
+  int training_dr_linearized_data_size) {
 
-  int random_seed = lbann_default_random_seed;
   bool master = comm->am_world_master();
   if (master) {
     std::cerr << "starting build_model_from_prototext" << std::endl;
   }
 
   std::ostringstream err;
-  options *opts = options::get();
-
-  // Optionally over-ride some values in prototext
-  get_cmdline_overrides(*comm, pb);
 
   lbann_data::Model *pb_model = pb.mutable_model();
 
-  // Adjust the number of parallel readers; this may be adjusted
-  // after calling split_trainers()
-  set_num_parallel_readers(*comm, pb);
-
   // Check to see if the model wants to reduce the I/O parallelism
-  if(pb_model->serialize_io() && io_thread_pool->get_num_threads() != 1) {
+  if(pb_model->serialize_io() && io_thread_pool.get_num_threads() != 1) {
     if(master) {
       std::cout << "Model " << pb_model->name() << " serialized the I/O threads" << std::endl;
     }
-    io_thread_pool->relaunch_pinned_threads(1);
+    io_thread_pool.relaunch_pinned_threads(1);
   }
-
-  // Setup I/O threads
-  auto io_threads_per_process = io_thread_pool->get_num_threads();
-  auto io_threads_offset = io_thread_pool->get_threads_offset();
-
-  // Set algorithmic blocksize
-  if (pb_model->block_size() == 0 and master) {
-    err << "model does not provide a valid block size (" << pb_model->block_size() << ")";
-    LBANN_ERROR(err.str());
-  }
-  El::SetBlocksize(pb_model->block_size());
-
-  // Change random seed if needed.
-  if (pb_model->random_seed() > 0) {
-    random_seed = pb_model->random_seed();
-    // Reseed here so that setup is done with this new seed.
-    init_random(random_seed);
-    init_data_seq_random(random_seed);
-  }
-  // Set up the communicator and get the grid based on the first model's spec.
-  // We do not currently support splitting different models in different ways,
-  // as this implies different grids.
-  int procs_per_trainer = pb_model->procs_per_trainer();
-  if (procs_per_trainer == 0) {
-    procs_per_trainer = comm->get_procs_in_world();
-  }
-  if (first_model) {
-    comm->split_trainers(procs_per_trainer);
-    if (pb_model->num_parallel_readers() > procs_per_trainer) {
-      pb_model->set_num_parallel_readers(procs_per_trainer);
-    }
-  } else if (procs_per_trainer != comm->get_procs_per_trainer()) {
-    LBANN_ERROR("Model prototexts requesting different procs per model is not supported");
-  }
-
-  // Initialize models differently if needed.
-#ifndef LBANN_DETERMINISTIC
-  if (pb_model->random_init_models_differently()) {
-    random_seed = random_seed + comm->get_trainer_rank();
-    // Reseed here so that setup is done with this new seed.
-    init_random(random_seed);
-    init_data_seq_random(random_seed);
-  }
-#else
-  if (pb_model->random_init_models_differently()) {
-    if (master) {
-      std::cout << "WARNING: Ignoring random_init_models_differently " <<
-        "due to sequential consistency" << std::endl;
-    }
-  }
-#endif
 
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
   save_session(*comm, argc, argv, pb);
-
-  // Report useful information
-  if (master) {
-    print_lbann_configuration(pb_model, comm, io_threads_per_process, io_threads_offset);
-  }
 
   // Display how the OpenMP threads are provisioned
   if (opts->has_string("print_affinity")) {
     display_omp_setup();
   }
 
-  // Update the index lists to accommodate multi-trainer / multi-model specification
-  customize_data_readers_index_list(*comm, pb);
+  // User feedback
+  print_parameters(*comm, pb);
 
-  // Initialize data readers
-  //@todo: code not in place for correctly handling image preprocessing
-  std::map<execution_mode, generic_data_reader *> data_readers;
-  bool is_shared_training_data_reader = pb_model->shareable_training_data_reader();
-  bool is_shared_testing_data_reader = pb_model->shareable_testing_data_reader();
-  if (opts->has_string("share_testing_data_readers")) {
-    is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
+  // Initalize model
+  std::unique_ptr<model> ret_model = proto::construct_model(comm,
+                                                            training_dr_linearized_data_size,
+                                                            pb.optimizer(),
+                                                            pb.trainer(),
+                                                            pb.model());
+
+  // Add the trainer's callbacks to the model
+  for (auto&& c : shared_callbacks) {
+    ret_model->add_callback(c);
   }
-  init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
 
-  // hack to prevent all data readers from loading identical data; instead,
-  // share a single copy. See data_reader_jag_conduit_hdf5 for example
-  if (first_model) {
-    if (opts->has_string("share_data_reader_data")) {
-      for (auto&& t : data_readers) {
-        opts->set_ptr((void*)t.second);
+  // If the checkpoint directory has been overridden reset it before
+  // setting up the model
+  if (opts && opts->has_string("ckpt_dir")) {
+    for (auto&& c : ret_model->get_callbacks()) {
+      {
+        auto* cb = dynamic_cast<callback::dump_weights*>(c);
+        if(cb != nullptr) {
+          cb->set_target_dir(opts->get_string("ckpt_dir"));
+          if(comm->am_trainer_master()) {
+            std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+          }
+        }
+      }
+      {
+        auto* cb = dynamic_cast<callback::save_model*>(c);
+        if(cb != nullptr) {
+          cb->set_target_dir(opts->get_string("ckpt_dir"));
+          if(comm->am_trainer_master()) {
+            std::cout << "Setting the dump weights directory to " << cb->get_target_dir() << std::endl;
+          }
+        }
       }
     }
   }
 
-  // User feedback
-  print_parameters(*comm, pb);
-
-  // Initialize model
-  std::unique_ptr<model> ret_model{
-    proto::construct_model(comm,
-                           data_readers,
-                           pb.optimizer(),
-                           pb.model())
-  };
-  ret_model->setup(std::move(io_thread_pool));
-
-  if(opts->get_bool("disable_background_io_activity")) {
-    ret_model->allow_background_io_activity(false);
-  }
-
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store")) {
-    if (master) {
-      std::cout << "\nUSING DATA STORE!\n\n";
+  if (opts && opts->has_string("load_model_weights_dir")) {
+    callback::load_model* cb = nullptr;
+    for (auto&& c : ret_model->get_callbacks()) {
+      cb = dynamic_cast<callback::load_model*>(c);
+      if(cb != nullptr) {
+        break;
+      }
     }
-    for (auto&& r : data_readers) {
-      if (!r.second) continue;
-      r.second->setup_data_store(pb_model->mini_batch_size());
+
+    std::string active_load_model_dir;
+    std::string load_model_dir = opts->get_string("load_model_weights_dir");
+    if(opts->get_bool("load_model_weights_dir_is_complete")) {
+      active_load_model_dir = load_model_dir;
+    }else {
+      size_t epochLast = std::numeric_limits<size_t>::max();;
+      size_t stepLast = std::numeric_limits<size_t>::max();;
+      execution_mode mode = execution_mode::invalid;
+      active_load_model_dir = callback::get_last_shared_checkpoint_filename("sgd", load_model_dir);
+
+      // get last epoch and step saved.
+      int success = callback::read_latest(active_load_model_dir, &mode, &epochLast, &stepLast);
+      if(!success) {
+        LBANN_ERROR("Unable to find the latest checkpoint ", active_load_model_dir);
+        return nullptr;
+      }
+      active_load_model_dir = callback::get_shared_checkpoint_dirname("sgd", load_model_dir, mode, epochLast, stepLast) + ret_model->get_name() + '/';
+    }
+
+    if(cb == nullptr) {
+      std::vector<std::string> dirs = {active_load_model_dir};
+      std::unique_ptr<callback::load_model> load_model_cb =
+        make_unique<callback::load_model>(dirs);
+      cb = load_model_cb.get();
+      ret_model->add_callback(std::move(load_model_cb));
+      if(comm->am_trainer_master()) {
+        LBANN_WARNING("command line flag --load_model_dir was provided but there was no explicit load_model callback, adding one automagically!");
+      }
+    }else {
+      cb->add_dir(opts->get_string("load_model_weights_dir"));
     }
   }
 
@@ -205,32 +350,10 @@ std::unique_ptr<model> build_model_from_prototext(
   //@todo
   //model->restartShared();
 
-  if (comm->am_world_master()) {
-    std::cout << "\n"
-              << ret_model->get_description()
-              << "Callbacks:" << std::endl;
-    for (lbann_callback *cb : ret_model->get_callbacks()) {
-      std::cout << cb->name() << std::endl;
-    }
-  }
-
-#ifndef LBANN_DETERMINISTIC
-  // Under normal conditions, reinitialize the random number generator so
-  // that regularization techniques (e.g. dropout) generate unique patterns
-  // on different ranks.
-  init_random(random_seed + comm->get_rank_in_world());
-#else
-  if(comm->am_world_master()) {
-    std::cout <<
-      "--------------------------------------------------------------------------------\n"
-      "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-      "--------------------------------------------------------------------------------\n";
-  }
-#endif
   return ret_model;
 }
 
-void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, int io_threads_per_process, int io_threads_offset) {
+void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int io_threads_offset) {
   // Report hardware settings
   std::cout << "Hardware properties (for master process)" << std::endl
             << "  Processes on node          : " << comm->get_procs_per_node() << std::endl
@@ -244,6 +367,16 @@ void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, in
   std::cout << std::endl;
 
   // Report build settings
+  std::cout << "Running: LLNL LBANN version: "
+            << LBANN_MAKE_STR(LBANN_VERSION)
+            << " (" << LBANN_MAKE_STR(LBANN_GIT_VERSION) << ")"
+            << std::endl;
+#ifdef HYDROGEN_VERSION
+  std::cout << "         LLNL Hydrogen version: "
+            << HYDROGEN_VERSION
+            << " (" << HYDROGEN_GIT_VERSION << ")"
+            << std::endl << std::endl;
+#endif
   std::cout << "Build settings" << std::endl;
   std::cout << "  Type     : ";
 #ifdef LBANN_DEBUG
@@ -275,22 +408,6 @@ void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, in
 #else
   std::cout << "NOT detected" << std::endl;
 #endif // HYDROGEN_HAVE_CUB
-  std::cout << std::endl;
-
-  // Report device settings
-  std::cout << "GPU settings" << std::endl;
-  bool disable_cuda = pb_model->disable_cuda();
-#ifndef LBANN_HAS_GPU
-  disable_cuda = true;
-#endif // LBANN_HAS_GPU
-  std::cout << "  CUDA         : "
-            << (disable_cuda ? "disabled" : "enabled") << std::endl;
-  std::cout << "  cuDNN        : ";
-#ifdef LBANN_HAS_CUDNN
-  std::cout << (disable_cuda ? "disabled" : "enabled") << std::endl;
-#else
-  std::cout << "disabled" << std::endl;
-#endif // LBANN_HAS_CUDNN
   const auto* env = std::getenv("MV2_USE_CUDA");
   std::cout << "  MV2_USE_CUDA : " << (env != nullptr ? env : "") << std::endl;
   std::cout << std::endl;
@@ -308,10 +425,9 @@ void print_lbann_configuration(lbann_data::Model *pb_model, lbann_comm *comm, in
 
   // Report model settings
   const auto& grid = comm->get_trainer_grid();
-  int procs_per_trainer = pb_model->procs_per_trainer();
-  std::cout << "Model settings" << std::endl
-            << "  Models                : " << comm->get_num_trainers() << std::endl
-            << "  Processes per trainer : " << procs_per_trainer << std::endl
+  std::cout << "Trainer settings" << std::endl
+            << "  Trainers              : " << comm->get_num_trainers() << std::endl
+            << "  Processes per trainer : " << comm->get_procs_per_trainer() << std::endl
             << "  Grid dimensions       : " << grid.Height() << " x " << grid.Width() << std::endl;
   std::cout << std::endl;
 }

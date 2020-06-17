@@ -31,6 +31,8 @@
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/io/persist.hpp"
+#include <cereal/types/base_class.hpp>
+#include <cereal/types/map.hpp>
 
 namespace lbann {
 
@@ -56,6 +58,13 @@ struct metric_statistics {
   metric_statistics& operator=(const metric_statistics& other) = default;
   /** Destructor. */
   ~metric_statistics() = default;
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_sum),
+       CEREAL_NVP(m_num_samples));
+  }
+
   /** Add metric value to statistics. */
   void add_value(EvalType value, int num_samples = 1);
   /** Get mean metric value.
@@ -67,19 +76,6 @@ struct metric_statistics {
   int get_num_samples() const { return m_num_samples; }
   /** Reset statistics. */
   void reset();
-
-  //************************************************************************
-  // Checkpointing
-  //************************************************************************
-  /** struct used to serialize mode fields in file and MPI transfer */
-  struct packing_header {
-    double sum;
-    uint64_t num_samples;
-  };
-  bool pack_scalars(persist& p);
-  bool unpack_scalars(persist& p, struct packing_header *header);
-  void unpack_header(struct packing_header& header);
-
 };
 
 /** Abstract base class for metric functions.
@@ -102,6 +98,11 @@ class metric {
   /** Copy function. */
   virtual metric* copy() const = 0;
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(CEREAL_NVP(m_statistics));
+  }
+
   /** Return a string name for this metric. */
   virtual std::string name() const = 0;
   /** Return a display unit for this metric.
@@ -122,9 +123,13 @@ class metric {
   virtual EvalType evaluate(execution_mode mode, int mini_batch_size) = 0;
 
   /** Clear all statistics. */
-  void reset_statistics() { m_statistics.clear(); }
+  void reset_statistics() {
+    for (auto& stats : m_statistics) {
+      stats.second.reset();
+    }
+  }
   /** Clear statistics for an execution mode. */
-  void reset_statistics(execution_mode mode) { m_statistics.erase(mode); }
+  void reset_statistics(execution_mode mode) { m_statistics[mode].reset(); }
 
   /** Get mean metric value.
    *  If mini-batch sizes are not identical, the mean is over the
@@ -150,12 +155,12 @@ class metric {
   }
 
   /** Save metric state to checkpoint. */
-  virtual bool save_to_checkpoint_shared(persist& p);
+  virtual bool save_to_checkpoint_shared(persist& p) = 0;
   /** Load metric state from checkpoint. */
-  virtual bool load_from_checkpoint_shared(persist& p);
+  virtual bool load_from_checkpoint_shared(persist& p) = 0;
 
-  virtual bool save_to_checkpoint_distributed(persist& p);
-  virtual bool load_from_checkpoint_distributed(persist& p);
+  virtual bool save_to_checkpoint_distributed(persist& p) = 0;
+  virtual bool load_from_checkpoint_distributed(persist& p) = 0;
 
  protected:
 

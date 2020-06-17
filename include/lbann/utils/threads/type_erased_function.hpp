@@ -1,9 +1,11 @@
-#ifndef __LBANN_TYPE_ERASED_FUNCTION_HPP__
-#define __LBANN_TYPE_ERASED_FUNCTION_HPP__
-
-#include <type_traits>
+#ifndef LBANN_UTILS_THREADS_TYPE_ERASED_FUNCTION_HPP_INCLUDED
+#define LBANN_UTILS_THREADS_TYPE_ERASED_FUNCTION_HPP_INCLUDED
 
 #include <lbann/utils/memory.hpp>
+
+#include <memory>
+#include <type_traits>
+#include <utility>
 
 namespace lbann {
 
@@ -88,4 +90,4 @@ private:
 };// class type_erased_function
 
 }// namespace lbann
-#endif /* __LBANN_TYPE_ERASED_FUNCTION_HPP__ */
+#endif /* LBANN_UTILS_THREADS_TYPE_ERASED_FUNCTION_HPP_INCLUDED */

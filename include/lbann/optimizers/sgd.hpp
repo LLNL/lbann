@@ -27,7 +27,9 @@
 #ifndef LBANN_OPTIMIZERS_SGD_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_SGD_HPP_INCLUDED
 
-#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/io/persist.hpp"
+#include <optimizers.pb.h>
 
 namespace lbann {
 
@@ -35,22 +37,42 @@ namespace lbann {
  *  @details Supports momentum and Nesterov acceleration.
  *  @todo Dedicated optimizers for momentum or Nesterov SGD.
  */
-class sgd : public optimizer {
+template <typename TensorDataType>
+class sgd : public data_type_optimizer<TensorDataType> {
+
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The optimizer base type of this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  ///@}
 
 public:
 
   /** @name Life cycle functions */
   ///@{
 
-  sgd(lbann_comm *comm,
-      DataType learning_rate,
-      DataType momentum = 0,
+  sgd(TensorDataType learning_rate,
+      TensorDataType momentum = 0,
       bool nesterov = false);
   sgd(const sgd& other);
   sgd& operator=(const sgd& other);
   ~sgd() override = default;
   sgd* copy() const override { return new sgd(*this); }
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
+       CEREAL_NVP(m_momentum));
+  }
   ///@}
 
   /** @name Descriptions */
@@ -69,11 +91,11 @@ public:
   /** @brief Decay rate for gradient accumulation.
    *  @details A momentum of zero corresponds to vanilla SGD.
    */
-  DataType get_momentum() const noexcept { return m_momentum; }
+  TensorDataType get_momentum() const noexcept { return m_momentum; }
   /** @brief Decay rate for gradient accumulation.
    *  @details A momentum of zero corresponds to vanilla SGD.
    */
-  void set_momentum(DataType momentum) { m_momentum = momentum; }
+  void set_momentum(TensorDataType momentum) { m_momentum = momentum; }
 
   /** Whether Nesterov acceleration is applied. */
   bool using_nesterov() const noexcept { return m_nesterov; }
@@ -81,69 +103,46 @@ public:
   void set_nesterov(bool nesterov) { m_nesterov = nesterov; }
 
   /** Accumulated gradients for momentum optimizer. */
-  const AbsDistMat& get_velocity() const;
+  const AbsDistMatrixType& get_velocity() const;
   /** Accumulated gradients for momentum optimizer. */
-  AbsDistMat& get_velocity();
+  AbsDistMatrixType& get_velocity();
 
   ///@}
 
   /** @name Setup */
   ///@{
 
-  void setup(weights* w = nullptr) override;
+  void setup(WeightsType* w = nullptr) override;
 
   ///@}
 
 protected:
 
   /** Computation for an optimization step. */
-  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+  void step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) override;
 
 private:
 
   /** @brief Decay rate for gradient accumulation.
    *  @details A momentum of zero corresponds to vanilla SGD.
    */
-  DataType m_momentum;
+  TensorDataType m_momentum;
   /** Whether Nesterov acceleration is used. */
   bool m_nesterov;
   /** @brief Accumulated gradients.
    *  @details Not used for vanilla SGD.
    */
-  std::unique_ptr<AbsDistMat> m_velocity;
+  std::unique_ptr<AbsDistMatrixType> m_velocity;
 
   /** CPU implementation of momentum or Nesterov step. */
-  void momentum_step_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void momentum_step_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #ifdef LBANN_HAS_CUDA
   /** GPU implementation of momentum or Nesterov step. */
-  void momentum_step_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void momentum_step_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_CUDA
 
   /** @name Checkpointing */
   ///@{
-
-  struct packing_header {
-    DataType momentum;
-  };
-
-  bool pack_scalars(persist& p) {
-    p.write_datatype(persist_type::train, "momentum", m_momentum);
-    return true;
-  }
-
-  bool unpack_scalars(persist& p, struct packing_header *header){
-    p.read_datatype(persist_type::train, "momentum",  &m_momentum);
-
-    if(header != nullptr){
-      header->momentum = m_momentum;
-    }
-
-  return true;
-  }
-
-  void unpack_header(struct packing_header& header){
-    m_momentum = header.momentum;
-  }
 
   bool save_to_checkpoint_shared(persist& p, std::string m_name) override;
   bool load_from_checkpoint_shared(persist& p, std::string m_name) override;
@@ -153,6 +152,11 @@ private:
   ///@}
 
 };
+
+template <typename TensorDataType>
+std::unique_ptr<optimizer>
+build_sgd_optimizer_from_pbuf(
+  google::protobuf::Message const&);
 
 } // namespace lbann
 

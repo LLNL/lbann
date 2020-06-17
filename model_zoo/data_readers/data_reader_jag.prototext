@@ -1,0 +1,50 @@
+########################################################################
+# The JAG normalization values were computed over the 10M + 1MA + 1MB random
+# pulls from the 100M data set.  They are valid for the directories:
+# /p/lustre2/brainusr/datasets/10MJAG/ (10M | 1M_A | 1M_B)
+# /p/lustre2/brainusr/datasets/10MJAG_balanced_1K/ (1M_A | 1M_B)
+# /p/gpfs1/brainusr/datasets/10MJAG/10M | 1M_A | 1M_B
+# /p/gpfs1/brainusr/datasets/10MJAG_balanced_1K/ (1M_A | 1M_B)
+########################################################################
+
+data_reader {
+  requires_data_set_metadata: true
+
+  reader {
+    name: "jag_conduit"
+    role: "train"
+    shuffle: true
+    data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/100K4trainers/"
+    index_list: "100Kindex.txt"
+    index_list_per_trainer: false
+    index_list_per_model: false
+
+    validation_percent: 0
+    absolute_sample_count: 0
+    #Use 1000 of 100K samples
+    percent_of_data_to_use: 0.001
+    disable_responses: true
+    disable_labels: true
+
+    num_labels: 5
+  }
+
+  reader {
+    name: "jag_conduit"
+    role: "test"
+    shuffle: false
+    # change to a lustre path
+    data_filedir: "/p/lustre2/brainusr/datasets/10MJAG/1M_A/100K16trainers/"
+    index_list: "t1_sample_list.txt"
+    index_list_per_trainer: false
+    index_list_per_model: false
+
+    validation_percent: 0
+    absolute_sample_count: 0
+    percent_of_data_to_use: 0.005
+    disable_responses: true
+    disable_labels: true
+
+    num_labels: 5
+  }
+}

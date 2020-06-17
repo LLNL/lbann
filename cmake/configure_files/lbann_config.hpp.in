@@ -24,6 +24,7 @@
 #cmakedefine LBANN_GNU_LINUX
 
 #cmakedefine LBANN_HAS_CEREAL
+#cmakedefine LBANN_HAS_DIHYDROGEN
 #cmakedefine LBANN_HAS_OPENCV
 #cmakedefine LBANN_HAS_TBINF
 #cmakedefine LBANN_HAS_CNPY
@@ -36,6 +37,13 @@
 
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
+#cmakedefine LBANN_HAS_NVSHMEM
+#ifndef LBANN_HAS_CUDA
+#undef LBANN_HAS_NVSHMEM
+#endif
+
+#cmakedefine LBANN_HAS_HALF
+#cmakedefine LBANN_HAS_GPU_FP16
 
 #cmakedefine LBANN_VTUNE
 #cmakedefine LBANN_NVPROF
@@ -44,6 +52,11 @@
 
 #cmakedefine LBANN_HAS_STD_ANY
 #cmakedefine LBANN_HAS_STD_MAKE_UNIQUE
+
+// API support for non-portable pthread functionality.
+#cmakedefine LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
+
+#cmakedefine LBANN_HAS_DISTCONV
 
 // Define the LBANN datatype
 namespace lbann

@@ -1,0 +1,759 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+syntax = "proto3";
+
+package lbann_data;
+
+import "google/protobuf/wrappers.proto";
+
+enum DataType {
+  FLOAT = 0;
+  DOUBLE = 1;
+  FP16 = 2;
+}
+
+// Lives here because it's used by both Convolution and
+// Deconvolution.
+enum ConvTensorOpsMode {
+  // Use the global default.
+  DEFAULT_TENSOR_OPS = 0;
+  // Explicitly disable tensor ops.
+  NO_TENSOR_OPS = 1;
+  // Use tensor ops -- allows conversion FP32->FP16
+  USE_TENSOR_OPS = 2;
+}
+
+message Layer {
+  string name = 50;
+  string parents = 151;
+  string children = 152;
+  string data_layout = 52;
+  string device_allocation = 55;
+  DataType datatype = 57;
+  string weights = 54;
+  bool num_neurons_from_data_reader = 53;
+  bool freeze = 5;
+  string hint_layer = 56;
+  ParallelStrategy parallel_strategy = 58;
+
+  repeated WeightsData weights_data = 153;
+  string top = 154;
+  string bottom = 155;
+  string type = 156;
+
+  oneof layer_type {
+    // Input layers
+    Input input = 2;
+
+    // Transform layers
+    Reshape reshape = 306;
+    Pooling pooling = 12;
+    Concatenation concatenation = 300;
+    Slice slice = 301;
+    Split split = 302;
+    Sum sum = 303;
+    WeightedSum weighted_sum = 323;
+    Unpooling unpooling = 304;
+    Hadamard hadamard = 308;
+    Constant constant = 309;
+    Reduction reduction = 310;
+    Evaluation evaluation = 311;
+    Gaussian gaussian = 312;
+    Bernoulli bernoulli = 313;
+    Uniform uniform = 314;
+    Crop crop = 316;
+    CategoricalRandom categorical_random = 317;
+    DiscreteRandom discrete_random = 318;
+    Dummy dummy = 319;
+    StopGradient stop_gradient = 320;
+    InTopK in_top_k = 324;
+    Sort sort = 325;
+    WeightsLayer weights_layer = 326;
+    Tessellate tessellate = 327;
+
+    // Learning layers
+    FullyConnected fully_connected = 11;
+    Convolution convolution = 13;
+    Deconvolution deconvolution = 305;
+    Embedding embedding = 328;
+    ChannelwiseScaleBias channelwise_scale_bias = 329;
+    EntrywiseScaleBias entrywise_scale_bias = 330;
+    ChannelwiseFullyConnected channelwise_fully_connected = 331;
+
+    // Loss layers
+    CrossEntropy cross_entropy = 60;
+    MeanSquaredError mean_squared_error = 61;
+    MeanAbsoluteError mean_absolute_error = 62;
+    CategoricalAccuracy categorical_accuracy = 63;
+    TopKCategoricalAccuracy top_k_categorical_accuracy = 64;
+    L2Norm2 l2_norm2 = 65;
+    L1Norm l1_norm = 66;
+    BinaryCrossEntropy binary_cross_entropy = 67;
+    SigmoidBinaryCrossEntropy sigmoid_binary_cross_entropy = 68;
+    BooleanAccuracy boolean_accuracy = 69;
+    BooleanFalseNegative boolean_false_negative = 70;
+    BooleanFalsePositive boolean_false_positive = 71;
+
+    // Math layers
+    LogicalNot logical_not = 401;
+    Abs abs = 402;
+    Negative negative = 403;
+    Sign sign = 404;
+    Round round = 405;
+    Ceil ceil = 406;
+    Floor floor = 407;
+    Reciprocal reciprocal = 408;
+    Square square = 409;
+    Sqrt sqrt = 410;
+    Rsqrt rsqrt = 411;
+    SafeReciprocal safe_reciprocal = 412;
+    Exp exp = 413;
+    Expm1 expm1 = 414;
+    Log log = 415;
+    Log1p log1p = 416;
+    Cos cos = 417;
+    Sin sin = 418;
+    Tan tan = 419;
+    Acos acos = 420;
+    Asin asin = 421;
+    Atan atan = 422;
+    Cosh cosh = 423;
+    Sinh sinh = 424;
+    Tanh tanh = 425;
+    Acosh acosh = 426;
+    Asinh asinh = 427;
+    Atanh atanh = 428;
+    Add add = 450;
+    Subtract subtract = 451;
+    Multiply multiply = 452;
+    Divide divide = 453;
+    Mod mod = 454;
+    Pow pow = 455;
+    SafeDivide safe_divide = 456;
+    SquaredDifference squared_difference = 457;
+    Max max = 458;
+    Min min = 459;
+    Equal equal = 460;
+    NotEqual not_equal = 461;
+    Less less = 462;
+    LessEqual less_equal = 463;
+    Greater greater = 464;
+    GreaterEqual greater_equal = 465;
+    LogicalAnd logical_and = 466;
+    LogicalOr logical_or = 467;
+    LogicalXor logical_xor = 468;
+    Clamp clamp = 469;
+    MatMul matmul = 470;
+
+    // Regularization layers
+    BatchNormalization batch_normalization = 19;
+    LocalResponseNormalization local_response_normalization = 20;
+    Dropout dropout = 21;
+    SeluDropout selu_dropout = 229;
+    EntrywiseBatchNormalization entrywise_batch_normalization = 230;
+    LayerNorm layer_norm = 231;
+    InstanceNorm instance_norm = 232;
+
+    // Activation layers
+    Elu elu = 200;
+    Identity identity = 201;
+    LeakyRelu leaky_relu = 202;
+    LogSigmoid log_sigmoid = 203;
+    LogSoftmax log_softmax = 204;
+    Relu relu = 205;
+    Selu selu = 206;
+    Sigmoid sigmoid = 207;
+    Softmax softmax = 208;
+    Softplus softplus = 209;
+    Softsign softsign = 210;
+
+    // Image layers
+    BilinearResize bilinear_resize = 500;
+
+    // Miscellaneous layers
+    Covariance covariance = 600;
+    Variance variance = 601;
+    ChannelwiseMean channelwise_mean = 602;
+    MiniBatchIndex mini_batch_index = 603;
+    MiniBatchSize mini_batch_size = 604;
+    Argmax argmax = 605;
+    Argmin argmin = 606;
+    OneHot one_hot = 607;
+    ChannelwiseSoftmax channelwise_softmax = 608;
+
+  }
+
+  ///////////////////////
+  // Math layers       //
+  ///////////////////////
+  message LogicalNot {}
+  message Abs {}
+  message Negative {}
+  message Sign {}
+  message Round {}
+  message Ceil {}
+  message Floor {}
+  message Reciprocal {}
+  message Square {}
+  message Sqrt {}
+  message Rsqrt {}
+  message SafeReciprocal {}
+  message Exp {}
+  message Expm1 {}
+  message Log {}
+  message Log1p {}
+  message Cos {}
+  message Sin {}
+  message Tan {}
+  message Acos {}
+  message Asin {}
+  message Atan {}
+  message Cosh {}
+  message Sinh {}
+  message Tanh {}
+  message Acosh {}
+  message Asinh {}
+  message Atanh {}
+  message Add {}
+  message Subtract {}
+  message Multiply {}
+  message Divide {}
+  message Mod {}
+  message Pow {}
+  message SafeDivide {}
+  message SquaredDifference {}
+  message Max {}
+  message Min {}
+  message Equal {}
+  message NotEqual {}
+  message Less {}
+  message LessEqual {}
+  message Greater {}
+  message GreaterEqual {}
+  message LogicalAnd {}
+  message LogicalOr {}
+  message LogicalXor {}
+  message Clamp {
+    double min = 1;
+    double max = 2;
+  }
+
+  /** @brief Matrix multiplication.
+   *
+   *  Takes two 2D input tensors and outputs their matrix product.
+   *  Matrix products are computed independently for each mini-batch
+   *  sample, in a similar manner as NumPy's matmul function.
+   */
+  message MatMul {
+    /** If true, matrices from the first input tensor are transposed
+     *  before multiplication.
+     */
+    bool transpose_a = 1;
+    /** If true, matrices from the second input tensor are transposed
+     *  before multiplication.
+     */
+    bool transpose_b = 2;
+  }
+
+  ///////////////////////
+  // Activation layers //
+  ///////////////////////
+  message Elu {
+    double alpha = 1; //default: 1.0; should be >= 0
+  }
+  message Identity {}
+  message LeakyRelu {
+    double negative_slope = 1; //default: 0.01
+  }
+  message LogSigmoid {}
+
+  /** @brief Logarithm of softmax function.
+   *
+   *  @f[ \log \text{softmax}(x)_i = x_i - \log \sum_j e^{x_j} @f]
+   */
+  message LogSoftmax {}
+
+  message Relu {}
+  message Selu {}
+  message Sigmoid {}
+
+  /**
+   *  @f[ \text{softmax}(x)_i = \frac{e^{x_i}}{\sum_j e^{x_j}} @f]
+   */
+  message Softmax {
+    string softmax_mode = 1; // default: "instance"; should be "instance" or "channel"
+  }
+
+  message Softplus {}
+  message Softsign {}
+
+  ///////////////////////
+  // Loss layers //
+  ///////////////////////
+  message CrossEntropy {}
+  message MeanSquaredError {}
+  message MeanAbsoluteError {}
+  message CategoricalAccuracy {}
+  message TopKCategoricalAccuracy {
+    int64 k = 1;
+  }
+  message L2Norm2 {}
+  message L1Norm {}
+  message BinaryCrossEntropy {}
+  message SigmoidBinaryCrossEntropy {}
+  message BooleanAccuracy {}
+  message BooleanFalseNegative {}
+  message BooleanFalsePositive {}
+
+  ///////////////////////////
+  // Regularization layers //
+  ///////////////////////////
+  message BatchNormalization {
+    double decay = 1;          //default: 0.9
+    double scale_init = 2;     //default: 1.0
+    double bias_init = 3;      //default: 0.0
+    double epsilon = 4;        //default: 1e-5
+    string stats_aggregation = 5; // default: local; deprecated
+    // default: 1 (local aggregation); set to a negative value for global stats.
+    int64 statistics_group_size = 6;
+  }
+
+  message EntrywiseBatchNormalization {
+    double decay = 1;
+    double epsilon = 2;
+  }
+
+  message SeluDropout {
+    double keep_prob = 2; //default: 0.95
+    double alpha = 3;     //default: 1.6732632423543772848170429916717
+    double scale = 4;     //default: 1.0507009873554804934193349852946
+  }
+
+  message LocalResponseNormalization {
+    int64 window_width = 4;
+    double lrn_alpha = 5;
+    double lrn_beta = 6;
+    double lrn_k = 7;
+  }
+
+  message Dropout {
+    double keep_prob = 2;  //default: 0.5
+  }
+
+  /** @brief
+   *
+   *  Each data sample is normalized to have zero mean and unit
+   *  standard deviation. See:
+   *
+   *  Jimmy Lei Ba, Jamie Ryan Kiros, and Geoffrey E. Hinton. "Layer
+   *  normalization." arXiv preprint arXiv:1607.06450 (2016).
+   *
+   *  Note that this layer does not apply an entry-wise scale and bias
+   *  like in the paper. Use the entry-wise scale/bias layer to
+   *  reproduce that functionality.
+   */
+  message LayerNorm {
+    /** @brief Small number to avoid division by zero.
+     *  @details Default is 1e-5.
+     */
+    google.protobuf.DoubleValue epsilon = 1;
+  }
+
+  message InstanceNorm {
+    /** @brief Small number to avoid division by zero.
+     *  @details Default is 1e-5.
+     */
+    google.protobuf.DoubleValue epsilon = 1;
+  }
+
+  //////////////////
+  // Input layers //
+  //////////////////
+  message Input {
+    string io_buffer = 2;         // Options: "partitioned" (default)
+    string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "N/A"
+  }
+
+  //////////////////////
+  // Transform layers //
+  //////////////////////
+  message Reshape {
+    int64 num_dims = 1; //DEPRECATED
+    string dims = 2; //should be space-separated list of ints, e.g, "2 6 7"
+  }
+
+  message Pooling {
+    int64 num_dims = 1;
+
+    bool has_vectors = 2;
+
+    //these are used if has_vectors = true
+    string pool_dims = 4; //should be space-separated list, e.g, "2 2 3"
+    string pool_pads = 5; //should be space-separated list, e.g, "2 2 3"
+    string pool_strides = 6; //should be space-separated list, e.g, "2 2 3"
+
+    //these are used if has_vectors = false
+    int64 pool_dims_i = 10;
+    int64 pool_pads_i = 11;
+    int64 pool_strides_i = 12;
+
+    //pool_mode should be one of: max, average, average_no_pad
+    //see: lbann/include/lbann/lbann_base.hpp
+    string pool_mode = 7;
+  }
+
+  message Unpooling {
+    int64 num_dims = 1;
+    string pooling_layer = 13; //should be name of the pooling layer
+  }
+
+
+  message Concatenation {
+    int64 axis = 1;
+  }
+
+  message Slice {
+    int64 axis = 1;
+    string slice_points = 2; //should be space-separated list of ints, e.g, "2 6 7"
+    //the following is for jag_conduit_hdf5;
+    string get_slice_points_from_reader = 4;
+    bool get_slice_points_from_reader_bool = 5;
+  }
+
+  message Split {
+  }
+
+  message Sum {
+  }
+
+  message WeightedSum {
+    string scaling_factors = 1;
+    //should be a space-separated list of doubles, e.g. "1.0 2.0 -1.0"
+  }
+
+  message Hadamard {
+  }
+
+  message Constant {
+    double value=1;
+    string num_neurons=2;
+  }
+
+  message Reduction {
+    string mode=1; //"sum" or "average"
+  }
+
+  message Evaluation {
+  }
+
+  message Gaussian {
+    double mean = 1;
+    double stdev = 2;
+    string neuron_dims = 3;
+    bool training_only = 4;
+  }
+
+  message Bernoulli {
+    double prob = 1;
+    string neuron_dims = 2;
+  }
+
+  message Uniform {
+    double min = 1;
+    double max = 2;
+    string neuron_dims = 3;
+    bool training_only = 4;
+  }
+
+
+  message Crop {
+    string dims = 3;
+  }
+
+  message CategoricalRandom {
+  }
+
+  message DiscreteRandom {
+    string values = 1;
+    string dims = 2;
+  }
+
+  message Dummy {
+  }
+
+  message StopGradient {
+  }
+
+  message InTopK {
+    int64 k = 1;
+  }
+
+  message Sort {
+    bool descending = 1;
+  }
+
+  message WeightsLayer {
+    string dims = 1;
+  }
+
+  message Tessellate {
+    string dims = 1;
+  }
+
+  /////////////////////
+  // Learning layers //
+  /////////////////////
+
+  /** @brief Affine transformation
+   *
+   *  Flattens the input tensor, multiplies with a weights matrix, and
+   *  optionally applies an entry-wise bias. Following the
+   *  column-vector convention:
+   *    @f[ y = W * \text{vec}(x) + b @f]
+   *
+   *  Two weights are required if bias is applied: the linearity and the
+   *  bias. Only the linearity weights are required if bias is not
+   *  applied. If weights aren't provided, the linearity weights are
+   *  initialized with He normal initialization and the bias weights are
+   *  initialized to zero.
+   */
+  message FullyConnected {
+    // Output tensor size
+    int64 num_neurons = 1;
+    // Whether to apply entry-wise bias
+    bool has_bias = 2;
+    // Whether to apply transpose of weights matrix
+    bool transpose = 3;
+  }
+
+  message Convolution {
+    int64 num_dims = 1;
+    int64 num_output_channels = 4;
+    int64 num_groups = 3;
+
+    bool has_vectors = 2;
+
+    // these are used if has_vector = true
+    string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
+    string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
+    string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
+    string conv_dilations = 8;  //should be space-separated list, e.g. "2 3 3"
+
+    // these are used if has_vector = false
+    int64 conv_dims_i = 50;
+    int64 conv_pads_i = 60;
+    int64 conv_strides_i = 70;
+    int64 conv_dilations_i = 80;
+
+    string weight_initialization = 9;     //DEPRECATED
+    bool has_bias = 10;                   //default: true
+    double bias_initial_value = 11;       //default: 0
+    double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
+  }
+
+  message Deconvolution {
+    int64 num_dims = 1;
+    int64 num_output_channels = 4;
+    int64 num_groups = 3;
+
+    bool has_vectors = 2;
+
+    // these are used if has_vector = true
+    string conv_dims = 5; //should be space-separated list, e.g, "2 2 3"
+    string conv_pads = 6;  //should be space-separated list, e.g, "2 2 3"
+    string conv_strides = 7; //should be space-separated list, e.g, "2 2 3"
+    string conv_dilations = 8;  //should be space-separated list, e.g. "2 3 3"
+
+    // these are used if has_vector = false
+    int64 conv_dims_i = 50;
+    int64 conv_pads_i = 60;
+    int64 conv_strides_i = 70;
+    int64 conv_dilations_i = 80;
+
+    string weight_initialization = 9;     //DEPRECATED
+    bool has_bias = 10;                   //default: true
+    double bias_initial_value = 11;       //default: 0
+    double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
+  }
+
+  /** @brief Lookup table to embedding vectors.
+   *
+   *  Takes a scalar input, interprets it as an index, and outputs the
+   *  corresponding vector. The number of embedding vectors and the
+   *  size of vectors are fixed. If the index is out-of-range, then
+   *  the output is a vector of zeros.
+   *
+   *  The embedding vectors are stored in an
+   *  @f$ \text{embedding_dim} \times \text{num_embeddings} @f$
+   *  weights matrix. Note that this is the transpose of the weights
+   *  in the PyTorch embedding layer.
+   */
+  message Embedding {
+    /// Size of dictionary of embeddings
+    int64 num_embeddings = 1;
+    /// Size of embedding vectors
+    int64 embedding_dim = 2;
+    /** If the padding index is set, then the corresponding embedding
+     *  vector is initialized with zeros. The objective function
+     *  gradient w.r.t. this embedding vector is always zero.
+     */
+    google.protobuf.Int64Value padding_idx = 3;
+  }
+
+  message ChannelwiseScaleBias {}
+  message EntrywiseScaleBias {}
+
+  /** @brief Apply affine transformation to tensor channels.
+   *
+   *  The input tensor is sliced along the first tensor dimension (the
+   *  "channel" dimension for image data in CHW format) and the same
+   *  affine transformation is applied to each slice. Following a
+   *  row-vector convention:
+   *    @f[ y(i,*) = \text{vec}( x(i,*) ) W^T + b @f]
+   *
+   *  Two weights are required if bias is applied: the linearity and the
+   *  bias. Only the linearity weights are required if bias is not
+   *  applied. If weights aren't provided, the linearity weights are
+   *  initialized with He normal initialization and the bias weights are
+   *  initialized to zero.
+   *
+   */
+  message ChannelwiseFullyConnected {
+    /// Output tensor dimensions, excluding the first dimension.
+    repeated uint64 output_channel_dims = 1;
+    /** @brief Whether to apply bias.
+     *  @details Default: true
+     */
+    google.protobuf.BoolValue bias = 2;
+    /** @brief Whether to apply transpose of weights matrix.
+     *  @details Default: false
+     */
+    google.protobuf.BoolValue transpose = 3;
+  }
+
+  //////////////////
+  // Image layers //
+  //////////////////
+  message BilinearResize {
+    int64 height = 1;
+    int64 width = 2;
+  }
+
+  //////////////////////////
+  // Miscellaneous layers //
+  //////////////////////////
+
+  message Covariance {
+    bool biased = 1; //Whether to use a biased covariance estimate
+  }
+  message Variance {
+    bool biased = 1; //Whether to use a biased variance estimate
+  }
+  message ChannelwiseMean {}
+  message MiniBatchIndex {}
+  message MiniBatchSize {}
+
+  // Get index of maximum-value tensor entry
+  //
+  // Expects a 1-D input tensor. If multiple entries have the same
+  // maximum value, outputs the index of the first one.
+  message Argmax {}
+
+  // Get index of minimum-value tensor entry
+  //
+  // Expects a 1-D input tensor. If multiple entries have the same
+  // minimum value, outputs the index of the first one.
+  message Argmin {}
+
+  // Convert index to a one-hot vector
+  //
+  // Expects a scalar input tensor and outputs a 1-D output tensor.
+  // The input is interpreted as an index, and output entries are one
+  // if they correspond to that index and zero otherwise. If the input
+  // is outside [0,size), then the output is all zeros.
+  message OneHot {
+    // Size of one-hot vector
+    int64 size = 1;
+  }
+
+  message ChannelwiseSoftmax {}
+
+} // message Layer
+
+//note: I'd like to put this enum inside of Layer, but if I do the enum values
+//      become, e.g, Layer_Imcomm_EXCLUDE, which is just ugly
+enum Imcomm {
+  DEFAULT = 0; //add Layer to Imcomm callback if all_learning_layers = true in
+               //the CallbackImComm
+  EXCLUDE = 1; //*do not* add Layer to Imcomm callback if all_learning_layers = true in
+               //the CallbackImComm
+  INCLUDE = 2;  //add Layer to Imcomm callback regardless of whether all_learning_layers
+                //in the CallbackImComm is set to true or false
+}
+
+// Weight data for exporting
+message WeightsShape {
+  repeated int64 dim = 1 [packed = true];
+}
+
+message WeightsData {
+  WeightsShape shape = 5;
+  string name = 1;
+  int64 height = 2;
+  int64 width = 3;
+  //@todo assume float above, add other datatype
+  repeated float data = 4 [packed=true];
+
+  Imcomm imcomm = 55;
+}
+
+//========================================================================
+// Parallel strategies for generalized layer-wise parallelism
+//========================================================================
+message ParallelStrategy {
+  int64 sample_groups = 1;
+  int64 sample_splits = 2;
+  int64 height_groups = 3;
+  int64 height_splits = 4;
+  int64 width_groups = 5;
+  int64 width_splits = 6;
+  int64 channel_groups = 7;
+  int64 channel_splits = 8;
+  int64 filter_groups = 9;
+  int64 filter_splits = 10;
+  // For fully-connected layers.
+  int64 replications = 11;
+  int64 procs_per_replica = 12;
+  int64 depth_groups = 13;
+  int64 depth_splits = 14;
+}

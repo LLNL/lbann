@@ -27,7 +27,9 @@
 #ifndef LBANN_OPTIMIZERS_ADAGRAD_HPP_INCLUDED
 #define LBANN_OPTIMIZERS_ADAGRAD_HPP_INCLUDED
 
-#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/optimizers/data_type_optimizer.hpp"
+#include "lbann/io/persist.hpp"
+#include <optimizers.pb.h>
 
 namespace lbann {
 
@@ -39,39 +41,61 @@ namespace lbann {
  *  methods for online learning and stochastic optimization." Journal
  *  of Machine Learning Research 12, no. Jul (2011): 2121-2159.
  */
-class adagrad : public optimizer {
+template <typename TensorDataType>
+class adagrad : public data_type_optimizer<TensorDataType> {
+public:
+  /** @name Public Types */
+  ///@{
+
+  /** @brief The tensor type expected in this object. */
+  using AbsDistMatrixType = El::AbstractDistMatrix<TensorDataType>;
+
+  /** @brief The optimizer base type of this object. */
+  using OptimizerType = data_type_optimizer<TensorDataType>;
+
+  /** @brief The concrete weights type used by this object. */
+  using WeightsType = data_type_weights<TensorDataType>;
+
+  ///@}
+
 public:
 
-  adagrad(lbann_comm* comm, DataType learning_rate, DataType eps = 1e-8);
+  adagrad(TensorDataType learning_rate, TensorDataType eps = 1e-8);
   adagrad(const adagrad& other);
   adagrad& operator=(const adagrad& other);
   ~adagrad() override = default;
   adagrad* copy() const override { return new adagrad(*this); }
+
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize(Archive & ar) {
+    ar(cereal::base_class<data_type_optimizer<TensorDataType>>(this),
+       CEREAL_NVP(m_eps));
+  }
 
   /** Human-readable type name. */
   std::string get_type() const override { return "AdaGrad"; }
   /** Human-readable description. */
   description get_description() const override;
 
-  void setup(weights* w = nullptr) override;
+  void setup(WeightsType* w = nullptr) override;
 
 protected:
 
   /** Computation for an optimization step. */
-  void step_compute(AbsDistMat& values, const AbsDistMat& gradient) override;
+  void step_compute(AbsDistMatrixType& values, const AbsDistMatrixType& gradient) override;
 
 private:
 
   /** Small factor to avoid division by zero. */
-  DataType m_eps;
+  TensorDataType m_eps;
   /** AdaGrad cache. */
-  std::unique_ptr<AbsDistMat> m_cache;
+  std::unique_ptr<AbsDistMatrixType> m_cache;
 
   /** CPU implementation of optimization step. */
-  void step_compute_cpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void step_compute_cpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #ifdef LBANN_HAS_CUDNN
   /** GPU implementation of optimization step. */
-  void step_compute_gpu(AbsDistMat& values, const AbsDistMat& gradient);
+  void step_compute_gpu(AbsDistMatrixType& values, const AbsDistMatrixType& gradient);
 #endif // LBANN_HAS_CUDNN
 
   // ===========================================
@@ -84,6 +108,11 @@ private:
   bool load_from_checkpoint_distributed(persist& p, std::string m_name) override;
 
 };
+
+template <typename TensorDataType>
+std::unique_ptr<optimizer>
+build_adagrad_optimizer_from_pbuf(
+  google::protobuf::Message const&);
 
 } // namespace lbann
 

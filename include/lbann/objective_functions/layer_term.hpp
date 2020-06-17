@@ -58,7 +58,7 @@ public:
 private:
 
   /** Get corresponding evaluation layer. */
-  abstract_evaluation_layer& get_evaluation_layer();
+  /*abstract_evaluation_*/Layer& get_evaluation_layer();
 
 };
 

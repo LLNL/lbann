@@ -31,25 +31,46 @@
 
 namespace lbann {
 
+#ifndef LBANN_ENTRYWISE_LAYER_INSTANTIATE
+#define BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, DEVICE)                 \
+  extern template class LAYER_NAME<T, data_layout::DATA_PARALLEL, DEVICE>; \
+  extern template class LAYER_NAME<T, data_layout::MODEL_PARALLEL, DEVICE>
+#else
+#define BINARY_ETI_DECL_MACRO_DEV(...)
+#endif // LBANN_BINARY_LAYER_INSTANTIATE
+
+#ifdef LBANN_HAS_GPU
+#define BINARY_ETI_DECL_MACRO(LAYER_NAME, T)                      \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::CPU);       \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::GPU)
+#else
+#define BINARY_ETI_DECL_MACRO(LAYER_NAME, T)                \
+  BINARY_ETI_DECL_MACRO_DEV(LAYER_NAME, T, El::Device::CPU)
+#endif // LBANN_HAS_GPU
+
 // Convenience macro to define an entry-wise binary layer class
 #define DEFINE_ENTRYWISE_BINARY_LAYER(layer_name, layer_string)         \
-  struct layer_name##_name_struct {                                     \
-    inline operator std::string() { return layer_string; }              \
-  };                                                                    \
-  template <data_layout Layout, El::Device Device>                      \
-  using layer_name                                                      \
-  = entrywise_binary_layer<Layout, Device, layer_name##_name_struct>;
+  LBANN_DECLARE_ENTRYWISE_BINARY_LAYER(layer_name, layer_string);       \
+  BINARY_ETI_DECL_MACRO(layer_name, float);                             \
+  BINARY_ETI_DECL_MACRO(layer_name, double)
 
 // Cross entropy loss
-DEFINE_ENTRYWISE_BINARY_LAYER(binary_cross_entropy_layer, "binary cross entropy");
-DEFINE_ENTRYWISE_BINARY_LAYER(sigmoid_binary_cross_entropy_layer, "sigmoid binary cross entropy");
+DEFINE_ENTRYWISE_BINARY_LAYER(binary_cross_entropy_layer,
+                              "binary cross entropy");
+DEFINE_ENTRYWISE_BINARY_LAYER(sigmoid_binary_cross_entropy_layer,
+                              "sigmoid binary cross entropy");
 
 // Boolean loss functions
 DEFINE_ENTRYWISE_BINARY_LAYER(boolean_accuracy_layer, "Boolean accuracy");
-DEFINE_ENTRYWISE_BINARY_LAYER(boolean_false_negative_layer, "Boolean false negative rate");
-DEFINE_ENTRYWISE_BINARY_LAYER(boolean_false_positive_layer, "Boolean false positive rate");
+DEFINE_ENTRYWISE_BINARY_LAYER(boolean_false_negative_layer,
+                              "Boolean false negative rate");
+DEFINE_ENTRYWISE_BINARY_LAYER(boolean_false_positive_layer,
+                              "Boolean false positive rate");
 
 } // namespace lbann
 
 #undef DEFINE_ENTRYWISE_BINARY_LAYER
+#undef BINARY_ETI_DECL_MACRO
+#undef BINARY_ETI_DECL_MACRO_DEV
+
 #endif // LBANN_LAYERS_LOSS_ENTRYWISE_HPP_INCLUDED

@@ -24,439 +24,264 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
+// Get the declarations of all the builders for registration
+#include "lbann/callbacks/callback.hpp"
+#include "lbann/callbacks/check_dataset.hpp"
+#include "lbann/callbacks/check_gradients.hpp"
+#include "lbann/callbacks/check_init.hpp"
+#include "lbann/callbacks/check_metric.hpp"
+#include "lbann/callbacks/check_nan.hpp"
+#include "lbann/callbacks/check_small.hpp"
+#include "lbann/callbacks/checkpoint.hpp"
+#include "lbann/callbacks/confusion_matrix.hpp"
+#include "lbann/callbacks/debug.hpp"
+#include "lbann/callbacks/debug_io.hpp"
+#include "lbann/callbacks/dump_error_signals.hpp"
+#include "lbann/callbacks/dump_gradients.hpp"
+#include "lbann/callbacks/dump_minibatch_sample_indices.hpp"
+#include "lbann/callbacks/dump_outputs.hpp"
+#include "lbann/callbacks/dump_weights.hpp"
+#include "lbann/callbacks/early_stopping.hpp"
+#include "lbann/callbacks/gpu_memory_usage.hpp"
+#include "lbann/callbacks/hang.hpp"
+#include "lbann/callbacks/imcomm.hpp"
+#include "lbann/callbacks/learning_rate.hpp"
+#include "lbann/callbacks/ltfb.hpp"
+#include "lbann/callbacks/mixup.hpp"
+#include "lbann/callbacks/monitor_io.hpp"
+#include "lbann/callbacks/perturb_adam.hpp"
+#include "lbann/callbacks/perturb_dropout.hpp"
+#include "lbann/callbacks/print_model_description.hpp"
+#include "lbann/callbacks/print_statistics.hpp"
+#include "lbann/callbacks/profiler.hpp"
+#include "lbann/callbacks/replace_weights.hpp"
+#include "lbann/callbacks/save_images.hpp"
+#include "lbann/callbacks/save_model.hpp"
+#include "lbann/callbacks/load_model.hpp"
+#include "lbann/callbacks/save_topk_models.hpp"
+#include "lbann/callbacks/summarize_images.hpp"
+#include "lbann/callbacks/summary.hpp"
+#include "lbann/callbacks/sync_layers.hpp"
+#include "lbann/callbacks/timeline.hpp"
+#include "lbann/callbacks/timer.hpp"
+#include "lbann/callbacks/variable_minibatch.hpp"
+#include "lbann/callbacks/set_weights_value.hpp"
+
 #include "lbann/proto/factories.hpp"
-#include "lbann/utils/peek_map.hpp"
+#include "lbann/proto/helpers.hpp"
+#include "lbann/utils/factory.hpp"
+#include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/memory.hpp"
+
+#include <callbacks.pb.h>
+#include <model.pb.h>
+
+#include <google/protobuf/message.h>
+
+#include <memory>
+#include <string>
 
 namespace lbann {
 namespace proto {
 
 namespace {
 
-/** Select entries from a list based on names.
- *  Any entry in 'list' with a name found in 'names' (interpreted as a
- *  space-separated list) is added to the output list.
- */
-template <typename T>
-std::vector<T*> select_from_list(std::string names,
-                                        std::vector<T*> list) {
-  std::vector<T*> selected;
-  for (const auto& name : parse_list<std::string>(names)) {
-    for (auto&& t : list) {
-      if (name == t->get_name()) {
-        selected.push_back(t);
-      }
-    }
-  }
-  return selected;
+// Define the factory type.
+using factory_type = lbann::generic_factory<
+  lbann::callback_base,
+  std::string,
+  generate_builder_type<lbann::callback_base,
+                        google::protobuf::Message const&,
+                        std::shared_ptr<lbann_summary> const&>,
+  default_key_error_policy>;
+
+void register_default_builders(factory_type& factory)
+{
+  using namespace ::lbann::callback;
+  factory.register_builder("CallbackAdaptiveLearningRate",
+                           build_adaptive_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackCheckDataset",
+                           build_check_dataset_callback_from_pbuf);
+  factory.register_builder("CallbackCheckGradients",
+                           build_check_gradients_callback_from_pbuf);
+  factory.register_builder("CallbackCheckInit",
+                           build_check_init_callback_from_pbuf);
+  factory.register_builder("CallbackCheckMetric",
+                           build_check_metric_callback_from_pbuf);
+  factory.register_builder("CallbackCheckNaN",
+                           build_check_nan_callback_from_pbuf);
+  factory.register_builder("CallbackCheckSmall",
+                           build_check_small_callback_from_pbuf);
+  factory.register_builder("CallbackConfusionMatrix",
+                           build_confusion_matrix_callback_from_pbuf);
+  factory.register_builder("CallbackDebug",
+                           build_debug_callback_from_pbuf);
+  factory.register_builder("CallbackDebugIO",
+                           build_debug_io_callback_from_pbuf);
+  factory.register_builder("CallbackDispIOStats",
+                           build_monitor_io_callback_from_pbuf);
+  factory.register_builder("CallbackDropFixedLearningRate",
+                           build_drop_fixed_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackDumpErrorSignals",
+                           build_dump_error_signals_callback_from_pbuf);
+  factory.register_builder("CallbackDumpGradients",
+                           build_dump_gradients_callback_from_pbuf);
+  factory.register_builder("CallbackDumpMBIndices",
+                           build_dump_mb_indices_callback_from_pbuf);
+  factory.register_builder("CallbackDumpOutputs",
+                           build_dump_outputs_callback_from_pbuf);
+  factory.register_builder("CallbackDumpWeights",
+                           build_dump_weights_callback_from_pbuf);
+  factory.register_builder("CallbackEarlyStopping",
+                           build_early_stopping_callback_from_pbuf);
+  factory.register_builder("CallbackGPUMemoryUsage",
+                           build_gpu_memory_usage_callback_from_pbuf);
+  factory.register_builder("CallbackHang",
+                           build_hang_callback_from_pbuf);
+  factory.register_builder("CallbackImComm",
+                           build_imcomm_callback_from_pbuf);
+  factory.register_builder(
+    "CallbackLinearGrowthLearningRate",
+    build_linear_growth_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackLTFB",
+                           build_ltfb_callback_from_pbuf);
+  factory.register_builder("CallbackMinibatchSchedule",
+                           build_minibatch_schedule_callback_from_pbuf);
+  factory.register_builder("CallbackMixup",
+                           build_mixup_callback_from_pbuf);
+  factory.register_builder(
+    "CallbackOptimizerwiseAdaptiveLearningRate",
+    build_optimizerwise_adaptive_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackPerturbAdam",
+                           build_perturb_adam_callback_from_pbuf);
+  factory.register_builder("CallbackPerturbDropout",
+                           build_perturb_dropout_callback_from_pbuf);
+  factory.register_builder("CallbackPolyLearningRate",
+                           build_poly_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackPrintModelDescription",
+                           build_print_model_description_callback_from_pbuf);
+  factory.register_builder("CallbackPrint",
+                           build_print_statistics_callback_from_pbuf);
+  factory.register_builder("CallbackProfiler",
+                           build_profiler_callback_from_pbuf);
+  factory.register_builder("CallbackReplaceWeights",
+                           build_replace_weights_callback_from_pbuf);
+  factory.register_builder("CallbackSaveImages",
+                           build_save_images_callback_from_pbuf);
+  factory.register_builder("CallbackSaveModel",
+                           build_save_model_callback_from_pbuf);
+  factory.register_builder("CallbackLoadModel",
+                           build_load_model_callback_from_pbuf);
+  factory.register_builder("CallbackSaveTopKModels",
+                           build_save_topk_models_callback_from_pbuf);
+  factory.register_builder("CallbackStepLearningRate",
+                           build_step_learning_rate_callback_from_pbuf);
+  factory.register_builder("CallbackStepMinibatch",
+                           build_step_minibatch_callback_from_pbuf);
+  factory.register_builder("CallbackSummarizeImages",
+                           build_summarize_images_callback_from_pbuf);
+  factory.register_builder("CallbackSummary",
+                           build_summary_callback_from_pbuf);
+  factory.register_builder("CallbackSyncLayers",
+                           build_sync_layers_callback_from_pbuf);
+  factory.register_builder("CallbackTimeline",
+                           build_timeline_callback_from_pbuf);
+  factory.register_builder("CallbackTimer",
+                           build_timer_callback_from_pbuf);
+  factory.register_builder("CallbackSetWeightsValue",
+                           build_set_weights_value_callback_from_pbuf);
 }
 
+// Manage a global factory
+struct factory_manager
+{
+    factory_type factory_;
+
+    factory_manager() {
+        register_default_builders(factory_);
+    }
+};
+
+factory_manager factory_mgr_;
+factory_type const& get_callback_factory() noexcept
+{
+  return factory_mgr_.factory_;
+}
 
 } // namespace
 
-lbann_callback* construct_callback(lbann_comm* comm,
-                                   const lbann_data::Callback& proto_cb,
-                                   const std::map<execution_mode, generic_data_reader*>& data_readers,
-                                   std::vector<Layer*> layer_list,
-                                   std::vector<weights*> weights_list,
-                                   lbann_summary* summarizer) {
-  std::stringstream err;
+std::unique_ptr<callback_base>
+construct_callback(
+  const google::protobuf::Message& proto_msg, std::shared_ptr<lbann_summary> const& summarizer) {
 
-  //////////////////////////////////////////////////////////////
-  // Display information
-  //////////////////////////////////////////////////////////////
+  auto const& factory = get_callback_factory();
+  auto const& msg =
+    helpers::get_oneof_message(proto_msg, "callback_type");
+  return factory.create_object(msg.GetDescriptor()->name(), msg, summarizer);
+}
 
-  if (proto_cb.has_print()) {
-    const auto& params = proto_cb.print();
-    return new lbann_callback_print(params.interval(),
-                                    params.print_global_stat_only());
-  }
-  if (proto_cb.has_timer()) {
-    return new lbann_callback_timer(summarizer);
-  }
-  if (proto_cb.has_disp_io_stats()) {
-    const auto& params = proto_cb.disp_io_stats();
-    auto&& l = select_from_list<Layer>(params.layers(),
-                                                     layer_list);
-    std::unordered_set<Layer*> selected_layers(l.begin(), l.end());
-    return new lbann_callback_io(selected_layers);
-  }
-  if (proto_cb.has_save_images()) {
-    const auto& params = proto_cb.save_images();
-    return new lbann_callback_save_images(parse_list<>(params.layers()),
-                                          params.image_format(),
-                                          params.image_prefix());
-  }
-  if (proto_cb.has_confusion_matrix()) {
-    const auto& params = proto_cb.confusion_matrix();
-    return new lbann_callback_confusion_matrix(params.prediction(),
-                                               params.label(),
-                                               params.prefix());
-  }
+std::unique_ptr<lbann_summary> construct_summarizer(lbann_comm* comm,
+                                                    const lbann_data::Model& m) {
+  const bool master = comm->am_world_master();
+  if (m.has_summarizer()) {
+    auto dir = m.summarizer().dir();
 
-  //////////////////////////////////////////////////////////////
-  // Inter-model communication
-  //////////////////////////////////////////////////////////////
-
-  if (proto_cb.has_ltfb()) {
-    const auto& params = proto_cb.ltfb();
-    return new lbann_callback_ltfb(params.batch_interval(),
-                                   params.metric(),
-                                   parse_set<std::string>(params.weights()),
-                                   params.low_score_wins(),
-                                   lbann_callback_ltfb::string_to_comm_algo(params.communication_algorithm()),
-                                   params.exchange_hyperparameters(),
-                                   summarizer);
-  }
-  /// @todo
-  if (proto_cb.has_imcomm()) {
-    const auto& params = proto_cb.imcomm();
-    const auto& type_str = params.intertrainer_comm_method();
-    lbann_callback_imcomm::comm_type type = lbann_callback_imcomm::comm_type::NONE;
-    if (type_str == "none") {
-      type = lbann_callback_imcomm::comm_type::NONE;
-    } else if (type_str == "normal") {
-      type = lbann_callback_imcomm::comm_type::NORMAL;
-    } else {
-      err << "invalid inter-model communication type (" << type_str << ")";
-      LBANN_ERROR(err.str());
-    }
-    std::unordered_set<weights*> selected_weights; /// @todo Initialize weights
-    return new lbann_callback_imcomm(type, selected_weights, summarizer);
-  }
-
-  //////////////////////////////////////////////////////////////
-  // Learning rate schedules
-  //////////////////////////////////////////////////////////////
-
-  if (proto_cb.has_step_learning_rate()) {
-    const auto& params = proto_cb.step_learning_rate();
-    auto&& w = select_from_list<weights>(params.weights(),
-                                                        weights_list);
-    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
-    return new lbann_callback_step_learning_rate(params.step(),
-                                                 params.amt(),
-                                                 selected_weights);
-  }
-  if (proto_cb.has_adaptive_learning_rate()) {
-    const auto& params = proto_cb.adaptive_learning_rate();
-    auto&& w = select_from_list<weights>(params.weights(),
-                                                        weights_list);
-    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
-    return new lbann_callback_adaptive_learning_rate(params.patience(),
-                                                     params.amt(),
-                                                     selected_weights);
-  }
-  if (proto_cb.has_drop_fixed_learning_rate()) {
-    const auto& params = proto_cb.drop_fixed_learning_rate();
-    std::vector<int64_t> drop_epochs;
-    for (int i = 0; i < params.drop_epoch_size(); ++i) {
-      drop_epochs.push_back(params.drop_epoch(i));
-    }
-    auto&& w = select_from_list<weights>(params.weights(),
-                                                        weights_list);
-    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
-    return new lbann_callback_drop_fixed_learning_rate(drop_epochs,
-                                                       params.amt(),
-                                                       selected_weights);
-  }
-  if (proto_cb.has_linear_growth_learning_rate()) {
-    const auto& params = proto_cb.linear_growth_learning_rate();
-    auto&& w = select_from_list<weights>(params.weights(),
-                                                        weights_list);
-    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
-    return new lbann_callback_linear_growth_learning_rate(params.target(),
-                                                          params.num_epochs(),
-                                                          params.delay(),
-                                                          selected_weights);
-  }
-  if (proto_cb.has_optimizerwise_adaptive_learning_rate()) {
-    const auto& params = proto_cb.optimizerwise_adaptive_learning_rate();
-    auto&& w = select_from_list<weights>(params.weights(),
-                                                        weights_list);
-    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
-    return new lbann_callback_optimizerwise_adaptive_learning_rate(params.scale(),
-                                                                   selected_weights);
-  }
-  if (proto_cb.has_poly_learning_rate()) {
-    const auto& params = proto_cb.poly_learning_rate();
-    auto&& w = select_from_list<weights>(params.weights(),
-                                                        weights_list);
-    std::unordered_set<weights*> selected_weights(w.begin(), w.end());
-    return new lbann_callback_poly_learning_rate(params.power(),
-                                                 params.num_epochs(),
-                                                 params.max_iter(),
-                                                 params.end_lr(),
-                                                 selected_weights);
-  }
-
-  //////////////////////////////////////////////////////////////
-  // Mini-batch schedules
-  //////////////////////////////////////////////////////////////
-
-  if (proto_cb.has_step_minibatch()) {
-    const auto& params = proto_cb.step_minibatch();
-    return new lbann_callback_step_minibatch(params.starting_mbsize(),
-                                             params.step(),
-                                             params.ramp_time());
-  }
-  if (proto_cb.has_minibatch_schedule()) {
-    const auto& params = proto_cb.minibatch_schedule();
-    std::vector<lbann_callback_minibatch_schedule::minibatch_step> steps;
-    for (int i = 0; i < params.step_size(); ++i) {
-      const auto& proto_step = params.step(i);
-      steps.emplace_back(proto_step.epoch(),
-                         proto_step.mbsize(),
-                         proto_step.lr(),
-                         proto_step.ramp_time());
-    }
-    return new lbann_callback_minibatch_schedule(params.starting_mbsize(),
-                                                 steps);
-  }
-
-  //////////////////////////////////////////////////////////////
-  // Checkpointing and exporting
-  //////////////////////////////////////////////////////////////
-
-  if (proto_cb.has_checkpoint()) {
-    const auto& params = proto_cb.checkpoint();
-    return new lbann_callback_checkpoint(params.checkpoint_dir(),
-                                         params.checkpoint_epochs(),
-                                         params.checkpoint_steps(),
-                                         params.checkpoint_secs(),
-                                         params.per_rank_dir(),
-                                         params.ckpt_dist_epochs(),
-                                         params.ckpt_dist_steps());
-  }
-  if (proto_cb.has_save_model()) {
-    const auto& params = proto_cb.save_model();
-    if(params.extension().size() != 0) {
-      return new lbann_callback_save_model(params.dir(),
-                                           params.disable_save_after_training(),
-                                           params.extension());
-    }else {
-      return new lbann_callback_save_model(params.dir(),
-                                           params.disable_save_after_training());
-    }
-  }
-
-  //////////////////////////////////////////////////////////////
-  // Weight exchange/replace
-  //////////////////////////////////////////////////////////////
-
-  if (proto_cb.has_replace_weights()) {
-    const auto& params = proto_cb.replace_weights();
-    auto&& src_layers = select_from_list<Layer>(params.source_layers(),
-                                                     layer_list);
-    auto&& dst_layers = select_from_list<Layer>(params.destination_layers(),
-                                                     layer_list);
-    return new lbann_callback_replace_weights(src_layers,dst_layers,params.batch_interval());
-  }
-
-  //////////////////////////////////////////////////////////////
-  // Profiling
-  //////////////////////////////////////////////////////////////
-
-  if (proto_cb.has_summary()) {
-    const auto& params = proto_cb.summary();
-    return new lbann_callback_summary(summarizer,
-                                      params.batch_interval(),
-                                      params.mat_interval());
-  }
-  if (proto_cb.has_profiler()) {
-    return new lbann_callback_profiler(proto_cb.profiler().sync(),
-                                       proto_cb.profiler().skip_init());
-  }
-  if (proto_cb.has_sync_layers()) {
-    const auto& params = proto_cb.sync_layers();
-    return new lbann_callback_sync_layers(params.sync_gpus(),
-                                          params.sync_mpi(),
-                                          params.only_input());
-  }
-  if (proto_cb.has_sync_selected()) {
-    const auto& params = proto_cb.sync_selected();
-    const int num_layers = params.layer_to_sync_size();
-    if (num_layers == 0) {
-      throw lbann_exception("sync_selected requires at least a layer to synchronize.");
+    if (master) {
+      std::cout << "constructing summarizer with dir: " << dir << std::endl;
     }
 
-    using layers_t = lbann_callback_sync_selected::layers_t;
-    using prop_t = lbann_callback_sync_selected::prop_t;
-
-    layers_t selected_layers;
-    selected_layers.reserve(num_layers);
-
-    for (int i = 0; i < num_layers; ++i) {
-      const auto& layer_to_sync = params.layer_to_sync(i);
-      selected_layers.emplace(layer_to_sync.name(),
-                              static_cast<prop_t>(layer_to_sync.prop()));
+    //check to see if directory exists
+    if (!file::directory_exists(dir)) {
+      LBANN_ERROR("summary directory ", dir, " does not exist.");
     }
 
-    lbann_callback_sync_selected* cb_ptr
-      = new lbann_callback_sync_selected(selected_layers,
-                                        params.async_gpus(),
-                                        params.async_mpi());
-
-    #ifdef LBANN_NVPROF
-    const auto& cp_setup = params.cuda_profiler_setup();
-    if (cp_setup.no_init()) {
-      lbann_callback_sync_selected::turn_off_init_cuda_profiler();
-    } else {
-      cb_ptr->init_cuda_profiler(cp_setup.config_file(),
-                                 cp_setup.output_dir(),
-                                 cp_setup.output_mode(),
-                                 comm);
-    }
-    #endif // LBANN_NVPROF
-    return cb_ptr;
-  }
-
-  //////////////////////////////////////////////////////////////
-  // Debugging
-  //////////////////////////////////////////////////////////////
-
-  if (proto_cb.has_debug()) {
-    const auto& params = proto_cb.debug();
-    const auto& modes = parse_set<execution_mode>(params.phase());
-    return new lbann_callback_debug(modes, summarizer);
-  }
-  if (proto_cb.has_debug_io()) {
-    const auto& params = proto_cb.debug_io();
-    const auto& phase = params.phase();
-    const auto& lvl = params.lvl();
-    if (phase == "train" || phase == "training") {
-      return new lbann_callback_debug_io(execution_mode::training, lvl);
-    } else if (phase == "validate" || phase == "validation") {
-      return new lbann_callback_debug_io(execution_mode::validation, lvl);
-    } else if (phase == "test" || phase == "testing") {
-      return new lbann_callback_debug_io(execution_mode::testing, lvl);
-    } else {
-      return new lbann_callback_debug_io();
-    }
-  }
-  if (proto_cb.has_dump_weights()) {
-    const auto& params = proto_cb.dump_weights();
-    return new lbann_callback_dump_weights(params.basename());
-  }
-  if (proto_cb.has_dump_outputs()) {
-    const auto& params = proto_cb.dump_outputs();
-    const auto& layer_names = parse_set<>(params.layers());
-    const auto& modes = parse_set<execution_mode>(params.execution_modes());
-    return new lbann_callback_dump_outputs(layer_names,
-                                           modes,
-                                           params.batch_interval(),
-                                           params.directory(),
-                                           params.format());
-  }
-  if (proto_cb.has_dump_error_signals()) {
-    const auto& params = proto_cb.dump_error_signals();
-    return new lbann_callback_dump_error_signals(params.basename());
-  }
-  if (proto_cb.has_dump_gradients()) {
-    const auto& params = proto_cb.dump_gradients();
-    return new lbann_callback_dump_gradients(params.basename(),
-                                             params.interval());
-  }
-  if (proto_cb.has_dump_mb_indices()) {
-    const auto& params = proto_cb.dump_mb_indices();
-    return new lbann_callback_dump_minibatch_sample_indices(params.basename(),
-                                                            params.interval());
-  }
-  if (proto_cb.has_check_dataset()) {
-    return new lbann_callback_check_dataset();
-  }
-  if (proto_cb.has_check_small()) {
-    return new lbann_callback_checksmall();
-  }
-  if (proto_cb.has_check_nan()) {
-    return new lbann_callback_checknan();
-  }
-  if (proto_cb.has_hang()) {
-    const auto& rank_to_hang = proto_cb.hang().rank();
-    if (comm->am_world_master()) {
-      if (rank_to_hang == -1) {
-        std::cout << "*** HANGING EVERY RANK IN HANG CALLBACK ***"
-                  << std::endl;
-      } else {
-        std::cout << "*** HANGING RANK " << rank_to_hang
-                  << " IN HANG CALLBACK ***" << std::endl;
-      }
-    }
-    return new lbann_callback_hang(rank_to_hang);
-  }
-  if (proto_cb.has_check_gradients()) {
-    const auto& params = proto_cb.check_gradients();
-    return new lbann_callback_check_gradients(params.step_size(),
-                                              params.verbose(),
-                                              params.error_on_failure());
-  }
-  if (proto_cb.has_check_metric()) {
-    const auto& params = proto_cb.check_metric();
-    const auto& modes = parse_set<execution_mode>(params.execution_modes());
-    return new lbann_callback_check_metric(params.metric(),
-                                           modes,
-                                           params.lower_bound(),
-                                           params.upper_bound(),
-                                           params.error_on_failure());
-  }
-
-  //////////////////////////////////////////////////////////////
-  // GPU memory profiling
-  //////////////////////////////////////////////////////////////
-  if (proto_cb.has_gpu_memory_usage()) {
-    return new lbann_callback_gpu_memory_usage();
-  }
-
-  //////////////////////////////////////////////////////////////
-  // Hyperparameter exploration
-  //////////////////////////////////////////////////////////////
-  if (proto_cb.has_perturb_adam()) {
-    const auto& params = proto_cb.perturb_adam();
-    return new lbann_callback_perturb_adam(
-                 params.learning_rate_factor(),
-                 params.beta1_factor(),
-                 params.beta2_factor(),
-                 params.eps_factor(),
-                 params.perturb_during_training(),
-                 params.batch_interval(),
-                 parse_set<std::string>(params.weights()));
-  }
-
-  if (proto_cb.has_perturb_dropout()) {
-    const auto& params = proto_cb.perturb_dropout();
-    return new lbann_callback_perturb_dropout(
-                 params.keep_dropout_factor(),
-                 parse_set<std::string>(params.layers()));
+    return make_unique<lbann_summary>(dir, comm);
   }
   return nullptr;
 }
 
-lbann_summary* construct_summarizer(lbann_comm* comm,
-                                    const lbann_data::Model& m) {
-  lbann_summary *summary = nullptr;
-  bool master = comm->am_world_master();
-  int size = m.callback_size();
-  for (int j=0; j<size; j++) {
-    const lbann_data::Callback& callback = m.callback(j);
-    if (callback.has_summary()) {
-      const lbann_data::CallbackSummary& c = callback.summary();
-      if (master) {
-        std::cout << "constructing summarizer with dir: " << c.dir() << std::endl;
-      }
+namespace {
+// Define a second factory type for callbacks that don't require a summarizer
+using factory_type_no_summarizer = lbann::generic_factory<
+  lbann::callback_base,
+  std::string,
+  generate_builder_type<lbann::callback_base,
+                        google::protobuf::Message const&>,
+  default_key_error_policy>;
 
-      //check to see if directory exists
-      struct stat sb;
-      if (! ( stat(c.dir().c_str(), &sb) == 0 && S_ISDIR(sb.st_mode) )) {
-        if (master) {
-          throw lbann_exception(
-            std::string {} + __FILE__ + " " + std::to_string(__LINE__) + " :: " +
-            "summary directory " + c.dir() + " does not exist");
-        }
-      }
-      summary = new lbann_summary(c.dir(), comm);
-    }
-  }
-  return summary;
+void register_default_builders_no_summarizer(factory_type_no_summarizer& factory)
+{
+  using namespace callback;
+  factory.register_builder("CallbackCheckpoint",
+                           build_checkpoint_callback_from_pbuf);
 }
 
+// Manage a global factory with no summarizer
+struct factory_manager_no_summarizer
+{
+    factory_type_no_summarizer factory_;
+
+    factory_manager_no_summarizer() {
+        register_default_builders_no_summarizer(factory_);
+    }
+};
+
+factory_manager_no_summarizer factory_mgr_no_summarizer_;
+factory_type_no_summarizer const& get_callback_factory_no_summarizer() noexcept
+{
+  return factory_mgr_no_summarizer_.factory_;
+}
+
+} // namespace
+
+std::unique_ptr<callback_base>
+construct_callback(
+  const google::protobuf::Message& proto_msg) {
+
+  auto const& factory = get_callback_factory_no_summarizer();
+  auto const& msg =
+    helpers::get_oneof_message(proto_msg, "callback_type");
+  return factory.create_object(msg.GetDescriptor()->name(), msg);
+}
 } // namespace proto
 } // namespace lbann

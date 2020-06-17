@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
       try {
 
         hdf5_file_hnd = conduit::relay::io::hdf5_open_file_for_read( files[j].c_str() );
-      } catch (std::exception e) {
+      } catch (const std::exception&) {
         std::cerr << rank << " :: exception hdf5_open_file_for_read: " << files[j] << "\n";
         continue;
       }
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
       std::vector<std::string> cnames;
       try {
         conduit::relay::io::hdf5_group_list_child_names(hdf5_file_hnd, "/", cnames);
-      } catch (std::exception e) {
+      } catch (const std::exception&) {
         std::cerr << rank << " :: exception hdf5_group_list_child_names; " << files[j] << "\n";
         continue;
       }
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
         key = "/" + cnames[i] + "/performance/success";
         try {
           conduit::relay::io::hdf5_read(hdf5_file_hnd, key, n_ok);
-        } catch (std::exception e) {
+        } catch (const std::exception&) {
           std::cerr << rank << " :: exception reading success flag: " << files[j] << "\n";
           continue;
         }
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
                 conduit::relay::io::hdf5_read(hdf5_file_hnd, key, node);
                 save_me["/" + cnames[i]] = node;
 
-            } catch (std::exception e) {
+            } catch (const std::exception&) {
               throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__) + " :: rank " + std::to_string(rank) + " :: " + "exception reading sample: " + cnames[i] + " which is " + std::to_string(i) + " of " + std::to_string(cnames[i].size()) + "; " + files[j]);
             }
 
@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
             if (sample_count == samples_per_file) {
               try {
                 conduit::relay::io::save(save_me, output_fn, "hdf5");
-              } catch (exception const &e) {
+              } catch (const std::exception& e) {
                 std::cerr << rank << " :: exception: failed to save conduit node to disk; what: " << e.what() << "\n";
                 continue;
               } catch (...) {
@@ -195,14 +195,14 @@ int main(int argc, char *argv[]) {
       if (sample_count) {
         try {
           conduit::relay::io::save(save_me, output_fn, "hdf5");
-        } catch (exception const &e) {
+        } catch (exception const& e) {
           std::cerr << rank << " :: exception: failed to save conduit node to disk; what: " << e.what() << "\n";
         } catch (...) {
           std::cerr << rank << " :: exception: failed to save conduit node to disk; FINAL FILE\n";
         }
       }
 
-  } catch (std::exception const &e) {
+  } catch (std::exception const& e) {
     El::ReportException(e);
     return EXIT_FAILURE;
   }
@@ -210,4 +210,3 @@ int main(int argc, char *argv[]) {
   // Clean up
   return EXIT_SUCCESS;
 }
-

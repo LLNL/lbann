@@ -28,36 +28,50 @@
 #define LBANN_UTILS_EXCEPTION_HPP_INCLUDED
 
 #include "lbann/comm.hpp"
+
+#include <exception>
 #include <iostream>
 #include <sstream>
-#include <exception>
 
 // Macro to throw an LBANN exception
-#define LBANN_ERROR(message)                                    \
+#define LBANN_ERROR(...)                                        \
   do {                                                          \
-    std::stringstream ss_LBANN_ERROR;                           \
-    ss_LBANN_ERROR << "LBANN error ";                           \
     const int rank_LBANN_ERROR = lbann::get_rank_in_world();    \
-    if (rank_LBANN_ERROR >= 0) {                                \
-      ss_LBANN_ERROR << "on rank " << rank_LBANN_ERROR << " ";  \
-    }                                                           \
-    ss_LBANN_ERROR << "(" << __FILE__ << ":" << __LINE__ << ")" \
-                     << ": " << (message);                      \
-    throw lbann::exception(ss_LBANN_ERROR.str());               \
+    throw lbann::exception(                                     \
+      lbann::build_string(                                      \
+        "LBANN error",                                          \
+        (rank_LBANN_ERROR >= 0                                  \
+         ? " on rank " + std::to_string(rank_LBANN_ERROR)       \
+         : std::string()),                                      \
+        " (", __FILE__, ":", __LINE__, "): ", __VA_ARGS__));    \
   } while (0)
 
 // Macro to print a warning to standard error stream.
-#define LBANN_WARNING(message)                                          \
-  do {                                                                  \
-    std::stringstream ss_LBANN_WARNING;                                 \
-    ss_LBANN_WARNING << "LBANN warning ";                               \
-    const int rank_LBANN_WARNING = lbann::get_rank_in_world();          \
-    if (rank_LBANN_WARNING >= 0) {                                      \
-      ss_LBANN_WARNING << "on rank " << rank_LBANN_WARNING << " ";      \
-    }                                                                   \
-    ss_LBANN_WARNING << "(" << __FILE__ << ":" << __LINE__ << ")"       \
-                     << ": " << (message) << std::endl;                 \
-    std::cerr << ss_LBANN_WARNING.str();                                \
+#define LBANN_WARNING(...)                                      \
+  do {                                                          \
+    const int rank_LBANN_WARNING = lbann::get_rank_in_world();  \
+    std::cerr << lbann::build_string(                           \
+      "LBANN warning",                                          \
+      (rank_LBANN_WARNING >= 0                                  \
+       ? " on rank " + std::to_string(rank_LBANN_WARNING)       \
+       : std::string()),                                        \
+      " (", __FILE__, ":", __LINE__, "): ", __VA_ARGS__)        \
+              << std::endl;                                     \
+  } while (0)
+
+// Macro to print a message to standard cout stream.
+#define LBANN_MSG(...)                                          \
+  do {                                                          \
+    const int rank_LBANN_MSG = lbann::get_rank_in_world();      \
+    if(rank_LBANN_MSG == 0) {                                   \
+      std::cout << lbann::build_string(                         \
+      "LBANN message",                                          \
+      (rank_LBANN_MSG >= 0                                      \
+       ? " on rank " + std::to_string(rank_LBANN_MSG)           \
+       : std::string()),                                        \
+      " (", __FILE__, ":", __LINE__, "): ", __VA_ARGS__)        \
+              << std::endl;                                     \
+    }                                                           \
   } while (0)
 
 namespace lbann {
@@ -90,6 +104,23 @@ private:
 
 };
 using lbann_exception = exception;
+
+/** @brief Build a string from the arguments.
+ *
+ *  The arguments must be stream-outputable (have operator<<(ostream&,
+ *  T) defined). It will be a static error if this fails.
+ *
+ *  @tparam Args (Inferred) The types of the arguments.
+ *
+ *  @param[in] args The things to be stringified.
+ */
+template <typename... Args>
+std::string build_string(Args&&... args) {
+  std::ostringstream oss;
+  int dummy[] = { (oss << args, 0)... };
+  (void) dummy; // silence compiler warnings
+  return oss.str();
+}
 
 } // namespace lbann
 

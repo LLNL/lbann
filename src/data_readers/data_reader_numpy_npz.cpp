@@ -157,6 +157,7 @@ namespace lbann {
     m_shuffled_indices.clear();
     m_shuffled_indices.resize(m_num_samples);
     std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+    resize_shuffled_indices();
     select_subset_of_data();
   }
 
@@ -198,6 +199,19 @@ namespace lbann {
     if (!m_has_responses) {
       throw lbann_exception("numpy_npz_reader: do not have responses");
     }
+
+    Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx + 1));
+    if(m_responses.word_size == 2) {
+      // Convert int16 to DataType.
+      const short *data = m_responses.data<short>() + data_id * m_num_response_features;
+      DataType *dest = Y_v.Buffer();
+      // OPTIMIZE
+      LBANN_OMP_PARALLEL_FOR
+        for(int j = 0; j < m_num_response_features; j++)
+          dest[j] = data[j];
+      return true;
+    }
+
     void *responses = NULL;
     if (m_responses.word_size == 4) {
       responses = (void *) (m_responses.data<float>()
@@ -206,7 +220,6 @@ namespace lbann {
       responses = (void *) (m_responses.data<double>()
                             + data_id * m_num_response_features);
     }
-    Mat Y_v = El::View(Y, El::IR(0, Y.Height()), El::IR(mb_idx, mb_idx + 1));
     std::memcpy(Y_v.Buffer(), responses,
                 m_num_response_features * m_responses.word_size);
     return true;

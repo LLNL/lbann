@@ -1,5 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  data_type_weights.cpp
   initializer.cpp
   variance_scaling_initializers.cpp
   weights.cpp

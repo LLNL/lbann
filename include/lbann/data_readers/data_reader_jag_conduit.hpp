@@ -27,19 +27,23 @@
 #ifndef _DATA_READER_JAG_CONDUIT_HPP_
 #define _DATA_READER_JAG_CONDUIT_HPP_
 
-#include "lbann_config.hpp" 
+#include "lbann_config.hpp"
 
-#include "lbann/data_readers/opencv.hpp"
 #include "data_reader.hpp"
 #include "conduit/conduit.hpp"
 #include "hdf5.h"
-#include "lbann/data_readers/cv_process.hpp"
 #include <string>
 #include <set>
 #include <unordered_map>
 #include <map>
 #include <memory>
-#include "lbann/data_readers/sample_list_jag.hpp"
+
+//#define _USE_IO_HANDLE_
+#ifdef _USE_IO_HANDLE_
+#include "lbann/data_readers/sample_list_conduit_io_handle.hpp"
+#else
+#include "lbann/data_readers/sample_list_hdf5.hpp"
+#endif
 
 namespace lbann {
 
@@ -57,13 +61,21 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Type for the pair of the key string of a sample and the handle of the file that contains it
   using sample_locator_t = std::pair<std::string, hid_t>;
   using sample_map_t = std::vector<sample_locator_t>; ///< valid sample map type
-  using sample_t = sample_list_jag::sample_t;
-  using sample_file_id_t = sample_list_jag::sample_file_id_t;
+  using sample_name_t = std::string;
+#ifdef _USE_IO_HANDLE_
+  using sample_list_t = sample_list_conduit_io_handle<sample_name_t>;
+#else
+  using sample_list_t = sample_list_hdf5<sample_name_t>;
+#endif
+  using file_handle_t = sample_list_t::file_handle_t;
+  using sample_file_id_t = sample_list_t::sample_file_id_t;
+  using sample_t = std::pair<sample_file_id_t, sample_name_t>;
+  //using sample_t = sample_list_t::sample_t;
   /// linear transform on X defined as: first * X + second => X'
   using linear_transform_t = std::pair<double, double>;
 
   /**
-   * Dependent/independent variable types
+   * Dependent/indepdendent variable types
    * - JAG_Image: simulation output images
    * - JAG_Scalar: simulation output scalars
    * - JAG_Input: simulation input parameters
@@ -75,15 +87,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Type to define a prefix string and the minimum length requirement to filter out a key
   using prefix_t = std::pair<std::string, size_t>;
 
-  data_reader_jag_conduit(bool shuffle = true) = delete;
-  data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle = true);
+  data_reader_jag_conduit(bool shuffle = true);
   data_reader_jag_conduit(const data_reader_jag_conduit&);
-  data_reader_jag_conduit(const data_reader_jag_conduit&, const std::vector<int>& ds_sample_move_list);
   data_reader_jag_conduit& operator=(const data_reader_jag_conduit&);
   ~data_reader_jag_conduit() override;
   data_reader_jag_conduit* copy() const override { return new data_reader_jag_conduit(*this); }
 
-  void setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) override;
+  void setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) override;
 
   std::string get_type() const override {
     return "data_reader_jag_conduit";
@@ -164,8 +174,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Set every reader instances in a model to have an independent index list
   void set_list_per_model(bool flag) { m_list_per_model = flag; };
 
-  bool has_list_per_model() const { return m_list_per_model; }
-  bool has_list_per_trainer() const { return m_list_per_trainer; }
+  bool has_list_per_model() const override { return m_list_per_model; }
+  bool has_list_per_trainer() const override { return m_list_per_trainer; }
 
 
   /// Fetch data of a mini-batch or reuse it from the cache of the leading reader
@@ -198,15 +208,13 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the dimension of data
   const std::vector<int> get_data_dims() const override;
 
-  /// Return the slice points for linearized independent variables
-  std::vector<El::Int> get_slice_points_independent() const;
-  /// Return the slice points for linearized dependent variables
-  std::vector<El::Int> get_slice_points_dependent() const;
-
   int get_num_data() const override;
   int get_num_labels() const override;
   int get_linearized_label_size() const override;
   int get_linearized_size(const std::string& desc) const override;
+
+  std::vector<El::Int> get_slice_points(const slice_points_mode var_category,
+                                        bool& is_supported) override;
 
   void set_split_image_channels();
   void unset_split_image_channels();
@@ -214,15 +222,6 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /// Show the description
   std::string get_description() const;
-
-  /// Return the image simulation output of the i-th sample
-  std::vector<cv::Mat> get_cv_images(const size_t i, conduit::Node& sample) const;
-
-  /**
-   * Return the images of the i-th sample as an 1-D vector of lbann::DataType
-   * There is one image per view, each of which is taken at closest to the bang time.
-   */
-  std::vector<ch_t> get_images(const size_t i, conduit::Node& sample) const;
 
   /// Return the scalar simulation output data of the i-th sample
   std::vector<scalar_t> get_scalars(const size_t i, conduit::Node& sample) const;
@@ -233,13 +232,8 @@ class data_reader_jag_conduit : public generic_data_reader {
   template<typename S>
   static size_t add_val(const std::string key, const conduit::Node& n, std::vector<S>& vals);
 
-  void save_image(Mat& pixels, const std::string filename, bool do_scale = true) override;
-
   void setup_data_store(int mini_batch_size);
 
-  /// A utility function to convert the pointer to image data into an opencv image
-  static cv::Mat cast_to_cvMat(const std::pair<size_t, const ch_t*> img,
-                               const int height, const int num_ch=1);
   /// A utility function to convert a JAG variable type to name string
   static std::string to_string(const variable_t t);
 
@@ -258,11 +252,10 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// once the sample_list class and file formats are generalized and
   /// finalized, it should (may?) be possible to code a single
   /// preload_data_store method.
-  void preload_data_store() override;
+  void do_preload_data_store() override;
 
   virtual void set_defaults();
-  virtual bool replicate_processor(const cv_process& pp, const int nthreads);
-  virtual void copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list = std::vector<int>());
+  virtual void copy_members(const data_reader_jag_conduit& rhs);
 
   /// add data type for independent variable
   void add_independent_variable_type(const variable_t independent);
@@ -279,7 +272,12 @@ class data_reader_jag_conduit : public generic_data_reader {
   /// Return the dimension of a particular JAG variable type
   const std::vector<int> get_dims(const variable_t t) const;
   /// Return the slice points for linearized data or responses
-  std::vector<El::Int> get_slice_points(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const;
+  std::vector<El::Int> get_slice_points_impl(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const;
+  /// Return the slice points for linearized independent variables
+  std::vector<El::Int> get_slice_points_independent() const;
+  /// Return the slice points for linearized dependent variables
+  std::vector<El::Int> get_slice_points_dependent() const;
+
   /// A utility function to make a string to show all the variable types
   static std::string to_string(const std::vector<variable_t>& vec);
   /// A utility function to make a string to show all the groups of variable types
@@ -303,7 +301,7 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool fetch_label(CPUMat& X, int data_id, int mb_idx) override;
 
 #ifndef _JAG_OFFLINE_TOOL_MODE_
-  /// Shuffle sample indices using a different RNG
+  /// Shuffle sammple indices using a different RNG
   void shuffle_indices(rng_gen& gen) override;
 
   /**
@@ -344,14 +342,17 @@ class data_reader_jag_conduit : public generic_data_reader {
 
   /**
    * Check if the key is associated with non-numeric value, that is not and
-   * cannot be converted to a numeric.
+   * cannot be converted to a numertic.
    */
   static bool check_non_numeric(const std::string key);
+
+  bool has_path(const file_handle_t& h, const std::string& path) const;
+  void read_node(const file_handle_t& h, const std::string& path, conduit::Node& n) const;
 
   /// Allow const access to the conduit data structure
   static const conduit::Node& get_conduit_node(const conduit::Node& n_base, const std::string key);
   /** Load the conduit node with the data of the sample i identified by key
-   *  from the file that contains the sample, and return true. Upon failure
+   *  from the file that contains the sample, and returm true. Upon failure
    *  to load from file, attempt to retrieve a random conduit node from
    *  the data_store (if --use_data_store) and return false.
    */
@@ -360,14 +361,14 @@ class data_reader_jag_conduit : public generic_data_reader {
   bool has_conduit_path(const size_t i, const std::string& key) const;
 
   /// Obtain image data
-  std::vector< std::vector<ch_t> > get_image_data(const size_t i, conduit::Node& sample) const;
+  std::vector< std::vector<DataType> > get_image_data(const size_t i, conduit::Node& sample) const;
 
-  bool data_store_active() const {
+  bool data_store_active() const override {
     bool flag = generic_data_reader::data_store_active();
     return (m_data_store != nullptr && flag);
   }
 
-  bool priming_data_store() const {
+  bool priming_data_store() const override {
     bool flag = generic_data_reader::priming_data_store();
     return (m_data_store != nullptr && flag);
   }
@@ -408,10 +409,6 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<std::string> m_scalar_keys;
   /// Keys to select a set of simulation input parameters to use. By default, use all.
   std::vector<std::string> m_input_keys;
-
-  /// preprocessor duplicated for each omp thread
-  std::vector<std::unique_ptr<cv_process> > m_pps;
-  std::unique_ptr<cv_process> m_master_pps;
 
   /**
    * Set of keys that are associated with non_numerical values.
@@ -466,20 +463,17 @@ class data_reader_jag_conduit : public generic_data_reader {
   std::vector<linear_transform_t> m_input_normalization_params;
 
   typedef std::pair<std::string, std::string> conduit_sample;
-  sample_list_jag m_sample_list;
+  sample_list_t m_sample_list;
   bool m_list_per_trainer;
   bool m_list_per_model;
 
-  /** temporary image normalization
-   * The inputs are the image to normalize, the image source id and the channel id.
-   */
-  void image_normalization(cv::Mat& img, size_t i, size_t ch) const;
+  void preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node);
 };
 
 /**
- * To facilitate the type comparison between a c++ native type and a conduit type id.
- * By default, each pair of a native type TN and a conduit type TC is not the same.
- * Those that are the same require explicit instantiation to say otherwise.
+ * To faciliate the type comparison between a c++ native type and a conduit type id.
+ * By deafult, each pair of a native type TN and a conduit type TC is not the same.
+ * Those that are the same require explicit instantication to say otherwise.
  */
 template<typename TN, conduit::DataType::TypeID TC>
 struct is_same : std::false_type {};
@@ -570,7 +564,7 @@ inline size_t data_reader_jag_conduit::add_val(const std::string key, const cond
       vals.push_back(static_cast<S>(n.to_value()));
       break;
     case TypeID::CHAR8_STR_ID: {
-        // In case of a character string, the method to convert it to a float number is specific to each key
+        // In case of a charater string, the method to convert it to a float number is specific to each key
         if (check_non_numeric(key)) {
           return 0u;
         //} else if (key == "some_key_with_non_numeric_values_that_can_be_converted_to_numerics_in_a_specific_way") {

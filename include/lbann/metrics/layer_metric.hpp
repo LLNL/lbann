@@ -47,6 +47,11 @@ class layer_metric : public metric {
   std::string name() const override;
   std::string get_unit() const override { return m_unit; }
 
+  /** Archive for checkpoint and restart */
+  template <class Archive> void serialize( Archive & ar ) {
+    ar(cereal::base_class<metric>(this), CEREAL_NVP(m_name), CEREAL_NVP(m_unit));
+  }
+
   /** Set corresponding layer. */
   void set_layer(Layer& l);
   /** Get corresponding layer. */
@@ -58,6 +63,14 @@ class layer_metric : public metric {
   std::vector<Layer*> get_layer_pointers() const override;
   /** Set list of pointers to layers. */
   void set_layer_pointers(std::vector<Layer*> layers) override;
+
+    /** Save metric state to checkpoint. */
+  bool save_to_checkpoint_shared(persist& p);
+  /** Load metric state from checkpoint. */
+  bool load_from_checkpoint_shared(persist& p);
+
+  bool save_to_checkpoint_distributed(persist& p);
+  bool load_from_checkpoint_distributed(persist& p);
 
  protected:
 
@@ -86,7 +99,7 @@ class layer_metric : public metric {
   Layer* m_layer;
 
   /** Get corresponding evaluation layer. */
-  abstract_evaluation_layer& get_evaluation_layer();
+  /*abstract_evaluation_*/Layer& get_evaluation_layer();
 
 };
 

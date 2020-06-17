@@ -11,24 +11,9 @@ data_reader {
     num_labels: 10
     scaling_factor_int16: 0.000030518509476 # 1 / 0x7FFF
 
-    image_preprocessor {
-      normalizer {
-        scale: true
-        subtract_mean: false
-        unit_variance: false
-        z_score: false
-      }
-      augmenter {
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
-      }
-      noiser {
-        disable: true
-        factor: 0.0
+    transforms {
+      scale {
+        scale: 0.003921568627  # 1/255
       }
     }
   }
@@ -43,24 +28,9 @@ data_reader {
     num_labels: 10
     scaling_factor_int16: 0.000030518509476 # 1 / 0x7FFF
 
-    image_preprocessor {
-      normalizer {
-        scale: true
-        subtract_mean: false
-        unit_variance: false
-        z_score: false
-      }
-      augmenter {
-        horizontal_flip: false
-        vertical_flip: false
-        rotation: 0
-        horizontal_shift: 0
-        vertical_shift: 0
-        shear_range: 0
-      }
-      noiser {
-        disable: true
-        factor: 0.0
+    transforms {
+      scale {
+        scale: 0.003921568627  # 1/255
       }
     }
   }

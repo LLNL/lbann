@@ -28,11 +28,15 @@
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/image.hpp"
+#include "lbann/utils/opencv.hpp"
+#include "lbann/transforms/repack_HWC_to_CHW_layout.hpp"
+#include "lbann/transforms/scale_and_translate.hpp"
 
 #include "lbann/utils/file_utils.hpp" // for add_delimiter() in load()
-#include "lbann/data_readers/opencv_extensions.hpp"
 #include <limits>     // numeric_limits
 #include <algorithm>  // max_element
 #include <numeric>    // accumulate
@@ -40,7 +44,6 @@
 #include <type_traits>// is_same
 #include <set>
 #include <map>
-#include "lbann/data_readers/image_utils.hpp"
 #include <omp.h>
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/glob.hpp"
@@ -52,24 +55,9 @@
 #include <cereal/archives/binary.hpp>
 #include <sstream>
 
-// This macro may be moved to a global scope
-#define _THROW_LBANN_EXCEPTION_(_CLASS_NAME_,_MSG_) { \
-  std::stringstream _err; \
-  _err << __FILE__ << ' '  << __LINE__ << " :: " \
-      << (_CLASS_NAME_) << "::" << (_MSG_); \
-  throw lbann_exception(_err.str()); \
-}
-
-#define _THROW_LBANN_EXCEPTION2_(_CLASS_NAME_,_MSG1_,_MSG2_) { \
-  std::stringstream _err; \
-  _err << __FILE__ << ' '  << __LINE__ << " :: " \
-      << (_CLASS_NAME_) << "::" << (_MSG1_) << (_MSG2_); \
-  throw lbann_exception(_err.str()); \
-}
-
 // This comes after all the headers, and is only visible within the current implementation file.
 // To make sure, we put '#undef _CN_' at the end of this file
-#define _CN_ "data_reader_jag_conduit"
+#define _CN_ std::string("data_reader_jag_conduit")
 
 namespace lbann {
 
@@ -130,13 +118,16 @@ void data_reader_jag_conduit::shuffle_indices(rng_gen& gen) {
 
 int data_reader_jag_conduit::compute_max_num_parallel_readers() {
   if (m_io_buffer_type == "partitioned") {
-    set_num_parallel_readers(partitioned_io_buffer::compute_max_num_parallel_readers(
+#if 0
+    // @todo BVE FIXME - Why are we doing this here
+    set_num_parallel_readers(partitioned_io_buffer<DataType>::compute_max_num_parallel_readers(
                              0, get_mini_batch_size(),
                              get_num_parallel_readers(), get_comm()));
+#endif
     set_sample_stride(get_num_parallel_readers());
     set_iteration_stride(1);
   } else {
-    _THROW_LBANN_EXCEPTION_(get_type(), " unknown io_buffer type: " + m_io_buffer_type);
+    LBANN_ERROR(get_type() + ":: unknown io_buffer type: " + m_io_buffer_type);
   }
   return get_num_parallel_readers();
 }
@@ -145,18 +136,12 @@ bool data_reader_jag_conduit::check_num_parallel_readers(long data_set_size) {
   return true;
 }
 
-data_reader_jag_conduit::data_reader_jag_conduit(const std::shared_ptr<cv_process>& pp, bool shuffle)
+data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
   : generic_data_reader(shuffle) {
   set_defaults();
-
-  if (!pp) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
-  }
-
-  m_master_pps = lbann::make_unique<cv_process>(*pp);
 }
 
-void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list) {
+void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
   m_independent = rhs.m_independent;
   m_independent_groups = rhs.m_independent_groups;
   m_dependent = rhs.m_dependent;
@@ -171,12 +156,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
   m_emi_image_keys = rhs.m_emi_image_keys;
   m_scalar_keys = rhs.m_scalar_keys;
   m_input_keys = rhs.m_input_keys;
-
-  if (!rhs.m_master_pps) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " construction error: no image processor");
-  }
-
-  m_master_pps = lbann::make_unique<cv_process>(*rhs.m_master_pps);
 
   m_uniform_input_type = rhs.m_uniform_input_type;
 
@@ -209,11 +188,7 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
   m_list_per_model = rhs.m_list_per_model;
 
   if(rhs.m_data_store != nullptr) {
-    if(ds_sample_move_list.size() == 0) {
-      m_data_store = new data_store_conduit(rhs.get_data_store());
-    } else {
-      m_data_store = new data_store_conduit(rhs.get_data_store(), ds_sample_move_list);
-    }
+    m_data_store = new data_store_conduit(rhs.get_data_store());
     m_data_store->set_data_reader_ptr(this);
   }
 }
@@ -221,11 +196,6 @@ void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs, c
 data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs)
   : generic_data_reader(rhs) {
   copy_members(rhs);
-}
-
-data_reader_jag_conduit::data_reader_jag_conduit(const data_reader_jag_conduit& rhs, const std::vector<int>& ds_sample_move_list)
-  : generic_data_reader(rhs) {
-  copy_members(rhs, ds_sample_move_list);
 }
 
 data_reader_jag_conduit& data_reader_jag_conduit::operator=(const data_reader_jag_conduit& rhs) {
@@ -283,50 +253,45 @@ void data_reader_jag_conduit::set_defaults() {
   m_scalar_normalization_params.clear();
   m_input_normalization_params.clear();
 
-  m_sample_list.clear();
+  //m_sample_list.clear();
   m_list_per_trainer = false;
   m_list_per_model = false;
 }
 
-void data_reader_jag_conduit::setup(int num_io_threads, std::shared_ptr<thread_pool> io_thread_pool) {
+void data_reader_jag_conduit::setup(int num_io_threads, observer_ptr<thread_pool> io_thread_pool) {
   generic_data_reader::setup(num_io_threads, io_thread_pool);
-  replicate_processor(*m_master_pps, num_io_threads);
 }
 
-/// Replicate image processor for each I/O thread
-bool data_reader_jag_conduit::replicate_processor(const cv_process& pp, const int nthreads) {
-  m_pps.resize(nthreads);
-
-  // Construct thread private preprocessing objects out of a shared pointer
-  for (int i = 0; i < nthreads; ++i) {
-    m_pps[i] = lbann::make_unique<cv_process>(pp);
-  }
-
-  bool ok = true;
-  for (int i = 0; ok && (i < nthreads); ++i) {
-    if (!m_pps[i]) ok = false;
-  }
-
-  if (!ok || (nthreads <= 0)) {
-    _THROW_LBANN_EXCEPTION_(get_type(), " cannot replicate image processor");
-    return false;
-  }
-
-  const std::vector<unsigned int> dims = pp.get_data_dims();
-  if ((dims.size() == 2u) && (dims[0] != 0u) && (dims[1] != 0u)) {
-    m_image_width = static_cast<int>(dims[0]);
-    m_image_height = static_cast<int>(dims[1]);
-  }
-
-  return true;
+#ifdef _USE_IO_HANDLE_
+bool data_reader_jag_conduit::has_path(const data_reader_jag_conduit::file_handle_t& h,
+                                       const std::string& path) const {
+  return m_sample_list.is_file_handle_valid(h) && h->has_path(path);
 }
+
+void data_reader_jag_conduit::read_node(const data_reader_jag_conduit::file_handle_t& h,
+                                        const std::string& path,
+                                        conduit::Node& n) const {
+  if (!h) {
+    return;
+  }
+  h->read(path, n);
+}
+#else
+bool data_reader_jag_conduit::has_path(const hid_t& h, const std::string& path) const {
+  return (m_sample_list.is_file_handle_valid(h) &&
+          conduit::relay::io::hdf5_has_path(h, path));
+}
+
+void data_reader_jag_conduit::read_node(const hid_t& h, const std::string& path, conduit::Node& n) const {
+  conduit::relay::io::hdf5_read(h, path, n);
+}
+#endif
 
 const conduit::Node& data_reader_jag_conduit::get_conduit_node(const conduit::Node& n_base, const std::string key) {
   return n_base[key];
 }
 
 bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::string& key, conduit::Node& node) const {
-
   if (m_io_thread_pool != nullptr && m_using_random_node.count(m_io_thread_pool->get_local_thread_id())) {
     LBANN_ERROR("previously retrieved a random conduit node from data_store, so shouldn't be here");
   }
@@ -336,11 +301,11 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
   const std::string path = sample_name + key;
 
   sample_file_id_t id = s.first;
-  hid_t h = m_sample_list.get_samples_hdf5_handle(id);
-  if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
+  auto h = m_sample_list.get_samples_file_handle(id);
+  if (!has_path(h, path)) {
+    const std::string& file_name = m_sample_list.get_samples_filename(id);
     if (m_data_store != nullptr) {
-      const std::string& file_name = m_sample_list.get_samples_filename(id);
-      if (! m_data_store->is_preloaded()) {
+      if (! m_data_store->is_fully_loaded()) {
         const conduit::Node obj = m_data_store->get_random_node();
         node = obj["data"];
         const std::vector<std::string>& child_names = node.child_names();
@@ -353,13 +318,11 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
                   <<" and key: " << key << "\n";
         return false;
       } else {
-        if (h <= static_cast<hid_t>(0) ) {
+        if (!m_sample_list.is_file_handle_valid(h)) {
           LBANN_ERROR("failed to get file handle for file " + file_name);
-        } else if (!conduit::relay::io::hdf5_has_path(h, path)) {
+        } else {
           LBANN_ERROR("got file handle for file " + file_name + \
                       " but the path doesn't exist in the file: " + path);
-        } else {
-          LBANN_ERROR("it should not be possible to be here");
         }
       }
     }
@@ -367,8 +330,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
     // this block fires if we cannot load a conduit node, either from file
     // or from the data_store
     else {
-      const std::string& file_name = m_sample_list.get_samples_filename(id);
-      if (h <= static_cast<hid_t>(0)) {
+      if (!m_sample_list.is_file_handle_valid(h)) {
         LBANN_ERROR(get_type() + ":: Cannot open file " + file_name + \
                     " in dir: " + m_sample_list.get_samples_dirname() +
                     " for sample "+ sample_name + " ran_in_trainer: " \
@@ -386,10 +348,7 @@ bool data_reader_jag_conduit::load_conduit_node(const size_t i, const std::strin
     }
   }
 
-  /// @todo explore the possibility of putting the sample name in
-  /// node's hierarchy, e.g. node[sample_name]
-  conduit::relay::io::hdf5_read(h, path, node);
-
+  read_node(h, path, node);
   return true;
 }
 
@@ -397,16 +356,16 @@ bool data_reader_jag_conduit::has_conduit_path(const size_t i, const std::string
   const sample_t& s = m_sample_list[i];
   sample_file_id_t id = s.first;
   const std::string& sample_name = s.second;
-  const hid_t h = m_sample_list.get_samples_hdf5_handle(id);
+  const auto h = m_sample_list.get_samples_file_handle(id);
   const std::string path = sample_name + key;
-  if (h <= static_cast<hid_t>(0) || !conduit::relay::io::hdf5_has_path(h, path)) {
+  if (!has_path(h, path)) {
     const std::string& file_name = m_sample_list.get_samples_filename(id);
-    _THROW_LBANN_EXCEPTION_(get_type(), "Cannot open file " + file_name + \
-                                        " for sample "+ sample_name);
+    LBANN_ERROR(get_type() +  ":: Cannot open file " + file_name + \
+                " for sample "+ sample_name);
     return false;
   }
 
-  return conduit::relay::io::hdf5_has_path(h, std::string("/") + sample_name + key);
+  return true;
 }
 
 
@@ -425,7 +384,7 @@ void data_reader_jag_conduit::set_independent_variable_type(
 void data_reader_jag_conduit::add_independent_variable_type(
   const data_reader_jag_conduit::variable_t independent) {
   if (!(independent == JAG_Image || independent == JAG_Scalar || independent == JAG_Input)) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized independent variable type ");
+    LBANN_ERROR(_CN_ + ":: unrecognized independent variable type ");
   }
   m_independent.push_back(independent);
 }
@@ -445,7 +404,7 @@ void data_reader_jag_conduit::set_dependent_variable_type(
 void data_reader_jag_conduit::add_dependent_variable_type(
   const data_reader_jag_conduit::variable_t dependent) {
   if (!(dependent == JAG_Image || dependent == JAG_Scalar || dependent == JAG_Input)) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "unrecognized dependent variable type ");
+    LBANN_ERROR(_CN_ + ":: unrecognized dependent variable type ");
   }
   m_dependent.push_back(dependent);
 }
@@ -460,17 +419,25 @@ data_reader_jag_conduit::get_dependent_variable_type() const {
   return m_dependent;
 }
 
+/**
+ * Note: this method is called by init_image_data_reader in
+ *       src/proto/init_image_data_readers.cpp
+ */
 void data_reader_jag_conduit::set_image_dims(const int width, const int height, const int ch) {
   if ((width > 0) && (height > 0) && (ch > 0)) { // set and valid
     m_image_width = width;
     m_image_height = height;
     m_image_num_channels = ch;
   } else if (!((width == 0) && (height == 0) && (ch == 1))) { // set but not valid
-    _THROW_LBANN_EXCEPTION_(_CN_, "set_image_dims() : invalid image dims");
+    LBANN_ERROR(_CN_ + ":: set_image_dims() : invalid image dims");
   }
   set_linearized_image_size();
 }
 
+/**
+ * Note: this method is called by init_image_data_reader in
+ *       src/proto/init_image_data_readers.cpp
+ */
 void data_reader_jag_conduit::set_image_choices(const std::vector<std::string> image_keys) {
   m_emi_image_keys = image_keys;
   // For example, in the data reader prototext file, have a line similar to the one below
@@ -503,7 +470,7 @@ void data_reader_jag_conduit::add_input_prefix_filter(const prefix_t& p) {
 /**
  * First, it checks if the key is in the list of keys to filter.
  * Then, it checks if the key contains any prefix string to filter
- * while satisfying the minimum length requirement.
+ * while sayisfying the mininum length requirement.
  */
 bool data_reader_jag_conduit::filter(const std::set<std::string>& key_filter,
   const std::vector<data_reader_jag_conduit::prefix_t>& prefix_filter, const std::string& key) const {
@@ -521,6 +488,10 @@ bool data_reader_jag_conduit::filter(const std::set<std::string>& key_filter,
   return false;
 }
 
+/**
+ * Note: this method is called by init_image_data_reader in
+ *       src/proto/init_image_data_readers.cpp
+ */
 void data_reader_jag_conduit::set_scalar_choices(const std::vector<std::string>& keys) {
   m_scalar_keys = keys;
   check_scalar_keys();
@@ -550,6 +521,8 @@ const std::vector<std::string>& data_reader_jag_conduit::get_scalar_choices() co
 /**
  * To use no key, set 'Undefined' to the corresponding variable type,
  * or call this with an empty vector argument after loading data.
+ * Note: this method is called by init_image_data_reader in
+ *       src/proto/init_image_data_readers.cpp
  */
 void data_reader_jag_conduit::set_input_choices(const std::vector<std::string>& keys) {
   m_input_keys = keys;
@@ -600,7 +573,7 @@ void data_reader_jag_conduit::check_image_data() {
 
   size_t first_idx = (m_sample_list[0]).first;
   if (!has_conduit_path(first_idx, "")) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no sample by " + m_sample_list[first_idx].second);
+    LBANN_ERROR(_CN_ + ":: check_image_data() : no sample by " + m_sample_list[first_idx].second);
     return;
   }
   conduit::Node n_imageset;
@@ -613,7 +586,7 @@ void data_reader_jag_conduit::check_image_data() {
   }
   for (const auto& emi_tag: m_emi_image_keys) {
     if (!has_conduit_path(first_idx, m_output_image_prefix + emi_tag)) {
-      _THROW_LBANN_EXCEPTION_(_CN_, "check_image_data() : no emi image by " + emi_tag);
+      LBANN_ERROR(_CN_ + ":: check_image_data() : no emi image by " + emi_tag);
       return;
     }
   }
@@ -628,18 +601,18 @@ void data_reader_jag_conduit::check_image_data() {
       m_image_num_channels = 1;
       set_linearized_image_size();
     } else {
-      std::string msg = "expected linearized emi image size: "
+      std::string msg = ":: expected linearized emi image size: "
                       + std::to_string(emi.number_of_elements()) + '\n';
-      _THROW_LBANN_EXCEPTION_(_CN_, msg + get_description());
+      LBANN_ERROR(_CN_ +  msg + get_description());
     }
   }
 
   if (m_image_normalization_params.empty()) {
     m_image_normalization_params.assign(m_emi_image_keys.size()*m_image_num_channels, linear_transform_t(1.0, 0.0));
   } else if (m_image_normalization_params.size() != static_cast<size_t>(m_image_num_channels)) {
-    _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of image normalization parameter sets!" \
-                                + std::to_string(m_image_normalization_params.size()) + " != " \
-                                + std::to_string(m_image_num_channels));
+    LBANN_ERROR(_CN_ + ":: Incorrect number of image normalization parameter sets!" \
+                + std::to_string(m_image_normalization_params.size()) + " != " \
+                + std::to_string(m_image_num_channels));
   }
 #if defined(LBANN_DEBUG)
   std::cout << "image normalization parameters: " << std::endl;
@@ -699,15 +672,15 @@ void data_reader_jag_conduit::check_scalar_keys() {
         msg += ' ' + m_scalar_keys[i];
       }
     }
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_scalar_keys() : " + msg);
+    LBANN_ERROR(_CN_ + ":: check_scalar_keys() : " + msg);
   }
 
   if (m_scalar_normalization_params.empty()) {
     m_scalar_normalization_params.assign(m_scalar_keys.size(), linear_transform_t(1.0, 0.0));
   } else if (m_scalar_normalization_params.size() != m_scalar_keys.size()) {
-     _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of scalar normalization parameter sets! " \
-                                 + std::to_string(m_scalar_normalization_params.size()) + " != " \
-                                 + std::to_string(m_scalar_keys.size()));
+     LBANN_ERROR(_CN_ + ":: Incorrect number of scalar normalization parameter sets! " \
+                 + std::to_string(m_scalar_normalization_params.size()) + " != " \
+                 + std::to_string(m_scalar_keys.size()));
   }
 #if defined(LBANN_DEBUG)
   std::cout << "scalar normalization parameters: " << std::endl;
@@ -770,7 +743,7 @@ void data_reader_jag_conduit::check_input_keys() {
         msg += ' ' + m_input_keys[i];
       }
     }
-    _THROW_LBANN_EXCEPTION_(_CN_, "check_input_keys() : " + msg);
+    LBANN_ERROR(_CN_ + ":: check_input_keys() : " + msg);
   }
 
   m_uniform_input_type = (m_input_keys.size() == 0u)? false : is_input_t;
@@ -778,9 +751,9 @@ void data_reader_jag_conduit::check_input_keys() {
   if (m_input_normalization_params.empty()) {
     m_input_normalization_params.assign(m_input_keys.size(), linear_transform_t(1.0, 0.0));
   } else if (m_input_normalization_params.size() != m_input_keys.size()) {
-     _THROW_LBANN_EXCEPTION_(_CN_, "Incorrect number of input normalization parameter sets! " \
-                                 + std::to_string(m_input_normalization_params.size()) + " != " \
-                                 + std::to_string(m_input_keys.size()));
+     LBANN_ERROR(_CN_ + ":: Incorrect number of input normalization parameter sets! " \
+                 + std::to_string(m_input_normalization_params.size()) + " != " \
+                 + std::to_string(m_input_keys.size()));
   }
 #if defined(LBANN_DEBUG)
   std::cout << "input normalization parameters: " << std::endl;
@@ -793,13 +766,13 @@ void data_reader_jag_conduit::check_input_keys() {
 
 
 void data_reader_jag_conduit::load() {
-  if(m_gan_labeling) {
+  if(m_gan_labelling) {
     m_num_labels=2;
   }
 
   if (is_master()) {
-    std::cout << "JAG load GAN m_gan_labeling : label_value "
-              << m_gan_labeling <<" : " << m_gan_label_value << std::endl;
+    std::cout << "JAG load GAN m_gan_labelling : label_value "
+              << m_gan_labelling <<" : " << m_gan_label_value << std::endl;
   }
 
   if ((m_leading_reader != this) && (m_leading_reader != nullptr)) {
@@ -811,19 +784,24 @@ void data_reader_jag_conduit::load() {
   m_shuffled_indices.clear();
 
   if(is_master()) {
-    std::cout << "starting load" << std::endl;
+    std::cout << "data_reader_jag_conduit - starting load" << std::endl;
   }
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = data_dir + get_data_index_list();
 
   options *opts = options::get();
+  bool check_data = opts->get_bool("check_data");
 
   /// The use of these flags need to be updated to properly separate
   /// how index lists are used between trainers and models
   /// @todo m_list_per_trainer || m_list_per_model
+  double tm2 = get_time();
   load_list_of_samples(sample_list_file, m_comm->get_procs_per_trainer(), m_comm->get_rank_in_trainer());
   if(is_master()) {
-    std::cout << "Finished sample list, check data" << std::endl;
+      std::cout << "Finished loading sample list; time: " << get_time() - tm2 << std::endl;
+    if (!check_data) {
+      std::cout << "Skipping check data" << std::endl;
+    }
   }
 
   /// Check the data that each rank loaded
@@ -831,63 +809,69 @@ void data_reader_jag_conduit::load() {
     m_is_data_loaded = true;
 
     /// Open the first sample to make sure that all of the fields are correct
-    m_sample_list.open_samples_hdf5_handle(0, true);
+    m_sample_list.open_samples_file_handle(0, true);
 
     if (m_scalar_keys.size() == 0u) {
       set_all_scalar_choices(); // use all by default if none is specified
     }
-    check_scalar_keys();
+    if (check_data) {
+      check_scalar_keys();
+    }
 
     if (m_input_keys.size() == 0u) {
       set_all_input_choices(); // use all by default if none is specified
     }
-    check_input_keys();
+    if (check_data) {
+      check_input_keys();
+    }
 
-    check_image_data();
+    if (check_data) {
+      check_image_data();
+    }
 
-    m_sample_list.close_if_done_samples_hdf5_handle(0);
+    m_sample_list.close_if_done_samples_file_handle(0);
   }
   if(is_master()) {
     std::cout << "Done with data checking" << std::endl;
   }
 
-
-  // need to resize and init shuffled indices here, since it's needed in
-  // preload_data_store, which must be called before merging the sample lists
-  int sz = m_sample_list.size();
-  std::vector<int> local_list_sizes(m_comm->get_procs_per_trainer());
-  m_comm->trainer_all_gather(sz, local_list_sizes);
-
-  if(is_master()) {
-    std::cout << "We now have the proper size" << std::endl;
-  }
-
   /// Merge all of the sample lists
+  tm2 = get_time();
   m_sample_list.all_gather_packed_lists(*m_comm);
   if (opts->has_string("write_sample_list") && m_comm->am_trainer_master()) {
-    const std::string msg = " writing sample list " + sample_list_file;
-    log_msg(msg.c_str());
+    {
+      const std::string msg = " writing sample list " + sample_list_file;
+      LBANN_WARNING(msg);
+    }
     std::stringstream s;
     std::string basename = get_basename_without_ext(sample_list_file);
     std::string ext = get_ext_name(sample_list_file);
     s << basename << "." << ext;
     m_sample_list.write(s.str());
   }
+  if (is_master()) {
+    std::cout << "time for all_gather_packed_lists: " << get_time() - tm2 << std::endl;
+  }
+
   m_shuffled_indices.resize(m_sample_list.size());
   std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  resize_shuffled_indices();
 
   if(is_master()) {
     std::cout << "Lists have been gathered" << std::endl;
   }
 
-  instantiate_data_store(local_list_sizes);
-
+  instantiate_data_store();
   select_subset_of_data();
 }
 
+void data_reader_jag_conduit::preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node) {
+  const std::string path = sample_name + field_name;
+  const std::string key2 = '/' + LBANN_DATA_ID_STR(data_id) + field_name;
+  read_node(h, path, node[key2]);
+}
 
-void data_reader_jag_conduit::preload_data_store() {
-  m_data_store->set_preload();
+void data_reader_jag_conduit::do_preload_data_store() {
   conduit::Node work;
   const std::string key; // key = "" is intentional
 
@@ -898,40 +882,47 @@ void data_reader_jag_conduit::preload_data_store() {
   double tm1 = get_time();
   if (get_comm()->am_world_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
-    std::stringstream msg;
-    msg << " for role: " << get_role() << " starting preload";
-    log_msg(msg.str().c_str());
+    LBANN_WARNING("starting preload for role: ", get_role());
   }
 
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
     try {
-      work.reset();
-      m_sample_list.open_samples_hdf5_handle(idx, true);
-      load_conduit_node(idx, key, work);
-      conduit::Node & node = m_data_store->get_empty_node(idx);
-      const std::string padded_idx = '/' + LBANN_DATA_ID_STR(idx);
-      node[padded_idx] = work;
+      const sample_t& s = m_sample_list[index];
+      const std::string& sample_name = s.second;
+      sample_file_id_t id = s.first;
+      m_sample_list.open_samples_file_handle(index, true);
+      auto h = m_sample_list.get_samples_file_handle(id);
+      conduit::Node & node = m_data_store->get_empty_node(index);
 
-      m_data_store->set_preloaded_conduit_node(idx, node);
-    }catch (conduit::Error const& e) {
-      LBANN_ERROR(" :: trying to load the node " + std::to_string(idx) + " with key " + key + " and got " + e.what());
+      preload_helper(h, sample_name, m_output_scalar_prefix, index, node);
+      preload_helper(h, sample_name, m_input_prefix, index, node);
+      for (auto t : m_emi_image_keys) {
+        const std::string field_name = m_output_image_prefix + t;
+        preload_helper(h, sample_name, field_name, index, node);
+      }
+      m_data_store->set_preloaded_conduit_node(index, node);
+    } catch (conduit::Error const& e) {
+      LBANN_ERROR(" :: trying to load the node " + std::to_string(index) + " with key " + key + " and got " + e.what());
     }
   }
   /// Once all of the data has been preloaded, close all of the file handles
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    if(m_data_store->get_index_owner(idx) != m_rank_in_model) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
-    m_sample_list.close_if_done_samples_hdf5_handle(idx);
+    m_sample_list.close_if_done_samples_file_handle(index);
   }
+
   if (get_comm()->am_world_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
     std::stringstream msg;
     msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s";
-    log_msg(msg.str().c_str());
+    LBANN_WARNING(msg.str());
   }
 }
 
@@ -990,9 +981,9 @@ size_t data_reader_jag_conduit::get_linearized_size(const data_reader_jag_condui
       return get_linearized_scalar_size();
     case JAG_Input:
       return get_linearized_input_size();
-    default: { // includes Undefined case
-      _THROW_LBANN_EXCEPTION2_(_CN_, "get_linearized_size() : ", \
-                                     "unknown or undefined variable type");
+    default: { // includes Unefined case
+      LBANN_ERROR(_CN_ + ":: get_linearized_size() : " \
+                  + "unknown or undefined variable type");
     }
   }
   return 0u;
@@ -1048,8 +1039,8 @@ const std::vector<int> data_reader_jag_conduit::get_dims(const data_reader_jag_c
     case JAG_Input:
       return {static_cast<int>(get_linearized_input_size())};
     default: { // includes Undefined case
-      _THROW_LBANN_EXCEPTION2_(_CN_, "get_dims() : ", \
-                                     "unknown or undefined variable type");
+      LBANN_ERROR(_CN_ + ":: get_dims() : " \
+                  + "unknown or undefined variable type");
     }
   }
   return {};
@@ -1071,7 +1062,25 @@ const std::vector<int> data_reader_jag_conduit::get_data_dims() const {
 #endif
 }
 
-std::vector<El::Int> data_reader_jag_conduit::get_slice_points(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const {
+std::vector<El::Int> data_reader_jag_conduit::get_slice_points(
+  const slice_points_mode var_category,
+  bool& is_supported) {
+  std::vector<El::Int> slice_points;
+  is_supported = true;
+  if (var_category == slice_points_mode::INDEPENDENT) {
+    slice_points = get_slice_points_independent();
+  } else if (var_category == slice_points_mode::DEPENDENT) {
+    slice_points = get_slice_points_dependent();
+  } else if (var_category == slice_points_mode::NA) {
+    is_supported = false;
+  } else {
+    LBANN_ERROR("Unknown variable category \"" + lbann::to_string(var_category) \
+                + "\". Must be either \"independent\" or \"dependent\".");
+  }
+  return slice_points;
+}
+
+std::vector<El::Int> data_reader_jag_conduit::get_slice_points_impl(const std::vector< std::vector<data_reader_jag_conduit::variable_t> >& var) const {
   std::vector<El::Int> points(var.size()+1u, static_cast<El::Int>(0));
   for (size_t i = 0u; i < var.size(); ++i) {
     const auto& group = var[i];
@@ -1085,11 +1094,11 @@ std::vector<El::Int> data_reader_jag_conduit::get_slice_points(const std::vector
 }
 
 std::vector<El::Int> data_reader_jag_conduit::get_slice_points_independent() const {
-  return get_slice_points(m_independent_groups);
+  return get_slice_points_impl(m_independent_groups);
 }
 
 std::vector<El::Int> data_reader_jag_conduit::get_slice_points_dependent() const {
-  return get_slice_points(m_independent_groups);
+  return get_slice_points_impl(m_dependent_groups);
 }
 
 int data_reader_jag_conduit::get_num_data() const {
@@ -1113,7 +1122,7 @@ int data_reader_jag_conduit::get_linearized_size(const std::string& desc) const 
   } else if (desc == "JAG_Input") {
     return get_linearized_size(JAG_Input);
   } else {
-    _THROW_LBANN_EXCEPTION_(_CN_, "get_linearized_size() : unknown key " + desc);
+    LBANN_ERROR(_CN_ + ":: get_linearized_size() : unknown key " + desc);
   }
   return generic_data_reader::get_linearized_size(desc);
 }
@@ -1223,18 +1232,20 @@ bool data_reader_jag_conduit::check_non_numeric(const std::string key) {
 }
 
 
-std::vector< std::vector<data_reader_jag_conduit::ch_t> >
+std::vector< std::vector<DataType> >
 data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& sample) const {
-  std::vector< std::vector<ch_t> > image_ptrs;
+  std::vector< std::vector<DataType> > image_ptrs;
   image_ptrs.reserve(m_emi_image_keys.size());
 
   for (const auto& emi_tag : m_emi_image_keys) {
     const std::string conduit_field = m_output_image_prefix + emi_tag;
-    const std::string conduit_obj = '/' + LBANN_DATA_ID_STR(sample_id) + '/' + conduit_field;
+    const std::string conduit_obj = LBANN_DATA_ID_STR(sample_id) + conduit_field;
     if(sample[conduit_obj].schema().dtype().is_empty()) {
       if (data_store_active()) {
-        LBANN_ERROR("Unable to find field " + conduit_obj
-                    + " in conduit node: " + std::to_string(sample_id));
+        LBANN_ERROR("Unable to find field ", conduit_obj,
+                    " in conduit node: ", std::to_string(sample_id),
+                    ": num nodes successfully loaded by this rank: ",
+                    m_data_store->get_data_size(), " num successful calls to get_image_data on this rank: ");
       }
       conduit::Node n_image;
       bool from_file = load_conduit_node(sample_id, conduit_field, n_image);
@@ -1247,107 +1258,13 @@ data_reader_jag_conduit::get_image_data(const size_t sample_id, conduit::Node& s
     conduit_ch_t emi = sample[conduit_obj].value();
     const size_t num_vals = emi.number_of_elements();
     const ch_t* emi_data = sample[conduit_obj].value();
+    // Note that data will be cast from ch_t to DataType format
     image_ptrs.emplace_back(emi_data, emi_data + num_vals);
   }
 
   return image_ptrs;
 }
 
-cv::Mat data_reader_jag_conduit::cast_to_cvMat(
-  const std::pair<size_t, const ch_t*> img, const int height, const int num_ch) {
-  const int num_pixels = static_cast<int>(img.first);
-  const ch_t* ptr = img.second;
-
-  // add a zero copying view to data
-  using InputBuf_T = cv_image_type<ch_t>;
-  const cv::Mat image(num_pixels, 1, InputBuf_T::T(1u),
-                      reinterpret_cast<void*>(const_cast<ch_t*>(ptr)));
-  // reshape the image. Further need to clone (deep-copy) the image
-  // to preserve the constness of the original data
-  return (image.reshape(num_ch, height));
-}
-
-/// Assumes the same parameters for the same channel from different views
-void data_reader_jag_conduit::image_normalization(cv::Mat& img, size_t i, size_t ch) const {
-  const auto& tr = m_image_normalization_params.at(ch);
-  img.convertTo(img, -1, tr.first, tr.second);
-}
-
-std::vector<cv::Mat> data_reader_jag_conduit::get_cv_images(const size_t sample_id, conduit::Node& sample) const {
-  const std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
-  std::vector<cv::Mat> images;
-
-  if (m_split_channels) {
-    images.reserve(img_data.size()*m_image_num_channels);
-    for (size_t i = 0u; i < img_data.size(); ++i) {
-      const auto& img = img_data[i];
-      cv::Mat ch[m_image_num_channels];
-      cv::split(cast_to_cvMat(std::make_pair(img.size(), img.data()), m_image_height, m_image_num_channels), ch);
-      for(int c = 0; c < m_image_num_channels; ++c) {
-    #if 1 // with normalization
-        image_normalization(ch[c], i, static_cast<size_t>(c));
-    #endif
-        images.emplace_back(ch[c].clone());
-      }
-    }
-  } else {
-    images.reserve(img_data.size());
-    for (size_t i = 0u; i < img_data.size(); ++i) {
-      const auto& img = img_data[i];
-    #if 1 // with normalization
-      cv::Mat ch[m_image_num_channels];
-      cv::split(cast_to_cvMat(std::make_pair(img.size(), img.data()), m_image_height, m_image_num_channels), ch);
-      for(int c = 0; c < m_image_num_channels; ++c) {
-        image_normalization(ch[c], i, static_cast<size_t>(c));
-      }
-      cv::Mat img_normalized;
-      cv::merge(ch, m_image_num_channels, img_normalized);
-      images.emplace_back(img_normalized);
-    #else
-      images.emplace_back(cast_to_cvMat(std::make_pair(img.size(), img.data()), m_image_height, m_image_num_channels).clone());
-    #endif
-    }
-  }
-  return images;
-}
-
-std::vector<data_reader_jag_conduit::ch_t> data_reader_jag_conduit::get_images(const size_t sample_id, conduit::Node& sample) const {
-  std::vector< std::vector<ch_t> > img_data(get_image_data(sample_id, sample));
-  std::vector<ch_t> images;
-
-  if (m_split_channels) {
-    images.resize(get_linearized_size(JAG_Image));
-    size_t i = 0u;
-    size_t j = 0u;
-    for (const auto& img: img_data) {
-      const ch_t * const ptr_end = img.data() + img.size();
-      for (int c=0; c < m_image_num_channels; ++c) {
-        const auto& tr = m_image_normalization_params.at(c);
-        for (const ch_t* ptr = img.data() + c; ptr < ptr_end; ptr += m_image_num_channels) {
-        #if 1 // with normalization
-          images[i++] = cv::saturate_cast<ch_t>(*ptr * tr.first + tr.second);
-        #else
-          images[i++] = *ptr;
-        #endif
-        }
-      }
-      j ++;
-    }
-  } else {
-    images.reserve(get_linearized_size(JAG_Image));
-    for (const auto& img: img_data) {
-    #if 1 // with normalization
-      // TODO: normalization needed
-      _THROW_LBANN_EXCEPTION_(_CN_, "get_images() : normalization not implemented yet");
-      (void) img;
-    #else
-      images.insert(images.end(), img.cbegin(), ptr + img.cend());
-    #endif
-    }
-  }
-
-  return images;
-}
 
 std::vector<data_reader_jag_conduit::scalar_t> data_reader_jag_conduit::get_scalars(const size_t sample_id, conduit::Node& sample) const {
   std::vector<scalar_t> scalars;
@@ -1438,7 +1355,6 @@ std::vector<data_reader_jag_conduit::input_t> data_reader_jag_conduit::get_input
   return inputs;
 }
 
-
 std::vector<CPUMat>
 data_reader_jag_conduit::create_datum_views(CPUMat& X, const std::vector<size_t>& sizes, const int mb_idx) const {
   std::vector<CPUMat> X_v(sizes.size());
@@ -1456,21 +1372,39 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
   const data_reader_jag_conduit::variable_t vt, const std::string tag) {
   switch (vt) {
     case JAG_Image: {
-      const size_t num_images = get_num_img_srcs()
-                              * static_cast<size_t>(m_split_channels? m_image_num_channels : 1u);
-      const size_t image_size = m_split_channels? get_linearized_1ch_image_size() : get_linearized_image_size();
+      const size_t num_images = get_num_img_srcs();
+      const size_t num_channels = m_image_num_channels;
+      const size_t image_size = get_linearized_image_size();
       const std::vector<size_t> sizes(num_images, image_size);
       std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
-      std::vector<cv::Mat> images = get_cv_images(data_id, sample);
+      std::vector< std::vector<DataType> > img_data(get_image_data(data_id, sample));
 
-      if (images.size() != num_images) {
-        _THROW_LBANN_EXCEPTION2_(_CN_, "fetch() : the number of images is not as expected", \
-          std::to_string(images.size()) + "!=" + std::to_string(num_images));
+      if (img_data.size() != num_images) {
+        LBANN_ERROR(_CN_ + ":: fetch() : the number of images is not as expected " \
+                    + std::to_string(img_data.size()) + "!=" + std::to_string(num_images));
+      }
+      if (!m_split_channels && m_image_num_channels != 1) {
+        LBANN_ERROR(_CN_ + ":: fetch() : transform pipeline now requires single channel images: num_channels=" \
+                    + std::to_string(m_image_num_channels) + " split_channel=" + std::to_string(m_split_channels));
       }
 
+      std::vector<size_t> dims = {num_channels, static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
+      std::vector<size_t> ch_dims = {static_cast<size_t>(m_image_height), static_cast<size_t>(m_image_width)};
+      auto tll = lbann::transform::repack_HWC_to_CHW_layout();
+
       for(size_t i=0u; i < num_images; ++i) {
-        int width, height, img_type;
-        image_utils::process_image(images[i], width, height, img_type, *(m_pps[tid]), X_v[i]);
+        CPUMat img_mat = CPUMat(utils::get_linearized_size(dims), 1, img_data[i].data(), utils::get_linearized_size(dims));
+        utils::type_erased_matrix te_img(std::move(img_mat));
+        CPUMat tgt_mat = CPUMat(utils::get_linearized_size(dims), 1);
+        tll.apply(te_img, X_v[i], dims);
+        const std::vector<size_t> ch_sizes(num_channels, m_image_height * m_image_width);
+        std::vector<CPUMat> X_ch_v = create_datum_views(X_v[i], ch_sizes, mb_idx);
+        for(size_t ch = 0; ch < num_channels; ch++) {
+          const auto& tr = m_image_normalization_params.at(ch);
+          auto s = lbann::transform::scale_and_translate(tr.first, tr.second);
+          utils::type_erased_matrix te_img_plane(std::move(X_ch_v[ch]));
+          s.apply(te_img_plane, ch_dims);
+        }
       }
       break;
     }
@@ -1485,7 +1419,7 @@ bool data_reader_jag_conduit::fetch(CPUMat& X, int data_id, conduit::Node& sampl
       break;
     }
     default: { // includes Undefined case
-      _THROW_LBANN_EXCEPTION_(_CN_, "fetch_" + tag + "() : unknown or undefined variable type");
+      LBANN_ERROR(_CN_ + ":: fetch_" + tag + "() : unknown or undefined variable type");
     }
   }
   return true;
@@ -1548,7 +1482,7 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }else {
-    m_sample_list.open_samples_hdf5_handle(data_id);
+    m_sample_list.open_samples_file_handle(data_id);
   }
 
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
@@ -1561,26 +1495,27 @@ bool data_reader_jag_conduit::fetch_datum(CPUMat& X, int data_id, int mb_idx) {
     m_data_store->set_conduit_node(data_id, node);
   }
 
-  m_sample_list.close_if_done_samples_hdf5_handle(data_id);
+  m_sample_list.close_if_done_samples_file_handle(data_id);
   m_using_random_node.erase(m_io_thread_pool->get_local_thread_id());
   return ok;
 }
 
 bool data_reader_jag_conduit::fetch_response(CPUMat& X, int data_id, int mb_idx) {
+  const auto& c = static_cast<const sgd_execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
   int tid = m_io_thread_pool->get_local_thread_id();
   std::vector<size_t> sizes = get_linearized_response_sizes();
   std::vector<CPUMat> X_v = create_datum_views(X, sizes, mb_idx);
   bool ok = true;
   // Create a node to hold all of the data
   conduit::Node node;
-  if (m_data_store != nullptr && m_model->get_epoch() > 0) {
+  if (m_data_store != nullptr && c.get_epoch() > 0) {
     const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
     node.set_external(ds_node);
   }
   for(size_t i = 0u; ok && (i < X_v.size()); ++i) {
     ok = fetch(X_v[i], data_id, node, 0, tid, m_dependent[i], "response");
   }
-  if (m_data_store != nullptr && m_model->get_epoch() == 0) {
+  if (m_data_store != nullptr && c.get_epoch() == 0) {
     // Once the node has been populated save it in the data store
     if (m_data_store != nullptr) {
       m_data_store->set_conduit_node(data_id, node);
@@ -1603,10 +1538,6 @@ void data_reader_jag_conduit::setup_data_store(int mini_batch_size) {
    if (m_data_store != nullptr) {
      m_data_store->setup(mini_batch_size);
    }
-}
-
-void data_reader_jag_conduit::save_image(Mat& pixels, const std::string filename, bool do_scale) {
-  internal_save_image(pixels, filename, m_image_height, m_image_width, 1, do_scale);
 }
 
 void data_reader_jag_conduit::print_schema(const size_t sample_id) const {

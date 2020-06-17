@@ -18,9 +18,13 @@
 
 import subprocess, os, runpy
 
-rebuild_doxygen = not os.path.isdir("doxy_out/xml")
+rebuild_doxygen = not os.path.isdir("doxy_out/xml") or not os.path.isdir("_static/doxygen/html")
 
+if not os.path.isdir("_static"):
+    os.makedirs("_static")
+    
 if rebuild_doxygen:
+    os.makedirs("doxy_out/xml")
     subprocess.call('doxygen SourceTreeDoxyfile', shell=True)
 
 #exec(open("./BuildRSTDocs.py").read())
@@ -75,6 +79,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+html_static_path = ['_static']
 
 # -- Options for HTML output -------------------------------------------------
 

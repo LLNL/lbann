@@ -29,10 +29,15 @@
 #include "lbann/models/model.hpp"
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
-#include <string>
+#include "lbann/execution_contexts/sgd_execution_context.hpp"
+
+#include <layers.pb.h>
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <string>
 
 // Asynchronous memory transfers for input data
 // Note: This introduces a race condition. It is possible for the
@@ -58,7 +63,6 @@ Layer::Layer(lbann_comm *comm)
 
 Layer::Layer(const Layer& other) :
   m_comm(other.m_comm),
-  m_weights(other.m_weights),
   m_parent_layers(other.m_parent_layers),
   m_child_layers(other.m_child_layers),
   m_expected_num_parent_layers(other.m_expected_num_parent_layers),
@@ -73,32 +77,12 @@ Layer::Layer(const Layer& other) :
   m_name(other.m_name),
   m_output_dims_list(other.m_output_dims_list),
   m_hint_layer(other.m_hint_layer) {
-
-  // Deep matrix copies
-  m_inputs.reserve(other.m_inputs.size());
-  m_outputs.reserve(other.m_outputs.size());
-  m_gradient_wrt_outputs.reserve(other.m_gradient_wrt_outputs.size());
-  m_gradient_wrt_inputs.reserve(other.m_gradient_wrt_inputs.size());
-  for (const auto& ptr : other.m_inputs) {
-    m_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
-  }
-  for (const auto& ptr : other.m_outputs) {
-    m_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
-  }
-  for (const auto& ptr : other.m_gradient_wrt_outputs) {
-    m_gradient_wrt_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
-  }
-  for (const auto& ptr : other.m_gradient_wrt_inputs) {
-    m_gradient_wrt_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
-  }
-
 }
 
 Layer& Layer::operator=(const Layer& other) {
 
   // Shallow copies
   m_comm = other.m_comm;
-  m_weights = other.m_weights;
   m_parent_layers = other.m_parent_layers;
   m_child_layers = other.m_child_layers;
   m_expected_num_parent_layers = other.m_expected_num_parent_layers;
@@ -113,28 +97,6 @@ Layer& Layer::operator=(const Layer& other) {
   m_name = other.m_name;
   m_output_dims_list = other.m_output_dims_list;
   m_hint_layer = other.m_hint_layer;
-
-  // Deep matrix copies
-  m_inputs.clear();
-  m_outputs.clear();
-  m_gradient_wrt_outputs.clear();
-  m_gradient_wrt_inputs.clear();
-  m_inputs.reserve(other.m_inputs.size());
-  m_outputs.reserve(other.m_outputs.size());
-  m_gradient_wrt_outputs.reserve(other.m_gradient_wrt_outputs.size());
-  m_gradient_wrt_inputs.reserve(other.m_gradient_wrt_inputs.size());
-  for (const auto& ptr : other.m_inputs) {
-    m_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
-  }
-  for (const auto& ptr : other.m_outputs) {
-    m_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
-  }
-  for (const auto& ptr : other.m_gradient_wrt_outputs) {
-    m_gradient_wrt_outputs.emplace_back(ptr ? nullptr : ptr->Copy());
-  }
-  for (const auto& ptr : other.m_gradient_wrt_inputs) {
-    m_gradient_wrt_inputs.emplace_back(ptr ? nullptr : ptr->Copy());
-  }
 
   return *this;
 }
@@ -193,7 +155,7 @@ description Layer::get_description() const {
   }
 
   // Weights
-  const auto& weights_list = get_weights();
+  const auto weights_list = get_weights();
   if (!weights_list.empty()) {
     ss.str(std::string{});
     ss.clear();
@@ -237,76 +199,15 @@ description Layer::get_description() const {
   }
   desc.add("Device", ss.str());
 
+  // DataType
+  desc.add("Data type", get_datatype_name());
+
   // Freeze state
   if (is_frozen()) {
     desc.add("Frozen");
   }
 
   return desc;
-}
-
-void Layer::forward_prop() {
-  const auto fp_start = get_time();
-
-  // Setup tensors
-  const auto& mini_batch_size = m_model->get_current_mini_batch_size();
-  fp_setup_inputs(mini_batch_size);
-  fp_setup_outputs(mini_batch_size);
-
-#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
-  // Synchronize GPUs and check for errors
-  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
-
-  // Apply layer's compute function
-  const auto fp_compute_start = get_time();
-  fp_compute();
-  m_fp_compute_time += get_time() - fp_compute_start;
-
-  // Add this layer as a gradient source for weight optimizers
-  for (auto&& w : m_weights) {
-    optimizer* opt = w->get_optimizer();
-    if (opt != nullptr) { opt->add_gradient_source(this); }
-  }
-
-#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
-  // Synchronize GPUs and check for errors
-  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
-
-  m_fp_time += get_time() - fp_start;
-}
-
-void Layer::back_prop() {
-  const auto bp_start = get_time();
-
-  // Setup tensors
-  const auto& mini_batch_size = m_model->get_current_mini_batch_size();
-  bp_setup_gradient_wrt_outputs(mini_batch_size);
-  bp_setup_gradient_wrt_inputs(mini_batch_size);
-
-#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
-  // Synchronize GPUs and check for errors
-  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
-
-  // Backprop the compute function.
-  const auto bp_compute_start = get_time();
-  bp_compute();
-  m_bp_compute_time += get_time() - bp_compute_start;
-
-  // Remove this layer as a gradient source for weight optimizers
-  for (auto&& w : m_weights) {
-    auto&& opt = w->get_optimizer();
-    if (opt != nullptr) { opt->remove_gradient_source(this); }
-  }
-
-#if defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
-  // Synchronize GPUs and check for errors
-  if (using_gpus()) { El::GPUManager::SynchronizeDevice(true); }
-#endif // defined(LBANN_HAS_GPU) && defined(LBANN_DEBUG)
-
-  m_bp_time += get_time() - bp_start;
 }
 
 bool Layer::update() {
@@ -337,7 +238,7 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   reset_counters();
   // Combine the optimizer step time from all the weights.
   double step_time = 0.0;
-  for (weights *w : get_weights()) {
+  for (auto const& w : get_weights()) {
     optimizer *opt = w->get_optimizer();
     if (opt) {
       step_time += opt->get_step_time();
@@ -347,37 +248,6 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   summarizer.reduce_scalar(prefix + "opt_time", step_time, step);
   summarizer.reduce_scalar_all(prefix + "opt_time", step_time, step);
 }
-
-void Layer::summarize_matrices(lbann_summary& summarizer, int step) {
-
-  // Summarize activation matrices
-  const int num_children = get_num_children();
-  for (int i = 0; i < num_children; ++i) {
-    AbsDistMatReadProxy<El::Device::CPU> acts(*m_outputs[i]);
-    std::string prefix = m_name + "/activations";
-    if (num_children > 1) { prefix += std::to_string(i); }
-    summarizer.reduce_mean(prefix + "/mean", acts.GetLocked(), step);
-    summarizer.reduce_min(prefix + "/min", acts.GetLocked(), step);
-    summarizer.reduce_max(prefix + "/max", acts.GetLocked(), step);
-    summarizer.reduce_stdev(prefix + "/stdev", acts.GetLocked(), step);
-    summarizer.reduce_2norm(prefix + "/2norm2", acts.GetLocked(), step);
-  }
-
-  // Summarize error signal matrices
-  const int num_parents = get_num_parents();
-  for (int i = 0; i < num_parents; ++i) {
-    AbsDistMatReadProxy<El::Device::CPU> error_signals(*m_gradient_wrt_inputs[i]);
-    std::string prefix = m_name + "/error_signals";
-    if (num_parents > 1) { prefix += std::to_string(i); }
-    summarizer.reduce_mean(prefix + "/mean", error_signals.GetLocked(), step);
-    summarizer.reduce_min(prefix + "/min", error_signals.GetLocked(), step);
-    summarizer.reduce_max(prefix + "/max", error_signals.GetLocked(), step);
-    summarizer.reduce_stdev(prefix + "/stdev", error_signals.GetLocked(), step);
-    summarizer.reduce_2norm(prefix + "/2norm2", error_signals.GetLocked(), step);
-  }
-
-}
-
 
 // ===================================================================
 // Tensor dimension access functions
@@ -405,10 +275,7 @@ std::vector<int> Layer::get_input_dims(int input_index) const {
 
   // Get dimensions of corresponding output tensor in parent layer
   const auto num_parent_outputs = parent.get_num_children();
-  const int parent_output_index = (std::find(parent.m_child_layers.begin(),
-                                             parent.m_child_layers.end(),
-                                             this)
-                                   - parent.m_child_layers.begin());
+  const int parent_output_index = parent.find_child_layer_index(this);
   if (parent_output_index >= num_parent_outputs) {
     std::stringstream err;
     err << "layer \"" << parent.get_name() << "\" is a parent of "
@@ -420,6 +287,10 @@ std::vector<int> Layer::get_input_dims(int input_index) const {
   return parent.get_output_dims(parent_output_index);
 
 }
+
+// ===========================================================
+// Tensor dimension access functions
+// ===========================================================
 
 int Layer::get_input_size(int input_index) const {
   const auto& dims = get_input_dims(input_index);
@@ -470,146 +341,38 @@ void Layer::set_output_dims(std::vector<int> dims, int output_index) {
   m_output_dims_list[output_index] = dims;
 }
 
-// ===================================================================
-// Tensor access functions
-// ===================================================================
-
-// Accessing distributed matrices
-const AbsDistMat& Layer::get_prev_activations(int parent_index) const {
-  if (parent_index < 0 || parent_index >= (int) m_inputs.size()) {
-    std::stringstream err;
-    err << "attempted to access invalid previous activation matrix "
-        << "from " << m_name << " "
-        << "(requested index " << parent_index << ", but there are "
-        << m_inputs.size() << " previous activation matrices)";
-    LBANN_ERROR(err.str());
-  }
-  return *m_inputs[parent_index];
-}
-const AbsDistMat& Layer::get_activations(int child_index) const {
-  if (child_index < 0 || child_index >= (int) m_outputs.size()) {
-    std::stringstream err;
-    err << "attempted to access invalid activation matrix "
-        << "from " << m_name << " "
-        << "(requested index " << child_index << ", but there are "
-        << m_outputs.size() << " activation matrices)";
-    LBANN_ERROR(err.str());
-  }
-  return *m_outputs[child_index];
-}
-const AbsDistMat& Layer::get_prev_error_signals(int child_index) const {
-  if (child_index < 0 || child_index >= (int) m_gradient_wrt_outputs.size()) {
-    std::stringstream err;
-    err << "attempted to access invalid previous error signal matrix "
-        << "from " << m_name << " "
-        << "(requested index " << child_index << ", but there are "
-        << m_gradient_wrt_outputs.size() << " previous error signal matrices)";
-    LBANN_ERROR(err.str());
-  }
-  return *m_gradient_wrt_outputs[child_index];
-}
-const AbsDistMat& Layer::get_error_signals(int parent_index) const {
-  if (parent_index < 0 || parent_index >= (int) m_gradient_wrt_inputs.size()) {
-    std::stringstream err;
-    err << "attempted to access invalid error signal matrix "
-        << "from " << m_name << " "
-        << "(requested index " << parent_index << ", but there are "
-        << m_gradient_wrt_inputs.size() << " error signal matrices)";
-    LBANN_ERROR(err.str());
-  }
-  return *m_gradient_wrt_inputs[parent_index];
-}
-
-// Accessing non-const distributed matrices
-// Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
-// by Scott Meyers.
-AbsDistMat& Layer::get_activations(int child_index) {
-  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_activations(child_index));
-}
-AbsDistMat& Layer::get_error_signals(int parent_index) {
-  return const_cast<AbsDistMat&>(static_cast<const Layer&>(*this).get_error_signals(parent_index));
-}
-
-// Accessing local matrices
-AbsMat& Layer::get_local_activations(int child_index) {
-  return get_activations(child_index).Matrix();
-}
-AbsMat& Layer::get_local_error_signals(int parent_index) {
-  return get_error_signals(parent_index).Matrix();
-}
-const AbsMat& Layer::get_local_prev_activations(int parent_index) const {
-  return get_prev_activations(parent_index).LockedMatrix();
-}
-const AbsMat& Layer::get_local_activations(int child_index) const {
-  return get_activations(child_index).LockedMatrix();
-}
-const AbsMat& Layer::get_local_prev_error_signals(int child_index) const {
-  return get_prev_error_signals(child_index).LockedMatrix();
-}
-const AbsMat& Layer::get_local_error_signals(int parent_index) const {
-  return get_error_signals(parent_index).LockedMatrix();
-}
-
-// Accessing matrices corresponding to parent/child layer
-const AbsDistMat& Layer::get_activations(const Layer& child) const {
-  const int child_index = (std::find(m_child_layers.begin(),
-                                     m_child_layers.end(),
-                                     &child)
-                           - m_child_layers.begin());
-  if (child_index >= get_num_children()) {
-    std::stringstream err;
-    err << "attempted to get activation tensor of "
-        << "layer \"" << get_name() << "\" "
-        << "corresponding to layer\"" << child.get_name() << "\", "
-        << "which is not a child layer";
-    LBANN_ERROR(err.str());
-  }
-  return get_activations(child_index);
-}
-const AbsDistMat& Layer::get_error_signals(const Layer& parent) const {
-  const int parent_index = (std::find(m_parent_layers.begin(),
-                                      m_parent_layers.end(),
-                                      &parent)
-                           - m_parent_layers.begin());
-  if (parent_index >= get_num_parents()) {
-    std::stringstream err;
-    err << "attempted to get error signal tensor of "
-        << "layer \"" << get_name() << "\" "
-        << "corresponding to layer\"" << parent.get_name() << "\", "
-        << "which is not a parent layer";
-    LBANN_ERROR(err.str());
-  }
-  return get_error_signals(parent_index);
-}
-
 void Layer::freeze() {
   m_frozen = true;
-  for(auto& w : m_weights) {
+  for(auto& w : get_weights()) {
     w->freeze();
   }
 }
 
 void Layer::unfreeze() {
   m_frozen = false;
-  for(auto& w : m_weights) {
+  for(auto& w : get_weights()) {
     w->unfreeze();
   }
 }
 
 bool Layer::is_frozen() const {
-  for(auto& w : m_weights) {
+  for(auto& w : get_weights()) {
     if (w->is_frozen() != m_frozen) {
-      LBANN_ERROR("layer and weights of them are inconsistently frozen");
+      LBANN_ERROR("layer ", get_name(), " and weight ", w->get_name(), \
+                  " of it are inconsistently frozen");
     }
   }
   return m_frozen;
 }
 
-void Layer::setup() {
+void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   setup_pointers();
-  setup_dims();
+  setup_dims(dr_metadata);
   setup_matrices(m_comm->get_trainer_grid());
-  setup_data();
+#ifdef LBANN_HAS_DISTCONV
+  prepare_distconv();
+#endif // LBANN_HAS_DISTCONV
+  setup_data(max_mini_batch_size);
   if (using_gpus()) { setup_gpu(); }
 }
 
@@ -690,7 +453,7 @@ void Layer::setup_pointers() {
 
 }
 
-void Layer::setup_dims() {
+void Layer::setup_dims(DataReaderMetaData& dr_metadata) {
   m_output_dims_list.resize(get_num_children());
   if (m_hint_layer != nullptr) {
     const auto& hint_dims = m_hint_layer->get_output_dims();
@@ -704,110 +467,6 @@ void Layer::setup_dims() {
         output_dims = input_dims;
       }
     }
-  }
-}
-
-void Layer::setup_matrices(const El::Grid& grid) {
-
-  // Destroy previously setup matrices
-  m_inputs.clear();
-  m_outputs.clear();
-  m_gradient_wrt_outputs.clear();
-  m_gradient_wrt_inputs.clear();
-
-  // Construct matrices
-  m_inputs.resize(get_num_parents());
-  m_outputs.resize(get_num_children());
-  m_gradient_wrt_outputs.resize(get_num_children());
-  m_gradient_wrt_inputs.resize(get_num_parents());
-  for (int i = 0; i < get_num_parents(); ++i) {
-    m_inputs[i] = construct_matrix(grid, "input", i);
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_outputs[i] = construct_matrix(grid, "output", i);
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    m_gradient_wrt_outputs[i]
-      = construct_matrix(grid, "gradient_wrt_output", i);
-  }
-  for (int i = 0; i < get_num_parents(); ++i) {
-    m_gradient_wrt_inputs[i]
-      = construct_matrix(grid, "gradient_wrt_input", i);
-  }
-}
-
-std::unique_ptr<AbsDistMat> Layer::construct_matrix(const El::Grid& grid,
-                                                    std::string type,
-                                                    El::Int index) {
-
-  // Choose matrix distribution
-  El::Distribution col_dist, row_dist;
-  El::DistWrap wrap;
-  El::Device device = get_device_allocation();
-  switch (get_data_layout()) {
-  case data_layout::DATA_PARALLEL:
-    col_dist = El::STAR;
-    row_dist = El::VC;
-    wrap     = El::ELEMENT;
-    break;
-  case data_layout::MODEL_PARALLEL:
-    col_dist = El::MC;
-    row_dist = El::MR;
-    wrap     = El::ELEMENT;
-    break;
-  default: LBANN_ERROR("invalid data layout");
-  }
-
-  // Construct matrix
-  std::unique_ptr<AbsDistMat> mat;
-  mat.reset(AbsDistMat::Instantiate(grid, 0,
-                                    col_dist, row_dist, wrap, device));
-
-#ifdef LBANN_HAS_GPU
-  // Allocate GPU memory with the CUDA API
-  if (device == El::Device::GPU) { mat->Matrix().SetMemoryMode(0); }
-  // Use pinned memory for data on the host.
-  if (device == El::Device::CPU) { mat->Matrix().SetMemoryMode(1); }
-#endif // LBANN_HAS_GPU
-
-  return mat;
-}
-
-void Layer::setup_data() {
-
-  // Get mini-batch size
-  const auto& mini_batch_size = m_model->get_max_mini_batch_size();
-
-  // Initialize input and output tensors
-  fp_setup_inputs(mini_batch_size);
-  fp_setup_outputs(mini_batch_size);
-
-  // Initialize gradient w.r.t. output tensors
-  // Note: We guess whether the tensor is a view or needs to allocate
-  // memory, but there are some edge cases that are not handled.
-  for (int i = 0; i < get_num_children(); ++i) {
-    const auto& child = *m_child_layers[i];
-    const auto& output = get_activations(i);
-    auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
-    gradient_wrt_output.Empty(false);
-    gradient_wrt_output.AlignWith(output);
-    if (child.get_data_layout() == get_data_layout()
-        && child.get_device_allocation() == get_device_allocation()
-        && gradient_wrt_output.DistData() == output.DistData()) {
-      El::LockedView(gradient_wrt_output, output);
-    } else {
-      El::Copy(output, gradient_wrt_output);
-    }
-  }
-
-  // Initialize gradient w.r.t. input tensors
-  bp_setup_gradient_wrt_inputs(mini_batch_size);
-
-}
-
-void Layer::bp_compute() {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    El::Zero(get_error_signals(i));
   }
 }
 
@@ -853,69 +512,15 @@ void Layer::check_setup() {
       LBANN_ERROR(err.str());
     }
   }
-
-  // Check number of tensors
-  const int num_parents = get_num_parents();
-  const int num_children = get_num_children();
-  if ((int) m_inputs.size() != num_parents
-      || (int) m_outputs.size() != num_children
-      || (int) m_gradient_wrt_outputs.size() != num_children
-      || (int) m_gradient_wrt_inputs.size() != num_parents) {
-    err << "layer \"" << get_name() << "\" has an "
-        << "invalid number of input and output tensors "
-        << "(found " << num_parents << " parent layers, "
-        << num_children << " child layers, "
-        << m_inputs.size() << " input tensors, "
-        << m_outputs.size() << " output tensors, "
-        << m_gradient_wrt_outputs.size() << " gradient w.r.t. output tensors, "
-        << m_gradient_wrt_inputs.size() << " gradient w.r.t. input tensors)";
-    LBANN_ERROR(err.str());
-  }
-
-  // Check that tensors are initialized
-  for (int i = 0; i < get_num_parents(); ++i) {
-    if (m_inputs[i] == nullptr) {
-      err << "layer \"" << get_name() << "\" has an "
-          << "uninitialized input tensor (index " << i << ")";
-      LBANN_ERROR(err.str());
-    }
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    if (m_outputs[i] == nullptr) {
-      err << "layer \"" << get_name() << "\" has an "
-          << "uninitialized output tensor (index " << i << ")";
-      LBANN_ERROR(err.str());
-    }
-  }
-  for (int i = 0; i < get_num_children(); ++i) {
-    if (m_gradient_wrt_outputs[i] == nullptr) {
-      err << "layer \"" << get_name() << "\" has an "
-          << "uninitialized gradient w.r.t. output tensor "
-          << "(index " << i << ")";
-      LBANN_ERROR(err.str());
-    }
-  }
-  for (int i = 0; i < get_num_parents(); ++i) {
-    if (m_gradient_wrt_inputs[i] == nullptr) {
-      err << "layer \"" << get_name() << "\" has an "
-          << "uninitialized gradient w.r.t. input tensor "
-          << "(index " << i << ")";
-      LBANN_ERROR(err.str());
-    }
-  }
 }
 
-void Layer::replace_weights(Layer* other_layer) {
-  if (other_layer == nullptr) {
-    LBANN_ERROR("attempted to add null pointer as a replacement layer");
-  }
-
-  const std::vector<weights *> other_layer_weights = other_layer->get_weights();
-  for (size_t i = 0; i < m_weights.size(); ++i) {
-    m_weights[i]->set_values(other_layer_weights[i]->get_values());
-  }
-
+void Layer::back_prop() {
+  allocate_new_gradients_();
+  back_prop_impl_();
+  propagate_error_signals_to_parents_();
+  clear_prev_error_signals_();
 }
+
 
 bool Layer::save_to_checkpoint_shared(persist& p) const {
   return true;
@@ -940,175 +545,9 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   if(!m_parent_layers.empty()) proto->set_bottom(m_parent_layers.front()->get_name());
   proto->set_top(get_name());
   //Add weights
-  for (weights *w : m_weights) {
+  for (auto const& w : get_weights()) {
     auto weight_proto = proto->add_weights_data();
     w->write_proto(weight_proto);
-  }
-}
-
-void Layer::fp_setup_inputs(El::Int mini_batch_size) {
-  if (get_num_parents() < 1) { return; }
-
-  // Determine distributed matrix alignment
-  const auto& alignment_dist
-    = m_parent_layers.front()->get_activations(*this).DistData();
-
-  // Iterate through input tensors
-  for (int i = 0; i < get_num_parents(); ++i) {
-
-    // Initialize input tensor
-    const auto& parent = *m_parent_layers[i];
-    const auto& parent_output = parent.get_activations(*this);
-    auto& input = *m_inputs[i];
-    input.Empty(false);
-    input.AlignWith(alignment_dist);
-    if (parent_output.DistData() == input.DistData()) {
-      El::LockedView(input, parent_output);
-    } else {
-      bool async_copy = false;
-#if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-      // Asynchronously copy CPU data to GPU data if they are otherwise aligned
-      if (parent_output.GetLocalDevice() == El::Device::CPU
-          && input.GetLocalDevice() == El::Device::GPU) {
-        auto parent_dist_data = parent_output.DistData();
-        parent_dist_data.device = El::Device::GPU;
-        async_copy = parent_dist_data == input.DistData();
-      }
-#endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-      if (async_copy) {
-        El::CopyAsync(parent_output, input);
-      } else {
-        El::Copy(parent_output, input);
-      }
-    }
-
-    // Check input matrix dimensions
-    const auto& height = get_input_size(i);
-    const auto& width = mini_batch_size;
-    if (input.Height() != height || input.Width() != width) {
-      std::stringstream err;
-      err << "layer \"" << get_name() << "\" "
-          << "expected an input tensor stored in a "
-          << height << " x " << width << " matrix "
-          << "from layer \"" << parent.get_name() << "\", but got a "
-          << input.Height() << " x " << input.Width() << " matrix";
-      LBANN_ERROR(err.str());
-    }
-
-  }
-
-}
-
-void Layer::fp_setup_outputs(El::Int mini_batch_size) {
-  if (get_num_children() < 1) { return; }
-
-  // Determine distributed matrix alignment
-  const bool align_outputs = get_num_parents() > 0;
-  const auto& alignment_dist = (align_outputs ?
-                                get_prev_activations().DistData() :
-                                get_activations().DistData());
-
-  // Initialize output tensors
-  for (int i = 0; i < get_num_children(); ++i) {
-    auto& output = get_activations(i);
-    output.Empty(false);
-    if (align_outputs) { output.AlignWith(alignment_dist); }
-    output.Resize(get_output_size(i), mini_batch_size);
-  }
-
-}
-
-void Layer::bp_setup_gradient_wrt_outputs(El::Int mini_batch_size) {
-  for (int i = 0; i < get_num_children(); ++i) {
-
-    // Initialize gradient w.r.t. output tensor
-    const auto& child = *m_child_layers[i];
-    const auto& child_gradient_wrt_input = child.get_error_signals(*this);
-    auto& gradient_wrt_output = *m_gradient_wrt_outputs[i];
-    gradient_wrt_output.Empty(false);
-    gradient_wrt_output.AlignWith(get_activations(i));
-    if (child_gradient_wrt_input.DistData()
-        == gradient_wrt_output.DistData()) {
-      El::LockedView(gradient_wrt_output, child_gradient_wrt_input);
-    } else {
-      bool async_copy = false;
-#if defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-      // Asynchronously copy CPU data to GPU data if they are otherwise aligned
-      if (child_gradient_wrt_input.GetLocalDevice() == El::Device::CPU
-          && gradient_wrt_output.GetLocalDevice() == El::Device::GPU) {
-        auto child_dist_data = child_gradient_wrt_input.DistData();
-        child_dist_data.device = El::Device::GPU;
-        async_copy = child_dist_data == gradient_wrt_output.DistData();
-      }
-#endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
-      if (async_copy) {
-        El::CopyAsync(child_gradient_wrt_input, gradient_wrt_output);
-      } else {
-        El::Copy(child_gradient_wrt_input, gradient_wrt_output);
-      }
-    }
-
-    // Check gradient w.r.t. output matrix dimensions
-    const auto& height = get_output_size(i);
-    const auto& width = mini_batch_size;
-    if (gradient_wrt_output.Height() != height
-        || gradient_wrt_output.Width() != width) {
-      std::stringstream err;
-      err << "layer \"" << get_name() << "\" "
-          << "expected a gradient w.r.t. output tensor stored in a "
-          << height << " x " << width << " matrix "
-          << "from layer \"" << child.get_name() << "\", but got a "
-          << gradient_wrt_output.Height() << " x "
-          << gradient_wrt_output.Width() << " matrix";
-      LBANN_ERROR(err.str());
-    }
-
-  }
-}
-
-void Layer::bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) {
-  for (int i = 0; i < get_num_parents(); ++i) {
-    auto& gradient_wrt_input = get_error_signals(i);
-    gradient_wrt_input.Empty(false);
-    gradient_wrt_input.AlignWith(get_prev_activations(i));
-    gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
-  }
-}
-
-std::string Layer::get_data_layout_string(data_layout d) const {
-  switch(d) {
-  case data_layout::DATA_PARALLEL:
-    return "data_parallel";
-  case data_layout::MODEL_PARALLEL:
-    return "model_parallel";
-  default:
-    LBANN_ERROR("invalid data layout");
-  }
-}
-
-std::string Layer::get_device_allocation_string(El::Device dev) const {
-  switch(dev) {
-  case El::Device::CPU:
-    return "cpu";
-#ifdef LBANN_HAS_GPU
-  case El::Device::GPU:
-    return "gpu";
-#endif // LBANN_HAS_GPU
-  default:
-    LBANN_ERROR("invalid device allocation");
-  }
-}
-
-std::string Layer::get_device_allocation_string_short(El::Device dev) const {
-  switch(dev) {
-  case El::Device::CPU:
-    return "C";
-#ifdef LBANN_HAS_GPU
-  case El::Device::GPU:
-    return "G";
-#endif // LBANN_HAS_GPU
-  default:
-    LBANN_ERROR("invalid device allocation");
   }
 }
 
@@ -1174,5 +613,68 @@ void Layer::set_layer_pointers(std::vector<Layer*> layers) {
   m_hint_layer = layers[pos];
   pos++;
 }
+
+#ifdef LBANN_HAS_DISTCONV
+void Layer::prepare_distconv() {
+  if (distconv_enabled()) {
+    setup_distconv_adapter();
+  }
+}
+
+bool Layer::distconv_enabled() const {
+  if (!m_distconv_enabled_set) {
+    // Distconv is disabled if no parallel strategy is defined. When no
+    // strategy is defined, the layer has the default strategy of all
+    // zeros, which is invalid, thus should not be used when distconv is
+    // used.
+    const auto &ps = get_parallel_strategy();
+    ParallelStrategy default_zero_ps;
+    if (ps == default_zero_ps) {
+      dc::MPIRootPrintStreamDebug()
+          << "Disable " << get_name()
+          << " as it does not have a parallel strategy.";
+      m_distconv_enabled = false;
+      m_distconv_enabled_set = true;
+    }
+  }
+
+  if (!m_distconv_enabled_set) {
+    // Finally, check whether a layer is supported by distconv.
+    m_distconv_enabled = is_distconv_supported();
+    m_distconv_enabled_set = true;
+  }
+
+  return m_distconv_enabled;
+}
+
+bool Layer::keep_original_inputs(int index) const {
+  return !(distconv_enabled() && !get_distconv_adapter().parent_copy_required(index));
+}
+
+bool Layer::keep_original_outputs(int index) const {
+  return !(distconv_enabled() && !get_distconv_adapter().child_copy_required(index));
+}
+
+bool Layer::keep_original_gradient_wrt_outputs(int index) const {
+  return keep_original_outputs(index);
+}
+
+bool Layer::keep_original_gradient_wrt_inputs(int index) const {
+  return keep_original_inputs(index);
+}
+
+distconv_adapter& Layer::get_distconv_adapter() {
+  return const_cast<distconv_adapter&>(
+      static_cast<const Layer&>(*this).get_distconv_adapter());
+}
+
+const distconv_adapter& Layer::get_distconv_adapter() const {
+  if (m_dc == nullptr) {
+    LBANN_ERROR("Trying to access distconv adapter for layer, ",
+                get_name(), ", without setting up");
+  }
+  return *m_dc;
+}
+#endif // LBANN_HAS_DISTCONV
 
 }  // namespace lbann

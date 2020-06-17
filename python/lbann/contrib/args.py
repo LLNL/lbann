@@ -1,6 +1,6 @@
 """Helper functions to add common command-line arguments."""
 import argparse
-import lbann.optimizer
+import lbann.core.optimizer
 
 def add_scheduler_arguments(parser):
     """Add command-line arguments for common scheduler settings.
@@ -118,14 +118,16 @@ def create_optimizer(args):
 
     # Create optimizer
     if opt == 'momentum':
-        return lbann.optimizer.SGD(learn_rate=lr, momentum=0.9)
+        return lbann.core.optimizer.SGD(learn_rate=lr, momentum=0.9)
     elif opt == 'sgd':
-        return lbann.optimizer.SGD(learn_rate=lr)
+        return lbann.core.optimizer.SGD(learn_rate=lr)
     elif opt == 'adam':
-        return lbann.optimizer.Adam(learn_rate=lr, beta1=0.9, beta2=0.99, eps=1e-8)
+        return lbann.core.optimizer.Adam(learn_rate=lr, beta1=0.9, beta2=0.99,
+                                         eps=1e-8)
     elif opt == 'adagrad':
-        return lbann.optimizer.AdaGrad(learn_rate=lr, eps=1e-8)
+        return lbann.core.optimizer.AdaGrad(learn_rate=lr, eps=1e-8)
     elif opt == 'rmsprop':
-        return lbann.optimizer.RMSprop(learn_rate=lr, decay_rate=0.99, eps=1e-8)
+        return lbann.core.optimizer.RMSprop(learn_rate=lr, decay_rate=0.99,
+                                            eps=1e-8)
     else:
         raise ValueError('invalid optimizer type ({})'.format(opt))

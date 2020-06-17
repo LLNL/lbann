@@ -78,6 +78,10 @@ The following LLNL-maintained packages are **optional**.
 + `CONDUIT <https://github.com/llnl/conduit>`_ is used to ingest
   structured data produced by scientific simulations.
 
++ `DiHydrogen <https://github.com/llnl/dihydrogen>`_ is going to
+  become the linear algebra interface; currently, it can be used to
+  manage metaprogramming and some utilities.
+  
 The following third-party packages are **optional**.
 
 + `CUDA <https://developer.nvidia.com/cuda-toolkit>`_. The development
@@ -113,6 +117,10 @@ The following options are exposed in the CMake build system.
   Numpy data.
 
 + :code:`LBANN_WITH_CONDUIT` (Default: :code:`OFF`): Build with support for CONDUIT.
+
++ :code:`LBANN_WITH_DIHYDROGEN` (Default: :code:`OFF`): Build with
+  DiHydrogen support. This will replace temporary implementations in
+  LBANN with permanent implementations from DiHydrogen.
 
 + :code:`LBANN_WITH_NVPROF` (Default: :code:`OFF`): Build with extra annotations for NVPROF.
 
@@ -183,6 +191,12 @@ The latter option is recommended.
   file. Must set :code:`LBANN_WITH_CONDUIT=ON` to enable CONDUIT
   support.
 
++ :code:`DIHYDROGEN_DIR` or :code:`H2_DIR`: The
+  path to *either* the DiHydrogen installation prefix *or* the
+  :code:`DiHydrogenConfig.cmake` file. Alternatively,
+  :code:`DiHydrogen_DIR` can be set to the path of the
+  :code:`DiHydrogenConfig.cmake` file.
+
 + :code:`HDF5_DIR`: The path to *either* the HDF5 installation prefix
   *or* the :code:`hdf5_config.cmake` file. There is a known issue with
   CONDUIT that it may link to HDF5 but not properly export that
@@ -223,6 +237,28 @@ in the DAG. If deeper dependency issues appear, please consult the
 documentation of the packages that are causing the issues as they may
 require additional CMake/environment flags to be set before properly
 resolving.
+
+------------------------------
+Building JAG utilities
+------------------------------
+The JAG utility executables are not part of the `all` target. In order
+to use or install them, they must be built using the `jag-utils`
+target. In order to install them, this must be done before installing.
+
+.. code-block:: bash
+                
+    # Configure LBANN
+    cmake <see below... or above> /path/to/lbann
+
+    # Build main LBANN library and front-ends
+    cmake --build .
+
+    # If JAG utilities are required, build them
+    cmake --build . --target jag-utils
+
+    # Install all (built) targets
+    cmake --build . --target install
+
 
 ------------------------------
 Example CMake invocation

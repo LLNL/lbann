@@ -27,7 +27,7 @@
 #ifndef LBANN_LAYERS_IMAGE_BILINEAR_RESIZE_HPP_INCLUDED
 #define LBANN_LAYERS_IMAGE_BILINEAR_RESIZE_HPP_INCLUDED
 
-#include "lbann/layers/layer.hpp"
+#include "lbann/layers/data_type_layer.hpp"
 
 namespace lbann {
 
@@ -36,14 +36,14 @@ namespace lbann {
  *  Tensors are assumed to be image data in CHW format. Gradients are
  *  not propagated during backprop.
  */
-template <data_layout Layout, El::Device Device>
-class bilinear_resize_layer : public Layer {
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class bilinear_resize_layer : public data_type_layer<TensorDataType> {
+  static_assert(Layout == data_layout::DATA_PARALLEL,
+                "bilinear_resize_layer only supports DATA_PARALLEL");
 public:
 
   bilinear_resize_layer(lbann_comm *comm, El::Int height, El::Int width)
-    : Layer(comm), m_height(height), m_width(width) {
-    static_assert(Layout == data_layout::DATA_PARALLEL,
-                  "bilinear_resize_layer only supports DATA_PARALLEL");
+    : data_type_layer<TensorDataType>(comm), m_height(height), m_width(width) {
   }
 
   bilinear_resize_layer* copy() const override {
@@ -57,17 +57,17 @@ public:
 
 protected:
 
-  void setup_dims() override {
-    Layer::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
     // Get input dimensions
-    auto dims = get_input_dims();
+    auto dims = this->get_input_dims();
     const auto& num_dims = dims.size();
 
     // Check that dimensions are valid
     std::stringstream err;
     if (num_dims < 2) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "expects input with at least two dimensions, "
           << "but input dimensions are ";
       for (size_t i = 0; i < num_dims; ++i) {
@@ -75,12 +75,12 @@ protected:
       }
       LBANN_ERROR(err.str());
     } else if (m_height <= 0) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "attempted to resize with "
           << "negative height (" << m_height << ")";
       LBANN_ERROR(err.str());
     } else if (m_width <= 0) {
-      err << get_type() << " layer \"" << get_name() << "\" "
+      err << get_type() << " layer \"" << this->get_name() << "\" "
           << "attempted to resize with "
           << "negative width (" << m_width << ")";
       LBANN_ERROR(err.str());
@@ -89,7 +89,7 @@ protected:
     // Resize output tensor
     dims[num_dims-2] = m_height;
     dims[num_dims-1] = m_width;
-    set_output_dims(dims);
+    this->set_output_dims(dims);
 
   }
 
@@ -105,6 +105,14 @@ private:
   El::Int m_width;
 
 };
+
+#ifndef LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
+#define PROTO_DEVICE(T, Device) \
+  extern template class bilinear_resize_layer<T, data_layout::DATA_PARALLEL, Device>
+
+#include "lbann/macros/instantiate_device.hpp"
+#undef PROTO_DEVICE
+#endif // LBANN_BILINEAR_RESIZE_LAYER_INSTANTIATE
 
 } // namespace lbann
 

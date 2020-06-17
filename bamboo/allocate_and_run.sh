@@ -1,7 +1,10 @@
+#!/bin/bash -l
+
 CLUSTER=$(hostname | sed 's/\([a-zA-Z][a-zA-Z]*\)[0-9]*/\1/g')
 
-echo "allocate_and_run.sh CLUSTER="
-echo $CLUSTER
+echo "allocate_and_run.sh CLUSTER=${CLUSTER}"
+
+export PYTHONPATH=${HOME}/.local/lib/python3.7/site-packages:${PYTHONPATH}
 
 WEEKLY=0
 while :; do
@@ -23,15 +26,66 @@ while :; do
     shift
 done
 
-echo "allocate_and_run.sh WEEKLY="
-echo $WEEKLY
+echo "allocate_and_run.sh WEEKLY=${WEEKLY}"
 
 if [ "${CLUSTER}" = 'pascal' ]; then
     export MV2_USE_CUDA=1
 fi
 
-if [ ${WEEKLY} -ne 0 ]; then
-    salloc -N16 -t 600 ./run.sh --weekly
+ALLOCATION_TIME_LIMIT_NIGHTLY=45
+ALLOCATION_TIME_LIMIT_WEEKLY=90
+
+if [ "${CLUSTER}" = 'lassen' ]; then
+    if [ ${WEEKLY} -ne 0 ]; then
+        timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 4 -W ${ALLOCATION_TIME_LIMIT_WEEKLY} ./run.sh --weekly
+    else
+        timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 2 -W ${ALLOCATION_TIME_LIMIT_NIGHTLY} ./run.sh
+    fi
+elif [ "${CLUSTER}" = 'ray' ]; then
+    if [ ${WEEKLY} -ne 0 ]; then
+        timeout -k 5 24h bsub -Is -q pbatch -nnodes 4 -W ${ALLOCATION_TIME_LIMIT_WEEKLY} ./run.sh --weekly
+    else
+        timeout -k 5 24h bsub -Is -q pbatch -nnodes 2 -W ${ALLOCATION_TIME_LIMIT_NIGHTLY} ./run.sh
+    fi
+elif [ "${CLUSTER}" = 'corona' ]; then
+    if [ ${WEEKLY} -ne 0 ]; then
+        ALLOCATION_TIME_LIMIT_WEEKLY=960
+        timeout -k 5 24h salloc -N4 --partition=mi60 -t ${ALLOCATION_TIME_LIMIT_WEEKLY} ./run.sh --weekly
+    else
+        ALLOCATION_TIME_LIMIT_NIGHTLY=90 # Start with 1.5 hrs; may adjust for CPU clusters
+        if [[ $(mjstat -c | awk 'match($1, "mi60") && NF < 7 { print $5 }') -ne "0" ]];
+        then
+            timeout -k 5 24h salloc -N2 --partition=mi60 -t ${ALLOCATION_TIME_LIMIT_NIGHTLY} ./run.sh
+        else
+            echo "Partition \"mi60\" on cluster \"${CLUSTER}\" appears to be down."
+            echo "Trying \"mi25\"."
+               timeout -k 5 24h salloc -N2 --partition=mi25 -t ${ALLOCATION_TIME_LIMIT_NIGHTLY} ./run.sh
+        fi
+    fi
+elif [ "${CLUSTER}" = 'pascal' ]; then
+    if [ ${WEEKLY} -ne 0 ]; then
+        timeout -k 5 24h salloc -N4 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT_WEEKLY} ./run.sh --weekly
+    else
+        if [[ $(mjstat -c | awk 'match($1, "pbatch") && NF < 7 { print $5 }') -ne "0" ]];
+        then
+            timeout -k 5 24h salloc -N2 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT_NIGHTLY} ./run.sh
+        else
+            echo "Partition \"pbatch\" on cluster \"${CLUSTER}\" appears to be down."
+        fi
+    fi
+elif [ "${CLUSTER}" = 'catalyst' ]; then
+    if [ ${WEEKLY} -ne 0 ]; then
+        ALLOCATION_TIME_LIMIT_WEEKLY=960
+        timeout -k 5 24h salloc -N4 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT_WEEKLY} ./run.sh --weekly
+    else
+        ALLOCATION_TIME_LIMIT_NIGHTLY=90 # Start with 1.5 hrs; may adjust for CPU clusters
+        if [[ $(mjstat -c | awk 'match($1, "pbatch") && NF < 7 { print $5 }') -ne "0" ]];
+        then
+            timeout -k 5 24h salloc -N2 --partition=pbatch -t ${ALLOCATION_TIME_LIMIT_NIGHTLY} ./run.sh
+        else
+            echo "Partition \"pbatch\" on cluster \"${CLUSTER}\" appears to be down."
+        fi
+    fi
 else
-    salloc -N16 -t 600 ./run.sh
+    echo "allocate_and_run.sh. Unsupported cluster CLUSTER=${CLUSTER}"
 fi
