@@ -29,6 +29,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+#include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -40,6 +41,18 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
+  auto& arg_parser = global_argument_parser();
+  construct_std_options();
+
+  try {
+    arg_parser.parse(argc, argv);
+  }
+  catch (std::exception const& e) {
+    std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+              << e.what() << "\n\nProcess terminating."
+              << std::endl;
+    std::terminate();
+  }
   auto comm = initialize(argc, argv);
   const bool master = comm->am_world_master();
 
