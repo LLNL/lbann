@@ -35,10 +35,12 @@ namespace lbann
 namespace
 {
 
-using MetadataType = dist_embedding_layer_impl::vector_metadata;
+// Typedefs
 using Size2 = cuda::array<size_t, 2>;
+template <typename T>
+using VectorMetadata = typename dist_embedding_layer<T,data_layout::DATA_PARALLEL,El::Device::GPU>::vector_metadata;
 
-/// @todo This would be fun to optimize further.
+/** Copy between two device buffers, using all threads in a warp. */
 template <typename T> __device__ __forceinline__
 T* memcpy_warp(T* __restrict__ dest, const T* __restrict__ src, size_t n) {
   constexpr size_t warp_size = 32;
@@ -73,6 +75,10 @@ size_t distmat_local_index(size_t global_index, size_t rank, size_t align, size_
   }
 }
 
+/** Launch a CUDA kernel.
+ *
+ *  @todo Check that argument types match kernel signature.
+ */
 template <typename Kernel, typename... Args>
 inline void launch_cuda_kernel(
   const Kernel& kernel,
@@ -94,6 +100,14 @@ inline void launch_cuda_kernel(
       stream));
 }
 
+/** Launch a collective NVSHMEM kernel.
+ *
+ *  Needed for device-side NVSHMEM synchronization calls like
+ *  nvshmem_wait. If grid_dims is zero, then the NVSHMEM will launch
+ *  with the largest available grid.
+ *
+ *  @todo Check that argument types match kernel signature.
+ */
 template <typename Kernel, typename... Args>
 inline void launch_nvshmem_collective_kernel(
   const Kernel& kernel,
@@ -204,17 +218,17 @@ namespace
  *
  *  Grid dimensions: input_dims[1] x input_dims[0] x 1
  */
-template <typename TensorDataType>
+template <typename T>
 __global__ void request_embeddings_kernel(
   size_t embedding_dim,
   Size2 input_dims,
-  const TensorDataType* __restrict__ input,
+  const T* __restrict__ input,
   Size2 input_strides,
-  const TensorDataType* __restrict__ embeddings,
+  const T* __restrict__ embeddings,
   Size2 embeddings_strides,
-  MetadataType* __restrict__ metadata,
+  VectorMetadata<T>* __restrict__ metadata,
   Size2 metadata_strides,
-  TensorDataType* __restrict__ workspace,
+  T* __restrict__ workspace,
   Size2 workspace_strides,
   size_t rank,
   size_t input_rowshift,
@@ -240,8 +254,8 @@ __global__ void request_embeddings_kernel(
       const auto& global_index = static_cast<size_t>(cuda::floor(global_index_float));
 
       // Figure out which process owns embedding vector
-      __shared__ unsigned char metadata_shared[sizeof(MetadataType)];
-      auto& m = *reinterpret_cast<MetadataType*>(metadata_shared);
+      __shared__ unsigned char metadata_shared[sizeof(VectorMetadata<T>)];
+      auto& m = *reinterpret_cast<VectorMetadata<T>*>(metadata_shared);
       if (threadIdx.x == 0) {
         m.source_rank = distmat_index_owner(global_index, embeddings_rowalign, embeddings_rowstride);
         m.source_index = distmat_local_index(global_index, m.source_rank, embeddings_rowalign, embeddings_rowstride);
@@ -256,7 +270,7 @@ __global__ void request_embeddings_kernel(
       nvshmemx_getmem_nbi_warp(
         &workspace[m.target_index * workspace_strides[0]],
         &embeddings[m.source_index * embeddings_strides[0]],
-        embedding_dim*sizeof(TensorDataType),
+        embedding_dim*sizeof(T),
         m.source_rank);
 
     }
@@ -270,15 +284,15 @@ __global__ void request_embeddings_kernel(
  *
  *  Grid dimensions: input_dims[1] x input_dims[0] x 1
  */
-template <typename TensorDataType>
+template <typename T>
 __global__ void copy_embeddings_kernel(
   size_t embedding_dim,
   Size2 input_dims,
-  const MetadataType* __restrict__ metadata,
+  const VectorMetadata<T>* __restrict__ metadata,
   Size2 metadata_strides,
-  const TensorDataType* __restrict__ workspace,
+  const T* __restrict__ workspace,
   Size2 workspace_strides,
-  TensorDataType* __restrict__ output,
+  T* __restrict__ output,
   Size2 output_strides,
   size_t input_rowshift,
   size_t input_rowstride) {
@@ -360,7 +374,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
     cudaMemsetAsync(
       m_metadata_buffer,
       0,
-      m_metadata_buffer_size*sizeof(MetadataType),
+      m_metadata_buffer_size*sizeof(vector_metadata),
       stream));
 
   // Request embedding vectors from owning processes
@@ -439,15 +453,15 @@ namespace
  *
  *  Grid dimensions: input_dims[1] x input_dims[0] x 1
  */
-template <typename TensorDataType>
+template <typename T>
 __global__ void send_gradients_kernel(
   size_t embedding_dim,
   Size2 input_dims,
-  const TensorDataType* __restrict__ output_grad,
+  const T* __restrict__ output_grad,
   Size2 output_grad_strides,
-  MetadataType* __restrict__ metadata,
+  VectorMetadata<T>* __restrict__ metadata,
   Size2 metadata_strides,
-  TensorDataType* __restrict__ workspace,
+  T* __restrict__ workspace,
   Size2 workspace_strides,
   size_t input_rowshift,
   size_t input_rowstride) {
@@ -477,12 +491,12 @@ __global__ void send_gradients_kernel(
         nvshmemx_putmem_nbi_warp(
           workspace_ptr,
           workspace_ptr,
-          embedding_dim*sizeof(TensorDataType),
+          embedding_dim*sizeof(T),
           m.source_rank);
         nvshmemx_putmem_nbi_warp(
           &m,
           &m,
-          sizeof(MetadataType),
+          sizeof(VectorMetadata<T>),
           m.source_rank);
       }
     }
@@ -586,17 +600,17 @@ namespace
  *
  *  Block dimensions: 32 x 1 x 1
  *
- *  Grid dimensions: Max allowed by NVSHMEM
+ *  Grid dimensions: num_gradients x 1 x 1
  */
-template <typename TensorDataType>
+template <typename T>
 __global__ void sgd_kernel(
-  TensorDataType learning_rate,
+  T learning_rate,
   size_t embedding_dim,
   size_t num_gradients,
-  const MetadataType* __restrict__ metadata,
-  const TensorDataType* __restrict__ embeddings_grad,
+  const VectorMetadata<T>* __restrict__ metadata,
+  const T* __restrict__ embeddings_grad,
   Size2 embeddings_grad_strides,
-  TensorDataType* __restrict__ embeddings,
+  T* __restrict__ embeddings,
   Size2 embeddings_strides,
   size_t rank) {
 

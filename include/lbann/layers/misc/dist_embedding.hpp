@@ -37,19 +37,6 @@
 
 namespace lbann {
 
-namespace dist_embedding_layer_impl {
-
-  /** Metadata for an embedding vector from a remote process. */
-  struct vector_metadata {
-    size_t source_rank{0};
-    size_t source_index{0};
-    size_t target_rank{0};
-    size_t target_index{0};
-    bool is_active{false};
-  };
-
-} // namespace dist_embedding_layer_impl
-
 /** @brief Embedding layer with distributed weights.
  *
  *  @warning This is extremely experimental.
@@ -92,10 +79,25 @@ protected:
   void bp_compute() override;
   bool update_compute() override;
 
+public:
+
+  /** Metadata for an embedding vector from a remote process.
+   *
+   *  This should be treated as an internal implementation detail. It
+   *  is only in public scope so it is available to CUDA kernels in an
+   *  anonymous namespace.
+   */
+  struct vector_metadata {
+    size_t source_rank{0};
+    size_t source_index{0};
+    size_t target_rank{0};
+    size_t target_index{0};
+    bool is_active{false};
+  };
+
 private:
 
   using LocalMat = El::Matrix<TensorDataType, Device>;
-  using MetadataType = dist_embedding_layer_impl::vector_metadata;
 
   /** @brief Non-blocking barrier
    *  @todo Handle case with non-default CUDA stream.
@@ -154,7 +156,7 @@ private:
   size_t m_workspace_buffer_size{0};
 
   /** SHMEM buffer to communicate metadata for embedding vectors. */
-  MetadataType* m_metadata_buffer{nullptr};
+  vector_metadata* m_metadata_buffer{nullptr};
   /** Allocated size of @c m_metadata_buffer. */
   size_t m_metadata_buffer_size{0};
 

@@ -137,7 +137,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
     m_workspace_buffer = reinterpret_cast<TensorDataType*>(
       shmem_realloc(
         m_workspace_buffer,
-        m_workspace_buffer_size*sizeof(MetadataType)
+        m_workspace_buffer_size*sizeof(vector_metadata)
         )
       );
   }
@@ -150,16 +150,16 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
   // Initialize SHMEM buffer for embedding vector metadata
   if (m_metadata_buffer_size < input_size * mini_batch_size) {
     m_metadata_buffer_size = input_size * mini_batch_size;
-    m_metadata_buffer = reinterpret_cast<MetadataType*>(
+    m_metadata_buffer = reinterpret_cast<vector_metadata*>(
       shmem_realloc(
         m_metadata_buffer,
-        m_metadata_buffer_size*sizeof(MetadataType))
+        m_metadata_buffer_size*sizeof(vector_metadata))
       );
   }
   std::fill(
     m_metadata_buffer,
     m_metadata_buffer+m_metadata_buffer_size,
-    MetadataType());
+    vector_metadata());
 
   // Get embedding vectors from owner processes
   const size_t rank = comm.get_rank_in_trainer();
@@ -244,7 +244,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::bp_compute() {
       shmem_putmem_nbi(
         &m,
         &m,
-        sizeof(MetadataType),
+        sizeof(vector_metadata),
         m.source_rank);
     }
   }
