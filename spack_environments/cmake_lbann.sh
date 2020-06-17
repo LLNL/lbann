@@ -16,7 +16,6 @@ LBANN_COMPILER_CMD=$(cat << EOF
   -D CMAKE_C_COMPILER=$(which clang)
 EOF
 )
-
 fi
 
 # Configure build with CMake

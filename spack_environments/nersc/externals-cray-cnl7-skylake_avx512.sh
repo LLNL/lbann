@@ -3,7 +3,7 @@
 EXTERNAL_ALL_PACKAGES=$(cat <<EOF
     all:
       providers:
-        mpi: [mvapich2@2.3 arch=linux-opensuse_leap15-skylake_avx512]
+        mpi: [mvapich2@2.3 arch=cray-cnl7-skylake_avx512]
         lapack: [openblas threads=openmp]
         blas: [openblas threasd=openmp]
       buildable: true
@@ -19,13 +19,13 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       variants: ~openssl ~ncurses
       version: [3.14.4]
       modules:
-        cmake@3.14.4 arch=linux-opensuse_leap15-skylake_avx512: cmake/3.14.4
+        cmake@3.14.4 arch=cray-cnl7-skylake_avx512: cmake/3.14.4
 
     cuda::
       buildable: False
       version: [10.2.89]
       modules:
-        cuda@10.2.89 arch=linux-opensuse_leap15-skylake_avx512: cuda/10.2.89
+        cuda@10.2.89 arch=cray-cnl7-skylake_avx512: cuda/10.2.89
 
     cudnn::
       buildable: true
@@ -35,19 +35,25 @@ EXTERNAL_PACKAGES=$(cat <<EOF
        buildable: False
        version: [8.2.0]
        modules:
-         gcc@8.2.0 arch=linux-opensuse_leap15-skylake_avx512: gcc/8.2.0
+         gcc@8.2.0 arch=cray-cnl7-skylake_avx512: gcc/8.2.0
+
+    gettext::
+      buildable: False
+      version: [0.19.8.1]
+      paths:
+        gettext@0.19.8.1 arch=cray-cnl7-skylake_avx512: /usr
 
     hwloc::
       buildable: False
       version: [1.11.8]
       paths:
-        hwloc@1.11.8 arch=linux-opensuse_leap15-skylake_avx512: /usr/lib64/libhwloc.so
+        hwloc@1.11.8 arch=cray-cnl7-skylake_avx512: /usr/lib64/libhwloc.so
 
     mvapich2::
       buildable: False
       version: [2.3.2]
       modules:
-        mvapich2@2.3.2%gcc@8.2.0 arch=linux-opensuse_leap15-skylake_avx512: mvapich2/2.3.2
+        mvapich2@2.3.2%gcc@8.2.0 arch=cray-cnl7-skylake_avx512: mvapich2/2.3.2
 
     openblas::
       buildable: True
@@ -63,13 +69,17 @@ EXTERNAL_PACKAGES=$(cat <<EOF
       buildable: True
       variants: +shared ~readline ~zlib ~bz2 ~lzma ~pyexpat
       version: [3.7.4]
-      modules:
-        python@3.7.4 arch=linux-opensuse_leap15-skylake_avx512: python/3.7-anaconda-2019.10
+
+    readline::
+      buildable: False
+      version: [8.0]
+      paths:
+        readline@8.0 arch=cray-cnl7-skylake_avx512: /lib64
 
     rdma-core::
       buildable: False
       version: [20]
       paths:
-        rdma-core@20 arch=linux-opensuse_leap15-skylake_avx512: /usr
+        rdma-core@20 arch=cray-cnl7-skylake_avx512: /usr
 EOF
 )
