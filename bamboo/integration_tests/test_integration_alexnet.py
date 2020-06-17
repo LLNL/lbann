@@ -149,7 +149,7 @@ def augment_test_func(test_func):
                 match = re.search('training epoch [0-9]+ top-5 accuracy : ([0-9.]+)%', line)
                 if match:
                     train_accuracy = float(match.group(1))
-                match = re.search('validation top-5 accuracy : ([0-9.]+)%', line)
+                match = re.search('test top-5 accuracy : ([0-9.]+)%', line)
                 if match:
                     test_accuracy = float(match.group(1))
                 match = re.search('training epoch [0-9]+ mini-batch time statistics : ([0-9.]+)s mean', line)
