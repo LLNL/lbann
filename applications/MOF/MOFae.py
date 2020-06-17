@@ -227,6 +227,10 @@ print_model = lbann.CallbackPrintModelDescription() #Prints initial Model after 
 training_output = lbann.CallbackPrint( interval = 1,
 				       print_global_stat_only = False) #Prints training progress
 
+gpu_usage = lbann.CallbackGPUMemoryUsage()
+
+encoded_output = lbann.CallbackDumpOutputs( layers = "decoded", batch_interval = 100, directory = os.path.dirname(os.path.realpath(__file__)), format="npy") 
+
 ## Possibly include 3D Voxel Saver Call Back
 
 #Generate Model 
@@ -234,8 +238,8 @@ model = lbann.Model(num_epochs,
 		    layers = layers,
 		    objective_function = img_loss, 
 		    metrics = metrics,
-		    callbacks = [print_model, training_output]
-					)
+		    callbacks = [print_model, training_output, gpu_usage, encoded_output]
+		   )
 
 #Optimizer 
 
