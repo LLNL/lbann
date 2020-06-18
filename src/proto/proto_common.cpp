@@ -179,6 +179,9 @@ void init_data_readers(
       reader_numpy_npz->set_scaling_factor_int16(readme.scaling_factor_int16());
       reader = reader_numpy_npz;
     } else if (name == "cosmoflow") {
+      if(name == "cosmoflow_hdf5") {
+        LBANN_WARNING("The \"cosmoflow\" data reader is deprecated. Use \"hdf5\" instead.");
+      }
       auto* reader_cosmoflow = new cosmoflow_reader(shuffle);
       auto filedir = readme.data_filedir();
       if(!endsWith(filedir, "/")) {
@@ -188,24 +191,27 @@ void init_data_readers(
       reader_cosmoflow->set_npz_paths(paths);
       reader_cosmoflow->set_scaling_factor_int16(readme.scaling_factor_int16());
       reader = reader_cosmoflow;
-    } else if (name=="cosmoflow_hdf5") {
+    } else if (name == "cosmoflow_hdf5" || name == "hdf5") {
+      if(name == "cosmoflow_hdf5") {
+        LBANN_WARNING("The \"cosmoflow_hdf5\" data reader is deprecated. Use \"hdf5\" instead.");
+      }
       const auto key_data = readme.hdf5_key_data();
       const auto key_labels = readme.hdf5_key_labels();
       const auto key_responses = readme.hdf5_key_responses();
       const auto hyperslab_labels = readme.hdf5_hyperslab_labels();
-      auto* reader_cosmo_hdf5 = new hdf5_reader<DataType>(shuffle, key_data,
+      auto* reader_hdf5 = new hdf5_reader<DataType>(shuffle, key_data,
                                                           key_labels,
                                                           key_responses,
                                                           hyperslab_labels);
-      reader_cosmo_hdf5->set_has_labels(!readme.disable_labels());
-      reader_cosmo_hdf5->set_has_responses(!readme.disable_responses());
+      reader_hdf5->set_has_labels(!readme.disable_labels());
+      reader_hdf5->set_has_responses(!readme.disable_responses());
       auto filedir = readme.data_filedir();
       if(!endsWith(filedir, "/")) {
         filedir = filedir + "/";
       }
       const auto paths = glob(filedir +readme.data_file_pattern());
-      reader_cosmo_hdf5->set_hdf5_paths(paths);
-      reader = reader_cosmo_hdf5;
+      reader_hdf5->set_hdf5_paths(paths);
+      reader = reader_hdf5;
     } else if (name == "pilot2_molecular_reader") {
       pilot2_molecular_reader* reader_pilot2_molecular = new pilot2_molecular_reader(readme.num_neighbors(), readme.max_neighborhood(), shuffle);
       reader = reader_pilot2_molecular;
