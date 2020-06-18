@@ -19,7 +19,21 @@
 
 namespace lbann {
 /**
- * Data reader for data stored in hdf5 files will need to assume the file contains x
+ * Data reader for data stored in HDF5 files. This data reader was
+ * designed to work with Distconv. This currently has two different
+ * modes:
+ * * Datasets with 3D data and a few numbers of responses:
+ *   This mode assumes a 3D cube dataset such as the CosmoFlow dataset.
+ *   This requires set_has_responses to be called on setup.
+ * * Datasets with 3D data and 3D labels:
+ *   This mode assumes 3D cubes with corresponding 3D label tensors
+ *   such as the LiTS dataset. This requires set_has_labels to be
+ *   called on setup, and label_reconstruction should be used for the
+ *   input layer.
+ *
+ * Each HDF5 file should contain hdf5_key_data, hdf5_key_labels, and
+ * hdf5_key_responses keys to read data, labels and responses
+ * respectively.
  */
 template <typename TensorDataType>
 class hdf5_reader : public generic_data_reader {
