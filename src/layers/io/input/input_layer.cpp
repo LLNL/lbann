@@ -55,7 +55,7 @@ input_distconv_adapter(Layer& layer): data_type_distconv_adapter<TensorDataType>
   // when the HDF5 data reader is used, it is assumed that it is used
   // in all execution modes.
   auto training_dr = l.get_data_reader(execution_mode::training);
-  m_shuffle_required = dynamic_cast<hdf5_reader*>(training_dr) == nullptr;
+  m_shuffle_required = dynamic_cast<hdf5_reader<TensorDataType>*>(training_dr) == nullptr;
   if (m_shuffle_required) {
     m_shufflers.resize(layer.get_num_children());
   }
