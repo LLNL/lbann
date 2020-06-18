@@ -2,6 +2,7 @@
           :language: python
 
 .. _callbacks:
+
 ============================================================
 Callbacks
 ============================================================
@@ -20,6 +21,7 @@ functionality, Please see :ref:`Available
 Callbacks<available-callbacks>`.
 
 .. _using-callbacks:
+
 ------------------------------------------------
 Using Callbacks
 ------------------------------------------------
@@ -71,6 +73,7 @@ Profobuf (Advanced)
    }
 
 .. _available-callbacks:
+
 ------------------------------------------------
 Available Callbacks
 ------------------------------------------------

@@ -5,6 +5,7 @@
           :language: c
 
 .. _summarize-images-callback:
+
 ============================================================
 Summarize Images Callback
 ============================================================
@@ -51,12 +52,14 @@ Callback Option Details
 ---------------------------------------------
 
 .. _strategy:
+
 + **Strategy**
 
   Pointer to the categorical accuracy or the track-sample-ids
   strategy.
 
     .. _track-sample-ids:
+
     - Track Sample IDs
 
       This strategy is ideally suited to generative applications,
@@ -71,6 +74,7 @@ Callback Option Details
                 layer.*
 
       .. _input-layer-name:
+
       * Input layer name
 
         String to specify the name of the input layer with the
@@ -81,6 +85,7 @@ Callback Option Details
            std::string input_layer_name
 
       .. _num-tracked-images:
+
       * Number of tracked images
 
         Integer to set the number of images to track. The default
@@ -91,6 +96,7 @@ Callback Option Details
            size_t num_images = 10
 
     .. _categorical-accuracy:
+
     - Categorical Accuracy
 
       This strategy is used to view a snapshot of images in the
@@ -103,6 +109,7 @@ Callback Option Details
       there are no more images that match the criteria.
 
        .. _accuracy-layer-name:
+
        * Categorical accuracy layer name
 
          String to specify the name of the categorical accuracy layer.
@@ -113,6 +120,7 @@ Callback Option Details
             std::string cat_accuracy_layer_name
 
        .. _selection-criteria:
+
        * Image selection criteria
 
          Criteria for selecting images to output: correct (MATCH),
@@ -129,6 +137,7 @@ Callback Option Details
             MatchType match_type=NOMATCH
 
        .. _num-images-per-epoch:
+
        * Number of images per epoch
 
          Number of images to output per epoch. The default value is 10.
@@ -138,6 +147,7 @@ Callback Option Details
             size_t num_images=10
 
 .. _image-source-layer:
+
 + **Image source layer name**
 
   String to specify which layer to pull images from. Defined in the
@@ -151,6 +161,7 @@ Callback Option Details
      std::string img_source_layer_name
 
 .. _epoch-interval:
+
 + **Epoch interval**
 
   Integer that sets the frequency to output images. The default value
@@ -161,6 +172,7 @@ Callback Option Details
      uint64_t interval = 1
 
 .. _image-format:
+
 + **Image format**
 
   String to specify the image format. The default is .jpg.
@@ -204,19 +216,23 @@ Python front end
 
   .. code-block:: python
 
+
+     # Set up categorical accuracy layer
+     accuracy = lbann.CategoricalAccuracy(prediction_scores, labels)
+
      # Set up image selection criteria
-     match_type=lbann.CategoricalAccuracyStrategy.MatchType
+     match_type = lbann.CategoricalAccuracyStrategy.MatchType
 
      # Set up image selection strategy
      img_strategy = lbann.CategoricalAccuracyStrategy(
-                     cat_accuracy_layer_name="top1",
+                     cat_accuracy_layer_name=accuracy.name,
                      match_type.NOMATCH,
                      num_images=10)
 
      # Pass parameters to callback
      summarize_images = lbann.CallbackSummarizeImages(
                          selection_strategy=img_strategy,
-                         image_source_layer_name="images",
+                         image_source_layer_name=images.name,
                          epoch_interval=5,
                          img_format=".jpg")
 
@@ -246,6 +262,15 @@ Profobuf (Advanced)
 
 .. code-block:: guess
 
+   # Set up categorical accuracy layer
+   layer {
+    parents: "prob label"
+    name: "accuracy"
+    data_layout: "data_parallel"
+    categorical_accuracy {}
+   }
+
+   # Set up callback
    callback {
      summarize_images {
        selection_strategy {
