@@ -81,9 +81,11 @@ int main(int argc, char *argv[]) {
 
     thread_pool& io_thread_pool = trainer->get_io_thread_pool();
     int training_dr_linearized_data_size = -1;
-    auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::training);
+    auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::testing);
     if(dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
+    }else {
+      LBANN_ERROR("No testing data reader defined");
     }
 
     std::vector<std::unique_ptr<model>> models;
@@ -97,7 +99,8 @@ int main(int argc, char *argv[]) {
 
     /// Interleave the inference between the models so that they can use a shared data reader
     /// Enable shared testing data readers on the command line via --share_testing_data_readers=1
-    El::Int num_samples = trainer->get_data_coordinator().get_data_reader(execution_mode::testing)->get_num_iterations_per_epoch();
+    El::Int num_samples = dr->get_num_iterations_per_epoch();
+    if(num_samples == 0) { LBANN_ERROR("The testing data reader does not have any samples"); }
     for(El::Int s = 0; s < num_samples; s++) {
       for(auto&& m : models) {
         trainer->evaluate(m.get(), execution_mode::testing, 1);
