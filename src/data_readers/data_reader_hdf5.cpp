@@ -101,10 +101,7 @@ void hdf5_reader<TensorDataType>::copy_members(const hdf5_reader &rhs) {
   m_key_labels = rhs.m_key_labels;
   m_key_responses = rhs.m_key_responses;
   m_hyperslab_labels = rhs.m_hyperslab_labels;
-
-  for(size_t i = 0; i < m_num_response_features; i++) {
-    m_all_responses[i] = rhs.m_all_responses[i];
-  }
+  m_all_responses = rhs.m_all_responses;
 }
 
 template <typename TensorDataType>
@@ -169,7 +166,7 @@ void hdf5_reader<TensorDataType>::read_hdf5_sample(int data_id, TensorDataType *
   } else if (m_has_responses) {
     assert_always(labels == nullptr);
     h_data = CHECK_HDF5(H5Dopen(h_file, m_key_responses.c_str(), H5P_DEFAULT));
-    CHECK_HDF5(H5Dread(h_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, m_all_responses));
+    CHECK_HDF5(H5Dread(h_data, H5T_NATIVE_FLOAT, H5S_ALL, H5S_ALL, H5P_DEFAULT, &m_all_responses[0]));
     CHECK_HDF5(H5Dclose(h_data));
   }
   CHECK_HDF5(H5Fclose(h_file));
@@ -315,8 +312,8 @@ void hdf5_reader<TensorDataType>::fetch_datum_conduit(Mat& X, int data_id) {
     }
     if(m_has_responses) {
       node[conduit_key + "/responses"].set(
-          m_all_responses,
-          m_num_response_features);
+          &m_all_responses[0],
+          m_all_responses.size());
     }
     if (priming_data_store()) {
       // Once the node has been populated save it in the data store
@@ -354,7 +351,7 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx
     buf = slab.value();
     std::memcpy(Y.Buffer(), buf, m_num_features*sizeof(TensorDataType));
   } else {
-    assert_eq(Y.Height(), m_num_response_features);
+    assert_eq(Y.Height(), m_all_responses.size());
     if (data_store_active()) {
       conduit::Node node;
       const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
@@ -362,10 +359,10 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx
       const std::string conduit_obj = LBANN_DATA_ID_STR(data_id);
       buf = node[conduit_obj+"/responses"].value();
     }else {
-      buf = m_all_responses;
+      buf = &m_all_responses[0];
     }
     std::memcpy(Y.Buffer(), buf,
-                m_num_response_features*sizeof(DataType));
+                m_all_responses.size()*sizeof(DataType));
     if (dc::get_rank_stride() == 1) {
       gather_responses(Y.Buffer());
     }
@@ -379,7 +376,7 @@ bool hdf5_reader<TensorDataType>::fetch_response(Mat& Y, int data_id, int mb_idx
 // is used.
 template <typename TensorDataType>
 void hdf5_reader<TensorDataType>::gather_responses(float *responses) {
-  float recv_buf[m_num_response_features];
+  float recv_buf[m_all_responses.size()];
   const int rank = dc::get_mpi_rank();
   const int num_part = dc::get_number_of_io_partitions();
   const int mini_batch_size = this->get_loaded_mini_batch_size();
@@ -391,14 +388,14 @@ void hdf5_reader<TensorDataType>::gather_responses(float *responses) {
 
   // send
   if (rank % num_part == 0) {
-    MPI_Isend(responses, m_num_response_features, MPI_FLOAT, dst_rank,
+    MPI_Isend(responses, m_all_responses.size(), MPI_FLOAT, dst_rank,
               tag, m_response_gather_comm, &req[req_idx]);
     ++req_idx;
   }
 
   // recv
   if (rank < mini_batch_size) {
-    MPI_Irecv(recv_buf, m_num_response_features, MPI_FLOAT, src_rank, tag,
+    MPI_Irecv(recv_buf, m_all_responses.size(), MPI_FLOAT, src_rank, tag,
               m_response_gather_comm, &req[req_idx]);
     ++req_idx;
   }
@@ -407,7 +404,7 @@ void hdf5_reader<TensorDataType>::gather_responses(float *responses) {
     MPI_Waitall(req_idx, req, MPI_STATUS_IGNORE);
   }
 
-  std::memcpy(responses, recv_buf, sizeof(float) * m_num_response_features);
+  std::memcpy(responses, recv_buf, sizeof(float) * m_all_responses.size());
 }
 
 template<> hid_t hdf5_reader<float>::get_hdf5_data_type() const {
