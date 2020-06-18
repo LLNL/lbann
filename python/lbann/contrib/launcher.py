@@ -1,9 +1,54 @@
 import os, os.path
+import socket
 import lbann
 import lbann.launcher
-import lbann.contrib.lc.launcher
-import lbann.contrib.lc.systems
 from lbann.util import make_iterable
+
+# ==============================================
+# Detect the current compute center
+# ==============================================
+
+def is_lc_center():
+    """Current system is operated by Livermore Computing at Lawrence
+    Livermore National Laboratory.
+
+    Checks whether the domain name ends with ".llnl.gov".
+
+    """
+    domain = socket.getfqdn().split('.')
+    return (len(domain) > 2
+            and domain[-2] == 'llnl'
+            and domain[-1] == 'gov')
+
+def is_nersc_center():
+    """Current system is operated by the National Energy Research
+    Scientific Computing Center at Lawrence Berkeley National
+    Laboratory.
+
+    Checks whether the environment variable NERSC_HOST is set.
+
+    """
+    return bool(os.getenv('NERSC_HOST'))
+
+# Detect compute center and choose launcher
+_center = 'unknown'
+launcher = lbann.launcher
+if is_lc_center():
+    _center = 'lc'
+    import lbann.contrib.lc.launcher
+    launcher = lbann.contrib.lc.launcher
+elif is_nersc_center():
+    _center = 'nersc'
+    import lbann.contrib.nersc.launcher
+    launcher = lbann.contrib.nersc.launcher
+
+def compute_center():
+    """Name of organization that operates current system."""
+    return _center
+
+# ==============================================
+# Launcher functions
+# ==============================================
 
 def run(
     trainer,
@@ -67,10 +112,4 @@ def make_batch_script(*args, **kwargs):
     optimizations for the current system.
 
     """
-
-    # Livermore Computing
-    if lbann.contrib.lc.systems.is_lc_system():
-        return lbann.contrib.lc.launcher.make_batch_script(*args, **kwargs)
-
-    # Default launcher
-    return lbann.launcher.make_batch_script(*args, **kwargs)
+    return launcher.make_batch_script(*args, **kwargs)

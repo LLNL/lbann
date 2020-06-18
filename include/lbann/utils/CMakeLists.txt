@@ -32,6 +32,7 @@ set_full_path(THIS_DIR_HEADERS
   prototext.hpp
   python.hpp
   random.hpp
+  random_number_generators.hpp
   serialization.hpp
   statistics.hpp
   summary.hpp

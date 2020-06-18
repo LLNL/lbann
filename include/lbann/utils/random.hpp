@@ -24,56 +24,19 @@
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef LBANN_UTILS_RNG_HPP
-#define LBANN_UTILS_RNG_HPP
+#ifndef LBANN_UTILS_RANDOM_HPP
+#define LBANN_UTILS_RANDOM_HPP
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/exception.hpp"
-#include <random>
+#include "lbann/utils/random_number_generators.hpp"
 
 namespace lbann {
 
 /** Probability distributions. */
 enum class probability_distribution {invalid, gaussian, bernoulli, uniform};
-
-using rng_gen = std::mt19937;  // Mersenne Twister
-using fast_rng_gen = std::minstd_rand;  // Minimum standard, LC
-
-/**
- * Return a reference to the global LBANN random number generator.
- * @note If compiling with OpenMP, this is stored in a threadprivate variable.
- */
-rng_gen& get_generator();
-
-/**
- * Return a reference to a possibly-faster global LBANN random number generator.
- * Compared to get_generator, this should be slightly faster.
- * @note If compiling with OpenMP, this is stored in a threadprivate variable.
- */
-fast_rng_gen& get_fast_generator();
-
-/**
- * Return a reference to the global LBANN random number generator used
- * for shuffling the data samples within each mini-batch
- * @note This is stored in a thread_local variable.
- */
-rng_gen& get_data_seq_generator();
-
-/**
- * Return a reference to the global LBANN random number generator used
- * for shuffling the data samples within each mini-batch
- * @note This is stored in a thread_local variable.
- */
-rng_gen& get_io_generator();
-
-/**
- * Return a reference to the fast global LBANN random number generator used
- * for the I/O threads
- * @note This is stored in a thread_local variable.
- */
-fast_rng_gen& get_fast_io_generator();
 
 /**
  * Return random integers uniformly distributed in [0, max).
@@ -154,33 +117,6 @@ template <typename T, typename Generator>
 inline T random_uniform(Generator& g) {
   return details::random_uniform_impl<Generator, T>::generate(g);
 }
-
-/** @brief Initialize the random number generator (with optional seed).
- *
- *  @param seed Seed value for the random number generator
- *  @param comm If present, mixes the process's rank within the model
- *              into the seed; if not, uses the MPI world rank.
- *
- */
-void init_random(int seed = -1, lbann_comm *comm = nullptr);
-
-/**
- * Initialize a random number generator (with optional seed) that is
- * specifically used for sequencing the training / testing data
- * samples.  Using a separate RNG for the data sequences helps provide
- * a stable training result that does not vary with how much I/O
- * parallelism is applied.
- */
-void init_data_seq_random(int seed = -1);
-
-/**
- * Initialize a random number generator (with optional seed) that is
- * specifically used by the I/O threads for tasks such as data
- * preprocessing, etc.
- *
- * Called from init_random
- */
-void init_io_random(int seed = -1);
 
 /**
  * Make mat into an m x n matrix where each entry is independently drawn from
@@ -291,4 +227,4 @@ void rng_bernoulli(const float p, DistMat *m) {
 #endif // LBANN_RANDOM_INSTANTIATE
 
 }// end namespace
-#endif // LBANN_UTILS_RNG_HPP
+#endif // LBANN_UTILS_RANDOM_HPP

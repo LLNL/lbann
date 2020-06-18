@@ -41,8 +41,11 @@ int mini_batch_size = 128;
 void test_is_shuffled(const generic_data_reader &reader, bool is_shuffled, const char *msg = nullptr);
 
 int main(int argc, char *argv[]) {
+  world_comm_ptr comm = initialize(argc, argv);
+  // Initialize the general RNGs and the data sequence RNGs
   int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  init_random(random_seed);
+  init_data_seq_random(random_seed);
   const bool master = comm->am_world_master();
 
   try {

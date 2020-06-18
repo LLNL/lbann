@@ -215,6 +215,7 @@ ${GPU_PACKAGES}
   - py-numpy
   - py-protobuf
   - py-setuptools
+  - mpi
 
 # These are required
   - catch2
