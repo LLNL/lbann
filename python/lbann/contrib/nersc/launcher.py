@@ -24,7 +24,7 @@ def make_batch_script(
     launcher_args = list(make_iterable(launcher_args))
     environment = environment.copy()
 
-    if system == CORI_GPU:
+    if system == 'cgpu':
         cores_per_proc = cores_per_node(system) // procs_per_node
         if 'AL_PROGRESS_RANKS_PER_NUMA_NODE' not in environment:
             environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = ceil(procs_per_node / numa_nodes_per_node(system))
