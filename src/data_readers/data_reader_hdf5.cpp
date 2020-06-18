@@ -252,7 +252,6 @@ bool hdf5_reader<TensorDataType>::fetch_label(Mat& Y, int data_id, int mb_idx) {
   assert_always(m_hyperslab_labels);
   assert_always(m_use_data_store);
   TensorDataType *buf = nullptr;
-  // REVIEW: should be divided by dc::get_number_of_io_partitions()?
   assert_eq(Y.Height(), m_num_features);
   conduit::Node node;
   const conduit::Node& ds_node = m_data_store->get_conduit_node(data_id);
