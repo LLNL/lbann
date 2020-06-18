@@ -314,8 +314,9 @@ void hdf5_reader<TensorDataType>::fetch_datum_conduit(Mat& X, int data_id) {
       read_hdf5_sample(data_id, sample_buf, nullptr);
     }
     if(m_has_responses) {
-      // TODO: Eliminate the magic number 4
-      node[conduit_key + "/responses"].set(m_all_responses, 4);
+      node[conduit_key + "/responses"].set(
+          m_all_responses,
+          m_num_response_features);
     }
     if (priming_data_store()) {
       // Once the node has been populated save it in the data store
