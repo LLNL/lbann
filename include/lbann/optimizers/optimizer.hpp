@@ -422,21 +422,71 @@ void optimizer::accumulate_all_gradient_contributions(
   using AbsDistMatType = El::AbstractDistMatrix<TensorDataType>;
   static const TensorDataType one = TensorDataType(1.f);
 
-  El::Zero(gradient);
+  // There are a few cases to note here:
+  //   1. One update of the same type.
+  //   2. One update of a different type.
+  //   3. Multiple updates of multiple types. In this case, some work
+  //      can be saved if one of the updates has the same type as
+  //      "gradient".
 
-  auto tmp = std::unique_ptr<AbsDistMatType>{
-    gradient.Construct(gradient.Grid(), gradient.Root())};
-  for (auto const& grad_mgr_v : this->gradients_) {
-    auto const& grad_mgr = *(grad_mgr_v.second);
+  // Some general information
+  auto num_updates = this->gradients_.size();
+  auto const this_type_idx = std::type_index(typeid(TensorDataType));
+
+  if (num_updates == 0UL)
+    return;
+
+  // Handle the case that one of the updates is TensorDataType. In
+  // this case, the input gradients matrix can be made to "view" the
+  // update, rather than requiring a copy.
+  auto this_type_contrib = this->gradients_.find(this_type_idx);
+  if (this_type_contrib != this->gradients_.end()) {
+    // Check for invariant consistency.
+    auto const& grad_mgr = *(this_type_contrib->second);
     if (grad_mgr.get_status() != optimizer_gradient_status::ready) {
       LBANN_ERROR("Expected ready status. Got: ",
                   to_string(grad_mgr.get_status()));
     }
-    auto const& grad_base = grad_mgr.gradient();
-    if (auto const* grad = dynamic_cast<AbsDistMatType const*>(&grad_base)) {
-      El::Axpy(one, *grad, gradient);
+    // Sync the input gradient with the contribution, one way or another.
+    auto const& contrib =
+      dynamic_cast<AbsDistMatType const&>(grad_mgr.gradient());
+    if (contrib.DistData() == gradient.DistData()) {
+      El::LockedView(gradient, contrib);
     }
     else {
+      LBANN_ERROR("Should never need this copy.");
+      El::Copy(contrib, gradient);
+    }
+    --num_updates;
+  }
+  else {
+    // No sync possible; zero out the matrix instead
+    El::Zero(gradient);
+  }
+
+  // Handle the case that only 1 update of a different type is needed.
+  if (num_updates == 1UL && this->gradients_.size() == 1UL) {
+    auto const& grad_mgr = *(this->gradients_.begin()->second);
+    if (grad_mgr.get_status() != optimizer_gradient_status::ready) {
+      LBANN_ERROR("Expected ready status. Got: ",
+                  to_string(grad_mgr.get_status()));
+    }
+    El::Copy(grad_mgr.gradient(), gradient);
+  }
+  else if (this->gradients_.size() > 1UL) {
+    // Need a temporary matrix for the type-casted copy.
+    auto tmp = std::unique_ptr<AbsDistMatType>{
+      gradient.Construct(gradient.Grid(), gradient.Root())};
+
+    for (auto const& grad_mgr_v : this->gradients_) {
+      if (grad_mgr_v.first == this_type_idx)
+        continue;
+      auto const& grad_mgr = *(grad_mgr_v.second);
+      if (grad_mgr.get_status() != optimizer_gradient_status::ready) {
+        LBANN_ERROR("Expected ready status. Got: ",
+                    to_string(grad_mgr.get_status()));
+      }
+      auto const& grad_base = grad_mgr.gradient();
       El::Copy(grad_base, *tmp);
       El::Axpy(one, *tmp, gradient);
     }
