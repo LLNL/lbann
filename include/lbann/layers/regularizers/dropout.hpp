@@ -347,6 +347,11 @@ protected:
 
 };
 
+template <typename T, data_layout L, El::Device D>
+using dropout_layer = dropout<T, L, D>;
+
+LBANN_DEFINE_LAYER_BUILDER(dropout);
+
 #ifndef LBANN_DROPOUT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \
   extern template class dropout<T, data_layout::DATA_PARALLEL, Device>; \
