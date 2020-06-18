@@ -9,15 +9,16 @@ Callbacks
 
 LBANN has numerous callbacks that can be used to collect
 data about an experiment, such as scalars, metrics, weights,
-memory usage, images, etc. See the :ref:`Available
-Callbacks<available-callbacks>` section for a comprehensive list.
+memory usage, images, etc. The documentation of many of these
+is pending; see the :ref:`list of Available
+Callbacks<available-callbacks>` for the documented ones.
 
 The callbacks are set to execute at various times, and can be
 used for reporting, debugging, and performing advanced training
 techniques.
 
 For a complete listing of callbacks and details about their
-functionality, Please see :ref:`Available
+functionality, please see :ref:`Available
 Callbacks<available-callbacks>`.
 
 .. _using-callbacks:
