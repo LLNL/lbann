@@ -41,7 +41,6 @@
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/io_layer.hpp"
-#include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/channelwise_fully_connected.hpp"
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 #include "lbann/layers/learning/convolution.hpp"
