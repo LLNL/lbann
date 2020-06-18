@@ -58,8 +58,11 @@ class hdf5_reader : public generic_data_reader {
   void load() override;
   void set_hdf5_paths(const std::vector<std::string> hdf5_paths) {m_file_paths = hdf5_paths;}
 
-  void set_has_labels(bool b) { m_has_labels = b; }
-  void set_has_responses(bool b) { m_has_responses = b; }
+  void set_has_labels(const bool b) { m_has_labels = b; }
+  void set_has_responses(const bool b) { m_has_responses = b; }
+  void set_num_responses(const size_t num_responses) {
+    m_all_responses.resize(num_responses);
+  }
 
   int get_num_labels() const override {
     if(!m_has_labels) {
@@ -90,7 +93,7 @@ class hdf5_reader : public generic_data_reader {
     if(!m_has_responses) {
       return generic_data_reader::get_linearized_response_size();
     }
-    return m_num_response_features;
+    return m_all_responses.size();
   }
   const std::vector<int> get_data_dims() const override {
     return m_data_dims;
@@ -112,10 +115,9 @@ class hdf5_reader : public generic_data_reader {
   bool m_has_labels = false;
   /// Whether to fetch a response from the last column.
   bool m_has_responses = false;
-  int m_image_depth=0;
+  int m_image_depth = 0;
   size_t m_num_features;
-  static constexpr int m_num_response_features = 4; // TODO: Exclude this CosmoFlow-specific parameter.
-  float m_all_responses[m_num_response_features];
+  std::vector<float> m_all_responses;
   std::vector<std::string> m_file_paths;
   MPI_Comm m_comm;
   std::vector<int> m_data_dims;
