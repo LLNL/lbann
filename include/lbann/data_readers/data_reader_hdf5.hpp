@@ -51,7 +51,9 @@ class hdf5_reader : public generic_data_reader {
     if(!m_has_labels) {
       return generic_data_reader::get_num_labels();
     }
-    return m_num_features; // TODO: Exclude this LiTS-specific hack.
+    // This data reader currently assumes that the shape of the label
+    // tensor is the same to the data tensor.
+    return m_num_features;
   }
   int get_num_responses() const override {
     if(!m_has_responses) {
@@ -66,7 +68,9 @@ class hdf5_reader : public generic_data_reader {
     if(!m_has_labels) {
       return generic_data_reader::get_linearized_label_size();
     }
-    return m_num_features; // TODO: Exclude this LiTS-specific hack.
+    // This data reader currently assumes that the shape of the label
+    // tensor is the same to the data tensor.
+    return m_num_features;
   }
   int get_linearized_response_size() const override {
     if(!m_has_responses) {
