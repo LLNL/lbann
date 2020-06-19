@@ -389,10 +389,7 @@ std::unique_ptr<Layer> build_convolution_layer_from_pbuf(
   return Builder::Build(comm, proto_layer);
 }
 
-// Note: This unit will also instantiate the base_convolution_layer class.
-
 #define PROTO_DEVICE(T, Device)                                            \
-  template class base_convolution_layer<T, Device>;                        \
   template class convolution_layer<T, data_layout::DATA_PARALLEL, Device>; \
     template std::unique_ptr<Layer>                                       \
   build_convolution_layer_from_pbuf<T, data_layout::DATA_PARALLEL, Device>( \
@@ -400,7 +397,6 @@ std::unique_ptr<Layer> build_convolution_layer_from_pbuf(
   template std::unique_ptr<Layer>                                       \
   build_convolution_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, Device>( \
     lbann_comm*, lbann_data::Layer const&)
-
 
 #include "lbann/macros/instantiate_device.hpp"
 
