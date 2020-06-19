@@ -361,9 +361,11 @@ std::unique_ptr<model> build_model_from_prototext(
         make_unique<callback::load_model>(dirs);
       cb = load_model_cb.get();
       ret_model->add_callback(std::move(load_model_cb));
+#ifdef LBANN_DEBUG
       if(comm->am_trainer_master()) {
         LBANN_WARNING("command line flag --load_model_dir was provided but there was no explicit load_model callback, adding one automagically!");
       }
+#endif
     }else {
       cb->add_dir(opts->get_string("load_model_weights_dir"));
     }
