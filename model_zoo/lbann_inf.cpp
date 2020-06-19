@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::testing);
     if(dr != nullptr) {
       training_dr_linearized_data_size = dr->get_linearized_data_size();
-    }else {
+    } else {
       LBANN_ERROR("No testing data reader defined");
     }
 
