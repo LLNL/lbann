@@ -1,0 +1,10 @@
+data_reader {
+  reader {
+    name: "smiles"
+    role: "train"
+    shuffle: true
+    percent_of_data_to_use: 1.0
+    data_filedir: "/p/lustre2/brainusr/datasets/zinc"
+    data_filename: "train.csv"
+  }
+}

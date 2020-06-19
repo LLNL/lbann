@@ -139,6 +139,7 @@
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_hdf5.hpp"
 #endif // LBANN_HAS_DISTCONV
+#include "lbann/data_readers/data_reader_smiles.hpp"
 
 /// Data stores
 #include "lbann/data_store/data_store_conduit.hpp"

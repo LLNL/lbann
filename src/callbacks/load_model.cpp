@@ -46,9 +46,20 @@ namespace callback {
 
 
 void load_model::on_train_begin(model *m) {
-  for (const auto& d : m_dirs) {
-    bool loaded = load_model_weights(d, "", m, true);
-    if(!loaded)  LBANN_ERROR("Unable to reload model");
+  if(!m_loaded) {
+    for (const auto& d : m_dirs) {
+      m_loaded = load_model_weights(d, "", m, true);
+      if(!m_loaded)  LBANN_ERROR("Unable to reload model on train begin");
+    }
+  }
+}
+
+void load_model::on_test_begin(model *m) {
+  if(!m_loaded) {
+    for (const auto& d : m_dirs) {
+      m_loaded = load_model_weights(d, "", m, true);
+      if(!m_loaded)  LBANN_ERROR("Unable to reload model on test begin");
+    }
   }
 }
 
@@ -60,7 +71,7 @@ bool load_model::load_model_weights(const std::string& ckpt_dir,
   std::vector<std::string> weight_list = std::vector<std::string>();
   std::string active_ckpt_dir;
   if(ckptdir_is_fullpath) {
-    active_ckpt_dir = ckpt_dir;
+    active_ckpt_dir = add_delimiter(ckpt_dir);
   }else {
     size_t epochLast = std::numeric_limits<size_t>::max();;
     size_t stepLast = std::numeric_limits<size_t>::max();;

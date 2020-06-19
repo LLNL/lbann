@@ -35,7 +35,6 @@
 #include "lbann/layers/transform/evaluation.hpp"
 #include "lbann/objective_functions/layer_term.hpp"
 #include "lbann/metrics/layer_metric.hpp"
-#include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/description.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
@@ -63,15 +62,14 @@ namespace lbann {
 // =============================================
 
 model::model(lbann_comm* comm,
-             size_t mini_batch_size,
-             objective_function* obj_fn,
+             std::unique_ptr<objective_function> obj_fn,
              std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg)
   : m_execution_context(nullptr),
     m_comm(comm),
-    m_max_mini_batch_size(mini_batch_size),
-    m_default_optimizer_msg(std::move(default_optimizer_msg)),
-    m_objective_function(obj_fn) {
+    m_default_optimizer_msg(std::move(default_optimizer_msg))
+{
 
+  m_objective_function = std::move(obj_fn);
   // Default model name
   static El::Int num_models = 0;
   m_name = "model" + std::to_string(num_models);
@@ -83,7 +81,6 @@ model::model(const model& other) :
   m_execution_context(other.m_execution_context),
   m_comm(other.m_comm),
   m_name(other.m_name),
-  m_max_mini_batch_size(other.m_max_mini_batch_size),
   m_model_is_setup(other.m_model_is_setup) {
 
   // Deep copies
@@ -91,8 +88,9 @@ model::model(const model& other) :
                              ? make_unique<lbann_data::Optimizer>(
                                *other.m_default_optimizer_msg)
                              : nullptr);
-  m_objective_function = (other.m_objective_function ?
-                          other.m_objective_function->copy() : nullptr);
+  m_objective_function = (other.m_objective_function
+                          ? make_unique<objective_function>(*other.m_objective_function)
+                          : nullptr);
   m_metrics = other.m_metrics;
   m_callbacks = other.m_callbacks;
   for (auto& m : m_metrics) {
@@ -136,23 +134,20 @@ model& model::operator=(const model& other) {
 
   // Delete objects
   if (m_execution_context  != nullptr) { delete m_execution_context; } /// @todo BVE FIXME what do we do with smart pointers here
-  if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
 
   // Shallow copies
   m_comm = other.m_comm;
   m_name = other.m_name;
-  m_max_mini_batch_size = other.m_max_mini_batch_size;
   m_model_is_setup = other.m_model_is_setup;
 
   // Deep copies
   m_execution_context  = other.m_execution_context;
-  m_objective_function = other.m_objective_function;
+  m_objective_function = (other.m_objective_function
+                          ? make_unique<objective_function>(*other.m_objective_function)
+                          : nullptr);
   m_metrics            = other.m_metrics;
   m_callbacks          = other.m_callbacks;
-  if (m_objective_function != nullptr) {
-    m_objective_function = m_objective_function->copy();
-  }
   for (auto& m : m_metrics) {
     m = m->copy();
   }
@@ -194,7 +189,6 @@ model& model::operator=(const model& other) {
 }
 
 model::~model() {
-  if (m_objective_function != nullptr) { delete m_objective_function; }
   for (const auto& m : m_metrics)      { delete m; }
 }
 
@@ -573,7 +567,7 @@ void model::remap_pointers(const std::unordered_map<Layer*,Layer*>& layer_map,
 // Setup
 // =============================================
 
-void model::setup() {
+void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
 
   // Bail out if the model is already setup
   if(m_model_is_setup) { return; }
@@ -581,10 +575,13 @@ void model::setup() {
   // Setup layers
   setup_layer_topology();
   setup_layer_execution_order();
-  setup_layers();
+  setup_layers(max_mini_batch_size, dr_metadata);
 
   // Setup weights
   setup_weights();
+
+  // Setup objective function
+  m_objective_function->setup(*this);
 
   // Setup metrics
   for (const auto& m : m_metrics) {
@@ -682,11 +679,11 @@ void model::setup_layer_execution_order() {
 
 }
 
-void model::setup_layers() {
+void model::setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.set_model(this);
-    l.setup();
+    l.setup(max_mini_batch_size, dr_metadata);
     l.check_setup();
   }
 }
@@ -1278,7 +1275,6 @@ void model::summarize_matrices(lbann_summary& summarizer) {
 
 /* struct used to serialize mode fields in file and MPI transfer */
 struct lbann_model_header {
-  uint64_t max_mini_batch_size;
   uint32_t callback_type;
 };
 
@@ -1389,8 +1385,8 @@ bool model::load_from_checkpoint_distributed(persist& p){
 
 void model::write_proto(lbann_data::Model* proto) {
   proto->Clear();
-  if (m_comm->am_world_master())
-    proto->set_mini_batch_size(m_max_mini_batch_size);
+  // if (m_comm->am_world_master())
+  //   proto->set_mini_batch_size(m_max_mini_batch_size);
 }
 
 

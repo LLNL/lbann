@@ -1,5 +1,0 @@
-      { scale: 1.666721654e+01 	bias: 5.000145788e+00}, 	# shape_model_initial_modes:(4,3)
-      { scale: 1.000025133e+01 	bias: -1.603520955e-06}, 	# betti_prl15_trans_u
-      { scale: 1.000001645e+00 	bias: -1.406676728e-06}, 	# betti_prl15_trans_v
-      { scale: 1.666672975e+00 	bias: 4.999989818e-01}, 	# shape_model_initial_modes:(2,1)
-      { scale: 1.666668753e+00 	bias: 5.000004967e-01}  	# shape_model_initial_modes:(1,0)

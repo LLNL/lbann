@@ -90,8 +90,7 @@ def setup(num_patches=3,
     )
 
     # Construct model
-    model = lbann.Model(mini_batch_size,
-                        num_epochs,
+    model = lbann.Model(num_epochs,
                         layers=lbann.traverse_layer_graph(input),
                         objective_function=obj,
                         metrics=metrics,
@@ -167,7 +166,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Setup experiment
-    trainer = lbann.Trainer()
+    trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
     model, data_reader, opt = setup(
         num_patches=args.num_patches,
         mini_batch_size=args.mini_batch_size,

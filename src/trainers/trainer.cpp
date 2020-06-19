@@ -39,6 +39,7 @@
 #include "lbann/utils/description.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
 #include "lbann/training_algorithms/sgd_training_algorithm.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include <string>
 #include <unistd.h>
 #include <iomanip>
@@ -54,10 +55,13 @@ namespace lbann {
 // Constructors and destructor
 ////////////////////////////////////////////////////////////
 
-trainer::trainer(lbann_comm *comm)
+trainer::trainer(lbann_comm *comm,
+                 size_t mini_batch_size)
   : m_comm(comm),
+    m_max_mini_batch_size(mini_batch_size),
     m_io_thread_pool(),
-    m_background_io_allowed(true) {
+    m_background_io_allowed(true),
+    m_data_coordinator(*this, comm) {
 
   // Default trainer name
   m_name = "trainer" + std::to_string(m_comm->get_trainer_rank());
@@ -65,7 +69,9 @@ trainer::trainer(lbann_comm *comm)
 
 trainer::trainer(const trainer& other) :
   m_comm(other.m_comm),
-  m_background_io_allowed(other.m_background_io_allowed) {
+  m_max_mini_batch_size(other.m_max_mini_batch_size),
+  m_background_io_allowed(other.m_background_io_allowed),
+  m_data_coordinator(other.m_data_coordinator) {
 
   // Deep copies
   // m_io_thread_pool = (other.m_io_thread_pool ?
@@ -80,6 +86,7 @@ trainer& trainer::operator=(const trainer& other) {
 
   // Shallow copies
   m_comm = other.m_comm;
+  m_max_mini_batch_size = other.m_max_mini_batch_size;
   m_background_io_allowed = other.m_background_io_allowed;
 
   // Deep copies
@@ -122,12 +129,17 @@ description trainer::get_description() const {
 // Setup
 ////////////////////////////////////////////////////////////
 
-void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool) {
+void trainer::setup(std::unique_ptr<thread_pool> io_thread_pool, std::map<execution_mode, generic_data_reader *> data_readers) {
   // Setup I/O threads - set up before setting up the layers (input
   // layer depends on having a properly initialized thread pool)
   m_io_thread_pool = std::move(io_thread_pool);
 
-  // Set up callbacks
+  for (auto d : data_readers) {
+    d.second->set_trainer(this);
+  }
+  m_data_coordinator.setup(get_max_mini_batch_size(), data_readers);
+
+  // Set up callbacks first - allow checkpoint / restart to reload state
   for (auto& cb : m_callbacks) {
     cb->setup(this);
   }
@@ -144,7 +156,7 @@ trainer::execution_context_key_pair_t trainer::check_and_build_execution_context
     if(dynamic_cast<observer_ptr<sgd_training_algorithm>>(&alg) != nullptr) {
       /// @todo BVE FIXME Figure out how to get a good mini-batch size
       /// in here
-      context = make_unique<sgd_execution_context>(*this, alg, m_comm, mode, model->get_max_mini_batch_size());
+      context = make_unique<sgd_execution_context>(*this, alg, m_comm, mode, get_max_mini_batch_size());
     }else {
       context = make_unique<execution_context>(*this, alg, m_comm, mode);
     }
@@ -162,7 +174,7 @@ trainer::execution_context_key_pair_t trainer::check_and_build_execution_context
     std::unique_ptr<execution_context> context;
     //    observer_ptr<training_algorithm> alg = const_cast
     if(dynamic_cast<observer_ptr</*const */sgd_execution_context>>(&c) != nullptr) {
-      context = make_unique<sgd_execution_context>(*this, c.get_training_algorithm(), m_comm, mode, model.get_max_mini_batch_size());
+      context = make_unique<sgd_execution_context>(*this, c.get_training_algorithm(), m_comm, mode, get_max_mini_batch_size());
     }else {
       context = make_unique<execution_context>(*this, c.get_training_algorithm(), m_comm, mode);
     }
@@ -213,25 +225,28 @@ void trainer::apply(training_algorithm& alg,
                     termination_criteria const& term_criteria) {
 
   auto key = check_and_build_execution_context(alg, model, mode);
-  alg.setup_models({model});
+  DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
+  alg.setup_models({model}, get_max_mini_batch_size(), dr_metadata);
   /// Apply the training algorithm to train the model
-  alg.apply(*(m_model_execution_context[key].get()), *model, mode, term_criteria);
+  alg.apply(*(m_model_execution_context[key].get()), *model, get_data_coordinator(), mode, term_criteria);
 }
 
 void trainer::train(observer_ptr<model> model, El::Int num_epochs, El::Int num_batches) {
   auto sgd = make_unique<sgd_training_algorithm>();
   auto key = check_and_build_execution_context(*sgd.get(), model, execution_mode::training);
-  sgd.get()->setup_models({model});
+  DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
+  sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
   /// Apply the training algorithm to train the model
-  sgd.get()->train(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, num_epochs, num_batches);
+  sgd.get()->train(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, get_data_coordinator(), num_epochs, num_batches);
 }
 
 void trainer::evaluate(observer_ptr<model> model, execution_mode mode, El::Int num_batches) {
   auto sgd = make_unique<sgd_training_algorithm>();
   auto key = check_and_build_execution_context(*sgd.get(), model, mode);
-  sgd.get()->setup_models({model});
+  DataReaderMetaData dr_metadata = get_data_coordinator().get_dr_metadata();
+  sgd.get()->setup_models({model}, get_max_mini_batch_size(), dr_metadata);
   /// Apply the training algorithm to evaluate the model
-  sgd.get()->evaluate(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, mode, num_batches);
+  sgd.get()->evaluate(static_cast<sgd_execution_context&>(*(m_model_execution_context[key].get())), *model, get_data_coordinator(), mode, num_batches);
 }
 
 // =============================================
@@ -248,7 +263,10 @@ bool trainer::save_to_checkpoint_shared() {
   if (m_comm->am_trainer_master()) {
     write_cereal_archive(*this, get_persist_obj(), "trainer.xml");
   }
-  return true;
+
+  auto flag = get_data_coordinator().save_to_checkpoint_shared(get_persist_obj());
+
+  return flag;
 }
 
 bool trainer::load_from_checkpoint_shared(persist& p) {
@@ -258,10 +276,15 @@ bool trainer::load_from_checkpoint_shared(persist& p) {
     LBANN_MSG(e.what());
     return false;
   }
-  return true;
+
+  auto flag = get_data_coordinator().load_from_checkpoint_shared(p);
+
+  return flag;
 }
 
 bool trainer::load_from_checkpoint_shared(model& m, execution_context& c) {
+  // Reload the RNG once the trainer and all of the  models are setup
+  // to avoid spurious turns of the RNGs
   load_rng_from_checkpoint(get_persist_obj(), m_comm);
 
   execution_mode current_mode = c.get_execution_mode();
@@ -334,4 +357,12 @@ bool trainer::load_from_checkpoint_distributed(model& m, execution_context& c){
   }
   return true;
 }
+
+void trainer::write_proto(lbann_data::Trainer* proto) {
+  proto->Clear();
+  if (m_comm->am_world_master()) {
+    proto->set_mini_batch_size(m_max_mini_batch_size);
+  }
+}
+
 }  // namespace lbann

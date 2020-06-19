@@ -34,16 +34,27 @@
 #include "lbann/callbacks/dump_weights.hpp"
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
+#include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
 
 namespace lbann {
 
+void construct_std_options() {
+  auto& arg_parser = global_argument_parser();
+  arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
+                        {"--rng_seeds_per_trainer_to_display"},
+                        utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
+                        "Limit how many random seeds LBANN should display from each trainer",
+                        2);
+}
+
 /// Construct a trainer that contains a lbann comm object and threadpool
 std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
-                                             lbann_data::Trainer* pb_trainer,
-                                             options *opts) {
+                                           lbann_data::Trainer* pb_trainer,
+                                           lbann_data::LbannPB &pb,
+                                           options *opts) {
   try {
     int procs_per_trainer = 0;
     if(pb_trainer->procs_per_trainer() > 0) {
@@ -122,53 +133,78 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
       }
     }
 
-    trainer->setup(std::move(io_thread_pool));
+    // Root of the random seed tree
+    int root_random_seed = lbann_default_random_seed;
 
-    if(opts->get_bool("disable_background_io_activity")) {
-      trainer->allow_background_io_activity(false);
-    }
-
-    int random_seed = lbann_default_random_seed;
-
-    // Change random seed if needed.
+    // Change random seed if requested
     if (pb_trainer->random_seed() > 0) {
-      random_seed = pb_trainer->random_seed();
-      // Reseed here so that setup is done with this new seed.
-      init_random(random_seed);
-      init_data_seq_random(random_seed);
+      root_random_seed = pb_trainer->random_seed();
     }
+
+    // Random seed used for the general RNGs
+    int random_seed = root_random_seed;
+    // Random seed used for the RNG used to fetch data
+    int data_seq_random_seed = root_random_seed;
 
     // Initialize models differently if needed.
 #ifndef LBANN_DETERMINISTIC
     if (!pb_trainer->random_init_trainers_identically()) {
-      hash_combine(random_seed, comm->get_trainer_rank());
-      // Reseed here so that setup is done with this new seed.
-      init_random(random_seed);
-      init_data_seq_random(random_seed);
+      random_seed = hash_combine(random_seed, comm->get_trainer_rank());
+      // Also update the data sequence random seed
+      data_seq_random_seed = random_seed;
     }
+
+    // Under normal conditions, reinitialize the random number generator so
+    // that regularization techniques (e.g. dropout) generate unique patterns
+    // on different ranks.
+    // At this point the data sequence random seed is no longer updated
+    random_seed = hash_combine(random_seed, comm->get_rank_in_world());
 #else
+    if(comm->am_world_master()) {
+      std::cout <<
+        "--------------------------------------------------------------------------------------------------------------------\n"
+        "ALERT: executing with LBANN_DETERMINISTIC flag to minimize reduce numerical variance -- performance will be degraded\n"
+        "--------------------------------------------------------------------------------------------------------------------\n";
+    }
     if (!pb_trainer->random_init_trainers_identically()) {
-      if (master) {
+      if(comm->am_trainer_master()) {
         std::cout << "WARNING: forcing 'random_init_trainers_identically' " <<
           "due to sequential consistency" << std::endl;
       }
     }
 #endif
 
-#ifndef LBANN_DETERMINISTIC
-    // Under normal conditions, reinitialize the random number generator so
-    // that regularization techniques (e.g. dropout) generate unique patterns
-    // on different ranks.
-    init_random(random_seed + comm->get_rank_in_world());
-#else
-    if(comm->am_world_master()) {
-      std::cout <<
-        "--------------------------------------------------------------------------------\n"
-        "ALERT: executing in sequentially consistent mode -- performance will suffer\n"
-        "--------------------------------------------------------------------------------\n";
-    }
-#endif
+    // Initialize the general RNGs and the data sequence RNGs
+    init_random(random_seed);
+    init_data_seq_random(data_seq_random_seed);
+    trainer->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
 
+    // Collect everyone's random seeds
+    std::vector<int> root_random_seeds(comm->get_procs_in_world());
+    comm->world_all_gather(root_random_seed, root_random_seeds);
+    std::vector<int> random_seeds(comm->get_procs_in_world());
+    comm->world_all_gather(random_seed, random_seeds);
+    std::vector<int> data_seq_random_seeds(comm->get_procs_in_world());
+    comm->world_all_gather(data_seq_random_seed, data_seq_random_seeds);
+
+    // Update the index lists to accomodate multi-trainer / multi-model specification
+    customize_data_readers_index_list(*comm, pb);
+
+    // Initialize data readers
+    //@todo: code not in place for correctly handling image preprocessing
+    std::map<execution_mode, generic_data_reader *> data_readers;
+    bool is_shared_training_data_reader = pb_trainer->shareable_training_data_reader();
+    bool is_shared_testing_data_reader = pb_trainer->shareable_testing_data_reader();
+    if (opts->has_string("share_testing_data_readers")) {
+      is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
+    }
+    init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
+
+    trainer->setup(std::move(io_thread_pool), data_readers);
+
+    if(opts->get_bool("disable_background_io_activity")) {
+      trainer->allow_background_io_activity(false);
+    }
 
 
     // Report useful information
@@ -179,6 +215,9 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
       std::cout << "\n"
                 << trainer->get_description()
                 << std::endl;
+
+      // User feedback
+      print_parameters(*comm, pb, root_random_seeds, random_seeds, data_seq_random_seeds);
     }
 
     return trainer;
@@ -223,7 +262,7 @@ std::unique_ptr<model> build_model_from_prototext(
   options *opts,
   thread_pool& io_thread_pool,
   std::vector<std::shared_ptr<callback_base>>& shared_callbacks,
-  bool first_model) {
+  int training_dr_linearized_data_size) {
 
   bool master = comm->am_world_master();
   if (master) {
@@ -242,9 +281,6 @@ std::unique_ptr<model> build_model_from_prototext(
     io_thread_pool.relaunch_pinned_threads(1);
   }
 
-  // Get I/O thread details
-  auto io_threads_per_process = io_thread_pool.get_num_threads();
-
   // Save info to file; this includes the complete prototext (with any over-rides
   // from the cmd line) and various other info
   save_session(*comm, argc, argv, pb);
@@ -254,35 +290,9 @@ std::unique_ptr<model> build_model_from_prototext(
     display_omp_setup();
   }
 
-  // Update the index lists to accomodate multi-trainer / multi-model specification
-  customize_data_readers_index_list(*comm, pb);
-
-  // Initialize data readers
-  //@todo: code not in place for correctly handling image preprocessing
-  std::map<execution_mode, generic_data_reader *> data_readers;
-  bool is_shared_training_data_reader = pb_model->shareable_training_data_reader();
-  bool is_shared_testing_data_reader = pb_model->shareable_testing_data_reader();
-  if (opts->has_string("share_testing_data_readers")) {
-    is_shared_testing_data_reader = opts->get_bool("share_testing_data_readers");
-  }
-  init_data_readers(comm, pb, data_readers, is_shared_training_data_reader, is_shared_testing_data_reader);
-
-  // hack to prevent all data readers from loading identical data; instead,
-  // share a single copy. See data_reader_jag_conduit_hdf5 for example
-  if (first_model) {
-    if (opts->has_string("share_data_reader_data")) {
-      for (auto&& t : data_readers) {
-        opts->set_ptr((void*)t.second);
-      }
-    }
-  }
-
-  // User feedback
-  print_parameters(*comm, pb);
-
   // Initalize model
   std::unique_ptr<model> ret_model = proto::construct_model(comm,
-                                                            data_readers,
+                                                            training_dr_linearized_data_size,
                                                             pb.optimizer(),
                                                             pb.trainer(),
                                                             pb.model());
@@ -351,27 +361,13 @@ std::unique_ptr<model> build_model_from_prototext(
         make_unique<callback::load_model>(dirs);
       cb = load_model_cb.get();
       ret_model->add_callback(std::move(load_model_cb));
+#ifdef LBANN_DEBUG
       if(comm->am_trainer_master()) {
         LBANN_WARNING("command line flag --load_model_dir was provided but there was no explicit load_model callback, adding one automagically!");
       }
+#endif
     }else {
       cb->add_dir(opts->get_string("load_model_weights_dir"));
-    }
-  }
-
-  // Setup data readers
-  for(auto&& dr: data_readers) {
-    dr.second->setup(io_threads_per_process, &io_thread_pool);
-    dr.second->set_rank(comm->get_rank_in_trainer());
-  }
-
-  if (opts->get_bool("use_data_store") || opts->get_bool("preload_data_store") || opts->get_bool("data_store_cache") || opts->has_string("data_store_spill")) {
-    if (master) {
-      std::cout << "\nUSING DATA STORE!\n\n";
-    }
-    for (auto&& r : data_readers) {
-      if (!r.second) continue;
-      r.second->setup_data_store(pb_model->mini_batch_size());
     }
   }
 
@@ -396,6 +392,16 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
   std::cout << std::endl;
 
   // Report build settings
+  std::cout << "Running: LLNL LBANN version: "
+            << LBANN_MAKE_STR(LBANN_VERSION)
+            << " (" << LBANN_MAKE_STR(LBANN_GIT_VERSION) << ")"
+            << std::endl;
+#ifdef HYDROGEN_VERSION
+  std::cout << "         LLNL Hydrogen version: "
+            << HYDROGEN_VERSION
+            << " (" << HYDROGEN_GIT_VERSION << ")"
+            << std::endl << std::endl;
+#endif
   std::cout << "Build settings" << std::endl;
   std::cout << "  Type     : ";
 #ifdef LBANN_DEBUG

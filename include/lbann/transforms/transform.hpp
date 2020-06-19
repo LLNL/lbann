@@ -38,7 +38,7 @@ namespace transform {
 
 /**
  * Abstract base class for transforms on data.
- * 
+ *
  * A transform takes a CPUMat and modifies it in-place. Transforms should
  * be thread-safe, as one instance of a transform may be called concurrently
  * within multiple threads.

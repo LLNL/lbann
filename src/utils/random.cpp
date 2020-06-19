@@ -31,74 +31,8 @@
 #include "lbann/utils/hash.hpp"
 #include <thread>
 
-namespace {
-#ifdef __ICC
-lbann::rng_gen generator;
-#pragma omp threadprivate(generator)
-
-lbann::fast_rng_gen fast_generator;
-#pragma omp threadprivate(fast_generator)
-#else
-// Random number generator, file-visible only.
-// Defined like this to work around a GCC problem with threadprivate objects:
-// https://stackoverflow.com/questions/23552077/how-to-define-a-object-or-struct-as-threadprivate-in-openmp/
-extern lbann::rng_gen generator;
-#pragma omp threadprivate(generator)
-lbann::rng_gen generator;
-
-extern lbann::fast_rng_gen fast_generator;
-#pragma omp threadprivate(fast_generator)
-lbann::fast_rng_gen fast_generator;
-#endif
-
-thread_local lbann::rng_gen data_seq_generator;
-thread_local bool data_seq_generator_inited = false;
-int data_seq_generator_seed_base = 0;
-
-thread_local lbann::rng_gen io_generator;
-thread_local bool io_generator_inited = false;
-int io_generator_seed_base = 0;
-
-thread_local lbann::fast_rng_gen fast_io_generator;
-thread_local bool fast_io_generator_inited = false;
-int fast_io_generator_seed_base = 0;
-}
 
 namespace lbann {
-
-rng_gen& get_generator() {
-  return ::generator;
-}
-
-fast_rng_gen& get_fast_generator() {
-  return ::fast_generator;
-}
-
-rng_gen& get_data_seq_generator() {
-  if (!::data_seq_generator_inited) {
-    ::data_seq_generator.seed(::data_seq_generator_seed_base);
-    ::data_seq_generator_inited = true;
-  }
-  return ::data_seq_generator;
-}
-
-rng_gen& get_io_generator() {
-  if (!::io_generator_inited) {
-    ::io_generator.seed(hash_combine(::io_generator_seed_base,
-                                     std::this_thread::get_id()));
-    ::io_generator_inited = true;
-  }
-  return ::io_generator;
-}
-
-fast_rng_gen& get_fast_io_generator() {
-  if (!::fast_io_generator_inited) {
-    ::fast_io_generator.seed(hash_combine(::fast_io_generator_seed_base,
-                                          std::this_thread::get_id()));
-    ::fast_io_generator_inited = true;
-  }
-  return ::fast_io_generator;
-}
 
 bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
   std::string dirname = std::string(p.m_checkpoint_dir) + "/rng_state";
@@ -121,7 +55,7 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
     rng_name = dirname + "/rng_seq_generator";
     std::ofstream rng_seq(rng_name);
     if(!rng_seq) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_seq << ::data_seq_generator;
+    rng_seq << get_data_seq_generator();
     rng_seq.close();
 
 #ifdef LBANN_SET_EL_RNG
@@ -137,14 +71,14 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
   rng_name = dirname + "/rng_io_generator_" + rank_in_trainer;
   std::ofstream rng_io(rng_name);
   if(!rng_io) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_io << ::io_generator;
+  rng_io << get_io_generator();
   rng_io.close();
 
   /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer;
   std::ofstream rng_fast_io(rng_name);
   if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_fast_io << ::fast_io_generator;
+  rng_fast_io << get_fast_io_generator();
   rng_fast_io.close();
 
 #ifdef _OPENMP
@@ -154,27 +88,27 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
              + std::to_string(omp_get_thread_num());
     std::ofstream rng(rng_name);
     if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng << ::generator;
+    rng << get_generator();
     rng.close();
 
     rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer + "_"
              + std::to_string(omp_get_thread_num());
     std::ofstream rng_fast(rng_name);
     if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_fast << ::fast_generator;
+    rng_fast << get_fast_generator();
     rng_fast.close();
   }
 #else
     rng_name = dirname + "/rng_generator_" + rank_in_trainer;
     std::ofstream rng(rng_name);
     if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng << ::generator;
+    rng << get_generator();
     rng.close();
 
     rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer;
     std::ofstream rng_fast(rng_name);
     if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_fast << ::fast_generator;
+    rng_fast << get_fast_generator();
     rng_fast.close();
 #endif
 
@@ -198,7 +132,7 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
   rng_name = dirname + "/rng_seq_generator";
   std::ifstream rng_seq(rng_name);
   if(!rng_seq) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_seq >> ::data_seq_generator;
+  rng_seq >> get_data_seq_generator();
 
 #ifdef LBANN_SET_EL_RNG
   rng_name = dirname + "/EL_generator";
@@ -218,13 +152,13 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
   rng_name = dirname + "/rng_io_generator_" + rank_in_trainer;
   std::ifstream rng_io(rng_name);
   if(!rng_io) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_io >> ::io_generator;
+  rng_io >> get_io_generator();
 
   /// @todo - Note that the RNG with thread local data is not correct
   rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer;
   std::ifstream rng_fast_io(rng_name);
   if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_fast_io >> ::fast_io_generator;
+  rng_fast_io >> get_fast_io_generator();
 
 #ifdef _OPENMP
   #pragma omp parallel private(rng_name)
@@ -233,101 +167,27 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
              + std::to_string(omp_get_thread_num());
     std::ifstream rng(rng_name);
     if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng >> ::generator;
+    rng >> get_generator();
 
     rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer + "_"
              + std::to_string(omp_get_thread_num());
     std::ifstream rng_fast(rng_name);
     if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_fast >> ::fast_generator;
+    rng_fast >> get_fast_generator();
    }
 #else
     rng_name = dirname + "/rng_generator_" + rank_in_trainer;
     std::ifstream rng(rng_name);
     if(!rng) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng >> ::generator;
+    rng >> get_generator();
 
     rng_name = dirname + "/rng_fast_generator_" + rank_in_trainer;
     std::ifstream rng_fast(rng_name);
     if(!rng_fast) { LBANN_ERROR("Failed to open ", rng_name); }
-    rng_fast >> ::fast_generator;
+    rng_fast >> get_fast_generator();
    }
 #endif
   return true;
-}
-
-void init_random(int seed, lbann_comm *comm) {
-  if (seed != -1) {
-    // Seed every OpenMP thread, if present.
-    // Note: Threadprivate OMP variables don't work with dynamic threads.
-#ifdef _OPENMP
-    #pragma omp parallel
-    {
-      get_generator().seed(hash_combine(seed, omp_get_thread_num()));
-      get_fast_generator().seed(hash_combine(seed, omp_get_thread_num()));
-    }
-#else
-    get_generator().seed(seed);
-    get_fast_generator().seed(seed);
-#endif
-
-#ifdef LBANN_SET_EL_RNG
-    // Set Elemental's RNG seed
-    auto elemental_seed = hash_combine(seed, 104729); // 10000th prime
-    elemental_seed = (comm == nullptr
-                      ? hash_combine(elemental_seed, El::mpi::Rank(El::mpi::COMM_WORLD))
-                      : hash_combine(elemental_seed, comm->get_rank_in_trainer()));
-    El::Generator().seed(elemental_seed);
-#endif
-
-  } else {
-    // Seed with a random value.
-    std::random_device rd;
-    unsigned rand_val = rd();
-#ifdef _OPENMP
-    #pragma omp parallel
-    {
-      get_generator().seed(hash_combine(rand_val, omp_get_thread_num()));
-      get_fast_generator().seed(hash_combine(rand_val, omp_get_thread_num()));
-    }
-#else
-    get_generator().seed(rand_val);
-    get_fast_generator().seed(rand_val);
-#endif
-#ifdef LBANN_SET_EL_RNG
-    El::Generator().seed(rand_val);
-#endif
-  }
-
-  init_io_random(seed);
-}
-
-void init_data_seq_random(int seed) {
-  if (seed == -1) {
-    // Seed with a random value.
-    std::random_device rd;
-    seed = rd();
-  }
-
-  ::data_seq_generator_seed_base = seed;
-  /// Reset the init flag so that generator will reinitialize
-  ::data_seq_generator_inited = false;
-}
-
-void init_io_random(int seed) {
-  if (seed == -1) {
-    // Seed with a random value.
-    std::random_device rd;
-    seed = rd();
-  }
-
-  ::io_generator_seed_base = seed;
-  /// Reset the init flag so that generator will reinitialize
-  ::io_generator_inited = false;
-
-  ::fast_io_generator_seed_base = seed;
-  /// Reset the init flag so that generator will reinitialize
-  ::fast_io_generator_inited = false;
 }
 
 template <typename TensorDataType>
@@ -337,7 +197,7 @@ void gaussian_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::I
   El::Gaussian(mat, m, n, mean, stddev);
 #else
   gaussian_fill_procdet(mat, m, n, mean, stddev);
-#endif  // LBANN_PARALLEL_DETERMINISTIC
+#endif  // LBANN_DETERMINISTIC
 }
 
 template <typename TensorDataType>
@@ -346,7 +206,7 @@ void bernoulli_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::
   El::Bernoulli(mat, m, n, p);
 #else
   bernoulli_fill_procdet(mat, m, n, p);
-#endif  // LBANN_PARALLEL_DETERMINISTIC
+#endif  // LBANN_DETERMINISTIC
 }
 
 template <typename TensorDataType>
@@ -356,7 +216,7 @@ void uniform_fill(El::AbstractDistMatrix<TensorDataType>& mat, El::Int m, El::In
   El::Uniform(mat, m, n, center, radius);
 #else
   uniform_fill_procdet(mat, m, n, center, radius);
-#endif  // LBANN_PARALLEL_DETERMINISTIC
+#endif  // LBANN_DETERMINISTIC
 }
 
 template <typename TensorDataType>

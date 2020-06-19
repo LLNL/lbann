@@ -44,7 +44,8 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    trainer = lbann.Trainer()
+    mini_batch_size = num_samples() // 2
+    trainer = lbann.Trainer(mini_batch_size)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
@@ -145,10 +146,8 @@ def construct_model(lbann):
     # Construct model
     # --------------------------
 
-    mini_batch_size = num_samples() // 2
     num_epochs = 0
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,
                        metrics=metrics,

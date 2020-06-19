@@ -34,7 +34,6 @@
 #include "lbann/weights/variance_scaling_initializers.hpp"
 #include "lbann/utils/cudnn.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/random.hpp"
 #include "lbann/utils/timer.hpp"
 #include "lbann/utils/im2col.hpp"
 #include "lbann/utils/distconv.hpp"
@@ -127,6 +126,11 @@ protected:
 
 #ifdef LBANN_HAS_CUDNN
 
+  /** @brief Math type to use inside cuDNN.
+   *  @details Must be cached since it isn't used until setup.
+   */
+  cudnnMathType_t m_convolution_math_type =
+    cudnn::get_default_convolution_math_type();
   /** Convolution kernel cuDNN descriptor. */
   cudnnFilterDescriptor_t m_kernel_cudnn_desc = nullptr;
   /** Convolution cuDNN descriptor. */
@@ -180,7 +184,8 @@ public:
       m_groups(other.m_groups),
       m_bias_scaling_factor(other.m_bias_scaling_factor)
 #ifdef LBANN_HAS_CUDNN
-    , m_tensors_cudnn_desc(other.m_tensors_cudnn_desc),
+    , m_convolution_math_type(other.m_convolution_math_type),
+      m_tensors_cudnn_desc(other.m_tensors_cudnn_desc),
       m_fwd_cudnn_algos(other.m_fwd_cudnn_algos),
       m_bwd_data_cudnn_algos(other.m_bwd_data_cudnn_algos),
       m_bwd_filter_cudnn_algos(other.m_bwd_filter_cudnn_algos)
@@ -211,6 +216,7 @@ public:
 
 #ifdef LBANN_HAS_CUDNN
     // Copy cuDNN objects
+    m_convolution_math_type = other.m_convolution_math_type;
     copy_kernel_cudnn_desc(other.m_kernel_cudnn_desc,
                            m_kernel_cudnn_desc);
     copy_convolution_cudnn_desc(other.m_convolution_cudnn_desc,
@@ -242,6 +248,12 @@ public:
     }
 #endif // LBANN_HAS_CUDNN
   }
+
+#ifdef LBANN_HAS_CUDNN
+  void set_cudnn_math_mode(cudnnMathType_t math_type) noexcept {
+    m_convolution_math_type = math_type;
+  }
+#endif // LBANN_HAS_CUDNN
 
   description get_description() const override {
     auto desc = data_type_layer<TensorDataType>::get_description();
@@ -289,13 +301,22 @@ public:
            "disabled" : "enabled");
     desc.add("Bias", ss.str());
 
+#ifdef LBANN_HAS_CUDNN
+    if (Device == El::Device::GPU) {
+      desc.add("cuDNN Math Mode",
+               (m_convolution_math_type == CUDNN_DEFAULT_MATH
+                ? "NO tensor cores."
+                : "USE tensor cores."));
+    }
+#endif // LBANN_HAS_CUDNN
+
     // Result
     return desc;
 
   }
 
-  void setup_dims() override {
-    data_type_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     std::ostringstream err;
 
     // Check number of channels and channel groups
@@ -381,8 +402,8 @@ public:
   /** Setup layer data.
    *  The kernel weights are setup in the convolution and
    *  deconvolution classes. */
-  void setup_data() override {
-    data_type_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Tensor dimensions
     const auto& input_dims = this->get_input_dims();
@@ -490,6 +511,8 @@ public:
 
     // Set convolution descriptor
     CHECK_CUDNN(cudnnCreateConvolutionDescriptor(&m_convolution_cudnn_desc));
+    CHECK_CUDNN(cudnnSetConvolutionMathType(
+                  m_convolution_cudnn_desc, m_convolution_math_type));
     CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(m_convolution_cudnn_desc,
                                                 m_pads.size(),
                                                 m_pads.data(),
@@ -1133,7 +1156,10 @@ private:
     if(src != nullptr) {
       cudnnConvolutionMode_t mode;
       cudnnDataType_t data_type;
+      cudnnMathType_t math_type;
       int num_dims;
+
+      CHECK_CUDNN(cudnnGetConvolutionMathType(src, &math_type));
       CHECK_CUDNN(cudnnGetConvolutionNdDescriptor(src,
                                                   0,
                                                   &num_dims,
@@ -1154,6 +1180,7 @@ private:
       int num_groups;
       CHECK_CUDNN(cudnnGetConvolutionGroupCount(src,
                                                 &num_groups));
+      CHECK_CUDNN(cudnnSetConvolutionMathType(dst, math_type));
       CHECK_CUDNN(cudnnSetConvolutionNdDescriptor(dst,
                                                   num_dims,
                                                   pads.data(),

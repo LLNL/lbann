@@ -112,8 +112,8 @@ public:
 
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_dims() override {
-    base_convolution_layer<TensorDataType, Device>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    base_convolution_layer<TensorDataType, Device>::setup_dims(dr_metadata);
     std::stringstream err;
 
     // Get tensor dimensions

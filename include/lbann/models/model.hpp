@@ -30,6 +30,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/layers/layer.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/utils/summary.hpp"
 #include "lbann/utils/graph.hpp"
@@ -75,8 +76,7 @@ public:
   // ===========================================
 
   model(lbann_comm* comm,
-        size_t mini_batch_size,
-        objective_function* obj_fn,
+        std::unique_ptr<objective_function> obj_fn,
         std::unique_ptr<lbann_data::Optimizer> default_optimizer_msg = nullptr);
   model(const model& other);
   model& operator=(const model& other);
@@ -85,7 +85,7 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {
-    ar(CEREAL_NVP(m_max_mini_batch_size));
+    ar(CEREAL_NVP(*m_objective_function));
   }
 
   // ===========================================
@@ -113,8 +113,8 @@ public:
   virtual description get_description() const;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function* get_objective_function() const {
-    return m_objective_function;
+  observer_ptr<objective_function> get_objective_function() const {
+    return m_objective_function.get();
   }
 
   /** @brief Return the model's metrics. */
@@ -220,11 +220,6 @@ public:
     return nullptr;
   }
 
-  /** Get the trainer's maximum mini-batch size. */
-  inline size_t get_max_mini_batch_size() const {
-    return m_max_mini_batch_size;
-  }
-
   /** @brief Set a flag that can be used to enable / disable the
    *         background I/O activities
    */
@@ -241,7 +236,7 @@ public:
 
   /** @details Must be called after model specification and before
    *  execution. */
-  virtual void setup();
+  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
 
   virtual void make_data_store_preloaded(execution_mode mode);
 
@@ -338,7 +333,7 @@ protected:
    *
    *  Called in setup function.
    */
-  virtual void setup_layers();
+  virtual void setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
   /** @brief Set up weights.
    *
    *  Called in setup function. All weights being used by layers or
@@ -442,12 +437,6 @@ private:
   /** @brief Trainable parameters. */
   std::vector<std::unique_ptr<weights>> m_weights;
 
-  /** @details Maximum possible minibatch size supported by layers in
-   *  this model.  Note that this is local to the particular model,
-   *  not across multiple models.
-   */
-  size_t m_max_mini_batch_size;
-
   /** @details If a layer needs to construct an optimizer during
    *  setup, it will make a copy of the default optimizer. This object
    *  is just used to create copies and is not actually used for
@@ -456,7 +445,7 @@ private:
   std::unique_ptr<lbann_data::Optimizer> m_default_optimizer_msg;
 
   /** @brief Mathematical function to be minimized during training. */
-  objective_function* m_objective_function;
+  std::unique_ptr<objective_function> m_objective_function;
 
   /** @brief Numerical quantities to evaluate model performance.
    *  @details Does not affect training.
