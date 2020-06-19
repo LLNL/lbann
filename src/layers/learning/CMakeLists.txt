@@ -1,5 +1,6 @@
 # Add the source files for this directory
 set_full_path(THIS_DIR_SOURCES
+  base_convolution.cpp
   channelwise_fully_connected.cpp
   channelwise_scale_bias.cpp
   channelwise_scale_bias_builder.cpp
