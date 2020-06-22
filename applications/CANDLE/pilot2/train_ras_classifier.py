@@ -75,10 +75,8 @@ def construct_model():
                  lbann.CallbackTimer()]
 
     # Construct model
-    mini_batch_size = 64
     num_epochs = 10
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        weights=weights,
                        layers=layers,
                        metrics=[lbann.Metric(acc, name='accuracy', unit='%')],
@@ -118,7 +116,8 @@ def construct_data_reader():
 if __name__ == '__main__':
     import lbann
     import lbann.contrib.launcher
-    trainer = lbann.Trainer()
+    mini_batch_size = 64
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model()
     opt = lbann.Adam(learn_rate=0.001,beta1=0.9,beta2=0.99,eps=1e-8)
     data_reader = construct_data_reader()

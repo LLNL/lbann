@@ -66,7 +66,7 @@ class SummaryWriter {
    * @param step Optional global step.
    */
 
- void add_image(const std::string& tag,
+ void add_image(std::string const& tag,
                 std::string encoded_img,
                 const std::vector<size_t>& dims,
                 int64_t step = -1);

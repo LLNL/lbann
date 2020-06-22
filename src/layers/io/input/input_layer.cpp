@@ -65,13 +65,13 @@ input_distconv_adapter<TensorDataType, T_io_buffer, T_layout, Dev>::get_shuffler
   auto src_buf = m_shuffler_src_buf.get();
   auto dst_buf = m_shuffler_dst_buf.get();
   int shfl_idx = -1;
-  const auto &model = *(this->layer().get_model());
-  if (cur_mb_size == model.get_max_mini_batch_size()) {
+  const auto& context = this->layer().get_model()->get_execution_context();
+  if (cur_mb_size == context.get_trainer().get_max_mini_batch_size()) {
     shfl_idx = 0;
   } else {
     // The last remaining mini-batches for the train, validation, and
     // testing modes
-    auto mode = model.get_execution_context().get_execution_mode();
+    auto mode = context.get_execution_mode();
     shfl_idx = 1 + static_cast<int>(mode);
   }
   assert_always(shfl_idx >= 0 && shfl_idx < 4);

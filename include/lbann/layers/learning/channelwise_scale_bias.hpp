@@ -75,83 +75,109 @@ public:
 
 public:
 
-  channelwise_scale_bias_layer(lbann_comm *comm)
-    : data_type_layer<TensorDataType>(comm) {
-  }
-
-  channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other)
-    : data_type_layer<TensorDataType>(other),
-      m_weights_gradient(other.m_weights_gradient ?
-                         other.m_weights_gradient->Copy() : nullptr) {}
-  channelwise_scale_bias_layer& operator=(const channelwise_scale_bias_layer& other) {
-    data_type_layer<TensorDataType>::operator=(other);
-    m_weights_gradient.reset(other.m_weights_gradient ?
-                             other.m_weights_gradient->Copy() :
-                             nullptr);
-    return *this;
-  }
+  channelwise_scale_bias_layer(lbann_comm *comm);
+  channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other);
+  channelwise_scale_bias_layer& operator=(
+    const channelwise_scale_bias_layer& other);
 
   channelwise_scale_bias_layer* copy() const override {
     return new channelwise_scale_bias_layer(*this);
   }
+
   std::string get_type() const override { return "channel-wise scale/bias"; }
   data_layout get_data_layout() const override { return Layout; }
   El::Device get_device_allocation() const override { return Device; }
 
-  void setup_matrices(const El::Grid& grid) override {
-    data_type_layer<TensorDataType>::setup_matrices(grid);
-    m_weights_gradient.reset(new StarMatDT<TensorDataType, Device>(grid));
-  }
-
-  void setup_data(size_t max_mini_batch_size) override {
-    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
-    const El::Int num_channels = this->get_output_dims()[0];
-
-    // Construct default weights if needed
-    // Note: Scale is initialized to 1 and bias to 0
-    if (!this->has_weights()) {
-      auto w = make_unique<WeightsType>(this->get_comm());
-      std::vector<TensorDataType> vals(2*num_channels, El::TypeTraits<TensorDataType>::Zero());
-      std::fill(vals.begin(), vals.begin()+num_channels, El::TypeTraits<TensorDataType>::One());
-      auto init = make_unique<value_initializer<TensorDataType>>(vals);
-      auto opt = this->m_model->template create_optimizer<TensorDataType>();
-      w->set_name(this->get_name() + "_weights");
-      w->set_initializer(std::move(init));
-      w->set_optimizer(std::move(opt));
-      this->add_weights(w.get());
-      this->m_model->add_weights(std::move(w));
-    }
-    if (this->num_weights() != 1) {
-      LBANN_ERROR("attempted to setup ",
-                  this->get_type()," layer \"",this->get_name(),"\" ",
-                  "with an invalid number of weights ",
-                  "(expected 1, found ",this->num_weights(),")");
-    }
-
-    // Setup weights
-    auto dist = this->get_prev_activations().DistData();
-    dist.colDist = El::STAR;
-    dist.rowDist = El::STAR;
-    this->get_data_type_weights(0).set_dims({static_cast<int>(num_channels)},
-                           {2});
-    this->get_data_type_weights(0).set_matrix_distribution(dist);
-
-    // Setup gradient w.r.t. weights
-    m_weights_gradient->AlignWith(dist);
-    m_weights_gradient->Resize(num_channels, 2);
-
-  }
+  void setup_matrices(const El::Grid& grid) override;
+  void setup_data(size_t max_mini_batch_size) override;
 
 protected:
+
   void fp_compute() override;
   void bp_compute() override;
 
 private:
 
-  /** Objective function gradient w.r.t. weights. */
+  /** @brief Objective function gradient w.r.t. weights. */
   std::unique_ptr<AbsDistMatrixType> m_weights_gradient;
 
 };
+
+// Implementation
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
+::channelwise_scale_bias_layer(lbann_comm *comm)
+  : data_type_layer<TensorDataType>(comm)
+{}
+
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
+::channelwise_scale_bias_layer(const channelwise_scale_bias_layer& other)
+  : data_type_layer<TensorDataType>(other),
+    m_weights_gradient(other.m_weights_gradient
+                       ? other.m_weights_gradient->Copy()
+                       : nullptr)
+{}
+
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+auto channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
+::operator=(const channelwise_scale_bias_layer& other)
+  -> channelwise_scale_bias_layer& {
+  data_type_layer<TensorDataType>::operator=(other);
+  m_weights_gradient.reset(other.m_weights_gradient
+                           ? other.m_weights_gradient->Copy()
+                           : nullptr);
+  return *this;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
+::setup_matrices(const El::Grid& grid) {
+  data_type_layer<TensorDataType>::setup_matrices(grid);
+  m_weights_gradient.reset(new StarMatDT<TensorDataType, Dev>(grid));
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Dev>
+void channelwise_scale_bias_layer<TensorDataType, Layout, Dev>
+::setup_data(size_t max_mini_batch_size) {
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
+  const El::Int num_channels = this->get_output_dims()[0];
+
+  // Construct default weights if needed
+  // Note: Scale is initialized to 1 and bias to 0
+  if (!this->has_weights()) {
+    auto w = make_unique<WeightsType>(this->get_comm());
+    std::vector<TensorDataType> vals(2*num_channels,
+                                     El::TypeTraits<TensorDataType>::Zero());
+    std::fill(vals.begin(), vals.begin()+num_channels,
+              El::TypeTraits<TensorDataType>::One());
+    auto init = make_unique<value_initializer<TensorDataType>>(vals);
+    auto opt = this->m_model->template create_optimizer<TensorDataType>();
+    w->set_name(this->get_name() + "_weights");
+    w->set_initializer(std::move(init));
+    w->set_optimizer(std::move(opt));
+    this->add_weights(w.get());
+    this->m_model->add_weights(std::move(w));
+  }
+  if (this->num_weights() != 1) {
+    LBANN_ERROR("attempted to setup ",
+                this->get_type()," layer \"",this->get_name(),"\" ",
+                "with an invalid number of weights ",
+                "(expected 1, found ",this->num_weights(),")");
+  }
+
+  // Setup weights
+  auto dist = this->get_prev_activations().DistData();
+  dist.colDist = El::STAR;
+  dist.rowDist = El::STAR;
+  this->get_data_type_weights(0).set_dims({static_cast<int>(num_channels)},
+                                          {2});
+  this->get_data_type_weights(0).set_matrix_distribution(dist);
+
+  // Setup gradient w.r.t. weights
+  m_weights_gradient->AlignWith(dist);
+  m_weights_gradient->Resize(num_channels, 2);
+}
 
 LBANN_DEFINE_LAYER_BUILDER(channelwise_scale_bias);
 

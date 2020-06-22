@@ -29,7 +29,20 @@
 
 namespace lbann {
 
-void data_coordinator::setup(int max_mini_batch_size) {
+void data_coordinator::setup(int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers) {
+  m_data_readers = data_readers;
+
+  if(m_data_readers[execution_mode::training] != nullptr) {
+    this->m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
+  }
+
+  if(m_data_readers[execution_mode::validation] != nullptr) {
+    this->m_validation_dataset.total_samples() = m_data_readers[execution_mode::validation]->get_num_data();
+  }
+
+  if(m_data_readers[execution_mode::testing] != nullptr) {
+    this->m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
+  }
 
   /// @todo BVE FIXME the list of execution modes should not include
   // ones will null data readers.  Fix this in next PR.

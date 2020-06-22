@@ -39,7 +39,7 @@ using namespace unit_test::utilities;
 int main(int argc, char* argv[])
 {
   // Set up the communication domain
-  auto world_comm = lbann::initialize(argc, argv, /*seed=*/13);
+  auto world_comm = lbann::initialize(argc, argv);
   expert::register_world_comm(*world_comm);
 
   // Initialize Catch2

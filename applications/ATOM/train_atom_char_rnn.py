@@ -9,6 +9,7 @@ def construct_lc_launcher_args():
     # defaults correspond to the settings needed for training on the moses dataset
     parser = argparse.ArgumentParser(prog="lbann charVAE training")
     parser.add_argument("--partition", default=None)
+    parser.add_argument("--account", default="hpcdl")
     parser.add_argument("--scheduler", default="slurm")
     parser.add_argument(
         "--data-module-file", default="dataset.py",
@@ -17,7 +18,7 @@ def construct_lc_launcher_args():
     parser.add_argument(
         "--data-config", default="data_config.json",
         help="path to a data config file that is used for the construction of python data reader",
-    ) 
+    )
     parser.add_argument(
         "--time-limit",
         type=int,
@@ -157,7 +158,7 @@ def construct_model(run_args):
         # mask padding in input
         pad_mask = lbann.NotEqual(
             [idl[i], lbann.Constant(value=pad_index, num_neurons="1")],
-        )  
+        )
         ce_mask = lbann.Multiply([pad_mask, ce], name="loss_mask_" + str(i))
         loss.append(lbann.LayerTerm(ce_mask, scale=1 / (sequence_length - 1)))
 
@@ -272,7 +273,7 @@ if __name__ == "__main__":
 
     # dump the config to the experiment_dir so that it can be used to load the model in pytorch (moses codebase)
     import torch
-
+    ppn = 4 if run_args.scheduler == "lsf" else 2
     torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
     status = lbann.contrib.launcher.run(
         trainer,
@@ -281,8 +282,10 @@ if __name__ == "__main__":
         opt,
         partition=run_args.partition,
         scheduler=run_args.scheduler,
+        account = run_args.account,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
+        procs_per_node = ppn,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
         lbann_args=f'--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}'

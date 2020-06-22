@@ -509,7 +509,7 @@ TEMPLATE_TEST_CASE ("Testing the argument parser", "[parser][utilities]",
 }
 
 // Testing for cases of ignored arguments
-TEST_CASE("Partial argument parsing", "[tdd][parser][utilities]")
+TEST_CASE("Partial argument parsing", "[parser][utilities]")
 {
   lbann::utils::argument_parser<lbann::utils::allow_extra_parameters> parser;
   auto flag_v =
@@ -543,6 +543,21 @@ TEST_CASE("Partial argument parsing", "[tdd][parser][utilities]")
   {
     char const* argv[] = {"argument_parser_test.exe",
                           "-o", "-v", "-a", "-t", "2", "-p", "13"};
+    int const argc = sizeof(argv) / sizeof(argv[0]);
+
+    REQUIRE_NOTHROW(parser.parse(argc, argv));
+
+    CHECK(parser.template get<bool>("flag v"));
+    CHECK(flag_v);
+
+    CHECK(parser.template get<int>("parameter t") == 2);
+    CHECK(param_t == 2);
+  }
+
+  SECTION("Final argument is unknown flag is ok.")
+  {
+    char const* argv[] = {"argument_parser_test.exe",
+                          "-o", "-v", "-a", "-t", "2", "-p", "13", "-flag"};
     int const argc = sizeof(argv) / sizeof(argv[0]);
 
     REQUIRE_NOTHROW(parser.parse(argc, argv));
