@@ -11,9 +11,24 @@ The representation is channel-wise concatenation of 11 32x32x32 voxel grids, whe
 
 ## Running Instructions
 
-Run the 
+Run in conjuction with the correct slurm / lsf command: 
+
 ```
 python3 MOFae.py --nodes N  --procs-per-node P --mini-batch-size B 
+```
+## Testing Dataset 
+
+To test the dataset: 
+
+```
+python3 -m unittest test/*
+```
+
+To test integration and performance:
+
+```
+cd test
+python3 -m pytest 
 ```
 ## Links  
 

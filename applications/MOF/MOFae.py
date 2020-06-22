@@ -208,8 +208,7 @@ x = lbann.Deconvolution(x,
 decoded = lbann.Tanh(x, 
 		     name = "decoded")
 
-img_loss = lbann.MeanSquaredError([decoded, tensors]) #Possibly add a sum reduction option
-metrics = [lbann.Metric(img_loss, name='recon_error')]
+img_loss = lbann.MeanSquaredError([decoded, tensors]) #Possibly add a sum reduction optionmetrics = [lbann.Metric(img_loss, name='recon_error')]
 
 # ----------------------------------
 # Set up Experiment
