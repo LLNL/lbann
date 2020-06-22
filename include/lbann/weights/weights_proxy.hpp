@@ -127,7 +127,7 @@ public:
               : nullptr)
   {}
 
-    /** @brief Copy a WeightsProxy object.
+  /** @brief Copy a WeightsProxy object.
    *
    *  Creates a new proxy to the same weights object.
    *
