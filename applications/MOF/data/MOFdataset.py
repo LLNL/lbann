@@ -1,14 +1,8 @@
-import sys
-import pickle
 from pathlib import Path 
 from typing import List
 import os
-
-import torch 
+import numpy as np 
 from torch.utils.data import Dataset 
-file_dir = os.path.dirname(__file__)
-sys.path.append(file_dir)
-from Voxel_MOF import Voxel_MOF
 
 
 
@@ -16,34 +10,29 @@ class MOFDataset(Dataset):
     '''
     Custom Dataset loader for MOF data.  
     '''
-    def __init__(self, path, no_grid=False, no_loc=False,transform=None):
+    def __init__(self, path, transform=None):
         self.path = path
-        self.no_grid = no_grid
-        self.no_loc = no_loc
         path = Path(path)
-        # Voxel_MOF.test()
-        with path.open("rb") as f:
-            self.data = pickle.load(f)
+        self.data = np.load(path)
         self.transform = transform
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        if self.no_grid:
-            return self.data[idx].loc_tensor.flatten()
-        elif self.no_loc:
-            return self.data[idx].grid_tensor    
+        if self.transform is not None:
+            return self.transform(self.data[idx])
         else:
-            return self.data[idx].data
+            return self.data[idx]
+        
 
 def test():
     data_dir = os.path.dirname(os.path.realpath(__file__))
-    train_file_path = os.path.join(data_dir, 'data/mofs.p')  
-    test_file_path = os.path.join(data_dir, 'data/mofs.p')
-
-    training_data = MOFDataset(train_file_path)
+    test_file_path = os.path.join(data_dir, 'mofs.npy')
     test_data = MOFDataset(test_file_path)
-
+    
+    print(test_data[0].shape)
+    print(len(test_data))
+    
 if __name__ == '__main__':
     test()

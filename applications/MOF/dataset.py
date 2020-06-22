@@ -12,11 +12,12 @@ from data.MOFdataset import MOFDataset
 data_dir = os.path.dirname(os.path.realpath(__file__))
 
 ## Add CLI arguments for training file location and error handling 
-train_file_path = os.path.join(data_dir, 'data/mofs.p')  
-test_file_path = os.path.join(data_dir, 'data/mofs.p')
+train_file_path = os.path.join(data_dir, 'data/mofs.npy')  
+test_file_path = os.path.join(data_dir, 'data/mofs.npy')
 
-training_data = MOFDataset(train_file_path, no_grid=True)
-test_data = MOFDataset(test_file_path, no_grid=True)
+
+training_data = MOFDataset(train_file_path)
+test_data = MOFDataset(test_file_path)
 
 def get_train (index):
 	return np.float32(training_data[index].flatten()) #Iterable or 1 D array 
@@ -36,8 +37,8 @@ if __name__ == '__main__':
 	data_dir = os.path.dirname(os.path.realpath(__file__))
 
 ## Add CLI arguments for training file location and error handling 
-	train_file_path = os.path.join(data_dir, 'data/mofs.p')  
-	test_file_path = os.path.join(data_dir, 'data/mofs.p')
+	train_file_path = os.path.join(data_dir, 'data/mofs.npy')  
+	test_file_path = os.path.join(data_dir, 'data/mofs.npy')
 
 	training_data =MOFDataset(train_file_path, no_grid=True)
 	test_data = MOFDataset(test_file_path, no_grid=True)

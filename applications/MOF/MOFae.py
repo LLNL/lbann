@@ -243,7 +243,7 @@ model = lbann.Model(num_epochs,
 
 #Optimizer 
 
-opt = lbann.Adam(learn_rate = 1e-6,
+opt = lbann.Adam(learn_rate = 1e-2,
 		beta1 = 0.9,
 		beta2 = 0.99,
 		eps = 1e-8
