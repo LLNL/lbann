@@ -131,7 +131,7 @@ message Callback {
   }
 
   message CallbackDumpWeights {
-    string basename = 1;
+    string directory = 1;
     int64  epoch_interval = 2;
   }
 

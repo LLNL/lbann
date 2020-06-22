@@ -72,7 +72,7 @@ build_dump_weights_callback_from_pbuf(
   const google::protobuf::Message& proto_msg, const std::shared_ptr<lbann_summary>&) {
   const auto& params =
     dynamic_cast<const lbann_data::Callback::CallbackDumpWeights&>(proto_msg);
-  return make_unique<dump_weights>(params.basename(), params.epoch_interval());
+  return make_unique<dump_weights>(params.directory(), params.epoch_interval());
 }
 
 } // namespace callback
