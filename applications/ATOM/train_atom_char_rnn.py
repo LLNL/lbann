@@ -29,7 +29,7 @@ def construct_lc_launcher_args():
     )
     parser.add_argument(
         "--data-config",
-        default=os.path.join(os.path.abspath(os.path.dirname(__file__)), "data_config.json"),
+        default=os.path.join(os.path.abspath(os.path.dirname(__file__)), "zinc_data_config.json"),
         help="path to a data config file that is used for the construction of python data reader",
     )
     parser.add_argument(
@@ -238,9 +238,8 @@ def main():
     if os.path.isfile(run_args.data_config):
         with open(run_args.data_config, "r") as f:
             config = json.load(f)
-        run_args.pad_index = config["pad_index"]
-        run_args.max_seq_len = config["max_seq_len"]
-        run_args.data_path = config["data_path"]
+        for k, v in config.items():
+            setattr(run_args, k, v)
 
     trainer = lbann.Trainer(
         mini_batch_size=run_args.batch_size,
@@ -250,7 +249,7 @@ def main():
 
     # define data_reader
     if run_args.data_reader_prototext:
-        print("USING data_reader_prototext")
+        print("Using data_reader_prototext")
         assert run_args.sequence_length is not None
         assert run_args.vocab is not None
 

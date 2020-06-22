@@ -1,0 +1,9 @@
+{
+
+  "pad_index": 28,
+  "sequence_length": 57,
+  "data_path": "/p/lustre2/brainusr/datasets/zinc/moses_zinc_train250K.npy",
+  "embedding_dim": 30,
+  "num_embeddings": 30
+
+}
