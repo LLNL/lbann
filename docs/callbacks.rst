@@ -14,8 +14,8 @@ is pending; see the :ref:`list of Available
 Callbacks<available-callbacks>` for the documented ones.
 
 The callbacks are set to execute at various times, and can be
-used for reporting, debugging, and performing advanced training
-techniques.
+used to display images according to either a boolean output or
+their global sample index.
 
 For a complete listing of callbacks and details about their
 functionality, please see :ref:`Available
@@ -86,8 +86,8 @@ Available Callbacks
    Check gradients <callbacks/check_gradients>
    Check init <callbacks/check_init>
    Check metric <callbacks/check_metric>
-   Check nan <callbacks/check_nan>
-   Check small <callbacks/check_small>
+   Check nan in activation values <callbacks/check_nan>
+   Check matrices in small values <callbacks/check_small>
    Checkpoint <callbacks/checkpoint>
    Confusion matrix <callbacks/confusion_matrix>
    Debug <callbacks/debug>
