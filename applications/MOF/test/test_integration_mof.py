@@ -21,17 +21,17 @@ sys.path.append(common_python_dir)
 import tools
 
 #Training options 
-num_epochs = 100
+num_epochs = 10
 mini_batch_size = 64 
 num_nodes = 2 
 
 # Error 
 
-expected_MSE_range = (0.0006, 0.0009)
+expected_MSE_range = (0.001, 0.009)
 
 expected_mini_batch_times = {
-    'ray': 1.75,
-    'pascal':1.75
+    'ray': .35,
+    'pascal':.35
     }
 
 
@@ -255,7 +255,7 @@ def augment_test_func(test_func):
         mini_batch_times = []
         with open(experiment_output['stdout_log_file']) as f:
             for line in f:
-                match = re.search('training epoch [0-9]+ accuracy : ([0-9.]+)%', line)
+                match = re.search('training epoch [0-9]+ recon_error : ([0-9.]+)', line)
                 if match:
                     train_accuracy = float(match.group(1))
                 match = re.search('training epoch [0-9]+ mini-batch time statistics : ([0-9.]+)s mean', line)
