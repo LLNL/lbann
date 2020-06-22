@@ -63,7 +63,7 @@ def make_data_reader(lbann):
     _reader.shuffle = True
     _reader.percent_of_data_to_use = 1.0
     _reader.python.module = 'dataset'
-    _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
+    _reader.python.module_dir = root_dir
     _reader.python.sample_function = 'get_train'
     _reader.python.num_samples_function = 'num_train_samples'
     _reader.python.sample_dims_function = 'sample_dims'
