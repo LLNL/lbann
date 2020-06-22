@@ -29,7 +29,9 @@ def construct_lc_launcher_args():
     )
     parser.add_argument(
         "--data-config",
-        default=os.path.join(os.path.abspath(os.path.dirname(__file__)), "zinc_data_config.json"),
+        default=os.path.join(
+            os.path.abspath(os.path.dirname(__file__)), "zinc_data_config.json"
+        ),
         help="path to a data config file that is used for the construction of python data reader",
     )
     parser.add_argument(
