@@ -1,6 +1,5 @@
 import argparse 
 import lbann 
-#import data.mnist 
 import dataset
 import os 
 import lbann.contrib.launcher
@@ -9,20 +8,11 @@ import lbann.contrib.args
 # Command-line arguments
 # ----------------------------------
 
-## TO DO. Add more CLI arguemnts for Model storage and Generated Data
 
 desc = ("Training 3D-CAE on 4D MOF Data using LBANN")
 
 parser = argparse.ArgumentParser(description = desc)
 
-'''
-parser.add_argument(
-    '--partition', action='store', type=str,
-    help='scheduler partition', metavar='NAME')
-parser.add_argument(
-    '--account', action='store', type=str,
-    help='scheduler account', metavar='NAME')
-'''
 parser.add_argument(
 	'--zdim', action='store',default = 2048, type=int, 
 	help="dimensionality of latent space (dedfault: 2048)", metavar = 'NUM')
@@ -40,24 +30,7 @@ parser.add_argument(
     help='number of epochs (default: 100)', metavar='NUM')
 
 lbann.contrib.args.add_scheduler_arguments(parser)
-'''
-parser.add_argument(
-    '--nodes', action='store', default=4, type=int,
-    help='number of nodes (default: 4)', metavar='NUM')
-parser.add_argument(
-    '--procs_per_node', action='store', default=4, type=int,
-    help='processes per node (default: 4)', metavar='NUM') ##Change to 1 for local machine / openhpc
-parser.add_argument(
-    '--ppn', action='store', default=4,type=int,
-    help='Number of GPUs per node (default: 4)', metavar='NUM') 
-parser.add_argument(
-    '--setup-only' , action='store', default=False, type=bool,
-    help='Setup LBANN experiment without running it')
-parser.add_argument(
-   '--reservation', action='store', default=".", type=str,
-    help='reservation var', metavar='NAME')
-'''
-args = parser.parse_args()
+rgs = parser.parse_args()
 
 
 latent_dim = args.zdim
@@ -166,7 +139,7 @@ x = lbann.Deconvolution(encoded,
 			has_bias = True,
 			name="Deconv_1"
 			)
-x = lbann.BatchNormalization(x, name="BN_D1") #Is thia 3D batch norm? 
+x = lbann.BatchNormalization(x, name="BN_D1") 
 x = lbann.Tanh(x, name="Deconv_1_Activation")
 x = lbann.Deconvolution(x,
 			num_dims = 3,
@@ -208,7 +181,7 @@ x = lbann.Deconvolution(x,
 decoded = lbann.Tanh(x, 
 		     name = "decoded")
 
-img_loss = lbann.MeanSquaredError([decoded, tensors]) #Possibly add a sum reduction optionmetrics = [lbann.Metric(img_loss, name='recon_error')]
+img_loss = lbann.MeanSquaredError([decoded, tensors])
 
 # ----------------------------------
 # Set up Experiment
@@ -230,7 +203,6 @@ gpu_usage = lbann.CallbackGPUMemoryUsage()
 
 encoded_output = lbann.CallbackDumpOutputs( layers = "decoded", batch_interval = 400, directory = os.path.dirname(os.path.realpath(__file__)), format="npy") 
 
-## Possibly include 3D Voxel Saver Call Back
 
 #Generate Model 
 model = lbann.Model(num_epochs,
@@ -248,7 +220,6 @@ opt = lbann.Adam(learn_rate = 1e-2,
 		eps = 1e-8
 	        )
 
-# Data Reader -- TO DO 06/02/2020
 
 def make_data_reader():
     reader = lbann.reader_pb2.DataReader()
@@ -270,8 +241,6 @@ data_reader = make_data_reader()
 
 
 #Trainer 
-
-#npp = args.ppn # Number of processes (GPUs) per trainer 
 
 trainer = lbann.Trainer(mini_batch_size = mini_batch_size,
 						name = "MOF_AE_1"
