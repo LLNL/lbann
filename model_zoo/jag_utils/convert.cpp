@@ -56,8 +56,7 @@ void test_jag(string filename);
 #define MAX_SAMPLES 10000
 
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
 
   options *opts = options::get();
   opts->init(argc, argv);
@@ -124,14 +123,14 @@ int main(int argc, char *argv[]) {
             tmp.reset();
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
             node2[ "/inputs/" + input_names[h]] = tmp;
-          }  
+          }
 
           for (size_t h=0; h<scalar_names.size(); h++) {
             tmp.reset();
             key = cnames[i] + "/scalars/" + scalar_names[h];
             conduit::relay::io::hdf5_read(hdf5_file_hnd, key, tmp);
             node2[ "/scalars/" + scalar_names[h]] = tmp;
-          }  
+          }
 
           for (size_t h=0; h<image_names.size(); h++) {
             tmp.reset();
@@ -184,6 +183,3 @@ vector<string> get_image_names_hydra() {
   f.push_back("(0,0)/bang/image/data");
   return f;
 }
-
-
-

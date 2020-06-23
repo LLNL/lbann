@@ -41,8 +41,7 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   if (master) {
@@ -131,7 +130,7 @@ if (j >= 400) break;
 
         // adding this since hydra has one top-level child in each file
         // that is not the root or a complete sample. Instead it's some
-        // sort of meta-data 
+        // sort of meta-data
         bool good = conduit::relay::io::hdf5_has_path(hdf5_file_hnd, key_1);
         if (!good) {
           std::cerr << "missing path: " << key_1 << " (this is probably OK for hydra)\n";
@@ -220,4 +219,3 @@ if (j >= 400) break;
   // Clean up
   return EXIT_SUCCESS;
 }
-
