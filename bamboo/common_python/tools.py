@@ -979,7 +979,7 @@ def print_diff_files(dcmp):
         err = f'Files {os.path.join(dcmp.left, name)} and {os.path.join(dcmp.right, name)} differ'
         if re.search('.xml', name):
             files_differ, diff_list, warn_list = approx_diff_xml_files(
-                os.path.join(dcmp.left, name), os.path.join(dcmp.right, name), 1e-7)
+                os.path.join(dcmp.left, name), os.path.join(dcmp.right, name), 1e-6)
             if files_differ:
                 any_files_differ = True
                 all_diffs.append(err)
