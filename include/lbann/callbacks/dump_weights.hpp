@@ -48,8 +48,8 @@ class dump_weights : public callback_base {
   /**
    * @param basename The basename for writing files.
    */
-  dump_weights(std::string basename, El::Int epoch_interval=1) :
-    callback_base(), m_basename(std::move(basename)),
+  dump_weights(std::string dir, El::Int epoch_interval=1) :
+    callback_base(), m_directory(std::move(dir)),
     m_epoch_interval(std::max(El::Int(1),epoch_interval)) {}
   dump_weights(const dump_weights&) = default;
   dump_weights& operator=(
@@ -60,15 +60,15 @@ class dump_weights : public callback_base {
   void on_train_begin(model *m) override;
   void on_epoch_end(model *m) override;
   std::string name() const override { return "dump weights"; }
-  void set_target_dir(const std::string& basename) { m_basename = basename; }
-  const std::string& get_target_dir() { return m_basename; }
+  void set_target_dir(const std::string& dir) { m_directory = dir; }
+  const std::string& get_target_dir() { return m_directory; }
  private:
   /** Basename for writing files. */
-  std::string m_basename;
+  std::string m_directory;
   /** Interval at which to dump weights */
   El::Int m_epoch_interval;
   /// Dump weights from learning layers.
-  void do_dump_weights(model *m, std::string s = "");
+  void do_dump_weights(const model& m, std::string s = "");
 };
 
 // Builder function
