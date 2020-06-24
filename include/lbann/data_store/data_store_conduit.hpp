@@ -167,7 +167,7 @@ class data_store_conduit {
 
 
   /** @brief turns local cache mode on of off */
-  void set_is_local_cache(bool flag) { m_is_local_cache = flag; }
+  void set_is_local_cache(bool flag = true) { m_is_local_cache = flag; }
 
   /** @brief Check that explicit loading, preloading, and fully loaded flags are consistent */
   void check_query_flags() const;
@@ -175,6 +175,7 @@ class data_store_conduit {
   //=================================================================
   // END methods for setting and querying the data store's mode
   //=================================================================
+
 //XX   void { m_owner_maps_were_exchanged = false; }
   /// fills in m_owner, which maps index -> owning processor
   void exchange_owner_maps();
@@ -263,6 +264,8 @@ class data_store_conduit {
   bool test_local_cache_imagenet(int n);
 
   void test_imagenet_node(int sample_id, bool dereference = true);
+
+  size_t get_mem_usage();
 
 private :
 
@@ -478,9 +481,6 @@ private :
 
   /// called by exchange_data
   void build_node_for_sending(const conduit::Node &node_in, conduit::Node &node_out);
-
-  /// fills in m_owner, which maps index -> owning processor
-//XX  void exchange_owner_maps();
 
   /// for use when conduit Nodes have non-uniform size, e.g, imagenet
   void exchange_sample_sizes();
