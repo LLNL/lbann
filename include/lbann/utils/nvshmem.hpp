@@ -28,8 +28,9 @@
 #define LBANN_UTILS_NVSHMEM_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/utils/exception.hpp"
 #ifdef LBANN_HAS_NVSHMEM
+#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/exception.hpp"
 #include <mpi.h>
 #include <nvshmem.h>
 #include <nvshmemx.h>
@@ -88,6 +89,7 @@ T* malloc(size_t size) {
   if (size == 0) {
     return nullptr;
   }
+  CHECK_CUDA(cudaDeviceSynchronize());
   auto* ptr = nvshmem_malloc(size * sizeof(T));
   if (ptr == nullptr) {
     LBANN_ERROR(
