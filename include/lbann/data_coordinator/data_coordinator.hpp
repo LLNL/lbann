@@ -214,8 +214,12 @@ class data_coordinator {
       dr = get_data_reader(mode);
       if (dr != nullptr) {
         map[data_reader_target_mode::INPUT] = dr->get_data_dims();
-        map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, dr->get_num_labels());
-        map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, dr->get_num_responses());
+        if(dr->has_labels()) {
+          map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, dr->get_num_labels());
+        }
+        if(dr->has_responses()) {
+          map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, dr->get_num_responses());
+        }
         map[data_reader_target_mode::RECONSTRUCTION] = dr->get_data_dims();
         map[data_reader_target_mode::LABEL_RECONSTRUCTION] = dr->get_data_dims();
         map[data_reader_target_mode::NA] = std::vector<int>(1, 0);

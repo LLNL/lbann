@@ -29,8 +29,6 @@
 
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/data_coordinator/io_data_buffer.hpp"
-#include "lbann/io/data_buffers/generic_io_buffer.hpp"
-#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include <cereal/types/base_class.hpp>
 
 namespace lbann {

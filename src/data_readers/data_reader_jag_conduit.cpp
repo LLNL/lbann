@@ -26,7 +26,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_jag_conduit.hpp"
-#include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
 #include "lbann/data_store/data_store_conduit.hpp"
 #include "lbann/trainers/trainer.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"

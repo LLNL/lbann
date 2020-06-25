@@ -37,7 +37,7 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/xml.hpp>
-#include <cereal/types/atomic.hpp>
+//#include <cereal/types/atomic.hpp>
 
 namespace lbann {
 
@@ -69,15 +69,18 @@ void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_poo
   if(partial_mini_batch_size > 0 && this->m_comm->get_rank_in_trainer() < partial_mini_batch_size) {
     local_mini_batch_size++;
   }
+  // generic_data_reader *data_reader = get_data_reader(mode);
   for (const auto& buf_map : m_data_buffers) {
     const data_buffer_map_t& buffer_map = buf_map;
     for (const auto& b : buffer_map) {
       observer_ptr<data_buffer<IODataType>> data_buffer = b.second.get();
+      // for(auto idt : input_data_type_iterator()) {
       data_buffer->m_input_buffers[input_data_type::SAMPLES]->Resize(num_neurons/*get_linearized_data_size()*/, max_mini_batch_size);
       data_buffer->m_input_buffers[input_data_type::LABELS]->Resize(get_linearized_label_size(), max_mini_batch_size);
-    /// The amount of space needed will vary based on input layer type,
-    /// but the batch size is the maximum space necessary
+      /// The amount of space needed will vary based on input layer type,
+      /// but the batch size is the maximum space necessary
       El::Zeros_seq(data_buffer->m_indices_fetched_per_mb, local_mini_batch_size, 1);
+      // }
     }
   }
 }
