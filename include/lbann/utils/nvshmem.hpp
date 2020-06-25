@@ -38,6 +38,12 @@
 namespace lbann {
 namespace nvshmem {
 
+/** Whether NVSHMEM has been initialized. */
+bool is_initialized() noexcept;
+
+/** Whether NVSHMEM has been finalized. */
+bool is_finalized() noexcept;
+
 /** Whether NVSHMEM is active.
  *
  *  Returns true if NVSHMEM has been initialized and has not been
@@ -47,8 +53,9 @@ bool is_active() noexcept;
 
 /** @brief Initialize NVSHMEM library.
  *
- *  Does nothing if NVSHMEM has already been initialized. This is
- *  _not_ thread-safe.
+ *  Does nothing if NVSHMEM has already been initialized and throws an
+ *  exception if it has already been finalized. This is _not_
+ *  thread-safe.
  */
 void initialize(MPI_Comm comm=MPI_COMM_WORLD);
 
