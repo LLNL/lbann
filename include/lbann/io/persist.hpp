@@ -33,6 +33,11 @@
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/enum_iterator.hpp"
 #include "El.hpp"
+#include <cereal/types/utility.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/vector.hpp>
+#include <cereal/types/atomic.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/xml.hpp>
 #include <cereal/types/base_class.hpp>

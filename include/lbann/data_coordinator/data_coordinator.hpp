@@ -32,15 +32,9 @@
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/io/data_buffers/generic_io_buffer.hpp"
 #include "lbann/io/data_buffers/partitioned_io_buffer.hpp"
-#include <cereal/types/utility.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/xml.hpp>
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/data_readers/data_reader_hdf5.hpp"
 #endif // LBANN_HAS_DISTCONV
-
 
 /** Design docs:
  num_parallel_readers - used by the partitioned io buffer to control
@@ -68,13 +62,8 @@ class data_coordinator {
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
  public:
-<<<<<<< 7567d2330c4feed1289512f175cc8ac4e28d42f5
-  data_coordinator(trainer& trainer, lbann_comm *comm) :
-    m_trainer(&trainer),
-=======
   data_coordinator(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
     m_trainer(nullptr),
->>>>>>> Revamped the creation of the data coordinator so that it is
     m_comm(comm),
     m_data_set_processed(false),
     m_execution_context(nullptr) {}
@@ -478,113 +467,11 @@ class data_coordinator {
   //************************************************************************
 
   // save state of IO to a checkpoint
-  virtual bool save_to_checkpoint_shared(persist& p) const {
-    // save state of data readers from input layer
-    data_reader_map_t::const_iterator it;
-    if(p.get_cb_type() == callback_type::execution_context_only
-       || p.get_cb_type() == callback_type::full_checkpoint){
-
-      it = this->m_data_readers.find(execution_mode::training);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_shared(p, execution_mode::training);
-      }
-      it = this->m_data_readers.find(execution_mode::testing);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_shared(p, execution_mode::testing);
-      }
-      it = this->m_data_readers.find(execution_mode::validation);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_shared(p, execution_mode::validation);
-      }
-
-      if (this->m_comm->am_trainer_master()) {
-        write_cereal_archive<const data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
-      }
-    }
-    return true;
-  }
-
+  virtual bool save_to_checkpoint_shared(persist& p) const;
   // reload state of IO from a checkpoint
-  virtual bool load_from_checkpoint_shared(persist& p) {
-    // save state of data readers from input layer
-    data_reader_map_t::const_iterator it;
-    if(p.get_cb_type() == callback_type::execution_context_only
-       || p.get_cb_type() == callback_type::full_checkpoint){
-
-      it = this->m_data_readers.find(execution_mode::training);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->load_from_checkpoint_shared(p, execution_mode::training);
-      }
-      it = this->m_data_readers.find(execution_mode::testing);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->load_from_checkpoint_shared(p, execution_mode::testing);
-      }
-      it = this->m_data_readers.find(execution_mode::validation);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->load_from_checkpoint_shared(p, execution_mode::validation);
-      }
-
-      std::string buf;
-      if (this->m_comm->am_trainer_master()) {
-        read_cereal_archive<data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
-        buf = create_cereal_archive_binary_string<data_coordinator>(*this);
-      }
-
-      // TODO: this assumes homogeneous processors
-      // broadcast state from rank 0
-      this->m_comm->trainer_broadcast(0, buf);
-
-      if (!this->m_comm->am_trainer_master()) {
-        unpack_cereal_archive_binary_string<data_coordinator>(*this, buf);
-      }
-    }
-
-    return true;
-  }
-
-  virtual bool save_to_checkpoint_distributed(persist& p) const {
-    // save state of data readers from input layer
-    data_reader_map_t::const_iterator it;
-    if(p.get_cb_type() == callback_type::execution_context_only
-       || p.get_cb_type() == callback_type::full_checkpoint) {
-
-      it = this->m_data_readers.find(execution_mode::training);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_distributed(p, execution_mode::training);
-      }
-      it = this->m_data_readers.find(execution_mode::testing);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_distributed(p, execution_mode::testing);
-      }
-      it = this->m_data_readers.find(execution_mode::validation);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_distributed(p, execution_mode::validation);
-      }
-
-      write_cereal_archive<const data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
-    }
-    return true;
-  }
-
-  virtual bool load_from_checkpoint_distributed(persist& p) {
-    // save state of data readers from input layer
-    data_reader_map_t::const_iterator it;
-    it = this->m_data_readers.find(execution_mode::training);
-    if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_distributed(p, execution_mode::training);
-    }
-    it = this->m_data_readers.find(execution_mode::testing);
-    if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_distributed(p, execution_mode::testing);
-    }
-    it = this->m_data_readers.find(execution_mode::validation);
-    if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_distributed(p, execution_mode::validation);
-    }
-
-    read_cereal_archive<data_coordinator>(*this, p, execution_mode::training, "_dc.xml");
-    return true;
-  }
+  virtual bool load_from_checkpoint_shared(persist& p);
+  virtual bool save_to_checkpoint_distributed(persist& p) const;
+  virtual bool load_from_checkpoint_distributed(persist& p);
 
  protected:
   /** Pointer to hosting trainer */

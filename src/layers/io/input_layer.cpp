@@ -95,7 +95,7 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   execution_mode mode = this->m_model->get_execution_context().get_execution_mode();
   buffered_data_coordinator<TensorDataType>& dc = static_cast<buffered_data_coordinator<TensorDataType>&>(this->m_model->get_execution_context().get_trainer().get_data_coordinator());
 
-  partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
+  //  partitioned_io_buffer<TensorDataType>* io_buffer = dc.get_active_buffer(mode);
   // generic_io_buffer<TensorDataType>* io_buffer = dc.m_io_buffers[dc.get_active_buffer_idx(mode) % dc.m_io_buffers.size()];
 
   // if(dynamic_cast<partitioned_io_buffer<TensorDataType>*>(io_buffer) != nullptr) {
@@ -105,9 +105,9 @@ void input_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
   dc.update_num_samples_processed(mode, num_samples_in_batch);
   if(this->m_expected_num_child_layers == 1) {
-    io_buffer->distribute_from_local_matrix(dc.get_data_reader(mode), mode, this->get_activations(0));
+    dc.distribute_from_local_matrix(mode, this->get_activations(0));
   }else {
-    io_buffer->distribute_from_local_matrix(dc.get_data_reader(mode), mode, this->get_activations(0), this->get_activations(1));
+    dc.distribute_from_local_matrix(mode, this->get_activations(0), this->get_activations(1));
   }
   // }else {
   //   LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
