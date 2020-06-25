@@ -459,6 +459,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
     grad_wrt_output = mat_builder->MakeEmpty(grid, 0);
   }
+  //std::cout<<"In DT setup matrices, layer name:"<<this->get_name()<< "Grid:"<<grid.VCSize()<<"\n";
 }
 
 template <typename TensorDataType>
@@ -568,10 +569,17 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
     // Initialize input tensor
     const auto& parent = *m_parent_layers[i];
     const auto& parent_output = parent.get_activations(*this);
+    //const El::DistMatrix<double,STAR,VC,ELEMENT,Device::GPU>& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
     input.Empty(false);
-    input.AlignWith(alignment_dist);
+    //if(El::GridCompare(input.Grid(),parent_output.DistData().grid))	
+    if(input.Grid()==*(parent_output.DistData().grid))	
+    {	
+      input.AlignWith(alignment_dist);	
+    }
     if (parent_output.DistData() == input.DistData()) {
+      //std::cout<<"Not Copying: Layer name"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<<"\n";
+
       El::LockedView(input, dynamic_cast<const AbsDistMatrixType&>(parent_output));
     } else {
       bool async_copy = false;
@@ -584,12 +592,17 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
         async_copy = parent_dist_data == input.DistData();
       }
 #endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+      async_copy = false;	
+      std::cout<<"In DT, layer name:"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<< " Input dimensions:"<<input.Height()<< " "<< input.Width() <<" output dimension:"<<parent_output.Height()<<" "<<parent_output.Width()<<"\n";
+
       if (async_copy) {
         El::CopyAsync(parent_output, input);
       } else {
-        El::Copy(parent_output, input);
+        El::Copy(dynamic_cast<const AbsDistMatrixType&>(parent_output), input);	
+        //input = (El::AbstractDistMatrix<double>)parent_output;
       }
     }
+    //std::cout<<"In DT, layer name:"<<this->get_name()<< " Input Grid:"<<input.Grid().VCSize()<<" output Grid:"<<parent_output.DistData().grid->VCSize()<<"\n";
 
     // Check input matrix dimensions
     const auto& height = get_input_size(i);

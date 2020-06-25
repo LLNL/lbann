@@ -365,10 +365,11 @@ bool Layer::is_frozen() const {
   return m_frozen;
 }
 
-void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
+void Layer::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata, const El::Grid& grid) {
   setup_pointers();
   setup_dims(dr_metadata);
-  setup_matrices(m_comm->get_trainer_grid());
+  //setup_matrices(m_comm->get_trainer_grid()); 
+  setup_matrices(grid);
 #ifdef LBANN_HAS_DISTCONV
   prepare_distconv();
 #endif // LBANN_HAS_DISTCONV

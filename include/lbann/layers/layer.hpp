@@ -116,6 +116,12 @@ struct ParallelStrategy {
   int filter_splits = 0;
   /** Number of times the layer is replicated (for FC layers right now). */
   int replications = 0;
+      /** Enable subgraph for the layer. */ 
+  int enable_subgraph = 0;  
+  /** Branch number in the sub graph. */  
+  int sub_branch_tag = 0; 
+  /** percentage of parent resources to be allocated to this branch. */ 
+  int sub_branch_resource_percentage = 0;
   bool operator==(const ParallelStrategy &ps) const {
     return sample_groups == ps.sample_groups &&
         sample_splits == ps.sample_splits &&
@@ -129,7 +135,10 @@ struct ParallelStrategy {
         channel_splits == ps.channel_splits &&
         filter_groups == ps.filter_groups &&
         filter_splits == ps.filter_splits &&
-        replications == ps.replications;
+        replications == ps.replications &&  
+        sub_branch_tag == ps.sub_branch_tag &&  
+        sub_branch_resource_percentage == ps.sub_branch_resource_percentage &&  
+        enable_subgraph == ps.enable_subgraph;
   }
   bool operator!=(const ParallelStrategy &ps) const {
     return !(*this == ps);
@@ -151,6 +160,9 @@ inline std::ostream &operator<<(std::ostream &os,
      << ", " << ps.filter_groups
      << "/" << ps.filter_splits
      << ", " << ps.replications
+     << "/" << ps.sub_branch_tag  
+     << "," << ps.sub_branch_resource_percentage  
+     << "/" << ps.enable_subgraph
      << "}";
   return os;
 }
@@ -176,7 +188,10 @@ class Layer {
   friend class callback::sync_layers;
 
 public:
-
+  /** Ranks in grid for the sub-graph */  
+  std::unique_ptr<std::set <int, std::greater <int> >> subgrid_ranks; 
+  El::Int subgrid_number;
+  
   Layer(lbann_comm *comm);
   Layer(const Layer& other);
   Layer& operator=(const Layer& other);
@@ -250,7 +265,7 @@ public:
    *  assumed that pointers to parent/child layers have already been
    *  initialized.
    */
-  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata);
+  virtual void setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata,const El::Grid& grid);
   /** Check that the setup is reasonable. */
   virtual void check_setup();
 

@@ -324,10 +324,17 @@ protected:
    *  relationships between layers are reciprocated.
    */
   virtual void setup_layer_topology();
+
+  /** setup sub grids for the sub graph parallelism	
+
+  */	
+  virtual void setup_subgrids();	
+
   /** @brief Set up layer execution order.
    *
    *  Called in setup function.
    */
+
   virtual void setup_layer_execution_order();
   /** @brief Set up layers.
    *
@@ -415,6 +422,11 @@ public:
   /** @brief Execute callbacks at the end of weight optimization. */
   virtual void do_weight_optimize_end_cbs(weights *w);
 
+	
+public:	
+  std::unique_ptr<El::Grid> grid1,grid2;	
+  std::unordered_map<int, std::unique_ptr<El::Grid>> grids; 
+
 private:
 
   /** Pointer to the execution context object used for training or evaluating this model */
@@ -423,6 +435,12 @@ private:
   /** @brief LBANN communicator. */
   lbann_comm* m_comm;
 
+  /*experimental code for Sub graph*/
+
+
+
+
+  
   /** @brief Model instance's name.
    *  @details Each model in a trainer should have a unique,
    *  preferably human-readable, name.
