@@ -36,6 +36,8 @@ ALLOCATION_TIME_LIMIT_NIGHTLY=45
 ALLOCATION_TIME_LIMIT_WEEKLY=90
 
 if [ "${CLUSTER}" = 'lassen' ]; then
+    ALLOCATION_TIME_LIMIT_NIGHTLY=90
+    ALLOCATION_TIME_LIMIT_WEEKLY=120
     if [ ${WEEKLY} -ne 0 ]; then
         timeout -k 5 24h bsub -G guests -Is -q pbatch -nnodes 4 -W ${ALLOCATION_TIME_LIMIT_WEEKLY} ./run.sh --weekly
     else
