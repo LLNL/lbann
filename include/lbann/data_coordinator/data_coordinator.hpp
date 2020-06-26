@@ -62,7 +62,7 @@ class data_coordinator {
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
  public:
-  data_coordinator(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
+  data_coordinator(lbann_comm *comm) :
     m_trainer(nullptr),
     m_comm(comm),
     m_data_set_processed(false),
@@ -159,6 +159,7 @@ class data_coordinator {
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
+  virtual const El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) const = 0;
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) = 0;
 
   virtual int get_num_iterations_per_epoch(execution_mode mode) const;

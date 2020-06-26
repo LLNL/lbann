@@ -29,6 +29,9 @@
 
 #include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/data_coordinator/io_data_buffer.hpp"
+#include <cereal/types/utility.hpp>
+#include <cereal/types/map.hpp>
+#include <cereal/types/atomic.hpp>
 #include <cereal/types/base_class.hpp>
 
 namespace lbann {
@@ -51,8 +54,8 @@ class buffered_data_coordinator : public data_coordinator {
  public:
   typedef std::map<execution_mode, std::unique_ptr<data_buffer<IODataType>>> data_buffer_map_t;
  public:
-  buffered_data_coordinator(lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
-    data_coordinator(comm, data_readers) {
+  buffered_data_coordinator(lbann_comm *comm) :
+    data_coordinator(comm) {
 
     // Initialize two buffers
     m_data_buffers.resize(2);
@@ -103,21 +106,24 @@ class buffered_data_coordinator : public data_coordinator {
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(cereal::base_class<data_coordinator>( this )/*,
-       CEREAL_NVP(m_active_buffer),
-       CEREAL_NVP(m_data_buffers)*/);
+    ar(cereal::base_class<data_coordinator>( this )
+       /*CEREAL_NVP(m_active_buffer),*/
+       /*CEREAL_NVP(m_data_buffers)*/);
   }
 
-  void setup(thread_pool& io_thread_pool, int max_mini_batch_size);
+  void setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
 
   void fp_setup_data(data_buffer_map_t& buffer_map, El::Int cur_mini_batch_size);
 
   void fetch_data(execution_mode mode) override;
 
+  const data_buffer_map_t& get_active_buffer_map(execution_mode mode) const;
   data_buffer_map_t& get_active_buffer_map(execution_mode mode);
 
+  const data_buffer<IODataType>& get_active_buffer(execution_mode mode) const;
   data_buffer<IODataType>& get_active_buffer(execution_mode mode);
 
+  const El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) const override;
   El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) override;
 
   /** @brief Complete any background I/O data fetch for the execution
@@ -126,7 +132,8 @@ class buffered_data_coordinator : public data_coordinator {
 
   bool epoch_complete(execution_mode mode);
 
-  data_buffer<IODataType>& get_data_buffer(data_buffer_map_t& buffer_map, const execution_mode mode) const;
+  const data_buffer<IODataType>& get_data_buffer(const data_buffer_map_t& buffer_map, const execution_mode mode) const;
+  data_buffer<IODataType>& get_data_buffer(data_buffer_map_t& buffer_map, const execution_mode mode);
 
   void distribute_from_local_matrix(execution_mode mode, AbsDistMatrixType& sample, AbsDistMatrixType& response);
   void distribute_from_local_matrix(execution_mode mode, AbsDistMatrixType& sample);
@@ -136,8 +143,10 @@ protected:
 
   void fetch_data_in_background(int future_active_buffer, execution_mode mode);
 
+  int get_active_buffer_idx(execution_mode m) const { return m_active_buffer.at(m).load(); }
+
   int get_active_buffer_idx(execution_mode m) {
-    return m_active_buffer[m].load();
+    return static_cast<const buffered_data_coordinator>(*this).get_active_buffer_idx(m);
   }
 
   void increment_active_buffer_idx(execution_mode m) {

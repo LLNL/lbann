@@ -42,8 +42,9 @@
 namespace lbann {
 
 template <typename TensorDataType>
-void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_pool, int max_mini_batch_size) {
-  data_coordinator::setup(io_thread_pool, max_mini_batch_size);
+void buffered_data_coordinator<TensorDataType>::setup(thread_pool& io_thread_pool, int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers) {
+  data_coordinator::setup(io_thread_pool, max_mini_batch_size, data_readers);
+
   El::Int num_neurons = get_linearized_data_size();
 #ifdef LBANN_HAS_DISTCONV
   if (dc::is_cosmoflow_parallel_io_enabled()) {
@@ -203,32 +204,57 @@ bool buffered_data_coordinator<TensorDataType>::epoch_complete(execution_mode mo
 }
 
 template <typename TensorDataType>
-auto buffered_data_coordinator<TensorDataType>::get_active_buffer_map(execution_mode mode) -> data_buffer_map_t& {
-  return m_data_buffers[this->get_active_buffer_idx(mode) % m_data_buffers.size()];
+auto buffered_data_coordinator<TensorDataType>::get_active_buffer_map(execution_mode mode) const -> const data_buffer_map_t& {
+  int idx = get_active_buffer_idx(mode) % m_data_buffers.size();
+  const data_buffer_map_t& foo = m_data_buffers.at(idx);
+  return foo;
+  //  return m_data_buffers.at(get_active_buffer_idx(mode) % m_data_buffers.size());
 }
 
 template <typename TensorDataType>
-auto buffered_data_coordinator<TensorDataType>::get_data_buffer(data_buffer_map_t& buffer_map, const execution_mode mode) const -> data_buffer<IODataType>&{
+auto buffered_data_coordinator<TensorDataType>::get_active_buffer_map(execution_mode mode) -> data_buffer_map_t& {
+  return const_cast<data_buffer_map_t&>(static_cast<const buffered_data_coordinator>(*this).get_active_buffer_map(mode));
+}
+
+template <typename TensorDataType>
+auto buffered_data_coordinator<TensorDataType>::get_data_buffer(const data_buffer_map_t& buffer_map, const execution_mode mode) const -> const data_buffer<IODataType>&{
   typename data_buffer_map_t::const_iterator it = buffer_map.find(mode);
   if (it == buffer_map.end()) {
     LBANN_ERROR("Attempting to return a buffer for an invalid execution mode ", to_string(mode));
   }
-  return *buffer_map[mode];
+  return *buffer_map.at(mode);
+}
+
+
+template <typename TensorDataType>
+auto buffered_data_coordinator<TensorDataType>::get_data_buffer(data_buffer_map_t& buffer_map, const execution_mode mode) -> data_buffer<IODataType>&{
+  return const_cast<data_buffer<IODataType>&>(static_cast<const buffered_data_coordinator>(*this).get_data_buffer(buffer_map, mode));
+}
+
+template <typename TensorDataType>
+auto buffered_data_coordinator<TensorDataType>::get_active_buffer(execution_mode mode) const -> const data_buffer<IODataType>&{
+  const data_buffer_map_t& active_buffer_map = get_active_buffer_map(mode);
+  return get_data_buffer(active_buffer_map, mode);
 }
 
 template <typename TensorDataType>
 auto buffered_data_coordinator<TensorDataType>::get_active_buffer(execution_mode mode) -> data_buffer<IODataType>&{
-  data_buffer_map_t& active_buffer_map = get_active_buffer_map(mode);
-  return get_data_buffer(active_buffer_map, mode);
+  return const_cast<data_buffer<IODataType>&>(static_cast<const buffered_data_coordinator>(*this).get_active_buffer(mode));
 }
+
 
   /**
    * Return the sample indices fetched in the current mini-batch.
    */
 template <typename TensorDataType>
-El::Matrix<El::Int>* buffered_data_coordinator<TensorDataType>::get_sample_indices_per_mb(execution_mode mode) {
-  auto& active_buffer = get_active_buffer(mode);
+const El::Matrix<El::Int>* buffered_data_coordinator<TensorDataType>::get_sample_indices_per_mb(execution_mode mode) const {
+  const auto& active_buffer = get_active_buffer(mode);
   return active_buffer.get_sample_indices_fetched_per_mb();
+}
+
+template <typename TensorDataType>
+El::Matrix<El::Int>* buffered_data_coordinator<TensorDataType>::get_sample_indices_per_mb(execution_mode mode) {
+  return const_cast<El::Matrix<El::Int>*>(static_cast<const buffered_data_coordinator>(*this).get_sample_indices_per_mb(mode));
 }
 
 template <typename TensorDataType>
