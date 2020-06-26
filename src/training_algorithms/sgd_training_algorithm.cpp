@@ -92,7 +92,7 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
     auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
     // Check to make sure that the model has a valid execution mode
     // before trying to do inference
-    if (model.is_execution_mode_valid(execution_mode::validation)) {
+    if (dc.is_execution_mode_valid(execution_mode::validation)) {
       evaluate(evaluation_context, model, dc, execution_mode::validation);
     }
   }
