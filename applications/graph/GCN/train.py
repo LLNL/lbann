@@ -76,19 +76,15 @@ def make_model(num_vertices = None,
     
    # print("Warning: Not using GCN layer and forwaring orignal feature matrix to reduction step. Should only use this when testing dataset / data reader")
     
-    out_channel = 1
-    #gcn = GCN_Layer(input_channels = node_features, output_channels = out_channel)
+    out_channel = 4
+    
+    gcn = GCN_Layer(input_channels = node_features, output_channels = out_channel)
 
-    #x = gcn(feature_matrix, adj_matrix )
+    x = gcn(feature_matrix, adj_matrix )
   
-    #weights = lbann.Weights(initializer = lbann.NormalInitializer(mean=1,standard_deviation=0))
-    #W = lbann.WeightsLayer(dims = str_list([1,out_channel]),
-    #                       weights = weights,
-    #                       name = "GCN_layer")
-    x = lbann.MatMul(adj_matrix, feature_matrix, name="GCN_Interm")
-    #x = lbann.MatMul(B, W, name="GCN_aggr")
-    #x = lbann.Relu(x,name="GCN_activation") 
+    x = lbann.Relu(x,name="GCN_activation") 
 
+    
     #----------------------------------
     # Apply Reduction on Node Features
     #----------------------------------
