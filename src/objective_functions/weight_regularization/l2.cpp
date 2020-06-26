@@ -168,8 +168,8 @@ EvalType l2_weight_regularization::finish_evaluation() {
 // optimizer::add_to_gradient, since this is literally the only
 // use-case. Given the line count, this was clearly the way to go... :/
 namespace {
-struct AddToGradFunctor {
-  AddToGradFunctor(optimizer& opt, EvalType scale_factor)
+struct AddToGrad {
+  AddToGrad(optimizer& opt, EvalType scale_factor)
     : opt_{&opt},
       scale_{scale_factor}
   {}
@@ -185,7 +185,7 @@ struct AddToGradFunctor {
   }
   optimizer* opt_;
   EvalType scale_;
-};// struct AddToGradFunctor
+};// struct AddToGrad
 
 using ValidDataTypes = h2::meta::TL<
 #ifdef LBANN_HAS_GPU_FP16
@@ -199,9 +199,8 @@ using ValidDataTypes = h2::meta::TL<
 using MatTypes =
   h2::meta::tlist::ExpandTL<El::AbstractDistMatrix, ValidDataTypes>;
 
-using FunctorType = AddToGradFunctor;
 using DispatcherType =
-  h2::multimethods::SwitchDispatcher<FunctorType,
+  h2::multimethods::SwitchDispatcher<AddToGrad,
                                      void,
                                      El::BaseDistMatrix, MatTypes>;
 }
@@ -211,8 +210,7 @@ void l2_weight_regularization::compute_weight_regularization() {
   for (auto* w : m_weights) {
     auto* opt = w->get_optimizer();
     if (opt != nullptr) {
-      FunctorType f(*opt, m_scale_factor);
-      DispatcherType::Exec(f, w->get_values());
+      DispatcherType::Exec(AddToGrad(*opt, m_scale_factor), w->get_values());
     }
   }
 }

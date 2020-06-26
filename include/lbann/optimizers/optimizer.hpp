@@ -370,18 +370,20 @@ El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
   using GradMgrType = GradientHelperImpl<TensorDataType>;
 
   auto& grad_mgr_ptr = gradients_[std::type_index(typeid(TensorDataType))];
+  // If the manager hasn't been created, let's make it.
   if (!grad_mgr_ptr) {
     auto mat_info = this->get_matrix_info();
     grad_mgr_ptr = make_unique<GradMgrType>(
       std::get<0>(mat_info), std::get<1>(mat_info), std::get<2>(mat_info));
     grad_mgr_ptr->set_status(optimizer_gradient_status::cleared);
   }
+  // Get the underlying matrix back out.
   auto& grad_mgr = static_cast<GradMgrType&>(*grad_mgr_ptr);
-  auto& buffer = grad_mgr.gradient();
   // Complete outstanding allreduce, if needed.
   if (grad_mgr.get_status() == optimizer_gradient_status::allreduce_started) {
     grad_mgr.complete_allreduce(*(this->m_comm));
   }
+  auto& buffer = grad_mgr.gradient();
 
   // Determine scaling factor and transition state.
   switch (grad_mgr.get_status()) {
