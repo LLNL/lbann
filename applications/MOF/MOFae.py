@@ -1,226 +1,102 @@
-import argparse 
 import lbann 
-import dataset
-import os 
-import lbann.contrib.launcher
-import lbann.contrib.args
-# ----------------------------------
-# Command-line arguments
-# ----------------------------------
-
-
-desc = ("Training 3D-CAE on 4D MOF Data using LBANN")
-
-parser = argparse.ArgumentParser(description = desc)
-
-parser.add_argument(
-	'--zdim', action='store',default = 2048, type=int, 
-	help="dimensionality of latent space (dedfault: 2048)", metavar = 'NUM')
-parser.add_argument(
-	'--atoms', action='store', default = 11,type=int, 
-	help="Number of atom species (default: 11)", metavar = 'NUM')
-parser.add_argument(
-    '--job-name', action='store', default='mofae', type=str,
-    help='job name', metavar='NAME')
-parser.add_argument(
-    '--mini-batch-size', action='store', default=128, type=int,
-    help='mini-batch size (default: 128)', metavar='NUM')
-parser.add_argument(
-    '--num-epochs', action='store', default=100, type=int,
-    help='number of epochs (default: 100)', metavar='NUM')
-
-lbann.contrib.args.add_scheduler_arguments(parser)
-rgs = parser.parse_args()
-
-
-latent_dim = args.zdim
-number_of_atoms = args.atoms
-
+import os
+import os.path
 
 # ----------------------------------
 # Construct Graph
 # ----------------------------------
-input_ = lbann.Input( target_mode = "reconstruction")
+def gen_layers(latent_dim, number_of_atoms):
+    ''' Generates the model for the 3D Convolutional Auto Encoder. 
 
+        returns the Directed Acyclic Graph (DAG) that the lbann 
+        model will run on. 
+    '''
+    input_ = lbann.Input( target_mode = "reconstruction")
+    tensors = lbann.Identity(input_)
 
-tensors = lbann.Identity(input_)
+    tensors = lbann.Reshape(tensors, dims="11 32 32 32", name="Sample")
+    # Input tensor shape is  (number_of_atoms)x32x32x32
 
-tensors = lbann.Reshape(tensors, dims="11 32 32 32")
-# Input tensor shape is  32x32x32x(number_of_atoms)
+    # Encoder 
 
-# Encoder 
-x = lbann.Convolution(tensors,
-		      num_dims = 3, 
-		      num_output_channels = latent_dim // 8, 
-		      num_groups = 1, 
-		      conv_dims_i = 4, 
-		      conv_strides_i = 2, 
-		      conv_dilations_i = 1,
-		      conv_pads_i = 1,
-		      has_bias = True,
-		      name="Conv_1")
+    x = lbann.Identity(tensors)
+    for i in range(4):
+        out_channels = latent_dim // (2 ** (3-i))
+        
+        x = lbann.Convolution(x,
+                  num_dims = 3, 
+                  num_output_channels = out_channels, 
+                  num_groups = 1, 
+                  conv_dims_i = 4, 
+                  conv_strides_i = 2, 
+                  conv_dilations_i = 1,
+                  conv_pads_i = 1,
+                  has_bias = True,
+                  name="Conv_{0}".format(i))
 
-x = lbann.BatchNormalization(x, name="Batch_NORM_1")
-x = lbann.LeakyRelu(x, name="Conv_1_Activation")
+        x = lbann.BatchNormalization(x, name="Batch_NORM_{0}".format(i+1))
+        x = lbann.LeakyRelu(x, name="Conv_{0}_Activation".format(i+1))
 
-# Shape: 16x16x16x(latent_dim // 8)
+    # Shape: (latent_dim)x2x2x2
+    encoded = lbann.Convolution(x,
+                   num_dims = 3, 
+                   num_output_channels = latent_dim, 
+                   num_groups = 1, 
+                   conv_dims_i = 2, 
+                   conv_strides_i = 2, 
+                   conv_dilations_i = 1,
+                   conv_pads_i  = 0,
+                   has_bias = True,
+                   name ="encoded")
 
-x = lbann.Convolution(x,
-		  num_dims = 3, 
-		  num_output_channels = latent_dim // 4, 
-		  num_groups = 1, 
-		  conv_dims_i = 4, 
-		  conv_strides_i = 2, 
-		  conv_dilations_i = 1,
-		  conv_pads_i = 1,
-		  has_bias = True,
-		  name="Conv_2")
-x = lbann.BatchNormalization(x, name="Batch_Norm_2")
-x = lbann.LeakyRelu(x, name="Conv_2_Activation")
+    # Shape: (latent_dim)1x1x1
 
-# Shape: 8x8x8x(latent_dim // 4)
+    # Decoder 
 
-x = lbann.Convolution(x,
-   		      num_dims = 3, 
-		      num_output_channels = latent_dim // 2, 
-		      num_groups = 1, 
-		      conv_dims_i = 4, 
-		      conv_strides_i = 2, 
-		      conv_dilations_i = 1,
-		      has_bias = True, 
-		      conv_pads_i = 1,
-		      name="Conv_3")
+    x = lbann.Deconvolution(encoded,
+                num_dims = 3,
+                num_output_channels = number_of_atoms * 16,
+                num_groups = 1,
+                conv_dims_i = 4,
+                conv_pads_i = 0,
+                conv_strides_i = 2,
+                conv_dilations_i = 1,
+                has_bias = True,
+                name="Deconv_1"
+                )
+    x = lbann.BatchNormalization(x, name="BN_D1") 
+    x = lbann.Tanh(x, name="Deconv_1_Activation")
 
-x = lbann.BatchNormalization(x, name="Batch_Norm_3")
-x = lbann.LeakyRelu(x, name="Conv_3_Activation")
+    for i in range(3):
+        out_channels = number_of_atoms * (2 ** (2-i))    
+        x = lbann.Deconvolution(x,
+                num_dims = 3,
+                num_output_channels = out_channels,
+                num_groups = 1,
+                conv_dims_i = 4,
+                conv_pads_i = 1,
+                conv_strides_i = 2,
+                conv_dilations_i = 1,
+                has_bias = True,
+                name="Deconv_{0}".format(i+2)
+                )
+        x = lbann.BatchNormalization(x, name="BN_D{0}".format(i+2))
 
-# Shape: 4x4x4x(latent_dim // 2)
+        if (i != 2): #Save the last activation layer because we want to dump the outputs 
+            x = lbann.Tanh(x, name="Deconv_{0}_Activation".format(i+2))
+     
+    decoded = lbann.Tanh(x, 
+                 name = "decoded")
 
-x = lbann.Convolution(x,
-		     num_dims = 3, 
-		     num_output_channels = latent_dim, 
-		     num_groups = 1, 
-		     conv_dims_i = 4, 
-		     conv_strides_i = 2, 
-		     conv_dilations_i = 1,
-		     conv_pads_i = 1,
-		     has_bias = True,
-    		     name="Conv_4")
+    img_loss = lbann.MeanSquaredError([decoded, tensors])
 
-x = lbann.BatchNormalization(x, name="Batch_Norm_4")
-x = lbann.LeakyRelu(x, name="Conv_4_Activation")
+    metrics = [lbann.Metric(img_loss, name='recon_error')]
+    # ----------------------------------
+    # Set up DAG
+    # ----------------------------------
 
-# Shape: 2x2x2x(latent_dim)
-
-encoded = lbann.Convolution(x,
-			   num_dims = 3, 
-		  	   num_output_channels = latent_dim, 
-			   num_groups = 1, 
-			   conv_dims_i = 2, 
-			   conv_strides_i = 2, 
-			   conv_dilations_i = 1,
-  			   conv_pads_i  = 0,
-			   has_bias = True,
-			   name ="encoded")
-
-# Shape: 1x1x1x(latent_dim)
-
-
-# Decoder 
-
-x = lbann.Deconvolution(encoded,
-			num_dims = 3,
-			num_output_channels = number_of_atoms * 16,
-			num_groups = 1,
-			conv_dims_i = 4,
-			conv_pads_i = 0,
-			conv_strides_i = 2,
-			conv_dilations_i = 1,
-			has_bias = True,
-			name="Deconv_1"
-			)
-x = lbann.BatchNormalization(x, name="BN_D1") 
-x = lbann.Tanh(x, name="Deconv_1_Activation")
-x = lbann.Deconvolution(x,
-			num_dims = 3,
-		        num_output_channels = number_of_atoms * 4,
-			num_groups = 1,
-			conv_dims_i = 4,
-			conv_pads_i = 1,
-			conv_strides_i = 2,
-			conv_dilations_i = 1,
-			has_bias = True,
-			name="Deconv_2"
-			)
-x = lbann.BatchNormalization(x, name="BN_D2")  
-x = lbann.Tanh(x, name="Deconv_2_Activation")
-x = lbann.Deconvolution(x,
-			num_dims = 3,
-			num_output_channels = number_of_atoms * 2,
-			num_groups = 1,
-			conv_dims_i = 4,
-			conv_pads_i = 1,
-			conv_strides_i = 2,
-			conv_dilations_i = 1,
-			has_bias = True,
-			name="Deconv_3"
-		 	)
-x = lbann.BatchNormalization(x, name="BN_D3")  
-x = lbann.Tanh(x, name="Deconv_3_Activation")
-x = lbann.Deconvolution(x,
-			num_dims = 3,
-			num_output_channels = number_of_atoms,
-			num_groups = 1,
-		        conv_dims_i = 4,
-			conv_pads_i = 1,
-			conv_strides_i = 2,
-			conv_dilations_i = 1,
-			has_bias = True,
-			name="Deconv_4"
-			)  
-decoded = lbann.Tanh(x, 
-		     name = "decoded")
-
-img_loss = lbann.MeanSquaredError([decoded, tensors])
-
-# ----------------------------------
-# Set up Experiment
-# ----------------------------------
-
-layers = lbann.traverse_layer_graph(input_) #Generate Model DAG
-
-mini_batch_size = args.mini_batch_size
-num_epochs = args.num_epochs 
-
-# Callbacks for Debug and Running Model 
-
-print_model = lbann.CallbackPrintModelDescription() #Prints initial Model after Setup
-
-training_output = lbann.CallbackPrint( interval = 1,
-				       print_global_stat_only = False) #Prints training progress
-
-gpu_usage = lbann.CallbackGPUMemoryUsage()
-
-encoded_output = lbann.CallbackDumpOutputs( layers = "decoded", batch_interval = 400, directory = os.path.dirname(os.path.realpath(__file__)), format="npy") 
-
-
-#Generate Model 
-model = lbann.Model(num_epochs,
-		    layers = layers,
-		    objective_function = img_loss, 
-		    metrics = metrics,
-		    callbacks = [print_model, training_output, gpu_usage, encoded_output]
-		   )
-
-#Optimizer 
-
-opt = lbann.Adam(learn_rate = 1e-2,
-		beta1 = 0.9,
-		beta2 = 0.99,
-		eps = 1e-8
-	        )
-
-
+    layers = lbann.traverse_layer_graph(input_) #Generate Model DAG
+    return layers, img_loss, metrics
 def make_data_reader():
     reader = lbann.reader_pb2.DataReader()
     _reader = reader.reader.add()
@@ -237,20 +113,3 @@ def make_data_reader():
     return reader 
 
 
-data_reader = make_data_reader()
-
-
-#Trainer 
-
-trainer = lbann.Trainer(mini_batch_size = mini_batch_size,
-						name = "MOF_AE_1"
-						)
-
-# ----------------------------------
-# Run Experiment 
-# ----------------------------------
-
-kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
-
-
-lbann.contrib.launcher.run(trainer, model, data_reader, opt, **kwargs)

@@ -2,11 +2,9 @@ from pathlib import Path
 from typing import List
 import os
 import numpy as np 
-from torch.utils.data import Dataset 
 
 
-
-class MOFDataset(Dataset):
+class MOFDataset():
     '''
     Custom Dataset loader for MOF data.  
     '''
