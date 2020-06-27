@@ -34,7 +34,7 @@
 
 #if defined LBANN_DEBUG
 #define LBANN_DEBUG_ASSERT_POINTER(ptr) \
-  do { if (ptr) LBANN_ERROR("Pointer \"" #ptr "\" is null."); } while (0)
+  do { if (!ptr) LBANN_ERROR("Pointer \"" #ptr "\" is null."); } while (0)
 #define LBANN_IN_DEBUG_MODE true
 #else
 #define LBANN_DEBUG_ASSERT_POINTER(ptr)
