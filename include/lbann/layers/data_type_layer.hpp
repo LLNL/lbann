@@ -100,7 +100,7 @@ public:
    *  Apply a mathematical operation to input tensors to obtain output
    *  tensors.
    */
-  void forward_prop() override;
+  void forward_prop() final;
 
   void summarize_matrices(lbann_summary& summarizer, int step) override;
 

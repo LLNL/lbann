@@ -367,6 +367,8 @@ El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
   TensorDataType& in_scale,
   bool allreduce_needed) {
 
+  // Anon enum to clarify "get<#>" calls below.
+  enum { HEIGHT=0, WIDTH, DISTDATA };
   using GradMgrType = GradientHelperImpl<TensorDataType>;
 
   auto& grad_mgr_ptr = gradients_[std::type_index(typeid(TensorDataType))];
@@ -374,7 +376,9 @@ El::AbstractDistMatrix<TensorDataType>& optimizer::get_gradient_buffer(
   if (!grad_mgr_ptr) {
     auto mat_info = this->get_matrix_info();
     grad_mgr_ptr = make_unique<GradMgrType>(
-      std::get<0>(mat_info), std::get<1>(mat_info), std::get<2>(mat_info));
+      std::get<HEIGHT>(mat_info),
+      std::get<WIDTH>(mat_info),
+      std::get<DISTDATA>(mat_info));
     grad_mgr_ptr->set_status(optimizer_gradient_status::cleared);
   }
   // Get the underlying matrix back out.
