@@ -30,7 +30,7 @@
 #include "lbann/data_readers/utils/input_data_type.hpp"
 #include <cereal/types/utility.hpp>
 #include <cereal/types/map.hpp>
-#include <cereal/types/atomic.hpp>
+//#include <cereal/types/atomic.hpp>
 #include <cereal/types/base_class.hpp>
 
 #include <cereal/types/utility.hpp>
