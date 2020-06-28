@@ -145,9 +145,7 @@ protected:
 
   int get_active_buffer_idx(execution_mode m) const { return m_active_buffer.at(m).load(); }
 
-  int get_active_buffer_idx(execution_mode m) {
-    return static_cast<const buffered_data_coordinator>(*this).get_active_buffer_idx(m);
-  }
+  int get_active_buffer_idx(execution_mode m) { return m_active_buffer[m].load(); }
 
   void increment_active_buffer_idx(execution_mode m) {
     m_active_buffer[m]++;

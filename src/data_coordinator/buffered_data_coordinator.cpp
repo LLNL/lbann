@@ -205,15 +205,12 @@ bool buffered_data_coordinator<TensorDataType>::epoch_complete(execution_mode mo
 
 template <typename TensorDataType>
 auto buffered_data_coordinator<TensorDataType>::get_active_buffer_map(execution_mode mode) const -> const data_buffer_map_t& {
-  int idx = get_active_buffer_idx(mode) % m_data_buffers.size();
-  const data_buffer_map_t& foo = m_data_buffers.at(idx);
-  return foo;
-  //  return m_data_buffers.at(get_active_buffer_idx(mode) % m_data_buffers.size());
+  return m_data_buffers.at(get_active_buffer_idx(mode) % m_data_buffers.size());
 }
 
 template <typename TensorDataType>
 auto buffered_data_coordinator<TensorDataType>::get_active_buffer_map(execution_mode mode) -> data_buffer_map_t& {
-  return const_cast<data_buffer_map_t&>(static_cast<const buffered_data_coordinator>(*this).get_active_buffer_map(mode));
+  return m_data_buffers[get_active_buffer_idx(mode) % m_data_buffers.size()];
 }
 
 template <typename TensorDataType>
@@ -228,7 +225,11 @@ auto buffered_data_coordinator<TensorDataType>::get_data_buffer(const data_buffe
 
 template <typename TensorDataType>
 auto buffered_data_coordinator<TensorDataType>::get_data_buffer(data_buffer_map_t& buffer_map, const execution_mode mode) -> data_buffer<IODataType>&{
-  return const_cast<data_buffer<IODataType>&>(static_cast<const buffered_data_coordinator>(*this).get_data_buffer(buffer_map, mode));
+  typename data_buffer_map_t::const_iterator it = buffer_map.find(mode);
+  if (it == buffer_map.end()) {
+    LBANN_ERROR("Attempting to return a buffer for an invalid execution mode ", to_string(mode));
+  }
+  return *buffer_map[mode];
 }
 
 template <typename TensorDataType>
@@ -239,7 +240,8 @@ auto buffered_data_coordinator<TensorDataType>::get_active_buffer(execution_mode
 
 template <typename TensorDataType>
 auto buffered_data_coordinator<TensorDataType>::get_active_buffer(execution_mode mode) -> data_buffer<IODataType>&{
-  return const_cast<data_buffer<IODataType>&>(static_cast<const buffered_data_coordinator>(*this).get_active_buffer(mode));
+  data_buffer_map_t& active_buffer_map = get_active_buffer_map(mode);
+  return get_data_buffer(active_buffer_map, mode);
 }
 
 

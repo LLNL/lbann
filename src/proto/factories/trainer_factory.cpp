@@ -44,8 +44,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm* comm,
     do {                                                                    \
       if (proto_datatype == TypeToProtoDataType<TensorDataType>::value) {   \
         dc = lbann::make_unique<buffered_data_coordinator<TensorDataType>>( \
-          comm,                                                             \
-          data_readers);                                                    \
+          comm);                                                            \
       }                                                                     \
     } while (0)
 
