@@ -162,7 +162,7 @@ class data_coordinator {
   virtual const El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) const = 0;
   virtual El::Matrix<El::Int>* get_sample_indices_per_mb(execution_mode mode) = 0;
 
-  virtual int get_num_iterations_per_epoch(execution_mode mode) const;
+  virtual size_t get_num_iterations_per_epoch(execution_mode mode) const;
 
   virtual int get_current_step_in_epoch(execution_mode mode) const;
 

@@ -185,7 +185,7 @@ int data_coordinator::compute_max_num_parallel_readers(long data_set_size, int m
   return num_parallel_readers;
 }
 
-int data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const {
+size_t data_coordinator::get_num_iterations_per_epoch(execution_mode mode) const {
   const generic_data_reader *data_reader = get_data_reader(mode);
   return (data_reader != nullptr) ? data_reader->get_num_iterations_per_epoch() : 0;
 }
