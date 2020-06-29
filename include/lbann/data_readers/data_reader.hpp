@@ -558,6 +558,10 @@ class generic_data_reader {
     return m_master;
   }
 
+  /// For use in instumentation, debugging, etc; activated via cmd flag: --verbose
+  bool is_verbose() { return m_verbose; }
+  bool verbose() { return m_verbose; }
+
   /// Allow the reader to know where it is in the model hierarchy
   virtual void set_rank(int rank) {
     m_rank_in_model = rank;
