@@ -96,7 +96,7 @@ private:
   bool is_distconv_supported() const override {
     return Device == El::Device::GPU && Layout == data_layout::DATA_PARALLEL;
   }
-  void setup_distconv_adapter() override {
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override {
     this->get_distconv_adapter_ptr() = make_unique<leaky_relu_distconv_adapter<
       TensorDataType, Layout, Device>>(*this);
   }

@@ -868,7 +868,7 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType>
-void data_type_layer<TensorDataType>::setup_distconv_adapter() {
+void data_type_layer<TensorDataType>::setup_distconv_adapter(const DataReaderMetaData& dr_metadata) {
   this->get_distconv_adapter_ptr() = make_unique<data_type_distconv_adapter<TensorDataType>>(*this);
 }
 

@@ -1215,7 +1215,8 @@ base_convolution_layer<TensorDataType,Device>::get_backward_filter_algo_cudnn(
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType, El::Device Device>
-void base_convolution_layer<TensorDataType,Device>::setup_distconv_adapter() {
+void base_convolution_layer<TensorDataType,Device>::setup_distconv_adapter(
+    const DataReaderMetaData& dr_metadata) {
   this->get_distconv_adapter_ptr() = make_unique<
     base_convolution_adapter<TensorDataType, Device>>(*this);
 }

@@ -400,7 +400,7 @@ private:
   const data_type_distconv_adapter<TensorDataType>& get_distconv_adapter() const override;
 
  protected:
-  void setup_distconv_adapter() override;
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
 #endif // LBANN_HAS_DISTCONV
 
 #ifdef LBANN_HAS_CUDA

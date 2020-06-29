@@ -39,6 +39,8 @@
 #include "lbann/utils/options.hpp"
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
+#include "lbann/utils/distconv.hpp"
+
 #include <cassert>
 #include <algorithm>
 #include <string>
@@ -662,6 +664,14 @@ class generic_data_reader {
   void set_transform_pipeline(transform::transform_pipeline&& tp) {
     m_transform_pipeline = std::move(tp);
   }
+
+#ifdef LBANN_HAS_DISTCONV
+  /**
+   * Returns whether shuffle (which refers to input data shuffling for
+   * Distconv but not random sample shuffling) is required.
+   */
+  virtual bool is_tensor_shuffle_required() const { return true; }
+#endif // LBANN_HAS_DISTCONV
 
  protected:
 

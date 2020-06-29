@@ -30,6 +30,7 @@
 #include <El.hpp>
 
 #include "lbann/utils/enum_iterator.hpp"
+#include "lbann/utils/distconv.hpp"
 
 #include <string>
 #include <unordered_map>
@@ -57,6 +58,12 @@ using slice_points_mode_iterator = enum_iterator<slice_points_mode, slice_points
 struct DataReaderMetaData {
   TargetModeDimMap data_dims;
   SPModeSlicePoints slice_points;
+
+#ifdef LBANN_HAS_DISTCONV
+  // Whether tensor shuffle is required. Some data readers such as
+  // hyperslab-enabled HDF5 data reader does not require shuffling.
+  bool shuffle_required;
+#endif // LBANN_HAS_DISTCONV
 };
 
 } // namespace lbann

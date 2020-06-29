@@ -98,6 +98,11 @@ class hdf5_reader : public generic_data_reader {
   const std::vector<int> get_data_dims() const override {
     return m_data_dims;
   }
+
+#ifdef LBANN_HAS_DISTCONV
+   bool is_tensor_shuffle_required() const override { return false; }
+#endif // LBANN_HAS_DISTCONV
+
  protected:
   void read_hdf5_hyperslab(hsize_t h_data, hsize_t filespace, int rank,
                            TensorDataType *sample);

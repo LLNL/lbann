@@ -256,7 +256,7 @@ private:
   friend class base_convolution_adapter<TensorDataType, Device>;
  protected:
   using BaseConvAdapterType = base_convolution_adapter<TensorDataType, Device>;
-  void setup_distconv_adapter() override;
+  void setup_distconv_adapter(const DataReaderMetaData& dr_metadata) override;
   BaseConvAdapterType& get_distconv_adapter() override;
   const BaseConvAdapterType& get_distconv_adapter() const override;
 #endif // LBANN_HAS_DISTCONV
