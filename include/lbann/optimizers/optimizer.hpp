@@ -317,13 +317,22 @@ protected:
   void accumulate_all_gradient_contributions(
     El::AbstractDistMatrix<TensorDataType>& gradient);
 
-  /** @brief Begin the allreduce on the gradient values. */
+  /** @brief Launch non-blocking allreduce on the gradient, if needed.
+   *
+   *  Does nothing if an allreduce is not needed or has already been
+   *  started.
+   */
   void start_gradient_allreduce() {
     for (auto& grad_mgr : gradients_) {
       grad_mgr.second->start_allreduce(*m_comm);
     }
   }
-  /** @brief Complete the allreduce on the gradient values. */
+
+  /** @brief Synchronize non-blocking allreduce on the gradient, if needed.
+   *
+   *  Does nothing if an allreduce isn't needed. Throws an exception
+   *  if an allreduce is needed but hasn't been started.
+   */
   void finish_gradient_allreduce() {
     for (auto& grad_mgr : gradients_) {
       grad_mgr.second->complete_allreduce(*m_comm);

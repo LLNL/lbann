@@ -124,7 +124,10 @@ protected:
   virtual void step_compute(AbsDistMatrixType& values,
                             const AbsDistMatrixType& gradient) = 0;
 
-  std::tuple<El::Int,El::Int,El::DistData> get_matrix_info() const override;
+  /** @brief Get the info needed to construct a new gradient matrix.
+   *  @return Tuple of height, width, and DistData.
+   */
+  std::tuple<El::Int,El::Int,El::DistData> get_matrix_info() const final;
 
 private:
 
@@ -158,20 +161,6 @@ private:
    *  @todo Consider moving this to the derived classes.
    */
   TensorDataType m_learning_rate;
-
-  /** @brief Launch non-blocking allreduce on the gradient, if needed.
-   *
-   *  Does nothing if an allreduce is not needed or has already been
-   *  started.
-   */
-  //void start_gradient_allreduce() final;
-
-  /** @brief Synchronize non-blocking allreduce on the gradient, if needed.
-   *
-   *  Does nothing if an allreduce isn't needed. Throws an exception
-   *  if an allreduce is needed but hasn't been started.
-   */
-  //void finish_gradient_allreduce();
 };
 
 #ifndef LBANN_DATA_TYPE_OPTIMIZER_INSTANTIATE
