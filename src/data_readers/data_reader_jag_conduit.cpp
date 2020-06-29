@@ -885,6 +885,17 @@ void data_reader_jag_conduit::do_preload_data_store() {
     LBANN_WARNING("starting preload for role: ", get_role());
   }
 
+  // Instrumentation
+  int my_count = 0;
+  int interval = 1000;
+  double tm5 = get_time();
+  if (opts->has_int("verbose")) {
+    interval = opts->get_int("verbose");
+  }
+  if (is_master()) {
+    std::cout << "XX interval: " << interval << std::endl;
+  }
+
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
     if(m_data_store->get_index_owner(index) != m_rank_in_model) {
@@ -905,6 +916,17 @@ void data_reader_jag_conduit::do_preload_data_store() {
         preload_helper(h, sample_name, field_name, index, node);
       }
       m_data_store->set_preloaded_conduit_node(index, node);
+
+      // Instrumentation
+      ++my_count;
+      if (is_verbose() && is_master()) {
+        if (my_count % interval == 0) {
+          double tm55 = get_time() - tm5;
+          std::cout << "P_0 has loaded " << my_count << " samples; time: " << tm55
+                    << " time per sample: " << tm55/my_count << std::endl;
+        }
+      }
+
     } catch (conduit::Error const& e) {
       LBANN_ERROR(" :: trying to load the node " + std::to_string(index) + " with key " + key + " and got " + e.what());
     }
