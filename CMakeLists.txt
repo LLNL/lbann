@@ -135,12 +135,9 @@ option(LBANN_WITH_VTUNE
 option(LBANN_WITH_UNIT_TESTING
   "Enable the unit testing framework (requires Catch2)" OFF)
 
-# Enable parallel random matrix generation, if possible
+# Use deterministic GPU algorithms and layer operations
 option(LBANN_DETERMINISTIC
   "Use deterministic algorithms as much as possible." OFF)
-
-option(LBANN_SEQUENTIAL_INITIALIZATION
-  "Sequentially consistent initialization" OFF)
 
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
@@ -657,6 +654,7 @@ add_subdirectory(model_zoo)
 add_subdirectory(model_zoo/tests)
 add_subdirectory(model_zoo/jag_utils)
 add_subdirectory(applications/CANDLE/pilot2/tools)
+add_subdirectory(applications/ATOM/utils)
 add_subdirectory(tests)
 add_subdirectory(scripts)
 

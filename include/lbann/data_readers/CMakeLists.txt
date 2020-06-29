@@ -16,6 +16,7 @@ set_full_path(THIS_DIR_HEADERS
   data_reader_pilot2_molecular.hpp
   data_reader_python.hpp
   data_reader_synthetic.hpp
+  data_reader_smiles.hpp
   )
 
 if (LBANN_HAS_DISTCONV)

@@ -112,8 +112,8 @@ protected:
     m_batch_statistics_gradient.reset(AbsDistMatrixType::Instantiate(dist));
   }
 
-  void setup_data() override {
-    data_type_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Initialize output dimensions
     this->set_output_dims(this->get_input_dims());

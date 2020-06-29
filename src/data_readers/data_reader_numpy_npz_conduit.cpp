@@ -31,7 +31,7 @@
 #include "lbann/utils/file_utils.hpp" // pad()
 #include "lbann/utils/jag_utils.hpp"  // read_filelist(..) TODO should be move to file_utils
 #include "lbann/utils/timer.hpp"
-#include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/lbann_library.hpp"
 
 namespace lbann {
@@ -118,7 +118,7 @@ void numpy_npz_conduit_reader::do_preload_data_store() {
 
   if (is_master()) std::cout << "Starting numpy_npz_conduit_reader::preload_data_store; num indices: " << m_shuffled_indices.size() << std::endl;
 
-  size_t count = get_absolute_sample_count(); 
+  size_t count = get_absolute_sample_count();
   double use_percent = get_use_percent();
   if (count != 0 || use_percent != 1) {
     LBANN_ERROR("numpy_npz_conduit_reader currently assumes you are using 100% of the data set; you specified get_absolute_sample_count() = ", count, " and get_use_percent() = ", use_percent, "; please ask Dave Hysom to modify the code, if you want to use less than 100%");
@@ -261,7 +261,7 @@ bool numpy_npz_conduit_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
     load_npz(m_filenames[data_id], data_id, node);
     //note: if testing, and test set is touched more than once, the following
     //      will through an exception TODO: relook later
-    const auto& c = static_cast<const execution_context&>(m_model->get_execution_context());
+    const auto& c = static_cast<const execution_context&>(m_trainer->get_data_coordinator().get_execution_context());
     if (priming_data_store() || c.get_execution_mode() == execution_mode::testing) {
       m_data_store->set_conduit_node(data_id, node);
     }
@@ -372,10 +372,10 @@ void numpy_npz_conduit_reader::fill_in_metadata() {
     LBANN_ERROR("failed to open " + m_filenames[my_file] + " for reading");
   }
   in.close();
-  m_num_samples = m_filenames.size(); 
-  if (is_master()) { 
+  m_num_samples = m_filenames.size();
+  if (is_master()) {
     std::cout << "num samples: " << m_num_samples << "\n";
-  } 
+  }
 
   int data_id = 0; //meaningless
   conduit::Node node;

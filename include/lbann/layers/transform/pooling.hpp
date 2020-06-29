@@ -230,8 +230,8 @@ public:
 
 protected:
 
-  void setup_dims() override {
-    transform_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    transform_layer<TensorDataType>::setup_dims(dr_metadata);
     const auto& input_dims = this->get_input_dims();
     auto output_dims = input_dims;
     for(size_t i = 0; i < output_dims.size() - 1; ++i) {

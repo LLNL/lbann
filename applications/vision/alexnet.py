@@ -57,8 +57,7 @@ callbacks = [lbann.CallbackPrint(),
              lbann.CallbackTimer(),
              lbann.CallbackDropFixedLearningRate(
                  drop_epoch=[20,40,60], amt=0.1)]
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
+model = lbann.Model(args.num_epochs,
                     layers=layers,
                     weights=weights,
                     objective_function=obj,
@@ -72,7 +71,7 @@ opt = lbann.contrib.args.create_optimizer(args)
 data_reader = data.imagenet.make_data_reader(num_classes=args.num_classes)
 
 # Setup trainer
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 
 # Run experiment
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)

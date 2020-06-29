@@ -28,6 +28,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/execution_contexts/sgd_execution_context.hpp"
+#include "lbann/trainers/trainer.hpp"
 
 namespace lbann {
 
@@ -345,7 +346,7 @@ dc::Shape data_type_distconv_adapter<TensorDataType>::get_prev_activations_shape
     int input_index) const {
   const auto input_dims = layer().get_input_dims(input_index);
   std::vector<int> input_tensor_shape_v(input_dims.rbegin(), input_dims.rend());
-  input_tensor_shape_v.push_back(layer().get_model()->get_max_mini_batch_size());
+  input_tensor_shape_v.push_back(get_max_mini_batch_size());
   return dc::Shape(input_tensor_shape_v);
 }
 
@@ -361,7 +362,7 @@ dc::Shape data_type_distconv_adapter<TensorDataType>::get_activations_shape(
     int output_index) const {
   const auto output_dims = layer().get_output_dims(output_index);
   std::vector<int> output_tensor_shape_v(output_dims.rbegin(), output_dims.rend());
-  output_tensor_shape_v.push_back(layer().get_model()->get_max_mini_batch_size());
+  output_tensor_shape_v.push_back(get_max_mini_batch_size());
   return dc::Shape(output_tensor_shape_v);
 }
 
@@ -700,12 +701,13 @@ dc::TensorShuffler<TensorDataType> &get_shuffler(
     const Layer &layer,
     std::array<dc::TensorShuffler<TensorDataType>*, 4> &shufflers,
     const dc::TensorDev<TensorDataType> &src,
-    const dc::TensorDev<TensorDataType> &dst) {
+    const dc::TensorDev<TensorDataType> &dst,
+    const size_t max_mini_batch_size) {
   const auto& c = static_cast<sgd_execution_context&>(
       layer.get_model()->get_execution_context());
   const auto& mini_batch_size = c.get_current_mini_batch_size();
   int shuffler_idx = -1;
-  if (layer.get_model()->get_max_mini_batch_size() == mini_batch_size) {
+  if (max_mini_batch_size == mini_batch_size) {
     shuffler_idx = 0;
   } else {
     // The last remaining mini-batches for the train, validation, and
@@ -727,28 +729,32 @@ template <typename TensorDataType>
 dc::TensorShuffler<TensorDataType>& data_type_distconv_adapter<TensorDataType>::
 get_prev_activations_shuffler(
     const dc::TensorDev<TensorDataType> &src, const dc::TensorDev<TensorDataType> &dst) {
-  return get_shuffler(layer(), m_prev_activations_shufflers, src, dst);
+  return get_shuffler(layer(), m_prev_activations_shufflers, src, dst,
+                      get_max_mini_batch_size());
 }
 
 template <typename TensorDataType>
 dc::TensorShuffler<TensorDataType>& data_type_distconv_adapter<TensorDataType>::
 get_activations_shuffler(
     const dc::TensorDev<TensorDataType> &src, const dc::TensorDev<TensorDataType> &dst) {
-  return get_shuffler(layer(), m_activations_shufflers, src, dst);
+  return get_shuffler(layer(), m_activations_shufflers, src, dst,
+                      get_max_mini_batch_size());
 }
 
 template <typename TensorDataType>
 dc::TensorShuffler<TensorDataType>& data_type_distconv_adapter<TensorDataType>::
 get_prev_error_signals_shuffler(
     const dc::TensorDev<TensorDataType> &src, const dc::TensorDev<TensorDataType> &dst) {
-  return get_shuffler(layer(), m_prev_error_signals_shufflers, src, dst);
+  return get_shuffler(layer(), m_prev_error_signals_shufflers, src, dst,
+                      get_max_mini_batch_size());
 }
 
 template <typename TensorDataType>
 dc::TensorShuffler<TensorDataType>& data_type_distconv_adapter<TensorDataType>::
 get_error_signals_shuffler(
     const dc::TensorDev<TensorDataType> &src, const dc::TensorDev<TensorDataType> &dst) {
-  return get_shuffler(layer(), m_error_signals_shufflers, src, dst);
+  return get_shuffler(layer(), m_error_signals_shufflers, src, dst,
+                      get_max_mini_batch_size());
 }
 
 template <typename TensorDataType>
@@ -876,6 +882,11 @@ void data_type_distconv_adapter<TensorDataType>::dump_original_error_signals() {
       get_original_activations(), l.get_activations().LockedBuffer()));
   dc::dump_tensor(get_original_error_signals(0),
                   get_name() +  "_error_signals_original");
+}
+
+template <typename TensorDataType>
+size_t data_type_distconv_adapter<TensorDataType>::get_max_mini_batch_size() const {
+  return layer().get_model()->get_max_mini_batch_size_distconv();
 }
 
 #define PROTO(T)                                \

@@ -111,8 +111,8 @@ public:
 
   }
 
-  void setup_dims() override {
-    transform_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    transform_layer<TensorDataType>::setup_dims(dr_metadata);
     std::stringstream err;
 
     // Make sure input tensors have valid dimensions

@@ -49,22 +49,14 @@ namespace lbann {
 template <typename TensorDataType>
 class generic_input_layer : public io_layer<TensorDataType> {
  public:
-  using data_reader_map_t = std::map<execution_mode, generic_data_reader *>;
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
  public:
   generic_input_layer(lbann_comm *comm,
               int num_parallel_readers,
-              std::map<execution_mode, generic_data_reader *> data_readers,
-              bool data_set_spans_models = true,
               data_reader_target_mode dr_mode = data_reader_target_mode::CLASSIFICATION)
-    : io_layer<TensorDataType>(comm, data_set_spans_models, dr_mode),
-      m_io_buffers(),
-      m_training_dataset(),
-      m_testing_dataset(),
-      m_validation_dataset(),
-      m_data_readers(data_readers),
-      m_data_set_processed(false) {
+    : io_layer<TensorDataType>(comm, dr_mode),
+      m_io_buffers() {
       //m_data_sets_span_models(data_sets_span_models) {
     // Input layers have no parents
     this->m_expected_num_parent_layers = 0;
@@ -74,18 +66,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
       // Input layers output a sample and target, which could be the
       // original value, categorical label, or regression value
       this->m_expected_num_child_layers = 2;
-    }
-
-    if(m_data_readers[execution_mode::training] != nullptr) {
-      this->m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
-    }
-
-    if(m_data_readers[execution_mode::validation] != nullptr) {
-      this->m_validation_dataset.total_samples() = m_data_readers[execution_mode::validation]->get_num_data();
-    }
-
-    if(m_data_readers[execution_mode::testing] != nullptr) {
-      this->m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
     }
 
     this->m_active_buffer[execution_mode::training].store(-1);
@@ -109,25 +89,14 @@ class generic_input_layer : public io_layer<TensorDataType> {
     for (auto& io_buffer : m_io_buffers) {
       delete io_buffer;
     }
-    // Input layer always frees data readers.
-    for (auto& dr : m_data_readers) {
-      delete dr.second;
-    }
   }
 
   // Input layers copy their datareaders.
   generic_input_layer(const generic_input_layer& other)
     : io_layer<TensorDataType>(other),
-      m_io_buffers(other.m_io_buffers),
-      m_training_dataset(other.m_training_dataset),
-      m_testing_dataset(other.m_testing_dataset),
-      m_validation_dataset(other.m_validation_dataset),
-      m_data_readers(other.m_data_readers) {
+      m_io_buffers(other.m_io_buffers) {
     for (auto& io_buffer : m_io_buffers) {
       io_buffer = io_buffer->copy();
-    }
-    for (auto& dr : m_data_readers) {
-      dr.second = dr.second ? dr.second->copy() : nullptr;
     }
   }
 
@@ -136,25 +105,17 @@ class generic_input_layer : public io_layer<TensorDataType> {
     for (auto& io_buffer : m_io_buffers) {
       io_buffer = io_buffer->copy();
     }
-    for (auto& dr : m_data_readers) {
-      dr.second = dr.second ? dr.second->copy() : nullptr;
-    }
     return *this;
   }
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize( Archive & ar ) {
-    ar(/*CEREAL_NVP(m_io_buffer),*/
-       CEREAL_NVP(m_training_dataset),
-       CEREAL_NVP(m_testing_dataset),
-       CEREAL_NVP(m_validation_dataset)/*,
-       CEREAL_NVP(m_data_readers),
-       CEREAL_NVP(m_data_set_processed)*/);
+    // ar(CEREAL_NVP(m_io_buffer));
   }
 
   template<typename T_io_buffer>
-  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers, std::map<execution_mode, generic_data_reader *> data_readers) {
-    m_io_buffers.push_back(new T_io_buffer(comm, num_parallel_readers, data_readers, this->m_expected_num_child_layers));
+  inline void initialize_io_buffer(lbann_comm *comm, int num_parallel_readers) {
+    m_io_buffers.push_back(new T_io_buffer(comm, num_parallel_readers, this->m_expected_num_child_layers));
   }
 
   std::string get_type() const override { return "generic_input"; }
@@ -165,49 +126,32 @@ class generic_input_layer : public io_layer<TensorDataType> {
     return desc;
   }
 
-  void setup_dims() override {
-    io_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    io_layer<TensorDataType>::setup_dims(dr_metadata);
     for (int i = 0; i < this->get_num_children(); ++i) {
-      this->set_output_dims(get_data_dims(i), i);
+      this->set_output_dims(get_data_dims(dr_metadata, i), i);
     }
   }
 
-  void setup_data() override {
-    io_layer<TensorDataType>::setup_data();
+  void setup_data(size_t max_mini_batch_size) override {
+    io_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
     // Resize output to maximum mini-batch size
-    const auto& max_mb_size = this->m_model->get_max_mini_batch_size();
     for (int i = 0; i < this->get_num_children(); ++i) {
       auto& output = this->get_activations(i);
-      output.Resize(output.Height(), max_mb_size);
-    }
-
-    if(io_layer<TensorDataType>::m_data_set_spans_models) {
-      calculate_num_iterations_per_epoch_training_spans_models(max_mb_size);
-    } else {
-      calculate_num_iterations_per_epoch_training_unique_per_models(max_mb_size);
+      output.Resize(output.Height(), max_mini_batch_size);
     }
 
     for (auto& io_buffer : m_io_buffers) {
       int linearized_target_size;
-      switch(this->m_data_reader_mode) {
-      case data_reader_target_mode::REGRESSION:
-        linearized_target_size = get_linearized_response_size();
-        break;
-      case data_reader_target_mode::RECONSTRUCTION:
-        linearized_target_size = get_linearized_data_size();
-        break;
-      case data_reader_target_mode::LABEL_RECONSTRUCTION:
-      case data_reader_target_mode::CLASSIFICATION:
-        linearized_target_size = get_linearized_label_size();
-        break;
-      case data_reader_target_mode::NA:
-      default:
+      if(this->get_num_children() > 1) {
+        linearized_target_size = this->get_output_size(1);
+      }else {
         linearized_target_size = 0;
       }
       io_buffer->setup_data(this->get_output_size(0),
                             linearized_target_size,
-                            max_mb_size);
+                            max_mini_batch_size);
     }
   }
 
@@ -251,7 +195,8 @@ class generic_input_layer : public io_layer<TensorDataType> {
   void fetch_data_in_background(int future_active_buffer, execution_mode mode) {
     int active_buffer = future_active_buffer % m_io_buffers.size();
     generic_io_buffer<TensorDataType>* io_buffer = m_io_buffers[active_buffer];
-    std::lock_guard<std::mutex> guard(dr_mutex);
+    data_coordinator& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
+    std::lock_guard<std::mutex> guard(dc.dr_mutex);
     setup_next_io_buffer(io_buffer);
     io_buffer->fetch_to_local_matrix(get_data_reader(mode), mode);
     return;
@@ -315,9 +260,10 @@ class generic_input_layer : public io_layer<TensorDataType> {
       LBANN_ERROR("could not fp_compute for I/O layers : encoutered generic_io_buffer type");
     }
 
-    m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
+    data_coordinator& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
+    dc.m_data_set_processed = io_buffer->update_data_set(get_data_reader(mode), mode);
 
-    if(!m_data_set_processed && this->m_model->get_execution_context().background_io_activity_allowed()) {
+    if(!dc.m_data_set_processed && this->m_model->get_execution_context().background_io_activity_allowed()) {
       int next_active_buffer = get_active_buffer_idx(mode) + 1;
       std::future<void> background_fetch_done = this->m_model->get_execution_context().get_io_thread_pool().submit_job(
         std::bind(&generic_input_layer::fetch_data_in_background, this, next_active_buffer, mode));
@@ -338,7 +284,8 @@ class generic_input_layer : public io_layer<TensorDataType> {
    * Once a mini-batch is processed, resuffle the data for the next batch if necessary
    */
   bool update_compute() override {
-    return m_data_set_processed;
+    data_coordinator& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
+    return dc.m_data_set_processed;
   }
 
   //************************************************************************
@@ -346,22 +293,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
   //************************************************************************
 
   generic_data_reader *get_data_reader(const execution_mode mode) const {
-    generic_data_reader *data_reader = nullptr;
-
-    auto it = m_data_readers.find(mode);
-    if (it != m_data_readers.end()) data_reader = it->second;
-
-    switch(mode) {
-    case execution_mode::training:
-      break;
-    case execution_mode::validation:
-      break;
-    case execution_mode::testing:
-      break;
-    default:
-      LBANN_ERROR("generic data distribution: invalid execution phase");
-    }
-    return data_reader;
+    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_data_reader(mode);
   }
 
   generic_data_reader *get_data_reader() const {
@@ -455,85 +387,15 @@ class generic_input_layer : public io_layer<TensorDataType> {
     return get_current_world_master_mini_batch_adjustment(this->m_model->get_execution_context().get_execution_mode(), model_rank);
   }
 
-  /** Calculate how many iterations are required for training, testing,
-   *  and validation given a specified mini-batch size and that the
-   *  training data set is spanning all of the models.
-   */
-  void calculate_num_iterations_per_epoch_training_spans_models(int mini_batch_size) {
-
-    generic_data_reader *dr = get_data_reader(execution_mode::training);
-    if(dr != nullptr) {
-      /// Setup the training data set so that it spans all models
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_spanning_models(mini_batch_size, dr);
-    }
-
-    dr = get_data_reader(execution_mode::validation);
-    if(dr != nullptr) {
-      /// Each model uses the entire validation and testing data sets
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
-    }
-
-    dr = get_data_reader(execution_mode::testing);
-    if(dr != nullptr) {
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
-    }
-
-  }
-
-  void calculate_num_iterations_per_epoch_training_unique_per_models(int mini_batch_size) {
-
-    generic_data_reader *dr = get_data_reader(execution_mode::training);
-    if(dr != nullptr) {
-      /// Setup the training data set so that it spans all models
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
-    }
-
-    dr = get_data_reader(execution_mode::validation);
-    if(dr != nullptr) {
-      /// Each model uses the entire validation and testing data sets
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
-    }
-
-    dr = get_data_reader(execution_mode::testing);
-    if(dr != nullptr) {
-      m_io_buffers[0]->calculate_num_iterations_per_epoch_single_model(mini_batch_size, dr);
-    }
-
-  }
-
   //************************************************************************
   // Helper functions to access the dataset statistics
   //************************************************************************
   dataset& get_dataset(execution_mode m) override {
-    switch(m) {
-    case execution_mode::training:
-      return m_training_dataset;
-      break;
-    case execution_mode::validation:
-      return m_validation_dataset;
-      break;
-    case execution_mode::testing:
-      return m_testing_dataset;
-      break;
-    default:
-      LBANN_ERROR("get_dataset: invalid execution mode");
-    }
+    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_dataset(m);
   }
 
   const dataset& get_dataset(execution_mode m) const override {
-    switch(m) {
-    case execution_mode::training:
-      return m_training_dataset;
-      break;
-    case execution_mode::validation:
-      return m_validation_dataset;
-      break;
-    case execution_mode::testing:
-      return m_testing_dataset;
-      break;
-    default:
-       LBANN_ERROR("get_dataset: invalid execution mode");
-    }
+    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_dataset(m);
   }
 
   /**
@@ -547,15 +409,7 @@ class generic_input_layer : public io_layer<TensorDataType> {
    * Returns null if none are valid.
    */
   dataset* select_first_valid_dataset() override {
-    if (m_data_readers[execution_mode::training]) {
-      return &m_training_dataset;
-    } else if (m_data_readers[execution_mode::validation]) {
-      return &m_validation_dataset;
-    } else if (m_data_readers[execution_mode::testing]) {
-      return &m_testing_dataset;
-    } else {
-      return nullptr;
-    }
+    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().select_first_valid_dataset();
   }
 
   /**
@@ -586,34 +440,13 @@ class generic_input_layer : public io_layer<TensorDataType> {
   /**
    * Get the dimensions of the underlying data.
    */
-  const std::vector<int> get_data_dims(int child_index = 0) const override {
-    // Check the training and testing execution modes for data dimensions
-    const generic_data_reader *dr = get_data_reader(execution_mode::training);
-    // If there isn't a training data reader, use the testing data reader
-    if(dr == nullptr) {
-      dr = get_data_reader(execution_mode::testing);
-    }
-    if(dr == nullptr) { LBANN_ERROR("unable to call get_data_dims -- no valid execution mode"); }
-    //    dataset* ds = select_first_valid_dataset();
-    if (dr) {
-      if(child_index == 0) {
-        return dr->get_data_dims();
-      }else if(child_index == 1) {
-        switch(this->m_data_reader_mode) {
-        case data_reader_target_mode::REGRESSION:
-          return std::vector<int>(1, dr->get_num_responses());
-        case data_reader_target_mode::RECONSTRUCTION:
-        case data_reader_target_mode::LABEL_RECONSTRUCTION:
-          return dr->get_data_dims();
-        case data_reader_target_mode::CLASSIFICATION:
-          return dr->get_data_dims();
-        default:
-          return std::vector<int>(1, dr->get_num_labels());
-        }
-        //        the correct value based on initialization
-      }else {
-        LBANN_ERROR("get_data_dims: Invalid child index");
-      }
+  std::vector<int> get_data_dims(DataReaderMetaData& dr_metadata, int child_index = 0) const override {
+    if(child_index == 0) {
+      return dr_metadata.data_dims[data_reader_target_mode::INPUT];
+    }else if(child_index == 1) {
+      return dr_metadata.data_dims[this->m_data_reader_mode];
+    }else {
+      LBANN_ERROR("get_data_dims: Invalid child index");
     }
     return std::vector<int>(1, 0);
   }
@@ -624,25 +457,26 @@ class generic_input_layer : public io_layer<TensorDataType> {
   long get_linearized_data_size() const override {
     long linearized_data_size = -1;
 
-    data_reader_map_t::const_iterator it;
+    generic_data_reader *dr;
 
-    it = m_data_readers.find(execution_mode::training);
-    if ((it != m_data_readers.end()) && it->second) {
-      linearized_data_size = (it->second)->get_linearized_data_size();
+    auto& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
+    dr = dc.get_data_reader(execution_mode::training);
+    if (dr != nullptr) {
+      linearized_data_size = dr->get_linearized_data_size();
     }
 
-    it = m_data_readers.find(execution_mode::validation);
-    if ((it != m_data_readers.end()) && it->second) {
-      long tmp_data_size = (it->second)->get_linearized_data_size();
+    dr = dc.get_data_reader(execution_mode::validation);
+    if (dr != nullptr) {
+      long tmp_data_size = dr->get_linearized_data_size();
       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
         LBANN_ERROR("lbann_io_layer: validation data set size does not "
                               "match the currently established data set size");
       }
     }
 
-    it = m_data_readers.find(execution_mode::testing);
-    if ((it != m_data_readers.end()) && it->second) {
-      long tmp_data_size = (it->second)->get_linearized_data_size();
+    dr = dc.get_data_reader(execution_mode::testing);
+    if (dr != nullptr) {
+      long tmp_data_size = dr->get_linearized_data_size();
       if (linearized_data_size != -1 && linearized_data_size != tmp_data_size) {
         LBANN_ERROR("lbann_io_layer: testing data set size does not "
                               "match the currently established data set size");
@@ -659,22 +493,23 @@ class generic_input_layer : public io_layer<TensorDataType> {
       return static_cast<long>(1);
     }
     long linearized_label_size = -1;
-    data_reader_map_t::const_iterator it;
+    generic_data_reader *dr;
 
-    it = m_data_readers.find(execution_mode::training);
-    if ((it != m_data_readers.end()) && it->second) {
-      linearized_label_size = (it->second)->get_linearized_label_size();
+    auto& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
+    dr = dc.get_data_reader(execution_mode::training);
+    if (dr != nullptr) {
+      linearized_label_size = dr->get_linearized_label_size();
     }
-    it = m_data_readers.find(execution_mode::validation);
-    if ((it != m_data_readers.end()) && it->second) {
-      long tmp_label_size = (it->second)->get_linearized_label_size();
+    dr = dc.get_data_reader(execution_mode::validation);
+    if (dr != nullptr) {
+      long tmp_label_size = dr->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
         LBANN_ERROR("lbann_io_layer: validation label set size (" + std::to_string(tmp_label_size) + ") does not match the currently established data set size (" + std::to_string(linearized_label_size) + ")");
       }
     }
-    it = m_data_readers.find(execution_mode::testing);
-    if ((it != m_data_readers.end()) && it->second) {
-      long tmp_label_size = (it->second)->get_linearized_label_size();
+    dr = dc.get_data_reader(execution_mode::testing);
+    if (dr != nullptr) {
+      long tmp_label_size = dr->get_linearized_label_size();
       if (linearized_label_size != -1 && linearized_label_size != tmp_label_size) {
         LBANN_ERROR("lbann_io_layer: testing label set size does not "
                               "match the currently established data set size");
@@ -688,23 +523,24 @@ class generic_input_layer : public io_layer<TensorDataType> {
       return static_cast<long>(1);
     }
     long linearized_response_size = -1;
-    data_reader_map_t::const_iterator it;
+    generic_data_reader *dr;
 
-    it = m_data_readers.find(execution_mode::training);
-    if ((it != m_data_readers.end()) && it->second) {
-      linearized_response_size = (it->second)->get_linearized_response_size();
+    auto& dc = this->m_model->get_execution_context().get_trainer().get_data_coordinator();
+    dr = dc.get_data_reader(execution_mode::training);
+    if (dr != nullptr) {
+      linearized_response_size = dr->get_linearized_response_size();
     }
-    it = m_data_readers.find(execution_mode::validation);
-    if ((it != m_data_readers.end()) && it->second) {
-      long tmp_response_size = (it->second)->get_linearized_response_size();
+    dr = dc.get_data_reader(execution_mode::validation);
+    if (dr != nullptr) {
+      long tmp_response_size = dr->get_linearized_response_size();
       if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
         LBANN_ERROR("lbann_io_layer: validation response set size does not "
                               "match the currently established data set size");
       }
     }
-    it = m_data_readers.find(execution_mode::testing);
-    if ((it != m_data_readers.end()) && it->second) {
-      long tmp_response_size = (it->second)->get_linearized_response_size();
+    dr = dc.get_data_reader(execution_mode::testing);
+    if (dr != nullptr) {
+      long tmp_response_size = dr->get_linearized_response_size();
       if (linearized_response_size != -1 && linearized_response_size != tmp_response_size) {
         LBANN_ERROR("lbann_io_layer: testing response set size does not "
                               "match the currently established data set size");
@@ -714,21 +550,21 @@ class generic_input_layer : public io_layer<TensorDataType> {
   }
 
   long get_num_samples_trained() const override {
-    return m_training_dataset.get_num_samples_processed();
+    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_num_samples_trained();
   }
   long get_num_samples_tested() const override {
-    return m_testing_dataset.get_num_samples_processed();
+    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_num_samples_tested();
   }
   long get_total_num_training_samples() const override {
-    return m_training_dataset.get_total_samples();
+    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_total_num_training_samples();
   }
   long get_total_num_testing_samples() const override {
-    return m_testing_dataset.get_total_samples();
+    return this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_total_num_testing_samples();
   }
 
   bool at_new_epoch() const override {
-    const data_reader_map_t::const_iterator it = m_data_readers.find(execution_mode::training);
-    return ((it != m_data_readers.end()) && it->second && (it->second)->at_new_epoch());
+    const generic_data_reader *dr = this->m_model->get_execution_context().get_trainer().get_data_coordinator().get_data_reader(execution_mode::training);
+    return (dr != nullptr && dr->at_new_epoch());
   }
 
   bool is_execution_mode_valid(execution_mode mode) const override {
@@ -742,22 +578,10 @@ class generic_input_layer : public io_layer<TensorDataType> {
   // save state of IO to a checkpoint
   bool save_to_checkpoint_shared(persist& p) const override {
     // save state of data readers from input layer
-    data_reader_map_t::const_iterator it;
     if(p.get_cb_type() == callback_type::execution_context_only
        || p.get_cb_type() == callback_type::full_checkpoint){
 
-      it = this->m_data_readers.find(execution_mode::training);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_shared(p, execution_mode::training);
-      }
-      it = this->m_data_readers.find(execution_mode::testing);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_shared(p, execution_mode::testing);
-      }
-      it = this->m_data_readers.find(execution_mode::validation);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_shared(p, execution_mode::validation);
-      }
+      this->m_model->get_execution_context().get_trainer().get_data_coordinator().save_to_checkpoint_shared(p);
 
       if (this->get_comm()->am_trainer_master()) {
         write_cereal_archive<const generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
@@ -769,23 +593,9 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
   // reload state of IO from a checkpoint
   bool load_from_checkpoint_shared(persist& p) override {
-    // save state of data readers from input layer
-    data_reader_map_t::const_iterator it;
+    // save state of the input layer
     if(p.get_cb_type() == callback_type::execution_context_only
        || p.get_cb_type() == callback_type::full_checkpoint){
-
-      it = this->m_data_readers.find(execution_mode::training);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->load_from_checkpoint_shared(p, execution_mode::training);
-      }
-      it = this->m_data_readers.find(execution_mode::testing);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->load_from_checkpoint_shared(p, execution_mode::testing);
-      }
-      it = this->m_data_readers.find(execution_mode::validation);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->load_from_checkpoint_shared(p, execution_mode::validation);
-      }
 
       std::string buf;
       if (this->get_comm()->am_trainer_master()) {
@@ -807,20 +617,8 @@ class generic_input_layer : public io_layer<TensorDataType> {
 
   bool save_to_checkpoint_distributed(persist& p) const override {
     // save state of data readers from input layer
-    data_reader_map_t::const_iterator it;
     if(p.get_cb_type() == callback_type::execution_context_only || p.get_cb_type() == callback_type::full_checkpoint) {
-      it = this->m_data_readers.find(execution_mode::training);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_distributed(p, execution_mode::training);
-      }
-      it = this->m_data_readers.find(execution_mode::testing);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_distributed(p, execution_mode::testing);
-      }
-      it = this->m_data_readers.find(execution_mode::validation);
-      if ((it != this->m_data_readers.end()) && it->second) {
-        (it->second)->save_to_checkpoint_distributed(p, execution_mode::validation);
-      }
+      this->m_model->get_execution_context().get_trainer().get_data_coordinator().save_to_checkpoint_distributed(p);
 
       write_cereal_archive<const generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
     }
@@ -828,20 +626,9 @@ class generic_input_layer : public io_layer<TensorDataType> {
   }
 
   bool load_from_checkpoint_distributed(persist& p) override {
-    // save state of data readers from input layer
-    data_reader_map_t::const_iterator it;
-    it = this->m_data_readers.find(execution_mode::training);
-    if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_distributed(p, execution_mode::training);
-    }
-    it = this->m_data_readers.find(execution_mode::testing);
-    if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_distributed(p, execution_mode::testing);
-    }
-    it = this->m_data_readers.find(execution_mode::validation);
-    if ((it != this->m_data_readers.end()) && it->second) {
-      (it->second)->load_from_checkpoint_distributed(p, execution_mode::validation);
-    }
+    // load state of data readers for input layer
+
+    this->m_model->get_execution_context().get_trainer().get_data_coordinator().load_from_checkpoint_distributed(p);
 
     read_cereal_archive<generic_input_layer>(*this, p, execution_mode::training, "_io.xml");
     return true;
@@ -857,16 +644,6 @@ class generic_input_layer : public io_layer<TensorDataType> {
  protected:
   std::vector<generic_io_buffer<TensorDataType>*> m_io_buffers;
   io_buffer_map_t m_active_buffer;
-
-  dataset m_training_dataset;
-  dataset m_testing_dataset;
-  dataset m_validation_dataset;
-  //  bool m_data_sets_span_models;
-
-  data_reader_map_t m_data_readers;
- //  std::map<execution_mode, dataset_stats> m_dataset_stats;
-  bool m_data_set_processed;
-  std::mutex dr_mutex;
 };
 
 }  // namespace lbann

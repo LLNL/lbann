@@ -55,8 +55,8 @@ public:
 
 protected:
 
-  void setup_dims() override {
-    data_type_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
     // Make sure input tensor is scalar
     if (this->get_input_size() != 1) {

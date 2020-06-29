@@ -41,7 +41,6 @@
 #include "lbann/layers/io/input/generic_input_layer.hpp"
 #include "lbann/layers/io/input/input_layer.hpp"
 #include "lbann/layers/io/io_layer.hpp"
-#include "lbann/layers/learning/base_convolution.hpp"
 #include "lbann/layers/learning/channelwise_fully_connected.hpp"
 #include "lbann/layers/learning/channelwise_scale_bias.hpp"
 #include "lbann/layers/learning/convolution.hpp"
@@ -105,17 +104,17 @@
 #include "lbann/layers/transform/weighted_sum.hpp"
 #include "lbann/layers/transform/weights.hpp"
 
-#include "lbann/data_readers/data_reader_jag_conduit.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
 #include "lbann/utils/peek_map.hpp"
 
 #include <layers.pb.h>
 
+#ifdef LBANN_HAS_CUDNN
+#include <cudnn.h>
+#endif // LBANN_HAS_CUDNN
+
 namespace lbann {
 namespace proto {
-
-std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr,
-                                                  const std::string& var_category,
-                                                  bool& is_supported);
 
 namespace {
 
@@ -280,12 +279,34 @@ factory_type const& get_layer_factory() noexcept
   return factory_mgr_.get();
 }
 
+// Some cuDNN stuff -- copied from convolution.cpp. To what common
+// location should this go?? The problem is it's the confluence of two
+// evils: protobuf and cudnn. I'd rather they never meet, but whatdya
+// gonna do.
+#ifdef LBANN_HAS_CUDNN
+using ProtoTensorOpEnumType = decltype(lbann_data::DEFAULT_TENSOR_OPS);
+cudnnMathType_t convert_to_cudnn_math_type(ProtoTensorOpEnumType mt)
+{
+  switch (mt)
+  {
+  case lbann_data::DEFAULT_TENSOR_OPS:
+    return cudnn::get_default_convolution_math_type();
+  case lbann_data::NO_TENSOR_OPS:
+    return CUDNN_DEFAULT_MATH;
+  case lbann_data::USE_TENSOR_OPS:
+    return CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+  default:
+    LBANN_ERROR("Bad math type value.");
+  }
+  return CUDNN_DEFAULT_MATH;
+}
+#endif // LBANN_HAS_CUDNN
 } // namespace
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> construct_layer_legacy(
   lbann_comm* comm,
-  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  int training_dr_linearized_data_size,
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer) {
   std::stringstream err;
@@ -320,8 +341,6 @@ std::unique_ptr<Layer> construct_layer_legacy(
                                               Device>>(
                                                 comm,
                                                 num_parallel_readers,
-                                                data_readers,
-                                                !params.data_set_per_model(),
                                                 target_mode);
       }
       else {
@@ -345,11 +364,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
       num_groups = 1;
     }
     if (proto_layer.num_neurons_from_data_reader()) {
-      const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
-      if (!dr) {
+      if (training_dr_linearized_data_size == -1) {
         LBANN_ERROR("Training data reader does not exist!");
       }
-      num_output_channels = dr->get_linearized_data_size();
+      num_output_channels = training_dr_linearized_data_size;
     }
     if (Layout != data_layout::DATA_PARALLEL) {
       LBANN_ERROR("deconvolution layer is only supported with "
@@ -363,9 +381,19 @@ std::unique_ptr<Layer> construct_layer_legacy(
       if (dilations.empty()) {
         dilations.resize(dims.size(), 1);
       }
+#ifdef LBANN_HAS_CUDNN
+      auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+        comm, dims.size(), num_output_channels,
+        dims, pads, strides, dilations, num_groups, bias);
+      ret->set_cudnn_math_mode(
+        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      return ret;
+#else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
                comm, dims.size(), num_output_channels,
                dims, pads, strides, dilations, num_groups, bias);
+#endif // LBANN_HAS_CUDNN
+
     } else {
       const auto& num_dims = params.num_dims();
       const auto& dim = params.conv_dims_i();
@@ -375,9 +403,18 @@ std::unique_ptr<Layer> construct_layer_legacy(
       if (dilation == 0) {
         dilation = 1;
       }
+#ifdef LBANN_HAS_CUDNN
+      auto ret = lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
+        comm, num_dims, num_output_channels,
+        dim, pad, stride, dilation, num_groups, bias);
+      ret->set_cudnn_math_mode(
+        convert_to_cudnn_math_type(params.conv_tensor_op_mode()));
+      return ret;
+#else
       return lbann::make_unique<deconvolution_layer<TensorDataType, data_layout::DATA_PARALLEL, Device>>(
-               comm, num_dims, num_output_channels,
-               dim, pad, stride, dilation, num_groups, bias);
+        comm, num_dims, num_output_channels,
+        dim, pad, stride, dilation, num_groups, bias);
+#endif // LBANN_HAS_CUDNN
     }
   }
 
@@ -393,11 +430,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
     }
     if (proto_layer.num_neurons_from_data_reader()) {
       dims.clear();
-      const auto dr  = lbann::peek_map(data_readers, execution_mode::training);
-      if (!dr) {
+      if (training_dr_linearized_data_size == -1) {
         LBANN_ERROR("Training data reader does not exist!");
       }
-      dims.push_back(dr->get_linearized_data_size());
+      dims.push_back(training_dr_linearized_data_size);
     }
     return lbann::make_unique<reshape_layer<TensorDataType, Layout, Device>>(comm, dims);
   }
@@ -408,33 +444,23 @@ std::unique_ptr<Layer> construct_layer_legacy(
   if (proto_layer.has_slice()) {
     const auto& params = proto_layer.slice();
     std::vector<size_t> slice_points;
-    bool is_supported = false;
-    std::string slice_point_method_name;
+
+    auto layer = lbann::make_unique<slice_layer<TensorDataType, Layout, Device>>(comm);
 
     if (params.get_slice_points_from_reader() != "") {
-      slice_point_method_name = "'get_slice_points_from_reader'";
-      const auto dr_generic  = lbann::peek_map(data_readers, execution_mode::training);
-      const std::string& var = params.get_slice_points_from_reader();
-      for (const auto& slice_point
-             : get_slice_points_from_reader(dr_generic, var, is_supported)) {
-        slice_points.push_back(slice_point);
-      }
+      const slice_points_mode var = slice_points_mode_from_string(params.get_slice_points_from_reader());
+      layer->setup_slice_points(params.axis(), true, var);
     } else {
-      slice_point_method_name = "'slice_points'";
+      std::string slice_point_method_name = "'slice_points'";
       slice_points = parse_list<size_t>(params.slice_points());
-      is_supported = true;
-    }
-    if (slice_points.size() < 2u) {
-      if (is_supported) {
+      if (slice_points.size() < 2u) {
         err << "Failed to get slice points via " << slice_point_method_name << '.';
-      } else {
-        err << slice_point_method_name << " is not supported by the reader.";
+        LBANN_ERROR(err.str());
+        return nullptr;
       }
-      LBANN_ERROR(err.str());
-      return nullptr;
+      layer->setup_slice_points(params.axis(), slice_points);
     }
-    return lbann::make_unique<slice_layer<TensorDataType, Layout, Device>>(
-             comm, params.axis(), slice_points);
+    return layer;
   }
   if (proto_layer.has_gaussian()) {
     const auto& params = proto_layer.gaussian();
@@ -714,33 +740,10 @@ std::unique_ptr<Layer> construct_layer_legacy(
 
 }
 
-/// Obtain the slice points from the data reader
-std::vector<El::Int> get_slice_points_from_reader(const generic_data_reader* dr_generic,
-                                                  const std::string& var_category,
-                                                  bool& is_supported) {
-  std::vector<El::Int> slice_points;
-  is_supported = false;
-  // TODO: remove the dynamic cast when this feature gets merged into the base class
-  const auto dr = dynamic_cast<const data_reader_jag_conduit*>(dr_generic);
-
-  if (dr != nullptr) {
-    is_supported = true;
-    if (var_category == "independent") {
-      slice_points = dr->get_slice_points_independent();
-    } else if (var_category == "dependent") {
-      slice_points = dr->get_slice_points_independent();
-    } else {
-      LBANN_ERROR("Unknown variable category \"" + var_category \
-                  + "\". Must be either \"independent\" or \"dependent\".");
-    }
-  }
-  return slice_points;
-}
-
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 std::unique_ptr<Layer> construct_layer(
   lbann_comm* comm,
-  const std::map<execution_mode, generic_data_reader*>& data_readers,
+  int training_dr_linearized_data_size,
   int num_parallel_readers,
   const lbann_data::Layer& proto_layer) {
 
@@ -753,7 +756,7 @@ std::unique_ptr<Layer> construct_layer(
   if(!l) {
     if (typeid(TensorDataType) == typeid(DataType))
       l = construct_layer_legacy<DataType, Layout, Device>(
-        comm, data_readers, num_parallel_readers, proto_layer);
+            comm, training_dr_linearized_data_size, num_parallel_readers, proto_layer);
     else
       LBANN_ERROR("Currently, layers of type \"", msg.GetDescriptor()->name(),
                   "\" are not constructible with any type other than the "
@@ -766,13 +769,13 @@ std::unique_ptr<Layer> construct_layer(
 #define PROTO_DEVICE(T, Device) \
   template std::unique_ptr<Layer> construct_layer<T, data_layout::DATA_PARALLEL, Device>(  \
     lbann_comm* comm,                                                                      \
-    const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
+    int training_dr_linearized_data_size,                                                  \
     int num_parallel_readers,                                                              \
     const lbann_data::Layer& proto_layer                                                   \
   );                                                                                       \
   template std::unique_ptr<Layer> construct_layer<T, data_layout::MODEL_PARALLEL, Device>( \
     lbann_comm* comm,                                                                      \
-    const std::map<execution_mode, generic_data_reader*>& data_readers,                    \
+    int training_dr_linearized_data_size,                                                  \
     int num_parallel_readers,                                                              \
     const lbann_data::Layer& proto_layer                                                   \
   )

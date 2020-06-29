@@ -32,7 +32,7 @@ def skeleton_jag_reconstruction_loss(cluster, executables, dir_name, compiler_na
         data_filedir_test_default='/p/lscratchh/brainusr/datasets/10MJAG/1M_A/100K16trainers',
         data_reader_name='jag',
         data_reader_percent='prototext',
-        metadata='model_zoo/models/jag/wae_cycle_gan/jag_100M_metadata.prototext',
+        metadata='applications/physics/data/jag_100M_metadata.prototext',
         model_folder='tests',
         model_name='jag_single_layer_ae',
         optimizer_name='adam',

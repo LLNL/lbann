@@ -78,12 +78,13 @@ void allow_extra_parameters::handle_error(
         && (err_text.substr(0, base_text.size()).compare(base_text) == 0))
     {
       auto const token = err_text.substr(base_text.size());
-      auto iter = std::find_if(newargv.begin(), newargv.end(),
+      auto iter = std::find_if(newargv.cbegin(), newargv.cend(),
                                [&token](char const* str)
                                {
                                  return token_match(token, str);
                                });
-      newargv.erase(newargv.cbegin() + 1, iter + 1);
+      newargv.erase(newargv.cbegin() + 1,
+                    (iter == newargv.cend() ? iter : iter + 1));
       parse_result = parser_.parse(clara::Args(newargv.size(), newargv.data()));
     }
     else

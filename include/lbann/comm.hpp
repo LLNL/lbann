@@ -170,6 +170,14 @@ class lbann_comm {
   inline int get_world_rank(int trainer, int rank) const {
     return procs_per_trainer * trainer + rank;
   }
+  /** Return the "rank" of the trainer that this rank is in */
+  inline int map_world_rank_to_trainer_rank(int world_rank) const {
+    return (world_rank / procs_per_trainer);
+  }
+  /** Return the "rank" within the trainer that this rank is in */
+  inline int map_world_rank_to_rank_in_trainer(int world_rank) const {
+    return (world_rank % procs_per_trainer);
+  }
   /** Return the rank of the master process in this trainer. */
   inline int get_trainer_master() const {
     return 0;
@@ -416,6 +424,14 @@ class lbann_comm {
   void all_gather(T &src, std::vector<T> &data, const El::mpi::Comm& c) {
     El::mpi::AllGather(&src, 1, data.data(), 1, c,
                        El::SyncInfo<El::Device::CPU>{});
+  }
+  /**
+   * Allgather for a single element over the world communicator;
+   * std::vector<T> &data must be correctly sized prior to entry.
+   */
+  template <typename T>
+  void world_all_gather(T &src, std::vector<T> &data) {
+    all_gather(src, data, get_world_comm());
   }
   /**
    * Allgather for a single element over the trainer communicator;

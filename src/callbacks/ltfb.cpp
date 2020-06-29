@@ -26,7 +26,7 @@
 
 #include "lbann/callbacks/ltfb.hpp"
 #include "lbann/callbacks/imcomm.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 #include "lbann/optimizers/sgd.hpp"
 #include "lbann/optimizers/adam.hpp"
 #include "lbann/proto/proto_common.hpp"

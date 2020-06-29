@@ -123,9 +123,13 @@ class metric {
   virtual EvalType evaluate(execution_mode mode, int mini_batch_size) = 0;
 
   /** Clear all statistics. */
-  void reset_statistics() { m_statistics.clear(); }
+  void reset_statistics() {
+    for (auto& stats : m_statistics) {
+      stats.second.reset();
+    }
+  }
   /** Clear statistics for an execution mode. */
-  void reset_statistics(execution_mode mode) { m_statistics.erase(mode); }
+  void reset_statistics(execution_mode mode) { m_statistics[mode].reset(); }
 
   /** Get mean metric value.
    *  If mini-batch sizes are not identical, the mean is over the

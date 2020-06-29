@@ -110,9 +110,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::setup_dims()
+::setup_dims(DataReaderMetaData& dr_metadata)
 {
-  data_type_layer<TensorDataType>::setup_dims();
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
 
   // Make sure input and output dimensions are valid
   const auto& input_dims = this->get_input_dims();
@@ -140,9 +140,9 @@ channelwise_fully_connected_layer<TensorDataType,Layout,Device>
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void
 channelwise_fully_connected_layer<TensorDataType,Layout,Device>
-::setup_data()
+::setup_data(size_t max_mini_batch_size)
 {
-  data_type_layer<TensorDataType>::setup_data();
+  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
   // Tensor dimensions
   const auto& input_dims = this->get_input_dims();

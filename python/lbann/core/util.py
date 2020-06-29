@@ -172,6 +172,12 @@ def _generate_class(message_descriptor,
                         field.value = val
                     elif field_descriptor.label == google.protobuf.descriptor.FieldDescriptor.LABEL_REPEATED:
                         field.extend(make_iterable(val))
+                    elif isinstance(val, google.protobuf.message.Message):
+                        getattr(message, field_name).MergeFrom(val)
+                    elif callable(getattr(val, "export_proto", None)):
+                        # 'val' is (hopefully) an LBANN class
+                        # representation of a protobuf message.
+                        getattr(message, field_name).MergeFrom(val.export_proto())
                     else:
                         setattr(message, field_name, val)
                 except:
