@@ -886,7 +886,7 @@ void data_type_distconv_adapter<TensorDataType>::dump_original_error_signals() {
 
 template <typename TensorDataType>
 size_t data_type_distconv_adapter<TensorDataType>::get_max_mini_batch_size() const {
-  return layer().get_model()->get_execution_context().get_trainer().get_max_mini_batch_size();
+  return layer().get_model()->get_max_mini_batch_size_distconv();
 }
 
 #define PROTO(T)                                \
