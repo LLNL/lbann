@@ -54,7 +54,8 @@ then
     # CUDA-y things (Use the newest)
     ARCH=$(uname -i)
     export NCCL_DIR=$(ls -d --color=no ${BRAIN_DIR}/nccl2/*cuda10*${ARCH} | tail -n1)
-    export CUDNN_DIR=$(find ${BRAIN_DIR}/cudnn -maxdepth 2 -type d | grep "cuda-10.*_${ARCH}" | tail -n1)
+    # Right now, we only support cuDNN 7 versions.
+    export CUDNN_DIR=$(find ${BRAIN_DIR}/cudnn -maxdepth 2 -type d | grep "cudnn-7.*/cuda-10.*_${ARCH}" | sort -r | head -1)
 
     # Unit testing framework
     export CLARA_DIR=${WORKSPACE_DIR}/stable_dependencies/clara
