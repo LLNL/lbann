@@ -147,6 +147,7 @@ class data_coordinator {
         map[data_reader_target_mode::CLASSIFICATION] = std::vector<int>(1, dr->get_num_labels());
         map[data_reader_target_mode::REGRESSION] = std::vector<int>(1, dr->get_num_responses());
         map[data_reader_target_mode::RECONSTRUCTION] = dr->get_data_dims();
+        map[data_reader_target_mode::LABEL_RECONSTRUCTION] = dr->get_data_dims();
         map[data_reader_target_mode::NA] = std::vector<int>(1, 0);
         return map;
       }
