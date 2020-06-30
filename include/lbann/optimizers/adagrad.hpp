@@ -42,7 +42,10 @@ namespace lbann {
  *  of Machine Learning Research 12, no. Jul (2011): 2121-2159.
  */
 template <typename TensorDataType>
-class adagrad : public data_type_optimizer<TensorDataType> {
+class adagrad : public Cloneable<adagrad<TensorDataType>,
+                                 data_type_optimizer<TensorDataType>> {
+  using BaseType = Cloneable<adagrad<TensorDataType>,
+                             data_type_optimizer<TensorDataType>>;
 public:
   /** @name Public Types */
   ///@{
@@ -64,7 +67,6 @@ public:
   adagrad(const adagrad& other);
   adagrad& operator=(const adagrad& other);
   ~adagrad() override = default;
-  adagrad* copy() const override { return new adagrad(*this); }
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {

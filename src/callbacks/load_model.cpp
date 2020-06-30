@@ -71,7 +71,7 @@ bool load_model::load_model_weights(const std::string& ckpt_dir,
   std::vector<std::string> weight_list = std::vector<std::string>();
   std::string active_ckpt_dir;
   if(ckptdir_is_fullpath) {
-    active_ckpt_dir = ckpt_dir;
+    active_ckpt_dir = add_delimiter(ckpt_dir);
   }else {
     size_t epochLast = std::numeric_limits<size_t>::max();;
     size_t stepLast = std::numeric_limits<size_t>::max();;

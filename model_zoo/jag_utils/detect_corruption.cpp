@@ -48,8 +48,7 @@ void print_errs(world_comm_ptr &comm, int np, int rank, std::ostringstream &s, c
 
 //==========================================================================
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   const int rank = comm->get_rank_in_world();
   const int np = comm->get_procs_in_world();

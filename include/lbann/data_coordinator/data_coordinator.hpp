@@ -48,25 +48,11 @@ class data_coordinator {
   using io_buffer_map_t = std::map<execution_mode, std::atomic<int>>;
 
  public:
-  data_coordinator(trainer& trainer, lbann_comm *comm, std::map<execution_mode, generic_data_reader *> data_readers) :
+  data_coordinator(trainer& trainer, lbann_comm *comm) :
     m_trainer(&trainer),
     m_comm(comm),
-    m_data_readers(data_readers),
     m_data_set_processed(false),
-    m_execution_context(nullptr) {
-
-    if(m_data_readers[execution_mode::training] != nullptr) {
-      this->m_training_dataset.total_samples() = m_data_readers[execution_mode::training]->get_num_data();
-    }
-
-    if(m_data_readers[execution_mode::validation] != nullptr) {
-      this->m_validation_dataset.total_samples() = m_data_readers[execution_mode::validation]->get_num_data();
-    }
-
-    if(m_data_readers[execution_mode::testing] != nullptr) {
-      this->m_testing_dataset.total_samples() = m_data_readers[execution_mode::testing]->get_num_data();
-    }
-  }
+    m_execution_context(nullptr) {}
 
   ~data_coordinator() {
     // Data coordinator always frees data readers.
@@ -105,7 +91,7 @@ class data_coordinator {
        CEREAL_NVP(m_data_set_processed)*/);
   }
 
-  void setup(int max_mini_batch_size);
+  void setup(int max_mini_batch_size, std::map<execution_mode, generic_data_reader *> data_readers);
 
   /** Check to see if there is a valid training context for the data coordinator */
   bool has_valid_execution_context() const {

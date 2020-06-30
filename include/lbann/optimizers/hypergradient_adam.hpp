@@ -42,7 +42,11 @@ namespace lbann {
  *  Descent", 2017.
  */
 template <typename TensorDataType>
-class hypergradient_adam : public data_type_optimizer<TensorDataType> {
+class hypergradient_adam
+  : public Cloneable<hypergradient_adam<TensorDataType>,
+                     data_type_optimizer<TensorDataType>> {
+  using BaseType = Cloneable<hypergradient_adam<TensorDataType>,
+                             data_type_optimizer<TensorDataType>>;
 public:
   /** @name Public Types */
   ///@{
@@ -81,7 +85,6 @@ public:
   hypergradient_adam(const hypergradient_adam& other);
   hypergradient_adam& operator=(const hypergradient_adam& other);
   ~hypergradient_adam() override = default;
-  hypergradient_adam* copy() const override { return new hypergradient_adam(*this); }
 
     /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {

@@ -74,7 +74,7 @@ using world_comm_ptr =
  *  @param seed RNG seed.
  *  @return     LBANN communicator corresponding to MPI_COMM_WORLD.
  */
-world_comm_ptr initialize(int& argc, char**& argv, int seed = -1);
+world_comm_ptr initialize(int& argc, char**& argv);
 
 /** Destroy LBANN communicator.
  *

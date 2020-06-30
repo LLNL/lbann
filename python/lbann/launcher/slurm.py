@@ -71,6 +71,7 @@ class SlurmBatchScript(BatchScript):
         self.add_header_line(f'#SBATCH --error={self.err_log_file}')
         self.add_header_line(f'#SBATCH --nodes={self.nodes}')
         self.add_header_line(f'#SBATCH --ntasks={self.nodes * self.procs_per_node}')
+        self.add_header_line(f'#SBATCH --ntasks-per-node={self.procs_per_node}')
         if self.time_limit is not None:
             self.add_header_line(f'#SBATCH --time={_time_string(self.time_limit)}')
         if self.job_name:
@@ -79,6 +80,9 @@ class SlurmBatchScript(BatchScript):
             self.add_header_line(f'#SBATCH --partition={self.partition}')
         if self.account:
             self.add_header_line(f'#SBATCH --account={self.account}')
+
+        for arg in self.launcher_args:
+            self.add_header_line(f'#SBATCH {arg}')
 
     def add_parallel_command(self,
                              command,

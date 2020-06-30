@@ -88,6 +88,9 @@ void optimizer::add_gradient_source(const void* source) {
 void optimizer::remove_gradient_source(const void* source) {
   m_gradient_sources.erase(nullptr);
   m_gradient_sources.erase(source);
+  if (get_gradient_sources().empty()) {
+    start_gradient_allreduce();
+  }
 }
 
 } // namespace lbann
