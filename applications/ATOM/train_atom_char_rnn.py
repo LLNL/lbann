@@ -1,10 +1,21 @@
+import argparse
+import datetime
+import os
+import os.path
 import sys
+
+from google.protobuf import text_format as txtf
+import json
 import numpy as np
+import torch
+
+import lbann
+import lbann.contrib.launcher
+import lbann.modules
 from lbann.util import str_list
 
 
 def construct_lc_launcher_args():
-    import argparse
 
     # defaults correspond to the settings needed for training on the moses dataset
     parser = argparse.ArgumentParser(prog="lbann charVAE training")
@@ -12,11 +23,15 @@ def construct_lc_launcher_args():
     parser.add_argument("--account", default="hpcdl")
     parser.add_argument("--scheduler", default="slurm")
     parser.add_argument(
-        "--data-module-file", default="dataset.py",
+        "--data-module-file",
+        default="dataset.py",
         help="specifies the module that contains the logic for loading data",
     )
     parser.add_argument(
-        "--data-config", default="data_config.json",
+        "--data-config",
+        default=os.path.join(
+            os.path.abspath(os.path.dirname(__file__)), "zinc_data_config.json"
+        ),
         help="path to a data config file that is used for the construction of python data reader",
     )
     parser.add_argument(
@@ -38,9 +53,8 @@ def construct_lc_launcher_args():
     parser.add_argument("--num-samples", type=int, default=None)
     parser.add_argument("--num-io-threads", type=int, default=11)
     parser.add_argument("--vocab", default=None)
-    parser.add_argument("--delimiter", default='c')
+    parser.add_argument("--delimiter", default="c")
     parser.add_argument("--no-header", type=bool, default=True)
-
 
     # these are specific to the Trainer object
     parser.add_argument(
@@ -49,7 +63,6 @@ def construct_lc_launcher_args():
         default=0,
         help="number of processes to use per trainer",
     )
-
 
     # these are the bits and pieces required for loading the model in the moses library...may be useful for evaluation tasks/continuing training/etc
     parser.add_argument("--gamma", type=float, default=0.5, help="")
@@ -87,8 +100,6 @@ def construct_model(run_args):
     https://github.com/samadejacobs/moses/tree/master/moses/char_rnn
 
     """
-    import lbann
-    import lbann.modules
 
     pad_index = run_args.pad_index
     assert pad_index is not None
@@ -100,10 +111,10 @@ def construct_model(run_args):
     data_layout = "data_parallel"
 
     # Layer graph
-    input = lbann.Input(name="inp_tensor", target_mode="N/A")
+    _input = lbann.Input(name="inp_tensor", target_mode="N/A")
     print(sequence_length)
     x_slice = lbann.Slice(
-        input,
+        _input,
         axis=0,
         slice_points=str_list(range(sequence_length + 1)),
         name="inp_slice",
@@ -162,7 +173,7 @@ def construct_model(run_args):
         ce_mask = lbann.Multiply([pad_mask, ce], name="loss_mask_" + str(i))
         loss.append(lbann.LayerTerm(ce_mask, scale=1 / (sequence_length - 1)))
 
-    layers = list(lbann.traverse_layer_graph(input))
+    layers = list(lbann.traverse_layer_graph(_input))
     # Setup objective function
     weights = set()
     for l in layers:
@@ -196,9 +207,6 @@ def construct_data_reader(run_args):
 
     """
 
-    import os.path
-    import lbann
-
     module_file = os.path.abspath(run_args.data_module_file)
     os.environ["DATA_CONFIG"] = os.path.abspath(run_args.data_config)
 
@@ -225,40 +233,34 @@ def construct_data_reader(run_args):
     return message
 
 
-if __name__ == "__main__":
-
+def main():
     run_args = construct_lc_launcher_args()
-    print(run_args)
-    import os
-    import lbann
 
-    import lbann.contrib.launcher
+    # add data_config data
+    if os.path.isfile(run_args.data_config):
+        with open(run_args.data_config, "r") as f:
+            config = json.load(f)
+        for k, v in config.items():
+            setattr(run_args, k, v)
 
     trainer = lbann.Trainer(
         run_args.batch_size,
         name=None,
         procs_per_trainer=run_args.procs_per_trainer,
     )
-    model = construct_model(run_args)
-    opt = lbann.Adam(learn_rate=run_args.lr, beta1=0.9, beta2=0.99, eps=1e-8)
-    if run_args.data_reader_prototext :
-        print("USING data_reader_prototext")
+
+    # define data_reader
+    if run_args.data_reader_prototext:
+        print("Using data_reader_prototext")
         assert run_args.sequence_length is not None
         assert run_args.vocab is not None
-
-        import os.path
-        import lbann
-        import google.protobuf.text_format as txtf
 
         data_reader_proto = lbann.lbann_pb2.LbannPB()
         with open(run_args.data_reader_prototext, "r") as f:
             txtf.Merge(f.read(), data_reader_proto)
         data_reader = data_reader_proto.data_reader
-
     else:
         data_reader = construct_data_reader(run_args)
-
-    import datetime
 
     if "LBANN_EXPERIMENT_DIR" in os.environ:
         work_dir = os.environ["LBANN_EXPERIMENT_DIR"]
@@ -271,9 +273,13 @@ if __name__ == "__main__":
     if not os.path.exists(experiment_dir):
         os.makedirs(experiment_dir)
 
+    # model and optimizer
+    model = construct_model(run_args)
+    opt = lbann.Adam(learn_rate=run_args.lr, beta1=0.9, beta2=0.99, eps=1e-8)
+
     # dump the config to the experiment_dir so that it can be used to load the model in pytorch (moses codebase)
-    import torch
     ppn = 4 if run_args.scheduler == "lsf" else 2
+    print("args:\n" + str(run_args))
     torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
     status = lbann.contrib.launcher.run(
         trainer,
@@ -282,13 +288,17 @@ if __name__ == "__main__":
         opt,
         partition=run_args.partition,
         scheduler=run_args.scheduler,
-        account = run_args.account,
+        account=run_args.account,
         time_limit=run_args.time_limit,
         nodes=run_args.nodes,
-        procs_per_node = ppn,
+        procs_per_node=ppn,
         job_name=run_args.job_name,
         experiment_dir=experiment_dir,
-        lbann_args=f'--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}'
+        lbann_args=f"--vocab={run_args.vocab} --num_samples={run_args.num_samples} --sequence_length={run_args.sequence_length}  --num_io_threads={run_args.num_io_threads} --no_header={run_args.no_header} --delimiter={run_args.delimiter}",
     )
 
-    print(status)
+    print("LBANN launcher status:\n" + str(status))
+
+
+if __name__ == "__main__":
+    sys.exit(main())
