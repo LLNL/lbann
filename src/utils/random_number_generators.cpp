@@ -95,7 +95,7 @@ rng_gen& get_data_seq_generator() {
 void set_io_generators_local_index(size_t idx) { ::local_io_generators_index = idx; }
 
 rng_gen& get_io_generator() {
-  size_t idx = ::local_io_generators_index;
+  const size_t idx = ::local_io_generators_index;
   if (!::io_generator_inited[idx]) {
     if (!::io_generator_seed_inited) { LBANN_ERROR("I/O RNG seed not set"); }
     ::io_generator[idx].seed(hash_combine(::io_generator_seed_base, idx));
@@ -105,7 +105,7 @@ rng_gen& get_io_generator() {
 }
 
 fast_rng_gen& get_fast_io_generator() {
-  size_t idx = ::local_io_generators_index;
+  const size_t idx = ::local_io_generators_index;
   if (!::fast_io_generator_inited[idx]) {
     if (!::fast_io_generator_seed_inited) { LBANN_ERROR("Fast I/O RNG seed not set"); }
     ::fast_io_generator[idx].seed(hash_combine(::fast_io_generator_seed_base, idx));

@@ -55,9 +55,7 @@ fast_rng_gen& get_fast_generator();
  */
 rng_gen& get_data_seq_generator();
 
-/**
- * Sets the local index for a thread to access the correct I/O RNGs.
- */
+/** @brief Sets the local index for a thread to access the correct I/O RNGs. */
 void set_io_generators_local_index(size_t idx);
 
 /**
