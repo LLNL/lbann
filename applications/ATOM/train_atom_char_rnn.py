@@ -234,7 +234,6 @@ def construct_data_reader(run_args):
 
 def main():
     run_args = construct_lc_launcher_args()
-    print("args:\n" + str(run_args))
 
     # add data_config data
     if os.path.isfile(run_args.data_config):
@@ -279,6 +278,7 @@ def main():
 
     # dump the config to the experiment_dir so that it can be used to load the model in pytorch (moses codebase)
     ppn = 4 if run_args.scheduler == "lsf" else 2
+    print("args:\n" + str(run_args))
     torch.save(run_args, "{}/{}_config.pt".format(experiment_dir, run_args.job_name))
     status = lbann.contrib.launcher.run(
         trainer,
