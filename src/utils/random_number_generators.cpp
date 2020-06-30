@@ -28,6 +28,7 @@
 #include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/hash.hpp"
 #include "lbann/utils/exception.hpp"
+#include <lbann/utils/memory.hpp>
 #include <thread>
 
 namespace {
@@ -60,15 +61,8 @@ bool data_seq_generator_seed_inited = false;
 
 // Local index for the I/O generators
 thread_local size_t local_io_generators_index = 0;
-std::vector<lbann::rng_gen> io_generator;
-std::vector<bool> io_generator_inited;
-int io_generator_seed_base = 0;
-bool io_generator_seed_inited = false;
-
-std::vector<lbann::fast_rng_gen> fast_io_generator;
-std::vector<bool> fast_io_generator_inited;
-int fast_io_generator_seed_base = 0;
-bool fast_io_generator_seed_inited = false;
+std::vector<lbann::io_rng_t> io_generators;
+bool io_generators_inited = false;
 }
 
 namespace lbann {
@@ -92,26 +86,28 @@ rng_gen& get_data_seq_generator() {
   return ::data_seq_generator;
 }
 
-void set_io_generators_local_index(size_t idx) { ::local_io_generators_index = idx; }
+io_rng_t& set_io_generators_local_index(size_t idx) {
+  ::local_io_generators_index = idx;
+  if (!::io_generators_inited) { LBANN_ERROR("I/O RNG seed not set"); }
+  return ::io_generators[idx];
+}
 
 rng_gen& get_io_generator() {
   const size_t idx = ::local_io_generators_index;
-  if (!::io_generator_inited[idx]) {
-    if (!::io_generator_seed_inited) { LBANN_ERROR("I/O RNG seed not set"); }
-    ::io_generator[idx].seed(hash_combine(::io_generator_seed_base, idx));
-    ::io_generator_inited[idx] = true;
+  io_rng_t& io_rng = ::io_generators[idx];
+  if (io_rng.active_thread_id != std::this_thread::get_id()) {
+    LBANN_ERROR("I/O RNG illegal thread access");
   }
-  return ::io_generator[idx];
+  return io_rng.io_generator;
 }
 
 fast_rng_gen& get_fast_io_generator() {
   const size_t idx = ::local_io_generators_index;
-  if (!::fast_io_generator_inited[idx]) {
-    if (!::fast_io_generator_seed_inited) { LBANN_ERROR("Fast I/O RNG seed not set"); }
-    ::fast_io_generator[idx].seed(hash_combine(::fast_io_generator_seed_base, idx));
-    ::fast_io_generator_inited[idx] = true;
+  io_rng_t& io_rng = ::io_generators[idx];
+  if (io_rng.active_thread_id != std::this_thread::get_id()) {
+    LBANN_ERROR("I/O RNG illegal thread access");
   }
-  return ::fast_io_generator[idx];
+  return io_rng.fast_io_generator;
 }
 
 void init_random(int seed, int num_io_RNGs, lbann_comm *comm) {
@@ -184,26 +180,21 @@ void init_data_seq_random(int seed) {
 }
 
 void init_io_random(int seed, int num_io_RNGs) {
+  int seed_base = seed;
   if (seed == -1) {
     // Seed with a random value.
     std::random_device rd;
-    seed = rd();
+    seed_base = rd();
   }
 
-  ::io_generator_seed_base = seed;
-  ::io_generator_seed_inited = true;
-  ::fast_io_generator_seed_base = seed;
-  ::fast_io_generator_seed_inited = true;
-
-  ::io_generator.resize(num_io_RNGs);
-  ::fast_io_generator.resize(num_io_RNGs);
-  ::io_generator_inited.resize(num_io_RNGs);
-  ::fast_io_generator_inited.resize(num_io_RNGs);
+  ::io_generators_inited = true;
+  ::io_generators.resize(num_io_RNGs);
   for(int i = 0; i < num_io_RNGs; i++) {
-    /// Reset the init flag so that I/O generator will reinitialize
-    ::io_generator_inited[i] = false;
-    /// Reset the init flag so that fast I/O generator will reinitialize
-    ::fast_io_generator_inited[i] = false;
+    auto& io_rng = ::io_generators[i];
+    io_rng.io_generator.seed(hash_combine(seed_base, i));
+    io_rng.fast_io_generator.seed(hash_combine(seed_base, i));
+    io_rng.io_mutex = make_unique<std::mutex>();
+    io_rng.active_thread_id = std::this_thread::get_id();
   }
 }
 

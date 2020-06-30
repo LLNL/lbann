@@ -79,7 +79,10 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
 
 
 bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
-  set_io_generators_local_index(block_offset);
+  io_rng_t& io_rng = set_io_generators_local_index(block_offset);
+  const std::lock_guard<std::mutex> lock(*(io_rng.io_mutex.get()));
+  io_rng.active_thread_id = std::this_thread::get_id();
+
   for (int s = block_offset; s < mb_size; s+=block_stride) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];

@@ -29,11 +29,20 @@
 
 #include "lbann/comm.hpp"
 #include <random>
+#include <mutex>
+#include <thread>
 
 namespace lbann {
 
 using rng_gen = std::mt19937;  // Mersenne Twister
 using fast_rng_gen = std::minstd_rand;  // Minimum standard, LC
+
+struct io_rng_t {
+  lbann::rng_gen io_generator;
+  lbann::fast_rng_gen fast_io_generator;
+  std::unique_ptr<std::mutex> io_mutex;
+  std::thread::id active_thread_id;
+};
 
 /**
  * Return a reference to the global LBANN random number generator.
@@ -56,7 +65,7 @@ fast_rng_gen& get_fast_generator();
 rng_gen& get_data_seq_generator();
 
 /** @brief Sets the local index for a thread to access the correct I/O RNGs. */
-void set_io_generators_local_index(size_t idx);
+io_rng_t& set_io_generators_local_index(size_t idx);
 
 /**
  * Return a reference to the global LBANN random number generator used
