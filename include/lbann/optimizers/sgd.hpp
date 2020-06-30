@@ -38,7 +38,10 @@ namespace lbann {
  *  @todo Dedicated optimizers for momentum or Nesterov SGD.
  */
 template <typename TensorDataType>
-class sgd : public data_type_optimizer<TensorDataType> {
+class sgd : public Cloneable<sgd<TensorDataType>,
+                             data_type_optimizer<TensorDataType>> {
+  using BaseType = Cloneable<sgd<TensorDataType>,
+                             data_type_optimizer<TensorDataType>>;
 
 public:
   /** @name Public Types */
@@ -66,7 +69,6 @@ public:
   sgd(const sgd& other);
   sgd& operator=(const sgd& other);
   ~sgd() override = default;
-  sgd* copy() const override { return new sgd(*this); }
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {

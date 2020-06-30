@@ -46,7 +46,10 @@ class perturb_adam;
  *  optimization." arXiv preprint arXiv:1412.6980 (2014).
  */
 template <typename TensorDataType>
-class adam : public data_type_optimizer<TensorDataType> {
+class adam : public Cloneable<adam<TensorDataType>,
+                              data_type_optimizer<TensorDataType>> {
+  using BaseType = Cloneable<adam<TensorDataType>,
+                             data_type_optimizer<TensorDataType>>;
 public:
   /** @name Public Types */
   ///@{
@@ -74,7 +77,6 @@ public:
   adam(const adam& other);
   adam& operator=(const adam& other);
   ~adam() = default;
-  adam* copy() const override { return new adam(*this); }
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {

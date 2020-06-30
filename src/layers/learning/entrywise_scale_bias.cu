@@ -96,13 +96,12 @@ __global__ void bp_kernel(size_t height,
 }
 
 template <typename TensorDataType>
-void fp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
-             El::Matrix<TensorDataType, El::Device::GPU>& local_output,
-             const data_type_weights<TensorDataType>& scale_bias) {
+void fp_impl(
+  const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
+  El::Matrix<TensorDataType, El::Device::GPU>& local_output,
+  El::Matrix<TensorDataType, El::Device::GPU> const& local_scale_bias) {
 
   // Local matrices
-  const auto& local_scale_bias
-    = dynamic_cast<const El::Matrix<TensorDataType, El::Device::GPU>&>(scale_bias.get_values().LockedMatrix());
   const auto local_scale = El::LockedView(local_scale_bias,
                                           El::ALL, El::IR(0));
   const auto local_bias = El::LockedView(local_scale_bias,
@@ -130,19 +129,14 @@ void fp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
 }
 
 template <typename TensorDataType>
-void bp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
-             const El::Matrix<TensorDataType, El::Device::GPU>& local_gradient_wrt_output,
-             El::Matrix<TensorDataType, El::Device::GPU>& local_gradient_wrt_input,
-             data_type_weights<TensorDataType>& scale_bias,
-             El::AbstractDistMatrix<TensorDataType>& gradient_wrt_scale_bias) {
-
-  using GPUMatType = El::Matrix<TensorDataType, El::Device::GPU>;
+void bp_impl(
+  const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
+  const El::Matrix<TensorDataType, El::Device::GPU>& local_gradient_wrt_output,
+  El::Matrix<TensorDataType, El::Device::GPU>& local_gradient_wrt_input,
+  El::Matrix<TensorDataType, El::Device::GPU> const& local_scale_bias,
+  El::Matrix<TensorDataType, El::Device::GPU>& local_gradient_wrt_scale_bias) {
 
   // Local matrices
-  const auto& local_scale_bias
-    = dynamic_cast<const GPUMatType&>(scale_bias.get_values().LockedMatrix());
-  auto& local_gradient_wrt_scale_bias
-    = dynamic_cast<GPUMatType&>(gradient_wrt_scale_bias.Matrix());
   const auto local_scale = El::LockedView(local_scale_bias,
                                           El::ALL, El::IR(0));
   auto local_gradient_wrt_scale = El::View(local_gradient_wrt_scale_bias,
@@ -169,12 +163,6 @@ void bp_impl(const El::Matrix<TensorDataType, El::Device::GPU>& local_input,
       local_gradient_wrt_bias.Buffer());
   }
 
-  // Update optimizer with gradient
-  auto* opt = scale_bias.get_optimizer();
-  if (opt != nullptr) {
-    opt->add_to_gradient(gradient_wrt_scale_bias, TensorDataType{1}, true);
-  }
-
 }
 
 } // namespace
@@ -186,17 +174,29 @@ void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::fp_compute() {
   using LocalMatType = El::Matrix<TensorDataType, Device>;
   fp_impl(dynamic_cast<const LocalMatType&>(this->get_local_prev_activations()),
           dynamic_cast<LocalMatType&>(this->get_local_activations()),
-          this->get_data_type_weights(0));
+          dynamic_cast<LocalMatType const&>(
+            this->weights_values(0).LockedMatrix()));
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void entrywise_scale_bias_layer<TensorDataType, Layout, Device>::bp_compute() {
   using LocalMatType = El::Matrix<TensorDataType, Device>;
+
+  auto& scale_bias = this->get_weights(0);
+  auto& gradient_wrt_scale_bias = *this->m_weights_gradient;
+
   bp_impl(dynamic_cast<const LocalMatType&>(this->get_local_prev_activations()),
           dynamic_cast<const LocalMatType&>(this->get_local_prev_error_signals()),
           dynamic_cast<LocalMatType&>(this->get_local_error_signals()),
-          this->get_data_type_weights(0),
-          *this->m_weights_gradient);
+          dynamic_cast<LocalMatType const&>(
+            this->weights_values(0).LockedMatrix()),
+          dynamic_cast<LocalMatType&>(gradient_wrt_scale_bias.Matrix()));
+
+  // Update optimizer with gradient
+  auto* opt = scale_bias.get_optimizer();
+  if (opt != nullptr) {
+    opt->add_to_gradient(gradient_wrt_scale_bias, TensorDataType{1}, true);
+  }
 }
 
 LBANN_LAYER_DEFAULT_BUILDER(entrywise_scale_bias)

@@ -7,7 +7,8 @@ LBANN_DIR=$(git rev-parse --show-toplevel)
 CLUSTER=$(hostname | sed 's/[0-9]*//g')
 USER=$(whoami)
 WORKSPACE_DIR=$(ls --color=no -d /usr/workspace/ws*/${USER})
-DEPENDENCY_DIR_BASE=${WORKSPACE_DIR}/stable_dependencies/${CLUSTER}
+COMMON_DEPENDENCY_DIR=${WORKSPACE_DIR}/stable_dependencies
+DEPENDENCY_DIR_BASE=${COMMON_DEPENDENCY_DIR}/${CLUSTER}
 
 # For this script, we only care about GCC.
 LATEST_GCC=$(ls -1 ${DEPENDENCY_DIR_BASE} | grep gcc | tail -n1)
@@ -21,6 +22,8 @@ MPI_DIR=${COMPILER_DIR}/${MPI_LIBRARY}
 # All the dependencies are installed at the MPI level (even though
 # most are MPI-independent).
 DEPENDENCY_DIR=${MPI_DIR}
+
+export CMAKE_PREFIX_PATH=${COMMON_DEPENDENCY_DIR}/catch2:${COMMON_DEPENDENCY_DIR}/cereal:${COMMON_DEPENDENCY_DIR}/clara:${COMMON_DEPENDENCY_DIR}/cub:${COMMON_DEPENDENCY_DIR}/half:${DEPENDENCY_DIR}/aluminum:${DEPENDENCY_DIR}/cnpy:${DEPENDENCY_DIR}/conduit:${DEPENDENCY_DIR}/hdf5:${DEPENDENCY_DIR}/hydrogen:${DEPENDENCY_DIR}/jpeg-turbo:${DEPENDENCY_DIR}/nccl:${DEPENDENCY_DIR}/openblas:${DEPENDENCY_DIR}/opencv:${DEPENDENCY_DIR}/protobuf:${CMAKE_PREFIX_PATH}
 
 if [ -e ${DEPENDENCY_DIR} ];
 then
@@ -89,8 +92,12 @@ then
     if [[ "${CLUSTER}" =~ ^(lassen|ray)$ ]];
     then
         LAUNCH_CMD="lrun -1"
+        NHOSTS=$(expr $(printenv LSB_HOSTS | wc -w) - 1)
+        NNODES=$(expr ${NHOSTS} / 40)
+        PARALLEL_LAUNCH_CMD="jsrun -n${NNODES} -r1 -a4 -c40 -g4 -d packed -b packed:10 "
     else
         unset LAUNCH_CMD
+        PARALLEL_LAUNCH_CMD="srun --mpibind=off -N${SLURM_NNODES} --ntasks-per-node=2 "
     fi
 
     cmake \
@@ -116,20 +123,9 @@ then
         -DLBANN_WITH_UNIT_TESTING=ON \
         -DLBANN_WITH_VTUNE=OFF \
         \
-        -DAluminum_DIR=${DEPENDENCY_DIR}/lib/cmake/Aluminum \
-        -DCEREAL_DIR=${DEPENDENCY_DIR} \
-        -DCNPY_DIR=${DEPENDENCY_DIR} \
-        -DCATCH2_DIR=${WORKSPACE_DIR}/stable_dependencies/catch2 \
-        -DHALF_DIR=${WORKSPACE_DIR}/stable_dependencies/half \
-        -DHDF5_DIR=${DEPENDENCY_DIR} \
-        -DCONDUIT_DIR=${DEPENDENCY_DIR} \
-        -DCUB_DIR=${DEPENDENCY_DIR} \
-        -DHydrogen_DIR=${DEPENDENCY_DIR} \
-        -DOpenCV_DIR=${DEPENDENCY_DIR} \
-        -DPROTOBUF_DIR=${DEPENDENCY_DIR} \
         -Dprotobuf_MODULE_COMPATIBLE=ON \
         \
-        ${LBANN_DIR} && ${LAUNCH_CMD} ninja && ${LAUNCH_CMD} ninja install && ${LAUNCH_CMD} ./unit_test/seq-catch-tests -r junit -o ${CATCH2_OUTPUT_DIR}/seq_catch_tests_output-${CLUSTER}.xml
+        ${LBANN_DIR} && ${LAUNCH_CMD} ninja && ${LAUNCH_CMD} ninja install && ${LAUNCH_CMD} ./unit_test/seq-catch-tests -r junit -o ${CATCH2_OUTPUT_DIR}/seq_catch_tests_output-${CLUSTER}.xml ; ${PARALLEL_LAUNCH_CMD} ./unit_test/mpi-catch-tests -r junit -o "${CATCH2_OUTPUT_DIR}/mpi_catch_tests_output-${CLUSTER}-rank=%r-size=%s.xml"
 else
     ${LBANN_DIR}/scripts/build_lbann_lc.sh --with-conduit
 fi

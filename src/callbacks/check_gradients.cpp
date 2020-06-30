@@ -91,34 +91,42 @@ struct CheckWeightsFunctor : DefaultErrorReporter
   bool verbose;
   bool error_on_failure;
 
-  CheckWeightsFunctor(model& arg_m, sgd_execution_context const& arg_c,
-                      EvalType arg_epsilon, EvalType arg_step_size, EvalType arg_expected_error,
-                      bool arg_verbose, bool arg_error_on_failure)
-    : m(arg_m), c(arg_c),
-      epsilon(arg_epsilon), step_size(arg_step_size), expected_error(arg_expected_error),
-      verbose(arg_verbose), error_on_failure(arg_error_on_failure)
+  CheckWeightsFunctor(model& arg_m,
+                      sgd_execution_context const& arg_c,
+                      EvalType arg_epsilon,
+                      EvalType arg_step_size,
+                      EvalType arg_expected_error,
+                      bool arg_verbose,
+                      bool arg_error_on_failure)
+    : m(arg_m),
+      c(arg_c),
+      epsilon(arg_epsilon),
+      step_size(arg_step_size),
+      expected_error(arg_expected_error),
+      verbose(arg_verbose),
+      error_on_failure(arg_error_on_failure)
   {}
 
   template <typename TensorDataType>
   void operator()(data_type_weights<TensorDataType>& dtw) {
     // Get weights matrix and gradient
-    const El::AbstractDistMatrix<TensorDataType>& weights_matrix = dtw.get_values();
-    const El::AbstractDistMatrix<TensorDataType>& gradient = dtw.get_optimizer()->get_gradient();
+    const auto& weights_matrix = dtw.get_values();
+    const auto& gradient = dtw.get_optimizer()->get_gradient();
 
     // Iterate through weights matrix entries
     for (El::Int col = 0; col < weights_matrix.Width(); ++col) {
       for (El::Int row = 0; row < weights_matrix.Height(); ++row) {
         const bool weight_is_local = weights_matrix.IsLocal(row, col);
-        const El::Int local_row = (weight_is_local ?
-                                   weights_matrix.LocalRow(row) :
-                                   0);
-        const El::Int local_col = (weight_is_local ?
-                                   weights_matrix.LocalCol(col) :
-                                   0);
-        const TensorDataType initial_weight = (weight_is_local ?
-                                         weights_matrix.GetLocal(local_row,
-                                                                 local_col) :
-                                         TensorDataType(0.));
+        const El::Int local_row = (weight_is_local
+                                   ? weights_matrix.LocalRow(row)
+                                   : 0);
+        const El::Int local_col = (weight_is_local
+                                   ? weights_matrix.LocalCol(col)
+                                   : 0);
+        const TensorDataType initial_weight =
+          (weight_is_local
+           ? weights_matrix.GetLocal(local_row, local_col)
+           : TensorDataType(0.));
 
         // Compute objective function values
         // Note: matrix entry is reset after computing objective
@@ -234,9 +242,9 @@ void check_gradients::do_check_gradients(model& m) const {
   const EvalType step_size = (m_step_size > EvalType{0} ?
                               m_step_size :
                               std::fabs(objective) * El::Sqrt(epsilon));
-  EvalType expected_error = (epsilon * objective / step_size
-                             + std::pow(step_size, 4) / 18);
-  expected_error = std::pow(expected_error, 0.9);
+  EvalType expected_error = std::pow((epsilon * objective / step_size
+                                      + std::pow(step_size, 4) / 18),
+                                     0.9);
 
   // Compute gradients
   m.get_objective_function()->differentiate();
@@ -247,7 +255,7 @@ void check_gradients::do_check_gradients(model& m) const {
 
   // Print objective function value
   if (comm.am_world_master()) {
-    std::cout << "----------------------------------------------------------------\n"
+    std::cout << std::string(64, '-') << "\n"
               << "Gradient checking...\n"
               << "  Objective function value = " << objective << "\n"
               << "  Step size                = " << step_size << "\n"
@@ -264,14 +272,19 @@ void check_gradients::do_check_gradients(model& m) const {
 
     using WeightsTypes =
       h2::meta::tlist::ExpandTL<data_type_weights, supported_layer_data_type>;
-    using Dispatcher = h2::multimethods::SwitchDispatcher<CheckWeightsFunctor,
-                                                          void,
-                                                          weights,
-                                                          WeightsTypes>;
-    Dispatcher::Exec(CheckWeightsFunctor(m, c, epsilon, step_size, expected_error, m_verbose, m_error_on_failure), *w);
+    using Dispatcher =
+      h2::multimethods::SwitchDispatcher<CheckWeightsFunctor,
+                                         void,
+                                         weights,
+                                         WeightsTypes>;
+    Dispatcher::Exec(
+      CheckWeightsFunctor(m, c,
+                          epsilon, step_size, expected_error,
+                          m_verbose, m_error_on_failure),
+      *w);
   }
   if (comm.am_world_master()) {
-    std::cout << "----------------------------------------------------------------\n";
+    std::cout << std::string(64,'-') << "\n";
   }
 
   // Clean up
