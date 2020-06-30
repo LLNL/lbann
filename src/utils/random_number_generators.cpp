@@ -58,13 +58,15 @@ thread_local bool data_seq_generator_inited = false;
 int data_seq_generator_seed_base = 0;
 bool data_seq_generator_seed_inited = false;
 
-thread_local lbann::rng_gen io_generator;
-thread_local bool io_generator_inited = false;
+// Local index for the I/O generators
+thread_local size_t local_io_generators_index = 0;
+std::vector<lbann::rng_gen> io_generator;
+std::vector<bool> io_generator_inited;
 int io_generator_seed_base = 0;
 bool io_generator_seed_inited = false;
 
-thread_local lbann::fast_rng_gen fast_io_generator;
-thread_local bool fast_io_generator_inited = false;
+std::vector<lbann::fast_rng_gen> fast_io_generator;
+std::vector<bool> fast_io_generator_inited;
 int fast_io_generator_seed_base = 0;
 bool fast_io_generator_seed_inited = false;
 }
@@ -90,26 +92,29 @@ rng_gen& get_data_seq_generator() {
   return ::data_seq_generator;
 }
 
+void set_io_generators_local_index(size_t idx) { ::local_io_generators_index = idx; }
+
 rng_gen& get_io_generator() {
-  if (!::io_generator_inited) {
+  size_t idx = ::local_io_generators_index;
+  if (!::io_generator_inited[idx]) {
     if (!::io_generator_seed_inited) { LBANN_ERROR("I/O RNG seed not set"); }
-    ::io_generator.seed(hash_combine(::io_generator_seed_base,
-                                     std::this_thread::get_id()));
-    ::io_generator_inited = true;
+    ::io_generator[idx].seed(hash_combine(::io_generator_seed_base, idx));
+    ::io_generator_inited[idx] = true;
   }
-  return ::io_generator;
+  return ::io_generator[idx];
 }
 
 fast_rng_gen& get_fast_io_generator() {
-  if (!::fast_io_generator_inited) {
+  size_t idx = ::local_io_generators_index;
+  if (!::fast_io_generator_inited[idx]) {
     if (!::fast_io_generator_seed_inited) { LBANN_ERROR("Fast I/O RNG seed not set"); }
-    ::fast_io_generator.seed(hash_combine(::fast_io_generator_seed_base,
-                                          std::this_thread::get_id()));
-    ::fast_io_generator_inited = true;
+    ::fast_io_generator[idx].seed(hash_combine(::fast_io_generator_seed_base, idx));
+    ::fast_io_generator_inited[idx] = true;
   }
-  return ::fast_io_generator;
+  return ::fast_io_generator[idx];
 }
-void init_random(int seed, lbann_comm *comm) {
+
+void init_random(int seed, int num_io_RNGs, lbann_comm *comm) {
   generator_inited = true;
   fast_generator_inited = true;
   if (seed != -1) {
@@ -162,7 +167,7 @@ void init_random(int seed, lbann_comm *comm) {
 #endif
   }
 
-  init_io_random(seed);
+  init_io_random(seed, num_io_RNGs);
 }
 
 void init_data_seq_random(int seed) {
@@ -178,7 +183,7 @@ void init_data_seq_random(int seed) {
   ::data_seq_generator_inited = false;
 }
 
-void init_io_random(int seed) {
+void init_io_random(int seed, int num_io_RNGs) {
   if (seed == -1) {
     // Seed with a random value.
     std::random_device rd;
@@ -187,13 +192,19 @@ void init_io_random(int seed) {
 
   ::io_generator_seed_base = seed;
   ::io_generator_seed_inited = true;
-  /// Reset the init flag so that generator will reinitialize
-  ::io_generator_inited = false;
-
   ::fast_io_generator_seed_base = seed;
   ::fast_io_generator_seed_inited = true;
-  /// Reset the init flag so that generator will reinitialize
-  ::fast_io_generator_inited = false;
+
+  ::io_generator.resize(num_io_RNGs);
+  ::fast_io_generator.resize(num_io_RNGs);
+  ::io_generator_inited.resize(num_io_RNGs);
+  ::fast_io_generator_inited.resize(num_io_RNGs);
+  for(int i = 0; i < num_io_RNGs; i++) {
+    /// Reset the init flag so that I/O generator will reinitialize
+    ::io_generator_inited[i] = false;
+    /// Reset the init flag so that fast I/O generator will reinitialize
+    ::fast_io_generator_inited[i] = false;
+  }
 }
 
 }  // namespace lbann

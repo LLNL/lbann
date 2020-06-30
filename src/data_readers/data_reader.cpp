@@ -78,16 +78,15 @@ void generic_data_reader::setup(int num_io_threads, observer_ptr<thread_pool> io
 }
 
 
-bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int thread_id, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
-  std::string error_message;
-  for (int s = thread_id; s < mb_size; s+=m_io_thread_pool->get_num_threads()) {
+bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int block_offset, El::Int block_stride, El::Int mb_size, El::Matrix<El::Int>& indices_fetched) {
+  set_io_generators_local_index(block_offset);
+  for (int s = block_offset; s < mb_size; s+=block_stride) {
     int n = m_current_pos + (s * m_sample_stride);
     int index = m_shuffled_indices[n];
     bool valid = fetch_datum(X, index, s);
     if (!valid) {
-      error_message = "invalid datum (index " + std::to_string(index) + ")";
+      LBANN_ERROR("invalid datum (index ", std::to_string(index), ")");
     }
-    if (!error_message.empty()) { LBANN_ERROR(error_message); }
     indices_fetched.Set(s, 0, index);
   }
   return true;
@@ -148,15 +147,11 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
   for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
     // Queue up work into other threads and then finish off the
     // mini-batch in the active thread
-    if(t == m_io_thread_pool->get_local_thread_id()) {
-      continue;
-    }else {
-      m_io_thread_pool->submit_job_to_work_group(
-        std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
-                  mb_size, std::ref(indices_fetched)));
-    }
+    m_io_thread_pool->submit_job_to_work_group(
+      std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
+                m_io_thread_pool->get_num_threads(),
+                mb_size, std::ref(indices_fetched)));
   }
-  fetch_data_block(X, m_io_thread_pool->get_local_thread_id(), mb_size, indices_fetched);
 
   // Wait for all of the threads to finish
   m_io_thread_pool->finish_work_group();

@@ -56,6 +56,11 @@ fast_rng_gen& get_fast_generator();
 rng_gen& get_data_seq_generator();
 
 /**
+ * Sets the local index for a thread to access the correct I/O RNGs.
+ */
+void set_io_generators_local_index(size_t idx);
+
+/**
  * Return a reference to the global LBANN random number generator used
  * for shuffling the data samples within each mini-batch
  * @note This is stored in a thread_local variable.
@@ -76,7 +81,7 @@ fast_rng_gen& get_fast_io_generator();
  *              into the seed; if not, uses the MPI world rank.
  *
  */
-void init_random(int seed = -1, lbann_comm *comm = nullptr);
+void init_random(int seed = -1, int num_io_RNGs = 1, lbann_comm *comm = nullptr);
 
 /**
  * Initialize a random number generator (with optional seed) that is
@@ -91,10 +96,11 @@ void init_data_seq_random(int seed = -1);
  * Initialize a random number generator (with optional seed) that is
  * specifically used by the I/O threads for tasks such as data
  * preprocessing, etc.
+ * Includes the number of I/O RNGs required.
  *
  * Called from init_random
  */
-void init_io_random(int seed = -1);
+void init_io_random(int seed = -1, int num_io_RNGs = 1);
 
 } // namespace lbann
 

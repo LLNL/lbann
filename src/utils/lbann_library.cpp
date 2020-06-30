@@ -175,7 +175,7 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
 #endif
 
     // Initialize the general RNGs and the data sequence RNGs
-    init_random(random_seed);
+    init_random(random_seed, io_threads_per_process);
     init_data_seq_random(data_seq_random_seed);
     trainer->set_random_seeds(root_random_seed, random_seed, data_seq_random_seed);
 
