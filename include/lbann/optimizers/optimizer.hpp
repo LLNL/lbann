@@ -243,7 +243,7 @@ protected:
     GradientHelperImpl(El::Int height, El::Int width, El::DistData dist_data)
       : gradient_{AbsDistMatType::Instantiate(dist_data)}
     {
-      gradient_->Resize(height, width);
+      El::Zeros(*gradient_, height, width);
     }
     AbsDistMatType& gradient() noexcept override { return *gradient_; }
     AbsDistMatType const& gradient() const noexcept override {
