@@ -286,10 +286,10 @@ void smiles_data_reader::print_statistics() const {
     std::cout << "delimiter: <tab>\n"; 
   } else if (m_delimiter == ',') {
     std::cout << "delimiter: <comma>\n"; 
-  } else if (m_delimiter == '0') {
+  } else if (m_delimiter == '\0') {
     std::cout << "delimiter: <none>\n"; 
   } else {
-    LBANN_ERROR("invalid delimiter character: ", m_delimiter);
+    LBANN_ERROR("invalid delimiter character: (int)", (int)m_delimiter);
   }
   std::cout << "pad index: " << m_pad << std::endl;
 
