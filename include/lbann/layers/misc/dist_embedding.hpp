@@ -33,6 +33,7 @@
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/sgd.hpp"
+#include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 
 namespace lbann {
@@ -301,7 +302,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_m
   }
 
   // Configure embedding weights
-  auto& embeddings = this->get_data_type_weights(0);
+  auto& embeddings = this->get_weights(0);
   {
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
@@ -349,7 +350,8 @@ bool dist_embedding_layer<TensorDataType,Layout,Device>::update_compute() {
   if (m_sparse_sgd) {
     const size_t input_size = this->get_input_size();
     const size_t mini_batch_size = this->get_prev_activations().Width();
-    auto& embeddings = this->get_data_type_weights(0).get_values();
+    using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
+    auto& embeddings = ValuesGetter::mutable_values(this->get_weights(0));
     auto& local_embeddings = dynamic_cast<LocalMat&>(embeddings.Matrix());
     apply_sparse_sgd_step(input_size * mini_batch_size, local_embeddings);
   }

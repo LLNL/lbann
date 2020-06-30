@@ -26,6 +26,7 @@
 
 #include "lbann/layers/misc/dist_embedding.hpp"
 
+#include "lbann/weights/weights_helpers.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include <layers.pb.h>
 
@@ -58,7 +59,8 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::attach_embeddings_to_sh
   }
 
   // Embedding weights matrix
-  auto& embeddings = this->get_data_type_weights(0).get_values();
+  using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
+  auto& embeddings = ValuesGetter::mutable_values(this->get_weights(0));
   const auto dist = embeddings.DistData();
   if (dist.device != El::Device::CPU) {
     LBANN_ERROR("attempted to attach non-CPU matrix to OpenSHMEM buffer");
@@ -108,7 +110,10 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
 
   // Data matrices
-  const auto& embeddings = this->get_data_type_weights(0).get_values();
+  // Note: Make sure to get original weight values since they are in
+  // NVSHMEM buffer.
+  using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
+  const auto& embeddings = ValuesGetter::mutable_values(this->get_weights(0));
   const auto& input = this->get_prev_activations();
   const auto& local_input = dynamic_cast<const LocalMat&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<LocalMat&>(this->get_local_activations());
@@ -258,7 +263,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::bp_compute() {
   if (!m_sparse_sgd) {
 
     // Create buffer for dense gradients
-    auto& embeddings = this->get_data_type_weights(0).get_values();
+    const auto& embeddings = this->weights_values(0);
     std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> embeddings_grad(
       embeddings.Construct(embeddings.Grid(), embeddings.Root()));
     embeddings_grad->AlignWith(embeddings);
@@ -271,7 +276,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::bp_compute() {
       local_embeddings_grad);
 
     // Send dense gradients to dense optimizer
-    auto&& opt = this->get_data_type_weights(0).get_optimizer();
+    auto* opt = this->get_weights(0).get_optimizer();
     if (opt != nullptr) {
       opt->add_to_gradient(*embeddings_grad);
     }
