@@ -67,19 +67,26 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
 #endif
   }
 
-  /// @todo - Note that the RNG with thread local data is not correct
-  rng_name = dirname + "/rng_io_generator_" + rank_in_trainer;
-  std::ofstream rng_io(rng_name);
-  if(!rng_io) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_io << get_io_generator();
-  rng_io.close();
+  for(int i = 0; i < get_num_io_generators(); i++) {
+    rng_name = dirname + "/rng_io_generator_" + rank_in_trainer
+      + "_t" + std::to_string(i);
+    std::ofstream rng_io(rng_name);
+    if(!rng_io) { LBANN_ERROR("Failed to open ", rng_name); }
+    rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer
+      + "_t" + std::to_string(i);
+    std::ofstream rng_fast_io(rng_name);
+    if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
 
-  /// @todo - Note that the RNG with thread local data is not correct
-  rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer;
-  std::ofstream rng_fast_io(rng_name);
-  if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_fast_io << get_fast_io_generator();
-  rng_fast_io.close();
+    io_rng_t& io_rng = set_io_generators_local_index(i);
+    const std::lock_guard<std::mutex> lock(*(io_rng.io_mutex.get()));
+    io_rng.active_thread_id = std::this_thread::get_id();
+    rng_io << get_io_generator();
+    rng_fast_io << get_fast_io_generator();
+    io_rng.active_thread_id = std::thread::id();
+
+    rng_io.close();
+    rng_fast_io.close();
+  }
 
 #ifdef _OPENMP
   #pragma omp parallel private(rng_name)
@@ -148,17 +155,24 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
     rank_in_trainer = std::to_string(comm->get_rank_in_trainer());
   }
 
-  /// @todo - Note that the RNG with thread local data is not correct
-  rng_name = dirname + "/rng_io_generator_" + rank_in_trainer;
-  std::ifstream rng_io(rng_name);
-  if(!rng_io) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_io >> get_io_generator();
+  for(int i = 0; i < get_num_io_generators(); i++) {
+    rng_name = dirname + "/rng_io_generator_" + rank_in_trainer
+      + "_t" + std::to_string(i);
+    std::ifstream rng_io(rng_name);
+    if(!rng_io) { LBANN_ERROR("Failed to open ", rng_name); }
+    rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer
+      + "_t" + std::to_string(i);
+    std::ifstream rng_fast_io(rng_name);
+    if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
 
-  /// @todo - Note that the RNG with thread local data is not correct
-  rng_name = dirname + "/rng_fast_io_generator_" + rank_in_trainer;
-  std::ifstream rng_fast_io(rng_name);
-  if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
-  rng_fast_io >> get_fast_io_generator();
+    io_rng_t& io_rng = set_io_generators_local_index(i);
+    const std::lock_guard<std::mutex> lock(*(io_rng.io_mutex.get()));
+    io_rng.active_thread_id = std::this_thread::get_id();
+    rng_io >> get_io_generator();
+    rng_fast_io >> get_fast_io_generator();
+    io_rng.active_thread_id = std::thread::id();
+  }
+
 
 #ifdef _OPENMP
   #pragma omp parallel private(rng_name)

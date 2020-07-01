@@ -86,6 +86,10 @@ rng_gen& get_data_seq_generator() {
   return ::data_seq_generator;
 }
 
+int get_num_io_generators() {
+  return ::io_generators.size();
+}
+
 io_rng_t& set_io_generators_local_index(size_t idx) {
   ::local_io_generators_index = idx;
   if (!::io_generators_inited) { LBANN_ERROR("I/O RNG seed not set"); }

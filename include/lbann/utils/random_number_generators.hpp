@@ -41,6 +41,8 @@ struct io_rng_t {
   lbann::rng_gen io_generator;
   lbann::fast_rng_gen fast_io_generator;
   std::unique_ptr<std::mutex> io_mutex;
+  // Track the owner so that it is easy to ensure the right thread is
+  // using this structure.
   std::thread::id active_thread_id;
 };
 
@@ -63,6 +65,9 @@ fast_rng_gen& get_fast_generator();
  * @note This is stored in a thread_local variable.
  */
 rng_gen& get_data_seq_generator();
+
+/** @brief Returns the number of provisioned I/O generators. */
+int get_num_io_generators();
 
 /** @brief Sets the local index for a thread to access the correct I/O RNGs. */
 io_rng_t& set_io_generators_local_index(size_t idx);
