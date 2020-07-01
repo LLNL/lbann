@@ -92,6 +92,8 @@ bool lbann::generic_data_reader::fetch_data_block(CPUMat& X, El::Int block_offse
     }
     indices_fetched.Set(s, 0, index);
   }
+
+  io_rng.active_thread_id = std::thread::id();
   return true;
 }
 

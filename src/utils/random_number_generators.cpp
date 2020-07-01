@@ -194,7 +194,7 @@ void init_io_random(int seed, int num_io_RNGs) {
     io_rng.io_generator.seed(hash_combine(seed_base, i));
     io_rng.fast_io_generator.seed(hash_combine(seed_base, i));
     io_rng.io_mutex = make_unique<std::mutex>();
-    io_rng.active_thread_id = std::this_thread::get_id();
+    io_rng.active_thread_id = std::thread::id();
   }
 }
 
