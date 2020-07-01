@@ -31,6 +31,7 @@
 
 namespace lbann {
 
+int num_available_cores_in_cpuset();
 int num_free_cores_per_process(const lbann_comm *comm);
 int free_core_offset(const lbann_comm *comm);
 

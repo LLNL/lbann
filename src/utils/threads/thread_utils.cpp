@@ -30,6 +30,29 @@
 
 namespace lbann {
 
+int num_available_cores_in_cpuset() {
+  // Find the current thread affinity
+  cpu_set_t cpuset;
+  CPU_ZERO(&cpuset);
+
+  auto error = pthread_getaffinity_np(pthread_self(),
+                                      sizeof(cpu_set_t), &cpuset);
+
+  if (error != 0) {
+    std::cerr << "error in pthread_getaffinity_np, error=" << error
+              << std::endl;
+  }
+
+  int num_available_cores = 0;
+  for (int j = 0; j < CPU_SETSIZE; j++) {
+    if (CPU_ISSET(j, &cpuset)) {
+      num_available_cores++;
+    }
+  }
+
+  return num_available_cores;
+}
+
 int num_free_cores_per_process(const lbann_comm *comm) {
   auto hw_cc = std::thread::hardware_concurrency();
   auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
@@ -42,7 +65,9 @@ int num_free_cores_per_process(const lbann_comm *comm) {
   aluminum_threads = 1;
 #endif // LBANN_HAS_ALUMINUM
 
-  auto io_threads_per_process = std::max(1, static_cast<int>((max_threads / processes_on_node) - omp_threads - aluminum_threads));
+  auto cores_in_cpuset = num_available_cores_in_cpuset();
+  auto max_cores_per_process = std::min(cores_in_cpuset, static_cast<int>(max_threads / processes_on_node));
+  auto io_threads_per_process = std::max(1, (max_cores_per_process - omp_threads - aluminum_threads));
 
   return io_threads_per_process;
 }
@@ -52,14 +77,14 @@ int free_core_offset(const lbann_comm *comm) {
   auto max_threads = std::max(hw_cc,decltype(hw_cc){1});
 
   auto omp_threads = omp_get_max_threads();
-  auto processes_on_node = comm->get_procs_per_node();
 
   auto aluminum_threads = 0;
 #ifdef LBANN_HAS_ALUMINUM
   aluminum_threads = 1;
 #endif // LBANN_HAS_ALUMINUM
 
-  auto io_threads_offset = ((omp_threads+aluminum_threads) * processes_on_node) % max_threads;
+  // Offset into the CPUMASK of each process
+  auto io_threads_offset = (omp_threads+aluminum_threads)% max_threads;
 
   return io_threads_offset;
 }

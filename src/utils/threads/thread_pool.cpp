@@ -63,20 +63,30 @@ void thread_pool::launch_pinned_threads(
 
   auto error = pthread_getaffinity_np(pthread_self(),
                                       sizeof(cpu_set_t), &cpuset);
+
   if (error != 0) {
     std::cerr << "error in pthread_getaffinity_np, error=" << error
               << std::endl;
   }
 
-  // Try to launch each worker thread
+  // Try to launch each worker thread and pin it to a single core
   try
   {
+    int cpuset_idx = 0;
+    int skipped_indices = 0;
     for (size_type cnt = 0; cnt < num_threads; ++cnt) {
       CPU_ZERO(&ht_cpuset);
       // Pin this thread to the base CPU id plus the thread count and offset
-      for (int j = 0; j < CPU_SETSIZE; j++) {
-        if (CPU_ISSET(j, &cpuset)) {
-          CPU_SET(j+cnt+cpu_offset, &ht_cpuset);
+      for (; cpuset_idx < CPU_SETSIZE; cpuset_idx++) {
+        if (CPU_ISSET(cpuset_idx, &cpuset)) {
+          // Skip reserved cores
+          if(skipped_indices < cpu_offset) {
+            skipped_indices++;
+          }else {
+            CPU_SET(cpuset_idx, &ht_cpuset);
+            cpuset_idx++;
+            break;
+          }
         }
       }
 
