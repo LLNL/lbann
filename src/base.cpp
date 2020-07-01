@@ -38,7 +38,6 @@
 
 #include "lbann/comm.hpp"
 #include "lbann/utils/exception.hpp"
-#include "lbann/utils/random.hpp"
 #include "lbann/utils/omp_diagnostics.hpp"
 #include "lbann/utils/stack_trace.hpp"
 
@@ -63,7 +62,7 @@ namespace lbann {
 
 MPI_Errhandler err_handle;
 
-world_comm_ptr initialize(int& argc, char**& argv, int seed) {
+world_comm_ptr initialize(int& argc, char**& argv) {
   // Initialize Elemental.
   El::Initialize(argc, argv);
   // Create a new comm object.
@@ -99,10 +98,6 @@ world_comm_ptr initialize(int& argc, char**& argv, int seed) {
   }
   hwloc_topology_destroy(topo);
 #endif
-
-  // Initialize local random number generators.
-  init_random(seed);
-  init_data_seq_random(seed);
 
 #ifdef LBANN_HAS_NVSHMEM
   // Initialize NVSHMEM

@@ -40,7 +40,10 @@ namespace lbann {
  *  https://www.cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf.
  */
 template <typename TensorDataType>
-class rmsprop : public data_type_optimizer<TensorDataType> {
+class rmsprop : public Cloneable<rmsprop<TensorDataType>,
+                                 data_type_optimizer<TensorDataType>> {
+  using BaseType = Cloneable<rmsprop<TensorDataType>,
+                             data_type_optimizer<TensorDataType>>;
 public:
   /** @name Public Types */
   ///@{
@@ -64,7 +67,6 @@ public:
   rmsprop(const rmsprop& other);
   rmsprop& operator=(const rmsprop& other);
   ~rmsprop() override = default;
-  rmsprop* copy() const override { return new rmsprop(*this); }
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {

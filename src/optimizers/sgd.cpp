@@ -34,13 +34,13 @@ template <typename TensorDataType>
 sgd<TensorDataType>::sgd(TensorDataType learning_rate,
          TensorDataType momentum,
          bool nesterov)
-  : OptimizerType(learning_rate),
+  : BaseType(learning_rate),
     m_momentum(momentum),
     m_nesterov(nesterov) {}
 
 template <typename TensorDataType>
 sgd<TensorDataType>::sgd(const sgd& other)
-  : OptimizerType(other),
+  : BaseType(other),
     m_momentum(other.m_momentum),
     m_nesterov(other.m_nesterov),
     m_velocity(other.m_velocity ? other.m_velocity->Copy() : nullptr) {}

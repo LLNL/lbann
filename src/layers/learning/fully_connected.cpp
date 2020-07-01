@@ -26,22 +26,194 @@
 
 #define LBANN_FULLY_CONNECTED_LAYER_INSTANTIATE
 #include "lbann/layers/learning/fully_connected.hpp"
-#include "layers.pb.h"
+
+#include "lbann/weights/initializer.hpp"
+#include "lbann/weights/variance_scaling_initializers.hpp"
+
+#include <layers.pb.h>
+
+#include <string>
+#include <sstream>
 
 namespace lbann {
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
+  lbann_comm *comm,
+  int output_size,
+  bool transpose,
+  WeightsType* weight,
+  bool has_bias)
+  : learning_layer<TensorDataType>(comm),
+  m_bias_gradient(nullptr),
+  m_transpose(transpose) {
+
+  // Initialize output tensor dimensions
+  this->set_output_dims({output_size});
+
+  // Initialize bias
+  m_bias_scaling_factor = (has_bias
+                           ? El::TypeTraits<TensorDataType>::One()
+                           : El::TypeTraits<TensorDataType>::Zero());
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+fully_connected_layer<TensorDataType, T_layout, Dev>::fully_connected_layer(
+  const fully_connected_layer& other)
+  : learning_layer<TensorDataType>(other),
+  m_bias_scaling_factor(other.m_bias_scaling_factor),
+  m_transpose(other.m_transpose) {
+
+  // Deep matrix copies
+  m_bias_gradient = other.m_bias_gradient;
+  if (m_bias_gradient != nullptr) {
+    m_bias_gradient = m_bias_gradient->Copy();
+  }
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+auto fully_connected_layer<TensorDataType, T_layout, Dev>::operator=(
+  const fully_connected_layer& other) -> fully_connected_layer& {
+  learning_layer<TensorDataType>::operator=(other);
+  m_bias_scaling_factor = other.m_bias_scaling_factor;
+  m_transpose = other.m_transpose;
+
+  // Deep matrix copies
+  deallocate_matrices();
+  m_bias_gradient = other.m_bias_gradient;
+  if (m_bias_gradient != nullptr) {
+    m_bias_gradient = m_bias_gradient->Copy();
+  }
+
+  return *this;
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+fully_connected_layer<TensorDataType, T_layout, Dev>::~fully_connected_layer() {
+  deallocate_matrices();
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+description
+fully_connected_layer<TensorDataType, T_layout, Dev>::get_description() const {
+  auto desc = learning_layer<TensorDataType>::get_description();
+  const auto& bias_str = (m_bias_scaling_factor == El::TypeTraits<TensorDataType>::Zero()
+                          ? "disabled"
+                          : "enabled");
+  desc.add("Bias", bias_str);
+  return desc;
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void fully_connected_layer<TensorDataType, T_layout, Dev>
-  ::setup_matrices(const El::Grid& grid) {
+::setup_matrices(const El::Grid& grid) {
   learning_layer<TensorDataType>::setup_matrices(grid);
   deallocate_matrices();
   if(Dev == El::Device::CPU) {
     if(T_layout == data_layout::MODEL_PARALLEL) {
       // Allocate a MCStarMat (RowSumMat)
-      this->m_bias_gradient = new El::DistMatrix<TensorDataType, El::MC, El::STAR, El::ELEMENT, El::Device::CPU>(grid);
+      this->m_bias_gradient =
+        new El::DistMatrix<TensorDataType,
+                           El::MC, El::STAR,
+                           El::ELEMENT,
+                           El::Device::CPU>(grid);
     } else if(T_layout == data_layout::DATA_PARALLEL) {
       // Allocate a StarMat
-      this->m_bias_gradient = new El::DistMatrix<TensorDataType, El::STAR, El::STAR, El::ELEMENT, El::Device::CPU>(grid);
+      this->m_bias_gradient =
+        new El::DistMatrix<TensorDataType,
+                           El::STAR, El::STAR,
+                           El::ELEMENT,
+                           El::Device::CPU>(grid);
+    }
+  }
+}
+
+template <typename TensorDataType, data_layout T_layout, El::Device Dev>
+void fully_connected_layer<TensorDataType, T_layout, Dev>
+::setup_data(size_t max_mini_batch_size) {
+  learning_layer<TensorDataType>::setup_data(max_mini_batch_size);
+
+  // Initialize default weights if none are provided
+  if (this->num_weights() > 2) {
+    LBANN_ERROR("attempted to setup ", this->get_name(), " with an invalid number of weights");
+  }
+  if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
+    this->set_num_weights(2);
+  } else {
+    this->set_num_weights(1);
+  }
+  if (!this->has_weights(0)) {
+    auto w = make_unique<WeightsType>(this->get_comm());
+    auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
+    auto opt = this->m_model->template create_optimizer<TensorDataType>();
+    w->set_name(this->get_name() + "_linearity_weights");
+    w->set_initializer(std::move(init));
+    w->set_optimizer(std::move(opt));
+    this->set_weights(0, w.get());
+    this->m_model->add_weights(std::move(w));
+  }
+  auto& linearity_weights = this->get_weights(0);
+
+  // Initialize variance scaling initialization
+  if (auto* initializer = linearity_weights.get_initializer()) {
+    set_fan_in(*initializer, this->get_input_size());
+    set_fan_out(*initializer, this->get_output_size());
+  }
+
+  // Setup linearity weights
+  auto linearity_dist = this->get_prev_activations().DistData();
+  if (linearity_dist.colDist != El::MC
+      || linearity_dist.rowDist != El::MR) {
+    linearity_dist.colDist = El::STAR;
+    linearity_dist.rowDist = El::STAR;
+  }
+  if (m_transpose) {
+    linearity_weights.set_dims(this->get_input_dims(), this->get_output_dims());
+  } else {
+    linearity_weights.set_dims(this->get_output_dims(), this->get_input_dims());
+  }
+  linearity_weights.set_matrix_distribution(linearity_dist);
+
+  // Set up bias if needed.
+  if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
+    if (!this->has_weights(1)) {
+      auto w = make_unique<WeightsType>(this->get_comm());
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+      w->set_name(this->get_name() + "_bias_weights");
+      w->set_optimizer(std::move(opt));
+      this->set_weights(1, w.get());
+      this->m_model->add_weights(std::move(w));
+    }
+    auto& bias_weights = this->get_weights(1);
+    // Setup bias weights
+    auto bias_dist = this->get_activations().DistData();
+    bias_dist.rowDist = El::STAR;
+    bias_weights.set_dims(this->get_output_dims());
+    bias_weights.set_matrix_distribution(bias_dist);
+    if (this->m_bias_gradient != nullptr) {
+      El::Zeros(*this->m_bias_gradient,
+                bias_weights.get_matrix_height(),
+                bias_weights.get_matrix_width());
+    }
+  }
+
+  // Initialize freeze state
+  auto const num_weights = this->num_weights();
+  for (size_t ii = 0; ii < num_weights; ++ii) {
+    auto& w = this->get_weights(ii);
+    if (this->m_frozen) {
+      w.freeze();
+    } else {
+      w.unfreeze();
+    }
+  }
+  for (size_t ii = 0; ii < num_weights; ++ii) {
+    auto& w = this->get_weights(ii);
+    if (w.is_frozen() != this->is_frozen()) {
+      LBANN_ERROR((this->is_frozen() ? "" : "un"), "frozen ",
+                  "layer \"", this->get_name(), "\" has ",
+                  (w.is_frozen() ? "" : "un"), "frozen ",
+                  "weights \"", w.get_name(), "\"");
     }
   }
 }
@@ -56,7 +228,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Apply linearity
   // Note: Perform GEMMs independently if possible
-  const auto& linearity = l.get_data_type_weights(0).get_values();
+  const auto& linearity = l.weights_values(0);
   if (linearity.DistSize() == 1) {
     El::Gemm(l.m_transpose ? El::TRANSPOSE : El::NORMAL,
              El::NORMAL,
@@ -71,7 +243,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Apply bias if needed
   if(l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
-    const auto& local_bias = l.get_data_type_weights(1).get_values().LockedMatrix();
+    const auto& local_bias = l.weights_values(1).LockedMatrix();
     auto& local_output = output.Matrix();
     El::IndexDependentMap(local_output,
                           (std::function<TensorDataType(El::Int,El::Int,const TensorDataType&)>)
@@ -88,7 +260,7 @@ template <typename TensorDataType>
 void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::CPU>& l) {
 
   // Matrices
-  const auto& linearity = l.get_data_type_weights(0).get_values();
+  const auto& linearity = l.weights_values(0);
   const auto& input = l.get_prev_activations();
   const auto& gradient_wrt_output = l.get_prev_error_signals();
   auto& gradient_wrt_input = l.get_error_signals();
@@ -99,7 +271,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
-    auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+    auto* bias_optimizer = l.get_weights(1).get_optimizer();
     if (bias_optimizer != nullptr) {
       El::RowSum(local_gradient_wrt_output,
                  l.m_bias_gradient->Matrix());
@@ -112,9 +284,10 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Compute gradient w.r.t. linearity if needed
   // Note: Perform GEMMs independently if possible
-  auto* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
+  auto* linearity_optimizer = l.get_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
-    TensorDataType dst_scale = El::TypeTraits<TensorDataType>::Zero(), gradient_scale = El::TypeTraits<TensorDataType>::One();
+    TensorDataType dst_scale = El::TypeTraits<TensorDataType>::Zero(),
+      gradient_scale = El::TypeTraits<TensorDataType>::One();
     if (linearity.DistSize() == 1) {
       auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
         dst_scale, gradient_scale, true);
@@ -167,7 +340,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   auto& local_output = l.get_local_activations();
 
   // Apply linearity
-  const auto& local_linearity = l.get_data_type_weights(0).get_values().LockedMatrix();
+  const auto& local_linearity = l.weights_values(0).LockedMatrix();
   El::Gemm(l.m_transpose ? El::TRANSPOSE : El::NORMAL,
            El::NORMAL,
            El::TypeTraits<TensorDataType>::One(), local_linearity, local_input,
@@ -175,7 +348,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
 
   // Apply bias if needed
   if(l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
-    const auto& local_bias = l.get_data_type_weights(1).get_values().LockedMatrix();
+    const auto& local_bias = l.weights_values(1).LockedMatrix();
     El::IndexDependentMap(local_output,
                           (std::function<TensorDataType(El::Int,El::Int,const TensorDataType&)>)
                           ([&l,&local_bias](El::Int r, El::Int c,const TensorDataType& z)
@@ -191,14 +364,14 @@ template <typename TensorDataType>
 void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
 
   // Matrices
-  const auto& local_linearity = l.get_data_type_weights(0).get_values().LockedMatrix();
+  const auto& local_linearity = l.weights_values(0).LockedMatrix();
   const auto& local_input = l.get_local_prev_activations();
   const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
   auto& local_gradient_wrt_input = l.get_local_error_signals();
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
-    auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+    auto* bias_optimizer = l.get_weights(1).get_optimizer();
     if (bias_optimizer != nullptr) {
       El::RowSum(local_gradient_wrt_output,
                  l.m_bias_gradient->Matrix());
@@ -210,7 +383,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   }
 
   // Compute gradient w.r.t. linearity if needed
-  auto* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
+  auto* linearity_optimizer = l.get_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
     TensorDataType dst_scale = El::TypeTraits<TensorDataType>::Zero(), gradient_scale = El::TypeTraits<TensorDataType>::Zero();
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
@@ -244,7 +417,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   auto& local_output = l.get_local_activations();
 
   // Apply linearity
-  const auto& local_linearity = l.get_data_type_weights(0).get_values().LockedMatrix();
+  const auto& local_linearity = l.weights_values(0).LockedMatrix();
   El::Gemm(l.m_transpose ? El::TRANSPOSE : El::NORMAL,
            El::NORMAL,
            El::TypeTraits<TensorDataType>::One(), local_linearity, local_input,
@@ -252,7 +425,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
 
   // Apply bias if needed
   if(l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
-    const auto& local_bias = l.get_data_type_weights(1).get_values().LockedMatrix();
+    const auto& local_bias = l.weights_values(1).LockedMatrix();
     El::Matrix<TensorDataType, El::Device::GPU> ones;
 #ifdef HYDROGEN_HAVE_CUB
     ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
@@ -271,14 +444,14 @@ template <typename TensorDataType>
 void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::GPU>& l) {
 
   // Matrices
-  const auto& local_linearity = l.get_data_type_weights(0).get_values().LockedMatrix();
+  const auto& local_linearity = l.weights_values(0).LockedMatrix();
   const auto& local_input = l.get_local_prev_activations();
   const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
   auto& local_gradient_wrt_input = l.get_local_error_signals();
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
-    auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+    auto* bias_optimizer = l.get_weights(1).get_optimizer();
     if (bias_optimizer != nullptr) {
       TensorDataType dst_scale = El::TypeTraits<TensorDataType>::Zero(), gradient_scale = El::TypeTraits<TensorDataType>::Zero();
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
@@ -301,7 +474,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   }
 
   // Compute gradient w.r.t. linearity if needed
-  auto* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
+  auto* linearity_optimizer = l.get_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
     TensorDataType dst_scale = El::TypeTraits<TensorDataType>::Zero(), gradient_scale = El::TypeTraits<TensorDataType>::Zero();
     auto& linearity_gradient = linearity_optimizer->get_gradient_buffer(
@@ -334,7 +507,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Apply linearity
   // Note: Perform GEMMs independently if possible
-  const auto& linearity = l.get_data_type_weights(0).get_values();
+  const auto& linearity = l.weights_values(0);
   if (linearity.DistSize() == 1) {
     El::Gemm(l.m_transpose ? El::TRANSPOSE : El::NORMAL,
              El::NORMAL,
@@ -350,7 +523,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   // Apply bias if needed
   // Note: local outer product is sufficient, no need for global GEMM
   if(l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
-    const auto& bias = l.get_data_type_weights(1).get_values();
+    const auto& bias = l.weights_values(1);
     El::Matrix<TensorDataType, El::Device::GPU> ones;
 #ifdef HYDROGEN_HAVE_CUB
     ones.SetMemoryMode(1); // Use CUB GPU memory pool if possible
@@ -368,7 +541,7 @@ template <typename TensorDataType>
 void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PARALLEL, El::Device::GPU>& l) {
 
   // Matrices
-  const auto& linearity = l.get_data_type_weights(0).get_values();
+  const auto& linearity = l.weights_values(0);
   const auto& input = l.get_prev_activations();
   const auto& gradient_wrt_output = l.get_prev_error_signals();
   auto& gradient_wrt_input = l.get_error_signals();
@@ -380,7 +553,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   // Compute gradient w.r.t. bias if needed
   // Note: local GEMV is sufficient, no need for global row sum
   if (l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
-    auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+    auto* bias_optimizer = l.get_weights(1).get_optimizer();
     if (bias_optimizer != nullptr) {
       TensorDataType dst_scale = El::TypeTraits<TensorDataType>::Zero(), gradient_scale = El::TypeTraits<TensorDataType>::Zero();
       auto& bias_gradient = bias_optimizer->get_gradient_buffer(
@@ -404,7 +577,7 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 
   // Compute gradient w.r.t. linearity if needed
   // Note: Perform GEMMs independently if possible
-  auto* linearity_optimizer = l.get_data_type_weights(0).get_optimizer();
+  auto* linearity_optimizer = l.get_weights(0).get_optimizer();
   if (linearity_optimizer != nullptr) {
     TensorDataType dst_scale = El::TypeTraits<TensorDataType>::Zero(), gradient_scale = El::TypeTraits<TensorDataType>::Zero();
     if (linearity.DistSize() == 1) {
@@ -466,8 +639,9 @@ template <typename TensorDataType, data_layout layout, El::Device device>
 std::unique_ptr<Layer> build_fully_connected_layer_from_pbuf(
   lbann_comm* comm, lbann_data::Layer const& layer_msg)
 {
+  using LayerType = fully_connected_layer<TensorDataType, layout, device>;
   const auto& params = layer_msg.fully_connected();
-  return lbann::make_unique<fully_connected_layer<TensorDataType, layout, device>>(
+  return lbann::make_unique<LayerType>(
     comm,
     params.num_neurons(),
     params.transpose(),

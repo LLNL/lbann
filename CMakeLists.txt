@@ -135,12 +135,9 @@ option(LBANN_WITH_VTUNE
 option(LBANN_WITH_UNIT_TESTING
   "Enable the unit testing framework (requires Catch2)" OFF)
 
-# Enable parallel random matrix generation, if possible
+# Use deterministic GPU algorithms and layer operations
 option(LBANN_DETERMINISTIC
   "Use deterministic algorithms as much as possible." OFF)
-
-option(LBANN_SEQUENTIAL_INITIALIZATION
-  "Sequentially consistent initialization" OFF)
 
 option(LBANN_DEBUG_PRINT_SUBTARGETS
   "Turn on debugging output of internal target properties." OFF)
@@ -529,6 +526,7 @@ if (LBANN_WITH_UNIT_TESTING)
   include(Catch)
   add_subdirectory(src/proto/unit_test)
   add_subdirectory(src/utils/unit_test)
+  add_subdirectory(src/weights/unit_test)
   add_subdirectory(src/transforms/unit_test)
   add_subdirectory(src/transforms/vision/unit_test)
 

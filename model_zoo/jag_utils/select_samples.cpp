@@ -37,13 +37,13 @@ void sanity_test_request();
 
 // constructs various mappings from the mapping file
 void read_mapping_file(
-  unordered_map<string, unordered_set<string>> &sample_mapping, 
-  unordered_map<string, vector<string>> &sample_mapping_v, 
+  unordered_map<string, unordered_set<string>> &sample_mapping,
+  unordered_map<string, vector<string>> &sample_mapping_v,
   unordered_map<string, int>& string_to_index);
 
 // constructs various mappings from the index file
 void build_index_maps(
-  unordered_map<string, unordered_set<int>> &index_map_keep, 
+  unordered_map<string, unordered_set<int>> &index_map_keep,
   unordered_map<string, unordered_set<int>> &index_map_exclude,
   unordered_map<string, int> &string_to_index,
   unordered_map<string, string> &filename_data);
@@ -52,24 +52,23 @@ void build_index_maps(
 // on entry, sets.size() = num_lists
 void divide_selected_samples(
   const unordered_map<string, unordered_set<int>> &index_map_keep,
-  vector<unordered_map<string, unordered_set<int>>> &sets); 
+  vector<unordered_map<string, unordered_set<int>>> &sets);
 
 // write the n-th sample list to file
 void write_sample_list(
-    int n, 
-    const vector<unordered_map<string, unordered_set<int>>> &subsets, 
+    int n,
+    const vector<unordered_map<string, unordered_set<int>>> &subsets,
     const unordered_map<string, vector<string>> &sample_mapping_v,
-    const std::unordered_map<std::string, std::string> &filename_data); 
+    const std::unordered_map<std::string, std::string> &filename_data);
 
 void write_bar_files(
   const unordered_map<string, unordered_set<int>> index_map_exclude,
-  const unordered_map<string, unordered_set<string>> &sample_mapping, 
-  const unordered_map<string, vector<string>> &sample_mapping_v, 
+  const unordered_map<string, unordered_set<string>> &sample_mapping,
+  const unordered_map<string, vector<string>> &sample_mapping_v,
   const unordered_map<string, string> &filename_data);
 //============================================================================
 int main(int argc, char **argv) {
-  int random_seed = lbann::lbann_default_random_seed;
-  lbann::world_comm_ptr comm = lbann::initialize(argc, argv, random_seed);
+  lbann::world_comm_ptr comm = lbann::initialize(argc, argv);
   int np = comm->get_procs_in_world();
 
   try {
@@ -106,7 +105,7 @@ int main(int argc, char **argv) {
 
     read_mapping_file(sample_mapping, sample_mapping_v, string_to_index);
 
-    // maps a samole_id filename to a set of randomly selected sample_ids 
+    // maps a samole_id filename to a set of randomly selected sample_ids
     unordered_map<string, unordered_set<int>> index_map_keep;
     // maps a samole_id filename to the set of sample_ids that have not been randomly selscted
     unordered_map<string, unordered_set<int>> index_map_exclude;
@@ -237,7 +236,7 @@ void read_mapping_file(unordered_map<string, unordered_set<string>> &sample_mapp
 // set of indices (not sample_ids; that comes later!) that are to be
 // included and excluded
 void build_index_maps(
-  unordered_map<string, unordered_set<int>> &index_map_keep, 
+  unordered_map<string, unordered_set<int>> &index_map_keep,
   unordered_map<string, unordered_set<int>> &index_map_exclude,
   unordered_map<string, int>& string_to_index,
   unordered_map<string, string> &filename_data) {
@@ -396,8 +395,8 @@ void divide_selected_samples(
 }
 
 void write_sample_list(
-    int n, 
-    const vector<unordered_map<string, unordered_set<int>>> &subsets, 
+    int n,
+    const vector<unordered_map<string, unordered_set<int>>> &subsets,
     const unordered_map<string, vector<string>> &sample_mapping_v,
     const std::unordered_map<std::string, std::string> &filename_data) {
   const string dir = options::get()->get_string("output_dir");
@@ -444,7 +443,7 @@ void write_sample_list(
       for (auto &t3 : include_me) {
         if (sample_mapping_v.find(fn2) == sample_mapping_v.end()) {
           LBANN_ERROR("failed to find the key: ", fn2, " in sample_mapping_v map");
-        }  
+        }
         unordered_map<string, vector<string>>::const_iterator t5 = sample_mapping_v.find(fn2);
         if (t5 == sample_mapping_v.end()) {
           LBANN_ERROR("t5 == sample_mapping_v.end()");
@@ -455,7 +454,7 @@ void write_sample_list(
         s6.back() << " " << t5->second[t3];
       }
 
-      //compute values for randomizing 
+      //compute values for randomizing
       //(this was previously done with a python script)
       size_t n2 = s6.size();
       unordered_set<int> used_indices;
@@ -540,7 +539,7 @@ void test_output_dir() {
       cout << "  path exists\n";
     } else {
       make_dir(cpath);
-    }  
+    }
   }
   free(cpath);
   cout << endl;
@@ -549,8 +548,8 @@ void test_output_dir() {
 
 void write_bar_files(
   const unordered_map<string, unordered_set<int>> index_map_exclude,
-  const unordered_map<string, unordered_set<string>> &sample_mapping, 
-  const unordered_map<string, vector<string>> &sample_mapping_v, 
+  const unordered_map<string, unordered_set<string>> &sample_mapping,
+  const unordered_map<string, vector<string>> &sample_mapping_v,
   const unordered_map<string, string> &filename_data
 ) {
 

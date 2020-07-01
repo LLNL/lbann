@@ -59,11 +59,13 @@
 #include "lbann/callbacks/save_model.hpp"
 #include "lbann/callbacks/load_model.hpp"
 #include "lbann/callbacks/save_topk_models.hpp"
+#include "lbann/callbacks/summarize_images.hpp"
 #include "lbann/callbacks/summary.hpp"
 #include "lbann/callbacks/sync_layers.hpp"
 #include "lbann/callbacks/timeline.hpp"
 #include "lbann/callbacks/timer.hpp"
 #include "lbann/callbacks/variable_minibatch.hpp"
+#include "lbann/callbacks/set_weights_value.hpp"
 
 #include "lbann/proto/factories.hpp"
 #include "lbann/proto/helpers.hpp"
@@ -95,7 +97,7 @@ using factory_type = lbann::generic_factory<
 
 void register_default_builders(factory_type& factory)
 {
-  using namespace callback;
+  using namespace ::lbann::callback;
   factory.register_builder("CallbackAdaptiveLearningRate",
                            build_adaptive_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackCheckDataset",
@@ -176,6 +178,8 @@ void register_default_builders(factory_type& factory)
                            build_step_learning_rate_callback_from_pbuf);
   factory.register_builder("CallbackStepMinibatch",
                            build_step_minibatch_callback_from_pbuf);
+  factory.register_builder("CallbackSummarizeImages",
+                           build_summarize_images_callback_from_pbuf);
   factory.register_builder("CallbackSummary",
                            build_summary_callback_from_pbuf);
   factory.register_builder("CallbackSyncLayers",
@@ -184,6 +188,8 @@ void register_default_builders(factory_type& factory)
                            build_timeline_callback_from_pbuf);
   factory.register_builder("CallbackTimer",
                            build_timer_callback_from_pbuf);
+  factory.register_builder("CallbackSetWeightsValue",
+                           build_set_weights_value_callback_from_pbuf);
 }
 
 // Manage a global factory

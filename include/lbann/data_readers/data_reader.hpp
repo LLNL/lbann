@@ -31,7 +31,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"
@@ -75,6 +75,7 @@ class generic_data_reader {
    * ctor
    */
   generic_data_reader(bool shuffle = true) :
+    m_verbose(options::get()->get_bool("verbose")),
     m_data_store(nullptr),
     m_comm(nullptr),
     m_mini_batch_size(0), m_current_pos(0),
@@ -104,7 +105,8 @@ class generic_data_reader {
     m_jag_partitioned(false),
     m_trainer(nullptr),
     m_issue_warning(true)
-  {}
+  {
+  }
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
@@ -662,6 +664,8 @@ class generic_data_reader {
   }
 
  protected:
+
+  bool m_verbose = false;
 
   // For use with conduit when samples are corrupt.
   mutable std::unordered_set<int> m_using_random_node;

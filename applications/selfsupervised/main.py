@@ -102,8 +102,8 @@ experiment_dir = util.make_experiment_dir(args.job_name)
 # trainer.
 file1 = os.path.join(experiment_dir, 'model1.prototext')
 file2 = os.path.join(experiment_dir, 'model2.prototext')
-lbann.proto.save_prototext(file1, model=model1, trainer=lbann.Trainer())
-lbann.proto.save_prototext(file2, model=model2, trainer=lbann.Trainer())
+lbann.proto.save_prototext(file1, model=model1, trainer=lbann.Trainer(mini_batch_size=512))
+lbann.proto.save_prototext(file2, model=model2, trainer=lbann.Trainer(mini_batch_size=512))
 lbann_command.append(f'--model={{{file1},{file2}}}')
 
 # Export data reader prototext files

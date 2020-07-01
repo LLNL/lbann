@@ -30,7 +30,7 @@
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/cudnn.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 namespace lbann {
 
@@ -346,6 +346,11 @@ protected:
 #endif // LBANN_HAS_CUDNN
 
 };
+
+template <typename T, data_layout L, El::Device D>
+using dropout_layer = dropout<T, L, D>;
+
+LBANN_DEFINE_LAYER_BUILDER(dropout);
 
 #ifndef LBANN_DROPOUT_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device) \

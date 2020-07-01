@@ -34,13 +34,13 @@ template <typename TensorDataType>
 rmsprop<TensorDataType>::rmsprop(TensorDataType learning_rate,
                  TensorDataType decay_rate,
                  TensorDataType eps)
-  : OptimizerType(learning_rate),
+  : BaseType(learning_rate),
     m_decay_rate(decay_rate),
     m_eps(eps) {}
 
 template <typename TensorDataType>
 rmsprop<TensorDataType>::rmsprop(const rmsprop& other) :
-  OptimizerType(other),
+  BaseType(other),
   m_decay_rate(other.m_decay_rate),
   m_eps(other.m_eps),
   m_cache(other.m_cache ? other.m_cache->Copy() : nullptr) {}

@@ -215,6 +215,7 @@ ${GPU_PACKAGES}
   - py-numpy
   - py-protobuf
   - py-setuptools
+  - mpi
 
 # These are required
   - catch2
@@ -265,7 +266,7 @@ ${STD_PACKAGES}
       target: []
     hydrogen:
       buildable: true
-      version: [develop]
+      version: [1.3.4]
       ${HYDROGEN_VARIANTS}
       providers: {}
       paths: {}

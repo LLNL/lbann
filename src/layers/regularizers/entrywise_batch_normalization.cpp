@@ -27,6 +27,8 @@
 #define LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
 
+#include "batch_norm_helpers.hpp"
+
 namespace lbann {
 
 namespace {
@@ -389,6 +391,8 @@ void bp_impl(lbann_comm& comm,
 // Template instantiation
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
+  using ValuesGetter = bn_details::SafeWeightsAccessor<TensorDataType>;
+
   const auto mode = this->m_model->get_execution_context().get_execution_mode();
   fp_impl(*this->get_comm(),
           this->m_decay,
@@ -397,8 +401,8 @@ void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_comp
           this->get_prev_activations(),
           this->get_activations(),
           *this->m_batch_statistics,
-          this->get_data_type_weights(0).get_values(),
-          this->get_data_type_weights(1).get_values());
+          ValuesGetter::mutable_values(this->get_weights(0)),
+          ValuesGetter::mutable_values(this->get_weights(1)));
 }
 
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
@@ -412,7 +416,7 @@ void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_comp
           this->get_error_signals(),
           *this->m_batch_statistics,
           *this->m_batch_statistics_gradient,
-          this->get_data_type_weights(1).get_values());
+          this->weights_values(1));
 }
 
 #define PROTO(T)                                      \
