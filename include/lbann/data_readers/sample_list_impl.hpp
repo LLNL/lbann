@@ -202,17 +202,15 @@ inline std::string sample_list<sample_name_t>
                    const std::string& filename,
                    const std::string& info) const {
   if (!istrm.good()) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: unable to read the header line of sample list " + filename + " for " + info);
+    LBANN_ERROR("unable to read the header line of sample list ", filename, " for ", info);
   }
 
   std::string line;
   std::getline(istrm, line);
 
   if (line.empty()) {
-    throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                          + " :: unable to read the header line of sample list " + filename + " for " + info
-                          + " -- the line was empty");
+    LBANN_ERROR("unable to read the header line of sample list", filename, "for", info,
+                " -- the line was empty");
   }
   return line;
 }
@@ -294,8 +292,7 @@ inline void sample_list<sample_name_t>
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
     if (filename.empty() || !check_if_file_exists(file_path)) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                            + " :: data file '" + filename + "' does not exist.");
+      LBANN_ERROR("data file '", filename, "' does not exist.");
     }
 
     const sample_file_id_t index = m_file_id_stats_map.size();
