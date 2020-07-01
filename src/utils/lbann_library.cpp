@@ -48,6 +48,11 @@ void construct_std_options() {
                         utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
                         "Limit how many random seeds LBANN should display from each trainer",
                         2);
+  arg_parser.add_option(NUM_IO_THREADS,
+                        {"--num_io_threads"},
+                        utils::ENV("LBANN_NUM_IO_THREADS"),
+                        "Number of threads available to both I/O and initial data transformations for each rank.",
+                        24);
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool
@@ -232,20 +237,18 @@ std::unique_ptr<trainer> construct_trainer(lbann_comm *comm,
 
 /// Setup I/O thread pool that is shared across all models
 std::unique_ptr<thread_pool> construct_io_thread_pool(lbann_comm *comm, options *opts) {
-  int num_io_threads = num_free_cores_per_process(comm);
+  int max_io_threads = num_free_cores_per_process(comm);
 
-  if(opts->has_int("num_io_threads")) {
-    int requested_io_threads = opts->get_int("num_io_threads");
-    if(requested_io_threads > 0 && requested_io_threads < num_io_threads) {
-      num_io_threads = requested_io_threads;
-    }
-  }
+  auto& arg_parser = global_argument_parser();
+  int req_io_threads = arg_parser.get<int>(NUM_IO_THREADS);
+  int num_io_threads = std::max(std::min(max_io_threads, req_io_threads), 1);
 
   auto io_threads_offset = free_core_offset(comm);
 
   if(comm->am_world_master()) {
     std::cout << "\tNum. I/O Threads: " << num_io_threads <<
-      " (Limited to # Unused Compute Cores or 1)" << std::endl;
+      " (Limited to # Unused Compute Cores or 1) at offset "
+      << io_threads_offset << std::endl;
   }
 
   auto io_thread_pool = make_unique<thread_pool>();
