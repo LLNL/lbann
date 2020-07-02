@@ -35,7 +35,7 @@ def download_graph(name='ego-Facebook',
 
     # Paths
     if not graph_file:
-        graph_file = os.path.join(_root_dir, 'data', name, 'graph.txt')
+        graph_file = os.path.join(_root_dir, 'data', 'graphs', name, 'graph.txt')
     data_dir = os.path.dirname(graph_file)
     if not os.path.isdir(data_dir):
         os.makedirs(data_dir)

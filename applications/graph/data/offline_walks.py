@@ -1,30 +1,36 @@
-"""Random walk dataset.
+"""Dataset for offline random walks.
 
-This is intended to be imported by the Python data reader and used to
-obtain data samples.
+This script loads random walks that have been generated offline. It is
+intended to be imported by the Python data reader and used in a
+Skip-Gram algorithm. Data samples consists of a random walk and
+negative samples.
 
 """
 import os.path
+import sys
 import numpy as np
+
+# Local imports
+root_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+sys.path.append(root_dir)
 import utils.snap
-root_dir = os.path.dirname(os.path.realpath(__file__))
 
 # Graph options
 graph_name = 'blog'
 graph_file = os.path.join(
     root_dir, 'largescale_node2vec', 'evaluation', 'dataset',
-    'blog', 'edges_0based'
+    'youtube', 'edges_0based'
 )
-# graph_file = os.path.join(root_dir, 'data', graph_name, 'graph.txt')
+# graph_file = os.path.join(root_dir, 'data', 'graphs', graph_name, 'graph.txt')
 directed = False
 weighted = False
 
 # Random walk options
 walk_length = 80        # Length of each random walk
-walk_context_length = 10    # Sequence length for Skip-gram
+walk_context_size = 10  # Sequence length for Skip-gram
 walks_per_node = 10     # Number of random walks starting on each node
-return_param = 0.25     # p-parameter
-inout_param = 0.25      # q-parameter
+return_param = 1.0      # p-parameter
+inout_param = 1.0       # q-parameter
 
 # Negative sampling options
 num_negative_samples = 5
@@ -32,7 +38,7 @@ noise_distribution_exp = 0.75   # Exponent to convert unigram
                                 # distribution to noise distribution
 
 # Download graph and perform random walk, if needed
-data_dir = os.path.join(root_dir, 'data', graph_name)
+data_dir = os.path.join(root_dir, 'data', 'graphs', graph_name)
 walk_file = os.path.join(data_dir, 'walk.txt')
 if not os.path.isfile(graph_file):
     utils.snap.download_graph(graph_name, graph_file)
@@ -85,10 +91,10 @@ def get_sample(index):
         need_to_seed_rng = False
 
     # Get context window from random walk
-    contexts_per_walk = walk_length - walk_context_length + 1
+    contexts_per_walk = walk_length - walk_context_size + 1
     walk_index, context_index = divmod(index, contexts_per_walk)
     walk_context = walks[walk_index,
-                         context_index:context_index+walk_context_length]
+                         context_index:context_index+walk_context_size]
 
     # Generate negative samples
     negative_samples = np.searchsorted(noise_distribution_cdf,
@@ -100,12 +106,12 @@ def get_sample(index):
 def num_samples():
     """Number of samples in dataset."""
     num_walks = walks.shape[0]
-    contexts_per_walk = walk_length - walk_context_length + 1
+    contexts_per_walk = walk_length - walk_context_size + 1
     return num_walks * contexts_per_walk
 
 def sample_dims():
     """Dimensions of a data sample."""
-    return (walk_context_length + num_negative_samples,)
+    return (walk_context_size + num_negative_samples,)
 
 def max_graph_node_id(graph_file=graph_file):
     """Largest node ID in graph.

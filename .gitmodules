@@ -6,6 +6,11 @@
 	path = applications/graph/largescale_node2vec
 	url = https://lc.llnl.gov/bitbucket/scm/havoq/largescale_node2vec.git
 	ignore = dirty
+[submodule "applications/graph/havoqgt"]
+	path = applications/KIwabuchi/havoqgt
+	url = https://github.com/LLNL/havoqgt.git
+	branch = develop
+	ignore = dirty
 [submodule "applications/ATOM/moses"]
 	path = applications/ATOM/moses
 	url = git@github.com:samadejacobs/moses.git

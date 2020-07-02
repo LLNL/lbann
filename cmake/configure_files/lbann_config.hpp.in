@@ -32,14 +32,15 @@
 #cmakedefine LBANN_HAS_ALUMINUM
 #cmakedefine LBANN_ALUMINUM_MPI_PASSTHROUGH
 #cmakedefine LBANN_HAS_PYTHON
+#cmakedefine LBANN_HAS_SHMEM
+#cmakedefine LBANN_HAS_LARGESCALE_NODE2VEC
 
 #cmakedefine LBANN_DETERMINISTIC
 
 #cmakedefine LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_CUDNN
+#ifdef LBANN_HAS_CUDA
 #cmakedefine LBANN_HAS_NVSHMEM
-#ifndef LBANN_HAS_CUDA
-#undef LBANN_HAS_NVSHMEM
 #endif
 
 #cmakedefine LBANN_HAS_HALF

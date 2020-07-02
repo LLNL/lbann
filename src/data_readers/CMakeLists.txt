@@ -11,6 +11,7 @@ set_full_path(THIS_DIR_SOURCES
   data_reader_mesh.cpp
   data_reader_mnist.cpp
   data_reader_nci.cpp
+  data_reader_node2vec.cpp
   data_reader_numpy.cpp
   data_reader_numpy_npz.cpp
   data_reader_pilot2_molecular.cpp
