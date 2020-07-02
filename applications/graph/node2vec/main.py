@@ -168,7 +168,7 @@ trainer = lbann.Trainer(
 callbacks = [
     lbann.CallbackPrint(),
     lbann.CallbackTimer(),
-    lbann.CallbackDumpWeights(basename='embeddings',
+    lbann.CallbackDumpWeights(directory='embeddings',
                               epoch_interval=num_epochs),
     lbann.CallbackPrintModelDescription(),
 ]

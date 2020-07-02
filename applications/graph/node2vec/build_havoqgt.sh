@@ -23,7 +23,7 @@ mpi_cxx_compiler=$(which mpicxx)
 pushd $(dirname $(realpath $0)) > /dev/null
 lbann_dir=$(git rev-parse --show-toplevel)
 popd > /dev/null
-app_dir=${lbann_dir}/applications/graph
+app_dir=${lbann_dir}/applications/graph/node2vec
 node2vec_dir=${app_dir}/largescale_node2vec
 havoqgt_dir=${app_dir}/havoqgt
 boost_dir=/usr/tcetmp/packages/boost/boost-1.70.0

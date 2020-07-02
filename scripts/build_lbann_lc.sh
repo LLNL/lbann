@@ -465,20 +465,19 @@ C_FLAGS="${CXX_FLAGS}"
 
 # Hacks to build with OpenSHMEM
 WITH_SHMEM=0
-if [ "${CLUSTER}" == "lassen" ]; then
-    CXX_FLAGS="${CXX_FLAGS} -L/usr/tce/packages/spectrum-mpi/ibm/spectrum-mpi-rolling-release/lib -loshmem"
-    WITH_SHMEM=1
-elif [ "${CLUSTER}" == "pascal" ]; then
-    SOS_DIR=/g/g17/moon13/src/SOS/install/${CLUSTER}.llnl.gov
-    CXX_FLAGS="${CXX_FLAGS} -I${SOS_DIR}/include -L${SOS_DIR}/lib -lsma -Wl,-rpath -Wl,${SOS_DIR}/lib"
-    WITH_SHMEM=1
+if [ ${WITH_SHMEM} -ne 0 ]; then
+    if [ "${CLUSTER}" == "lassen" ]; then
+        CXX_FLAGS="${CXX_FLAGS} -L/usr/tce/packages/spectrum-mpi/ibm/spectrum-mpi-rolling-release/lib -loshmem"
+    else
+        echo "OpenSHMEM is currently only supported on Lassen"
+        exit 1
+    fi
 fi
-C_FLAGS="${CXX_FLAGS}"
 
 # Hacks to build with NVSHMEM
 if [ ${WITH_NVSHMEM} -ne 0 ]; then
     if [ "${CLUSTER}" == "lassen" ]; then
-        NVSHMEM_DIR=/usr/workspace/wsb/brain/nvshmem/nvshmem_0.3.3/cuda-10.1_ppc64le
+        NVSHMEM_DIR=/usr/workspace/wsb/brain/nvshmem/nvshmem_1.0.1/cuda-10.1_ppc64le
         CUDA_FLAGS="-gencode=arch=compute_70,code=sm_70"
     else
         echo "NVSHMEM is currently only supported on Lassen"
