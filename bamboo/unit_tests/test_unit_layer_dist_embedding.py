@@ -208,5 +208,8 @@ def construct_data_reader(lbann):
 # ==============================================
 
 # Create test functions that can interact with PyTest
-for test in tools.create_tests(setup_experiment, __file__):
-    globals()[test.__name__] = test
+# Note (tym 6/12/20): Tests are disabled for now since the default
+# build doesn't include SHMEM or NVSHMEM. Restore these tests when
+# proper support is added.
+# for test in tools.create_tests(setup_experiment, __file__):
+#     globals()[test.__name__] = test

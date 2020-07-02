@@ -28,14 +28,21 @@
 #define LBANN_UTILS_NVSHMEM_HPP_INCLUDED
 
 #include "lbann/base.hpp"
-#include "lbann/utils/exception.hpp"
 #ifdef LBANN_HAS_NVSHMEM
+#include "lbann/utils/cuda.hpp"
+#include "lbann/utils/exception.hpp"
 #include <mpi.h>
 #include <nvshmem.h>
 #include <nvshmemx.h>
 
 namespace lbann {
 namespace nvshmem {
+
+/** Whether NVSHMEM has been initialized. */
+bool is_initialized() noexcept;
+
+/** Whether NVSHMEM has been finalized. */
+bool is_finalized() noexcept;
 
 /** Whether NVSHMEM is active.
  *
@@ -46,8 +53,9 @@ bool is_active() noexcept;
 
 /** @brief Initialize NVSHMEM library.
  *
- *  Does nothing if NVSHMEM has already been initialized. This is
- *  _not_ thread-safe.
+ *  Does nothing if NVSHMEM has already been initialized and throws an
+ *  exception if it has already been finalized. This is _not_
+ *  thread-safe.
  */
 void initialize(MPI_Comm comm=MPI_COMM_WORLD);
 
@@ -88,6 +96,7 @@ T* malloc(size_t size) {
   if (size == 0) {
     return nullptr;
   }
+  CHECK_CUDA(cudaDeviceSynchronize());
   auto* ptr = nvshmem_malloc(size * sizeof(T));
   if (ptr == nullptr) {
     LBANN_ERROR(

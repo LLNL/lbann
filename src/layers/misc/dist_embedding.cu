@@ -25,21 +25,22 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/layers/misc/dist_embedding.hpp"
-#include "lbann/utils/cuda.hpp"
 #ifdef LBANN_HAS_NVSHMEM
+
+#include "lbann/utils/cuda.hpp"
 #include "lbann/utils/nvshmem.hpp"
-#endif // LBANN_HAS_NVSHMEM
 
-#include <layers.pb.h>
+namespace lbann
+{
+namespace
+{
 
-namespace lbann {
-
-namespace {
-
-using MetadataType = dist_embedding_layer_impl::vector_metadata;
+// Typedefs
 using Size2 = cuda::array<size_t, 2>;
+template <typename T>
+using VectorMetadata = typename dist_embedding_layer<T,data_layout::DATA_PARALLEL,El::Device::GPU>::vector_metadata;
 
-/// @todo This would be fun to optimize further.
+/** Copy between two device buffers, using all threads in a warp. */
 template <typename T> __device__ __forceinline__
 T* memcpy_warp(T* __restrict__ dest, const T* __restrict__ src, size_t n) {
   constexpr size_t warp_size = 32;
@@ -74,6 +75,10 @@ size_t distmat_local_index(size_t global_index, size_t rank, size_t align, size_
   }
 }
 
+/** Launch a CUDA kernel.
+ *
+ *  @todo Check that argument types match kernel signature.
+ */
 template <typename Kernel, typename... Args>
 inline void launch_cuda_kernel(
   const Kernel& kernel,
@@ -95,7 +100,14 @@ inline void launch_cuda_kernel(
       stream));
 }
 
-#ifdef LBANN_HAS_NVSHMEM
+/** Launch a collective NVSHMEM kernel.
+ *
+ *  Needed for device-side NVSHMEM synchronization calls like
+ *  nvshmem_wait. If grid_dims is zero, then the NVSHMEM will launch
+ *  with the largest available grid.
+ *
+ *  @todo Check that argument types match kernel signature.
+ */
 template <typename Kernel, typename... Args>
 inline void launch_nvshmem_collective_kernel(
   const Kernel& kernel,
@@ -124,18 +136,16 @@ inline void launch_nvshmem_collective_kernel(
       "(error ",status,")");
   }
 }
-#endif // LBANN_HAS_NVSHMEM
 
 } // namespace <anon>
 
-// =============================================
+// ---------------------------------------------
 // Life cycle and setup
-// =============================================
+// ---------------------------------------------
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 dist_embedding_layer<TensorDataType,Layout,Device>::~dist_embedding_layer()
 {
-#ifdef LBANN_HAS_NVSHMEM
   if (m_embeddings_buffer != nullptr) {
     nvshmem_free(m_embeddings_buffer);
   }
@@ -145,27 +155,18 @@ dist_embedding_layer<TensorDataType,Layout,Device>::~dist_embedding_layer()
   if (m_metadata_buffer != nullptr) {
     nvshmem_free(m_metadata_buffer);
   }
-#endif // LBANN_HAS_NVSHMEM
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void dist_embedding_layer<TensorDataType,Layout,Device>::attach_embeddings_to_shmem_buffer() {
-#ifndef LBANN_HAS_NVSHMEM
-    LBANN_ERROR(
-    "dist_embedding_layer with ",
-    "(TensorDataType=",TypeName<TensorDataType>(),", ",
-    "Layout=",to_string(Layout),", ",
-    "Device=",to_string(Device),") ",
-    "requires NVSHMEM, but LBANN has not been built with NVSHMEM");
-  return;
-#else
   if (m_embeddings_buffer != nullptr || m_embeddings_buffer_size != 0) {
     LBANN_ERROR("attempted to attach embedding matrix ",
                 "to NVSHMEM buffer multiple times");
   }
 
   // Embedding weights matrix
-  auto& embeddings = this->get_data_type_weights(0).get_values();
+  using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
+  auto& embeddings = ValuesGetter::mutable_values(this->get_weights(0));
   const auto dist = embeddings.DistData();
   if (dist.device != El::Device::GPU) {
     LBANN_ERROR("attempted to attach non-GPU matrix to NVSHMEM buffer");
@@ -203,33 +204,32 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::attach_embeddings_to_sh
     m_embeddings_buffer, local_height, dist.root);
   El::Copy(*orig_mat, embeddings);
 
-#endif // LBANN_HAS_NVSHMEM
 }
 
-// =============================================
+// ---------------------------------------------
 // Forward prop
-// =============================================
+// ---------------------------------------------
 
-namespace {
+namespace
+{
 
-#ifdef LBANN_HAS_NVSHMEM
 /** Request embedding vectors from owner processes.
  *
  *  Block dimensions: 32 x 1 x 1
  *
  *  Grid dimensions: input_dims[1] x input_dims[0] x 1
  */
-template <typename TensorDataType>
+template <typename T>
 __global__ void request_embeddings_kernel(
   size_t embedding_dim,
   Size2 input_dims,
-  const TensorDataType* __restrict__ input,
+  const T* __restrict__ input,
   Size2 input_strides,
-  const TensorDataType* __restrict__ embeddings,
+  const T* __restrict__ embeddings,
   Size2 embeddings_strides,
-  MetadataType* __restrict__ metadata,
+  VectorMetadata<T>* __restrict__ metadata,
   Size2 metadata_strides,
-  TensorDataType* __restrict__ workspace,
+  T* __restrict__ workspace,
   Size2 workspace_strides,
   size_t rank,
   size_t input_rowshift,
@@ -255,8 +255,8 @@ __global__ void request_embeddings_kernel(
       const auto& global_index = static_cast<size_t>(cuda::floor(global_index_float));
 
       // Figure out which process owns embedding vector
-      __shared__ unsigned char metadata_shared[sizeof(MetadataType)];
-      auto& m = *reinterpret_cast<MetadataType*>(metadata_shared);
+      __shared__ unsigned char metadata_shared[sizeof(VectorMetadata<T>)];
+      auto& m = *reinterpret_cast<VectorMetadata<T>*>(metadata_shared);
       if (threadIdx.x == 0) {
         m.source_rank = distmat_index_owner(global_index, embeddings_rowalign, embeddings_rowstride);
         m.source_index = distmat_local_index(global_index, m.source_rank, embeddings_rowalign, embeddings_rowstride);
@@ -271,31 +271,29 @@ __global__ void request_embeddings_kernel(
       nvshmemx_getmem_nbi_warp(
         &workspace[m.target_index * workspace_strides[0]],
         &embeddings[m.source_index * embeddings_strides[0]],
-        embedding_dim*sizeof(TensorDataType),
+        embedding_dim*sizeof(T),
         m.source_rank);
 
     }
   }
 
 }
-#endif // LBANN_HAS_NVSHMEM
 
-#ifdef LBANN_HAS_NVSHMEM
 /** Copy embedding vectors to output tensor.
  *
  *  Block dimensions: 32 x 1 x 1
  *
  *  Grid dimensions: input_dims[1] x input_dims[0] x 1
  */
-template <typename TensorDataType>
+template <typename T>
 __global__ void copy_embeddings_kernel(
   size_t embedding_dim,
   Size2 input_dims,
-  const MetadataType* __restrict__ metadata,
+  const VectorMetadata<T>* __restrict__ metadata,
   Size2 metadata_strides,
-  const TensorDataType* __restrict__ workspace,
+  const T* __restrict__ workspace,
   Size2 workspace_strides,
-  TensorDataType* __restrict__ output,
+  T* __restrict__ output,
   Size2 output_strides,
   size_t input_rowshift,
   size_t input_rowstride) {
@@ -321,24 +319,17 @@ __global__ void copy_embeddings_kernel(
   }
 
 }
-#endif // LBANN_HAS_NVSHMEM
 
 } // namespace <anon>
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
-#ifndef LBANN_HAS_NVSHMEM
-  LBANN_ERROR(
-    "dist_embedding_layer with ",
-    "(TensorDataType=",TypeName<TensorDataType>(),", ",
-    "Layout=",to_string(Layout),", ",
-    "Device=",to_string(Device),") ",
-    "requires NVSHMEM, but LBANN has not been built with NVSHMEM");
-  return;
-#else // LBANN_HAS_NVSHMEM
 
   // Data matrices
-  const auto& embeddings = this->get_data_type_weights(0).get_values();
+  // Note: Make sure to get original weight values since they are in
+  // SHMEM buffer.
+  using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
+  const auto& embeddings = ValuesGetter::mutable_values(this->get_weights(0));
   const auto& input = this->get_prev_activations();
   const auto& local_input = dynamic_cast<const LocalMat&>(input.LockedMatrix());
   auto& local_output = dynamic_cast<LocalMat&>(this->get_local_activations());
@@ -387,7 +378,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
     cudaMemsetAsync(
       m_metadata_buffer,
       0,
-      m_metadata_buffer_size*sizeof(MetadataType),
+      m_metadata_buffer_size*sizeof(vector_metadata),
       stream));
 
   // Request embedding vectors from owning processes
@@ -451,31 +442,30 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::fp_compute() {
   // Note: NVSHMEM workspaces are ready to recieve gradients.
   nb_barrier(comm, comm.get_trainer_comm(), m_nb_barrier_request);
 
-#endif // LBANN_HAS_NVSHMEM
 }
 
-// =============================================
+// ---------------------------------------------
 // Backprop
-// =============================================
+// ---------------------------------------------
 
-namespace {
+namespace
+{
 
-#ifdef LBANN_HAS_NVSHMEM
 /** Send gradients to owner processes.
  *
  *  Block dimensions: 32 x 1 x 1
  *
  *  Grid dimensions: input_dims[1] x input_dims[0] x 1
  */
-template <typename TensorDataType>
+template <typename T>
 __global__ void send_gradients_kernel(
   size_t embedding_dim,
   Size2 input_dims,
-  const TensorDataType* __restrict__ output_grad,
+  const T* __restrict__ output_grad,
   Size2 output_grad_strides,
-  MetadataType* __restrict__ metadata,
+  VectorMetadata<T>* __restrict__ metadata,
   Size2 metadata_strides,
-  TensorDataType* __restrict__ workspace,
+  T* __restrict__ workspace,
   Size2 workspace_strides,
   size_t input_rowshift,
   size_t input_rowstride) {
@@ -505,33 +495,23 @@ __global__ void send_gradients_kernel(
         nvshmemx_putmem_nbi_warp(
           workspace_ptr,
           workspace_ptr,
-          embedding_dim*sizeof(TensorDataType),
+          embedding_dim*sizeof(T),
           m.source_rank);
         nvshmemx_putmem_nbi_warp(
           &m,
           &m,
-          sizeof(MetadataType),
+          sizeof(VectorMetadata<T>),
           m.source_rank);
       }
     }
   }
 
 }
-#endif // LBANN_HAS_NVSHMEM
 
 } // namespace <anon>
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 void dist_embedding_layer<TensorDataType,Layout,Device>::bp_compute() {
-#ifndef LBANN_HAS_NVSHMEM
-  LBANN_ERROR(
-    "dist_embedding_layer with ",
-    "(TensorDataType=",TypeName<TensorDataType>(),", ",
-    "Layout=",to_string(Layout),", ",
-    "Device=",to_string(Device),") ",
-    "requires NVSHMEM, but LBANN has not been built with NVSHMEM");
-  return;
-#else // LBANN_HAS_NVSHMEM
 
   // Data matrices
   const auto& input = this->get_prev_activations();
@@ -591,7 +571,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::bp_compute() {
   if (!m_sparse_sgd) {
 
     // Create buffer for dense gradients
-    auto& embeddings = this->get_data_type_weights(0).get_values();
+    const auto& embeddings = this->weights_values(0);
     std::unique_ptr<El::AbstractDistMatrix<TensorDataType>> embeddings_grad(
       embeddings.Construct(embeddings.Grid(), embeddings.Root()));
     embeddings_grad->AlignWith(embeddings);
@@ -604,38 +584,37 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::bp_compute() {
       local_embeddings_grad);
 
     // Send dense gradients to dense optimizer
-    auto&& opt = this->get_data_type_weights(0).get_optimizer();
+    auto* opt = this->get_weights(0).get_optimizer();
     if (opt != nullptr) {
       opt->add_to_gradient(*embeddings_grad);
     }
 
   }
 
-#endif // LBANN_HAS_NVSHMEM
 }
 
-// =============================================
+// ---------------------------------------------
 // Sparse SGD
-// =============================================
+// ---------------------------------------------
 
-namespace {
+namespace
+{
 
-#ifdef LBANN_HAS_NVSHMEM
 /** Sparse SGD on local embeddings.
  *
  *  Block dimensions: 32 x 1 x 1
  *
- *  Grid dimensions: Max allowed by NVSHMEM
+ *  Grid dimensions: num_gradients x 1 x 1
  */
-template <typename TensorDataType>
+template <typename T>
 __global__ void sgd_kernel(
-  TensorDataType learning_rate,
+  T learning_rate,
   size_t embedding_dim,
   size_t num_gradients,
-  const MetadataType* __restrict__ metadata,
-  const TensorDataType* __restrict__ embeddings_grad,
+  const VectorMetadata<T>* __restrict__ metadata,
+  const T* __restrict__ embeddings_grad,
   Size2 embeddings_grad_strides,
-  TensorDataType* __restrict__ embeddings,
+  T* __restrict__ embeddings,
   Size2 embeddings_strides,
   size_t rank) {
 
@@ -665,7 +644,6 @@ __global__ void sgd_kernel(
   }
 
 }
-#endif // LBANN_HAS_NVSHMEM
 
 } // namespace <anon>
 
@@ -673,15 +651,6 @@ template <typename TensorDataType, data_layout Layout, El::Device Device>
 void dist_embedding_layer<TensorDataType,Layout,Device>::apply_sparse_sgd_step(
   size_t num_gradients,
   LocalMat& local_embeddings) {
-#ifndef LBANN_HAS_NVSHMEM
-  LBANN_ERROR(
-    "dist_embedding_layer with ",
-    "(TensorDataType=",TypeName<TensorDataType>(),", ",
-    "Layout=",to_string(Layout),", ",
-    "Device=",to_string(Device),") ",
-    "requires NVSHMEM, but LBANN has not been built with NVSHMEM");
-  return;
-#else // LBANN_HAS_NVSHMEM
 
   // GPU objects
   auto&& stream = El::GPUManager::Stream();
@@ -718,15 +687,15 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::apply_sparse_sgd_step(
     Size2{size_t(local_embeddings.LDim()), 1},
     rank);
 
-#endif // LBANN_HAS_NVSHMEM
 }
 
-// =============================================
+// ---------------------------------------------
 // Explicit template instantiation
-// =============================================
+// ---------------------------------------------
 
 /// @todo fp16
 template class dist_embedding_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
+#endif // LBANN_HAS_NVSHMEM

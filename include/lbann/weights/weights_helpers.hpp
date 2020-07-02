@@ -23,8 +23,8 @@
 // implied. See the License for the specific language governing
 // permissions and limitations under the license.
 ////////////////////////////////////////////////////////////////////////////////
-#ifndef SRC_LAYERS_REGULARIZERS_BATCH_NORM_HELPERS_INCLUDED
-#define SRC_LAYERS_REGULARIZERS_BATCH_NORM_HELPERS_INCLUDED
+#ifndef LBANN_WEIGHTS_WEIGHTS_HELPERS_HPP_INCLUDED
+#define LBANN_WEIGHTS_WEIGHTS_HELPERS_HPP_INCLUDED
 
 #include "lbann/utils/exception.hpp"
 #include "lbann/utils/typename.hpp"
@@ -33,18 +33,17 @@
 
 /** @file
  *
- *  A hacky utility for dealing with the batchnorm oddities a bit
- *  more cleanly. A future refactor should focus on cleaning this up;
- *  a suitable metric for at least some success would be the deletion
- *  of this file.
+ *  A hacky utility for dealing with layers that require access to
+ *  mutable weights values (e.g. batchnorm layers). A future refactor
+ *  should focus on cleaning this up; a suitable metric for at least
+ *  some success would be the deletion of this file.
  *
- *  This file mostly exists because the code is common across the
- *  entrywise and non-entrywise versions of batchnorm, in both the cpp
- *  and cu implementations, but it is not needed in the header.
+ *  This file mostly exists because the code is common across several
+ *  layers, but it is not needed in the header.
  */
 
 namespace lbann {
-namespace bn_details {
+namespace weights_details {
 
 /** @class SafeWeightsAccessor
  *  @brief Ensure safe access to weights objects' data.
@@ -66,6 +65,6 @@ struct SafeWeightsAccessor
   }
 };// class SafeWeightsAccessor
 
-}// namespace bn_details
+}// namespace weights_details
 }// namespace lbann
-#endif // SRC_LAYERS_REGULARIZERS_BATCH_NORM_HELPERS_INCLUDED
+#endif // LBANN_WEIGHTS_WEIGHTS_HELPERS_HPP_INCLUDED

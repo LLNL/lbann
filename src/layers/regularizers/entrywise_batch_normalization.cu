@@ -26,9 +26,8 @@
 
 #define LBANN_ENTRYWISE_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/entrywise_batch_normalization.hpp"
+#include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/cuda.hpp"
-
-#include "batch_norm_helpers.hpp"
 
 namespace lbann {
 
@@ -579,7 +578,7 @@ void bp_impl(lbann_comm& comm,
 // Template instantiation
 template <typename TensorDataType, data_layout T_layout, El::Device Dev>
 void entrywise_batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
-  using ValuesGetter = bn_details::SafeWeightsAccessor<TensorDataType>;
+  using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
 
   const auto mode = this->get_model()->get_execution_context().get_execution_mode();
   fp_impl(*this->get_comm(),

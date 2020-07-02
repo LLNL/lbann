@@ -26,32 +26,42 @@
 
 #ifndef LBANN_LAYERS_MISC_DIST_EMBEDDING_HPP_INCLUDED
 #define LBANN_LAYERS_MISC_DIST_EMBEDDING_HPP_INCLUDED
+#include "lbann/base.hpp"
+#include "lbann/layers/layer.hpp"
 
+#if defined(LBANN_HAS_SHMEM) || defined(LBANN_HAS_NVSHMEM)
 #include "lbann/layers/data_type_layer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/optimizers/sgd.hpp"
+#include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/memory.hpp"
 
 namespace lbann {
 
-namespace dist_embedding_layer_impl {
-
-  /** Metadata for an embedding vector from a remote process. */
-  struct vector_metadata {
-    size_t source_rank{0};
-    size_t source_index{0};
-    size_t target_rank{0};
-    size_t target_index{0};
-    bool is_active{false};
-  };
-
-} // namespace dist_embedding_layer_impl
-
 /** @brief Embedding layer with distributed weights.
  *
- *  @warning This is extremely experimental.
+ *  This is similar to the embedding layer, which takes integer
+ *  indices and returns embedding vectors from a lookup table.
+ *  However, the embedding vectors are distributed between processes
+ *  and one-sided inter-process communication is performed with
+ *  OpenSHMEM (on CPU) or NVSHMEM (on GPU).
  *
- *  @todo Arbitrary unbalanced distributions
+ *  The main benefit of this model-parallel approach is to handle
+ *  cases where the embedding vectors don't fit on one process. It
+ *  should also have better scaling properties when the mini-batch
+ *  size is very large.
+ *
+ *  To take advantage of sparse gradients, the distributed embedding
+ *  layer provides the option to bypass the optimizer (which currently
+ *  only supports dense gradients) and perform sparse SGD directly on
+ *  the embedding weights. If enabled, SGD occurs during the layers
+ *  "update" phase (i.e. in the virtual update_compute function).
+ *  Otherwise, the layer converts sparse gradients to a dense tensor
+ *  and passes it into the usual optimizer. This is a hack and will be
+ *  deprecated once the optimizer class supports sparse gradients.
+ *
+ *  @warning This is experimental.
+ *
  *  @todo Sparse SGD with optimizer class
  */
 template <typename TensorDataType, data_layout Layout, El::Device Device>
@@ -89,10 +99,25 @@ protected:
   void bp_compute() override;
   bool update_compute() override;
 
+public:
+
+  /** Metadata for an embedding vector from a remote process.
+   *
+   *  This should be treated as an internal implementation detail. It
+   *  is only in public scope so it is available to CUDA kernels in an
+   *  anonymous namespace.
+   */
+  struct vector_metadata {
+    size_t source_rank{0};
+    size_t source_index{0};
+    size_t target_rank{0};
+    size_t target_index{0};
+    bool is_active{false};
+  };
+
 private:
 
   using LocalMat = El::Matrix<TensorDataType, Device>;
-  using MetadataType = dist_embedding_layer_impl::vector_metadata;
 
   /** @brief Non-blocking barrier
    *  @todo Handle case with non-default CUDA stream.
@@ -107,6 +132,40 @@ private:
   void apply_sparse_sgd_step(
     size_t num_gradients,
     LocalMat& local_embeddings);
+
+  /** SHMEM buffer for embedding vectors.
+   *
+   *  If the embedding weights matrix is not already attached to a
+   *  SHMEM buffer, then this layer allocates a SHMEM buffer and
+   *  attaches it. In this case, the layer is responsible for managing
+   *  the buffer.
+   */
+  TensorDataType* m_embeddings_buffer{nullptr};
+  /** Allocated size of @c m_embeddings_buffer. */
+  size_t m_embeddings_buffer_size{0};
+
+  /** SHMEM buffer to communicate embedding vectors. */
+  TensorDataType* m_workspace_buffer{nullptr};
+  /** Allocated size of @c m_workspace_buffer. */
+  size_t m_workspace_buffer_size{0};
+
+  /** SHMEM buffer to communicate metadata for embedding vectors. */
+  vector_metadata* m_metadata_buffer{nullptr};
+  /** Allocated size of @c m_metadata_buffer. */
+  size_t m_metadata_buffer_size{0};
+
+  /** Request to synchronize non-blocking barriers.
+   *
+   *  Careful synchronization is required to ensure the correctness of
+   *  asynchronous, one-sided communication via SHMEM buffers. After
+   *  any modification to a SHMEM buffer (local or remote), a
+   *  non-blocking barrier is launched to signal that the local
+   *  process has finished its work. Before the next access to the
+   *  SHMEM buffer, the non-blocking barrier is synchronized to make
+   *  sure that all remote processes have finished their work and that
+   *  the buffers are safe to access.
+   */
+  Al::request m_nb_barrier_request;
 
   /** Size of dictionary of embeddings. */
   size_t m_num_embeddings;
@@ -134,48 +193,11 @@ private:
    */
   bool m_barrier_in_forward_prop;
 
-  /** SHMEM buffer for embedding vectors.
-   *
-   *  If the embedding weights matrix is not already attached to a
-   *  SHMEM buffer, then this layer allocates a SHMEM buffer and
-   *  attaches it. In this case, the layer is responsible for managing
-   *  the buffer.
-   */
-  TensorDataType* m_embeddings_buffer{nullptr};
-  /** Allocated size of @c m_embeddings_buffer. */
-  size_t m_embeddings_buffer_size{0};
-
-  /** SHMEM buffer to communicate embedding vectors. */
-  TensorDataType* m_workspace_buffer{nullptr};
-  /** Allocated size of @c m_workspace_buffer. */
-  size_t m_workspace_buffer_size{0};
-
-  /** SHMEM buffer to communicate metadata for embedding vectors. */
-  MetadataType* m_metadata_buffer{nullptr};
-  /** Allocated size of @c m_metadata_buffer. */
-  size_t m_metadata_buffer_size{0};
-
-  /** Request to synchronize non-blocking barriers.
-   *
-   *  Careful synchronization is required to ensure the correctness of
-   *  asynchronous, one-sided communication via SHMEM buffers. After
-   *  any modification to a SHMEM buffer (local or remote), a
-   *  non-blocking barrier is launched to signal that the local
-   *  process has finished its work. Before the next access to the
-   *  SHMEM buffer, the non-blocking barrier is synchronized to make
-   *  sure that all remote processes have finished their work and that
-   *  the buffers are safe to access.
-   */
-  Al::request m_nb_barrier_request;
-
 };
 
-// Builder function
-LBANN_DEFINE_LAYER_BUILDER(dist_embedding);
-
-// =============================================
+// ---------------------------------------------
 // Implementation
-// =============================================
+// ---------------------------------------------
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
 dist_embedding_layer<TensorDataType,Layout,Device>::dist_embedding_layer(
@@ -280,7 +302,7 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::setup_data(size_t max_m
   }
 
   // Configure embedding weights
-  auto& embeddings = this->get_data_type_weights(0);
+  auto& embeddings = this->get_weights(0);
   {
     auto dist = this->get_prev_activations().DistData();
     dist.colDist = El::STAR;
@@ -328,7 +350,8 @@ bool dist_embedding_layer<TensorDataType,Layout,Device>::update_compute() {
   if (m_sparse_sgd) {
     const size_t input_size = this->get_input_size();
     const size_t mini_batch_size = this->get_prev_activations().Width();
-    auto& embeddings = this->get_data_type_weights(0).get_values();
+    using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
+    auto& embeddings = ValuesGetter::mutable_values(this->get_weights(0));
     auto& local_embeddings = dynamic_cast<LocalMat&>(embeddings.Matrix());
     apply_sparse_sgd_step(input_size * mini_batch_size, local_embeddings);
   }
@@ -353,14 +376,30 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::nb_barrier(
   comm.nb_allreduce(buffer, c, req);
 }
 
-// =============================================
+// ---------------------------------------------
 // Explicit template instantiation
-// =============================================
+// ---------------------------------------------
 
+#ifdef LBANN_HAS_SHMEM
 extern template class dist_embedding_layer<
   float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+#endif // LBANN_HAS_SHMEM
+#if defined(LBANN_HAS_GPU) && defined(LBANN_HAS_NVSHMEM)
 extern template class dist_embedding_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_HAS_NVSHMEM)
+
+} // namespace lbann
+#endif // defined(LBANN_HAS_SHMEM) || defined(LBANN_HAS_NVSHMEM)
+
+// ---------------------------------------------
+// Builder function
+// ---------------------------------------------
+
+namespace lbann
+{
+
+LBANN_DEFINE_LAYER_BUILDER(dist_embedding);
 
 } // namespace lbann
 
