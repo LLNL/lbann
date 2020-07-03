@@ -44,6 +44,9 @@ parser.add_argument(
     '--zdim', action='store', default=20, type=int,
     help='latent space dim (default: 20)', metavar='NUM')
 parser.add_argument(
+    '--mcf', action='store', default=1, type=int,
+    help='model capacity factor (default: 1)', metavar='NUM')
+parser.add_argument(
     '--useCNN', action='store', default=False, type=bool,
     help='use CNN', metavar='BOOL')
 parser.add_argument(
@@ -95,7 +98,7 @@ def construct_model():
     z_dim = 20  #Latent space dim
 
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
-    model = macc_models.MACCWAE(args.zdim,args.ydim,use_CNN=args.useCNN)
+    model = macc_models.MACCWAE(args.zdim,args.ydim,cf=args.mcf,use_CNN=args.useCNN)
     d1_real, d1_fake, d_adv, pred_y  = model(z,gt_y)
 
     d1_real_bce = lbann.SigmoidBinaryCrossEntropy([d1_real,one],name='d1_real_bce')
