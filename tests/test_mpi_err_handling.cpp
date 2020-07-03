@@ -35,8 +35,7 @@ const int Buf_size = 10000;
 const int Trainer = 0;
 
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
 
   try {
     const int size = comm->get_procs_in_world();
@@ -52,7 +51,7 @@ int main(int argc, char *argv[]) {
 
     else {
       std::vector<int> buf;
-      comm->recv(buf.data(), 0, Trainer, 0); 
+      comm->recv(buf.data(), 0, Trainer, 0);
     }
 
 
@@ -63,4 +62,3 @@ int main(int argc, char *argv[]) {
 
   return EXIT_SUCCESS;
 }
-

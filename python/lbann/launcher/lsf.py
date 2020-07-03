@@ -120,18 +120,14 @@ class LSFBatchScript(BatchScript):
         args = [launcher]
         args.extend(make_iterable(launcher_args))
         args.append(f'--chdir {work_dir}')
-        if reservation:
-            args.append(f'--use_reservation {reservation}')
-            args.append(f'--np {nodes * procs_per_node}')
-        else:
-            args.extend([
-                f'--nrs {nodes}',
-                '--rs_per_host 1',
-                f'--tasks_per_rs {procs_per_node}',
-                '--launch_distribution packed',
-                '--cpu_per_rs ALL_CPUS',
-                '--gpu_per_rs ALL_GPUS',
-            ])
+        args.extend([
+            f'--nrs {nodes}',
+            '--rs_per_host 1',
+            f'--tasks_per_rs {procs_per_node}',
+            '--launch_distribution packed',
+            '--cpu_per_rs ALL_CPUS',
+            '--gpu_per_rs ALL_GPUS',
+        ])
         args.extend(make_iterable(command))
         self.add_command(args)
 

@@ -30,7 +30,7 @@
 #include "lbann/layers/regularizers/regularizer.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/utils/cudnn.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 
 namespace lbann {
 
@@ -143,8 +143,8 @@ public:
 
 protected:
 
-  void setup_dims() override {
-    regularizer_layer<TensorDataType>::setup_dims();
+  void setup_dims(DataReaderMetaData& dr_metadata) override {
+    regularizer_layer<TensorDataType>::setup_dims(dr_metadata);
     this->set_output_dims(this->get_input_dims());
   }
 

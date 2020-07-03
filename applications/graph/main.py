@@ -108,6 +108,7 @@ reader = lbann.reader_pb2.DataReader()
 _reader = reader.reader.add()
 _reader.name = 'python'
 _reader.role = 'train'
+_reader.shuffle = True
 _reader.percent_of_data_to_use = 1.0
 _reader.python.module = 'dataset'
 _reader.python.module_dir = os.path.dirname(os.path.realpath(__file__))
@@ -127,15 +128,14 @@ if learning_rate < 0:
 opt = lbann.SGD(learn_rate=learning_rate)
 
 # Create LBANN objects
-trainer = lbann.Trainer()
+trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 callbacks = [
     lbann.CallbackPrint(),
     lbann.CallbackTimer(),
     lbann.CallbackDumpWeights(basename='embeddings',
                               epoch_interval=args.num_epochs),
 ]
-model = lbann.Model(args.mini_batch_size,
-                    args.num_epochs,
+model = lbann.Model(args.num_epochs,
                     layers=lbann.traverse_layer_graph(input_),
                     objective_function=obj,
                     callbacks=callbacks)

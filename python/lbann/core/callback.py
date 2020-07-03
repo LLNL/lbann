@@ -22,3 +22,21 @@ classes = lbann.core.util.generate_classes_from_protobuf_message(
     base_has_export_proto = True)
 for c in classes:
     globals()[c.__name__] = c
+
+class ImageSelectionStrategy(abc.ABC):
+    """Image selection strategy for summarize images callback."""
+
+    def __init__(self):
+        pass
+
+    def export_proto(self):
+        """Construct and return a protobuf message."""
+        return callbacks_pb2.Callback.CallbackSummarizeImages.SelectionStrategy()
+
+# Build all subclasses
+classes = lbann.core.util.generate_classes_from_protobuf_message(
+    callbacks_pb2.Callback.CallbackSummarizeImages.SelectionStrategy,
+    base_class = ImageSelectionStrategy,
+    base_has_export_proto = True)
+for c in classes:
+    globals()[c.__name__] = c

@@ -29,6 +29,7 @@
 #include "lbann/lbann.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/protobuf_utils.hpp"
+#include "lbann/utils/argument_parser.hpp"
 
 #include <lbann.pb.h>
 #include <model.pb.h>
@@ -37,9 +38,48 @@
 
 using namespace lbann;
 
+namespace {
+int guess_global_rank() noexcept
+{
+  int have_mpi;
+  MPI_Initialized(&have_mpi);
+  if (have_mpi) {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    return rank;
+  }
+  else {
+    if (char const* slurm_flag = std::getenv("SLURM_PROCID"))
+      return std::stoi(slurm_flag);
+    if (char const* open_mpi_flag = std::getenv("OMPI_WORLD_COMM_RANK"))
+      return std::stoi(open_mpi_flag);
+    else if (char const* mv2_flag = std::getenv("MV2_COMM_WORLD_LOCAL_RANK"))
+      return std::stoi(mv2_flag);
+    else
+      return -1;
+  }
+}
+}// namespace <anon>
+
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  auto& arg_parser = global_argument_parser();
+  construct_std_options();
+
+  try {
+    arg_parser.parse(argc, argv);
+  }
+  catch (std::exception const& e) {
+    auto guessed_rank = guess_global_rank();
+    if (guessed_rank <= 0)
+      // Cannot call `El::ReportException` because MPI hasn't been
+      // initialized yet.
+      std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+                << e.what() << "\n\nProcess terminating."
+                << std::endl;
+    std::terminate();
+  }
+
+  world_comm_ptr comm = initialize(argc, argv);
   const bool master = comm->am_world_master();
 
   try {
@@ -63,13 +103,20 @@ int main(int argc, char *argv[]) {
     lbann_data::Trainer *pb_trainer = pb.mutable_trainer();
 
     // Construct the trainer
-    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, opts);
+    std::unique_ptr<trainer> trainer = construct_trainer(comm.get(), pb_trainer, *(pbs[0]), opts);
 
     thread_pool& io_thread_pool = trainer->get_io_thread_pool();
 
+    int training_dr_linearized_data_size = -1;
+    auto *dr = trainer->get_data_coordinator().get_data_reader(execution_mode::training);
+    if(dr != nullptr) {
+      training_dr_linearized_data_size = dr->get_linearized_data_size();
+    }
+
     auto model_1 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[0]),
                                               comm.get(), opts, io_thread_pool,
-                                              trainer->get_callbacks_with_ownership(), true); //ae
+                                              trainer->get_callbacks_with_ownership(),
+                                              training_dr_linearized_data_size); //ae
     std::unique_ptr<model>
       model_2, //cycgan
       model_3; //ae+cycgan
@@ -78,13 +125,15 @@ int main(int argc, char *argv[]) {
     if (pbs.size() > 1) {
       model_2 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[1]),
                                            comm.get(), opts, io_thread_pool,
-                                           trainer->get_callbacks_with_ownership(), false);
+                                           trainer->get_callbacks_with_ownership(),
+                                           training_dr_linearized_data_size);
     }
 
     if (pbs.size() > 2) {
       model_3 = build_model_from_prototext(argc, argv, pb_trainer, *(pbs[2]),
                                            comm.get(), opts, io_thread_pool,
-                                           trainer->get_callbacks_with_ownership(), false);
+                                           trainer->get_callbacks_with_ownership(),
+                                           training_dr_linearized_data_size);
     }
 
 
@@ -115,7 +164,9 @@ int main(int argc, char *argv[]) {
 
   } catch (std::exception& e) {
     El::ReportException(e);
-    return EXIT_FAILURE;
+    // It's possible that a proper subset of ranks throw some
+    // exception. But we want to tear down the whole world.
+    El::mpi::Abort(El::mpi::COMM_WORLD, EXIT_FAILURE);
   }
 
   return EXIT_SUCCESS;

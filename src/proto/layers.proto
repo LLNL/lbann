@@ -36,6 +36,17 @@ enum DataType {
   FP16 = 2;
 }
 
+// Lives here because it's used by both Convolution and
+// Deconvolution.
+enum ConvTensorOpsMode {
+  // Use the global default.
+  DEFAULT_TENSOR_OPS = 0;
+  // Explicitly disable tensor ops.
+  NO_TENSOR_OPS = 1;
+  // Use tensor ops -- allows conversion FP32->FP16
+  USE_TENSOR_OPS = 2;
+}
+
 message Layer {
   string name = 50;
   string parents = 151;
@@ -385,7 +396,6 @@ message Layer {
   // Input layers //
   //////////////////
   message Input {
-    bool data_set_per_model = 1;  // Default: false
     string io_buffer = 2;         // Options: "partitioned" (default)
     string target_mode = 3;       // Options: "classification" (default), "regression", "reconstruction", "label_reconstruction", "N/A"
   }
@@ -565,6 +575,9 @@ message Layer {
     bool has_bias = 10;                   //default: true
     double bias_initial_value = 11;       //default: 0
     double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
   }
 
   message Deconvolution {
@@ -590,6 +603,9 @@ message Layer {
     bool has_bias = 10;                   //default: true
     double bias_initial_value = 11;       //default: 0
     double l2_regularization_factor = 12; //default: 0
+
+    // This field is ignored for non-GPU layers.
+    ConvTensorOpsMode conv_tensor_op_mode = 13;
   }
 
   /** @brief Lookup table to embedding vectors.

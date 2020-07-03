@@ -27,6 +27,7 @@
 #include "lbann/callbacks/dump_outputs.hpp"
 #include "lbann/proto/proto_common.hpp"
 #include "lbann/utils/file_utils.hpp"
+#include "lbann/utils/trainer_file_utils.hpp"
 #include "lbann/layers/data_type_layer.hpp"
 
 #include <callbacks.pb.h>
@@ -140,8 +141,6 @@ void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
 
   // Get mini-batch step information
   const auto& mode = c.get_execution_mode();
-  const auto& epoch = c.get_epoch();
-  const auto& step = c.get_step();
 
   // Quit if output dump isn't needed
   if (!m_modes.empty() && m_modes.count(mode) == 0) { return; }
@@ -149,7 +148,8 @@ void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
       && m_layer_names.count(l.get_name()) == 0) { return; }
 
   // Create directory
-  file::make_directory(m_directory);
+  const std::string root_file_path = get_multi_trainer_model_path(m, m_directory);
+  file::trainer_master_make_directory(root_file_path, m.get_comm());
 
   // Save layer outputs on root process
   for (int i = 0; i < l.get_num_children(); ++i) {
@@ -157,13 +157,10 @@ void dump_outputs::do_dump_outputs(const model& m, const Layer& l) {
     const CircMat<El::Device::CPU> circ_data(dtl.get_activations(i));
     if (circ_data.CrossRank() == circ_data.Root()) {
       const auto& data = static_cast<const CPUMat&>(circ_data.LockedMatrix());
-      const std::string file_name = (m_directory
-                                     + m.get_name()
-                                     + "-" + to_string(mode)
-                                     + "-epoch" + std::to_string(epoch)
-                                     + "-step" + std::to_string(step)
-                                     + "-" + l.get_name()
-                                     + "-output" + std::to_string(i)
+      const std::string file_name = (root_file_path
+                                     + c.get_state_string() + "_"
+                                     + l.get_name()
+                                     + "_output" + std::to_string(i)
                                      + "." + m_file_format);
       if (m_file_format == "csv") {
         save_text(file_name, ",", data);

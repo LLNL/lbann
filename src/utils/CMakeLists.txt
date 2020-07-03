@@ -19,6 +19,7 @@ set_full_path(THIS_DIR_SOURCES
   protobuf_utils.cpp
   python.cpp
   random.cpp
+  random_number_generators.cpp
   stack_profiler.cpp
   stack_trace.cpp
   statistics.cpp
@@ -27,6 +28,7 @@ set_full_path(THIS_DIR_SOURCES
   lbann_library.cpp
   jag_common.cpp
   commify.cpp
+  trainer_file_utils.cpp
 )
 
 if (LBANN_HAS_HALF)

@@ -27,12 +27,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lbann/proto/proto_common.hpp>
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/lbann_library.hpp"
 
 #include <iostream>
 
 using namespace lbann;
 
-int main(int, char **) {
+int main(int argc, char *argv[]) {
+  auto& arg_parser = global_argument_parser();
+  construct_std_options();
+
+  try {
+    arg_parser.parse(argc, argv);
+  }
+  catch (std::exception const& e) {
+    std::cerr << "Error during argument parsing:\n\ne.what():\n\n  "
+              << e.what() << "\n\nProcess terminating."
+              << std::endl;
+    std::terminate();
+  }
   print_help(std::cerr);
   return EXIT_SUCCESS;
 }

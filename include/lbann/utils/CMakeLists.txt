@@ -17,6 +17,7 @@ set_full_path(THIS_DIR_HEADERS
   factory_error_policies.hpp
   file_utils.hpp
   glob.hpp
+  hydrogen_utils.hpp
   im2col.hpp
   image.hpp
   jag_utils.hpp
@@ -31,11 +32,13 @@ set_full_path(THIS_DIR_HEADERS
   prototext.hpp
   python.hpp
   random.hpp
+  random_number_generators.hpp
   serialization.hpp
   statistics.hpp
   summary.hpp
   summary_impl.hpp
   timer.hpp
+  trainer_file_utils.hpp
   type_erased_matrix.hpp
   typename.hpp
   )

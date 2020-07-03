@@ -55,7 +55,8 @@ class load_model : public callback_base {
   load_model(std::vector<std::string> dirs,
              std::string extension="prototext") :
     callback_base(), m_dirs(std::move(dirs)),
-    m_extension(std::move(extension))
+    m_extension(std::move(extension)),
+    m_loaded(false)
   {}
   load_model(const load_model&) = default;
   load_model& operator=(
@@ -69,6 +70,9 @@ class load_model : public callback_base {
   }
 
   void on_train_begin(model *m) override;
+
+  void on_test_begin(model *m) override;
+
   /* ckptdir_is_fullpath flag if true
  * allow user to specify full path to model weights to load
  * and allow system to ignore appending trainer id, num of epochs/steps
@@ -89,6 +93,8 @@ class load_model : public callback_base {
   /// Disables the normal behavior of saving when training is complete
   std::string m_extension; //file extension
 
+  /// Flag to indicate if the model has already been loaded
+  bool m_loaded;
 };
 
 // Builder function

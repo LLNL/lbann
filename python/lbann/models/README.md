@@ -8,5 +8,5 @@ used as components within more complicated models.
 _Note to developers_: This directory is reserved for very
 well-established models (i.e. O(1000) citations) and any Python
 scripts should be usable by external users. Experimental models
-should be kept within the model_zoo directory in the base LBANN
+should be kept within the applications directory in the base LBANN
 directory.

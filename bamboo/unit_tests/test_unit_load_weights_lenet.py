@@ -41,7 +41,8 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    trainer = lbann.Trainer(random_seed=random_seed)
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size,
+                            random_seed=random_seed)
 
     # Checkpoint after every epoch
     trainer.callbacks = [
@@ -91,8 +92,7 @@ def construct_model(lbann):
     metrics = [lbann.Metric(acc, name='accuracy', unit='%')]
 
     # Construct model
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        layers=lbann.traverse_layer_graph(input_),
                        objective_function=loss,
                        metrics=metrics,

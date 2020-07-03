@@ -36,18 +36,19 @@ namespace lbann {
 
 void sgd_training_algorithm::apply(execution_context& context,
                                    model& model,
+                                   data_coordinator& dc,
                                    execution_mode mode,
                                    termination_criteria const& term_criteria) {
   sgd_execution_context& sgd_context = static_cast<sgd_execution_context&>(context);
   const sgd_termination_criteria& sgd_term = static_cast<const sgd_termination_criteria&>(term_criteria);
   switch(mode) {
   case execution_mode::training:
-    train(sgd_context, model, sgd_term.num_epochs, sgd_term.num_steps);
+    train(sgd_context, model, dc, sgd_term.num_epochs, sgd_term.num_steps);
     break;
   case execution_mode::validation:
   case execution_mode::testing:
   case execution_mode::prediction:
-    evaluate(sgd_context, model, mode, sgd_term.num_steps);
+    evaluate(sgd_context, model, dc, mode, sgd_term.num_steps);
     break;
   default:
     LBANN_ERROR(std::string{} + "Illegal mode: " + to_string(mode));
@@ -56,11 +57,13 @@ void sgd_training_algorithm::apply(execution_context& context,
 
 void sgd_training_algorithm::train(sgd_execution_context& c,
                                    model& model,
+                                   data_coordinator& dc,
                                    size_t num_epochs,
                                    size_t num_batches) {
 
   // Initialize epoch
   model.reset_mode(c, execution_mode::training);
+  dc.reset_mode(c);
 
   do_train_begin_cbs(model);
   for (size_t epoch = c.get_epoch(); epoch < num_epochs; ++epoch) {
@@ -69,13 +72,14 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
     // Initialize epoch
     model.reset_mode(c, execution_mode::training);
     model.reset_epoch_statistics(execution_mode::training);
+    dc.reset_mode(c);
     do_epoch_begin_cbs(model);
 
     // Training iterations
     if (num_batches > 0) {
-      for (size_t i = 0; i < num_batches; i++) { train_mini_batch(c, model); }
+      for (size_t i = 0; i < num_batches; i++) { train_mini_batch(c, model, dc); }
     } else {
-      while (!train_mini_batch(c, model)) {}
+      while (!train_mini_batch(c, model, dc)) {}
     }
 
     // Finalize epoch
@@ -86,7 +90,11 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
     // Evaluate on validation set
     auto key = c.get_trainer().check_and_build_execution_context(c, model, execution_mode::validation);
     auto& evaluation_context = static_cast<sgd_execution_context&>(c.get_trainer().get_execution_context(key));
-    evaluate(evaluation_context, model, execution_mode::validation);
+    // Check to make sure that the model has a valid execution mode
+    // before trying to do inference
+    if (model.is_execution_mode_valid(execution_mode::validation)) {
+      evaluate(evaluation_context, model, dc, execution_mode::validation);
+    }
   }
   do_train_end_cbs(model);
 }
@@ -96,8 +104,10 @@ void sgd_training_algorithm::train(sgd_execution_context& c,
 ////////////////////////////////////////////////////////////
 
 bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
-                                              model& model) {
+                                              model& model,
+                                              data_coordinator& dc) {
   model.reset_mode(c, execution_mode::training);
+  dc.reset_mode(c);
   do_batch_begin_cbs(model, execution_mode::training);
 
   bool finished;
@@ -141,8 +151,18 @@ bool sgd_training_algorithm::train_mini_batch(sgd_execution_context& c,
 
 void sgd_training_algorithm::evaluate(sgd_execution_context& c,
                                       model& model,
+                                      data_coordinator& dc,
                                       execution_mode mode,
                                       size_t num_batches) {
+  /// @todo BVE FIXME this state needs to be set for inference-only
+  /// workflows -- however, if the model will bail due to a lack of a
+  /// valid mode, the state of the data coordinator is not
+  /// consistent.  Fix this once the data coordinator is fully
+  /// decoupled from the input layer.
+  model.reset_epoch_statistics(mode);
+  model.reset_mode(c, mode);
+  // Ensure that the data coordinator has the right execution context
+  dc.reset_mode(c);
   // Return early if execution mode is invalid
   if (!model.is_execution_mode_valid(mode)) return;
   if (mode != execution_mode::validation
@@ -154,13 +174,11 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
   }
 
   // Evaluate on all mini-batches
-  model.reset_epoch_statistics(mode);
-  model.reset_mode(c, mode);
   do_evaluate_begin_cbs(model, mode);
   if (num_batches > 0) {
-    for (size_t i = 0; i < num_batches; i++) { evaluate_mini_batch(c, model, mode); }
+    for (size_t i = 0; i < num_batches; i++) { evaluate_mini_batch(c, model, dc, mode); }
   } else {
-    while (!evaluate_mini_batch(c, model, mode)) {}
+    while (!evaluate_mini_batch(c, model, dc, mode)) {}
   }
   c.inc_epoch();
   do_evaluate_end_cbs(model, mode);
@@ -168,8 +186,10 @@ void sgd_training_algorithm::evaluate(sgd_execution_context& c,
 
 bool sgd_training_algorithm::evaluate_mini_batch(sgd_execution_context& c,
                                                  model& model,
+                                                 data_coordinator& dc,
                                                  execution_mode mode) {
   model.reset_mode(c, mode);
+  dc.reset_mode(c);
   do_batch_begin_cbs(model, mode);
   model.forward_prop(mode);
   model.get_objective_function()->start_evaluation(mode, c.get_current_mini_batch_size());

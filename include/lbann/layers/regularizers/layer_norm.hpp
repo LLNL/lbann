@@ -76,7 +76,7 @@ public:
 
 protected:
 
-  void setup_dims() override;
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
   void setup_matrices(const El::Grid& grid) override;
   void fp_setup_outputs(El::Int mini_batch_size) override;
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override;
@@ -170,8 +170,8 @@ description layer_norm_layer<TensorDataType,Layout,Device>::get_description() co
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Device>
-void layer_norm_layer<TensorDataType,Layout,Device>::setup_dims() {
-  data_type_layer<TensorDataType>::setup_dims();
+void layer_norm_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
   this->set_output_dims(this->get_input_dims());
 }
 

@@ -883,6 +883,20 @@ cudnnConvolutionBwdFilterAlgo_t get_bwd_filter_algorithm(
   }
 }
 
+namespace {
+cudnnMathType_t default_tensor_ops_mode = CUDNN_DEFAULT_MATH;
+}
+
+void default_to_tensor_ops() noexcept
+{
+  default_tensor_ops_mode = CUDNN_TENSOR_OP_MATH_ALLOW_CONVERSION;
+}
+
+cudnnMathType_t get_default_convolution_math_type() noexcept
+{
+  return default_tensor_ops_mode;
+}
+
 #define PROTO(T)                                       \
   template cudnnDataType_t get_data_type<T>();                   \
   template void set_tensor_desc<T>(cudnnTensorDescriptor_t&, std::vector<int>, std::vector<int>); \

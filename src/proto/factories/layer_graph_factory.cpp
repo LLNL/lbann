@@ -138,7 +138,7 @@ void setup_unpooling_pointers(lbann_comm* comm,
 
 std::vector<std::unique_ptr<Layer>> construct_layer_graph(
   lbann_comm* comm,
-  const std::map<execution_mode, generic_data_reader *>& data_readers,
+  int training_dr_linearized_data_size,
   const lbann_data::Trainer& proto_trainer,
   const lbann_data::Model& proto_model) {
   std::stringstream err;
@@ -202,7 +202,7 @@ std::vector<std::unique_ptr<Layer>> construct_layer_graph(
           && device == T_device) {                                      \
         l = construct_layer<TensorDataType, T_layout, T_device>(        \
           comm,                                                         \
-          data_readers,                                                 \
+          training_dr_linearized_data_size,                             \
           num_parallel_readers,                                         \
           proto_layer);                                                 \
       }                                                                 \

@@ -25,11 +25,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/data_readers/data_reader_python.hpp"
+#include "lbann/trainers/trainer.hpp"
 #ifdef LBANN_HAS_PYTHON
 #include <cstdio>
 #include <algorithm>
 #include <regex>
-#include "lbann/models/model.hpp"
+#include "lbann/trainers/trainer.hpp"
 #include "lbann/utils/python.hpp"
 
 namespace lbann {
@@ -38,8 +39,9 @@ python_reader::python_reader(std::string module,
                              std::string module_dir,
                              std::string sample_function,
                              std::string num_samples_function,
-                             std::string sample_dims_function)
-  : generic_data_reader(true) {
+                             std::string sample_dims_function,
+                             bool shuffle)
+  : generic_data_reader(shuffle) {
 
   // Make sure Python is running and acquire GIL
   python::global_interpreter_lock gil;
@@ -181,7 +183,7 @@ void python_reader::setup(int num_io_threads,
   /// @todo Figure out more robust way to get max mini-batch size
   const El::Int sample_size = get_linearized_data_size();
   const El::Int mini_batch_size
-    = generic_data_reader::get_model()->get_max_mini_batch_size();
+    = generic_data_reader::get_trainer().get_max_mini_batch_size();
   std::string datatype_typecode;
   switch (sizeof(DataType)) {
   case 4: datatype_typecode = "f"; break;

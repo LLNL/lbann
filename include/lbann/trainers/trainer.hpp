@@ -29,6 +29,7 @@
 
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
+#include "lbann/data_coordinator/data_coordinator.hpp"
 #include "lbann/models/model.hpp"
 #include "lbann/execution_contexts/execution_context.hpp"
 #include "lbann/io/persist.hpp"
@@ -51,7 +52,8 @@ class trainer {
 public:
 
   /** Constructor. */
-  trainer(lbann_comm *comm);
+  trainer(lbann_comm *comm,
+          size_t mini_batch_size);
 
   /** Copy constructor. */
   trainer(const trainer& other);
@@ -62,7 +64,11 @@ public:
 
   /** Archive for checkpoint and restart */
   template <class Archive> void serialize(Archive & ar) {
-    ar(CEREAL_NVP(m_persist));
+    ar(CEREAL_NVP(m_persist),
+       CEREAL_NVP(m_max_mini_batch_size),
+       CEREAL_NVP(m_root_random_seed),
+       CEREAL_NVP(m_random_seed),
+       CEREAL_NVP(m_data_seq_random_seed));
   }
 
   /** Set the trainer's name; this is an arbitrary string
@@ -81,6 +87,16 @@ public:
 
   /** Human-readable description. */
   description get_description() const;
+
+  /** Set the random seeds used for the trainer */
+  void set_random_seeds(int root_random_seed, int random_seed, int data_seq_random_seed) {
+    m_root_random_seed = root_random_seed;
+    m_random_seed = random_seed;
+    m_data_seq_random_seed = data_seq_random_seed;
+  }
+
+  int get_random_seed() const { return m_random_seed; }
+  int get_data_seq_random_seed() const { return m_data_seq_random_seed; }
 
   /** @brief Get the list of callbacks for the trainer. */
   std::vector<observer_ptr<callback_base>> get_callbacks() {
@@ -104,7 +120,7 @@ public:
   }
 
   /** Set up the trainer. */
-  void setup(std::unique_ptr<thread_pool> io_thread_pool);
+  void setup(std::unique_ptr<thread_pool> io_thread_pool, std::map<execution_mode, generic_data_reader *> data_readers);
 
   using execution_context_key_pair_t = typename std::pair<observer_ptr<model>, execution_mode>;
 
@@ -126,6 +142,8 @@ public:
   void delete_execution_context(execution_context_key_pair_t key);
 
   void for_each_execution_context(std::function<void(observer_ptr<execution_context>)>fn);
+
+  data_coordinator& get_data_coordinator() { return m_data_coordinator; }
 
   void apply(training_algorithm& alg,
              observer_ptr<model> model,
@@ -152,6 +170,11 @@ public:
     return m_persist;
   }
 
+  /** Get the trainer's maximum mini-batch size. */
+  inline size_t get_max_mini_batch_size() const {
+    return m_max_mini_batch_size;
+  }
+
   /** Set a flag that can be used to enable / disable the background I/O activities */
   void allow_background_io_activity(bool enable) { m_background_io_allowed = enable; }
 
@@ -172,6 +195,9 @@ public:
   bool load_from_checkpoint_distributed(persist& p);
   bool load_from_checkpoint_distributed(model& m, execution_context& c);
 
+  /** @brief Write model to proto file */
+  void write_proto(lbann_data::Trainer* proto);
+
 private:
 
   /** Give trainer a name. */
@@ -179,6 +205,19 @@ private:
 
   /** Communicator for the trainer. */
   lbann_comm *m_comm;
+
+  /** @details Maximum possible minibatch size supported by models and
+   *  layers in this trainer.  Note that this field will eventually be
+   *  local to the particular, instance of the training context..
+   */
+  size_t m_max_mini_batch_size;
+
+  // Root of the random seed tree: either default or user supplied
+  int m_root_random_seed;
+  // Random seed used for the general RNGs
+  int m_random_seed;
+  // Random seed used for the RNG used to fetch data
+  int m_data_seq_random_seed;
 
   /** Threads available for I/O */
   std::unique_ptr<thread_pool> m_io_thread_pool;
@@ -202,6 +241,9 @@ private:
 
   /** @brief Current callbacks to process. */
   std::vector<std::shared_ptr<callback_base>> m_callbacks;
+
+  /** @brief Data Coordinator holding trainers data readers */
+  data_coordinator m_data_coordinator;
 };
 
 }  // namespace lbann

@@ -46,7 +46,8 @@ def setup_experiment(lbann):
         lbann (module): Module for LBANN Python frontend
 
     """
-    trainer = lbann.Trainer()
+    mini_batch_size = num_samples() // 2
+    trainer = lbann.Trainer(mini_batch_size=mini_batch_size)
     model = construct_model(lbann)
     data_reader = construct_data_reader(lbann)
     optimizer = lbann.NoOptimizer()
@@ -90,7 +91,7 @@ def construct_model(lbann):
     y = lbann.LeakyRelu(x, negative_slope=0.01,
                         data_layout='data_parallel',
                         parallel_strategy=create_parallel_strategy(4))
-    y = lbann.Reshape(y, dims=str(sample_dims()))    
+    y = lbann.Reshape(y, dims=str(sample_dims()))
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='data-parallel layout'))
@@ -117,11 +118,11 @@ def construct_model(lbann):
 
     # LBANN implementation
     x = x_lbann
-    x = lbann.Reshape(x, dims="4 2 6")    
+    x = lbann.Reshape(x, dims="4 2 6")
     y = lbann.LeakyRelu(x, negative_slope=2,
                         data_layout='model_parallel',
                         parallel_strategy=create_parallel_strategy(4))
-    y = lbann.Reshape(y, dims=str(sample_dims()))    
+    y = lbann.Reshape(y, dims=str(sample_dims()))
     z = lbann.L2Norm2(y)
     obj.append(z)
     metrics.append(lbann.Metric(z, name='model-parallel layout'))
@@ -152,10 +153,8 @@ def construct_model(lbann):
     # Construct model
     # ------------------------------------------
 
-    mini_batch_size = num_samples() // 2
     num_epochs = 0
-    return lbann.Model(mini_batch_size,
-                       num_epochs,
+    return lbann.Model(num_epochs,
                        layers=lbann.traverse_layer_graph(x_lbann),
                        objective_function=obj,
                        metrics=metrics,

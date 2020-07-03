@@ -30,7 +30,8 @@
 #define LBANN_DATA_READER_HPP
 
 #include "lbann/base.hpp"
-#include "lbann/utils/random.hpp"
+#include "lbann/data_coordinator/data_coordinator_metadata.hpp"
+#include "lbann/utils/random_number_generators.hpp"
 #include "lbann/utils/exception.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/file_io.hpp"
@@ -56,7 +57,7 @@
 namespace lbann {
 
 class data_store_conduit;
-class model;
+class trainer;
 
 /**
  * A data reader manages reading in data in a particular format.
@@ -74,6 +75,7 @@ class generic_data_reader {
    * ctor
    */
   generic_data_reader(bool shuffle = true) :
+    m_verbose(options::get()->get_bool("verbose")),
     m_data_store(nullptr),
     m_comm(nullptr),
     m_mini_batch_size(0), m_current_pos(0),
@@ -101,9 +103,10 @@ class generic_data_reader {
     m_procs_per_partition(1),
     m_io_thread_pool(nullptr),
     m_jag_partitioned(false),
-    m_model(nullptr),
+    m_trainer(nullptr),
     m_issue_warning(true)
-  {}
+  {
+  }
   generic_data_reader(const generic_data_reader&) = default;
   generic_data_reader& operator=(const generic_data_reader&) = default;
 
@@ -345,6 +348,13 @@ class generic_data_reader {
   virtual const std::vector<int> get_data_dims() const {
     return std::vector<int>(0);
   }
+
+  virtual std::vector<El::Int> get_slice_points(const slice_points_mode var_category,
+                                                bool& is_supported) {
+    is_supported = false;
+    return {};
+  }
+
   /// True if the data reader's current position is valid.
   virtual bool position_valid() const {
     return (m_current_pos < get_num_data());
@@ -623,7 +633,7 @@ class generic_data_reader {
 
   void instantiate_data_store();
 
-  virtual void preload_data_store(); 
+  virtual void preload_data_store();
 
   void set_gan_labelling(bool has_gan_labelling) {
      m_gan_labelling = has_gan_labelling;
@@ -637,9 +647,12 @@ class generic_data_reader {
 
   virtual bool priming_data_store() const;
 
-  void set_model(model *m) { m_model = m; }
+  void set_trainer(trainer *t) { m_trainer = t; }
 
-  model * get_model() const { return m_model; }
+  trainer& get_trainer() const {
+    if(m_trainer == nullptr) { LBANN_ERROR("get_trainer called with nullptr"); }
+    return *m_trainer;
+  }
 
   /// experimental; used to ensure all readers for jag_conduit_hdf5
   /// have identical shuffled indices
@@ -651,6 +664,8 @@ class generic_data_reader {
   }
 
  protected:
+
+  bool m_verbose = false;
 
   // For use with conduit when samples are corrupt.
   mutable std::unordered_set<int> m_using_random_node;
@@ -844,8 +859,7 @@ private:
   /// this sets various member variables (num_iterations, m_reset_mini_batch_index,
   /// etc.
   void set_jag_variables(int mb_size);
-  model *m_model;
-
+  trainer *m_trainer;
 
   /** Transform pipeline for preprocessing data. */
   transform::transform_pipeline m_transform_pipeline;
