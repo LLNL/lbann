@@ -7,7 +7,7 @@
         ignore = dirty
 [submodule "applications/graph/node2vec/havoqgt"]
 	path = applications/graph/node2vec/havoqgt
-	url = https://github.com/LLNL/havoqgt
+	url = https://github.com/KIwabuchi/havoqgt
         branch = develop
         ignore = dirty
 [submodule "applications/graph/node2vec/largescale_node2vec"]

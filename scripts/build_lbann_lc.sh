@@ -487,7 +487,7 @@ fi
 
 # Hacks to build with largescale_node2vec and HavoqGT
 WITH_LARGESCALE_NODE2VEC=0
-CXX_FLAGS="${CXX_FLAGS} -isystem ${ROOT_DIR}/applications/graph/largescale_node2vec/include -isystem ${ROOT_DIR}/applications/graph/havoqgt/include"
+CXX_FLAGS="${CXX_FLAGS} -isystem ${ROOT_DIR}/applications/graph/node2vec/largescale_node2vec/include -isystem ${ROOT_DIR}/applications/graph/node2vec/havoqgt/include"
 C_FLAGS="${CXX_FLAGS}"
 
 # Set environment variables

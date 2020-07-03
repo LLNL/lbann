@@ -71,11 +71,12 @@ else:
     # before starting LBANN.
     graph_file = os.path.join(
         root_dir, 'largescale_node2vec', 'evaluation', 'dataset',
-        'youtube', 'edges_0based'
+        'blog', 'edges_0based'
     )
     distributed_graph_file = '/dev/shm/graph'
     epoch_size = 100 * args.mini_batch_size
-    num_graph_nodes = 1138500
+    num_graph_nodes = 10312 # blog
+    #num_graph_nodes = 1138500 # youtube
     walk_length = 80
     return_param = 0.25
     inout_param = 0.25
