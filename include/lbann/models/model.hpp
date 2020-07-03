@@ -425,7 +425,9 @@ public:
 	
 public:	
   std::unique_ptr<El::Grid> grid1,grid2;	
-  std::unordered_map<int, std::unique_ptr<El::Grid>> grids; 
+  std::unordered_map<int, std::shared_ptr<El::Grid>> grids; 
+  std::unordered_map<int, std::unique_ptr<El::mpi::Group>> grids_mpi_groups; 
+
 
 private:
 

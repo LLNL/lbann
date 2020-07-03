@@ -191,6 +191,8 @@ public:
   /** Ranks in grid for the sub-graph */  
   std::unique_ptr<std::set <int, std::greater <int> >> subgrid_ranks; 
   El::Int subgrid_number;
+
+  std::shared_ptr<El::Grid> mygrid;
   
   Layer(lbann_comm *comm);
   Layer(const Layer& other);

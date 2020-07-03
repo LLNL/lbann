@@ -746,14 +746,19 @@ void  model::setup_subgrids(){
   El::Int grid_number = 0;
   
   const El::GridOrder orderGrid =  El::COLUMN_MAJOR;
-  El::mpi::Group group, grid1Group,grid2Group;
+  
+  grids_mpi_groups[0] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+
   El::mpi::Comm sub_comm = El::mpi::NewWorldComm();
   El::Int commSize = El::mpi::Size( sub_comm);
-  El::mpi::CommGroup( El::mpi::NewWorldComm(), group );
+  El::mpi::CommGroup( El::mpi::NewWorldComm(), *grids_mpi_groups[0]  );
 
 
   //grids[grid_number] = std::unique_ptr<El::Grid>(new El::Grid(sub_comm,group, commSize, orderGrid ));
-  grids.insert(std::make_pair(grid_number, std::unique_ptr<El::Grid>(new El::Grid(El::mpi::NewWorldComm(),group, commSize, orderGrid ))));
+  //grids.insert(std::make_pair(grid_number, std::shared_ptr<El::Grid>(new El::Grid(El::mpi::NewWorldComm(),*grids_mpi_groups[0], commSize, orderGrid ))));
+  //make_shared<Song>
+  //grids.insert(std::make_pair(grid_number, std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[0], commSize, orderGrid )));
+  grids[grid_number] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[0], commSize, orderGrid );
   std::unique_ptr<El::Grid> temp_ptr;
   //grids[grid_number] = temp_ptr;
   //grids.insert({grid_number,temp_ptr});
@@ -763,13 +768,8 @@ void  model::setup_subgrids(){
 
   
 
-  std::vector<int> grid1Ranks(2);
-  std::vector<int> grid2Ranks(2);
 
-  grid1Ranks[0]=0;
-  grid1Ranks[1]=1;
 
-  El::mpi::Incl( group, grid1Ranks.size(),  grid1Ranks.data(), grid1Group );
   //grids.insert(std::make_pair(grid_number, std::unique_ptr<El::Grid>(new El::Grid(El::mpi::NewWorldComm(),grid1Group, 2, orderGrid ))));
 
 
@@ -788,6 +788,8 @@ void  model::setup_subgrids(){
     {
       layers[node]->subgrid_ranks.reset(new std::set<int, std::greater <int> >(initial_ranks.begin(),initial_ranks.end()));
       layers[node]->subgrid_number = 0;
+      //layers[node]->mygrid.reset(grids[grid_number].get());
+      layers[node]->mygrid = grids[grid_number];
 
     }
     else
@@ -802,6 +804,8 @@ void  model::setup_subgrids(){
           std::set <int, std::greater <int> > layer_ranks = *(parents[0]->subgrid_ranks);
           layers[node]->subgrid_ranks.reset(new std::set<int, std::greater <int> >(layer_ranks.begin(),layer_ranks.end()));
           layers[node]->subgrid_number = parents[0]->subgrid_number;
+          //layers[node]->mygrid.reset(grids[layers[node]->subgrid_number].get());
+          layers[node]->mygrid = grids[layers[node]->subgrid_number];
         }
         else
         {
@@ -821,12 +825,17 @@ void  model::setup_subgrids(){
 
           //create new grid 
           std::vector<int> ranks_in_grid(pooled_set.begin(), pooled_set.end());
-          El::mpi::Group temp_group;
-          El::mpi::Incl( group, ranks_in_grid.size(), ranks_in_grid.data(), temp_group );
+          
           grid_number++;
+          grids_mpi_groups[grid_number] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+          El::mpi::Incl( *grids_mpi_groups[0], ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_number] );
+          
 
-          grids[grid_number] = std::unique_ptr<El::Grid>(new El::Grid(El::mpi::NewWorldComm(),temp_group, ranks_in_grid.size(), orderGrid ));
+          grids[grid_number] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_number], ranks_in_grid.size(), orderGrid );
+          //grids_mpi_groups[grid_number] = std::unique_ptr<El::mpi::Group>(temp_group);
           layers[node]->subgrid_number = grid_number;
+          //layers[node]->mygrid.reset(grids[grid_number].get());
+          layers[node]->mygrid = grids[grid_number];
 
           std::string temp_print;
 
@@ -837,7 +846,7 @@ void  model::setup_subgrids(){
             temp_print.append(" ");
           }
 
-          std::cout<<"Adding Layer:"<<layers[node]->get_name()<< " Pooled resources:"<<temp_print<<"\n";
+          //std::cout<<"Adding Layer:"<<layers[node]->get_name()<< " Pooled resources:"<<temp_print<<"\n";
 
 
 
@@ -878,13 +887,24 @@ void  model::setup_subgrids(){
         
         //create new grid 
         std::vector<int> ranks_in_grid(my_sub_ranks.begin(), my_sub_ranks.end());
-        El::mpi::Group temp_group;
-        El::mpi::Incl( group, ranks_in_grid.size(), ranks_in_grid.data(), temp_group );
         grid_number++;
+        grids_mpi_groups[grid_number] = std::unique_ptr<El::mpi::Group>(new El::mpi::Group);
+        El::mpi::Incl( *grids_mpi_groups[0], ranks_in_grid.size(), ranks_in_grid.data(), *grids_mpi_groups[grid_number] );
+        
 
-        grids[grid_number] = std::unique_ptr<El::Grid>(new El::Grid(El::mpi::NewWorldComm(),temp_group, ranks_in_grid.size(), orderGrid ));
+        grids[grid_number] = std::make_shared<El::Grid>(El::mpi::NewWorldComm(),*grids_mpi_groups[grid_number], ranks_in_grid.size(), orderGrid );
+
         layers[node]->subgrid_number = grid_number;
         layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
+        //layers[node]->mygrid.reset(grids[grid_number].get());
+        layers[node]->mygrid = grids[grid_number];
+
+        // if(parents[0]->get_name().find("split")!= std::string::npos)
+        // {
+        //   parents[0]->subgrid_number = grid_number;
+        //   parents[0]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
+        //   std::cout<<"My parent is spliting layer "<<layers[node]->get_name()<<"\n";
+        // }
 
         std::string temp_print;
 
@@ -895,7 +915,7 @@ void  model::setup_subgrids(){
           temp_print.append(" ");
         }
 
-        std::cout<<"Spliting Layer:"<<layers[node]->get_name()<< " Pooled resources:"<<temp_print<<"\n";
+        //std::cout<<"Spliting Layer:"<<layers[node]->get_name()<< " Pooled resources:"<<temp_print<<"\n";
 
 
 
@@ -909,6 +929,8 @@ void  model::setup_subgrids(){
     //std::cout<<"In model Layer name:"<<layers[node]->get_name()<<" Type:"<<layers[node]->get_type()<<" Enable subgraph:"<<layers[node]->get_parallel_strategy().enable_subgraph<< " Ranks size:"<< (*layers[node]->subgrid_ranks).size()<<"\n";
 
   }
+
+  //std::cout<<"Times shared pointer 0 is used:"<<grids[0].use_count()<<"\n";
 }
 
 void model::setup_layer_execution_order() {
@@ -961,9 +983,16 @@ void model::setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_meta
   */
 
 
+
+
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.set_model(this);
+    // auto parents = l.get_parent_layers();
+    // if(parents[0]->get_type()=="sum")
+    // {
+    //   std::cout<<"Layer before sum layer has grid size:"<<(*(grids[l.subgrid_number])).Size()<<"\n";
+    // }
     //std::cout<<"Branch tag:"<<l.get_parallel_strategy().sub_branch_tag<<"\n";
     //std::cout<<"Layer:"<<l.get_name()<<" has subgrid number:"<<l.subgrid_number<<" Size:"<<(*l.subgrid_ranks).size()<<"\n";
     if(i==4)
@@ -1289,25 +1318,63 @@ void model::clear_gradients() {
 }
 
 void model::forward_prop(execution_mode mode) {
+  int myrank = El::mpi::Rank();
+
+  
+
   do_model_forward_prop_begin_cbs(mode);
+  
+
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
+
+
+
+    
     do_layer_forward_prop_begin_cbs(mode, &l);
-    l.forward_prop();
+
+    //std::cout<<"Running FP with"<<l.get_type()<<" Layer name:"<<l.get_name()<<" Rank:"<<myrank<<"\n";
+    if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum")
+    {
+      //std::cout<<"calling fp for :"<<l.get_name()<<" Rank:"<<myrank<<"\n";
+
+      l.forward_prop();
+    }
+
+    
+    
     do_layer_forward_prop_end_cbs(mode, &l);
   }
   do_model_forward_prop_end_cbs(mode);
+
+  //c.set_current_mini_batch_size(effective_batch_size/4);
 }
 
 void model::backward_prop() {
+  int myrank = El::mpi::Rank();
   do_model_backward_prop_begin_cbs();
+
+ 
+
   for (El::Int i = get_num_layers()-1; i >= 0; --i) {
 
     // Perform backward prop step on current layer
     auto& l = get_layer(i);
-    do_layer_backward_prop_begin_cbs(&l);
-    l.back_prop();
-    do_layer_backward_prop_end_cbs(&l);
+
+    
+    
+
+    
+    //std::cout<<"Running BP with:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
+    if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum")
+    {
+      //std::cout<<"Actually Running BP with:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
+
+      do_layer_backward_prop_begin_cbs(&l);
+      l.back_prop();
+      do_layer_backward_prop_end_cbs(&l);
+    }
+    
 
     // Terminate early if all gradients have been computed
     bool all_gradients_computed = true;
@@ -1321,7 +1388,9 @@ void model::backward_prop() {
     if (all_gradients_computed) { break; }
 
   }
+  //std::cout<<"BP is complete Rank:"<<myrank<<"\n";
   do_model_backward_prop_end_cbs();
+  
 }
 
 void model::update_weights() {
@@ -1334,15 +1403,31 @@ void model::update_weights() {
   // after a weights gradient has been computed. Thus, iterating in
   // reverse order will use gradients that have already finished their
   // allreduce, giving more time for more recent allreduces to finish.
+  int counter = 0;
   for (auto rit = m_weights.rbegin(); rit != m_weights.rend(); ++rit) {
     auto& w = **rit;
     auto&& opt = w.get_optimizer();
+
+    // auto ranks = w.get_resources();
+
+    // std::cout<<"In weight: weightname:"<<w.get_name();
+    //  for (int const& r : ranks)
+    // {
+    //     std::cout << r << ' ';
+    // }
+    // std::cout<<"\n";
+
+
     if (opt != nullptr) {
       do_weight_optimize_begin_cbs(&w);
       opt->step();
       do_weight_optimize_end_cbs(&w);
+      counter++;
     }
   }
+
+  //std::cout<<"Times weights are updated:"<<counter<<"\n";
+
 
   do_model_optimize_end_cbs();
 }

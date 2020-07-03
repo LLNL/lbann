@@ -134,6 +134,8 @@ public:
   /** Get error signal tensor corresponding to parent layer. */
   const BaseDistMat& get_error_signals(const Layer& parent) const override;
 
+  /** Get temp Grad Tensor. */
+  AbsDistMatrixType& get_temp_grad() ;
   /** Get activation tensor. */
   AbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
@@ -385,6 +387,11 @@ private:
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
   std::vector<std::unique_ptr<AbsDistMatrixType>> m_gradient_wrt_inputs;
+
+  /** Temp grad tensor for Split Layer
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<std::unique_ptr<AbsDistMatrixType>> m_temp_grad;
 
   /** @brief Whether to keep persistent error signals or dynamically
    *         allocate/deallocate them.

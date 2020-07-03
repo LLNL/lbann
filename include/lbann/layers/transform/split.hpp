@@ -66,6 +66,7 @@ public:
 
 protected:
 
+
   void setup_dims(DataReaderMetaData& dr_metadata) override {
     data_type_layer<TensorDataType>::setup_dims(dr_metadata);
     for (int i = 0; i < this->get_num_children(); ++i) {
@@ -76,29 +77,62 @@ protected:
   void fp_setup_outputs(El::Int mini_batch_size) override {
     const auto& input = this->get_prev_activations();
     for (int i = 0; i < this->get_num_children(); ++i) {
-      El::LockedView(this->get_activations(i), input);
+      //El::LockedView(this->get_activations(i), input);
+      El::Copy( input,this->get_activations(i));
     }
   }
 
   void fp_compute() override {}
 
   void bp_compute() override {
+    
+    
 #ifdef LBANN_HAS_DISTCONV
     if (this->distconv_enabled()) {
       get_distconv_adapter().bp_compute();
       return;
     }
 #endif // LBANN_HAS_DISTCONV
-    auto& gradient_wrt_input = this->get_error_signals();
-    if (this->get_num_children() > 0) {
-      El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
-    } else {
-      El::Zero(gradient_wrt_input);
+
+    if(true)
+    {
+
+      auto& gradient_wrt_input = this->get_error_signals();
+      if (this->get_num_children() > 0) {
+        //std::cout<<"Split Layer prev grad size: First branch 0 Height:"<<this->get_prev_error_signals(0).Height()<<" Width:"<<this->get_prev_error_signals(0).Width()<<" Local Height:"<<this->get_prev_error_signals(0).LocalHeight()<<" Local Width:"<<this->get_prev_error_signals(0).LocalWidth()<<"\n";
+        El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
+      } else {
+        El::Zero(gradient_wrt_input);
+      }
+      for (int i = 1; i < this->get_num_children(); ++i) {
+        //std::cout<<"Split Layer prev grad size: First branch:"<<i<<" Height:"<<this->get_prev_error_signals(i).Height()<<" Width:"<<this->get_prev_error_signals(i).Width()<<" Local Height:"<<this->get_prev_error_signals(i).LocalHeight()<<" Local Width:"<<this->get_prev_error_signals(i).LocalWidth()<<"\n";
+        
+        El::Copy(this->get_prev_error_signals(i), this->get_temp_grad());
+        El::Axpy(DataType(1), this->get_temp_grad(),
+                 gradient_wrt_input);
+      }
+
     }
-    for (int i = 1; i < this->get_num_children(); ++i) {
-      El::Axpy(DataType(1), this->get_prev_error_signals(i),
-               gradient_wrt_input);
+
+    else
+    {
+
+      auto& gradient_wrt_input = this->get_error_signals();
+      if (this->get_num_children() > 0) {
+        El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
+      } else {
+        El::Zero(gradient_wrt_input);
+      }
+      for (int i = 1; i < this->get_num_children(); ++i) {
+        El::Axpy(DataType(1), this->get_prev_error_signals(i),
+                 gradient_wrt_input);
+      }
+
     }
+    
+
+
+
   }
 
 #ifdef LBANN_HAS_DISTCONV

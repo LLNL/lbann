@@ -284,6 +284,9 @@ std::vector<int> Layer::get_input_dims(int input_index) const {
         << "\"" << parent.get_name() << "\"";
     LBANN_ERROR(err.str());
   }
+  auto temp = parent.get_output_dims(parent_output_index);
+
+  //std::cout<<"Input Dim Layer Name:"<<get_name()<<" dims size"<<temp.size()<<" Dims"<<temp[0]<< " "<< temp[1]<<"\n";
   return parent.get_output_dims(parent_output_index);
 
 }

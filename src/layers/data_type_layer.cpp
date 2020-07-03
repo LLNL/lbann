@@ -274,6 +274,13 @@ auto data_type_layer<TensorDataType>::get_error_signals(int parent_index) const
   return *m_gradient_wrt_inputs[parent_index];
 }
 
+template <typename TensorDataType>
+auto data_type_layer<TensorDataType>::get_temp_grad() 
+  ->  AbsDistMatrixType& {
+  
+  return *m_temp_grad[0];
+}
+
 // Accessing non-const distributed matrices
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.
@@ -441,24 +448,103 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   m_outputs.clear();
   m_gradient_wrt_outputs.clear();
   m_gradient_wrt_inputs.clear();
+  m_temp_grad.clear();
 
   // Construct matrices
   m_inputs.resize(get_num_parents());
   m_outputs.resize(get_num_children());
   m_gradient_wrt_outputs.resize(get_num_children());
   m_gradient_wrt_inputs.resize(get_num_parents());
-  for (auto& input : m_inputs) {
+  m_temp_grad.resize(1);
+
+  auto childs = get_child_layers(); 
+  auto parents = get_parent_layers();
+  
+  if(get_name().find("split")!= std::string::npos)
+  {
+    for (auto& input : m_inputs) {
     input = mat_builder->MakeEmpty(grid, 0);
-  }
-  for (auto& output : m_outputs) {
-    output = mat_builder->MakeEmpty(grid, 0);
-  }
-  for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
+    } 
+
+    int count = 0;
+
+    for (auto& output : m_outputs) {
+      output = mat_builder->MakeEmpty(*(childs[count]->mygrid), 0);
+      count++;
+    }
+    count = 0;
+    for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
+      grad_wrt_output = mat_builder->MakeEmpty(*(childs[count]->mygrid), 0);
+      count++;
+    }
+
+    for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
     grad_wrt_input = mat_builder->MakeEmpty(grid, 0);
+    }
+
+    for (auto& temp_grad : m_temp_grad) {
+    temp_grad = mat_builder->MakeEmpty(grid, 0);
+    }
+    
   }
-  for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
-    grad_wrt_output = mat_builder->MakeEmpty(grid, 0);
+  else if(get_type()=="sum")
+  {
+    int count = 0;
+    for (auto& input : m_inputs) {
+    input = mat_builder->MakeEmpty(grid, 0);
+    } 
+
+    for (auto& output : m_outputs) {
+      output = mat_builder->MakeEmpty(grid, 0);
+    }
+    
+    for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
+      grad_wrt_output = mat_builder->MakeEmpty(grid, 0);
+    }
+
+    count = 0;
+    for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
+    grad_wrt_input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
+    count++;
+    }
+
+    for (auto& temp_grad : m_temp_grad) {
+    temp_grad = mat_builder->MakeEmpty(grid, 0);
+    }
+    //std::cout<<"Setup for Sum layer\n";
+
   }
+  else
+  {
+    
+    
+    for (auto& input : m_inputs) {
+    input = mat_builder->MakeEmpty(grid, 0);
+    }
+
+    for (auto& output : m_outputs) {
+      output = mat_builder->MakeEmpty(grid, 0);
+    }
+
+    for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
+      grad_wrt_output = mat_builder->MakeEmpty(grid, 0);
+      
+    }
+
+    for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
+    grad_wrt_input = mat_builder->MakeEmpty(grid, 0);
+    }
+
+    for (auto& temp_grad : m_temp_grad) {
+    temp_grad = mat_builder->MakeEmpty(grid, 0);
+    }
+    
+
+    
+
+  }
+  
+  
   //std::cout<<"In DT setup matrices, layer name:"<<this->get_name()<< "Grid:"<<grid.VCSize()<<"\n";
 }
 
@@ -573,7 +659,7 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
     auto& input = *m_inputs[i];
     input.Empty(false);
     //if(El::GridCompare(input.Grid(),parent_output.DistData().grid))	
-    if(input.Grid()==*(parent_output.DistData().grid))	
+    if(this->get_type()!="add" && this->get_type()!="sum")	
     {	
       input.AlignWith(alignment_dist);	
     }
@@ -593,7 +679,7 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
       }
 #endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
       async_copy = false;	
-      std::cout<<"In DT, layer name:"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<< " Input dimensions:"<<input.Height()<< " "<< input.Width() <<" output dimension:"<<parent_output.Height()<<" "<<parent_output.Width()<<"\n";
+      //std::cout<<"In DT1, layer name:"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<< " Input dimensions:"<<input.Height()<< " "<< input.Width() <<" output dimension:"<<parent_output.Height()<<" "<<parent_output.Width()<<"\n";
 
       if (async_copy) {
         El::CopyAsync(parent_output, input);
@@ -601,6 +687,8 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
         El::Copy(dynamic_cast<const AbsDistMatrixType&>(parent_output), input);	
         //input = (El::AbstractDistMatrix<double>)parent_output;
       }
+      //std::cout<<"In DT2, layer name:"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<< " Input dimensions:"<<input.Height()<< " "<< input.Width() <<" output dimension:"<<parent_output.Height()<<" "<<parent_output.Width()<<"\n";
+
     }
     //std::cout<<"In DT, layer name:"<<this->get_name()<< " Input Grid:"<<input.Grid().VCSize()<<" output Grid:"<<parent_output.DistData().grid->VCSize()<<"\n";
 
@@ -638,7 +726,16 @@ void data_type_layer<TensorDataType>::fp_setup_outputs(El::Int mini_batch_size) 
 #endif // LBANN_HAS_DISTCONV
     auto& output = get_activations(i);
     output.Empty(false);
-    if (align_outputs) { output.AlignWith(alignment_dist); }
+    if (align_outputs) {
+      output.AlignWith(alignment_dist); 
+      // if(this->get_type()!="add" && this->get_type()!="sum")
+      // { 
+      //   output.AlignWith(alignment_dist); 
+      // }
+      // else{
+      //   std::cout<<"Problem is here\n";
+      // }
+    }
     output.Resize(get_output_size(i), mini_batch_size);
   }
 
@@ -743,9 +840,12 @@ void data_type_layer<TensorDataType>::move_or_copy_prev_error_signal_(
 
   // Check the signal size
   auto& signal = *signal_in;
-  assert_tensor_size(
-    signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
-    m_name, child.get_name());
+  if(m_outputs[layer_idx]->Participating()==true)
+  {
+    assert_tensor_size(
+      signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
+      m_name, child.get_name());
+  }
 
   // If the distribution is OK, then we can just swap data
   // around. Otherwise, deep copy into correct distribution.
@@ -847,20 +947,36 @@ void data_type_layer<TensorDataType>::propagate_error_signals_to_parents_() {
 
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::allocate_new_gradients_() {
+  auto parents = get_parent_layers();
   for (int i = 0; i < get_num_parents(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_gradient_wrt_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     if (!m_gradient_wrt_inputs[i]) {
-      m_gradient_wrt_inputs[i] =
-        MakeMatBuilder<TensorDataType>(
-          this->get_data_layout(),
-          this->get_device_allocation())->MakeEmpty(
-            m_inputs[i]->Grid(), 0);
+      if(get_type()=="sum")
+      {
+        //std::cout<<"Initializing Sum layer grads in allocate new gradients\n";
+        m_gradient_wrt_inputs[i] =
+          MakeMatBuilder<TensorDataType>(
+            this->get_data_layout(),
+            this->get_device_allocation())->MakeEmpty(
+              *(parents[i]->mygrid), 0);
+      }
+      else
+      {
+        m_gradient_wrt_inputs[i] =
+          MakeMatBuilder<TensorDataType>(
+            this->get_data_layout(),
+            this->get_device_allocation())->MakeEmpty(
+              m_inputs[i]->Grid(), 0);
+          }
     }
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
-    gradient_wrt_input.AlignWith(get_prev_activations(i));
+    if(get_type()!="sum")
+    {
+      gradient_wrt_input.AlignWith(get_prev_activations(i));
+    }
   }
 }
 
@@ -875,6 +991,10 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
     gradient_wrt_input.AlignWith(get_prev_activations(i));
+    // if(get_type()=="sum")
+    // {
+    //   std::cout<<"In sum layer, Iput Size:"<<get_input_size(i)<<" Mini batch Size:"<<mini_batch_size<<"\n";
+    // }
     gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
   }
 }

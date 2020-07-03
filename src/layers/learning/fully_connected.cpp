@@ -144,6 +144,7 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
   }
   if (!this->has_data_type_weights(0)) {
     auto w = make_unique<WeightsType>(this->get_comm());
+    w->set_resources(*(this->subgrid_ranks));
     auto init = make_unique<he_initializer<TensorDataType>>(probability_distribution::gaussian);
     auto opt = this->m_model->template create_optimizer<TensorDataType>();
     w->set_name(this->get_name() + "_linearity_weights");
@@ -180,6 +181,7 @@ void fully_connected_layer<TensorDataType, T_layout, Dev>
   if (m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
     if (!this->has_data_type_weights(1)) {
       auto w = make_unique<WeightsType>(this->get_comm());
+      w->set_resources(*(this->subgrid_ranks));
       auto opt = this->m_model->template create_optimizer<TensorDataType>();
       w->set_name(this->get_name() + "_bias_weights");
       w->set_optimizer(std::move(opt));
@@ -225,6 +227,7 @@ void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   const auto& input = l.get_prev_activations();
   auto& output = l.get_activations();
 
+
   // Apply linearity
   // Note: Perform GEMMs independently if possible
   const auto& linearity = l.get_data_type_weights(0).get_values();
@@ -267,6 +270,18 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
   const auto& local_input = input.LockedMatrix();
   const auto& local_gradient_wrt_output = gradient_wrt_output.LockedMatrix();
   auto& local_gradient_wrt_input = gradient_wrt_input.Matrix();
+
+  // auto parents = l.get_parent_layers();
+  // auto parent = parents[0];
+
+  // if(parent->get_type()=="sum")
+  // {
+  //   std::cout<<"Running Error layer name:"<<l.get_name()<<" BP grad wrt output Height:"<<gradient_wrt_output.LocalHeight()<<" Width:"<<gradient_wrt_output.LocalWidth()<<"\n";
+  // }
+  // else{
+  //   std::cout<<"Running Error layer name:"<<l.get_name()<<" BP grad wrt output Height:"<<gradient_wrt_output.LocalHeight()<<" Width:"<<gradient_wrt_output.LocalWidth()<<"\n";
+
+  // }
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {
@@ -332,6 +347,11 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::MODEL_PA
 /** CPU implementation of forward prop computation. */
 template <typename TensorDataType>
 void fp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PARALLEL, El::Device::CPU>& l) {
+  // const auto& myoutput = l.get_activations();
+  // const auto& input = l.get_prev_activations();
+
+  //std::cout<<"Running FP(Grid check) Layer name:"<< l.get_name()<<" grad wrt output Height:"<<l.get_local_prev_error_signals().Height()<<" Width:"<<l.get_local_prev_error_signals().Width()<<" Grid Size"<<l.get_prev_error_signals().Grid().Size()<< " input grid size"<<input.Grid().Size()<< " out gird size"<<myoutput.Grid().Size()<<"\n";
+  
 
   // Matrices
   const auto& local_input = l.get_local_prev_activations();
@@ -366,6 +386,26 @@ void bp_compute_impl(fully_connected_layer<TensorDataType, data_layout::DATA_PAR
   const auto& local_input = l.get_local_prev_activations();
   const auto& local_gradient_wrt_output = l.get_local_prev_error_signals();
   auto& local_gradient_wrt_input = l.get_local_error_signals();
+
+  // const auto& myoutput = l.get_activations();
+  // const auto& input = l.get_prev_activations();
+
+
+  auto childs = l.get_child_layers();
+
+
+  // if(childs[0]->get_type()=="sum")
+  // {
+  //   std::cout<<"Running Error BP FC(DP) grad wrt output Height:"<<local_gradient_wrt_output.Height()<<" Width:"<<local_gradient_wrt_output.Width()<<" Grid Size"<<l.get_prev_error_signals().Grid().Size()<< " input grid size"<<input.Grid().Size()<< " out gird size"<<myoutput.Grid().Size()<<"\n";
+  // }
+  // if(childs[0]->get_type()=="sum")
+  // {
+  //   std::cout<<"Running Size Error layer name:"<<l.get_name()<<" BP grad wrt output Height:"<<local_gradient_wrt_output.Height()<<" Width:"<<local_gradient_wrt_output.Width()<<"\n";
+  // }
+  // else{
+  //   std::cout<<"Running Size Error layer name:"<<l.get_name()<<" BP grad wrt output Height:"<<local_gradient_wrt_output.Height()<<" Width:"<<local_gradient_wrt_output.Width()<<"\n";
+
+  // }
 
   // Compute gradient w.r.t. bias if needed
   if (l.m_bias_scaling_factor != El::TypeTraits<TensorDataType>::Zero()) {

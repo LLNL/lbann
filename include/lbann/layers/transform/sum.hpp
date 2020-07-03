@@ -116,8 +116,12 @@ protected:
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     const auto& gradient_wrt_output = this->get_prev_error_signals();
+
     for (int i = 0; i < this->get_num_parents(); ++i) {
-      El::LockedView(this->get_error_signals(i), gradient_wrt_output);
+      //El::LockedView(this->get_error_signals(i), gradient_wrt_output);
+      
+      El::Copy(gradient_wrt_output,this->get_error_signals(i) );
+      //std::cout<<"Sum layer gradient size:"<<this->get_error_signals(i).LocalHeight()<< " "<<this->get_error_signals(i).LocalWidth()<<"\n";
     }
   }
 
