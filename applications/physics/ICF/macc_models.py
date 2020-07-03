@@ -7,15 +7,17 @@ class MACCForward(lbann.modules.Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, out_dim,name=None):
+    #model capacity factor cf
+    def __init__(self, out_dim,cf=1,name=None):
        self.instance = 0
        self.name = (name if name
                      else 'macc_forward{0}'.format(MACCForward.global_count))
 
        fc = lbann.modules.FullyConnectedModule
        
+       assert isinstance(cf, int), 'model capacity factor should be an int!'
        #generator #fc2_gen0
-       g_neurons = [32,256,1024]
+       g_neurons = [x*cf for x in [32,256,1024]]
        self.gen_fc = [fc(g_neurons[i],activation=lbann.Relu, name=self.name+'gen_fc'+str(i))
                       for i in range(len(g_neurons))]
        self.predy = fc(out_dim,name=self.name+'pred_out')
@@ -27,16 +29,17 @@ class MACCForward(lbann.modules.Module):
 class MACCInverse(lbann.modules.Module):
 
     global_count = 0  # Static counter, used for default names
-
-    def __init__(self, out_dim,name=None):
+    #model capacity factor cf
+    def __init__(self, out_dim,cf=1,name=None):
        self.instance = 0
        self.name = (name if name
                      else 'macc_inverse{0}'.format(MACCInverse.global_count))
 
        fc = lbann.modules.FullyConnectedModule
        
+       assert isinstance(cf, int), 'model capacity factor should be an int!'
        #generator #fc_gen1
-       g_neurons = [16,128,64]
+       g_neurons = [x*cf for x in [16,128,64]]
        self.gen_fc = [fc(g_neurons[i],activation=lbann.Relu, name=self.name+'gen_fc'+str(i))
                       for i in range(len(g_neurons))]
        self.predx = fc(out_dim,name=self.name+'pred_out')
@@ -48,8 +51,8 @@ class MACCInverse(lbann.modules.Module):
 class MACCWAE(lbann.modules.Module):
 
     global_count = 0  # Static counter, used for default names
-
-    def __init__(self, encoder_out_dim, decoder_out_dim, scalar_dim = 15, use_CNN=False, name=None):
+    #model capacity factor (cf) 
+    def __init__(self, encoder_out_dim, decoder_out_dim, scalar_dim = 15, cf=1, use_CNN=False, name=None):
        self.instance = 0
        self.name = (name if name
                      else 'macc_wae{0}'.format(MACCWAE.global_count))
@@ -59,10 +62,13 @@ class MACCWAE(lbann.modules.Module):
        fc = lbann.modules.FullyConnectedModule
        conv = lbann.modules.Convolution2dModule
 
-       disc_neurons = [128,64,1]
-       encoder_neurons = [32,256,128]
-       decoder_neurons = [64,128,256]
+       assert isinstance(cf, int), 'model capacity factor should be an int!'
 
+       disc_neurons = [128,64,1]
+       encoder_neurons = [x*cf for x in [32,256,128]]
+       decoder_neurons = [x*cf for x in [64,128,256]]
+       #Enc/Dec sizes  [32, 256, 128]   [64, 128, 256]
+       print("CF, Enc/Dec sizes ", cf, " ", encoder_neurons, " ", decoder_neurons) 
        enc_outc = [64,32,16]
        dec_outc = [32,16,4]
        
