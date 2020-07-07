@@ -883,5 +883,4 @@ void generic_data_reader::print_get_methods(const std::string filename) {
   out.close();
 }
 
-
 }  // namespace lbann
