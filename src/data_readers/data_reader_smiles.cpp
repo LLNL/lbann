@@ -32,6 +32,7 @@
 #include "lbann/utils/lbann_library.hpp"
 #include <mutex>
 #include <random>
+#include <time.h>
 
 namespace lbann {
 
@@ -133,14 +134,20 @@ void smiles_data_reader::load() {
   // This block replaces:
   //  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   //
-  LBANN_WARNING("starting to generate some random numbers ... theoretically this could run forever, esp. if you set --num_samples too high.");
-  std::set<int> my_indices;
-  while (my_indices.size() < m_num_samples) {
-    my_indices.insert(rand() % m_total_samples);
-  }
-  size_t jj = 0;
-  for (auto idx : my_indices) {
-    m_shuffled_indices[jj++] = idx;
+  if (! opts->get_bool("smiles_random_off")) {
+    LBANN_WARNING("starting to generate some random numbers ... theoretically this could run forever, esp. if you set --num_samples too high.");
+    int seed = opts->get_int("smiles_srand", time(NULL));
+    srand(seed);
+    std::set<int> useme_indices;
+    while (useme_indices.size() < static_cast<size_t>(m_num_samples)) {
+      useme_indices.insert(rand() % m_total_samples);
+    }
+    size_t jj = 0;
+    for (auto idx : useme_indices) {
+      m_shuffled_indices[jj++] = idx;
+    }
+  } else {
+    LBANN_WARNING("pulling all samples from top of file");
   }
 
   resize_shuffled_indices();
@@ -164,6 +171,14 @@ void smiles_data_reader::load() {
       m_shuffled_indices.push_back(t);
     }
   } 
+
+  // get values for ad-hoc sanity checking; see: do_preload()
+  m_min_index = INT_MAX;
+  m_max_index = 0;
+  for (const auto &idx : m_shuffled_indices) {
+    if (idx < m_min_index) m_min_index = idx;
+    if (idx > m_max_index) m_max_index = idx;
+  }
 
   instantiate_data_store();
   select_subset_of_data();
@@ -203,9 +218,20 @@ void smiles_data_reader::do_preload_data_store() {
 
   size_t max_line = 0;
   std::unordered_set<int> valid_ids;
+  int sanity_min = INT_MAX;
+  int sanity_max = 0;
   for (const auto &id : m_shuffled_indices) {
     valid_ids.insert(id);
     max_line = static_cast<size_t>(id) > max_line ? id : max_line;
+    if (id < sanity_min) sanity_min = id;
+    if (id > sanity_max) sanity_max = id;
+  }
+
+  // cheap sanity check 
+  if ( (sanity_min != m_min_index || sanity_max != m_max_index)
+        &&
+        get_role() == "train") {
+    LBANN_ERROR("sanity_min != m_min_index || sanity_max != m_max_index: ", sanity_min, " ", m_min_index, " ", sanity_max, " ", m_max_index);
   }
 
   size_t sample_id = -1;

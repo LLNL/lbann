@@ -72,6 +72,11 @@ public:
 
 private:
 
+  /// used for sanity checking in load() and do_preload();
+  /// may eventually go away
+  int m_min_index = INT_MAX;
+  int m_max_index = 0;
+
   //==== start hack to make it work fast ====
   
   // maps: sample_id to <sample offset, wrt m_data[0], sample_size>
