@@ -184,7 +184,7 @@ def construct_model(run_args):
         lbann.CallbackPrint(),
         lbann.CallbackTimer(),
         lbann.CallbackStepLearningRate(step=run_args.step_size, amt=run_args.gamma),
-        lbann.CallbackDumpWeights(basename=run_args.dump_weights_dir, epoch_interval=1),
+        lbann.CallbackDumpWeights(directory=run_args.dump_weights_dir, epoch_interval=1),
     ]
 
     # Construct model
@@ -237,7 +237,8 @@ def main():
     run_args = construct_lc_launcher_args()
 
     # add data_config data
-    if os.path.isfile(run_args.data_config):
+    # and do not overwrite args if data_reader_prototext is enabled
+    if os.path.isfile(run_args.data_config) and not run_args.data_reader_prototext:
         with open(run_args.data_config, "r") as f:
             config = json.load(f)
         for k, v in config.items():
