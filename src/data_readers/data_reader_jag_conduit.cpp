@@ -831,8 +831,13 @@ void data_reader_jag_conduit::load() {
 
     m_sample_list.close_if_done_samples_file_handle(0);
   }
-  if(is_master()) {
+  if (is_master()) {
     std::cout << "Done with data checking" << std::endl;
+  }
+
+  /// Get the set of sample ids that are owned by this rank
+  for (const auto &t : m_sample_list.get_list()) {
+    m_my_sample_names.insert(t.second);
   }
 
   /// Merge all of the sample lists
@@ -872,6 +877,20 @@ void data_reader_jag_conduit::preload_helper(const hid_t& h, const std::string &
 }
 
 void data_reader_jag_conduit::do_preload_data_store() {
+  if (options::get()->get_bool("old_method")) {
+    do_preload_data_store_jun_2020();
+    return;
+  }
+
+  /// get set of the indices that I own
+  std::set<int> my_indices;
+  for (size_t j=0; j<m_shuffled_indices.size(); j++) {
+    const auto &sample_name = m_sample_list[j].second;
+    if (m_my_sample_names.find(sample_name) != m_my_sample_names.end()) {
+      my_indices.insert(j);
+    }
+  }
+
   conduit::Node work;
   const std::string key; // key = "" is intentional
 
@@ -887,20 +906,14 @@ void data_reader_jag_conduit::do_preload_data_store() {
 
   // Instrumentation
   int my_count = 0;
-  int interval = 1000;
+  int interval = 100;
   double tm5 = get_time();
+  double tm5a= get_time();
   if (opts->has_int("verbose")) {
     interval = opts->get_int("verbose");
   }
-  if (is_master()) {
-    std::cout << "XX interval: " << interval << std::endl;
-  }
 
-  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    int index = m_shuffled_indices[idx];
-    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
-      continue;
-    }
+  for (auto index : my_indices) {
     try {
       const sample_t& s = m_sample_list[index];
       const std::string& sample_name = s.second;
@@ -919,24 +932,32 @@ void data_reader_jag_conduit::do_preload_data_store() {
 
       // Instrumentation
       ++my_count;
-      if (is_verbose() && is_master()) {
-        if (my_count % interval == 0) {
-          double tm55 = get_time() - tm5;
-          std::cout << "P_0 has loaded " << my_count << " samples; time: " << tm55
-                    << " time per sample: " << tm55/my_count << std::endl;
-        }
+
+      if (is_verbose() && is_master() && (my_count % interval == 0) ) {
+        double tm55 = get_time() - tm5;
+        double time_per_sample = tm55/my_count;
+        double remaining_time =  (my_indices.size()-my_count)*time_per_sample;
+          std::cout << "P_0 loaded " << my_count << " samples; "
+                    << " time this incr: " << get_time()-tm5a 
+                    << " time total: " << tm55
+                    << " time per sample: " << tm55/my_count 
+                    << " est. remaining time: " << remaining_time << std::endl;
+        tm5a = get_time();
+      } // end Instrumentation
+
+      //XX
+      if (is_master() && my_count >= 1000)  {
+        std::cerr << "XX calling abort; my count: " << my_count << std::endl;
+        MPI_Abort(MPI_COMM_WORLD, -1);
       }
 
     } catch (conduit::Error const& e) {
       LBANN_ERROR(" :: trying to load the node " + std::to_string(index) + " with key " + key + " and got " + e.what());
     }
   }
+
   /// Once all of the data has been preloaded, close all of the file handles
-  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    int index = m_shuffled_indices[idx];
-    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
-      continue;
-    }
+  for (auto index : my_indices) {
     m_sample_list.close_if_done_samples_file_handle(index);
   }
 
@@ -946,6 +967,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
     msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s";
     LBANN_WARNING(msg.str());
   }
+
 }
 
 void data_reader_jag_conduit::load_list_of_samples(const std::string sample_list_file, size_t stride, size_t offset) {
@@ -1595,6 +1617,98 @@ void data_reader_jag_conduit::add_scalar_normalization_param(const data_reader_j
 
 void data_reader_jag_conduit::add_input_normalization_param(const data_reader_jag_conduit::linear_transform_t& t) {
   m_input_normalization_params.push_back(t);
+}
+
+
+void data_reader_jag_conduit::do_preload_data_store_jun_2020() {
+  if (is_master()) {
+    std::cout << "starting data_reader_jag_conduit::do_preload_data_store_jun_2020" << std::endl;
+  }
+  conduit::Node work;
+  const std::string key; // key = "" is intentional
+
+  /// @todo BVE FIXME this
+  m_rank_in_model = get_comm()->get_rank_in_trainer();
+
+  options *opts = options::get();
+  double tm1 = get_time();
+  if (get_comm()->am_world_master() ||
+      (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
+    LBANN_WARNING("starting preload for role: ", get_role());
+  }
+
+  // Instrumentation
+  int my_count = 0;
+  int interval = 100;
+  double tm5 = get_time();
+  if (opts->has_int("verbose")) {
+    interval = opts->get_int("verbose");
+  }
+
+  int total = 0;
+  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
+      continue;
+    }
+    ++total;
+  }  
+
+  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
+      continue;
+    }
+    try {
+      const sample_t& s = m_sample_list[index];
+      const std::string& sample_name = s.second;
+      sample_file_id_t id = s.first;
+      m_sample_list.open_samples_file_handle(index, true);
+      auto h = m_sample_list.get_samples_file_handle(id);
+      conduit::Node & node = m_data_store->get_empty_node(index);
+
+      preload_helper(h, sample_name, m_output_scalar_prefix, index, node);
+      preload_helper(h, sample_name, m_input_prefix, index, node);
+      for (auto t : m_emi_image_keys) {
+        const std::string field_name = m_output_image_prefix + t;
+        preload_helper(h, sample_name, field_name, index, node);
+      }
+      m_data_store->set_preloaded_conduit_node(index, node);
+
+      // Instrumentation
+      ++my_count;
+      if (is_verbose() && is_master() && (my_count % interval == 0) ) {
+        double tm55 = get_time() - tm5;
+        double time_per_sample = tm55/my_count;
+        double remaining_time =  (total-my_count)*time_per_sample;
+          std::cout << "P_0 loaded " << my_count << " samples; time: " << tm55
+                    << " time per sample: " << tm55/my_count 
+                    << " est. remaining time: " << remaining_time 
+                    << " (old method)" << std::endl;
+      } // end Instrumentation
+
+      //XX
+      if (is_master() && my_count >= 1000) MPI_Abort(MPI_COMM_WORLD, 0);
+
+    } catch (conduit::Error const& e) {
+      LBANN_ERROR(" :: trying to load the node " + std::to_string(index) + " with key " + key + " and got " + e.what());
+    }
+  }
+  /// Once all of the data has been preloaded, close all of the file handles
+  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
+    int index = m_shuffled_indices[idx];
+    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
+      continue;
+    }
+    m_sample_list.close_if_done_samples_file_handle(index);
+  }
+
+  if (get_comm()->am_world_master() ||
+      (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
+    std::stringstream msg;
+    msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s";
+    LBANN_WARNING(msg.str());
+  }
 }
 
 } // end of namespace lbann

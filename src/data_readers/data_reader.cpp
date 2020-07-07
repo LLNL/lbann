@@ -825,32 +825,37 @@ void generic_data_reader::set_role(std::string role) {
   }
 }
 
+void generic_data_reader::get_local_list_sizes(std::vector<int> &local_list_sizes) {
+  int np = m_comm->get_procs_per_trainer();
+  int base_files_per_rank = m_shuffled_indices.size() / np;
+  int extra = m_shuffled_indices.size() - (base_files_per_rank*np);
+  if (extra > np) {
+    LBANN_ERROR("extra > np");
+  }
+  local_list_sizes.resize(np, 0);
+  for (int j=0; j<np; j++) {
+    local_list_sizes[j] = base_files_per_rank;
+     if (j < extra) {
+      local_list_sizes[j] += 1;
+    }
+  }
+}
+
 void generic_data_reader::preload_data_store() {
   if (m_data_store->is_local_cache()) {
-    m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling m_data_store->preload_local_cache()");
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store(): calling m_data_store->preload_local_cache()");
     m_data_store->preload_local_cache();
   }
 
   else {
     std::vector<int> local_list_sizes;
-    int np = m_comm->get_procs_per_trainer();
-    int base_files_per_rank = m_shuffled_indices.size() / np;
-    int extra = m_shuffled_indices.size() - (base_files_per_rank*np);
-    if (extra > np) {
-      LBANN_ERROR("extra > np");
-    }
-    local_list_sizes.resize(np, 0);
-    for (int j=0; j<np; j++) {
-      local_list_sizes[j] = base_files_per_rank;
-      if (j < extra) {
-        local_list_sizes[j] += 1;
-      }
-    }
-    m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling m_data_store->build_preloaded_owner_map()");
+    get_local_list_sizes(local_list_sizes);
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store(): calling m_data_store->build_preloaded_owner_map()");
     m_data_store->build_preloaded_owner_map(local_list_sizes);
-    m_data_store->set_profile_msg("generic_data_reader::preload_data_store() calling do_preload_data_store()");
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store(): calling do_preload_data_store()");
     do_preload_data_store();
     m_data_store->set_loading_is_complete();
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store(): loading is complete"); 
   }
 
 }

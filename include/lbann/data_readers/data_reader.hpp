@@ -822,6 +822,10 @@ private:
   }
 
  protected :
+
+  /// used in conjunction with preloading
+  void get_local_list_sizes(std::vector<int> &local_list_sizes);
+
   //var to support GAN
   bool m_gan_labelling; //boolean flag of whether its GAN binary label, default is false
   int m_gan_label_value; //zero(0) or 1 label value for discriminator, default is 0
