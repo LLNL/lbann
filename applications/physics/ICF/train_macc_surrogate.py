@@ -88,8 +88,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 if not(args.pretrained_dir):
-  print("WARNING pretrained dir ", args.pretrained_dir, " is empty, default option assumes
-         pretrained autoencoder")
+  print("WARNING pretrained dir ", args.pretrained_dir, " is empty, default option assumes pretrained autoencoder")
 
 def list2str(l):
     return ' '.join(l)
