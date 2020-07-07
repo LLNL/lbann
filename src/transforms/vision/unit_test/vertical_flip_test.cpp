@@ -3,12 +3,13 @@
 
 // File being tested
 #include <lbann/transforms/vision/vertical_flip.hpp>
+#include <lbann/utils/random_number_generators.hpp>
 #include "helper.hpp"
 
 TEST_CASE("Testing vertical flip preprocessing", "[preproc]") {
   lbann::utils::type_erased_matrix mat = lbann::utils::type_erased_matrix(El::Matrix<uint8_t>());
   // Grab the necessary I/O RNG and lock it
-  locked_io_rng_ref& io_rng = set_io_generators_local_index(0);
+  lbann::locked_io_rng_ref io_rng = lbann::set_io_generators_local_index(0);
 
   SECTION("matrix with one channel") {
     zeros(mat.template get<uint8_t>(), 3, 3, 1);

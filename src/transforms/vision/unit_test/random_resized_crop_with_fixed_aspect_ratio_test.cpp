@@ -5,12 +5,13 @@
 #include <lbann/transforms/vision/random_resized_crop_with_fixed_aspect_ratio.hpp>
 #include <lbann/transforms/vision/resize.hpp>
 #include <lbann/transforms/vision/random_crop.hpp>
+#include <lbann/utils/random_number_generators.hpp>
 #include "helper.hpp"
 
 TEST_CASE("Testing random resized crop with fixed aspect ratio preprocessing", "[preproc]") {
   lbann::utils::type_erased_matrix mat = lbann::utils::type_erased_matrix(El::Matrix<uint8_t>());
   // Grab the necessary I/O RNG and lock it
-  locked_io_rng_ref& io_rng = set_io_generators_local_index(0);
+  lbann::locked_io_rng_ref io_rng = lbann::set_io_generators_local_index(0);
 
   SECTION("matrix with one channel") {
     ones(mat.template get<uint8_t>(), 5, 5, 1);
