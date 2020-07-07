@@ -90,10 +90,10 @@ int get_num_io_generators() {
   return ::io_generators.size();
 }
 
-io_rng_t& set_io_generators_local_index(size_t idx) {
+locked_io_rng_ref set_io_generators_local_index(size_t idx) {
   ::local_io_generators_index = idx;
   if (!::io_generators_inited) { LBANN_ERROR("I/O RNG seed not set"); }
-  return ::io_generators[idx];
+  return locked_io_rng_ref(::io_generators[idx]);
 }
 
 rng_gen& get_io_generator() {

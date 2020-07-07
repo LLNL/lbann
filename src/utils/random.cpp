@@ -77,12 +77,9 @@ bool save_rng_to_checkpoint(persist& p, lbann_comm* comm, bool is_distributed) {
     std::ofstream rng_fast_io(rng_name);
     if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
 
-    io_rng_t& io_rng = set_io_generators_local_index(i);
-    const std::lock_guard<std::mutex> lock(*(io_rng.io_mutex.get()));
-    io_rng.active_thread_id = std::this_thread::get_id();
+    locked_io_rng_ref io_rng = set_io_generators_local_index(i);
     rng_io << get_io_generator();
     rng_fast_io << get_fast_io_generator();
-    io_rng.active_thread_id = std::thread::id();
 
     rng_io.close();
     rng_fast_io.close();
@@ -165,12 +162,9 @@ bool load_rng_from_checkpoint(persist& p, const lbann_comm* comm) {
     std::ifstream rng_fast_io(rng_name);
     if(!rng_fast_io) { LBANN_ERROR("Failed to open ", rng_name); }
 
-    io_rng_t& io_rng = set_io_generators_local_index(i);
-    const std::lock_guard<std::mutex> lock(*(io_rng.io_mutex.get()));
-    io_rng.active_thread_id = std::this_thread::get_id();
+    locked_io_rng_ref io_rng = set_io_generators_local_index(i);
     rng_io >> get_io_generator();
     rng_fast_io >> get_fast_io_generator();
-    io_rng.active_thread_id = std::thread::id();
   }
 
 

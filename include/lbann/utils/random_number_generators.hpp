@@ -46,6 +46,22 @@ struct io_rng_t {
   std::thread::id active_thread_id;
 };
 
+struct locked_io_rng_ref {
+  io_rng_t* rng_;
+  std::unique_lock<std::mutex> lock_;
+  locked_io_rng_ref(io_rng_t& rng)
+    : rng_(&rng),
+      lock_(*(rng.io_mutex.get()))
+  {
+    rng_->active_thread_id = std::this_thread::get_id();
+  }
+  explicit operator io_rng_t&() { return *rng_; }
+  ~locked_io_rng_ref() {
+    rng_->active_thread_id = std::thread::id();
+  }
+  locked_io_rng_ref(locked_io_rng_ref&& ) = default;
+};
+
 /**
  * Return a reference to the global LBANN random number generator.
  * @note If compiling with OpenMP, this is stored in a threadprivate variable.
@@ -70,7 +86,7 @@ rng_gen& get_data_seq_generator();
 int get_num_io_generators();
 
 /** @brief Sets the local index for a thread to access the correct I/O RNGs. */
-io_rng_t& set_io_generators_local_index(size_t idx);
+locked_io_rng_ref set_io_generators_local_index(size_t idx);
 
 /**
  * Return a reference to the global LBANN random number generator used
