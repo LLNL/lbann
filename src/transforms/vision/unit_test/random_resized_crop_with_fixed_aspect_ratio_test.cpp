@@ -9,6 +9,8 @@
 
 TEST_CASE("Testing random resized crop with fixed aspect ratio preprocessing", "[preproc]") {
   lbann::utils::type_erased_matrix mat = lbann::utils::type_erased_matrix(El::Matrix<uint8_t>());
+  // Grab the necessary I/O RNG and lock it
+  locked_io_rng_ref& io_rng = set_io_generators_local_index(0);
 
   SECTION("matrix with one channel") {
     ones(mat.template get<uint8_t>(), 5, 5, 1);
