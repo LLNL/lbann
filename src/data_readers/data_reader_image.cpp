@@ -217,7 +217,6 @@ void image_data_reader::do_preload_data_store() {
   }
 
   else {
-    conduit::Node node;
     if (is_master()) {
       std::cout << "mode: NOT data_store_thread\n";
     }
@@ -226,6 +225,7 @@ void image_data_reader::do_preload_data_store() {
       if (m_data_store->get_index_owner(index) != rank) {
         continue;
       }
+      conduit::Node &node = m_data_store->get_empty_node(index);
       load_conduit_node_from_file(index, node);
       m_data_store->set_preloaded_conduit_node(index, node);
     }
@@ -247,10 +247,10 @@ std::vector<image_data_reader::sample_t> image_data_reader::get_image_list_of_cu
 }
 
 bool image_data_reader::load_conduit_nodes_from_file(const std::unordered_set<int> &data_ids) {
-  conduit::Node node;
-  for (auto t : data_ids) {
-    load_conduit_node_from_file(t, node);
-    m_data_store->set_preloaded_conduit_node(t, node);
+  for (auto data_id : data_ids) {
+    conduit::Node &node = m_data_store->get_empty_node(data_id);
+    load_conduit_node_from_file(data_id, node);
+    m_data_store->set_preloaded_conduit_node(data_id, node);
   }
   return true;
 }
