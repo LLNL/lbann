@@ -31,6 +31,7 @@
 #include "lbann/utils/commify.hpp"
 #include "lbann/utils/lbann_library.hpp"
 #include <mutex>
+#include <random>
 
 namespace lbann {
 
@@ -123,13 +124,28 @@ void smiles_data_reader::load() {
   // Do the usual things we always do to finish up ...
   m_shuffled_indices.clear();
   m_shuffled_indices.resize(m_num_samples);
-  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-  resize_shuffled_indices();
 
+  //
+  // Randomly select N out of a possible M indices, where N << M.
+  // Unf, if a user sets N to be close or identical to M, the simple
+  // algorithm could run for a long time.
+  //
+  // This block replaces:
+  //  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
+  //
+  LBANN_WARNING("starting to generate some random numbers ... theoretically this could run forever, esp. if you set --num_samples too high.");
+  std::set<int> my_indices;
+  while (my_indices.size() < m_num_samples) {
+    my_indices.insert(rand() % m_total_samples);
+  }
+  size_t jj = 0;
+  for (auto idx : my_indices) {
+    m_shuffled_indices[jj++] = idx;
+  }
+
+  resize_shuffled_indices();
   
   // Optionally run "poor man's" LTFB
-  // TODO: does this work with validation? I think: all trainers should
-  //       have a common validation set
   if (opts->get_bool("ltfb")) {
     size_t my_trainer = m_comm->get_trainer_rank();
     size_t num_trainers = m_comm->get_num_trainers();
