@@ -172,6 +172,9 @@ void smiles_data_reader::load() {
     }
   } 
 
+  instantiate_data_store();
+  select_subset_of_data();
+
   // get values for ad-hoc sanity checking; see: do_preload()
   m_min_index = INT_MAX;
   m_max_index = 0;
@@ -179,9 +182,6 @@ void smiles_data_reader::load() {
     if (idx < m_min_index) m_min_index = idx;
     if (idx > m_max_index) m_max_index = idx;
   }
-
-  instantiate_data_store();
-  select_subset_of_data();
 
   get_delimiter();
 
