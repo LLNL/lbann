@@ -135,7 +135,9 @@ void smiles_data_reader::load() {
   //  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   //
   if (! opts->get_bool("smiles_random_off")) {
-    LBANN_WARNING("starting to generate some random numbers ... theoretically this could run forever, esp. if you set --num_samples too high.");
+    if (is_master()) {
+      std::cout << "starting to generate some random numbers ... theoretically this could run forever, esp. if you set --num_samples too high." << std::endl;
+    }  
     int seed = opts->get_int("smiles_srand", time(NULL));
     srand(seed);
     std::set<int> useme_indices;
@@ -147,7 +149,9 @@ void smiles_data_reader::load() {
       m_shuffled_indices[jj++] = idx;
     }
   } else {
-    LBANN_WARNING("pulling all samples from top of file");
+    if (is_master()) {
+      std::cout << "pulling all samples from top of file" << std::endl;
+    }
   }
 
   resize_shuffled_indices();
