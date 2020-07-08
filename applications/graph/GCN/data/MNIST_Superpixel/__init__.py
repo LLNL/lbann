@@ -1,4 +1,3 @@
-import torch 
 import urllib.request
 import tarfile 
 import os

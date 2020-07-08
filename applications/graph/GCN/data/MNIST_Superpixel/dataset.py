@@ -1,14 +1,12 @@
 import os 
 import os.path
-
 import numpy as np 
-from torch.utils.data import Dataset 
 import utils
 
 data_dir = os.path.dirname(os.path.realpath(__file__))
 
 
-class MNIST_Superpixel_Dataset(Dataset):
+class MNIST_Superpixel_Dataset():
     def __init__(self, train=True):
         super(MNIST_Superpixel_Dataset, self).__init__()
         self.num_vertices = 75 #All graphs have 75 nodes 
