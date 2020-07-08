@@ -46,13 +46,20 @@ void construct_std_options() {
   arg_parser.add_option(MAX_RNG_SEEDS_DISPLAY,
                         {"--rng_seeds_per_trainer_to_display"},
                         utils::ENV("LBANN_RNG_SEEDS_PER_TRAINER_TO_DISPLAY"),
-                        "Limit how many random seeds LBANN should display from each trainer",
+                        "Limit how many random seeds LBANN should display "
+                        "from each trainer",
                         2);
   arg_parser.add_option(NUM_IO_THREADS,
                         {"--num_io_threads"},
                         utils::ENV("LBANN_NUM_IO_THREADS"),
-                        "Number of threads available to both I/O and initial data transformations for each rank.",
-                        24);
+                        "Number of threads available to both I/O and "
+                        "initial data transformations for each rank.",
+                        64);
+  arg_parser.add_flag(STRICT_IO_THREAD_PINNING,
+                      {"--strict_io_thread_pinning"},
+                      utils::ENV("LBANN_STRICT_IO_THREAD_PINNING"),
+                      "Restrict the Number of I/O threads to the number of "
+                      "available cores.");
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool

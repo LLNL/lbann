@@ -1,4 +1,6 @@
 #include "lbann/utils/threads/thread_pool.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/lbann_library.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -72,11 +74,17 @@ void thread_pool::launch_pinned_threads(
   // Try to launch each worker thread and pin it to a single core
   try
   {
+    auto& arg_parser = global_argument_parser();
+    bool strict_io_threads = arg_parser.get<bool>(STRICT_IO_THREAD_PINNING);
     int cpuset_idx = 0;
     int skipped_indices = 0;
     for (size_type cnt = 0; cnt < num_threads; ++cnt) {
       CPU_ZERO(&ht_cpuset);
       // Pin this thread to the base CPU id plus the thread count and offset
+      if(!strict_io_threads) {
+        cpuset_idx = 0;
+        skipped_indices = 0;
+      }
       for (; cpuset_idx < CPU_SETSIZE; cpuset_idx++) {
         if (CPU_ISSET(cpuset_idx, &cpuset)) {
           // Skip reserved cores
@@ -85,7 +93,9 @@ void thread_pool::launch_pinned_threads(
           }else {
             CPU_SET(cpuset_idx, &ht_cpuset);
             cpuset_idx++;
-            break;
+            if(strict_io_threads) {
+              break;
+            }
           }
         }
       }

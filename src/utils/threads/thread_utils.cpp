@@ -25,6 +25,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "lbann/utils/threads/thread_utils.hpp"
+#include "lbann/utils/argument_parser.hpp"
+#include "lbann/utils/lbann_library.hpp"
 #include <thread>
 #include <omp.h>
 
@@ -66,7 +68,12 @@ int num_free_cores_per_process(const lbann_comm *comm) {
 #endif // LBANN_HAS_ALUMINUM
 
   auto cores_in_cpuset = num_available_cores_in_cpuset();
-  auto max_cores_per_process = std::min(cores_in_cpuset, static_cast<int>(max_threads / processes_on_node));
+  auto max_cores_per_process = static_cast<int>(max_threads / processes_on_node);
+
+  auto& arg_parser = global_argument_parser();
+  if(arg_parser.get<bool>(STRICT_IO_THREAD_PINNING)) {
+    max_cores_per_process = std::min(cores_in_cpuset, max_cores_per_process);
+  }
   auto io_threads_per_process = std::max(1, (max_cores_per_process - omp_threads - aluminum_threads));
 
   return io_threads_per_process;
