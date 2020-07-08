@@ -1,51 +1,7 @@
 import lbann
-from Graph_Kernels import GCN_Layer
 from lbann.util import str_list
-
-class lbann_Data_Mat:
-    def __init__(self, list_of_layers, layer_size):
-        self.size = (len(list_of_lbann_layers), layer_size)
-        self.layers = list_of_layers
-    
-    def __getitem__(self, row):
-        return self.layers[row]
-
-class lbann_Graph_Data:
-    def __init__(self, input_layer, num_vertices, num_features, num_classes):
-        self.num_vertices = num_vertices 
-        self.num_features = num_features 
-        self.num_classes = num_classes 
-
-        self.x, self.adj, self.y = gen_data()
-
-    def generate_slice_points (self):
-        slices_points = [for i in range(self.num_vertices * self.num_features + 1, self.num_features)]
-        adj_mat = slice_points[-1] + self.num_vertices * self.num_vertices 
-        slices_points.append(adj_mat)
-        targets = slice_points[-1] + self.num_classes 
-        slice_points.append(targets)
-        return str_list(slice_points)
-    
-    def gen_data(self, input_layer):
-        slice_points = generate_slice_points()
-        sliced_graph  = lbann.Slice(input_layer, axis = 0, slice_points = slice_points, name="Sliced_Input")
-
-        node_features = [] 
-
-        for i in range(self.num_vertices):
-            temp = lbann.Identity(sliced_graph)
-            node_features.append(lbann.Reshape(temp, dims=str(self.num_vertices)))
-
-        x = lbann_Data_Mat(node_features, self.num_features)
-        
-        adj_mat_in = lbann.Identity(sliced_graph) 
-        adj_mat = lbann.Reshape(adj_mat_in, dims = str_list([self.num_vertices, self.num_vertices])) 
-
-        y_ind = lbann.Identity(sliced_graph)
-        y = lbann.Reshape(sliced_graph, dims=str(self.num_classes))
-        return x, adj_mat, y 
-
-
+from Graph_Kernels import Dense_Graph_Layer as GraphConv
+from Graph_Data import lbann_Data_Mat, lbann_Graph_Data
 
 
 def make_model(num_vertices = None, 
@@ -91,6 +47,16 @@ def make_model(num_vertices = None,
     # Input dimensions should be (num_vertices * node_features + num_vertices^2 + num_classes )
     
     # input should have atleast two children since the target is classification 
+    
+    #data = lbann.Identity(input_)
+
+    '''
+    data = lbann_Graph_Data(input_,75, 1,10)
+    
+    feature_matrix = data.x 
+    adj_matrix = data.adj 
+    target = data.y 
+    '''
 
     
     sample_dims = num_vertices*node_features + (num_vertices ** 2) + num_classes
@@ -98,8 +64,7 @@ def make_model(num_vertices = None,
         
     feature_matrix_size = num_vertices * node_features 
    
-    graph_input = lbann.Slice(input_, axis = 0 , slice_points = str_list([0,feature_matrix_size,graph_dims, sample_dims]), name = "Graph_Input")
-    
+    graph_input = lbann.Slice(input_, axis = 0 , slice_points = str_list([0,feature_matrix_size,graph_dims, sample_dims]), name = "Graph_Input") 
     #graph = lbann.Identity(graph_input, name="Flat_Graph_Data")
     
     # Slice graph into node feature matrix, and adjacency matrix 
@@ -110,7 +75,7 @@ def make_model(num_vertices = None,
     adj_matrix = lbann.Reshape(graph_input, dims = str_list([num_vertices,num_vertices]), name="Adj_Mat") 
 
     target = lbann.Identity(graph_input, name="Target")
-    target = lbann.Reshape(target, dims="10")
+    target = lbann.Reshape(target, dims="10")   
     #----------------------------------
     # Perform Graph Convolution
     #----------------------------------
@@ -126,9 +91,9 @@ def make_model(num_vertices = None,
     out_channel_2 = 256
     out_channel_3 = 128
     
-    gcn = GCN_Layer(input_channels = node_features, output_channels = out_channel_1)
-    gcn2 = GCN_Layer(input_channels = out_channel_1, output_channels = out_channel_2)
-    gcn3 = GCN_Layer(input_channels = out_channel_2, output_channels = out_channel_3)
+    gcn = GraphConv(input_channels = node_features, output_channels = out_channel_1)
+    gcn2 = GraphConv(input_channels = out_channel_1, output_channels = out_channel_2)
+    gcn3 = GraphConv(input_channels = out_channel_2, output_channels = out_channel_3)
     
     out_channel = out_channel_3 
     
