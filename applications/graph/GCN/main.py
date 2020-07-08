@@ -5,7 +5,7 @@ import lbann.contrib.args
 import argparse 
 import os 
 
-import train
+import sparse_train
 import data.MNIST_Superpixel 
 
 desc = (" Training a Graph Convolutional Model using LBANN" )
@@ -40,7 +40,7 @@ dataset = args.dataset
 num_epochs = args.num_epochs
 mini_batch_size = args.mini_batch_size 
 job_name = args.job_name
-model = train.make_model(dataset = dataset,
+model = sparse_train.make_model(dataset = dataset,
                             num_epochs = num_epochs)
 
 

@@ -39,31 +39,41 @@ def edge_list_to_dense(elist, num_vertices = 75):
 #
 ########################################################
 
-def extract_node_features(node_slices, node_labels, num_classes = None):
+def extract_node_features(node_slices, node_labels, max_nodes, num_classes = None):
     node_label_list = [] 
     for i, ind in enumerate(node_slices[1:]):
         if num_classes:
             graph_x = np.eye(num_classes)[np.asarray([int(x) for x in node_labels[node_slices[i]:ind]],dtype=np.int)]
         else:
             graph_x = anp.asarray([int(x) for x in node_labels[node_slices[i]:ind]],dtype=np.int)
-        node_label_list.append(graph_x)
+        if (len(graph_x) < max_nodes):
+            pad = max_nodes - len(graph_x)
+            graph_x = np.pad(graph_x, ((0,pad),(0,0)), 'constant')
+            node_label_list.append(graph_x)
     return node_label_list 
 
 
-def extract_adj_mat(node_slices, edge_list):
-    adj_mat_list = [] 
-    for i, max_node_id in enumerate(node_slices[1:10]):
+def extract_adj_mat(node_slices, edge_list, max_nodes):
+    adj_mat_list = []
+    removed_graphs = []
+    for i, max_node_id in enumerate(node_slices[1:]):
         min_node_id = node_slices[i]
         num_nodes = max_node_id - min_node_id
-        edges = edge_list[(edge_list[:,1] > min_node_id) & (edge_list[:,1] < max_node_id)]
-        edges = edges -1 - min_node_id 
-        adj_mat = edge_list_to_dense(edges)
-        adj_mat_list.append(adj_mat)
-    return adj_mat_list
+        if (num_nodes < max_nodes):
+            edges = edge_list[(edge_list[:,1] > min_node_id) & (edge_list[:,1] < max_node_id)]
+            edges = edges -1 - min_node_id 
+            adj_mat = edge_list_to_dense(edges, max_nodes)
+            adj_mat_list.append(adj_mat)
+        else:
+            removed_graphs.append(i)
+            
+    return adj_mat_list, removed_graphs
 
-def extract_targets(graph_labels, num_classes):
+def extract_targets(graph_labels, num_classes, removed_graphs):
     graph_labels = np.array([int(x) for x in graph_labels])
-    return np.eye(num_classes)[graph_labels-1]
+    labels = np.eye(num_classes)[graph_labels-1]
+    graph_labels =  np.delete(labels, removed_graphs, axis=0)
+    return graph_labels
 
 def dataset_node_slices(graph_indicator_list, num_graphs):
     node_slices = []
@@ -106,8 +116,11 @@ def TUDataset_Parser(data_dir, dataset_name, num_classes):
 
     node_slices = dataset_node_slices(graph_ind, NUM_GRAPHS)
     
-    adj_mat = extract_adj_mat(node_slices, edge_list)
-    node_features = extract_node_features(node_slices, node_labels, num_classes)
-    targets = extract_targets(graph_labels, num_classes)
+    max_nodes = 100
+    adj_mat, removed_graphs = extract_adj_mat(node_slices, edge_list, max_nodes)
+    num_features = 3
+    node_features = extract_node_features(node_slices, node_labels,max_nodes, num_features)
+    node_features = np.array(node_features)
+    targets = extract_targets(graph_labels, num_classes, removed_graphs)
 
     return node_features, adj_mat, targets
