@@ -898,17 +898,6 @@ void data_reader_jag_conduit::do_preload_data_store() {
     interval = opts->get_int("verbose");
   }
 
-  // Collect the sample IDs assigned to this rank
-  std::set<int> my_indices;
-  // Instrumentation
-  int my_count = 0;
-  int interval = 1000;
-  double tm5 = get_time();
-  double tm5a= get_time();
-  if (opts->has_int("verbose")) {
-    interval = opts->get_int("verbose");
-  }
-
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
     if(m_data_store->get_index_owner(index) != m_rank_in_model) {
@@ -942,19 +931,11 @@ void data_reader_jag_conduit::do_preload_data_store() {
         double tm55 = get_time() - tm5;
         double time_per_sample = tm55/my_count;
         double remaining_time =  (my_indices.size()-my_count)*time_per_sample;
-          std::cout << "P_0 loaded " << my_count << " samples; "
-                    << " time this incr: " << get_time()-tm5a
-                    << " time total: " << tm55
+          std::cout << "P_0 loaded " << my_count << " samples; time: " << tm55
                     << " time per sample: " << tm55/my_count
-                    << " est. remaining time: " << remaining_time << std::endl;
-        tm5a = get_time();
+                    << " est. remaining time: " << remaining_time
+                    << std::endl;
       } // end Instrumentation
-
-      //XX
-      if (is_master() && my_count >= 1000)  {
-        std::cerr << "XX calling abort; my count: " << my_count << std::endl;
-        MPI_Abort(MPI_COMM_WORLD, -1);
-      }
 
     } catch (conduit::Error const& e) {
       LBANN_ERROR(" :: trying to load the node " + std::to_string(index) + " with key " + key + " and got " + e.what());
