@@ -5,6 +5,7 @@ import lbann.models
 import lbann.contrib.args
 import lbann.contrib.launcher
 import lbann.modules as lm
+from lbann.core.util import get_parallel_strategy_args
 
 
 class UNet3D(lm.Module):
@@ -23,14 +24,10 @@ class UNet3D(lm.Module):
 
     global_count = 0  # Static counter, used for default names
 
-    def __init__(self, parallel_strategy, partition_level, name=None):
+    def __init__(self, name=None):
         """Initialize 3D U-Net.
 
         Args:
-            parallel_strategy (dict):
-                The parallel strategy for each node.
-            partition_level (int):
-                The maximum depth where nodes are partitioned.
             name (str, optional): Module name
                 (default: 'alexnet_module<index>').
         """
@@ -39,8 +36,6 @@ class UNet3D(lm.Module):
         self.instance = 0
         self.name = (name if name
                      else "unet3d_module{0}".format(UNet3D.global_count))
-        self.parallel_strategy = parallel_strategy
-        self.partition_level = partition_level
 
         # The list of ([down-conv filters], [up-conv filters], deconv filters)
         self.BLOCKS = [
@@ -60,8 +55,6 @@ class UNet3D(lm.Module):
         assert all([self.BLOCKS[x][2] == self.BLOCKS[x+1][1][-1]
                     for x in range(self.NUM_LEVELS-1)])
 
-        psargs = {"parallel_strategy": self.parallel_strategy}
-
         # Building blocks
         self.downconvs = []
         self.upconvs = []
@@ -69,35 +62,28 @@ class UNet3D(lm.Module):
         for i, blocks in enumerate(self.BLOCKS):
             downBlock, upBlock, deconv = blocks
             self.downconvs.append(UNet3DConvBlock(
-                downBlock, name="{}_bconv{}_down".format(self.name, i+1),
-                psargs=psargs if i < self.partition_level else {}))
+                downBlock, name="{}_bconv{}_down".format(self.name, i+1)))
             ui = self.NUM_LEVELS-1-i
             self.upconvs.insert(0, UNet3DConvBlock(
-                upBlock, name="{}_bconv{}_up".format(self.name, ui+1),
-                psargs=psargs if i < self.partition_level else {}))
+                upBlock, name="{}_bconv{}_up".format(self.name, ui+1)))
             self.deconvs.insert(0, Deconvolution3dModule(
                 deconv, 2, stride=2, padding=0, activation=None,
                 bias=False,
-                name="{}_deconv{}".format(self.name, ui+1),
-                **(psargs if i < self.partition_level-(
-                    0 if self.PARTITION_INCLUDE_POOL else 1) else {})))
+                name="{}_deconv{}".format(self.name, ui+1)))
 
         # The bottom convolution
         self.bottomconv = UNet3DConvBlock(
-            self.BOTTOM_BLOCK, name="{}_bconv_bottom".format(self.name),
-            psargs=psargs if self.partition_level > self.NUM_LEVELS else {})
+            self.BOTTOM_BLOCK, name="{}_bconv_bottom".format(self.name))
 
         # The last convolution
         self.lastconv = lm.Convolution3dModule(
             3, 1, stride=1, padding=0, activation=None,
             bias=False,
-            name="{}_lconv".format(self.name),
-            **(psargs if self.partition_level > 0 else {}))
+            name="{}_lconv".format(self.name))
 
     def forward(self, x):
         self.instance += 1
 
-        psargs = {"parallel_strategy": self.parallel_strategy}
         x_concat = []
         for i in range(self.NUM_LEVELS):
             x = self.downconvs[i](x)
@@ -107,9 +93,7 @@ class UNet3D(lm.Module):
                 pool_dims_i=2, pool_pads_i=0, pool_strides_i=2,
                 pool_mode="max",
                 name="{}_pool{}_instance{}".format(
-                    self.name, i+1, self.instance),
-                **(psargs if i < self.partition_level-(
-                    0 if self.PARTITION_INCLUDE_POOL else 1) else {}))
+                    self.name, i+1, self.instance))
 
         x = self.bottomconv(x)
 
@@ -120,8 +104,7 @@ class UNet3D(lm.Module):
         x = self.lastconv(x)
         x = lbann.Softmax(
             x,
-            softmax_mode="channel",
-            **(psargs if self.partition_level >= 1 else {}))
+            softmax_mode="channel")
 
         return x
 
@@ -131,11 +114,10 @@ class UNet3DConvBlock(lm.Module):
     a list of 3D convolutional layers.
     """
 
-    def __init__(self, out_channels_list, name, psargs={}):
+    def __init__(self, out_channels_list, name):
         super().__init__()
         self.name = name
         self.instance = 0
-        self.psargs = psargs
         assert len(out_channels_list) == 2
 
         self.convs = []
@@ -147,16 +129,14 @@ class UNet3DConvBlock(lm.Module):
                 padding=1,
                 activation=lbann.Relu,
                 bias=False,
-                name="{}_conv_block_{}".format(self.name, i+1),
-                psargs=self.psargs))
+                name="{}_conv_block_{}".format(self.name, i+1)))
 
     def forward(self, x, x_concat=None):
         self.instance += 1
         if x_concat is not None:
             x = lbann.Concatenation(
                 [x, x_concat],
-                axis=0,
-                **self.psargs)
+                axis=0)
 
         for c in self.convs:
             x = c(x)
@@ -175,11 +155,6 @@ class Convolution3dBNModule(lm.Module):
         self.activation = None if "activation" not in kwargs.keys() \
             else kwargs["activation"]
         kwargs["activation"] = None
-        if "psargs" in kwargs.keys():
-            self.psargs = kwargs["psargs"]
-            kwargs = dict(kwargs)
-            kwargs.update(self.psargs)
-            kwargs.pop("psargs")
 
         self.conv = lm.Convolution3dModule(*args, **kwargs)
 
@@ -201,10 +176,9 @@ class Convolution3dBNModule(lm.Module):
             statistics_group_size=-1,
             name="{}_bn_instance{}".format(
                 self.name,
-                self.instance),
-            **self.psargs)
+                self.instance))
         if self.activation is not None:
-            x = self.activation(x, **self.psargs)
+            x = self.activation(x)
 
         return x
 
@@ -305,34 +279,24 @@ if __name__ == '__main__':
     lbann.contrib.args.add_optimizer_arguments(parser)
     args = parser.parse_args()
 
-    parallel_strategy = {
-        'sample_groups': args.mini_batch_size,
-        'depth_groups': args.depth_groups,
-        'height_groups': 1,
-        'width_groups': 1,
-        'channel_groups': 1,
-        'filter_groups': 1,
-    }
+    parallel_strategy = get_parallel_strategy_args(
+        sample_groups=args.mini_batch_size,
+        depth_groups=args.depth_groups)
 
     # Construct layer graph
     input = lbann.Input(
         io_buffer='partitioned',
-        target_mode='label_reconstruction',
-        parallel_strategy=parallel_strategy)
-    volume = lbann.Split(
-        input, parallel_strategy=parallel_strategy)
-    output = UNet3D(
-        parallel_strategy=parallel_strategy,
-        partition_level=args.partition_level
-    )(volume)
-    segmentation = lbann.Split(
-        input, parallel_strategy=parallel_strategy)
+        target_mode='label_reconstruction')
+    volume = lbann.Split(input)
+    output = UNet3D()(volume)
+    segmentation = lbann.Split(input)
     ce = lbann.CrossEntropy(
         [output, segmentation],
-        use_labels=True,
-        parallel_strategy=parallel_strategy)
+        use_labels=True)
     obj = lbann.ObjectiveFunction([ce])
     layers = list(lbann.traverse_layer_graph(input))
+    for l in layers:
+        l.parallel_strategy = parallel_strategy
 
     # Setup model
     metrics = [lbann.Metric(ce, name='CE', unit='')]
@@ -378,7 +342,6 @@ if __name__ == '__main__':
     lbann.contrib.launcher.run(
         trainer, model, data_reader, optimizer,
         job_name=args.job_name,
-        setup_only=args.setup_only,
         environment=environment,
         lbann_args=lbann_args,
         **kwargs)
