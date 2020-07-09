@@ -231,7 +231,7 @@ def create_unet3d_optimizer(learn_rate):
 
 
 if __name__ == '__main__':
-    desc = ('Construct and run the 3D U-Net on LiTS data. '
+    desc = ('Construct and run the 3D U-Net on a 3D segmentation dataset.'
             'Running the experiment is only supported on LC systems.')
     parser = argparse.ArgumentParser(description=desc)
     lbann.contrib.args.add_scheduler_arguments(parser)
