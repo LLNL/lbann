@@ -146,14 +146,25 @@ int lbann::generic_data_reader::fetch_data(CPUMat& X, El::Matrix<El::Int>& indic
     set_jag_variables(mb_size);
   }
 
+  // Fetch data is executed by the thread pool so it has to dispatch
+  // work to other threads in the thread pool and do some work locally
   for (int t = 0; t < static_cast<int>(m_io_thread_pool->get_num_threads()); t++) {
     // Queue up work into other threads and then finish off the
     // mini-batch in the active thread
-    m_io_thread_pool->submit_job_to_work_group(
-      std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
-                m_io_thread_pool->get_num_threads(),
-                mb_size, std::ref(indices_fetched)));
+    if(t == m_io_thread_pool->get_local_thread_id()) {
+      continue;
+    }else {
+      m_io_thread_pool->submit_job_to_work_group(
+        std::bind(&generic_data_reader::fetch_data_block, this, std::ref(X), t,
+                  m_io_thread_pool->get_num_threads(),
+                  mb_size, std::ref(indices_fetched)));
+    }
   }
+  fetch_data_block(X,
+                   m_io_thread_pool->get_local_thread_id(),
+                   m_io_thread_pool->get_num_threads(),
+                   mb_size,
+                   indices_fetched);
 
   // Wait for all of the threads to finish
   m_io_thread_pool->finish_work_group();
