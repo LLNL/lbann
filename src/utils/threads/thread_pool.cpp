@@ -67,7 +67,7 @@ void thread_pool::launch_pinned_threads(
                                       sizeof(cpu_set_t), &cpuset);
 
   if (error != 0) {
-    std::cerr << "error in pthread_getaffinity_np, error=" << error
+    std::cerr << "error in pthread_getaffinity_np, error=" << strerror(error)
               << std::endl;
   }
 
@@ -156,7 +156,7 @@ void thread_pool::do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set)
                                       sizeof(cpu_set_t), &cpu_set);
   if (error != 0) {
     std::cerr << "error in pthread_setaffinity_np, error="
-              << error << std::endl;
+              << strerror(error) << std::endl;
   }
 
   {
