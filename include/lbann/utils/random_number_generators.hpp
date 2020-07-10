@@ -38,9 +38,9 @@ using rng_gen = std::mt19937;  // Mersenne Twister
 using fast_rng_gen = std::minstd_rand;  // Minimum standard, LC
 
 struct io_rng_t {
-  lbann::rng_gen io_generator;
-  lbann::fast_rng_gen fast_io_generator;
-  std::unique_ptr<std::mutex> io_mutex;
+  lbann::rng_gen generator;
+  lbann::fast_rng_gen fast_generator;
+  std::unique_ptr<std::mutex> mutex;
   // Track the owner so that it is easy to ensure the right thread is
   // using this structure.
   std::thread::id active_thread_id;
@@ -51,7 +51,7 @@ struct locked_io_rng_ref {
   std::unique_lock<std::mutex> lock_;
   locked_io_rng_ref(io_rng_t& rng)
     : rng_(&rng),
-      lock_(*(rng.io_mutex.get()))
+      lock_(*(rng.mutex.get()))
   {
     rng_->active_thread_id = std::this_thread::get_id();
   }
