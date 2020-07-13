@@ -142,6 +142,8 @@ data_reader_jag_conduit::data_reader_jag_conduit(bool shuffle)
 }
 
 void data_reader_jag_conduit::copy_members(const data_reader_jag_conduit& rhs) {
+  m_my_indices_train = rhs.m_my_indices_train;
+  m_my_indices_validate = rhs.m_my_indices_validate;
   m_independent = rhs.m_independent;
   m_independent_groups = rhs.m_independent_groups;
   m_dependent = rhs.m_dependent;
@@ -782,7 +784,7 @@ void data_reader_jag_conduit::load() {
 
   const std::string data_dir = add_delimiter(get_file_dir());
   const std::string sample_list_file = data_dir + get_data_index_list();
-  LBANN_INFO("data_reader_jag_conduit - starting load; sample_list_filename: ", sample_list_file);
+  LBANN_INFO("sample_list_filename: ", sample_list_file);
 
   options *opts = options::get();
   bool check_data = opts->get_bool("check_data");
@@ -828,9 +830,12 @@ void data_reader_jag_conduit::load() {
   }
   LBANN_INFO("Done with data checking");
 
-  /// Get the set of sample ids that are owned by this rank
+  /// Get the set of sample names that are owned by this rank; note that
+  /// these are for both training and validation @TODO: this should be
+  /// a call to the sample list
+  std::set<std::string> my_sample_names;
   for (const auto &t : m_sample_list.get_list()) {
-    m_my_sample_names.insert(t.second);
+    my_sample_names.insert(t.second);
   }
 
   /// Merge all of the sample lists
@@ -856,6 +861,21 @@ void data_reader_jag_conduit::load() {
 
   instantiate_data_store();
   select_subset_of_data();
+
+  // Partition the set of indices for the samples that are owned by this rank
+  // into train and validate sets. We must do this here, since load() is called
+  // for the train reader, but not the validation reader. The indices
+  // will be stored in "m_my_indices_train" and "m_my_indices_validate."
+  // These indices are used in do_preload, which is called for both
+  // train and validate readers.
+  if (get_role() == "train") {
+    partition_indices(my_sample_names);
+  } else if (get_role() == "test") {
+    // @TODO what should be done here?
+    LBANN_INFO("role is test; skipping partition_indices");
+  } else {
+    LBANN_ERROR("don't know how to handle role: ", get_role());
+  }
 }
 
 void data_reader_jag_conduit::preload_helper(const hid_t& h, const std::string &sample_name, const std::string &field_name, int data_id, conduit::Node &node) {
@@ -865,20 +885,14 @@ void data_reader_jag_conduit::preload_helper(const hid_t& h, const std::string &
 }
 
 void data_reader_jag_conduit::do_preload_data_store() {
+  m_data_store->clear_owner_map();
   if (options::get()->get_bool("old_method")) {
     do_preload_data_store_jun_2020();
     return;
   }
   LBANN_INFO("starting data_reader_jag_conduit::do_preload_data_store, revised method, for role: ", get_role());
 
-  /// get set of the indices that I own
-  std::set<int> my_indices;
-  for (size_t j=0; j<m_shuffled_indices.size(); j++) {
-    const auto &sample_name = m_sample_list[j].second;
-    if (m_my_sample_names.find(sample_name) != m_my_sample_names.end()) {
-      my_indices.insert(j);
-    }
-  }
+  std::set<int> *my_indices_ptr = get_role() == "train" ? &m_my_indices_train : &m_my_indices_validate;
 
   conduit::Node work;
   const std::string key; // key = "" is intentional
@@ -887,7 +901,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
   double tm1 = get_time();
   if (is_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
-    LBANN_INFO("starting preload for role: ", get_role());
+    LBANN_INFO("starting preload for role: ", get_role(), "; m_my_sample_names.size: ", my_indices_ptr->size());
   }
 
   // Instrumentation
@@ -898,23 +912,14 @@ void data_reader_jag_conduit::do_preload_data_store() {
     interval = opts->get_int("verbose");
   }
 
-  for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
-    int index = m_shuffled_indices[idx];
-    if(m_data_store->get_index_owner(index) != m_rank_in_model) {
-      continue;
-    }
-    my_indices.insert(index);
-  }
-  int total = my_indices.size();
-
-  for (auto index : my_indices) {
+  for (auto index : (*my_indices_ptr)) {
     try {
       const sample_t& s = m_sample_list[index];
       const std::string& sample_name = s.second;
       sample_file_id_t id = s.first;
       m_sample_list.open_samples_file_handle(index, true);
       auto h = m_sample_list.get_samples_file_handle(id);
-      conduit::Node & node = m_data_store->get_empty_node(index);
+      conduit::Node node;
 
       preload_helper(h, sample_name, m_output_scalar_prefix, index, node);
       preload_helper(h, sample_name, m_input_prefix, index, node);
@@ -922,15 +927,14 @@ void data_reader_jag_conduit::do_preload_data_store() {
         const std::string field_name = m_output_image_prefix + t;
         preload_helper(h, sample_name, field_name, index, node);
       }
-      m_data_store->set_preloaded_conduit_node(index, node);
+      m_data_store->set_conduit_node(index, node);
 
       // Instrumentation
       ++my_count;
-
       if (is_verbose() && is_master() && (my_count % interval == 0) ) {
         double tm55 = get_time() - tm5;
         double time_per_sample = tm55/my_count;
-        double remaining_time =  (my_indices.size()-my_count)*time_per_sample;
+        double remaining_time =  (my_indices_ptr->size()-my_count)*time_per_sample;
           std::cout << "P_0 loaded " << my_count << " samples; time: " << tm55
                     << " time per sample: " << tm55/my_count
                     << " est. remaining time: " << remaining_time
@@ -943,7 +947,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
 
   /// Once all of the data has been preloaded, close all of the file handles
-  for (auto index : my_indices) {
+  for (auto index : (*my_indices_ptr)) {
     m_sample_list.close_if_done_samples_file_handle(index);
   }
 
@@ -1694,6 +1698,46 @@ void data_reader_jag_conduit::do_preload_data_store_jun_2020() {
     msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s (old method)";
     LBANN_INFO(msg.str());
   }
+}
+
+void data_reader_jag_conduit::partition_indices(const std::set<std::string> &my_sample_names) {
+  m_my_indices_train.clear();
+  for (const auto &idx : m_shuffled_indices) {
+    const auto &sample_name = m_sample_list[idx].second;
+    if (my_sample_names.find(sample_name) != my_sample_names.end()) {
+      m_my_indices_train.insert(idx);
+    }
+  }
+  m_my_indices_validate.clear();
+  for (const auto &idx : m_unused_indices) {
+    const auto &sample_name = m_sample_list[idx].second;
+    if (my_sample_names.find(sample_name) != my_sample_names.end()) {
+      m_my_indices_validate.insert(idx);
+    }
+  }
+
+  LBANN_INFO("shuffled indices size: ", m_shuffled_indices.size(), "; unused size: ", m_unused_indices.size(), "; data_reader::load - partitioned indices into ", m_my_indices_train.size(), " for training, ", m_my_indices_validate.size(), " for validation; my_sample_names.size: ", my_sample_names.size());
+
+#if 0
+  //XX
+  std::stringstream ss;
+  for (auto t : m_my_indices_validate) ss << t << " ";
+  std::string s3 = ss.str();
+  int me = m_comm->get_rank_in_trainer();
+  int sz = m_comm->get_procs_per_trainer();
+  for (int j=0; j<sz; j++) {
+    MPI_Barrier(MPI_COMM_WORLD);
+    if (me == j) {
+      std::cout << "me: "<<me << " indices_validate.size: "<<m_my_indices_validate.size()<<" unused size: "<<m_unused_indices.size()<<"; indices_train.size: " << m_my_indices_train.size() << " my validate indices: " << s3 << std::endl;
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+
+  sleep(1);
+  m_comm->global_barrier();
+  sleep(1);
+  MPI_Abort(MPI_COMM_WORLD, 0);
+#endif
 }
 
 } // end of namespace lbann
