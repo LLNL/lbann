@@ -13,7 +13,7 @@ class Dense_GCN_Layer(Module):
         self.name = (name if name else 'Dense_GCN_{}'.format(Dense_GCN_Layer.global_count))
         
                                 
-        self.weights = lbann.Weights(initializer = lbann.NormalInitializer(mean=0, standard_deviation=1/output_channels),
+        self.weights = lbann.Weights(initializer = lbann.NormalInitializer(mean=0, standard_deviation=1),
                                     name=self.name+'_Weights')
 
         self.W = lbann.WeightsLayer(dims = str_list([input_channels, output_channels]),
