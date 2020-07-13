@@ -6,7 +6,9 @@ import argparse
 import os 
 
 import sparse_train
-import data.MNIST_Superpixel 
+import train
+import data.MNIST_Superpixel
+import data.PROTEINS
 
 desc = (" Training a Graph Convolutional Model using LBANN" )
 
@@ -40,18 +42,18 @@ dataset = args.dataset
 num_epochs = args.num_epochs
 mini_batch_size = args.mini_batch_size 
 job_name = args.job_name
-model = sparse_train.make_model(dataset = dataset,
+model = train.make_model(dataset = 'PROTEINS',
                             num_epochs = num_epochs)
 
 
 ## Possibly replace this with contrib.args.create_optimizer()
 
-optimizer = lbann.SGD(learn_rate = 1e-3)
+optimizer = lbann.SGD(learn_rate = 1e-1)
 #optimizer = lbann.NoOptimizer()
 
 #add logic for choosing a dataset 
 
-data_reader = data.MNIST_Superpixel.make_data_reader()
+data_reader = data.PROTEINS.make_data_reader()
 
 trainer = lbann.Trainer(mini_batch_size = mini_batch_size)
 

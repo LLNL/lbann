@@ -1,6 +1,6 @@
 import lbann
 from lbann.util import str_list
-from Graph_Kernels import Dense_Graph_Layer as GraphConv
+from Graph_Kernels import Dense_GCN_Layer as GraphConv
 from Graph_Data import lbann_Data_Mat, lbann_Graph_Data
 
 
@@ -26,13 +26,14 @@ def make_model(num_vertices = None,
             num_classes = 10
             node_features = 1
 
-        elif dataset == 'Synthetic':
-            num_vertices = 3
+        elif dataset == 'PROTEINS':
+            num_vertices = 100
             num_classes = 2
-            node_features = 2
+            node_features = 3
         else:
             raise Exception("Unkown Dataset")
 
+    
     assert num_vertices is not None
     assert num_classes is not None 
     assert node_features is not None 
@@ -75,7 +76,7 @@ def make_model(num_vertices = None,
     adj_matrix = lbann.Reshape(graph_input, dims = str_list([num_vertices,num_vertices]), name="Adj_Mat") 
 
     target = lbann.Identity(graph_input, name="Target")
-    target = lbann.Reshape(target, dims="10")   
+    target = lbann.Reshape(target, dims=str(num_classes))   
     #----------------------------------
     # Perform Graph Convolution
     #----------------------------------
@@ -87,15 +88,15 @@ def make_model(num_vertices = None,
     
    # print("Warning: Not using GCN layer and forwaring orignal feature matrix to reduction step. Should only use this when testing dataset / data reader")
     
-    out_channel_1 = 1024
-    out_channel_2 = 256
-    out_channel_3 = 128
+    out_channel_1 = 256
+    out_channel_2 = 64
+    out_channel_3 = 32
     
     gcn = GraphConv(input_channels = node_features, output_channels = out_channel_1)
     gcn2 = GraphConv(input_channels = out_channel_1, output_channels = out_channel_2)
     gcn3 = GraphConv(input_channels = out_channel_2, output_channels = out_channel_3)
     
-    out_channel = out_channel_3 
+    out_channel = out_channel_3
     
     x = gcn(feature_matrix, adj_matrix )
     x = lbann.Relu(x,name="GCN1_activation") 
@@ -105,11 +106,13 @@ def make_model(num_vertices = None,
     
     x = gcn3 (x, adj_matrix)
     x = lbann.Relu(x, name="GCN3_activation")
-
+   
     #----------------------------------
     # Apply Reduction on Node Features
     #----------------------------------
-
+    
+    #out_channel = node_features
+    #print(node_features)
     average_vector = lbann.Constant(value = 1/num_vertices, num_neurons = str_list([1,num_vertices]), name="Average_Vector")
     x = lbann.MatMul(average_vector,x, name="Node_Feature_Reduction") # X is now a vector with output_channel dimensions 
     
@@ -124,7 +127,7 @@ def make_model(num_vertices = None,
     
     
     probs = lbann.Softmax(x, name="Softmax")
-    loss = lbann.CrossEntropy(probs, target, name="Cross_Entropy_Loss")
+    loss = lbann.MeanSquaredError(x, target, name="Cross_Entropy_Loss")
     accuracy = lbann.CategoricalAccuracy(probs, target, name="Accuracy")
 
     layers = lbann.traverse_layer_graph(input_)
@@ -137,7 +140,7 @@ def make_model(num_vertices = None,
     
     timer = lbann.CallbackTimer()
 
-    callbacks = [print_model, training_output, gpu_usage, timer]
+    callbacks = [training_output, timer, print_model]
 
     metrics = [lbann.Metric(accuracy, name='accuracy', unit="%")]
 

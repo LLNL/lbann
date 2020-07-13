@@ -4,6 +4,7 @@ import os.path
 import sys 
 import utils
 import numpy as np 
+import sys 
 
 files = ['node_features.npy', 'adj_mats.npy', 'targets.npy']
 
@@ -15,12 +16,12 @@ class PROTEINS_Dataset:
         # Load if data exists 
         # Else Download and process data  
         for npy_file in files:
-            if not os.path.isfile(os.path.join(data_dir,npy_file)):
+            if not os.path.isfile(os.path.join(data_dir,"PROTEINS/"+npy_file)):
                 self.process_data()
 
-        self.node_features = np.load(os.path.join(data_dir, files[0]))
-        self.adjs = np.load(os.path.join(data_dir,files[1]))
-        self.targets = np.load(os.path.join(data_dir, files[2]))
+        self.node_features = np.load(os.path.join(data_dir, "PROTEINS/"+files[0]))
+        self.adjs = np.load(os.path.join(data_dir,"PROTEINS/"+files[1]))
+        self.targets = np.load(os.path.join(data_dir, "PROTEINS/"+files[2]))
        
     def generate_dataset(self):
         global data_dir
@@ -41,15 +42,35 @@ class PROTEINS_Dataset:
         
         self.generate_dataset()
 
-    
+    def __len__(self):
+        
+        return len(self.node_features)
     def __getitem__(self, index):
         
-        x = self.node_features.flatten()
-        y = self.targets.flatten()
-        adj = self.adjs.flatten()
+        x = np.float32(self.node_features[index].flatten())
+        y = np.float32(self.targets[index].flatten())
+        adj = np.float32(self.adjs[index].flatten())
 
         return np.concatenate((x,adj,y), axis=0)
-if __name__== '__main__':
-    dataset = PROTEINS_Dataset()
 
-    
+training_data = PROTEINS_Dataset()
+
+def get_train(index):
+    return training_data[index]
+
+def num_train_samples():
+    return len(training_data)
+
+def sample_dims():
+    adjacency_matrix_size = 100 * 100 
+    node_feature_size = 100 * 3 
+    target_size = 2
+    return (adjacency_matrix_size + node_feature_size + target_size, )
+
+if __name__== '__main__':
+    print(len(training_data))
+    print(training_data.node_features[0].shape)
+    print(training_data.adjs[0].shape)
+    print(training_data.targets[0].shape)
+    print(type(training_data[0][0]))
+    print(sys.getsizeof(training_data[0][0]))

@@ -2,6 +2,7 @@ import lbann
 from lbann.modules import Module
 from lbann.util import str_list
 from Graph_Data import lbann_Data_Mat
+import lbann.modules.base
 
 class Dense_GCN_Layer(Module):
     global_count = 0
@@ -12,7 +13,7 @@ class Dense_GCN_Layer(Module):
         self.name = (name if name else 'Dense_GCN_{}'.format(Dense_GCN_Layer.global_count))
         
                                 
-        self.weights = lbann.Weights(initializer = lbann.NormalInitializer(mean=1, standard_deviation=0),
+        self.weights = lbann.Weights(initializer = lbann.NormalInitializer(mean=0, standard_deviation=1/output_channels),
                                     name=self.name+'_Weights')
 
         self.W = lbann.WeightsLayer(dims = str_list([input_channels, output_channels]),
@@ -29,8 +30,8 @@ class GCN_Layer(Module):
     def __init__(self, input_channels, output_channels, name=None, activation = None):
         super().__init__()
         GCN_Layer.global_count +=1
-        self.name = (name if name else 'GCN_{}'.format(GCN_Layer.global_count))
-        self.weights = lbann.Weights(initializer = lbann.NormalInitializer(mean = 1, standard_deviation=0),
+        self.name = (self.name if name else 'GCN_{}'.format(GCN_Layer.global_count))
+        self.weights = lbann.Weights(initializer = lbann.NormalInitializer(mean = 0, standard_deviation=1/output_channels),
                                     name = self.name+'_Weights')
         self.W = lbann.WeightsLayer(dims = str_list([input_channels, output_channels]),
                                     name = self.name+'_layer',
@@ -52,16 +53,17 @@ class GCN_Layer(Module):
         return out 
             
 
-
 class GIN_Layer(Module):
     global_count = 0 
-    def __init__(self, nn, eps = 1e-6, activation = None):
+    def __init__(self, nn, eps = 1e-6, name=None, activation = None):
         super().__init__()
         GIN_Layer.global_count += 1 
 
         self.name = (name if name else 'GIN_{}'.format(GIN_Layer.global_count))
         self.eps = eps
-
+        fc = lbann.modules.FullyConnectedModule
+        self.fc2 = fc(128)
+        self.fc1 = fc(1024)
     def forward(self, X, A, activation='relu'): 
         in_channel = X.shape[1]
         eps = lbann.Constant(value=self.eps, num_neurons = str(in_channel))
@@ -70,8 +72,14 @@ class GIN_Layer(Module):
         # Propagate Phase: To Do: Encase this is in a method of message and aggregate
         #
         ###############################################################################
+
+
+        
         for i in range(X.shape[0]):
-            X[i] = nn(X[i])
+            temp = self.fc2(X[i]) 
+            temp = lbann.Relu(temp)
+            temp = self.fc1(temp)
+            X[i] = temp
         out = X.get_mat()
         ###############################################################################
 
@@ -80,7 +88,7 @@ class GIN_Layer(Module):
         #
         # Need to handle conversion back to LBANN Data Type here
         #
-        out = lbann_Data_Mat.mat_to_data(out, X.size(0), self.output_channels)
+        out = lbann_Data_Mat.mat_to_data(out, X.shape[0], 128)
         return out 
 
 

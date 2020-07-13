@@ -20,9 +20,9 @@ class MNIST_Superpixel_Dataset():
         return self.num_data
 
     def __getitem__(self, idx):
-        data_x = self.node_features[idx].flatten()
-        data_edges = self.edges[idx].flatten()
-        data_target = self.targets[idx].flatten()
+        data_x = np.float32(self.node_features[idx].flatten())
+        data_edges = np.float32(self.edges[idx].flatten())
+        data_target = np.float32(self.targets[idx].flatten())
         
         return np.concatenate([data_x, data_edges, data_target])
 
