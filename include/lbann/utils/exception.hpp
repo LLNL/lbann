@@ -59,6 +59,18 @@
               << std::endl;                                     \
   } while (0)
 
+// Macro to print a warning to standard error stream; only world master prints
+#define LBANN_INFO(...)                                      \
+  do {                                                       \
+    const int rank_LBANN_INFO = lbann::get_rank_in_world();  \
+    std::string s = lbann::build_string(                     \
+      "LBANN info (", __FILE__, ":", __LINE__, "): ",        \
+        __VA_ARGS__);                                        \
+    if (rank_LBANN_INFO == 0 || rank_LBANN_INFO < 0) {       \
+         std::cout << s << std::endl;                        \
+    }                                                        \
+  } while (0)
+
 // Macro to print a message to standard cout stream.
 #define LBANN_MSG(...)                                          \
   do {                                                          \

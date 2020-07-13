@@ -848,6 +848,11 @@ void generic_data_reader::preload_data_store() {
   }
 
   else {
+    // TODO: 
+    // this is a mess: too much interaction between data_reader, derived
+    // reader classes, and data store. E.g, "build_preloaded_owner_map"
+    // is N/A for at least some jag_conduit reader modes. But for now
+    // I'm leaving as is, since the call doesn't take much time
     std::vector<int> local_list_sizes;
     get_local_list_sizes(local_list_sizes);
     m_data_store->set_profile_msg("generic_data_reader::preload_data_store(): calling m_data_store->build_preloaded_owner_map()");

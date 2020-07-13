@@ -215,8 +215,7 @@ inline void sample_list_open_files<sample_name_t, file_handle_t>
     const std::string file_path = add_delimiter(m_header.get_file_dir()) + filename;
 
     if (filename.empty() || !check_if_file_exists(file_path)) {
-      throw lbann_exception(std::string{} + __FILE__ + " " + std::to_string(__LINE__)
-                            + " :: data file '" + filename + "' does not exist.");
+      LBANN_ERROR("data file '", filename, "' does not exist.");
     }
 
     file_handle_t file_hnd = open_file_handle(file_path);

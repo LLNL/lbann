@@ -249,8 +249,11 @@ class data_reader_jag_conduit : public generic_data_reader {
 
  protected:
 
-  /// used during load and preload
-  std::set<std::string> m_my_sample_names;
+  /// used during load and preload (don't even think about changing
+  /// these to unordered_sets!)
+  std::set<int> m_my_indices_train;
+  std::set<int> m_my_indices_validate;
+  void partition_indices(const std::set<std::string> &my_sample_names);
 
   /// once the sample_list class and file formats are generalized and
   /// finalized, it should (may?) be possible to code a single

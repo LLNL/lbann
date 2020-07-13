@@ -108,9 +108,9 @@ data_store_conduit::data_store_conduit(
   if (opts->has_string("data_store_reserve")) {
     reserve = opts->get_int("data_store_reserve");
   }
-  if (reserve) {
+  if (reserve && !opts->get_bool("old_method")) {
+    if (m_world_master) std::cout << "data store, m_data reserving: " << reserve << std::endl;
     m_data.reserve(reserve);
-    if (m_world_master) std::cout << " data store, m_data reserving: " << reserve << std::endl;
   }
 }
 
@@ -226,7 +226,6 @@ void data_store_conduit::copy_members(const data_store_conduit& rhs) {
   m_recv_buffer = rhs.m_recv_buffer;
   m_outgoing_msg_sizes = rhs.m_outgoing_msg_sizes;
   m_incoming_msg_sizes = rhs.m_incoming_msg_sizes;
-  m_compacted_sample_size = rhs.m_compacted_sample_size;
   m_indices_to_send = rhs.m_indices_to_send;
   m_indices_to_recv = rhs.m_indices_to_recv;
 
@@ -273,6 +272,7 @@ void data_store_conduit::spill_preloaded_conduit_node(int data_id, const conduit
 }
 
 void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::Node &node) {
+if (m_rank_in_trainer == 0) std::cout << "XX starting set_preloaded_conduit_node for " << data_id << std::endl;
   // note: at this point m_data[data_id] = node
   {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -299,6 +299,8 @@ void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::
   {
     conduit::Node n2 = node;  // node == m_data[data_id]
     std::lock_guard<std::mutex> lock(m_mutex);
+if (m_rank_in_trainer == 0) std::cout << "XX calling build_node_for_sending for id: " << data_id 
+    << " node_size_vary6: " << m_node_sizes_vary << std::endl;
     build_node_for_sending(n2, m_data[data_id]);
   }
   if (!m_node_sizes_vary) {
@@ -340,7 +342,6 @@ void data_store_conduit::error_check_compacted_node(const conduit::Node &nd, int
 //n.b. Do not put any PROFILE or DEBUG_DS statements in this method,
 //     since the threading from the data_reader will cause you grief
 void data_store_conduit::set_conduit_node(int data_id, const conduit::Node &node, bool already_have) {
-
   std::lock_guard<std::mutex> lock(m_mutex);
   // TODO: test whether having multiple mutexes below is better (faster) than
   //       locking this entire call with a single mutex. For now I'm
@@ -945,6 +946,8 @@ void data_store_conduit::set_loading_is_complete() {
   set_is_explicitly_loading(false);
   check_query_flags();
 
+  exchange_owner_maps();
+
   if (m_run_checkpoint_test) {
     test_checkpoint(m_spill_dir_base);
   }
@@ -1322,14 +1325,28 @@ void data_store_conduit::exchange_images(std::vector<char> &work, map_is_t &imag
 }
 
 void data_store_conduit::exchange_owner_maps() {
+  if (m_owner_maps_were_exchanged) {
+    if (m_trainer_master) {
+      std::cout << "Immediate return from data_store_conduit::exchange_owner_maps(), since this was previously called for role: " << m_reader->get_role() << "\n";
+    }
+    return;
+  }
+
+  if (m_trainer_master) {
+    std::cout << "starting data_store_conduit::exchange_owner_maps(); m_owner_maps_were_exchanged? " << m_owner_maps_were_exchanged << std::endl;
+  }
   PROFILE("starting exchange_owner_maps;",
-          "my owner map size: ", m_owner.size());
+          "my owner map size: ", m_owner.size(),
+          "; about to call all_gather");
   DEBUG_DS("starting exchange_owner_maps;",
-        "size: ", m_owner.size());
+          "my owner map size: ", m_owner.size(),
+        "; about to call all_gather");
 
   int my_count = m_my_num_indices;
   std::vector<int> all_counts(m_np_in_trainer);
   m_comm->all_gather(&my_count, 1, all_counts.data(), 1,  m_comm->get_trainer_comm());
+  PROFILE("FINISHED all_gather");
+  DEBUG_DS("FINISHED all_gather");
 
   std::vector<size_t> my_sizes(m_my_num_indices);
   size_t j = 0;
@@ -1346,14 +1363,6 @@ void data_store_conduit::exchange_owner_maps() {
       m_comm->broadcast<size_t>(k, others.data(), all_counts[k],  m_comm->get_trainer_comm());
       for (size_t i=0; i<others.size(); ++i) {
         if (m_owner.find(others[i]) != m_owner.end()) {
-
-          if (m_debug) {
-            DEBUG_DS("data_store_conduit::exchange_owner_maps, duplicate data_id: ", others[i], "; k= ", k, "\nmy current m_owner map: ");
-            for (auto t : m_owner) DEBUG_DS("data_id: ", t.first, " owner: ", t.second);
-            DEBUG_DS("\nowner map (partial or whole) from P_", k);
-            for (auto t : others) DEBUG_DS(t, " ");
-          }
-
           LBANN_ERROR("duplicate data_id: ", others[i], " role: ", m_reader->get_role(), "; m_owner[", others[i],"] = ", m_owner[others[i]], " for role: ", m_reader->get_role(), " m_owner.size: ", m_owner.size(), " m_data.size(): ", m_data.size());
         }
         m_owner[others[i]] = k;
@@ -1361,12 +1370,7 @@ void data_store_conduit::exchange_owner_maps() {
     }
 
   }
-  PROFILE("leaving data_store_conduit::exchange_owner_maps\n",
-          "my owner map size: ", m_owner.size());
   m_owner_maps_were_exchanged = true;
-PROFILE("exchange_owner_maps; m_owner_maps_were_exchanged = true");
-  set_loading_is_complete();
-
   PROFILE("LEAVING exchange_owner_maps;",
           "my owner map size: ", m_owner.size());
 }
