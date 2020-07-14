@@ -166,7 +166,7 @@ void smiles_data_reader::load() {
 
   // TODO: does this work if we carve off a validation set?
   // NOTE: if ltfb is run, we've hard-coded above to use the
-  //       data-store, so this block won't fire
+  //       data-store
   if (m_data_store == nullptr) {
     double tm4 = get_time();
     setup_local_cache();
@@ -233,6 +233,9 @@ void smiles_data_reader::do_preload_data_store() {
     }
     if (sample_id >= max_index) {
       break;
+    }
+    if (is_master() && (sample_id % 1000000 == 0)) {
+      std::cout << sample_id/1000000 << "M samples loaded" << std::endl;
     }
   }
   in.close();
@@ -402,7 +405,15 @@ int smiles_data_reader::get_num_lines(std::string fn) {
     std::cout << "smiles_data_reader::get_num_lines; num_lines: " 
               << utils::commify(count) << " time: " << get_time()-tm1 << std::endl;
   }
+
+  //I'm putting temporary timing around the bcast, because it
+  //seems to be taking a long time
+  if (is_master()) std::cout << "XX calling bcast ..." << std::endl;
+  tm1 = get_time();
   m_comm->broadcast<int>(0, &count, 1, m_comm->get_world_comm());
+  double tm = get_time() - tm1;
+  if (is_master()) std::cout << "XX DONE! calling bcast ... TIME: " << tm << std::endl;
+
   return count;
 }
 
