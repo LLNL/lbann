@@ -96,12 +96,8 @@ void smiles_data_reader::load() {
 
   // WARNING: this has not been tested (Jul 13, 2020)
   if (opts->get_bool("ltfb")) {
-    if (! opts->get_bool("use_data_store")) {
-      if (is_master()) {
-        std::cout << "WARNING: you requested --ltfb, but not --use_data_store; as of now, you must use data store with ltfb, so we are making it so." << std::endl;
-      }
-      opts->set_option("use_data_store", 1);
-    }
+    opts->set_option("use_data_store", 1);
+    opts->set_option("preload_data_store", 1);
   }
 
   if (!opts->has_int("sequence_length")) {
@@ -134,25 +130,21 @@ void smiles_data_reader::load() {
     }
     size_t my_trainer = m_comm->get_trainer_rank();
     size_t num_trainers = m_comm->get_num_trainers();
-    size_t samples_per_trainer = num_samples / num_trainers;
+    std::set<int> my_trainers_indices;
 
-    std::set<int> my_indices;
+    // TODO: the following assumes num_trainers evenly divides 
+    //       shuffled_indices.size()
     for (size_t t=0; t<m_shuffled_indices.size(); t++) {
       if (t % num_trainers == my_trainer) {
-        my_indices.insert(m_shuffled_indices[t]);
+        my_trainers_indices.insert(m_shuffled_indices[t]);
       }
     }
 
-    // Sanity check
-    if (my_indices.size() != m_shuffled_indices.size()) {
-      LBANN_ERROR("my_indices.size() != m_shuffled_indices.size(); ", my_indices.size(), " ", m_shuffled_indices.size());
-    }
-
-    num_samples = samples_per_trainer;
     m_shuffled_indices.clear();
-    for (const auto &t : my_indices) {
+    for (const auto &t : my_trainers_indices) {
       m_shuffled_indices.push_back(t);
     }
+
   } else {
     if (is_master()) std::cout << "NOT running ltfb\n";
   }
