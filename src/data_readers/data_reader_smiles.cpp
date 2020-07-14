@@ -72,7 +72,6 @@ void smiles_data_reader::copy_members(const smiles_data_reader &rhs) {
       m_data_store = new data_store_conduit(rhs.get_data_store());
       m_data_store->set_data_reader_ptr(this);
   }
-  m_num_samples = rhs.m_num_samples;
   m_linearized_data_size = rhs.m_linearized_data_size;
   m_linearized_label_size = rhs.m_linearized_label_size;
   m_linearized_response_size = rhs.m_linearized_response_size;
@@ -95,6 +94,16 @@ void smiles_data_reader::load() {
 
   options *opts = options::get();
 
+  // WARNING: this has not been tested (Jul 13, 2020)
+  if (opts->get_bool("ltfb")) {
+    if (! opts->get_bool("use_data_store")) {
+      if (is_master()) {
+        std::cout << "WARNING: you requested --ltfb, but not --use_data_store; as of now, you must use data store with ltfb, so we are making it so." << std::endl;
+      }
+      opts->set_option("use_data_store", 1);
+    }
+  }
+
   if (!opts->has_int("sequence_length")) {
     LBANN_ERROR("you must pass --sequence_length=<int> on the cmd line");
   }
@@ -103,64 +112,29 @@ void smiles_data_reader::load() {
   // load the vocabulary; this is a map: string -> short
   load_vocab();
 
-  // Count total number of samples in the file
   //m_has_header = !opts->get_bool("no_header");
   m_has_header = true;
 
+  // get the total number of samples in the file
   const std::string infile = get_file_dir() + "/" + get_data_filename();
-  m_total_samples = get_num_lines(infile);
-  if (m_has_header) {
-    --m_total_samples;
+  int num_samples = get_num_lines(infile);
+  if (m_has_header) {  // hardcoded to be true; making this an optional case is trouble-prone for now
+    --num_samples;
   }
 
-  // Get the number of samples to use (this is separate from "percent_of_data_to_use," etc);
-  m_num_samples = m_total_samples;
-  if (opts->has_int("num_samples")) {
-    m_num_samples = opts->get_int("num_samples");
-  }
-  if (m_num_samples > m_total_samples) {
-    LBANN_ERROR("You requested to use ", m_num_samples, " samples, but input file only contains ", m_total_samples);
-  }
-
-  // Do the usual things we always do to finish up ...
   m_shuffled_indices.clear();
-  m_shuffled_indices.resize(m_num_samples);
-
-  //
-  // Randomly select N out of a possible M indices, where N << M.
-  // Unf, if a user sets N to be close or identical to M, the simple
-  // algorithm could run for a long time.
-  //
-  // This block replaces:
-  //  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
-  //
-  if (! opts->get_bool("smiles_random_off")) {
-    if (is_master()) {
-      std::cout << "starting to generate some random numbers ... theoretically this could run forever, esp. if you set --num_samples too high." << std::endl;
-    }  
-    int seed = opts->get_int("smiles_srand", time(NULL));
-    srand(seed);
-    std::set<int> useme_indices;
-    while (useme_indices.size() < static_cast<size_t>(m_num_samples)) {
-      useme_indices.insert(rand() % m_total_samples);
-    }
-    size_t jj = 0;
-    for (auto idx : useme_indices) {
-      m_shuffled_indices[jj++] = idx;
-    }
-  } else {
-    if (is_master()) {
-      std::cout << "pulling all samples from top of file" << std::endl;
-    }
-  }
-
+  m_shuffled_indices.resize(num_samples);
+  std::iota(m_shuffled_indices.begin(), m_shuffled_indices.end(), 0);
   resize_shuffled_indices();
-  
+
   // Optionally run "poor man's" LTFB
   if (opts->get_bool("ltfb")) {
+    if (is_master()) {
+      std::cout << "running poor man's LTFB\n";
+    }
     size_t my_trainer = m_comm->get_trainer_rank();
     size_t num_trainers = m_comm->get_num_trainers();
-    size_t samples_per_trainer = m_num_samples / num_trainers;
+    size_t samples_per_trainer = num_samples / num_trainers;
 
     std::set<int> my_indices;
     for (size_t t=0; t<m_shuffled_indices.size(); t++) {
@@ -169,12 +143,19 @@ void smiles_data_reader::load() {
       }
     }
 
-    m_num_samples = samples_per_trainer;
+    // Sanity check
+    if (my_indices.size() != m_shuffled_indices.size()) {
+      LBANN_ERROR("my_indices.size() != m_shuffled_indices.size(); ", my_indices.size(), " ", m_shuffled_indices.size());
+    }
+
+    num_samples = samples_per_trainer;
     m_shuffled_indices.clear();
     for (const auto &t : my_indices) {
       m_shuffled_indices.push_back(t);
     }
-  } 
+  } else {
+    if (is_master()) std::cout << "NOT running ltfb\n";
+  }
 
   instantiate_data_store();
   select_subset_of_data();
@@ -208,6 +189,7 @@ void smiles_data_reader::do_preload_data_store() {
               << utils::commify(m_shuffled_indices.size()) 
               << " for role: " << get_role() << std::endl;
   }
+
   m_data_store->set_node_sizes_vary();
   m_data_store->set_is_local_cache();
   const std::string infile = get_file_dir() + "/" + get_data_filename();
@@ -220,13 +202,15 @@ void smiles_data_reader::do_preload_data_store() {
     getline(in, line); 
   }
 
-  size_t max_line = 0;
+  // Collect the (global) set of sample_ids to be used in this experiment
   std::unordered_set<int> valid_ids;
   int sanity_min = INT_MAX;
   int sanity_max = 0;
+  int max_index = 0;
   for (const auto &id : m_shuffled_indices) {
     valid_ids.insert(id);
-    max_line = static_cast<size_t>(id) > max_line ? id : max_line;
+    max_index = id > max_index ? id : max_index;
+    //max_index = static_cast<int>(id) > max_index ? id : max_index;
     if (id < sanity_min) sanity_min = id;
     if (id > sanity_max) sanity_max = id;
   }
@@ -238,25 +222,37 @@ void smiles_data_reader::do_preload_data_store() {
     LBANN_ERROR("sanity_min != m_min_index || sanity_max != m_max_index: ", sanity_min, " ", m_min_index, " ", sanity_max, " ", m_max_index);
   }
 
-  size_t sample_id = -1;
+  // Load the samples. As currently written, each rank loads all samples,
+  // hence, there will be no data exchange phases
+  int sample_id = -1;
+  size_t sanity = 0;
   while (true) {
     ++sample_id;
-    ssize_t n = 0;
     getline(in, line);
     if (valid_ids.find(sample_id) != valid_ids.end()) {
       conduit::Node &node = m_data_store->get_empty_node(sample_id);
       construct_conduit_node(sample_id, line, node);
       m_data_store->set_preloaded_conduit_node(sample_id, node);
+      ++sanity;
     }
-    if (sample_id >= max_line || n == -1) {
+    if (sample_id >= max_index) {
       break;
     }
   }
+
   in.close();
   m_data_store->set_loading_is_complete();
+
+  // Sanity check
+  if (sanity != valid_ids.size()) {
+    LBANN_ERROR("sanity != valid_ids.size() (sanity=", sanity, "; valid_ids.size()=", valid_ids.size());
+  }
+
   if (is_master()) {
     std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
   }
+
+/*
   if (is_master()) {
     pid_t p = getpid();
     char buf[80];
@@ -264,6 +260,7 @@ void smiles_data_reader::do_preload_data_store() {
     system(buf);
     std::cout << "wrote proc/[pid]/status to 'status.txt'" << std::endl;
   }
+*/
 }
 
 bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
@@ -332,10 +329,10 @@ void smiles_data_reader::print_statistics() const {
     std::cout << "delimiter: <tab>\n"; 
   } else if (m_delimiter == ',') {
     std::cout << "delimiter: <comma>\n"; 
-  } else if (m_delimiter == '0') {
+  } else if (m_delimiter == '\0') {
     std::cout << "delimiter: <none>\n"; 
   } else {
-    LBANN_ERROR("invalid delimiter character: ", m_delimiter);
+    LBANN_ERROR("invalid delimiter character, as int: ", (int)m_delimiter);
   }
   std::cout << "pad index: " << m_pad << std::endl;
 
@@ -394,8 +391,14 @@ void smiles_data_reader::load_vocab() {
 
 int smiles_data_reader::get_num_lines(std::string fn) {
   double tm1 = get_time();
+
+  options *opts = options::get();
+  if (opts->has_int("n_lines")) {
+    return opts->get_int("n_lines");
+  }
+
   if (is_master()) {
-    std::cout << "starting: count number of lines in the input file" << std::endl;
+    std::cout << "WARNING: starting smiles_data_reader::get_num_lines(), which reads every line in the file. This can be avoided by passing: --n_lines=<int>" << std::endl;
   }
 
   int count = 0;
@@ -404,6 +407,7 @@ int smiles_data_reader::get_num_lines(std::string fn) {
     if (!in) {
       LBANN_ERROR("failed to open data file: ", fn, " for reading");
     }
+    std::cout << "opened " << fn << " for reading\n";
     std::string line;
     while(getline(in,line)) {
       ++count;

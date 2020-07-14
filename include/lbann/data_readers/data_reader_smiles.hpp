@@ -67,9 +67,6 @@ public:
   void set_sequence_length(int n) { m_linearized_data_size = n; }
   int get_sequence_length() { return get_linearized_data_size(); }
 
-  void set_num_samples(int n) { m_num_samples = n; }
-  int get_num_samples() { return m_num_samples; }
-
 private:
 
   /// used for sanity checking in load() and do_preload();
@@ -100,13 +97,6 @@ private:
   int get_smiles_string_length(const std::string &line, int line_number);
 
   //==== end hack to make it work fast ====
-
-  // Number of samples the user has requested
-  int m_num_samples = -1;
-
-  // The total number of samples in the file; will be 
-  // computed from the input file
-  int m_total_samples;
 
   int m_linearized_data_size = 0;
   int m_linearized_label_size = 0;
