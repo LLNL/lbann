@@ -94,7 +94,6 @@ void smiles_data_reader::load() {
 
   options *opts = options::get();
 
-  // WARNING: this has not been tested (Jul 13, 2020)
   if (opts->get_bool("ltfb")) {
     opts->set_option("use_data_store", 1);
     opts->set_option("preload_data_store", 1);
@@ -108,13 +107,14 @@ void smiles_data_reader::load() {
   // load the vocabulary; this is a map: string -> short
   load_vocab();
 
-  //m_has_header = !opts->get_bool("no_header");
+  // m_has_header = !opts->get_bool("no_header");
+  //  side effects -- hard code for now, relook later
   m_has_header = true;
 
   // get the total number of samples in the file
   const std::string infile = get_file_dir() + "/" + get_data_filename();
   int num_samples = get_num_lines(infile);
-  if (m_has_header) {  // hardcoded to be true; making this an optional case is trouble-prone for now
+  if (m_has_header) {
     --num_samples;
   }
 
@@ -132,11 +132,13 @@ void smiles_data_reader::load() {
     size_t num_trainers = m_comm->get_num_trainers();
     std::set<int> my_trainers_indices;
 
-    // TODO: the following assumes num_trainers evenly divides 
-    //       shuffled_indices.size()
-    for (size_t t=0; t<m_shuffled_indices.size(); t++) {
-      if (t % num_trainers == my_trainer) {
-        my_trainers_indices.insert(m_shuffled_indices[t]);
+    // Use two loops here, to assure all trainers have
+    // the same number of samples
+    for (size_t j=0; j<m_shuffled_indices.size(); j += num_trainers) {
+      for (size_t k=0; k<num_trainers; k++) {
+        int idx = j+k;
+        if (idx % num_trainers == my_trainer) 
+        my_trainers_indices.insert(m_shuffled_indices[idx]);
       }
     }
 
@@ -163,6 +165,8 @@ void smiles_data_reader::load() {
   get_delimiter();
 
   // TODO: does this work if we carve off a validation set?
+  // NOTE: if ltfb is run, we've hard-coded above to use the
+  //       data-store, so this block won't fire
   if (m_data_store == nullptr) {
     double tm4 = get_time();
     setup_local_cache();
@@ -198,14 +202,12 @@ void smiles_data_reader::do_preload_data_store() {
   std::unordered_set<int> valid_ids;
   int sanity_min = INT_MAX;
   int sanity_max = 0;
-  int max_index = 0;
   for (const auto &id : m_shuffled_indices) {
     valid_ids.insert(id);
-    max_index = id > max_index ? id : max_index;
-    //max_index = static_cast<int>(id) > max_index ? id : max_index;
     if (id < sanity_min) sanity_min = id;
     if (id > sanity_max) sanity_max = id;
   }
+  int max_index = sanity_max;
 
   // cheap sanity check 
   if ( (sanity_min != m_min_index || sanity_max != m_max_index)
@@ -215,7 +217,9 @@ void smiles_data_reader::do_preload_data_store() {
   }
 
   // Load the samples. As currently written, each rank loads all samples,
-  // hence, there will be no data exchange phases
+  // hence, there will be no data exchange phases. This can be expanded
+  // in the future, to use the data store for sharding, instead of a purely
+  // local cache
   int sample_id = -1;
   size_t sanity = 0;
   while (true) {
@@ -231,7 +235,6 @@ void smiles_data_reader::do_preload_data_store() {
       break;
     }
   }
-
   in.close();
   m_data_store->set_loading_is_complete();
 
@@ -243,16 +246,6 @@ void smiles_data_reader::do_preload_data_store() {
   if (is_master()) {
     std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
   }
-
-/*
-  if (is_master()) {
-    pid_t p = getpid();
-    char buf[80];
-    sprintf(buf, "cat /proc/%d/status >& status.txt", p);
-    system(buf);
-    std::cout << "wrote proc/[pid]/status to 'status.txt'" << std::endl;
-  }
-*/
 }
 
 bool smiles_data_reader::fetch_datum(Mat& X, int data_id, int mb_idx) {
@@ -390,7 +383,7 @@ int smiles_data_reader::get_num_lines(std::string fn) {
   }
 
   if (is_master()) {
-    std::cout << "WARNING: starting smiles_data_reader::get_num_lines(), which reads every line in the file. This can be avoided by passing: --n_lines=<int>" << std::endl;
+    std::cout << "INFO: starting smiles_data_reader::get_num_lines(), which reads every line in the file. This can be avoided by passing: --n_lines=<int>" << std::endl;
   }
 
   int count = 0;
