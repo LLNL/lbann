@@ -329,6 +329,7 @@ protected:
 
   */	
   virtual void setup_subgrids();	
+  virtual void get_parent_subgrid_tags(int layer_index );
 
   /** @brief Set up layer execution order.
    *

@@ -740,6 +740,59 @@ void model::setup_layer_topology() {
 
 }
 
+void model::get_parent_subgrid_tags(int layer_index ){
+	const auto& layers = this->get_layers();
+	std::vector<const Layer*>& parents = layers[layer_index]->get_parent_layers();
+	std::vector < std::set < int,  std::greater <int>>> diff_subgrids;
+	std::vector<int> parent_tags(parents.size());
+  
+
+
+	//diffbranches.push_back(temp);
+	for (int i = 0; i < int(parents.size()); ++i)
+	{
+		std::set<int,std::greater <int>> parent_subgrid_ranks_set = *(parents[i]->subgrid_ranks);
+		if(diff_subgrids.size()==0)
+		{
+		    diff_subgrids.push_back(parent_subgrid_ranks_set);
+		}
+		else
+		{
+		    
+		    bool flag_found = false;
+		    for(int j=0; j< int(diff_subgrids.size()); ++j)
+		    {
+		        if(parent_subgrid_ranks_set==diff_subgrids[j])
+		        {
+		            parent_tags[i] = j;
+		            flag_found = true;
+		            break;
+		        }
+		    }
+		    
+		    if(flag_found==false)
+		    {
+		        parent_tags[i] = int(diff_subgrids.size());
+		        diff_subgrids.push_back(parent_subgrid_ranks_set);
+		    }
+		    
+		    
+		}
+	  
+
+	}
+  layers[layer_index]->parent_tags.reset(new std::vector<int>(parent_tags.begin(),parent_tags.end()) );
+  // std::cout<<"Parent tags are ";
+  // for(int i = 0; i< int(parent_tags.size());++i)
+  // {
+  //   std::cout<<(*layers[layer_index]->parent_tags)[i]<<" ";
+  // }
+  // std::cout<<"\n";
+  layers[layer_index]->num_spliting_groups = int(diff_subgrids.size());
+
+
+}
+
 void  model::setup_subgrids(){
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
@@ -837,6 +890,8 @@ void  model::setup_subgrids(){
           //layers[node]->mygrid.reset(grids[grid_number].get());
           layers[node]->mygrid = grids[grid_number];
 
+          get_parent_subgrid_tags(node );
+
           std::string temp_print;
 
           for(int vec_index = 0; vec_index<int(ranks_in_grid.size());++vec_index)
@@ -864,12 +919,33 @@ void  model::setup_subgrids(){
         std::set <int, std::greater <int> > parent_layer_ranks = *(parents[0]->subgrid_ranks);
         std::set <int, std::greater <int> > my_sub_ranks ;
 
+        bool flag_subgrid_found  = false;
+
         for(El::Int child = 0; child<int(childs.size());++child)
         {
           num_divisions = std::max(num_divisions, int(childs[child]->get_parallel_strategy().sub_branch_tag));
+
+          //check if the grid is initialized for the childs with similar tag
+          if(childs[child]->subgrid_number > 0 && int(childs[child]->get_parallel_strategy().sub_branch_tag) == (layers[node]->get_parallel_strategy().sub_branch_tag ))
+          {
+            layers[node]->subgrid_number = childs[child]->subgrid_number;
+            layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (  (*childs[child]->subgrid_ranks).begin()  ,(*childs[child]->subgrid_ranks).end())    );
+            //layers[node]->mygrid.reset(grids[grid_number].get());
+            layers[node]->mygrid = grids[childs[child]->subgrid_number];
+            layers[node]->num_spliting_groups = childs[child]->num_spliting_groups;
+            flag_subgrid_found = true;
+
+          }
+
+        }
+
+        if(flag_subgrid_found){
+          continue;
         }
 
         int number_ranks_in_grid = ( (*parent[0].subgrid_ranks).size())/num_divisions;
+        
+        //parents[0]->num_spliting_groups = num_divisions;
 
 
 
@@ -898,6 +974,7 @@ void  model::setup_subgrids(){
         layers[node]->subgrid_ranks.reset(new std::set<int,std::greater <int>> (my_sub_ranks.begin(),my_sub_ranks.end()));
         //layers[node]->mygrid.reset(grids[grid_number].get());
         layers[node]->mygrid = grids[grid_number];
+        layers[node]->num_spliting_groups=num_divisions;
 
         // if(parents[0]->get_name().find("split")!= std::string::npos)
         // {
@@ -929,7 +1006,7 @@ void  model::setup_subgrids(){
     //std::cout<<"In model Layer name:"<<layers[node]->get_name()<<" Type:"<<layers[node]->get_type()<<" Enable subgraph:"<<layers[node]->get_parallel_strategy().enable_subgraph<< " Ranks size:"<< (*layers[node]->subgrid_ranks).size()<<"\n";
 
   }
-
+  std::cout<<"Number of subgrids created:"<<grid_number<<"\n";
   //std::cout<<"Times shared pointer 0 is used:"<<grids[0].use_count()<<"\n";
 }
 

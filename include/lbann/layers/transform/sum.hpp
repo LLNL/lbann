@@ -108,21 +108,120 @@ protected:
     }
 #endif // LBANN_HAS_DISTCONV
     auto& output = this->get_activations();
-    El::Copy(this->get_prev_activations(0), output);
-    for (int i = 1; i < this->get_num_parents(); ++i) {
-      El::Axpy(DataType(1), this->get_prev_activations(i), output);
+    auto parents = this->get_parent_layers(); 
+    //El::Copy(this->get_prev_activations(0), output);
+    auto subgrid_tags = (*this->parent_tags);
+
+
+
+    if(true)
+    {
+      int tag=0;
+      
+      std::vector<bool> is_initialized_tensor(this->num_spliting_groups, false);
+
+      //Copy data internally with same branch tag 
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        tag = subgrid_tags[i];
+
+        if(is_initialized_tensor[tag])
+        {
+          
+          if(this->get_prev_activations(i).Participating())
+          {
+            El::Axpy(DataType(1), this->get_prev_activations(i),
+                    this->get_branch_tag_input(tag));
+          }
+        }
+        else
+        {
+          El::Copy(this->get_prev_activations(i), this->get_branch_tag_input(tag));
+          is_initialized_tensor[tag] = true;
+
+        }
+      }
+
+      // copy and add data from reduced gradients from same branch 
+      //std::cout<<"Completed locally reducing sum on subgrid "<<" Rank:"<<El::mpi::Rank()<<"\n";
+
+      if (this->get_num_parents() > 0) {
+        El::Copy(this->get_branch_tag_input(0), output);
+      } else {
+        El::Zero(output);
+      }
+
+      for(int i = 1; i < this->num_spliting_groups; i++)
+      {
+        
+        El::Copy( this->get_branch_tag_input(i), this->get_temp_grad());
+        El::Axpy(DataType(1), this->get_temp_grad(),
+                 output);
+      }
+
     }
+
+
+
+  //   for (int i = 1; i < this->get_num_parents(); ++i) {
+  //     El::Axpy(DataType(1), this->get_prev_activations(i), output);
+  //   }
+  }
+
+  void fp_setup_outputs(El::Int mini_batch_size) override {
+
+    if (this->get_num_children() < 1) { return; }
+
+
+  // Initialize output tensors
+  for (int i = 0; i < this->get_num_children(); ++i) {
+
+    auto& output = this->get_activations(i);
+    output.Empty(false);
+    output.Resize(this->get_output_size(i), mini_batch_size);
+    }
+
   }
 
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
+    int tag= 0 ;
     const auto& gradient_wrt_output = this->get_prev_error_signals();
+    auto subgrid_tags = (*this->parent_tags);
 
-    for (int i = 0; i < this->get_num_parents(); ++i) {
-      //El::LockedView(this->get_error_signals(i), gradient_wrt_output);
+    if(true)
+    {
       
-      El::Copy(gradient_wrt_output,this->get_error_signals(i) );
-      //std::cout<<"Sum layer gradient size:"<<this->get_error_signals(i).LocalHeight()<< " "<<this->get_error_signals(i).LocalWidth()<<"\n";
+      for(int i = 0; i < this->num_spliting_groups; i++)
+      {
+        
+        El::Copy( gradient_wrt_output, this->get_branch_tag_input(i));
+      }
+      
+
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        tag = subgrid_tags[i];
+        
+        El::LockedView(this->get_error_signals(i), this->get_branch_tag_input(tag));
+        
+      }
+      
     }
+    else
+    {
+      for (int i = 0; i < this->get_num_parents(); ++i) {
+        
+        El::LockedView(this->get_error_signals(i), gradient_wrt_output);
+
+      }
+    }
+
+
+
+    // for (int i = 0; i < this->get_num_parents(); ++i) {
+    //   //El::LockedView(this->get_error_signals(i), gradient_wrt_output);
+      
+    //   El::Copy(gradient_wrt_output,this->get_error_signals(i) );
+    //   //std::cout<<"Sum layer gradient size:"<<this->get_error_signals(i).LocalHeight()<< " "<<this->get_error_signals(i).LocalWidth()<<"\n";
+    // }
   }
 
   void bp_compute() override {}

@@ -190,7 +190,9 @@ class Layer {
 public:
   /** Ranks in grid for the sub-graph */  
   std::unique_ptr<std::set <int, std::greater <int> >> subgrid_ranks; 
-  El::Int subgrid_number;
+  std::unique_ptr<std::vector<int>> parent_tags;
+  El::Int subgrid_number=-1;
+  El::Int num_spliting_groups=1;
 
   std::shared_ptr<El::Grid> mygrid;
   
@@ -226,6 +228,11 @@ public:
   virtual std::string get_datatype_name() const {
     return TypeName<DataType>();
   };
+
+  void set_num_spliting_groups(int num_grps)
+  {
+    num_spliting_groups = num_grps;
+  }
 
   /** Human-readable description. */
   virtual description get_description() const;

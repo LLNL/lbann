@@ -136,6 +136,8 @@ public:
 
   /** Get temp Grad Tensor. */
   AbsDistMatrixType& get_temp_grad() ;
+  /** Get transfered inpit for each branch tag **/
+  AbsDistMatrixType& get_branch_tag_input(int tag) ;
   /** Get activation tensor. */
   AbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
@@ -392,6 +394,11 @@ private:
    *  Each matrix column corresponds to a flattened mini-batch sample.
    */
   std::vector<std::unique_ptr<AbsDistMatrixType>> m_temp_grad;
+
+  /** For Split layer create a tensor for each branch_tag (opt for not transfering data for each branch)
+   *  Each matrix column corresponds to a flattened mini-batch sample.
+   */
+  std::vector<std::unique_ptr<AbsDistMatrixType>> m_subgrid_tensors_split;
 
   /** @brief Whether to keep persistent error signals or dynamically
    *         allocate/deallocate them.

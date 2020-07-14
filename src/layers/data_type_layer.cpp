@@ -281,6 +281,13 @@ auto data_type_layer<TensorDataType>::get_temp_grad()
   return *m_temp_grad[0];
 }
 
+template <typename TensorDataType>
+auto data_type_layer<TensorDataType>::get_branch_tag_input(int tag)
+  ->  AbsDistMatrixType& {
+  
+  return *m_subgrid_tensors_split[tag];
+}
+
 // Accessing non-const distributed matrices
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.
@@ -449,6 +456,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   m_gradient_wrt_outputs.clear();
   m_gradient_wrt_inputs.clear();
   m_temp_grad.clear();
+  m_subgrid_tensors_split.clear();
 
   // Construct matrices
   m_inputs.resize(get_num_parents());
@@ -456,12 +464,19 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   m_gradient_wrt_outputs.resize(get_num_children());
   m_gradient_wrt_inputs.resize(get_num_parents());
   m_temp_grad.resize(1);
+  m_subgrid_tensors_split.resize(1);
 
   auto childs = get_child_layers(); 
   auto parents = get_parent_layers();
   
   if(get_name().find("split")!= std::string::npos)
   {
+    //split layer 
+    m_subgrid_tensors_split.clear();
+    //std::cout<<"Number of spliting groups:"<<childs[0]->num_spliting_groups<<"\n";
+    m_subgrid_tensors_split.resize(childs[0]->num_spliting_groups);
+
+    
     for (auto& input : m_inputs) {
     input = mat_builder->MakeEmpty(grid, 0);
     } 
@@ -485,13 +500,34 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     for (auto& temp_grad : m_temp_grad) {
     temp_grad = mat_builder->MakeEmpty(grid, 0);
     }
+    count = 0;
+    for (auto& subgrid_tensor : m_subgrid_tensors_split) {
+      for (int child_index = 0; child_index< int(childs.size());++child_index)
+      {
+        if(childs[child_index]->get_parallel_strategy().sub_branch_tag == count+1)
+        {
+          subgrid_tensor = mat_builder->MakeEmpty(*(childs[child_index]->mygrid), 0);
+          count++;
+          break;
+        }
+      }
+    
+    }
     
   }
   else if(get_type()=="sum")
   {
+    //split layer 
+    m_subgrid_tensors_split.clear();
+    //std::cout<<"Number of spliting groups Sum layer :"<<this->num_spliting_groups<<"\n";
+    m_subgrid_tensors_split.resize(this->num_spliting_groups);
+
+
     int count = 0;
     for (auto& input : m_inputs) {
-    input = mat_builder->MakeEmpty(grid, 0);
+    //input = mat_builder->MakeEmpty(grid, 0);
+    input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
+    count++;
     } 
 
     for (auto& output : m_outputs) {
@@ -511,11 +547,30 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     for (auto& temp_grad : m_temp_grad) {
     temp_grad = mat_builder->MakeEmpty(grid, 0);
     }
+    
     //std::cout<<"Setup for Sum layer\n";
+
+    auto subgrid_tags = *(this->parent_tags);
+
+    count = 0;
+    for (auto& subgrid_tensor : m_subgrid_tensors_split) {
+      for (int parent_index = 0; parent_index< int(parents.size());++parent_index)
+      {
+        if(subgrid_tags[parent_index] == count)
+        {
+          //std::cout<<"Parent index is:"<<parent_index<<" subgrid tag is:"<<subgrid_tags[parent_index]<<"\n";
+          subgrid_tensor = mat_builder->MakeEmpty(*(parents[parent_index]->mygrid), 0);
+          count++;
+          break;
+        }
+      }
+    
+    }
 
   }
   else
   {
+    
     
     
     for (auto& input : m_inputs) {
@@ -538,6 +593,11 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     for (auto& temp_grad : m_temp_grad) {
     temp_grad = mat_builder->MakeEmpty(grid, 0);
     }
+    for (auto& subgrid_tensor : m_subgrid_tensors_split) {
+    subgrid_tensor = mat_builder->MakeEmpty(grid, 0);
+    }
+
+
     
 
     

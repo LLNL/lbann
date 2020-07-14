@@ -76,9 +76,35 @@ protected:
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
     const auto& input = this->get_prev_activations();
-    for (int i = 0; i < this->get_num_children(); ++i) {
-      //El::LockedView(this->get_activations(i), input);
-      El::Copy( input,this->get_activations(i));
+    int tag=0;
+    auto childs = this->get_child_layers(); 
+    if(childs[0]->get_parallel_strategy().enable_subgraph==1)
+    {
+      //std::cout<<"Layer name:"<<this->get_name()<<" starting\n";
+      //if subgraph parallelism is enabled 
+      //std::cout<<"In FP setup output num spliting grp:"<<childs[0]->num_spliting_groups<<"\n";
+      for(int i = 0; i < childs[0]->num_spliting_groups; i++)
+      {
+        
+        El::Copy( input,this->get_branch_tag_input(i));
+      }
+      //std::cout<<"Layer name:"<<this->get_name()<<" intermediate Complete\n";
+
+      for (int i = 0; i < this->get_num_children(); ++i) {
+        tag = childs[i]->get_parallel_strategy().sub_branch_tag;
+        //std::cout<<"Layer name:"<<this->get_name()<<"  tag is:"<<tag<<"\n";
+        El::LockedView(this->get_activations(i), this->get_branch_tag_input(tag-1));
+        //El::Copy( input,this->get_activations(i));
+      }
+      //std::cout<<"Layer name:"<<this->get_name()<<"  Complete\n";
+    }
+    else
+    {
+      for (int i = 0; i < this->get_num_children(); ++i) {
+        
+        El::LockedView(this->get_activations(i), input);
+
+      }
     }
   }
 
@@ -94,20 +120,44 @@ protected:
     }
 #endif // LBANN_HAS_DISTCONV
 
-    if(true)
-    {
+    auto& gradient_wrt_input = this->get_error_signals();
+    auto childs = this->get_child_layers(); 
 
-      auto& gradient_wrt_input = this->get_error_signals();
+    if(childs[0]->get_parallel_strategy().enable_subgraph==1)
+    {
+      int tag=0;
+      
+      std::vector<bool> is_initialized_tensor(childs[0]->num_spliting_groups, false);
+
+      //Copy data internally with same branch tag 
+      for (int i = 0; i < this->get_num_children(); ++i) {
+        tag = childs[i]->get_parallel_strategy().sub_branch_tag;
+
+        if(is_initialized_tensor[tag-1])
+        {
+          El::Axpy(DataType(1), this->get_prev_error_signals(i),
+                 this->get_branch_tag_input(tag-1));
+        }
+        else
+        {
+          El::Copy(this->get_prev_error_signals(i), this->get_branch_tag_input(tag-1));
+          is_initialized_tensor[tag-1] = true;
+
+        }
+      }
+
+      // copy and add data from reduced gradients from same branch 
+
       if (this->get_num_children() > 0) {
-        //std::cout<<"Split Layer prev grad size: First branch 0 Height:"<<this->get_prev_error_signals(0).Height()<<" Width:"<<this->get_prev_error_signals(0).Width()<<" Local Height:"<<this->get_prev_error_signals(0).LocalHeight()<<" Local Width:"<<this->get_prev_error_signals(0).LocalWidth()<<"\n";
-        El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
+        El::Copy(this->get_branch_tag_input(0), gradient_wrt_input);
       } else {
         El::Zero(gradient_wrt_input);
       }
-      for (int i = 1; i < this->get_num_children(); ++i) {
-        //std::cout<<"Split Layer prev grad size: First branch:"<<i<<" Height:"<<this->get_prev_error_signals(i).Height()<<" Width:"<<this->get_prev_error_signals(i).Width()<<" Local Height:"<<this->get_prev_error_signals(i).LocalHeight()<<" Local Width:"<<this->get_prev_error_signals(i).LocalWidth()<<"\n";
+
+      for(int i = 1; i < childs[0]->num_spliting_groups; i++)
+      {
         
-        El::Copy(this->get_prev_error_signals(i), this->get_temp_grad());
+        El::Copy( this->get_branch_tag_input(i), this->get_temp_grad());
         El::Axpy(DataType(1), this->get_temp_grad(),
                  gradient_wrt_input);
       }
@@ -117,7 +167,7 @@ protected:
     else
     {
 
-      auto& gradient_wrt_input = this->get_error_signals();
+      
       if (this->get_num_children() > 0) {
         El::Copy(this->get_prev_error_signals(0), gradient_wrt_input);
       } else {
