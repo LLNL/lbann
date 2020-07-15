@@ -1,7 +1,14 @@
 import lbann
 from lbann.modules import Module
 from lbann.util import str_list
-from Graph_Data import lbann_Data_Mat
+import os.path
+import sys
+
+current_file = os.path.realpath(__file__)
+root_dir = os.path.dirname(os.path.dirname(current_file))
+sys.path.append(root_dir)
+
+from .Graph_Data import lbann_Data_Mat
 import lbann.modules.base
 import math 
 
