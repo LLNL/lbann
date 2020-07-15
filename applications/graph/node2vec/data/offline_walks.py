@@ -16,12 +16,7 @@ sys.path.append(root_dir)
 import utils.snap
 
 # Graph options
-graph_name = 'blog'
-graph_file = os.path.join(
-    root_dir, 'largescale_node2vec', 'evaluation', 'dataset',
-    'youtube', 'edges_0based'
-)
-# graph_file = os.path.join(root_dir, 'data', 'graphs', graph_name, 'graph.txt')
+graph_name = 'facebook'
 directed = False
 weighted = False
 
@@ -38,10 +33,9 @@ noise_distribution_exp = 0.75   # Exponent to convert unigram
                                 # distribution to noise distribution
 
 # Download graph and perform random walk, if needed
-data_dir = os.path.join(root_dir, 'data', 'graphs', graph_name)
+graph_file = utils.snap.download_graph(graph_name)
+data_dir = os.path.dirname(graph_file)
 walk_file = os.path.join(data_dir, 'walk.txt')
-if not os.path.isfile(graph_file):
-    utils.snap.download_graph(graph_name, graph_file)
 if not os.path.isfile(walk_file):
     utils.snap.node2vec_walk(
         graph_file,
@@ -112,30 +106,3 @@ def num_samples():
 def sample_dims():
     """Dimensions of a data sample."""
     return (walk_context_size + num_negative_samples,)
-
-def max_graph_node_id(graph_file=graph_file):
-    """Largest node ID in graph.
-
-    Nodes should be numbered consecutively from 0 to
-    (num_graph_nodes-1). If there are any gaps in the IDs, then
-    unnecessary memory will be allocated. If any IDs are negative,
-    there may be mysterious errors.
-
-    Args:
-        graph_file (str): Uncompressed edge list file.
-
-    Returns:
-        int: Largest node ID in graph.
-
-    """
-    max_id = -1
-    with open(graph_file) as f:
-        for line in f:
-            line = line.split('#')[0]
-            line = line.split()
-            if len(line) >= 2:
-                max_id = max(max_id, int(line[0]))
-                max_id = max(max_id, int(line[1]))
-    if max_id < 0:
-        raise RuntimeError('Graph has no non-negative node IDs')
-    return max_id

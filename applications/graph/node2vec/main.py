@@ -8,6 +8,7 @@ import lbann.contrib.args
 
 import data.data_readers
 import utils
+import utils.graph
 import utils.snap
 
 root_dir = os.path.dirname(os.path.realpath(__file__))
@@ -22,6 +23,10 @@ lbann.contrib.args.add_scheduler_arguments(parser)
 parser.add_argument(
     '--job-name', action='store', default='lbann_node2vec', type=str,
     help='job name', metavar='NAME')
+parser.add_argument(
+    '--graph', action='store', default='youtube', type=str,
+    help='graph name (see utils.snap.download_graph) or edgelist file',
+    metavar='NAME')
 parser.add_argument(
     '--mini-batch-size', action='store', default=256, type=int,
     help='mini-batch size (default: 256)', metavar='NUM')
@@ -50,16 +55,31 @@ args = parser.parse_args()
 if args.learning_rate < 0:
     args.learning_rate = 0.25 * args.mini_batch_size
 
+# Random walk options
+epoch_size = 100 * args.mini_batch_size
+walk_length = 80
+return_param = 0.25
+inout_param = 0.25
+walk_context_size = 10
+num_negative_samples = 50
+
 # ----------------------------------
 # Create data reader
 # ----------------------------------
 
+# Download graph if needed
+if os.path.exists(args.graph):
+    graph_file = args.graph
+else:
+    graph_file = utils.snap.download_graph(args.graph)
+
 # Construct data reader
 if args.offline_walks:
+    # Note: Graph and walk parameters are fully specified in module
+    # for offline walks
     import data.offline_walks
     graph_file = data.offline_walks.graph_file
     epoch_size = data.offline_walks.num_samples()
-    num_graph_nodes = data.offline_walks.max_graph_node_id() + 1
     walk_length = data.offline_walks.walk_length
     return_param = data.offline_walks.return_param
     inout_param = data.offline_walks.inout_param
@@ -69,19 +89,7 @@ if args.offline_walks:
 else:
     # Note: Preprocess graph with HavoqGT and store in shared memory
     # before starting LBANN.
-    graph_file = os.path.join(
-        root_dir, 'largescale_node2vec', 'evaluation', 'dataset',
-        'blog', 'edges_0based'
-    )
     distributed_graph_file = '/dev/shm/graph'
-    epoch_size = 100 * args.mini_batch_size
-    num_graph_nodes = 10312 # blog
-    #num_graph_nodes = 1138500 # youtube
-    walk_length = 80
-    return_param = 0.25
-    inout_param = 0.25
-    walk_context_size = 10
-    num_negative_samples = 50
     reader = data.data_readers.make_online_data_reader(
         graph_file=distributed_graph_file,
         epoch_size=epoch_size,
@@ -90,6 +98,9 @@ else:
         inout_param=inout_param,
         num_negative_samples=num_negative_samples,
     )
+
+# Parse graph file to get number of vertices
+num_vertices = utils.graph.max_vertex_index(graph_file) + 1
 
 # ----------------------------------
 # Embedding weights
@@ -107,20 +118,20 @@ embeddings_weights = lbann.Weights(
 # ----------------------------------
 
 # Embedding vectors, including negative sampling
-# Note: Input is sequence of graph node IDs
-input_ = lbann.Identity(lbann.Input())
+# Note: Input is sequence of vertex IDs
+input_ = lbann.Input()
 if args.disable_dist_embeddings:
     embeddings = lbann.Embedding(
         input_,
         weights=embeddings_weights,
-        num_embeddings=num_graph_nodes,
+        num_embeddings=num_vertices,
         embedding_dim=args.latent_dim,
     )
 else:
     embeddings = lbann.DistEmbedding(
         input_,
         weights=embeddings_weights,
-        num_embeddings=num_graph_nodes,
+        num_embeddings=num_vertices,
         embedding_dim=args.latent_dim,
         sparse_sgd=True,
         learning_rate=args.learning_rate,
