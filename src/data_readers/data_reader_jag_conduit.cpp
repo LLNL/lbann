@@ -891,6 +891,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
     if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
+    my_indices.insert(index);
   }
   int total = my_indices.size();
 
@@ -901,7 +902,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
       sample_file_id_t id = s.first;
       m_sample_list.open_samples_file_handle(index, true);
       auto h = m_sample_list.get_samples_file_handle(id);
-      conduit::Node node;
+      conduit::Node & node = m_data_store->get_empty_node(index);
 
       preload_helper(h, sample_name, m_output_scalar_prefix, index, node);
       preload_helper(h, sample_name, m_input_prefix, index, node);
@@ -909,7 +910,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
         const std::string field_name = m_output_image_prefix + t;
         preload_helper(h, sample_name, field_name, index, node);
       }
-      m_data_store->set_conduit_node(index, node);
+      m_data_store->set_preloaded_conduit_node(index, node);
 
       // Instrumentation
       ++my_count;
@@ -920,6 +921,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
           std::cout << "P_0 loaded " << my_count << " samples; time: " << tm55
                     << " time per sample: " << tm55/my_count
                     << " est. remaining time: " << remaining_time
+                    << " for role: " << get_role()
                     << std::endl;
       } // end Instrumentation
 

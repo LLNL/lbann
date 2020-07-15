@@ -272,7 +272,6 @@ void data_store_conduit::spill_preloaded_conduit_node(int data_id, const conduit
 }
 
 void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::Node &node) {
-if (m_rank_in_trainer == 0) std::cout << "XX starting set_preloaded_conduit_node for " << data_id << std::endl;
   // note: at this point m_data[data_id] = node
   {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -297,8 +296,6 @@ if (m_rank_in_trainer == 0) std::cout << "XX starting set_preloaded_conduit_node
   {
     conduit::Node n2 = node;  // node == m_data[data_id]
     std::lock_guard<std::mutex> lock(m_mutex);
-if (m_rank_in_trainer == 0) std::cout << "XX calling build_node_for_sending for id: " << data_id 
-    << " node_size_vary6: " << m_node_sizes_vary << std::endl;
     build_node_for_sending(n2, m_data[data_id]);
   }
   if (!m_node_sizes_vary) {
