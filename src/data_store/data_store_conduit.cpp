@@ -272,7 +272,6 @@ void data_store_conduit::spill_preloaded_conduit_node(int data_id, const conduit
 }
 
 void data_store_conduit::set_preloaded_conduit_node(int data_id, const conduit::Node &node) {
-if (m_rank_in_trainer == 0) std::cout << "XX starting set_preloaded_conduit_node for " << data_id << std::endl;
   // note: at this point m_data[data_id] = node
   {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -280,8 +279,6 @@ if (m_rank_in_trainer == 0) std::cout << "XX starting set_preloaded_conduit_node
       LBANN_ERROR("(m_data.find(data_id) == m_data.end() for id: ", data_id);
     }
   }
-
-  // TODO: get rid of "m_my_num_indices" -dah, May 2020
 
   if (is_local_cache()) {
     std::lock_guard<std::mutex> lock(m_mutex);
@@ -299,8 +296,6 @@ if (m_rank_in_trainer == 0) std::cout << "XX starting set_preloaded_conduit_node
   {
     conduit::Node n2 = node;  // node == m_data[data_id]
     std::lock_guard<std::mutex> lock(m_mutex);
-if (m_rank_in_trainer == 0) std::cout << "XX calling build_node_for_sending for id: " << data_id 
-    << " node_size_vary6: " << m_node_sizes_vary << std::endl;
     build_node_for_sending(n2, m_data[data_id]);
   }
   if (!m_node_sizes_vary) {
@@ -1964,14 +1959,14 @@ void data_store_conduit::verify_sample_size() {
   //  rank does not own any data), m_compacted_sample_size will be zero.
   //  This method ensures that all ranks know the sample size, whether or not
   //  they own any samples
-  int max_samples = m_comm->trainer_allreduce<int>(m_compacted_sample_size, El::mpi::MAX);
-  if (max_samples <= 0) {
-    LBANN_ERROR("sample size, which is needed for data exchange, is invalid; should be > 0, but value is: ", max_samples, "; this indicates there is insufficient data. Role: ", m_reader->get_role());
+  int max_sample_size = m_comm->trainer_allreduce<int>(m_compacted_sample_size, El::mpi::MAX);
+  if (max_sample_size <= 0) {
+    LBANN_ERROR("max_sample_size, which is needed for data exchange, is invalid; should be > 0, but value is: ", max_sample_size, "; this indicates there may be insufficient data. Role: ", m_reader->get_role());
   }
-  if (m_compacted_sample_size != 0 && max_samples != m_compacted_sample_size) {
-    LBANN_ERROR("m_compacted_sample_size = ", m_compacted_sample_size, " but max_samples = ", max_samples, "; values should be identical");
+  if (m_compacted_sample_size != 0 && max_sample_size != m_compacted_sample_size) {
+    LBANN_ERROR("m_compacted_sample_size = ", m_compacted_sample_size, " but max_samples = ", max_sample_size, "; values should be identical");
   }
-  m_compacted_sample_size = max_samples;
+  m_compacted_sample_size = max_sample_size;
 }
 
 size_t data_store_conduit::get_mem_usage() {

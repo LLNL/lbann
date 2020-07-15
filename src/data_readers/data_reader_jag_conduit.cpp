@@ -891,6 +891,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
     if(m_data_store->get_index_owner(index) != m_rank_in_model) {
       continue;
     }
+    my_indices.insert(index);
   }  
   int total = my_indices.size();
 
@@ -901,7 +902,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
       sample_file_id_t id = s.first;
       m_sample_list.open_samples_file_handle(index, true);
       auto h = m_sample_list.get_samples_file_handle(id);
-      conduit::Node node;
+      conduit::Node & node = m_data_store->get_empty_node(index);
 
       preload_helper(h, sample_name, m_output_scalar_prefix, index, node);
       preload_helper(h, sample_name, m_input_prefix, index, node);
@@ -909,7 +910,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
         const std::string field_name = m_output_image_prefix + t;
         preload_helper(h, sample_name, field_name, index, node);
       }
-      m_data_store->set_conduit_node(index, node);
+      m_data_store->set_preloaded_conduit_node(index, node);
 
       // Instrumentation
       ++my_count;
@@ -920,6 +921,7 @@ void data_reader_jag_conduit::do_preload_data_store() {
           std::cout << "P_0 loaded " << my_count << " samples; time: " << tm55
                     << " time per sample: " << tm55/my_count 
                     << " est. remaining time: " << remaining_time 
+                    << " for role: " << get_role()
                     << std::endl;
       } // end Instrumentation
 
@@ -1615,6 +1617,8 @@ void data_reader_jag_conduit::do_preload_data_store_jun_2020() {
     interval = opts->get_int("verbose");
   }
 
+  // Count total indices assigned to this rank; this is only used 
+  // for instrumentation
   int total = 0;
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
@@ -1624,6 +1628,7 @@ void data_reader_jag_conduit::do_preload_data_store_jun_2020() {
     ++total;
   }  
 
+  // Loop over the indices, and load the samples that belong to me
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
     int index = m_shuffled_indices[idx];
     if(m_data_store->get_index_owner(index) != m_rank_in_model) {
@@ -1654,6 +1659,7 @@ void data_reader_jag_conduit::do_preload_data_store_jun_2020() {
           std::cout << "P_0 loaded " << my_count << " samples; time: " << tm55
                     << " time per sample: " << tm55/my_count 
                     << " est. remaining time: " << remaining_time 
+                    << " for role: " << get_role()
                     << " (old method)" << std::endl;
       } // end Instrumentation
 
@@ -1670,7 +1676,7 @@ void data_reader_jag_conduit::do_preload_data_store_jun_2020() {
     m_sample_list.close_if_done_samples_file_handle(index);
   }
 
-  if (get_comm()->am_world_master() ||
+  if (is_master() ||
       (opts->get_bool("ltfb_verbose") && get_comm()->am_trainer_master())) {
     std::stringstream msg;
     msg << " loading data for role: " << get_role() << " took " << get_time() - tm1 << "s (old method)";

@@ -176,7 +176,6 @@ class data_store_conduit {
   // END methods for setting and querying the data store's mode
   //=================================================================
 
-//XX   void { m_owner_maps_were_exchanged = false; }
   /// fills in m_owner, which maps index -> owning processor
   void exchange_owner_maps();
 
@@ -185,6 +184,8 @@ class data_store_conduit {
 
   /// fills in m_owner, which maps index -> owning processor
   void set_preloaded_owner_map(const std::unordered_map<int,int> &owner) { m_owner = owner; }
+
+  const std::unordered_map<int,int> & get_owner_map() const { return m_owner; }
 
   /** @brief Special hanling for ras_lipid_conduit_data_reader; may go away in the future */
   void clear_owner_map();
