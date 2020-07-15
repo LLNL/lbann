@@ -138,9 +138,10 @@ def make_model(num_vertices = None,
                            print_global_stat_only = False) #Prints training progress
     gpu_usage = lbann.CallbackGPUMemoryUsage()
     
+    check_nan = lbann.CallbackCheckNaN()
     timer = lbann.CallbackTimer()
 
-    callbacks = [training_output, timer, print_model]
+    callbacks = [training_output, timer, print_model, check_nan]
 
     metrics = [lbann.Metric(accuracy, name='accuracy', unit="%")]
 

@@ -7,6 +7,8 @@ import os
 
 import sparse_train
 import train
+import GIN_train
+
 import data.MNIST_Superpixel
 import data.PROTEINS
 
@@ -42,11 +44,15 @@ dataset = args.dataset
 num_epochs = args.num_epochs
 mini_batch_size = args.mini_batch_size 
 job_name = args.job_name
-model = train.make_model(dataset = 'PROTEINS',
+
+
+
+## Get Model
+
+model = GIN_train.make_model(dataset = 'PROTEINS',
                             num_epochs = num_epochs)
 
 
-## Possibly replace this with contrib.args.create_optimizer()
 
 optimizer = lbann.SGD(learn_rate = 1e-1)
 #optimizer = lbann.NoOptimizer()
