@@ -13,12 +13,19 @@ class lbann_Data_Mat:
         # To Do: Add bounds checking
         self.layers[row] = layer
 
-    def get_mat(self):
+    def get_mat(self, cols = None):
         
+
         mat = lbann.Identity(self.layers[0])
         
         for i in range(1,self.shape[0]):
-            mat = lbann.Concatenation(mat, self.layers[i])           
+            mat = lbann.Concatenation(mat, self.layers[i])
+
+        if (cols):
+            mat = lbann.Reshape(mat, dims=str_list([self.shape[0], cols]))    
+        else:
+            mat = lbann.Reshape(mat, dims=str_list([self.shape[0], self.shape[1]]))
+
         return mat
     @classmethod
     def mat_to_data(cls, mat_layer, num_vertices, out_channels):

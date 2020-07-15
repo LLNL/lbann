@@ -1,6 +1,13 @@
 import lbann 
 from lbann.modules import Module 
-from Graph_Data import lbann_Data_Mat as Matrix
+import os.path
+import sys 
+
+### Local Imports
+current_file = os.path.realpath(__file__)
+root_dir = os.path.dirname(os.path.dirname(current_file))
+sys.path.append(root_dir)
+from .Graph_Data  import lbann_Data_Mat as Matrix
 
 class GINConv(Module):
     global_count = 0; 
@@ -25,9 +32,9 @@ class GINConv(Module):
             for node_feature in range(X.shape[0]):
                 X[node_feature] = layer(X[node_feature])
 
-        out = X.get_mat() #Gather the rows 
+        out = X.get_mat(self.output_channels) #Gather the rows 
 
-        out = lbann.MatMul(A, out)
+        out = lbann.MatMul(A, out, name=self.name+"_GIN_MATMUL")
 
         return Matrix.mat_to_data(out, X.shape[0], self.output_channels) 
 

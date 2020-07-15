@@ -5,8 +5,8 @@ import lbann.contrib.args
 import argparse 
 import os 
 
-import sparse_train
-import train
+#import sparse_train
+#import train
 import GIN_train
 
 import data.MNIST_Superpixel
