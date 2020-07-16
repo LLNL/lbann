@@ -848,7 +848,7 @@ void generic_data_reader::preload_data_store() {
   }
 
   else {
-    // TODO: 
+    // TODO:
     // this is a mess: too much interaction between data_reader, derived
     // reader classes, and data store. E.g, "build_preloaded_owner_map"
     // is N/A for at least some jag_conduit reader modes. But for now
@@ -864,7 +864,7 @@ void generic_data_reader::preload_data_store() {
     m_data_store->set_profile_msg("generic_data_reader::preload_data_store(): calling do_preload_data_store()");
     do_preload_data_store();
     m_data_store->set_loading_is_complete();
-    m_data_store->set_profile_msg("generic_data_reader::preload_data_store(): loading is complete"); 
+    m_data_store->set_profile_msg("generic_data_reader::preload_data_store(): loading is complete");
   }
 
 }

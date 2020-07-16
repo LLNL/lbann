@@ -828,6 +828,11 @@ void data_reader_jag_conduit::load() {
   }
   LBANN_INFO("Done with data checking");
 
+  /// Get the set of sample ids that are owned by this rank
+  for (const auto &t : m_sample_list.get_list()) {
+    m_my_sample_names.insert(t.second);
+  }
+
   /// Merge all of the sample lists
   tm2 = get_time();
   m_sample_list.all_gather_packed_lists(*m_comm);
@@ -866,6 +871,15 @@ void data_reader_jag_conduit::do_preload_data_store() {
   }
   LBANN_INFO("starting data_reader_jag_conduit::do_preload_data_store, revised method, for role: ", get_role());
 
+  /// get set of the indices that I own
+  std::set<int> my_indices;
+  for (size_t j=0; j<m_shuffled_indices.size(); j++) {
+    const auto &sample_name = m_sample_list[j].second;
+    if (m_my_sample_names.find(sample_name) != m_my_sample_names.end()) {
+      my_indices.insert(j);
+    }
+  }
+
   conduit::Node work;
   const std::string key; // key = "" is intentional
 
@@ -890,11 +904,9 @@ void data_reader_jag_conduit::do_preload_data_store() {
   int my_count = 0;
   int interval = 1000;
   double tm5 = get_time();
+  double tm5a= get_time();
   if (opts->has_int("verbose")) {
     interval = opts->get_int("verbose");
-  }
-  if (is_master()) {
-    std::cout << "XX interval: " << interval << std::endl;
   }
 
   for (size_t idx=0; idx < m_shuffled_indices.size(); idx++) {
@@ -925,12 +937,23 @@ void data_reader_jag_conduit::do_preload_data_store() {
 
       // Instrumentation
       ++my_count;
-      if (is_verbose() && is_master()) {
-        if (my_count % interval == 0) {
-          double tm55 = get_time() - tm5;
-          std::cout << "P_0 has loaded " << my_count << " samples; time: " << tm55
-                    << " time per sample: " << tm55/my_count << std::endl;
-        }
+
+      if (is_verbose() && is_master() && (my_count % interval == 0) ) {
+        double tm55 = get_time() - tm5;
+        double time_per_sample = tm55/my_count;
+        double remaining_time =  (my_indices.size()-my_count)*time_per_sample;
+          std::cout << "P_0 loaded " << my_count << " samples; "
+                    << " time this incr: " << get_time()-tm5a
+                    << " time total: " << tm55
+                    << " time per sample: " << tm55/my_count
+                    << " est. remaining time: " << remaining_time << std::endl;
+        tm5a = get_time();
+      } // end Instrumentation
+
+      //XX
+      if (is_master() && my_count >= 1000)  {
+        std::cerr << "XX calling abort; my count: " << my_count << std::endl;
+        MPI_Abort(MPI_COMM_WORLD, -1);
       }
 
     } catch (conduit::Error const& e) {

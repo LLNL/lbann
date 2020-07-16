@@ -249,6 +249,9 @@ class data_reader_jag_conduit : public generic_data_reader {
 
  protected:
 
+  /// used during load and preload
+  std::set<std::string> m_my_sample_names;
+
   /// once the sample_list class and file formats are generalized and
   /// finalized, it should (may?) be possible to code a single
   /// preload_data_store method.
