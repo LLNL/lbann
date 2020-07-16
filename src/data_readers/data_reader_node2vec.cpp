@@ -79,7 +79,6 @@ node2vec_reader::node2vec_reader(
   size_t walk_length,
   double return_param,
   double inout_param,
-  size_t walk_context_size,
   size_t num_negative_samples)
   : generic_data_reader(true),
     m_graph_file(std::move(graph_file)),
@@ -87,13 +86,7 @@ node2vec_reader::node2vec_reader(
     m_walk_length{walk_length},
     m_return_param{return_param},
     m_inout_param{inout_param},
-    m_walk_context_size{walk_context_size},
     m_num_negative_samples{num_negative_samples} {
-  if (m_walk_context_size > m_walk_length) {
-    LBANN_ERROR("attempted to create node2vec data reader ",
-                "with the walk context size (",m_walk_context_size,") ",
-                "larger than the walk length (",m_walk_length,")");
-  }
 }
 
 node2vec_reader::~node2vec_reader() {
@@ -113,7 +106,7 @@ std::string node2vec_reader::get_type() const {
 
 const std::vector<int> node2vec_reader::get_data_dims() const {
   std::vector<int> dims;
-  dims.push_back(static_cast<int>(m_walk_context_size + m_num_negative_samples));
+  dims.push_back(static_cast<int>(m_walk_length + m_num_negative_samples));
   return dims;
 }
 int node2vec_reader::get_num_labels() const {
@@ -137,45 +130,21 @@ bool node2vec_reader::fetch_data_block(
   const size_t mb_size_ = mb_size;
 
   // Perform random walks
-  const auto contexts_per_walk = m_walk_length - m_walk_context_size + 1;
-  auto num_walks = (mb_size_ + contexts_per_walk - 1) / contexts_per_walk;
-  if (m_walks_cache.size() < mb_size_) {
-    num_walks = El::Max(num_walks, mb_size_ - m_walks_cache.size());
-  }
-  num_walks = El::Max(num_walks, 1);
-  num_walks = El::Min(num_walks, mb_size_);
-  auto walks = run_walker(num_walks);
-
-  // Update cache of random walks
-  const size_t max_cache_size = El::Max(m_walks_cache.size(), mb_size_);
-  for (auto& walk : walks) {
-    m_walks_cache.emplace_front(std::move(walk));
-  }
-  while (m_walks_cache.size() > max_cache_size) {
-    m_walks_cache.pop_back();
-  }
+  auto walks = run_walker(mb_size);
 
   // Recompute noise distribution if there are enough vertex visits
   if (m_total_visit_count > 2*m_noise_visit_count) {
-    compute_noise_distribution();
+    update_noise_distribution();
   }
 
-  // Populate output tensor
+  // Populate output tensor with negative samples and walk
   /// @todo Parallelize
   for (size_t j=0; j<mb_size_; ++j) {
-
-    // Context window in random walk
-    const auto cache_pos
-      = fast_rand_int(get_io_generator(),
-                      contexts_per_walk*m_walks_cache.size());
-    const auto& walk = m_walks_cache[cache_pos / contexts_per_walk];
-    const auto offset = cache_pos % contexts_per_walk;
-    const auto start_index = walk[offset];
-    for (size_t i=0; i<m_walk_context_size; ++i) {
-      X(i+m_num_negative_samples,j) = static_cast<float>(walk[i+offset]);
-    }
+    const auto& walk = walks[j];
 
     // Negative samples
+    // Note: Make sure negative samples are not in the walk
+    std::unordered_set<size_t> walk_set(walk.begin(), walk.end());
     for (size_t i=0; i<m_num_negative_samples; ++i) {
       size_t global_index;
       do {
@@ -186,8 +155,13 @@ bool node2vec_reader::fetch_data_block(
             m_local_vertex_noise_distribution.end(),
             random_uniform<double>(get_io_generator())));
         global_index = m_local_vertex_global_indices[local_index];
-      } while (global_index == start_index);
+      } while (walk_set.count(global_index) > 0);
       X(i,j) = static_cast<float>(global_index);
+    }
+
+    // Walk
+    for (size_t i=0; i<m_walk_length; ++i) {
+      X(i+m_num_negative_samples,j) = static_cast<float>(walk[i]);
     }
 
   }
@@ -258,10 +232,7 @@ void node2vec_reader::load() {
   }
 
   // Compute noise distribution for negative sampling
-  compute_noise_distribution();
-
-  // Reset cache of random walks
-  m_walks_cache.clear();
+  update_noise_distribution();
 
   // Construct list of indices
   m_shuffled_indices.resize(m_epoch_size);
@@ -318,7 +289,7 @@ std::vector<std::vector<size_t>> node2vec_reader::run_walker(size_t num_walks) {
 }
 
 /// @todo Parallelize
-void node2vec_reader::compute_noise_distribution() {
+void node2vec_reader::update_noise_distribution() {
 
   // Count number of times each local vertex has been visited
   // Note: Distribution is proportional to count^0.75

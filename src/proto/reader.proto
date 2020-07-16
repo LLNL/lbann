@@ -109,8 +109,7 @@ message Node2VecDataReader {
   uint64 walk_length = 3;
   double return_param = 4;
   double inout_param = 5;
-  uint64 walk_context_size = 6;
-  uint64 num_negative_samples = 7;
+  uint64 num_negative_samples = 6;
 }
 
 message DataSetMetaData {

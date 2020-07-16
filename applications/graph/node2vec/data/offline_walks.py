@@ -22,7 +22,6 @@ weighted = False
 
 # Random walk options
 walk_length = 80        # Length of each random walk
-walk_context_size = 10  # Sequence length for Skip-gram
 walks_per_node = 10     # Number of random walks starting on each node
 return_param = 1.0      # p-parameter
 inout_param = 1.0       # q-parameter
@@ -84,25 +83,15 @@ def get_sample(index):
         np.random.seed()
         need_to_seed_rng = False
 
-    # Get context window from random walk
-    contexts_per_walk = walk_length - walk_context_size + 1
-    walk_index, context_index = divmod(index, contexts_per_walk)
-    walk_context = walks[walk_index,
-                         context_index:context_index+walk_context_size]
-
-    # Generate negative samples
+    # Return negative samples and walk
     negative_samples = np.searchsorted(noise_distribution_cdf,
                                        np.random.rand(num_negative_samples))
-
-    # Return concatenated arrays
-    return np.concatenate((negative_samples, walk_context))
+    return np.concatenate((negative_samples, walks[index]))
 
 def num_samples():
     """Number of samples in dataset."""
-    num_walks = walks.shape[0]
-    contexts_per_walk = walk_length - walk_context_size + 1
-    return num_walks * contexts_per_walk
+    return walks.shape[0]
 
 def sample_dims():
     """Dimensions of a data sample."""
-    return (walk_context_size + num_negative_samples,)
+    return (walk_length + num_negative_samples,)

@@ -319,7 +319,6 @@ void init_data_readers(
         params.walk_length(),
         params.return_param(),
         params.inout_param(),
-        params.walk_context_size(),
         params.num_negative_samples());
 #else
       LBANN_ERROR("attempted to construct node2vec data reader, "

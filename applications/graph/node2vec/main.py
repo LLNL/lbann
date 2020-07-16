@@ -1,6 +1,7 @@
 """Learn embedding weights with LBANN."""
 import argparse
 import os.path
+import numpy as np
 
 import lbann
 import lbann.contrib.launcher
@@ -61,7 +62,7 @@ walk_length = 80
 return_param = 0.25
 inout_param = 0.25
 walk_context_size = 10
-num_negative_samples = 50
+num_negative_samples = 10
 
 # ----------------------------------
 # Create data reader
@@ -83,7 +84,6 @@ if args.offline_walks:
     walk_length = data.offline_walks.walk_length
     return_param = data.offline_walks.return_param
     inout_param = data.offline_walks.inout_param
-    walk_context_size = data.offline_walks.walk_context_size
     num_negative_samples = data.offline_walks.num_negative_samples
     reader = data.data_readers.make_offline_data_reader()
 else:
@@ -93,7 +93,7 @@ else:
     reader = data.data_readers.make_online_data_reader(
         graph_file=distributed_graph_file,
         epoch_size=epoch_size,
-        walk_context_size=walk_context_size,
+        walk_length=walk_length,
         return_param=return_param,
         inout_param=inout_param,
         num_negative_samples=num_negative_samples,
@@ -136,30 +136,55 @@ else:
         sparse_sgd=True,
         learning_rate=args.learning_rate,
     )
-embeddings_slice = lbann.Slice(
+num_encoder_embeddings = walk_length - 1
+num_decoder_embeddings = num_negative_samples + walk_length - walk_context_size + 1
+encoder_embeddings = lbann.Slice(
     embeddings,
     axis=0,
-    slice_points=f'0 {num_negative_samples+1} {num_negative_samples+walk_context_size}'
+    slice_points=f'{num_negative_samples+1} {num_negative_samples+walk_length}',
 )
-decoder_embeddings = lbann.Identity(embeddings_slice)
-encoder_embeddings = lbann.Identity(embeddings_slice)
+decoder_embeddings = lbann.Slice(
+    embeddings,
+    axis=0,
+    slice_points=f'0 {num_decoder_embeddings}',
+)
 
-# Skip-Gram with negative sampling
+# Multiply encoder and decoder embeddings
 preds = lbann.MatMul(decoder_embeddings, encoder_embeddings, transpose_b=True)
 preds_slice = lbann.Slice(
     preds,
     axis=0,
-    slice_points=f'0 {num_negative_samples} {num_negative_samples+1}',
+    slice_points=f'0 {num_negative_samples} {num_decoder_embeddings}',
 )
 preds_negative = lbann.Identity(preds_slice)
 preds_positive = lbann.Identity(preds_slice)
+
+# Loss function for positive samples
+mask_dims = (num_decoder_embeddings-num_negative_samples, num_encoder_embeddings)
+mask = np.triu(np.tril(np.full(mask_dims, 1.0), k=walk_context_size-2))
+mask = lbann.Weights(
+    initializer=lbann.ValueInitializer(values=utils.str_list(np.nditer(mask))),
+    optimizer=lbann.NoOptimizer(),
+)
+mask = lbann.WeightsLayer(dims=utils.str_list(mask_dims), weights=mask)
 obj_positive = lbann.LogSigmoid(preds_positive)
-obj_positive = lbann.Reduction(obj_positive, mode='average')
+obj_positive = lbann.MatMul(
+    lbann.Reshape(obj_positive, dims='1 -1'),
+    lbann.Reshape(mask, dims='1 -1'),
+    transpose_b=True,
+)
+
+# Loss function for negative samples
 obj_negative = lbann.WeightedSum(preds_negative, scaling_factors='-1')
 obj_negative = lbann.LogSigmoid(obj_negative)
 obj_negative = lbann.Reduction(obj_negative, mode='average')
+
+# Loss function
 obj = [
-    lbann.LayerTerm(obj_positive, scale=-1),
+    lbann.LayerTerm(
+        obj_positive,
+        scale=-1/((num_decoder_embeddings-num_negative_samples)*(walk_context_size-1)),
+    ),
     lbann.LayerTerm(obj_negative, scale=-1),
 ]
 
