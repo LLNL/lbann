@@ -246,9 +246,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '--num-epochs', action='store', default=5, type=int,
         help='number of epochs (default: 100)', metavar='NUM')
-    parser.add_argument(
-        '--setup_only', action='store_true',
-        help='setup LBANN experiment without running it')
 
     # Model specific arguments
     parser.add_argument(
@@ -276,7 +273,11 @@ if __name__ == '__main__':
         '--keep-error-signals', action='store_true',
         help='Keep error signals (default: False)')
 
-    lbann.contrib.args.add_optimizer_arguments(parser)
+    lbann.contrib.args.add_optimizer_arguments(
+        parser,
+        default_optimizer="adam",
+        default_learning_rate=0.001,
+    )
     args = parser.parse_args()
 
     parallel_strategy = get_parallel_strategy_args(
@@ -320,7 +321,7 @@ if __name__ == '__main__':
     )
 
     # Setup optimizer
-    optimizer = create_unet3d_optimizer(args.learning_rate)
+    optimizer = lbann.contrib.args.create_optimizer(args)
 
     # Setup data reader
     data_reader = create_unet3d_data_reader(
