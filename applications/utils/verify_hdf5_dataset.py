@@ -90,4 +90,7 @@ if __name__ == '__main__':
     if args.key_labels is not None:
         assert data_dtype_set == label_dtype_set
 
+    if args.key_responses is not None:
+        assert data_dtype_set == response_dtype_set
+
     print("OK")
