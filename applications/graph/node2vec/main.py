@@ -58,11 +58,10 @@ if args.learning_rate < 0:
 
 # Random walk options
 epoch_size = 100 * args.mini_batch_size
-walk_length = 80
+walk_length = 500
 return_param = 0.25
 inout_param = 0.25
-walk_context_size = 10
-num_negative_samples = 10
+num_negative_samples = 200
 
 # ----------------------------------
 # Create data reader
@@ -137,7 +136,7 @@ else:
         learning_rate=args.learning_rate,
     )
 num_encoder_embeddings = walk_length - 1
-num_decoder_embeddings = num_negative_samples + walk_length - walk_context_size + 1
+num_decoder_embeddings = num_negative_samples + walk_length - 1
 encoder_embeddings = lbann.Slice(
     embeddings,
     axis=0,
@@ -146,7 +145,7 @@ encoder_embeddings = lbann.Slice(
 decoder_embeddings = lbann.Slice(
     embeddings,
     axis=0,
-    slice_points=f'0 {num_decoder_embeddings}',
+    slice_points=f'0 {num_negative_samples+walk_length-1}',
 )
 
 # Multiply encoder and decoder embeddings
@@ -154,14 +153,18 @@ preds = lbann.MatMul(decoder_embeddings, encoder_embeddings, transpose_b=True)
 preds_slice = lbann.Slice(
     preds,
     axis=0,
-    slice_points=f'0 {num_negative_samples} {num_decoder_embeddings}',
+    slice_points=f'0 {num_negative_samples} {num_negative_samples+walk_length-1}',
 )
 preds_negative = lbann.Identity(preds_slice)
 preds_positive = lbann.Identity(preds_slice)
 
 # Loss function for positive samples
 mask_dims = (num_decoder_embeddings-num_negative_samples, num_encoder_embeddings)
-mask = np.triu(np.tril(np.full(mask_dims, 1.0), k=walk_context_size-2))
+mask_decay = 0.9
+mask = np.zeros((walk_length-1,walk_length-1))
+for i in range(walk_length-1):
+    for j in range(i, walk_length-1):
+        mask[i,j] = (1-mask_decay) * mask_decay**(j-i)
 mask = lbann.Weights(
     initializer=lbann.ValueInitializer(values=utils.str_list(np.nditer(mask))),
     optimizer=lbann.NoOptimizer(),
@@ -181,10 +184,7 @@ obj_negative = lbann.Reduction(obj_negative, mode='average')
 
 # Loss function
 obj = [
-    lbann.LayerTerm(
-        obj_positive,
-        scale=-1/((num_decoder_embeddings-num_negative_samples)*(walk_context_size-1)),
-    ),
+    lbann.LayerTerm(obj_positive, scale=-1/(walk_length-1)),
     lbann.LayerTerm(obj_negative, scale=-1),
 ]
 
