@@ -109,6 +109,16 @@ public:
    */
   void set_name(std::string name);
 
+  void set_subgrid_communication_type(int type)
+  {
+    vector_communication_subgraph =type;
+  }
+
+  int get_subgrid_communication_type()
+  {
+    return vector_communication_subgraph;
+  }
+
   /** @brief Human-readable description. */
   virtual description get_description() const;
 
@@ -439,6 +449,12 @@ private:
   lbann_comm* m_comm;
 
   /*experimental code for Sub graph*/
+  /** Enable vector communication for the subgraph parallelism */
+  //0: send-recv based subgrid communication
+  //1: collective based subgrid communication without optimization that requires specific assumptions like subgrids should have same size
+  //2: collective based subgrid communication with optimization
+
+  int vector_communication_subgraph = 0;
 
 
 

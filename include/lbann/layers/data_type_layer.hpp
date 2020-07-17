@@ -138,6 +138,8 @@ public:
   AbsDistMatrixType& get_temp_grad() ;
   /** Get transfered inpit for each branch tag **/
   AbsDistMatrixType& get_branch_tag_input(int tag) ;
+
+  std::vector<std::unique_ptr<AbsDistMatrixType>>& get_branch_tag_input_vector() ;
   /** Get activation tensor. */
   AbsDistMatrixType& get_activations(int child_index = 0);
   /** Get error signal tensor. */
@@ -162,6 +164,8 @@ public:
    *  false means to dynamically reallocate them.
    */
   void set_keep_error_signals(bool) override;
+
+  El::mpi::Comm& get_subgrid_comm() { return interSubGridVCComm; }
 
 protected:
 
@@ -273,6 +277,10 @@ protected:
   size_t num_weights() const noexcept { return m_weights.size(); }
   bool has_weights() const noexcept { return num_weights() > 0; }
 
+
+  void setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid);
+  void setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid);
+
 private:
 
   /** @brief Attempt to take ownership of the previous error signal.
@@ -352,6 +360,8 @@ private:
    */
   void back_prop_impl_() final;
 
+
+
   // ===========================================================
   // Private access functions
   // ===========================================================
@@ -406,6 +416,12 @@ private:
    *  The default behavior is dynamic allocation.
    */
   bool m_persistent_error_signals = false;
+
+  /** Inter subgrids comm for STAR,VC distribution
+  */
+  El::mpi::Comm interSubGridVCComm;
+
+  
 
 #ifdef LBANN_HAS_DISTCONV
   friend class data_type_distconv_adapter<TensorDataType>;

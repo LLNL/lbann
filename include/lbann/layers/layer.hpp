@@ -225,6 +225,19 @@ public:
   inline void set_name(const std::string name) { m_name = name; }
   /** Get a string representing the layer datatype
    */
+
+  void set_communication_flag(int type)
+  {
+    enable_vector_copy = type;
+
+  }
+
+  int get_communication_flag()
+  {
+    return enable_vector_copy;
+
+  }
+
   virtual std::string get_datatype_name() const {
     return TypeName<DataType>();
   };
@@ -584,6 +597,8 @@ protected:
    *  human-readable, name.
    */
   std::string m_name;
+
+  int enable_vector_copy = 0;
 
 private:
   /** @name Implementation details of back-prop. */

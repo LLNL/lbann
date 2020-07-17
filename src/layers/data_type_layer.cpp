@@ -26,6 +26,7 @@
 
 #define LBANN_DATA_TYPE_LAYER_INSTANTIATE
 
+
 #include "matrix_builder.hpp"
 
 #include "lbann/layers/data_type_layer.hpp"
@@ -288,6 +289,13 @@ auto data_type_layer<TensorDataType>::get_branch_tag_input(int tag)
   return *m_subgrid_tensors_split[tag];
 }
 
+template <typename TensorDataType>
+auto data_type_layer<TensorDataType>::get_branch_tag_input_vector()
+  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  
+  return m_subgrid_tensors_split;
+}
+
 // Accessing non-const distributed matrices
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.
@@ -468,6 +476,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
 
   auto childs = get_child_layers(); 
   auto parents = get_parent_layers();
+
   
   if(get_name().find("split")!= std::string::npos)
   {
@@ -512,6 +521,12 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
         }
       }
     
+    }
+
+    //create interprocess subgrid communicator
+    if(childs[0]->get_parallel_strategy().enable_subgraph)
+    {
+      this->setup_inter_subgrid_comm_based_on_childs(grid);
     }
     
   }
@@ -566,6 +581,11 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
       }
     
     }
+
+  
+    
+    this->setup_inter_subgrid_comm_based_on_parents(grid);
+    
 
   }
   else
@@ -1058,6 +1078,59 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(
     gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
   }
 }
+
+
+template <typename TensorDataType>
+void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid) {
+
+  auto& childs = get_child_layers();
+
+  int indexSubgrid = -1;
+  for(int child = 0 ; child < this->get_num_children(); ++child )
+  {
+    if(childs[child]->mygrid->InGrid())
+    
+    {
+      // if(indexSubgrid!=-1)
+      // {
+      //   LBANN_ERROR("Logic error: Subgrid inter communicator check "
+      //             "a process can only be in one subgrid");
+      // }
+      indexSubgrid = child;
+    }
+  }
+  const int posInSubGrid = childs[indexSubgrid]->mygrid->VCRank();
+  const int posInGrid = grid.VCRank();
+  auto& interSubgridComm = this->get_subgrid_comm();
+  El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm); 
+
+  }
+
+template <typename TensorDataType>
+void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid) {
+
+  auto& parents = get_parent_layers();
+
+  int indexSubgrid = -1;
+  for(int parent = 0 ; parent < this->get_num_parents(); ++parent )
+  {
+    if(parents[parent]->mygrid->InGrid())
+    
+    {
+      // if(indexSubgrid!=-1)
+      // {
+      //   LBANN_ERROR("Logic error: Subgrid inter communicator check "
+      //             "a process can only be in one subgrid");
+      // }
+      indexSubgrid = parent;
+    }
+  }
+  const int posInSubGrid = parents[indexSubgrid]->mygrid->VCRank();
+  const int posInGrid = grid.VCRank();
+  auto& interSubgridComm = this->get_subgrid_comm();
+  El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm); 
+
+  }
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType>

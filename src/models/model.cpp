@@ -837,6 +837,13 @@ void  model::setup_subgrids(){
 
 
   for (El::Int node = 0; node < num_layers; ++node) {
+    if(layers[node]->get_type()=="split" || layers[node]->get_type()=="sum")
+    {
+      layers[node]->set_communication_flag(this->get_subgrid_communication_type());
+      //std::cout<<"communication type for subgrid:"<<this->get_subgrid_communication_type()<<"\n";
+    }
+
+
     if(layers[node]->get_type() == "input")
     {
       layers[node]->subgrid_ranks.reset(new std::set<int, std::greater <int> >(initial_ranks.begin(),initial_ranks.end()));

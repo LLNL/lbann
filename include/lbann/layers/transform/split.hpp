@@ -64,7 +64,12 @@ public:
   data_layout get_data_layout() const override { return T_layout; }
   El::Device get_device_allocation() const override { return Dev; }
 
+
+
 protected:
+
+  El::SyncInfo<Dev> syncSubGridCommunication = El::SyncInfo<Dev>();
+  
 
 
   void setup_dims(DataReaderMetaData& dr_metadata) override {
@@ -75,7 +80,14 @@ protected:
   }
 
   void fp_setup_outputs(El::Int mini_batch_size) override {
+    // const auto D = this->get_device_allocation();
+    // const auto T = this->get_data_layout();
+    //using concrete_matrix_type = El::DistMatrix<TensorDataType, El::MC  , El::MR, El::ELEMENT, Dev>;
+    
     const auto& input = this->get_prev_activations();
+
+    auto const* ptr_input = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> const *>(&input);
+
     int tag=0;
     auto childs = this->get_child_layers(); 
     if(childs[0]->get_parallel_strategy().enable_subgraph==1)
@@ -83,11 +95,24 @@ protected:
       //std::cout<<"Layer name:"<<this->get_name()<<" starting\n";
       //if subgraph parallelism is enabled 
       //std::cout<<"In FP setup output num spliting grp:"<<childs[0]->num_spliting_groups<<"\n";
-      for(int i = 0; i < childs[0]->num_spliting_groups; i++)
+      if(this->get_communication_flag()==2)
       {
-        
-        El::Copy( input,this->get_branch_tag_input(i));
+        El::copy::TranslateBetweenGridsBroadcastOptComm<TensorDataType,Dev,Dev>(*ptr_input,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
       }
+      else if(this->get_communication_flag()==1)
+      {
+        El::copy::TranslateBetweenGridsBroadcast<TensorDataType,Dev,Dev>(*ptr_input,this->get_branch_tag_input_vector());
+      }
+      else
+      {
+        for(int i = 0; i < childs[0]->num_spliting_groups; i++)
+        {
+          
+          El::Copy( input,this->get_branch_tag_input(i));
+        }
+
+      }
+      
       //std::cout<<"Layer name:"<<this->get_name()<<" intermediate Complete\n";
 
       for (int i = 0; i < this->get_num_children(); ++i) {
@@ -148,19 +173,39 @@ protected:
 
       // copy and add data from reduced gradients from same branch 
 
-      if (this->get_num_children() > 0) {
-        El::Copy(this->get_branch_tag_input(0), gradient_wrt_input);
-      } else {
-        El::Zero(gradient_wrt_input);
+      if(this->get_communication_flag()==2)
+      //If vector is enabled copy data using allreduce operation from aggregated subgrids to the gradient_wrt_input
+      {
+        auto * ptr_gradient = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> *>(&gradient_wrt_input);
+
+        El::copy::TranslateBetweenGridsAllreduceOptComm<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector(),this->get_subgrid_comm(),syncSubGridCommunication);
+      }
+      else if(this->get_communication_flag()==1)
+      {
+        auto * ptr_gradient = dynamic_cast<El::DistMatrix<TensorDataType, El::STAR  , El::VC, El::ELEMENT, Dev> *>(&gradient_wrt_input);
+
+        El::copy::TranslateBetweenGridsAllreduce<TensorDataType,Dev,Dev>(*ptr_gradient,this->get_branch_tag_input_vector());
+
+      }
+      else
+      {
+        if (this->get_num_children() > 0) {
+          El::Copy(this->get_branch_tag_input(0), gradient_wrt_input);
+        } else {
+          El::Zero(gradient_wrt_input);
+        }
+
+        for(int i = 1; i < childs[0]->num_spliting_groups; i++)
+        {
+          
+          El::Copy( this->get_branch_tag_input(i), this->get_temp_grad());
+          El::Axpy(DataType(1), this->get_temp_grad(),
+                   gradient_wrt_input);
+        }
+
       }
 
-      for(int i = 1; i < childs[0]->num_spliting_groups; i++)
-      {
-        
-        El::Copy( this->get_branch_tag_input(i), this->get_temp_grad());
-        El::Axpy(DataType(1), this->get_temp_grad(),
-                 gradient_wrt_input);
-      }
+      
 
     }
 
