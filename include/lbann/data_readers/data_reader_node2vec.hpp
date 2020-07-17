@@ -111,6 +111,17 @@ private:
   /** Manager for node2vec random walks on distributed graph. */
   std::unique_ptr<node2vec_reader_impl::RandomWalker> m_random_walker;
 
+  /** Cache of random walks.
+   *
+   *  The random walker does not output the same number of walks as
+   *  the number of start vertices. I presume this is because walks
+   *  starting from local vertices may finish on remote processes and
+   *  there is not a step to gather them to the original process. To
+   *  handle cases where the walker returns no walks, we cache walks
+   *  from previous mini-batch iterations.
+   */
+  std::deque<std::vector<size_t>> m_walks_cache;
+
   /** Global indices of local graph vertices. */
   std::vector<size_t> m_local_vertex_global_indices;
   /** Local indices of local graph vertices.

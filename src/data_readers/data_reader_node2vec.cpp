@@ -129,8 +129,15 @@ bool node2vec_reader::fetch_data_block(
   if (thread_id != 0) { return true; }
   const size_t mb_size_ = mb_size;
 
-  // Perform random walks
+  // Perform random walks and add to cache
   auto walks = run_walker(mb_size);
+  const auto max_cache_size = std::max(mb_size_, m_walks_cache.size());
+  for (auto& walk : walks) {
+    if (m_walks_cache.size() >= max_cache_size) {
+      m_walks_cache.pop_front();
+    }
+    m_walks_cache.emplace_back(std::move(walk));
+  }
 
   // Recompute noise distribution if there are enough vertex visits
   if (m_total_visit_count > 2*m_noise_visit_count) {
@@ -140,10 +147,10 @@ bool node2vec_reader::fetch_data_block(
   // Populate output tensor with negative samples and walk
   /// @todo Parallelize
   for (size_t j=0; j<mb_size_; ++j) {
-    const auto& walk = walks[j];
+    const auto& walk = m_walks_cache[j % m_walks_cache.size()];
 
     // Negative samples
-    // Note: Make sure negative samples are not in the walk
+    // Note: Make sure negative samples are not repeated or in the walk
     std::unordered_set<size_t> walk_set(walk.begin(), walk.end());
     for (size_t i=0; i<m_num_negative_samples; ++i) {
       size_t global_index;
@@ -155,8 +162,11 @@ bool node2vec_reader::fetch_data_block(
             m_local_vertex_noise_distribution.end(),
             random_uniform<double>(get_io_generator())));
         global_index = m_local_vertex_global_indices[local_index];
-      } while (walk_set.count(global_index) > 0);
+      } while (!walk_set.insert(global_index).second);
       X(i,j) = static_cast<float>(global_index);
+      if (walk_set.size() >= m_local_vertex_noise_distribution.size()) {
+        walk_set.clear();
+      }
     }
 
     // Walk
@@ -174,6 +184,7 @@ bool node2vec_reader::fetch_label(CPUMat& Y, int data_id, int col) {
 }
 
 void node2vec_reader::load() {
+
   auto& comm = *get_comm();
 
   // Load graph data
@@ -233,6 +244,16 @@ void node2vec_reader::load() {
 
   // Compute noise distribution for negative sampling
   update_noise_distribution();
+
+  // Make sure walks cache has at least one walk
+  m_walks_cache.clear();
+  do {
+    auto walks = run_walker(1);
+    for (auto& walk : walks) {
+      m_walks_cache.emplace_back(std::move(walk));
+    }
+  } while (comm.trainer_allreduce(m_walks_cache.empty() ? 1 : 0));
+
 
   // Construct list of indices
   m_shuffled_indices.resize(m_epoch_size);
