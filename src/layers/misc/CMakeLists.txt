@@ -9,6 +9,7 @@ set_full_path(THIS_DIR_SOURCES
   mini_batch_index.cpp
   mini_batch_size.cpp
   one_hot.cpp
+  uniform_hash.cpp
   variance.cpp
   )
 
@@ -21,6 +22,7 @@ if (LBANN_HAS_CUDA)
     channelwise_mean.cu
     channelwise_softmax.cu
     one_hot.cu
+    uniform_hash.cu
     )
 endif ()
 

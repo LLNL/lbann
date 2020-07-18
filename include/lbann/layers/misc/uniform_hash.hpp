@@ -1,0 +1,120 @@
+////////////////////////////////////////////////////////////////////////////////
+// Copyright (c) 2014-2019, Lawrence Livermore National Security, LLC.
+// Produced at the Lawrence Livermore National Laboratory.
+// Written by the LBANN Research Team (B. Van Essen, et al.) listed in
+// the CONTRIBUTORS file. <lbann-dev@llnl.gov>
+//
+// LLNL-CODE-697807.
+// All rights reserved.
+//
+// This file is part of LBANN: Livermore Big Artificial Neural Network
+// Toolkit. For details, see http://software.llnl.gov/LBANN or
+// https://github.com/LLNL/LBANN.
+//
+// Licensed under the Apache License, Version 2.0 (the "Licensee"); you
+// may not use this file except in compliance with the License.  You may
+// obtain a copy of the License at:
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+// implied. See the License for the specific language governing
+// permissions and limitations under the license.
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef LBANN_LAYERS_MISC_UNIFORM_HASH_HPP_INCLUDED
+#define LBANN_LAYERS_MISC_UNIFORM_HASH_HPP_INCLUDED
+
+#include "lbann/layers/data_type_layer.hpp"
+
+namespace lbann {
+
+/** @brief Apply a hash function to get uniformly distributed values
+ *
+ *  Each input entry is hashed with MD5 and scaled to [0,1).
+ *
+ *  @warning Currently only supported on GPU.
+ */
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+class uniform_hash_layer : public data_type_layer<TensorDataType> {
+  static_assert(Device == El::Device::GPU,
+                "uniform_hash_layer only supports GPU");
+
+public:
+
+  uniform_hash_layer(lbann_comm* comm);
+
+  uniform_hash_layer(const uniform_hash_layer& other) = default;
+  uniform_hash_layer& operator=(const uniform_hash_layer& other) = default;
+  uniform_hash_layer* copy() const override;
+
+  std::string get_type() const override;
+  data_layout get_data_layout() const override;
+  El::Device get_device_allocation() const override;
+
+protected:
+
+  void setup_dims(DataReaderMetaData& dr_metadata) override;
+
+  void fp_compute() override;
+
+};
+
+// Builder function
+LBANN_DEFINE_LAYER_BUILDER(uniform_hash);
+
+// ---------------------------------------------
+// Implementation
+// ---------------------------------------------
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+uniform_hash_layer<TensorDataType,Layout,Device>::uniform_hash_layer(
+  lbann_comm* comm)
+  : data_type_layer<TensorDataType>(comm)
+{}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+uniform_hash_layer<TensorDataType,Layout,Device>* uniform_hash_layer<TensorDataType,Layout,Device>::copy() const {
+  return new uniform_hash_layer(*this);
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+std::string uniform_hash_layer<TensorDataType,Layout,Device>::get_type() const {
+  return "uniform hash";
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+data_layout uniform_hash_layer<TensorDataType,Layout,Device>::get_data_layout() const {
+  return Layout;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+El::Device uniform_hash_layer<TensorDataType,Layout,Device>::get_device_allocation() const {
+  return Device;
+}
+
+template <typename TensorDataType, data_layout Layout, El::Device Device>
+void uniform_hash_layer<TensorDataType,Layout,Device>::setup_dims(DataReaderMetaData& dr_metadata) {
+  data_type_layer<TensorDataType>::setup_dims(dr_metadata);
+  this->set_output_dims(this->get_input_dims());
+}
+
+// ---------------------------------------------
+// Explicit template instantiation
+// ---------------------------------------------
+
+#ifndef LBANN_UNIFORM_HASH_LAYER_INSTANTIATE
+#define PROTO(T)                                        \
+  extern template class uniform_hash_layer<             \
+    T, data_layout::DATA_PARALLEL, El::Device::GPU>;    \
+  extern template class uniform_hash_layer<             \
+    T, data_layout::MODEL_PARALLEL, El::Device::GPU>
+#include "lbann/macros/instantiate.hpp"
+#undef PROTO
+#endif // LBANN_UNIFORM_HASH_LAYER_INSTANTIATE
+
+} // namespace lbann
+
+#endif // LBANN_LAYERS_MISC_UNIFORM_HASH_HPP_INCLUDED

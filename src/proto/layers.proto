@@ -205,6 +205,7 @@ message Layer {
     OneHot one_hot = 607;
     ChannelwiseSoftmax channelwise_softmax = 608;
     DistEmbedding dist_embedding = 609;
+    UniformHash uniform_hash = 610;
 
   }
 
@@ -742,6 +743,14 @@ message Layer {
     bool barrier_in_forward_prop = 5;
 
   }
+
+  /** @brief Apply a hash function to get uniformly distributed values
+   *
+   *  Each input entry is hashed with MD5 and scaled to [0,1).
+   *
+   *  @warning Currently only supported on GPU.
+   */
+  message UniformHash {}
 
 } // message Layer
 

@@ -8,6 +8,7 @@ set_full_path(THIS_DIR_HEADERS
   argmax.hpp
   argmin.hpp
   one_hot.hpp
+  uniform_hash.hpp
   )
 
 # Propagate the files up the tree

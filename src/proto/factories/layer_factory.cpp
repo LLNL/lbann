@@ -71,6 +71,7 @@
 #include "lbann/layers/misc/argmin.hpp"
 #include "lbann/layers/misc/one_hot.hpp"
 #include "lbann/layers/misc/dist_embedding.hpp"
+#include "lbann/layers/misc/uniform_hash.hpp"
 #include "lbann/layers/regularizers/batch_normalization.hpp"
 #include "lbann/layers/regularizers/dropout.hpp"
 #include "lbann/layers/regularizers/local_response_normalization.hpp"
@@ -267,6 +268,7 @@ private:
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchIndex, mini_batch_index);
     LBANN_REGISTER_DEFAULT_BUILDER(MiniBatchSize, mini_batch_size);
     LBANN_REGISTER_BUILDER(DistEmbedding, dist_embedding);
+    LBANN_REGISTER_BUILDER(UniformHash, uniform_hash);
 
   }
 
