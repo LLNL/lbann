@@ -224,7 +224,7 @@ void data_type_weights<TensorDataType>::do_setup_() {
                                                 matrix_dist.device));
   m_values->AlignWith(matrix_dist);
 
-  m_values->Resize(get_matrix_height(), get_matrix_width());
+  m_values->Resize(this->get_matrix_height(), this->get_matrix_width());
   //if (m_initializer != nullptr) {	
     //m_initializer->fill(*m_values);	
   //} else {	

@@ -330,7 +330,7 @@ fi
 # Load packages
 if [ ${USE_MODULES} -ne 0 ]; then
     module load git
-    module load cmake/3.14.5
+    #module load cmake/3.14.5
 else
     use git
 fi
@@ -808,6 +808,8 @@ cmake \
 -D ALUMINUM_TAG=v0.3.3 \
 -D ALUMINUM_ENABLE_MPI_CUDA=${ALUMINUM_WITH_MPI_CUDA} \
 -D ALUMINUM_ENABLE_NCCL=${ALUMINUM_WITH_NCCL} \
+-D HYDROGEN_TAG="v1.3.4_differentGrids" \
+-D HYDROGEN_URL=https://github.com/aj-prime/Elemental.git \
 -D LBANN_SB_BUILD_CONDUIT=${WITH_CONDUIT} \
 -D LBANN_SB_BUILD_HDF5=${WITH_CONDUIT} \
 -D LBANN_SB_BUILD_LBANN=ON \
@@ -836,6 +838,8 @@ cmake \
 -D DIHYDROGEN_ENABLE_DISTCONV_LEGACY=${WITH_DISTCONV} \
 -D LBANN_WITH_DIHYDROGEN=${WITH_DIHYDROGEN} \
 -D LBANN_WITH_DISTCONV=${WITH_DISTCONV} \
+-DLBANN_SB_FWD_LBANN_Python_EXECUTABLE=/usr/workspace/jain8/miniconda3/envs/lbann_dev_test/bin/python \
+-DLBANN_SB_FWD_LBANN_Python_LIBRARY=/usr/workspace/jain8/miniconda3/envs/lbann_dev_test/lib/libpython3.7m.so.1.0 \
 ${SUPERBUILD_DIR}
 EOF
 )
