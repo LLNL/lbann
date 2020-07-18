@@ -187,7 +187,7 @@ void smiles_data_reader::do_preload_data_store() {
   }
 
   m_data_store->set_node_sizes_vary();
-  m_data_store->set_is_local_cache();
+  //m_data_store->set_is_local_cache();
   const std::string infile = get_file_dir() + "/" + get_data_filename();
   std::ifstream in(infile.c_str());
   if (!in) {
@@ -202,10 +202,19 @@ void smiles_data_reader::do_preload_data_store() {
   std::unordered_set<int> valid_ids;
   int sanity_min = INT_MAX;
   int sanity_max = 0;
-  for (const auto &id : m_shuffled_indices) {
+  /*for (const auto &id : m_shuffled_indices) {
     valid_ids.insert(id);
     if (id < sanity_min) sanity_min = id;
     if (id > sanity_max) sanity_max = id;
+  }*/
+  for (size_t idx=0; idx<m_shuffled_indices.size(); idx++) {
+    int id = m_shuffled_indices[idx];
+    if (id < sanity_min) sanity_min = id;
+    if (id > sanity_max) sanity_max = id;
+    if (m_data_store->get_index_owner(id) != m_comm->get_rank_in_world()) {
+      continue;
+    }
+    valid_ids.insert(id);
   }
   int max_index = sanity_max;
 
@@ -234,8 +243,8 @@ void smiles_data_reader::do_preload_data_store() {
     if (sample_id >= max_index) {
       break;
     }
-    if (is_master() && (sample_id % 1000000 == 0)) {
-      std::cout << sample_id/1000000 << "M samples loaded" << std::endl;
+    if (is_master() && (sanity % 1000000 == 0) && sanity > 0) {
+      std::cout << sanity/1000000 << "M " << get_role() << " samples loaded" << std::endl;
     }
   }
   in.close();
@@ -379,16 +388,6 @@ void smiles_data_reader::load_vocab() {
 
 int smiles_data_reader::get_num_lines(std::string fn) {
   double tm1 = get_time();
-
-  options *opts = options::get();
-  if (opts->has_int("n_lines")) {
-    return opts->get_int("n_lines");
-  }
-
-  if (is_master()) {
-    std::cout << "INFO: starting smiles_data_reader::get_num_lines(), which reads every line in the file. This can be avoided by passing: --n_lines=<int>" << std::endl;
-  }
-
   int count = 0;
   if (is_master()) {
     std::ifstream in(fn.c_str());
@@ -414,7 +413,19 @@ int smiles_data_reader::get_num_lines(std::string fn) {
   double tm = get_time() - tm1;
   if (is_master()) std::cout << "XX DONE! calling bcast ... TIME: " << tm << std::endl;
 
-  return count;
+  //check if user want less than all samples in this file
+  //@todo, this (flag or entire function) should really be deprecated since it can be accomplished with absoulte sample count
+  options *opts = options::get();
+  int n_lines = INT_MAX;
+  if (opts->has_int("n_lines")) {
+     n_lines = opts->get_int("n_lines");
+     if(is_master() && count < n_lines) { 
+       std::cout << "WARNING:: number of available samples (" << count 
+                << " ) in file " << fn << " is less than number of samples requested (" << n_lines
+                << " ) I am returning number of available samples " << std::endl;
+       }
+  }
+  return std::min(count,n_lines);
 }
 
 void smiles_data_reader::construct_conduit_node(int data_id, const std::string &line, conduit::Node &node) {
