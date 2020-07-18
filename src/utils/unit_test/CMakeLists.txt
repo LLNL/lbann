@@ -2,6 +2,7 @@ set_full_path(THIS_DIR_SEQ_CATCH2_TEST_FILES
   any_test.cpp
   argument_parser_test.cpp
   beta_distribution_test.cpp
+  cloneable_test.cpp
   environment_variable_test.cpp
   factory_test.cpp
   from_string_test.cpp

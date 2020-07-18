@@ -26,6 +26,7 @@
 
 #define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/batch_normalization.hpp"
+#include "lbann/weights/weights_helpers.hpp"
 #include "lbann/utils/cuda.hpp"
 
 namespace lbann {
@@ -303,20 +304,26 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::fp_com
   assert_always(Dev == El::Device::GPU);
   assert_always(T_layout == data_layout::DATA_PARALLEL);
 
+  using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
+
   auto &l = dynamic_cast<batch_normalization_layer<
     TensorDataType, T_layout, Dev>&>(this->layer());
 
   const bool is_training =
       l.m_model->get_execution_context().get_execution_mode() == execution_mode::training;
+  auto& local_running_mean =
+    ValuesGetter::mutable_values(this->get_weights(2)).Matrix();
+  auto& local_running_var =
+    ValuesGetter::mutable_values(this->get_weights(3)).Matrix();
 
   assert0(dc::tensor::View(
-      m_scale, l.get_data_type_weights(0).get_values().LockedMatrix().LockedBuffer()));
+      m_scale, l.weights_values(0).LockedMatrix().LockedBuffer()));
   assert0(dc::tensor::View(
-      m_bias, l.get_data_type_weights(1).get_values().LockedMatrix().LockedBuffer()));
+      m_bias, l.weights_values(1).LockedMatrix().LockedBuffer()));
   assert0(dc::tensor::View(
-      m_running_mean, l.get_data_type_weights(2).get_values().Matrix().Buffer()));
+      m_running_mean, local_running_mean.Buffer()));
   assert0(dc::tensor::View(
-      m_running_var, l.get_data_type_weights(3).get_values().Matrix().Buffer()));
+      m_running_var, local_running_var.Buffer()));
 
   m_bn->forward_stage1(this->get_prev_activations(), m_mean,
                        m_var, is_training);
@@ -350,7 +357,7 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::bp_com
   assert_always(is_training);
 
   assert0(dc::tensor::View(
-      m_scale, l.get_data_type_weights(0).get_values().LockedMatrix().LockedBuffer()));
+      m_scale, l.weights_values(0).LockedMatrix().LockedBuffer()));
 
   m_bn->backward_stage1(this->get_prev_activations(),
                         this->get_prev_error_signals(),
@@ -370,11 +377,11 @@ void batch_normalization_distconv_adapter<TensorDataType, T_layout, Dev>::bp_com
     Zero(*l.m_mean_and_var_gradient);
   }
 
-  auto* scale_optimizer = l.get_data_type_weights(0).get_optimizer();
+  auto* scale_optimizer = l.get_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
     scale_optimizer->add_to_gradient(*l.m_scale_gradient, TensorDataType{1}, true);
   }
-  auto* bias_optimizer = l.get_data_type_weights(1).get_optimizer();
+  auto* bias_optimizer = l.get_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
     bias_optimizer->add_to_gradient(*l.m_bias_gradient, TensorDataType{1}, true);
   }
@@ -415,12 +422,15 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
   // Compute statistics
   if (is_training) {
+    using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
 
     // Local matrices
     auto& local_mean = this->m_mean_v->Matrix();
     auto& local_var = this->m_var_v->Matrix();
-    auto& local_running_mean = this->get_data_type_weights(2).get_values().Matrix();
-    auto& local_running_var = this->get_data_type_weights(3).get_values().Matrix();
+    auto& local_running_mean =
+      ValuesGetter::mutable_values(this->get_weights(2)).Matrix();
+    auto& local_running_var =
+      ValuesGetter::mutable_values(this->get_weights(3)).Matrix();
 
     // Compute sums and sums of squares
     El::Zero(local_mean);
@@ -476,14 +486,14 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   }
 
   // Apply batch normalization
-  const auto& local_scale = this->get_data_type_weights(0).get_values().LockedMatrix();
-  const auto& local_bias = this->get_data_type_weights(1).get_values().LockedMatrix();
+  const auto& local_scale = this->weights_values(0).LockedMatrix();
+  const auto& local_bias = this->weights_values(1).LockedMatrix();
   const auto& local_mean = (is_training ?
                             this->m_mean_v->LockedMatrix() :
-                            this->get_data_type_weights(2).get_values().LockedMatrix());
+                            this->weights_values(2).LockedMatrix());
   const auto& local_var = (is_training ?
                            this->m_var_v->LockedMatrix() :
-                           this->get_data_type_weights(3).get_values().LockedMatrix());
+                           this->weights_values(3).LockedMatrix());
   if (!local_input.IsEmpty()) {
     const El::Int block_size = 256;
     dim3 block_dims, grid_dims;
@@ -517,13 +527,13 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   auto&& stream = El::GPUManager::Stream();
 
   // Matrices
-  const auto& local_scale = this->get_data_type_weights(0).get_values().LockedMatrix();
+  const auto& local_scale = this->weights_values(0).LockedMatrix();
   const auto& local_mean = (is_training ?
                             this->m_mean_v->LockedMatrix() :
-                            this->get_data_type_weights(2).get_values().LockedMatrix());
+                            this->weights_values(2).LockedMatrix());
   const auto& local_var = (is_training ?
                            this->m_var_v->LockedMatrix() :
-                           this->get_data_type_weights(3).get_values().LockedMatrix());
+                           this->weights_values(3).LockedMatrix());
   const auto& input = this->get_prev_activations();
   const auto& local_input = input.LockedMatrix();
   const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
@@ -580,11 +590,11 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::bp_compute() {
     // Zero fused buffer.
     El::Zero(*this->m_mean_and_var_gradient);
   }
-  auto* scale_optimizer = this->get_data_type_weights(0).get_optimizer();
+  auto* scale_optimizer = this->get_weights(0).get_optimizer();
   if (scale_optimizer != nullptr) {
     scale_optimizer->add_to_gradient(*this->m_scale_gradient, TensorDataType(1.0), true);
   }
-  auto* bias_optimizer = this->get_data_type_weights(1).get_optimizer();
+  auto* bias_optimizer = this->get_weights(1).get_optimizer();
   if (bias_optimizer != nullptr) {
     bias_optimizer->add_to_gradient(*this->m_bias_gradient, TensorDataType(1.0), true);
   }

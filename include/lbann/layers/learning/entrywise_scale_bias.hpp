@@ -141,45 +141,46 @@ template <typename TensorDataType, data_layout Layout, El::Device Dev>
 void
 entrywise_scale_bias_layer<TensorDataType, Layout, Dev>
 ::setup_data(size_t max_mini_batch_size) {
-  data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
+    data_type_layer<TensorDataType>::setup_data(max_mini_batch_size);
 
-  // Initialize output dimensions
-  this->set_output_dims(this->get_input_dims());
-  const auto output_dims = this->get_output_dims();
-  const El::Int output_size = this->get_output_size();
+    // Initialize output dimensions
+    this->set_output_dims(this->get_input_dims());
+    const auto output_dims = this->get_output_dims();
+    const El::Int output_size = this->get_output_size();
 
-  // Construct default weights if needed
-  // Note: Scale is initialized to 1 and bias to 0
-  if (!this->has_weights()) {
-    auto w = make_unique<WeightsType>(this->get_comm());
-    std::vector<TensorDataType> vals(2*output_size, El::TypeTraits<TensorDataType>::Zero());
-    std::fill(vals.begin(), vals.begin()+output_size, El::TypeTraits<TensorDataType>::One());
-    auto init = make_unique<value_initializer<TensorDataType>>(vals);
-    auto opt = this->m_model->template create_optimizer<TensorDataType>();
-    w->set_name(this->get_name() + "_weights");
-    w->set_initializer(std::move(init));
-    w->set_optimizer(std::move(opt));
-    this->add_weights(w.get());
-    this->m_model->add_weights(std::move(w));
-  }
-  if (this->num_weights() != 1) {
-    LBANN_ERROR("attempted to setup ",
-                this->get_type()," layer \"",this->get_name(),"\" ",
-                "with an invalid number of weights ",
-                "(expected 1, found ",this->num_weights(),")");
-  }
+    // Construct default weights if needed
+    // Note: Scale is initialized to 1 and bias to 0
+    if (!this->has_weights()) {
+      auto w = make_unique<WeightsType>(this->get_comm());
+      std::vector<TensorDataType> vals(2*output_size,
+                                       El::TypeTraits<TensorDataType>::Zero());
+      std::fill(vals.begin(), vals.begin()+output_size,
+                El::TypeTraits<TensorDataType>::One());
+      auto init = make_unique<value_initializer<TensorDataType>>(vals);
+      auto opt = this->m_model->template create_optimizer<TensorDataType>();
+      w->set_name(this->get_name() + "_weights");
+      w->set_initializer(std::move(init));
+      w->set_optimizer(std::move(opt));
+      this->add_weights(w.get());
+      this->m_model->add_weights(std::move(w));
+    }
+    if (this->num_weights() != 1) {
+      LBANN_ERROR("attempted to setup ",
+                  this->get_type()," layer \"",this->get_name(),"\" ",
+                  "with an invalid number of weights ",
+                  "(expected 1, found ",this->num_weights(),")");
+    }
 
-  // Setup weights
-  auto dist = this->get_prev_activations().DistData();
-  dist.rowDist = El::STAR;
-  this->get_data_type_weights(0).set_dims(output_dims,
-                                          {static_cast<int>(2)});
-  this->get_data_type_weights(0).set_matrix_distribution(dist);
+    // Setup weights
+    auto dist = this->get_prev_activations().DistData();
+    dist.rowDist = El::STAR;
+    this->get_weights(0).set_dims(output_dims,
+                                     {static_cast<int>(2)});
+    this->get_weights(0).set_matrix_distribution(dist);
 
-  // Setup gradient w.r.t. weights
-  m_weights_gradient->AlignWith(dist);
-  m_weights_gradient->Resize(output_size, 2);
-
+    // Setup gradient w.r.t. weights
+    m_weights_gradient->AlignWith(dist);
+    m_weights_gradient->Resize(output_size, 2);
 }
 
 template <typename TensorDataType, data_layout Layout, El::Device Dev>
