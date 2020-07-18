@@ -30,15 +30,16 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/data_coordinator/data_coordinator_metadata.hpp"
-#include "lbann/utils/summary.hpp"
-#include "lbann/optimizers/optimizer.hpp"
-#include "lbann/utils/exception.hpp"
-#include "lbann/utils/timer.hpp"
-#include "lbann/utils/description.hpp"
 #include "lbann/io/persist.hpp"
-#include "lbann/utils/memory.hpp"
-#include "lbann/utils/typename.hpp"
+#include "lbann/optimizers/optimizer.hpp"
+#include "lbann/utils/description.hpp"
 #include "lbann/utils/distconv.hpp"
+#include "lbann/utils/exception.hpp"
+#include "lbann/utils/memory.hpp"
+#include "lbann/utils/summary.hpp"
+#include "lbann/utils/timer.hpp"
+#include "lbann/utils/typename.hpp"
+#include "lbann/weights/weights.hpp"
 #ifdef LBANN_HAS_DISTCONV
 #include "lbann/layers/distconv_adapter.hpp"
 #endif // LBANN_HAS_DISTCONV
@@ -83,7 +84,6 @@ namespace lbann {
 
 // Forward declarations
 class model;
-class weights;
 namespace callback {
 class sync_layers;
 } // namespace callback
@@ -420,9 +420,12 @@ public:
   // ===========================================================
 
   /** Set list of pointers to weights. */
-  virtual void set_weights(std::vector<weights*>& w) = 0;
+  void set_weights(std::vector<weights*> const& w) {
+    m_weights = w;
+  }
+
   /** Replace weights with another Layer's weights*/
-  virtual void replace_weights(Layer* other_layer) = 0;
+  void replace_weights(Layer const& other_layer);
 
   // ===========================================================
   // Tensor access functions
@@ -483,6 +486,54 @@ public:
   virtual void set_keep_error_signals(bool) = 0;
 
 protected:
+
+  /** @name Weights-related accessors */
+  ///@{
+  void add_weights(weights* w) {
+    m_weights.push_back(w);
+  }
+  size_t num_weights() const noexcept { return m_weights.size(); }
+  bool has_weights() const noexcept { return num_weights() > 0; }
+  bool has_weights(size_t idx) const noexcept {
+    return ((idx < this->num_weights()) && (m_weights[idx]));
+  }
+  void set_num_weights(size_t n) { m_weights.resize(n, nullptr); }
+  void set_weights(size_t idx, weights* w) {
+    m_weights.at(idx) = w;
+  }
+  weights const& get_weights(size_t idx) const {
+    if (idx >= num_weights()) {
+      LBANN_ERROR("Asked for weights index \"", idx, "\"; "
+                  "however, this layer has ", num_weights(),
+                  " weights associated with it.");
+    }
+    if (m_weights[idx] == nullptr) {
+      LBANN_ERROR("Logic error: Detected an in-bounds null weights pointer.");
+    }
+    return *(m_weights[idx]);
+  }
+
+  weights& get_weights(size_t idx) {
+    return const_cast<weights&>(
+      static_cast<Layer const&>(*this).get_weights(idx));
+  }
+
+  void add_as_gradient_source()
+  {
+    for (auto&& w : this->m_weights) {
+      optimizer* opt = w->get_optimizer();
+      if (opt != nullptr) { opt->add_gradient_source(this); }
+    }
+  }
+
+  void remove_as_gradient_source()
+  {
+    for (auto&& w : this->m_weights) {
+      auto&& opt = w->get_optimizer();
+      if (opt != nullptr) { opt->remove_gradient_source(this); }
+    }
+  }
+  ///@}
 
   // ===========================================================
   // Setup helper functions
@@ -613,6 +664,9 @@ protected:
   bool apply_subgraph_parallelism = false;
 
 private:
+
+  virtual void setup_weights(size_t idx, weights& w) = 0;
+
   /** @name Implementation details of back-prop. */
   ///@{
 
@@ -709,16 +763,18 @@ private:
   ///@}
 
   // ===========================================================
-  // Private access functions
-  // ===========================================================
-  /** Get references to weights. */
-  virtual std::vector<weights*> get_weights() = 0;
-  /** Get references to weights. (const) */
-  virtual std::vector<weights const*> get_weights() const = 0;
-
-  // ===========================================================
   // Private class members
   // ===========================================================
+
+  /** @brief References to layer weights.
+   *
+   *  These are references to the base weights objects. The tensor
+   *  data type for weights storage might differ from the tensor data
+   *  type of this layer's tensors. To ensure consistency, we must
+   *  only access weights values through the WeightsProxy class during
+   *  training.
+   */
+  std::vector<weights*> m_weights;
 
   /** Dimensions of output tensors. */
   std::vector<std::vector<int>> m_output_dims_list;
@@ -773,12 +829,15 @@ private:
 #endif // LBANN_HAS_DISTCONV
 };
 
+// FIXME (trb 05/28/2020): These should go away. They're used in
+// "model.cpp" and "model_factory.cpp" but could be refactored
+// out. Outside the scope of current PR.
 inline std::vector<weights*> extract_weights(Layer& l) {
-  return l.get_weights();
+  return l.m_weights;
 }
 
 inline std::vector<const weights*> extract_weights(Layer const& l) {
-  return l.get_weights();
+  return {l.m_weights.cbegin(), l.m_weights.cend()};
 }
 
 } // namespace lbann

@@ -47,6 +47,12 @@ template <typename TensorDataType,
           data_layout T_layout = data_layout::DATA_PARALLEL,
           El::Device Dev = El::Device::CPU>
 class local_response_normalization_layer : public regularizer_layer<TensorDataType> {
+#ifdef LBANN_HAS_CUDNN
+  using ScalingType = cudnn::ScalingParamType<TensorDataType>;
+#else
+  using ScalingType = TensorDataType;
+#endif // LBANN_HAS_CUDNN
+
   static_assert(T_layout == data_layout::DATA_PARALLEL,
                 "local_response_normalization only supports DATA_PARALLEL");
 public:
@@ -201,8 +207,8 @@ private:
     const auto& local_input = this->get_local_prev_activations();
     auto& local_output = this->get_local_activations();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
-      const TensorDataType one = El::TypeTraits<TensorDataType>::One();
+      const ScalingType zero = El::TypeTraits<ScalingType>::Zero();
+      const ScalingType one = El::TypeTraits<ScalingType>::One();
       CHECK_CUDNN(cudnnLRNCrossChannelForward(cudnn::get_handle(),
                                               m_lrn_cudnn_desc,
                                               CUDNN_LRN_CROSS_CHANNEL_DIM1,
@@ -226,8 +232,8 @@ private:
     const auto& local_gradient_wrt_output = this->get_local_prev_error_signals();
     auto& local_gradient_wrt_input = this->get_local_error_signals();
     if (local_input.Height() > 0 && local_input.Width() > 0) {
-      const TensorDataType zero = El::TypeTraits<TensorDataType>::Zero();
-      const TensorDataType one = El::TypeTraits<TensorDataType>::One();
+      const ScalingType zero = El::TypeTraits<ScalingType>::Zero();
+      const ScalingType one = El::TypeTraits<ScalingType>::One();
       CHECK_CUDNN(cudnnLRNCrossChannelBackward(cudnn::get_handle(),
                                                m_lrn_cudnn_desc,
                                                CUDNN_LRN_CROSS_CHANNEL_DIM1,
@@ -449,6 +455,8 @@ private:
   }
 
 };
+
+LBANN_DEFINE_LAYER_BUILDER(local_response_normalization);
 
 #ifndef LBANN_LOCAL_RESPONSE_NORMALIZATION_LAYER_INSTANTIATE
 #define PROTO_DEVICE(T, Device)                             \

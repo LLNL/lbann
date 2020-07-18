@@ -30,6 +30,7 @@
 #include "lbann/base.hpp"
 #include "lbann/comm.hpp"
 #include "lbann/io/persist.hpp"
+#include "lbann/utils/cloneable.hpp"
 #include "lbann/utils/description.hpp"
 
 #include <memory>
@@ -60,7 +61,7 @@ class optimizer;
  *  Note that LBANN weights are similar to Tensorflow variables and
  *  Caffe parameters.
  */
-class weights {
+class weights : public Cloneable<HasAbstractFunction<weights>> {
 private:
   weights();
   // -----------------------------------------------
@@ -71,8 +72,6 @@ private:
 
 public:
   weights(lbann_comm* comm);
-  weights(const weights& other);
-  weights& operator=(const weights& other);
   virtual ~weights() = default;
 
   /** Set weights name.
@@ -101,15 +100,8 @@ public:
     return *m_comm;
   }
 
-  /** Create a copy of the weights.
-   *  This function dynamically allocates memory for a weights
-   *  instance and instantiates a copy. The caller is responsible for
-   *  deallocating the instance.
-   */
-  virtual weights* copy() const = 0;
-
   /** Human-readable description. */
-  virtual description get_description() const;
+  description get_description() const;
 
   virtual bool has_optimizer() const = 0;
 
@@ -152,16 +144,38 @@ public:
   /** Set weight tensor dimensions.
    *  See the 'get_dims' function for an explanation of the notation.
    */
-  virtual void set_dims(std::vector<int> matrix_height_dims,
-                        std::vector<int> matrix_width_dims = std::vector<int>());
+  void set_dims(std::vector<int> matrix_height_dims,
+                std::vector<int> matrix_width_dims = std::vector<int>());
   /** Set weight tensor dimensions as a 1D tensor. */
-  virtual void set_dims(int size) { set_dims({size}, {}); }
+  void set_dims(int size) { set_dims({size}, {}); }
 
   // -----------------------------------------------
   // Matrix distribution accessors
   // -----------------------------------------------
   El::DistData get_matrix_distribution() const;
   void set_matrix_distribution(El::DistData dist);
+
+  /** @name Matrix accessors */
+  ///@{
+  /** @brief Set the values matrix to the given matrix.
+   *
+   *  The input matrix must be compatible with the established matrix
+   *  dimensions. If the data type of the input matrix is different
+   *  from that expected by the weights object, they will be cast to
+   *  the data type expected by the weights object.
+   *
+   *  @throws lbann::exception If the input matrix has incompatible
+   *                           dimensions.
+   *
+   *  @todo (trb 05/28/2020): Should this check the DistData of the
+   *  input against the expected DistData for the weights object?
+   */
+  void set_values(El::BaseDistMatrix const& values);
+
+  /** @brief Access the matrix of weights values. */
+  virtual El::BaseDistMatrix& get_values() = 0;
+  virtual El::BaseDistMatrix const& get_values() const = 0;
+  ///@}
 
   // -----------------------------------------------
   // Initializer accessors
@@ -194,7 +208,7 @@ public:
   // -----------------------------------------------
   // Setup
   // -----------------------------------------------
-  virtual void setup();
+  void setup();
 
   // -----------------------------------------------
   // Freezing
@@ -233,7 +247,16 @@ public:
   /** Write weights to proto file */
   virtual void write_proto(lbann_data::WeightsData* proto) const = 0;
 
-  
+protected:
+
+  weights(const weights& other);
+  weights& operator=(const weights& other);
+
+private:
+  virtual void do_augment_description_(description&) const = 0;
+  virtual void do_setup_() = 0;
+  virtual void do_set_dims_(std::vector<int> const& matrix_height_dims,
+                            std::vector<int> const& matrix_width_dims) = 0;
 
 private:
 

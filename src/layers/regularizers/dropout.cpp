@@ -26,10 +26,27 @@
 
 #define LBANN_DROPOUT_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/dropout.hpp"
+#include "layers.pb.h"
 
 namespace lbann {
 
-#define PROTO_DEVICE(T, Device) \
+template <typename TensorDataType, data_layout layout, El::Device device>
+std::unique_ptr<Layer> build_dropout_layer_from_pbuf(
+  lbann_comm* comm, lbann_data::Layer const& layer_msg)
+{
+  const auto& params = layer_msg.dropout();
+  return lbann::make_unique<dropout_layer<TensorDataType, layout, device>>(
+    comm,
+    params.keep_prob());
+}
+
+#define PROTO_DEVICE(T, Device)                                         \
+  template std::unique_ptr<Layer>                                       \
+  build_dropout_layer_from_pbuf<T, data_layout::DATA_PARALLEL, Device>( \
+    lbann_comm*, lbann_data::Layer const&);                             \
+  template std::unique_ptr<Layer>                                       \
+  build_dropout_layer_from_pbuf<T, data_layout::MODEL_PARALLEL, Device>( \
+    lbann_comm*, lbann_data::Layer const&);                             \
   template class dropout<T, data_layout::DATA_PARALLEL, Device>; \
   template class dropout<T, data_layout::MODEL_PARALLEL, Device>
 

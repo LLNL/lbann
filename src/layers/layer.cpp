@@ -75,6 +75,7 @@ Layer::Layer(const Layer& other) :
   m_bp_compute_time(other.m_bp_compute_time),
   m_update_time(other.m_update_time),
   m_name(other.m_name),
+  m_weights(other.m_weights),
   m_output_dims_list(other.m_output_dims_list),
   m_hint_layer(other.m_hint_layer) {
 }
@@ -95,6 +96,7 @@ Layer& Layer::operator=(const Layer& other) {
   m_bp_compute_time = other.m_bp_compute_time;
   m_update_time = other.m_update_time;
   m_name = other.m_name;
+  m_weights = other.m_weights;
   m_output_dims_list = other.m_output_dims_list;
   m_hint_layer = other.m_hint_layer;
 
@@ -155,7 +157,7 @@ description Layer::get_description() const {
   }
 
   // Weights
-  const auto weights_list = get_weights();
+  const auto weights_list = m_weights;
   if (!weights_list.empty()) {
     ss.str(std::string{});
     ss.clear();
@@ -238,7 +240,7 @@ void Layer::summarize_stats(lbann_summary& summarizer, int step) {
   reset_counters();
   // Combine the optimizer step time from all the weights.
   double step_time = 0.0;
-  for (auto const& w : get_weights()) {
+  for (auto const& w : m_weights) {
     optimizer *opt = w->get_optimizer();
     if (opt) {
       step_time += opt->get_step_time();
@@ -344,22 +346,51 @@ void Layer::set_output_dims(std::vector<int> dims, int output_index) {
   m_output_dims_list[output_index] = dims;
 }
 
+// FIXME (trb 05/28/2020): IMO, this function name is somewhat
+// misleading. It's not "replacing" anything -- it's overwriting the
+// weights values of "this" with the weights values of "other_layer",
+// which is left intact.
+//
+// ALSO, really what it does is copies the first "number of weights
+// 'this' expects to have" and ignores any others that might be
+// present in "other_layer".
+//
+// The use-cases of this function are outside the scope of my current
+// work, so I'm "refactoring in-place" and leaving this documentation
+// for a future refactor.
+void Layer::replace_weights(Layer const& other_layer) {
+
+  auto const other_num_weights = other_layer.num_weights();
+  auto const my_num_weights = this->num_weights();
+
+  // Minimal sanity check; see longer note above.
+  if (other_num_weights < my_num_weights)
+    LBANN_ERROR("Expected at least ", my_num_weights, " weights in layer \"",
+                other_layer.get_name(), "\" but found ", other_num_weights);
+
+  using IdxT = typename std::decay<decltype(my_num_weights)>::type;
+  for (IdxT ii = 0; ii < my_num_weights; ++ii) {
+    auto const& other_layer_weights = other_layer.get_weights(ii);
+    this->get_weights(ii).set_values(other_layer_weights.get_values());
+  }
+}
+
 void Layer::freeze() {
   m_frozen = true;
-  for(auto& w : get_weights()) {
+  for(auto& w : m_weights) {
     w->freeze();
   }
 }
 
 void Layer::unfreeze() {
   m_frozen = false;
-  for(auto& w : get_weights()) {
+  for(auto& w : m_weights) {
     w->unfreeze();
   }
 }
 
 bool Layer::is_frozen() const {
-  for(auto& w : get_weights()) {
+  for(auto& w : m_weights) {
     if (w->is_frozen() != m_frozen) {
       LBANN_ERROR("layer ", get_name(), " and weight ", w->get_name(), \
                   " of it are inconsistently frozen");
@@ -549,7 +580,7 @@ void Layer::write_proto(lbann_data::Layer* proto) const {
   if(!m_parent_layers.empty()) proto->set_bottom(m_parent_layers.front()->get_name());
   proto->set_top(get_name());
   //Add weights
-  for (auto const& w : get_weights()) {
+  for (auto const& w : m_weights) {
     auto weight_proto = proto->add_weights_data();
     w->write_proto(weight_proto);
   }

@@ -177,7 +177,7 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::fp_compute() {
   // Local matrices
   const auto& local_input = dynamic_cast<const GPUMatType&>(this->get_local_prev_activations());
   auto& local_output = dynamic_cast<GPUMatType&>(this->get_local_activations());
-  const auto& local_weights = dynamic_cast<const GPUMatType&>(this->get_data_type_weights(0).get_values().LockedMatrix());
+  const auto& local_weights = dynamic_cast<const GPUMatType&>(this->weights_values(0).LockedMatrix());
   const auto local_scale = El::LockedView(local_weights,
                                           El::ALL, El::IR(0));
   const auto local_bias = El::LockedView(local_weights,
@@ -223,7 +223,7 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   const auto& local_input = dynamic_cast<const GPUMatType&>(this->get_local_prev_activations());
   const auto& local_gradient_wrt_output = dynamic_cast<const GPUMatType&>(this->get_local_prev_error_signals());
   auto& local_gradient_wrt_input = dynamic_cast<GPUMatType&>(this->get_local_error_signals());
-  const auto& local_weights = dynamic_cast<const GPUMatType&>(this->get_data_type_weights(0).get_values().LockedMatrix());
+  const auto& local_weights = dynamic_cast<const GPUMatType&>(this->weights_values(0).LockedMatrix());
   auto& local_gradient_wrt_weights = dynamic_cast<GPUMatType&>(this->m_weights_gradient->Matrix());
   const auto local_scale = El::LockedView(local_weights,
                                           El::ALL, El::IR(0));
@@ -265,7 +265,7 @@ void channelwise_scale_bias_layer<TensorDataType, T_layout, Dev>::bp_compute() {
   }
 
   // Update optimizer with gradient
-  auto* opt = this->get_data_type_weights(0).get_optimizer();
+  auto* opt = this->get_weights(0).get_optimizer();
   if (opt != nullptr) {
     opt->add_to_gradient(*this->m_weights_gradient, El::TypeTraits<TensorDataType>::One(), true);
   }

@@ -10,8 +10,7 @@
 using namespace lbann;
 
 int main(int argc, char **argv) {
-  int random_seed = 42;
-  lbann::world_comm_ptr comm = lbann::initialize(argc, argv, random_seed);
+  lbann::world_comm_ptr comm = lbann::initialize(argc, argv);
   int np = comm->get_procs_in_world();
 
   std::cerr << "STARTED!\n";
@@ -22,8 +21,8 @@ int main(int argc, char **argv) {
       LBANN_ERROR("please run with a single processor");
     }
     if (argc < 3) {
-      std::cerr 
-        << "usage: " << argv[0] 
+      std::cerr
+        << "usage: " << argv[0]
         << " --input_fn=<string> --output_fn=<string> --delimiter=<char>\n"
         << "where: input_fn is csv file containing SMILES strings;\n"
         << "       --delimiter is c (comma), t (tab) or 0 (none)\n"
@@ -62,7 +61,7 @@ int main(int argc, char **argv) {
         break;
       default :
         LBANN_ERROR("Invalid delimiter character; should be 'c', 't', '0'; you passed: ", ww);
-    }  
+    }
 
     std::set<char> s;
 
@@ -108,4 +107,3 @@ int main(int argc, char **argv) {
 
   return EXIT_SUCCESS;
 }
-
