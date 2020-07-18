@@ -75,31 +75,7 @@ model::model(lbann_comm* comm,
   static El::Int num_models = 0;
   m_name = "model" + std::to_string(num_models);
   num_models++;
-  const El::GridOrder orderGrid =  El::COLUMN_MAJOR;	
-  El::mpi::Comm sub_comm = El::mpi::NewWorldComm();	
-  El::mpi::Group group, grid1Group,grid2Group;	
-
-  std::vector<int> grid1Ranks(2);	
-  std::vector<int> grid2Ranks(2);
-
-  for( El::Int i=0; i<2; ++i )	
-  {	
-    grid1Ranks[i] = i;	
-  }	
-  for( El::Int i=0; i<2; ++i )	
-  {	
-    grid2Ranks[i] = 3-i;	
-  }	
-
-  El::mpi::CommGroup( sub_comm, group );	
-  El::mpi::Incl( group, grid1Ranks.size(), grid1Ranks.data(), grid1Group );	
-  El::mpi::Incl( group, grid2Ranks.size(), grid2Ranks.data(), grid2Group );	
-
-  	
-  grid1.reset(new El::Grid(	
-            El::mpi::NewWorldComm(), grid1Group, 2, orderGrid ));	
-  grid2.reset(new El::Grid(	
-            El::mpi::NewWorldComm(), grid2Group, 2, orderGrid ));	
+  
 
 
 
@@ -153,29 +129,7 @@ model::model(const model& other) :
     m_weights.emplace_back(make_unique<data_type_weights<DataType>>(dynamic_cast<data_type_weights<DataType>&>(*other_weights)));
     weights_map[other_weights.get()] = m_weights.back().get();
   }
-  const El::GridOrder orderGrid =  El::COLUMN_MAJOR;	
-  El::mpi::Comm sub_comm = El::mpi::NewWorldComm();	
-  El::mpi::Group group, grid1Group,grid2Group;	
-
-  std::vector<int> grid1Ranks(2);	
-  std::vector<int> grid2Ranks(2);	
-
-  for( El::Int i=0; i<2; ++i )	
-  {	
-    grid1Ranks[i] = i;	
-  }	
-  for( El::Int i=0; i<2; ++i )	
-  {	
-    grid2Ranks[i] = 3-i;	
-  }	
-
-  El::mpi::CommGroup( sub_comm, group );	
-  El::mpi::Incl( group, grid1Ranks.size(), grid1Ranks.data(), grid1Group );	
-  El::mpi::Incl( group, grid2Ranks.size(), grid2Ranks.data(), grid2Group );	
-  grid1.reset(new El::Grid(	
-            El::mpi::NewWorldComm(), grid1Group, 2, orderGrid ));	
-  grid2.reset(new El::Grid(	
-            El::mpi::NewWorldComm(), grid2Group, 2, orderGrid ));
+  
 
   // Fix pointers
   remap_pointers(layer_map, weights_map);
@@ -236,29 +190,7 @@ model& model::operator=(const model& other) {
     weights_map[other_weights.get()] = m_weights.back().get();
   }
 
-  const El::GridOrder orderGrid =  El::COLUMN_MAJOR;	
-  El::mpi::Comm sub_comm = El::mpi::NewWorldComm();	
-  El::mpi::Group group, grid1Group,grid2Group;	
-
-  std::vector<int> grid1Ranks(2);	
-  std::vector<int> grid2Ranks(2);	
-
-  for( El::Int i=0; i<2; ++i )	
-  {	
-    grid1Ranks[i] = i;	
-  }	
-  for( El::Int i=0; i<2; ++i )	
-  {	
-    grid2Ranks[i] = 3-i;	
-  }	
-
-  El::mpi::CommGroup( sub_comm, group );	
-  El::mpi::Incl( group, grid1Ranks.size(), grid1Ranks.data(), grid1Group );	
-  El::mpi::Incl( group, grid2Ranks.size(), grid2Ranks.data(), grid2Group );	
-  grid1.reset(new El::Grid(	
-            El::mpi::NewWorldComm(), grid1Group, 2, orderGrid ));	
-  grid2.reset(new El::Grid(	
-            El::mpi::NewWorldComm(), grid2Group, 2, orderGrid ));
+  
 
   // Fix pointers
   remap_pointers(layer_map, weights_map);
@@ -652,11 +584,17 @@ void model::setup(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
   // Bail out if the model is already setup
   if(m_model_is_setup) { return; }
 
+  check_subgraph_parallelism();
+
   // Setup layers
 
   setup_layer_topology();
   setup_layer_execution_order();
-  setup_subgrids();
+  if(this->is_subgraph_parallelism_enabled())
+  {
+    setup_subgrids();
+  }
+  
   setup_layers(max_mini_batch_size, dr_metadata);
 
 
@@ -793,6 +731,21 @@ void model::get_parent_subgrid_tags(int layer_index ){
 
 }
 
+void model::check_subgraph_parallelism(){
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  for (El::Int node = 0; node < num_layers; ++node) {
+    if(layers[node]->get_parallel_strategy().sub_branch_tag != 0)
+    {
+      this->enable_subgraph_parallelism();
+      break;
+    }
+
+  }
+  std::cout<<"Is subgraph parallelism enabled:"<<this->is_subgraph_parallelism_enabled()<<"\n";
+
+}
+
 void  model::setup_subgrids(){
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
@@ -837,6 +790,7 @@ void  model::setup_subgrids(){
 
 
   for (El::Int node = 0; node < num_layers; ++node) {
+    layers[node]->enable_subgraph_parallelism();
     if(layers[node]->get_type()=="split" || layers[node]->get_type()=="sum")
     {
       layers[node]->set_communication_flag(this->get_subgrid_communication_type());
@@ -1040,58 +994,20 @@ void model::setup_layer_execution_order() {
 }
 
 void model::setup_layers(size_t max_mini_batch_size, DataReaderMetaData& dr_metadata) {
-  /*
-  const El::GridOrder orderGrid =  El::COLUMN_MAJOR;
-  El::mpi::Comm comm = El::mpi::NewWorldComm();
-  El::mpi::Group group, grid1Group,grid2Group;
-
-  std::vector<int> grid1Ranks(2);
-  std::vector<int> grid2Ranks(2);
-
-  for( El::Int i=0; i<2; ++i )
-  {
-    grid1Ranks[i] = i;
-  }
-  for( El::Int i=0; i<2; ++i )
-  {
-    grid2Ranks[i] = 3-i;
-  }
-
-  El::mpi::CommGroup( comm, group );
-  El::mpi::Incl( group, grid1Ranks.size(), grid1Ranks.data(), grid1Group );
-  El::mpi::Incl( group, grid2Ranks.size(), grid2Ranks.data(), grid2Group );
-  const El::Grid grid1(
-            El::mpi::NewWorldComm(), grid1Group, 2, orderGrid );
-  const El::Grid grid2(
-            El::mpi::NewWorldComm(), grid2Group, 2, orderGrid );
-  */
-
-
-
 
   for (El::Int i = 0; i < get_num_layers(); ++i) {
     auto& l = get_layer(i);
     l.set_model(this);
-    // auto parents = l.get_parent_layers();
-    // if(parents[0]->get_type()=="sum")
-    // {
-    //   std::cout<<"Layer before sum layer has grid size:"<<(*(grids[l.subgrid_number])).Size()<<"\n";
-    // }
-    //std::cout<<"Branch tag:"<<l.get_parallel_strategy().sub_branch_tag<<"\n";
-    //std::cout<<"Layer:"<<l.get_name()<<" has subgrid number:"<<l.subgrid_number<<" Size:"<<(*l.subgrid_ranks).size()<<"\n";
-    if(i==4)
-      {
-      //std::printf("Layer four going to grid 2\n");
 
-      //l.setup(max_mini_batch_size, dr_metadata,*grid2);
+    if(this->is_subgraph_parallelism_enabled())
+    {
       l.setup(max_mini_batch_size, dr_metadata,*(grids[l.subgrid_number]));
 
     }
     else
     {
-      //std::printf("other layers going to grid 1\n");
-      //l.setup(max_mini_batch_size, dr_metadata,*grid1);
-      l.setup(max_mini_batch_size, dr_metadata,*(grids[l.subgrid_number]));
+
+      l.setup(max_mini_batch_size, dr_metadata,m_comm->get_trainer_grid());
     }
     l.check_setup();
   }
@@ -1418,12 +1334,22 @@ void model::forward_prop(execution_mode mode) {
     do_layer_forward_prop_begin_cbs(mode, &l);
 
     //std::cout<<"Running FP with"<<l.get_type()<<" Layer name:"<<l.get_name()<<" Rank:"<<myrank<<"\n";
-    if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum")
+    if(this->is_subgraph_parallelism_enabled())
     {
-      //std::cout<<"calling fp for :"<<l.get_name()<<" Rank:"<<myrank<<"\n";
+      if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum")
+      {
+        //std::cout<<"calling fp for :"<<l.get_name()<<" Rank:"<<myrank<<"\n";
 
-      l.forward_prop();
+        l.forward_prop();
+      }
+
     }
+    else
+    {
+      l.forward_prop();
+
+    }
+    
 
     
     
@@ -1449,15 +1375,26 @@ void model::backward_prop() {
     
 
     
-    //std::cout<<"Running BP with:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
-    if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum")
+    if(this->is_subgraph_parallelism_enabled())
     {
-      //std::cout<<"Actually Running BP with:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
+      if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum")
+      {
+        //std::cout<<"Actually Running BP with:"<<l.get_type()<<" Layer name:"<<l.get_name()<<"\n";
 
+        do_layer_backward_prop_begin_cbs(&l);
+        l.back_prop();
+        do_layer_backward_prop_end_cbs(&l);
+      }
+
+    }
+    else
+    {
       do_layer_backward_prop_begin_cbs(&l);
       l.back_prop();
       do_layer_backward_prop_end_cbs(&l);
+
     }
+    
     
 
     // Terminate early if all gradients have been computed

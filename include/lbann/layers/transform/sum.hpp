@@ -114,12 +114,13 @@ protected:
     auto& output = this->get_activations();
     auto parents = this->get_parent_layers(); 
     //El::Copy(this->get_prev_activations(0), output);
-    auto subgrid_tags = (*this->parent_tags);
+    
 
 
 
-    if(true)
+    if(this->is_subgraph_parallelism_enabled())
     {
+      auto subgrid_tags = (*this->parent_tags);
       int tag=0;
       
       std::vector<bool> is_initialized_tensor(this->num_spliting_groups, false);
@@ -185,6 +186,14 @@ protected:
 
       
 
+    } //if subgraph parallelism is enabled 
+    else
+    {
+      El::Copy(this->get_prev_activations(0), output);
+      for (int i = 1; i < this->get_num_parents(); ++i) {
+        El::Axpy(DataType(1), this->get_prev_activations(i), output);
+      }
+
     }
 
 
@@ -197,15 +206,24 @@ protected:
   void fp_setup_outputs(El::Int mini_batch_size) override {
 
     if (this->get_num_children() < 1) { return; }
+    // Determine distributed matrix alignment
+    const bool align_outputs = this->get_num_parents() > 0;
+    const auto& alignment_dist = (align_outputs ?
+                                  this->get_prev_activations().DistData() :
+                                  this->get_activations().DistData());
 
 
-  // Initialize output tensors
-  for (int i = 0; i < this->get_num_children(); ++i) {
+    // Initialize output tensors
+    for (int i = 0; i < this->get_num_children(); ++i) {
+#ifdef LBANN_HAS_DISTCONV
+    if (!keep_original_outputs(i)) continue;
+#endif // LBANN_HAS_DISTCONV
 
-    auto& output = this->get_activations(i);
-    output.Empty(false);
-    output.Resize(this->get_output_size(i), mini_batch_size);
-    }
+      auto& output = this->get_activations(i);
+      output.Empty(false);
+      if (align_outputs && this->is_subgraph_parallelism_enabled() ==false) { output.AlignWith(alignment_dist); }
+      output.Resize(this->get_output_size(i), mini_batch_size);
+      }
 
   }
 
@@ -214,7 +232,7 @@ protected:
     const auto& gradient_wrt_output = this->get_prev_error_signals();
     auto subgrid_tags = (*this->parent_tags);
 
-    if(true)
+    if(this->is_subgraph_parallelism_enabled())
     {
       
       if(this->get_communication_flag())

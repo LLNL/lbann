@@ -238,6 +238,16 @@ public:
 
   }
 
+  void enable_subgraph_parallelism()
+  {
+    apply_subgraph_parallelism = true;
+  }
+
+  bool is_subgraph_parallelism_enabled()
+  {
+    return apply_subgraph_parallelism;
+  }
+
   virtual std::string get_datatype_name() const {
     return TypeName<DataType>();
   };
@@ -599,6 +609,8 @@ protected:
   std::string m_name;
 
   int enable_vector_copy = 0;
+
+  bool apply_subgraph_parallelism = false;
 
 private:
   /** @name Implementation details of back-prop. */

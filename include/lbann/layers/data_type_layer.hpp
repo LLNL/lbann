@@ -167,6 +167,8 @@ public:
 
   El::mpi::Comm& get_subgrid_comm() { return interSubGridVCComm; }
 
+
+
 protected:
 
   // ===========================================================
@@ -420,6 +422,8 @@ private:
   /** Inter subgrids comm for STAR,VC distribution
   */
   El::mpi::Comm interSubGridVCComm;
+
+
 
   
 

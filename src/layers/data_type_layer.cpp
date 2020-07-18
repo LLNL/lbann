@@ -478,7 +478,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   auto parents = get_parent_layers();
 
   
-  if(get_name().find("split")!= std::string::npos)
+  if(get_name().find("split")!= std::string::npos  && this->get_model()->is_subgraph_parallelism_enabled())
   {
     //split layer 
     m_subgrid_tensors_split.clear();
@@ -530,7 +530,7 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
     }
     
   }
-  else if(get_type()=="sum")
+  else if(get_type()=="sum" && this->get_model()->is_subgraph_parallelism_enabled())
   {
     //split layer 
     m_subgrid_tensors_split.clear();
@@ -725,10 +725,11 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
   // Determine distributed matrix alignment
-  const auto& alignment_dist = m_parent_layers.front()->get_activations(*this).DistData();
+  //const auto& alignment_dist = m_parent_layers.front()->get_activations(*this).DistData();
 
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
+    const auto& alignment_dist = m_parent_layers[i]->get_activations(*this).DistData();
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
@@ -739,7 +740,7 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
     auto& input = *m_inputs[i];
     input.Empty(false);
     //if(El::GridCompare(input.Grid(),parent_output.DistData().grid))	
-    if(this->get_type()!="add" && this->get_type()!="sum")	
+    if(this->get_type()!="adds" && this->get_type()!="sums")	
     {	
       input.AlignWith(alignment_dist);	
     }

@@ -119,6 +119,18 @@ public:
     return vector_communication_subgraph;
   }
 
+  void enable_subgraph_parallelism()
+  {
+    apply_subgraph_parallelism = true;
+  }
+
+  bool is_subgraph_parallelism_enabled()
+  {
+    return apply_subgraph_parallelism;
+  }
+
+
+
   /** @brief Human-readable description. */
   virtual description get_description() const;
 
@@ -339,6 +351,9 @@ protected:
 
   */	
   virtual void setup_subgrids();	
+
+  virtual void check_subgraph_parallelism();
+
   virtual void get_parent_subgrid_tags(int layer_index );
 
   /** @brief Set up layer execution order.
@@ -435,7 +450,7 @@ public:
 
 	
 public:	
-  std::unique_ptr<El::Grid> grid1,grid2;	
+  //std::unique_ptr<El::Grid> grid1,grid2;	
   std::unordered_map<int, std::shared_ptr<El::Grid>> grids; 
   std::unordered_map<int, std::unique_ptr<El::mpi::Group>> grids_mpi_groups; 
 
@@ -455,6 +470,7 @@ private:
   //2: collective based subgrid communication with optimization
 
   int vector_communication_subgraph = 0;
+  bool apply_subgraph_parallelism = false;
 
 
 
