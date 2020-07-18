@@ -291,6 +291,7 @@ std::unique_ptr<model> construct_model(
   if (!name.empty()) {
     m->set_name(name);
   }
+  m->set_subgrid_communication_type(proto_model.vector_communication());
   return m;
 
 }

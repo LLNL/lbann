@@ -49,6 +49,9 @@ message Model {
   int64 super_steps = 121; //multiple steps/epochs currently use in GAN
   int64 num_batches = 122; //multiple batches/sub epoch
   int64 evaluation_frequency = 54;
+  
+  int64 vector_communication = 13;  //Subgrid vector communication flag
+  
   bool  serialize_io = 101;
 
   bool disable_cuda = 8;

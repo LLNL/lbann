@@ -26,6 +26,7 @@
 
 #define LBANN_DATA_TYPE_LAYER_INSTANTIATE
 
+
 #include "matrix_builder.hpp"
 
 #include "lbann/layers/data_type_layer.hpp"
@@ -286,6 +287,27 @@ auto data_type_layer<TensorDataType>::get_error_signals(int parent_index) const
   return *m_gradient_wrt_inputs[parent_index];
 }
 
+template <typename TensorDataType>
+auto data_type_layer<TensorDataType>::get_temp_grad() 
+  ->  AbsDistMatrixType& {
+  
+  return *m_temp_grad[0];
+}
+
+template <typename TensorDataType>
+auto data_type_layer<TensorDataType>::get_branch_tag_input(int tag)
+  ->  AbsDistMatrixType& {
+  
+  return *m_subgrid_tensors_split[tag];
+}
+
+template <typename TensorDataType>
+auto data_type_layer<TensorDataType>::get_branch_tag_input_vector()
+  ->    std::vector<std::unique_ptr<AbsDistMatrixType>>& {
+  
+  return m_subgrid_tensors_split;
+}
+
 // Accessing non-const distributed matrices
 // Note: Using idiom from Item 3, p. 23 in "Effective C++", 3rd ed.,
 // by Scott Meyers.
@@ -453,24 +475,169 @@ void data_type_layer<TensorDataType>::setup_matrices(const El::Grid& grid) {
   m_outputs.clear();
   m_gradient_wrt_outputs.clear();
   m_gradient_wrt_inputs.clear();
+  m_temp_grad.clear();
+  m_subgrid_tensors_split.clear();
 
   // Construct matrices
   m_inputs.resize(get_num_parents());
   m_outputs.resize(get_num_children());
   m_gradient_wrt_outputs.resize(get_num_children());
   m_gradient_wrt_inputs.resize(get_num_parents());
-  for (auto& input : m_inputs) {
+  m_temp_grad.resize(1);
+  m_subgrid_tensors_split.resize(1);
+
+  auto childs = get_child_layers(); 
+  auto parents = get_parent_layers();
+
+  
+  if(get_name().find("split")!= std::string::npos  && this->get_model()->is_subgraph_parallelism_enabled())
+  {
+    //split layer 
+    m_subgrid_tensors_split.clear();
+    //std::cout<<"Number of spliting groups:"<<childs[0]->num_spliting_groups<<"\n";
+    m_subgrid_tensors_split.resize(childs[0]->num_spliting_groups);
+
+    
+    for (auto& input : m_inputs) {
     input = mat_builder->MakeEmpty(grid, 0);
-  }
-  for (auto& output : m_outputs) {
-    output = mat_builder->MakeEmpty(grid, 0);
-  }
-  for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
+    } 
+
+    int count = 0;
+
+    for (auto& output : m_outputs) {
+      output = mat_builder->MakeEmpty(*(childs[count]->mygrid), 0);
+      count++;
+    }
+    count = 0;
+    for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
+      grad_wrt_output = mat_builder->MakeEmpty(*(childs[count]->mygrid), 0);
+      count++;
+    }
+
+    for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
     grad_wrt_input = mat_builder->MakeEmpty(grid, 0);
+    }
+
+    for (auto& temp_grad : m_temp_grad) {
+    temp_grad = mat_builder->MakeEmpty(grid, 0);
+    }
+    count = 0;
+    for (auto& subgrid_tensor : m_subgrid_tensors_split) {
+      for (int child_index = 0; child_index< int(childs.size());++child_index)
+      {
+        if(childs[child_index]->get_parallel_strategy().sub_branch_tag == count+1)
+        {
+          subgrid_tensor = mat_builder->MakeEmpty(*(childs[child_index]->mygrid), 0);
+          count++;
+          break;
+        }
+      }
+    
+    }
+
+    //create interprocess subgrid communicator
+    if(childs[0]->get_parallel_strategy().enable_subgraph)
+    {
+      this->setup_inter_subgrid_comm_based_on_childs(grid);
+    }
+    
   }
-  for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
-    grad_wrt_output = mat_builder->MakeEmpty(grid, 0);
+  else if(get_type()=="sum" && this->get_model()->is_subgraph_parallelism_enabled())
+  {
+    //split layer 
+    m_subgrid_tensors_split.clear();
+    //std::cout<<"Number of spliting groups Sum layer :"<<this->num_spliting_groups<<"\n";
+    m_subgrid_tensors_split.resize(this->num_spliting_groups);
+
+
+    int count = 0;
+    for (auto& input : m_inputs) {
+    //input = mat_builder->MakeEmpty(grid, 0);
+    input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
+    count++;
+    } 
+
+    for (auto& output : m_outputs) {
+      output = mat_builder->MakeEmpty(grid, 0);
+    }
+    
+    for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
+      grad_wrt_output = mat_builder->MakeEmpty(grid, 0);
+    }
+
+    count = 0;
+    for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
+    grad_wrt_input = mat_builder->MakeEmpty(*(parents[count]->mygrid), 0);
+    count++;
+    }
+
+    for (auto& temp_grad : m_temp_grad) {
+    temp_grad = mat_builder->MakeEmpty(grid, 0);
+    }
+    
+    //std::cout<<"Setup for Sum layer\n";
+
+    auto subgrid_tags = *(this->parent_tags);
+
+    count = 0;
+    for (auto& subgrid_tensor : m_subgrid_tensors_split) {
+      for (int parent_index = 0; parent_index< int(parents.size());++parent_index)
+      {
+        if(subgrid_tags[parent_index] == count)
+        {
+          //std::cout<<"Parent index is:"<<parent_index<<" subgrid tag is:"<<subgrid_tags[parent_index]<<"\n";
+          subgrid_tensor = mat_builder->MakeEmpty(*(parents[parent_index]->mygrid), 0);
+          count++;
+          break;
+        }
+      }
+    
+    }
+
+  
+    
+    this->setup_inter_subgrid_comm_based_on_parents(grid);
+    
+
   }
+  else
+  {
+    
+    
+    
+    for (auto& input : m_inputs) {
+    input = mat_builder->MakeEmpty(grid, 0);
+    }
+
+    for (auto& output : m_outputs) {
+      output = mat_builder->MakeEmpty(grid, 0);
+    }
+
+    for (auto& grad_wrt_output : m_gradient_wrt_outputs) {
+      grad_wrt_output = mat_builder->MakeEmpty(grid, 0);
+      
+    }
+
+    for (auto& grad_wrt_input : m_gradient_wrt_inputs) {
+    grad_wrt_input = mat_builder->MakeEmpty(grid, 0);
+    }
+
+    for (auto& temp_grad : m_temp_grad) {
+    temp_grad = mat_builder->MakeEmpty(grid, 0);
+    }
+    for (auto& subgrid_tensor : m_subgrid_tensors_split) {
+    subgrid_tensor = mat_builder->MakeEmpty(grid, 0);
+    }
+
+
+    
+
+    
+
+  }
+  
+  
+  //std::cout<<"In DT setup matrices, layer name:"<<this->get_name()<< "Grid:"<<grid.VCSize()<<"\n";
 }
 
 template <typename TensorDataType>
@@ -550,20 +717,28 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
   if (get_num_parents() < 1) { return; }
 
   // Determine distributed matrix alignment
-  const auto& alignment_dist = m_parent_layers.front()->get_activations(*this).DistData();
+  //const auto& alignment_dist = m_parent_layers.front()->get_activations(*this).DistData();
 
   // Iterate through input tensors
   for (int i = 0; i < get_num_parents(); ++i) {
+    const auto& alignment_dist = m_parent_layers[i]->get_activations(*this).DistData();
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     // Initialize input tensor
     const auto& parent = *m_parent_layers[i];
     const auto& parent_output = parent.get_activations(*this);
+    //const El::DistMatrix<double,STAR,VC,ELEMENT,Device::GPU>& parent_output = parent.get_activations(*this);
     auto& input = *m_inputs[i];
     input.Empty(false);
-    input.AlignWith(alignment_dist);
+    //if(El::GridCompare(input.Grid(),parent_output.DistData().grid))	
+    if(this->get_type()!="adds" && this->get_type()!="sums")	
+    {	
+      input.AlignWith(alignment_dist);	
+    }
     if (parent_output.DistData() == input.DistData()) {
+      //std::cout<<"Not Copying: Layer name"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<<"\n";
+
       El::LockedView(input, dynamic_cast<const AbsDistMatrixType&>(parent_output));
     } else {
       bool async_copy = false;
@@ -576,12 +751,19 @@ void data_type_layer<TensorDataType>::fp_setup_inputs(El::Int mini_batch_size) {
         async_copy = parent_dist_data == input.DistData();
       }
 #endif // defined(LBANN_HAS_GPU) && defined(ASYNC_INPUT_MEMORY_TRANSFER)
+      async_copy = false;	
+      //std::cout<<"In DT1, layer name:"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<< " Input dimensions:"<<input.Height()<< " "<< input.Width() <<" output dimension:"<<parent_output.Height()<<" "<<parent_output.Width()<<"\n";
+
       if (async_copy) {
         El::CopyAsync(parent_output, input);
       } else {
-        El::Copy(parent_output, input);
+        El::Copy(dynamic_cast<const AbsDistMatrixType&>(parent_output), input);	
+        //input = (El::AbstractDistMatrix<double>)parent_output;
       }
+      //std::cout<<"In DT2, layer name:"<<this->get_name()<<" Rank:"<<El::mpi::Rank()<< " Input dimensions:"<<input.Height()<< " "<< input.Width() <<" output dimension:"<<parent_output.Height()<<" "<<parent_output.Width()<<"\n";
+
     }
+    //std::cout<<"In DT, layer name:"<<this->get_name()<< " Input Grid:"<<input.Grid().VCSize()<<" output Grid:"<<parent_output.DistData().grid->VCSize()<<"\n";
 
     // Check input matrix dimensions
     const auto& height = get_input_size(i);
@@ -617,7 +799,16 @@ void data_type_layer<TensorDataType>::fp_setup_outputs(El::Int mini_batch_size) 
 #endif // LBANN_HAS_DISTCONV
     auto& output = get_activations(i);
     output.Empty(false);
-    if (align_outputs) { output.AlignWith(alignment_dist); }
+    if (align_outputs) {
+      output.AlignWith(alignment_dist); 
+      // if(this->get_type()!="add" && this->get_type()!="sum")
+      // { 
+      //   output.AlignWith(alignment_dist); 
+      // }
+      // else{
+      //   std::cout<<"Problem is here\n";
+      // }
+    }
     output.Resize(get_output_size(i), mini_batch_size);
   }
 
@@ -722,9 +913,12 @@ void data_type_layer<TensorDataType>::move_or_copy_prev_error_signal_(
 
   // Check the signal size
   auto& signal = *signal_in;
-  assert_tensor_size(
-    signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
-    m_name, child.get_name());
+  if(m_outputs[layer_idx]->Participating()==true)
+  {
+    assert_tensor_size(
+      signal, get_output_size(layer_idx), m_outputs[layer_idx]->Width(),
+      m_name, child.get_name());
+  }
 
   // If the distribution is OK, then we can just swap data
   // around. Otherwise, deep copy into correct distribution.
@@ -826,20 +1020,36 @@ void data_type_layer<TensorDataType>::propagate_error_signals_to_parents_() {
 
 template <typename TensorDataType>
 void data_type_layer<TensorDataType>::allocate_new_gradients_() {
+  auto parents = get_parent_layers();
   for (int i = 0; i < get_num_parents(); ++i) {
 #ifdef LBANN_HAS_DISTCONV
     if (!keep_original_gradient_wrt_inputs(i)) continue;
 #endif // LBANN_HAS_DISTCONV
     if (!m_gradient_wrt_inputs[i]) {
-      m_gradient_wrt_inputs[i] =
-        MakeMatBuilder<TensorDataType>(
-          this->get_data_layout(),
-          this->get_device_allocation())->MakeEmpty(
-            m_inputs[i]->Grid(), 0);
+      if(get_type()=="sum")
+      {
+        //std::cout<<"Initializing Sum layer grads in allocate new gradients\n";
+        m_gradient_wrt_inputs[i] =
+          MakeMatBuilder<TensorDataType>(
+            this->get_data_layout(),
+            this->get_device_allocation())->MakeEmpty(
+              *(parents[i]->mygrid), 0);
+      }
+      else
+      {
+        m_gradient_wrt_inputs[i] =
+          MakeMatBuilder<TensorDataType>(
+            this->get_data_layout(),
+            this->get_device_allocation())->MakeEmpty(
+              m_inputs[i]->Grid(), 0);
+          }
     }
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
-    gradient_wrt_input.AlignWith(get_prev_activations(i));
+    if(get_type()!="sum")
+    {
+      gradient_wrt_input.AlignWith(get_prev_activations(i));
+    }
   }
 }
 
@@ -854,9 +1064,66 @@ void data_type_layer<TensorDataType>::bp_setup_gradient_wrt_inputs(
     auto& gradient_wrt_input = get_error_signals(i);
     gradient_wrt_input.Empty(false);
     gradient_wrt_input.AlignWith(get_prev_activations(i));
+    // if(get_type()=="sum")
+    // {
+    //   std::cout<<"In sum layer, Iput Size:"<<get_input_size(i)<<" Mini batch Size:"<<mini_batch_size<<"\n";
+    // }
     gradient_wrt_input.Resize(get_input_size(i), mini_batch_size);
   }
 }
+
+
+template <typename TensorDataType>
+void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_childs(const El::Grid& grid) {
+
+  auto& childs = get_child_layers();
+
+  int indexSubgrid = -1;
+  for(int child = 0 ; child < this->get_num_children(); ++child )
+  {
+    if(childs[child]->mygrid->InGrid())
+    
+    {
+      // if(indexSubgrid!=-1)
+      // {
+      //   LBANN_ERROR("Logic error: Subgrid inter communicator check "
+      //             "a process can only be in one subgrid");
+      // }
+      indexSubgrid = child;
+    }
+  }
+  const int posInSubGrid = childs[indexSubgrid]->mygrid->VCRank();
+  const int posInGrid = grid.VCRank();
+  auto& interSubgridComm = this->get_subgrid_comm();
+  El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm); 
+
+  }
+
+template <typename TensorDataType>
+void data_type_layer<TensorDataType>::setup_inter_subgrid_comm_based_on_parents(const El::Grid& grid) {
+
+  auto& parents = get_parent_layers();
+
+  int indexSubgrid = -1;
+  for(int parent = 0 ; parent < this->get_num_parents(); ++parent )
+  {
+    if(parents[parent]->mygrid->InGrid())
+    
+    {
+      // if(indexSubgrid!=-1)
+      // {
+      //   LBANN_ERROR("Logic error: Subgrid inter communicator check "
+      //             "a process can only be in one subgrid");
+      // }
+      indexSubgrid = parent;
+    }
+  }
+  const int posInSubGrid = parents[indexSubgrid]->mygrid->VCRank();
+  const int posInGrid = grid.VCRank();
+  auto& interSubgridComm = this->get_subgrid_comm();
+  El::mpi::Split(this->get_comm()->get_trainer_comm(), posInSubGrid, posInGrid, interSubgridComm); 
+
+  }
 
 #ifdef LBANN_HAS_DISTCONV
 template <typename TensorDataType>

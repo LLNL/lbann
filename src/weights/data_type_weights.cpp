@@ -223,12 +223,14 @@ void data_type_weights<TensorDataType>::do_setup_() {
                                                  El::ELEMENT : El::BLOCK),
                                                 matrix_dist.device));
   m_values->AlignWith(matrix_dist);
-  m_values->Resize(this->get_matrix_height(), this->get_matrix_width());
-  if (m_initializer != nullptr) {
-    m_initializer->fill(*m_values);
-  } else {
-    El::Zero(*m_values);
-  }
+
+  m_values->Resize(get_matrix_height(), get_matrix_width());
+  //if (m_initializer != nullptr) {	
+    //m_initializer->fill(*m_values);	
+  //} else {	
+  El::Zero(*m_values);	
+  //}
+
 
   // Setup optimizer
   if (m_optimizer != nullptr) {
