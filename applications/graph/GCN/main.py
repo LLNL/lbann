@@ -8,6 +8,8 @@ import os
 #import sparse_train
 #import train
 import GIN_train
+import GCN_train
+import Graph_train
 
 import data.MNIST_Superpixel
 import data.PROTEINS
@@ -35,6 +37,10 @@ parser.add_argument(
     '--job-name', action='store', default="GCN_TEST", type=str,
     help="Job name for scheduler", metavar='NAME')
 
+parser.add_argument(
+    '--model', action = 'store', default='GCN', type=str,
+    help="The type of model to use", metavar='NAME')
+
 args = parser.parse_args()
 
 
@@ -44,18 +50,23 @@ dataset = args.dataset
 num_epochs = args.num_epochs
 mini_batch_size = args.mini_batch_size 
 job_name = args.job_name
-
+model_arch = args.model
 
 
 ## Get Model
 
-model = GIN_train.make_model(dataset = 'PROTEINS',
+if (model_arch == 'GRAPH'):
+    model = Graph_train.make_model(dataset = 'PROTEINS',
                             num_epochs = num_epochs)
+elif(model_arch=='GIN'):
+    model = GIN_train.make_model(dataset = 'PROTEINS',
+                            num_epochs = num_epochs)
+else:
+    model = GCN_train.make_model(dataset = 'PROTEINS',
+                            num_epochs=num_epochs)
 
 
-
-optimizer = lbann.SGD(learn_rate = 1e-1)
-#optimizer = lbann.NoOptimizer()
+optimizer = lbann.SGD(learn_rate = 1e-3)
 
 #add logic for choosing a dataset 
 

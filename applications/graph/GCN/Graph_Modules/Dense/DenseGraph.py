@@ -1,20 +1,21 @@
 import lbann
 from lbann.modules import Module 
+from lbann.util import str_list
 import math
 
 class DenseGraph(Module):
     global_count = 0 
     def __init__(self, input_channels, output_channels, name=None):
         super().__init__()
-        self.name = (name if name else 'DenseGraph_{}'.format(Dense_Graph_Layer.global_count))
+        self.name = (name if name else 'DenseGraph_{}'.format(DenseGraph.global_count))
         
         DenseGraph.global_count+=1                        
         
         bounds = math.sqrt(6.0/(input_channels + output_channels))
 
-        self.weights_1 = lbann.Weights(initializer = lbann.NormalInitializer(mean=0, standard_deviation=bounds),
+        self.weights_1 = lbann.Weights(initializer = lbann.UniformInitializer(min=-bounds, max=bounds),
                                     name=self.name+'_Weights_1')
-        self.weights_2 = lbann.Weights(initializer = lbann.NormalInitializer(mean=0, standard_deviation=bounds),
+        self.weights_2 = lbann.Weights(initializer = lbann.UniformInitializer(min=-bounds, max=bounds),
                                     name=self.name+'_Weights_2')
         self.W1 = lbann.WeightsLayer(dims = str_list([input_channels, output_channels]),
                                     name=self.name+'_param_1',

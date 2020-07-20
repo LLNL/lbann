@@ -1,5 +1,6 @@
 import lbann 
-import lbann.modules import Module 
+from  lbann.modules import Module 
+from lbann.util import str_list
 import math 
 
 
@@ -8,9 +9,9 @@ class DenseGCN(Module):
 
     def __init__(self, input_channels, output_channels, name=None):
         super().__init__()
-        Dense_GCN_Layer.global_count += 1
+        DenseGCN.global_count += 1
 
-        self.name = (name if name else 'Dense_GCN_{}'.format(Dense_GCN_Layer.global_count))
+        self.name = (name if name else 'Dense_GCN_{}'.format(DenseGCN.global_count))
         
         
         bounds = math.sqrt(6.0 / (input_channels + output_channels))
