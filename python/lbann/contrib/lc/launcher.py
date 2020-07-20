@@ -1,3 +1,4 @@
+import os
 from lbann.contrib.lc.systems import *
 import lbann.launcher
 from lbann.util import make_iterable
@@ -38,6 +39,13 @@ def make_batch_script(
     launcher_args = list(make_iterable(launcher_args))
     environment = environment.copy()
 
+    # Helper function to configure environment variables
+    # Note: User-provided values take precedence, followed by values
+    # in the environment, followed by default values.
+    def set_environment(key, default):
+        if key not in environment:
+            environment[key] = os.getenv(key, default)
+
     # Setup GPU bindings
     # Note: Each Hydrogen process is assigned to the GPU index that
     # matches its node communicator rank. This is not compatible with
@@ -54,10 +62,8 @@ def make_batch_script(
     if system == 'pascal':
         cores_per_socket = cores_per_node(system) // 2
         cores_per_proc = cores_per_socket // procs_per_node
-        if 'AL_PROGRESS_RANKS_PER_NUMA_NODE' not in environment:
-            environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_node
-        if 'OMP_NUM_THREADS' not in environment:
-            environment['OMP_NUM_THREADS'] = cores_per_proc - 1
+        set_environment('AL_PROGRESS_RANKS_PER_NUMA_NODE', procs_per_node)
+        set_environment('OMP_NUM_THREADS', cores_per_proc - 1)
         if scheduler == 'slurm':
             masks = [2**cores_per_proc - 1]
             while len(masks) < procs_per_node:
@@ -69,8 +75,7 @@ def make_batch_script(
     # Note: MPI_Init hangs when started with more than 35
     # processes. This bug is not present in MVAPICH2-2.2 but is
     # present in MVAPICH2-2.3rc2.
-    if 'MV2_USE_RDMA_CM' not in environment:
-        environment['MV2_USE_RDMA_CM'] = 0
+    set_environment('MV2_USE_RDMA_CM', 0)
 
     # Optimizations for Sierra-like systems
     if system in ('sierra', 'lassen'):
@@ -83,10 +88,8 @@ def make_batch_script(
         cores_per_socket = 16
         procs_per_socket = (procs_per_node + 1) // 2
         cores_per_proc = cores_per_socket // procs_per_socket
-        if 'AL_PROGRESS_RANKS_PER_NUMA_NODE' not in environment:
-            environment['AL_PROGRESS_RANKS_PER_NUMA_NODE'] = procs_per_socket
-        if 'OMP_NUM_THREADS' not in environment:
-            environment['OMP_NUM_THREADS'] = cores_per_proc
+        set_environment('AL_PROGRESS_RANKS_PER_NUMA_NODE', procs_per_socket)
+        set_environment('OMP_NUM_THREADS', cores_per_proc)
         if scheduler == 'lsf':
             launcher_args.append('--bind packed:{}'.format(cores_per_proc))
 
@@ -97,23 +100,18 @@ def make_batch_script(
         # Setting IBV_FORK_SAFE seems to fix this issue, but it may
         # hurt performance (see
         # https://linux.die.net/man/3/ibv_fork_init).
-        if 'IBV_FORK_SAFE' not in environment:
-            environment['IBV_FORK_SAFE'] = 1
+        set_environment('IBV_FORK_SAFE', 1)
 
         # Hacked bugfix for hcoll (1/23/19)
         # Note: Fixes hangs in MPI_Bcast.
-        if 'HCOLL_ENABLE_SHARP' not in environment:
-            environment['HCOLL_ENABLE_SHARP'] = 0
-        if 'OMPI_MCA_coll_hcoll_enable' not in environment:
-            environment['OMPI_MCA_coll_hcoll_enable'] = 0
+        set_environment('HCOLL_ENABLE_SHARP', 0)
+        set_environment('OMPI_MCA_coll_hcoll_enable', 0)
 
         # Hacked bugfix for Spectrum MPI PAMI (9/17/19)
-        if 'PAMI_MAX_NUM_CACHED_PAGES' not in environment:
-            environment['PAMI_MAX_NUM_CACHED_PAGES'] = 0
+        set_environment('PAMI_MAX_NUM_CACHED_PAGES', 0)
 
         # Configure NVSHMEM to load Spectrum MPI
-        if 'NVSHMEM_MPI_LIB_NAME' not in environment:
-            environment['NVSHMEM_MPI_LIB_NAME'] = 'libmpi_ibm.so'
+        set_environment('NVSHMEM_MPI_LIB_NAME', 'libmpi_ibm.so')
 
     return lbann.launcher.make_batch_script(
         procs_per_node=procs_per_node,

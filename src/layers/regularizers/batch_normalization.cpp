@@ -26,8 +26,7 @@
 
 #define LBANN_BATCH_NORMALIZATION_LAYER_INSTANTIATE
 #include "lbann/layers/regularizers/batch_normalization.hpp"
-
-#include "batch_norm_helpers.hpp"
+#include "lbann/weights/weights_helpers.hpp"
 
 namespace lbann {
 
@@ -51,7 +50,7 @@ void batch_normalization_layer<TensorDataType, T_layout, Dev>::fp_compute() {
 
   // Compute statistics
   if (is_training) {
-    using ValuesGetter = bn_details::SafeWeightsAccessor<TensorDataType>;
+    using ValuesGetter = weights_details::SafeWeightsAccessor<TensorDataType>;
     // Local matrices
     auto& local_mean = this->m_mean_v->Matrix();
     auto& local_var = this->m_var_v->Matrix();
