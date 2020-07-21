@@ -41,6 +41,7 @@ set_full_path(THIS_DIR_SOURCES
   timeline.cpp
   timer.cpp
   variable_minibatch.cpp
+  kfac_test.cpp
 )
 
 # Propagate the files up the tree
