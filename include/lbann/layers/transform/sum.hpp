@@ -230,10 +230,11 @@ protected:
   void bp_setup_gradient_wrt_inputs(El::Int mini_batch_size) override {
     int tag= 0 ;
     const auto& gradient_wrt_output = this->get_prev_error_signals();
-    auto subgrid_tags = (*this->parent_tags);
+    
 
     if(this->is_subgraph_parallelism_enabled())
     {
+      auto subgrid_tags = (*this->parent_tags);
       
       if(this->get_communication_flag())
       //If vector copy is enable, broadcast the gradients from parent grid to multiple subgrids

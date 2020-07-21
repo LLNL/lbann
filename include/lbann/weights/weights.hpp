@@ -83,15 +83,15 @@ public:
   /*
   Create a set of ranks on which weight data exists
   */
-  void set_resources(std::set <int, std::greater <int> > ranks )
-  {
-    subgrid_ranks.reset(new std::set<int,std::greater <int>> (ranks.begin(),ranks.end()));
-  }
+  // void set_resources(std::set <int, std::greater <int> > ranks )
+  // {
+  //   subgrid_ranks.reset(new std::set<int,std::greater <int>> (ranks.begin(),ranks.end()));
+  // }
 
-  std::set <int, std::greater <int> >  get_resources ()
-  {
-    return *subgrid_ranks;
-  }
+  // std::set <int, std::greater <int> >  get_resources ()
+  // {
+  //   return *subgrid_ranks;
+  // }
   /** Get weights name. */
   std::string get_name() const { return m_name; }
 
@@ -260,7 +260,7 @@ private:
 
 private:
 
-  std::unique_ptr<std::set <int, std::greater <int> >> subgrid_ranks; 
+  //std::unique_ptr<std::set <int, std::greater <int> >> subgrid_ranks; 
 
   /** Weights name.
    *  Each set of weights in a model should have a unique,
