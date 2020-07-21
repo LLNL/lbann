@@ -147,6 +147,8 @@ message Layer {
     Acosh acosh = 426;
     Asinh asinh = 427;
     Atanh atanh = 428;
+    Erf erf = 429;
+    ErfInv erfinv = 430;
     Add add = 450;
     Subtract subtract = 451;
     Multiply multiply = 452;
@@ -240,6 +242,8 @@ message Layer {
   message Acosh {}
   message Asinh {}
   message Atanh {}
+  message Erf {}
+  message ErfInv {}
   message Add {}
   message Subtract {}
   message Multiply {}
