@@ -198,6 +198,10 @@ endif ()
 message(STATUS "Found Hydrogen: ${Hydrogen_DIR}")
 set(LBANN_HAS_HYDROGEN ${Hydrogen_FOUND})
 
+if (_HYDROGEN_HAVE_ROCM)
+  message(FATAL_ERROR "ROCm not yet supported in LBANN.")
+endif ()
+
 # DiHydrogen and Distconv
 if (LBANN_WITH_DISTCONV AND NOT LBANN_WITH_DIHYDROGEN)
   message(FATAL_ERROR "Distconv requires DiHydrogen. Enable DiHydrogen to use Distconv.")
