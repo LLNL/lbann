@@ -37,8 +37,7 @@
 using namespace lbann;
 
 int main(int argc, char *argv[]) {
-  int random_seed = 0;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
 
   try {
@@ -71,18 +70,18 @@ int main(int argc, char *argv[]) {
       const size_t num_frames = shape[0];
       const size_t word_size = a["bbs"].word_size;
       bool is_good = true;
-      if (shape[1] != 184 || shape[2] != 3 || word_size != 4) { 
-        is_good = false; 
+      if (shape[1] != 184 || shape[2] != 3 || word_size != 4) {
+        is_good = false;
         std::stringstream s3;
         for (auto t : shape) { s3 << t << " "; }
         LBANN_WARNING("Bad file: ", filenames[j], " word_size: ", word_size, " dinum_frames: ", num_frames, " shape: ", s3.str());
       }
 
       if (is_good) {
-  
+
         // Get the bbs data array
         const float *data = a["bbs"].data<float>();
-  
+
         // Loop over the bbs entries
         for (size_t k=0; k<num_frames*184; k++) {
           float xx = data[0];
@@ -99,15 +98,15 @@ int main(int argc, char *argv[]) {
           total[2] += zz;
           data += 3;
           ++count;
-        }  
-  
+        }
+
         ++nn;
         if (!rank) {
-          std::cout << "approx " << utils::commify(nn*np) << " files of " 
+          std::cout << "approx " << utils::commify(nn*np) << " files of "
           << utils::commify(filenames.size()) << " processed\n";
         }
       }
-    } // END: for (size_t j=rank; j<filenames.size(); j+=np) 
+    } // END: for (size_t j=rank; j<filenames.size(); j+=np)
 
     // Collect and report global min/max values
     // (using MPI native calls because having separate calls for root/non-root
@@ -116,7 +115,7 @@ int main(int argc, char *argv[]) {
     std::vector<float> max_all(3);
     std::vector<float> min_all(3);
     std::vector<double> mean(3);
-    size_t count_all; 
+    size_t count_all;
 
     // only master needs to know min and max
     MPI_Reduce(max.data(), max_all.data(), 3, MPI_FLOAT, MPI_MAX, 0, MPI_COMM_WORLD);
@@ -151,9 +150,9 @@ int main(int argc, char *argv[]) {
           v_minus_mean_squared[1] += ((yy - mean[1])*(yy - mean[1]));
           v_minus_mean_squared[2] += ((zz - mean[2])*(zz - mean[2]));
           data += 3;
-        }  
+        }
       }
-    }  
+    }
     std::vector<double> all_minus_mean_squared(3, 0.);
     std::vector<double> std_dev(3, 0.);
     MPI_Reduce(v_minus_mean_squared.data(), all_minus_mean_squared.data(), 3, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
@@ -162,7 +161,7 @@ int main(int argc, char *argv[]) {
         double v3 = all_minus_mean_squared[i] / count_all;
         std_dev[i] = sqrt(v3);
       }
-      
+
       std::cout << "\nmax x/y/z: ";
       for (auto t : max_all) std::cout << t << " ";
       std::cout << std::endl;
@@ -186,4 +185,3 @@ int main(int argc, char *argv[]) {
   }
   return EXIT_SUCCESS;
 }
-

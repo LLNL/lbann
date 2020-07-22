@@ -35,12 +35,12 @@ adam<TensorDataType>::adam(TensorDataType learning_rate,
                            TensorDataType beta1,
                            TensorDataType beta2,
                            TensorDataType eps)
-  : OptimizerType(learning_rate),
+  : BaseType(learning_rate),
     m_beta1(beta1), m_beta2(beta2), m_eps(eps) {}
 
 template <typename TensorDataType>
 adam<TensorDataType>::adam(const adam& other)
-  : OptimizerType(other),
+  : BaseType(other),
     m_beta1(other.m_beta1),
     m_beta2(other.m_beta2),
     m_eps(other.m_eps),

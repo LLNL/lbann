@@ -5,6 +5,7 @@ set_full_path(THIS_DIR_SOURCES
   channelwise_mean.cpp
   channelwise_softmax.cpp
   covariance.cpp
+  dist_embedding.cpp
   mini_batch_index.cpp
   mini_batch_size.cpp
   one_hot.cpp
@@ -15,6 +16,7 @@ if (LBANN_HAS_CUDA)
   # Add the CUDA source files for this directory
   set_full_path(THIS_DIR_CU_SOURCES
     covariance.cu
+    dist_embedding.cu
     variance.cu
     channelwise_mean.cu
     channelwise_softmax.cu

@@ -73,8 +73,7 @@ std::vector<std::string> jag_scalar_keys = {
 };
 
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  lbann_comm *comm = initialize(argc, argv, random_seed);
+  lbann_comm *comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   int np = comm->get_procs_in_world();
 

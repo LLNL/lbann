@@ -102,10 +102,6 @@ def get_command(cluster,
     if time_limit > MAX_TIME:
         time_limit = MAX_TIME
 
-    # Check executable existence
-    if check_executable_existence:
-        process_executable_existence(executable, skip_no_exe)
-
     # Determine scheduler
     if cluster in ['catalyst', 'corona', 'pascal']:
         scheduler = 'slurm'
@@ -555,18 +551,6 @@ def get_command(cluster,
         return command_string
 
 
-def process_executable_existence(executable, skip_no_exe=True):
-    executable_exists = os.path.exists(executable)
-    if not executable_exists:
-        error_string = 'Executable does not exist: %s' % executable
-        if skip_no_exe:
-            print('Skip - ' + error_string)
-            import pytest
-            pytest.skip(error_string)
-        else:
-            raise Exception(error_string)
-
-
 def process_executable(name, compiler_name, executables):
     if compiler_name not in executables:
         e = '{n}: default_exes[{c}] does not exist'.format(
@@ -576,7 +560,6 @@ def process_executable(name, compiler_name, executables):
         pytest.skip(e)
     executable_path = executables[compiler_name]
     print('{n}: executable_path={e}'.format(n=name, e=executable_path))
-    process_executable_existence(executable_path)
 
 
 def get_spack_exes(default_dirname, cluster):
@@ -979,7 +962,7 @@ def print_diff_files(dcmp):
         err = f'Files {os.path.join(dcmp.left, name)} and {os.path.join(dcmp.right, name)} differ'
         if re.search('.xml', name):
             files_differ, diff_list, warn_list = approx_diff_xml_files(
-                os.path.join(dcmp.left, name), os.path.join(dcmp.right, name), 1e-7)
+                os.path.join(dcmp.left, name), os.path.join(dcmp.right, name), 1e-6)
             if files_differ:
                 any_files_differ = True
                 all_diffs.append(err)

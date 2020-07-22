@@ -46,8 +46,7 @@ void get_scalar_names(std::unordered_set<std::string> &s);
 void get_image_names(std::unordered_set<std::string> &s);
 //==========================================================================
 int main(int argc, char *argv[]) {
-  int random_seed = lbann_default_random_seed;
-  world_comm_ptr comm = initialize(argc, argv, random_seed);
+  world_comm_ptr comm = initialize(argc, argv);
   bool master = comm->am_world_master();
   const int np = comm->get_procs_in_world();
 
@@ -158,4 +157,3 @@ void get_image_names(std::unordered_set<std::string> &s) {
   s.insert("(90.0, 0.0)//0.0/emi");
   s.insert("(90.0, 78.0)//0.0/emi");
 }
-
