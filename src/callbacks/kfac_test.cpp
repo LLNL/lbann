@@ -62,7 +62,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         const DataType damping = DataType(1e-4);
         // OPTIMIZE
 #pragma omp parallel for
-        for(int i = 0; i < A.Width(); i++)
+        for(int i = 0; i < A.Height(); i++)
           Ainv(i, i) += damping;
 
         const double t_damping = get_time();
@@ -87,6 +87,14 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
         const double t_spotri = get_time();
 
+        // OPTIMIZE
+#pragma omp parallel for
+        for(int j = 0; j < A.Width(); j++)
+          for(int i = 0; i < j; i++)
+            Ainv(i, j) = Ainv(j, i);
+
+        const double t_fill = get_time();
+
         if(report_time) {
           std::cerr << "get_inverse of"
                     << " " << A.Height() << "x" << A.Width()
@@ -94,6 +102,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
                     << " t_damping=" << (t_damping-t_start)
                     << ", t_spotrf=" << (t_spotrf-t_damping)
                     << ", t_spotri=" << (t_spotri-t_spotrf)
+                    << ", t_fill=" << (t_fill-t_spotri)
                     << std::endl;
         }
 
