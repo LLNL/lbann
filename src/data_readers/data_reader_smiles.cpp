@@ -162,8 +162,13 @@ void smiles_data_reader::load() {
       std::cout << "time for setup_local_cache(): " << get_time()-tm4
                 << "; num samples: " << m_sample_lookup.size() << std::endl;
     }
+<<<<<<< HEAD
     print_statistics();
   }
+=======
+  }
+  print_statistics();
+>>>>>>> 0f3501e786006c38506c2f0bb87e67612fbc1bc7
 }
 
 void smiles_data_reader::do_preload_data_store() {
@@ -211,7 +216,10 @@ void smiles_data_reader::do_preload_data_store() {
   if (is_master()) {
     std::cout << " do_preload_data_store time: " << get_time() - tm1 << std::endl;
   }
+<<<<<<< HEAD
   print_statistics();
+=======
+>>>>>>> 0f3501e786006c38506c2f0bb87e67612fbc1bc7
   if (is_master()) {
     pid_t p = getpid();
     char buf[80];
@@ -279,8 +287,13 @@ void smiles_data_reader::print_statistics() const {
 
   std::cout << "\n======================================================\n";
   std::cout << "role: " << get_role() << std::endl;
+<<<<<<< HEAD
   std::cout << "mem for data, lower bound: " << utils::commify(get_mem_usage()) << std::endl;
   std::cout << "num samples: " << m_shuffled_indices.size() << std::endl;
+=======
+  //std::cout << "mem for data, lower bound: " << utils::commify(get_mem_usage()) << std::endl;
+  std::cout << "num samples per trainer: " << m_shuffled_indices.size() << std::endl;
+>>>>>>> 0f3501e786006c38506c2f0bb87e67612fbc1bc7
   std::cout << "max sequence length: " << utils::commify(m_linearized_data_size) << std::endl;
   std::cout << "num features=" << utils::commify(m_linearized_data_size) << std::endl;
   if (m_delimiter == '\t') {
@@ -405,9 +418,13 @@ void smiles_data_reader::encode_smiles(const char *smiles, short size, std::vect
         std::lock_guard<std::mutex> lock(m_mutex);
         m_missing_chars.insert(w);
         ++m_missing_char_in_vocab_count;
-        if (m_missing_char_in_vocab_count < 20) {
+        if (m_verbose && m_missing_char_in_vocab_count < 20) {
           std::stringstream ss;
+<<<<<<< HEAD
           ss << "XX rank: " << m_comm->get_rank_in_trainer() << "; character not in vocab >>" << w << "<<; idx: " << j << "; data_id: " << data_id << "; string length: " << size << "; will use length: " << stop << "; vocab size: " << m_vocab.size() << std::endl;
+=======
+          ss << "world rank: " << m_comm->get_rank_in_world() << "; character not in vocab >>" << w << "<<; idx: " << j << "; data_id: " << data_id << "; string length: " << size << "; will use length: " << stop << "; vocab size: " << m_vocab.size() << std::endl;
+>>>>>>> 0f3501e786006c38506c2f0bb87e67612fbc1bc7
           std::cerr << ss.str();
 
           //XX
@@ -450,7 +467,7 @@ int smiles_data_reader::get_smiles_string_length(const std::string &line, int li
   }
   size_t k = line.find(m_delimiter);
   if (k == std::string::npos) {
-    LBANN_ERROR("failed to find delimit character >>", m_delimiter, " in line: ", line, " which is line number ", line_number);
+    LBANN_ERROR("failed to find delimit character; as an int: ", (int)m_delimiter, "; line: ", line, " which is line number ", line_number);
   }
   return k;
 }
@@ -719,7 +736,11 @@ void smiles_data_reader::get_delimiter() {
     }  
   }
   if (is_master()) {
+<<<<<<< HEAD
     std::cout << "USING delimiter character: " << m_delimiter << std::endl;
+=======
+    std::cout << "USING delimiter character: (int)" << (int)m_delimiter << std::endl;
+>>>>>>> 0f3501e786006c38506c2f0bb87e67612fbc1bc7
   }
 }
 

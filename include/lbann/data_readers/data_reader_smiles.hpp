@@ -147,11 +147,8 @@ private:
   int get_num_lines(std::string fn); 
   void construct_conduit_node(int data_id, const std::string &line, conduit::Node &node); 
   void encode_smiles(const char *smiles, short size, std::vector<short> &data, int data_id); 
-
   void encode_smiles(const std::string &smiles, std::vector<short> &data, int data_id); 
-
   void decode_smiles(const std::vector<short> &data, std::string &out);
-
 };
 
 }  // namespace lbann
