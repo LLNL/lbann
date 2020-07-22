@@ -354,6 +354,8 @@ protected:
 
   virtual void check_subgraph_parallelism();
 
+  virtual void setup_subgrid_layers_run_condition();
+
   virtual void get_parent_subgrid_tags(int layer_index );
 
   /** @brief Set up layer execution order.

@@ -746,6 +746,20 @@ void model::check_subgraph_parallelism(){
 
 }
 
+void model::setup_subgrid_layers_run_condition()
+{
+  const auto& layers = this->get_layers();
+  const El::Int num_layers = layers.size();
+  int myrank = El::mpi::Rank();
+  for (El::Int node = 0; node < num_layers; ++node) {
+    if((*layers[node]->subgrid_ranks).find(myrank) != (*layers[node]->subgrid_ranks).end() || layers[node]->get_type()=="add" || layers[node]->get_type()=="concatenate" || layers[node]->get_type()=="sum")
+    {
+      layers[node]->set_run_layer_in_subgraph();
+    }
+
+  }
+}
+
 void  model::setup_subgrids(){
   const auto& layers = this->get_layers();
   const El::Int num_layers = layers.size();
@@ -968,6 +982,8 @@ void  model::setup_subgrids(){
 
   }
   std::cout<<"Number of subgrids created:"<<grid_number<<"\n";
+
+  this->setup_subgrid_layers_run_condition();
   //std::cout<<"Times shared pointer 0 is used:"<<grids[0].use_count()<<"\n";
 }
 
@@ -1331,7 +1347,7 @@ void model::forward_prop(execution_mode mode) {
 
 
     
-    do_layer_forward_prop_begin_cbs(mode, &l);
+    
 
     //std::cout<<"Running FP with"<<l.get_type()<<" Layer name:"<<l.get_name()<<" Rank:"<<myrank<<"\n";
     if(this->is_subgraph_parallelism_enabled())
@@ -1339,21 +1355,25 @@ void model::forward_prop(execution_mode mode) {
       if((*l.subgrid_ranks).find(myrank) != (*l.subgrid_ranks).end() || l.get_type()=="add" || l.get_type()=="concatenate" || l.get_type()=="sum")
       {
         //std::cout<<"calling fp for :"<<l.get_name()<<" Rank:"<<myrank<<"\n";
+        do_layer_forward_prop_begin_cbs(mode, &l);
 
         l.forward_prop();
+        do_layer_forward_prop_end_cbs(mode, &l);
       }
 
     }
     else
     {
+      do_layer_forward_prop_begin_cbs(mode, &l);
       l.forward_prop();
+      do_layer_forward_prop_end_cbs(mode, &l);
 
     }
     
 
     
     
-    do_layer_forward_prop_end_cbs(mode, &l);
+    
   }
   do_model_forward_prop_end_cbs(mode);
 

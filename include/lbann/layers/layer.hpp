@@ -248,6 +248,16 @@ public:
     return apply_subgraph_parallelism;
   }
 
+  void set_run_layer_in_subgraph()
+  {
+    run_layer_in_subgraph = true;
+  }
+
+  bool get_run_layer_in_subgraph()
+  {
+    return run_layer_in_subgraph;
+  }
+
   virtual std::string get_datatype_name() const {
     return TypeName<DataType>();
   };
@@ -662,6 +672,8 @@ protected:
   int enable_vector_copy = 0;
 
   bool apply_subgraph_parallelism = false;
+
+  bool run_layer_in_subgraph = false;
 
 private:
 
