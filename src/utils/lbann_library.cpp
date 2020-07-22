@@ -387,7 +387,7 @@ void print_lbann_configuration(lbann_comm *comm, int io_threads_per_process, int
             << "  I/O threads per process (+offset) : " << io_threads_per_process
             << " (+" << io_threads_offset << ")" << std::endl;
 #ifdef HYDROGEN_HAVE_CUDA
-  std::cout << "  GPUs on node               : " << El::GPUManager::NumDevices() << std::endl;
+  std::cout << "  GPUs on node               : " << hydrogen::gpu::DeviceCount() << std::endl;
 #endif // HYDROGEN_HAVE_CUDA
   std::cout << std::endl;
 
