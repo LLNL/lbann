@@ -3,18 +3,44 @@ from lbann.util import str_list
 
 class lbann_Data_Mat:
     def __init__(self, list_of_layers, layer_size):
+        """
+
+        """
         self.shape = (len(list_of_layers), layer_size)
         self.layers = list_of_layers
-    
-    def __getitem__(self, row):
-        # To Do: Add bounds checking 
+        self.num_nodes = len(list_of_layers)
+        self.num_features = layer_size
+
+    def __getitem__(self, node):
+        """
+        
+            args: node (int): 
+
+            returns: (Layer) : returns the features of the  Vertex <node> of  the graph.
+                    
+        """
         return self.layers[row]
-    def __setitem__(self, row, layer):
-        # To Do: Add bounds checking
-        self.layers[row] = layer
+    def __setitem__(self, node, feature):
+        """Set the value of the row-th layer in 
+           args: row (int):
+                 layer (Layer): 
+        """
+        self.layers[node] = feature
+
+    def size(index = None):
+        """
+
+        """
+        if (index):
+            return self.shape[index]
+        else:
+            return self.shape
 
     def get_mat(self, cols = None):
-        
+        """Generates a matrix representation of the graph data.
+
+           args: cols (int) 
+        """
 
         mat = lbann.Identity(self.layers[0])
         
@@ -27,9 +53,14 @@ class lbann_Data_Mat:
             mat = lbann.Reshape(mat, dims=str_list([self.shape[0], self.shape[1]]))
 
         return mat
+    
     @classmethod
-    def mat_to_data(cls, mat_layer, num_vertices, out_channels):
-        
+    def matrix_to_graph(cls, mat_layer, num_vertices, num_features):
+        """Given a 2D matrix of shape (num_vertices, num_features), returns a 
+           GraphVertexData object with num_vertices number of nodes with num_features. 
+           
+        """
+
         slice_points = str_list([i for i in range(0,num_vertices * out_channels + 1, out_channels)])
         flattened_layer = lbann.Reshape(mat_layer, dims = str(num_vertices * out_channels))
         sliced_mat_layer = lbann.Slice(flattened_layer, axis = 0, slice_points = slice_points)
@@ -42,6 +73,9 @@ class lbann_Data_Mat:
 
 class lbann_Graph_Data:
     def __init__(self, input_layer, num_vertices, num_features, num_classes):
+        """
+
+        """
         self.num_vertices = num_vertices 
         self.num_features = num_features 
         self.num_classes = num_classes 
@@ -49,6 +83,9 @@ class lbann_Graph_Data:
         self.x, self.adj, self.y = self.gen_data(input_layer)
 
     def generate_slice_points (self):
+        """
+
+        """
         slice_points = [i for i in range(0,self.num_vertices * self.num_features + 1, self.num_features)]
         adj_mat = slice_points[-1] + self.num_vertices * self.num_vertices 
         slice_points.append(adj_mat)
@@ -57,6 +94,9 @@ class lbann_Graph_Data:
         return str_list(slice_points)
     
     def gen_data(self, input_layer):
+        """
+
+        """
         slice_points = self.generate_slice_points()
         sliced_graph  = lbann.Slice(input_layer, axis = 0, slice_points = slice_points, name="Sliced_Input")
 
