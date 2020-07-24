@@ -47,8 +47,10 @@ parser.add_argument(
     '--offline-walks', action='store_true',
     help='perform random walks offline')
 parser.add_argument(
-    '--disable-dist-embeddings', action='store_true',
-    help='disable distributed embedding layers')
+    '--embeddings', action='store', default='distributed', type=str,
+    help=('method to get embedding vectors '
+          '(options: distributed (default), replicated, random_projection)'),
+    metavar='METHOD')
 args = parser.parse_args()
 
 # Default learning rate
@@ -98,19 +100,10 @@ else:
         num_negative_samples=num_negative_samples,
     )
 
+sample_size = num_negative_samples + walk_length
+
 # Parse graph file to get number of vertices
 num_vertices = utils.graph.max_vertex_index(graph_file) + 1
-
-# ----------------------------------
-# Embedding weights
-# ----------------------------------
-
-embeddings_weights = lbann.Weights(
-    initializer=lbann.NormalInitializer(
-        mean=0, standard_deviation=1/args.latent_dim,
-    ),
-    name='embeddings',
-)
 
 # ----------------------------------
 # Construct layer graph
@@ -119,14 +112,13 @@ embeddings_weights = lbann.Weights(
 # Embedding vectors, including negative sampling
 # Note: Input is sequence of vertex IDs
 input_ = lbann.Input()
-if args.disable_dist_embeddings:
-    embeddings = lbann.Embedding(
-        input_,
-        weights=embeddings_weights,
-        num_embeddings=num_vertices,
-        embedding_dim=args.latent_dim,
+if args.embeddings == 'distributed':
+    embeddings_weights = lbann.Weights(
+        initializer=lbann.NormalInitializer(
+            mean=0, standard_deviation=1/args.latent_dim,
+        ),
+        name='embeddings',
     )
-else:
     embeddings = lbann.DistEmbedding(
         input_,
         weights=embeddings_weights,
@@ -135,17 +127,94 @@ else:
         sparse_sgd=True,
         learning_rate=args.learning_rate,
     )
+elif args.embeddings == 'replicated':
+    embeddings_weights = lbann.Weights(
+        initializer=lbann.NormalInitializer(
+            mean=0, standard_deviation=1/args.latent_dim,
+        ),
+        name='embeddings',
+    )
+    embeddings = lbann.Embedding(
+        input_,
+        weights=embeddings_weights,
+        num_embeddings=num_vertices,
+        embedding_dim=args.latent_dim,
+    )
+elif args.embeddings == 'random_projection':
+    proj_dim = 1024
+    hidden_dim = 1024
+    row_indices = lbann.Reshape(input_, dims='-1 1')
+    col_indices = lbann.Weights(
+        initializer=lbann.ValueInitializer(values=utils.str_list(range(proj_dim))),
+        optimizer=lbann.NoOptimizer(),
+    )
+    col_indices = lbann.WeightsLayer(dims=utils.str_list(proj_dim), weights=col_indices)
+    col_indices = lbann.Reshape(col_indices, dims='1 -1')
+    flat_indices = lbann.Sum(
+        lbann.Tessellate(
+            lbann.WeightedSum(
+                row_indices, scaling_factors=utils.str_list(proj_dim)
+            ),
+            dims=utils.str_list([sample_size, proj_dim]),
+        ),
+        lbann.Tessellate(
+            col_indices,
+            dims=utils.str_list([sample_size, proj_dim]),
+        ),
+    )
+    proj = lbann.UniformHash(flat_indices)
+    ones = lbann.Constant(value=1, num_neurons=utils.str_list([sample_size, proj_dim]))
+    proj = lbann.ErfInv(
+        lbann.WeightedSum(
+            proj,
+            ones,
+            scaling_factors='1.99 -0.995',
+        )
+    )
+    proj = lbann.InstanceNorm(proj)
+    x = proj
+    x = lbann.Relu(
+        lbann.InstanceNorm(
+            lbann.ChannelwiseFullyConnected(
+                x,
+                output_channel_dims=hidden_dim,
+                bias=False,
+            )
+        )
+    )
+    x = lbann.Relu(
+        lbann.InstanceNorm(
+            lbann.ChannelwiseFullyConnected(
+                x,
+                output_channel_dims=hidden_dim,
+                bias=False,
+            )
+        )
+    )
+    embeddings = lbann.ChannelwiseFullyConnected(
+        x,
+        output_channel_dims=args.latent_dim,
+        bias=False,
+    )
+    embeddings = lbann.WeightedSum(
+        lbann.InstanceNorm(embeddings),
+        scaling_factors=str(1/args.latent_dim),
+    )
+else:
+    raise RuntimeError(
+        f'unknown method to get embedding vectors ({args.embeddings})'
+    )
 num_encoder_embeddings = walk_length - 1
 num_decoder_embeddings = num_negative_samples + walk_length - 1
 encoder_embeddings = lbann.Slice(
     embeddings,
     axis=0,
-    slice_points=f'{num_negative_samples+1} {num_negative_samples+walk_length}',
+    slice_points=f'{num_negative_samples+1} {sample_size}',
 )
 decoder_embeddings = lbann.Slice(
     embeddings,
     axis=0,
-    slice_points=f'0 {num_negative_samples+walk_length-1}',
+    slice_points=f'0 {sample_size-1}',
 )
 
 # Multiply encoder and decoder embeddings
@@ -153,14 +222,14 @@ preds = lbann.MatMul(decoder_embeddings, encoder_embeddings, transpose_b=True)
 preds_slice = lbann.Slice(
     preds,
     axis=0,
-    slice_points=f'0 {num_negative_samples} {num_negative_samples+walk_length-1}',
+    slice_points=f'0 {num_negative_samples} {sample_size-1}',
 )
 preds_negative = lbann.Identity(preds_slice)
 preds_positive = lbann.Identity(preds_slice)
 
 # Loss function for positive samples
 mask_dims = (num_decoder_embeddings-num_negative_samples, num_encoder_embeddings)
-mask_decay = 0.9
+mask_decay = 0.8
 mask = np.zeros((walk_length-1,walk_length-1))
 for i in range(walk_length-1):
     for j in range(i, walk_length-1):
@@ -187,6 +256,8 @@ obj = [
     lbann.LayerTerm(obj_positive, scale=-1/(walk_length-1)),
     lbann.LayerTerm(obj_negative, scale=-1),
 ]
+if args.embeddings == 'random_projection':
+    obj.append(lbann.L2WeightRegularization(scale=1e-12))
 
 # ----------------------------------
 # Run LBANN
