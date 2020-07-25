@@ -68,10 +68,9 @@ parser.add_argument(
     default=1.0, type=float,
     help='the percent of the data to use (default: 1.0)', metavar='NUM')
 parser.add_argument(
-    '--data-reader', action='store', default='data_readers/
-    data_reader_candle_pilot1.prototext', type=str,
-    help='scheduler job name (default: data_readers/
-    data_reader_candle_pilot1.prototext)')
+    '--data-reader', action='store',
+    default='data_readers/data_reader_candle_pilot1.prototext', type=str,
+    help='scheduler job name (default: data_readers/data_reader_candle_pilot1.prototext)')
 lbann.contrib.args.add_optimizer_arguments(parser, default_learning_rate=0.1)
 args = parser.parse_args()
 
@@ -225,13 +224,12 @@ model = lbann.Model(args.num_epochs,
 opt = lbann.contrib.args.create_optimizer(args)
 
 # Setup data reader
-data_reader = args.data_reader
+data_reader_file = args.data_reader
+data_reader_proto = lbann.lbann_pb2.LbannPB()
+with open(data_reader_file, 'r') as f:
+    txtf.Merge(f.read(), data_reader_proto)
+data_reader_proto = data_reader_proto.data_reader
 
-#FIXME: should I use make_data_reader?
-#if dataset == "cifar10":
-#    data_reader = cifar10.make_data_reader(num_classes=num_classes)
-#else:
-#    data_reader = imagenet.make_data_reader(num_classes=num_classes)
 
 # Setup trainer
 trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
@@ -240,6 +238,6 @@ trainer = lbann.Trainer(mini_batch_size=args.mini_batch_size)
 kwargs = lbann.contrib.args.get_scheduler_kwargs(args)
 kwargs['lbann_args'] = '--data_reader_percent='+str(args.data_reader_percent)
 
-lbann.contrib.launcher.run(trainer, model, data_reader, opt,
+lbann.contrib.launcher.run(trainer, model, data_reader_proto, opt,
                            job_name=args.job_name,
                            **kwargs)
