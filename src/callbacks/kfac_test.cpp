@@ -25,15 +25,41 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include "lbann/callbacks/kfac_test.hpp"
-#include "lbann/layers/data_type_layer.hpp"
-#include "cblas.h"
-#include "lapacke.h"
 #include <iomanip>
 #include <sstream>
 
+#include "lbann/callbacks/kfac_test.hpp"
+#include "lbann/layers/data_type_layer.hpp"
+
+#include "cblas.h"
+#include "lapacke.h"
+#include <magma.h>
+
+// Use the MAGMA library instead of OpenBLAS.
+#define KFAC_CALLBACK_USE_MAGMA
+
+// Always-assert from the DiHydrogen library.
+#define assert_always(...) do {                 \
+    if ((__VA_ARGS__) == 0) {                   \
+      std::stringstream ss;                     \
+      ss << __FILE__ << ":" << __LINE__         \
+         << ": " << __func__ << " Assertion "   \
+         << #__VA_ARGS__ << " failed.\n";       \
+      std::cerr << ss.str();                    \
+      abort();                                  \
+    } } while (0)
+
 namespace lbann {
 namespace callback {
+
+void kfac_test::setup(model *m) {
+#if defined(KFAC_CALLBACK_USE_MAGMA)
+  const auto ret = magma_init();
+  assert_always(ret == MAGMA_SUCCESS);
+  std::cerr << "kfac_test::setup" << std::endl;
+  // TODO: Call magma_finalize at last
+#endif
+}
 
 void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
@@ -41,7 +67,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
   const auto get_kronecker_factor =
       [](const El::AbstractMatrix<DataType>& A,
          const DataType alpha) {
-        assert(A.GetLocalDevice() == El::Device::GPU);
+        assert_always(A.GetDevice() == El::Device::GPU);
         El::Matrix<DataType, El::Device::GPU> factor(A.Height(), A.Height());
         El::Gemm(
             El::NORMAL, El::TRANSPOSE,
@@ -53,7 +79,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
   const auto get_inverse =
       [](const El::Matrix<DataType>& A,
          const bool report_time=false) {
-        assert(A.Width() == A.Height());
+        assert_always(A.Width() == A.Height());
         El::Matrix<DataType> Ainv(A);
 
         const double t_start = get_time();
@@ -65,25 +91,56 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         for(int i = 0; i < A.Height(); i++)
           Ainv(i, i) += damping;
 
-        const double t_damping = get_time();
-
-        // TODO: CHECK_LAPACK
+#if defined(KFAC_CALLBACK_USE_MAGMA)
+        const magma_uplo_t uplo = MagmaLower;
+#else
         const int matrix_layout = LAPACK_COL_MAJOR;
         const char uplo = 'L';
+#endif
+
+        const double t_damping = get_time();
+
+#if defined(KFAC_CALLBACK_USE_MAGMA)
+        { // TODO: CHECK_MAGMA
+          magma_int_t ret;
+          magma_spotrf(
+              uplo,
+              Ainv.Height(), Ainv.Buffer(),
+              Ainv.Height(),
+              &ret);
+          assert_always(ret == 0);
+        }
+
+#else
+        // TODO: CHECK_LAPACK
         LAPACKE_spotrf(
             matrix_layout,
             uplo,
             Ainv.Height(), Ainv.Buffer(),
             Ainv.Height() );
+#endif
 
         const double t_spotrf = get_time();
 
+#if defined(KFAC_CALLBACK_USE_MAGMA)
+        { // TODO: CHECK_MAGMA
+          magma_int_t ret;
+          magma_spotri(
+              uplo,
+              Ainv.Height(), Ainv.Buffer(),
+              Ainv.Height(),
+              &ret);
+          assert_always(ret == 0);
+        }
+
+#else
         // TODO: CHECK_LAPACK
         LAPACKE_spotri(
             matrix_layout,
             'L',
             Ainv.Height(), Ainv.Buffer(),
             Ainv.Height() );
+#endif
 
         const double t_spotri = get_time();
 
@@ -98,7 +155,11 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         if(report_time) {
           std::cerr << "get_inverse of"
                     << " " << A.Height() << "x" << A.Width()
-                    << " @ " << openblas_get_num_threads() << " threads: "
+#if defined(KFAC_CALLBACK_USE_MAGMA)
+                    << " using MAGMA:"
+#else
+                    << " using OpenBLAS @ " << openblas_get_num_threads() << " threads:"
+#endif
                     << " t_damping=" << (t_damping-t_start)
                     << ", t_spotrf=" << (t_spotrf-t_damping)
                     << ", t_spotri=" << (t_spotri-t_spotrf)
@@ -111,8 +172,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
   auto comm = m->get_comm();
   if(l->get_type() == "fully connected") {
-    assert(l->get_num_parents() == 1);
-    assert(l->get_num_children() == 1);
+    assert_always(l->get_num_parents() == 1);
+    assert_always(l->get_num_children() == 1);
     const auto parent = l->get_parent_layers()[0];
     const auto child = l->get_child_layers()[0];
     const auto& dtl_parent = dynamic_cast<const data_type_layer<DataType>&>(*parent);
@@ -124,8 +185,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     optimizer *opt = w.get_optimizer();
     auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(opt);
     El::Matrix<DataType, El::Device::GPU> gradient = dto->get_gradient().Matrix();
-    assert(activations.Height() == gradient.Width());
-    assert(error_signals.Height() == gradient.Height());
+    assert_always(activations.Height() == gradient.Width());
+    assert_always(error_signals.Height() == gradient.Height());
 
     const DataType alpha = DataType(1.0/activations.Width()/comm->get_procs_per_trainer());
     El::Matrix<DataType> A(get_kronecker_factor(activations, alpha));
@@ -152,7 +213,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         El::TypeTraits<DataType>::Zero(),
         Fgrad);
 
-    assert(Fgrad.Height() == gradient.Height() && Fgrad.Width() == gradient.Width());
+    assert_always(Fgrad.Height() == gradient.Height());
+    assert_always(Fgrad.Width() == gradient.Width());
 
     DataType dst_scale = El::TypeTraits<DataType>::Zero(),
         gradient_scale = El::TypeTraits<DataType>::One();
@@ -166,3 +228,5 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
 } // namespace callback
 } // namespace lbann
+
+#undef KFAC_CALLBACK_USE_MAGMA

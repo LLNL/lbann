@@ -44,6 +44,7 @@ class kfac_test : public callback_base {
   kfac_test(const kfac_test&) = default;
   kfac_test& operator=(const kfac_test&) = default;
   kfac_test* copy() const override { return new kfac_test(*this); }
+  void setup(model *m) override;
   void on_backward_prop_end(model *m, Layer *l) override;
   std::string name() const override { return "K-FAC test"; }
 };
