@@ -35,6 +35,9 @@
 #include "lapacke.h"
 #include <magma.h>
 
+namespace lbann {
+namespace callback {
+
 // Use the MAGMA library instead of OpenBLAS.
 #define KFAC_CALLBACK_USE_MAGMA
 
@@ -48,9 +51,6 @@
       std::cerr << ss.str();                    \
       abort();                                  \
     } } while (0)
-
-namespace lbann {
-namespace callback {
 
 void kfac_test::setup(model *m) {
 #if defined(KFAC_CALLBACK_USE_MAGMA)
@@ -77,25 +77,22 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       };
 
   const auto get_inverse =
-      [](const El::Matrix<DataType>& A,
-         const bool report_time=false) {
+      [](const El::Matrix<DataType, El::Device::GPU>& A,
+         const bool report_time=false,
+         const DataType damping) {
         assert_always(A.Width() == A.Height());
-        El::Matrix<DataType> Ainv(A);
+        El::Matrix<DataType, El::Device::GPU> Ainv(A);
 
         const double t_start = get_time();
-
-        // TODO: Dynamic scheduling of the damping factor
-        const DataType damping = DataType(1e-4);
-        // OPTIMIZE
-#pragma omp parallel for
-        for(int i = 0; i < A.Height(); i++)
-          Ainv(i, i) += damping;
+        kfac_test_add_to_diagonal(
+            Ainv.Buffer(), Ainv.Height(), damping);
 
 #if defined(KFAC_CALLBACK_USE_MAGMA)
         const magma_uplo_t uplo = MagmaLower;
 #else
         const int matrix_layout = LAPACK_COL_MAJOR;
         const char uplo = 'L';
+        El::Matrix<DataType> AinvCPU(Ainv.Height(), Ainv.Width());
 #endif
 
         const double t_damping = get_time();
@@ -103,7 +100,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 #if defined(KFAC_CALLBACK_USE_MAGMA)
         { // TODO: CHECK_MAGMA
           magma_int_t ret;
-          magma_spotrf(
+          magma_spotrf_gpu(
               uplo,
               Ainv.Height(), Ainv.Buffer(),
               Ainv.Height(),
@@ -112,12 +109,14 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         }
 
 #else
+        El::Copy(Ainv, AinvCPU);
         // TODO: CHECK_LAPACK
         LAPACKE_spotrf(
             matrix_layout,
             uplo,
-            Ainv.Height(), Ainv.Buffer(),
-            Ainv.Height() );
+            AinvCPU.Height(), AinvCPU.Buffer(),
+            AinvCPU.Height() );
+        El::Copy(AinvCPU, Ainv);
 #endif
 
         const double t_spotrf = get_time();
@@ -125,7 +124,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 #if defined(KFAC_CALLBACK_USE_MAGMA)
         { // TODO: CHECK_MAGMA
           magma_int_t ret;
-          magma_spotri(
+          magma_spotri_gpu(
               uplo,
               Ainv.Height(), Ainv.Buffer(),
               Ainv.Height(),
@@ -134,21 +133,18 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         }
 
 #else
+        El::Copy(Ainv, AinvCPU);
         // TODO: CHECK_LAPACK
         LAPACKE_spotri(
             matrix_layout,
             'L',
-            Ainv.Height(), Ainv.Buffer(),
-            Ainv.Height() );
+            AinvCPU.Height(), AinvCPU.Buffer(),
+            AinvCPU.Height() );
+        El::Copy(AinvCPU, Ainv);
 #endif
 
         const double t_spotri = get_time();
-
-        // OPTIMIZE
-#pragma omp parallel for
-        for(int j = 0; j < A.Width(); j++)
-          for(int i = 0; i < j; i++)
-            Ainv(i, j) = Ainv(j, i);
+        kfac_test_fill_upper_tri(Ainv.Buffer(), Ainv.Height());
 
         const double t_fill = get_time();
 
@@ -189,27 +185,27 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     assert_always(error_signals.Height() == gradient.Height());
 
     const DataType alpha = DataType(1.0/activations.Width()/comm->get_procs_per_trainer());
-    El::Matrix<DataType> A(get_kronecker_factor(activations, alpha));
-    El::Matrix<DataType> G(get_kronecker_factor(error_signals, alpha));
+    auto A = get_kronecker_factor(activations, alpha);
+    auto G = get_kronecker_factor(error_signals, alpha);
     // OPTIMIZE: Communicate only the lower triangulars
     comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
     comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
-    const auto Ainv = get_inverse(A, comm->am_trainer_master());
-    const auto Ginv = get_inverse(G, comm->am_trainer_master());
-    const El::Matrix<DataType, El::Device::GPU> AinvG(Ainv);
-    const El::Matrix<DataType, El::Device::GPU> GinvG(Ginv);
+    // TODO: Dynamic scheduling of the damping factor
+    const DataType damping = DataType(1e-4);
+    const auto Ainv = get_inverse(A, comm->am_trainer_master(), damping);
+    const auto Ginv = get_inverse(G, comm->am_trainer_master(), damping);
 
     El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), gradient.Width());
     El::Gemm(
         El::NORMAL, El::NORMAL,
-        El::TypeTraits<DataType>::One(), GinvG, gradient,
+        El::TypeTraits<DataType>::One(), Ginv, gradient,
         El::TypeTraits<DataType>::Zero(), Gg);
 
     El::Matrix<DataType, El::Device::GPU> Fgrad(G.Height(), A.Width());
     El::Gemm(
         El::NORMAL, El::NORMAL,
         El::TypeTraits<DataType>::One(),
-        Gg, AinvG,
+        Gg, Ainv,
         El::TypeTraits<DataType>::Zero(),
         Fgrad);
 

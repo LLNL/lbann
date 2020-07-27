@@ -34,6 +34,19 @@
 namespace lbann {
 namespace callback {
 
+// Add the damping value to the diagonal elements of A.
+template <typename TensorDataType>
+void kfac_test_add_to_diagonal(
+    TensorDataType * __restrict__ A,
+    const size_t height,
+    const TensorDataType damping);
+
+// Fill the upper trianglar with the lower trianglar.
+template <typename TensorDataType>
+void kfac_test_fill_upper_tri(
+    TensorDataType * __restrict__ A,
+    const size_t height);
+
 /** Callback hooks for the K-FAC method. */
 class kfac_test : public callback_base {
  public:
