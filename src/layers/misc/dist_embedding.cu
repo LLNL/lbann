@@ -696,6 +696,8 @@ void dist_embedding_layer<TensorDataType,Layout,Device>::apply_sparse_sgd_step(
 /// @todo fp16
 template class dist_embedding_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+template class dist_embedding_layer<
+  double, data_layout::DATA_PARALLEL, El::Device::GPU>;
 
 } // namespace lbann
 #endif // LBANN_HAS_NVSHMEM

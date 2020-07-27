@@ -366,56 +366,27 @@ struct Builder
   }
 };
 
-template <>
-struct Builder<float,data_layout::DATA_PARALLEL,El::Device::CPU>
-{
-  template <typename... Args>
-  static std::unique_ptr<Layer> Build(Args&&... args)
-  {
-    using TensorDataType = float;
-    constexpr data_layout Layout = data_layout::DATA_PARALLEL;
-    constexpr El::Device Device = El::Device::CPU;
+#define DEFINE_BUILDER(TensorDataType, Device)                          \
+template <>                                                             \
+struct Builder<TensorDataType,data_layout::DATA_PARALLEL,Device>        \
+{                                                                       \
+  template <typename... Args>                                           \
+    static std::unique_ptr<Layer> Build(Args&&... args)                 \
+  {                                                                     \
+    constexpr data_layout Layout = data_layout::DATA_PARALLEL;          \
+    using LayerType = dist_embedding_layer<TensorDataType,Layout,Device>; \
+    return make_unique<LayerType>(std::forward<Args>(args)...);         \
+  }                                                                     \
+}
 #ifdef LBANN_HAS_SHMEM
-    using LayerType = dist_embedding_layer<TensorDataType,Layout,Device>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
-#else
-    LBANN_ERROR(
-      "Attempted to construct CPU dist_embedding_layer, ",
-      "but LBANN has not been built with OpenSHMEM support "
-      "(TensorDataType=",TypeName<TensorDataType>(),", ",
-      "Layout=",to_string(Layout),", ",
-      "Device=",to_string(Device),")");
-    return nullptr;
+DEFINE_BUILDER(float, El::Device::CPU);
+DEFINE_BUILDER(double, El::Device::CPU);
 #endif // LBANN_HAS_SHMEM
-  }
-};
-
-#ifdef LBANN_HAS_GPU
-template <>
-struct Builder<float,data_layout::DATA_PARALLEL,El::Device::GPU>
-{
-  template <typename... Args>
-  static std::unique_ptr<Layer> Build(Args&&... args)
-  {
-    using TensorDataType = float;
-    constexpr data_layout Layout = data_layout::DATA_PARALLEL;
-    constexpr El::Device Device = El::Device::GPU;
-#ifdef LBANN_HAS_NVSHMEM
-    using LayerType = dist_embedding_layer<TensorDataType,Layout,Device>;
-    return make_unique<LayerType>(std::forward<Args>(args)...);
-#else
-    LBANN_ERROR(
-      "Attempted to construct GPU dist_embedding_layer, ",
-      "but LBANN has not been built with NVSHMEM support "
-      "(TensorDataType=",TypeName<TensorDataType>(),", ",
-      "Layout=",to_string(Layout),", ",
-      "Device=",to_string(Device),")");
-    return nullptr;
-#endif // LBANN_HAS_NVSHMEM
-  }
-
-};
-#endif // LBANN_HAS_GPU
+#if defined(LBANN_HAS_GPU) && defined(LBANN_HAS_NVSHMEM)
+DEFINE_BUILDER(float, El::Device::GPU);
+DEFINE_BUILDER(double, El::Device::GPU);
+#endif // defined(LBANN_HAS_GPU) && defined(LBANN_HAS_NVSHMEM)
+#undef DEFINE_BUILDER
 
 } // namespace <anon>
 
@@ -444,10 +415,14 @@ std::unique_ptr<Layer> build_dist_embedding_layer_from_pbuf(
 #ifdef LBANN_HAS_SHMEM
 template class dist_embedding_layer<
   float, data_layout::DATA_PARALLEL, El::Device::CPU>;
+template class dist_embedding_layer<
+  double, data_layout::DATA_PARALLEL, El::Device::CPU>;
 #endif // LBANN_HAS_SHMEM
 #if defined(LBANN_HAS_GPU) && defined(LBANN_HAS_NVSHMEM)
 extern template class dist_embedding_layer<
   float, data_layout::DATA_PARALLEL, El::Device::GPU>;
+extern template class dist_embedding_layer<
+  double, data_layout::DATA_PARALLEL, El::Device::GPU>;
 #endif // defined(LBANN_HAS_GPU) && defined(LBANN_HAS_NVSHMEM)
 
 #define PROTO_DEVICE(T, Device)                         \
