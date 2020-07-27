@@ -32,6 +32,9 @@ def make_batch_script(
         if key not in environment:
             environment[key] = os.getenv(key, default)
 
+    # Set environment for shared libraries
+    set_environment('LD_LIBRARY_PATH', os.environ['LD_LIBRARY_PATH'])
+
     # Optimizations for Cori GPU nodes
     if system == 'cgpu':
         cores_per_proc = cores_per_node(system) // procs_per_node

@@ -46,6 +46,9 @@ def make_batch_script(
         if key not in environment:
             environment[key] = os.getenv(key, default)
 
+    # Set environment for shared libraries
+    set_environment('LD_LIBRARY_PATH', os.environ['LD_LIBRARY_PATH'])
+
     # Setup GPU bindings
     # Note: Each Hydrogen process is assigned to the GPU index that
     # matches its node communicator rank. This is not compatible with
