@@ -318,6 +318,8 @@ void smiles_data_reader::print_statistics() const {
 
   std::cout << "\n======================================================\n";
   std::cout << "role: " << get_role() << std::endl;
+//std::cout << "mem for data, lower bound: " << utils::commify(get_mem_usage()) << std::endl;   
+  std::cout << "num samples per trainer: " << m_shuffled_indices.size() << std::endl;
   std::cout << "max sequence length: " << utils::commify(m_linearized_data_size) << std::endl;
   std::cout << "num features=" << utils::commify(m_linearized_data_size) << std::endl;
   if (m_delimiter == '\t') {
@@ -463,8 +465,8 @@ void smiles_data_reader::encode_smiles(const char *smiles, short size, std::vect
           std::stringstream ss;
           ss << "world rank: " << m_comm->get_rank_in_world() << "; character not in vocab >>" << w << "<<; idx: " << j << "; data_id: " << data_id << "; string length: " << size << "; will use length: " << stop << "; vocab size: " << m_vocab.size() << std::endl;
           std::cerr << ss.str();
+        }
       }
-LBANN_ERROR("ERROR!");
       data.push_back(m_unk);
     } else {
       data.push_back(m_vocab[w]);
