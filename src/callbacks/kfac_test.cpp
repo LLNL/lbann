@@ -230,11 +230,32 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         std::cout << std::endl;
         El::Print(Ginv, "Ginv");
         std::cout << std::endl;
-        El::Print(gradient, "gradient");
+        El::Print(gradient, "grad");
         std::cout << std::endl;
         El::Print(Fgrad, "Fgrad");
         std::cout << std::endl;
       }
+    }
+
+    if(comm->am_trainer_master() && m_print_matrix_summary) {
+      const auto get_nrm2 =
+          [](const El::Matrix<DataType, El::Device::GPU>& X) {
+            El::Matrix<DataType> XCPU(X);
+            return El::Nrm2(XCPU);
+          };
+
+      std::ostringstream oss;
+      oss << "L2 norm @ "<< l->get_name() << ": "
+          << "acts=" << get_nrm2(activations)
+          << ", errs=" << get_nrm2(error_signals)
+          << ", A=" << get_nrm2(A)
+          << ", G=" << get_nrm2(G)
+          << ", Ainv=" << get_nrm2(Ainv)
+          << ", Ginv=" << get_nrm2(Ginv)
+          << ", grad=" << get_nrm2(gradient)
+          << ", Fgrad=" << get_nrm2(Fgrad)
+          << std::endl;
+      std::cout << oss.str();
     }
 
   }
@@ -251,9 +272,12 @@ build_kfac_test_callback_from_pbuf(
   double damping = params.damping();
   bool print_time = params.print_time();
   bool print_matrix = params.print_matrix();
+  bool print_matrix_summary = params.print_matrix_summary();
   if(damping == 0.0)
     damping = 0.03;
-  return make_unique<CallbackType>(damping, print_time, print_matrix);
+  return make_unique<CallbackType>(
+      damping,
+      print_time, print_matrix, print_matrix_summary);
 }
 
 #undef KFAC_CALLBACK_USE_MAGMA

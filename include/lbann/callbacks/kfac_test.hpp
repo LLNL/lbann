@@ -53,9 +53,12 @@ class kfac_test : public callback_base {
 
   /** Constructor.
    */
-  kfac_test(double damping, bool print_time, bool print_matrix)
+  kfac_test(double damping,
+            bool print_time, bool print_matrix,
+            bool print_matrix_summary)
       : callback_base(), m_damping(damping),
-        m_print_time(print_time), m_print_matrix(print_matrix) {}
+        m_print_time(print_time), m_print_matrix(print_matrix),
+        m_print_matrix_summary(print_matrix_summary) {}
   kfac_test(const kfac_test&) = default;
   kfac_test& operator=(const kfac_test&) = default;
   kfac_test* copy() const override { return new kfac_test(*this); }
@@ -65,7 +68,7 @@ class kfac_test : public callback_base {
 
  private:
   double m_damping;
-  bool m_print_time, m_print_matrix;
+  bool m_print_time, m_print_matrix, m_print_matrix_summary;
 };
 
 // Builder function
