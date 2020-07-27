@@ -377,6 +377,9 @@ message Callback {
   }// message CallbackSummarizeImages
 
   message CallbackKFACTest {
+    double damping = 1; // default: 0.03
+    bool print_time = 2; // default: false
+    bool print_matrix = 3; // default: false
   }
 
 }

@@ -52,6 +52,7 @@ namespace callback {
       abort();                                  \
     } } while (0)
 
+
 void kfac_test::setup(model *m) {
 #if defined(KFAC_CALLBACK_USE_MAGMA)
   const auto ret = magma_init();
@@ -149,13 +150,14 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         const double t_fill = get_time();
 
         if(report_time) {
-          std::cerr << "get_inverse of"
+          std::cout << "get_inverse of"
                     << " " << A.Height() << "x" << A.Width()
 #if defined(KFAC_CALLBACK_USE_MAGMA)
-                    << " using MAGMA:"
+                    << " using MAGMA"
 #else
-                    << " using OpenBLAS @ " << openblas_get_num_threads() << " threads:"
+                    << " using OpenBLAS @ " << openblas_get_num_threads() << " threads"
 #endif
+                    << " (damping=" << damping << "): "
                     << " t_damping=" << (t_damping-t_start)
                     << ", t_spotrf=" << (t_spotrf-t_damping)
                     << ", t_spotri=" << (t_spotri-t_spotrf)
@@ -184,16 +186,16 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     assert_always(activations.Height() == gradient.Width());
     assert_always(error_signals.Height() == gradient.Height());
 
+    // TODO: Use the mini-batch size
     const DataType alpha = DataType(1.0/activations.Width()/comm->get_procs_per_trainer());
     auto A = get_kronecker_factor(activations, alpha);
     auto G = get_kronecker_factor(error_signals, alpha);
     // OPTIMIZE: Communicate only the lower triangulars
+    const bool print_time = comm->am_trainer_master() && m_print_time;
     comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
     comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
-    // TODO: Dynamic scheduling of the damping factor
-    const DataType damping = DataType(1e-4);
-    const auto Ainv = get_inverse(A, comm->am_trainer_master(), damping);
-    const auto Ginv = get_inverse(G, comm->am_trainer_master(), damping);
+    const auto Ainv = get_inverse(A, print_time, DataType(m_damping));
+    const auto Ginv = get_inverse(G, print_time, DataType(m_damping));
 
     El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), gradient.Width());
     El::Gemm(
@@ -204,10 +206,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     El::Matrix<DataType, El::Device::GPU> Fgrad(G.Height(), A.Width());
     El::Gemm(
         El::NORMAL, El::NORMAL,
-        El::TypeTraits<DataType>::One(),
-        Gg, Ainv,
-        El::TypeTraits<DataType>::Zero(),
-        Fgrad);
+        El::TypeTraits<DataType>::One(), Gg, Ainv,
+        El::TypeTraits<DataType>::Zero(), Fgrad);
 
     assert_always(Fgrad.Height() == gradient.Height());
     assert_always(Fgrad.Width() == gradient.Width());
@@ -218,11 +218,45 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         dst_scale, gradient_scale, false);
     El::Copy(Fgrad, grad_buffer.Matrix());
 
+    // Damp matrices for debugging
+    if(comm->am_trainer_master() && m_print_matrix) {
+      if(comm->am_trainer_master()) {
+        std::cout << std::endl;
+        El::Print(A, "A");
+        std::cout << std::endl;
+        El::Print(G, "G");
+        std::cout << std::endl;
+        El::Print(Ainv, "Ainv");
+        std::cout << std::endl;
+        El::Print(Ginv, "Ginv");
+        std::cout << std::endl;
+        El::Print(gradient, "gradient");
+        std::cout << std::endl;
+        El::Print(Fgrad, "Fgrad");
+        std::cout << std::endl;
+      }
+    }
+
   }
 
 }
 
-} // namespace callback
-} // namespace lbann
+std::unique_ptr<callback_base>
+build_kfac_test_callback_from_pbuf(
+    const google::protobuf::Message& proto_msg,
+    const std::shared_ptr<lbann_summary>&) {
+  using MsgType = lbann_data::Callback::CallbackKFACTest;
+  using CallbackType = kfac_test;
+  const auto& params = dynamic_cast<const MsgType&>(proto_msg);
+  double damping = params.damping();
+  bool print_time = params.print_time();
+  bool print_matrix = params.print_matrix();
+  if(damping == 0.0)
+    damping = 0.03;
+  return make_unique<CallbackType>(damping, print_time, print_matrix);
+}
 
 #undef KFAC_CALLBACK_USE_MAGMA
+
+} // namespace callback
+} // namespace lbann

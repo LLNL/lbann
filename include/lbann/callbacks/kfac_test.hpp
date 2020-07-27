@@ -53,18 +53,25 @@ class kfac_test : public callback_base {
 
   /** Constructor.
    */
-  kfac_test() = default;
+  kfac_test(double damping, bool print_time, bool print_matrix)
+      : callback_base(), m_damping(damping),
+        m_print_time(print_time), m_print_matrix(print_matrix) {}
   kfac_test(const kfac_test&) = default;
   kfac_test& operator=(const kfac_test&) = default;
   kfac_test* copy() const override { return new kfac_test(*this); }
   void setup(model *m) override;
   void on_backward_prop_end(model *m, Layer *l) override;
   std::string name() const override { return "K-FAC test"; }
+
+ private:
+  double m_damping;
+  bool m_print_time, m_print_matrix;
 };
 
 // Builder function
-LBANN_ADD_DEFAULT_CALLBACK_BUILDER(
-    kfac_test, build_kfac_test_callback_from_pbuf);
+std::unique_ptr<callback_base>
+build_kfac_test_callback_from_pbuf(
+  const google::protobuf::Message&,std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann
