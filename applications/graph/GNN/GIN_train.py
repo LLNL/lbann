@@ -1,9 +1,8 @@
 import lbann
 from lbann.util import str_list
-from Graph_Modules.Sparse import GINConv as GraphConv
-
-from Graph_Modules.Sparse.Graph_Data import lbann_Data_Mat, lbann_Graph_Data
-
+from lbann.modules.graph import GINConv as GraphConv
+from lbann.modules.graph import GraphVertexData as lbann_Data_Mat
+from graph_data_util  import lbann_Graph_Data 
 
 def make_model(num_vertices = None, 
                node_features = None, 
@@ -70,7 +69,7 @@ def make_model(num_vertices = None,
 
     gin = GraphConv(sequential_nn , output_channels= out_channel)
     
-    x = gin(feature_matrix, adj_matrix)
+    x = gin(feature_matrix, adj_matrix, activation = lbann.Relu)
     
     #----------------------------------
     # Apply Reduction on Node Features
