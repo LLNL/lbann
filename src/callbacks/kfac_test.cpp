@@ -59,6 +59,18 @@ void kfac_test::setup(model *m) {
   assert_always(ret == MAGMA_SUCCESS);
   // TODO: Call magma_finalize at last
 #endif
+
+  const auto comm = m->get_comm();
+  if(comm->am_trainer_master()) {
+    std::ostringstream oss;
+    oss << "K-FAC callback setup:"
+        << " damping_0=" << m_damping_0
+        << " damping_target=" << m_damping_target
+        << " damping_warmup_steps=" << m_damping_warmup_steps
+        << " kronecker_decay=" << m_kronecker_decay
+        << std::endl;
+    std::cout << oss.str();
+  }
 }
 
 void kfac_test::on_backward_prop_end(model *m) {
