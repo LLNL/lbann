@@ -53,28 +53,46 @@ class kfac_test : public callback_base {
 
   /** Constructor.
    */
-  kfac_test(double damping,
+  kfac_test(double damping_0, double damping_target,
+            double damping_warmup_steps,
             bool print_time, bool print_matrix,
             bool print_matrix_summary)
-      : callback_base(), m_damping(damping),
+      : callback_base(),
+        m_damping_0(damping_0), m_damping_target(damping_target),
+        m_damping_warmup_steps(damping_warmup_steps),
         m_print_time(print_time), m_print_matrix(print_matrix),
-        m_print_matrix_summary(print_matrix_summary) {}
+        m_print_matrix_summary(print_matrix_summary) {
+    m_damping = m_damping_0;
+  }
   kfac_test(const kfac_test&) = default;
   kfac_test& operator=(const kfac_test&) = default;
   kfac_test* copy() const override { return new kfac_test(*this); }
   void setup(model *m) override;
+  void on_backward_prop_end(model *m) override;
+  void on_epoch_end(model *m) override;
   void on_backward_prop_end(model *m, Layer *l) override;
   std::string name() const override { return "K-FAC test"; }
 
+  /** @brief The default parameters of a Tikhonov damping technique. */
+  constexpr static const double damping_0_default = 3e-2;
+  constexpr static const double damping_target_default = 1e-4;
+  constexpr static const double damping_warmup_steps_default = 100;
+
  private:
+
+  /** @brief Parameters of a Tikhonov damping technique. */
+  const double m_damping_0, m_damping_target, m_damping_warmup_steps;
+
+  /** @brief Knobs to print information for debugging. */
+  const bool m_print_time, m_print_matrix, m_print_matrix_summary;
   double m_damping;
-  bool m_print_time, m_print_matrix, m_print_matrix_summary;
+
 };
 
 // Builder function
 std::unique_ptr<callback_base>
 build_kfac_test_callback_from_pbuf(
-  const google::protobuf::Message&,std::shared_ptr<lbann_summary> const&);
+    const google::protobuf::Message&,std::shared_ptr<lbann_summary> const&);
 
 } // namespace callback
 } // namespace lbann

@@ -57,9 +57,32 @@ void kfac_test::setup(model *m) {
 #if defined(KFAC_CALLBACK_USE_MAGMA)
   const auto ret = magma_init();
   assert_always(ret == MAGMA_SUCCESS);
-  std::cerr << "kfac_test::setup" << std::endl;
   // TODO: Call magma_finalize at last
 #endif
+}
+
+void kfac_test::on_backward_prop_end(model *m) {
+  // Using a modified Tikhonov damping tequnique from
+  // http://arxiv.org/abs/1811.12019.
+  const DataType alpha = DataType(2.0) * log10(m_damping_0 / m_damping_target) / m_damping_warmup_steps;
+  m_damping = (DataType(1.0)-alpha) * m_damping + alpha * m_damping_target;
+}
+
+void kfac_test::on_epoch_end(model *m) {
+  const auto comm = m->get_comm();
+  if(comm->am_trainer_master()) {
+    const auto& c = static_cast<const sgd_execution_context&>(m->get_execution_context());
+    const auto epoch = c.get_epoch();
+    std::ostringstream oss;
+    oss << "K-FAC callback: changing damping value to " << m_damping
+        << " at " << epoch << " epochs"
+        << " (g_0=" << m_damping_0
+        << ", g_target=" << m_damping_target
+        << ", t_warmup=" << m_damping_warmup_steps
+        << ")"
+        << std::endl;
+    std::cout << oss.str();
+  }
 }
 
 void kfac_test::on_backward_prop_end(model *m, Layer *l) {
@@ -150,7 +173,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         const double t_fill = get_time();
 
         if(report_time) {
-          std::cout << "get_inverse of"
+          std::cout << "K-FAC callback: get_inverse of"
                     << " " << A.Height() << "x" << A.Width()
 #if defined(KFAC_CALLBACK_USE_MAGMA)
                     << " using MAGMA"
@@ -168,7 +191,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         return Ainv;
       };
 
-  auto comm = m->get_comm();
+  const auto comm = m->get_comm();
   if(l->get_type() == "fully connected") {
     assert_always(l->get_num_parents() == 1);
     assert_always(l->get_num_children() == 1);
@@ -245,7 +268,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
           };
 
       std::ostringstream oss;
-      oss << "L2 norm @ "<< l->get_name() << ": "
+      oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
           << "acts=" << get_nrm2(activations)
           << ", errs=" << get_nrm2(error_signals)
           << ", A=" << get_nrm2(A)
@@ -269,14 +292,20 @@ build_kfac_test_callback_from_pbuf(
   using MsgType = lbann_data::Callback::CallbackKFACTest;
   using CallbackType = kfac_test;
   const auto& params = dynamic_cast<const MsgType&>(proto_msg);
-  double damping = params.damping();
-  bool print_time = params.print_time();
-  bool print_matrix = params.print_matrix();
-  bool print_matrix_summary = params.print_matrix_summary();
-  if(damping == 0.0)
-    damping = 0.03;
+  double damping_0 = params.damping_0();
+  if(damping_0 == 0.0)
+    damping_0 = kfac_test::damping_0_default;
+  double damping_target = params.damping_target();
+  if(damping_target == 0.0)
+    damping_target = kfac_test::damping_target_default;
+  double damping_warmup_steps = params.damping_warmup_steps();
+  if(damping_warmup_steps == 0.0)
+    damping_warmup_steps = kfac_test::damping_warmup_steps_default;
+  const bool print_time = params.print_time();
+  const bool print_matrix = params.print_matrix();
+  const bool print_matrix_summary = params.print_matrix_summary();
   return make_unique<CallbackType>(
-      damping,
+      damping_0, damping_target, damping_warmup_steps,
       print_time, print_matrix, print_matrix_summary);
 }
 

@@ -377,10 +377,12 @@ message Callback {
   }// message CallbackSummarizeImages
 
   message CallbackKFACTest {
-    double damping = 1; // default: 0.03
-    bool print_time = 2; // default: false
-    bool print_matrix = 3; // default: false
-    bool print_matrix_summary = 4; // default: false
+    double damping_0 = 1; // default: 3e-2
+    double damping_target = 2; // default: 1e-4
+    double damping_warmup_steps = 3; // default: 100
+    bool print_time = 4; // default: false
+    bool print_matrix = 5; // default: false
+    bool print_matrix_summary = 6; // default: false
   }
 
 }
