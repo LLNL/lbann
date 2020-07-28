@@ -380,9 +380,10 @@ message Callback {
     double damping_0 = 1; // default: 3e-2
     double damping_target = 2; // default: 1e-4
     double damping_warmup_steps = 3; // default: 100
-    bool print_time = 4; // default: false
-    bool print_matrix = 5; // default: false
-    bool print_matrix_summary = 6; // default: false
+    double kronecker_decay = 4; // default: 0.99
+    bool print_time = 5; // default: false
+    bool print_matrix = 6; // default: false
+    bool print_matrix_summary = 7; // default: false
   }
 
 }

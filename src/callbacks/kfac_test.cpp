@@ -88,6 +88,13 @@ void kfac_test::on_epoch_end(model *m) {
 void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
   // TODO: Static functions
+  const auto get_nrm2 =
+      [](const El::Matrix<DataType, El::Device::GPU>& X) {
+        El::Matrix<DataType> XCPU(X);
+        return El::Nrm2(XCPU);
+      };
+
+  // TODO: Static functions
   const auto get_kronecker_factor =
       [](const El::AbstractMatrix<DataType>& A,
          const DataType alpha) {
@@ -100,6 +107,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         return factor;
       };
 
+  // TODO: Static functions
   const auto get_inverse =
       [](const El::Matrix<DataType, El::Device::GPU>& A,
          const bool report_time=false,
@@ -191,8 +199,17 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         return Ainv;
       };
 
+
   const auto comm = m->get_comm();
   if(l->get_type() == "fully connected") {
+
+    // Get the layer ID
+    const auto layers = m->get_layers();
+    const auto layer_it_in_list = std::find(layers.begin(), layers.end(), l);
+    assert_always(layer_it_in_list != layers.end());
+    const size_t layer_id = std::distance(layers.begin(), layer_it_in_list);
+
+    // Get activations, errors, and gradients
     assert_always(l->get_num_parents() == 1);
     assert_always(l->get_num_children() == 1);
     const auto parent = l->get_parent_layers()[0];
@@ -201,7 +218,6 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
     const El::AbstractMatrix<DataType>& activations = dtl_parent.get_local_activations();
     const El::AbstractMatrix<DataType>& error_signals = dtl_child.get_local_error_signals();
-
     auto& w = l->get_weights(0);
     optimizer *opt = w.get_optimizer();
     auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(opt);
@@ -209,32 +225,46 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     assert_always(activations.Height() == gradient.Width());
     assert_always(error_signals.Height() == gradient.Height());
 
+    // Compute Kronecker factors
     // TODO: Use the mini-batch size
     const DataType alpha = DataType(1.0/activations.Width()/comm->get_procs_per_trainer());
     auto A = get_kronecker_factor(activations, alpha);
     auto G = get_kronecker_factor(error_signals, alpha);
     // OPTIMIZE: Communicate only the lower triangulars
-    const bool print_time = comm->am_trainer_master() && m_print_time;
     comm->allreduce((El::AbstractMatrix<DataType>&) A, comm->get_trainer_comm());
     comm->allreduce((El::AbstractMatrix<DataType>&) G, comm->get_trainer_comm());
-    const auto Ainv = get_inverse(A, print_time, DataType(m_damping));
-    const auto Ginv = get_inverse(G, print_time, DataType(m_damping));
 
+    // Compute exponential moving average of the factors
+    if(m_kronecker_average.find(layer_id) == m_kronecker_average.end())
+      m_kronecker_average.emplace(layer_id, std::make_pair(A, G));
+    auto& AGave = (*m_kronecker_average.find(layer_id)).second;
+    auto& Aave = AGave.first;
+    auto& Gave = AGave.second;
+    kfac_test_update_kronecker_average(
+        Aave.Buffer(), A.Buffer(), A.Height()*A.Width(), m_kronecker_decay);
+    kfac_test_update_kronecker_average(
+        Gave.Buffer(), G.Buffer(), G.Height()*G.Width(), m_kronecker_decay);
+
+    // Compute the inverse of the factors
+    const bool print_time = comm->am_trainer_master() && m_print_time;
+    const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping));
+    const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping));
+
+    // Compute preconditioned gradients
     El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), gradient.Width());
     El::Gemm(
         El::NORMAL, El::NORMAL,
         El::TypeTraits<DataType>::One(), Ginv, gradient,
         El::TypeTraits<DataType>::Zero(), Gg);
-
     El::Matrix<DataType, El::Device::GPU> Fgrad(G.Height(), A.Width());
     El::Gemm(
         El::NORMAL, El::NORMAL,
         El::TypeTraits<DataType>::One(), Gg, Ainv,
         El::TypeTraits<DataType>::Zero(), Fgrad);
-
     assert_always(Fgrad.Height() == gradient.Height());
     assert_always(Fgrad.Width() == gradient.Width());
 
+    // Apply preconditioned grads
     DataType dst_scale = El::TypeTraits<DataType>::Zero(),
         gradient_scale = El::TypeTraits<DataType>::One();
     auto& grad_buffer = opt->get_gradient_buffer(
@@ -249,6 +279,10 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
         std::cout << std::endl;
         El::Print(G, "G");
         std::cout << std::endl;
+        El::Print(Aave, "Aave");
+        std::cout << std::endl;
+        El::Print(Gave, "Gave");
+        std::cout << std::endl;
         El::Print(Ainv, "Ainv");
         std::cout << std::endl;
         El::Print(Ginv, "Ginv");
@@ -260,19 +294,16 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
       }
     }
 
+    // damp L2 norm of matrices
     if(comm->am_trainer_master() && m_print_matrix_summary) {
-      const auto get_nrm2 =
-          [](const El::Matrix<DataType, El::Device::GPU>& X) {
-            El::Matrix<DataType> XCPU(X);
-            return El::Nrm2(XCPU);
-          };
-
       std::ostringstream oss;
       oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
           << "acts=" << get_nrm2(activations)
           << ", errs=" << get_nrm2(error_signals)
           << ", A=" << get_nrm2(A)
           << ", G=" << get_nrm2(G)
+          << ", Aave=" << get_nrm2(Aave)
+          << ", Gave=" << get_nrm2(Gave)
           << ", Ainv=" << get_nrm2(Ainv)
           << ", Ginv=" << get_nrm2(Ginv)
           << ", grad=" << get_nrm2(gradient)
@@ -301,11 +332,15 @@ build_kfac_test_callback_from_pbuf(
   double damping_warmup_steps = params.damping_warmup_steps();
   if(damping_warmup_steps == 0.0)
     damping_warmup_steps = kfac_test::damping_warmup_steps_default;
+  double kronecker_decay = params.kronecker_decay();
+  if(kronecker_decay == 0.0)
+    kronecker_decay = kfac_test::kronecker_decay_default;
   const bool print_time = params.print_time();
   const bool print_matrix = params.print_matrix();
   const bool print_matrix_summary = params.print_matrix_summary();
   return make_unique<CallbackType>(
       damping_0, damping_target, damping_warmup_steps,
+      kronecker_decay,
       print_time, print_matrix, print_matrix_summary);
 }
 

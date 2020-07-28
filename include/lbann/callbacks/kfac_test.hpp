@@ -47,6 +47,13 @@ void kfac_test_fill_upper_tri(
     TensorDataType * __restrict__ A,
     const size_t height);
 
+// Aave = Aave * decay + A * (1-decay)
+template <typename TensorDataType>
+void kfac_test_update_kronecker_average(
+    TensorDataType * __restrict__ Aave,
+    const TensorDataType * __restrict__ A,
+    const size_t count, const DataType decay);
+
 /** Callback hooks for the K-FAC method. */
 class kfac_test : public callback_base {
  public:
@@ -55,11 +62,13 @@ class kfac_test : public callback_base {
    */
   kfac_test(double damping_0, double damping_target,
             double damping_warmup_steps,
+            double kronecker_decay,
             bool print_time, bool print_matrix,
             bool print_matrix_summary)
       : callback_base(),
         m_damping_0(damping_0), m_damping_target(damping_target),
         m_damping_warmup_steps(damping_warmup_steps),
+        m_kronecker_decay(kronecker_decay),
         m_print_time(print_time), m_print_matrix(print_matrix),
         m_print_matrix_summary(print_matrix_summary) {
     m_damping = m_damping_0;
@@ -78,14 +87,28 @@ class kfac_test : public callback_base {
   constexpr static const double damping_target_default = 1e-4;
   constexpr static const double damping_warmup_steps_default = 100;
 
+  /** @brief The default parameters of the decay factor. */
+  constexpr static const double kronecker_decay_default = 0.99;
+
  private:
 
   /** @brief Parameters of a Tikhonov damping technique. */
   const double m_damping_0, m_damping_target, m_damping_warmup_steps;
 
+  /** @brief The decay factor of kronecker factors. */
+  const double m_kronecker_decay;
+
   /** @brief Knobs to print information for debugging. */
   const bool m_print_time, m_print_matrix, m_print_matrix_summary;
+
+  /** @brief The current damping value. */
   double m_damping;
+
+  /** @brief Exponential moving average of kronecker factors. */
+  std::unordered_map<
+    size_t,
+    std::pair<El::Matrix<DataType, El::Device::GPU>,
+              El::Matrix<DataType, El::Device::GPU>>> m_kronecker_average;
 
 };
 

@@ -56,6 +56,17 @@ __global__ void kfac_test_fill_upper_tri_kernel(
   }
 }
 
+template <typename TensorDataType>
+__global__ void kfac_test_update_kronecker_average_kernel(
+    TensorDataType * __restrict__ Aave,
+    const TensorDataType * __restrict__ A,
+    const size_t count, const DataType decay) {
+  const size_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+  if(gid < count) {
+    Aave[gid] = Aave[gid]*decay + A[gid]*(DataType(1.0)-decay);
+  }
+}
+
 } // namespace
 
 // TODO: static function
@@ -84,14 +95,31 @@ void kfac_test_fill_upper_tri(
       A, height);
 }
 
-#define PROTO(T)                                \
-  template void kfac_test_add_to_diagonal<T>(   \
-      T* __restrict__ A,                        \
-      const size_t height,                      \
-      const T damping);                         \
-  template void kfac_test_fill_upper_tri<T>(    \
-      T * __restrict__ A,                       \
-      const size_t height)
+// TODO: static function
+template <typename TensorDataType>
+void kfac_test_update_kronecker_average(
+    TensorDataType * __restrict__ Aave,
+    const TensorDataType * __restrict__ A,
+    const size_t count, const DataType decay) {
+  constexpr size_t block_size = 256;
+  const size_t grid_size = (count + block_size - 1) / block_size;
+  auto&& stream = El::GPUManager::Stream();
+  kfac_test_update_kronecker_average_kernel<TensorDataType><<<grid_size, block_size, 0, stream>>>(
+      Aave, A, count, decay);
+}
+
+#define PROTO(T)                                        \
+  template void kfac_test_add_to_diagonal<T>(           \
+      T* __restrict__ A,                                \
+      const size_t height,                              \
+      const T damping);                                 \
+  template void kfac_test_fill_upper_tri<T>(            \
+      T * __restrict__ A,                               \
+      const size_t height);                             \
+  template void kfac_test_update_kronecker_average<T>(  \
+      T * __restrict__ Aave,                            \
+      const T * __restrict__ A,                         \
+      const size_t count, const DataType decay)
 
 #define LBANN_INSTANTIATE_GPU_HALF
 #include "lbann/macros/instantiate.hpp"
