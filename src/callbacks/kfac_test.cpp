@@ -218,6 +218,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     const auto& dtl_child = dynamic_cast<const data_type_layer<DataType>&>(*child);
     const El::AbstractMatrix<DataType>& activations = dtl_parent.get_local_activations();
     const El::AbstractMatrix<DataType>& error_signals = dtl_child.get_local_error_signals();
+    const auto mini_batch_size = dtl_parent.get_activations().Width();
+    assert_always(mini_batch_size == dtl_child.get_error_signals().Width());
     auto& w = l->get_weights(0);
     optimizer *opt = w.get_optimizer();
     auto* dto = dynamic_cast<data_type_optimizer<DataType>*>(opt);
@@ -226,8 +228,7 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
     assert_always(error_signals.Height() == gradient.Height());
 
     // Compute Kronecker factors
-    // TODO: Use the mini-batch size
-    const DataType alpha = DataType(1.0/activations.Width()/comm->get_procs_per_trainer());
+    const DataType alpha = DataType(1.0/mini_batch_size);
     auto A = get_kronecker_factor(activations, alpha);
     auto G = get_kronecker_factor(error_signals, alpha);
     // OPTIMIZE: Communicate only the lower triangulars
