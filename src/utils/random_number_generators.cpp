@@ -191,7 +191,6 @@ void init_io_random(int seed, int num_io_RNGs) {
     seed_base = rd();
   }
 
-  ::io_generators_inited = true;
   ::io_generators.resize(num_io_RNGs);
   for(int i = 0; i < num_io_RNGs; i++) {
     auto& io_rng = ::io_generators[i];
@@ -200,6 +199,7 @@ void init_io_random(int seed, int num_io_RNGs) {
     io_rng.mutex = make_unique<std::mutex>();
     io_rng.active_thread_id = std::thread::id();
   }
+  ::io_generators_inited = true;
 }
 
 }  // namespace lbann
