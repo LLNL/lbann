@@ -1,7 +1,7 @@
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
-#include "lbann/utils/hw_topology.hpp"
+#include "lbann/utils/threads/thread_topology.hpp"
 
 #include <hydrogen/device/gpu/CUDA.hpp>
 
@@ -73,9 +73,10 @@ void thread_pool::launch_pinned_threads(
   int err;
   /* initialize a topology context */
   err = hwloc_topology_init(&topo);
-  assert(!err);
+  if(!err) { LBANN_ERROR("hwloc_topology_init failed"); }
   /* build the topology created and configured above */
   err = hwloc_topology_load(topo);
+  if(!err) { LBANN_ERROR("hwloc_topology_load failed"); }
   // Get the number of PUs per core
   // hwloc_obj_t core = hwloc_get_obj_by_type(topo, HWLOC_OBJ_CORE, 0);
   m_threads_offset = PU_offset;
@@ -111,7 +112,7 @@ void thread_pool::launch_pinned_threads(
       hwloc_cpuset_t ht_cpuset = hwloc_bitmap_dup(iot_cpuset);
       hwloc_topology_t ht_topo;
       err = hwloc_topology_dup(&ht_topo, topo);
-      assert(!err);
+      if(!err) { LBANN_ERROR("hwloc_topology_dup failed"); }
       threads_.emplace_back(&thread_pool::do_thread_work_pinned_thread_,
                             this, cnt, ht_topo, ht_cpuset);
     }
