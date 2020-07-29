@@ -25,6 +25,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lbann/utils/threads/thread_topology.hpp>
+#include <lbann/utils/exception.hpp>
 
 #if defined(LBANN_TOPO_AWARE)
 #include <hwloc.h>
@@ -167,7 +168,7 @@ hwloc_cpuset_t get_local_cpuset_for_current_thread(hwloc_topology_t topo) {
 hwloc_cpuset_t get_allocated_cpuset_for_current_thread(hwloc_topology_t topo) {
   hwloc_cpuset_t current_cpuset = hwloc_bitmap_alloc();
   int err = hwloc_get_cpubind(topo, current_cpuset, 0);
-  assert(!err);
+  if(!err) { LBANN_ERROR("Unable to execute hwloc_get_cpubind"); }
 
   hwloc_cpuset_t PU_core_set = hwloc_bitmap_alloc();
   // Primary core set
@@ -176,9 +177,9 @@ hwloc_cpuset_t get_allocated_cpuset_for_current_thread(hwloc_topology_t topo) {
   hwloc_cpuset_t ht_PU_core_set = hwloc_bitmap_dup(current_cpuset);
   // Get the list of available cores without hyperthreads
   err = hwloc_bitmap_singlify_per_core(topo, primary_PU_core_set, 0);
-  assert(!err);
+  if(!err) { LBANN_ERROR("Unable to singlify the cpuset"); }
   err = hwloc_bitmap_singlify_per_core(topo, ht_PU_core_set, 1);
-  assert(!err);
+  if(!err) { LBANN_ERROR("Unable to singlify the cpuset"); }
 
   if(!hwloc_bitmap_iszero(ht_PU_core_set)) {
     find_common_core_set_from_cpu_masks(topo, PU_core_set, primary_PU_core_set, ht_PU_core_set);
