@@ -160,7 +160,7 @@ hwloc_cpuset_t get_local_cpuset_for_current_thread(hwloc_topology_t topo) {
 #else
   hwloc_const_cpuset_t allowed_cpuset = hwloc_topology_get_allowed_cpuset(topo);
   local_cpuset = hwloc_bitmap_dup(allowed_cpuset);
-  hwloc_bitmap_free(allowed_cpuset);
+  //  hwloc_bitmap_free(allowed_cpuset);
 #endif // LBANN_HAS_GPU
   return local_cpuset;
 }
