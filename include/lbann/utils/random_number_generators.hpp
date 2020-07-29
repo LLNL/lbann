@@ -28,8 +28,9 @@
 #define LBANN_UTILS_RNG_HPP
 
 #include "lbann/comm.hpp"
+#include "lbann/utils/exception.hpp"
 #include <random>
-#include <mutex>
+#include <atomic>
 #include <thread>
 
 namespace lbann {
@@ -40,24 +41,37 @@ using fast_rng_gen = std::minstd_rand;  // Minimum standard, LC
 struct io_rng_t {
   lbann::rng_gen generator;
   lbann::fast_rng_gen fast_generator;
-  std::unique_ptr<std::mutex> mutex;
   // Track the owner so that it is easy to ensure the right thread is
   // using this structure.
-  std::thread::id active_thread_id;
+  std::atomic<std::thread::id> active_thread_id;
+
+  io_rng_t()
+    : generator(42ULL),
+      fast_generator(42ULL),
+      active_thread_id(std::thread::id()) {}
+
+  io_rng_t(const io_rng_t& other)
+    : generator(other.generator),
+      fast_generator(other.fast_generator),
+      active_thread_id(other.active_thread_id.load()) {}
 };
 
 struct locked_io_rng_ref {
   io_rng_t* rng_;
-  std::unique_lock<std::mutex> lock_;
   locked_io_rng_ref(io_rng_t& rng)
-    : rng_(&rng),
-      lock_(*(rng.mutex.get()))
+    : rng_(&rng)
   {
-    rng_->active_thread_id = std::this_thread::get_id();
+    std::thread::id prev_tid = rng_->active_thread_id.exchange( std::this_thread::get_id());
+    if(prev_tid != std::thread::id()) {
+      LBANN_ERROR("Acquired a \'locked\' RNG that isn't owned by this thread");
+    }
   }
   explicit operator io_rng_t&() { return *rng_; }
   ~locked_io_rng_ref() {
-    rng_->active_thread_id = std::thread::id();
+    std::thread::id prev_tid = rng_->active_thread_id.exchange(std::thread::id());
+    if(prev_tid != std::this_thread::get_id()) {
+      LBANN_WARNING("Releasing a \'locked\' RNG that isn't owned by this thread");
+    }
   }
   locked_io_rng_ref(locked_io_rng_ref&& ) = default;
 };

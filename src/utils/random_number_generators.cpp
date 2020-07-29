@@ -99,7 +99,7 @@ locked_io_rng_ref set_io_generators_local_index(size_t idx) {
 rng_gen& get_io_generator() {
   const size_t idx = ::local_io_generators_index;
   io_rng_t& io_rng = ::io_generators[idx];
-  if (io_rng.active_thread_id != std::this_thread::get_id()) {
+  if (io_rng.active_thread_id.load() != std::this_thread::get_id()) {
     LBANN_ERROR("I/O RNG illegal thread access");
   }
   return io_rng.generator;
@@ -108,7 +108,7 @@ rng_gen& get_io_generator() {
 fast_rng_gen& get_fast_io_generator() {
   const size_t idx = ::local_io_generators_index;
   io_rng_t& io_rng = ::io_generators[idx];
-  if (io_rng.active_thread_id != std::this_thread::get_id()) {
+  if (io_rng.active_thread_id.load() != std::this_thread::get_id()) {
     LBANN_ERROR("I/O RNG illegal thread access");
   }
   return io_rng.fast_generator;
@@ -196,8 +196,7 @@ void init_io_random(int seed, int num_io_RNGs) {
     auto& io_rng = ::io_generators[i];
     io_rng.generator.seed(hash_combine(seed_base, i));
     io_rng.fast_generator.seed(hash_combine(seed_base, i));
-    io_rng.mutex = make_unique<std::mutex>();
-    io_rng.active_thread_id = std::thread::id();
+    io_rng.active_thread_id.store(std::thread::id());
   }
   ::io_generators_inited = true;
 }
