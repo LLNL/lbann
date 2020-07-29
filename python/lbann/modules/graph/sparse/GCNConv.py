@@ -14,7 +14,11 @@ class GCNConv(Module):
     
     global_count = 0
 
-    def __init__(self, input_channels, output_channels, bias=True,name=None):
+    def __init__(self, 
+                 input_channels,
+                 output_channels,
+                 bias=True,
+                 name=None):
         """Initialize GCN layer
         
 
@@ -24,7 +28,7 @@ class GCNConv(Module):
             bias (bool): Whether to apply biases after MatMul 
             name (str): Default name of the layer is GCN_{number}
             data_layout (str): Data layout
-
+            activation (type): Activation leyer for the node features
 
         """
         super().__init__()
@@ -65,6 +69,15 @@ class GCNConv(Module):
                                            weights = self.bias_weights, 
                                            name = self.name+'_bias_layer')
 
+        self.activation = None 
+
+        if activation:
+            if isinstance(activation, type):
+                self.activation = activation 
+            else:
+                self.activation = type(actvation)
+            if not issubclass(self.activation, lbann.Layer):
+                raise ValueError('activation must be a layer') 
     
     def forward(self, X, A, activation = lbann.Relu):
         """Apply GCN
@@ -75,7 +88,6 @@ class GCNConv(Module):
 
             A (Layer): Adjacency matrix input with shape (num_nodes, num_nodes)
 
-            activation (Layer): Activation layer for the node features. If None, then no activation is 
                                 applied. (default: lbann.Relu) 
         Returns: 
             
@@ -89,14 +101,15 @@ class GCNConv(Module):
             if (self.bias):
                 X[i] = lbann.Sum(X[i], self.bias, name=self.name+'_message_bias_'+str(i))
 
+        # Pass Message to Node Features
         out = X.get_mat()
         out = lbann.MatMul(A, out, name=self.name+'_aggregate')
         
-        out = activation(out)
+        if self.activation:
+            out = activation(out)
 
         out = GraphVertexData.matrix_to_graph(out, X.shape[0], self.output_channels)
         
-
         return out 
  
 
