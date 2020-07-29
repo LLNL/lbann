@@ -53,7 +53,10 @@ parser.add_argument(
     '--xdim', action='store', default=5, type=int,
     help='input (x) dim (default: 5)', metavar='NUM')
 parser.add_argument(
-    '--mcf', action='store', default=1, type=int,
+    '--wae_mcf', action='store', default=1, type=int,
+    help='model capacity factor (default: 1)', metavar='NUM')
+parser.add_argument(
+    '--surrogate_mcf', action='store', default=1, type=int,
     help='model capacity factor (default: 1)', metavar='NUM')
 parser.add_argument(
     '--lamda-cyc', action='store', default=1e-3, type=float,
@@ -113,9 +116,9 @@ def construct_model():
 
 
     z = lbann.Gaussian(mean=0.0,stdev=1.0, neuron_dims="20")
-    wae = macc_models.MACCWAE(args.zdim,args.ydim,cf=args.mcf,use_CNN=args.useCNN) #pretrained, freeze
-    inv = macc_models.MACCInverse(args.xdim,cf=args.mcf)
-    fwd = macc_models.MACCForward(args.zdim,cf=args.mcf)
+    wae = macc_models.MACCWAE(args.zdim,args.ydim,cf=args.wae_mcf,use_CNN=args.useCNN) #pretrained, freeze
+    inv = macc_models.MACCInverse(args.xdim,cf=args.surrogate_mcf)
+    fwd = macc_models.MACCForward(args.zdim,cf=args.surrogate_mcf)
 
 
     y_pred_fwd = wae.encoder(gt_y)
