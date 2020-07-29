@@ -3,11 +3,8 @@
 #include "lbann/utils/lbann_library.hpp"
 #include "lbann/utils/threads/thread_topology.hpp"
 
-#include <hydrogen/device/gpu/CUDA.hpp>
-
 #if defined(LBANN_TOPO_AWARE)
 #include <hwloc.h>
-#include <hwloc/cudart.h>
 #if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
 #define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
 #endif
