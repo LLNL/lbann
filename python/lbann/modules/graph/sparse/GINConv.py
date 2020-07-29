@@ -1,6 +1,7 @@
 import lbann 
 from lbann.modules import Module 
 from lbann.modules.graph.utils import GraphVertexData
+from lbann.util import str_list
 
 class GINConv(Module):
     """Details of the kernel is detailed in: 
@@ -19,11 +20,8 @@ class GINConv(Module):
         """
         GINConv.global_count += 1
         self.name = (self.name if name else 'GIN_{}'.format(GINConv.global_count))
-
         self.nn = sequential_nn
-        
-        self.eps = eps
-        
+        self.eps = eps 
         self.output_channels = output_channels
 
 
@@ -44,20 +42,26 @@ class GINConv(Module):
                           directly
         """
         in_channel = X.shape[1]
-        
-        eps = lbann.Constant(value=(1+self.eps),num_neurons = str(in_channel))
 
+        # Accumulate Messages from Neighboring Nodes
+        out = X.get_mat()
+        out = lbann.MatMul(A,out, name = self.name+"_GIN_MATMUL")
+        message = GraphVertexData.matrix_to_graph(out, X.shape[0], in_channel)
+
+        # Aggregate Messages into node features  
+        eps = lbann.Constant(value=(1+self.eps),num_neurons = str_list([1, in_channel]))
+        for node_feature in range(X.shape[0]):
+            eps_val = lbann.Multiply(eps, X[node_feature])
+            X[node_feature] = lbann.Sum(message[node_feature], eps_val)
+        
+        # Transform with the sequence of linear layers
         for layer in self.nn:
             for node_feature in range(X.shape[0]):
-                eps_val = lbann.Multiply(eps, X[node_feature])
                 X[node_feature] = layer(X[node_feature])
-                X[node_feature] = lbann.Sum(X[node_feature],eps_val)
-
-        out = X.get_mat(self.output_channels) #Gather the rows 
         
-
-        out = lbann.MatMul(A, out, name=self.name+"_GIN_MATMUL")
-        
-        out = activation(out)
-        return GraphVertexData.matrix_to_graph(out, X.shape[0], self.output_channels) 
-
+        ## Apply activation 
+        if activation:
+            for node_feature in range(X.shape[0]):
+                X[node_feature] = activation(X[node_feature])
+        X.num_features = self.output_channels
+        return X

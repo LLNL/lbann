@@ -118,4 +118,4 @@ def make_model(num_vertices = None,
 
 if __name__ == '__main__':
     model = make_model(dataset="MNIST")
- 
+     
