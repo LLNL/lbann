@@ -37,7 +37,6 @@
 #include "lbann/io/file_io.hpp"
 #include "lbann/io/persist.hpp"
 #include "lbann/utils/options.hpp"
-#include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/transforms/transform_pipeline.hpp"
 #include <cassert>
 #include <algorithm>
@@ -57,6 +56,7 @@
 namespace lbann {
 
 class data_store_conduit;
+class thread_pool;
 class trainer;
 
 /**

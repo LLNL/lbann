@@ -55,11 +55,6 @@ void construct_std_options() {
                         "Number of threads available to both I/O and "
                         "initial data transformations for each rank.",
                         64);
-  arg_parser.add_flag(STRICT_IO_THREAD_PINNING,
-                      {"--strict_io_thread_pinning"},
-                      utils::ENV("LBANN_STRICT_IO_THREAD_PINNING"),
-                      "Restrict the Number of I/O threads to the number of "
-                      "available cores.");
 }
 
 /// Construct a trainer that contains a lbann comm object and threadpool

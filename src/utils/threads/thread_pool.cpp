@@ -1,6 +1,17 @@
 #include "lbann/utils/threads/thread_pool.hpp"
 #include "lbann/utils/argument_parser.hpp"
 #include "lbann/utils/lbann_library.hpp"
+#include "lbann/utils/hw_topology.hpp"
+
+#include <hydrogen/device/gpu/CUDA.hpp>
+
+#if defined(LBANN_TOPO_AWARE)
+#include <hwloc.h>
+#include <hwloc/cudart.h>
+#if defined(HWLOC_API_VERSION) && (HWLOC_API_VERSION < 0x00010b00)
+#define HWLOC_OBJ_NUMANODE HWLOC_OBJ_NODE
+#endif
+#endif
 
 #include <algorithm>
 #include <iostream>
@@ -51,58 +62,61 @@ void thread_pool::launch_threads(size_type num_threads)
 // As a result of the above, this will, in fact, *not* launch pinned
 // threads when the locally-supported pthread API does not support it.
 void thread_pool::launch_pinned_threads(
-  size_type num_threads, int cpu_offset) {
-#ifdef LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
+  size_type num_threads, int PU_offset) {
+
+#if defined(LBANN_TOPO_AWARE)
   threads_.reserve(num_threads);
   m_work_group.reserve(num_threads);
   m_thread_id_to_local_id_map.reserve(num_threads);
 
-  m_threads_offset = cpu_offset;
+  hwloc_topology_t topo;
+  int err;
+  /* initialize a topology context */
+  err = hwloc_topology_init(&topo);
+  assert(!err);
+  /* build the topology created and configured above */
+  err = hwloc_topology_load(topo);
+  // Get the number of PUs per core
+  // hwloc_obj_t core = hwloc_get_obj_by_type(topo, HWLOC_OBJ_CORE, 0);
+  m_threads_offset = PU_offset;
 
-  // Find the current thread affinity
-  cpu_set_t cpuset, ht_cpuset;
-  CPU_ZERO(&cpuset);
-
-  auto error = pthread_getaffinity_np(pthread_self(),
-                                      sizeof(cpu_set_t), &cpuset);
-
-  if (error != 0) {
-    std::cerr << "error in pthread_getaffinity_np, error=" << strerror(error)
-              << std::endl;
-  }
-
+  //  hwloc_cpuset_t current_cpuset = get_local_cpuset_for_current_thread(topo);
+  int i;
+  //  hwloc_obj_t obj;
   // Try to launch each worker thread and pin it to a single core
   try
   {
-    auto& arg_parser = global_argument_parser();
-    bool strict_io_threads = arg_parser.get<bool>(STRICT_IO_THREAD_PINNING);
-    int cpuset_idx = 0;
+    hwloc_cpuset_t allocated_cpuset = get_local_cpuset_for_current_thread(topo);
+    hwloc_cpuset_t excluded_cpuset = hwloc_bitmap_alloc();
+    // int cpuset_idx = 0;
     int skipped_indices = 0;
-    for (size_type cnt = 0; cnt < num_threads; ++cnt) {
-      CPU_ZERO(&ht_cpuset);
-      // Pin this thread to the base CPU id plus the thread count and offset
-      if(!strict_io_threads) {
-        cpuset_idx = 0;
-        skipped_indices = 0;
+    // Skip PUs to match the thread offset
+    hwloc_bitmap_foreach_begin(i, allocated_cpuset) {
+      if(skipped_indices < m_threads_offset) {
+        skipped_indices++;
+        hwloc_bitmap_set(excluded_cpuset, i);
       }
-      for (; cpuset_idx < CPU_SETSIZE; cpuset_idx++) {
-        if (CPU_ISSET(cpuset_idx, &cpuset)) {
-          // Skip reserved cores
-          if(skipped_indices < cpu_offset) {
-            skipped_indices++;
-          }else {
-            CPU_SET(cpuset_idx, &ht_cpuset);
-            cpuset_idx++;
-            if(strict_io_threads) {
-              break;
-            }
-          }
-        }
-      }
+    } hwloc_bitmap_foreach_end();
 
-      threads_.emplace_back(&thread_pool::do_thread_work_pinned_thread_,
-                            this, cnt, ht_cpuset);
+    hwloc_cpuset_t iot_cpuset = hwloc_bitmap_dup(allocated_cpuset);
+    hwloc_bitmap_andnot(iot_cpuset, iot_cpuset, excluded_cpuset);
+    if(hwloc_bitmap_iszero(iot_cpuset)) {
+      LBANN_WARNING("Insufficient number of allocated cores to respect I/O CPU offset");
+      hwloc_bitmap_free(iot_cpuset);
+      // Reset the cpuset back to all of the allowed cores
+      iot_cpuset = hwloc_bitmap_dup(allocated_cpuset);
     }
+
+    for (size_type cnt = 0; cnt < num_threads; ++cnt) {
+      hwloc_cpuset_t ht_cpuset = hwloc_bitmap_dup(iot_cpuset);
+      hwloc_topology_t ht_topo;
+      err = hwloc_topology_dup(&ht_topo, topo);
+      assert(!err);
+      threads_.emplace_back(&thread_pool::do_thread_work_pinned_thread_,
+                            this, cnt, ht_topo, ht_cpuset);
+    }
+    hwloc_bitmap_free(iot_cpuset);
+    hwloc_bitmap_free(allocated_cpuset);
   }
   catch(...)
   {
@@ -148,16 +162,21 @@ void thread_pool::do_thread_work_()
   }
 }
 
-#ifdef LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
-void thread_pool::do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set)
+#if defined(LBANN_TOPO_AWARE)
+void thread_pool::do_thread_work_pinned_thread_(int tid, hwloc_topology_t topo, hwloc_cpuset_t cpuset)
 {
   // Set the CPU affinity for the thread
-  auto error = pthread_setaffinity_np(pthread_self(),
-                                      sizeof(cpu_set_t), &cpu_set);
+  auto error = hwloc_set_cpubind(topo, cpuset, 0);
+  // Free the hwloc_cpuset_t structure once the thread is pinned
+  hwloc_bitmap_free(cpuset);
+  //assert(!err);
   if (error != 0) {
-    std::cerr << "error in pthread_setaffinity_np, error="
+    std::cerr << "error in hwloc_set_cpubind, error="
               << strerror(error) << std::endl;
   }
+
+  /* terminate this topology context */
+  hwloc_topology_destroy(topo);
 
   {
     std::lock_guard<std::mutex> guard(m_thread_map_mutex);
@@ -173,7 +192,7 @@ void thread_pool::do_thread_work_pinned_thread_(int tid, cpu_set_t cpu_set)
     }
   }
 }
-#endif // LBANN_HAS_PTHREAD_AFFINITY_SUPPORT
+#endif // LBANN_TOPO_AWARE
 
 int thread_pool::get_local_thread_id() {
   std::thread::id this_id = std::this_thread::get_id();
