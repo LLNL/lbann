@@ -100,13 +100,6 @@ void kfac_test::on_epoch_end(model *m) {
 void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
   // TODO: Static functions
-  const auto get_nrm2 =
-      [](const El::Matrix<DataType, El::Device::GPU>& X) {
-        El::Matrix<DataType> XCPU(X);
-        return El::Nrm2(XCPU);
-      };
-
-  // TODO: Static functions
   const auto get_kronecker_factor =
       [](const El::AbstractMatrix<DataType>& A,
          const DataType alpha) {
@@ -123,7 +116,9 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
   const auto get_inverse =
       [](const El::Matrix<DataType, El::Device::GPU>& A,
          const bool report_time=false,
-         const DataType damping) {
+         const DataType damping,
+         const std::string layer_name,
+         const std::string matrix_name) {
         assert_always(A.Width() == A.Height());
         El::Matrix<DataType, El::Device::GPU> Ainv(A);
 
@@ -149,7 +144,13 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
               Ainv.Height(), Ainv.Buffer(),
               Ainv.Height(),
               &ret);
-          assert_always(ret == 0);
+
+          if(ret != 0) {
+            std::cerr << "K-FAC callback: Cholesky decomposition of "
+                      << matrix_name << " failed at "
+                      << layer_name << std::endl;
+            abort();
+          }
         }
 
 #else
@@ -260,8 +261,8 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
     // Compute the inverse of the factors
     const bool print_time = comm->am_trainer_master() && m_print_time;
-    const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping));
-    const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping));
+    const auto Ainv = get_inverse(Aave, print_time, DataType(m_damping), l->get_name(), "A");
+    const auto Ginv = get_inverse(Gave, print_time, DataType(m_damping), l->get_name(), "G");
 
     // Compute preconditioned gradients
     El::Matrix<DataType, El::Device::GPU> Gg(G.Height(), gradient.Width());
@@ -309,18 +310,40 @@ void kfac_test::on_backward_prop_end(model *m, Layer *l) {
 
     // damp L2 norm of matrices
     if(comm->am_trainer_master() && m_print_matrix_summary) {
+
+      const auto get_stat =
+          [](const El::Matrix<DataType, El::Device::GPU>& X,
+             const char *name) {
+            El::Matrix<DataType> XCPU(X);
+            const auto nrm2 = El::Nrm2(XCPU);
+            std::ostringstream oss;
+            oss << name
+                << "("
+                << X.Height()
+                << "x"
+                << X.Width()
+                << ")="
+                << std::setprecision(2)
+                << std::scientific
+                << nrm2;
+            return oss.str();
+          };
+
+      const auto &dtw = dynamic_cast<data_type_weights<DataType>*>(&w);
+      const auto &weights = dtw->get_values();
       std::ostringstream oss;
       oss << "K-FAC callback: L2 norm @ "<< l->get_name() << ": "
-          << "acts=" << get_nrm2(activations)
-          << ", errs=" << get_nrm2(error_signals)
-          << ", A=" << get_nrm2(A)
-          << ", G=" << get_nrm2(G)
-          << ", Aave=" << get_nrm2(Aave)
-          << ", Gave=" << get_nrm2(Gave)
-          << ", Ainv=" << get_nrm2(Ainv)
-          << ", Ginv=" << get_nrm2(Ginv)
-          << ", grad=" << get_nrm2(gradient)
-          << ", Fgrad=" << get_nrm2(Fgrad)
+          << get_stat(weights.LockedMatrix(), "W")
+          << ", " << get_stat(activations, "acts")
+          << ", " << get_stat(error_signals, "errs")
+          << ", " << get_stat(A, "A")
+          << ", " << get_stat(G, "G")
+          << ", " << get_stat(Aave, "Aave")
+          << ", " << get_stat(Gave, "Gave")
+          << ", " << get_stat(Ainv, "Ainv")
+          << ", " << get_stat(Ginv, "Ginv")
+          << ", " << get_stat(gradient, "grad")
+          << ", " << get_stat(Fgrad, "Finvgrad")
           << std::endl;
       std::cout << oss.str();
     }
